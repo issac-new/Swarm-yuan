@@ -1,11 +1,11 @@
-# codebase.md — ncwk 代码库参考（reference §1）
+# codebase.md — SwarmStudio 代码库参考（reference §1）
 
-> 本文件是 ncwk-dev 技能的代码库结构参考。开发前必读。
+> 本文件是 Swarm-studio 技能的代码库结构参考。开发前必读。
 
 ## §1 Workspace 布局
 
 ```
-/Volumes/nvme2230/lab/ncwk/
+<project-root>/
 ├── overlay/                 # ← 所有开发在此（二次开发仓库，git 仓库）
 │   ├── package.json         # hermes-overlay v0.6.22-overlay, type:module, engines.node>=23.0.0
 │   ├── patches/             # B 类 patch（83 个活跃，series 文件排序）
@@ -35,7 +35,7 @@
 │   ├── specs/               # 设计文档 YYYY-MM-DD-<topic>-design.md（29 files）
 │   └── plans/               # 实施计划 YYYY-MM-DD-<topic>.md（30 files）
 ├── AGENTS.md                # 41 行工作区规则（overlay-only / 分支 / 结构）
-└── .agents/skills/ncwk-dev/ # 本技能
+└── .agents/skills/Swarm-studio/ # 本技能
 ```
 
 ## overlay/ 关键结构

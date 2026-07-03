@@ -1,4 +1,4 @@
-# dev-guide.md — ncwk 开发指南（reference §7）
+# dev-guide.md — SwarmStudio 开发指南（reference §7）
 
 > 本文件指导 A 类/B 类改造的具体开发流程。配套：codebase.md（结构）、workflow.md（流程）、snippets.md（模板）。
 
@@ -114,8 +114,8 @@ npm run sync   # bash scripts/sync-upstream.sh
 
 ## 首次启动
 
-1. `cd /Volumes/nvme2230/lab/ncwk/overlay`
-2. `bash .agents/skills/ncwk-dev/assets/env-setup.sh` — 检测 Node>=23 / Python>=3.11 / git/gh/docker
+1. `cd <project-root>/overlay`
+2. `bash .agents/skills/Swarm-studio/assets/env-setup.sh` — 检测 Node>=23 / Python>=3.11 / git/gh/docker
 3. `npm run ensure-injected` — 确保注入态（首次会 inject）
 4. `npm run verify` — 校验干净
 5. `npm run dev` — 启动开发

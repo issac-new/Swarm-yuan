@@ -1,4 +1,4 @@
-# release.md — ncwk 构建与发布（reference §3）
+# release.md — SwarmStudio 构建与发布（reference §3）
 
 > 本文件指导 build:full 与 build:dmg 流程。规则引用 AGENTS.md / 项目记忆，不硬编码敏感策略。
 

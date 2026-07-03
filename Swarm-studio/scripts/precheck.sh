@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# precheck.sh — ncwk 质量门禁（--branch/--scope/--inject/--test/--sensitive/--consistency/--review）
+# precheck.sh — SwarmStudio 质量门禁（--branch/--scope/--inject/--test/--sensitive/--consistency/--review）
 set -euo pipefail
-P="/Volumes/nvme2230/lab/ncwk/overlay"; N="/Volumes/nvme2230/lab/ncwk"
+P="<project-root>/overlay"; N="<project-root>"
 BR='^(feat|fix|refactor|chore)/.+'; PB=("main" "backup/pre-squash")
 TC="npm test"; SD=("$P/custom" "$P/patches"); UH="$N/upstream/hermes-studio"
 M="${1:---all}"; F=0; pass(){ echo "  ✓ $1";}; fail(){ echo "  ✗ $1"; F=1;}; warn(){ echo "  ⚠ $1";}

@@ -9,7 +9,7 @@ swarm-yuan（生成器，装在 ~/.agents/skills/）
     │
     │  探查目标仓库 → 填充六段式模板
     ▼
-项目专属技能（如 ncwk-dev，装在 <project>/.agents/skills/）
+项目专属技能（如 Swarm-studio，装在 <project>/.agents/skills/）
     │
     │  研发人员日常开发时使用
     ▼
@@ -255,7 +255,7 @@ bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh <skill-name> <project
 - 给了一个代码仓库 + 一份模板，要求产出研发用 skill
 
 **不用：**
-- 用户只是要在某项目里做具体开发任务（那应该用该项目的目标技能，如 ncwk-dev，不是 swarm-yuan 本身）
+- 用户只是要在某项目里做具体开发任务（那应该用该项目的目标技能，如 Swarm-studio，不是 swarm-yuan 本身）
 
 ---
 
@@ -284,7 +284,7 @@ grep -r '待填充\|<项目根>' .            # 占位符检查
 
 ## 八、生成的目标技能怎么用（给研发人员）
 
-目标技能（如 ncwk-dev）生成后，研发人员在日常开发中这样用：
+目标技能（如 Swarm-studio）生成后，研发人员在日常开发中这样用：
 
 ```
 ①需求理解 → ②设计spec → ③实施plan → ④分支准备 → ⑤编码实现 → ⑥测试验证 → ⑦合入main → ⑧构建发布
@@ -377,33 +377,33 @@ cat .swarm-yuan/sdd/progress.md                                # 查任务进度
 
 ## 十、一个完整示例
 
-为 ncwk（SwarmStudio）项目生成开发技能：
+为 SwarmStudio 项目生成开发技能：
 
 ```bash
 # Step 0: 自检
 bash ~/.agents/skills/swarm-yuan/scripts/self-check.sh
 
 # Step 1: 探查（图谱 + 子代理）
-cd /Volumes/nvme2230/lab/ncwk/overlay
+cd <project-root>/overlay
 gitnexus analyze
 # AI agent 三路并行探查
 
 # Step 4: 生成骨架
-bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh ncwk-dev /Volumes/nvme2230/lab/ncwk
+bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh Swarm-studio <project-root>
 
 # Step 3+4: 填充 5 个 reference + 定制 6 个脚本（AI agent 用探查数据填充）
 
 # Step 5: 验证
-cd /Volumes/nvme2230/lab/ncwk/.agents/skills/ncwk-dev
+cd <project-root>/.agents/skills/Swarm-studio
 bash scripts/precheck.sh --all        # 门禁
 bash scripts/self-check.sh            # 9 项目自检
 grep -r '待填充' .                     # 无占位符
 
 # 日常使用（研发人员）
-cd /Volumes/nvme2230/lab/ncwk/overlay
-bash .agents/skills/ncwk-dev/assets/env-setup.sh
-bash .agents/skills/ncwk-dev/scripts/state-machine.sh status
-bash .agents/skills/ncwk-dev/scripts/precheck.sh --all
+cd <project-root>/overlay
+bash .agents/skills/Swarm-studio/assets/env-setup.sh
+bash .agents/skills/Swarm-studio/scripts/state-machine.sh status
+bash .agents/skills/Swarm-studio/scripts/precheck.sh --all
 ```
 
 生成后，研发人员只需：**提需求 → 确认 spec → 确认合入 → 确认发布**。中间的编码、测试、审查由 agent 按 8 节点流程自动完成。

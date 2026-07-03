@@ -2,7 +2,7 @@
 
 ## 命令
 ```bash
-cd /Volumes/nvme2230/lab/ncwk/overlay
+cd <project-root>/overlay
 npm run inject && (cd ../upstream/hermes-studio && npm i --ignore-scripts && mkdir -p dist) && cd ../../overlay
 bash scripts/serve-server.sh &  # :8647
 npm run dev                      # :8649

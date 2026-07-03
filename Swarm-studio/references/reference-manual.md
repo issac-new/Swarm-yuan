@@ -1,6 +1,6 @@
-# reference-manual.md — ncwk 参考手册（reference §2/4/5/6/7/8 + check §1/2/3/4 + goal-backward）
+# reference-manual.md — SwarmStudio 参考手册（reference §2/4/5/6/7/8 + check §1/2/3/4 + goal-backward）
 
-> 本文件是 ncwk-dev 技能的详细参考手册。安全/组件/依赖链/API/UI/数据段 + 检查段（测试/业务规则/勾稽/UI核对/对抗验证）。
+> 本文件是 Swarm-studio 技能的详细参考手册。安全/组件/依赖链/API/UI/数据段 + 检查段（测试/业务规则/勾稽/UI核对/对抗验证）。
 
 ## §2 安全
 

@@ -14,7 +14,7 @@
 set -euo pipefail
 
 # ===== 按项目定制 =====
-PROJECT_DIR="${PROJECT_DIR:-/Volumes/nvme2230/lab/ncwk/overlay}"
+PROJECT_DIR="${PROJECT_DIR:-<project-root>/overlay}"
 STATE_DIR="$PROJECT_DIR/.swarm-yuan"
 STATE_FILE="$STATE_DIR/state.yaml"
 # 阶段顺序（comet 5 阶段模式，可按项目裁剪）

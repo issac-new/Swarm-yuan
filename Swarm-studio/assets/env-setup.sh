@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# env-setup.sh — ncwk overlay 环境加载与资源检测脚本
+# env-setup.sh — SwarmStudio overlay 环境加载与资源检测脚本
 # 对应材料 assets §1 加载开发环境 + §2 检测资源连接、工具权限
 # 用法: bash env-setup.sh
-# ncwk 特点：embedded SQLite，无外部 DB/Redis/MQ/ELK；Node>=23, Python>=3.11<3.14
+# SwarmStudio 特点：embedded SQLite，无外部 DB/Redis/MQ/ELK；Node>=23, Python>=3.11<3.14
 
 set -uo pipefail
 
@@ -11,7 +11,7 @@ pass() { echo "  ✓ $1"; }
 warn() { echo "  ⚠ $1"; }
 fail() { echo "  ✗ $1"; FAIL=1; }
 
-PROJECT_DIR="${PROJECT_DIR:-/Volumes/nvme2230/lab/ncwk/overlay}"
+PROJECT_DIR="${PROJECT_DIR:-<project-root>/overlay}"
 
 echo "=== 开发环境检测 ==="
 
@@ -68,7 +68,7 @@ check_tool docker "Docker（desktop 打包可选）"
 
 echo ""
 echo "=== 外部资源连通性检测 ==="
-echo "  ncwk 使用 embedded SQLite（node:sqlite DatabaseSync），无外部 DB/Redis/MQ/ELK。"
+echo "  SwarmStudio 使用 embedded SQLite（node:sqlite DatabaseSync），无外部 DB/Redis/MQ/ELK。"
 pass "无外部资源依赖（embedded SQLite + 本地文件）"
 
 echo ""

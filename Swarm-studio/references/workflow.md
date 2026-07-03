@@ -1,6 +1,6 @@
-# workflow.md — ncwk 全流程总览（8 节点 × 9 要素）
+# workflow.md — SwarmStudio 全流程总览（8 节点 × 9 要素）
 
-> 本文件指导 ncwk-dev 技能的完整交付流程。每节点含 9 要素：①流程入口 ②参与方 ③前序依赖检查（Pre-flight）④质量门禁（标注类型）⑤分支处理（成功/失败/信息不足）⑥产出物归档（持久化/临时）⑦流程控制（暂停/恢复）⑧状态控制。末尾⑨完成检查表。
+> 本文件指导 Swarm-studio 技能的完整交付流程。每节点含 9 要素：①流程入口 ②参与方 ③前序依赖检查（Pre-flight）④质量门禁（标注类型）⑤分支处理（成功/失败/信息不足）⑥产出物归档（持久化/临时）⑦流程控制（暂停/恢复）⑧状态控制。末尾⑨完成检查表。
 
 ## 节点①需求理解
 
@@ -158,7 +158,7 @@
 
 ## 状态机与三层记忆
 
-- **阶段状态**：`scripts/state-machine.sh`（PROJECT_DIR 默认 `/Volumes/nvme2230/lab/ncwk/overlay`），PHASES=(open design build verify archive)。每节点转换调 `transition`，转换前 `guard` 检查准入。
+- **阶段状态**：`scripts/state-machine.sh`（PROJECT_DIR 默认 `<project-root>/overlay`），PHASES=(open design build verify archive)。每节点转换调 `transition`，转换前 `guard` 检查准入。
 - **任务进度**：`overlay/.swarm-yuan/sdd/progress.md`（superpowers progress ledger）。启动时 `cat`；标记完成的不重派；从第一个未完成恢复。
 - **跨会话知识**：claude-mem（若装）observer 自动捕获 decision/discovery/gotcha，SessionStart(compact) 重新注入；未装则用 progress ledger + 手动 `overlay/.swarm-yuan/decisions.md`。
 

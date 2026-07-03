@@ -11,7 +11,7 @@
 
 **Spec:** `docs/superpowers/specs/YYYY-MM-DD-<feature>-design.md`（归档到 specs/，现有 29 files 规范）
 
-**工作目录:** `cd /Volumes/nvme2230/lab/ncwk/overlay`
+**工作目录:** `cd <project-root>/overlay`
 
 ---
 
@@ -21,7 +21,7 @@
 
 **起点核验：**
 ```bash
-cd /Volumes/nvme2230/lab/ncwk/overlay
+cd <project-root>/overlay
 git branch --show-current          # 应为 main
 git rev-parse HEAD
 git rev-parse main                 # 应与 HEAD 相等
@@ -54,7 +54,7 @@ git status --porcelain             # 应为空或只有文档
 
 - [ ] **Step 1: 核验起点**
   ```bash
-  cd /Volumes/nvme2230/lab/ncwk/overlay
+  cd <project-root>/overlay
   git branch --show-current
   git rev-parse HEAD && git rev-parse main
   git status --porcelain

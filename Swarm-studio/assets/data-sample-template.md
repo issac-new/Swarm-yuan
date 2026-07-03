@@ -1,6 +1,6 @@
 # 库表及数据结构、样例数据模版 (Data Schema & Sample Data Template)
 
-> 对应材料 assets §6。ncwk 使用 embedded SQLite（node:sqlite DatabaseSync），无外部 DB。
+> 对应材料 assets §6。SwarmStudio 使用 embedded SQLite（node:sqlite DatabaseSync），无外部 DB。
 
 ## 数据库引擎
 
@@ -62,7 +62,7 @@ patch 001 为 users 表新增 5 列：
 
 ## 样例数据
 
-> ncwk **无内置 seed/fixture 数据**。测试 stub 在 `custom/client/test/setup.ts`（ResizeObserver/localStorage/matchMedia/i18n）。
+> SwarmStudio **无内置 seed/fixture 数据**。测试 stub 在 `custom/client/test/setup.ts`（ResizeObserver/localStorage/matchMedia/i18n）。
 
 无 seed/fixture。开发/测试数据由测试用例运行时生成。
 

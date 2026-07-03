@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# branch-setup.sh — ncwk overlay 分支准备脚本（hermes-overlay 二次开发）
+# branch-setup.sh — SwarmStudio overlay 分支准备脚本（hermes-overlay 二次开发）
 # 用法: bash branch-setup.sh <branch-name>
 # 基于 main 创建 feat/fix/refactor/chore 分支，含起点核验 + 测试基线
 
 set -euo pipefail
 
-# ===== ncwk 定制 =====
-PROJECT_DIR="/Volumes/nvme2230/lab/ncwk/overlay"
+# ===== SwarmStudio 定制 =====
+PROJECT_DIR="<project-root>/overlay"
 BRANCH_REGEX='^(feat|fix|refactor|chore)/.+'
 PROTECTED_BRANCHES=("main" "backup/pre-squash")
 TEST_CMD="npm test"
