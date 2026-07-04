@@ -1,17 +1,14 @@
 # 实施计划：<feature 名称>
 
 > **For agentic workers:** 按 Task 逐个推进，每个 Task 完成即 commit。步骤用 checkbox (`- [ ]`) 跟踪。
-> **执行方式：** subagent-driven 推荐（每 Task 派发 fresh subagent，见 references/subagent-orchestration.md）；inline 备选。
 
 **Goal:** （一句话目标）
 
-**Architecture:** （架构摘要：A类/B类改造、模块、依赖关系）
+**Architecture:** （架构摘要：改造分类、模块、依赖关系）
 
-**Tech Stack:** Vue 3 ^3.5.32 + Pinia ^3.0.4 + vue-router ^4.6.4 + vue-i18n ^11.3.2 + Vite ^8.0.4 + TypeScript ~6.0.2 + naive-ui ^2.44.1 + Koa ^2.15.3 + embedded SQLite (node:sqlite) + Vitest ^3.2.4 + Electron ^42.3.0
+**Tech Stack:** （项目技术栈摘要）
 
-**Spec:** `docs/superpowers/specs/YYYY-MM-DD-<feature>-design.md`（归档到 specs/，现有 29 files 规范）
-
-**工作目录:** `cd <project-root>/overlay`
+**Spec:** `docs/specs/YYYY-MM-DD-<feature>-design.md`（按项目实际路径）
 
 ---
 
@@ -21,14 +18,14 @@
 
 **起点核验：**
 ```bash
-cd <project-root>/overlay
+cd <项目根>
 git branch --show-current          # 应为 main
 git rev-parse HEAD
 git rev-parse main                 # 应与 HEAD 相等
 git status --porcelain             # 应为空或只有文档
 ```
 
-**测试基线：** `npm test` = 37 files passed（34 cockpit + 2 chat + 1 server security）
+**测试基线：** `<test 命令>` = ___ passed
 
 **关键边界（来自 spec §非目标）：**
 - （列出不做的事）
@@ -39,12 +36,8 @@ git status --porcelain             # 应为空或只有文档
 
 | 文件 | 动作 | 类型 | 职责 |
 |------|------|------|------|
-| `custom/client/<feature>/<Name>.vue` | 新建 | A类 | 组件 |
-| `custom/client/<feature>/stores/<name>.ts` | 新建 | A类 | Pinia store |
-| `registries/client/bootstrap.ts` | 修改 | A类 | 动态 import + flag 守卫 |
-| `patches/NNN-<tag>-<desc>.patch` | 新建 | B类 | upstream 修改（仅当必须） |
-| `patches/series` | 修改 | B类 | 追加 patch 号 |
-| `custom/server/src/...` | 新建 | A类 | Koa 后端（CJS） |
+| `<路径>` | 新建/修改 | <分类> | |
+| `<路径>` | 新建 | <分类> | |
 
 ---
 
@@ -54,42 +47,39 @@ git status --porcelain             # 应为空或只有文档
 
 - [ ] **Step 1: 核验起点**
   ```bash
-  cd <project-root>/overlay
+  cd <项目根>
   git branch --show-current
   git rev-parse HEAD && git rev-parse main
   git status --porcelain
-  npm run verify            # 校验注入态干净
   ```
 - [ ] **Step 2: 建分支**
   ```bash
   git checkout main
-  git checkout -b feat/<feature-name>   # 或 fix/ refactor/ chore/
+  git checkout -b <分支规范>/<feature-name>
   ```
 - [ ] **Step 3: 记录测试基线**
   ```bash
-  npm test 2>&1 | tail -5   # 应为 37 files passed
+  <test 命令> 2>&1 | tail -5
   ```
 
 ---
 
 ### Task 2: <具体任务>
 
-**Files:** `custom/client/<feature>/<Name>.vue`
+**Files:** `<路径>`
 
-- [ ] **Step 1: ...** （A类：新建组件 + store + types）
-- [ ] **Step 2: ...** （注册：bootstrap.ts 动态 import + isFeatureEnabled 守卫 + registerRoute/registerNavEntry/registerComponent）
+- [ ] **Step 1: ...**
+- [ ] **Step 2: ...**
 - [ ] **Step 3: 验证**
   ```bash
-  npm run dev    # 手动验证（8649 前端 HMR + 8647 后端）
-  npm test       # 37 files 不退化
+  <dev 命令>   # 手动验证
+  <test 命令>
   ```
 - [ ] **Step 4: Commit**
   ```bash
   git add -A
-  git commit -m "feat(<scope>): <描述>"
+  git commit -m "<类型>(<scope>): <描述>"
   ```
-
-> **B类任务**（若涉及 patches）：先 `npm run verify` → 临时改 upstream → `git diff > patches/NNN-<tag>-<desc>.patch` → 追加 series → `npm run clean && npm run inject` → `npm test`。**dev server 运行期间禁止 git checkout upstream。**
 
 ---
 
@@ -99,12 +89,12 @@ git status --porcelain             # 应为空或只有文档
   ```bash
   git fetch origin
   git rebase origin/main
-  npm test   # rebase 后重跑（37 files）
+  <test 命令>   # rebase 后重跑
   ```
 - [ ] **Step 2: 合并（需用户确认）**
   ```bash
   git checkout main
-  git merge --no-ff feat/<feature-name> -m "merge: feat/<feature-name>"
+  git merge --no-ff <分支> -m "merge: <分支>"
   ```
 - [ ] **Step 3: 不自动推送**（除非用户明确要求）
 
@@ -112,12 +102,10 @@ git status --porcelain             # 应为空或只有文档
 
 ## 完成检查表
 
-- [ ] 改动仅在 `overlay/`（custom 或 patches），`precheck.sh --scope` 通过
-- [ ] A类已接入注册（registerRoute/registerNavEntry/registerComponent → bootstrap.ts + flag 守卫）；B类 patch 入 series 且 `npm run clean && npm run inject` 成功
-- [ ] `npm test` 全绿（37 files），不退化于基线
-- [ ] `precheck.sh --sensitive` 无敏感信息泄漏
-- [ ] `precheck.sh --consistency` 业务规则 + 勾稽核对通过（无多漏错重 6 项）
-- [ ] `precheck.sh --review` 审查通过（ocr 若装自动，否则手动 5 维度 + goal-backward）
-- [ ] spec/plan 已归档到 `docs/superpowers/specs/` + `plans/`
-- [ ] 已合入 main（`--no-ff`，`merge: <branch>`），未自动推送远端（除非用户明确要求）
-- [ ] `backup/pre-squash` 未被删除
+- [ ] 改动仅在可改目录，<范围检查命令> 通过
+- [ ] <分类>改动已正确接入（patch 入 series / 模块已注册）
+- [ ] `<test 命令>` 全绿，不退化于基线
+- [ ] 敏感信息已脱敏
+- [ ] spec/plan 已归档到 <文档目录>
+- [ ] 已合入 main（合入策略符合项目规范）
+- [ ] 未自动推送远端（除非用户明确要求）
