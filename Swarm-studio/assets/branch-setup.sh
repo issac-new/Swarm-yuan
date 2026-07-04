@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# branch-setup.sh — SwarmStudio overlay 分支准备脚本（hermes-overlay 二次开发）
+# branch-setup.sh — 通用分支准备脚本模板（由 swarm-yuan 生成器按项目定制）
 # 用法: bash branch-setup.sh <branch-name>
-# 基于 main 创建 feat/fix/refactor/chore 分支，含起点核验 + 测试基线
+# 生成目标技能时，替换 PROJECT_DIR / PROTECTED_BRANCHES / 分支名正则 为项目实际值
 
 set -euo pipefail
 
-# ===== SwarmStudio 定制 =====
-PROJECT_DIR="<project-root>/overlay"
-BRANCH_REGEX='^(feat|fix|refactor|chore)/.+'
-PROTECTED_BRANCHES=("main" "backup/pre-squash")
-TEST_CMD="npm test"
-# =====================
+# ===== 按项目定制以下变量 =====
+PROJECT_DIR="<项目根绝对路径>"
+BRANCH_REGEX='^(feat|fix|refactor)/.+'   # 按项目分支规范调整
+PROTECTED_BRANCHES=("main")                # 按项目保护分支调整，可追加如 "release/*" 等
+TEST_CMD="<test 命令>"                   # 如 npm test / pytest / go test ./...
+# ============================
 
 BRANCH_NAME="${1:-}"
 
