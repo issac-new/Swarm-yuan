@@ -122,3 +122,53 @@ claude-mem 支持的查询维度：
 | claude-mem | SQLite + ChromaDB + observer | 跨会话/跨压缩的完整记忆（决策/发现/gotcha） |
 
 **推荐组合**：state-machine.sh 管阶段状态 + progress ledger 管任务进度 + claude-mem（若装）管跨会话知识。三者不冲突，各管一层。
+
+## claude-mem v13 全量能力（swarm-yuan 须知道但可选引用）
+
+> 以下能力来自 claude-mem v13.10.1 源码调研。swarm-yuan **不要求全部使用**，但生成目标技能时须知道这些能力存在，按项目需要引用。
+
+### 18 个内置 Skills（`plugin/skills/`）
+
+| Skill | 用途 | swarm-yuan 落点 |
+|-------|------|----------------|
+| `do` | orchestrator 按任务派发 subagent 执行 | 与 superpowers subagent-driven 重叠，二选一 |
+| `make-plan` | orchestrator 制定计划后派发 subagent | 与 gsd-core plan-phase 重叠 |
+| `smart-explore` | tree-sitter AST 结构化代码搜索（20+ 语言） | 探查阶段可替代部分 grep |
+| `learn-codebase` | 读全部源文件建立项目认知 | 探查阶段路 C 可引用 |
+| `knowledge-agent` | 从 observation 构建可查询"知识脑" | reference-manual 的认知映射表可引用 |
+| `mem-search` | 3 层渐进式检索（search→timeline→get_observations） | check 段状态恢复引用 |
+| `pathfinder` | 特性分组流程图 + 重复关注点检测 + 统一架构提案 | reference-manual 依赖链路段可引用 |
+| `standup` | 自动生成站会报告 | 项目管理方向可引用 |
+| `timeline-report` | 时序报告 | 复盘可引用 |
+| `weekly-digests` | 周报 | 项目管理方向可引用 |
+| `what-the` | 快速解释代码/概念 | dev-guide 可引用 |
+| `how-it-works` | 深度解释机制 | dev-guide 可引用 |
+| `version-bump` | 版本升级 | release 段可引用 |
+| `babysit` | 持续监控 agent 执行 | 长任务执行可引用 |
+| `oh-my-issues` | 按 root cause 聚类 GitHub issue | 项目管理方向可引用 |
+| `design-is` | 设计意图探索 | spec §1 背景可引用 |
+| `wowerpoint` | 生成演示文稿 | 文档方向可引用 |
+
+### 配置项（`~/.claude-mem/settings.json`）
+
+关键配置（AI 生成 precheck.conf 时可参考）：
+- `CLAUDE_MEM_MODEL` — 记忆模型（默认 `claude-haiku-4-5-20251001`），支持 `$TIER:fast`/`$TIER:smart` 分层路由
+- `CLAUDE_MEM_CONTEXT_OBSERVATIONS` — 注入观察数（默认 50）
+- `CLAUDE_MEM_SEMANTIC_INJECT` — 语义注入开关
+- `CLAUDE_MEM_MODE` — 工作模式 + 输出语言（`code`/`code--zh`/`code--ja` 等 36 种）
+- `CLAUDE_MEM_RATE_LIMIT_PER_MIN` / `CLAUDE_MEM_MONTHLY_REQUEST_CAP` — 限流
+- `<private>` 标签 — 排除敏感内容不入库
+
+### Worker/Server 双运行时
+
+- **Worker 模式**（默认）：Bun 进程，本地 SQLite + ChromaDB，端口 37700+uid%100
+- **Server 模式**：Docker（PostgreSQL + Redis），API-key 认证，多人共享，远程 MCP recall
+
+### REST API + 远程 MCP
+
+- 本地 Web Viewer：`http://localhost:37777`（10 个搜索端点）
+- 远程 MCP recall：`/v1/mcp`（search/context/recent 工具，API-key 认证，限流，用量计量）
+
+### 10+ IDE 集成
+
+claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli / antigravity / goose / roo-code / warp
