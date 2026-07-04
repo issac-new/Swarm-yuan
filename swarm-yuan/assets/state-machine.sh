@@ -99,8 +99,8 @@ guard_phase() {
       # 门禁：verify 通过
       local vr
       vr=$(get_field verify_result)
-      [[ "$vr" != "pass" ]] && { fail "verify_result=$vr，须先 pass"; ok=0; }
-      [[ $ok -eq 1 ]] && pass "archive 准入: verify_result=$vr"
+      [[ "$vr" != "pass" ]] && { fail "verify_result=${vr}，须先 pass"; ok=0; }
+      [[ $ok -eq 1 ]] && pass "archive 准入: verify_result=${vr}"
       ;;
     *)
       fail "未知阶段: $phase"; ok=0
@@ -121,7 +121,7 @@ transition_phase() {
     [[ "${PHASES[$i]}" == "$target" ]] && tgt_idx=$i
   done
   if [[ $tgt_idx -le $cur_idx ]]; then
-    echo "ERROR: 不能回退到 $target（当前 $current）"
+    echo "ERROR: 不能回退到 ${target}（当前 ${current}）"
     exit 1
   fi
   # 门禁
