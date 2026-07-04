@@ -112,3 +112,59 @@ python -m graphify.serve graph.json --transport http --port 8080  # 共享 HTTP 
 3. 在 `reference-manual.md` 的"组件依赖链路"段引用图谱输出（`GRAPH_REPORT.md` / Mermaid 调用流）
 4. 在 workflow 节点⑤编码时，agent 查图谱查依赖（`graphify path` / GitNexus MCP）而非 grep
 5. **只引用命令，不复制工具源码**
+
+## GitNexus v1.6 全量能力（swarm-yuan 须知道但可选引用）
+
+> 来自 GitNexus v1.6.9 源码调研。44 节点类型 + 21 关系类型，14 语言支持。
+
+### 17 个 MCP 工具
+
+| 工具 | 用途 | swarm-yuan 落点 |
+|------|------|----------------|
+| `query` | 混合搜索（BM25 + 语义 + RRF） | 探查阶段找稳定单元 |
+| `context` | 360 度符号上下文 | 依赖链路段 |
+| `impact` | 爆炸半径分析（depth grouping + confidence + risk） | `--impact` 门禁可引用 |
+| `trace` | 最短有向路径（调用 + 类成员边） | `--link-depth` 可引用 |
+| `detect_changes` | git diff → 受影响进程 | `--stable-diff` 可引用 |
+| `check` | 健康检查 | 自检阶段 |
+| `rename` | 多文件协调重命名（dry_run） | 重构时引用 |
+| `cypher` | 原始 Cypher 查询 | 高级分析 |
+| `route_map` | API 路由图 | `--api` 可引用 |
+| `tool_map` | MCP/RPC 工具映射 | `--contract` 可引用 |
+| `shape_check` | API 响应结构校验 | `--api` 可引用 |
+| `api_impact` | 变更前 API 影响报告 | `--impact` 可引用 |
+| `explain` | 污点/数据流解释（需 `--pdg`） | `--security` 可引用 |
+| `pdg_query` | 语句级控制/数据依赖（需 `--pdg`） | 安全审查可引用 |
+| `group_list/sync` | 多仓库组 + 契约注册 | 微服务跨仓库可引用 |
+
+### 关键能力
+
+- **`--pdg` CFG/PDG/taint 基质**（TS/JS）：`explain` 做源→汇污点流分析，`pdg_query` 做语句级依赖——安全审查利器
+- **`gitnexus wiki`**：LLM 生成每模块文档 + 交叉引用
+- **`--skills`**：Leiden 社区检测 → 每功能域一个 `SKILL.md`（`.claude/skills/generated/`）
+- **Claude Code PostToolUse hook**：commit/merge/rebase 后自动检测 stale index → 提示 reindex
+- **MCP prompts**：`detect_impact`（提交前变更分析）+ `generate_map`（架构文档 + Mermaid）
+- **多仓库组**：Contract Registry → 跨仓库爆炸半径 + 跨仓库 trace
+
+## graphify v0.9 全量能力（swarm-yuan 须知道但可选引用）
+
+> 来自 graphify v0.9.5 源码调研。36 tree-sitter 语法，22 平台集成。
+
+### 关键能力（swarm-yuan 可能没用到）
+
+| 能力 | 描述 | swarm-yuan 落点 |
+|------|------|----------------|
+| **Work memory + reflection loop** | `save-result` 记录 Q&A 结果 → `reflect` 聚合为 `LESSONS.md` + `.graphify_learning.json`（preferred/tentative/contested 标签 + recency 加权 + provenance） | 记忆闭环可引用 |
+| **PR 情报套件** | `graphify prs` → CI 状态 + review 状态 + worktree→branch→PR 映射 + AI triage 排名 + merge-order 冲突检测 | `--impact` 可引用 |
+| **跨项目全局图** | `graphify global add/remove/list` → `~/.graphify/global-graph.json` | 多项目可引用 |
+| **Callflow HTML 导出** | `graphify export callflow-html` → Mermaid 架构/调用流 HTML | `--mermaid` 可引用 |
+| **MCP 工具** | `query_graph`/`get_node`/`get_neighbors`/`shortest_path`/`list_prs`/`get_pr_impact`/`triage_prs` | 探查+审查可引用 |
+| **共享 HTTP MCP** | `--transport http --host 0.0.0.0 --api-key` → 团队共享一个图 URL | 团队协作可引用 |
+| **Git merge driver** | `graph.json` union-merge → 并发 commit 无冲突标记 | 团队协作可引用 |
+| **语义缓存** | `--update` 只重新提取变更文件 | 增量探查可引用 |
+| **`--exclude-hubs N`** | 抑制工具超级枢纽节点出 god-node 排名 | 更清晰的依赖分析 |
+| **多 LLM 后端** | Gemini/Kimi/Claude/OpenAI/DeepSeek/Azure/Bedrock/Ollama + `claude-cli`（用订阅，免 API key） | 按项目环境选择 |
+| **Obsidian vault 导出** | `--obsidian` → 可被 agent 爬取的文档 | 文档方向可引用 |
+| **36 tree-sitter 语法** | 含 CUDA/Metal/SystemVerilog/Fortran/Pascal/Delphi/Lua/Zig/Elixir/Julia/Vue/Svelte/Astro | 更广语言覆盖 |
+| **MCP 配置作为一等节点** | `.mcp.json` 提取 server 节点 + 包引用 + env-var 需求 | MCP 工具盘点可引用 |
+| **包清单作为枢纽节点** | `pyproject.toml`/`go.mod`/`pom.xml` → `depends_on` 边 | `--deps` 可引用 |
