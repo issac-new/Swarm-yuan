@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "SessionStart": [{
+      "matcher": "startup|clear|compact",
+      "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true"
+    }],
+    "PreToolUse": [{
+      "matcher": "Write|Edit",
+      "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --scope --quiet 2>/dev/null || true"
+    }]
+  }
+}
