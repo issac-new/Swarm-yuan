@@ -1,40 +1,78 @@
-# 代码片段与组件参数 (Snippets)
+# 代码片段与组件参数配置 (Code Snippets & Component Config)
 
-## 命令
+> 对应材料 scripts §1/§3。生成目标技能时，填入项目常用代码片段、命令组合、组件参数配置。
+
+## 常用命令组合
+
+> 高频使用的命令组合（探查项目 scripts/Makefile 提炼）。
+
+### 开发启动
 ```bash
-cd <project-root>/overlay
-npm run inject && (cd ../upstream/hermes-studio && npm i --ignore-scripts && mkdir -p dist) && cd ../../overlay
-bash scripts/serve-server.sh &  # :8647
-npm run dev                      # :8649
-lsof -ti:8647|xargs kill -9 2>/dev/null; bash scripts/serve-server.sh &  # 重启后端
-npm run clean && npm run inject  # B类重新注入
-npm run build:full; npm run build:dmg:mac; npm test; npm run sync
+# （填入项目实际的 dev 启动命令组合）
 ```
 
-## A类注册模板
-```ts
-import type { App } from 'vue'
-import { registerRoute, registerNavEntry } from '@registries/client'
-export function register<Feature>(app: App) {
-  registerRoute({ path: '/hermes/cockpit/<f>', name: 'hermes.<f>', component: () => import('./views/<F>View.vue') })
-  registerNavEntry({ id: '<f>', label: '<标签>', section: 'cockpit' })
-}
-```
-
-## B类 patch
+### 构建
 ```bash
-cd upstream/hermes-studio && git diff > ../../overlay/patches/NNN-<desc>.patch && git checkout -- .
-# 追加 series，cd ../../overlay && npm run clean && npm run inject
+# （填入项目实际的 build 命令组合）
 ```
 
-## 注册 API
-| API | 参数 |
-|-----|------|
-| registerRoute | RouteRecordRaw |
-| registerNavEntry | { id, label, icon?, section? } |
-| registerComponent | name, comp |
+### 测试
+```bash
+# （填入项目实际的 test 命令组合，含过滤参数）
+```
 
-## 关节组件
-- CockpitView — cockpit 入口，cockpit.ts(1452行) 驱动
-- SwarmKanbanView — Board→Column→TaskCard
-- MatrixChatView — matrix-room.ts(1302行)
+### 部署/发布
+```bash
+# （填入项目实际的 release/deploy 命令组合）
+```
+
+## 代码模板
+
+### 新增模块/组件模板
+> 探查项目代码风格，提炼新增模块的模板。
+
+```
+# （填入项目实际的模块模板，如 Vue 组件 / Python 类 / Go struct）
+```
+
+### 新增接口模板
+```
+# （填入项目实际的 API/路由定义模板）
+```
+
+## 组件参数配置说明
+
+> 探查项目组件库，列出关键组件的参数配置。
+
+### <组件名1>
+
+| 参数 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| | | | |
+
+**示例：**
+```
+# （填入组件使用示例）
+```
+
+### <组件名2>
+（同上）
+
+## 关节组件库
+
+> 项目核心/关节组件（频繁组合使用的组件）的详细参数与组合方式。
+
+### <关节组件名>
+
+**职责：** （一句话）
+
+**关键参数：**
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+
+**组合方式：**
+```
+# （填入与其他组件的组合示例）
+```
+
+**注意事项：** （使用该组件的坑/约束）
