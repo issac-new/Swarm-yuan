@@ -134,3 +134,46 @@ ocr rules check <file>
 2. 在 `precheck.sh` 加 `--review` 子命令（调用 `ocr review` 若可用，否则提示手动审查清单）
 3. 在 workflow 节点⑥（测试验证）引用本审查方法论
 4. 在 `dev-guide.md` 引用 subagent 编排时的两阶段审查（spec合规 + 质量）
+
+## gstack v1.58 + open-code-review v1.3 全量能力
+
+> 来自 gstack v1.58.5 + open-code-review v1.3.13 源码调研。
+
+### gstack 审查维度（超出 5 维度的扩展）
+
+| 维度 | gstack 命令 | 描述 | swarm-yuan 落点 |
+|------|------------|------|----------------|
+| 战略/范围 | `/plan-ceo-review` | 4 范围模式（扩张/选择性扩张/维持/缩减）| spec §1.3 非目标可引用 |
+| 架构/数据流 | `/plan-eng-review` | ASCII 图 + 状态机 + 错误路径 + 测试矩阵 + 失败模式 | spec §5 详细设计可引用 |
+| 视觉设计 | `/plan-design-review` | 每维度 0-10 评分 + "10 分长什么样" + AI Slop 检测 | 前端项目可引用 |
+| 开发体验 | `/plan-devex-review` | DX 审查 + TTHW 基准 + 摩擦追踪 | dev-guide 可引用 |
+| 跨模型审查 | `/codex` | OpenAI Codex 独立第二意见 + 3 模式（审查门/对抗挑战/开放咨询）| `--review` 可引用 |
+| 安全 | `/cso` | OWASP Top 10 + STRIDE + 17 FP 排除 + 8/10+ 置信门 + 利用场景 | `--security` 可引用 |
+| 性能 | `/benchmark` | Core Web Vitals + 页面加载 + 资源大小 + before/after | 前端项目可引用 |
+| 根因调试 | `/investigate` | Iron Law：无调查不修复 + 3 次失败后停止 | check 段可引用 |
+
+### open-code-review 关键能力
+
+| 能力 | 描述 | swarm-yuan 落点 |
+|------|------|----------------|
+| **确定性文件捆绑** | 相关文件分组成审查单元（如 `message_en.properties` + `message_zh.properties`），每个 bundle 独立 sub-agent | `--review` 大变更集可引用 |
+| **外部定位模块** | 独立模块提高 AI 评论的行号定位准确度（解决定位漂移） | `--review` 质量提升 |
+| **外部反思模块** | 独立模块提高评论内容准确度 | `--review` 质量提升 |
+| **模板引擎规则匹配** | 按路径的规则匹配（比自然语言更稳定） | `--review` 规则可引用 |
+| **`ocr scan` 全文件审计** | 无 git diff 也能审查（非 git 目录/迁移前扫描） | 探查阶段可引用 |
+| **`--audience agent`** | 输出摘要模式供 agent 消费（非人类进度显示） | subagent 审查可引用 |
+| **MCP server 支持** | 可挂载 CodeGraph 等工具做代码结构分析 | `--review` + `--layer` 协同 |
+| **4 层规则优先级链** | CLI > 项目(`.opencodereview/rule.json`) > 全局 > 内置 | 项目自定义审查规则 |
+| **`--background` 需求上下文** | 从 commit message 自动填充需求上下文 | 更精准的审查 |
+| **`ocr viewer` WebUI** | 查看完整 LLM 请求/响应会话（DNS-rebinding 防护） | 审查调试 |
+| **精度优先设计** | 50 仓库/200 PR/10 语言/1505 标注基准验证，精度 + F1 显著高于通用 agent，~1/9 token | 资源效率 |
+
+### superpowers 审查模式（两阶段 subagent review）
+
+| 阶段 | 检查什么 | swarm-yuan 落点 |
+|------|---------|----------------|
+| Stage 1: Spec 合规 | 实现是否符合 spec delta（ADDED/MODIFIED/REMOVED） | check 段引用 |
+| Stage 2: 代码质量 | 5 维度（正确性/安全/性能/可维护/测试覆盖）+ 两遍清单 | check 段引用 |
+| TDD 强制 | RED→GREEN→REFACTOR，先写测试后写代码（删违规代码） | `--test` 可引用 |
+| 系统调试 | 4 阶段根因定位（root-cause-tracing / defense-in-depth / condition-based-waiting） | `--review` 可引用 |
+| 验证前完成 | 确保"真的修了"而非"以为修了" | goal-backward 可引用 |
