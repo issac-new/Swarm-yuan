@@ -84,7 +84,7 @@ Discuss → Plan → Execute → Verify → Ship
 
 ## 4 类门禁分类法（Gates Taxonomy）
 
-引自 `gsd-core/references/gates.md`。每个检查点映射到一类：
+引自 gsd-core 安装后的 `~/.claude/skills/gsd-core/references/gates.md`（运行 `/gsd-verify` 时由 gsd-core 提供，swarm-yuan 不含此文件）。每个检查点映射到一类：
 
 | 门禁类型 | 作用 | 何时用 |
 |---------|------|--------|
@@ -181,3 +181,63 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 ### 在目标技能中的落地
 - reference-manual.md 的测试案例段引用这 6 契约作为测试质量标准
 - precheck.sh `--test` 可增加：检测 pass-always/空真断言模式
+
+## gsd-core v1.6 全量能力（swarm-yuan 须知道但可选引用）
+
+> 以下能力来自 gsd-core v1.6.1 源码调研。swarm-yuan **不要求全部使用**，但生成目标技能时须知道这些能力存在。
+
+### 核心 Slash 命令（按阶段分组）
+
+| 阶段 | 命令 | 用途 | swarm-yuan 落点 |
+|------|------|------|----------------|
+| 初始化 | `/gsd-new-project` | 深度上下文采集→PROJECT/REQUIREMENTS/ROADMAP/STATE.md | 生成流程 Step 2 特征卡可引用 |
+| 规划 | `/gsd-spec-phase N` | Socratic WHAT-spec + 8 类边界覆盖探针 + 禁止完整性探针 | spec §4 Spec Delta 可引用 |
+| 讨论 | `/gsd-discuss-phase N` | 自适应提问→CONTEXT.md + DISCUSSION-LOG.md | 4-Phase SOP Phase 1 可引用 |
+| 计划 | `/gsd-plan-phase N` | researcher→planner→plan-checker 三 subagent + slopcheck 包合法性 | 4-Phase SOP Phase 3 可引用 |
+| 执行 | `/gsd-execute-phase N` | wave 并行 + worktree 隔离 + checkpoint 心跳 | workflow 节点⑤可引用 |
+| 验证 | `/gsd-verify-work N` | goal-backward UAT + 覆盖感知路由（auto-pass if human_judgment:false + all pass） | check 段对抗验证可引用 |
+| 发布 | `/gsd-ship N` | 自动生成 PR body | workflow 节点⑧可引用 |
+| 审查 | `/gsd-code-review N` | quick/standard/deep 三档 | `--review` 可引用 |
+| 安全 | `/gsd-secure-phase N` | OWASP/ASVS 安全审查 | `--security` 可引用 |
+
+### 关键能力（swarm-yuan 可能没用到）
+
+| 能力 | 描述 | 价值 |
+|------|------|------|
+| **Package Legitimacy Gate** | `slopcheck` 审查 researcher 推荐的 npm 包（`[SLOP]`/`[SUS]`/`[OK]`/`[ASSUMED]`） | 防供应链投毒 |
+| **Cross-AI plan-review convergence** | plan→review→replan→re-review 跨 AI 循环（最多 3 轮） | 多 AI 交叉验证计划 |
+| **Plan drift guard** | `source_grounding` + `source_grounding_authority`(grep/intel/treesitter/lsp/scip) | 防计划中幻觉符号名 |
+| **Coverage-aware UAT routing** | SUMMARY `coverage:` 块自动路由（auto-pass if 测试全通过 + 无人工判断） | 减少不必要的人工验证 |
+| **Spec edge-coverage probe** | 8 类边界探针（boundary/adjacency/empty/encoding/ordering/precision/idempotency/concurrency） | spec 完整性保障 |
+| **Spec prohibition-completeness** | must-NOT 约束探针 | 防遗漏禁止性规则 |
+| **Capability 系统** | 32 个一等能力 + 第三方 overlay 安装 + consent store + host-based registry allowlist | 可扩展不 fork |
+| **Runtime-aware model profiles** | `model_profile_overrides.<runtime>.<tier>` + `model_policy` 预设 + 动态路由 + 失败降级 | 多模型混用 |
+| **Worktree 并行执行** | `use_worktrees` + `[checkpoint]` 心跳 + stall detection | 并行隔离 |
+| **MemPalace** | 时序 KG 记忆层（recall-on-discuss/plan, artifact capture, cross-project tunnels） | 跨项目记忆 |
+| **Graphify 集成** | `graphify.enabled` → `.planning/graphs/` 知识图 + commit 后自动重建 | 代码图谱 |
+| **Intel 系统** | `intel.enabled` → 可查询代码库情报索引 + `api-map.json` + `API-SURFACE.md` | API 影响 |
+| **MVP vertical-slice mode** | `--mvp` → UI→API→DB 特性切片 + Walking Skeleton | MVP 快速交付 |
+| **TDD mode** | `tdd_mode` → planner 标记 `type: tdd` + executor 强制 RED/GREEN/REFACTOR | 测试先行 |
+| **Nyquist validation** | `nyquist_validation` → 测试覆盖映射 | 覆盖率分析 |
+| **`/gsd-forensics`** | 事后调查 + `/gsd-extract-learnings` 跨阶段模式提取 | 复盘改进 |
+| **`/gsd-spike` + `/gsd-sketch`** | 探索性实验 + `--wrap-up` 打包为可复用 skill | 探索+知识沉淀 |
+| **Multi-repo workspaces** | `/gsd-workspace --new --repos` + worktree/clone + 独立 `.planning/` | 多仓库协调 |
+
+### Gate 类型（8 个 + 安全门禁）
+
+| Gate | 触发点 |
+|------|--------|
+| `confirm_project` | 项目初始化后确认 |
+| `confirm_phases` | 阶段拆分后确认 |
+| `confirm_roadmap` | 路线图确认 |
+| `confirm_breakdown` | 任务分解确认 |
+| `confirm_plan` | 计划确认 |
+| `execute_next_plan` | 执行下一个 plan 确认 |
+| `issues_review` | 问题审查 |
+| `confirm_transition` | 阶段转换确认 |
+| `safety.always_confirm_destructive` | 破坏性操作确认 |
+| `safety.always_confirm_external_services` | 外部服务调用确认 |
+
+### `gsd-tools` CLI（20 个模块）
+
+关键模块：`state`(load/json/update/get/patch/advance-plan/record-metric) / `phase`(next-decimal/add/insert/remove/complete/uat-passed) / `roadmap`(get-phase/analyze/validate/upgrade) / `verify`(summary/plan-structure/phase-completeness/references/commits/artifacts/key-links) / `validate`(consistency/health/context) / `scaffold`(context/uat/verification/phase-dir) / `init`(execute-phase/plan-phase/new-project/new-milestone/quick/resume/verify-work) / `capability`(install/update/remove/list/outdated/disable/enable/state/set) / `graphify`(build/query/status/diff/snapshot) / `intel`(api-surface)
