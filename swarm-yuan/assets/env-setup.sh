@@ -26,7 +26,7 @@ check_runtime() {
     ver=$("$cmd" --version 2>&1 | head -1)
     pass "$name: $ver"
   else
-    fail "$name 未安装（要求 >= $min_ver）"
+    fail "${name} 未安装（要求 >= ${min_ver}）"
   fi
 }
 check_runtime "Node.js" node "23.0.0"
