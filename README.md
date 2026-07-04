@@ -1,409 +1,265 @@
-# swarm-yuan 使用说明（面向研发人员）
+# 一个人 + AI = 一个研发团队？swarm-yuan 让 Claude Code 自动为你生成项目专属开发技能
 
-## 一、它是什么
-
-swarm-yuan 是一个**元技能（生成器）**。它不直接帮你写代码，而是**为任意代码仓库自动生成一个项目专属的开发技能**。生成的技能会贴合该项目的目录结构、技术栈、构建命令、分支策略、安全规则，供研发人员在日常开发中从需求到交付全流程使用。
-
-```
-swarm-yuan（生成器，装在 ~/.agents/skills/）
-    │
-    │  探查目标仓库 → 填充六段式模板
-    ▼
-项目专属技能（如 Swarm-studio，装在 <project>/.agents/skills/）
-    │
-    │  研发人员日常开发时使用
-    ▼
-需求理解 → 设计spec → 实施plan → 分支 → 编码 → 测试 → 合入 → 发布
-```
-
-**一句话定位：** 给我一个代码仓库，我还你一套贴合该项目的全流程开发技能。
-
----
-
-## 二、安装位置与文件结构
-
-```
-~/.agents/skills/swarm-yuan/
-├── SKILL.md                        # 主文档（触发条件 + 5步流程 + 7方法论）
-├── references/                     # 7 份方法论参考（按需读，不一次性加载）
-│   ├── template-spec.md            #   六段式填充规范（核心，273行）
-│   ├── exploration-guide.md        #   仓库探查指南 + 12项特征卡模板
-│   ├── subagent-orchestration.md   #   superpowers subagent 编排模式
-│   ├── review-methodology.md       #   gstack/OCR 5维度审查方法论
-│   ├── gsd-patterns.md             #   gsd-core phase-loop + goal-backward + 安装
-│   ├── memory-persistence.md       #   claude-mem 跨会话记忆持久化
-│   └── code-graph-tools.md         #   GitNexus/graphify 命令引用
-├── assets/                         # 通用模板（拷贝进目标技能后按项目定制）
-│   ├── spec-template.md            #   OpenSpec proposal 格式模板
-│   ├── plan-template.md            #   OpenSpec tasks checkbox 格式模板
-│   ├── branch-setup.sh             #   分支准备脚本模板
-│   ├── env-setup.sh                #   环境检测脚本模板
-│   ├── data-sample-template.md     #   库表样例模板
-│   ├── state-machine.sh            #   comet 阶段状态机模板
-│   ├── precheck.sh                 #   质量门禁检查模板
-│   ├── snippets.md                 #   代码片段模板
-│   └── mcp-tools.md                #   MCP 工具模板
-└── scripts/
-    ├── generate-skill.sh           # 脚手架生成器（创建目标技能骨架）
-    └── self-check.sh               # 9 项目运行时自检 + 自动安装
-```
-
----
-
-## 三、第一次使用前：自检（必须先做）
-
-swarm-yuan 整合了 9 个外部项目的运行时。**第一次使用前**（或换机器后）必须跑自检：
-
-```bash
-bash ~/.agents/skills/swarm-yuan/scripts/self-check.sh
-```
-
-### 自检做什么
-
-1. 逐个检测 9 个项目运行时是否已安装
-2. 缺失的**自动安装**（7 个可自动）
-3. 无法自动安装的（2 个）**打印命令提示**
-4. 安装后复查，确认就绪
-
-### 9 个项目运行时
-
-| # | 项目 | 检测方式 | 安装命令 | 自动安装 |
-|---|------|---------|---------|---------|
-| 1 | OpenSpec | `openspec --version` | `npm i -g @fission-ai/openspec` | ✅ |
-| 2 | comet | `comet --version` | `npm i -g @rpamis/comet` | ✅ |
-| 3 | GitNexus | `gitnexus --version` | `npm i -g gitnexus` | ✅ |
-| 4 | gsd-core | `gsd-tools` | `npx @opengsd/gsd-core --claude --global` | ✅ |
-| 5 | claude-mem | `claude-mem` / `~/.claude-mem` | `npx claude-mem install` | ✅ |
-| 6 | open-code-review | `ocr --version` | `npm i -g @alibaba-group/open-code-review` | ✅ |
-| 7 | graphify | `graphify --help` | `uv tool install graphifyy` | ✅ |
-| 8 | superpowers | `~/.claude/plugins/superpowers` | `/plugin install superpowers@claude-plugins-official` | ❌ 手动 |
-| 9 | gstack | `~/.claude/skills/gstack` | `git clone … ~/.claude/skills/gstack && ./setup` | ❌ 手动 |
-
-### self-check.sh 子命令
-
-| 命令 | 用途 |
-|------|------|
-| `self-check.sh` | 检测 + 自动安装缺失的 |
-| `self-check.sh --check-only` | 仅检测，不安装 |
-| `self-check.sh --install gitnexus` | 仅安装指定项目 |
-
-> **graphify 特殊：** 需先有 `uv`（`curl -LsSf https://astral.sh/uv/install.sh | sh`）或 `pipx`。self-check 优先用 uv，降级 pipx，两者都无则提示先装 uv。
+> 你有没有遇到过这种情况：接手一个新项目，花了一周才搞清楚代码结构、分支规范、哪些文件能改哪些不能碰、哪些组件能复用、测试怎么跑……
 >
-> **superpowers / gstack：** 因 `/plugin` 是 Claude Code 运行时命令、gstack 需 clone+setup，bash 无法自动完成。按提示手动安装后重跑 `self-check.sh` 确认。
+> 如果 AI 能在 5 分钟内自动探查完这一切，生成一套专属的开发技能——含 25 个质量门禁、18 段 spec 模板、14 项项目特征卡——你直接拿来用，零手动配置，会怎样？
+
+这就是 **swarm-yuan**。
 
 ---
 
-## 四、核心使用：5 步生成流程
+## 它是什么
 
-```
-⓪自检（9 项目运行时） → ①探查目标仓库 → ②提取项目特征 → ③填充六段模板 → ④落盘目标技能 → ⑤验证
-```
+swarm-yuan 是一个 **AI 驱动的 skill 生成器**。
 
-### Step 0：自检（见上文第三节）
+你给它一个代码仓库的路径，它自动：
 
-### Step 1：探查目标仓库
+1. 🔍 **读取项目知识** — AGENTS.md、CLAUDE.md、项目记忆、hermes-agent 配置，提取团队积累的规则和教训
+2. 📊 **探查代码库** — 三路并行子代理扫描（结构/规范/代码组织），优先用代码图谱工具（GitNexus/graphify）索引，而非暴力 grep
+3. 📋 **提取 14 项特征卡** — 项目类型、可改范围、技术栈、构建命令、可复用稳定单元、领域知识……每项落到真实路径和版本号
+4. 🏗️ **生成六段式技能** — SKILL.md + 13 个 reference + 7 个 asset 模板 + 25 个门禁脚本 + hooks + slash 命令
+5. ⚙️ **自动配置** — 45 个门禁变量从探查结果推导，你不需要手动编辑任何配置文件
+6. ✅ **自检验证** — 运行 25 个门禁，有误报自动修复后重跑
+7. 🧠 **写回记忆** — 探查结果写回 claude-mem / .zcode/memories，下次生成时自动读取，形成闭环
 
-**1a. 代码图谱构建（优先）：**
-
-探查前，先用代码图谱工具索引目标仓库，让后续探查基于图谱而非 grep：
-
-```bash
-# GitNexus（深度代码调用图）
-cd <目标仓库根目录>
-gitnexus analyze          # 构建知识图谱
-gitnexus mcp              # 启动 MCP server 供 agent 查询
-
-# graphify（广谱知识图：代码+文档+依赖链）
-graphify .                # 构建 → graphify-out/GRAPH_REPORT.md
-graphify path "组件A" "组件B"  # 查依赖链/最短路径
-```
-
-> 若工具不可用，降级为 grep + 读文件（传统探查）。
-
-**1b. 三路并行探查（AI agent 子代理）：**
-
-| 路 | 探查内容 |
-|----|---------|
-| A 结构与构建 | 顶层目录、package.json/pyproject.toml、scripts、端口、构建系统、测试体系 |
-| B 开发规范 | AGENTS.md/CLAUDE.md/CONTRIBUTING、分支策略、文档约定、改造分类 |
-| C 代码与资源 | 组件库（从图谱读依赖链）、接口、数据模型、安全机制、环境依赖、外部资源、MCP 工具 |
-
-### Step 2：提取项目特征卡
-
-整理成 12 项特征卡（模板见 `references/exploration-guide.md` 末尾）：
-
-| # | 特征项 | 说明 |
-|---|--------|------|
-| 1 | 项目类型 | 单体/monorepo/overlay-fork/微服务/库 |
-| 2 | 可改范围 | 哪些目录可改、哪些只读、只读区修改机制 |
-| 3 | 改造分类 | A类/B类、core/plugin、src/lib |
-| 4 | 技术栈摘要 | 语言+框架+构建+测试 |
-| 5 | 构建发布命令 | dev/build/test/release + 端口 |
-| 6 | 分支规范 | 命名、合入策略、保护分支、推送规则 |
-| 7 | 安全规则 | 脱敏、密钥、网络白名单 |
-| 8 | 文档约定 | spec/plan 存放位置、命名格式 |
-| 9 | 测试体系 | 框架、目录、运行命令 |
-| 10 | 环境与外部资源 | 运行时版本、外部服务、MCP 工具 |
-| 11 | 组件库与接口 | 主要组件、API 入口、OpenAPI 生成方式 |
-| 12 | 数据规范 | schema 位置、样例数据、业务规则、勾稽关系 |
-
-### Step 3：填充六段式模板
-
-用 `assets/` 模板逐段填充。**6 条填充原则：**
-
-1. **具体优于通用** — 用真实路径/命令/版本，不用占位符
-2. **引用规则而非写死** — 来自 AGENTS.md 的规则写"见 AGENTS.md"，不重复具体值
-3. **specs as source of truth** — 节点②③用 OpenSpec proposal→spec(delta)→design→tasks
-4. **subagent 隔离** — 节点⑤用 superpowers orchestrator+subagent
-5. **状态机背书** — 节点间状态用 `state-machine.sh` 验证，非 prompt-only
-6. **审查维度覆盖** — check 段含 5 审查维度 + goal-backward + AUTO-FIX/ASK
-
-### Step 4：落盘目标技能
-
-```bash
-bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh <skill-name> <project-dir>
-```
-
-生成 23 文件骨架到 `<project>/.agents/skills/<skill-name>/`，然后填充占位文件。
-
-**生成的目标技能结构：**
-
-```
-<project>/.agents/skills/<skill-name>/
-├── SKILL.md                      # meta：铁律、改造分类、流程总览、命令速查
-├── references/
-│   ├── workflow.md               # 8 节点 × 9 要素（需填充）
-│   ├── codebase.md               # 目录结构+技术栈（需填充）
-│   ├── dev-guide.md              # 改造分类+开发指南+组件填充（需填充）
-│   ├── release.md                # 编译规则+构建发布（需填充）
-│   ├── reference-manual.md       # 安全/组件/接口/数据/测试/审查（需填充）
-│   ├── subagent-orchestration.md # (已就绪) superpowers 编排
-│   ├── review-methodology.md     # (已就绪) gstack/OCR 审查
-│   ├── gsd-patterns.md           # (已就绪) gsd-core 模式
-│   ├── memory-persistence.md     # (已就绪) claude-mem 记忆
-│   └── code-graph-tools.md       # (已就绪) GitNexus/graphify
-├── assets/
-│   ├── spec-template.md          # OpenSpec proposal 模板（按项目定制）
-│   ├── plan-template.md          # tasks checkbox 模板（按项目定制）
-│   ├── branch-setup.sh           # 分支准备（按项目定制）
-│   ├── env-setup.sh              # 环境检测（按项目定制）
-│   ├── data-sample-template.md   # 库表样例（按项目定制）
-│   └── state-machine.sh          # 阶段状态机（按项目定制）
-└── scripts/
-    ├── precheck.sh               # 质量门禁（按项目定制，7 子命令）
-    ├── state-machine.sh          # 状态机（按项目定制）
-    ├── self-check.sh             # 9 项目自检（已就绪）
-    ├── snippets.md               # 代码片段（按项目定制）
-    ├── code-graph-tools.md       # 图谱工具引用（已就绪）
-    └── mcp-tools.md              # MCP 工具（按项目定制）
-```
-
-> **5 个 reference 文件已就绪**（方法论通用，无需改）：subagent-orchestration.md、review-methodology.md、gsd-patterns.md、memory-persistence.md、code-graph-tools.md。
-> **5 个 reference 文件需填充**（项目特定）：workflow.md、codebase.md、dev-guide.md、release.md、reference-manual.md。
-> **6 个 assets/scripts 需定制**（替换通用变量为项目实际值）。
-
-### Step 5：验证
-
-用 `references/template-spec.md` 末尾的核对表逐项检查：
-
-**材料要素覆盖：**
-- [ ] workflow 9 要素（每节点：流程入口/参与方/准入/门禁/分支处理/产出物归档/流程控制/状态控制 + 完成检查表）
-- [ ] reference 8 项（目录结构/安全检查/编译规则/组件库/依赖链路/接口清单/UI-UX/数据字典）
-- [ ] assets 7 项（环境加载/资源检测/分支拉取/任务配置/静态资源/库表样例/组件填充）
-- [ ] check 4 项（单测接口集成回归安全/业务规则案例/数据勾稽无多漏错重/UI脱敏日志）
-- [ ] scripts 3 项（执行脚本/代码片段+组件参数/MCP工具）
-
-**方法论整合（7 项）：**
-- [ ] Spec-driven（OpenSpec）：proposal→spec(delta)→archive
-- [ ] Subagent-driven（superpowers）：orchestrator+fresh subagent+两阶段审查
-- [ ] State machine（comet）：state-machine.sh 阶段状态持久化
-- [ ] Review（gstack/OCR）：5维度+AUTO-FIX/ASK+严重度
-- [ ] Code-graph（GitNexus/graphify）：引用命令，探查先用图谱索引
-- [ ] Phase-loop（gsd-core 可安装）：goal-backward 对抗验证+4类门禁
-- [ ] Memory（claude-mem）：三层记忆方案
-
-**质量：**
-- [ ] 无占位符残留（`grep -r '待填充\|<项目根>' .`）
-- [ ] 所有 .sh 通过 `bash -n`
-- [ ] frontmatter description 含项目关键词
-- [ ] 工具引用合规（只引用 GitNexus/graphify/ocr/claude-mem/gsd-core 命令，不重新实现）
+**一句话：对 AI 说"为这个项目生成 skill"，5 分钟后你拿到一套可直接用的项目专属开发技能。**
 
 ---
 
-## 五、整合的 7 大方法论
+## 为什么你需要它
 
-| 方法论 | 来源 | 借鉴的模式 | 在目标技能中的落地 |
-|--------|------|-----------|-------------------|
-| **Spec-driven** | OpenSpec | proposal→spec(delta:ADDED/MODIFIED/REMOVED)→design→tasks(checkbox)→archive | workflow 节点②③ + assets 模板 |
-| **Subagent-driven** | superpowers | orchestrator + fresh subagent per task + 两阶段审查 + progress ledger | workflow 节点⑤ + subagent-orchestration.md |
-| **State machine** | comet | 脚本背书阶段状态机 + 硬门禁 + 阻塞决策点 | state-machine.sh |
-| **Review** | gstack + open-code-review | 5 审查维度 + AUTO-FIX/ASK + 严重度分级 | check 段 + review-methodology.md |
-| **Code-graph** | GitNexus + graphify | 代码图谱索引，查询而非 grep | code-graph-tools.md |
-| **Phase-loop** | gsd-core（可安装） | goal-backward 对抗验证 + 4类门禁 + wave并行 + capability | gsd-patterns.md + check + 运行时 `/gsd-*` |
-| **Memory** | claude-mem | 跨会话记忆持久化 + detached observer + 3层检索 | memory-persistence.md + 状态控制 |
+### 痛点 1：每个项目都要重新摸索
 
-**工具引用铁律：** GitNexus / graphify / ocr / claude-mem / gsd-core **只引用调用命令，不重新实现，不复制源码**。gsd-core 安装：`npx @opengsd/gsd-core --claude --global` → 运行时 `/gsd:new-project` → `/gsd-execute-phase`/`gsd-tools`。与目标技能安全共存（只 prune `gsd-` 前缀）。**注意：没有 `gsd-core init` 命令。**
+接手新项目时，你花了大量时间理解：
+- 哪些目录能改？哪些只读？（改错了破坏 upstream）
+- 分支怎么命名？合入策略是什么？
+- 构建命令是什么？测试怎么跑？端口约定？
+- 哪些组件可以复用？哪些是稳定层不能动？
+- 安全规则是什么？脱敏怎么做？
 
----
+**swarm-yuan 自动探查这一切**，生成 14 项特征卡，每项落到真实路径和命令名——不是通用模板，是项目专属。
 
-## 六、什么时候用 / 不用
+### 痛点 2：代码审查靠人工，漏检率高
 
-**用：**
-- "为某项目生成开发技能"
-- "create a dev skill for this repo"
-- "按模板生成 skill" / "六段式 skill" / "需求交付全流程 skill"
-- 给了一个代码仓库 + 一份模板，要求产出研发用 skill
+提交前你手动检查：
+- 有没有硬编码密钥？
+- 有没有 SQL 注入？
+- 有没有改到不该改的文件？
+- 有没有重复造轮子？
 
-**不用：**
-- 用户只是要在某项目里做具体开发任务（那应该用该项目的目标技能，如 Swarm-studio，不是 swarm-yuan 本身）
+**swarm-yuan 的 25 个门禁自动检查**，从分支命名到安全规范到复用合规到领域知识客观规律，全覆盖。
 
----
+### 痛点 3：AI 编码不知道项目规则
 
-## 七、常用命令速查
+AI 帮你写代码，但不知道：
+- 这个项目不允许随意升级依赖版本
+- 这个项目的稳定层不能改签名
+- 这个项目有特定的改造分类（A 类纯新增 / B 类骨架修改）
+- 这个项目的领域有什么客观规律不能违反
 
-```bash
-# 1. 自检（首次/换机器后）
-bash ~/.agents/skills/swarm-yuan/scripts/self-check.sh
-
-# 2. 生成目标技能骨架
-bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh <name> <project-dir>
-
-# 3. 探查阶段构建图谱（在目标仓库根目录）
-gitnexus analyze && gitnexus mcp        # 或
-graphify . && graphify path "A" "B"
-
-# 4. 验证生成的目标技能
-cd <project>/.agents/skills/<name>
-bash scripts/precheck.sh --all          # 质量门禁
-bash scripts/self-check.sh              # 9 项目自检
-bash -n scripts/*.sh                    # 语法检查
-grep -r '待填充\|<项目根>' .            # 占位符检查
-```
+**swarm-yuan 生成的目标技能内置这些规则**，AI 在编码时自动遵守。
 
 ---
 
-## 八、生成的目标技能怎么用（给研发人员）
+## 25 个质量门禁：从分支到认知，全覆盖
 
-目标技能（如 Swarm-studio）生成后，研发人员在日常开发中这样用：
+### 核心门禁（日常 `--all` 跑这 10 个，~5 秒）
+
+| 门禁 | 检查什么 |
+|------|---------|
+| `--branch` | 分支命名规范 + 保护分支禁止直接开发 |
+| `--scope` | 改动范围（可改 vs 只读目录） |
+| `--build` | 构建是否通过 |
+| `--sensitive` | 密码/密钥/token 明文扫描 |
+| `--review` | 代码审查（调用 ocr，5 维度） |
+| `--reuse` | 复用合规（拼装式开发：禁止重复造轮子） |
+| `--deps` | 依赖版本锁定（铁律：不随意升级） |
+| `--security` | OWASP Top 10（注入/XSS/eval/硬编码密钥/TLS） |
+| `--test` | 测试是否通过 |
+| `--consistency` | 业务规则 + 数据勾稽（无多漏错重） |
+
+### 架构门禁（`--all-full` 跑全部 25 个，~30 秒）
+
+| 门禁 | 检查什么 |
+|------|---------|
+| `--layer` | DDD 分层边界（层穿透/依赖倒置/领域污染） |
+| `--stable-diff` | 稳定单元篡改（改稳定层须 spec 声明） |
+| `--link-depth` | 调用链深度（链路膨胀检测） |
+| `--adr` | 架构决策记录（ADR + 技术债登记） |
+| `--contract` | 接口契约（version 字段 + ACL 防腐层） |
+| `--impact` | 变更影响分析（消费方反查） |
+| `--service` | 微服务架构（共享 DB / 同步链 / 网关 / trace） |
+| `--cognition` | 认知递进体检（六阶认知链 + 六维动力学） |
+| `--domain` | 领域知识（客观规律违规检测） |
+| `--knowledge` | 项目知识复用（AGENTS.md/CLAUDE.md/记忆 → skill 是否引用） |
+| `--mermaid` | Mermaid 可视化（架构图/流程图是否用 Mermaid） |
+| …… | 共 15 个架构门禁 |
+
+### 门禁工具优先级 + 降级策略
+
+每个门禁优先用已安装的运行时工具，无则降级到内置 grep：
 
 ```
-①需求理解 → ②设计spec → ③实施plan → ④分支准备 → ⑤编码实现 → ⑥测试验证 → ⑦合入main → ⑧构建发布
+gitnexus trace（代码图谱）→ graphify explain（知识图）→ madge（依赖树）→ 纯转发函数统计
+ocr review --from --to（diff 审查）→ ocr scan（全文件审查）→ 手动 5 维度清单
+claude-mem search（记忆库）→ 文件检测（AGENTS.md/CLAUDE.md）
 ```
 
-### 研发人员的 4 个介入点
+**核心理念：有能力就用，无能力降级。不浪费已安装工具的能力，也不因工具缺失而崩溃。**
 
-| 节点 | 研发人员做什么 | 其余谁做 |
-|------|--------------|---------|
-| ①需求理解 | 确认 agent 对需求的理解 | agent 复述+判定改造类型 |
-| ②设计spec | review + 批准 spec | agent 写 OpenSpec proposal |
-| ⑦合入main | 确认可以合入 | agent rebase + merge --no-ff |
-| ⑧构建发布 | 确认是否发布 | agent 构建 + 验证产物 |
+---
 
-中间的 ③④⑤⑥ 由 agent 自动完成（subagent 编排 + goal-backward 验证 + 状态机持久化），**连续执行不 check-in**。
+## 五层认知基底：不只是门禁，是认知方法论
 
-### 每次开发前的 3 个命令
+swarm-yuan 不只是 25 个门禁的堆砌。它的背后是一套 **五层认知基底**：
+
+| 层 | 解决什么 | 核心构造 |
+|----|---------|---------|
+| 第一层 **认知递进** | 如何认识项目 | 概念→结构→空间→映射→规律→处理 + 六维动力学（速度/聚散/趋势/强度/能耗/累积量） |
+| 第二层 **思维语言** | 如何思考 | 价值-知识-行动三元演化 + 四导向（价值/目标/问题/结果）+ 七推理 + 7×7 双循环 |
+| 第三层 **认知辩证** | 如何推演+自证伪 | 4-Phase 多轮 SOP（概念澄清→破局重构→七步推演→行动落地）+ 逻辑剃刀 6 步对抗审查 |
+| 第四层 **偏差防范** | 如何纠偏 | 五维偏差扫描（感知/记忆/社会/决策/元认知）+ 思维模型 8 类检查清单 |
+| 第五层 **辩证认知** | 如何统一前四层 | 7 对辩证范畴（内容↔形式 / 原因↔结果 / 必然↔偶然 / 现实↔可能 / 实践↔认识 / 真理↔谬误 / 绝对↔相对真理） |
+
+> **核心理念：呈现递进的关系，而非仅关注计算。**
+>
+> 门禁不是"数 import 数"——`--layer` 数 import 是为了验证"结构是否遵循依赖单向规律"；`--reuse` 数新增导出是为了验证"概念是否复用了既存稳定单元"。每个计数背后指向一条关系规律。
+
+---
+
+## 10 个运行时工具：只引用调用，不重新实现
+
+swarm-yuan 整合了 10 个已验证的开源运行时工具，**只引用其命令，不复制源码**：
+
+| 运行时 | 能力 | 版本 |
+|--------|------|------|
+| **OpenSpec** | spec-driven 开发（proposal→spec→archive） | v1.5.0 |
+| **superpowers** | subagent-driven 编排（两阶段审查） | v6.1.1 |
+| **comet** | 脚本背书状态机（阶段转换硬门禁） | v0.3.9 |
+| **GitNexus** | 代码知识图谱（17 MCP 工具，14 语言） | v1.6.9 |
+| **graphify** | 广谱知识图（36 tree-sitter 语法） | v0.9.6 |
+| **gsd-core** | phase-loop + goal-backward 对抗验证 | v1.6.1 |
+| **claude-mem** | 跨会话记忆持久化（SQLite + ChromaDB） | v13.10.1 |
+| **open-code-review** | 确定性代码审查（精度优先，~1/9 token） | v1.3.13 |
+| **gstack** | 8 审查维度 + 浏览器守护 | v1.58.5 |
+| **Ruflo** | agent swarm + 向量记忆 + federation + witness 验证 | v3.21.1 |
+
+---
+
+## 32 个领域知识速查：防达克效应
+
+swarm-yuan 内置 32 个技术+业务领域的客观规律速查表：
+
+**技术领域**（11 个）：数据库（关系/文档）、缓存、网络（HTTP/WebSocket）、安全、并发、前端（框架/CSS）、分布式、构建/DevOps
+
+**业务领域**（7 个）：IM 通讯、电商、CRM、监控、DevOps/CI-CD、教育、金融
+
+**专业领域**（14 个）：银行卡转接清算（境内/跨境）、网络支付、等保 2.0、ATT&CK 框架、DDD、TOGAF、C4 模型、常用架构模式、大规模敏捷、敏捷工程实践、SRE/可观测性、Kubernetes、容灾/高可用、4-Phase SOP + 逻辑剃刀
+
+> **铁律：领域规则不得违反通用常识和客观规律。**
+>
+> 密码必须哈希不可明文。SQL 必须参数化不可拼接。消息有时序性须保序。库存须原子扣减。这些不是"建议"，是客观规律——违反就是硬伤。
+
+---
+
+## 深度集成 Claude Code
+
+生成的目标技能不是一个静态文档——它深度使用 Claude Code 的原生能力：
+
+| 能力 | 怎么用 |
+|------|--------|
+| **Hooks** | SessionStart 注入阶段状态 + PreToolUse(Write) 自动检查改动范围 |
+| **Slash Commands** | `/my-skill:spec` 创建 spec / `/my-skill:precheck` 运行门禁 / `/my-skill:explore` 探查项目 |
+| **MCP Tools** | 自动注册 gitnexus / claude-mem / graphify MCP server |
+| **Subagent** | 每任务新 subagent + 两阶段审查（spec 合规 + 代码质量） |
+| **Dynamic Workflows** | 复杂变更（>3 文件）用 Dynamic Workflow 并行扇出 + 交叉验证 |
+| **LSP** | go-to-definition / find-references（比 grep 更精确） |
+| **TodoWrite** | 任务清单 + 完成检查表 |
+| **AskUserQuestion** | 疑虑确认（7 个必须暂停场景） |
+| **Worktree** | 隔离工作空间 |
+| **claude ultrareview** | 云端多 agent 代码审查（可选增强） |
+
+> **降级策略**：联网/云端功能不可用时，自动降级为本地工具。Dynamic Workflows 不可用时降级为 Task(subagent) 手动并行。每节点都有降级路径。
+
+---
+
+## 日常使用流程
+
+```
+首次使用：
+  对 AI 说 "为 /path/to/project 生成 skill"
+    → AI 全自动探查 + 生成 + 配置 + 验证
+    → 你获得可直接用的 skill（零手动配置）
+
+日常开发：
+  开始新需求 → 复制 spec 模板，按规模填写（简单/标准/完整）
+    → 编码（查 reference-manual §4/5/6 复用清单，拼装优先）
+      → 提交前：bash precheck.sh --all
+        ├→ 全 ✓ → 可提交
+        ├→ 有 ✗ → 修复后重跑
+        └→ 有 ⚠ → 人工评估
+
+架构审查日：
+  bash precheck.sh --all-full（全部 25 门禁）
+
+skill 过时了：
+  对 AI 说 "升级 my-project-dev skill"
+    → AI 自动更新模板 + 重新探查 + 重新配置
+```
+
+---
+
+## 安装
 
 ```bash
-cd <project>
-bash .agents/skills/<skill>/assets/env-setup.sh           # 检测环境
-bash .agents/skills/<skill>/scripts/state-machine.sh status  # 查当前阶段
-bash .agents/skills/<skill>/scripts/precheck.sh --all       # 全门禁检查
+# 1. 克隆 swarm-yuan 到 ~/.agents/skills/
+# 2. 注册 slash command
+cp -r ~/.agents/skills/swarm-yuan/.claude/commands/ ~/.claude/commands/
+
+# 3. 使用
+/swarm-yuan /path/to/your/project
 ```
 
-### 中断恢复（context compaction 后）
+---
 
-```bash
-git checkout feat/<feature-branch>
-bash .agents/skills/<skill>/scripts/state-machine.sh status   # 查阶段状态
-cat .swarm-yuan/sdd/progress.md                                # 查任务进度
-# 从第一个未完成 Task 继续
-```
+## 数字一览
 
-> 如果装了 claude-mem，SessionStart(compact) hook 自动注入历史 observation，无需手动恢复。
-
-### precheck.sh 各子命令
-
-| 子命令 | 什么时候用 | 检查什么 |
-|--------|-----------|---------|
-| `--branch` | 建分支后 | 分支名规范、不在保护分支开发 |
-| `--scope` | 编码中 | upstream 只读、无本地 commit |
-| `--inject` | B类 patch 后 | manifest 存在、series 引用 patch 存在 |
-| `--test` | 编码后 | 测试全绿 |
-| `--sensitive` | 推送前 | 无硬编码密钥/私有 IP |
-| `--consistency` | 测试阶段 | 业务规则 + 数据勾稽（无多漏错重） |
-| `--review` | 测试阶段 | 5 审查维度 + goal-backward 对抗验证 |
-| `--all` | 任意 | 全部上述检查 |
-
-### state-machine.sh 各子命令
-
-| 命令 | 用途 |
+| 维度 | 数值 |
 |------|------|
-| `init <change>` | 初始化状态（节点①） |
-| `transition <phase>` | 阶段转换（含门禁检查） |
-| `get <field>` | 读取字段 |
-| `set <field> <value>` | 设置字段 |
-| `guard <phase>` | 检查阶段准入条件 |
-| `next` | 显示下一阶段 |
-| `status` | 显示当前状态 |
-
-### 三层记忆方案
-
-| 层 | 工具 | 管什么 | 载体 |
-|----|------|--------|------|
-| 阶段状态 | comet state-machine | phase / verify_result | `.swarm-yuan/state.yaml` |
-| 任务进度 | superpowers progress ledger | 单会话任务完成状态 | `.swarm-yuan/sdd/progress.md` |
-| 跨会话知识 | claude-mem（若装） | 决策/发现/gotcha/pattern | `~/.claude-mem/` |
+| 质量门禁 | 25 个（核心 10 + 架构 15） |
+| 运行时工具 | 10 个（只引用调用） |
+| 项目特征卡 | 14 项 |
+| spec 模板 | 22 段（分级填写：简单/标准/完整） |
+| reference 文档 | 13 个（7700+ 行方法论+认知+领域知识） |
+| 领域知识速查 | 32 个领域 |
+| 认知基底 | 5 层（认知递进/思维语言/认知辩证/偏差防范/辩证认知） |
+| Claude Code 集成 | hooks + commands + MCP + Dynamic Workflows + LSP |
+| 降级策略 | 每节点有降级路径（联网/云端不可用→本地工具） |
+| 三平台兼容 | macOS / Linux / Windows（bash 3.2 兼容） |
+| 自举能力 | ✅ 用自身 25 个门禁检查自身，通过 |
 
 ---
 
-## 九、阅读顺序建议
+## 写在最后
 
-第一次掌握 swarm-yuan 时，按此顺序读：
+swarm-yuan 的核心理念不是"更多门禁"或"更多工具"——而是 **呈现递进的关系，而非仅关注计算**。
 
-| 顺序 | 文件 | 目的 |
-|------|------|------|
-| 1 | 本使用说明 | 整体认知 |
-| 2 | `SKILL.md` | 触发条件 + 5 步流程 + 7 方法论映射表 |
-| 3 | `references/template-spec.md` | 六段式每段的填充规范 + 生成后核对表 |
-| 4 | `references/exploration-guide.md` | 如何探查仓库（含图谱工具用法 + 12 项特征卡） |
-| 5 | `references/subagent-orchestration.md` | subagent 编排模式（节点⑤核心） |
-| 6 | `references/review-methodology.md` | 5 审查维度 + goal-backward |
-| 7 | `references/gsd-patterns.md` | gsd-core 安装 + phase-loop + 4 类门禁 |
-| 8 | `references/memory-persistence.md` | claude-mem 跨会话记忆 |
-| 9 | `references/code-graph-tools.md` | GitNexus/graphify 命令参考 |
-| 10 | 实操 | 跑一遍 `self-check.sh` + `generate-skill.sh` |
+每一个门禁的 fail/warn 背后，是一条工程规律：
+- `--layer` 报"层依赖违规"→ 本质是"上层对下层有隐式耦合"
+- `--reuse` 报"新增单元与既有重名"→ 本质是"重复造轮子"
+- `--domain` 报"密码明文存储"→ 本质是"违反安全客观规律"
+- `--cognition` 报"认知总分 0/19"→ 本质是"项目认知有系统性漏洞"
+
+它不帮你写代码——它帮你的 AI **在正确的约束下写代码**。
+
+它不替代审查——它让 **25 个维度的自动检查在提交前跑完**。
+
+它不是一个工具——它是一套 **从认知到交付的工程方法论**。
 
 ---
 
-## 十、一个完整示例
+**如果你觉得这篇文章有帮助，欢迎点赞、在看、转发。**
 
-为 SwarmStudio 项目生成开发技能：
+**项目地址**：`~/.agents/skills/swarm-yuan/`
 
-```bash
-# Step 0: 自检
-bash ~/.agents/skills/swarm-yuan/scripts/self-check.sh
-
-# Step 1: 探查（图谱 + 子代理）
-cd <project-root>/overlay
-gitnexus analyze
-# AI agent 三路并行探查
-
-# Step 4: 生成骨架
-bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh Swarm-studio <project-root>
-
-# Step 3+4: 填充 5 个 reference + 定制 6 个脚本（AI agent 用探查数据填充）
-
-# Step 5: 验证
-cd <project-root>/.agents/skills/Swarm-studio
-bash scripts/precheck.sh --all        # 门禁
-bash scripts/self-check.sh            # 9 项目自检
-grep -r '待填充' .                     # 无占位符
-
-# 日常使用（研发人员）
-cd <project-root>/overlay
-bash .agents/skills/Swarm-studio/assets/env-setup.sh
-bash .agents/skills/Swarm-studio/scripts/state-machine.sh status
-bash .agents/skills/Swarm-studio/scripts/precheck.sh --all
-```
-
-生成后，研发人员只需：**提需求 → 确认 spec → 确认合入 → 确认发布**。中间的编码、测试、审查由 agent 按 8 节点流程自动完成。
+**使用说明**：`USAGE.md`
