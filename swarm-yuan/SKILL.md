@@ -43,22 +43,25 @@ swarm-yuan 的 25 个门禁服务于一条认知递进链。核心理念：**呈
 
 ## 生成流程（AI 自动执行，用户只需提供项目路径）
 
+**铁律：AI 必须执行完整流程（Step 0-10）后才算生成完成。不允许中途停止在骨架阶段——骨架中的占位符必须全部被真实内容替换。生成完成时检查：目标 skill 中不得残留任何"待填充"/"填充指引"/占位符。**
+
 ```
 用户："为 /path/to/project 生成 skill"
-  ↓ AI 自动执行（零手动配置）
-⓪自检(10运行时) → ⓪.5读取项目知识(AGENTS.md/CLAUDE.md/记忆/hermes-agent) → ①探查仓库(三路并行+图谱工具) → ②提取14项特征卡 → ③create骨架 → ④AI填充全部文件 → ⑤AI配置precheck.conf → ⑤.5 AI生成hooks/commands/MCP集成 → ⑥AI运行门禁验证 → ⑦AI写回项目记忆(闭环)
+  ↓ AI 自动执行（零手动配置，不可中途停止）
+⓪自检(10运行时) → ⓪.5读取项目知识(AGENTS.md/CLAUDE.md/记忆/hermes-agent) → ①探查仓库(三路并行+图谱工具) → ②提取14项特征卡 → ③create骨架 → ④AI填充全部文件(消除全部占位符) → ⑤AI配置precheck.conf(消除全部占位符) → ⑤.5 AI生成hooks/commands/MCP集成 → ⑥AI运行门禁验证 → ⑦AI写回项目记忆(闭环) → ⑧AI最终检查(零占位符)
 ```
 
 1. **自检**：`bash scripts/self-check.sh`（10 个运行时检测+自动安装）
 2. **读取项目知识**：AGENTS.md/CLAUDE.md/记忆/.zcode/hermes-agent → 提取规则写入特征卡（不读=重复造轮子）
 3. **探查仓库**：三路并行子代理（结构/规范/代码组织），优先用 gitnexus/graphify/claude-mem/LSP，大型项目用 Dynamic Workflow 并行扇出。工具矩阵+降级策略见 `references/exploration-guide.md`
 4. **特征卡**：14 项（项目类型→…→可复用稳定单元→领域知识），每项落到具体值不用占位符。映射表见 `references/template-spec.md` §3
-5. **创建骨架**：`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ 目录）
-6. **AI 填充全部文件**：SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools。填充指引见 `references/template-spec.md`
-7. **AI 配置 precheck.conf**：从特征卡推导 45 个变量（PROJECT_DIR/WRITABLE_DIRS/LAYER_DEFS/SERVICE_DIRS/STORE_DIR 等）
+5. **创建骨架**：`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ + precheck.conf）
+6. **AI 填充全部文件**：SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`
+7. **AI 配置 precheck.conf**：从特征卡推导 45 个变量（PROJECT_DIR/WRITABLE_DIRS/LAYER_DEFS/SERVICE_DIRS/STORE_DIR 等）——**所有 `<占位符>` 必须替换为真实值**
 8. **AI 集成 Claude Code**：生成 hooks/hooks.json + commands/ + settings.local.json + .mcp.json + workflow.md 节点标注。详见 `references/claude-code-capabilities.md`
 9. **AI 运行门禁**：`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--all-full`（全 25）
 10. **AI 写回记忆**：claude-mem/.zcode/memories/.project-knowledge.md 三路写回，形成"记忆→生成→开发→记忆"闭环
+11. **AI 最终检查**：grep 目标 skill 目录，确认零"待填充"/零"填充指引"/零"<占位符>"残留。**如有残留，回到 Step 6 继续填充，直到零残留。**
 
 > **铁律**：用户不编辑任何配置文件，不手动复制模板。开始新需求时对 AI 说"开始新需求 xxx"，AI 自动创建 spec 文件 + 引导填写 + 运行门禁。门禁误报 AI 自动调 conf 后重跑。每节点须有降级策略（联网/云端不可用→降级本地工具）。节点工具表+降级表见 `references/claude-code-capabilities.md` §十四。
 
