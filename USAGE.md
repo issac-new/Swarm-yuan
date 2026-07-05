@@ -100,12 +100,11 @@ AI 自动完成：
 
 ### 提交前自检
 
-```bash
-# 日常开发：核心 10 门禁（~5 秒）
-bash .agents/skills/my-project-dev/scripts/precheck.sh --all
+对 AI 说"跑门禁"或"提交前检查"，AI 自动运行核心门禁。也可用 slash 命令：
 
-# 架构审查：全部 25 门禁（~30 秒）
-bash .agents/skills/my-project-dev/scripts/precheck.sh --all-full
+```
+/my-project-dev:precheck --all         # 日常：核心 10 门禁（~5 秒）
+/my-project-dev:precheck --all-full    # 架构审查：全部 25 门禁（~30 秒）
 ```
 
 **结果解读**：
@@ -115,12 +114,14 @@ bash .agents/skills/my-project-dev/scripts/precheck.sh --all-full
 
 ### 单独跑某个门禁
 
-```bash
-bash .agents/skills/my-project-dev/scripts/precheck.sh --security    # 安全
-bash .agents/skills/my-project-dev/scripts/precheck.sh --reuse       # 复用合规
-bash .agents/skills/my-project-dev/scripts/precheck.sh --cognition   # 认知体检
-bash .agents/skills/my-project-dev/scripts/precheck.sh --domain      # 领域知识
-bash .agents/skills/my-project-dev/scripts/precheck.sh --knowledge   # 项目知识复用
+对 AI 说"跑安全门禁"或"跑复用检查"，AI 自动执行对应门禁。也可直接用 slash 命令：
+
+```
+/my-project-dev:precheck --security    # 安全
+/my-project-dev:precheck --reuse       # 复用合规
+/my-project-dev:precheck --cognition   # 认知体检
+/my-project-dev:precheck --domain      # 领域知识
+/my-project-dev:precheck --knowledge   # 项目知识复用
 ```
 
 ### 用 slash 命令
@@ -177,7 +178,7 @@ bash .agents/skills/my-project-dev/scripts/precheck.sh --knowledge   # 项目知
 | `--link-depth` | gitnexus trace → graphify explain → madge | 纯转发函数统计 |
 | `--impact` | gitnexus detect_changes / impact | git diff + grep 反查 |
 | `--layer` | gitnexus query（跨层依赖） | grep import + realpath |
-| `--review` | ocr review --from --to / ocr scan / `claude ultrareview` | 手动 5 维度清单 |
+| `--review` | ocr review --from --to / ocr scan / `claude ultrareview` | AI 按 5 维度审查 |
 | `--knowledge` | claude-mem search | 文件检测（AGENTS.md/CLAUDE.md） |
 | `--frontend` 循环 | madge --circular | grep 互引检测 |
 
@@ -189,11 +190,7 @@ swarm-yuan 自身迭代后（新增门禁 / 修复误报 / 更新模板），对
 升级 /path/to/project 的 my-project-dev skill
 ```
 
-或手动执行：
-
-```bash
-bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-dev /path/to/project
-```
+AI 自动完成：运行 `generate-skill.sh --upgrade` → 重新探查项目 → 自动填充 precheck.conf → 检查 SKILL.md/reference-manual 是否需补认知框架段 → 运行门禁验证。
 
 **`--upgrade` 做什么**：
 - ✅ 覆盖通用模板（precheck.sh / precheck.conf / spec-template / 13 个 reference）
@@ -227,22 +224,11 @@ AI 生成 skill 时自动识别项目类型——单体项目留空 SERVICE_DIRS
 
 ### Q: 如何只检查安全？
 
-```bash
-bash .agents/skills/my-project-dev/scripts/precheck.sh --security
-```
-
-所有 25 个门禁都支持单独运行。
+对 AI 说"跑安全检查"，或用 `/my-project-dev:precheck --security`。所有 25 个门禁都支持单独运行。
 
 ### Q: generate-skill.sh 报"目标技能已存在"？
 
-```bash
-# 方式 1：升级已有技能
-bash generate-skill.sh --upgrade my-project-dev /path/to/project
-
-# 方式 2：删除重建
-rm -rf .agents/skills/my-project-dev
-bash generate-skill.sh my-project-dev /path/to/project
-```
+对 AI 说"升级 my-project-dev skill"（AI 自动执行 --upgrade），或"删除重建 my-project-dev skill"（AI 自动删除+重新生成）。
 
 ### Q: hooks 和 commands 是什么？
 
@@ -268,7 +254,7 @@ bash generate-skill.sh my-project-dev /path/to/project
         └→ 有 ⚠ → 人工评估
 
 架构审查日：
-  bash precheck.sh --all-full（全部 25 门禁）
+  对 AI 说 "跑全量门禁" → AI 执行 --all-full（全部 25 门禁）
 
 skill 过时：
   对 AI 说 "升级 my-project-dev skill"
