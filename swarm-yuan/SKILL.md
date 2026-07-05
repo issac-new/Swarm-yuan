@@ -1,6 +1,6 @@
 ---
 name: swarm-yuan
-description: A meta-skill (generator) that produces a project-specific "requirements-to-delivery" development skill for ANY code repository. swarm-yuan integrates seven proven methodologies — OpenSpec spec-driven (proposal→spec→archive), superpowers subagent-driven (orchestrator+fresh-subagent+two-stage-review), comet script-backed state machine (resumable phase pipeline), gstack/open-code-review review dimensions (5-dimension+AUTO-FIX/ASK), GitNexus/graphify code-graph indexing (query graph not grep), gsd-core phase-loop+capability (goal-backward adversarial verification+4-gate taxonomy+wave-parallel), and claude-mem memory persistence (cross-session/cross-compaction SQLite+vector memory with detached observer). It explores a target repo, then generates a complete six-section skill (meta/workflow/reference/assets/check/scripts) guiding developers from requirement to release. Use whenever the user asks to "generate/create a dev skill", "为某项目生成开发技能", or references the XX场景模板/six-section template.
+description: "Meta-skill generator: produces a project-specific dev skill for ANY code repo. Integrates 10 runtimes (OpenSpec/superpowers/comet/GitNexus/graphify/gsd-core/claude-mem/ocr/gstack/Ruflo), 25 quality gates, 5-layer cognition framework, 32-domain knowledge. Use when user says '为某项目生成开发技能', 'create a dev skill', '六段式 skill'."
 ---
 
 # swarm-yuan — 项目需求交付技能生成器
