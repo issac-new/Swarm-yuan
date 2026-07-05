@@ -1,78 +1,44 @@
-# 代码片段与组件参数配置 (Code Snippets & Component Config)
+# 代码片段
 
-> 对应材料 scripts §1/§3。生成目标技能时，填入项目常用代码片段、命令组合、组件参数配置。
+## A类组件注册
 
-## 常用命令组合
+```typescript
+// registries/client/bootstrap.ts
+import('./../custom/client/cockpit').then(({ registerCockpit }) => registerCockpit(app))
+```
 
-> 高频使用的命令组合（探查项目 scripts/Makefile 提炼）。
+## B类 patch 创建
 
-### 开发启动
 ```bash
-# （填入项目实际的 dev 启动命令组合）
+cd overlay
+npm run inject
+# 修改 upstream 文件
+cd upstream/hermes-studio
+git diff > ../../patches/NNN-description.patch
+cd ../../
+# 添加到 series
+echo "NNN-description.patch" >> patches/series
+npm run clean && npm run inject  # 验证
 ```
 
-### 构建
+## Vite alias 配置
+
+```typescript
+// vite.config.overlay.ts
+resolve: {
+  alias: {
+    '@/custom': path.resolve(__dirname, 'custom/client'),
+    '@registries': path.resolve(__dirname, 'registries'),
+    '@': path.resolve(__dirname, '../upstream/hermes-studio/packages/client/src'),
+  }
+}
+```
+
+## 测试命令
+
 ```bash
-# （填入项目实际的 build 命令组合）
+cd overlay
+npm test                          # 全部测试
+npm test -- cockpit               # 按 filename 过滤
+npm test -- -t "attention"        # 按测试名过滤
 ```
-
-### 测试
-```bash
-# （填入项目实际的 test 命令组合，含过滤参数）
-```
-
-### 部署/发布
-```bash
-# （填入项目实际的 release/deploy 命令组合）
-```
-
-## 代码模板
-
-### 新增模块/组件模板
-> 探查项目代码风格，提炼新增模块的模板。
-
-```
-# （填入项目实际的模块模板，如 Vue 组件 / Python 类 / Go struct）
-```
-
-### 新增接口模板
-```
-# （填入项目实际的 API/路由定义模板）
-```
-
-## 组件参数配置说明
-
-> 探查项目组件库，列出关键组件的参数配置。
-
-### <组件名1>
-
-| 参数 | 类型 | 默认 | 说明 |
-|------|------|------|------|
-| | | | |
-
-**示例：**
-```
-# （填入组件使用示例）
-```
-
-### <组件名2>
-（同上）
-
-## 关节组件库
-
-> 项目核心/关节组件（频繁组合使用的组件）的详细参数与组合方式。
-
-### <关节组件名>
-
-**职责：** （一句话）
-
-**关键参数：**
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-
-**组合方式：**
-```
-# （填入与其他组件的组合示例）
-```
-
-**注意事项：** （使用该组件的坑/约束）
