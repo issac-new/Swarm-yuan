@@ -14,7 +14,7 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 - 用户提到"六段式 skill"、"需求交付全流程 skill"、"spec-driven skill"
 - 用户给了一个代码仓库，要求产出研发用 skill
 
-**安装**：`cp -r ~/.claude/skills/swarm-yuan/.claude/commands/ ~/.claude/commands/`（注册 `/swarm-yuan` slash command）
+**安装**：`bash install.sh`（自动检测运行环境 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi，安装到对应 skill 目录。详见 `install.sh --list`）
 
 **不适用**：用户只是要在某项目里做具体开发任务（那应该用该项目的目标技能）。
 
