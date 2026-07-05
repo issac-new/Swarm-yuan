@@ -1,32 +1,79 @@
 ---
 name: ncwk-dev
-description: （填充指引：写一句触发条件 + 项目特有关键词。例"SwarmStudio 二次开发全流程技能。触发关键词: hermes-overlay, cockpit, patch inject, vitest, 拼装式开发"）
+description: "SwarmStudio hermes-overlay 二次开发全流程技能。触发关键词: hermes-overlay, cockpit, matrix-chat, kanban, patch inject, overlay, custom 注册, vitest, vite.config.overlay, 二次开发, 拼装式开发, ncwk. 覆盖 patch 注入、custom 注册、拼装优先、SQLite、NaiveUI、特征卡 14 项全覆盖。"
 ---
 
-# ncwk-dev — （填充指引：项目名 + 需求交付全流程技能）项目需求交付全流程技能
+# ncwk-dev — SwarmStudio hermes-overlay 二次开发全流程技能
 
-> 本技能由 swarm-yuan 生成器创建（2026-07-04T16:34:33Z），需 AI agent 探查项目后填充。
-> 填充规范见 swarm-yuan/references/template-spec.md
+> 项目形态：overlay 层（patch + custom 注册），注入 hermes-studio 上游（v0.6.25）。
+> 核心理念：**拼装式开发** — 优先复用既有稳定单元，禁止重复造轮子、侵入式重构、破坏性改造。
 
-## 填充指引（六段式 + 材料要素 + 方法论整合 + 五层认知基底核对）
-- [ ] **★四层认知基底**: SKILL.md 含四层框架段（认知递进/思维语言/认知辩证/认知偏差防范）；spec-template 含 §14 交付衰减/§15 蓝图/§16 认知偏差自检；reference-manual 含逻辑谬误图谱 + 认知映射表 + 六维动力学基线；workflow 含 4-Phase 多轮交互 SOP；check 含逻辑剃刀对抗审查
-- [ ] **meta**: 核心理念（四层认知基底 + 拼装式开发三条禁止性约束）、改造分类、全流程总览（含入口顺序）、命令速查、门禁、检查表
-- [ ] **workflow** (9 要素/节点 + 4-Phase SOP): references/workflow.md
-  - 节点②③用 OpenSpec proposal→spec(delta)→design→tasks 模式
-  - 节点⑤用 superpowers subagent 编排（见 references/subagent-orchestration.md）
-  - 4-Phase SOP（概念澄清→破局重构→七步推演→行动落地），每 Phase 暂停等确认
-  - 状态控制引用 scripts/state-machine.sh（comet 风格脚本背书）
-- [ ] **reference** (8 项 + 方法论 + 认知): codebase.md / dev-guide.md / release.md / reference-manual.md
-  + subagent-orchestration.md / review-methodology.md / code-graph-tools.md / security-spec.md
-  + cognition-framework.md / logic-razor.md / cognitive-bias.md（四层认知 reference，已就绪按需引用）
-- [ ] **assets** (7 项): spec-template.md(OpenSpec proposal 含 §5.5复用约束/§5.6版本约束/§5.7安全约束/§14交付衰减/§15蓝图/§16认知偏差自检) / plan-template.md(tasks checkbox) /
-  branch-setup.sh / env-setup.sh / data-sample-template.md / state-machine.sh
-- [ ] **check** (22 门禁 + 审查 + 逻辑剃刀 + 铁律): scripts/precheck.sh
-  --branch/--scope/--build/--test/--sensitive/--consistency/--review/--reuse/--deps/--security
-  --layer/--stable-diff/--link-depth/--adr/--contract/--consistency-cross/--impact
-  --service/--api/--state/--frontend/--cognition
-  + reference-manual.md 检查段（含 5 审查维度 + 逻辑剃刀 6 步 + 谬误图谱）
-- [ ] **scripts** (5 项): precheck.sh / state-machine.sh / snippets.md / code-graph-tools.md / mcp-tools.md
-  - precheck.sh 22 个门禁子命令，配置变量按项目实际填充（DDD/TOGAF/微服务/前端/认知）
-  - code-graph-tools.md 引用 GitNexus/graphify（只引用命令，不复制源码）
-  - mcp-tools.md §2 MCP 工具(DB/ELK/Redis/MQ，按项目实际)
+## 核心理念与项目定位
+
+- **项目类型**：Vue 3 + NaiveUI 桌面应用（SwarmStudio），overlay 注入式二次开发
+- **overlay 仓库** `overlay/`（hermes-overlay v0.6.22-overlay, type:module, node>=23）— **唯一可改目录**
+- **upstream** `upstream/hermes-studio/`（v0.6.25）— **只读**，仅 `git pull` 同步
+- **改造机制**：upstream 变更经 `overlay/patches/`（109 patch 文件）构建时 `npm run inject` 注入；custom 组件经 `@registries/client` 注册接入
+- **改造分类**：A类（custom/ 纯新增）+ B类（patches/ 骨架修改）
+- **技术栈**：Vue 3 + TypeScript + Vite + NaiveUI + Vitest + SQLite + Koa + Electron
+- **端口**：8647（后端 Koa）/ 8649（前端 Vite dev）/ 8650（Agent health）
+
+## 十条铁律
+
+1. **仅改 overlay/**：严格禁止修改 upstream/（见 AGENTS.md）
+2. **版本锁定**：不随意升级核心依赖（precheck `--deps`）
+3. **安全规范**：遵守 OWASP Top 10（precheck `--security`）
+4. **拼装优先**：新功能 = 既有稳定单元拼装 + 最小新增胶水代码（precheck `--reuse`）
+5. **分支规范**：feat/fix/refactor，基于 main，merge --no-ff（precheck `--branch`）
+6. **A类/B类分类**：A类放 custom/（Vite alias），B类放 patches/（git apply）
+7. **inject 幂等**：`npm run inject` 可重复执行，`npm run clean` 可回滚
+8. **测试先行**：custom/**/*.test.ts，37 个测试文件，vitest 运行
+9. **release 规则**：仅上传 arm64.dmg + x64.zip 2 种文件
+10. **不自动推送**：除非用户明确要求，不推送至 GitHub
+
+## 命令速查
+
+| 用途 | 命令 |
+|------|------|
+| dev | `cd overlay && npm run dev`（:8649） |
+| build | `cd overlay && npm run build` |
+| test | `cd overlay && npm test` |
+| inject | `cd overlay && npm run inject` |
+| clean | `cd overlay && npm run clean` |
+| verify | `cd overlay && npm run verify` |
+| build:full | `cd overlay && npm run build:full` |
+| build:dmg:mac | `cd overlay && npm run build:dmg:mac` |
+| 后端服务 | `cd overlay && bash scripts/serve-server.sh &`（:8647） |
+
+## 全流程总览（八节点）
+
+```
+①需求理解 → ②设计spec → ③实施plan → ④分支准备 → ⑤编码实现 → ⑥测试审查 → ⑦合入main → ⑧构建发布
+```
+
+每节点开始前先读取项目最新知识（AGENTS.md/CLAUDE.md/记忆）。
+
+## 门禁速查
+
+| 门禁 | 检查什么 | 命令 |
+|------|---------|------|
+| --branch | 分支命名 | `bash scripts/precheck.sh --branch` |
+| --scope | 改动范围（overlay/ vs upstream/） | `--scope` |
+| --build | 构建通过 | `--build` |
+| --test | 测试通过 | `--test` |
+| --security | OWASP Top 10 | `--security` |
+| --reuse | 复用合规 | `--reuse` |
+| --deps | 依赖版本锁定 | `--deps` |
+| --all | 核心 10 门禁 | `--all` |
+| --all-full | 全部 25 门禁 | `--all-full` |
+
+## 完成检查表
+
+- [ ] 分支规范（feat/fix/refactor）
+- [ ] 改动范围（仅 overlay/）
+- [ ] 构建通过
+- [ ] 测试通过
+- [ ] 安全无硬性违规
+- [ ] spec §5.5 复用约束已填
+- [ ] 依赖版本未变更（或已声明）
+- [ ] 无占位符残留
