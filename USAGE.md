@@ -70,21 +70,33 @@ AI 全自动完成后，你拿到：
 
 ## 3. 日常使用
 
-### 写 spec（开始新需求时）
+### 开始新需求
 
-```bash
-cp .agents/skills/my-project-dev/assets/spec-template.md specs/$(date +%Y-%m-%d)-my-feature.md
+对 AI 说：
+
+```
+开始新需求：给 cockpit 添加一个通知面板
 ```
 
-按变更规模分级填写：
+AI 自动完成：
+1. 复制 spec-template.md 到 `specs/YYYY-MM-DD-<feature>.md`
+2. 根据需求描述判断变更规模（简单/标准/完整），只引导你填需要的段
+3. 从 reference-manual §4/5/6 检索可复用稳定单元，预填 §5.5 复用约束
+4. 填完后自动运行 `precheck.sh --reuse` 验证 §5.5 合规
 
-| 规模 | 填哪些段 | 典型场景 |
-|------|---------|---------|
+或用 slash 命令：
+
+```
+/my-project-dev:spec 给 cockpit 添加一个通知面板
+```
+
+| 规模 | AI 引导填哪些段 | 典型场景 |
+|------|----------------|---------|
 | **简单** | §1-§4 + §5.5 复用约束 + §12 风险回滚 | 改 bug / 加字段 / 调样式 |
 | **标准** | §1-§13 + §5.5/§5.6/§5.7 约束段 | 新功能 / 改接口 / 加组件 |
 | **完整** | 全部 18 段（含 §14-§18 认知/辩证/领域） | 架构变更 / 跨服务 / 新上下文 |
 
-> 复杂变更（>3 文件 / 跨模块）：spec §4 标注"建议用 Dynamic Workflow 并行执行"。
+> 复杂变更（>3 文件 / 跨模块）：AI 在 spec §4 标注"建议用 Dynamic Workflow 并行执行"。
 
 ### 提交前自检
 
@@ -247,8 +259,9 @@ bash generate-skill.sh my-project-dev /path/to/project
     → 你获得可直接用的 skill（零手动配置）
 
 日常开发：
-  开始新需求 → 复制 spec 模板，按规模填写（简单/标准/完整）
-    → 编码（查 reference-manual §4/5/6 复用清单，拼装优先）
+  对 AI 说 "开始新需求：xxx"
+    → AI 自动创建 spec 文件 + 判断规模 + 引导填写 + 预填复用约束
+    → 编码（AI 查 reference-manual §4/5/6 复用清单，拼装优先）
       → 提交前：bash precheck.sh --all
         ├→ 全 ✓ → 可提交
         ├→ 有 ✗ → 修复后重跑
