@@ -43,7 +43,7 @@ npx @opengsd/gsd-core --claude --global --uninstall
 | `gsd-tools capability list` | 列出激活的 capability |
 
 ### 共存说明
-gsd-core 安装器只 prune `gsd-` 前缀目录。目标技能（`<target-skill-name>`，非 `gsd-` 前缀）在 `.agents/skills/` 下**安全共存**，互不覆盖。
+gsd-core 安装器只 prune `gsd-` 前缀目录。目标技能（`<target-skill-name>`，非 `gsd-` 前缀）在 `.claude/skills/` 下**安全共存**，互不覆盖。
 
 ### 在目标技能中的落地
 - 目标技能的 workflow 节点⑤⑥可调用 `/gsd-execute-phase` / `/gsd-verify` 作为运行时引擎
