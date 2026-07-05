@@ -1,6 +1,6 @@
 # swarm-yuan 使用说明
 
-> **一句话**：对 AI 说"为这个项目生成 skill"，AI 全自动探查代码库 → 生成项目专属开发技能（含 25 个质量门禁 + spec 模板 + 14 项特征卡），你直接用。
+> **一句话**：对 AI 说"为这个项目生成 skill"，AI 全自动探查代码库 → 生成项目专属开发技能（25 个质量门禁 + spec 模板 + 14 项特征卡），你直接用。
 
 ---
 
@@ -46,26 +46,17 @@ AI 全自动完成后，你拿到：
 ```
 你的项目/.agents/skills/my-project-dev/
 ├── SKILL.md                  ← 技能入口（AI 读取，自动触发）
-├── hooks/hooks.json          ← Claude Code 生命周期钩子（SessionStart + PreToolUse）
+├── hooks/hooks.json          ← Claude Code 生命周期钩子
 ├── commands/                 ← slash 命令（/spec, /precheck, /explore）
-│   ├── spec.md
-│   ├── precheck.md
-│   └── explore.md
 ├── scripts/
 │   ├── precheck.sh           ← 25 个门禁（已配置好，直接运行）
 │   ├── precheck.conf         ← 45 个配置变量（AI 自动填充）
 │   ├── state-machine.sh      ← 阶段状态机
 │   └── self-check.sh         ← 10 个运行时自检
 ├── assets/
-│   ├── spec-template.md      ← spec 模板（写需求时复制使用，18 段分级填写）
-│   ├── plan-template.md      ← 实施计划模板
+│   ├── spec-template.md      ← spec 模板（18 段分级填写）
 │   └── ...                   ← 分支/环境/库表/状态机模板
 └── references/               ← 13 个参考文档（AI 填充项目内容）
-    ├── codebase.md           ← 代码库概况
-    ├── dev-guide.md          ← 开发指南 + 拼装式开发原则
-    ├── reference-manual.md   ← 参考手册（安全/组件/接口/数据/认知/领域知识）
-    ├── workflow.md           ← 八节点开发流程
-    └── ...                   ← 方法论 + 认知框架 + 领域知识速查
 ```
 
 ## 3. 日常使用
@@ -169,21 +160,21 @@ bash .agents/skills/my-project-dev/scripts/precheck.sh --knowledge   # 项目知
 
 | 门禁 | 检查什么 | 需要配置 |
 |------|---------|---------|
-| `--layer` | DDD 分层边界（穿透/倒置/领域污染/聚合跨引用） | LAYER_DEFS / LAYER_ORDER |
-| `--stable-diff` | 稳定单元篡改（改稳定层须 spec MODIFIED 声明） | STABLE_GLOBS |
-| `--link-depth` | 调用链深度（链路膨胀/纯转发堆叠） | MAX_LINK_DEPTH |
-| `--adr` | 架构决策记录（ADR + 技术债登记） | ADR_DIR / TECH_DEBT_FILE |
-| `--contract` | 接口契约（version 字段 + ACL 防腐层） | CONTRACT_DIR / ACL_DIR |
-| `--consistency-cross` | BDAT 一致性（术语表 vs 代码 + 数据所有权） | GLOSSARY_FILE / SOR_FILE |
-| `--impact` | 变更影响分析（spec 须含影响范围段 + 消费方反查） | — |
-| `--service` | 微服务架构（共享 DB / 同步链 / 网关 / trace） | SERVICE_DIRS |
-| `--api` | API 契约与幂等（version / 幂等键 / 分布式事务） | API_SPEC_DIR |
-| `--state` | 前端状态管理（巨型 store / prop drilling / 派生 useState） | STORE_DIR |
-| `--frontend` | 前端组件架构（层级 / props / 循环依赖 / CSS 污染） | COMPONENT_DIR |
-| `--cognition` | 认知递进体检（六阶认知链 + 六维动力学 + 五层总分） | — |
-| `--domain` | 领域知识（技术+业务领域识别 + 客观规律违规检测） | — |
-| `--knowledge` | 项目知识复用（AGENTS.md/CLAUDE.md/记忆 → skill 是否引用） | — |
-| `--mermaid` | Mermaid 可视化（架构图/流程图/调用链是否用 Mermaid） | — |
+| `--layer` | DDD 分层边界 | LAYER_DEFS / LAYER_ORDER |
+| `--stable-diff` | 稳定单元篡改 | STABLE_GLOBS |
+| `--link-depth` | 调用链深度 | MAX_LINK_DEPTH |
+| `--adr` | 架构决策记录 | ADR_DIR / TECH_DEBT_FILE |
+| `--contract` | 接口契约 + ACL 防腐层 | CONTRACT_DIR / ACL_DIR |
+| `--consistency-cross` | BDAT 一致性 | GLOSSARY_FILE / SOR_FILE |
+| `--impact` | 变更影响分析 | — |
+| `--service` | 微服务架构 | SERVICE_DIRS |
+| `--api` | API 契约与幂等 | API_SPEC_DIR |
+| `--state` | 前端状态管理 | STORE_DIR |
+| `--frontend` | 前端组件架构 | COMPONENT_DIR |
+| `--cognition` | 认知递进体检 | — |
+| `--domain` | 领域知识违规检测 | — |
+| `--knowledge` | 项目知识复用 | — |
+| `--mermaid` | Mermaid 可视化 | — |
 
 ### 门禁工具优先级 + 降级策略
 
@@ -193,20 +184,20 @@ bash .agents/skills/my-project-dev/scripts/precheck.sh --knowledge   # 项目知
 |------|--------------|-------------|
 | `--link-depth` | gitnexus trace → graphify explain → madge | 纯转发函数统计 |
 | `--impact` | gitnexus detect_changes / impact | git diff + grep 反查 |
-| `--layer` | gitnexus query（跨层依赖） | grep import + realpath |
-| `--review` | ocr review --from --to / ocr scan / `claude ultrareview` | AI 按 5 维度审查 |
-| `--knowledge` | claude-mem search | 文件检测（AGENTS.md/CLAUDE.md） |
+| `--layer` | gitnexus query | grep import + realpath |
+| `--review` | ocr review / ocr scan / `claude ultrareview` | AI 按 5 维度审查 |
+| `--knowledge` | claude-mem search | 文件检测 |
 | `--frontend` 循环 | madge --circular | grep 互引检测 |
 
 ## 5. 升级已有技能
 
-swarm-yuan 自身迭代后（新增门禁 / 修复误报 / 更新模板），对 AI 说：
+对 AI 说：
 
 ```
 升级 /path/to/project 的 my-project-dev skill
 ```
 
-AI 自动完成：运行 `generate-skill.sh --upgrade` → 重新探查项目 → 自动填充 precheck.conf → 检查 SKILL.md/reference-manual 是否需补认知框架段 → 运行门禁验证。
+AI 自动完成：运行 `generate-skill.sh --upgrade` → 重新探查 → 自动填充 precheck.conf → 检查认知框架段 → 运行门禁验证。
 
 也可以直接运行：
 
@@ -225,10 +216,7 @@ bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ### Q: 门禁报误报怎么办？
 
-对 AI 说"precheck 报了误报，帮我看看"。AI 会：
-1. 分析误报原因（配置不准 / grep 模式过宽 / 项目特殊结构）
-2. 自动调整 `precheck.conf` 或修复 `precheck.sh` 检测逻辑
-3. 重跑门禁确认修复
+对 AI 说"precheck 报了误报，帮我看看"。AI 会分析原因、自动调整 `precheck.conf` 或修复检测逻辑、重跑确认。
 
 你也可以直接编辑 `precheck.conf` 调整配置变量。
 
@@ -238,11 +226,11 @@ bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ### Q: 不需要微服务 / 前端 / TOGAF 门禁？
 
-AI 生成 skill 时自动识别项目类型——单体项目留空 SERVICE_DIRS，无前端项目留空 COMPONENT_DIR。留空的门禁在 `--all-full` 中静默跳过。
+AI 生成 skill 时自动识别项目类型——不适用门禁静默跳过。你不用管。
 
-### Q: 项目结构变了怎么办？
+### Q: 项目结构变了？
 
-对 AI 说"重新探查 /path/to/project 并更新 skill"。AI 会重新跑探查 → 更新特征卡 → 更新 precheck.conf 和项目特定文件。
+对 AI 说"重新探查并更新 skill"。
 
 ### Q: 如何只检查安全？
 
@@ -255,12 +243,10 @@ bash .agents/skills/my-project-dev/scripts/precheck.sh --security
 ### Q: generate-skill.sh 报"目标技能已存在"？
 
 ```bash
-# 方式 1：升级已有技能
+# 升级
 bash generate-skill.sh --upgrade my-project-dev /path/to/project
-
-# 方式 2：删除重建
-rm -rf .agents/skills/my-project-dev
-bash generate-skill.sh my-project-dev /path/to/project
+# 或删除重建
+rm -rf .agents/skills/my-project-dev && bash generate-skill.sh my-project-dev /path/to/project
 ```
 
 或对 AI 说"升级 skill" / "删除重建 skill"。
@@ -268,8 +254,8 @@ bash generate-skill.sh my-project-dev /path/to/project
 ### Q: hooks 和 commands 是什么？
 
 生成目标技能时自动创建：
-- `hooks/hooks.json` — Claude Code 生命周期钩子（SessionStart 注入状态 + PreToolUse(Write) 范围检查）
-- `commands/` — slash 命令入口（`/my-project-dev:spec` 创建 spec / `/my-project-dev:precheck` 运行门禁 / `/my-project-dev:explore` 探查项目）
+- `hooks/hooks.json` — SessionStart 注入状态 + PreToolUse(Write) 范围检查
+- `commands/` — `/my-project-dev:spec` / `/my-project-dev:precheck` / `/my-project-dev:explore`
 
 ## 7. 日常使用流程
 
