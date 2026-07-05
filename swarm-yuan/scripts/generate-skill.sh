@@ -20,7 +20,7 @@ fi
 
 SKILL_NAME="${1:?Usage: generate-skill.sh [--upgrade] <skill-name> <project-dir> [target-dir]}"
 PROJECT_DIR="${2:?Usage: generate-skill.sh [--upgrade] <skill-name> <project-dir> [target-dir]}"
-TARGET_DIR="${3:-$PROJECT_DIR/.agents/skills}"
+TARGET_DIR="${3:-$PROJECT_DIR/.claude/skills}"
 
 if [[ ! -d "$PROJECT_DIR" ]]; then
   echo "ERROR: 项目目录不存在: $PROJECT_DIR"
