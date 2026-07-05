@@ -137,14 +137,15 @@ EOF
   echo ""
   echo "=== 升级完成 ==="
   echo "  通用模板已更新到 swarm-yuan 最新版"
-  echo "  项目特定文件保留（如 SKILL.md 含旧版框架描述，需手动同步四层认知基底）"
+  echo "  项目特定文件保留"
   echo "  备份: $backup_dir"
   echo ""
-  echo "  ⚠ 升级后须手动检查:"
-  echo "    1. SKILL.md 是否引用了新增的门禁/认知框架段（可能需补四层认知基底段）"
-  echo "    2. reference-manual.md 是否含认知映射表/逻辑谬误图谱/六维动力学基线段"
-  echo "    3. precheck.sh 配置变量是否按项目实际填充（升级后配置变量重置为占位符）"
-  echo "    4. spec-template.md 的 §14/§15/§16 段是否需在 SKILL.md 中引用"
+  echo "  下一步: AI 自动执行升级后检查 + 重新探查填充"
+  echo "    1. AI 检查 SKILL.md 是否引用了新增门禁/认知框架段，缺失则自动补"
+  echo "    2. AI 检查 reference-manual.md 是否含认知映射表/谬误图谱/动力学基线，缺失则自动补"
+  echo "    3. AI 重新探查项目，自动填充 precheck.conf（升级后重置为占位符）"
+  echo "    4. AI 检查 spec-template.md §14-§18 是否需在 SKILL.md 中引用"
+  echo "    5. AI 运行 precheck.sh --all 验证"
   exit 0
 fi
 
