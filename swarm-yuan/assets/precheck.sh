@@ -700,8 +700,8 @@ check_reuse() {
     if [[ -f "$cand" ]]; then ref_file="$cand"; break; fi
   done
   if [[ -z "$ref_file" ]]; then
-    # 兜底：glob 匹配 .agents/skills/<*>/references/reference-manual.md
-    for f in .agents/skills/*/references/reference-manual.md; do
+    # 兜底：glob 匹配 .claude/skills/<*>/references/reference-manual.md
+    for f in .claude/skills/*/references/reference-manual.md; do
       if [[ -f "$f" ]]; then ref_file="$f"; break; fi
     done
   fi
@@ -814,11 +814,11 @@ check_deps() {
     baseline_file="$CODEBASE_REF"
   else
     local cand
-    cand=$(find "$PROJECT_DIR/.agents/skills" -name codebase.md -path '*/references/*' 2>/dev/null | head -n 1 || true)
+    cand=$(find "$PROJECT_DIR/.claude/skills" -name codebase.md -path '*/references/*' 2>/dev/null | head -n 1 || true)
     [[ -n "$cand" ]] && baseline_file="$cand"
   fi
   if [[ -z "$baseline_file" ]]; then
-    warn "未找到 codebase.md 版本基线（设置 CODEBASE_REF 或确保 .agents/skills/<skill>/references/codebase.md 存在）"
+    warn "未找到 codebase.md 版本基线（设置 CODEBASE_REF 或确保 .claude/skills/<skill>/references/codebase.md 存在）"
     return 0
   fi
 
@@ -828,7 +828,7 @@ check_deps() {
     spec_file="$SPEC_FILE"
   else
     local cand2
-    cand2=$(find "$PROJECT_DIR/.agents/skills" -type f -name '*.md' 2>/dev/null | grep -iE 'spec' | head -n 1 || true)
+    cand2=$(find "$PROJECT_DIR/.claude/skills" -type f -name '*.md' 2>/dev/null | grep -iE 'spec' | head -n 1 || true)
     [[ -n "$cand2" ]] && spec_file="$cand2"
   fi
 
@@ -1697,7 +1697,7 @@ check_cognition() {
   fi
   # 稳定单元清单（reference-manual §4/5/6）
   local rm_file=""
-  for cand in "references/reference-manual.md" "reference-manual.md" ".agents/skills/*/references/reference-manual.md"; do
+  for cand in "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md"; do
     for f in $cand; do [[ -f "$f" ]] && rm_file="$f" && break 2; done
   done
   if [[ -n "$rm_file" ]]; then
@@ -2001,7 +2001,7 @@ check_domain() {
 
   # ---- 2. reference-manual 含"领域知识"段且规律有依据 ----
   local rm_file=""
-  for cand in "references/reference-manual.md" "reference-manual.md" ".agents/skills/*/references/reference-manual.md"; do
+  for cand in "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md"; do
     for f in $cand; do [[ -f "$f" ]] && rm_file="$f" && break 2; done
   done
   if [[ -n "$rm_file" ]]; then
@@ -2093,7 +2093,7 @@ check_knowledge() {
 
   # ---- 2. 检查生成的 SKILL.md 是否引用了知识来源 ----
   local skill_file=""
-  for cand in "$PROJECT_DIR/.agents/skills/*/SKILL.md" ".agents/skills/*/SKILL.md" "SKILL.md"; do
+  for cand in "$PROJECT_DIR/.claude/skills/*/SKILL.md" ".claude/skills/*/SKILL.md" "SKILL.md"; do
     for f in $cand; do [[ -f "$f" ]] && skill_file="$f" && break 2; done
   done
   if [[ -z "$skill_file" ]]; then
@@ -2140,7 +2140,7 @@ check_mermaid() {
 
   # 检查 reference-manual.md 是否含 mermaid 图
   local rm_file=""
-  for cand in "references/reference-manual.md" "reference-manual.md" ".agents/skills/*/references/reference-manual.md"; do
+  for cand in "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md"; do
     for f in $cand; do [[ -f "$f" ]] && rm_file="$f" && break 2; done
   done
   local has_mermaid=0
