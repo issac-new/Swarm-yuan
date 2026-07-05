@@ -281,7 +281,7 @@ check_review() {
       ocr scan --audience agent --format text 2>&1 | tail -30 || warn "ocr scan 返回非零"
     fi
   else
-    warn "ocr 未安装，安装 ocr（npm i -g @alibaba-group/open-code-review）或手动按 5 维度审查：正确性/安全/性能/可维护/测试覆盖"
+    warn "ocr 未安装，安装 ocr（npm i -g @alibaba-group/open-code-review）或由 AI 按 5 维度审查：正确性/安全/性能/可维护/测试覆盖"
     echo "  两遍清单：CRITICAL（SQL/竞态/注入/越权/路径穿越）+ INFORMATIONAL（命名/注释/风格）"
     echo "  严重度：High（必修）/ Medium（评估）/ Low（丢弃）"
   fi
