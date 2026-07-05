@@ -64,6 +64,17 @@ install_to() {
     return 0
   fi
 
+  # 不能自我复制（SRC_DIR == dest 时跳过复制，只注册 slash command）
+  if [[ "$SRC_DIR" == "$dest" ]]; then
+    echo "  ⚠ 源目录与目标相同，跳过复制（已在此位置）"
+    if [[ -n "$cmd_dir" && -f "$SRC_DIR/.claude/commands/swarm-yuan.md" ]]; then
+      mkdir -p "$cmd_dir"
+      cp "$SRC_DIR/.claude/commands/swarm-yuan.md" "$cmd_dir/swarm-yuan.md"
+      echo "  ✓ slash command 已注册: ${cmd_dir}/swarm-yuan.md"
+    fi
+    return 0
+  fi
+
   # 备份旧版本
   if [[ -d "$dest" ]]; then
     echo "  ⚠ 已存在，备份旧版本..."
