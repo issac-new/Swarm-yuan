@@ -248,7 +248,7 @@ AI 生成 skill 时自动识别项目类型——单体项目留空 SERVICE_DIRS
   对 AI 说 "开始新需求：xxx"
     → AI 自动创建 spec 文件 + 判断规模 + 引导填写 + 预填复用约束
     → 编码（AI 查 reference-manual §4/5/6 复用清单，拼装优先）
-      → 提交前：bash precheck.sh --all
+      → 提交前：对 AI 说 "跑门禁"
         ├→ 全 ✓ → 可提交
         ├→ 有 ✗ → 修复后重跑
         └→ 有 ⚠ → 人工评估
