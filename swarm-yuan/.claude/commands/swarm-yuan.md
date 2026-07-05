@@ -25,7 +25,7 @@
 
 ### 2. 自检运行时
 ```bash
-bash ~/.agents/skills/swarm-yuan/scripts/self-check.sh
+bash ~/.claude/skills/swarm-yuan/scripts/self-check.sh
 ```
 
 ### 3. 读取项目知识（最高优先级）
@@ -47,7 +47,7 @@ bash ~/.agents/skills/swarm-yuan/scripts/self-check.sh
 
 ### 6. 创建骨架
 ```bash
-bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh <skill名称> <项目路径>
+bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh <skill名称> <项目路径>
 ```
 
 ### 7. AI 自动填充全部文件
@@ -86,9 +86,9 @@ bash <skill路径>/scripts/precheck.sh --all-full    # 全部门禁
 ```bash
 # 方式 1：Claude Code slash command（推荐）
 # 将 .claude/commands/swarm-yuan.md 复制到项目的 .claude/commands/ 或全局 ~/.claude/commands/
-cp -r ~/.agents/skills/swarm-yuan/.claude/commands/ ~/.claude/commands/
+cp -r ~/.claude/skills/swarm-yuan/.claude/commands/ ~/.claude/commands/
 
-# 方式 2：直接用 skill（Claude Code 自动识别 ~/.agents/skills/ 下的 SKILL.md）
+# 方式 2：直接用 skill（Claude Code 自动识别 ~/.claude/skills/ 下的 SKILL.md）
 # 无需安装，Claude Code 会自动加载
 
 # 方式 3：其他 AI 工具
