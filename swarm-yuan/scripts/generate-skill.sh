@@ -202,10 +202,16 @@ HEOF
 # --- commands 段：slash 命令入口 ---
 cat > "$SKILL_DIR/commands/spec.md" <<'CEOF'
 ---
-description: 创建 spec 设计文档
-argument-hint: <feature 名称>
+description: 开始新需求——AI 自动创建 spec 文件 + 判断规模 + 引导填写 + 预填复用约束
+argument-hint: <需求描述>
 ---
-复制 assets/spec-template.md 到 specs/ 目录，按变更规模填写。$ARGUMENTS
+AI 自动执行：
+1. 从 assets/spec-template.md 复制到 specs/YYYY-MM-DD-<feature>.md
+2. 根据需求描述判断变更规模（简单/标准/完整），只引导用户填需要的段
+3. 从 reference-manual §4/5/6 检索可复用稳定单元，预填 §5.5 复用约束
+4. 填完后运行 precheck.sh --reuse 验证 §5.5 合规
+
+需求描述：$ARGUMENTS
 CEOF
 cat > "$SKILL_DIR/commands/precheck.md" <<'CEOF'
 ---
