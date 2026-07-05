@@ -4,12 +4,49 @@
 #   bash generate-skill.sh <skill-name> <project-dir> [target-dir]       # 创建新技能骨架
 #   bash generate-skill.sh --upgrade <skill-name> <project-dir> [target-dir]  # 升级已存在技能的模板文件
 # 作用:
-#   创建模式: 在 target-dir 下创建目标技能的六段式目录骨架（含全部材料要素文件），从 assets/ 拷贝模板
-#   升级模式: 用 swarm-yuan 最新模板覆盖已存在技能的"通用模板文件"（precheck/spec-template/方法论 reference），
-#            保留"项目特定填充文件"（SKILL.md/codebase.md/dev-guide.md/release.md/reference-manual.md/workflow.md）
+#   创建模式: 自动检测运行环境（Claude Code/Cursor/Codex/OpenCode/Windsurf/Gemini/Kimi），
+#             在对应 skill 默认目录下创建六段式骨架
+#   升级模式: 用 swarm-yuan 最新模板覆盖通用文件，保留项目特定文件
 # 注意: 本脚本只创建骨架与通用模板，具体内容需由 AI agent 探查项目后填充
 
 set -euo pipefail
+
+# ---- 检测运行环境 + 确定 skill 默认目录 ----
+detect_skill_dir() {
+  local project="$1"
+  # 按优先级检测已安装的 AI 工具
+  # 1. 项目级 .claude/skills/（Claude Code 项目级，最高优先级）
+  if [[ -d "$project/.claude/skills" ]]; then echo "$project/.claude/skills"; return; fi
+  # 2. 全局 ~/.claude/skills/（Claude Code 全局）
+  if [[ -d "$HOME/.claude/skills" ]]; then echo "$HOME/.claude/skills"; return; fi
+  # 3. ~/.codex/skills/（Codex）
+  if [[ -d "$HOME/.codex/skills" ]]; then echo "$HOME/.codex/skills"; return; fi
+  # 4. ~/.cursor/skills/（Cursor）
+  if [[ -d "$HOME/.cursor/skills" ]]; then echo "$HOME/.cursor/skills"; return; fi
+  # 5. ~/.codeium/windsurf/skills/（Windsurf）
+  if [[ -d "$HOME/.codeium/windsurf/skills" ]]; then echo "$HOME/.codeium/windsurf/skills"; return; fi
+  # 6. ~/.config/opencode/skills/（OpenCode）
+  if [[ -d "$HOME/.config/opencode/skills" ]]; then echo "$HOME/.config/opencode/skills"; return; fi
+  # 7. ~/.gemini/skills/（Gemini CLI）
+  if [[ -d "$HOME/.gemini/skills" ]]; then echo "$HOME/.gemini/skills"; return; fi
+  # 8. ~/.kimi/skills/（Kimi）
+  if [[ -d "$HOME/.kimi/skills" ]]; then echo "$HOME/.kimi/skills"; return; fi
+  # 9. 兜底：创建项目级 .claude/skills/（最广泛兼容）
+  echo "$project/.claude/skills"
+}
+
+detect_runtime_name() {
+  local project="$1"
+  if [[ -d "$project/.claude/skills" || -d "$HOME/.claude/skills" ]]; then echo "Claude Code"
+  elif [[ -d "$HOME/.codex/skills" ]]; then echo "Codex"
+  elif [[ -d "$HOME/.cursor/skills" ]]; then echo "Cursor"
+  elif [[ -d "$HOME/.codeium/windsurf/skills" ]]; then echo "Windsurf"
+  elif [[ -d "$HOME/.config/opencode/skills" ]]; then echo "OpenCode"
+  elif [[ -d "$HOME/.gemini/skills" ]]; then echo "Gemini CLI"
+  elif [[ -d "$HOME/.kimi/skills" ]]; then echo "Kimi"
+  else echo "通用（.claude/skills）"
+  fi
+}
 
 # ---- 解析模式 ----
 MODE="create"
@@ -20,12 +57,24 @@ fi
 
 SKILL_NAME="${1:?Usage: generate-skill.sh [--upgrade] <skill-name> <project-dir> [target-dir]}"
 PROJECT_DIR="${2:?Usage: generate-skill.sh [--upgrade] <skill-name> <project-dir> [target-dir]}"
-TARGET_DIR="${3:-$PROJECT_DIR/.claude/skills}"
+# 如果未指定 target-dir，自动检测运行环境
+if [[ -z "${3:-}" ]]; then
+  TARGET_DIR=$(detect_skill_dir "$PROJECT_DIR")
+  RUNTIME_NAME=$(detect_runtime_name "$PROJECT_DIR")
+  echo "检测到运行环境: ${RUNTIME_NAME}"
+  echo "目标 skill 目录: ${TARGET_DIR}"
+else
+  TARGET_DIR="$3"
+  RUNTIME_NAME="自定义"
+fi
 
 if [[ ! -d "$PROJECT_DIR" ]]; then
   echo "ERROR: 项目目录不存在: $PROJECT_DIR"
   exit 1
 fi
+
+# 确保目标目录存在
+mkdir -p "$TARGET_DIR"
 
 SKILL_DIR="$TARGET_DIR/$SKILL_NAME"
 ASSETS_DIR="$(cd "$(dirname "$0")/.." && pwd)/assets"
