@@ -15,15 +15,14 @@
 set -euo pipefail
 
 SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)"
-# 如果是从 zip 下载运行，SCRIPT_PATH 是解压目录；如果从 git clone 运行，是 swarm-yuan/ 子目录
-# 尝试找到 SKILL.md 所在目录作为源目录
-SRC_DIR="$SCRIPT_PATH"
-if [[ ! -f "$SCRIPT_PATH/SKILL.md" ]]; then
-  # 可能脚本在子目录（如 scripts/），向上找
-  for cand in "$SCRIPT_PATH/.." "$SCRIPT_PATH/../.." "$SCRIPT_PATH/swarm-yuan"; do
-    if [[ -f "$cand/SKILL.md" ]]; then SRC_DIR="$cand"; break; fi
-  done
-fi
+# 查找 SKILL.md 所在目录作为源目录
+# 场景1: 从 zip 解压，install.sh 和 SKILL.md 同目录
+# 场景2: 从 git clone，install.sh 在 swarm-yuan/ 子目录或仓库根目录
+# 场景3: 已安装在 ~/.claude/skills/swarm-yuan/ 下
+SRC_DIR=""
+for cand in "$SCRIPT_PATH" "$SCRIPT_PATH/swarm-yuan" "$SCRIPT_PATH/.." "$SCRIPT_PATH/../.."; do
+  if [[ -f "$cand/SKILL.md" ]]; then SRC_DIR="$(cd "$cand" && pwd)"; break; fi
+done
 if [[ ! -f "$SRC_DIR/SKILL.md" ]]; then
   echo "ERROR: 未找到 SKILL.md，请确保在 swarm-yuan 目录下运行此脚本"
   exit 1
