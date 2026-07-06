@@ -1,231 +1,188 @@
-# swarm-yuan — AI 驱动的项目开发技能生成器
+# swarm-yuan — 让 AI 懂你的项目，再写代码
 
-> 给我一个代码仓库，还你一套贴合该项目的全流程开发技能。
+> 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 >
-> 对 AI 说"为这个项目生成 skill"，5 分钟后你拿到：25 个质量门禁 + 18 段 spec 模板 + 14 项项目特征卡 + Claude Code 深度集成。零手动配置。
+> 14 项特征卡让 AI 认识你的项目，25 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
 
-[![Release](https://img.shields.io/badge/release-v2026.07.04-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.04)
-[![Gates](https://img.shields.io/badge/gates-25-green)]()
-[![Runtimes](https://img.shields.io/badge/runtimes-10-orange)]()
+[![Release](https://img.shields.io/badge/release-v2026.07.05-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.05)
+[![Feature Card](https://img.shields.io/badge/feature%20card-14-green)]()
+[![Quality Gates](https://img.shields.io/badge/quality%20gates-25-orange)]()
+[![Runtimes](https://img.shields.io/badge/runtimes-10-yellow)]()
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
 
-## 它是什么
+## 为什么需要它
 
-swarm-yuan 是一个 **AI 驱动的 skill 生成器**。它不帮你写代码——它帮你的 AI **在正确的约束下写代码**。
+**痛点 1：AI 不知道你的项目规则。** 改了不该改的文件、升级了不该升级的依赖、重复造了已有组件的轮子。
 
-给它任意代码仓库，AI 全自动：
+**痛点 2：AI 不懂你的领域。** 密码必须哈希、SQL 必须参数化、消息有时序性——违反就是硬伤。
 
-1. 读取项目既有知识（AGENTS.md / CLAUDE.md / 项目记忆 / hermes-agent 配置）
-2. 三路并行探查代码库（结构 / 规范 / 代码组织），优先用代码图谱工具索引
-3. 提取 14 项项目特征卡（项目类型 → 可改范围 → 技术栈 → 可复用稳定单元 → 领域知识）
-4. 生成六段式技能骨架（SKILL.md + references + assets + scripts + hooks + commands）
-5. AI 自动填充全部文件 + 自动配置 45 个门禁变量
-6. 运行 25 个门禁验证，有误报自动修复后重跑
-7. 将探查结果写回项目记忆，形成"记忆 → 生成 → 开发 → 记忆"闭环
+**痛点 3：检查靠人工。** 没有自动化检查就没有信任，只能逐行 review。
 
-**你不需要手动编辑任何配置文件。**
+**核心论断：AI 的代码生成能力已经很强，但「项目认知」还停留在零。**
 
 ---
 
-## 快速上手
+## 关键设计理念
 
-### 安装
-
-```bash
-# 1. 克隆仓库
-git clone https://github.com/issac-new/Swarm-yuan.git
-cp -r Swarm-yuan/swarm-yuan ~/.agents/skills/
-
-# 2. 注册 /swarm-yuan slash command（Claude Code）
-cp -r ~/.agents/skills/swarm-yuan/.claude/commands/ ~/.claude/commands/
-```
-
-### 生成项目技能
-
-对 AI 说：
-
-```
-为 /path/to/my-project 生成 skill
-```
-
-或用 slash command：
-
-```
-/swarm-yuan /path/to/my-project
-```
-
-AI 全自动完成后，你拿到：
-
-```
-你的项目/.agents/skills/my-project-dev/
-├── SKILL.md                  ← 技能入口（AI 读取，自动触发）
-├── hooks/hooks.json          ← Claude Code 生命周期钩子（SessionStart + PreToolUse）
-├── commands/                 ← slash 命令（/spec, /precheck, /explore）
-├── scripts/
-│   ├── precheck.sh           ← 25 个门禁（已配置好，直接运行）
-│   ├── precheck.conf         ← 45 个配置变量（AI 自动填充）
-│   ├── state-machine.sh      ← 阶段状态机
-│   └── self-check.sh         ← 10 个运行时自检
-├── assets/
-│   ├── spec-template.md      ← spec 模板（写需求时复制使用，18 段分级填写）
-│   └── ...                   ← 分支/环境/库表/状态机模板
-└── references/               ← 13 个参考文档（AI 填充项目内容）
-```
+| 理念 | 含义 |
+|------|------|
+| 先认识，再行动 | AI 写代码前必须先认识项目。14 项特征卡完成认知，25 个门禁守护行动 |
+| 拼装式开发 | 新功能 = 既有稳定单元拼装 + 最小新增胶水代码。禁止重复造轮子/侵入式重构/破坏性改造 |
+| 呈现递进的关系 | 门禁不是"数 import 数"——每个计数背后指向一条关系规律 |
+| 特征卡是立法，门禁是执法 | 14 项特征卡定义「项目应该是什么样的」，25 个门禁验证「代码是否符合」 |
 
 ---
 
-## 日常使用
+## 14 项特征卡：项目的「认知 DNA」
 
-### 开始新需求
+AI 探查项目后提取 14 项特征，每项落到真实路径和版本号，不用占位符。特征卡不是独立文件，而是**分散承接进目标 skill 的各个文件中**，驱动门禁配置和文件填充。
 
-对 AI 说：
+| # | 特征项 | AI 提取什么 | 驱动什么 |
+|---|--------|-----------|---------|
+| 1 | 项目类型 | 单体/monorepo/overlay-fork/微服务 | SKILL.md 定位 + `--cognition` |
+| 2 | **可改范围** | 可改目录 + 只读目录 + 只读区修改机制 | 安全铁律 + `--scope` |
+| 3 | **改造分类** | A类(纯新增)/B类(骨架修改) | dev-guide + `--layer` |
+| 4 | 技术栈 | 语言+框架+构建+测试（含版本基线） | codebase.md + `--deps` |
+| 5 | **构建命令** | dev/build/test/release 真实命令 | `--build` `--test` |
+| 6 | 分支规范 | 命名/合入/保护分支/推送 | `--branch` |
+| 7 | 安全规则 | 脱敏/密钥/白名单 | `--sensitive` `--security` |
+| 8 | 文档约定 | spec/plan 位置和命名 | workflow + spec-template |
+| 9 | 测试体系 | 框架/目录/命令 | `--test` |
+| 10 | 环境资源 | 运行时/DB/缓存/MQ/MCP | `--service` |
+| 11 | **可复用稳定单元** | 全部稳定 API/组件/类/函数/store/类型（签名+路径+用途+复用方式+稳定性标注） | **`--reuse` + `--stable-diff` + `--state` + `--frontend`** |
+| 12 | 数据规范 | schema/样例/业务规则/勾稽 | `--consistency` |
+| 13 | 认知基底 | 认知映射表 + 六维动力学基线 | `--cognition` |
+| 14 | **领域知识** | 技术+业务领域 → 推导客观规律 | `--domain` |
 
-```
-开始新需求：给 cockpit 添加一个通知面板
-```
+**第 11 项是核心中的核心**——AI 用 gitnexus `context` / graphify `query` 系统性盘点全部稳定单元，每个记录签名、路径、用途、复用方式、稳定性标注。
 
-AI 自动完成：
-1. 创建 spec 文件到 `specs/YYYY-MM-DD-<feature>.md`
-2. 根据需求判断变更规模，只引导你填需要的段
-3. 从 reference-manual §4/5/6 检索可复用稳定单元，预填 §5.5 复用约束
-4. 填完后自动运行 `precheck.sh --reuse` 验证
+**特征卡驱动一切：** → 文件填充（SKILL.md 铁律 ← 第 2/6 项、codebase.md ← 第 4 项、reference-manual.md 组件库 ← 第 11 项）→ 门禁配置（precheck.conf 45 个变量从特征卡推导）→ 开发流程（开始新需求时从第 11 项检索可复用单元）。
 
-| 规模 | AI 引导填哪些段 | 典型场景 |
-|------|----------------|---------|
-| **简单** | §1-§4 + §5.5 复用约束 + §12 风险回滚 | 改 bug / 加字段 / 调样式 |
-| **标准** | §1-§13 + §5.5/§5.6/§5.7 约束段 | 新功能 / 改接口 / 加组件 |
-| **完整** | 全部 18 段（含 §14-§18 认知/辩证/领域） | 架构变更 / 跨服务 / 新上下文 |
+### 落地示例（SwarmStudio overlay）
 
-> 复杂变更（>3 文件 / 跨模块）：AI 在 spec §4 标注"建议用 Dynamic Workflow 并行执行"。
-
-### 提交前自检
-
-```bash
-# 日常开发：核心 10 门禁（~5 秒）
-bash .agents/skills/my-project-dev/scripts/precheck.sh --all
-
-# 架构审查：全部 25 门禁（~30 秒）
-bash .agents/skills/my-project-dev/scripts/precheck.sh --all-full
-```
-
-**结果解读**：`✓` 通过 / `✗` fail 必须修复 / `⚠` warn 人工评估
-
-### 单独跑某个门禁
-
-```bash
-bash .agents/skills/my-project-dev/scripts/precheck.sh --security    # 安全
-bash .agents/skills/my-project-dev/scripts/precheck.sh --reuse       # 复用合规
-bash .agents/skills/my-project-dev/scripts/precheck.sh --cognition   # 认知体检
-bash .agents/skills/my-project-dev/scripts/precheck.sh --domain      # 领域知识
-bash .agents/skills/my-project-dev/scripts/precheck.sh --knowledge   # 项目知识复用
-```
-
-### 用 slash 命令
-
-```
-/my-project-dev:spec my-feature      # 创建 spec
-/my-project-dev:precheck --all       # 运行门禁
-/my-project-dev:explore              # 探查项目
-```
+| # | 真实值 |
+|---|--------|
+| 1 | overlay 注入式二次开发（Vue 3 + Electron） |
+| 2 | 可改: overlay/；只读: upstream/（严格禁止） |
+| 3 | A类（custom/ 纯新增）+ B类（patches/ 骨架修改） |
+| 5 | `npm run dev`(:8649) / `npm test` / `npm run inject` |
+| 11 | CockpitWorkspace / CockpitKanban / GatewayNoticeBanner 等 15+ 组件 |
+| 14 | IM 通讯（Matrix 协议）+ DevOps 监控 |
 
 ---
 
-## 25 个门禁速查
+## 25 个质量门禁：特征卡的守卫者
 
-### 核心门禁（`--all` 默认跑这 10 个）
+**特征卡是立法，门禁是执法。** 特征卡定义规则，门禁验证合规。
+
+| 特征卡项（立法） | 门禁（执法） |
+|----------------|-------------|
+| 第 2 项：可改范围 | `--scope` 检查 git diff 是否触碰只读目录 |
+| 第 5 项：构建命令 | `--build` 运行此命令，非零 = fail |
+| 第 6 项：分支规范 | `--branch` 校验分支名 |
+| 第 7 项：安全规则 | `--sensitive` `--security` 扫描密钥 |
+| 第 11 项：可复用单元 | `--reuse` 检测新增单元与既有重名 |
+| 第 11 项：稳定层 | `--stable-diff` 检测稳定层被改未声明 |
+| 第 14 项：领域知识 | `--domain` 检测密码明文存储等违规 |
+
+### 核心门禁（`--all`，10 个，~5 秒）
 
 | 门禁 | 检查什么 | fail 条件 |
 |------|---------|----------|
 | `--branch` | 分支命名 + 保护分支 | 在 main 上开发 / 分支名不合规 |
-| `--scope` | 改动范围（可改 vs 只读） | 只读目录有改动 |
+| `--scope` | 改动范围 | 只读目录有改动 |
 | `--build` | 构建通过 | 构建失败 |
-| `--sensitive` | 敏感信息脱敏 | 密码 / 密钥 / token 明文 |
-| `--consistency` | 业务规则 + 数据勾稽 | 人工核对项（提示性） |
-| `--review` | 代码审查（5 维度） | ocr 检测到 High 级问题 |
-| `--reuse` | 复用合规（拼装式开发） | spec 缺 §5.5 / 新增单元与既有重名 |
-| `--deps` | 依赖版本锁定 | 依赖版本变更但 spec 未声明 |
-| `--security` | 安全规范（OWASP Top 10） | 注入 / eval / XSS / 硬编码密钥 / TLS 关闭 |
+| `--sensitive` | 敏感信息 | 密码/密钥明文 |
+| `--review` | 代码审查（5 维度） | ocr 检测到 High |
+| `--reuse` | 复用合规 | spec 缺 §5.5 / 新增与既有重名 |
+| `--deps` | 依赖锁定 | 版本变更但 spec 未声明 |
+| `--security` | OWASP Top 10 | 注入/XSS/eval/硬编码密钥 |
 | `--test` | 测试通过 | 测试失败 |
+| `--consistency` | 业务规则 + 勾稽 | 人工核对项 |
 
-### 架构门禁（`--all-full` 才跑，未配置则静默跳过）
+### 架构门禁（`--all-full`，15 个，~30 秒）
 
-| 门禁 | 检查什么 | 需要配置 |
-|------|---------|---------|
-| `--layer` | DDD 分层边界（穿透/倒置/领域污染/聚合跨引用） | LAYER_DEFS / LAYER_ORDER |
-| `--stable-diff` | 稳定单元篡改（改稳定层须 spec MODIFIED 声明） | STABLE_GLOBS |
-| `--link-depth` | 调用链深度（链路膨胀/纯转发堆叠） | MAX_LINK_DEPTH |
-| `--adr` | 架构决策记录（ADR + 技术债登记） | ADR_DIR / TECH_DEBT_FILE |
-| `--contract` | 接口契约（version 字段 + ACL 防腐层） | CONTRACT_DIR / ACL_DIR |
-| `--consistency-cross` | BDAT 一致性（术语表 vs 代码 + 数据所有权） | GLOSSARY_FILE / SOR_FILE |
-| `--impact` | 变更影响分析（spec 须含影响范围段 + 消费方反查） | — |
-| `--service` | 微服务架构（共享 DB / 同步链 / 网关 / trace） | SERVICE_DIRS |
-| `--api` | API 契约与幂等（version / 幂等键 / 分布式事务） | API_SPEC_DIR |
-| `--state` | 前端状态管理（巨型 store / prop drilling / 派生 useState） | STORE_DIR |
-| `--frontend` | 前端组件架构（层级 / props / 循环依赖 / CSS 污染） | COMPONENT_DIR |
-| `--cognition` | 认知递进体检（六阶认知链 + 六维动力学 + 五层总分） | — |
-| `--domain` | 领域知识（技术+业务领域识别 + 客观规律违规检测） | — |
-| `--knowledge` | 项目知识复用（AGENTS.md/CLAUDE.md/记忆 → skill 是否引用） | — |
-| `--mermaid` | Mermaid 可视化（架构图/流程图/调用链是否用 Mermaid） | — |
+DDD 分层 / 稳定单元篡改 / 调用链深度 / 架构决策 / 接口契约 / BDAT 一致性 / 变更影响 / 微服务 / API 幂等 / 前端状态 / 组件架构 / 认知体检 / 领域知识 / 知识复用 / Mermaid
 
-### 门禁工具优先级 + 降级策略
+### 降级策略
 
-每个门禁优先用已安装的运行时工具，无则降级到内置 grep：
+每个门禁优先用运行时工具，无则降级：
 
-| 门禁 | 优先（运行时） | 降级（内置） |
-|------|--------------|-------------|
-| `--link-depth` | gitnexus trace → graphify explain → madge | 纯转发函数统计 |
-| `--impact` | gitnexus detect_changes / impact | git diff + grep 反查 |
-| `--layer` | gitnexus query（跨层依赖） | grep import + realpath |
-| `--review` | ocr review --from --to / ocr scan / `claude ultrareview` | 手动 5 维度清单 |
-| `--knowledge` | claude-mem search | 文件检测（AGENTS.md/CLAUDE.md） |
-| `--frontend` 循环 | madge --circular | grep 互引检测 |
+```
+gitnexus trace → graphify → madge → 纯转发统计
+ocr review → ocr scan → AI 5 维度审查
+claude-mem search → 文件检测
+```
 
 ---
 
-## 升级已有技能
+## 快速开始
+
+### 安装
 
 ```bash
-bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-dev /path/to/project
+git clone https://github.com/issac-new/Swarm-yuan.git
+cd Swarm-yuan/swarm-yuan
+bash install.sh
 ```
 
-- ✅ 覆盖通用模板（precheck.sh / precheck.conf / spec-template / 13 个 reference）
-- ✅ 保留项目特定文件（SKILL.md / codebase / dev-guide / release / reference-manual / workflow）
-- ✅ 自动备份旧文件到 `.upgrade-backup-<timestamp>/`
-- ✅ 写入版本戳 `.swarm-yuan-version`
-- ⚠ 升级后 `precheck.conf` 被重置为占位符 — AI 会重新探查并填充
+自动检测 7 个 AI 工具：Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi
+
+### 生成项目技能
+
+对 AI 说："为 /path/to/my-project 生成 skill"
+
+或用 slash 命令：`/swarm-yuan /path/to/my-project`
+
+AI 自动执行 11 步流程（**不允许中途停在骨架阶段**）：
+
+```
+自检 → 读取项目知识 → 探查仓库 → 提取 14 项特征卡 → 创建骨架 → 填充全部文件（消除占位符）→ 配置 precheck.conf → 生成 hooks/commands → 运行 25 个门禁 → 写回记忆 → grep 确认零占位符
+```
+
+### 日常使用
+
+```bash
+# 提交前自检
+bash .claude/skills/my-project-dev/scripts/precheck.sh --all         # 核心 10 门禁
+bash .claude/skills/my-project-dev/scripts/precheck.sh --all-full    # 全部 25 门禁
+
+# 单独跑某个门禁
+bash .claude/skills/my-project-dev/scripts/precheck.sh --security
+bash .claude/skills/my-project-dev/scripts/precheck.sh --reuse
+```
+
+或对 AI 说："跑门禁" / "开始新需求：xxx"
+
+### 升级
+
+```bash
+bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-dev /path/to/project
+```
+
+覆盖通用模板 / 保留项目特定文件 / 自动备份 / AI 重新填充 precheck.conf。
 
 ---
 
 ## 五层认知基底
 
-| 层 | 解决什么 |
-|----|---------|
-| 第一层 **认知递进** | 如何认识项目（概念→结构→空间→映射→规律→处理） |
-| 第二层 **思维语言** | 如何思考（三元演化 + 四导向 + 七推理） |
-| 第三层 **认知辩证** | 如何推演+自证伪（4-Phase SOP + 逻辑剃刀） |
-| 第四层 **偏差防范** | 如何纠偏（五维偏差 + 思维模型 8 类） |
-| 第五层 **辩证认知** | 如何统一前四层（7 对辩证范畴） |
-
-> 核心理念：**呈现递进的关系，而非仅关注计算。**
+| 层 | 解决什么 | 与特征卡/门禁的关系 |
+|----|---------|-------------------|
+| 认知递进 | 如何认识项目 | 特征卡 14 项 = 认知递进的产物 |
+| 思维语言 | 如何思考 | spec §14-§18 = 思维语言落地 |
+| 认知辩证 | 如何推演+自证伪 | `--cognition` = 验证工具 |
+| 偏差防范 | 如何纠偏 | spec §16 偏差自检 |
+| 辩证认知 | 如何统一前四层 | `--domain` = 违规检测 |
 
 ---
 
-## 10 个运行时工具
+## 10 个运行时 + 32 个领域
 
-| 工具 | 能力 | 版本 |
-|------|------|------|
-| OpenSpec | spec-driven 开发 | v1.5.0 |
-| superpowers | subagent-driven 编排 | v6.1.1 |
-| comet | 脚本背书状态机 | v0.3.9 |
-| GitNexus | 代码知识图谱（17 MCP 工具） | v1.6.9 |
-| graphify | 广谱知识图（36 语法） | v0.9.6 |
-| gsd-core | phase-loop + goal-backward | v1.6.1 |
-| claude-mem | 跨会话记忆持久化 | v13.10.1 |
-| open-code-review | 确定性代码审查 | v1.3.13 |
-| gstack | 8 审查维度 | v1.58.5 |
-| Ruflo | agent swarm + federation | v3.21.1 |
+**运行时**（只引用调用不重新实现）：OpenSpec / superpowers / comet / GitNexus / graphify / gsd-core / claude-mem / open-code-review / gstack / Ruflo
+
+**领域知识**：数据库 ACID / 网络 CORS / 安全密码哈希 / IM 消息保序 / 电商库存原子扣减 / 金融金额 Decimal……32 个领域客观规律。
 
 ---
 
@@ -233,55 +190,32 @@ bash ~/.agents/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 | 能力 | 用法 |
 |------|------|
-| Hooks | SessionStart 注入状态 + PreToolUse(Write) 范围检查 |
+| Hooks | SessionStart 注入状态 + PreToolUse(Write) 检查范围 |
 | Slash Commands | `/my-skill:spec` / `/my-skill:precheck` / `/my-skill:explore` |
 | MCP | 自动注册 gitnexus / claude-mem / graphify |
 | Dynamic Workflows | 复杂变更并行扇出 + 交叉验证 |
 | LSP | go-to-definition / find-references |
 | Subagent | 每任务新 subagent + 两阶段审查 |
-| ultrareview | 云端多 agent 审查（可选） |
-
-联网/云端功能不可用时自动降级为本地工具。
 
 ---
 
-## 常见问题
+## 零占位符 + 自举
 
-**Q: 门禁报误报怎么办？** → 对 AI 说"precheck 报了误报"，AI 自动分析+调整+重跑。
+**零占位符：** AI 执行完整 11 步后 grep 检查——零残留才算完成。
 
-**Q: `--reuse` 总是 fail？** → 每次变更前写 spec，填 §5.5 复用约束的 4 个 checkbox。先声明复用了什么，再写代码。
-
-**Q: 不需要微服务/前端/TOGAF 门禁？** → AI 自动识别项目类型，不适用门禁静默跳过。
-
-**Q: 项目结构变了？** → 对 AI 说"重新探查并更新 skill"。
-
-**Q: generate-skill.sh 报"已存在"？** → 用 `--upgrade` 升级，或删除重建。
+**自举：** swarm-yuan 能用自身的 25 个门禁检查自身。一个连自己都检查不了的工具，凭什么检查你的项目？
 
 ---
 
-## 日常使用流程
+## FAQ
 
-```
-首次使用：
-  对 AI 说 "为 /path/to/project 生成 skill"
-    → AI 全自动探查 + 生成 + 配置 + 验证
-    → 你获得可直接用的 skill（零手动配置）
+**Q: 门禁报误报？** → 对 AI 说"precheck 报了误报"，AI 自动分析+调整+重跑。也可直接编辑 `precheck.conf`。
 
-日常开发：
-  对 AI 说 "开始新需求：xxx"\n    → AI 自动创建 spec + 判断规模 + 引导填写 + 预填复用约束
-    → 编码（查 reference-manual §4/5/6 复用清单，拼装优先）
-      → 提交前：bash precheck.sh --all
-        ├→ 全 ✓ → 可提交
-        ├→ 有 ✗ → 修复后重跑
-        └→ 有 ⚠ → 人工评估
+**Q: `--reuse` 总是 fail？** → 每次变更前写 spec，填 §5.5 的 4 个 checkbox。先声明复用了特征卡第 11 项的哪些单元，再写代码。
 
-架构审查日：
-  bash precheck.sh --all-full（全部 25 门禁）
+**Q: 不需要微服务/前端/TOGAF？** → 特征卡第 10/11 项留空 = 对应门禁静默跳过。
 
-skill 过时：
-  对 AI 说 "升级 my-project-dev skill"
-    → AI 自动更新模板 + 重新探查 + 重新配置
-```
+**Q: 项目结构变了？** → 对 AI 说"重新探查并更新 skill"。AI 重新探查 → 更新特征卡 → 更新门禁配置。
 
 ---
 
@@ -290,18 +224,19 @@ skill 过时：
 ```
 Swarm-yuan/
 ├── README.md                     ← 本文件
-├── USAGE.md                      ← 详细使用说明
-├── LICENSE
+├── docs/
+│   ├── USAGE.md                  ← 详细使用说明
+│   └── PROMO.md                  ← 宣传稿
 ├── swarm-yuan/                   ← 生成器 skill
-│   ├── SKILL.md                  ← 技能入口（108 行，渐进式披露）
-│   ├── .claude/commands/         ← /swarm-yuan slash command
+│   ├── SKILL.md                  ← AI 入口（111 行）
+│   ├── install.sh                ← 一键安装（7 环境检测）
 │   ├── assets/                   ← 模板 + 门禁 + 状态机
+│   │   ├── precheck.sh           ← 25 个门禁（2255 行）
+│   │   ├── precheck.conf         ← 45 个配置变量模板
+│   │   └── spec-template.md      ← 22 段 spec 模板
 │   ├── references/               ← 13 个参考文档
 │   └── scripts/                  ← 生成器 + 自检
-└── Swarm-studio/                 ← 项目示例（SwarmStudio overlay 生成物）
-    ├── SKILL.md
-    ├── hooks/ + commands/
-    ├── assets/ + references/ + scripts/
+└── Swarm-studio/                 ← 示例项目（SwarmStudio overlay 生成物）
 ```
 
 ---
@@ -310,18 +245,23 @@ Swarm-yuan/
 
 | 维度 | 数值 |
 |------|------|
-| 质量门禁 | 25 个（核心 10 + 架构 15） |
-| 运行时工具 | 10 个 |
-| 项目特征卡 | 14 项 |
-| spec 模板 | 22 段（分级填写） |
-| reference 文档 | 13 个 |
-| 领域知识速查 | 32 个领域 |
+| **特征卡** | **14 项（驱动全部文件 + 45 个门禁变量 + 开发流程）** |
+| **质量门禁** | **25 个（核心 10 + 架构 15，特征卡立法 + 门禁执法）** |
+| 运行时工具 | 10 |
+| spec 模板 | 22 段 |
+| 领域知识 | 32 个领域 |
 | 认知基底 | 5 层 |
-| 三平台兼容 | macOS / Linux / Windows |
-| 自举能力 | ✅ 用自身门禁检查自身 |
+| 兼容 AI 工具 | 7 个 |
+| 三平台 | macOS / Linux / Windows |
+| 零占位符 | ✅ |
+| 自举 | ✅ |
 
 ---
 
 ## License
 
 MIT
+
+---
+
+> AI 的代码生成能力已经很强，但「项目认知」还停留在零。swarm-yuan 用 14 项特征卡让 AI 先懂你的项目，用 25 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
