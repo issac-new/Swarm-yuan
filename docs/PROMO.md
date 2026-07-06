@@ -127,7 +127,21 @@ AI 写代码前必须先认识项目。swarm-yuan 用 **14 项特征卡** 完成
 
 ### 架构门禁（`--all-full`，15 个，~30 秒）
 
-DDD 分层 / 稳定单元篡改 / 调用链深度 / 架构决策 / 接口契约 / BDAT 一致性 / 变更影响 / 微服务 / API 幂等 / 前端状态 / 组件架构 / 认知体检 / 领域知识 / 知识复用 / Mermaid
+| `--layer` | DDD 分层边界（穿透/倒置/领域污染/聚合跨引用） | 第 3 项 |
+| `--stable-diff` | 稳定单元篡改（改稳定层须 spec MODIFIED 声明） | 第 11 项 |
+| `--link-depth` | 调用链深度（链路膨胀/纯转发堆叠） | 第 13 项 |
+| `--adr` | 架构决策记录（ADR + 技术债登记） | 第 8 项 |
+| `--contract` | 接口契约（version + ACL 防腐层） | 第 10 项 |
+| `--consistency-cross` | BDAT 一致性（术语表 vs 代码 + 数据所有权） | 第 12 项 |
+| `--impact` | 变更影响分析（消费方反查） | — |
+| `--service` | 微服务架构（共享 DB/同步链/网关/trace） | 第 10 项 |
+| `--api` | API 契约与幂等（version/幂等键/分布式事务） | 第 10 项 |
+| `--state` | 前端状态管理（巨型 store/prop drilling/派生 useState） | 第 11 项 |
+| `--frontend` | 前端组件架构（层级/props/循环依赖/CSS 污染） | 第 11 项 |
+| `--cognition` | 认知递进体检（六阶+六维+五层总分） | 第 13 项 |
+| `--domain` | 领域知识违规检测（密码明文/SQL 拼接/XSS/并发竞态） | 第 14 项 |
+| `--knowledge` | 项目知识复用（AGENTS.md/CLAUDE.md/记忆 → skill 引用） | — |
+| `--mermaid` | Mermaid 可视化（架构图/流程图/调用链） | — |
 
 ### 降级策略
 
