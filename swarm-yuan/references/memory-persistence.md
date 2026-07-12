@@ -79,6 +79,30 @@ observation XML 格式：
 - workflow 的"状态控制"要素：状态存于上下文窗外（state-machine.sh 的 `.swarm-yuan/state.yaml` + claude-mem 的 SQLite），压缩后可恢复
 - 若用 claude-mem，SessionStart(compact) hook 自动重新注入记忆——无需手动恢复
 
+## SQLite 并发安全（claude-mem v13.10.2）
+
+> 引自 claude-mem v13.10.2。worker + hook 并发访问同一 SQLite DB 时的防御。
+
+- **`busy_timeout`**：worker 进程与 PostToolUse hook 可能同时写 `claude-mem.db`，须设 `busy_timeout`（如 `5000ms`）避免 `SQLITE_BUSY` 立即失败
+- **原子 settings 写**：`~/.claude-mem/settings.json` 须原子写（write-to-temp + rename），避免 hook 读到半写状态
+- **migration column re-check**：启动时检查 schema 列是否已迁移，避免 legacy 重复行导致 boot 崩溃
+- **worktree 相对 `gitdir:` 指针解析**：在 git worktree 中运行时，相对 `gitdir:` 指针须正确解析到主仓库
+
+**在目标技能中的落地：**
+- 若项目用 claude-mem，dev-guide.md 提示：concurrent worker/hook 访问须设 `busy_timeout`，不可裸连 SQLite
+- precheck.sh 的 `--memory` 子命令（若项目自建 SQLite 记忆层）可扫描 `new Database(path)` 后无 `busy_timeout` 的模式
+
+## 代理环境变量透传（claude-mem v13.10.2）
+
+> 引自 claude-mem v13.10.2。supervisor 进程启动 SDK 子进程时须保留代理环境。
+
+- `HTTPS_PROXY` 须透传给 SDK 子进程（不能只继承部分 env）
+- Bedrock/Vertex 的 `skip-auth` env 须保留（否则子进程失去免鉴权配置）
+
+**在目标技能中的落地：**
+- security-spec §3 网络安全：若项目启动 LLM SDK 子进程，须显式透传 `HTTPS_PROXY` 等代理 env
+- precheck.sh 的 `--security` 可扫描 `spawn()` 调用是否过滤了 `env`（若显式传 `env:` 须包含 `HTTPS_PROXY`）
+
 ## Mode-JSON 分类法（生成+检索同源）
 
 引自 `plugin/modes/code.json`。一个 mode JSON 定义：
@@ -122,6 +146,74 @@ claude-mem 支持的查询维度：
 | claude-mem | SQLite + ChromaDB + observer | 跨会话/跨压缩的完整记忆（决策/发现/gotcha） |
 
 **推荐组合**：state-machine.sh 管阶段状态 + progress ledger 管任务进度 + claude-mem（若装）管跨会话知识。三者不冲突，各管一层。
+
+## WAL 安全备份（ruflo v3.23.0）
+
+> 引自 ruflo v3.23.0。SQLite WAL 模式下的安全备份模式——naive 拷贝会损坏 DB。
+
+### 为什么不能直接拷贝
+SQLite 在 WAL（Write-Ahead Logging）模式下，`*.db` + `*-wal` + `*-shm` 三个文件组成一致状态。naive `cp *.db` 只拷贝主文件，丢失 WAL 中未 checkpoint 的事务——恢复后数据不一致或损坏。
+
+### 安全备份模式
+```
+# better-sqlite3 在线备份（推荐，非破坏式只读源）
+const backup = db.backup(`${dest}.db`);
+while (backup.remaining > 0) backup.transfer(-1);
+backup.close();
+
+# 或 SQLite CLI
+sqlite3 "$DB" ".backup '$DEST'"
+```
+
+**特性：**
+- **在线非破坏**：源 DB 可继续读写，备份是一致性快照
+- **轮转保留**：保留最近 N 份（默认 7），自动删除更旧的
+- **可选异地**：备份完成后上传到 GCS (`--gcs gs://bucket/path`) 或 S3
+
+**在目标技能中的落地：**
+- 若项目用 SQLite 做状态存储（state-machine.sh 的 `.swarm-yuan/state.yaml` 是 YAML 不涉及，但若项目自建 SQLite 记忆/缓存层），dev-guide.md 须提示：WAL 模式 DB 不可直接 `cp`，须用在线 `.backup()`
+- precheck.sh 的 `--memory` 子命令可扫描 `cp *.db` 或 `fs.copyFile(*.db)` 模式并告警
+
+## Failure-signal 真实捕获（ruflo v3.22.0）
+
+> 引自 ruflo v3.22.0。PostToolUse hook 须记录真实的工具执行结果，而非硬编码 `success:true`。
+
+### 问题
+observer 之前在 PostToolUse hook 中记录 `success: true` 硬编码值（898/898 次成功，0 失败）——oracle 层永远没有负例，无法学习"什么操作会失败"。
+
+### 修复
+- PostToolUse hook 读取 Claude Code 的 PostToolUse outcome（`tool_response.success` / `tool_response.error`）
+- 记录真实 failure：`success: false` + `error_message` + `error_type`
+- 这使 oracle 层有了负例：可挖掘"哪种 tool 组合容易失败"、"哪种输入导致 exec 超时"
+
+**在目标技能中的落地：**
+- memory-persistence 的 observer 须读 PostToolUse 真实 outcome，不可硬编码 `success:true`
+- 若项目自建 observer，dev-guide.md 提示：从 `tool_response` 提取 `success/error` 字段，写入 observation 的 `<facts>` 段
+- 这让 review-methodology 的 oracle 层（spec-completion audit）有了"失败操作"的历史数据
+
+## Memory Distillation 自学习环（ruflo v3.22.0, ADR-174）
+
+> 引自 ruflo v3.22.0。从 raw observations 蒸馏出可复用的 reasoning patterns——增量、非破坏式、provenance-gated。
+
+### 蒸馏流水线
+```
+memory_entries (raw observations)
+  → episodes (相关 observation 聚合为一个事件)
+    → reasoning_patterns (从 episodes 抽象出可复用模式 + embeddings)
+      → weak relational edges (pattern 间的弱关联)
+```
+
+**特性：**
+- **增量**：只处理新增/变更的 observations，不全量重算
+- **非破坏式**：只新增 episodes/patterns，不修改或删除已有
+- **provenance-gated**：每个蒸馏产物记录来源 observation IDs，可溯源
+- **本地训练**：可训练本地 SONA/MoE 模型（$0 默认，无 API 调用）
+- CLI：`memory distill run|status|config` + `distill-tuning`（自优化检索参数）
+
+**在目标技能中的落地（可选高级模式）：**
+- 若项目长期运行（>1月），可在 check 段加"记忆蒸馏"步骤：定期从 observations 蒸馏 patterns
+- 蒸馏产物存于 `.swarm-yuan/patterns.json`（可提交，团队共享）
+- dev-guide.md 引用：查"这个模块的常见 failure pattern"→ 查蒸馏产物而非翻 raw observations
 
 ## claude-mem v13 全量能力（swarm-yuan 须知道但可选引用）
 

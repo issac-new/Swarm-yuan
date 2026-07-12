@@ -9,6 +9,7 @@
 #   bash state-machine.sh guard <phase>                # 检查阶段准入条件
 #   bash state-machine.sh next                         # 显示下一阶段
 #   bash state-machine.sh status                       # 显示当前状态
+#   bash state-machine.sh update                       # 原地修订 plan（openspec /opsx:update 能力）
 # 生成目标技能时：替换 PHASES / GUARDS 为项目实际阶段与门禁
 
 set -euo pipefail
@@ -159,5 +160,18 @@ case "${1:-}" in
   guard) guard_phase "${2:-}" ;;
   next) next_phase ;;
   status) show_status ;;
-  *) echo "Usage: state-machine.sh {init|get|set|transition|guard|next|status} [args]"; exit 1 ;;
+  # update: 原地修订 plan + reconcile 关联 artifacts（openspec v1.6.0 /opsx:update 能力的脚本背书）
+  # 不回退到 open 阶段，在当前 design 阶段内修订 plan
+  update)
+    echo "=== 原地修订 plan ==="
+    current=$(get_field phase)
+    if [[ "$current" != "design" && "$current" != "build" ]]; then
+      echo "ERROR: update 仅在 design/build 阶段可用（当前 ${current}）"
+      exit 1
+    fi
+    echo "  当前阶段: $current — 允许原地修订 plan + reconcile tasks"
+    echo "  → 若装了 openspec: openspec update $(get_field change)"
+    echo "  → 修订后须重跑 guard $current 确认门禁仍通过"
+    ;;
+  *) echo "Usage: state-machine.sh {init|get|set|transition|guard|next|status|update} [args]"; exit 1 ;;
 esac

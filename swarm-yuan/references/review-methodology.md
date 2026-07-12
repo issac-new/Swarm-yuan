@@ -127,6 +127,44 @@ ocr rules check <file>
 
 对照 tasks.md 的每个 checkbox，按类型验证完成度。
 
+## Plan 原地修订（openspec `/opsx:update`，v1.6.0+）
+
+> 引自 openspec v1.6.0。swarm-yuan 生成的目标技能可引用此能力，在 design→build 边界处修订计划而不回退到 open 阶段。
+
+**命令：**
+```bash
+# 原地修订已有 change 的 plan，并 reconcile 关联 artifacts（不越界到实现工作）
+openspec update <change-id>
+# 或通过 slash command（Claude Code 集成）
+/opsx:update <change-id>
+```
+
+**行为：**
+- 读取已有 change 的 `plan.md` + `tasks.md`，允许原地修改 plan 与关联 spec delta
+- 自动 reconcile：若 plan 引用了已变更的 spec 节，更新 tasks 中的受影响 checkbox（DIFF-VERIFIABLE 类自动重判）
+- **不触发实现工作**：只生成/更新 plan+tasks，不写实现代码、不改实现文件
+
+**在目标技能中的落地：**
+- workflow 的 design→build 边界处，若需基于新信息调整 plan（而非回退到 open 重做），引用 `openspec update` 而非重新 `openspec change`
+- precheck.sh 的 `design` 门禁可增加检查：若 `tasks.md` 存在，其 checkbox 列表与当前 `plan.md` 的任务定义一致（reconcile 无遗漏）
+
+## 预批准 OpenSpec CLI（openspec 生成技能权限，v1.6.0+）
+
+> 引自 openspec v1.6.0。生成的技能与 Claude commands 可预批准 OpenSpec CLI，避免每次 opsx 调用都触发权限确认。
+
+**在目标技能中的落地：**
+- 生成目标技能时，在 `hooks/hooks.json` 或 commands 的 frontmatter 中，为 `openspec`/`opsx` 命令预置 `"permission": "allow"` verdict
+- 仅预批准 OpenSpec CLI 这一个工具，其他工具（grep/Read/Bash）仍受正常权限控制
+- 示例 hooks 片段：
+```json
+{
+  "PreToolUse": [
+    { "matcher": "Bash", "hooks": [{"type": "command", "command": "echo '{\"permission\":\"allow\"}'"}], "condition": "tool_input.command matches /^openspec|^opsx/" }
+  ]
+}
+```
+- 这减少高频 opsx 调用（validate/update/change/archive）的重复确认，同时不弱化其他工具的权限门
+
 ## 与目标技能的整合
 
 目标技能的 check 段应：
@@ -167,8 +205,19 @@ ocr rules check <file>
 | **`--background` 需求上下文** | 从 commit message 自动填充需求上下文 | 更精准的审查 |
 | **`ocr viewer` WebUI** | 查看完整 LLM 请求/响应会话（DNS-rebinding 防护） | 审查调试 |
 | **精度优先设计** | 50 仓库/200 PR/10 语言/1505 标注基准验证，精度 + F1 显著高于通用 agent，~1/9 token | 资源效率 |
+| **Anti-overfitting eval 纪律**（ruflo v3.25.0 方法论） | 审查策略改进须在**冻结的 human-labeled eval set**（hash-pinned, tamper-evident）上验证；每代改进暴露 humanRelevance delta（"自检索升但 human relevance 平→过拟合"须可见）；**clean-room replay** 验收（离线重放 promoted generation，哈希一致 + 重新跑 accept/v1+sig） | `--review` 规则演进可引用 |
+| **Shadow/canary 部署模式**（ruflo v3.24.0 方法论） | promoted 审查策略 champion 经一代 shadow 延迟后才 serve；canary 在 evolving store 上每 tick 重打分；**auto-rollback** 回归——可迁移到"precheck 规则升级"场景 | `--review` 规则升级可引用 |
 | **Astro 专用审查规则**（v1.3.13+） | `.astro` 文件的专用审查规则 | Astro 项目可引用 |
 | **per-chapter 文档路由**（v1.3.13+） | 文档站点按章节路由，便于导航 | 文档审查可引用 |
+| **可恢复 review session**（v1.7.6+） | `ocr review` 支持 resumable sessions + session inspection，中断后可恢复审查 | 长变更集审查可引用 |
+| **`code_search` 路径遍历拒绝**（v1.7.6+） | `ocr` 工具层拒绝 traversal pathspecs，作为 path-traversal 防御的工具级补充 | `--security` 可引用 |
+| **Monorepo git top-level 路径解析**（v1.7.4+） | `file_read` 路径在 monorepo 中按 git top-level 解析，避免子包相对路径错位 | monorepo 审查可引用 |
+| **结构化 category + severity**（v1.7.3+） | findings 现带结构化 category 字段（不止 severity），便于按类别过滤 | `--review` 规则可引用 |
+| **Python 内置审查规则**（v1.7.6+） | Python 代码审查规则已内置（与 Java/TS/Rust 平级） | Python 项目可引用 |
+| **可复用 composite PR-review GitHub Action**（v1.7.6+） | 抽取为可复用 composite action，CI 中一行引用即可做 PR 自动审查 | CI 集成可引用 |
+| **`--background-file` 业务上下文**（v1.7.6+） | 读取本地业务上下文文件作为审查背景（比 `--background` 字符串更结构化） | 大型项目审查可引用 |
+| **Eden AI provider 预置**（v1.7.7+） | 内置 Eden AI 作为 LLM provider 预设 | 按项目环境选择 |
+| **Dark mode + 系统等宽字体**（v1.7.5+） | viewer 支持 dark mode + 系统等宽字体 | 审查调试体验 |
 
 ### superpowers 审查模式（两阶段 subagent review）
 
