@@ -9,9 +9,9 @@
 ## 示例
 
 ```
-/swarm-yuan /Volumes/lab/my-project
-/swarm-yuan /Volumes/lab/my-project my-project-dev
-/swarm-yuan --upgrade /Volumes/lab/my-project my-project-dev
+/swarm-yuan /path/to/your-project
+/swarm-yuan /path/to/your-project my-project-dev
+/swarm-yuan --upgrade /path/to/your-project my-project-dev
 ```
 
 ## AI 执行流程

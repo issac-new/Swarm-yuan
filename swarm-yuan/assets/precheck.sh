@@ -13,6 +13,25 @@
 
 set -euo pipefail
 
+# 可移植 realpath 替代函数（BSD findutils 无 realpath，cd+pwd 三平台通用）
+_resolve_path() {
+  local p="$1"
+  local dir base cand
+  case "$p" in
+    */*) dir="${p%/*}"; base="${p##*/}";;
+    *) dir="."; base="$p";;
+  esac
+  if [[ -d "$dir" ]]; then
+    cand=$(cd "$dir" 2>/dev/null && pwd -P 2>/dev/null || cd "$dir" 2>/dev/null && pwd) 
+    if [[ -n "$cand" ]]; then
+      echo "${cand%/}/$base"
+      return 0
+    fi
+  fi
+  echo "$p"
+  return 1
+}
+
 # ===== 配置加载 =====
 # 配置变量从 precheck.conf 加载（与脚本同目录）。生成目标技能时按项目实际填充。
 _CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
@@ -208,7 +227,7 @@ check_sensitive() {
     for pattern in "${patterns[@]}"; do
       local matches
       matches=$(grep -rnE "$pattern" "$dir" \
-        --include='*.ts' --include='*.vue' --include='*.js' --include='*.mjs' \
+        --include='*.ts' --include='*.vue' --include='*.svelte' --include='*.js' --include='*.mjs' \
         --include='*.patch' --include='*.py' --include='*.go' --include='*.rs' \
         --include='*.scss' --include='*.java' 2>/dev/null \
         | grep -v -i 'example\|placeholder\|test\|mock\|dummy\|<.*>' || true)
@@ -396,7 +415,7 @@ check_layer() {
           # realpath 对无扩展名的模块路径会失败，先按各扩展名尝试解析
           for ext in ".ts" ".js" ".py" ".go" ".tsx" ".jsx" "/index.ts" "/index.js"; do
             local cand
-            cand=$(cd "$dir" 2>/dev/null && realpath "${imp}${ext}" 2>/dev/null || echo "")
+            cand=$(cd "$dir" 2>/dev/null && _resolve_path "${imp}${ext}" 2>/dev/null || echo "")
             if [[ -n "$cand" && -f "$cand" ]]; then target="$cand"; break; fi
           done
           [[ -z "$target" ]] && continue
@@ -464,7 +483,7 @@ check_layer() {
                 local target=""
                 for ext in ".ts" ".js" ".py" ".tsx" ".jsx"; do
                   local cand
-                  cand=$(cd "$dir" 2>/dev/null && realpath "${imp}${ext}" 2>/dev/null || echo "")
+                  cand=$(cd "$dir" 2>/dev/null && _resolve_path "${imp}${ext}" 2>/dev/null || echo "")
                   if [[ -n "$cand" && -f "$cand" ]]; then target="$cand"; break; fi
                 done
                 [[ -z "$target" ]] && continue
@@ -476,7 +495,7 @@ check_layer() {
                     fail "聚合跨边界对象引用：$af ($aname 聚合) 直接 import 了 $other 聚合的内部。聚合间应只引用 ID，不引用对象"
                     found=1
                   fi
-                done < <(find "$AGGREGATE_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null || find "$AGGREGATE_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)
+                done < <(find "$AGGREGATE_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null)
                 ;;
             esac
           done <<< "$imps"
@@ -895,7 +914,7 @@ _sec_scan() {
   for d in "$@"; do
     [[ -z "$d" || ! -d "$d" ]] && continue
     grep -rnE "$pattern" "$d" \
-      --include='*.ts' --include='*.js' --include='*.jsx' --include='*.tsx' --include='*.vue' \
+      --include='*.ts' --include='*.js' --include='*.jsx' --include='*.tsx' --include='*.vue' --include='*.svelte' \
       --include='*.py' --include='*.java' --include='*.go' --include='*.json' --include='*.env' 2>/dev/null \
       | grep -viE 'test|mock|node_modules|\.patch|__fixtures__|__mocks__|\.spec\.|\.d\.ts' || true
   done
@@ -1137,7 +1156,7 @@ check_contract() {
                 local target=""
                 for ext in ".ts" ".js" ".py" ".tsx" ".jsx"; do
                   local cand
-                  cand=$(cd "$dir" 2>/dev/null && realpath "${imp}${ext}" 2>/dev/null || echo "")
+                  cand=$(cd "$dir" 2>/dev/null && _resolve_path "${imp}${ext}" 2>/dev/null || echo "")
                   if [[ -n "$cand" && -f "$cand" ]]; then target="$cand"; break; fi
                 done
                 [[ -z "$target" ]] && continue
@@ -1532,7 +1551,7 @@ check_state() {
     # 粗筛：检测组件接收 props 后原样透传给子组件（...props / {...this.props}）
     local drilling
     drilling=$(grep -rnE '\.\.\.props|\{\.\.\.props\}|\{\.\.\.this\.props\}|rest\.props|remaining.*props' "$COMPONENT_DIR" \
-      --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.vue' 2>/dev/null \
+      --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.vue' --include='*.svelte' 2>/dev/null \
       | grep -v -i 'test\|mock\|node_modules' || true)
     if [[ -n "$drilling" ]]; then
       local dcount; dcount=$(echo "$drilling" | wc -l | xargs || true)
@@ -1591,7 +1610,7 @@ print(maxd)
       if [[ "$depth" -gt "$MAX_COMPONENT_DEPTH" ]]; then
         warn "${cf} 组件嵌套深度 ${depth}（>阈值 ${MAX_COMPONENT_DEPTH}）——层级过深导致渲染栈深、调试难、性能损耗，建议扁平化"
       fi
-    done < <(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.jsx' -o -name '*.vue' \) 2>/dev/null)
+    done < <(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.jsx' -o -name '*.vue' -o -name '*.svelte' \) 2>/dev/null)
   fi
 
   # ---- 2. 容器组件与展示组件未分离检测 ----
@@ -1600,14 +1619,18 @@ print(maxd)
   while IFS= read -r cf2; do
     [[ -z "$cf2" ]] && continue
     local has_io has_render
-    has_io=$(grep -cE '(fetch|axios|useQuery|useMutation|useSWR|\.get\(|\.post\()' "$cf2" 2>/dev/null || echo 0)
+    has_io=$(grep -cE '(fetch|axios|useQuery|useMutation|useSWR|\.get\(|\.post\()' "$cf2" 2>/dev/null || true)
+    has_io=${has_io:-0}; has_io=$(echo "$has_io" | xargs)
+    [[ "$has_io" =~ ^[0-9]+$ ]] || has_io=0
     # 统计 JSX 标签出现次数（非行数），用 grep -o 计数
-    has_render=$(grep -oE '<(div|span|ul|li|section|article|main|header|footer|table|button|input|form|p|h[1-6])' "$cf2" 2>/dev/null | wc -l | xargs || echo 0)
+    has_render=$(grep -oE '<(div|span|ul|li|section|article|main|header|footer|table|button|input|form|p|h[1-6])' "$cf2" 2>/dev/null | wc -l | xargs || true)
+    has_render=${has_render:-0}; has_render=$(echo "$has_render" | xargs)
+    [[ "$has_render" =~ ^[0-9]+$ ]] || has_render=0
     if [[ "$has_io" -gt 0 && "$has_render" -gt 10 ]]; then
       warn "${cf2} 同时含数据获取（${has_io}）和大量渲染（${has_render}）——容器组件与展示组件未分离，建议拆分（容器管数据，展示管 UI），提升复用性与可测性"
       break  # 只提示一次，避免刷屏
     fi
-  done < <(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.jsx' -o -name '*.vue' \) 2>/dev/null)
+  done < <(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.jsx' -o -name '*.vue' -o -name '*.svelte' \) 2>/dev/null)
 
   # ---- 3. 组件 props 过多检测（>MAX_PROPS_COUNT warn）----
   if [[ "$MAX_PROPS_COUNT" -gt 0 ]]; then
@@ -1739,7 +1762,7 @@ check_cognition() {
     space_score=$((space_score+1))
   fi
   if [[ -n "$COMPONENT_DIR" && -d "$COMPONENT_DIR" ]]; then
-    local comp_count; comp_count=$(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.jsx' -o -name '*.vue' \) 2>/dev/null | wc -l | xargs || echo 0)
+    local comp_count; comp_count=$(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.jsx' -o -name '*.vue' -o -name '*.svelte' \) 2>/dev/null | wc -l | xargs || echo 0)
     echo "    组件空间：${COMPONENT_DIR}（${comp_count} 个组件）"
     space_score=$((space_score+1))
   fi
@@ -1829,7 +1852,7 @@ check_cognition() {
   # 聚散：服务/组件数
   local gather_val=0
   [[ ${#SERVICE_DIRS[@]} -gt 0 ]] && gather_val=${#SERVICE_DIRS[@]}
-  [[ -n "$COMPONENT_DIR" && -d "$COMPONENT_DIR" ]] && gather_val=$((gather_val + $(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.vue' \) 2>/dev/null | wc -l | xargs || echo 0)))
+  [[ -n "$COMPONENT_DIR" && -d "$COMPONENT_DIR" ]] && gather_val=$((gather_val + $(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.vue' -o -name '*.svelte' -o -name '*.jsx' \) 2>/dev/null | wc -l | xargs || echo 0)))
   echo "    聚散：${gather_val} 个服务/组件单元", $([[ "$gather_val" -gt 50 ]] && echo "趋向分散" || echo "聚合适中")
 
   # 趋势：依赖深度变化（与基线对比）
@@ -1884,9 +1907,9 @@ check_cognition() {
     warn "第一层认知递进不足（${total_score}/11）——概念/结构/空间未显式定义，门禁沦为计数，建议先建立 ①概念定义"
   fi
 
-  # ---- 四层认知基底完整性检查（第二/三/四层）----
+  # ---- 五层认知基底完整性检查（第二/三/四/五层）----
   echo ""
-  echo "  ── 四层认知基底完整性（第一层 + 第二/三/四层）──"
+  echo "  ── 五层认知基底完整性（第一层 + 第二/三/四/五层）──"
   local layer2_score=0 layer3_score=0 layer4_score=0
 
   # 第二层：思维语言框架——spec 含三导向段（§1.1现状/§1.2目标/§14交付衰减/§15蓝图）
@@ -2043,7 +2066,7 @@ check_domain() {
   # 3c. 前端常识：v-html / dangerouslySetInnerHTML 直接拼接动态内容（排除 sanitize/renderMarkdown/DOMPurify 等消毒场景）
   local xss_violation
   xss_violation=$(grep -rnE 'v-html|dangerouslySetInnerHTML|innerHTML\s*=' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" \
-    --include='*.vue' --include='*.tsx' --include='*.jsx' --include='*.ts' --include='*.js' 2>/dev/null \
+    --include='*.vue' --include='*.svelte' --include='*.tsx' --include='*.jsx' --include='*.ts' --include='*.js' 2>/dev/null \
     | grep -v -i 'test\|mock\|node_modules' \
     | grep -viE 'sanitize|renderMarkdown|DOMPurify|escape|encode|sanitizeHtml|marked\(|markdownit' || true)
   if [[ -n "$xss_violation" ]]; then
@@ -2172,6 +2195,171 @@ check_mermaid() {
   fi
 }
 
+# ===== 左移门禁（--shift-left：测试左移+变更左移+运维监控左移）=====
+check_shift_left() {
+  echo "=== 左移检查（Shift-Left：测试设计+变更影响+可观测性，防缺陷/变更/故障流入后段）==="
+  local found=0
+
+  # ---- 定位 spec 文件 ----
+  local spec_file="${SPEC_FILE:-}"
+  [[ -z "$spec_file" ]] && for cand in "spec-template.md" "specs/spec-template.md" "docs/spec-template.md"; do
+    [[ -f "$cand" ]] && spec_file="$cand" && break
+  done
+  local test_design_file="${TEST_DESIGN_FILE:-$spec_file}"
+  local obs_file="${OBSERVABILITY_FILE:-$spec_file}"
+
+  # ---- 定位 plan 文件 ----
+  local plan_file="${CHANGE_IMPACT_FILE:-}"
+  [[ -z "$plan_file" ]] && for cand in "plan-template.md" "plans/plan-template.md" "docs/plan-template.md"; do
+    [[ -f "$cand" ]] && plan_file="$cand" && break
+  done
+
+  echo "  ── 测试左移（spec §19 + test 先于 impl）──"
+
+  # 1a. spec §19 测试设计段存在（硬门禁）
+  if [[ -n "$test_design_file" && -f "$test_design_file" ]]; then
+    if grep -qE '^## .*19.*测试左移|^## §19' "$test_design_file" 2>/dev/null; then
+      pass "spec §19 测试左移段存在"
+      # 检查 §19.2 用例骨架表是否有实质内容
+      local case_rows; case_rows=$(awk '/^### 19\.2/,/^### 19\.3/' "$test_design_file" 2>/dev/null | grep -cE '^\|.*\|.*\|.*\|.*\|' || true)
+      if [[ "$case_rows" -ge 3 ]]; then
+        pass "§19.2 用例骨架有 $case_rows 行（含边界/异常用例）"
+      else
+        warn "§19.2 用例骨架行数不足（$case_rows），须覆盖正常/边界/异常路径"
+      fi
+    else
+      fail "spec 缺 §19 测试左移段——测试设计须在 spec 阶段写，不可编码后才补"
+      found=1
+    fi
+  else
+    warn "未找到 spec 文件，跳过 §19 测试左移段检查（配置 SPEC_FILE 或 TEST_DESIGN_FILE）"
+  fi
+
+  # 1b. git diff 中 test 文件先于或同时于 impl 文件提交（warn）
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    local base="main"; git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
+    local test_commits impl_commits
+    test_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -E '\.test\.|\.spec\.|__tests__' | sort -u | wc -l | xargs || echo 0)
+    impl_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -vE '\.test\.|\.spec\.|__tests__|\.md$|\.json$|\.lock$' | grep -E '\.(ts|js|py|go|java|rs)$' | sort -u | wc -l | xargs || echo 0)
+    if [[ "$impl_commits" -gt 0 && "$test_commits" -eq 0 ]]; then
+      warn "本次变更有 $impl_commits 个 impl 文件但无 test 文件提交——须先写/更新测试再实现（TDD/BDD）"
+      found=1
+    elif [[ "$impl_commits" -gt 0 && "$test_commits" -gt 0 ]]; then
+      pass "本次变更有 test 文件提交（$test_commits test + $impl_commits impl）"
+    fi
+  fi
+
+  echo "  ── 变更左移（plan §20 变更影响 + 回滚预案 + 迁移兼容）──"
+
+  # 2a. plan §20 变更影响段存在（硬门禁）
+  if [[ -n "$plan_file" && -f "$plan_file" ]]; then
+    if grep -qE '^## .*20.*变更左移|^## §20' "$plan_file" 2>/dev/null; then
+      pass "plan §20 变更左移段存在"
+    else
+      fail "plan 缺 §20 变更左移段——变更影响范围须在 plan 阶段写"
+      found=1
+    fi
+  else
+    warn "未找到 plan 文件，跳过 §20 变更左移段检查（配置 CHANGE_IMPACT_FILE）"
+  fi
+
+  # 2b. spec 含回滚预案声明（硬门禁）
+  if [[ -n "$spec_file" && -f "$spec_file" ]]; then
+    local has_rollback
+    has_rollback=$(grep -ciE "$ROLLBACK_KEYWORDS" "$spec_file" 2>/dev/null || true)
+    has_rollback=${has_rollback:-0}
+    has_rollback=$(echo "$has_rollback" | xargs)
+    [[ "$has_rollback" =~ ^[0-9]+$ ]] || has_rollback=0
+    if [[ "$has_rollback" -ge 1 ]]; then
+      pass "spec 含回滚预案声明（$has_rollback 处提及）"
+    else
+      fail "spec 无回滚预案声明——须含回滚方式+验证+窗口"
+      found=1
+    fi
+  fi
+
+  # 2c. 数据库迁移无破坏性 DDL（warn）
+  if [[ ${#MIGRATION_DIRS[@]} -gt 0 ]]; then
+    local breaking=0
+    local md
+    for md in "${MIGRATION_DIRS[@]}"; do
+      [[ -d "$md" ]] || continue
+      local hits; hits=$(grep -rnEi "$BREAKING_DDL_PATTERNS" "$md" 2>/dev/null | grep -v -i 'down\|rollback\|revert' || true)
+      if [[ -n "$hits" ]]; then
+        warn "迁移目录 $md 含破坏性 DDL（DROP/TRUNCATE），须确认向前兼容或双写期："
+        echo "$hits" | head -5
+        breaking=1
+      fi
+    done
+    [[ $breaking -eq 0 ]] && pass "迁移目录无破坏性 DDL（或均在 down/rollback 段）"
+  fi
+
+  echo "  ── 运维监控左移（spec §21 可观测性 + 代码埋点 + 健康检查）──"
+
+  # 3a. spec §21 可观测性段存在（warn）
+  if [[ -n "$obs_file" && -f "$obs_file" ]]; then
+    if grep -qE '^## .*21.*可观测性|^## §21' "$obs_file" 2>/dev/null; then
+      pass "spec §21 可观测性约束段存在"
+    else
+      warn "spec 缺 §21 可观测性约束段——日志/metrics/trace/告警须在 spec 阶段写"
+      found=1
+    fi
+  else
+    warn "未找到 spec 文件，跳过 §21 可观测性段检查"
+  fi
+
+  # 3b. 代码中 metrics/日志/trace 埋点存在（warn）
+  local scan_targets=()
+  for d in "${WRITABLE_DIRS[@]}"; do [[ -d "$d" ]] && scan_targets+=("$d"); done
+  [[ ${#scan_targets[@]} -eq 0 ]] && scan_targets=(".")
+
+  local metric_hits=0 log_hits=0 trace_hits=0
+  for d in "${scan_targets[@]}"; do
+    local mh lh th
+    mh=$(grep -rlE "$METRIC_CODE_PATTERNS" "$d" 2>/dev/null --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' | wc -l | xargs)
+    lh=$(grep -rlE "$LOG_CODE_PATTERNS" "$d" 2>/dev/null --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' | wc -l | xargs)
+    th=$(grep -rlE "$TRACE_CODE_PATTERNS" "$d" 2>/dev/null --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' | wc -l | xargs)
+    metric_hits=$((metric_hits + ${mh:-0}))
+    log_hits=$((log_hits + ${lh:-0}))
+    trace_hits=$((trace_hits + ${th:-0}))
+  done
+  if [[ $metric_hits -gt 0 ]]; then
+    pass "代码中检测到 metrics 埋点（$metric_hits 个文件）"
+  else
+    warn "代码中未检测到 metrics 埋点——可观测性约束要求 spec §21 的埋点清单在代码中实现"
+  fi
+  if [[ $log_hits -gt 0 ]]; then
+    pass "代码中检测到日志埋点（$log_hits 个文件）"
+  else
+    warn "代码中未检测到日志埋点"
+  fi
+  if [[ $trace_hits -gt 0 ]]; then
+    pass "代码中检测到 trace 埋点（$trace_hits 个文件）"
+  else
+    warn "代码中未检测到 trace 埋点（微服务/分布式项目建议加 traceId 透传）"
+  fi
+
+  # 3c. 健康检查端点可访问（warn）
+  if [[ ${#HEALTH_CHECK_URLS[@]} -gt 0 ]]; then
+    local hc
+    for hc in "${HEALTH_CHECK_URLS[@]}"; do
+      local code
+      code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$HEALTH_CHECK_TIMEOUT" "$hc" 2>/dev/null || echo "000")
+      if [[ "$code" == "200" ]]; then
+        pass "健康检查端点可访问：$hc (200)"
+      else
+        warn "健康检查端点不可访问：$hc (HTTP $code)——服务须启动后才能验证"
+      fi
+    done
+  fi
+
+  if [[ $found -eq 0 ]]; then
+    pass "左移检查通过（测试设计+变更影响+可观测性均已在 spec/plan 阶段嵌入）"
+  else
+    echo "  ⚠ 左移有 fail 项——测试/变更/运维约束须在 spec/plan 阶段写，不可后置"
+  fi
+}
+
 case "$MODE" in
   --all)
     # 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
@@ -2212,6 +2400,7 @@ case "$MODE" in
     check_domain
     check_knowledge
     check_mermaid
+    check_shift_left
     check_test
     ;;
   --branch) check_branch ;;
@@ -2239,8 +2428,9 @@ case "$MODE" in
   --domain) check_domain ;;
   --knowledge) check_knowledge ;;
   --mermaid) check_mermaid ;;
+  --shift-left) check_shift_left ;;
   *)
-    echo "Usage: bash precheck.sh [--all|--all-full|--branch|--scope|--build|--test|--sensitive|--consistency|--review|--reuse|--deps|--security|--layer|--stable-diff|--link-depth|--adr|--contract|--consistency-cross|--impact|--service|--api|--state|--frontend|--cognition|--domain|--knowledge]"
+    echo "Usage: bash precheck.sh [--all|--all-full|--branch|--scope|--build|--test|--sensitive|--consistency|--review|--reuse|--deps|--security|--layer|--stable-diff|--link-depth|--adr|--contract|--consistency-cross|--impact|--service|--api|--state|--frontend|--cognition|--domain|--knowledge|--mermaid|--shift-left]"
     exit 1
     ;;
 esac
