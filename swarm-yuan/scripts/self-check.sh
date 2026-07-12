@@ -211,6 +211,10 @@ upgrade_from_source(){
 }
 
 # 9 个项目定义：name|check_func|install_func|auto_installable
+# 注：self-check 生成的 hooks.json PreToolUse 命令须发射 Claude Code 和 Cursor 都接受的
+#   {"permission":"allow"} verdict（参考 ruflo v3.25.6 #2613 修复）
+# 注：若目标技能注册 MCP，须检测重复注册（同一 binary 注册 claude-flow + ruflo 两个 key）
+#   并通过 ruflo doctor 自愈——canonical MCP key 保留一个（参考 ruflo v3.25.6 #2612 修复）
 PROJECTS=(
   "openspec|check_openspec|install_openspec|1"
   "comet|check_comet|install_comet|1"

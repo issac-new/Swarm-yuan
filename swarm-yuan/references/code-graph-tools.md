@@ -70,10 +70,13 @@ graphify path "ComponentA" "ComponentB"    # 依赖链/最短路径
 graphify explain "RateLimiter"             # 节点邻域
 graphify export callflow-html              # Mermaid 调用流 HTML
 graphify hook install                      # git commit 时自动重建图
+graphify hook-guard <search|read>          # hook 守卫子命令（跨平台，v0.9.8+）
 graphify merge-graphs a.json b.json        # 合并图
 python -m graphify.serve graphify-out/graph.json              # MCP server（stdio）
 python -m graphify.serve graph.json --transport http --port 8080  # 共享 HTTP MCP
 ```
+
+> ⚠️ **hook-guard 子命令（v0.9.8+）**：`PreToolUse` / `BeforeTool` hook 逻辑已移入 shell 无关的 `graphify hook-guard <search|read>` 子命令，Windows/macOS/Linux 行为字节一致。不再依赖 POSIX bash 内联（`case/esac`、`[ -f ]`），Windows 上 hook 不再静默失败。Gemini 的 `BeforeTool` 用 `graphify hook-guard gemini`，移除对 bare `python` 在 PATH 的依赖。
 
 ### 输入/输出
 - **输入**：文件夹路径。代码（36 种 tree-sitter 语法）本地离线解析；文档/PDF/图片/视频需 LLM backend（`--backend claude|gemini|openai|deepseek|kimi|azure|bedrock|ollama`）
@@ -183,3 +186,24 @@ python -m graphify.serve graph.json --transport http --port 8080  # 共享 HTTP 
 | **36 tree-sitter 语法** | 含 CUDA/Metal/SystemVerilog/Fortran/Pascal/Delphi/Lua/Zig/Elixir/Julia/Vue/Svelte/Astro | 更广语言覆盖 |
 | **MCP 配置作为一等节点** | `.mcp.json` 提取 server 节点 + 包引用 + env-var 需求 | MCP 工具盘点可引用 |
 | **包清单作为枢纽节点** | `pyproject.toml`/`go.mod`/`pom.xml` → `depends_on` 边 | `--deps` 可引用 |
+
+### graphify v0.9.6–v0.9.12 新增能力
+
+> 来自 graphify v0.9.6 → v0.9.12 release notes。
+
+| 能力 | 版本 | 描述 | swarm-yuan 落点 |
+|------|------|------|----------------|
+| **`hook-guard` 跨平台 hook 子命令** | v0.9.8 | hook 逻辑移入 shell 无关的 `graphify hook-guard` 子命令，Windows/macOS/Linux 行为字节一致 | 目标技能的 hook 安装可引用 |
+| **不静默丢弃：无 extractor 的代码文件** | v0.9.9 | `.r`/`.ejs`/`.ets` 等被分类为代码但无 AST extractor 的文件，现在 print grouped warning 而非静默消失 | 探查阶段可引用（图完整性） |
+| **不静默丢弃：`os.walk` 错误** | v0.9.11 | `os.walk` 的 `os.scandir` 失败（权限/并发写入）现在记录每个跳过的子树 + warn，而非吞掉整棵子树 | 探查阶段可引用（图完整性） |
+| **anti-shrink guard** | v0.9.11 | 非空但不可读的旧 `graph.json` 拒绝覆盖（须 `force=True`），空文件仍继续 | 图完整性可引用 |
+| **幻影边防御：builtin-typed receivers** | v0.9.10 | TS/JS `x: Date; x.getTime()` 不再绑定到同名用户 `class DATE` | 图正确性可引用 |
+| **幻影边防御：跨语言 calls** | v0.9.10 | 禁止跨语言 `calls` 边（按 interop family 过滤候选） | 图正确性可引用 |
+| **语义超边保留** | v0.9.12 | `graphify update` 不再在 AST 重建时删除 doc-sourced hyperedges | 增量探查可引用 |
+| **PostgreSQL 只读 FK 内省** | v0.9.12 | `--postgres` 从 `pg_catalog.pg_constraint` 读 FK，只读角色也能得 `references` 边 | DB 项目可引用 |
+| **`json_config` 依赖边** | v0.9.12 | `package.json` 依赖 + `tsconfig.json` `extends`/`$ref` 创建 `concept` 目标节点再连边 | 依赖图可引用 |
+| **Ruby `mixes_in` 边** | v0.9.7 | `include`/`extend`/`prepend <Module>` → `mixes_in` 边，Rails concern 可见 | Ruby 项目可引用 |
+| **rationale/doc_ref 节点** | v0.9.7 | JS/TS `// NOTE:` 注释与 ADR/RFC 引用成为 `rationale`/`doc_ref` 节点 | 文档关联可引用 |
+| **`pascal` 可选 extra** | v0.9.7 | Delphi 提取（AST-quality） | Delphi 项目可引用 |
+| **大小写不敏感扩展名分发** | v0.9.7 | `App.PY`/`script.JS` 不再被跳过 | 跨平台文件名可引用 |
+| **`affected <Class>` 成员种子** | v0.9.7 | `affected` 从类的成员节点种子反向遍历 | 影响分析可引用 |
