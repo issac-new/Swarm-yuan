@@ -817,6 +817,27 @@ _extract_deps() {
         if(n!="" && v!="") print n"\t"v
       }' "$f" 2>/dev/null || true
       ;;
+    *pom.xml)
+      # Maven: <dependency><groupId>G</groupId><artifactId>A</artifactId><version>V</version>
+      awk '/<dependency>/{gd="";ad="";vd=""}
+           /<groupId>/{gd=$0}
+           /<artifactId>/{ad=$0}
+           /<version>/{vd=$0}
+           /<\/dependency>/{
+             g=gd; sub(/.*<groupId>/,"",g); sub(/<\/groupId>.*/,"",g)
+             a=ad; sub(/.*<artifactId>/,"",a); sub(/<\/artifactId>.*/,"",a)
+             v=vd; sub(/.*<version>/,"",v); sub(/<\/version>.*/,"",v)
+             if(g!="" && a!="" && v!="") print g":"a"\t"v
+           }' "$f" 2>/dev/null || true
+      ;;
+    *build.gradle|*build.gradle.kts)
+      # Gradle: implementation 'group:artifact:version' 或 implementation group: 'g', name: 'a', version: 'v'
+      grep -oE "implementation\s+['\"]([^'\"]+):([^'\"]+):([^'\"]+)['\"]" "$f" 2>/dev/null \
+        | sed -E "s/.*['\"]([^'\"]+)['\"].*/\\1/" | awk -F: '{print $1":"$2"\t"$3}' || true
+      # Gradle Kotlin DSL: implementation("group:artifact:version")
+      grep -oE 'implementation\("([^"]+):([^"]+):([^"]+)"\)' "$f" 2>/dev/null \
+        | sed -E 's/.*\("([^"]+)"\).*/\1/' | awk -F: '{print $1":"$2"\t"$3}' || true
+      ;;
   esac
 }
 
@@ -868,7 +889,7 @@ check_deps() {
   # 收集项目依赖清单文件（排除 node_modules / upstream / .git）
   local dep_files
   dep_files=$(find "$PROJECT_DIR" -maxdepth 3 \
-    \( -name package.json -o -name pyproject.toml -o -name go.mod -o -name requirements.txt -o -name Cargo.toml \) \
+    \( -name package.json -o -name pyproject.toml -o -name go.mod -o -name requirements.txt -o -name Cargo.toml -o -name pom.xml -o -name build.gradle -o -name build.gradle.kts \) \
     2>/dev/null | grep -vE 'node_modules|/upstream/|/\.git/' || true)
 
   local df name ver base_ver ver_clean base_clean declared
@@ -913,9 +934,13 @@ _sec_scan() {
   local d
   for d in "$@"; do
     [[ -z "$d" || ! -d "$d" ]] && continue
-    grep -rnE "$pattern" "$d" \
-      --include='*.ts' --include='*.js' --include='*.jsx' --include='*.tsx' --include='*.vue' --include='*.svelte' \
-      --include='*.py' --include='*.java' --include='*.go' --include='*.json' --include='*.env' 2>/dev/null \
+    # 基础文件类型
+    local includes="--include=*.ts --include=*.js --include=*.jsx --include=*.tsx --include=*.vue --include=*.svelte --include=*.py --include=*.java --include=*.go --include=*.json --include=*.env"
+    # 当配置了 MyBatis mapper 目录时，追加 .xml 扫描（SQL 注入实际在 XML mapper 中）
+    if [[ ${#MYBATIS_MAPPER_DIRS[@]} -gt 0 ]]; then
+      includes="$includes --include=*.xml"
+    fi
+    grep -rnE "$pattern" "$d" $includes 2>/dev/null \
       | grep -viE 'test|mock|node_modules|\.patch|__fixtures__|__mocks__|\.spec\.|\.d\.ts' || true
   done
 }
@@ -935,9 +960,29 @@ check_security() {
   local line
 
   # §1 SQL 注入：SQL 关键字 + 字符串拼接/插值
+  # ★MyBatis 框架感知：#{} 是参数化安全写法（跳过），${} 是危险字符串拼接（仅 ORDER BY/表名白名单可用）
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
-    fail "疑似 SQL 注入（字符串拼接 SQL）：$line"; found=1
+    # 排除 MyBatis 安全的 #{} 参数化写法
+    if echo "$line" | grep -qE '#\{'; then
+      # 含 #{} 的行如果是纯 #{}（无 ${}），视为安全
+      if ! echo "$line" | grep -qE '\$\{'; then
+        continue
+      fi
+    fi
+    # 检查白名单（SQL_INJECTION_WHITELIST）
+    local in_whitelist=0
+    if [[ ${#SQL_INJECTION_WHITELIST[@]} -gt 0 ]]; then
+      local wl
+      for wl in "${SQL_INJECTION_WHITELIST[@]}"; do
+        echo "$line" | grep -qF "$wl" && in_whitelist=1 && break
+      done
+    fi
+    if [[ $in_whitelist -eq 1 ]]; then
+      warn "MyBatis \${} 白名单命中（须人工确认安全）：$line"
+    else
+      fail "疑似 SQL 注入（字符串拼接 SQL）：$line"; found=1
+    fi
   done < <(_sec_scan 'SELECT|INSERT|UPDATE|DELETE|DROP' "${targets[@]}" | grep -E '\+|\$\{' || true)
 
   # §2 命令注入：child_process exec/spawn + 动态拼接（排除 RegExp.exec）
