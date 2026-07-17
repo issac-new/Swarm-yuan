@@ -34,9 +34,12 @@ _resolve_path() {
 
 # ===== 配置加载 =====
 # 配置变量从 precheck.conf 加载（与脚本同目录）。生成目标技能时按项目实际填充。
+# conf 可能含字面 ${}（如 SQL_INJECTION_WHITELIST），set -u 下会 unbound——临时关闭再恢复。
 _CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 if [[ -f "$_CONF_DIR/precheck.conf" ]]; then
+  set +u
   source "$_CONF_DIR/precheck.conf"
+  set -u
 else
   # 无配置文件时用默认值（全部留空=跳过架构/认知门禁）
   PROJECT_DIR="."
@@ -2420,7 +2423,10 @@ check_framework() {
   for fw in "${ACTIVE_FRAMEWORKS[@]}"; do
     fn="_fw_$(echo "$fw" | tr '-' '_')_check"
     if declare -f "$fn" >/dev/null 2>&1; then
-      "$fn"
+      # || true 兜底：单个框架函数内若有命令返回非 0（如 grep 无匹配），
+      # set -e 会触发整个 check_framework 退出，导致后续框架无法执行。
+      # 框架函数内部的 pass/fail/warn 已自行记录检查结果，此处只须防止退出。
+      "$fn" || true
     else
       fail "框架 '$fw' 已激活但无门禁实现（$fn 缺失）——须运行 generate-skill.sh --inject-frameworks"
     fi

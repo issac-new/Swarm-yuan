@@ -38,10 +38,13 @@ inject_frameworks() {
     fi
   fi
 
-  # 读取 ACTIVE_FRAMEWORKS（在子 shell source，避免污染本进程）
+  # 读取 ACTIVE_FRAMEWORKS（conf 可能含字面 ${} 如 SQL_INJECTION_WHITELIST，set -u 下会 unbound；
+  # 在函数内临时关闭 set -u 做 source，读完立即恢复）
   ACTIVE_FRAMEWORKS=()
   # shellcheck disable=SC1090
+  set +u
   . "$conf"
+  set -u
   if [[ ${#ACTIVE_FRAMEWORKS[@]} -eq 0 ]]; then
     echo "⚠ ACTIVE_FRAMEWORKS 未配置，跳过门禁注入"
     return 0
