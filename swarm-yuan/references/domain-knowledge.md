@@ -389,7 +389,7 @@
 
 > **T4 改造：框架规则已迁移至 `references/frameworks/`**（每框架 1 文件，六段式结构：§1 探查信号 / §2 特定构件枚举 / §3 领域规律 / §4 门禁清单 / §5 跨框架交互 / §6 版本陷阱）。生成时按 §C+.0.5 探查结果读取对应 `references/frameworks/<fw>.md`，AI 逐条用项目代码验证后实例化为 `references/framework-knowledge.md`（成立→附证据；不成立→剔除记录原因；版本区间外→标"待验证"）。框架门禁片段位于 `assets/framework-gates/<fw>.sh`，由 `scripts/generate-skill.sh --inject-frameworks` 注入到 `scripts/precheck.sh` 的 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，模板内置 `check_framework()` 通过 `declare -f` 动态分发到 `_fw_<id>_check`。四要素核验（构件计数/规律门槛/门禁实跑/dev-guide §10 约束数）见 SKILL.md Step 12 与 `references/template-spec.md` "框架适配四要素核验"。
 >
-> 框架规则集扩展方式：`references/frameworks/<fw>.md` 加六段式规则文件（ruleset_id/适用版本/最后调研/深度门槛 frontmatter 四字段）+ `assets/framework-gates/<fw>.sh` 加门禁片段（`_fw_<id>_check` 函数 + 头注释 `# ruleset: <id> requires_conf: VAR1 VAR2` / `# gates: fw_<id>_<rule>(fail) ...`）+ `precheck.conf` 加框架适配配置变量。`scripts/verify-framework-ruleset.sh <id>` 做四要素机械核验，`scripts/gen-framework-index.sh` 重写 exploration-guide.md §C+.0.5 信号索引区块。
+> 框架规则集扩展方式：`references/frameworks/<fw>.md` 加六段式规则文件（ruleset_id/适用版本/最后调研/深度门槛 frontmatter 四字段）+ `assets/framework-gates/<fw>.sh` 加门禁片段（`_fw_<id>_check` 函数 + 头注释 `# ruleset: <id> requires_conf: VAR1 VAR2` / `# gates: fw_<id>_<rule>(fail) ...`）+ `precheck.conf` 加框架适配配置变量。`scripts/verify-framework-ruleset.sh <id>` 做**范式侧规则集完整性机械核验**（规则文件/门禁片段存在 + 规律数≥门槛 + §4 门禁 id ⊆ 片段函数 + fixture 双态），与 SKILL.md Step 12 的**生成流程侧四要素核验**（构件计数/规律证据/门禁实跑/dev-guide §10 约束数，在目标 skill 上执行）是不同集合——前者核范式文件，后者核生成产物。`scripts/gen-framework-index.sh` 重写 exploration-guide.md §C+.0.5 信号索引区块。
 >
 > 本文件保留通用领域速查（数据库/缓存/网络/安全/并发/业务/架构/管理/运维），不含框架特定规律——所有框架规则一律以 `references/frameworks/<fw>.md` 为唯一来源。
 

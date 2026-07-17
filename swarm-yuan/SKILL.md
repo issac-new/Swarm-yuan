@@ -96,7 +96,7 @@ swarm-yuan 的 26 个门禁服务于一条认知递进链。核心理念：**呈
 | meta | `SKILL.md` | 元信息、铁律、流程总览、命令速查 |
 | workflow | `references/workflow.md` | 节点化流程（9 要素/节点 + 4-Phase SOP）——生成时填充 |
 | reference | `references/*.md` | 参考手册（目录/安全/编译/**全量组件库**/**三层依赖链路+约束**/**全量接口端点**/**全量store+类型** + 数据 + 方法论 + 认知 + 领域知识） |
-| reference | `references/framework-knowledge.md` | **按激活框架实例化的规律与门禁依据**（骨架由 `--inject-frameworks` 自 `references/frameworks/<fw>.md` §3 生成，AI 逐条用项目代码验证实例化） |
+| reference | `references/framework-knowledge.md` | **按激活框架实例化的规律与门禁依据**（骨架由 `--inject-frameworks` 自 `references/frameworks/<fw>.md` §3+§4 生成，AI 逐条用项目代码验证实例化） |
 | assets | `assets/*` | 模板（spec/plan/分支/环境/库表/状态机） |
 | check | `scripts/precheck.sh` | 26 个门禁子命令（含 `--shift-left` 左移：测试设计/变更影响/可观测性） + **框架门禁片段注入区**（`# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，由 `--inject-frameworks` 写入） |
 | scripts | `scripts/*` | 工具箱（门禁+状态机+图谱+MCP+self-check） |
