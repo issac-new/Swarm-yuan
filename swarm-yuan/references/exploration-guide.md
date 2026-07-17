@@ -52,17 +52,17 @@
 
 > **生成的 skill 须能反向写入项目记忆**：当 AI 在开发过程中发现新规则/教训时，通过 claude-mem 或 .zcode/memories 写入，下次生成 skill 时自动读取。形成"记忆→生成→开发→记忆"闭环。
 
-### 读取 AI Agent 运行时（如 hermes-agent）
+### 读取 AI Agent 运行时（如项目含 agent 运行时）
 
-> 如果项目包含 AI agent 运行时（如 `upstream/hermes-agent/`），AI 须读取其工作内容，理解 agent 的能力边界、工具链、配置方式。生成的目标技能须能指导开发者正确配置和使用 agent。
+> 如果目标项目包含 AI agent 运行时（如独立的 agent 包、`agent/` 目录、或 plugin/hook 系统），AI 须读取其工作内容，理解 agent 的能力边界、工具链、配置方式。生成的目标技能须能指导开发者正确配置和使用 agent。
 
 | 读取项 | 路径模式 | 提取什么 | 写入特征卡哪项 |
 |--------|---------|---------|--------------|
-| Agent 概述 | `upstream/hermes-agent/README.md` | agent 版本、能力、架构 | 第 1 项（项目类型） |
-| Agent 配置 | `upstream/hermes-agent/AGENTS.md` | agent 工作规则、工具链、安全约束 | 第 2/7 项 |
-| Agent 工具 | `upstream/hermes-agent/src/tools/` 或 `tools/` | agent 可调用的工具清单（工具名/参数/用途） | 第 11 项（可复用稳定单元） |
-| Agent 插件 | `custom/hermes-agent-plugins/` 或 `plugins/` | 项目自定义的 agent 插件 | 第 11 项 |
-| Agent 版本 | `upstream/hermes-agent/pyproject.toml` 或 `package.json` | agent 运行时版本 | 第 4 项（技术栈） |
+| Agent 概述 | `<agent-dir>/README.md` | agent 版本、能力、架构 | 第 1 项（项目类型） |
+| Agent 配置 | `<agent-dir>/AGENTS.md` | agent 工作规则、工具链、安全约束 | 第 2/7 项 |
+| Agent 工具 | `<agent-dir>/src/tools/` 或 `tools/` | agent 可调用的工具清单（工具名/参数/用途） | 第 11 项（可复用稳定单元） |
+| Agent 插件 | `<project-plugins-dir>/` 或 `plugins/` | 项目自定义的 agent 插件 | 第 11 项 |
+| Agent 版本 | `<agent-dir>/pyproject.toml` 或 `package.json` | agent 运行时版本 | 第 4 项（技术栈） |
 
 > 生成的目标技能的 reference-manual.md 须含"AI Agent 运行时"段，记录 agent 版本、能力清单、工具链、配置方式、插件清单。dev-guide.md 须含"如何配置 agent"指引。
 
@@ -89,7 +89,7 @@ graphify export callflow-html                    # Mermaid 调用流（用于组
 
 ## 探查清单（通用）
 
-> **工具使用原则**：每项探查优先用运行时工具（gitnexus/graphify/claude-mem/ocr/gsd-tools）+ Claude Code 原生能力（Read/Glob/Grep/LSP/WebSearch/Task），降级到 grep+读文件。以下是 14 项特征卡的工具使用矩阵。
+> **工具使用原则**：每项探查优先用运行时工具（gitnexus/graphify/claude-mem/ocr/gsd-tools）+ Claude Code 原生能力（Read/Glob/Grep/LSP/WebSearch/Task），降级到 grep+读文件。以下是 16 项特征卡的工具使用矩阵。
 
 ### 特征卡工具使用矩阵（每项探查的工具优先级 + 降级策略）
 
@@ -107,8 +107,10 @@ graphify export callflow-html                    # Mermaid 调用流（用于组
 | 10 | 环境与外部资源 | gitnexus `route_map` + gitnexus `tool_map` + Read .env/docker-compose | Grep "host\|port\|url\|connection" |
 | 11 | 可复用稳定单元 | **gitnexus `context <symbol>`**（360 度上下文）+ **graphify `query "stable units"`** | Grep "export\|module.exports" + Read 组件目录 |
 | 12 | 数据规范 | gitnexus `query "data models"` + Read schema/migration/ORM | Grep "CREATE TABLE\|schema\|model" |
-| 13 | 四层认知基底 | graphify `explain "god nodes"` + claude-mem `search "cognition baseline"` | 手动盘点（Read + Grep） |
+| 13 | 五层认知基底 | graphify `explain "god nodes"` + claude-mem `search "cognition baseline"` | 手动盘点（Read + Grep） |
 | 14 | 领域知识 | gitnexus `query "domain entities"` + claude-mem `search "domain knowledge"` + WebSearch 行业标准 | Read 领域模型 + Grep 业务关键词 |
+| 15 | 编排调用关系及约束 | **graphify `path "ModuleA" "ModuleB"`**（最短依赖路径）+ **gitnexus `trace <entry> <register>`**（调用链） | Grep "^import.*from" + madge 循环检测 |
+| 16 | 详尽构件库清单（全量） | **gitnexus `analyze` + `gitnexus mcp`**（全量符号索引）+ **graphify `.`**（全量知识图） | `find` + `grep export` 机械枚举 + 计数核验 |
 
 > **Dynamic Workflows 场景**：如果项目大型（>100 文件），探查阶段可用 Dynamic Workflow 并行扇出三路子代理（结构/规范/代码组织），每路用不同的运行时工具，最后交叉验证特征卡。降级：传统 Task(subagent) 三路并行。
 
@@ -203,13 +205,480 @@ graphify export callflow-html                    # Mermaid 调用流（用于组
 - CI/CD：.github/workflows、Jenkinsfile、部署流程
 ```
 
+### C+. 详尽组件库清单与调用链路分析（Exhaustive Inventory + Call-Chain Analysis）
+
+> **铁律：特征卡第 11 项与 reference-manual §4/§5/§6 不允许用"代表性样本"填充。** 必须按本节方法论做**全量穷举 + 调用链路分析 + 编排约束推导**，产出可被 `find` 计数核验的完整清单。
+>
+> **★通用性铁律：swarm-yuan 是研发范式提示词，不预设项目是前端/后端/全栈/移动/桌面/库。** 以下方法论按"先探查项目形态 → 再选择对应维度"的动态适配方式执行。每节的"维度表"列出按探查结果应枚举的构件类型——**只枚举项目实际存在的维度，不枚举不存在的**。
+>
+> 典型反模式（须杜绝）：探查到 85 个组件只列 10 个；依赖链路写成"模块A→模块B"的骨架树而无挂载顺序/跨模块边界/注册机制；接口清单写"GET/POST /api/xxx"而无具体端点与 handler；**对纯后端项目却按前端维度（.vue/store/bootstrap）枚举=维度错配**。
+
+#### C+.0 项目形态判定（先于一切枚举）
+
+探查第一步：判定项目形态，决定后续枚举哪些维度。**不预设——按探查到的文件类型/框架特征动态判定。**
+
+| 探查信号 | 判定形态 | 后续枚举维度 |
+|---------|---------|-------------|
+| 有 `.vue`/`.svelte`/`.tsx`+`defineComponent`/`createApp` | 含前端 | UI 组件 + store + composable/hook + 路由 + 注册装配链路 |
+| 有 `@Controller`/`@RestController`/`router.get`/`app.get`/`Blueprint`/`FastAPI` | 含后端 | controller/route + service + repository/dao + middleware + ORM model |
+| 有 `package.json`+`electron`/`Electron`/`BrowserWindow` | 桌面应用 | 主进程+渲染进程+IPC+preload |
+| 有 `MainActivity`/`Info.plist`/`expo`/`flutter` | 移动端 | Activity/Fragment/Screen/Widget + 导航 + 平台桥接 |
+| 有 `go.mod`+`cmd/`/`Cargo.toml`+`src/main.rs`/`pom.xml`+`src/main/java` | 纯后端/CLI/库 | 按 §C+.1-B 后端维度 |
+| 有 `worker`/`consumer`/`@RabbitListener`/`@KafkaHandler`/`celery` | 含异步消费 | 消费者+生产者+队列拓扑+幂等键 |
+| 有 `Dockerfile`+`docker-compose`+多服务 | 微服务/多服务 | 每服务独立枚举 + 跨服务调用链 |
+| 只有 `src/`+导出、无入口（无 main/index） | 库 | 公共 API（导出函数/类/类型）+ 内部模块依赖 |
+
+> **判定产出**：记录"本项目含以下维度：[前端UI / 后端API / 异步消费 / 桌面IPC / 移动端 / 库导出 ...]"，后续 C+.1-C+.4 **只枚举列出的维度**。
+
+#### C+.0.5 框架探查（从依赖清单+注解+配置文件识别具体框架，激活规则集）
+
+> **★铁律：§C+.0 只判前端/后端/异步等大类，§C+.0.5 进一步识别具体框架。** 探查到什么框架，就激活 domain-knowledge.md 中对应的框架规则集 + §C+.1-B 框架特定构件枚举 + precheck.conf 框架配置变量。**不预设——按探查到的信号动态激活。**
+
+**探查方法：从构建文件依赖清单提取框架 starter**
+
+```bash
+# JVM 项目：从 pom.xml / build.gradle 提取框架依赖
+grep -hE 'spring-boot-starter|mybatis|lombok|sharding|spring-batch|dubbo|rocketmq|spring-kafka|spring-amqp|data-redis|quartz|elasticjob' \
+  pom.xml build.gradle 2>/dev/null | sort -u
+
+# Node 项目：从 package.json 提取框架依赖
+grep -hE '"express"|"koa"|"fastify"|"@nestjs"|"vue"|"react"|"svelte"|"element-ui"|"element-plus"|"antd"|"ant-design-vue"|"naive-ui"' \
+  package.json 2>/dev/null | sort -u
+
+# Go 项目：从 go.mod 提取框架依赖
+grep -hE 'gin|echo|fiber|gorm' go.mod 2>/dev/null | sort -u
+
+# Python 项目：从 pyproject.toml/requirements.txt 提取框架依赖
+grep -hE 'fastapi|django|flask|sqlalchemy|celery' pyproject.toml requirements.txt 2>/dev/null | sort -u
+
+# 从注解提取框架（Java）
+grep -rlE '@Data|@Slf4j|@Builder|@Mapper|@Transactional|@DubboService|@RocketMQMessageListener|@KafkaListener|@RabbitListener' src/ 2>/dev/null
+
+# 从配置文件提取框架
+find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2>/dev/null
+```
+
+**框架信号→规则集激活表：**
+
+| 探查信号 | 激活规则集 | 规则集要点（详见 domain-knowledge.md） |
+|---------|-----------|--------------------------------------|
+| `spring-boot-starter` in pom/gradle | `spring-boot` | @Transactional 代理/回滚/注入/Configuration |
+| `mybatis` starter / `@Mapper` | `mybatis` | #{} vs ${} / Mapper↔XML / N+1 / foreach |
+| `lombok` / `@Data`/`@Slf4j` | `lombok` | @Data+JPA / @Slf4j 字段名 / @Builder 反序列化 |
+| `sharding-jdbc`/`shardingsphere` | `sharding` | 分片键必含 / 广播表只读 / 绑定表 JOIN |
+| `spring-boot-starter-batch` | `spring-batch` | Step 三件套 / @StepScope / JobRepository 事务 |
+| `dubbo` starter / `@DubboService` | `dubbo` | 超时重试幂等 / 注册中心兼容 / 泛化调用安全 |
+| `rocketmq` starter / `@RocketMQMessageListener` | `rocketmq` | 消费幂等 / 顺序消息 / 事务消息回查 |
+| `spring-kafka` / `@KafkaListener` | `kafka` | offset 语义 / 分区vs消费者 / 幂等生产者 |
+| `spring-amqp` / `@RabbitListener` | `rabbitmq` | 消费幂等 / 死信队列 / 消息确认 |
+| `spring-boot-starter-data-redis` | `redis` | 穿透/击穿/雪崩 / 分布式锁 / 序列化 |
+| `quartz` / `@Scheduled` | `quartz` | 分布式调度锁 / 幂等执行 / cron |
+| `elasticjob` | `elasticjob` | 分片调度 / 失效转移 / 幂等 |
+| `mysql-connector` / `jdbc:mysql://` | `mysql` | 索引覆盖 / 大表分页 / 事务隔离 / utf8mb4 |
+| `mssql-jdbc` / `jdbc:sqlserver://` | `sqlserver` | NOLOCK 脏读 / 锁升级 / 事务隔离 |
+| `postgresql` / `jdbc:postgresql://` | `postgresql` | VACUUM / 序列 / JSONB / 索引类型 |
+| `element-ui`/`element-plus` | `element` | 按需引入 / 表单校验 / 虚拟滚动 / i18n |
+| `antd`/`ant-design-vue` | `antd` | 按需引入 / useForm / 虚拟滚动 / ConfigProvider |
+| `vue` v3 | `vue` | ref/reactive / 生命周期 / defineProps / Teleport |
+| `react` | `react` | Hooks 规则 / useEffect 依赖 / key 稳定 |
+| `naive-ui` | `naiveui` | 按需引入 / 主题 / 表单校验 / 虚拟滚动 |
+
+> **判定产出**：记录"本项目激活以下框架规则集：[spring-boot, mybatis, lombok, sharding, ...]"。后续 §C+.1-B 枚举框架特定构件 / §C+.3 推导框架约束 / domain-knowledge 引用框架规则表 / precheck.conf 填充框架配置变量。
+
+#### C+.1 全量穷举方法论（按维度动态适配，确保一个不漏）
+
+**Step 1：按项目形态机械枚举（根据 C+.0 判定结果选择维度）**
+
+**C+.1-F 前端 UI 维度（仅当 C+.0 判定含前端时）**
+```bash
+# UI 组件（按项目框架：Vue/Svelte/React/Angular）
+find <可改源码目录> -type f \( -name "*.vue" -o -name "*.svelte" -o -name "*.tsx" -o -name "*.ts" \) -path "*/components/*" ! -path "*test*" | sort
+# 或按 import 用法识别组件：grep "import .* from.*components" 找全部被引用的组件文件
+
+# 状态管理（按项目框架：Pinia/Vuex/Redux/Zustand/MobX/Provider）
+grep -rlE "defineStore|createStore|createSlice|create\(|useReducer|Provider.*value" <可改源码目录>
+
+# Composable/Hook（Vue composables / React hooks）
+find <可改源码目录> -type f \( -name "use*.ts" -o -name "use*.tsx" -o -name "use*.js" \) ! -path "*test*"
+
+# 路由定义
+grep -rlE "routes|createRouter|RouterProvider|<Route" <可改源码目录>
+```
+
+**C+.1-B 后端 API 维度（仅当 C+.0 判定含后端时）**
+```bash
+# Controller / Route handler（按框架：Express/Koa/Fastify/Spring/FastAPI/Django/Gin/Echo）
+grep -rlE "router\.(get|post|put|delete|patch)|@(Rest)?Controller|@Get|@Post|app\.(get|post)|Blueprint\.route|APIRouter\(\)" <可改源码目录>
+
+# Service / 业务逻辑层
+find <可改源码目录> -type f \( -name "*.ts" -o -name "*.py" -o -name "*.go" -o -name "*.java" \) -path "*/service*" -o -path "*/usecase*" -o -path "*/domain*"
+
+# Repository / DAO / 数据访问层
+find <可改源码目录> -type f \( -path "*/repository*" -o -path "*/dao*" -o -path "*/mapper*" -o -path "*/model*" \) ! -path "*test*"
+
+# Middleware / 中间件 / 拦截器
+grep -rlE "middleware|@Interceptor|@Guard|beforeEach|app\.use\(" <可改源码目录>
+
+# ORM Model / Schema / Migration
+find <可改源码目录> -type f \( -path "*/migration*" -o -path "*/schema*" -o -name "*.prisma" -o -name "schema.*" \)
+grep -rlE "@Entity|@Table|Schema\(|mongoose\.|sequeliz|CREATE TABLE" <可改源码目录>
+```
+
+**C+.1-FW 框架特定构件枚举（仅当 §C+.0.5 探查到对应框架时执行）**
+
+> 以下按激活的框架规则集动态选择，只枚举探查到的框架的特定构件。
+
+```
+# === spring-boot 规则集 ===
+# @Configuration + @Bean（DI 配置中枢）
+grep -rlE '@Configuration|@Bean' <可改源码目录> --include='*.java'
+# application.yml / application-{profile}.yml / bootstrap.yml
+find <可改源码目录> -name 'application*.yml' -o -name 'bootstrap.yml'
+
+# === mybatis 规则集 ===
+# Mapper 接口
+grep -rlE '@Mapper|@Repository' <可改源码目录> --include='*.java'
+# XML mapper 文件（SQL 注入实际发生处）
+find <可改源码目录> -name '*Mapper.xml' -o -name '*mapper.xml'
+
+# === lombok 规则集 ===
+grep -rlE '@Data|@Builder|@Slf4j|@Getter|@Setter|@RequiredArgsConstructor' <可改源码目录> --include='*.java'
+
+# === sharding 规则集 ===
+grep -rlE 'ShardingRule|ShardingTable|PreciseShardingAlgorithm|sharding-key' <可改源码目录> --include='*.java' --include='*.yml'
+
+# === spring-batch 规则集 ===
+grep -rlE 'Job|Step|ItemReader|ItemProcessor|ItemWriter|@StepScope|@JobScope' <可改源码目录> --include='*.java'
+
+# === dubbo 规则集 ===
+grep -rlE '@DubboService|@DubboReference|@Service.*dubbo' <可改源码目录> --include='*.java'
+find <可改源码目录> -name 'dubbo*.yml' -o -name 'dubbo*.properties'
+
+# === rocketmq 规则集 ===
+grep -rlE '@RocketMQMessageListener|RocketMQTemplate|DefaultMQPushConsumer' <可改源码目录> --include='*.java'
+
+# === kafka 规则集 ===
+grep -rlE '@KafkaListener|KafkaTemplate|@KafkaHandler' <可改源码目录> --include='*.java'
+
+# === rabbitmq 规则集 ===
+grep -rlE '@RabbitListener|RabbitTemplate|@Queue|@Exchange' <可改源码目录> --include='*.java'
+
+# === redis 规则集 ===
+grep -rlE 'RedisTemplate|StringRedisTemplate|@Cacheable|@CacheEvict|RedissonClient' <可改源码目录> --include='*.java'
+
+# === quartz 规则集 ===
+grep -rlE '@Scheduled|Scheduler|JobDetail|CronTrigger|@SchedulerLock' <可改源码目录> --include='*.java'
+
+# === element / antd / naiveui 规则集（前端）===
+grep -rlE 'el-|ElButton|ElTable|ElForm' <可改源码目录> --include='*.vue' --include='*.ts'   # Element
+grep -rlE 'a-|AntButton|AntTable|AntForm' <可改源码目录> --include='*.vue' --include='*.tsx' # Ant Design
+grep -rlE 'n-|NButton|NDataTable|NForm' <可改源码目录> --include='*.vue' --include='*.ts'    # NaiveUI
+```
+
+**C+.1-A 异步/事件维度（仅当 C+.0 判定含异步消费时）**
+```bash
+# 消费者/生产者/队列定义
+grep -rlE "@RabbitListener|@KafkaHandler|@EventListener|celery|worker|consumer|Producer|publish|emit" <可改源码目录>
+# 队列拓扑定义（exchange/queue/topic 定义文件）
+find <可改源码目录> -type f \( -name "*queue*" -o -name "*topology*" -o -name "*exchange*" \)
+```
+
+**C+.1-D 桌面/移动维度（仅当 C+.0 判定含桌面/移动时）**
+```bash
+# 桌面：主进程/渲染进程/preload/IPC
+grep -rlE "ipcMain|ipcRenderer|contextBridge|BrowserWindow|app\.whenReady" <可改源码目录>
+# 移动：Activity/Fragment/Screen/Widget + 导航
+grep -rlE "Activity|Fragment|Composable|Screen|Navigator|expo|flutter.*Widget" <可改源码目录>
+```
+
+**C+.1-L 库导出维度（仅当 C+.0 判定为库时）**
+```bash
+# 公共 API：入口文件的导出
+cat <入口 index.ts/index.js/__init__.py/mod.go/lib.rs> # 提取全部 export
+# 内部模块依赖
+grep -rn "^import\|^from\|^use " <可改源码目录> | grep -v "test"
+```
+
+**C+.1-T 通用维度（所有项目都枚举）**
+```bash
+# 类型定义（TS 项目）
+grep -rlE "^export (interface|type) " <可改源码目录> --include="*.ts" --include="*.d.ts"
+# 工具函数
+find <可改源码目录> -type f \( -name "util*" -o -name "helper*" -o -name "common*" \) ! -path "*test*"
+# 配置/常量
+find <可改源码目录> -type f \( -name "config*" -o -name "constant*" -o -name "env*" \) ! -path "*node_modules*"
+```
+
+**Step 2：解析每个文件的导出签名（非只数文件数）**
+
+对 Step 1 枚举到的每个文件，提取其**全部导出**（函数名/类名/store名/类型名/组件名 + 签名）：
+
+```bash
+# TS/JS：提取所有 export 行（签名级）
+grep -nH "^export " <文件列表>
+# Python：提取 def/class
+grep -nH "^def \|^class \|^async def " <文件列表>
+# Go：提取 func/type
+grep -nH "^func \|^type " <文件列表>
+# Java：提取 public class/method
+grep -nH "public class\|public.*(" <文件列表>
+# 前端组件签名（若有）：Props/Emits/Slots
+grep -nH "defineProps\|interface.*Props\|withDefaults\|defineEmits\|defineSlots" <组件文件>
+```
+
+> 优先用 **gitnexus `context <symbol>`**（360度上下文：定义+被引用+引用关系）或 **graphify `explain <symbol>`**（节点邻域）系统性提取签名，而非逐文件 grep。
+
+**Step 3：计数核验（防止样本化填充）**
+
+```
+对每个维度独立核验：
+  枚举计数 = 该维度 find/grep 命令输出的文件数
+  清单计数 = reference-manual 对应章节的表格行数（去重后）
+  断言：清单计数 ≥ 枚举计数 × 0.95（允许少量非公开/内部文件不列，但偏差须注明原因）
+```
+
+> 若某维度清单计数远小于枚举计数（如 10 vs 85），**禁止提交**，回到 Step 2 继续补全该维度。
+
+#### C+.2 调用链路分析方法论（按项目形态选择链路模型）
+
+**铁律：依赖链路不是"模块A→模块B"的骨架树。** 链路模型按项目形态选择——**前端追注册装配+组件挂载树；后端追请求处理管道+分层依赖；微服务追跨服务调用链**。不预设某一种。
+
+**按形态选择链路模型（根据 C+.0 判定）：**
+
+| 项目形态 | 链路模型 | 追查重点 |
+|---------|---------|---------|
+| 含前端 | §C+.2-F 注册装配链路 + 组件挂载树 + store 依赖 | 注册顺序/feature-gate/静态vs动态路由/跨模块引用 |
+| 含后端 | §C+.2-B 请求处理管道 + 分层依赖 | 入口→中间件→路由→controller→service→repo→DB/外部 |
+| 含异步 | §C+.2-A 消息流转链路 | 生产者→队列→消费者→副作用+幂等 |
+| 微服务 | §C+.2-M 跨服务调用链 | 服务间同步/异步调用/共享DB/网关/trace透传 |
+| 桌面 | §C+.2-D IPC 链路 | 主进程↔preload↔渲染进程 IPC 通道 |
+| 库 | §C+.2-L 导出依赖图 | 公共API→内部模块依赖 |
+
+---
+
+**§C+.2-F 前端注册装配链路 + 组件挂载树（仅含前端时）**
+
+Layer 1 注册装配链路：
+```
+追查路径：
+  应用入口（main.ts/index.ts/App.vue/main.jsx）
+    → 注册中枢（bootstrap.ts/register.ts/plugin install/app.use）
+      → 各功能模块的 registerXxx(app) 或 app.use(plugin)
+        → registerRoute / registerNav / registerComponent / 路由表
+          → 视图组件 → 子组件
+```
+分析方法：
+1. 找入口（package.json scripts.dev / index.html script src / main 入口）
+2. grep 入口文件的 `import` 与 `createApp`/`app.use`/`register` 调用
+3. 追每个 register/install 函数体内挂载了什么（路由/导航/组件/store/插件）
+4. 记录：**注册顺序**、**feature-gate**（受开关控制的注册）、**动态 vs 静态路由**
+
+Layer 2 模块间依赖图：
+```bash
+grep -rn "^import.*from" <可改源码目录> | grep -oE "from ['\"][^'\"]+['\"]" | sort -u
+# 或：graphify path "ModuleA" "ModuleB" / gitnexus trace
+```
+产出模块依赖矩阵（Mermaid，节点用项目实际模块名）。**关键：识别跨模块边界**——ModuleA 能否直接 import ModuleB 的组件？还是只能经 store/adapter？
+
+Layer 3 组件挂载树（每个容器视图递归追 import）：
+```
+ContainerView (路由 /xxx)
+  ├─ import ChildA from './ChildA'
+  ├─ import CrossModuleComp from '<other-module>/components/...'  ← 跨模块引用
+  └─ import { useContainerStore } from '<this-module>/store'
+       ├─ import { useOtherStore } from '<other-module>/stores/...'  ← store 跨模块
+       └─ import * as someApi from '<foundation>/api/xxx'
+```
+
+Layer 4 store/服务依赖链路：
+```
+每个 store：import 了哪些其他 store？哪些组件消费它？调用了哪些 API？
+```
+
+---
+
+**§C+.2-B 后端请求处理管道 + 分层依赖（仅含后端时）**
+
+Layer 1 请求处理管道（从入口到 DB/外部副作用）：
+```
+追查路径：
+  服务入口（server.ts/index.js/main.py/main.go/Application.java）
+    → 全局中间件（cors/bodyParser/auth/errorHandler/logging）
+      → 路由挂载（app.use(router) / @ComponentScan / include_router）
+        → 路由级中间件/守卫（@Guard/beforeEach/jwt verify）
+          → controller handler
+            → service/usecase（业务逻辑）
+              → repository/dao（数据访问）
+                → DB / 外部 API / 缓存 / MQ
+```
+分析方法：
+1. 找服务入口（scripts.start / main 函数 / Application 启动类）
+2. grep 入口的中间件注册顺序（`app.use` / `@Middleware` / `add_middleware`）
+3. 追路由挂载：哪些 router 被挂载、prefix 是什么、挂载顺序
+4. 对每个端点追：controller → service → repository → DB/外部，记录完整调用链
+5. 记录：**中间件链顺序**、**认证在哪层**、**事务边界在哪层**、**外部副作用在哪层**
+
+Layer 2 分层依赖矩阵：
+```bash
+# 按分层目录聚合 import（service→repository / controller→service）
+grep -rn "^import\|^from\|^use " <可改源码目录> | grep -E "service|repository|controller|domain" | sort -u
+```
+产出分层依赖矩阵（Mermaid）。**关键：识别分层边界**——controller 能否直接访问 repository？domain 层能否 import ORM/框架？
+
+Layer 3 数据流图（每条核心业务的数据流）：
+```
+Endpoint POST /api/xxx
+  → Controller.handler(req)
+    → Service.method(dto)
+      → Repository.find/query/save(entity)
+        → ORM → DB
+      → EventBus.publish(event)  ← 副作用
+    → return ResponseDto
+```
+
+Layer 4 外部依赖链路：
+```
+每个 service：调用了哪些外部资源？DB/缓存/MQ/第三方API？
+→ 记录：连接方式、事务边界、超时/重试策略、幂等性
+```
+
+---
+
+**§C+.2-A 异步消息流转链路（仅含异步消费时）**
+
+```
+追查路径：
+  生产者（publish/emit/send）
+    → 队列/Topic/Exchange（拓扑定义）
+      → 消费者（@Listener/consumer/worker）
+        → handler → service → 副作用（DB/通知/下游消息）
+```
+记录：**队列拓扑**、**消费幂等键**、**重试/DLQ 策略**、**消息时序保证**、**背压/限流**。
+
+---
+
+**§C+.2-M 微服务跨服务调用链（仅微服务时）**
+
+```
+追查路径：
+  API Gateway / BFF
+    → 服务A（同步 REST/gRPC 调用服务B）
+      → 服务B
+    → 服务A（异步发消息到队列，服务C消费）
+      → 服务C
+```
+记录：**同步调用链长度**、**共享DB**、**traceId透传**、**熔断/降级**、**Saga/Outbox 模式**。
+
+#### C+.3 编排调用关系及约束推导（从链路分析中提炼规则）
+
+> **这是"研发流程"的核心**：不仅是列出组件，还要提炼出**新功能开发时必须遵守的编排约束**。约束类别按项目形态动态选择——**只推导项目实际存在的约束类别**。
+
+**按形态选择约束类别（根据 C+.0 判定）：**
+
+| 项目形态 | 适用的约束类别 |
+|---------|-------------|
+| 含前端 | 导入方向/跨模块边界/注册顺序/feature-gate/路由挂载/状态所有权/测试边界 |
+| 含后端 | 分层依赖方向/事务边界/DTO转换边界/中间件顺序/认证层/外部副作用隔离/测试边界 |
+| 含异步 | 消费幂等/消息时序/重试DLQ/生产消费解耦 |
+| 微服务 | 服务间调用方向/共享DB禁止/trace透传/熔断降级/Saga补偿 |
+| 通用 | 改造分类与文件落位/版本锁定/可改vs只读边界 |
+
+**约束推导表（每条须有代码证据，示例用项目实际名替换）：**
+
+| 约束类别 | 推导方法 | 示例格式 |
+|---------|---------|---------|
+| **导入方向约束**（前端） | 分析模块依赖矩阵，识别允许的依赖方向 | "ModuleA→ModuleB 允许；反向禁止（避免循环）" |
+| **分层依赖方向约束**（后端） | 分析分层依赖矩阵，识别允许的层间依赖 | "Controller→Service→Repository 允许；Repository→Controller 禁止；Domain 不得 import ORM/框架" |
+| **跨模块/层边界约束** | 分析跨边界 import，区分"允许直接引用"vs"只能经接口/adapter" | "ModuleA 可 import ModuleB 组件；但 ModuleA 的 service 只能经接口访问 ModuleC，不直接 import 实体" |
+| **注册/启动顺序约束**（前端） | 分析注册链路的执行顺序 | "registerA 必须在 registerB 后（A 依赖 B 已注册）" |
+| **中间件顺序约束**（后端） | 分析中间件注册顺序 | "auth 中间件须在 route handler 前；errorHandler 须最后注册" |
+| **事务边界约束**（后端） | 分析事务开启/提交/回滚的位置 | "事务在 Service 层开启（@Transactional），Repository 不开事务；跨 service 调用不用同一事务" |
+| **Feature-gate 约束** | 分析 feature flag 判断 | "ModuleB 受 ENV_FLAG 控制；ModuleA 在 ModuleB=false 时须降级" |
+| **路由挂载约束**（前端） | 分析静态 vs 动态路由 | "ModuleA 子路由静态定义；ModuleC detail 路由动态 addRoute" |
+| **状态所有权约束**（前端） | 分析 store 间数据流向 | "ModuleA store 聚合 B/C/D 数据，是只读消费者；某 bus 是单例" |
+| **消费幂等约束**（异步） | 分析消费者幂等键设计 | "消费者须按 msgId 去重；无幂等键=重复消费风险" |
+| **服务调用方向约束**（微服务） | 分析服务间调用拓扑 | "服务A→服务B 允许；服务B→服务A 禁止（避免循环依赖）" |
+| **改造分类约束**（通用） | 分析文件位置决定改造机制 | "可改目录纯新增=扩展类；只读骨架改=注入类（patch/override）" |
+| **测试边界约束**（通用） | 分析测试配置 | "测试框架只跑可改目录；只读区经注入间接覆盖" |
+
+**推导流程（每条约束须有代码证据）：**
+```
+1. 从 C+.2 的依赖矩阵，识别所有跨边界 import/调用边
+2. 对每条边判断：允许的依赖 vs 应避免的反向依赖？
+   → 依据：项目既有分层约定 + 循环依赖检测（madge/graphify）
+3. 从注册链路/中间件链，识别顺序与 feature-gate
+4. 从路由表/事务注解，识别挂载方式与事务边界
+5. 把每条约束写成"因为 [代码证据]，所以 [约束规则]，违反则 [后果]"
+6. 写入 dev-guide.md "编排约束"段 + reference-manual.md §5 约束注释
+```
+
+#### C+.4 接口清单全量枚举（按接口形态适配）
+
+**按探查到的接口形态选择枚举方式（不预设 REST）：**
+
+```bash
+# REST/HTTP 端点（Express/Koa/Fastify/Spring/FastAPI/Gin/Django）
+grep -nH "router\.(get|post|put|delete|patch)|@(Get|Post|Put|Delete|RequestMapping)|app\.(get|post)|@app\.route|APIRouter" <路由文件列表>
+# 提取 prefix
+grep -nH "prefix|Router(\{|Blueprint\(|APIRouter\(" <路由文件列表>
+# 提取认证中间件
+grep -nH "auth|jwt|session|guard|middleware|@Guard" <路由文件列表>
+
+# GraphQL（resolver/schema）
+grep -rlE "resolver|@Query|@Mutation|@Field|@ObjectType|buildSchema|gql\`" <可改源码目录>
+# 枚举每个 resolver 的 Query/Mutation
+
+# gRPC（.proto）
+find <可改源码目录> -name "*.proto" | xargs grep -H "rpc \|service "
+
+# 消息队列消费者（作为"接口"枚举）
+grep -nH "@RabbitListener|@KafkaHandler|@EventListener|@Consumer|celery\.shared_task" <可改源码目录>
+
+# 库的公共 API（导出函数即接口）
+grep -nH "^export " <库入口文件>
+```
+
+产出**每接口文件一张端点表**：
+| 方法/类型 | 完整路径/名称 | handler/函数 | 认证 | 用途 | 复用方式 |
+|----------|-------------|-------------|------|------|---------|
+（一行一个端点，prefix 拼接到完整路径；GraphQL 列 Query/Mutation 名+返回类型；gRPC 列 service.method；MQ 列 queue+handler。不写通配符占位）
+
+#### C+.5 产出校验清单（按维度动态核验，探查完成前必过）
+
+> **只核验 C+.0 判定存在的维度**。不存在的维度跳过（如纯后端项目不核验"组件穷举"）。
+
+**前端维度（仅含前端时）：**
+- [ ] **UI 组件穷举**：§4 组件表行数 ≥ `find` 组件文件计数 × 0.95，按模块分组，每行含路径/用途/稳定性
+- [ ] **Store 穷举**：§4 store 表覆盖全部状态管理调用，每行含暴露的 state/action
+- [ ] **注册装配链路**：§5 含注册顺序 + feature-gate + 静态/动态路由
+- [ ] **组件挂载树**：§5 含每个容器视图的挂载树（含跨模块引用注释）
+- [ ] **store 依赖链路**：§5 含 store 间依赖 + 消费者反查
+
+**后端维度（仅含后端时）：**
+- [ ] **Controller/Route 穷举**：§6 每路由文件一张端点表，逐端点列出
+- [ ] **Service/Repository 穷举**：§4 含全部 service/repository + 签名
+- [ ] **请求处理管道**：§5 含中间件链顺序 + 认证层 + 事务边界
+- [ ] **分层依赖矩阵**：§5 含 Mermaid 分层图 + 允许/禁止方向
+- [ ] **数据流图**：§5 含核心业务的数据流（controller→service→repo→DB/外部）
+
+**异步维度（仅含异步时）：**
+- [ ] **生产者/消费者穷举**：§4 含全部生产者+消费者+队列拓扑
+- [ ] **消息流转链路**：§5 含生产→队列→消费→副作用链路
+- [ ] **幂等/DLQ/重试策略**：dev-guide §8 含幂等约束
+
+**通用维度（所有项目）：**
+- [ ] **类型定义穷举**：§9 覆盖全部 export interface/type（TS）或等效
+- [ ] **编排约束**：dev-guide §8 含按形态推导的约束类别，每条有代码证据
+- [ ] **接口全量**：§6 无通配符占位（逐端点/逐 resolver/逐 method 列出）
+- [ ] **计数核验**：每个维度清单计数 ≥ 枚举计数 × 0.95
+
 ## 各语言项目探查要点
 
 ### Node.js / 前端
 - package.json: name, version, scripts, engines, type, dependencies/devDependencies 关键框架
 - 构建配置：vite.config / webpack.config / tsconfig / electron-builder.yml
 - 目录：src/ packages/ apps/ monorepo?
-- overlay-fork 类：overlay/ upstream/ 分离、patch 机制（patches/series? inject 脚本?）、符号链接、alias 链
+- overlay-fork 类（可改层/只读层分离）：patch 机制（patch 清单文件 + inject 脚本?）、符号链接、alias 链
 
 ### Python
 - pyproject.toml / setup.py / requirements.txt: 依赖、版本、entry points
@@ -337,7 +806,10 @@ git --version; gh --version; docker --version
 
 ### 11. 可复用稳定单元清单（拼装式开发的核心依据）
 
-> 这是拼装式开发的关键。研发人员基于既有稳定单元（接口/组件/类/函数/方法）进行拼装，而非重复造轮子或侵入式重构。特征卡必须**准确、全面、完整**地盘点可复用单元，供目标技能的 dev-guide.md 和 spec-template.md 引用。
+> 这是拼装式开发的关键。研发人员基于既有稳定单元（接口/组件/类/函数/方法）进行拼装，而非重复造轮子或侵入式重构。
+>
+> **★铁律：本项不允许用"代表性样本"填充。必须按 §C+.1 全量穷举方法论做机械枚举 + 签名提取 + 计数核验，确保一个不漏。清单计数 ≥ 枚举计数 × 0.95。** 探查指南见上方 §C+.1-C+.5。特征卡填好后供目标技能的 dev-guide.md 和 spec-template.md 引用。
+> **★铁律：本项必须配套产出"编排调用关系及约束"（见 §C+.3），写入特征卡第 15 项与目标技能 dev-guide.md。** 只列清单不推约束 = 未完成。
 
 #### 11a. 可复用 API 接口
 | 接口签名 | 方法 | 路径 | 用途 | 认证 | 复用方式 |
@@ -349,7 +821,7 @@ git --version; gh --version; docker --version
 #### 11b. 可复用组件
 | 组件名 | 路径 | Props | 用途 | 复用方式 |
 |--------|------|-------|------|---------|
-| `<Button>` | @/components/... | type,onClick | 按钮 | import 直接用 |
+| `<Button>` | &lt;module&gt;/components/... | type,onClick | 按钮 | import 直接用 |
 （列出项目全部稳定 UI 组件，含 props 签名）
 
 #### 11c. 可复用类/函数/方法
@@ -363,13 +835,13 @@ git --version; gh --version; docker --version
 #### 11d. 可复用 Store（状态管理）
 | Store | 路径 | 暴露的状态/方法 | 复用方式 |
 |-------|------|----------------|---------|
-| `useCockpitStore` | store/cockpit | tasks, addTask, removeTask | 组件中调用 |
+| `useXxxStore` | store/xxx | state, actionA, actionB | 组件中调用 |
 （列出项目全部 Pinia/Vuex/Redux store）
 
 #### 11e. 可复用类型定义
 | 类型 | 路径 | 定义 | 复用方式 |
 |------|------|------|---------|
-| `TraceNode` | adapters/... | `{ id, name, cluster }` | import type |
+| `TraceNode` | adapters/... | `{ id, name, kind }` | import type |
 （列出项目全部 TS interface/type，供新功能直接引用）
 
 #### 11f. 稳定性标注
@@ -385,8 +857,8 @@ git --version; gh --version; docker --version
 - 业务规则：<关键规则>
 - 勾稽关系：<外键/聚合/关联>
 
-### 13. 四层认知基底（探查时记录基线，供 --cognition 体检对比）
-> 此项不是"额外填写"，而是把前 12 项的认知状态做一次总结，形成可对比趋势的基线。
+### 13. 五层认知基底（探查时记录基线，供 --cognition 体检对比）
+> 此项不是"额外填写"，而是把前 12 项的认知状态做一次总结，形成可对比趋势的基线。认知基底共五层（认知递进/思维语言/认知辩证/偏差防范/辩证认知），详见 `references/cognition-framework.md`。
 
 #### 13a. 认知映射表（六阶认知链落点）
 | 认知阶 | 项目落点 | 文件 |
@@ -408,11 +880,12 @@ git --version; gh --version; docker --version
 | 能耗 | store X 行/props X 个 | wc -l/awk |
 | 累积量 | TODO X 处/技术债 X 条 | grep TODO |
 
-#### 13c. 四层认知状态（探查时标注是否已建立）
-- 第一层 认知递进：☐已建立（特征卡 12 项完整 + 认知映射表）☐未建立
+#### 13c. 五层认知状态（探查时标注是否已建立）
+- 第一层 认知递进：☐已建立（特征卡前 12 项完整 + 认知映射表）☐未建立
 - 第二层 思维语言：☐已建立（spec 含 §14 交付衰减/§15 蓝图段）☐未建立
 - 第三层 认知辩证：☐已建立（workflow 4-Phase + 逻辑剃刀审查）☐未建立
 - 第四层 偏差防范：☐已建立（spec §16 偏差自检 + 谬误图谱）☐未建立
+- 第五层 辩证认知：☐已建立（spec §17 辩证映射 + 7 对辩证范畴）☐未建立
 ```
 
 ### 14. 领域知识识别（技术领域 + 业务领域）
@@ -467,7 +940,7 @@ Step 3: 推导客观规律
 
 | 分析步骤 | 具体产出 |
 |---------|---------|
-| Step 1 识别 | 识别到项目含 IM 通讯领域（依据：custom/client/chat/ 目录 + Matrix 协议依赖 + gateway-notice.ts） |
+| Step 1 识别 | 识别到项目含 IM 通讯领域（依据：`chat/` 目录 + Matrix/IRC/XMPP 协议依赖 + gateway/notice 相关文件） |
 | Step 2(1) 核心实体 | Message（消息）、Thread（会话线程）、Gateway（网关）——从代码类名提取 |
 | Step 2(2) 因果关系 | Gateway 状态变化 → 触发 Notice → 展示 Banner → 用户感知；消息发送 → 经过网关 → 落库 → 推送 |
 | Step 2(3) 客观约束 | 因为消息有时序性（代码证据：timeline 排序逻辑），所以消息顺序不可乱；因为已读状态会被多端同步（代码证据：多端 ACK 逻辑），所以已读须幂等；因为网关可能断线（代码证据：重连逻辑），所以离线消息须缓存 |
@@ -492,7 +965,60 @@ Step 3: 推导客观规律
 | DevOps | 构建可重复性？回滚机制？配置分离？监控覆盖？ |
 
 > 探查时从上表选取涉及领域作为**分析起点**，但每条规律须从项目代码证据推导，不可直接复制通用条目。precheck `--domain` 检查：reference-manual 领域知识段的每条规律是否标注了依据（代码证据/文档证据/行业常识）。
-```
+
+### 15. 编排调用关系及约束（从调用链路分析推导，必填）
+
+> **★铁律：特征卡第 11 项（稳定单元清单）必须配套本项。** 只列组件不推约束 = 未完成。
+> 推导方法论见上方 §C+.3。本项把 §C+.2 三层链路分析的结论结构化为研发约束，写入目标技能 dev-guide.md 的"编排约束"段。
+
+#### 15a. 导入方向与跨模块边界约束
+| 允许的依赖方向 | 禁止的反向依赖 | 代码证据 | 违反后果 |
+|--------------|--------------|---------|---------|
+| 模块A → 模块B（组件+store） | 模块B → 模块A（避免循环） | grep import 分析 | 循环依赖、构建失败 |
+
+#### 15b. 注册/装配顺序约束
+| 注册顺序 | 依赖关系 | feature-gate | 代码证据 |
+|---------|---------|-------------|---------|
+| registerXxx 在 registerYyy 后 | XxxStore 依赖 YyyStore 已注册 | ENV_FLAG_XXX | bootstrap 注册调用顺序 |
+
+#### 15c. 路由挂载约束
+| 路由 | 挂载方式 | 定义位置 | 代码证据 |
+|------|---------|---------|---------|
+| /xxx | 静态定义 | router/index.ts (patch NNN) | grep addRoute |
+| /xxx/:id | 动态 addRoute | registerXxxRoutes() | bootstrap 注册 |
+
+#### 15d. 改造分类与文件落位约束
+| 变更类型 | 落位目录 | 机制 | 约束 |
+|---------|---------|------|------|
+| 纯新增（扩展类） | 可改目录/&lt;module&gt;/ | 项目允许的扩展机制（alias/插件/模块注册） | 不碰只读骨架 |
+| 骨架修改（注入类） | 项目允许的注入位置（patch/override/monkey-patch） | 构建时注入或运行时替换 | 须记录在变更清单 |
+
+#### 15e. 状态所有权与数据流约束
+| 数据所有者 | 消费者 | 访问方式 | 代码证据 |
+|----------|--------|---------|---------|
+| StoreA（owner） | StoreB（只读） | adapter 转换 | store 间 import |
+
+#### 15f. 测试边界约束
+| 测试范围 | include 规则 | 约束 | 代码证据 |
+|---------|-------------|------|---------|
+| custom/**/*.test.ts | vitest.config.ts | upstream 不直接单测 | vitest.config |
+
+> 每条约束须标注代码证据（文件:行 或 grep 命令）。precheck `--layer` 门禁可校验导入方向；`--frontend` 门禁校验循环依赖。
+
+### 16. 详尽构件库清单（全量，从 §C+.1 全量穷举得出）
+
+> **★铁律：本项是特征卡第 11 项的"全量保障"。** 第 11 项列稳定单元清单，本项记录全量枚举的计数核验结果，确保不漏。
+> 按 §C+.0 项目形态判定 → §C+.1 按维度全量穷举 → 每维度计数核验（清单计数 ≥ 枚举计数 × 0.95）。
+> 产出写入 reference-manual.md §4（全量构件表）+ §6（全量接口端点表）+ §9（全量 store/类型表）。
+
+#### 16a. 枚举计数核验表
+| 维度 | find/grep 命令 | 枚举计数 | 清单计数 | 覆盖率 | 偏差说明 |
+|------|---------------|---------|---------|--------|---------|
+| 前端 UI 组件 | `find ... \( -name "*.vue" -o -name "*.svelte" -o -name "*.tsx" -o -name "*.jsx" \)` | | | ≥95% | |
+| 后端 controller | `grep -rl "router\.(get\|post..."` | | | ≥95% | |
+| store | `grep -rl "defineStore\|createStore\|createSlice\|useReducer\|Provider.*value"` | | | ≥95% | |
+| 类型定义 | `grep -rl "^export (interface\|type)"` | | | ≥95% | |
+（按 §C+.0 判定的维度填，不存在的维度不填）
 
 ## 探查不到时的处理
 
