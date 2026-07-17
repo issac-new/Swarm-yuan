@@ -265,6 +265,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 # >>> framework-signal-index >>>
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
+| lombok | 依赖 | `org.projectlombok:lombok` / `org.projectlombok:lombok-mapstruct-binding` | 高 |
+| lombok | 注解 | `@Data` / `@Getter` / `@Setter` / `@Builder` / `@Jacksonized` / `@AllArgsConstructor` / `@NoArgsConstructor` / `@RequiredArgsConstructor` / `@Slf4j` / `@Log` / `@SneakyThrows` / `@Cleanup` / `@NonNull` / `@Value` / `@EqualsAndHashCode` / `val` / `var` | 高 |
+| lombok | 配置 | `lombok.config`（含 `config.stopBubbling` / `lombok.log.fieldName` / `lombok.copyJacksonAnnotationsToAccessors` / `lombok.anyConstructor.addConstructorProperties` 等 key） | 高 |
+| lombok | 代码 | `import lombok.` / `import lombok.experimental.` / `@Jacksonized` / `@SuperBuilder` / `@Accessors` / `@Locked` | 高 |
+| lombok | 工具 | `java -jar lombok.jar delombok` / `lombok-maven-plugin` / `org.mapstruct:mapstruct-processor` 与 `lombok` 同 module 路径 | 中 |
 | mybatis | 依赖 | `org.mybatis:mybatis` / `org.mybatis:mybatis-spring` / `org.mybatis.spring.boot:mybatis-spring-boot-starter` / `com.baomidou:mybatis-plus` / `com.baomidou:mybatis-plus-boot-starter` | 高 |
 | mybatis | 文件 | `**/resources/**/*Mapper.xml` / `**/mapper/**/*.xml` / `mybatis-config.xml` | 高 |
 | mybatis | 注解 | `@Mapper` / `@MapperScan` / `@Intercepts` / `@TableLogic` / `@TableName` / `@TableId` / `@TableField` | 高 |
