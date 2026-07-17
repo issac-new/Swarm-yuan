@@ -97,9 +97,10 @@ inject_frameworks() {
   local sha
   sha=$(sed -n '/^# >>> swarm-yuan:framework-gates >>>/,/^# <<< swarm-yuan:framework-gates <<</p' "$sh" | cksum | awk '{print $1}')
   touch "$ver"
-  # 移除旧字段，再追加新值（幂等更新）
-  grep -v '^framework_gates_injected_at=\|^framework_gates_sha=' "$ver" > "${ver}.tmp" 2>/dev/null || true
-  mv "${ver}.tmp" "$ver" 2>/dev/null || cp "${ver}.tmp" "$ver" && rm -f "${ver}.tmp"
+  # 移除旧字段，再追加新值（幂等更新；分组确保 .tmp 始终被清理）
+  grep -Ev '^framework_gates_(injected_at|sha)=' "$ver" > "${ver}.tmp" 2>/dev/null || true
+  { mv "${ver}.tmp" "$ver" 2>/dev/null || cp "${ver}.tmp" "$ver"; }
+  rm -f "${ver}.tmp"
   {
     echo "framework_gates_injected_at=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)"
     echo "framework_gates_sha=${sha}"
@@ -236,10 +237,14 @@ EOF
   echo "=== 升级完成 ==="
   echo "  备份: $backup_dir"
   echo "  下一步: AI 自动检查 + 重新探查填充 precheck.conf + 运行门禁验证"
-  # --upgrade 自动重注入门禁片段（幂等）
+  # --upgrade 自动重注入门禁片段（幂等）；在子 shell 内 source conf 防止污染升级主进程
   if [[ -f "$SKILL_DIR/scripts/precheck.conf" ]] && grep -q '^ACTIVE_FRAMEWORKS=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null; then
-    if ! . "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null || [[ ${#ACTIVE_FRAMEWORKS[@]} -eq 0 ]]; then
-      echo "  （ACTIVE_FRAMEWORKS 未配置，跳过门禁注入）"
+    local_af_count=$(
+      # shellcheck disable=SC1090
+      . "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null && echo "${#ACTIVE_FRAMEWORKS[@]}" || echo 0
+    )
+    if [[ "${local_af_count:-0}" -eq 0 ]]; then
+      echo "  （ACTIVE_FRAMEWORKS 未配置或为空，跳过门禁注入）"
     else
       inject_frameworks "$SKILL_DIR" || echo "  ⚠ 门禁注入返回非 0（$?），请人工检查"
     fi
