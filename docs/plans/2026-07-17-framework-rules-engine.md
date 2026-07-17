@@ -322,7 +322,7 @@ NOGATE=$(awk '/^### 规律/{c++} /^### 规律/,/^### |^## /{if(/对应门禁|人
 # 要素3: §4 门禁 id ⊆ 片段 gates: 头注释，且函数存在
 IDS=$(awk '/^## §4/,/^## §5/' "$RULE" | grep -oE 'fw_[a-z0-9_]+' | sort -u)
 for gid in $IDS; do
-  grep -q "$gid" "$GATE" || err "门禁 $id 在 $GATE 中无实现痕迹"
+  grep -q "$gid" "$GATE" || err "门禁 $gid 在 $GATE 中无实现痕迹"
 done
 [[ -f "$GATE" ]] && { grep -q "^${FN}()" "$GATE" && ok "函数 $FN 存在" || err "函数 $FN 不存在于 $GATE"; }
 
