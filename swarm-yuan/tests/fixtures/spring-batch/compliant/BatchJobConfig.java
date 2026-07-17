@@ -16,8 +16,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * compliant fixture:
- *  - @Value("#{jobParameters['input.file.name']}") 的 reader Bean 有 @StepScope → @StepScope 已加，不触发 fw_batch_step_scope
- *  - late binding 须在 Step 启动后才求值，有 @StepScope 会在容器启动期注入 null / SpEL 求值失败
+ *  - @Value("#{jobParameters['input.file.name']}") 的 reader Bean 有 @StepScope → late binding 正常，不触发 fw_batch_step_scope
+ *  - late binding 须在 Step 启动后才求值，缺 @StepScope 才会在容器启动期注入 null / SpEL 求值失败；有则正常
+ *  - Step / Job Bean 无 late binding，不应加 @StepScope（官方建议 Step bean 不 step-scope）
  *
  * 期望：bash run-framework-fixture.sh spring-batch → compliant 退出码 = 0（PASS）
  */
@@ -34,7 +35,6 @@ public class BatchJobConfig {
                 .build();
     }
 
-    @StepScope
     @Bean
     public Step step1(JobRepository jobRepository,
                       PlatformTransactionManager transactionManager,
@@ -46,7 +46,6 @@ public class BatchJobConfig {
                 .build();
     }
 
-    @StepScope
     @Bean
     public Job job1(JobRepository jobRepository, Step step1) {
         return new org.springframework.batch.core.job.builder.JobBuilder("job1", jobRepository)
