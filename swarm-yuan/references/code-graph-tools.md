@@ -78,6 +78,59 @@ python -m graphify.serve graph.json --transport http --port 8080  # 共享 HTTP 
 
 > ⚠️ **hook-guard 子命令（v0.9.8+）**：`PreToolUse` / `BeforeTool` hook 逻辑已移入 shell 无关的 `graphify hook-guard <search|read>` 子命令，Windows/macOS/Linux 行为字节一致。不再依赖 POSIX bash 内联（`case/esac`、`[ -f ]`），Windows 上 hook 不再静默失败。Gemini 的 `BeforeTool` 用 `graphify hook-guard gemini`，移除对 bare `python` 在 PATH 的依赖。
 
+### ECC v2.0 Hook 治理（hook runtime governance）
+
+> 来自 ECC v2.0.0。将 hook 管理从"静态 hooks.json"升级为"运行时 profile + env gating + dispatcher 架构"。
+
+#### Hook Runtime Governance
+
+ECC 的 hook 系统有 4 层治理：
+
+| 层 | 机制 | 说明 |
+|----|------|------|
+| **Stable hook IDs** | `pre:bash:dispatcher` | 每个 hook 有稳定 ID，重装时 dedupe（不重复注册） |
+| **Runtime profiles** | `ECC_HOOK_PROFILE=minimal\|standard\|strict` | 按 profile 启用不同 hook 集合（minimal=仅核心，strict=全量） |
+| **Env gating** | `ECC_DISABLED_HOOKS` | 环境变量禁用特定 hook，不编辑文件 |
+| **Consolidated dispatchers** | 一个 `PreToolUse(Bash)` 入口 fan-out 到多个检查 | 减少 hook 数量，降低开销 |
+
+**在目标技能中的落地：**
+- 生成的目标技能的 hooks.json 可增加 `hookProfile` 字段，支持 minimal/standard/strict
+- 用 `ECC_DISABLED_HOOKS` 风格的 env 变量允许用户禁用特定 hook
+- 用 dispatcher 模式：一个 PreToolUse 入口调用多个检查脚本（而非每个检查一个 hook）
+
+#### Gateguard Fact-Forcing Gate（事实强制门禁）
+
+ECC 的 `gateguard-fact-force.js` hook 在**首次 Edit/Write/MultiEdit** 时阻断，直到 agent 展示具体调查证据：
+
+- 阻断条件：首次修改某文件
+- 放行条件：agent 在 prompt 中展示：importers 分析 / data schemas 分析 / 用户明确指令
+
+**在目标技能中的落地：**
+- 生成的目标技能的 PreToolUse(Write|Edit) hook 可引用此模式：首次修改前须展示调查证据
+- 这防止 agent 盲目修改未调查的文件
+
+#### Config Protection（配置保护）
+
+ECC 的 `config-protection.js` hook 阻断**削弱 linter/formatter 配置的编辑**：
+
+- 阻断：减少 lint 规则 / 禁用 formatter / 降低严格度
+- 放行：修复代码以通过 lint（而非放松 lint）
+
+**在目标技能中的落地：**
+- 生成的目标技能的 PreToolUse(Write|Edit) hook 可引用此模式：防止 agent 通过放松配置来"修复"问题
+- 引导 agent 修复代码而非放松配置
+
+#### MCP Health Check（MCP 健康检查）
+
+ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
+
+- 阻断：MCP server 不健康（unreachable / error）
+- 放行：MCP server 健康
+
+**在目标技能中的落地：**
+- 若目标技能依赖 MCP，可在 PreToolUse(mcp__*) hook 中加健康检查
+- 防止调用不健康的 MCP server（避免超时/错误）
+
 ### 输入/输出
 - **输入**：文件夹路径。代码（36 种 tree-sitter 语法）本地离线解析；文档/PDF/图片/视频需 LLM backend（`--backend claude|gemini|openai|deepseek|kimi|azure|bedrock|ollama`）
 - **输出**：`graphify-out/` 目录（可提交）：`graph.html`（交互可视化）、`GRAPH_REPORT.md`（god nodes、surprising connections、建议问题、置信度标签 EXTRACTED/INFERRED/AMBIGUOUS）、`graph.json`（完整图，默认 512MiB 上限）；可选 Mermaid/Obsidian/SVG/GraphML/Neo4j 导出；可选 MCP server

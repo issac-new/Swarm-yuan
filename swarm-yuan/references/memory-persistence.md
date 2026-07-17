@@ -215,6 +215,92 @@ memory_entries (raw observations)
 - 蒸馏产物存于 `.swarm-yuan/patterns.json`（可提交，团队共享）
 - dev-guide.md 引用：查"这个模块的常见 failure pattern"→ 查蒸馏产物而非翻 raw observations
 
+## ECC v2.0 记忆与学习方法论
+
+> 来自 ECC v2.0.0。将记忆系统从"观察+检索"升级为"原子 instinct 生命周期 + observer lease + skills→rules 蒸馏"。
+
+### Atomic Instinct 生命周期（continuous-learning-v2）
+
+ECC 的 instinct 系统将观察升级为**原子 instinct**——每个观察是一个带置信度评分的独立实体：
+
+```
+session 观察（PostToolUse hook）
+  → atomic instinct（带 confidence score 0.0-1.0）
+    → instinct 演化（置信度 ≥ 阈值时）
+      → 提升为 skill / command / agent
+```
+
+**置信度评分维度：**
+- **频率**：同一模式出现次数
+- **成功率**：该模式是否成功解决问题
+- **新鲜度**：最近出现的时间衰减
+- **人工确认**：用户是否标记为"重要"
+
+**项目隔离**：instinct 按 project-scope 存储，防止跨项目泄漏（A 项目的 pattern 不污染 B 项目）。
+
+**5 层 observer 循环防护**：
+1. **observer 不观察自己**——observer agent 不观察 observer 的 tool call
+2. **循环深度限制**——observer 最多 3 层嵌套
+3. **session-aware lease**——SessionStart 写入 project-scoped lease，SessionEnd 移除；observer 检测到最后一个 lease 消失时自动退出（修复 memory-explosion/zombie-observer）
+4. **instinct 去重**——相同模式的 instinct 合并（不重复创建）
+5. **手动禁用**——`ECC_DISABLED_HOOKS` env 可禁用 instinct observer
+
+**在目标技能中的落地：**
+- 若项目用 ECC 的 continuous-learning-v2，dev-guide.md 引用：查"这个项目常用的 pattern"→ `instinct status` 而非翻 observations
+- swarm-yuan 的 memory-persistence 可引用 instinct 的**置信度评分**模式，为 observation 增加 `confidence: 0.0-1.0` 字段
+
+### Observer Lease 模式（kill idle observers deterministically）
+
+ECC 修复了 claude-mem/ruflo 的 observer 僵尸问题：
+
+| 问题 | 原因 | ECC 修复 |
+|------|------|---------|
+| Observer 内存爆炸 | observer 永不退出，累积历史 | session-aware lease：最后一个 lease 消失时退出 |
+| Zombie observer | session 结束但 observer 仍运行 | SessionEnd 移除 lease，observer 检测无 lease 退出 |
+| Observer 观察自己 | observer 的 tool call 被 observer 捕获 | 5 层循环防护（不观察自己 + 深度限制 + 去重） |
+
+**在目标技能中的落地：**
+- 若项目自建 observer，dev-guide.md 提示：实现 session lease 模式（SessionStart 写 lease / SessionEnd 移除 / 无 lease 退出）
+- precheck.sh 的 `--memory` 子命令可扫描 observer 是否有"无 lease 退出"逻辑
+
+### Skills → Rules 蒸馏（rules-distill）
+
+ECC 的 `rules-distill` 方向与 swarm-yuan 的 memory distillation 互补：
+
+| 方向 | 来源 | 产物 | swarm-yuan 映射 |
+|------|------|------|----------------|
+| sessions → memory | claude-mem/ruflo observations | reasoning patterns | 已有的 memory distillation |
+| **skills → rules** | ECC skills 扫描 | cross-cutting rule 文件 | **新增**：从已生成的目标技能中提炼规则 |
+
+**流程：**
+1. 扫描项目下所有 skills（目标技能）
+2. 提取跨技能的公共原则（如"所有 skill 都要求 TDD"）
+3. 蒸馏为 rule 文件（`.claude/rules/*.md`）
+4. 模式：append（追加新规则）/ revise（修订已有规则）/ create（创建新规则文件）
+
+**在目标技能中的落地：**
+- 若项目积累了多个目标技能，可在 check 段加"rules-distill"步骤：扫描 skills 提炼公共规则
+- 提炼的规则文件可被新 skill 的 precheck.sh 引用（如 `--security` 门禁引用公共安全规则）
+
+### 6 层知识架构（knowledge-ops）
+
+ECC 的 knowledge-ops 定义了 6 层知识架构：
+
+| 层 | 名称 | 内容 | swarm-yuan 映射 |
+|----|------|------|----------------|
+| 1 | active-truth | 当前活跃任务的事实 | state-machine.sh 的 `.swarm-yuan/state.yaml` |
+| 2 | quick-memory | 最近会话的 observation | claude-mem 的 SQLite |
+| 3 | MCP-graph | 代码知识图谱 | GitNexus/graphify |
+| 4 | durable-KB | 持久化知识库 | reference-manual.md |
+| 5 | external-store | 外部存储（GCS/S3） | 备份/归档 |
+| 6 | local-archive | 本地归档（历史版本） | git history |
+
+**"无影子工作区"规则**：知识只存于上述 6 层之一，不额外创建 shadow workspace（如临时文件缓存）。
+
+**在目标技能中的落地：**
+- 目标技能的产出物归档须映射到这 6 层之一
+- 避免"临时文件不清理"——临时上下文（对话/草稿）在节点结束后须归档或删除
+
 ## claude-mem v13 全量能力（swarm-yuan 须知道但可选引用）
 
 > 以下能力来自 claude-mem v13.10.1 源码调研。swarm-yuan **不要求全部使用**，但生成目标技能时须知道这些能力存在，按项目需要引用。

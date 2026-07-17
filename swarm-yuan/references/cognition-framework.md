@@ -66,7 +66,50 @@
 
 **疑虑确认**：改只读/升级依赖/删稳定单元/多方案/安全效率冲突/不确定意图 → 必须暂停确认
 
-## §5 最小意识三条件
+## §5 ECC v2.0 认知扩展（council + recursive-decision-ledger）
+
+### Council（四声音议事会）
+
+ECC 的 `council` 在模糊 go/no-go 决策时召集**四个独立声音**：
+
+| 声音 | 角色 | 关注点 |
+|------|------|--------|
+| **Advocate** | 支持者 | 论证"做"的理由 |
+| **Skeptic** | 怀疑者 | 论证"不做"的理由 |
+| **Pragmatist** | 务实者 | 论证"如何做"的可行性 |
+| **Visionary** | 远见者 | 论证"长期影响" |
+
+**结构化分歧**：四个声音**独立**输出观点，不互相参考（避免 groupthink），然后综合。
+
+**在目标技能中的落地：**
+- 高复杂度决策（如"是否重构整个模块"）可引用 council 模式：派发 4 个 subagent 分别扮演 4 个角色
+- 综合 4 个角色的观点后，由用户做最终决策（AI 不替代用户决策）
+
+### Recursive Decision Ledger（递归决策账本）
+
+ECC 的 `recursive-decision-ledger` 记录**决策过程**而非仅决策结果：
+
+- 每个决策记录：选项 / 理由 / 预期结果 / 实际结果 / 偏差分析
+- 递归展开：若决策导致子决策，递归记录
+- 局部最优探索：记录"为什么选择局部最优而非全局最优"的理由
+
+**在目标技能中的落地：**
+- `.swarm-yuan/decisions.md` 可扩展为递归格式：每个决策带子决策列表
+- 复盘时可追溯"为什么当时这样决定"（避免事后诸葛亮）
+
+### 意图驱动开发（intent-driven-development）
+
+ECC 的 `intent-driven-development` 将模糊/高影响变更转化为**可验证的验收标准**：
+
+- 在实现前，将"模糊需求"转化为"可验证的 acceptance criteria"
+- 每个 criterion 须有明确的成功/失败判定
+- 实现后验证每个 criterion 是否满足
+
+**在目标技能中的落地：**
+- spec 阶段的"验收标准"段可引用此模式：每个需求须有可验证的 criterion
+- 实现后验证 criterion（而非"以为实现了"）
+
+## §6 最小意识三条件
 
 | 条件 | 含义 | 实现 |
 |------|------|------|
@@ -82,5 +125,6 @@ reference-manual.md 须含以下段（从本文件框架裁剪）：
 3. 辩证映射表（7 对辩证关系落点）
 4. 逻辑谬误图谱（见 `references/logic-razor.md`）
 5. 领域知识（见 `references/domain-knowledge.md`）
+6. ECC 认知扩展（可选：council 四声音 / recursive decision ledger / intent-driven development）
 
 precheck `--cognition` 检查以上段的存在性与内容质量，输出五层认知基底总分（≥15/19 = 完整）。
