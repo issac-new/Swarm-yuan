@@ -70,7 +70,8 @@ IDX_FILE="$(mktemp /tmp/fwidx.XXXXXX)"
       END { print c+0 }
     ' "${f}")
     if [[ "${rows}" -eq 0 ]]; then
-      printf '| %s | <无 §1 信号行> | - | - |\n' "${rid}"
+      printf '| %s | （无 §1 信号行） | - | - |\n' "${rid}" >&2
+      printf '⚠ %s §1 无信号数据行，已跳过（须补全 §1 探查信号表）\n' "${rid}" >&2
     fi
   done <<EOF
 ${FILES}
@@ -81,13 +82,24 @@ N="$(printf '%s\n' "${FILES}" | grep -c '^/.')"
 
 # 重写标记区块（awk 分段 + getline 注入索引文件 + 临时文件 mv，兼容三平台）
 TMP_BODY="$(mktemp /tmp/fwbody.XXXXXX)"
-awk -v beg="${BEGIN_MARK}" -v end="${END_MARK}" -v idxfile="${IDX_FILE}" '
+if ! awk -v beg="${BEGIN_MARK}" -v end="${END_MARK}" -v idxfile="${IDX_FILE}" '
   $0 == beg { print; while ((getline l < idxfile) > 0) print l; inblk=1; next }
   $0 == end { print end; inblk=0; next }
   !inblk { print }
-' "${GUIDE}" > "${TMP_BODY}"
+' "${GUIDE}" > "${TMP_BODY}"; then
+  rm -f "${TMP_BODY}" "${IDX_FILE}"
+  echo "✗ awk 重写标记区块失败，exploration-guide.md 未改动" >&2
+  exit 1
+fi
 
-mv "${TMP_BODY}" "${GUIDE}"
+# 仅当 awk 成功且 TMP_BODY 非空才覆盖（防异常退出导致 guide 被清空）
+if [[ -s "${TMP_BODY}" ]]; then
+  mv "${TMP_BODY}" "${GUIDE}"
+else
+  rm -f "${TMP_BODY}"
+  echo "✗ 生成索引为空，exploration-guide.md 未改动" >&2
+  exit 1
+fi
 rm -f "${IDX_FILE}"
 
 echo "已重写索引（${N} 个框架）"
