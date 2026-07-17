@@ -288,6 +288,16 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | spring-batch | SpEL | `@Value("#{jobParameters` / `@Value("#{stepExecutionContext` / `@Value("#{jobExecutionContext` | 高 |
 | spring-batch | 配置 | `spring.batch.job.enabled` / `spring.batch.job.name` / `spring.batch.jdbc.initialize-schema` / `spring.batch.jdbc.table-prefix` | 高 |
 | spring-batch | 接口实现 | `implements ItemReader<` / `implements ItemWriter<` / `implements ItemProcessor<` / `implements Tasklet` / `implements ItemStream` / `extends AbstractItemStreamItemReader` | 高 |
+| spring-boot | 依赖 | `org.springframework.boot:spring-boot-starter` / `spring-boot-starter-web` / `spring-boot-starter-actuator` / `spring-boot-starter-data-jpa` / `spring-boot-starter-test` | 高 |
+| spring-boot | 注解 | `@SpringBootApplication` / `@Configuration` / `@ConfigurationProperties` / `@ConditionalOnMissingBean` / `@Profile` / `@SpringBootConfiguration` | 高 |
+| spring-boot | 文件 | `**/application.yml` / `**/application.yaml` / `**/application.properties` / `**/application-*.yml` / `banner.txt` / `**/META-INF/spring.factories` / `**/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` | 高 |
+| spring-boot | 配置 | `spring.profiles.active` / `management.endpoints.web.exposure.*` / `spring.datasource.*` / `server.port` / `spring.devtools.*` / `spring.main.banner-mode` / `spring.main.allow-circular-references` | 高 |
+| spring-boot | 代码 | `SpringApplication.run(` / `@Bean` / `@Transactional` / `extends SpringBootServletInitializer` / `WebSecurityConfigurerAdapter`(废弃) | 高 |
+| spring-cloud | 依赖 | `org.springframework.cloud:spring-cloud-starter` / `spring-cloud-starter-openfeign` / `spring-cloud-starter-loadbalancer` / `spring-cloud-starter-gateway` / `spring-cloud-starter-config` / `spring-cloud-starter-netflix-eureka-client` / `spring-cloud-starter-bus` | 高 |
+| spring-cloud | 注解 | `@EnableFeignClients` / `@EnableDiscoveryClient` / `@RefreshScope` / `@FeignClient` | 高 |
+| spring-cloud | 文件 | `**/bootstrap.yml` / `**/bootstrap.properties` / `**/spring-cloud-bootstrap.yml` | 中（Boot 2.4+ 默认弃用 bootstrap，改 import） |
+| spring-cloud | 配置 | `spring.cloud.config.*` / `spring.cloud.gateway.routes.*` / `feign.client.*` / `spring.cloud.loadbalancer.*` / `eureka.client.*` / `spring.cloud.bus.*` | 高 |
+| spring-cloud | 代码 | `@FeignClient` / `SpringCloudLoadBalancer` / `RouteLocator` / `@RefreshScope` / `DiscoveryClient` | 高 |
 # <<< framework-signal-index <<<
 
 > **★版本号提取（与规则文件 §3 适用版本区间匹配，T4 新增铁律）**：探查时须同时提取各框架**版本号**（来源：JVM 项目 `pom.xml` `<version>` / `build.gradle` implementation；Node 项目 `package.json` `"vue": "^3.x"`；Go 项目 `go.mod` `module vX.Y.Z`；Python 项目 `pyproject.toml`/`requirements.txt` `fastapi==0.x`）。将提取到的版本与 `references/frameworks/<fw>.md` §3 规律的"适用版本"区间匹配——区间内规律实例化时附证据；区间外规律标"⚠ 待验证（项目版本 X，规律适用区间 Y）"；框架版本号须写入特征卡第 4 项技术栈摘要。
