@@ -239,8 +239,8 @@ binding 门禁在 fixture 空 SRC_GLOBS 场景加守卫跳过，否则 compliant
 | mybatis 3.5.19 | 回退 3.5.18 引入的 #3349 回归 | 若已升级到 3.5.18 须跟进 3.5.19 |
 | mybatis-plus 3.5.6 | 升级 mybatis 至 3.5.16；`sqlFirst`/`sqlComment` 不再转义（须手动转义） | MP Wrapper 的 `last()` 注入面扩大——规律 fw_mybatis_wrapper_injection 适用 |
 | mybatis-plus 3.5.7 | `BaseMapper` 新增批量操作与 InsertOrUpdate 方法；逻辑删除默认支持填充；`UpdateWrapper` 增 `checkSqlInjection` | 批量插入不必再手写 foreach；逻辑删除字段填充逻辑变化；Wrapper 注入检查可选开启 |
-| mybatis-plus 3.5.8 | jsqlParser 升至 5.0；`selectBatchIds` 重命名为 `selectByIds`；Page 字段改 private | API 名变化引起编译错误；反射访问 Page 字段的代码失效 |
-| mybatis-plus 3.5.10 | 重命名 `selectBatchIds` → `selectByIds`（持续） | 旧 API 迁移 |
+| mybatis-plus 3.5.8 | jsqlParser 升至 5.0（待验证：具体 API 改名/字段可见性变化未联网核实 release notes） | jsqlParser 5.0 解析行为变化可能影响 MP Wrapper SQL 生成；API 名/字段变化待人工核实 release notes |
+| mybatis-plus 3.5.10 | 待验证：未联网核实 release notes，沿用 3.5.8 起的迁移趋势 | 旧 API 迁移（须人工核实 3.5.10 具体变更） |
 | mybatis-plus 3.5.17 | 最新发布（2026-07-08） | 待验证：本版无破坏性变更清单公开，规律基于 3.5.x 通用项 |
 
 <!--

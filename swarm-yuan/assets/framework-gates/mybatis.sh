@@ -210,13 +210,13 @@ $(printf '%s\n' "$no_jdbctype_hits" | head -5)"
     pass "fw_mybatis_cache_dirty: 无二级缓存，跳过"
   else
     local cache_assoc=""
-    for cfile in $cache_files; do
-      [[ -n "$cfile" ]] || continue
-      if grep -qE '<(association|collection)[[:space:]]+[^>]*\bselect=' "$cfile" 2>/dev/null; then
+    while IFS= read -r cfile; do
+      [[ -n "${cfile}" ]] || continue
+      if grep -qE '<(association|collection)[[:space:]]+[^>]*\bselect=' "${cfile}" 2>/dev/null; then
         cache_assoc="${cache_assoc}${cfile}
 "
       fi
-    done
+    done <<< "${cache_files}"
     if [[ -n "$cache_assoc" ]]; then
       warn "fw_mybatis_cache_dirty: 二级缓存 + 跨 namespace 嵌套 select（须 cache-ref 或禁用二级缓存）:
 ${cache_assoc}"
