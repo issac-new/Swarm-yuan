@@ -268,7 +268,8 @@ ${kg_bad}"
       grep -qE '@Transactional' "$jf" 2>/dev/null || continue
       tcnt=0
       for st in ${sharded_str}; do
-        if grep -q "$st" "$jf" 2>/dev/null; then
+        # 词边界：t_order 不应命中 t_order_item（与 broadcast/keygen/binding_join 同款防护）
+        if grep -qE "${st}([^a-zA-Z0-9_]|\$)" "$jf" 2>/dev/null; then
           tcnt=$((tcnt+1))
         fi
       done
