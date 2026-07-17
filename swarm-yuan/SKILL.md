@@ -63,7 +63,7 @@ swarm-yuan 的 26 个门禁服务于一条认知递进链。核心理念：**呈
 ```
 用户："为 /path/to/project 生成 skill"
   ↓ AI 自动执行（零手动配置，不可中途停止）
-⓪自检(10运行时) → ⓪.5读取项目知识(AGENTS.md/CLAUDE.md/记忆/agent运行时) → ①探查仓库(三路并行+图谱工具) → ①.5项目形态判定(§C+.0)+详尽构件库清单+调用链路分析(§C+.1-C+.5按维度动态适配) → ②提取16项特征卡 → ③create骨架 → ④AI填充全部文件(消除全部占位符) → ⑤AI配置precheck.conf(消除全部占位符) → ⑤.5 AI生成hooks/commands/MCP集成 → ⑥AI运行门禁验证 → ⑦AI写回项目记忆(闭环) → ⑧AI最终检查(零占位符+按维度计数核验)
+⓪自检(10运行时) → ⓪.5读取项目知识(AGENTS.md/CLAUDE.md/记忆/agent运行时) → ①探查仓库(三路并行+图谱工具) → ①.5项目形态判定(§C+.0)+详尽构件库清单+调用链路分析(§C+.1-C+.5按维度动态适配) → ②提取16项特征卡 → ③create骨架 → ④AI填充全部文件(消除全部占位符) → ④.5框架深化(逐激活框架:按 references/frameworks/<fw>.md §1-§6 枚举+规律实例化+门禁清单对齐) → ⑤AI配置precheck.conf(消除全部占位符) → ⑤.5 AI生成hooks/commands/MCP集成 → ⑥AI运行门禁验证 → ⑦.5门禁注入(`scripts/generate-skill.sh --inject-frameworks` 将 assets/framework-gates/<fw>.sh 写入 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块；`--upgrade` 触发自动重注入) → ⑦AI写回项目记忆(闭环) → ⑧AI最终检查(零占位符+按维度计数核验+框架适配四要素核验)
 ```
 
 1. **自检**：`bash scripts/self-check.sh`（10 个运行时检测+自动安装）
@@ -83,7 +83,7 @@ swarm-yuan 的 26 个门禁服务于一条认知递进链。核心理念：**呈
 9. **AI 集成 Claude Code**：生成 hooks/hooks.json + commands/ + settings.local.json + .mcp.json + workflow.md 节点标注。详见 `references/claude-code-capabilities.md`
 10. **AI 运行门禁**：`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--all-full`（全 26）
 11. **AI 写回记忆**：claude-mem/.zcode/memories/.project-knowledge.md 三路写回，形成"记忆→生成→开发→记忆"闭环
-12. **AI 最终检查**：grep 目标 skill 目录，确认零"待填充"/零"填充指引"/零"<占位符>"残留；**按维度计数核验：对 §C+.0 判定的每个维度，用对应的 `find`/`grep` 命令计数，对比 reference-manual.md 对应章节行数，偏差 >5% → 回到 Step 4 补全该维度**；**维度适配核验：纯后端项目不应有 UI 组件表，纯前端项目不应有 controller 表（维度错配 → 回 Step 4 重判）**。**如有残留，回到 Step 7 继续填充，直到零残留。**
+12. **AI 最终检查**：grep 目标 skill 目录，确认零"待填充"/零"填充指引"/零"<占位符>"残留；**按维度计数核验：对 §C+.0 判定的每个维度，用对应的 `find`/`grep` 命令计数，对比 reference-manual.md 对应章节行数，偏差 >5% → 回到 Step 4 补全该维度**；**维度适配核验：纯后端项目不应有 UI 组件表，纯前端项目不应有 controller 表（维度错配 → 回 Step 4 重判）**；**框架适配四要素核验：对 ACTIVE_FRAMEWORKS 每个框架——① 构件枚举计数 ≥ 实际 × 0.95（依 `references/frameworks/<fw>.md` §2 的计数基准）② `framework-knowledge.md` 规律数 ≥ 规则文件声明的深度门槛且 100% 含"证据:"字段 ③ `precheck.sh` 含 `_fw_<id>_check` 动态分发器且 `--framework <id>` 实跑 exit 0（门禁片段位于 `assets/framework-gates/<fw>.sh`，已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块）④ `dev-guide.md` §10 含该框架约束段 ≥ 3 条。任一不过 → 回 Step 4.5**。**如有残留，回到 Step 7 继续填充，直到零残留。**
 
 > **铁律**：用户不编辑任何配置文件，不手动复制模板。开始新需求时对 AI 说"开始新需求 xxx"，AI 自动创建 spec 文件 + 引导填写 + 运行门禁。门禁误报 AI 自动调 conf 后重跑。每节点须有降级策略（联网/云端不可用→降级本地工具）。节点工具表+降级表见 `references/claude-code-capabilities.md` §十四。
 
@@ -96,8 +96,9 @@ swarm-yuan 的 26 个门禁服务于一条认知递进链。核心理念：**呈
 | meta | `SKILL.md` | 元信息、铁律、流程总览、命令速查 |
 | workflow | `references/workflow.md` | 节点化流程（9 要素/节点 + 4-Phase SOP）——生成时填充 |
 | reference | `references/*.md` | 参考手册（目录/安全/编译/**全量组件库**/**三层依赖链路+约束**/**全量接口端点**/**全量store+类型** + 数据 + 方法论 + 认知 + 领域知识） |
+| reference | `references/framework-knowledge.md` | **按激活框架实例化的规律与门禁依据**（骨架由 `--inject-frameworks` 自 `references/frameworks/<fw>.md` §3 生成，AI 逐条用项目代码验证实例化） |
 | assets | `assets/*` | 模板（spec/plan/分支/环境/库表/状态机） |
-| check | `scripts/precheck.sh` | 26 个门禁子命令（含 `--shift-left` 左移：测试设计/变更影响/可观测性） |
+| check | `scripts/precheck.sh` | 26 个门禁子命令（含 `--shift-left` 左移：测试设计/变更影响/可观测性） + **框架门禁片段注入区**（`# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，由 `--inject-frameworks` 写入） |
 | scripts | `scripts/*` | 工具箱（门禁+状态机+图谱+MCP+self-check） |
 
 ## 它整合的方法论（只引用调用，不重新实现）
@@ -123,6 +124,7 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 代码图谱工具引用 | `references/code-graph-tools.md` |
 | gsd-core phase-loop/goal-backward | `references/gsd-patterns.md` |
 | 跨会话记忆持久化 | `references/memory-persistence.md` |
+| 框架规则库（生成时按 ACTIVE_FRAMEWORKS 读取对应 `<fw>.md`） | `references/frameworks/` |
 
 ## 使用说明
 
