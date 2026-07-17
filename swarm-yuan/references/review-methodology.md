@@ -207,6 +207,106 @@ openspec update <change-id>
 | **精度优先设计** | 50 仓库/200 PR/10 语言/1505 标注基准验证，精度 + F1 显著高于通用 agent，~1/9 token | 资源效率 |
 | **Anti-overfitting eval 纪律**（ruflo v3.25.0 方法论） | 审查策略改进须在**冻结的 human-labeled eval set**（hash-pinned, tamper-evident）上验证；每代改进暴露 humanRelevance delta（"自检索升但 human relevance 平→过拟合"须可见）；**clean-room replay** 验收（离线重放 promoted generation，哈希一致 + 重新跑 accept/v1+sig） | `--review` 规则演进可引用 |
 | **Shadow/canary 部署模式**（ruflo v3.24.0 方法论） | promoted 审查策略 champion 经一代 shadow 延迟后才 serve；canary 在 evolving store 上每 tick 重打分；**auto-rollback** 回归——可迁移到"precheck 规则升级"场景 | `--review` 规则升级可引用 |
+
+### ECC v2.0 审查方法论扩展
+
+> 来自 ECC v2.0.0。将审查系统从"静态规则"升级为"动态评估 + 对抗收敛 + 部署验证"。
+
+#### Santa Method（对抗收敛审查）
+
+ECC 的 `santa-method` 是两阶段审查的**对抗收敛**变体：
+
+| 阶段 | 说明 | 与 swarm-yuan 两阶段审查的关系 |
+|------|------|------------------------------|
+| Agent A 审查 | 独立审查 agent，输出 findings | 同 swarm-yuan Stage 1（spec 合规） |
+| Agent B 审查 | **另一个独立**审查 agent，输出 findings | 同 swarm-yuan Stage 2（代码质量） |
+| **收敛判决** | A 和 B 的 findings 取交集——只有双方都报告的 finding 才视为真 | **新增**：降低误报率 |
+
+**N-of-M 收敛**：可扩展为 N 个审查 agent，至少 M 个（如 3/5）报告同一 finding 才采纳。
+
+**在目标技能中的落地：**
+- 高复杂度变更（large 级）可用 santa-method 替代单 agent 审查
+- 收敛判决规则：A ∩ B 的 findings → High；A ∪ B 的 findings → 全部列出但标注来源
+
+#### Skill-Run Telemetry（技能运行遥测）
+
+ECC 的 `skill-runs.jsonl` 记录每次 skill 执行的**3×3 结果矩阵**：
+
+| outcome | 含义 |
+|---------|------|
+| `success` | 完全成功 |
+| `failure` | 完全失败 |
+| `partial` | 部分成功 |
+
+| feedback | 含义 |
+|----------|------|
+| `accepted` | 用户采纳结果 |
+| `corrected` | 用户修正后采纳 |
+| `rejected` | 用户拒绝结果 |
+
+**9 种组合**（success+accepted 是最佳，failure+rejected 是最差）。
+
+**Verifier-gated promotion**：skill 改进提案须经 verifier 验证（不扩大 blast radius）才能 promote。
+
+**在目标技能中的落地：**
+- swarm-yuan 的目标技能可在 check 段加 `--telemetry` 子命令：记录 skill 执行的 outcome/feedback
+- 遥测数据存于 `.swarm-yuan/skill-runs.jsonl`（JSONL 格式，一行一次运行）
+
+#### Skill-Comply（行为合规测试）
+
+ECC 的 `skill-comply` 自动测试 agent 是否**真的遵循 skill**：
+
+- 自动生成 **3 种严格度**的 prompt：宽松（隐式暗示）/ 标准（明确指令）/ 严格（强制要求）
+- 运行 agent，记录行为序列
+- 分类行为：compliant / partial / non-compliant
+- 报告合规率
+
+**在目标技能中的落地：**
+- 生成的目标技能可在 check 段加 `--comply` 子命令：测试 skill 的合规率
+- 若合规率 < 阈值（如 80%），修订 skill 的指令（更明确/更严格）
+
+#### Head-to-Head Agent Eval（head-to-head 对比）
+
+ECC 的 `agent-eval` 对比两个 agent 在同一任务上的表现：
+
+| 指标 | 说明 |
+|------|------|
+| pass-rate | 通过测试的比例 |
+| cost | token 消耗 |
+| time | 耗时 |
+| consistency | 多次运行的结果一致性 |
+
+**在目标技能中的落地：**
+- 生成目标技能时，可对比两个候选 skill（如两个不同 prompt 策略）的 head-to-head 表现
+- 选择 pass-rate 高 + cost 低 + consistency 高的版本
+
+#### Deploy Canary-Watch（部署验证）
+
+ECC 的 `canary-watch` 是**发布后**的验证（不同于 swarm-yuan 的 eval-rollout canary）：
+
+- 验证 HTTP 端点可访问
+- 验证 SSE 流正常
+- 验证静态资产加载
+- 验证无 console 错误
+- 验证性能无回归
+
+**在目标技能中的落地：**
+- 若项目有部署环节，check 段可加 `--canary-watch` 子命令：发布后验证部署 URL
+- 与 swarm-yuan 的 shadow/canary（eval 阶段）互补：shadow/canary 验证策略，canary-watch 验证部署
+
+#### Closed-Stale Salvage Ledger（陈旧 PR 抢救）
+
+ECC 的 stale PR 抢救流程（治理模式）：
+
+1. **关闭陈旧 PR**：用礼貌评论关闭（"此 PR 已陈旧，如有价值请重新提交"）
+2. **记录 salvage ledger**：记录 PR 号、作者、原因、有用文件、风险、建议行动
+3. **手动 diff 审查**：审查 salvage 候选的 diff
+4. **cherry-pick 或重写**：若 diff 干净则 cherry-pick，否则用 attribution 重写
+5. **标记状态**：landed / superseded / no-action
+
+**在目标技能中的落地：**
+- 若项目有大量陈旧 PR，可在 check 段加 `--salvage` 子命令：扫描陈旧 PR 并生成 salvage ledger
+- 规则：**绝不盲 cherry-pick 生成的 churn**（机械生成的变更须人工审查）
 | **Astro 专用审查规则**（v1.3.13+） | `.astro` 文件的专用审查规则 | Astro 项目可引用 |
 | **per-chapter 文档路由**（v1.3.13+） | 文档站点按章节路由，便于导航 | 文档审查可引用 |
 | **可恢复 review session**（v1.7.6+） | `ocr review` 支持 resumable sessions + session inspection，中断后可恢复审查 | 长变更集审查可引用 |
