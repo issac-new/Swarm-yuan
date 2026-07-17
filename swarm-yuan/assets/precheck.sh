@@ -84,6 +84,7 @@ else
   COG_SPEED_FILES=10
   COG_CUMULATIVE_TODO=20
   COG_STRENGTH_FANIN=8
+  ACTIVE_FRAMEWORKS=()
 fi
 
 MODE="${1:---all}"
@@ -2405,6 +2406,56 @@ check_shift_left() {
   fi
 }
 
+# ===== 框架适配门禁（--framework）：由 --inject-frameworks 注入片段，动态分发 =====
+check_framework() {
+  echo "▶ 框架适配门禁 (--framework)"
+  if [[ ${#ACTIVE_FRAMEWORKS[@]} -eq 0 ]]; then
+    # 漏配检测：探查信号明显但未配置 → warn
+    local hit
+    hit=$(find "${PROJECT_DIR:-.}" -name '*Mapper.xml' -not -path '*/node_modules/*' 2>/dev/null | head -1)
+    [[ -n "$hit" ]] && warn "发现 $hit 但 ACTIVE_FRAMEWORKS 未配置——疑似漏配 mybatis"
+    skip_if_unconfigured "ACTIVE_FRAMEWORKS 未配置"; return
+  fi
+  local fw fn
+  for fw in "${ACTIVE_FRAMEWORKS[@]}"; do
+    fn="_fw_$(echo "$fw" | tr '-' '_')_check"
+    if declare -f "$fn" >/dev/null 2>&1; then
+      "$fn"
+    else
+      fail "框架 '$fw' 已激活但无门禁实现（$fn 缺失）——须运行 generate-skill.sh --inject-frameworks"
+    fi
+  done
+}
+
+# >>> swarm-yuan:framework-gates >>> （由 generate-skill.sh --inject-frameworks 维护，勿手改）
+# <<< swarm-yuan:framework-gates <<<
+
+# 将 *_FILE_GLOBS（含 ** 递归通配）解析为实际文件列表（兼容 bash 3.2 无 globstar）。
+# 每个 glob 形如 "overlay/custom/client/**/*.vue" → find overlay/custom/client -name '*.vue'
+# 输出：以空格分隔的文件路径串（供 unquoted 展开给 grep 作 path 参数）。
+_fw_resolve_globs() {
+  local g dir name
+  for g in "$@"; do
+    # 拆分为 ** 之前的目录前缀 与 末段文件名
+    dir="${g%%/\*\*/*}"
+    name="${g##*/}"
+    # 若拆分后 dir == g 说明无 **，整体当作单个路径/文件
+    if [[ "$dir" == "$g" ]]; then
+      [[ -e "$g" ]] && printf '%s\n' "$g"
+    else
+      [[ -d "$dir" ]] || continue
+      find "$dir" -type f -name "$name" 2>/dev/null
+    fi
+  done
+}
+
+# grep 计数包装：规避 set -e + pipefail 在无匹配（grep exit 1）时整体退出。
+_fw_grep_count() {
+  # $1=pattern, $@=files...
+  local pat="$1"; shift
+  { grep -rlE "$pat" "$@" 2>/dev/null || true; } | wc -l | xargs
+}
+
 case "$MODE" in
   --all)
     # 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
@@ -2446,6 +2497,7 @@ case "$MODE" in
     check_knowledge
     check_mermaid
     check_shift_left
+    check_framework
     check_test
     ;;
   --branch) check_branch ;;
@@ -2474,8 +2526,9 @@ case "$MODE" in
   --knowledge) check_knowledge ;;
   --mermaid) check_mermaid ;;
   --shift-left) check_shift_left ;;
+  --framework) check_framework ;;
   *)
-    echo "Usage: bash precheck.sh [--all|--all-full|--branch|--scope|--build|--test|--sensitive|--consistency|--review|--reuse|--deps|--security|--layer|--stable-diff|--link-depth|--adr|--contract|--consistency-cross|--impact|--service|--api|--state|--frontend|--cognition|--domain|--knowledge|--mermaid|--shift-left]"
+    echo "Usage: bash precheck.sh [--all|--all-full|--branch|--scope|--build|--test|--sensitive|--consistency|--review|--reuse|--deps|--security|--layer|--stable-diff|--link-depth|--adr|--contract|--consistency-cross|--impact|--service|--api|--state|--frontend|--cognition|--domain|--knowledge|--mermaid|--shift-left|--framework]"
     exit 1
     ;;
 esac
