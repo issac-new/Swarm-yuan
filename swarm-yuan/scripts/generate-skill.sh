@@ -9,6 +9,110 @@
 
 set -euo pipefail
 
+# ============================================================
+# --inject-frameworks 子命令（独立于 create/upgrade，单独拦截）
+# 用法: bash generate-skill.sh --inject-frameworks <skill-dir>
+# 读取目标 skill 的 precheck.conf 中 ACTIVE_FRAMEWORKS，把对应门禁片段
+# 幂等注入其 precheck.sh 的标记区块；核对/补齐 conf 变量；记录区块哈希。
+# ============================================================
+inject_frameworks() {
+  local skill_dir="$1"
+  local paradigm_dir; paradigm_dir="$(cd "$(dirname "$0")/.." && pwd)"
+  local sh="$skill_dir/scripts/precheck.sh"
+  local conf="$skill_dir/scripts/precheck.conf"
+  local ver="$skill_dir/.swarm-yuan-version"
+  [[ -f "$sh" ]]  || { echo "✗ 未找到 $sh"; return 1; }
+  [[ -f "$conf" ]] || { echo "✗ 未找到 $conf"; return 1; }
+
+  # 冲突检测：若 .swarm-yuan-version 已记 framework_gates_sha，且现有区块哈希不符 → 裁决
+  if [[ -f "$ver" ]]; then
+    local old_sha; old_sha=$(grep '^framework_gates_sha=' "$ver" 2>/dev/null | cut -d= -f2- || true)
+    if [[ -n "$old_sha" ]]; then
+      local cur_sha; cur_sha=$(sed -n '/^# >>> swarm-yuan:framework-gates >>>/,/^# <<< swarm-yuan:framework-gates <<</p' "$sh" 2>/dev/null | cksum | awk '{print $1}')
+      # 空区块（只有标记行）的 cksum 作为"未注入"基准；与 old_sha 不符即手改嫌疑
+      if [[ "$cur_sha" != "$old_sha" && -n "$cur_sha" ]]; then
+        echo "⚠ precheck.sh 框架门禁区块被手改（记录 sha=${old_sha}，当前 sha=${cur_sha}）"
+        echo "  须用户裁决：覆盖（继续注入会丢失手改）或保留（中止）。中止。"
+        return 2
+      fi
+    fi
+  fi
+
+  # 读取 ACTIVE_FRAMEWORKS（在子 shell source，避免污染本进程）
+  ACTIVE_FRAMEWORKS=()
+  # shellcheck disable=SC1090
+  . "$conf"
+  if [[ ${#ACTIVE_FRAMEWORKS[@]} -eq 0 ]]; then
+    echo "⚠ ACTIVE_FRAMEWORKS 未配置，跳过门禁注入"
+    return 0
+  fi
+
+  # 1) 构建新区块 + 校验 requires_conf
+  local block; block="$(mktemp /tmp/fwblock.XXXXXX)"
+  local uncovered=() missing_conf=()
+  echo '# >>> swarm-yuan:framework-gates >>> （由 generate-skill.sh --inject-frameworks 维护，勿手改）' > "$block"
+  local fw frag req var
+  for fw in "${ACTIVE_FRAMEWORKS[@]}"; do
+    frag="$paradigm_dir/assets/framework-gates/$fw.sh"
+    if [[ -f "$frag" ]]; then
+      cat "$frag" >> "$block"
+      # 解析 requires_conf（兼容行内多空格/无声明）
+      req=$(sed -n 's/^# ruleset:.*requires_conf: *//p' "$frag" | tr -s ' ')
+      for var in $req; do
+        grep -q "^${var}=" "$conf" 2>/dev/null || missing_conf+=("$var")
+      done
+    else
+      uncovered+=("$fw")
+    fi
+  done
+  echo '# <<< swarm-yuan:framework-gates <<<' >> "$block"
+
+  # 2) 幂等替换标记区块（awk 三平台兼容；无标记区块则追加到文件末尾）
+  local tmp; tmp="$(mktemp /tmp/fwprecheck.XXXXXX)"
+  if grep -q '^# >>> swarm-yuan:framework-gates >>>' "$sh"; then
+    awk -v blockfile="$block" '
+      /^# >>> swarm-yuan:framework-gates >>>/ { while ((getline l < blockfile) > 0) print l; skip=1; next }
+      /^# <<< swarm-yuan:framework-gates <<</ { skip=0; next }
+      !skip { print }
+    ' "$sh" > "$tmp"
+  else
+    { cat "$sh"; echo ''; cat "$block"; } > "$tmp"
+    echo "⚠ $sh 中无标记区块，已追加到文件末尾（建议人工调整位置至 check_framework 之后）"
+  fi
+  cat "$tmp" > "$sh"
+  rm -f "$tmp" "$block"
+
+  # 3) 缺失 conf 变量：注入占位 + warn（不静默）
+  for var in ${missing_conf[@]+"${missing_conf[@]}"}; do
+    printf '%s=()  # TODO(framework-gates): 由生成流程 Step 7.5 填充\n' "${var}" >> "$conf"
+    echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
+  done
+
+  # 4) 未覆盖框架：warn 列出（不静默跳过）
+  for fw in ${uncovered[@]+"${uncovered[@]}"}; do
+    echo "⚠ 框架 '${fw}' 无对应门禁片段（references/frameworks/${fw}.md 缺失）——列入未覆盖清单"
+  done
+
+  # 5) 记录区块哈希（更新而非追加；首次注入则新建 ver）
+  local sha
+  sha=$(sed -n '/^# >>> swarm-yuan:framework-gates >>>/,/^# <<< swarm-yuan:framework-gates <<</p' "$sh" | cksum | awk '{print $1}')
+  touch "$ver"
+  # 移除旧字段，再追加新值（幂等更新）
+  grep -v '^framework_gates_injected_at=\|^framework_gates_sha=' "$ver" > "${ver}.tmp" 2>/dev/null || true
+  mv "${ver}.tmp" "$ver" 2>/dev/null || cp "${ver}.tmp" "$ver" && rm -f "${ver}.tmp"
+  {
+    echo "framework_gates_injected_at=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)"
+    echo "framework_gates_sha=${sha}"
+  } >> "$ver"
+  echo "✓ 门禁片段注入完成（${#ACTIVE_FRAMEWORKS[@]} 个框架，区块 sha=${sha}）"
+}
+
+if [[ "${1:-}" == "--inject-frameworks" ]]; then
+  [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --inject-frameworks <skill-dir>"; exit 1; }
+  inject_frameworks "$2"
+  exit $?
+fi
+
 # ---- 检测运行环境 ----
 detect_skill_dir() {
   local project="$1"
@@ -132,6 +236,14 @@ EOF
   echo "=== 升级完成 ==="
   echo "  备份: $backup_dir"
   echo "  下一步: AI 自动检查 + 重新探查填充 precheck.conf + 运行门禁验证"
+  # --upgrade 自动重注入门禁片段（幂等）
+  if [[ -f "$SKILL_DIR/scripts/precheck.conf" ]] && grep -q '^ACTIVE_FRAMEWORKS=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null; then
+    if ! . "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null || [[ ${#ACTIVE_FRAMEWORKS[@]} -eq 0 ]]; then
+      echo "  （ACTIVE_FRAMEWORKS 未配置，跳过门禁注入）"
+    else
+      inject_frameworks "$SKILL_DIR" || echo "  ⚠ 门禁注入返回非 0（$?），请人工检查"
+    fi
+  fi
   exit 0
 fi
 

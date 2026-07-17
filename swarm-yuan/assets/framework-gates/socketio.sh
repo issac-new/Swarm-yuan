@@ -4,7 +4,7 @@
 _fw_socketio_check() {
   echo "  [socketio] Socket.IO 4.8 框架规律"
   local files fa=()
-  files=$(_fw_resolve_globs "${SOCKETIO_FILE_GLOBS[@]}" | sort -u)
+  files=$(_fw_resolve_globs "${SOCKETIO_FILE_GLOBS[@]+"${SOCKETIO_FILE_GLOBS[@]}"}" | sort -u)
   [[ -z "$files" ]] && { warn "socketio: 无文件可检"; return; }
   while IFS= read -r ln; do fa+=("$ln"); done <<< "$files"
   # 规律1: 须命名空间 setup

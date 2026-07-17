@@ -4,7 +4,7 @@
 _fw_koa_check() {
   echo "  [koa] Koa 2.15 框架规律"
   local files fa=()
-  files=$(_fw_resolve_globs "${KOA_FILE_GLOBS[@]}" | sort -u)
+  files=$(_fw_resolve_globs "${KOA_FILE_GLOBS[@]+"${KOA_FILE_GLOBS[@]}"}" | sort -u)
   [[ -z "$files" ]] && { warn "koa: 无文件可检"; return; }
   while IFS= read -r ln; do fa+=("$ln"); done <<< "$files"
   # 规律1: 须 factory 注入

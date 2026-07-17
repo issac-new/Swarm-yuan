@@ -4,7 +4,7 @@
 _fw_pinia_check() {
   echo "  [pinia] Pinia 3.0 框架规律"
   local files fa=()
-  files=$(_fw_resolve_globs "${PINIA_FILE_GLOBS[@]}" | sort -u)
+  files=$(_fw_resolve_globs "${PINIA_FILE_GLOBS[@]+"${PINIA_FILE_GLOBS[@]}"}" | sort -u)
   [[ -z "$files" ]] && { warn "pinia: 无文件可检"; return; }
   while IFS= read -r ln; do fa+=("$ln"); done <<< "$files"
   # 规律1: 须 defineStore

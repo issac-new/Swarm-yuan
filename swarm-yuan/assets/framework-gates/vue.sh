@@ -4,7 +4,7 @@
 _fw_vue_check() {
   echo "  [vue] Vue 3.5 框架规律"
   local files
-  files=$(_fw_resolve_globs "${VUE_FILE_GLOBS[@]}" | sort -u)
+  files=$(_fw_resolve_globs "${VUE_FILE_GLOBS[@]+"${VUE_FILE_GLOBS[@]}"}" | sort -u)
   [[ -z "$files" ]] && { warn "vue: 无 .vue 文件可检"; return; }
   local fa=()
   while IFS= read -r ln; do fa+=("$ln"); done <<< "$files"
