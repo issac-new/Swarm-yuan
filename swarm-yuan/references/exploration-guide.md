@@ -275,6 +275,13 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | mybatis | 注解 | `@Mapper` / `@MapperScan` / `@Intercepts` / `@TableLogic` / `@TableName` / `@TableId` / `@TableField` | 高 |
 | mybatis | 配置 | `mybatis.mapper-locations` / `mybatis.type-aliases-package` / `mybatis-plus.global-config.db-config.*` / `mybatis-plus.global-config.enable-aggressive` | 高 |
 | mybatis | 代码 | `extends BaseMapper<` / `implements TypeHandler<` / `extends MybatisPlusInterceptor` / `SqlSessionFactoryBean` / `MapperScannerConfigurer` | 高 |
+| spring-batch | 依赖 | `org.springframework.batch:spring-batch-core` / `org.springframework.batch:spring-batch-infrastructure` / `org.springframework.batch:spring-batch-integration` | 高 |
+| spring-batch | 注解 | `@EnableBatchProcessing` / `@StepScope` / `@JobScope` / `@BatchStep` / `@BatchJob` | 高 |
+| spring-batch | 类 | `JobBuilder` / `StepBuilder` / `JobBuilderFactory`（5.x 前已废弃）/ `StepBuilderFactory`（5.x 前已废弃）/ `JobRepository` / `JobLauncher` / `JobOperator` / `RunIdIncrementer` | 高 |
+| spring-batch | 构建器 DSL | `.chunk(` / `.tasklet(` / `.reader(` / `.writer(` / `.processor(` / `.allowStartIfComplete(` / `.startLimit(` / `.incrementer(` / `.preventRestart()` | 高 |
+| spring-batch | SpEL | `@Value("#{jobParameters` / `@Value("#{stepExecutionContext` / `@Value("#{jobExecutionContext` | 高 |
+| spring-batch | 配置 | `spring.batch.job.enabled` / `spring.batch.job.name` / `spring.batch.jdbc.initialize-schema` / `spring.batch.jdbc.table-prefix` | 高 |
+| spring-batch | 接口实现 | `implements ItemReader<` / `implements ItemWriter<` / `implements ItemProcessor<` / `implements Tasklet` / `implements ItemStream` / `extends AbstractItemStreamItemReader` | 高 |
 # <<< framework-signal-index <<<
 
 > **★版本号提取（与规则文件 §3 适用版本区间匹配，T4 新增铁律）**：探查时须同时提取各框架**版本号**（来源：JVM 项目 `pom.xml` `<version>` / `build.gradle` implementation；Node 项目 `package.json` `"vue": "^3.x"`；Go 项目 `go.mod` `module vX.Y.Z`；Python 项目 `pyproject.toml`/`requirements.txt` `fastapi==0.x`）。将提取到的版本与 `references/frameworks/<fw>.md` §3 规律的"适用版本"区间匹配——区间内规律实例化时附证据；区间外规律标"⚠ 待验证（项目版本 X，规律适用区间 Y）"；框架版本号须写入特征卡第 4 项技术栈摘要。
