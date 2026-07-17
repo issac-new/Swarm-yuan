@@ -275,6 +275,12 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | mybatis | 注解 | `@Mapper` / `@MapperScan` / `@Intercepts` / `@TableLogic` / `@TableName` / `@TableId` / `@TableField` | 高 |
 | mybatis | 配置 | `mybatis.mapper-locations` / `mybatis.type-aliases-package` / `mybatis-plus.global-config.db-config.*` / `mybatis-plus.global-config.enable-aggressive` | 高 |
 | mybatis | 代码 | `extends BaseMapper<` / `implements TypeHandler<` / `extends MybatisPlusInterceptor` / `SqlSessionFactoryBean` / `MapperScannerConfigurer` | 高 |
+| sharding | 依赖 | `org.apache.shardingsphere:shardingsphere-jdbc` / `shardingsphere-jdbc-core` / `shardingsphere-transaction-xa-core` / `shardingsphere-transaction-base-seata-at` / Proxy 安装包 `apache-shardingsphere-*-shardingsphere-proxy-bin` | 高 |
+| sharding | 配置 | `rules:` 下 `- !SHARDING` / `actualDataNodes` / `bindingTables` / `broadcastTables` / `shardingAlgorithms` / `keyGenerators` / `defaultKeyGenerateStrategy` / `- !READWRITE_SPLITTING` | 高 |
+| sharding | 配置 | `org.apache.shardingsphere.driver.ShardingSphereDriver` / `jdbc:shardingsphere:` URL / `YamlShardingSphereDataSourceFactory` / `ShardingSphereDataSource` | 高 |
+| sharding | 代码 | `HintManager` / `addDatabaseShardingValue` / `addTableShardingValue` / `setDatabaseShardingValue` / `HintShardingAlgorithm` / `StandardShardingAlgorithm` / `ComplexKeysShardingAlgorithm` | 高 |
+| sharding | 文件 | `**/sharding*.yaml` / `**/config-sharding*.yaml` / `META-INF` 下含 sharding 规则的 yaml | 中 |
+| sharding | DistSQL | `CREATE SHARDING TABLE RULE` / `ALTER SHARDING TABLE RULE` / `CREATE BROADCAST TABLE RULE`（Proxy 侧） | 中 |
 | spring-batch | 依赖 | `org.springframework.batch:spring-batch-core` / `org.springframework.batch:spring-batch-infrastructure` / `org.springframework.batch:spring-batch-integration` | 高 |
 | spring-batch | 注解 | `@EnableBatchProcessing` / `@StepScope` / `@JobScope` / `@BatchStep` / `@BatchJob` | 高 |
 | spring-batch | 类 | `JobBuilder` / `StepBuilder` / `JobBuilderFactory`（5.x 前已废弃）/ `StepBuilderFactory`（5.x 前已废弃）/ `JobRepository` / `JobLauncher` / `JobOperator` / `RunIdIncrementer` | 高 |
