@@ -280,6 +280,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | elasticsearch | 代码 | `ElasticsearchClient` / `RestClient` / `RestHighLevelClient` / `SearchRequest` / `BulkRequest` / `@Document` | 高 |
 | elasticsearch | 注解 | `@Document` / `@Field`（spring-data-elasticsearch） | 中（需排除其他同名注解） |
 | elasticsearch | 文件 | `**/elasticsearch*.yml` / `**/*mapping*.json` 中含 `"mappings"` | 中 |
+| express | 依赖 | `package.json` dependencies 含 `"express"` / `"express-validator"` / `"helmet"` | 高 |
+| express | 代码 | `require('express')` / `from 'express'` / `express()` / `express.Router(` / `app.listen(` | 高 |
+| express | 文件 | `**/app.js` / `**/server.js`（含 express 引用）/ `**/routes/**/*.js` | 中（需组合依赖信号） |
+| express | 配置 | `NODE_ENV` / `PORT` 环境变量 + express 中间件链 `app.use(` | 中 |
 | flink | 依赖 | `org.apache.flink:flink-streaming-java` / `flink-table-api-java-bridge` / `flink-connector-*` / `org.apache.flink.cdc:flink-cdc-*` / `com.ververica:flink-connector-*` | 高 |
 | flink | 注解/代码 | `StreamExecutionEnvironment` / `StreamTableEnvironment` / `DataStream` / `WatermarkStrategy` / `CheckpointConfig` | 高 |
 | flink | 文件 | `**/flink-conf.yaml` / `**/flink-conf.yml` / `**/sql-client-defaults.yaml` / `**/conf/flink-conf.yaml` | 中（须排除他用） |
@@ -306,6 +310,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | kettle | 文件 | `**/*.kjb` / `**/*.ktr` / `kettle.properties` / `carte-config*.xml` / `slave-server-config*.xml` / `pwd/kettle.pwd` | 高 |
 | kettle | 配置 | `<transformation>` / `<job>` 根元素 / `<connection>` 块 / `<transversion>` | 高 |
 | kettle | 脚本调用 | `pan.sh` / `kitchen.sh` / `carte.sh` / `spoon.sh` 命令行调用 | 高 |
+| koa | 依赖 | `package.json` dependencies 含 `"koa"` / `"@koa/router"` / `"koa-bodyparser"` / `"koa-helmet"` | 高 |
+| koa | 代码 | `new Koa()` / `require('koa')` / `await next()` / `ctx.body =` / `ctx.throw(` | 高 |
+| koa | 文件 | `**/app.js` / `**/server.js`（含 koa 引用）/ `**/routes/**/*.js`（含 Router） | 中（需组合依赖信号） |
+| koa | 配置 | `PORT` + 中间件链 `app.use(` 且含 `ctx` 参数签名 | 中 |
 | lombok | 依赖 | `org.projectlombok:lombok` / `org.projectlombok:lombok-mapstruct-binding` | 高 |
 | lombok | 注解 | `@Data` / `@Getter` / `@Setter` / `@Builder` / `@Jacksonized` / `@AllArgsConstructor` / `@NoArgsConstructor` / `@RequiredArgsConstructor` / `@Slf4j` / `@Log` / `@SneakyThrows` / `@Cleanup` / `@NonNull` / `@Value` / `@EqualsAndHashCode` / `val` / `var` | 高 |
 | lombok | 配置 | `lombok.config`（含 `config.stopBubbling` / `lombok.log.fieldName` / `lombok.copyJacksonAnnotationsToAccessors` / `lombok.anyConstructor.addConstructorProperties` 等 key） | 高 |
@@ -331,6 +339,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | nacos | 配置 | `spring.cloud.nacos.config.*` / `spring.cloud.nacos.discovery.*` / `nacos.server-addr` | 高 |
 | nacos | 文件 | `**/nacos/conf/cluster.conf` / `**/application.properties`（nacos server 包内） | 中（需排除他用） |
 | nacos | 代码 | `NamingService` / `ConfigService` / `NacosFactory` / `NacosConfigManager` | 高 |
+| nestjs | 依赖 | `package.json` dependencies 含 `"@nestjs/core"` / `"@nestjs/common"` / `"@nestjs/platform-express"` / `"@nestjs/platform-fastify"` | 高 |
+| nestjs | 注解 | `@Module(` / `@Injectable(` / `@Controller(` / `@UseGuards(` / `@UseInterceptors(` / `@UsePipes(` | 高 |
+| nestjs | 文件 | `**/*.module.ts` / `**/*.controller.ts` / `**/*.service.ts` / `nest-cli.json` | 高 |
+| nestjs | 配置 | `tsconfig.json` 含 `emitDecoratorMetadata: true` + `experimentalDecorators: true` | 中（需组合依赖信号） |
 | netty | 依赖 | `io.netty:netty-all` / `netty-buffer` / `netty-transport` / `netty-codec` / `netty-handler` / `netty-codec-http` | 高 |
 | netty | 注解 | `@ChannelHandler.Sharable` / `@Sharable` | 高 |
 | netty | 文件 | `**/netty/**` 包目录 / `**/*ChannelInitializer*.java` | 中（需排除仅依赖传递） |
