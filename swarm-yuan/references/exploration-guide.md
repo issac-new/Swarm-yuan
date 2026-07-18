@@ -265,6 +265,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 # >>> framework-signal-index >>>
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
+| celery | 依赖 | celery / celery[redis] / celery[sqs] / kombu | 高 |
+| celery | 注解 | @shared_task / @app.task / @task | 高 |
+| celery | 文件 | celery.py / celeryconfig.py / tasks.py | 中 |
+| celery | 配置 | CELERY_BROKER_URL / CELERY_RESULT_BACKEND / task_routes / beat_schedule | 高 |
 | django | 依赖 | `Django` / `django`（requirements.txt / pyproject.toml / Pipfile） | 高 |
 | django | 文件 | `**/manage.py` / `**/settings.py` / `**/wsgi.py` / `**/asgi.py` | 高 |
 | django | 代码 | `from django.` / `import django` / `django.db.models` / `models.Model` | 高 |
@@ -382,6 +386,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | prisma | 文件 | `**/schema.prisma` / `**/prisma/migrations/*/migration.sql` / `**/prisma.config.ts` | 高 |
 | prisma | 配置 | `datasource db {` / `generator client {` / `model ` 块 | 高 |
 | prisma | 代码 | `new PrismaClient(` / `prisma.$transaction(` / `prisma.$queryRaw` / `$extends(` | 高 |
+| pytest | 依赖 | pytest / pytest-asyncio / pytest-xdist / pytest-cov | 高 |
+| pytest | 注解 | @pytest.fixture / @pytest.mark / @pytest.mark.parametrize / @pytest.skip | 高 |
+| pytest | 文件 | conftest.py / pytest.ini / pyproject.toml [tool.pytest.ini_options] | 高 |
+| pytest | 配置 | pytest.ini / tox.ini [pytest] / setup.cfg [tool:pytest] | 高 |
 | quartz | 依赖 | `org.quartz-scheduler:quartz` / `spring-boot-starter-quartz` / `net.javacrumbs.shedlock:shedlock-spring`（配套信号） | 高 |
 | quartz | 注解 | `@Scheduled` / `@DisallowConcurrentExecution` / `@PersistJobDataAfterExecution` / `@SchedulerLock` | 高 |
 | quartz | 配置 | `org.quartz.*` / `spring.quartz.*` / `QRTZ_*`（数据库表前缀） | 高 |
