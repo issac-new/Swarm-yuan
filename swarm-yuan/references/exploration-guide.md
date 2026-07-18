@@ -265,6 +265,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 # >>> framework-signal-index >>>
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
+| dubbo | 依赖 | `org.apache.dubbo:dubbo` / `dubbo-spring-boot-starter` / `dubbo-registry-nacos` / `dubbo-registry-zookeeper` / `dubbo-rpc-triple` | 高 |
+| dubbo | 注解 | `@DubboService` / `@DubboReference` / `@EnableDubbo` / `@DubboMethod` | 高 |
+| dubbo | 文件 | `**/dubbo.properties` / `**/dubbo.xml` / `**/dubbo-provider.xml` / `**/dubbo-consumer.xml` | 中（需排除他用） |
+| dubbo | 配置 | `dubbo.application.*` / `dubbo.registry.*` / `dubbo.protocol.*` / `dubbo.consumer.*` / `dubbo.provider.*` / `dubbo.qos.*` | 高 |
+| dubbo | 代码 | `RpcContext` / `GenericService` / `org.apache.dubbo.config.annotation` | 高 |
 | jackson | 依赖 | `com.fasterxml.jackson.core:jackson-databind` / `com.fasterxml.jackson.module:jackson-module-parameter-names` / `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` / `tools.jackson.core:jackson-databind`（3.x） | 高 |
 | jackson | 注解 | `@JsonProperty` / `@JsonIgnore` / `@JsonFormat` / `@JsonTypeInfo` / `@JsonSubTypes` / `@JsonInclude` / `@JsonCreator` / `@JsonView` / `@JsonIgnoreProperties` | 高 |
 | jackson | 文件 | `**/dto/**/*.java` 含 Jackson 注解 / `**/*ObjectMapper*.java` | 中（需组合注解信号） |
@@ -290,6 +295,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | mybatis | 注解 | `@Mapper` / `@MapperScan` / `@Intercepts` / `@TableLogic` / `@TableName` / `@TableId` / `@TableField` | 高 |
 | mybatis | 配置 | `mybatis.mapper-locations` / `mybatis.type-aliases-package` / `mybatis-plus.global-config.db-config.*` / `mybatis-plus.global-config.enable-aggressive` | 高 |
 | mybatis | 代码 | `extends BaseMapper<` / `implements TypeHandler<` / `extends MybatisPlusInterceptor` / `SqlSessionFactoryBean` / `MapperScannerConfigurer` | 高 |
+| seata | 依赖 | `io.seata:seata-spring-boot-starter` / `org.apache.seata:seata-spring-boot-starter` / `seata-all` / `seata-saga` | 高 |
+| seata | 注解 | `@GlobalTransactional` / `@GlobalLock` / `@TwoPhaseBusinessAction` / `@LocalTCC` | 高 |
+| seata | 文件 | `**/undo_log.sql` / `**/seata.conf` / `**/registry.conf` / `**/file.conf` / `**/*statemachine*.json` | 中（需排除他用） |
+| seata | 配置 | `seata.tx-service-group` / `seata.service.vgroup-mapping` / `seata.application-id` / `seata.data-source-proxy-mode` / `seata.registry.*` | 高 |
+| seata | 代码 | `RootContext.getXID` / `RootContext.bind` / `DataSourceProxy` / `GlobalTransactionScanner` | 高 |
 | sharding | 依赖 | `org.apache.shardingsphere:shardingsphere-jdbc` / `shardingsphere-jdbc-core` / `shardingsphere-transaction-xa-core` / `shardingsphere-transaction-base-seata-at` / Proxy 安装包 `apache-shardingsphere-*-shardingsphere-proxy-bin` | 高 |
 | sharding | 配置 | `rules:` 下 `- !SHARDING` / `actualDataNodes` / `bindingTables` / `broadcastTables` / `shardingAlgorithms` / `keyGenerators` / `defaultKeyGenerateStrategy` / `- !READWRITE_SPLITTING` | 高 |
 | sharding | 配置 | `org.apache.shardingsphere.driver.ShardingSphereDriver` / `jdbc:shardingsphere:` URL / `YamlShardingSphereDataSourceFactory` / `ShardingSphereDataSource` | 高 |
