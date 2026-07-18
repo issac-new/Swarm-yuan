@@ -321,6 +321,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | mybatis | 注解 | `@Mapper` / `@MapperScan` / `@Intercepts` / `@TableLogic` / `@TableName` / `@TableId` / `@TableField` | 高 |
 | mybatis | 配置 | `mybatis.mapper-locations` / `mybatis.type-aliases-package` / `mybatis-plus.global-config.db-config.*` / `mybatis-plus.global-config.enable-aggressive` | 高 |
 | mybatis | 代码 | `extends BaseMapper<` / `implements TypeHandler<` / `extends MybatisPlusInterceptor` / `SqlSessionFactoryBean` / `MapperScannerConfigurer` | 高 |
+| mysql | 依赖 | `mysql:mysql-connector-j` / `mysql-connector-java` / `github.com/go-sql-driver/mysql` / `mysql2`(npm) / `PyMySQL` | 高 |
+| mysql | 文件 | `**/my.cnf` / `**/my.ini` / `**/schema.sql` 内含 `ENGINE=InnoDB` | 高 |
+| mysql | 配置 | `jdbc:mysql://` / `spring.datasource.url.*mysql` / `[mysqld]` 配置段 | 高 |
+| mysql | 代码 | `ENGINE=InnoDB` / `ALGORITHM=INSTANT` / `innodb_` 前缀参数 / `utf8mb4` | 高 |
+| mysql | 服务 | `docker-compose` 含 `image: mysql:` | 中（须排除仅本地开发用途） |
 | nacos | 依赖 | `com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config` / `spring-cloud-starter-alibaba-nacos-discovery` / `com.alibaba.nacos:nacos-client` / `nacos-spring-context` | 高 |
 | nacos | 注解 | `@NacosValue` / `@NacosPropertySource` / `@NacosConfigListener` / `@NacosInjected` | 高 |
 | nacos | 配置 | `spring.cloud.nacos.config.*` / `spring.cloud.nacos.discovery.*` / `nacos.server-addr` | 高 |
@@ -337,6 +342,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | paimon | 配置项 | `merge-engine` / `changelog-producer` / `bucket` / `snapshot.time-retained` / `scan.mode` | 高 |
 | paimon | 代码/SQL | `CREATE TABLE ... WITH ('connector'='paimon')` / `MERGE INTO`（paimon spark）/ `sys.compact` 过程调用 | 高 |
 | paimon | CDC | flink-cdc YAML `sink: connector: paimon` / `PaimonPipeline` | 高 |
+| postgresql | 依赖 | `org.postgresql:postgresql` / `github.com/lib/pq` / `pg`(npm) / `psycopg2` / `asyncpg` | 高 |
+| postgresql | 文件 | `**/postgresql.conf` / `**/pg_hba.conf` / DDL 内含 `GENERATED ... AS IDENTITY` / `PARTITION BY` | 高 |
+| postgresql | 配置 | `jdbc:postgresql://` / `postgres://` / `postgresql://` 数据源 URL | 高 |
+| postgresql | 代码 | `jsonb` / `USING gin` / `GENERATED ALWAYS AS IDENTITY` / `RETURNING` 子句 | 高 |
+| postgresql | 服务 | `docker-compose` 含 `image: postgres:` / `image: pgbouncer:` | 中（须排除仅本地开发用途） |
 | quartz | 依赖 | `org.quartz-scheduler:quartz` / `spring-boot-starter-quartz` / `net.javacrumbs.shedlock:shedlock-spring`（配套信号） | 高 |
 | quartz | 注解 | `@Scheduled` / `@DisallowConcurrentExecution` / `@PersistJobDataAfterExecution` / `@SchedulerLock` | 高 |
 | quartz | 配置 | `org.quartz.*` / `spring.quartz.*` / `QRTZ_*`（数据库表前缀） | 高 |
@@ -400,6 +410,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | spring-security | 配置 | `spring.security.*` / `security.jwt.*` / `jjwt.secret` / `spring.security.oauth2.client.registration.*` | 高 |
 | spring-security | 代码 | `SecurityFilterChain` / `WebSecurityConfigurerAdapter` / `PasswordEncoder` / `UserDetailsService` / `OncePerRequestFilter` / `JwtAuthenticationToken` | 高 |
 | spring-security | 文件 | `**/SecurityConfig*.java` / `**/*SecurityConfiguration.java` | 中（需组合依赖信号） |
+| sqlserver | 依赖 | `mssql-jdbc`(com.microsoft.sqlserver) / `Microsoft.Data.SqlClient` / `System.Data.SqlClient` / `mssql`(npm) / `pyodbc` | 高 |
+| sqlserver | 文件 | `**/*.sql` 内含 `WITH (NOLOCK)` / `OFFSET ... FETCH` / `[dbo].` / `sp_executesql` | 高 |
+| sqlserver | 配置 | `jdbc:sqlserver://` / `Server=.*;Database=` 连接串 / `Initial Catalog` | 高 |
+| sqlserver | 代码 | `CREATE PROC` / `IDENTITY(1,1)` / `NVARCHAR` / `@@ROWCOUNT` / `SET NOCOUNT ON` | 高 |
+| sqlserver | 服务 | `docker-compose` 含 `image: mcr.microsoft.com/mssql/server` | 中（须排除仅本地开发用途） |
 | validation | 依赖 | `org.hibernate.validator:hibernate-validator` / `org.springframework.boot:spring-boot-starter-validation` / `jakarta.validation:jakarta.validation-api` | 高 |
 | validation | 注解 | `@NotNull` / `@NotBlank` / `@NotEmpty` / `@Size` / `@Pattern` / `@Email` / `@Valid` / `@Validated` / `@GroupSequence` / `@DecimalMin` / `@DecimalMax` / `@Future` / `@Past` | 高 |
 | validation | 文件 | `**/dto/**/*.java` 中含约束注解 / `**/*Validator.java` 实现 `ConstraintValidator` | 中（需组合注解信号） |
