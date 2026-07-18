@@ -291,6 +291,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | junit5-mockito | 文件 | `src/test/java/**/*Test.java` / `**/*Tests.java` / `**/*IT.java` | 高 |
 | junit5-mockito | 配置 | `junit-platform.properties` / `mockito-extensions/org.mockito.plugins.MockMaker` | 中 |
 | junit5-mockito | 代码 | `import org.junit.jupiter.api` / `import org.mockito` / `Mockito.when(` / `Mockito.verify(` | 高 |
+| kafka | 依赖 | `org.apache.kafka:kafka-clients` / `org.springframework.kafka:spring-kafka` / `spring-kafka-test` / `io.confluent:kafka-avro-serializer` | 高 |
+| kafka | 注解 | `@KafkaListener` / `@RetryableTopic` / `@KafkaHandler` / `@DltHandler` | 高 |
+| kafka | 配置 | `spring.kafka.*` / `bootstrap.servers` / `bootstrap-servers` / `group.id` / `enable.auto.commit` | 高 |
+| kafka | 代码 | `KafkaTemplate` / `ProducerRecord` / `KafkaProducer` / `KafkaConsumer` / `ConsumerFactory` / `DeadLetterPublishingRecoverer` | 高 |
+| kafka | 文件 | `**/docker-compose*.yml` 含 `kafka:` / `**/schema-registry*.yml` | 中（需排除仅部署描述） |
 | kettle | 依赖 | `pentaho-kettle:kettle-core` / `kettle-engine` / `pentaho:pdi` | 高 |
 | kettle | 注解 | `@Step` / `@JobEntry`（Kettle 插件注解） | 中（仅插件开发项目出现） |
 | kettle | 文件 | `**/*.kjb` / `**/*.ktr` / `kettle.properties` / `carte-config*.xml` / `slave-server-config*.xml` / `pwd/kettle.pwd` | 高 |
@@ -327,6 +332,16 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | paimon | 配置项 | `merge-engine` / `changelog-producer` / `bucket` / `snapshot.time-retained` / `scan.mode` | 高 |
 | paimon | 代码/SQL | `CREATE TABLE ... WITH ('connector'='paimon')` / `MERGE INTO`（paimon spark）/ `sys.compact` 过程调用 | 高 |
 | paimon | CDC | flink-cdc YAML `sink: connector: paimon` / `PaimonPipeline` | 高 |
+| rabbitmq | 依赖 | `org.springframework.boot:spring-boot-starter-amqp` / `org.springframework.amqp:spring-rabbit` / `com.rabbitmq:amqp-client` | 高 |
+| rabbitmq | 注解 | `@RabbitListener` / `@RabbitHandler` / `@EnableRabbit` | 高 |
+| rabbitmq | 配置 | `spring.rabbitmq.*` / `spring.rabbitmq.listener.*` / `publisher-confirm-type` / `x-dead-letter-exchange` / `x-queue-type` | 高 |
+| rabbitmq | 代码 | `RabbitTemplate` / `ConnectionFactory` / `QueueBuilder` / `DirectExchange` / `TopicExchange` / `basicPublish` / `basicConsume` | 高 |
+| rabbitmq | 文件 | `**/docker-compose*.yml` 含 `rabbitmq:` | 中（需排除仅部署描述） |
+| rocketmq | 依赖 | `org.apache.rocketmq:rocketmq-spring-boot-starter` / `rocketmq-client` / `rocketmq-client-java` | 高 |
+| rocketmq | 注解 | `@RocketMQMessageListener` / `@RocketMQTransactionListener` / `@MessageModel` | 高 |
+| rocketmq | 配置 | `rocketmq.name-server` / `rocketmq.producer.*` / `rocketmq.consumer.*` | 高 |
+| rocketmq | 代码 | `RocketMQTemplate` / `DefaultMQProducer` / `DefaultMQPushConsumer` / `TransactionListener` / `MessageListenerOrderly` | 高 |
+| rocketmq | 文件 | `**/rocketmq*.yml` / `**/rocketmq*.properties` | 中（需排除仅文件名巧合） |
 | seata | 依赖 | `io.seata:seata-spring-boot-starter` / `org.apache.seata:seata-spring-boot-starter` / `seata-all` / `seata-saga` | 高 |
 | seata | 注解 | `@GlobalTransactional` / `@GlobalLock` / `@TwoPhaseBusinessAction` / `@LocalTCC` | 高 |
 | seata | 文件 | `**/undo_log.sql` / `**/seata.conf` / `**/registry.conf` / `**/file.conf` / `**/*statemachine*.json` | 中（需排除他用） |
