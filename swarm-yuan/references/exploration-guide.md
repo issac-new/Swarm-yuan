@@ -265,6 +265,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 # >>> framework-signal-index >>>
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
+| angular | 依赖 | `@angular/core` / `@angular/common` / `@angular/router` / `@angular/forms` / `rxjs`（package.json dependencies） | 高 |
+| angular | 文件 | `**/*.component.ts` / `**/*.service.ts` / `**/*.module.ts` / `angular.json` / `**/*.spec.ts` | 高 |
+| angular | 装饰器 | `@Component` / `@Injectable` / `@Directive` / `@Pipe` / `@NgModule` / `@Input` / `@Output` | 高 |
+| angular | 代码 | `signal(` / `computed(` / `effect(` / `ChangeDetectionStrategy.OnPush` / `takeUntilDestroyed(` / `AsyncPipe` | 高 |
+| angular | 配置 | `angular.json` / `tsconfig.json` 的 `strict` 模式 / `bootstrapApplication(` | 高 |
 | celery | 依赖 | celery / celery[redis] / celery[sqs] / kombu | 高 |
 | celery | 注解 | @shared_task / @app.task / @task | 高 |
 | celery | 文件 | celery.py / celeryconfig.py / tasks.py | 中 |
@@ -380,6 +385,16 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | netty | 文件 | `**/netty/**` 包目录 / `**/*ChannelInitializer*.java` | 中（需排除仅依赖传递） |
 | netty | 配置 | `ServerBootstrap` / `Bootstrap` / `NioEventLoopGroup` / `EpollEventLoopGroup` / `ChannelOption\.` | 高 |
 | netty | 代码 | `ChannelInboundHandlerAdapter` / `SimpleChannelInboundHandler` / `ByteBuf` / `ChannelPipeline` / `writeAndFlush` | 高 |
+| nextjs | 依赖 | `next` 包（package.json dependencies）/ `next/router` / `next/navigation` / `next/image` / `next/font` | 高 |
+| nextjs | 文件 | `next.config.js` / `next.config.mjs` / `app/**/page.tsx` / `app/**/layout.tsx` / `pages/**/*.tsx`（Pages Router） | 高 |
+| nextjs | 代码 | `'use client'` / `'use server'` / `next/headers` / `next/cookies` / `generateStaticParams(` / `revalidate` / `metadata` | 高 |
+| nextjs | 目录 | `app/` 目录（App Router）/ `pages/` 目录（Pages Router）/ `middleware.ts` | 高 |
+| nextjs | 配置 | `next.config.*` 的 `experimental.serverActions` / `images.domains` / `redirects` / `rewrites` | 高 |
+| nuxt | 依赖 | `nuxt` 包（package.json devDependencies）/ `#imports` / `@nuxt/` / `nuxt.config.ts` | 高 |
+| nuxt | 文件 | `nuxt.config.ts` / `app/app.vue` / `app/pages/**/*.vue` / `app/layouts/**/*.vue` / `app/middleware/**/*.ts` / `app/plugins/**/*.ts` / `app/composables/**/*.ts` | 高 |
+| nuxt | 代码 | `useFetch(` / `useAsyncData(` / `useState(` / `defineNuxtPlugin(` / `defineNuxtRouteMiddleware(` / `useSeoMeta(` | 高 |
+| nuxt | 配置 | `nuxt.config.ts` 的 `modules` / `runtimeConfig` / `app.head` / `nitro` | 高 |
+| nuxt | 目录 | `app/`（Nuxt 4 默认 srcDir）/ `server/`（nitro 服务端）/ `public/` | 高 |
 | paimon | 依赖 | `org.apache.paimon:paimon-flink-*` / `paimon-spark-*` / `paimon-bundle` / `paimon-hive-connector` / `paimon-trino` | 高 |
 | paimon | 配置 | `'connector'\s*=\s*'paimon'` / `catalog-type=paimon` / `warehouse` + `paimon` / `PAIMON` catalog 注册 | 高 |
 | paimon | 文件 | `**/catalog/*.sql`（含 paimon DDL）/ `warehouse/` 目录下 `*/db.db/*/manifest/` 结构 | 中（须排除他用） |
@@ -409,6 +424,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | rabbitmq | 配置 | `spring.rabbitmq.*` / `spring.rabbitmq.listener.*` / `publisher-confirm-type` / `x-dead-letter-exchange` / `x-queue-type` | 高 |
 | rabbitmq | 代码 | `RabbitTemplate` / `ConnectionFactory` / `QueueBuilder` / `DirectExchange` / `TopicExchange` / `basicPublish` / `basicConsume` | 高 |
 | rabbitmq | 文件 | `**/docker-compose*.yml` 含 `rabbitmq:` | 中（需排除仅部署描述） |
+| react | 依赖 | `react` / `react-dom` 包（package.json dependencies）/ `next` / `react-router-dom` / `@reduxjs/toolkit` | 高 |
+| react | 文件 | `**/*.jsx` / `**/*.tsx` 含 JSX / `react.config.*` | 中（须组合代码信号） |
+| react | 代码 | `import .* from 'react'` / `useState(` / `useEffect(` / `useMemo(` / `useCallback(` / `React.createElement` / `function .*Component` | 高 |
+| react | JSX | `<Fragment>` / `<>...</>` / `className=` / `key={` | 中（须组合 import 信号） |
+| react | 配置 | `eslint-plugin-react-hooks` / `babel-preset-react` / `vite.config.*` 含 `@vitejs/plugin-react` | 高 |
 | redis | 依赖 | `org.springframework.data:spring-data-redis` / `spring-boot-starter-data-redis` / `org.redisson:redisson` / `redis.clients:jedis` / `io.lettuce:lettuce-core` | 高 |
 | redis | 注解 | `@Cacheable` / `@CacheEvict` / `@CachePut` / `@Caching`（配合 RedisCacheManager） | 中（须结合 RedisCacheManager 排除 caffeine 等其他 provider） |
 | redis | 配置 | `spring.data.redis.*` / `spring.redis.*`（Boot 2.x 旧节点） / `spring.cache.type=redis` | 高 |
@@ -482,6 +502,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | validation | 文件 | `**/dto/**/*.java` 中含约束注解 / `**/*Validator.java` 实现 `ConstraintValidator` | 中（需组合注解信号） |
 | validation | 配置 | `spring.mvc.problemdetails.enabled` / `validation` 相关 `MessageSource` bean | 低（仅辅助） |
 | validation | 代码 | `implements ConstraintValidator<` / `extends AbstractAssert`（误用排除） / `MethodArgumentNotValidException` / `HandlerMethodValidationException` | 高 |
+| vue | 依赖 | `vue` 包（package.json dependencies） / `@vue/runtime-dom` / `@vue/compiler-sfc` / `vue-router` / `pinia` | 高 |
+| vue | 文件 | `**/*.vue`（SFC 单文件组件） / `vite.config.ts` 含 `@vitejs/plugin-vue` | 高 |
+| vue | 代码 | `<script setup>` / `defineProps(` / `defineEmits(` / `ref(` / `reactive(` / `computed(` / `useRouter()` | 高 |
+| vue | 模板 | `v-html` / `v-for` / `v-model` / `<Teleport>` / `<Suspense>` / `<slot>` | 中（须组合 .vue 文件信号） |
+| vue | 配置 | `vue.config.js`（Vue CLI） / `vite.config.*` 的 `@vitejs/plugin-vue` | 高 |
 | xxl-job | 依赖 | `com.xuxueli:xxl-job-core` | 高 |
 | xxl-job | 注解 | `@XxlJob` | 高 |
 | xxl-job | 配置 | `xxl.job.admin.addresses` / `xxl.job.executor.*` / `xxl.job.accessToken` | 高 |
