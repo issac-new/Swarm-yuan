@@ -270,6 +270,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | lombok | 配置 | `lombok.config`（含 `config.stopBubbling` / `lombok.log.fieldName` / `lombok.copyJacksonAnnotationsToAccessors` / `lombok.anyConstructor.addConstructorProperties` 等 key） | 高 |
 | lombok | 代码 | `import lombok.` / `import lombok.experimental.` / `@Jacksonized` / `@SuperBuilder` / `@Accessors` / `@Locked` | 高 |
 | lombok | 工具 | `java -jar lombok.jar delombok` / `lombok-maven-plugin` / `org.mapstruct:mapstruct-processor` 与 `lombok` 同 module 路径 | 中 |
+| mapstruct | 依赖 | `org.mapstruct:mapstruct` / `org.mapstruct:mapstruct-processor` / `org.projectlombok:lombok-mapstruct-binding` | 高 |
+| mapstruct | 注解 | `@Mapper` / `@MapperConfig` / `@Mapping` / `@MappingTarget` / `@Named` / `@InheritConfiguration` / `@InheritInverseConfiguration` / `@IterableMapping` | 高 |
+| mapstruct | 配置 | `annotationProcessorPaths`（含 mapstruct-processor） / `mapstruct.defaultComponentModel` / `mapstruct.unmappedTargetPolicy` 编译参数 | 高 |
+| mapstruct | 代码 | `import org.mapstruct.` / `Mappers.getMapper(` / `ReportingPolicy` / `CycleAvoidingStrategy` | 高 |
+| mapstruct | 文件 | `**/mapper/**/*Mapper.java` / `**/mapstruct/**/*.java` | 中（需组合依赖信号） |
 | mybatis | 依赖 | `org.mybatis:mybatis` / `org.mybatis:mybatis-spring` / `org.mybatis.spring.boot:mybatis-spring-boot-starter` / `com.baomidou:mybatis-plus` / `com.baomidou:mybatis-plus-boot-starter` | 高 |
 | mybatis | 文件 | `**/resources/**/*Mapper.xml` / `**/mapper/**/*.xml` / `mybatis-config.xml` | 高 |
 | mybatis | 注解 | `@Mapper` / `@MapperScan` / `@Intercepts` / `@TableLogic` / `@TableName` / `@TableId` / `@TableField` | 高 |
@@ -298,6 +303,16 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | spring-cloud | 文件 | `**/bootstrap.yml` / `**/bootstrap.properties` / `**/spring-cloud-bootstrap.yml` | 中（Boot 2.4+ 默认弃用 bootstrap，改 import） |
 | spring-cloud | 配置 | `spring.cloud.config.*` / `spring.cloud.gateway.routes.*` / `feign.client.*` / `spring.cloud.loadbalancer.*` / `eureka.client.*` / `spring.cloud.bus.*` | 高 |
 | spring-cloud | 代码 | `@FeignClient` / `SpringCloudLoadBalancer` / `RouteLocator` / `@RefreshScope` / `DiscoveryClient` | 高 |
+| spring-data-jpa | 依赖 | `org.springframework.boot:spring-boot-starter-data-jpa` / `org.springframework.data:spring-data-jpa` / `org.hibernate.orm:hibernate-core` / `jakarta.persistence:jakarta.persistence-api` | 高 |
+| spring-data-jpa | 注解 | `@Entity` / `@Table` / `@Id` / `@OneToMany` / `@ManyToOne` / `@Enumerated` / `@Transactional` / `@EntityGraph` / `@EnableJpaAuditing` / `@EnableJpaRepositories` | 高 |
+| spring-data-jpa | 配置 | `spring.jpa.*` / `spring.datasource.*` / `hibernate.*`（`open-in-view` / `ddl-auto` / `show-sql`） | 高 |
+| spring-data-jpa | 代码 | `extends JpaRepository<` / `extends CrudRepository<` / `EntityManager` / `@PersistenceContext` / `JpaSpecificationExecutor` | 高 |
+| spring-data-jpa | 文件 | `**/entity/**/*.java` / `**/repository/**/*Repository.java` | 中（需组合依赖信号） |
+| spring-security | 依赖 | `org.springframework.security:spring-security-core` / `spring-security-web` / `spring-security-config` / `org.springframework.boot:spring-boot-starter-security` / `spring-security-oauth2-client` / `spring-security-oauth2-resource-server` | 高 |
+| spring-security | 注解 | `@EnableWebSecurity` / `@EnableMethodSecurity` / `@EnableGlobalMethodSecurity`（遗留） / `@PreAuthorize` / `@PostAuthorize` / `@Secured` / `@RolesAllowed` | 高 |
+| spring-security | 配置 | `spring.security.*` / `security.jwt.*` / `jjwt.secret` / `spring.security.oauth2.client.registration.*` | 高 |
+| spring-security | 代码 | `SecurityFilterChain` / `WebSecurityConfigurerAdapter` / `PasswordEncoder` / `UserDetailsService` / `OncePerRequestFilter` / `JwtAuthenticationToken` | 高 |
+| spring-security | 文件 | `**/SecurityConfig*.java` / `**/*SecurityConfiguration.java` | 中（需组合依赖信号） |
 # <<< framework-signal-index <<<
 
 > **★版本号提取（与规则文件 §3 适用版本区间匹配，T4 新增铁律）**：探查时须同时提取各框架**版本号**（来源：JVM 项目 `pom.xml` `<version>` / `build.gradle` implementation；Node 项目 `package.json` `"vue": "^3.x"`；Go 项目 `go.mod` `module vX.Y.Z`；Python 项目 `pyproject.toml`/`requirements.txt` `fastapi==0.x`）。将提取到的版本与 `references/frameworks/<fw>.md` §3 规律的"适用版本"区间匹配——区间内规律实例化时附证据；区间外规律标"⚠ 待验证（项目版本 X，规律适用区间 Y）"；框架版本号须写入特征卡第 4 项技术栈摘要。
