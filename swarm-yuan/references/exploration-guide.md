@@ -313,6 +313,15 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | flink | 配置 | `execution.checkpointing.*` / `state.backend.*` / `restart-strategy.*` / `pipeline.jars` / `table.*` / `high-availability.*` | 高 |
 | flink | 代码 | `enableCheckpointing` / `assignTimestampsAndWatermarks` / `RestartStrategy` / `KeyedState` / `ValueState` / `CEP.pattern` | 高 |
 | flink | CDC | `flink-cdc.yaml`（YAML pipeline：`source:`/`sink:` + `pipeline:` 节点）/ `MySqlSource` / `FlinkSourceFunction` | 高 |
+| gin | 依赖 | `github.com/gin-gonic/gin` / `github.com/gin-contrib/...`（gzip/cors/sessions/jwt） | 高 |
+| gin | 注解 | 无（Gin 不依赖注解，以 import + API 调用识别） | — |
+| gin | 文件 | `**/go.mod` 含 `gin-gonic/gin` | 高 |
+| gin | 配置 | `GIN_MODE` 环境变量 / `gin.SetMode(` | 中 |
+| gin | 代码 | `gin.Engine` / `gin.Context` / `gin.Default()` / `gin.New()` / `c.JSON(` / `c.Abort(` / `c.Next()` / `engine.Run(` | 高 |
+| gorm | 依赖 | `gorm.io/gorm` / `gorm.io/driver/mysql` / `gorm.io/driver/postgres` / `gorm.io/driver/sqlite` / `gorm.io/driver/sqlserver` | 高 |
+| gorm | 文件 | `**/go.mod` 含 `gorm.io/gorm` | 高 |
+| gorm | 配置 | 无独立配置文件（DSN 走代码/env） | — |
+| gorm | 代码 | `gorm.Open(` / `gorm.DB` / `db.AutoMigrate(` / `db.Preload(` / `db.Transaction(` / `db.Model(` / `db.Create(` / `db.First(` / `db.Find(` / `gorm.Model` / `gorm.DeletedAt` / `errors.Is(err, gorm.ErrRecordNotFound)` | 高 |
 | jackson | 依赖 | `com.fasterxml.jackson.core:jackson-databind` / `com.fasterxml.jackson.module:jackson-module-parameter-names` / `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` / `tools.jackson.core:jackson-databind`（3.x） | 高 |
 | jackson | 注解 | `@JsonProperty` / `@JsonIgnore` / `@JsonFormat` / `@JsonTypeInfo` / `@JsonSubTypes` / `@JsonInclude` / `@JsonCreator` / `@JsonView` / `@JsonIgnoreProperties` | 高 |
 | jackson | 文件 | `**/dto/**/*.java` 含 Jackson 注解 / `**/*ObjectMapper*.java` | 中（需组合注解信号） |
