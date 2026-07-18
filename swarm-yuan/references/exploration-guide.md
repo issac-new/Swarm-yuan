@@ -295,11 +295,21 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | mybatis | 注解 | `@Mapper` / `@MapperScan` / `@Intercepts` / `@TableLogic` / `@TableName` / `@TableId` / `@TableField` | 高 |
 | mybatis | 配置 | `mybatis.mapper-locations` / `mybatis.type-aliases-package` / `mybatis-plus.global-config.db-config.*` / `mybatis-plus.global-config.enable-aggressive` | 高 |
 | mybatis | 代码 | `extends BaseMapper<` / `implements TypeHandler<` / `extends MybatisPlusInterceptor` / `SqlSessionFactoryBean` / `MapperScannerConfigurer` | 高 |
+| nacos | 依赖 | `com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config` / `spring-cloud-starter-alibaba-nacos-discovery` / `com.alibaba.nacos:nacos-client` / `nacos-spring-context` | 高 |
+| nacos | 注解 | `@NacosValue` / `@NacosPropertySource` / `@NacosConfigListener` / `@NacosInjected` | 高 |
+| nacos | 配置 | `spring.cloud.nacos.config.*` / `spring.cloud.nacos.discovery.*` / `nacos.server-addr` | 高 |
+| nacos | 文件 | `**/nacos/conf/cluster.conf` / `**/application.properties`（nacos server 包内） | 中（需排除他用） |
+| nacos | 代码 | `NamingService` / `ConfigService` / `NacosFactory` / `NacosConfigManager` | 高 |
 | seata | 依赖 | `io.seata:seata-spring-boot-starter` / `org.apache.seata:seata-spring-boot-starter` / `seata-all` / `seata-saga` | 高 |
 | seata | 注解 | `@GlobalTransactional` / `@GlobalLock` / `@TwoPhaseBusinessAction` / `@LocalTCC` | 高 |
 | seata | 文件 | `**/undo_log.sql` / `**/seata.conf` / `**/registry.conf` / `**/file.conf` / `**/*statemachine*.json` | 中（需排除他用） |
 | seata | 配置 | `seata.tx-service-group` / `seata.service.vgroup-mapping` / `seata.application-id` / `seata.data-source-proxy-mode` / `seata.registry.*` | 高 |
 | seata | 代码 | `RootContext.getXID` / `RootContext.bind` / `DataSourceProxy` / `GlobalTransactionScanner` | 高 |
+| sentinel | 依赖 | `com.alibaba.cloud:spring-cloud-starter-alibaba-sentinel` / `com.alibaba.csp:sentinel-core` / `sentinel-annotation-aspectj` / `sentinel-datasource-nacos` / `sentinel-spring-cloud-gateway-adapter` / `sentinel-parameter-flow-control` | 高 |
+| sentinel | 注解 | `@SentinelResource` | 高 |
+| sentinel | 配置 | `spring.cloud.sentinel.*` / `spring.cloud.sentinel.datasource.*` / `spring.cloud.sentinel.transport.dashboard` | 高 |
+| sentinel | 代码 | `SphU.entry` / `FlowRule` / `DegradeRule` / `ParamFlowRule` / `SystemRule` / `GatewayFlowRule` / `BlockException` | 高 |
+| sentinel | 文件 | `**/sentinel-dashboard*.jar` / `**/sentinel-rules/**` | 中（需排除他用） |
 | sharding | 依赖 | `org.apache.shardingsphere:shardingsphere-jdbc` / `shardingsphere-jdbc-core` / `shardingsphere-transaction-xa-core` / `shardingsphere-transaction-base-seata-at` / Proxy 安装包 `apache-shardingsphere-*-shardingsphere-proxy-bin` | 高 |
 | sharding | 配置 | `rules:` 下 `- !SHARDING` / `actualDataNodes` / `bindingTables` / `broadcastTables` / `shardingAlgorithms` / `keyGenerators` / `defaultKeyGenerateStrategy` / `- !READWRITE_SPLITTING` | 高 |
 | sharding | 配置 | `org.apache.shardingsphere.driver.ShardingSphereDriver` / `jdbc:shardingsphere:` URL / `YamlShardingSphereDataSourceFactory` / `ShardingSphereDataSource` | 高 |
