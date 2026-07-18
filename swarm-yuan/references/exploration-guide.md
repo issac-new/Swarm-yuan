@@ -284,6 +284,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | express | 代码 | `require('express')` / `from 'express'` / `express()` / `express.Router(` / `app.listen(` | 高 |
 | express | 文件 | `**/app.js` / `**/server.js`（含 express 引用）/ `**/routes/**/*.js` | 中（需组合依赖信号） |
 | express | 配置 | `NODE_ENV` / `PORT` 环境变量 + express 中间件链 `app.use(` | 中 |
+| fastify | 依赖 | `package.json` 含 `"fastify"` / `"@fastify/cors"` / `"@fastify/rate-limit"` / `"@fastify/auth"` / `"@fastify/swagger"` / `"fastify-plugin"` | 高 |
+| fastify | 代码 | `require('fastify')` / `from 'fastify'` / `fastify.register(` / `fastify.addHook(` / `fastify.decorate` | 高 |
+| fastify | 配置 | `fastify({ logger: ... })` 初始化 / `setErrorHandler` / `setNotFoundHandler` | 高 |
+| fastify | 文件 | `**/plugins/*.js`（fastify 插件目录约定） | 中（需排除他用，须组合依赖信号） |
 | flink | 依赖 | `org.apache.flink:flink-streaming-java` / `flink-table-api-java-bridge` / `flink-connector-*` / `org.apache.flink.cdc:flink-cdc-*` / `com.ververica:flink-connector-*` | 高 |
 | flink | 注解/代码 | `StreamExecutionEnvironment` / `StreamTableEnvironment` / `DataStream` / `WatermarkStrategy` / `CheckpointConfig` | 高 |
 | flink | 文件 | `**/flink-conf.yaml` / `**/flink-conf.yml` / `**/sql-client-defaults.yaml` / `**/conf/flink-conf.yaml` | 中（须排除他用） |
@@ -359,6 +363,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | postgresql | 配置 | `jdbc:postgresql://` / `postgres://` / `postgresql://` 数据源 URL | 高 |
 | postgresql | 代码 | `jsonb` / `USING gin` / `GENERATED ALWAYS AS IDENTITY` / `RETURNING` 子句 | 高 |
 | postgresql | 服务 | `docker-compose` 含 `image: postgres:` / `image: pgbouncer:` | 中（须排除仅本地开发用途） |
+| prisma | 依赖 | `package.json` 含 `"prisma"` / `"@prisma/client"` / `"@prisma/adapter-*"` | 高 |
+| prisma | 文件 | `**/schema.prisma` / `**/prisma/migrations/*/migration.sql` / `**/prisma.config.ts` | 高 |
+| prisma | 配置 | `datasource db {` / `generator client {` / `model ` 块 | 高 |
+| prisma | 代码 | `new PrismaClient(` / `prisma.$transaction(` / `prisma.$queryRaw` / `$extends(` | 高 |
 | quartz | 依赖 | `org.quartz-scheduler:quartz` / `spring-boot-starter-quartz` / `net.javacrumbs.shedlock:shedlock-spring`（配套信号） | 高 |
 | quartz | 注解 | `@Scheduled` / `@DisallowConcurrentExecution` / `@PersistJobDataAfterExecution` / `@SchedulerLock` | 高 |
 | quartz | 配置 | `org.quartz.*` / `spring.quartz.*` / `QRTZ_*`（数据库表前缀） | 高 |
@@ -427,6 +435,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | sqlserver | 配置 | `jdbc:sqlserver://` / `Server=.*;Database=` 连接串 / `Initial Catalog` | 高 |
 | sqlserver | 代码 | `CREATE PROC` / `IDENTITY(1,1)` / `NVARCHAR` / `@@ROWCOUNT` / `SET NOCOUNT ON` | 高 |
 | sqlserver | 服务 | `docker-compose` 含 `image: mcr.microsoft.com/mssql/server` | 中（须排除仅本地开发用途） |
+| typeorm | 依赖 | `package.json` 含 `"typeorm"` / `"@nestjs/typeorm"` / `"typeorm-naming-strategies"` | 高 |
+| typeorm | 注解/装饰器 | `@Entity` / `@Column` / `@PrimaryGeneratedColumn` / `@ManyToOne` / `@OneToMany` / `@Index` | 高 |
+| typeorm | 文件 | `**/data-source.ts` / `**/ormconfig.json` / `**/migrations/*.ts`（含 `MigrationInterface`） | 中（migrations 目录须组合 MigrationInterface 确认） |
+| typeorm | 配置 | `new DataSource({...})` / `createConnection(` / `synchronize:` / `migrationsRun:` | 高 |
+| typeorm | 代码 | `getRepository(` / `createQueryBuilder(` / `QueryRunner` / `EntityManager` | 高 |
 | validation | 依赖 | `org.hibernate.validator:hibernate-validator` / `org.springframework.boot:spring-boot-starter-validation` / `jakarta.validation:jakarta.validation-api` | 高 |
 | validation | 注解 | `@NotNull` / `@NotBlank` / `@NotEmpty` / `@Size` / `@Pattern` / `@Email` / `@Valid` / `@Validated` / `@GroupSequence` / `@DecimalMin` / `@DecimalMax` / `@Future` / `@Past` | 高 |
 | validation | 文件 | `**/dto/**/*.java` 中含约束注解 / `**/*Validator.java` 实现 `ConstraintValidator` | 中（需组合注解信号） |
