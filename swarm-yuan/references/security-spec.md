@@ -254,6 +254,38 @@ ECC 的 `governance-capture.js` hook 捕获安全相关事件为 `governanceEven
 - install-safety 构建（可选依赖缺失时）须编译通过
 - `package.json` 的 `optionalDependencies` 须对应 try-catch 动态 import 模式
 
+### 6.7 AST 可移植性规则（gsd-core v1.7.0, ADR-1239）
+
+gsd-core v1.7.0 引入 **6 条 AST 可移植性规则**（G1–G6），用 AST 分析替代正则，精准检测不可移植代码：
+
+| 规则 | 检测 | 说明 |
+|------|------|------|
+| **G1: no-path-literal-in-assert** | `assert.equal(path, '/foo/bar')` | 禁止在 assert 中硬编码绝对路径（跨平台失败） |
+| **G2: no-posix-mode-bit-assert** | `assert.equal(mode, 0o755)` | 禁止断言 POSIX mode bit（Windows 无 chmod） |
+| **G3: no-unguarded-nonportable-exec** | `exec('cmd')` 无平台判断 | 禁止无平台守卫的不可移植 exec |
+| **G4: normalize-path-in-content** | 写入内容的路径须 `path.normalize` | 防止 Windows `\` 泄漏到内容 |
+| **G5: require-fs-op-fallback** | `fs.op()` 无 fallback | fs 操作须有 Windows fallback |
+| **G6: destSubpath write-confinement** | `destSubpath` 须在允许目录内 | 安装目标路径须限制（防路径穿越） |
+
+**在目标技能中的落地：**
+- precheck.sh 的 `--security` 子命令可引用 G1–G6 规则（用 AST 而非正则检测）
+- 生成的目标技能若跨平台，dev-guide.md 引用可移植性规则
+
+### 6.8 Codex hooks.json BOM 修复（ruflo v3.32.1）
+
+ruflo v3.32.1 修复了 Codex 集成中的 hooks.json 解析失败：
+
+| 问题 | 原因 | 修复 |
+|------|------|------|
+| `expected value at line 1 column 1` | hooks.json 以 UTF-8 BOM 开头，严格 JSON 解析在字节 1 失败 | 剥离 BOM 后解析 |
+| Windows npm shim 启动失败 | Windows npm shim 须 `cmd /c` 启动，不能当原生 exe | Windows 用 `cmd /c <shim>` |
+| MCP startup 30s 超时 | 冷 npm 解析慢 | 预解析 + 缓存 |
+
+**在目标技能中的落地：**
+- 生成的目标技能的 hooks.json 须**无 BOM**（用 UTF-8 无 BOM 编码）
+- Windows 上的 npm shim 须用 `cmd /c` 启动（不能当原生 exe）
+- precheck.sh 的 `--security` 可扫描 hooks.json 是否有 BOM
+
 ### 6.5 文件系统兼容
 - 文件名大小写：Windows 不区分、macOS 默认不区分、Linux 区分 → 统一用小写
 - 文件名特殊字符：避免 `:` `*` `?` `<` `>` `|` `"`（Windows 禁用）
