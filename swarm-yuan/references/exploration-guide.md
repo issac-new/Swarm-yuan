@@ -270,6 +270,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | dubbo | 文件 | `**/dubbo.properties` / `**/dubbo.xml` / `**/dubbo-provider.xml` / `**/dubbo-consumer.xml` | 中（需排除他用） |
 | dubbo | 配置 | `dubbo.application.*` / `dubbo.registry.*` / `dubbo.protocol.*` / `dubbo.consumer.*` / `dubbo.provider.*` / `dubbo.qos.*` | 高 |
 | dubbo | 代码 | `RpcContext` / `GenericService` / `org.apache.dubbo.config.annotation` | 高 |
+| elasticjob | 依赖 | `org.apache.shardingsphere.elasticjob:elasticjob-lite-core` / `elasticjob-lite-spring-boot-starter` / `elasticjob-error-handler-*` / `elasticjob-tracing-rdb` | 高 |
+| elasticjob | 代码 | `implements SimpleJob` / `implements DataflowJob` / `ShardingContext` / `JobConfiguration` / `ScheduleJobBootstrap` | 高 |
+| elasticjob | 配置 | `elasticjob.reg-center.*` / `elasticjob.jobs.*` / `elasticjob.tracing.*` | 高 |
+| elasticjob | 注解 | `@ElasticJobConfiguration`（社区封装，待验证官方性） | 低（非官方标准注解，仅辅助） |
+| elasticjob | 文件 | `**/elasticjob*.yml` / ZK 命名空间 `**/job` 节点 | 低 |
 | elasticsearch | 依赖 | `co.elastic.clients:elasticsearch-java` / `org.elasticsearch.client:elasticsearch-rest-high-level-client` / `org.springframework.data:spring-data-elasticsearch` | 高 |
 | elasticsearch | 配置 | `spring.elasticsearch.*` / `elasticsearch.hosts` / `index.max_result_window` / `index.refresh_interval` | 高 |
 | elasticsearch | 代码 | `ElasticsearchClient` / `RestClient` / `RestHighLevelClient` / `SearchRequest` / `BulkRequest` / `@Document` | 高 |
@@ -332,11 +337,21 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | paimon | 配置项 | `merge-engine` / `changelog-producer` / `bucket` / `snapshot.time-retained` / `scan.mode` | 高 |
 | paimon | 代码/SQL | `CREATE TABLE ... WITH ('connector'='paimon')` / `MERGE INTO`（paimon spark）/ `sys.compact` 过程调用 | 高 |
 | paimon | CDC | flink-cdc YAML `sink: connector: paimon` / `PaimonPipeline` | 高 |
+| quartz | 依赖 | `org.quartz-scheduler:quartz` / `spring-boot-starter-quartz` / `net.javacrumbs.shedlock:shedlock-spring`（配套信号） | 高 |
+| quartz | 注解 | `@Scheduled` / `@DisallowConcurrentExecution` / `@PersistJobDataAfterExecution` / `@SchedulerLock` | 高 |
+| quartz | 配置 | `org.quartz.*` / `spring.quartz.*` / `QRTZ_*`（数据库表前缀） | 高 |
+| quartz | 代码 | `JobBuilder` / `TriggerBuilder` / `CronScheduleBuilder` / `SchedulerFactoryBean` / `JobDetail` / `implements Job` | 高 |
+| quartz | 文件 | `**/quartz.properties` / `**/tables_*.sql`（QRTZ 建表脚本） | 中（需排除仅样例文档） |
 | rabbitmq | 依赖 | `org.springframework.boot:spring-boot-starter-amqp` / `org.springframework.amqp:spring-rabbit` / `com.rabbitmq:amqp-client` | 高 |
 | rabbitmq | 注解 | `@RabbitListener` / `@RabbitHandler` / `@EnableRabbit` | 高 |
 | rabbitmq | 配置 | `spring.rabbitmq.*` / `spring.rabbitmq.listener.*` / `publisher-confirm-type` / `x-dead-letter-exchange` / `x-queue-type` | 高 |
 | rabbitmq | 代码 | `RabbitTemplate` / `ConnectionFactory` / `QueueBuilder` / `DirectExchange` / `TopicExchange` / `basicPublish` / `basicConsume` | 高 |
 | rabbitmq | 文件 | `**/docker-compose*.yml` 含 `rabbitmq:` | 中（需排除仅部署描述） |
+| redis | 依赖 | `org.springframework.data:spring-data-redis` / `spring-boot-starter-data-redis` / `org.redisson:redisson` / `redis.clients:jedis` / `io.lettuce:lettuce-core` | 高 |
+| redis | 注解 | `@Cacheable` / `@CacheEvict` / `@CachePut` / `@Caching`（配合 RedisCacheManager） | 中（须结合 RedisCacheManager 排除 caffeine 等其他 provider） |
+| redis | 配置 | `spring.data.redis.*` / `spring.redis.*`（Boot 2.x 旧节点） / `spring.cache.type=redis` | 高 |
+| redis | 代码 | `RedisTemplate` / `StringRedisTemplate` / `RedissonClient` / `Jedis` / `@Cacheable` | 高 |
+| redis | 文件 | `**/redis.conf` / `**/redis-cluster.yml` | 低（部署侧文件，工程侧仅辅助） |
 | rocketmq | 依赖 | `org.apache.rocketmq:rocketmq-spring-boot-starter` / `rocketmq-client` / `rocketmq-client-java` | 高 |
 | rocketmq | 注解 | `@RocketMQMessageListener` / `@RocketMQTransactionListener` / `@MessageModel` | 高 |
 | rocketmq | 配置 | `rocketmq.name-server` / `rocketmq.producer.*` / `rocketmq.consumer.*` | 高 |
