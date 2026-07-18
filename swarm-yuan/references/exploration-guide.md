@@ -265,6 +265,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 # >>> framework-signal-index >>>
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
+| django | 依赖 | `Django` / `django`（requirements.txt / pyproject.toml / Pipfile） | 高 |
+| django | 文件 | `**/manage.py` / `**/settings.py` / `**/wsgi.py` / `**/asgi.py` | 高 |
+| django | 代码 | `from django.` / `import django` / `django.db.models` / `models.Model` | 高 |
+| django | 配置 | `SECRET_KEY` / `MIDDLEWARE` / `INSTALLED_APPS` / `DATABASES` / `ALLOWED_HOSTS` | 高 |
+| django | 目录结构 | `**/migrations/`（含 `__init__.py` 与数字前缀迁移文件） | 中（需组合信号） |
 | dubbo | 依赖 | `org.apache.dubbo:dubbo` / `dubbo-spring-boot-starter` / `dubbo-registry-nacos` / `dubbo-registry-zookeeper` / `dubbo-rpc-triple` | 高 |
 | dubbo | 注解 | `@DubboService` / `@DubboReference` / `@EnableDubbo` / `@DubboMethod` | 高 |
 | dubbo | 文件 | `**/dubbo.properties` / `**/dubbo.xml` / `**/dubbo-provider.xml` / `**/dubbo-consumer.xml` | 中（需排除他用） |
@@ -284,10 +289,20 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | express | 代码 | `require('express')` / `from 'express'` / `express()` / `express.Router(` / `app.listen(` | 高 |
 | express | 文件 | `**/app.js` / `**/server.js`（含 express 引用）/ `**/routes/**/*.js` | 中（需组合依赖信号） |
 | express | 配置 | `NODE_ENV` / `PORT` 环境变量 + express 中间件链 `app.use(` | 中 |
+| fastapi | 依赖 | `fastapi` / `uvicorn`（requirements.txt / pyproject.toml） | 高 |
+| fastapi | 代码 | `from fastapi import` / `FastAPI(` / `APIRouter(` / `Depends(` | 高 |
+| fastapi | 代码 | `from pydantic import` / `BaseModel` / `field_validator` | 中（pydantic 可独立于 FastAPI 使用） |
+| fastapi | 脚本调用 | `uvicorn .* :app` / `fastapi run` | 高 |
+| fastapi | 配置 | `allow_origins` / `CORSMiddleware` / `response_model` | 中 |
 | fastify | 依赖 | `package.json` 含 `"fastify"` / `"@fastify/cors"` / `"@fastify/rate-limit"` / `"@fastify/auth"` / `"@fastify/swagger"` / `"fastify-plugin"` | 高 |
 | fastify | 代码 | `require('fastify')` / `from 'fastify'` / `fastify.register(` / `fastify.addHook(` / `fastify.decorate` | 高 |
 | fastify | 配置 | `fastify({ logger: ... })` 初始化 / `setErrorHandler` / `setNotFoundHandler` | 高 |
 | fastify | 文件 | `**/plugins/*.js`（fastify 插件目录约定） | 中（需排除他用，须组合依赖信号） |
+| flask | 依赖 | `Flask` / `flask`（requirements.txt / pyproject.toml） | 高 |
+| flask | 代码 | `from flask import` / `Flask(__name__)` / `@app.route` / `Blueprint(` | 高 |
+| flask | 文件 | `**/app.py`（含 Flask 实例化） / `**/wsgi.py` / `**/create_app` 工厂 | 中（需组合信号） |
+| flask | 配置 | `SECRET_KEY` / `app.config` / `FLASK_APP` / `SQLALCHEMY_DATABASE_URI` | 高 |
+| flask | 脚本调用 | `flask run` / `gunicorn .* :app` | 中 |
 | flink | 依赖 | `org.apache.flink:flink-streaming-java` / `flink-table-api-java-bridge` / `flink-connector-*` / `org.apache.flink.cdc:flink-cdc-*` / `com.ververica:flink-connector-*` | 高 |
 | flink | 注解/代码 | `StreamExecutionEnvironment` / `StreamTableEnvironment` / `DataStream` / `WatermarkStrategy` / `CheckpointConfig` | 高 |
 | flink | 文件 | `**/flink-conf.yaml` / `**/flink-conf.yml` / `**/sql-client-defaults.yaml` / `**/conf/flink-conf.yaml` | 中（须排除他用） |
@@ -430,6 +445,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | spring-security | 配置 | `spring.security.*` / `security.jwt.*` / `jjwt.secret` / `spring.security.oauth2.client.registration.*` | 高 |
 | spring-security | 代码 | `SecurityFilterChain` / `WebSecurityConfigurerAdapter` / `PasswordEncoder` / `UserDetailsService` / `OncePerRequestFilter` / `JwtAuthenticationToken` | 高 |
 | spring-security | 文件 | `**/SecurityConfig*.java` / `**/*SecurityConfiguration.java` | 中（需组合依赖信号） |
+| sqlalchemy | 依赖 | `SQLAlchemy` / `sqlalchemy`（requirements.txt / pyproject.toml） | 高 |
+| sqlalchemy | 代码 | `from sqlalchemy import` / `create_engine(` / `sessionmaker(` / `declarative_base` / `DeclarativeBase` | 高 |
+| sqlalchemy | 代码 | `select(` + `Mapped[` / `mapped_column(` | 中（2.x 特征，需组合） |
+| sqlalchemy | 文件 | `**/alembic.ini` / `**/alembic/env.py` / `**/alembic/versions/` | 高 |
+| sqlalchemy | 配置 | `pool_size` / `pool_recycle` / `SQLALCHEMY_DATABASE_URI` | 中 |
 | sqlserver | 依赖 | `mssql-jdbc`(com.microsoft.sqlserver) / `Microsoft.Data.SqlClient` / `System.Data.SqlClient` / `mssql`(npm) / `pyodbc` | 高 |
 | sqlserver | 文件 | `**/*.sql` 内含 `WITH (NOLOCK)` / `OFFSET ... FETCH` / `[dbo].` / `sp_executesql` | 高 |
 | sqlserver | 配置 | `jdbc:sqlserver://` / `Server=.*;Database=` 连接串 / `Initial Catalog` | 高 |
