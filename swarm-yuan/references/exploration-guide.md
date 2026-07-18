@@ -270,6 +270,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | angular | 装饰器 | `@Component` / `@Injectable` / `@Directive` / `@Pipe` / `@NgModule` / `@Input` / `@Output` | 高 |
 | angular | 代码 | `signal(` / `computed(` / `effect(` / `ChangeDetectionStrategy.OnPush` / `takeUntilDestroyed(` / `AsyncPipe` | 高 |
 | angular | 配置 | `angular.json` / `tsconfig.json` 的 `strict` 模式 / `bootstrapApplication(` | 高 |
+| antd | 依赖 | `antd` 包（package.json dependencies）/ `@ant-design/icons` / `unplugin` 配 AntdResolver | 高 |
+| antd | 文件 | `**/*.tsx` / `**/*.jsx` 含 `<Button` / `<Table` / `<Form`（ant 组件 PascalCase） | 高 |
+| antd | 代码 | `from 'antd'` / `App.useApp(` / `useForm(` / `ConfigProvider` / `message.success(` | 高 |
+| antd | 配置 | `vite.config.*` / `webpack.config.*` 含 `AntdResolver` / `babel-plugin-import` | 中 |
 | celery | 依赖 | celery / celery[redis] / celery[sqs] / kombu | 高 |
 | celery | 注解 | @shared_task / @app.task / @task | 高 |
 | celery | 文件 | celery.py / celeryconfig.py / tasks.py | 中 |
@@ -294,6 +298,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | elasticsearch | 代码 | `ElasticsearchClient` / `RestClient` / `RestHighLevelClient` / `SearchRequest` / `BulkRequest` / `@Document` | 高 |
 | elasticsearch | 注解 | `@Document` / `@Field`（spring-data-elasticsearch） | 中（需排除其他同名注解） |
 | elasticsearch | 文件 | `**/elasticsearch*.yml` / `**/*mapping*.json` 中含 `"mappings"` | 中 |
+| element | 依赖 | `element-plus` 包（package.json dependencies）/ `@element-plus/icons-vue` / `unplugin-vue-components` 配 ElementPlusResolver | 高 |
+| element | 文件 | `**/*.vue` 含 `el-` 前缀组件 / `element-plus.config.*` | 高 |
+| element | 代码 | `import .* from 'element-plus'` / `ElMessage(` / `ElNotification(` / `ElMessageBox(` / `<el-form` / `<el-table` | 高 |
+| element | 配置 | `vite.config.*` 含 `ElementPlusResolver` / `@element-plus` 自动导入配置 | 中 |
 | express | 依赖 | `package.json` dependencies 含 `"express"` / `"express-validator"` / `"helmet"` | 高 |
 | express | 代码 | `require('express')` / `from 'express'` / `express()` / `express.Router(` / `app.listen(` | 高 |
 | express | 文件 | `**/app.js` / `**/server.js`（含 express 引用）/ `**/routes/**/*.js` | 中（需组合依赖信号） |
@@ -332,6 +340,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | jackson | 文件 | `**/dto/**/*.java` 含 Jackson 注解 / `**/*ObjectMapper*.java` | 中（需组合注解信号） |
 | jackson | 配置 | `spring.jackson.*`（serialization-inclusion / date-format / time-zone / default-property-inclusion） | 高 |
 | jackson | 代码 | `new ObjectMapper(` / `JsonMapper.builder()` / `registerModule(new JavaTimeModule` / `ObjectMapper.readValue` | 高 |
+| jest-vitest | 依赖 | `vitest` 包（package.json devDependencies）/ `@vitest/coverage-v8` / `@vitest/ui` / `jest` | 高 |
+| jest-vitest | 文件 | `vitest.config.ts` / `vitest.config.js` / `jest.config.*` / `vite.config.*` 含 `test:` | 高 |
+| jest-vitest | 代码 | `from 'vitest'` / `import { describe, it, expect, vi }` / `vi.fn(` / `vi.mock(` / `jest.fn(` | 高 |
+| jest-vitest | 测试文件 | `**/__tests__/**/*.test.ts` / `**/*.spec.ts` / `**/*.bench.ts` | 高 |
 | junit5-mockito | 依赖 | `org.junit.jupiter:junit-jupiter` / `org.mockito:mockito-core` / `org.mockito:mockito-junit-jupiter` / `org.springframework.boot:spring-boot-starter-test` / `org.testcontainers:junit-jupiter` | 高 |
 | junit5-mockito | 注解 | `@Test` / `@BeforeEach` / `@BeforeAll` / `@AfterEach` / `@ParameterizedTest` / `@ValueSource` / `@MethodSource` / `@ExtendWith` / `@Mock` / `@Spy` / `@InjectMocks` / `@MockBean` / `@MockitoBean` / `@Testcontainers` / `@Disabled` / `@DisplayName` / `@Timeout` | 高 |
 | junit5-mockito | 文件 | `src/test/java/**/*Test.java` / `**/*Tests.java` / `**/*IT.java` | 高 |
@@ -376,6 +388,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | nacos | 配置 | `spring.cloud.nacos.config.*` / `spring.cloud.nacos.discovery.*` / `nacos.server-addr` | 高 |
 | nacos | 文件 | `**/nacos/conf/cluster.conf` / `**/application.properties`（nacos server 包内） | 中（需排除他用） |
 | nacos | 代码 | `NamingService` / `ConfigService` / `NacosFactory` / `NacosConfigManager` | 高 |
+| naiveui | 依赖 | `naive-ui` 包（package.json dependencies）/ `@vicons/ionicons5` 等图标包 | 高 |
+| naiveui | 文件 | `**/*.vue` 含 `n-` 前缀组件 / `**/*.ts` 含 `from 'naive-ui'` | 高 |
+| naiveui | 代码 | `from 'naive-ui'` / `useMessage(` / `useDialog(` / `n-config-provider` / `<n-data-table` | 高 |
+| naiveui | 配置 | `vite.config.*` 含 `NaiveUiResolver` / `unplugin-vue-components` | 中 |
 | nestjs | 依赖 | `package.json` dependencies 含 `"@nestjs/core"` / `"@nestjs/common"` / `"@nestjs/platform-express"` / `"@nestjs/platform-fastify"` | 高 |
 | nestjs | 注解 | `@Module(` / `@Injectable(` / `@Controller(` / `@UseGuards(` / `@UseInterceptors(` / `@UsePipes(` | 高 |
 | nestjs | 文件 | `**/*.module.ts` / `**/*.controller.ts` / `**/*.service.ts` / `nest-cli.json` | 高 |
@@ -492,6 +508,10 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | sqlserver | 配置 | `jdbc:sqlserver://` / `Server=.*;Database=` 连接串 / `Initial Catalog` | 高 |
 | sqlserver | 代码 | `CREATE PROC` / `IDENTITY(1,1)` / `NVARCHAR` / `@@ROWCOUNT` / `SET NOCOUNT ON` | 高 |
 | sqlserver | 服务 | `docker-compose` 含 `image: mcr.microsoft.com/mssql/server` | 中（须排除仅本地开发用途） |
+| tailwind | 依赖 | `tailwindcss` 包（package.json devDependencies）/ `@tailwindcss/vite` / `@tailwindcss/postcss` | 高 |
+| tailwind | 文件 | `tailwind.config.{js,ts,cjs,mjs}` / `postcss.config.*` 含 `tailwindcss` / `app.css` 含 `@import "tailwindcss"` | 高 |
+| tailwind | 代码 | `class="[^"]*\b(flex|grid|p-[0-9]|text-[a-z]+|bg-[a-z]+)` / `@apply` / `@theme` | 高 |
+| tailwind | 配置 | `content:` / `theme.extend` / `darkMode:` / `@source` | 高 |
 | typeorm | 依赖 | `package.json` 含 `"typeorm"` / `"@nestjs/typeorm"` / `"typeorm-naming-strategies"` | 高 |
 | typeorm | 注解/装饰器 | `@Entity` / `@Column` / `@PrimaryGeneratedColumn` / `@ManyToOne` / `@OneToMany` / `@Index` | 高 |
 | typeorm | 文件 | `**/data-source.ts` / `**/ormconfig.json` / `**/migrations/*.ts`（含 `MigrationInterface`） | 中（migrations 目录须组合 MigrationInterface 确认） |
@@ -502,11 +522,19 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | validation | 文件 | `**/dto/**/*.java` 中含约束注解 / `**/*Validator.java` 实现 `ConstraintValidator` | 中（需组合注解信号） |
 | validation | 配置 | `spring.mvc.problemdetails.enabled` / `validation` 相关 `MessageSource` bean | 低（仅辅助） |
 | validation | 代码 | `implements ConstraintValidator<` / `extends AbstractAssert`（误用排除） / `MethodArgumentNotValidException` / `HandlerMethodValidationException` | 高 |
+| vite | 依赖 | `vite` 包（package.json devDependencies）/ `@vitejs/plugin-vue` / `@vitejs/plugin-react` | 高 |
+| vite | 文件 | `vite.config.ts` / `vite.config.js` / `vite.config.mts` | 高 |
+| vite | 配置 | `defineConfig(` / `rollupOptions` / `optimizeDeps` / `server.proxy` | 高 |
+| vite | 代码 | `import.meta.env.VITE_` / `import.meta.glob(` / `__VITE_` | 高 |
 | vue | 依赖 | `vue` 包（package.json dependencies） / `@vue/runtime-dom` / `@vue/compiler-sfc` / `vue-router` / `pinia` | 高 |
 | vue | 文件 | `**/*.vue`（SFC 单文件组件） / `vite.config.ts` 含 `@vitejs/plugin-vue` | 高 |
 | vue | 代码 | `<script setup>` / `defineProps(` / `defineEmits(` / `ref(` / `reactive(` / `computed(` / `useRouter()` | 高 |
 | vue | 模板 | `v-html` / `v-for` / `v-model` / `<Teleport>` / `<Suspense>` / `<slot>` | 中（须组合 .vue 文件信号） |
 | vue | 配置 | `vue.config.js`（Vue CLI） / `vite.config.*` 的 `@vitejs/plugin-vue` | 高 |
+| webpack | 依赖 | `webpack` 包（package.json devDependencies）/ `webpack-cli` / `webpack-dev-server` | 高 |
+| webpack | 文件 | `webpack.config.ts` / `webpack.config.js` / `webpack.config.prod.*` | 高 |
+| webpack | 配置 | `module.exports = { ... }` + `entry`/`output`/`module.rules`/`plugins` | 高 |
+| webpack | 代码 | `require.context(` / `import(/* webpackChunkName */)` / `module.hot` | 高 |
 | xxl-job | 依赖 | `com.xuxueli:xxl-job-core` | 高 |
 | xxl-job | 注解 | `@XxlJob` | 高 |
 | xxl-job | 配置 | `xxl.job.admin.addresses` / `xxl.job.executor.*` / `xxl.job.accessToken` | 高 |
