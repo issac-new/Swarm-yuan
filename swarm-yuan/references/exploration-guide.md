@@ -265,6 +265,16 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 # >>> framework-signal-index >>>
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
+| jackson | 依赖 | `com.fasterxml.jackson.core:jackson-databind` / `com.fasterxml.jackson.module:jackson-module-parameter-names` / `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` / `tools.jackson.core:jackson-databind`（3.x） | 高 |
+| jackson | 注解 | `@JsonProperty` / `@JsonIgnore` / `@JsonFormat` / `@JsonTypeInfo` / `@JsonSubTypes` / `@JsonInclude` / `@JsonCreator` / `@JsonView` / `@JsonIgnoreProperties` | 高 |
+| jackson | 文件 | `**/dto/**/*.java` 含 Jackson 注解 / `**/*ObjectMapper*.java` | 中（需组合注解信号） |
+| jackson | 配置 | `spring.jackson.*`（serialization-inclusion / date-format / time-zone / default-property-inclusion） | 高 |
+| jackson | 代码 | `new ObjectMapper(` / `JsonMapper.builder()` / `registerModule(new JavaTimeModule` / `ObjectMapper.readValue` | 高 |
+| junit5-mockito | 依赖 | `org.junit.jupiter:junit-jupiter` / `org.mockito:mockito-core` / `org.mockito:mockito-junit-jupiter` / `org.springframework.boot:spring-boot-starter-test` / `org.testcontainers:junit-jupiter` | 高 |
+| junit5-mockito | 注解 | `@Test` / `@BeforeEach` / `@BeforeAll` / `@AfterEach` / `@ParameterizedTest` / `@ValueSource` / `@MethodSource` / `@ExtendWith` / `@Mock` / `@Spy` / `@InjectMocks` / `@MockBean` / `@MockitoBean` / `@Testcontainers` / `@Disabled` / `@DisplayName` / `@Timeout` | 高 |
+| junit5-mockito | 文件 | `src/test/java/**/*Test.java` / `**/*Tests.java` / `**/*IT.java` | 高 |
+| junit5-mockito | 配置 | `junit-platform.properties` / `mockito-extensions/org.mockito.plugins.MockMaker` | 中 |
+| junit5-mockito | 代码 | `import org.junit.jupiter.api` / `import org.mockito` / `Mockito.when(` / `Mockito.verify(` | 高 |
 | lombok | 依赖 | `org.projectlombok:lombok` / `org.projectlombok:lombok-mapstruct-binding` | 高 |
 | lombok | 注解 | `@Data` / `@Getter` / `@Setter` / `@Builder` / `@Jacksonized` / `@AllArgsConstructor` / `@NoArgsConstructor` / `@RequiredArgsConstructor` / `@Slf4j` / `@Log` / `@SneakyThrows` / `@Cleanup` / `@NonNull` / `@Value` / `@EqualsAndHashCode` / `val` / `var` | 高 |
 | lombok | 配置 | `lombok.config`（含 `config.stopBubbling` / `lombok.log.fieldName` / `lombok.copyJacksonAnnotationsToAccessors` / `lombok.anyConstructor.addConstructorProperties` 等 key） | 高 |
@@ -313,6 +323,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | spring-security | 配置 | `spring.security.*` / `security.jwt.*` / `jjwt.secret` / `spring.security.oauth2.client.registration.*` | 高 |
 | spring-security | 代码 | `SecurityFilterChain` / `WebSecurityConfigurerAdapter` / `PasswordEncoder` / `UserDetailsService` / `OncePerRequestFilter` / `JwtAuthenticationToken` | 高 |
 | spring-security | 文件 | `**/SecurityConfig*.java` / `**/*SecurityConfiguration.java` | 中（需组合依赖信号） |
+| validation | 依赖 | `org.hibernate.validator:hibernate-validator` / `org.springframework.boot:spring-boot-starter-validation` / `jakarta.validation:jakarta.validation-api` | 高 |
+| validation | 注解 | `@NotNull` / `@NotBlank` / `@NotEmpty` / `@Size` / `@Pattern` / `@Email` / `@Valid` / `@Validated` / `@GroupSequence` / `@DecimalMin` / `@DecimalMax` / `@Future` / `@Past` | 高 |
+| validation | 文件 | `**/dto/**/*.java` 中含约束注解 / `**/*Validator.java` 实现 `ConstraintValidator` | 中（需组合注解信号） |
+| validation | 配置 | `spring.mvc.problemdetails.enabled` / `validation` 相关 `MessageSource` bean | 低（仅辅助） |
+| validation | 代码 | `implements ConstraintValidator<` / `extends AbstractAssert`（误用排除） / `MethodArgumentNotValidException` / `HandlerMethodValidationException` | 高 |
 # <<< framework-signal-index <<<
 
 > **★版本号提取（与规则文件 §3 适用版本区间匹配，T4 新增铁律）**：探查时须同时提取各框架**版本号**（来源：JVM 项目 `pom.xml` `<version>` / `build.gradle` implementation；Node 项目 `package.json` `"vue": "^3.x"`；Go 项目 `go.mod` `module vX.Y.Z`；Python 项目 `pyproject.toml`/`requirements.txt` `fastapi==0.x`）。将提取到的版本与 `references/frameworks/<fw>.md` §3 规律的"适用版本"区间匹配——区间内规律实例化时附证据；区间外规律标"⚠ 待验证（项目版本 X，规律适用区间 Y）"；框架版本号须写入特征卡第 4 项技术栈摘要。
