@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# self-check.sh — swarm-yuan 运行前自检：10 个项目运行时是否已安装，未装则自动安装最新版
+# self-check.sh — swarm-yuan 运行前自检：11 个项目运行时是否已安装，未装则自动安装最新版
 #
 # 安装策略（优先级从高到低）：
 #   1. 本地源码（RESEARCH_DIR 下各项目 git clone）：git pull → install 依赖 → build → npm link
@@ -59,6 +59,7 @@ check_graphify(){ command -v graphify &>/dev/null && pass "graphify: $(graphify 
 check_superpowers(){ [[ -d ~/.claude/plugins/superpowers || -d ~/.claude/skills/superpowers ]] && pass "superpowers: 已安装" || miss "superpowers（需 /plugin install）"; }
 check_gstack(){ [[ -d ~/.claude/skills/gstack ]] && pass "gstack: 已安装" || miss "gstack（需 git clone + setup）"; }
 check_ruflo(){ command -v ruflo &>/dev/null && pass "ruflo: $(ruflo --version 2>&1|head -1)" || miss "ruflo"; }
+check_ecc(){ [[ -d ~/.claude/plugins/ecc || -d ~/.claude/skills/ecc ]] && pass "ECC: 已安装" || miss "ECC（需 /plugin marketplace add https://github.com/affaan-m/ECC && /plugin install ecc）"; }
 
 # ---------- 通用：从 research 源码安装（git pull + install + build + link）----------
 # 参数: <项目名> <源码根目录> [可选 bin 名用于 link]
@@ -210,11 +211,12 @@ upgrade_from_source(){
   install_from_source "$name" "$root" 2>&1 | tail -2 || warn "$name 源码升级失败"
 }
 
-# 9 个项目定义：name|check_func|install_func|auto_installable
+# 11 个项目定义：name|check_func|install_func|auto_installable
 # 注：self-check 生成的 hooks.json PreToolUse 命令须发射 Claude Code 和 Cursor 都接受的
 #   {"permission":"allow"} verdict（参考 ruflo v3.25.6 #2613 修复）
 # 注：若目标技能注册 MCP，须检测重复注册（同一 binary 注册 claude-flow + ruflo 两个 key）
 #   并通过 ruflo doctor 自愈——canonical MCP key 保留一个（参考 ruflo v3.25.6 #2612 修复）
+# 注：hooks.json 须无 BOM（UTF-8 无 BOM），否则 Codex 严格 JSON 解析失败（参考 ruflo v3.32.1 修复）
 PROJECTS=(
   "openspec|check_openspec|install_openspec|1"
   "comet|check_comet|install_comet|1"
@@ -226,6 +228,7 @@ PROJECTS=(
   "superpowers|check_superpowers||0"
   "gstack|check_gstack||0"
   "ruflo|check_ruflo|install_ruflo|1"
+  "ECC|check_ecc||0"
 )
 
 CHECK_ONLY=0
@@ -239,7 +242,7 @@ USE_NPM_ONLY=0   # --npm 时跳过 research 源码
 [[ "${1:-}" == "--npm" ]] && USE_NPM_ONLY=1
 
 echo "=========================================="
-echo "  swarm-yuan 自检：10 个项目运行时"
+echo "  swarm-yuan 自检：11 个项目运行时"
 if [[ $FORCE_LATEST -eq 1 ]]; then
   echo "  （自动安装/升级到最新版 已启用）"
 else
@@ -287,7 +290,7 @@ done
 
 echo ""
 if [[ ${#MISSING[@]} -eq 0 ]]; then
-  echo "✓ 全部 10 个项目运行时已安装"
+  echo "✓ 全部 11 个项目运行时已安装"
 fi
 
 # 即便全部已装，若启用 --latest 则升级到最新版
@@ -361,6 +364,11 @@ for m in "${MISSING[@]}"; do
         echo "    git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack"
         echo "    cd ~/.claude/skills/gstack && ./setup"
         ;;
+      ECC)
+        echo "    在 Claude Code 中运行:"
+        echo "    /plugin marketplace add https://github.com/affaan-m/ECC"
+        echo "    /plugin install ecc"
+        ;;
     esac
     echo ""
   fi
@@ -372,7 +380,7 @@ for m in "${MISSING[@]}"; do
   case "$name" in
     openspec) check_openspec ;; comet) check_comet ;; gitnexus) check_gitnexus ;;
     gsd-core) check_gsd_core ;; claude-mem) check_claude_mem ;; ocr) check_ocr ;;
-    graphify) check_graphify ;; superpowers) check_superpowers ;; gstack) check_gstack ;; ruflo) check_ruflo ;;
+    graphify) check_graphify ;; superpowers) check_superpowers ;; gstack) check_gstack ;; ruflo) check_ruflo ;; ECC) check_ecc ;;
   esac
 done
 

@@ -131,6 +131,35 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 - 若目标技能依赖 MCP，可在 PreToolUse(mcp__*) hook 中加健康检查
 - 防止调用不健康的 MCP server（避免超时/错误）
 
+### graphify v0.9.13–v0.9.19 新增能力
+
+> 来自 graphify v0.9.13 → v0.9.19 release notes。correctness + privacy + strict hook 批次。
+
+| 能力 | 版本 | 描述 | swarm-yuan 落点 |
+|------|------|------|----------------|
+| **`--strict` PreToolUse 硬阻断** | v0.9.19 | `graphify install --strict` 安装的 hook 首次 raw source read 时 `permissionDecision: "deny"` 阻断 + 重定向到 `graphify query`，然后降级为 soft nudge（每会话最多一次，不会 strand agent） | 目标技能的 hook 可引用此 strict 模式 |
+| **原子 JSON 写入** | v0.9.18 | `graph.json`/`manifest.json` 等写入 temp 文件 + `os.replace` 原子替换（写穿 symlink），kill/OOM/ENOSPC 不留截断文件 | 图完整性可引用 |
+| **不完整提取不覆盖完整图** | v0.9.18 | 崩溃/部分失败/权限拒绝的提取拒绝覆盖更大的已有图（exit 1，除非 `--allow-partial`）；不可解析的已有图 fail-closed | 图完整性可引用 |
+| **查询日志默认关闭** | v0.9.13 | `querylog` 不再默认开启（原默认写 `~/.cache/graphify-queries.log` 明文），须 `GRAPHIFY_QUERY_LOG=1` 显式开启 | 隐私可引用 |
+| **`.git/info/exclude` 遵守** | v0.9.14 | 检测遵守 `.git/info/exclude`（git worktree 记录嵌套 worktree 路径处），不再走入 worktree 副本（避免图膨胀 20x） | worktree 项目可引用 |
+| **嵌套 `.gitignore` 作用域** | v0.9.15/v0.9.16 | 嵌套 `.gitignore`/`.graphifyignore` 的 `*` 只作用于自己的子树，不吞整棵树 | 图正确性可引用 |
+| **graph.html stored XSS 修复** | v0.9.15 | 导出的 `graph.html` 邻居链接的 node id 现在用 HTML-escaped `data-nid` 属性 + 单一 delegated listener，防止 stored XSS | 安全可引用 |
+| **原子 GraphML 导出** | v0.9.14 | `graphify export graphml` 不再因 dict/list 属性崩溃；非标量 JSON 序列化；原子写 | 导出可靠性可引用 |
+| **hyperedge-only 文档 stamping** | v0.9.17 | hyperedge-only 文档在 manifest 中 stamp，不再每次运行重提取 | 增量效率可引用 |
+| **Ruby `.rake` + Bash `source` 边** | v0.9.13 | 新语言覆盖：Ruby `.rake` 文件 + 跨文件 Bash script execution 边 | 语言覆盖可引用 |
+| **`--strict` 运行时切换** | v0.9.19 | `GRAPHIFY_HOOK_STRICT=1/0` 运行时切换 strict 模式，无需重装 | 用户体验可引用 |
+
+**`--strict` hook 模式详解（v0.9.19）：**
+- 默认安装：soft nudge（advisory `additionalContext`，模型可忽略）
+- strict 安装（`--strict`）：首次 raw source read 时 `permissionDecision: "deny"` 硬阻断 + 重定向到 `graphify query`
+- 阻断后降级：下次 read 自动放行（即使 `graphify query` 失败也不 strand agent）
+- "recently oriented" stamp：运行任何 `graphify query`/`explain`/`path` 后刷新短期 stamp，抑制阻断
+- 仅 Claude Code 支持硬阻断（Bash-grep 和 Glob 仍 nudge-only；Gemini/Codex/OpenCode 无法硬阻断）
+
+**在目标技能中的落地：**
+- 生成的目标技能若用 graphify，hooks.json 可提供 strict 模式选项
+- precheck.sh 的 `--graph` 子命令可校验 `graph.json` 是否原子写入（检查是否有 `.tmp` 残留）
+
 ### 输入/输出
 - **输入**：文件夹路径。代码（36 种 tree-sitter 语法）本地离线解析；文档/PDF/图片/视频需 LLM backend（`--backend claude|gemini|openai|deepseek|kimi|azure|bedrock|ollama`）
 - **输出**：`graphify-out/` 目录（可提交）：`graph.html`（交互可视化）、`GRAPH_REPORT.md`（god nodes、surprising connections、建议问题、置信度标签 EXTRACTED/INFERRED/AMBIGUOUS）、`graph.json`（完整图，默认 512MiB 上限）；可选 Mermaid/Obsidian/SVG/GraphML/Neo4j 导出；可选 MCP server

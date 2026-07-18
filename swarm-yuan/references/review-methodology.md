@@ -307,6 +307,71 @@ ECC 的 stale PR 抢救流程（治理模式）：
 **在目标技能中的落地：**
 - 若项目有大量陈旧 PR，可在 check 段加 `--salvage` 子命令：扫描陈旧 PR 并生成 salvage ledger
 - 规则：**绝不盲 cherry-pick 生成的 churn**（机械生成的变更须人工审查）
+
+### ocr v1.7.8–v1.7.12 + gsd-core v1.7.0 审查能力扩展
+
+> 来自 open-code-review v1.7.8→v1.7.12 + gsd-core v1.7.0 release notes。
+
+#### Delegate 模式（ocr v1.7.11+）
+
+ocr 新增 **delegation mode**——host-agent 驱动的代码审查：
+
+- host-agent（如 Claude Code）将审查任务**委托**给 ocr
+- ocr 作为 delegated reviewer，而非独立运行
+- 适用于：host-agent 已有完整上下文，只需 ocr 做规则匹配 + finding 生成
+
+**在目标技能中的落地：**
+- review-methodology 的 specialist 并行审查可引用 delegate 模式：host-agent 委托 ocr 做特定维度审查
+- `ocr review --delegate` 选项
+
+#### W3C Traceparent 传播（ocr v1.7.9+）
+
+ocr 审查过程传播 **W3C traceparent** header：
+
+- 从父进程继承 traceparent
+- 审查的每一步（LLM 调用、规则匹配、finding 生成）都携带 trace
+- 支持分布式追踪（审查过程可追踪到具体 LLM 调用）
+
+**在目标技能中的落地：**
+- 若项目用分布式追踪，precheck.sh 的 `--review` 子命令可传播 traceparent
+- 审查结果可关联到 trace（便于审计"为什么这个 finding 被报告"）
+
+#### Honest Verifier Abstain（gsd-core v1.7.0+）
+
+gsd-core 的 verifier 新增 **abstain（弃权）** 判决：
+
+- 当 spec 信息不足以推断 backstop truth 时，verifier **弃权**（`insufficient_spec`）而非猜测
+- 弃权 ≠ 通过：弃权时须补充 spec 信息后重新验证
+- 防止 verifier 在信息不足时"编造"验证结果
+
+**在目标技能中的落地：**
+- review-methodology 的 spec-compliance audit 可引用 abstain：若 spec 不够详细无法验证，报 "abstain: insufficient_spec" 而非 "pass"
+- precheck.sh 的 `--review` 子命令：abstain 计为 "需人工确认"（非 pass 非 fail）
+
+#### Assumption-Delta Advisory Checkpoint（gsd-core v1.7.0+）
+
+gsd-core 在实现过程中检查**假设偏移**：
+
+- 实现开始时记录假设清单（"我假设 X 为真"）
+- 实现过程中若发现假设不成立，记录 **assumption-delta**（"假设 X 不成立，实际 Y"）
+- 在 advisory checkpoint 暂停，提示人工确认假设偏移的影响
+
+**在目标技能中的落地：**
+- workflow 节点⑤（编码实现）可引用 assumption-delta：实现过程中假设变化时记录
+- check 段审查 assumption-delta：评估假设偏移是否影响 spec 合规
+
+#### OpenAI Responses API + LiteLLM 网关（ocr v1.7.10/v1.7.12+）
+
+ocr 新增 LLM provider 支持：
+
+| Provider | 版本 | 说明 |
+|----------|------|------|
+| **OpenAI Responses API** | v1.7.10 | OpenAI 新 Responses API 协议 |
+| **Ollama Cloud** | v1.7.11 | 内置 Ollama Cloud 预置 |
+| **LiteLLM AI Gateway** | v1.7.12 | LiteLLM 网关预置（统一多 LLM 路由） |
+
+**在目标技能中的落地：**
+- 若项目用 ocr 审查，dev-guide.md 可列出支持的 LLM provider（含 OpenAI Responses/Ollama Cloud/LiteLLM）
 | **Astro 专用审查规则**（v1.3.13+） | `.astro` 文件的专用审查规则 | Astro 项目可引用 |
 | **per-chapter 文档路由**（v1.3.13+） | 文档站点按章节路由，便于导航 | 文档审查可引用 |
 | **可恢复 review session**（v1.7.6+） | `ocr review` 支持 resumable sessions + session inspection，中断后可恢复审查 | 长变更集审查可引用 |
