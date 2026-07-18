@@ -270,6 +270,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | dubbo | 文件 | `**/dubbo.properties` / `**/dubbo.xml` / `**/dubbo-provider.xml` / `**/dubbo-consumer.xml` | 中（需排除他用） |
 | dubbo | 配置 | `dubbo.application.*` / `dubbo.registry.*` / `dubbo.protocol.*` / `dubbo.consumer.*` / `dubbo.provider.*` / `dubbo.qos.*` | 高 |
 | dubbo | 代码 | `RpcContext` / `GenericService` / `org.apache.dubbo.config.annotation` | 高 |
+| elasticsearch | 依赖 | `co.elastic.clients:elasticsearch-java` / `org.elasticsearch.client:elasticsearch-rest-high-level-client` / `org.springframework.data:spring-data-elasticsearch` | 高 |
+| elasticsearch | 配置 | `spring.elasticsearch.*` / `elasticsearch.hosts` / `index.max_result_window` / `index.refresh_interval` | 高 |
+| elasticsearch | 代码 | `ElasticsearchClient` / `RestClient` / `RestHighLevelClient` / `SearchRequest` / `BulkRequest` / `@Document` | 高 |
+| elasticsearch | 注解 | `@Document` / `@Field`（spring-data-elasticsearch） | 中（需排除其他同名注解） |
+| elasticsearch | 文件 | `**/elasticsearch*.yml` / `**/*mapping*.json` 中含 `"mappings"` | 中 |
 | jackson | 依赖 | `com.fasterxml.jackson.core:jackson-databind` / `com.fasterxml.jackson.module:jackson-module-parameter-names` / `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` / `tools.jackson.core:jackson-databind`（3.x） | 高 |
 | jackson | 注解 | `@JsonProperty` / `@JsonIgnore` / `@JsonFormat` / `@JsonTypeInfo` / `@JsonSubTypes` / `@JsonInclude` / `@JsonCreator` / `@JsonView` / `@JsonIgnoreProperties` | 高 |
 | jackson | 文件 | `**/dto/**/*.java` 含 Jackson 注解 / `**/*ObjectMapper*.java` | 中（需组合注解信号） |
@@ -348,6 +353,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | validation | 文件 | `**/dto/**/*.java` 中含约束注解 / `**/*Validator.java` 实现 `ConstraintValidator` | 中（需组合注解信号） |
 | validation | 配置 | `spring.mvc.problemdetails.enabled` / `validation` 相关 `MessageSource` bean | 低（仅辅助） |
 | validation | 代码 | `implements ConstraintValidator<` / `extends AbstractAssert`（误用排除） / `MethodArgumentNotValidException` / `HandlerMethodValidationException` | 高 |
+| xxl-job | 依赖 | `com.xuxueli:xxl-job-core` | 高 |
+| xxl-job | 注解 | `@XxlJob` | 高 |
+| xxl-job | 配置 | `xxl.job.admin.addresses` / `xxl.job.executor.*` / `xxl.job.accessToken` | 高 |
+| xxl-job | 代码 | `XxlJobHelper` / `XxlJobExecutor` / `IJobHandler` | 高 |
+| xxl-job | 文件 | `**/xxl-job-executor*.yml` / `**/application*.properties` 中含 `xxl.job.` 节点 | 中（需排除仅样例文档） |
 # <<< framework-signal-index <<<
 
 > **★版本号提取（与规则文件 §3 适用版本区间匹配，T4 新增铁律）**：探查时须同时提取各框架**版本号**（来源：JVM 项目 `pom.xml` `<version>` / `build.gradle` implementation；Node 项目 `package.json` `"vue": "^3.x"`；Go 项目 `go.mod` `module vX.Y.Z`；Python 项目 `pyproject.toml`/`requirements.txt` `fastapi==0.x`）。将提取到的版本与 `references/frameworks/<fw>.md` §3 规律的"适用版本"区间匹配——区间内规律实例化时附证据；区间外规律标"⚠ 待验证（项目版本 X，规律适用区间 Y）"；框架版本号须写入特征卡第 4 项技术栈摘要。
