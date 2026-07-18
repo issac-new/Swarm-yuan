@@ -275,6 +275,12 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | elasticsearch | 代码 | `ElasticsearchClient` / `RestClient` / `RestHighLevelClient` / `SearchRequest` / `BulkRequest` / `@Document` | 高 |
 | elasticsearch | 注解 | `@Document` / `@Field`（spring-data-elasticsearch） | 中（需排除其他同名注解） |
 | elasticsearch | 文件 | `**/elasticsearch*.yml` / `**/*mapping*.json` 中含 `"mappings"` | 中 |
+| flink | 依赖 | `org.apache.flink:flink-streaming-java` / `flink-table-api-java-bridge` / `flink-connector-*` / `org.apache.flink.cdc:flink-cdc-*` / `com.ververica:flink-connector-*` | 高 |
+| flink | 注解/代码 | `StreamExecutionEnvironment` / `StreamTableEnvironment` / `DataStream` / `WatermarkStrategy` / `CheckpointConfig` | 高 |
+| flink | 文件 | `**/flink-conf.yaml` / `**/flink-conf.yml` / `**/sql-client-defaults.yaml` / `**/conf/flink-conf.yaml` | 中（须排除他用） |
+| flink | 配置 | `execution.checkpointing.*` / `state.backend.*` / `restart-strategy.*` / `pipeline.jars` / `table.*` / `high-availability.*` | 高 |
+| flink | 代码 | `enableCheckpointing` / `assignTimestampsAndWatermarks` / `RestartStrategy` / `KeyedState` / `ValueState` / `CEP.pattern` | 高 |
+| flink | CDC | `flink-cdc.yaml`（YAML pipeline：`source:`/`sink:` + `pipeline:` 节点）/ `MySqlSource` / `FlinkSourceFunction` | 高 |
 | jackson | 依赖 | `com.fasterxml.jackson.core:jackson-databind` / `com.fasterxml.jackson.module:jackson-module-parameter-names` / `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` / `tools.jackson.core:jackson-databind`（3.x） | 高 |
 | jackson | 注解 | `@JsonProperty` / `@JsonIgnore` / `@JsonFormat` / `@JsonTypeInfo` / `@JsonSubTypes` / `@JsonInclude` / `@JsonCreator` / `@JsonView` / `@JsonIgnoreProperties` | 高 |
 | jackson | 文件 | `**/dto/**/*.java` 含 Jackson 注解 / `**/*ObjectMapper*.java` | 中（需组合注解信号） |
@@ -315,6 +321,12 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | netty | 文件 | `**/netty/**` 包目录 / `**/*ChannelInitializer*.java` | 中（需排除仅依赖传递） |
 | netty | 配置 | `ServerBootstrap` / `Bootstrap` / `NioEventLoopGroup` / `EpollEventLoopGroup` / `ChannelOption\.` | 高 |
 | netty | 代码 | `ChannelInboundHandlerAdapter` / `SimpleChannelInboundHandler` / `ByteBuf` / `ChannelPipeline` / `writeAndFlush` | 高 |
+| paimon | 依赖 | `org.apache.paimon:paimon-flink-*` / `paimon-spark-*` / `paimon-bundle` / `paimon-hive-connector` / `paimon-trino` | 高 |
+| paimon | 配置 | `'connector'\s*=\s*'paimon'` / `catalog-type=paimon` / `warehouse` + `paimon` / `PAIMON` catalog 注册 | 高 |
+| paimon | 文件 | `**/catalog/*.sql`（含 paimon DDL）/ `warehouse/` 目录下 `*/db.db/*/manifest/` 结构 | 中（须排除他用） |
+| paimon | 配置项 | `merge-engine` / `changelog-producer` / `bucket` / `snapshot.time-retained` / `scan.mode` | 高 |
+| paimon | 代码/SQL | `CREATE TABLE ... WITH ('connector'='paimon')` / `MERGE INTO`（paimon spark）/ `sys.compact` 过程调用 | 高 |
+| paimon | CDC | flink-cdc YAML `sink: connector: paimon` / `PaimonPipeline` | 高 |
 | seata | 依赖 | `io.seata:seata-spring-boot-starter` / `org.apache.seata:seata-spring-boot-starter` / `seata-all` / `seata-saga` | 高 |
 | seata | 注解 | `@GlobalTransactional` / `@GlobalLock` / `@TwoPhaseBusinessAction` / `@LocalTCC` | 高 |
 | seata | 文件 | `**/undo_log.sql` / `**/seata.conf` / `**/registry.conf` / `**/file.conf` / `**/*statemachine*.json` | 中（需排除他用） |
