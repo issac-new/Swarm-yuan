@@ -379,3 +379,32 @@ done
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
 exit $FAIL
+
+# ===== 框架规则库时效检查 =====
+fw_freshness_check() {
+  echo "▶ 框架规则库时效检查"
+  local now d ts age f id
+  now=$(date -u +%s)
+  for f in "$(cd "$(dirname "$0")/.." && pwd)/references/frameworks"/*.md; do
+    id=$(basename "$f" .md)
+    [[ "$id" == "_template" ]] && continue
+    d=$(sed -n 's/^最后调研: *\([0-9-]*\).*/\1/p' "$f" | head -1)
+    if [[ -z "$d" ]]; then
+      warn "$(basename "$f") 缺'最后调研'日期"
+      continue
+    fi
+    # 兼容 macOS date -j 与 GNU date -d
+    ts=$(date -u -j -f "%Y-%m-%d" "$d" +%s 2>/dev/null || date -u -d "$d" +%s 2>/dev/null || echo 0)
+    if [[ "$ts" -eq 0 ]]; then
+      warn "$(basename "$f") 日期格式异常: $d"
+      continue
+    fi
+    age=$(( (now - ts) / 86400 ))
+    if [[ "$age" -gt 365 ]]; then
+      warn "$(basename "$f") 调研于 $d（${age} 天前 >365 天），建议重新核实版本区间"
+    elif [[ "$age" -gt 180 ]]; then
+      warn "$(basename "$f") 调研于 $d（${age} 天前 >180 天），建议关注版本变化"
+    fi
+  done
+}
+fw_freshness_check

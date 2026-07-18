@@ -300,3 +300,33 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | 兼容 AI 工具 | 7 个 |
 | 三平台 | macOS / Linux / Windows |
 | 零占位符 | ✅ |
+
+## 框架规则引擎
+
+swarm-yuan 内置 57 个框架规则集（references/frameworks/*.md + assets/framework-gates/*.sh），覆盖 Java/Node/Python/Go/前端全栈。
+
+### 生成时激活
+
+1. **框架探查**（§C+.0.5）：从 pom.xml/package.json/go.mod/pyproject.toml 提取依赖，识别 ACTIVE_FRAMEWORKS
+2. **门禁注入**（--inject-frameworks）：按 ACTIVE_FRAMEWORKS 把对应门禁片段注入目标 skill 的 precheck.sh 标记区块
+3. **四要素核验**（verify-framework-ruleset.sh）：每框架须通过 枚举+领域知识+门禁+约束 四要素
+4. **fixture 双态**（run-framework-fixture.sh）：每框架含 violating→FAIL / compliant→PASS 测试
+
+### 扩展新框架
+
+1. 复制 `references/frameworks/_template.md` 为 `<fw>.md`（六段式：§1 探查信号 + §2 构件枚举 + §3 领域规律≥10 + §4 门禁清单 + §5 跨框架交互 + §6 版本陷阱）
+2. 创建 `assets/framework-gates/<fw>.sh`（`_fw_<id>_check()` 函数 + 头注释 `# ruleset:` + `# gates:`）
+3. 创建 `tests/fixtures/<fw>/{violating,compliant}/`
+4. 跑 `bash scripts/verify-framework-ruleset.sh <fw>` 核验
+5. 跑 `bash scripts/gen-framework-index.sh` 更新索引
+
+### 门禁运行
+
+```bash
+bash scripts/precheck.sh --framework    # 运行所有激活框架门禁
+bash scripts/precheck.sh --all-full     # 全量 26+门禁（含 --framework）
+```
+
+### 时效检查
+
+`bash scripts/self-check.sh` 末尾自动检查规则库时效（>180 天 warn，>365 天 warn 强烈建议重新核实）。
