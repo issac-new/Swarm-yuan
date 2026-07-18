@@ -285,6 +285,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | junit5-mockito | 文件 | `src/test/java/**/*Test.java` / `**/*Tests.java` / `**/*IT.java` | 高 |
 | junit5-mockito | 配置 | `junit-platform.properties` / `mockito-extensions/org.mockito.plugins.MockMaker` | 中 |
 | junit5-mockito | 代码 | `import org.junit.jupiter.api` / `import org.mockito` / `Mockito.when(` / `Mockito.verify(` | 高 |
+| kettle | 依赖 | `pentaho-kettle:kettle-core` / `kettle-engine` / `pentaho:pdi` | 高 |
+| kettle | 注解 | `@Step` / `@JobEntry`（Kettle 插件注解） | 中（仅插件开发项目出现） |
+| kettle | 文件 | `**/*.kjb` / `**/*.ktr` / `kettle.properties` / `carte-config*.xml` / `slave-server-config*.xml` / `pwd/kettle.pwd` | 高 |
+| kettle | 配置 | `<transformation>` / `<job>` 根元素 / `<connection>` 块 / `<transversion>` | 高 |
+| kettle | 脚本调用 | `pan.sh` / `kitchen.sh` / `carte.sh` / `spoon.sh` 命令行调用 | 高 |
 | lombok | 依赖 | `org.projectlombok:lombok` / `org.projectlombok:lombok-mapstruct-binding` | 高 |
 | lombok | 注解 | `@Data` / `@Getter` / `@Setter` / `@Builder` / `@Jacksonized` / `@AllArgsConstructor` / `@NoArgsConstructor` / `@RequiredArgsConstructor` / `@Slf4j` / `@Log` / `@SneakyThrows` / `@Cleanup` / `@NonNull` / `@Value` / `@EqualsAndHashCode` / `val` / `var` | 高 |
 | lombok | 配置 | `lombok.config`（含 `config.stopBubbling` / `lombok.log.fieldName` / `lombok.copyJacksonAnnotationsToAccessors` / `lombok.anyConstructor.addConstructorProperties` 等 key） | 高 |
@@ -305,6 +310,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | nacos | 配置 | `spring.cloud.nacos.config.*` / `spring.cloud.nacos.discovery.*` / `nacos.server-addr` | 高 |
 | nacos | 文件 | `**/nacos/conf/cluster.conf` / `**/application.properties`（nacos server 包内） | 中（需排除他用） |
 | nacos | 代码 | `NamingService` / `ConfigService` / `NacosFactory` / `NacosConfigManager` | 高 |
+| netty | 依赖 | `io.netty:netty-all` / `netty-buffer` / `netty-transport` / `netty-codec` / `netty-handler` / `netty-codec-http` | 高 |
+| netty | 注解 | `@ChannelHandler.Sharable` / `@Sharable` | 高 |
+| netty | 文件 | `**/netty/**` 包目录 / `**/*ChannelInitializer*.java` | 中（需排除仅依赖传递） |
+| netty | 配置 | `ServerBootstrap` / `Bootstrap` / `NioEventLoopGroup` / `EpollEventLoopGroup` / `ChannelOption\.` | 高 |
+| netty | 代码 | `ChannelInboundHandlerAdapter` / `SimpleChannelInboundHandler` / `ByteBuf` / `ChannelPipeline` / `writeAndFlush` | 高 |
 | seata | 依赖 | `io.seata:seata-spring-boot-starter` / `org.apache.seata:seata-spring-boot-starter` / `seata-all` / `seata-saga` | 高 |
 | seata | 注解 | `@GlobalTransactional` / `@GlobalLock` / `@TwoPhaseBusinessAction` / `@LocalTCC` | 高 |
 | seata | 文件 | `**/undo_log.sql` / `**/seata.conf` / `**/registry.conf` / `**/file.conf` / `**/*statemachine*.json` | 中（需排除他用） |
