@@ -118,8 +118,23 @@ detect 信号命中任一高置信度行即可激活 jest-vitest 框架规则集
 - **验证方法**: config 无 `typecheck` → warn。
 - **对应门禁**: fw_jest_typecheck(warn)
 
+### 规律：vitest.config include 须明确 custom 测试入口
+- **适用版本**: Vitest 3.x/4.x（vitest 随 jest-vitest 合并管理，原 vitest 规则集已并入）
+- **规律**: 项目若有 custom 测试入口（非默认 `**/*.test.ts` 约定，如自定义脚本、集成测试目录），须在 `vitest.config` 的 `include` 显式列出，避免遗漏收集。本规律与 `fw_jest_test_location` 语义重叠（test_location 已检 include test/spec 一致性），不单独新增门禁，统一由 `fw_jest_test_location` 覆盖；config 含 `custom` 字样作为额外置信信号。
+- **违反后果**: custom 测试入口未纳入 include → 测试不执行、CI 绿但回归无感知。
+- **验证方法**: `VITEST_CONFIG_FILE` 指向配置文件，`grep -qE "custom" "$VITEST_CONFIG_FILE"` 校验是否声明 custom 入口；未声明 → warn（见 fw_jest_test_location）。
+- **对应门禁**: 见 fw_jest_test_location（语义合并，不新增门禁）
+
+### 规律：禁在只读 upstream 目录新增测试文件
+- **适用版本**: Vitest 3.x/4.x（ncwk 仓库契约）
+- **规律**: ncwk 仓库 `upstream/` 子目录全为只读第三方快照（element-web/hermes-agent/hermes-studio/research 等），其自带测试非 ncwk 违规。prune 掉 `upstream/<子包>/` 内容，仅保留对 `upstream/` 直属文件的检测，以捕获 ncwk 未来直接在 upstream 顶层新增测试的真实违规。此为 ncwk 仓库特有契约（非通用 Vitest 规律），迁移到其他仓库时须按该仓库的只读目录约定调整 prune 路径。
+- **违反后果**: 在只读 upstream 新增测试 → 污染只读快照、与上游同步时冲突丢失。
+- **验证方法**: `VITEST_FORBIDDEN_UPSTREAM_TEST` 设正则后，`find . \( -path ./node_modules -o -path "./upstream/*" \) -prune -o -name "*.test.ts" -print | grep -E "$VITEST_FORBIDDEN_UPSTREAM_TEST"` 检出 upstream 直属测试文件 → fail。
+- **对应门禁**: fw_jest_no_upstream_test(fail)
+
 <!--
-共 11 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。
+共 13 条规律（≥10 门槛，vitest 合并后 +2）。11 条挂 jest-vitest 门禁，1 条折叠进 fw_jest_test_location（不新增门禁），1 条新增 fw_jest_no_upstream_test(fail)。
+每条规律均挂门禁 id 或"见 <门禁>"，无游离规律。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁"关键字，缺失则 NOGATE 报错。
 -->
 
@@ -138,13 +153,15 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 | fw_jest_in_source | warn | in-source 未隔离 → warn | VITEST_CONFIG_GLOBS |
 | fw_jest_bench | warn | 无 benchmark 配置 → warn | VITEST_CONFIG_GLOBS |
 | fw_jest_typecheck | warn | 无 typecheck → warn | VITEST_CONFIG_GLOBS |
+| fw_jest_no_upstream_test | fail | VITEST_FORBIDDEN_UPSTREAM_TEST 正则检出 upstream 直属测试文件 → fail（ncwk 仓库契约，prune upstream/<子包>/） | VITEST_FORBIDDEN_UPSTREAM_TEST |
 
 <!--
 门禁 id 命名规范：fw_jest_<rule>（rule 全小写下划线）。
-本表 11 条 id 须在 assets/framework-gates/jest-vitest.sh 中有同名实现痕迹（grep 命中）。
+本表 12 条 id（11 原有 + 1 vitest 合并的 no_upstream_test）须在 assets/framework-gates/jest-vitest.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_jest_<rule>(fail/warn) ...` 与本表 id 集合应一致。
-依赖变量在片段头注释 `# ruleset: jest-vitest  requires_conf: VITEST_CONFIG_GLOBS VITEST_TEST_GLOBS` 声明。
+依赖变量在片段头注释 `# ruleset: jest-vitest  requires_conf: VITEST_CONFIG_GLOBS VITEST_TEST_GLOBS VITEST_CONFIG_FILE VITEST_FORBIDDEN_UPSTREAM_TEST` 声明。
 fixture 验证覆盖：violating 含无覆盖率阈值 + 残留 jest.fn + globals:true → coverage_threshold fail 主触发；compliant 全 pass。
+vitest 合并自原独立 vitest.sh（harvested-from: ncwk-dev precheck.sh:2633-2654），原 include_custom 规律折叠进 fw_jest_test_location，原 no_upstream_test 改名 fw_jest_no_upstream_test 保留 fail 级。
 -->
 
 ## §5 跨框架交互规则
