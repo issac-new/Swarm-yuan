@@ -318,7 +318,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 
 **文件：** `<target-skill>/references/framework-knowledge.md`
 
-**骨架生成**：由 `scripts/generate-skill.sh --inject-frameworks` 自 `references/frameworks/<fw>.md` §3（领域规律）+ §4（门禁清单）派生——对 ACTIVE_FRAMEWORKS 中每个 `<fw>`，将该规则文件的 §3 规律段与 §4 门禁清单按项目实际激活情况拷贝/拼接到 `framework-knowledge.md` 形成骨架（保留 frontmatter 与六段结构标记），未激活的框架不出现。
+**骨架生成**：由 AI 在生成流程 **Step 4.5 框架深化阶段**依据 `references/frameworks/<fw>.md` §3（领域规律）+ §4（门禁清单）构建骨架——对 ACTIVE_FRAMEWORKS 中每个 `<fw>`，将该规则文件的 §3 规律段与 §4 门禁清单按项目实际激活情况拷贝/拼接到 `framework-knowledge.md` 形成骨架（保留 frontmatter 与六段结构标记），未激活的框架不出现。**脚本不自动生成骨架**（`generate-skill.sh --inject-frameworks` 只负责门禁片段注入 precheck.sh 标记区块，不读写 `framework-knowledge.md`）——避免未经验证的规律种子直接落产物，违反"残留未实例化种子零容忍"（设计文档 §5.1 Step 4.5 明确规定 AI 实例化后填充）。
 
 **AI 实例化铁律（逐条规律处理）：**
 - **成立 → 附证据**：用项目代码验证该规律确实成立（按 §3 每条规律的"验证方法"给出的 `grep`/`read` 命令实跑），在规律行末附"证据: `<file>:<line>` 或 `<grep 命令输出摘要>`"。证据须可机械复现，不允许"应当""想必"等臆测语
