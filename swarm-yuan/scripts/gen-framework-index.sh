@@ -70,8 +70,9 @@ IDX_FILE="$(mktemp /tmp/fwidx.XXXXXX)"
       END { print c+0 }
     ' "${f}")
     if [[ "${rows}" -eq 0 ]]; then
-      printf '| %s | （无 §1 信号行） | - | - |\n' "${rid}" >&2
-      printf '⚠ %s §1 无信号数据行，已跳过（须补全 §1 探查信号表）\n' "${rid}" >&2
+      # 占位行须进索引文件（stdout，与 L61 注释意图一致）；告警走 stderr
+      printf '| %s | （无 §1 信号行） | - | - |\n' "${rid}"
+      printf '⚠ %s §1 无信号数据行，已写入占位行（须补全 §1 探查信号表）\n' "${rid}" >&2
     fi
   done <<EOF
 ${FILES}
