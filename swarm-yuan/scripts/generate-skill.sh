@@ -15,6 +15,100 @@ set -euo pipefail
 # 读取目标 skill 的 precheck.conf 中 ACTIVE_FRAMEWORKS，把对应门禁片段
 # 幂等注入其 precheck.sh 的标记区块；核对/补齐 conf 变量；记录区块哈希。
 # ============================================================
+# ============================================================
+# 已合并框架迁移映射（缺口 B 合并产物）
+# key=旧独立 ruleset_id，value=母框架 ruleset_id
+# 维护约定：后续若有新合并，在此追加映射 + 注释说明
+# ============================================================
+MERGED_FRAMEWORK_MAP=(
+  "pinia:vue"        # B1: pinia 合并入 vue
+  "socketio:koa"     # B3: socketio 合并入 koa
+  "vitest:jest-vitest" # B2: vitest 合并入 jest-vitest
+)
+
+# 迁移 ACTIVE_FRAMEWORKS 里的旧 id 到母框架（原地修改全局 ACTIVE_FRAMEWORKS 数组）
+# 迁移后 warn 提示用户更新 conf 的 ACTIVE_FRAMEWORKS 行
+# 置全局 MIGRATION_HAPPENED=1 表示发生了迁移（供调用方判断是否写回 conf）
+MIGRATION_HAPPENED=0
+migrate_merged_frameworks() {
+  MIGRATION_HAPPENED=0
+  local i fw old new migrated=0 newlist=()
+  for fw in "${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"}"; do
+    new="$fw"
+    for m in "${MERGED_FRAMEWORK_MAP[@]+"${MERGED_FRAMEWORK_MAP[@]}"}"; do
+      if [[ "$fw" == "${m%%:*}" ]]; then
+        new="${m##*:}"
+        echo "⚠ 框架 '$fw' 已合并入母框架 '$new'（conf 的 ACTIVE_FRAMEWORKS 将自动更新）"
+        migrated=$((migrated+1))
+        break
+      fi
+    done
+    # 去重（母框架可能已在列表里）
+    local dup=0
+    for ex in "${newlist[@]+"${newlist[@]}"}"; do [[ "$ex" == "$new" ]] && { dup=1; break; }; done
+    [[ "$dup" -eq 0 ]] && newlist+=("$new")
+  done
+  ACTIVE_FRAMEWORKS=("${newlist[@]+"${newlist[@]}"}")
+  if [[ "$migrated" -gt 0 ]]; then
+    MIGRATION_HAPPENED=1
+    echo "  已迁移 $migrated 个旧框架 id 到母框架"
+  fi
+}
+
+# upgrade 模式增量合并 precheck.conf：保留用户配置，只对【激活框架】缺失的 requires_conf 变量补占位
+# 不触碰用户已填的任何行；只追加用户 ACTIVE_FRAMEWORKS 里框架声明但 conf 没有的变量
+merge_precheck_conf() {
+  local skill_dir="$1"
+  local paradigm_dir; paradigm_dir="$(cd "$(dirname "$0")/.." && pwd)"
+  local conf="$skill_dir/scripts/precheck.conf"
+  [[ -f "$conf" ]] || { echo "⚠ precheck.conf 不存在，跳过合并"; return 0; }
+  # 读取用户 ACTIVE_FRAMEWORKS（含旧 id，迁移后补对应母框架变量）
+  ACTIVE_FRAMEWORKS=()
+  ( set +u; # shellcheck disable=SC1090
+    . "$conf" 2>/dev/null
+  )
+  # 在当前 shell 重新 source（上面子 shell 的变量带不出来）
+  ACTIVE_FRAMEWORKS=()
+  local _af
+  _af=$( ( set +u; . "$conf" 2>/dev/null; printf '%s\n' "${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"}" ) )
+  # 迁移旧 id 到母框架，确定要补占位的框架清单
+  local fws=() seen="" fw m new
+  while IFS= read -r fw; do
+    [[ -z "$fw" ]] && continue
+    new="$fw"
+    for m in "${MERGED_FRAMEWORK_MAP[@]+"${MERGED_FRAMEWORK_MAP[@]}"}"; do
+      [[ "$fw" == "${m%%:*}" ]] && { new="${m##*:}"; break; }
+    done
+    case " $seen " in *" $new "*) continue;; esac
+    seen="$seen $new"; fws+=("$new")
+  done <<< "$_af"
+  [[ ${#fws[@]} -eq 0 ]] && { echo "  （ACTIVE_FRAMEWORKS 为空，跳过变量补占位）"; return 0; }
+  local frag var missing=()
+  for fw in "${fws[@]}"; do
+    frag="$paradigm_dir/assets/framework-gates/$fw.sh"
+    [[ -f "$frag" ]] || continue
+    local req
+    req=$(sed -n 's/^# ruleset:.*requires_conf: *//p' "$frag" | tr -s ' ')
+    for var in $req; do
+      grep -q "^${var}=" "$conf" 2>/dev/null || missing+=("$var")
+    done
+  done
+  # 去重
+  local uniq_missing=() useen=""
+  for var in "${missing[@]+"${missing[@]}"}"; do
+    case " $useen " in *" $var "*) continue;; esac
+    useen="$useen $var"; uniq_missing+=("$var")
+  done
+  if [[ ${#uniq_missing[@]} -gt 0 ]]; then
+    echo "" >> "$conf"
+    echo "# ===== 由 upgrade 增量补充（激活框架需要的变量，用户未声明）=====" >> "$conf"
+    for var in "${uniq_missing[@]}"; do
+      printf '%s=()  # TODO(upgrade): 由用户按项目实际填充\n' "$var" >> "$conf"
+      echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
+    done
+  fi
+}
+
 inject_frameworks() {
   local skill_dir="$1"
   local paradigm_dir; paradigm_dir="$(cd "$(dirname "$0")/.." && pwd)"
@@ -48,6 +142,27 @@ inject_frameworks() {
   if [[ ${#ACTIVE_FRAMEWORKS[@]} -eq 0 ]]; then
     echo "⚠ ACTIVE_FRAMEWORKS 未配置，跳过门禁注入"
     return 0
+  fi
+
+  # 迁移已合并的旧框架 id 到母框架（缺口 B 合并产物：pinia→vue / socketio→koa / vitest→jest-vitest）
+  migrate_merged_frameworks
+
+  # 若发生迁移，把迁移后的 ACTIVE_FRAMEWORKS 写回 conf（运行时 check_framework 遍历 conf 的 ACTIVE_FRAMEWORKS，
+  # 不写回会导致旧 id 仍触发"无门禁实现"fail）。用 sed 替换 ACTIVE_FRAMEWORKS= 行，三平台兼容（mktemp+mv）。
+  if [[ "$MIGRATION_HAPPENED" == "1" ]]; then
+    local new_af_line="ACTIVE_FRAMEWORKS=("
+    local first=1 fw
+    for fw in "${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"}"; do
+      [[ "$first" -eq 1 ]] && first=0 || new_af_line="$new_af_line "
+      new_af_line="${new_af_line}\"$fw\""
+    done
+    new_af_line="${new_af_line})"
+    local conf_tmp; conf_tmp="$(mktemp /tmp/fwconf.XXXXXX)"
+    # 替换首个 ACTIVE_FRAMEWORKS= 开头的行（用户可能在该行有注释，迁移后注释丢弃——可接受，因迁移是范式主动行为）
+    awk -v line="$new_af_line" '/^ACTIVE_FRAMEWORKS=/{print line; next} {print}' "$conf" > "$conf_tmp"
+    cat "$conf_tmp" > "$conf"
+    rm -f "$conf_tmp"
+    echo "  ✓ conf 的 ACTIVE_FRAMEWORKS 已更新为迁移后列表：${new_af_line#ACTIVE_FRAMEWORKS=}"
   fi
 
   # 1) 构建新区块 + 校验 requires_conf
@@ -170,6 +285,7 @@ SWARM_YUAN_STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H
 
 copy_universal_templates() {
   local dir="$1"
+  local mode="${2:-create}"   # create=覆盖 precheck.conf（新建骨架）；upgrade=不覆盖（保留用户配置，由 merge_precheck_conf 增量补）
   cp "$ASSETS_DIR/spec-template.md" "$dir/assets/spec-template.md"
   cp "$ASSETS_DIR/plan-template.md" "$dir/assets/plan-template.md"
   cp "$ASSETS_DIR/branch-setup.sh" "$dir/assets/branch-setup.sh"
@@ -178,7 +294,10 @@ copy_universal_templates() {
   cp "$ASSETS_DIR/state-machine.sh" "$dir/assets/state-machine.sh"
   chmod +x "$dir/assets/branch-setup.sh" "$dir/assets/env-setup.sh" "$dir/assets/state-machine.sh"
   cp "$ASSETS_DIR/precheck.sh" "$dir/scripts/precheck.sh"
-  cp "$ASSETS_DIR/precheck.conf" "$dir/scripts/precheck.conf"
+  # precheck.conf：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
+  if [[ "$mode" == "create" ]]; then
+    cp "$ASSETS_DIR/precheck.conf" "$dir/scripts/precheck.conf"
+  fi
   cp "$ASSETS_DIR/snippets.md" "$dir/scripts/snippets.md"
   cp "$ASSETS_DIR/mcp-tools.md" "$dir/scripts/mcp-tools.md"
   cp "$ASSETS_DIR/state-machine.sh" "$dir/scripts/state-machine.sh"
@@ -221,13 +340,15 @@ if [[ "$MODE" == "upgrade" ]]; then
   backup_dir="$SKILL_DIR/.upgrade-backup-${SWARM_YUAN_STAMP}"
   mkdir -p "$backup_dir/assets" "$backup_dir/scripts" "$backup_dir/references"
   echo "=== 1. 备份 ==="
-  for f in assets/spec-template.md assets/plan-template.md assets/branch-setup.sh assets/env-setup.sh assets/data-sample-template.md assets/state-machine.sh scripts/precheck.sh scripts/snippets.md scripts/mcp-tools.md scripts/state-machine.sh scripts/self-check.sh references/subagent-orchestration.md references/review-methodology.md references/code-graph-tools.md references/gsd-patterns.md references/memory-persistence.md references/security-spec.md references/cognition-framework.md references/logic-razor.md references/cognitive-bias.md references/domain-knowledge.md references/claude-code-capabilities.md; do
+  for f in assets/spec-template.md assets/plan-template.md assets/branch-setup.sh assets/env-setup.sh assets/data-sample-template.md assets/state-machine.sh scripts/precheck.sh scripts/precheck.conf scripts/snippets.md scripts/mcp-tools.md scripts/state-machine.sh scripts/self-check.sh references/subagent-orchestration.md references/review-methodology.md references/code-graph-tools.md references/gsd-patterns.md references/memory-persistence.md references/security-spec.md references/cognition-framework.md references/logic-razor.md references/cognitive-bias.md references/domain-knowledge.md references/claude-code-capabilities.md; do
     [[ -f "$SKILL_DIR/$f" ]] && { mkdir -p "$backup_dir/$(dirname "$f")"; cp "$SKILL_DIR/$f" "$backup_dir/$f"; }
   done
   echo "  ✓ 已备份"
-  echo "=== 2. 覆盖通用模板 ==="
-  copy_universal_templates "$SKILL_DIR"
-  echo "  ✓ 已更新"
+  echo "=== 2. 覆盖通用模板（precheck.conf 保留用户配置，不覆盖）==="
+  copy_universal_templates "$SKILL_DIR" upgrade
+  echo "  ✓ 已更新（precheck.conf 保留，precheck.sh 已覆盖）"
+  echo "=== 2.5 增量合并 precheck.conf（补缺失的 requires_conf 变量占位）==="
+  merge_precheck_conf "$SKILL_DIR"
   echo "=== 3. 保留项目特定文件 ==="
   for f in "${PROJECT_SPECIFIC_FILES[@]}"; do [[ -f "$SKILL_DIR/$f" ]] && echo "  ✓ $f"; done
   echo "=== 4. 版本戳 ==="
@@ -236,11 +357,13 @@ upgraded_at=$SWARM_YUAN_STAMP
 generator=swarm-yuan
 mode=upgrade
 EOF
-  echo "  ✓ .swarm-yuan-version"
+  echo "  ✓ .swarm-yuan-version（已重置 framework_gates_sha，由重注入写入新值）"
   echo "=== 升级完成 ==="
   echo "  备份: $backup_dir"
-  echo "  下一步: AI 自动检查 + 重新探查填充 precheck.conf + 运行门禁验证"
-  # --upgrade 自动重注入门禁片段（幂等）；在子 shell 内 source conf 防止污染升级主进程
+  echo "  下一步: AI 自动检查 + 运行门禁验证"
+  # --upgrade 自动重注入门禁片段（precheck.sh 已被覆盖，区块为空，须重注入）
+  # upgrade 场景下 .swarm-yuan-version 的 framework_gates_sha 已在第 4 步重置（cat 覆盖），
+  # inject_frameworks 的 sha 冲突检测走"无 old_sha"分支，直接注入不中止。
   if [[ -f "$SKILL_DIR/scripts/precheck.conf" ]] && grep -q '^ACTIVE_FRAMEWORKS=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null; then
     local_af_count=$(
       # shellcheck disable=SC1090

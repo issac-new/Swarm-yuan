@@ -2,7 +2,7 @@
 ruleset_id: spring-boot
 适用版本: Spring Boot 3.4.x–4.0.x（jakarta 命名空间终态；3.2.x 起 javax.* 全量迁移至 jakarta.*；差异单独标注）
 最后调研: 2026-07-17（来源：https://github.com/spring-projects/spring-boot/releases ；https://spring.io/projects/spring-boot ；https://docs.spring.io/spring-boot/reference/ ；https://github.com/spring-projects/spring-framework/wiki/Upgrading-to-Spring-Framework-6.x ；https://spring.io/blog/2025/11 ；https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.profiles ；https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.endpoints ）
-深度门槛: 12
+深度门槛: 15
 ---
 
 # Spring Boot 规则集

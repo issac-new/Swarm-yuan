@@ -1,19 +1,27 @@
-# ruleset: jest-vitest  requires_conf: VITEST_CONFIG_GLOBS VITEST_TEST_GLOBS
-# gates: fw_jest_test_location(warn) fw_jest_mock_hoisted(warn) fw_jest_snapshot_governance(warn) fw_jest_coverage_threshold(fail) fw_jest_jest_fn_to_vi(warn) fw_jest_environment(warn) fw_jest_setup_files(warn) fw_jest_globals(warn) fw_jest_in_source(warn) fw_jest_bench(warn) fw_jest_typecheck(warn)
-# harvested-from: P5 范例（2026-07-17），规律源自 Vitest 3.x/4.x 与 Jest 兼容官方文档
+# ruleset: jest-vitest  requires_conf: VITEST_CONFIG_GLOBS VITEST_TEST_GLOBS VITEST_CONFIG_FILE VITEST_FORBIDDEN_UPSTREAM_TEST
+# gates: fw_jest_test_location(warn) fw_jest_mock_hoisted(warn) fw_jest_snapshot_governance(warn) fw_jest_coverage_threshold(fail) fw_jest_jest_fn_to_vi(warn) fw_jest_environment(warn) fw_jest_setup_files(warn) fw_jest_globals(warn) fw_jest_in_source(warn) fw_jest_bench(warn) fw_jest_typecheck(warn) fw_jest_no_upstream_test(fail)
+# harvested-from: P5 范例（2026-07-17），规律源自 Vitest 3.x/4.x 与 Jest 兼容官方文档；vitest 合并自 ncwk-dev precheck.sh:2633-2654 (2026-07-17)
 _fw_jest_vitest_check() {
   echo "  [jest-vitest] Vitest 3.x/4.x（Jest 兼容）框架规律"
 
-  # ---------- 收集配置文件 ----------
+  # ---------- 收集配置文件（VITEST_CONFIG_GLOBS 优先，回退 VITEST_CONFIG_FILE 单文件）----------
   local cfgs cfgarr=()
   cfgs=$(_fw_resolve_globs ${VITEST_CONFIG_GLOBS[@]+"${VITEST_CONFIG_GLOBS[@]}"} 2>/dev/null | sort -u)
+  # 回退：GLOBS 未配置或无结果时，用 VITEST_CONFIG_FILE 单文件路径（兼容旧 conf / 单配置项目）
+  if [[ -z "$cfgs" && -n "${VITEST_CONFIG_FILE:-}" && -f "$VITEST_CONFIG_FILE" ]]; then
+    cfgs="$VITEST_CONFIG_FILE"
+  fi
   while IFS= read -r ln; do
     [[ -n "$ln" ]] && cfgarr+=("$ln")
   done <<< "$cfgs"
 
-  # ---------- 收集测试文件 ----------
+  # ---------- 收集测试文件（VITEST_TEST_GLOBS 优先，回退 VITEST_TEST_DIR_PATTERNS 旧约定）----------
   local tests testarr=()
   tests=$(_fw_resolve_globs ${VITEST_TEST_GLOBS[@]+"${VITEST_TEST_GLOBS[@]}"} 2>/dev/null | sort -u)
+  # 回退：GLOBS 未配置或无结果时，用 VITEST_TEST_DIR_PATTERNS（ncwk-dev 旧约定，兼容未迁移 conf）
+  if [[ -z "$tests" && -n "${VITEST_TEST_DIR_PATTERNS+x}" && ${#VITEST_TEST_DIR_PATTERNS[@]} -gt 0 ]]; then
+    tests=$(_fw_resolve_globs ${VITEST_TEST_DIR_PATTERNS[@]+"${VITEST_TEST_DIR_PATTERNS[@]}"} 2>/dev/null | sort -u)
+  fi
   while IFS= read -r ln; do
     [[ -n "$ln" ]] && testarr+=("$ln")
   done <<< "$tests"
@@ -225,5 +233,22 @@ ${insrc_bad}"
     pass "fw_jest_typecheck: 已启用 typecheck"
   else
     warn "fw_jest_typecheck: 未启 typecheck（类型断言测试须 typecheck: { enabled: true }）"
+  fi
+
+  # ====================================================================
+  # fw_jest_no_upstream_test(fail)：禁在只读 upstream 目录新增测试文件
+  # （合并自原 vitest.sh，门禁 id 由 fw_vitest_no_upstream_test 改名以遵循 fw_jest_ 命名规范）
+  # ncwk 仓库契约：upstream/ 子目录全为只读第三方快照，prune 掉 upstream/<子包>/，
+  # 仅保留对 upstream/ 直属文件的检测。迁移到其他仓库时须按该仓库只读目录约定调整 prune 路径。
+  # ====================================================================
+  if [[ -n "${VITEST_FORBIDDEN_UPSTREAM_TEST:-}" ]]; then
+    local up_hits
+    up_hits=$( { find . \( -path ./node_modules -o -path "./upstream/*" \) -prune -o -name "*.test.ts" -print 2>/dev/null | grep -E "$VITEST_FORBIDDEN_UPSTREAM_TEST" | head -5 || true; } )
+    if [[ -z "$up_hits" ]]; then
+      pass "fw_jest_no_upstream_test: 无 upstream 直属测试文件"
+    else
+      fail "fw_jest_no_upstream_test: 检出 upstream 测试文件（违反只读）:
+${up_hits}"
+    fi
   fi
 }

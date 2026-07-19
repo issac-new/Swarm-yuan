@@ -1,6 +1,6 @@
-# ruleset: koa  requires_conf: KOA_SRC_GLOBS
-# gates: fw_koa_router_factory(warn) fw_koa_no_bare_appuse(warn) fw_koa_input_guard(warn) fw_koa_error_handler(fail) fw_koa_helmet(fail) fw_koa_onion_try_catch(warn) fw_koa_ctx_state(warn) fw_koa_body_limit(warn) fw_koa_ctx_throw(warn) fw_koa_async_middleware(warn) fw_koa_cors(warn)
-# harvested-from: ncwk-dev precheck.sh:2556-2581 (2026-07-17) + P4 调研 Koa 3.x 官方文档
+# ruleset: koa  requires_conf: KOA_SRC_GLOBS KOA_SOCKETIO_FILE_GLOBS KOA_SOCKETIO_NAMESPACE_REQUIRED KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET
+# gates: fw_koa_router_factory(warn) fw_koa_no_bare_appuse(warn) fw_koa_input_guard(warn) fw_koa_error_handler(fail) fw_koa_helmet(fail) fw_koa_onion_try_catch(warn) fw_koa_ctx_state(warn) fw_koa_body_limit(warn) fw_koa_ctx_throw(warn) fw_koa_async_middleware(warn) fw_koa_cors(warn) fw_koa_socketio_namespace(warn) fw_koa_socketio_no_bare_socket(warn)
+# harvested-from: ncwk-dev precheck.sh:2556-2581 (2026-07-17) + P4 调研 Koa 3.x 官方文档；socketio 合并自 ncwk-dev precheck.sh:2582-2601 (2026-07-17)
 # 兼容说明：KOA_SRC_GLOBS 未配置时回退 ncwk-dev 约定 KOA_FILE_GLOBS；
 #           KOA_ROUTER_FACTORY_REQUIRED / KOA_FORBIDDEN_GLOBAL_APPUSE / KOA_INPUT_GUARD 缺省时用默认值（仍生效）。
 _fw_koa_check() {
@@ -205,5 +205,46 @@ ${am_bad}"
 ${cors_bad}"
   else
     pass "fw_koa_cors: CORS origin 白名单已配或未启用 CORS"
+  fi
+
+  # ====================================================================
+  # fw_koa_socketio_namespace(warn)：Socket.IO 须用 namespace 隔离
+  # （合并自原 socketio.sh，门禁 id 由 fw_socketio_namespace 改名以遵循 fw_koa_ 命名规范）
+  # ====================================================================
+  if [[ "${KOA_SOCKETIO_NAMESPACE_REQUIRED:-}" == "1" ]]; then
+    local sio_files sio_fa=()
+    sio_files=$(_fw_resolve_globs ${KOA_SOCKETIO_FILE_GLOBS[@]+"${KOA_SOCKETIO_FILE_GLOBS[@]}"} 2>/dev/null | sort -u)
+    if [[ -z "$sio_files" ]]; then
+      warn "fw_koa_socketio_namespace: KOA_SOCKETIO_FILE_GLOBS 未配置或无文件可检"
+    else
+      while IFS= read -r ln; do [[ -n "$ln" ]] && sio_fa+=("$ln"); done <<< "$sio_files"
+      local setup
+      setup=$(_fw_grep_count "setup.*[Ss]ocket.*[Nn]amespace|io\.of\(" "${sio_fa[@]+"${sio_fa[@]}"}")
+      if [[ "$setup" -gt 0 ]]; then
+        pass "fw_koa_socketio_namespace: 命名空间 setup 存在（$setup 处）"
+      else
+        warn "fw_koa_socketio_namespace: 未检出 namespace setup（须 io.of('/x') 隔离连接空间）"
+      fi
+    fi
+  fi
+
+  # ====================================================================
+  # fw_koa_socketio_no_bare_socket(warn)：禁散落裸 socket.on
+  # （合并自原 socketio.sh，门禁 id 由 fw_socketio_no_bare_socket 改名）
+  # ====================================================================
+  if [[ -n "${KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET:-}" ]]; then
+    local sio_files2 sio_fa2=()
+    sio_files2=$(_fw_resolve_globs ${KOA_SOCKETIO_FILE_GLOBS[@]+"${KOA_SOCKETIO_FILE_GLOBS[@]}"} 2>/dev/null | sort -u)
+    if [[ -n "$sio_files2" ]]; then
+      while IFS= read -r ln; do [[ -n "$ln" ]] && sio_fa2+=("$ln"); done <<< "$sio_files2"
+      local bare_hits
+      bare_hits=$(grep -rnE "$KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET" "${sio_fa2[@]+"${sio_fa2[@]}"}" 2>/dev/null || true)
+      if [[ -z "$bare_hits" ]]; then
+        pass "fw_koa_socketio_no_bare_socket: 无裸 socket.on（已 setup 封装）"
+      else
+        warn "fw_koa_socketio_no_bare_socket: 检出裸 socket.on（建议收敛进 setup 封装，避免重复监听泄漏）:
+${bare_hits}"
+      fi
+    fi
   fi
 }

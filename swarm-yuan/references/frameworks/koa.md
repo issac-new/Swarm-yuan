@@ -19,7 +19,7 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 
 | 信号类型 | 模式 | 置信度 |
 |---------|------|-------|
-| 依赖 | `package.json` dependencies 含 `"koa"` / `"@koa/router"` / `"koa-bodyparser"` / `"koa-helmet"` | 高 |
+| 依赖 | `package.json` dependencies 含 `"koa"` / `"@koa/router"` / `"koa-bodyparser"` / `"koa-helmet"` / `"socket.io"` | 高 |
 | 代码 | `new Koa()` / `require('koa')` / `await next()` / `ctx.body =` / `ctx.throw(` | 高 |
 | 文件 | `**/app.js` / `**/server.js`（含 koa 引用）/ `**/routes/**/*.js`（含 Router） | 中（需组合依赖信号） |
 | 配置 | `PORT` + 中间件链 `app.use(` 且含 `ctx` 参数签名 | 中 |
@@ -118,8 +118,22 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 - **验证方法**: 检出 `app.context.<name> =` 且赋值为请求相关数据 → 人工检查语义（请求态/共享方法）。
 - **对应门禁**: 人工检查
 
+### 规律：Socket.IO 须用 namespace 隔离，禁裸 socket.on
+- **适用版本**: Socket.IO 4.x（随 koa 合并管理，原 socketio 规则集已并入；Koa 常挂 socket.io server，ncwk-dev 实际用 koa+socket.io）
+- **规律**: Koa 项目集成 Socket.IO 时须用 namespace（`io.of('/chat')`）或 setup 封装隔离连接空间，禁在路由/中间件内裸 `socket.on('event', …)` 散落监听。namespace 隔离可让不同业务域（聊天/通知/实时数据）独立鉴权与连接管理，避免事件名冲突与跨域泄露。
+- **违反后果**: 裸 socket.on 散落 → 事件名冲突、鉴权边界模糊、跨 namespace 数据泄露；无 namespace → 多业务共用默认空间难治理。
+- **验证方法**: `KOA_SOCKETIO_NAMESPACE_REQUIRED=1` 时 `_fw_grep_count "setup.*[Ss]ocket.*[Nn]amespace|io\.of\("` 命中数 = 0 → warn（未检出 namespace setup）；`KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET` 设正则后 `grep -rnE` 检出裸 socket.on → warn。
+- **对应门禁**: fw_koa_socketio_namespace(warn)
+
+### 规律：Socket.IO 连接须 setup 封装，禁散落 socket.on 监听
+- **适用版本**: Socket.IO 4.x
+- **规律**: Socket.IO 事件监听须集中在 setup 函数（如 `setupSocketServer(io)`）内统一注册，按 namespace 分组管理 connect/disconnect/business 事件。散落在各路由/中间件的 socket.on 会导致监听重复注册（热重载/多实例场景内存泄漏）、事件来源不可追溯。
+- **违反后果**: 散落 socket.on → 重复监听内存泄漏、事件来源混乱、难审计。
+- **验证方法**: `KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET` 设正则（如 `socket\.on\(`）后检出 → warn（建议收敛进 setup 封装）。
+- **对应门禁**: fw_koa_socketio_no_bare_socket(warn)
+
 <!--
-共 12 条规律（≥10 门槛）。每条均挂门禁 id 或标注人工检查，无游离规律。
+共 14 条规律（≥10 门槛，socketio 合并后 +2）。每条均挂门禁 id 或标注人工检查，无游离规律。
 -->
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
@@ -137,14 +151,17 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 | fw_koa_ctx_throw | warn | 裸 throw new Error → warn 须 ctx.throw(4xx) | KOA_SRC_GLOBS |
 | fw_koa_async_middleware | warn | generator 中间件 → warn Koa 2+/3 废弃 | KOA_SRC_GLOBS |
 | fw_koa_cors | warn | cors() 空参或 origin:* → warn | KOA_SRC_GLOBS |
+| fw_koa_socketio_namespace | warn | KOA_SOCKETIO_NAMESPACE_REQUIRED=1 时未检出 namespace setup → warn | KOA_SOCKETIO_FILE_GLOBS KOA_SOCKETIO_NAMESPACE_REQUIRED |
+| fw_koa_socketio_no_bare_socket | warn | KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET 正则检出裸 socket.on → warn | KOA_SOCKETIO_FILE_GLOBS KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET |
 
 <!--
 门禁 id 命名规范：fw_koa_<rule>（rule 全小写下划线）。
-本表 11 条 id 均在 assets/framework-gates/koa.sh 中有同名实现，片段头注释 # gates: 与本表一致。
+本表 13 条 id（11 原有 + 2 socketio 合并）均在 assets/framework-gates/koa.sh 中有同名实现，片段头注释 # gates: 与本表一致。
 KOA_SRC_GLOBS 未配置时实现回退 ncwk-dev 约定 KOA_FILE_GLOBS；KOA_ROUTER_FACTORY_REQUIRED /
 KOA_FORBIDDEN_GLOBAL_APPUSE / KOA_INPUT_GUARD 缺省给默认值保持门禁生效。
 fixture 验证覆盖：violating 含全局裸 app.use(router) + 无错误处理 + 无 helmet → error_handler/helmet fail 主触发；
 compliant 用 factory 注入 + try/catch 错误兜底 + koa-helmet 修正后全 pass。
+socketio 合并自原独立 socketio.sh（harvested-from: ncwk-dev precheck.sh:2582-2601），门禁 id 由 fw_socketio_* 改为 fw_koa_socketio_* 以遵循命名规范。
 -->
 
 ## §5 跨框架交互规则
