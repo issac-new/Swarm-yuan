@@ -1,0 +1,41 @@
+=== RUN 2026-07-19T17:41:51+08:00 Swarm-studio 重同步基线（generator --upgrade + SKILLS_PATH_REWRITE） ===
+# 背景：Swarm-studio 冻结于 2026-07-05 模板（25 门禁 precheck.sh 2247 行），
+# 模板已演进至 27 门禁 + 公共库（2639 行）。本记录为消除双维护的重同步基线。
+#
+# 机制（单一事实来源）：
+#   通用文件唯一事实来源 = swarm-yuan/assets + swarm-yuan/references + swarm-yuan/scripts
+#   重同步命令（仓库根执行）：
+#     SKILLS_PATH_REWRITE='s|\.claude/skills|.agents/skills|g' \
+#       bash swarm-yuan/scripts/generate-skill.sh --upgrade Swarm-studio . .
+#   SKILLS_PATH_REWRITE 为 generate-skill.sh 新增可选环境变量（缺省空=行为不变），
+#   在 copy_universal_templates 复制后逐文件 sed 应用（create/upgrade 均生效）。
+#
+# 前提验证（git 考古，studio@2026-07-05 vs 模板同日版，路径归一化后 diff）：
+#   7 个大漂移 references（subagent-orchestration/review-methodology/code-graph-tools/
+#   memory-persistence/security-spec/cognition-framework/claude-code-capabilities）
+#   全部为「模板演进、studio 停滞」，无 studio 独有段落。
+#   例外（studio 独有内容，保留不动）：scripts/snippets.md、scripts/mcp-tools.md
+#   ——两者为填充型模板（同 precheck.conf 性质），studio 已填项目真实内容，
+#   重同步覆盖后须 git restore 恢复（已写入 README「仓库结构」节）。
+#
+# 同步结果：
+DUP_DIFF_LINES_BEFORE 950
+DUP_DIFF_LINES_AFTER 22
+# 22 = 11 处 .claude/skills→.agents/skills 路径重写行（diff 双侧计数）
+# 全部 UNIVERSAL_FILES 与模板逐项 diff（路径归一化后）= 0，即 studio == 模板 + 路径重写
+# precheck.conf：45 行原值逐行保留（diff 空），无 ACTIVE_FRAMEWORKS 故无增量补充、门禁注入块保持空
+# 清理：git rm Swarm-studio/scripts/code-graph-tools.md（游离旧版 114 行，
+#   references/code-graph-tools.md 291 行为其超集：归一化后逐行 grep 0 缺失）
+#
+# 验证证据：
+GATES_COUNT_STUDIO 27
+STUDIO_CLAUDE_SKILLS_REFS 0
+STUDIO_AGENTS_SKILLS_REFS 11
+BASH_N_ALL_SH OK
+SHELLCHECK_ERRORS 0
+SHELLCHECK_WARNINGS_CORE 13
+FIXTURES_TOTAL 57 FAILS 0
+E2E_RC 0
+# 冒烟：/tmp create → upgrade（不带 REWRITE）默认行为不变（.claude/skills=11/.agents/skills=0）；
+#       带 REWRITE 后 11/0 翻转；generate-skill.sh shellcheck -S warning 新旧均 0。
+EXIT 0

@@ -127,6 +127,44 @@ ocr rules check <file>
 
 对照 tasks.md 的每个 checkbox，按类型验证完成度。
 
+## Plan 原地修订（openspec `/opsx:update`，v1.6.0+）
+
+> 引自 openspec v1.6.0。swarm-yuan 生成的目标技能可引用此能力，在 design→build 边界处修订计划而不回退到 open 阶段。
+
+**命令：**
+```bash
+# 原地修订已有 change 的 plan，并 reconcile 关联 artifacts（不越界到实现工作）
+openspec update <change-id>
+# 或通过 slash command（Claude Code 集成）
+/opsx:update <change-id>
+```
+
+**行为：**
+- 读取已有 change 的 `plan.md` + `tasks.md`，允许原地修改 plan 与关联 spec delta
+- 自动 reconcile：若 plan 引用了已变更的 spec 节，更新 tasks 中的受影响 checkbox（DIFF-VERIFIABLE 类自动重判）
+- **不触发实现工作**：只生成/更新 plan+tasks，不写实现代码、不改实现文件
+
+**在目标技能中的落地：**
+- workflow 的 design→build 边界处，若需基于新信息调整 plan（而非回退到 open 重做），引用 `openspec update` 而非重新 `openspec change`
+- precheck.sh 的 `design` 门禁可增加检查：若 `tasks.md` 存在，其 checkbox 列表与当前 `plan.md` 的任务定义一致（reconcile 无遗漏）
+
+## 预批准 OpenSpec CLI（openspec 生成技能权限，v1.6.0+）
+
+> 引自 openspec v1.6.0。生成的技能与 Claude commands 可预批准 OpenSpec CLI，避免每次 opsx 调用都触发权限确认。
+
+**在目标技能中的落地：**
+- 生成目标技能时，在 `hooks/hooks.json` 或 commands 的 frontmatter 中，为 `openspec`/`opsx` 命令预置 `"permission": "allow"` verdict
+- 仅预批准 OpenSpec CLI 这一个工具，其他工具（grep/Read/Bash）仍受正常权限控制
+- 示例 hooks 片段：
+```json
+{
+  "PreToolUse": [
+    { "matcher": "Bash", "hooks": [{"type": "command", "command": "echo '{\"permission\":\"allow\"}'"}], "condition": "tool_input.command matches /^openspec|^opsx/" }
+  ]
+}
+```
+- 这减少高频 opsx 调用（validate/update/change/archive）的重复确认，同时不弱化其他工具的权限门
+
 ## 与目标技能的整合
 
 目标技能的 check 段应：
@@ -167,6 +205,184 @@ ocr rules check <file>
 | **`--background` 需求上下文** | 从 commit message 自动填充需求上下文 | 更精准的审查 |
 | **`ocr viewer` WebUI** | 查看完整 LLM 请求/响应会话（DNS-rebinding 防护） | 审查调试 |
 | **精度优先设计** | 50 仓库/200 PR/10 语言/1505 标注基准验证，精度 + F1 显著高于通用 agent，~1/9 token | 资源效率 |
+| **Anti-overfitting eval 纪律**（ruflo v3.25.0 方法论） | 审查策略改进须在**冻结的 human-labeled eval set**（hash-pinned, tamper-evident）上验证；每代改进暴露 humanRelevance delta（"自检索升但 human relevance 平→过拟合"须可见）；**clean-room replay** 验收（离线重放 promoted generation，哈希一致 + 重新跑 accept/v1+sig） | `--review` 规则演进可引用 |
+| **Shadow/canary 部署模式**（ruflo v3.24.0 方法论） | promoted 审查策略 champion 经一代 shadow 延迟后才 serve；canary 在 evolving store 上每 tick 重打分；**auto-rollback** 回归——可迁移到"precheck 规则升级"场景 | `--review` 规则升级可引用 |
+
+### ECC v2.0 审查方法论扩展
+
+> 来自 ECC v2.0.0。将审查系统从"静态规则"升级为"动态评估 + 对抗收敛 + 部署验证"。
+
+#### Santa Method（对抗收敛审查）
+
+ECC 的 `santa-method` 是两阶段审查的**对抗收敛**变体：
+
+| 阶段 | 说明 | 与 swarm-yuan 两阶段审查的关系 |
+|------|------|------------------------------|
+| Agent A 审查 | 独立审查 agent，输出 findings | 同 swarm-yuan Stage 1（spec 合规） |
+| Agent B 审查 | **另一个独立**审查 agent，输出 findings | 同 swarm-yuan Stage 2（代码质量） |
+| **收敛判决** | A 和 B 的 findings 取交集——只有双方都报告的 finding 才视为真 | **新增**：降低误报率 |
+
+**N-of-M 收敛**：可扩展为 N 个审查 agent，至少 M 个（如 3/5）报告同一 finding 才采纳。
+
+**在目标技能中的落地：**
+- 高复杂度变更（large 级）可用 santa-method 替代单 agent 审查
+- 收敛判决规则：A ∩ B 的 findings → High；A ∪ B 的 findings → 全部列出但标注来源
+
+#### Skill-Run Telemetry（技能运行遥测）
+
+ECC 的 `skill-runs.jsonl` 记录每次 skill 执行的**3×3 结果矩阵**：
+
+| outcome | 含义 |
+|---------|------|
+| `success` | 完全成功 |
+| `failure` | 完全失败 |
+| `partial` | 部分成功 |
+
+| feedback | 含义 |
+|----------|------|
+| `accepted` | 用户采纳结果 |
+| `corrected` | 用户修正后采纳 |
+| `rejected` | 用户拒绝结果 |
+
+**9 种组合**（success+accepted 是最佳，failure+rejected 是最差）。
+
+**Verifier-gated promotion**：skill 改进提案须经 verifier 验证（不扩大 blast radius）才能 promote。
+
+**在目标技能中的落地：**
+- swarm-yuan 的目标技能可在 check 段加 `--telemetry` 子命令：记录 skill 执行的 outcome/feedback
+- 遥测数据存于 `.swarm-yuan/skill-runs.jsonl`（JSONL 格式，一行一次运行）
+
+#### Skill-Comply（行为合规测试）
+
+ECC 的 `skill-comply` 自动测试 agent 是否**真的遵循 skill**：
+
+- 自动生成 **3 种严格度**的 prompt：宽松（隐式暗示）/ 标准（明确指令）/ 严格（强制要求）
+- 运行 agent，记录行为序列
+- 分类行为：compliant / partial / non-compliant
+- 报告合规率
+
+**在目标技能中的落地：**
+- 生成的目标技能可在 check 段加 `--comply` 子命令：测试 skill 的合规率
+- 若合规率 < 阈值（如 80%），修订 skill 的指令（更明确/更严格）
+
+#### Head-to-Head Agent Eval（head-to-head 对比）
+
+ECC 的 `agent-eval` 对比两个 agent 在同一任务上的表现：
+
+| 指标 | 说明 |
+|------|------|
+| pass-rate | 通过测试的比例 |
+| cost | token 消耗 |
+| time | 耗时 |
+| consistency | 多次运行的结果一致性 |
+
+**在目标技能中的落地：**
+- 生成目标技能时，可对比两个候选 skill（如两个不同 prompt 策略）的 head-to-head 表现
+- 选择 pass-rate 高 + cost 低 + consistency 高的版本
+
+#### Deploy Canary-Watch（部署验证）
+
+ECC 的 `canary-watch` 是**发布后**的验证（不同于 swarm-yuan 的 eval-rollout canary）：
+
+- 验证 HTTP 端点可访问
+- 验证 SSE 流正常
+- 验证静态资产加载
+- 验证无 console 错误
+- 验证性能无回归
+
+**在目标技能中的落地：**
+- 若项目有部署环节，check 段可加 `--canary-watch` 子命令：发布后验证部署 URL
+- 与 swarm-yuan 的 shadow/canary（eval 阶段）互补：shadow/canary 验证策略，canary-watch 验证部署
+
+#### Closed-Stale Salvage Ledger（陈旧 PR 抢救）
+
+ECC 的 stale PR 抢救流程（治理模式）：
+
+1. **关闭陈旧 PR**：用礼貌评论关闭（"此 PR 已陈旧，如有价值请重新提交"）
+2. **记录 salvage ledger**：记录 PR 号、作者、原因、有用文件、风险、建议行动
+3. **手动 diff 审查**：审查 salvage 候选的 diff
+4. **cherry-pick 或重写**：若 diff 干净则 cherry-pick，否则用 attribution 重写
+5. **标记状态**：landed / superseded / no-action
+
+**在目标技能中的落地：**
+- 若项目有大量陈旧 PR，可在 check 段加 `--salvage` 子命令：扫描陈旧 PR 并生成 salvage ledger
+- 规则：**绝不盲 cherry-pick 生成的 churn**（机械生成的变更须人工审查）
+
+### ocr v1.7.8–v1.7.12 + gsd-core v1.7.0 审查能力扩展
+
+> 来自 open-code-review v1.7.8→v1.7.12 + gsd-core v1.7.0 release notes。
+
+#### Delegate 模式（ocr v1.7.11+）
+
+ocr 新增 **delegation mode**——host-agent 驱动的代码审查：
+
+- host-agent（如 Claude Code）将审查任务**委托**给 ocr
+- ocr 作为 delegated reviewer，而非独立运行
+- 适用于：host-agent 已有完整上下文，只需 ocr 做规则匹配 + finding 生成
+
+**在目标技能中的落地：**
+- review-methodology 的 specialist 并行审查可引用 delegate 模式：host-agent 委托 ocr 做特定维度审查
+- `ocr review --delegate` 选项
+
+#### W3C Traceparent 传播（ocr v1.7.9+）
+
+ocr 审查过程传播 **W3C traceparent** header：
+
+- 从父进程继承 traceparent
+- 审查的每一步（LLM 调用、规则匹配、finding 生成）都携带 trace
+- 支持分布式追踪（审查过程可追踪到具体 LLM 调用）
+
+**在目标技能中的落地：**
+- 若项目用分布式追踪，precheck.sh 的 `--review` 子命令可传播 traceparent
+- 审查结果可关联到 trace（便于审计"为什么这个 finding 被报告"）
+
+#### Honest Verifier Abstain（gsd-core v1.7.0+）
+
+gsd-core 的 verifier 新增 **abstain（弃权）** 判决：
+
+- 当 spec 信息不足以推断 backstop truth 时，verifier **弃权**（`insufficient_spec`）而非猜测
+- 弃权 ≠ 通过：弃权时须补充 spec 信息后重新验证
+- 防止 verifier 在信息不足时"编造"验证结果
+
+**在目标技能中的落地：**
+- review-methodology 的 spec-compliance audit 可引用 abstain：若 spec 不够详细无法验证，报 "abstain: insufficient_spec" 而非 "pass"
+- precheck.sh 的 `--review` 子命令：abstain 计为 "需人工确认"（非 pass 非 fail）
+
+#### Assumption-Delta Advisory Checkpoint（gsd-core v1.7.0+）
+
+gsd-core 在实现过程中检查**假设偏移**：
+
+- 实现开始时记录假设清单（"我假设 X 为真"）
+- 实现过程中若发现假设不成立，记录 **assumption-delta**（"假设 X 不成立，实际 Y"）
+- 在 advisory checkpoint 暂停，提示人工确认假设偏移的影响
+
+**在目标技能中的落地：**
+- workflow 节点⑤（编码实现）可引用 assumption-delta：实现过程中假设变化时记录
+- check 段审查 assumption-delta：评估假设偏移是否影响 spec 合规
+
+#### OpenAI Responses API + LiteLLM 网关（ocr v1.7.10/v1.7.12+）
+
+ocr 新增 LLM provider 支持：
+
+| Provider | 版本 | 说明 |
+|----------|------|------|
+| **OpenAI Responses API** | v1.7.10 | OpenAI 新 Responses API 协议 |
+| **Ollama Cloud** | v1.7.11 | 内置 Ollama Cloud 预置 |
+| **LiteLLM AI Gateway** | v1.7.12 | LiteLLM 网关预置（统一多 LLM 路由） |
+
+**在目标技能中的落地：**
+- 若项目用 ocr 审查，dev-guide.md 可列出支持的 LLM provider（含 OpenAI Responses/Ollama Cloud/LiteLLM）
+| **Astro 专用审查规则**（v1.3.13+） | `.astro` 文件的专用审查规则 | Astro 项目可引用 |
+| **per-chapter 文档路由**（v1.3.13+） | 文档站点按章节路由，便于导航 | 文档审查可引用 |
+| **可恢复 review session**（v1.7.6+） | `ocr review` 支持 resumable sessions + session inspection，中断后可恢复审查 | 长变更集审查可引用 |
+| **`code_search` 路径遍历拒绝**（v1.7.6+） | `ocr` 工具层拒绝 traversal pathspecs，作为 path-traversal 防御的工具级补充 | `--security` 可引用 |
+| **Monorepo git top-level 路径解析**（v1.7.4+） | `file_read` 路径在 monorepo 中按 git top-level 解析，避免子包相对路径错位 | monorepo 审查可引用 |
+| **结构化 category + severity**（v1.7.3+） | findings 现带结构化 category 字段（不止 severity），便于按类别过滤 | `--review` 规则可引用 |
+| **Python 内置审查规则**（v1.7.6+） | Python 代码审查规则已内置（与 Java/TS/Rust 平级） | Python 项目可引用 |
+| **可复用 composite PR-review GitHub Action**（v1.7.6+） | 抽取为可复用 composite action，CI 中一行引用即可做 PR 自动审查 | CI 集成可引用 |
+| **`--background-file` 业务上下文**（v1.7.6+） | 读取本地业务上下文文件作为审查背景（比 `--background` 字符串更结构化） | 大型项目审查可引用 |
+| **Eden AI provider 预置**（v1.7.7+） | 内置 Eden AI 作为 LLM provider 预设 | 按项目环境选择 |
+| **Dark mode + 系统等宽字体**（v1.7.5+） | viewer 支持 dark mode + 系统等宽字体 | 审查调试体验 |
 
 ### superpowers 审查模式（两阶段 subagent review）
 

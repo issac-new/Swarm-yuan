@@ -19,12 +19,39 @@ echo "=== 开发环境检测 ==="
 # ===== 按项目定制：运行时版本 =====
 # 示例：node>=23 / python>=3.11 / go>=1.22 / java>=17
 # 生成时替换为项目实际要求，不需要的删掉
+
+# 版本比较：have >= want ?（按 major.minor 数值逐段比，bash 3.2 / macOS 可移植，不依赖 sort -V）
+ver_ge() {
+  local have="$1" want="$2"
+  local hmaj hmin wmaj wmin
+  hmaj="${have%%.*}"; hmin="${have#*.}"; hmin="${hmin%%.*}"
+  [[ "$hmin" == "$have" || -z "$hmin" ]] && hmin=0
+  wmaj="${want%%.*}"; wmin="${want#*.}"; wmin="${wmin%%.*}"
+  [[ "$wmin" == "$want" || -z "$wmin" ]] && wmin=0
+  # 非数字兜底按 0 处理
+  [[ "$hmaj" =~ ^[0-9]+$ ]] || hmaj=0
+  [[ "$hmin" =~ ^[0-9]+$ ]] || hmin=0
+  [[ "$wmaj" =~ ^[0-9]+$ ]] || wmaj=0
+  [[ "$wmin" =~ ^[0-9]+$ ]] || wmin=0
+  (( hmaj > wmaj )) && return 0
+  (( hmaj == wmaj && hmin >= wmin )) && return 0
+  return 1
+}
+
 check_runtime() {
   local name="$1" cmd="$2" min_ver="$3"
   if command -v "$cmd" &>/dev/null; then
-    local ver
-    ver=$("$cmd" --version 2>&1 | head -1)
-    pass "$name: $ver"
+    local ver_line ver
+    ver_line=$("$cmd" --version 2>&1 | head -1)
+    # 提取首个数字版本号（v23.0.0 → 23.0.0；openjdk version "17.0.1" → 17.0.1）
+    ver=$(printf '%s\n' "$ver_line" | grep -oE '[0-9]+(\.[0-9]+)*' | head -1)
+    if [[ -z "$ver" ]]; then
+      warn "$name: $ver_line（无法解析版本号，要求 >= $min_ver，请人工确认）"
+    elif ver_ge "$ver" "$min_ver"; then
+      pass "$name: $ver_line（满足 >= $min_ver）"
+    else
+      fail "$name: $ver_line（版本过低，要求 >= $min_ver）"
+    fi
   else
     fail "${name} 未安装（要求 >= ${min_ver}）"
   fi
@@ -80,7 +107,7 @@ echo ""
 echo "=== 代码仓库状态检测 ==="
 PROJECT_DIR="${PROJECT_DIR:-$(pwd)}"
 if [[ -d "$PROJECT_DIR/.git" ]]; then
-  cd "$PROJECT_DIR"
+  cd "$PROJECT_DIR" || exit 1
   pass "git 仓库: $(git branch --show-current 2>/dev/null || echo 'detached')"
   pass "工作树: $(git status --porcelain 2>/dev/null | wc -l | xargs) 个改动"
 else
