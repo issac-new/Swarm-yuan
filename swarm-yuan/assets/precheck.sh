@@ -34,14 +34,10 @@ _resolve_path() {
 
 # ===== 配置加载 =====
 # 配置变量从 precheck.conf 加载（与脚本同目录）。生成目标技能时按项目实际填充。
-# conf 可能含字面 ${}（如 SQL_INJECTION_WHITELIST），set -u 下会 unbound——临时关闭再恢复。
-_CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
-if [[ -f "$_CONF_DIR/precheck.conf" ]]; then
-  set +u
-  source "$_CONF_DIR/precheck.conf"
-  set -u
-else
-  # 无配置文件时用默认值（全部留空=跳过架构/认知门禁）
+# 策略：先初始化全部 conf 变量默认值（避免 conf 未声明时 set -u 崩），
+#       再若有 conf 则 source 覆盖。conf 可能含字面 ${}，source 时临时关 set -u。
+_default_conf() {
+  # 基础配置
   PROJECT_DIR="."
   BRANCH_REGEX='^(feat|fix|refactor)/.+'
   PROTECTED_BRANCHES=("main")
@@ -51,6 +47,7 @@ else
   BUILD_CMD=""
   SCAN_DIRS=()
   CONSISTENCY_DIRS=()
+  # DDD / 分层
   LAYER_DEFS=()
   LAYER_ORDER=()
   DOMAIN_LAYER=""
@@ -58,8 +55,10 @@ else
   STABLE_GLOBS=()
   AGGREGATE_DIR=""
   MAX_LINK_DEPTH=0
+  # 依赖版本
   CODEBASE_REF=""
   SPEC_FILE=""
+  # TOGAF 架构契约
   ADR_DIR=""
   TECH_DEBT_FILE=""
   CONTRACT_DIR=""
@@ -68,6 +67,7 @@ else
   GLOSSARY_FILE=""
   SOR_FILE=""
   IMPACT_SPEC_FILE=""
+  # 微服务
   SERVICE_DIRS=()
   SHARED_LIBS_DIR=""
   DB_CONFIG_FILES=()
@@ -75,6 +75,7 @@ else
   MAX_SYNC_CHAIN=0
   API_SPEC_DIR=""
   WRITE_HANDLER_DIRS=()
+  # 前端架构
   STORE_DIR=""
   MAX_STORE_LINES=0
   COMPONENT_DIR=""
@@ -82,13 +83,71 @@ else
   MAX_PROPS_COUNT=0
   BUNDLE_REPORT=""
   STYLE_DIR=""
+  # 认知门禁
   COGNITION_BASELINE=""
   COGNITION_MAP=""
   COG_SPEED_FILES=10
   COG_CUMULATIVE_TODO=20
   COG_STRENGTH_FANIN=8
+  # 左移门禁（测试/变更/运维监控）
+  TEST_DESIGN_FILE=""
+  TEST_DIR_PATTERNS=()
+  IMPL_DIR_PATTERNS=()
+  CHANGE_IMPACT_FILE=""
+  ROLLBACK_KEYWORDS="回滚\|revert\|rollback\|灰度\|canary\|feature.flag\|功能开关"
+  MIGRATION_DIRS=()
+  BREAKING_DDL_PATTERNS="DROP TABLE\|DROP COLUMN\|TRUNCATE\|RENAME TABLE"
+  OBSERVABILITY_FILE=""
+  METRIC_ENDPOINTS=()
+  METRIC_CODE_PATTERNS="metrics\.\|counter\.\|gauge\.\|histogram\.\|prometheus\|statsd\|emitMetric\|recordMetric"
+  LOG_CODE_PATTERNS="logger\.\|console\.\(log\|warn\|error\)\|winston\|pino\|log4j\|logging\.\|@Slf4j\|@Log\|log\.\(info\|warn\|error\|debug\)"
+  TRACE_CODE_PATTERNS="traceId\|spanId\|openTelemetry\|@Trace\|@Span\|tracer\."
+  HEALTH_CHECK_URLS=()
+  HEALTH_CHECK_TIMEOUT=3
+  # 框架适配（约定式命名 <RULESET_ID>_<VAR>；未激活的框架变量留空数组/空串，门禁片段用 ${VAR:-} 安全展开）
   ACTIVE_FRAMEWORKS=()
+  JAVA_BUILD_FILES=()
+  MYBATIS_MAPPER_DIRS=()
+  MYBATIS_SRC_GLOBS=()
+  SQL_INJECTION_WHITELIST=()
+  LOMBOK_ANNOTATIONS="@Data|@Slf4j|@Builder|@Getter|@Setter|@RequiredArgsConstructor"
+  LOMBOK_SRC_GLOBS=()
+  SHARDING_KEY_COLUMNS=()
+  SHARDED_TABLES=()
+  SHARDING_BROADCAST_TABLES=()
+  SPRING_BATCH_JOB_DIRS=()
+}
+_default_conf
+_CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+if [[ -f "$_CONF_DIR/precheck.conf" ]]; then
+  set +u
+  # shellcheck disable=SC1090
+  source "$_CONF_DIR/precheck.conf"
+  set -u
 fi
+# 兜底：source conf 后，对 conf 仍未声明的关键变量补空默认值（已声明的保留用户值）。
+# 用 ${VAR+x} 判断是否已声明——未声明则补空数组/空串，防 set -u 崩。
+# 数组变量（门禁片段用 ${VAR[@]+"${VAR[@]}"} 或 ${#VAR[@]} 引用，未声明会 unbound）
+[[ -z "${MYBATIS_MAPPER_DIRS+x}" ]] && MYBATIS_MAPPER_DIRS=()
+[[ -z "${SQL_INJECTION_WHITELIST+x}" ]] && SQL_INJECTION_WHITELIST=()
+[[ -z "${SHARDING_KEY_COLUMNS+x}" ]] && SHARDING_KEY_COLUMNS=()
+[[ -z "${SHARDED_TABLES+x}" ]] && SHARDED_TABLES=()
+[[ -z "${SHARDING_BROADCAST_TABLES+x}" ]] && SHARDING_BROADCAST_TABLES=()
+[[ -z "${MYBATIS_SRC_GLOBS+x}" ]] && MYBATIS_SRC_GLOBS=()
+[[ -z "${LOMBOK_SRC_GLOBS+x}" ]] && LOMBOK_SRC_GLOBS=()
+[[ -z "${SPRING_BATCH_JOB_DIRS+x}" ]] && SPRING_BATCH_JOB_DIRS=()
+[[ -z "${JAVA_BUILD_FILES+x}" ]] && JAVA_BUILD_FILES=()
+[[ -z "${LAYER_DEFS+x}" ]] && LAYER_DEFS=()
+[[ -z "${TEST_DIR_PATTERNS+x}" ]] && TEST_DIR_PATTERNS=()
+[[ -z "${IMPL_DIR_PATTERNS+x}" ]] && IMPL_DIR_PATTERNS=()
+[[ -z "${MIGRATION_DIRS+x}" ]] && MIGRATION_DIRS=()
+[[ -z "${METRIC_ENDPOINTS+x}" ]] && METRIC_ENDPOINTS=()
+[[ -z "${HEALTH_CHECK_URLS+x}" ]] && HEALTH_CHECK_URLS=()
+[[ -z "${CONTEXT_DIRS+x}" ]] && CONTEXT_DIRS=()
+[[ -z "${DB_CONFIG_FILES+x}" ]] && DB_CONFIG_FILES=()
+[[ -z "${WRITE_HANDLER_DIRS+x}" ]] && WRITE_HANDLER_DIRS=()
+[[ -z "${STABLE_GLOBS+x}" ]] && STABLE_GLOBS=()
+[[ -z "${SERVICE_DIRS+x}" ]] && SERVICE_DIRS=()
 
 MODE="${1:---all}"
 FAIL=0
@@ -2288,8 +2347,13 @@ check_shift_left() {
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     local base="main"; git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
     local test_commits impl_commits
-    test_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -E '\.test\.|\.spec\.|__tests__' | sort -u | wc -l | xargs || echo 0)
-    impl_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -vE '\.test\.|\.spec\.|__tests__|\.md$|\.json$|\.lock$' | grep -E '\.(ts|js|py|go|java|rs)$' | sort -u | wc -l | xargs || echo 0)
+    test_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -E '\.test\.|\.spec\.|__tests__' | sort -u | wc -l | tr -d ' ' || true)
+    impl_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -vE '\.test\.|\.spec\.|__tests__|\.md$|\.json$|\.lock$' | grep -E '\.(ts|js|py|go|java|rs)$' | sort -u | wc -l | tr -d ' ' || true)
+    test_commits=${test_commits:-0}
+    impl_commits=${impl_commits:-0}
+    # 防御：若值非纯数字（git log 异常输出多行），强制归 0
+    [[ "$test_commits" =~ ^[0-9]+$ ]] || test_commits=0
+    [[ "$impl_commits" =~ ^[0-9]+$ ]] || impl_commits=0
     if [[ "$impl_commits" -gt 0 && "$test_commits" -eq 0 ]]; then
       warn "本次变更有 $impl_commits 个 impl 文件但无 test 文件提交——须先写/更新测试再实现（TDD/BDD）"
       found=1
