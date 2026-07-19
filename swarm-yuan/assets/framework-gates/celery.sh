@@ -27,12 +27,7 @@ _fw_celery_check() {
   # fw_celery_serializer_pickle(fail)：task_serializer=pickle → fail
   local pickle_hits
   pickle_hits=$(grep -rnE 'task_serializer\s*=\s*.(pickle|application/x-python-serialize).' "${srcarr[@]+"${srcarr[@]}"}" 2>/dev/null || true)
-  if [[ -n "$pickle_hits" ]]; then
-    fail "fw_celery_serializer_pickle: task_serializer=pickle 有 RCE 风险（CWE-502），须改 json:
-$pickle_hits"
-  else
-    pass "fw_celery_serializer_pickle: 未用 pickle 序列化"
-  fi
+  _fw_report fail fw_celery_serializer_pickle "$pickle_hits" "task_serializer=pickle 有 RCE 风险（CWE-502），须改 json" "未用 pickle 序列化"
 
   # fw_celery_retry_backoff(warn)：@task 无 retry_backoff=True
   local task_files backoff_hits

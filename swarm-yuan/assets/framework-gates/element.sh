@@ -27,12 +27,7 @@ _fw_element_check() {
     [[ -n "$ln" ]] && full_imp="${full_imp}${f}:${ln}
 "
   done
-  if [[ -n "$full_imp" ]]; then
-    warn "fw_element_on_demand_import: 检出全量 import element-plus（生产须用 unplugin-vue-components 按需引入，否则包体过大）:
-${full_imp}"
-  else
-    pass "fw_element_on_demand_import: 未检出全量 import（已按需引入或未使用）"
-  fi
+  _fw_report warn fw_element_on_demand_import "$full_imp" "检出全量 import element-plus（生产须用 unplugin-vue-components 按需引入，否则包体过大）" "未检出全量 import（已按需引入或未使用）"
 
   # ====================================================================
   # fw_element_form_rules(warn)：表单校验须用 rules，禁手动 if 校验
@@ -50,12 +45,7 @@ ${full_imp}"
 "
     fi
   done
-  if [[ -n "$form_bad" ]]; then
-    warn "fw_element_form_rules: el-form 未用 :rules 校验（须用 rules + FormInstance.validate，禁手动 if 校验）:
-${form_bad}"
-  else
-    pass "fw_element_form_rules: el-form 均用 rules 校验（或无表单）"
-  fi
+  _fw_report warn fw_element_form_rules "$form_bad" "el-form 未用 :rules 校验（须用 rules + FormInstance.validate，禁手动 if 校验）" "el-form 均用 rules 校验（或无表单）"
 
   # ====================================================================
   # fw_element_table_virtual(warn)：el-table 大数据须虚拟滚动
@@ -75,12 +65,7 @@ ${form_bad}"
       fi
     fi
   done
-  if [[ -n "$tbl_bad" ]]; then
-    warn "fw_element_table_virtual: el-table 绑定疑似大数据源未配虚拟滚动（>1k 行须用 el-table-v2 或 virtual-scroll）:
-${tbl_bad}"
-  else
-    pass "fw_element_table_virtual: el-table 已配虚拟滚动或数据量小（或无表格）"
-  fi
+  _fw_report warn fw_element_table_virtual "$tbl_bad" "el-table 绑定疑似大数据源未配虚拟滚动（>1k 行须用 el-table-v2 或 virtual-scroll）" "el-table 已配虚拟滚动或数据量小（或无表格）"
 
   # ====================================================================
   # fw_element_i18n_no_hardcode_cn(warn)：禁硬编码中文文案
@@ -97,12 +82,7 @@ ${tbl_bad}"
         ;;
     esac
   done
-  if [[ -n "$cn_bad" ]]; then
-    warn "fw_element_i18n_no_hardcode_cn: 检出硬编码中文文案（须用 \$t() i18n，否则无法国际化）:
-${cn_bad}"
-  else
-    pass "fw_element_i18n_no_hardcode_cn: 未检出硬编码中文（或已用 i18n）"
-  fi
+  _fw_report warn fw_element_i18n_no_hardcode_cn "$cn_bad" "检出硬编码中文文案（须用 \$t() i18n，否则无法国际化）" "未检出硬编码中文（或已用 i18n）"
 
   # ====================================================================
   # fw_element_theme_no_override_component(warn)：禁直接改组件包 SCSS 源
@@ -119,12 +99,7 @@ ${cn_bad}"
         ;;
     esac
   done
-  if [[ -n "$th_bad" ]]; then
-    warn "fw_element_theme_no_override_component: 直接引用 element-plus 内部 SCSS 覆盖（须用 CSS Variables / --el-* 变量覆盖，改源升级即丢）:
-${th_bad}"
-  else
-    pass "fw_element_theme_no_override_component: 未检出直接改组件源（已用 CSS 变量）"
-  fi
+  _fw_report warn fw_element_theme_no_override_component "$th_bad" "直接引用 element-plus 内部 SCSS 覆盖（须用 CSS Variables / --el-* 变量覆盖，改源升级即丢）" "未检出直接改组件源（已用 CSS 变量）"
 
   # ====================================================================
   # fw_element_imperative_api(warn)：命令式 API 须 import 而非挂全局
@@ -149,12 +124,7 @@ ${th_bad}"
       fi
     done <<< "$imp_bad"
   fi
-  if [[ -n "$imp_no_import" ]]; then
-    warn "fw_element_imperative_api: ElMessage/ElNotification 等命令式 API 调用未显式 import（依赖全局挂载，SSR/按需引入下失效）:
-${imp_no_import}"
-  else
-    pass "fw_element_imperative_api: 命令式 API 均显式 import（或未使用）"
-  fi
+  _fw_report warn fw_element_imperative_api "$imp_no_import" "ElMessage/ElNotification 等命令式 API 调用未显式 import（依赖全局挂载，SSR/按需引入下失效）" "命令式 API 均显式 import（或未使用）"
 
   # ====================================================================
   # fw_element_form_item_prop(warn)：el-form-item 须配 prop 与 model 对应
@@ -170,12 +140,7 @@ ${imp_no_import}"
     [[ -n "$ln" ]] && prop_bad="${prop_bad}${f}:${ln}
 "
   done
-  if [[ -n "$prop_bad" ]]; then
-    warn "fw_element_form_item_prop: el-form-item 未配 prop（须与 model 字段对应，否则校验/重置失效）:
-${prop_bad}"
-  else
-    pass "fw_element_form_item_prop: el-form-item 均配 prop（或无表单项）"
-  fi
+  _fw_report warn fw_element_form_item_prop "$prop_bad" "el-form-item 未配 prop（须与 model 字段对应，否则校验/重置失效）" "el-form-item 均配 prop（或无表单项）"
 
   # ====================================================================
   # fw_element_dialog_destroy_on_close(warn)：el-dialog 须配 destroy-on-close
@@ -192,12 +157,7 @@ ${prop_bad}"
 "
     fi
   done
-  if [[ -n "$dlg_bad" ]]; then
-    warn "fw_element_dialog_destroy_on_close: el-dialog 未配 destroy-on-close（关闭后子组件状态残留，表单/校验不重置）:
-${dlg_bad}"
-  else
-    pass "fw_element_dialog_destroy_on_close: el-dialog 均配 destroy-on-close（或无 dialog）"
-  fi
+  _fw_report warn fw_element_dialog_destroy_on_close "$dlg_bad" "el-dialog 未配 destroy-on-close（关闭后子组件状态残留，表单/校验不重置）" "el-dialog 均配 destroy-on-close（或无 dialog）"
 
   # ====================================================================
   # fw_element_tree_virtual(warn)：el-tree 大数据须虚拟滚动
@@ -214,12 +174,7 @@ ${dlg_bad}"
 "
     fi
   done
-  if [[ -n "$tree_bad" ]]; then
-    warn "fw_element_tree_virtual: el-tree 未配虚拟滚动（>1k 节点须用 el-tree-v2，否则卡顿）:
-${tree_bad}"
-  else
-    pass "fw_element_tree_virtual: el-tree 已配虚拟滚动或数据量小（或无树）"
-  fi
+  _fw_report warn fw_element_tree_virtual "$tree_bad" "el-tree 未配虚拟滚动（>1k 节点须用 el-tree-v2，否则卡顿）" "el-tree 已配虚拟滚动或数据量小（或无树）"
 
   # ====================================================================
   # fw_element_date_value_format(warn)：日期组件须配 value-format
@@ -236,12 +191,7 @@ ${tree_bad}"
 "
     fi
   done
-  if [[ -n "$date_bad" ]]; then
-    warn "fw_element_date_value_format: 日期组件未配 value-format（默认返回 Date 对象，序列化/反序列化不一致）:
-${date_bad}"
-  else
-    pass "fw_element_date_value_format: 日期组件均配 value-format（或无日期组件）"
-  fi
+  _fw_report warn fw_element_date_value_format "$date_bad" "日期组件未配 value-format（默认返回 Date 对象，序列化/反序列化不一致）" "日期组件均配 value-format（或无日期组件）"
 
   # ====================================================================
   # fw_element_upload_size_limit(fail)：el-upload 须配文件大小限制
@@ -258,12 +208,7 @@ ${date_bad}"
 "
     fi
   done
-  if [[ -n "$up_bad" ]]; then
-    fail "fw_element_upload_size_limit: el-upload 未配 before-upload 大小校验（无限制可上传超大文件致存储耗尽/DoS）:
-${up_bad}"
-  else
-    pass "fw_element_upload_size_limit: el-upload 均配大小限制（或无上传）"
-  fi
+  _fw_report fail fw_element_upload_size_limit "$up_bad" "el-upload 未配 before-upload 大小校验（无限制可上传超大文件致存储耗尽/DoS）" "el-upload 均配大小限制（或无上传）"
 
   # ====================================================================
   # fw_element_select_remote_search(warn)：el-select 远程搜索须配 remote-method
@@ -283,10 +228,5 @@ ${up_bad}"
       fi
     fi
   done
-  if [[ -n "$sel_bad" ]]; then
-    warn "fw_element_select_remote_search: el-select filterable 但未配 remote-method（大数据选项须远程搜索，否则全量渲染卡顿）:
-${sel_bad}"
-  else
-    pass "fw_element_select_remote_search: el-select 远程搜索配置合理（或无 filterable）"
-  fi
+  _fw_report warn fw_element_select_remote_search "$sel_bad" "el-select filterable 但未配 remote-method（大数据选项须远程搜索，否则全量渲染卡顿）" "el-select 远程搜索配置合理（或无 filterable）"
 }

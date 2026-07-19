@@ -118,12 +118,7 @@ ${ver_bad}"
     [[ -n "$ln" ]] && gen_hit="${gen_hit}${c}:${ln}
 "
   done
-  if [[ -n "$gen_hit" ]]; then
-    warn "fw_dubbo_generic_security: 检出泛化调用（须鉴权 + 方法/参数白名单，禁止透传外部输入 CWE-862）:
-${gen_hit}"
-  else
-    pass "fw_dubbo_generic_security: 未检出泛化调用"
-  fi
+  _fw_report warn fw_dubbo_generic_security "$gen_hit" "检出泛化调用（须鉴权 + 方法/参数白名单，禁止透传外部输入 CWE-862）" "未检出泛化调用"
 
   # ====================================================================
   # fw_dubbo_qos_exposure(fail)：qos 端口禁止公网暴露
@@ -140,12 +135,7 @@ ${gen_hit}"
     [[ -n "$ln" ]] && qos_bad="${qos_bad}${c}:${ln}
 "
   done
-  if [[ -n "$qos_bad" ]]; then
-    fail "fw_dubbo_qos_exposure: qos 端口允许远程访问（无鉴权可远程下线服务 CWE-749，生产必须 localhost）:
-${qos_bad}"
-  else
-    pass "fw_dubbo_qos_exposure: qos 未允许远程访问"
-  fi
+  _fw_report fail fw_dubbo_qos_exposure "$qos_bad" "qos 端口允许远程访问（无鉴权可远程下线服务 CWE-749，生产必须 localhost）" "qos 未允许远程访问"
 
   # ====================================================================
   # fw_dubbo_serialization(warn)：序列化协议选型
@@ -161,12 +151,7 @@ ${qos_bad}"
     [[ -n "$ln" ]] && ser_hit="${ser_hit}${c}:${ln}
 "
   done
-  if [[ -n "$ser_hit" ]]; then
-    warn "fw_dubbo_serialization: 检出 java 原生/fastjson1 序列化（反序列化 RCE CWE-502，须 hessian2/fastjson2）:
-${ser_hit}"
-  else
-    pass "fw_dubbo_serialization: 未检出高危序列化协议"
-  fi
+  _fw_report warn fw_dubbo_serialization "$ser_hit" "检出 java 原生/fastjson1 序列化（反序列化 RCE CWE-502，须 hessian2/fastjson2）" "未检出高危序列化协议"
 
   # ====================================================================
   # fw_dubbo_cluster_failover(warn)：集群容错策略语义匹配
@@ -182,12 +167,7 @@ ${ser_hit}"
     [[ -n "$ln" ]] && clu_hit="${clu_hit}${c}:${ln}
 "
   done
-  if [[ -n "$clu_hit" ]]; then
-    warn "fw_dubbo_cluster_failover: 检出显式 cluster 策略（写操作须 failfast，failsafe 吞异常仅可丢弃调用）:
-${clu_hit}"
-  else
-    pass "fw_dubbo_cluster_failover: 未显式配 cluster（默认 failover，写接口须自行评估）"
-  fi
+  _fw_report warn fw_dubbo_cluster_failover "$clu_hit" "检出显式 cluster 策略（写操作须 failfast，failsafe 吞异常仅可丢弃调用）" "未显式配 cluster（默认 failover，写接口须自行评估）"
 
   # ====================================================================
   # fw_dubbo_loadbalance(warn)：负载均衡策略评估
@@ -203,12 +183,7 @@ ${clu_hit}"
     [[ -n "$ln" ]] && lb_hit="${lb_hit}${c}:${ln}
 "
   done
-  if [[ -n "$lb_hit" ]]; then
-    warn "fw_dubbo_loadbalance: 检出显式 loadbalance（须确认与流量特征匹配，默认 random 不感知实例负载）:
-${lb_hit}"
-  else
-    pass "fw_dubbo_loadbalance: 未显式配 loadbalance"
-  fi
+  _fw_report warn fw_dubbo_loadbalance "$lb_hit" "检出显式 loadbalance（须确认与流量特征匹配，默认 random 不感知实例负载）" "未显式配 loadbalance"
 
   # ====================================================================
   # fw_dubbo_mock_degrade(fail)：mock=force 上生产屏蔽真实调用
@@ -250,12 +225,7 @@ ${mock_warn}"
 "
     fi
   done
-  if [[ -n "$rc_bad" ]]; then
-    warn "fw_dubbo_rpc_context: RpcContext 隐式传参与异步/线程切换同文件（attachment 跨线程丢失，上下文断链）:
-${rc_bad}"
-  else
-    pass "fw_dubbo_rpc_context: 未检出隐式传参与异步混用"
-  fi
+  _fw_report warn fw_dubbo_rpc_context "$rc_bad" "RpcContext 隐式传参与异步/线程切换同文件（attachment 跨线程丢失，上下文断链）" "未检出隐式传参与异步混用"
 
   # ====================================================================
   # fw_dubbo_async(warn)：异步调用须异常/超时兜底
@@ -270,12 +240,7 @@ ${rc_bad}"
 "
     fi
   done
-  if [[ -n "$async_bad" ]]; then
-    warn "fw_dubbo_async: Dubbo 异步调用无 exceptionally/orTimeout 兜底（异常静默 / future 悬挂）:
-${async_bad}"
-  else
-    pass "fw_dubbo_async: 异步调用有兜底或未检出异步"
-  fi
+  _fw_report warn fw_dubbo_async "$async_bad" "Dubbo 异步调用无 exceptionally/orTimeout 兜底（异常静默 / future 悬挂）" "异步调用有兜底或未检出异步"
 
   # ====================================================================
   # fw_dubbo_direct_url(fail)：生产禁用直连 url
@@ -291,12 +256,7 @@ ${async_bad}"
     [[ -n "$ln" ]] && url_bad="${url_bad}${c}:${ln}
 "
   done
-  if [[ -n "$url_bad" ]]; then
-    fail "fw_dubbo_direct_url: 检出 Dubbo 直连 url（绕过注册中心，仅限测试环境，生产禁用）:
-${url_bad}"
-  else
-    pass "fw_dubbo_direct_url: 未检出直连 url"
-  fi
+  _fw_report fail fw_dubbo_direct_url "$url_bad" "检出 Dubbo 直连 url（绕过注册中心，仅限测试环境，生产禁用）" "未检出直连 url"
 
   # ====================================================================
   # fw_dubbo_registry(warn)：注册中心地址须显式配置

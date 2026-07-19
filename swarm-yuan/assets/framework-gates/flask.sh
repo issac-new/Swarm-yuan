@@ -16,10 +16,7 @@ _fw_flask_check() {
     return
   fi
 
-  # 代码正文过滤辅助（去 # 注释）
-  _fw_flask_code_only() {
-    sed -E 's:#.*$::' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_hash（Python 系，剔 # 注释）
 
   # ====================================================================
   # fw_flask_secret_key(fail)：SECRET_KEY / app.secret_key 禁止硬编码
@@ -27,17 +24,12 @@ _fw_flask_check() {
   local sk_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_flask_code_only "$f" | grep -nE '(secret_key|SECRET_KEY)["'"'"'\]]*[[:space:]]*=[[:space:]]*["'"'"']' 2>/dev/null \
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE '(secret_key|SECRET_KEY)["'"'"'\]]*[[:space:]]*=[[:space:]]*["'"'"']' 2>/dev/null \
        | grep -vE 'os\.environ|getenv|env\(|config\.get' || true)
     [[ -n "$ln" ]] && sk_bad="${sk_bad}${f}:${ln}
 "
   done
-  if [[ -n "$sk_bad" ]]; then
-    fail "fw_flask_secret_key: SECRET_KEY 硬编码（会话签名泄露即可伪造 Cookie，CWE-798）:
-${sk_bad}"
-  else
-    pass "fw_flask_secret_key: SECRET_KEY 经环境变量注入"
-  fi
+  _fw_report fail fw_flask_secret_key "$sk_bad" "SECRET_KEY 硬编码（会话签名泄露即可伪造 Cookie，CWE-798）" "SECRET_KEY 经环境变量注入"
 
   # ====================================================================
   # fw_flask_debug(fail)：禁 app.run(debug=True) 上生产
@@ -45,16 +37,11 @@ ${sk_bad}"
   local dbg_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_flask_code_only "$f" | grep -nE '\.run\([^)]*debug[[:space:]]*=[[:space:]]*True|\.debug[[:space:]]*=[[:space:]]*True' 2>/dev/null || true)
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE '\.run\([^)]*debug[[:space:]]*=[[:space:]]*True|\.debug[[:space:]]*=[[:space:]]*True' 2>/dev/null || true)
     [[ -n "$ln" ]] && dbg_bad="${dbg_bad}${f}:${ln}
 "
   done
-  if [[ -n "$dbg_bad" ]]; then
-    fail "fw_flask_debug: debug=True（Werkzeug 调试器 PIN 可绕过→RCE，CWE-489/CWE-94）:
-${dbg_bad}"
-  else
-    pass "fw_flask_debug: 无 debug=True 硬编码"
-  fi
+  _fw_report fail fw_flask_debug "$dbg_bad" "debug=True（Werkzeug 调试器 PIN 可绕过→RCE，CWE-489/CWE-94）" "无 debug=True 硬编码"
 
   # ====================================================================
   # fw_flask_errorhandler(warn)：须有统一错误处理
@@ -76,17 +63,12 @@ ${dbg_bad}"
   local bp_bad=""
   for f in "${srcarr[@]}"; do
     if grep -qE 'Blueprint\(' "$f" 2>/dev/null \
-       && _fw_flask_code_only "$f" | grep -qE '^(from|import)[[:space:]]+(app|main|run|wsgi)[[:space:]]'; then
+       && _fw_strip_comments_hash "$f" | grep -qE '^(from|import)[[:space:]]+(app|main|run|wsgi)[[:space:]]'; then
       bp_bad="${bp_bad}${f}: 蓝图模块 import 应用模块（循环导入风险）
 "
     fi
   done
-  if [[ -n "$bp_bad" ]]; then
-    warn "fw_flask_blueprint_circular: 蓝图循环导入（须工厂模式 + current_app 延迟引用）:
-${bp_bad}"
-  else
-    pass "fw_flask_blueprint_circular: 蓝图无反向导入"
-  fi
+  _fw_report warn fw_flask_blueprint_circular "$bp_bad" "蓝图循环导入（须工厂模式 + current_app 延迟引用）" "蓝图无反向导入"
 
   # ====================================================================
   # fw_flask_session_teardown(warn)：SQLAlchemy 会话须 teardown/remove
@@ -126,17 +108,12 @@ ${bp_bad}"
   local db_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_flask_code_only "$f" | grep -nE '[a-zA-Z][a-zA-Z0-9+]*://[A-Za-z0-9_-]+:[^@"'"'"'[:space:]]+@' 2>/dev/null \
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE '[a-zA-Z][a-zA-Z0-9+]*://[A-Za-z0-9_-]+:[^@"'"'"'[:space:]]+@' 2>/dev/null \
        | grep -vE 'os\.environ|getenv|%\(|format\(|example|user:pass|user:password' || true)
     [[ -n "$ln" ]] && db_bad="${db_bad}${f}:${ln}
 "
   done
-  if [[ -n "$db_bad" ]]; then
-    fail "fw_flask_db_credentials: 连接 URI 明文凭据（CWE-798，须环境变量注入）:
-${db_bad}"
-  else
-    pass "fw_flask_db_credentials: 无明文凭据 URI"
-  fi
+  _fw_report fail fw_flask_db_credentials "$db_bad" "连接 URI 明文凭据（CWE-798，须环境变量注入）" "无明文凭据 URI"
 
   # ====================================================================
   # fw_flask_request_validation(warn)：请求体须校验
@@ -149,12 +126,7 @@ ${db_bad}"
 "
     fi
   done
-  if [[ -n "$rv_bad" ]]; then
-    warn "fw_flask_request_validation: 直接使用 request 数据无校验（须 pydantic/marshmallow Schema）:
-${rv_bad}"
-  else
-    pass "fw_flask_request_validation: 请求数据有校验或无请求解析"
-  fi
+  _fw_report warn fw_flask_request_validation "$rv_bad" "直接使用 request 数据无校验（须 pydantic/marshmallow Schema）" "请求数据有校验或无请求解析"
 
   # ====================================================================
   # fw_flask_json_response(warn)：禁 return json.dumps，须 jsonify
@@ -162,16 +134,11 @@ ${rv_bad}"
   local jr_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_flask_code_only "$f" | grep -nE 'return[[:space:]]+json\.dumps\(' 2>/dev/null || true)
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE 'return[[:space:]]+json\.dumps\(' 2>/dev/null || true)
     [[ -n "$ln" ]] && jr_bad="${jr_bad}${f}:${ln}
 "
   done
-  if [[ -n "$jr_bad" ]]; then
-    warn "fw_flask_json_response: return json.dumps 缺 Content-Type: application/json（须 jsonify）:
-${jr_bad}"
-  else
-    pass "fw_flask_json_response: 无 json.dumps 直返"
-  fi
+  _fw_report warn fw_flask_json_response "$jr_bad" "return json.dumps 缺 Content-Type: application/json（须 jsonify）" "无 json.dumps 直返"
 
   # ====================================================================
   # fw_flask_xss(warn)：Markup/|safe 拼接绕过自动转义
@@ -179,16 +146,11 @@ ${jr_bad}"
   local xss_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_flask_code_only "$f" | grep -nE 'Markup\(|render_template_string\([^)]*(\+|%|f["'"'"'])' 2>/dev/null || true)
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE 'Markup\(|render_template_string\([^)]*(\+|%|f["'"'"'])' 2>/dev/null || true)
     [[ -n "$ln" ]] && xss_bad="${xss_bad}${f}:${ln}
 "
   done
-  if [[ -n "$xss_bad" ]]; then
-    warn "fw_flask_xss: Markup/拼接模板串绕过 Jinja 自动转义（XSS，CWE-79）:
-${xss_bad}"
-  else
-    pass "fw_flask_xss: 无 Markup/拼接模板"
-  fi
+  _fw_report warn fw_flask_xss "$xss_bad" "Markup/拼接模板串绕过 Jinja 自动转义（XSS，CWE-79）" "无 Markup/拼接模板"
 
   # ====================================================================
   # fw_flask_cors(warn)：CORS 禁全开放 origins=*
@@ -204,12 +166,7 @@ ${xss_bad}"
 "
     fi
   done
-  if [[ -n "$cors_bad" ]]; then
-    warn "fw_flask_cors: CORS origins=*（配合 Cookie 会话将放大 CSRF/数据窃取面）:
-${cors_bad}"
-  else
-    pass "fw_flask_cors: CORS origins 收敛或未使用"
-  fi
+  _fw_report warn fw_flask_cors "$cors_bad" "CORS origins=*（配合 Cookie 会话将放大 CSRF/数据窃取面）" "CORS origins 收敛或未使用"
 
   # ====================================================================
   # fw_flask_ratelimit(warn)：登录等敏感路由须限流

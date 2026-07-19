@@ -16,10 +16,7 @@ _fw_fastapi_check() {
     return
   fi
 
-  # 代码正文过滤辅助（去 # 注释）
-  _fw_fastapi_code_only() {
-    sed -E 's:#.*$::' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_hash（Python 系，剔 # 注释）
 
   # ====================================================================
   # fw_fastapi_blocking_async(fail)：async 路由内 time.sleep 阻塞事件循环
@@ -27,17 +24,12 @@ _fw_fastapi_check() {
   local blk_bad=""
   for f in "${srcarr[@]}"; do
     if grep -qE 'async[[:space:]]+def' "$f" 2>/dev/null \
-       && _fw_fastapi_code_only "$f" | grep -qE 'time\.sleep\('; then
+       && _fw_strip_comments_hash "$f" | grep -qE 'time\.sleep\('; then
       blk_bad="${blk_bad}${f}: async 路由内 time.sleep（事件循环全停）
 "
     fi
   done
-  if [[ -n "$blk_bad" ]]; then
-    fail "fw_fastapi_blocking_async: async 路由内阻塞调用（事件循环阻塞全 worker 停摆；改 def 路由或 await asyncio.sleep）:
-${blk_bad}"
-  else
-    pass "fw_fastapi_blocking_async: async 路由无 time.sleep 阻塞"
-  fi
+  _fw_report fail fw_fastapi_blocking_async "$blk_bad" "async 路由内阻塞调用（事件循环阻塞全 worker 停摆；改 def 路由或 await asyncio.sleep）" "async 路由无 time.sleep 阻塞"
 
   # ====================================================================
   # fw_fastapi_pydantic_v1(fail)：Pydantic v1 API 须迁 v2
@@ -45,16 +37,11 @@ ${blk_bad}"
   local p1_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_fastapi_code_only "$f" | grep -nE '@validator\(|@root_validator\(|\.parse_obj\(|\.dict\(\)|class Config:' 2>/dev/null || true)
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE '@validator\(|@root_validator\(|\.parse_obj\(|\.dict\(\)|class Config:' 2>/dev/null || true)
     [[ -n "$ln" ]] && p1_bad="${p1_bad}${f}:${ln}
 "
   done
-  if [[ -n "$p1_bad" ]]; then
-    fail "fw_fastapi_pydantic_v1: Pydantic v1 API（@validator/class Config/.dict()/.parse_obj() 在 v2 已移除/弃用；迁 @field_validator + model_config + .model_dump()）:
-${p1_bad}"
-  else
-    pass "fw_fastapi_pydantic_v1: 无 Pydantic v1 API"
-  fi
+  _fw_report fail fw_fastapi_pydantic_v1 "$p1_bad" "Pydantic v1 API（@validator/class Config/.dict()/.parse_obj() 在 v2 已移除/弃用；迁 @field_validator + model_config + .model_dump()）" "无 Pydantic v1 API"
 
   # ====================================================================
   # fw_fastapi_response_model(warn)：路由须 response_model 过滤响应
@@ -67,12 +54,7 @@ ${p1_bad}"
 "
     fi
   done
-  if [[ -n "$rm_bad" ]]; then
-    warn "fw_fastapi_response_model: 路由无 response_model（内部字段/ORM 全字段泄露风险）:
-${rm_bad}"
-  else
-    pass "fw_fastapi_response_model: 路由均声明 response_model 或无路由"
-  fi
+  _fw_report warn fw_fastapi_response_model "$rm_bad" "路由无 response_model（内部字段/ORM 全字段泄露风险）" "路由均声明 response_model 或无路由"
 
   # ====================================================================
   # fw_fastapi_depends_yield(warn)：yield 依赖须 try/finally 清理
@@ -80,18 +62,13 @@ ${rm_bad}"
   local dy_bad=""
   for f in "${srcarr[@]}"; do
     if grep -qE 'Depends' "$f" 2>/dev/null \
-       && _fw_fastapi_code_only "$f" | grep -qE '^[[:space:]]*yield[[:space:]]' \
+       && _fw_strip_comments_hash "$f" | grep -qE '^[[:space:]]*yield[[:space:]]' \
        && ! grep -qE 'finally:' "$f" 2>/dev/null; then
       dy_bad="${dy_bad}${f}: yield 依赖无 finally（异常时资源不释放）
 "
     fi
   done
-  if [[ -n "$dy_bad" ]]; then
-    warn "fw_fastapi_depends_yield: yield 依赖缺 try/finally 清理（连接/会话泄漏）:
-${dy_bad}"
-  else
-    pass "fw_fastapi_depends_yield: yield 依赖有 finally 或无 yield 依赖"
-  fi
+  _fw_report warn fw_fastapi_depends_yield "$dy_bad" "yield 依赖缺 try/finally 清理（连接/会话泄漏）" "yield 依赖有 finally 或无 yield 依赖"
 
   # ====================================================================
   # fw_fastapi_background(warn)：BackgroundTasks 长任务须 Celery/RQ
@@ -99,17 +76,12 @@ ${dy_bad}"
   local bg_bad=""
   for f in "${srcarr[@]}"; do
     if grep -qE 'BackgroundTasks' "$f" 2>/dev/null \
-       && _fw_fastapi_code_only "$f" | grep -qE 'time\.sleep\('; then
+       && _fw_strip_comments_hash "$f" | grep -qE 'time\.sleep\('; then
       bg_bad="${bg_bad}${f}: BackgroundTasks 内长耗时任务（进程内执行不可靠，须 Celery/RQ 队列）
 "
     fi
   done
-  if [[ -n "$bg_bad" ]]; then
-    warn "fw_fastapi_background: BackgroundTasks 承载长任务（重启丢失/无重试，须可靠队列）:
-${bg_bad}"
-  else
-    pass "fw_fastapi_background: BackgroundTasks 仅轻量任务或未使用"
-  fi
+  _fw_report warn fw_fastapi_background "$bg_bad" "BackgroundTasks 承载长任务（重启丢失/无重试，须可靠队列）" "BackgroundTasks 仅轻量任务或未使用"
 
   # ====================================================================
   # fw_fastapi_http_exception(warn)：路由内禁裸 raise Exception/ValueError
@@ -118,17 +90,12 @@ ${bg_bad}"
   for f in "${srcarr[@]}"; do
     if grep -qE '@[A-Za-z_]+\.(get|post|put|delete|patch)\(' "$f" 2>/dev/null; then
       local ln
-      ln=$(_fw_fastapi_code_only "$f" | grep -nE 'raise[[:space:]]+(Exception|ValueError|RuntimeError|KeyError)\(' 2>/dev/null || true)
+      ln=$(_fw_strip_comments_hash "$f" | grep -nE 'raise[[:space:]]+(Exception|ValueError|RuntimeError|KeyError)\(' 2>/dev/null || true)
       [[ -n "$ln" ]] && he_bad="${he_bad}${f}:${ln}
 "
     fi
   done
-  if [[ -n "$he_bad" ]]; then
-    warn "fw_fastapi_http_exception: 路由内裸异常将成 500（须 raise HTTPException(status_code=...)）:
-${he_bad}"
-  else
-    pass "fw_fastapi_http_exception: 路由用 HTTPException 或无裸异常"
-  fi
+  _fw_report warn fw_fastapi_http_exception "$he_bad" "路由内裸异常将成 500（须 raise HTTPException(status_code=...)）" "路由用 HTTPException 或无裸异常"
 
   # ====================================================================
   # fw_fastapi_router_modular(warn)：路由须 APIRouter 模块化
@@ -167,16 +134,11 @@ ${he_bad}"
   local ls_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_fastapi_code_only "$f" | grep -nE '@[A-Za-z_]+\.on_event\(' 2>/dev/null || true)
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE '@[A-Za-z_]+\.on_event\(' 2>/dev/null || true)
     [[ -n "$ln" ]] && ls_bad="${ls_bad}${f}:${ln}
 "
   done
-  if [[ -n "$ls_bad" ]]; then
-    warn "fw_fastapi_lifespan: @app.on_event 已弃用（须 lifespan asynccontextmanager 管理启动/关闭）:
-${ls_bad}"
-  else
-    pass "fw_fastapi_lifespan: 无 on_event（用 lifespan 或无启动逻辑）"
-  fi
+  _fw_report warn fw_fastapi_lifespan "$ls_bad" "@app.on_event 已弃用（须 lifespan asynccontextmanager 管理启动/关闭）" "无 on_event（用 lifespan 或无启动逻辑）"
 
   # ====================================================================
   # fw_fastapi_sync_io_async(warn)：async 路由内同步 IO 库须改 httpx/threadpool
@@ -184,17 +146,12 @@ ${ls_bad}"
   local sio_bad=""
   for f in "${srcarr[@]}"; do
     if grep -qE 'async[[:space:]]+def' "$f" 2>/dev/null \
-       && _fw_fastapi_code_only "$f" | grep -qE '\brequests\.(get|post|put|delete|patch)\(|urllib'; then
+       && _fw_strip_comments_hash "$f" | grep -qE '\brequests\.(get|post|put|delete|patch)\(|urllib'; then
       sio_bad="${sio_bad}${f}: async 路由内 requests/urllib 同步 IO（须 httpx.AsyncClient 或 run_in_threadpool）
 "
     fi
   done
-  if [[ -n "$sio_bad" ]]; then
-    warn "fw_fastapi_sync_io_async: async 路由内同步 IO 库阻塞事件循环:
-${sio_bad}"
-  else
-    pass "fw_fastapi_sync_io_async: async 路由无同步 IO 库调用"
-  fi
+  _fw_report warn fw_fastapi_sync_io_async "$sio_bad" "async 路由内同步 IO 库阻塞事件循环" "async 路由无同步 IO 库调用"
 
   # ====================================================================
   # fw_fastapi_websocket(warn)：WebSocket 路由须处理 WebSocketDisconnect
@@ -223,10 +180,5 @@ ${sio_bad}"
 "
     fi
   done
-  if [[ -n "$cors_bad" ]]; then
-    warn "fw_fastapi_cors: allow_origins 通配（配合 allow_credentials 将放大窃取面，须白名单）:
-${cors_bad}"
-  else
-    pass "fw_fastapi_cors: CORS origins 收敛或未使用"
-  fi
+  _fw_report warn fw_fastapi_cors "$cors_bad" "allow_origins 通配（配合 allow_credentials 将放大窃取面，须白名单）" "CORS origins 收敛或未使用"
 }

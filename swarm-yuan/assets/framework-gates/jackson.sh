@@ -71,12 +71,7 @@ $(printf '%s\n' "$pw_bad" | head -5)"
 "
       fi
     done <<< "$ti_files"
-    if [[ -n "$ti_bad" ]]; then
-      fail "fw_jackson_polymorphic: @JsonTypeInfo 多态反序列化攻击面:
-${ti_bad}"
-    else
-      pass "fw_jackson_polymorphic: @JsonTypeInfo 均含 defaultImpl 且未用 Id.CLASS"
-    fi
+    _fw_report fail fw_jackson_polymorphic "$ti_bad" "@JsonTypeInfo 多态反序列化攻击面" "@JsonTypeInfo 均含 defaultImpl 且未用 Id.CLASS"
   fi
 
   # ---------- fw_jackson_unknown_props(warn)：FAIL_ON_UNKNOWN_PROPERTIES 显式选型 ----------
@@ -140,12 +135,7 @@ $(printf '%s\n' "$jf_hits" | head -5)"
 "
     fi
   done
-  if [[ -n "$pn_bad" ]]; then
-    warn "fw_jackson_property_naming: 同类内 snake_case 与 camelCase @JsonProperty 混用（API 契约分裂，建议 PropertyNamingStrategies 集中统一）:
-${pn_bad}"
-  else
-    pass "fw_jackson_property_naming: @JsonProperty 命名风格一致或无显式命名"
-  fi
+  _fw_report warn fw_jackson_property_naming "$pn_bad" "同类内 snake_case 与 camelCase @JsonProperty 混用（API 契约分裂，建议 PropertyNamingStrategies 集中统一）" "@JsonProperty 命名风格一致或无显式命名"
 
   # ---------- fw_jackson_creator(warn)：@JsonCreator 参数须 @JsonProperty ----------
   local jc_files jc_bad=""
@@ -160,12 +150,7 @@ ${pn_bad}"
 "
       fi
     done <<< "$jc_files"
-    if [[ -n "$jc_bad" ]]; then
-      warn "fw_jackson_creator: @JsonCreator 参数列表未检出 @JsonProperty（参数名默认编译被擦除为 arg0/arg1，反序列化全 null）:
-${jc_bad}"
-    else
-      pass "fw_jackson_creator: @JsonCreator 参数均已 @JsonProperty"
-    fi
+    _fw_report warn fw_jackson_creator "$jc_bad" "@JsonCreator 参数列表未检出 @JsonProperty（参数名默认编译被擦除为 arg0/arg1，反序列化全 null）" "@JsonCreator 参数均已 @JsonProperty"
   fi
 
   # ---------- fw_jackson_bigdecimal(warn)：金额字段禁止浮点 ----------
