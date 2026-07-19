@@ -25,10 +25,7 @@ _fw_gorm_check() {
     esac
   done
 
-  # 代码正文过滤：去 // 行注释与块注释行
-  _fw_gorm_code_only() {
-    sed -E 's://.*$::; s:/\*.*\*/::g; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_c_inline（C 系变体，多剥行内 /* */）
 
   local g ln
 
@@ -38,7 +35,7 @@ _fw_gorm_check() {
   local n1_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     local code
-    code=$(_fw_gorm_code_only "$g" 2>/dev/null)
+    code=$(_fw_strip_comments_c_inline "$g" 2>/dev/null)
     [[ -z "$code" ]] && continue
     # 命中 for ... range 循环行
     local forlines
@@ -46,7 +43,7 @@ _fw_gorm_check() {
     [[ -z "$forlines" ]] && continue
     # 文件级是否有 Preload/Joins
     local has_preload=0
-    _fw_gorm_code_only "$g" | grep -qE '\.Preload\(|\.Joins\(' && has_preload=1
+    _fw_strip_comments_c_inline "$g" | grep -qE '\.Preload\(|\.Joins\(' && has_preload=1
     if [[ "$has_preload" -eq 0 ]]; then
       local bad_lines=""
       while IFS= read -r fl; do
@@ -66,12 +63,7 @@ ${bad_lines}
 "
     fi
   done
-  if [[ -n "$n1_bad" ]]; then
-    fail "fw_gorm_n_plus_one: 检出 for-range 内逐条查询无 Preload/Joins（N+1 查询，N 大时查询数线性膨胀）:
-${n1_bad}"
-  else
-    pass "fw_gorm_n_plus_one: 未检出 N+1 模式"
-  fi
+  _fw_report fail fw_gorm_n_plus_one "$n1_bad" "检出 for-range 内逐条查询无 Preload/Joins（N+1 查询，N 大时查询数线性膨胀）" "未检出 N+1 模式"
 
   # ====================================================================
   # fw_gorm_nested_transaction(warn)：手动 Begin 嵌套 / 无配对 Commit/Rollback
@@ -79,7 +71,7 @@ ${n1_bad}"
   local begin_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     local code
-    code=$(_fw_gorm_code_only "$g" 2>/dev/null)
+    code=$(_fw_strip_comments_c_inline "$g" 2>/dev/null)
     [[ -z "$code" ]] && continue
     if printf '%s\n' "$code" | grep -qE '\.Begin\(\)'; then
       local has_commit=0 has_rollback=0
@@ -95,12 +87,7 @@ ${n1_bad}"
       fi
     fi
   done
-  if [[ -n "$begin_bad" ]]; then
-    warn "fw_gorm_nested_transaction: 检出手动 Begin（嵌套无 SavePoint，须统一用 Transaction 闭包）:
-${begin_bad}"
-  else
-    pass "fw_gorm_nested_transaction: 未检出违规 Begin 嵌套"
-  fi
+  _fw_report warn fw_gorm_nested_transaction "$begin_bad" "检出手动 Begin（嵌套无 SavePoint，须统一用 Transaction 闭包）" "未检出违规 Begin 嵌套"
 
   # ====================================================================
   # fw_gorm_soft_delete(warn)：软删除字段须 gorm.DeletedAt
@@ -108,7 +95,7 @@ ${begin_bad}"
   local sd_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     local code
-    code=$(_fw_gorm_code_only "$g" 2>/dev/null)
+    code=$(_fw_strip_comments_c_inline "$g" 2>/dev/null)
     [[ -z "$code" ]] && continue
     # 含 DeletedAt 字段但类型非 gorm.DeletedAt
     local hits
@@ -122,20 +109,15 @@ ${begin_bad}"
 "
     fi
   done
-  if [[ -n "$sd_bad" ]]; then
-    warn "fw_gorm_soft_delete: 软删除字段非 gorm.DeletedAt（自定义字段无自动过滤，已删记录泄漏风险）:
-${sd_bad}"
-  else
-    pass "fw_gorm_soft_delete: 软删除字段均用 gorm.DeletedAt 或无软删除"
-  fi
+  _fw_report warn fw_gorm_soft_delete "$sd_bad" "软删除字段非 gorm.DeletedAt（自定义字段无自动过滤，已删记录泄漏风险）" "软删除字段均用 gorm.DeletedAt 或无软删除"
 
   # ====================================================================
   # fw_gorm_conn_pool(fail)：gorm.Open 须配 SetMaxOpenConns
   # ====================================================================
   local open_hit=0 pool_hit=0
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    _fw_gorm_code_only "$g" | grep -qE 'gorm\.Open\(' && open_hit=1
-    _fw_gorm_code_only "$g" | grep -qE 'SetMaxOpenConns' && pool_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'gorm\.Open\(' && open_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'SetMaxOpenConns' && pool_hit=1
   done
   if [[ "$open_hit" -eq 1 && "$pool_hit" -eq 0 ]]; then
     fail "fw_gorm_conn_pool: gorm.Open 后未配 SetMaxOpenConns（默认 MaxOpenConns=0 无限制，高并发打爆 DB）"
@@ -148,16 +130,11 @@ ${sd_bad}"
   # ====================================================================
   local logmode_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    ln=$(_fw_gorm_code_only "$g" | grep -nE 'LogMode[[:space:]]*\([[:space:]]*logger\.(Info|Silent)' || true)
+    ln=$(_fw_strip_comments_c_inline "$g" | grep -nE 'LogMode[[:space:]]*\([[:space:]]*logger\.(Info|Silent)' || true)
     [[ -n "$ln" ]] && logmode_bad="${logmode_bad}${g}:${ln}
 "
   done
-  if [[ -n "$logmode_bad" ]]; then
-    warn "fw_gorm_dryrun_audit: 检出 LogMode(logger.Info/Silent)（Info 打印全 SQL 含敏感参数 CWE-532；Silent 吞错误；审计须用 DryRun Session）:
-${logmode_bad}"
-  else
-    pass "fw_gorm_dryrun_audit: 未检出危险 LogMode（生产用 Warn，审计用 DryRun Session）"
-  fi
+  _fw_report warn fw_gorm_dryrun_audit "$logmode_bad" "检出 LogMode(logger.Info/Silent)（Info 打印全 SQL 含敏感参数 CWE-532；Silent 吞错误；审计须用 DryRun Session）" "未检出危险 LogMode（生产用 Warn，审计用 DryRun Session）"
 
   # ====================================================================
   # fw_gorm_model_convention(warn)：GORM 模型须有主键声明
@@ -165,7 +142,7 @@ ${logmode_bad}"
   local model_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     local code
-    code=$(_fw_gorm_code_only "$g" 2>/dev/null)
+    code=$(_fw_strip_comments_c_inline "$g" 2>/dev/null)
     [[ -z "$code" ]] && continue
     # 命中 type X struct { 行
     local structlines
@@ -191,12 +168,7 @@ ${logmode_bad}"
 "
     done <<< "$structlines"
   done
-  if [[ -n "$model_bad" ]]; then
-    warn "fw_gorm_model_convention: GORM 模型无 gorm.Model/ID/primaryKey（First 查询按 ID 约定找不到主键报错）:
-${model_bad}"
-  else
-    pass "fw_gorm_model_convention: 模型主键声明完整或无 GORM 模型"
-  fi
+  _fw_report warn fw_gorm_model_convention "$model_bad" "GORM 模型无 gorm.Model/ID/primaryKey（First 查询按 ID 约定找不到主键报错）" "模型主键声明完整或无 GORM 模型"
 
   # ====================================================================
   # fw_gorm_automigrate_prod(warn)：AutoMigrate 不应在生产入口
@@ -211,7 +183,7 @@ ${model_bad}"
       main.go|*.go)
         case "$g" in
           */cmd/*|*/server/*|*/main.go|*/main_*.go)
-            if _fw_gorm_code_only "$g" | grep -qE '\.AutoMigrate\('; then
+            if _fw_strip_comments_c_inline "$g" | grep -qE '\.AutoMigrate\('; then
               am_bad="${am_bad}${g}: AutoMigrate( 在生产入口（生产须用独立 migration 工具）
 "
             fi
@@ -220,12 +192,7 @@ ${model_bad}"
         ;;
     esac
   done
-  if [[ -n "$am_bad" ]]; then
-    warn "fw_gorm_automigrate_prod: AutoMigrate 在生产入口（无回滚、多实例并发竞态，须用 golang-migrate/atlas/goose）:
-${am_bad}"
-  else
-    pass "fw_gorm_automigrate_prod: AutoMigrate 未在生产入口或无 AutoMigrate"
-  fi
+  _fw_report warn fw_gorm_automigrate_prod "$am_bad" "AutoMigrate 在生产入口（无回滚、多实例并发竞态，须用 golang-migrate/atlas/goose）" "AutoMigrate 未在生产入口或无 AutoMigrate"
 
   # ====================================================================
   # fw_gorm_batch_insert(warn)：for-range 内单条 Create 须改 CreateInBatches
@@ -233,10 +200,10 @@ ${am_bad}"
   local batch_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     local code
-    code=$(_fw_gorm_code_only "$g" 2>/dev/null)
+    code=$(_fw_strip_comments_c_inline "$g" 2>/dev/null)
     [[ -z "$code" ]] && continue
     local has_batch=0
-    _fw_gorm_code_only "$g" | grep -qE '\.CreateInBatches\(' && has_batch=1
+    _fw_strip_comments_c_inline "$g" | grep -qE '\.CreateInBatches\(' && has_batch=1
     if [[ "$has_batch" -eq 0 ]]; then
       local forlines
       forlines=$(printf '%s\n' "$code" | grep -nE '\bfor[[:space:]]+.*,?[[:space:]]*range\b' || true)
@@ -258,20 +225,15 @@ ${bad_lines}
 "
     fi
   done
-  if [[ -n "$batch_bad" ]]; then
-    warn "fw_gorm_batch_insert: for-range 内单条 Create（N 次 RTT，须 CreateInBatches 分批）:
-${batch_bad}"
-  else
-    pass "fw_gorm_batch_insert: 已用 CreateInBatches 或无循环 Create"
-  fi
+  _fw_report warn fw_gorm_batch_insert "$batch_bad" "for-range 内单条 Create（N 次 RTT，须 CreateInBatches 分批）" "已用 CreateInBatches 或无循环 Create"
 
   # ====================================================================
   # fw_gorm_record_not_found(warn)：First 须配 ErrRecordNotFound 判断
   # ====================================================================
   local first_hit=0 rnf_hit=0
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    _fw_gorm_code_only "$g" | grep -qE '\.First\(' && first_hit=1
-    _fw_gorm_code_only "$g" | grep -qE 'ErrRecordNotFound' && rnf_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE '\.First\(' && first_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'ErrRecordNotFound' && rnf_hit=1
   done
   if [[ "$first_hit" -eq 1 && "$rnf_hit" -eq 0 ]]; then
     warn "fw_gorm_record_not_found: 检出 First( 但无 ErrRecordNotFound 判断（无记录会被当 500 报错）"
@@ -286,7 +248,7 @@ ${batch_bad}"
   local index_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     local code
-    code=$(_fw_gorm_code_only "$g" 2>/dev/null)
+    code=$(_fw_strip_comments_c_inline "$g" 2>/dev/null)
     [[ -z "$code" ]] && continue
     # 检出 Where("user_id / order_id / status / tenant_id ...") 但同项目无 gorm:"index
     if printf '%s\n' "$code" | grep -qE '\.Where\("(user_id|order_id|tenant_id|status|deleted_at)'; then
@@ -298,21 +260,16 @@ ${batch_bad}"
       fi
     fi
   done
-  if [[ -n "$index_bad" ]]; then
-    warn "fw_gorm_index: 高频查询字段(user_id/order_id/status)可能缺 gorm:\"index\" 标签（启发式，须人工核对）:
-${index_bad}"
-  else
-    pass "fw_gorm_index: 未检出疑似缺索引字段"
-  fi
+  _fw_report warn fw_gorm_index "$index_bad" "高频查询字段(user_id/order_id/status)可能缺 gorm:\"index\" 标签（启发式，须人工核对）" "未检出疑似缺索引字段"
 
   # ====================================================================
   # fw_gorm_error_handling(warn)：db.Error 须区分 ErrRecordNotFound/ErrDuplicatedKey
   # ====================================================================
   local dberr_hit=0 rnf2_hit=0 dup_hit=0
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    _fw_gorm_code_only "$g" | grep -qE '\.Error\b|result\.Error|errs\.Is' && dberr_hit=1
-    _fw_gorm_code_only "$g" | grep -qE 'ErrRecordNotFound' && rnf2_hit=1
-    _fw_gorm_code_only "$g" | grep -qE 'ErrDuplicatedKey' && dup_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE '\.Error\b|result\.Error|errs\.Is' && dberr_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'ErrRecordNotFound' && rnf2_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'ErrDuplicatedKey' && dup_hit=1
   done
   if [[ "$dberr_hit" -eq 1 && "$rnf2_hit" -eq 0 && "$dup_hit" -eq 0 ]]; then
     warn "fw_gorm_error_handling: 检出 .Error 但未区分 ErrRecordNotFound/ErrDuplicatedKey（无记录当 500）"
@@ -326,7 +283,7 @@ ${index_bad}"
   local assoc_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     local code
-    code=$(_fw_gorm_code_only "$g" 2>/dev/null)
+    code=$(_fw_strip_comments_c_inline "$g" 2>/dev/null)
     [[ -z "$code" ]] && continue
     local structlines
     structlines=$(printf '%s\n' "$code" | grep -nE '^type[[:space:]]+[A-Z][A-Za-z0-9_]*[[:space:]]+struct[[:space:]]*\{' || true)
@@ -350,24 +307,19 @@ ${index_bad}"
       fi
     done <<< "$structlines"
   done
-  if [[ -n "$assoc_bad" ]]; then
-    warn "fw_gorm_association: 多 ID 字段关联无 foreignKey 标签（Preload 推断歧义，加载错关联）:
-${assoc_bad}"
-  else
-    pass "fw_gorm_association: 关联外键声明清晰或无多外键模型"
-  fi
+  _fw_report warn fw_gorm_association "$assoc_bad" "多 ID 字段关联无 foreignKey 标签（Preload 推断歧义，加载错关联）" "关联外键声明清晰或无多外键模型"
 
   # ====================================================================
   # fw_gorm_naming(warn)：TableName 与 NamingStrategy 禁混用
   # ====================================================================
   local tn_hit=0 ns_hit=0 tn_files=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    if _fw_gorm_code_only "$g" | grep -qE 'func[[:space:]]*\([^)]*\)[[:space:]]+TableName\(\)[[:space:]]+string'; then
+    if _fw_strip_comments_c_inline "$g" | grep -qE 'func[[:space:]]*\([^)]*\)[[:space:]]+TableName\(\)[[:space:]]+string'; then
       tn_hit=1
       tn_files="${tn_files}${g}
 "
     fi
-    _fw_gorm_code_only "$g" | grep -qE 'NamingStrategy' && ns_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'NamingStrategy' && ns_hit=1
   done
   if [[ "$tn_hit" -eq 1 && "$ns_hit" -eq 1 ]]; then
     warn "fw_gorm_naming: TableName() 与 NamingStrategy 混用（表名不一致，查询错表）:

@@ -26,10 +26,7 @@ _fw_kafka_check() {
     esac
   done
 
-  # 代码正文过滤辅助（剥离行注释与块注释行，防注释中关键字误命中）
-  _fw_kafka_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_c（C 系，剔 // 与块注释行）
 
   # 常用检出集合
   local listener_files
@@ -55,16 +52,11 @@ _fw_kafka_check() {
   done
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
     local ln
-    ln=$(_fw_kafka_code_only "$j" | grep -nE 'ENABLE_AUTO_COMMIT_CONFIG[[:space:]]*,[[:space:]]*"true"' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE 'ENABLE_AUTO_COMMIT_CONFIG[[:space:]]*,[[:space:]]*"true"' || true)
     [[ -n "$ln" ]] && ac_bad="${ac_bad}${j}:${ln}
 "
   done
-  if [[ -n "$ac_bad" ]]; then
-    fail "fw_kafka_offset_semantics: enable.auto.commit=true（offset 与业务处理脱钩，处理失败消息永久丢失；须 false + 业务成功后提交）:
-${ac_bad}"
-  else
-    pass "fw_kafka_offset_semantics: 未检出 auto.commit=true"
-  fi
+  _fw_report fail fw_kafka_offset_semantics "$ac_bad" "enable.auto.commit=true（offset 与业务处理脱钩，处理失败消息永久丢失；须 false + 业务成功后提交）" "未检出 auto.commit=true"
 
   # ====================================================================
   # fw_kafka_acks(fail/warn)：acks=0 必丢；acks=1 须确认
@@ -81,10 +73,10 @@ ${ac_bad}"
   done
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
     local ln
-    ln=$(_fw_kafka_code_only "$j" | grep -nE 'ACKS_CONFIG[[:space:]]*,[[:space:]]*"0"' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE 'ACKS_CONFIG[[:space:]]*,[[:space:]]*"0"' || true)
     [[ -n "$ln" ]] && acks0_bad="${acks0_bad}${j}:${ln}
 "
-    ln=$(_fw_kafka_code_only "$j" | grep -nE 'ACKS_CONFIG[[:space:]]*,[[:space:]]*"1"' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE 'ACKS_CONFIG[[:space:]]*,[[:space:]]*"1"' || true)
     [[ -n "$ln" ]] && acks1_hit="${acks1_hit}${j}:${ln}
 "
   done
@@ -104,7 +96,7 @@ ${acks1_hit}"
   local idem_bad=""
   while IFS= read -r lf; do
     [[ -z "$lf" ]] && continue
-    if ! _fw_kafka_code_only "$lf" | grep -qiE '幂等|idempot|dedup|去重|setIfAbsent|setnx|ON DUPLICATE|insertIgnore|uk_[a-z]|unique[[:space:]]+key|consumeOnce'; then
+    if ! _fw_strip_comments_c "$lf" | grep -qiE '幂等|idempot|dedup|去重|setIfAbsent|setnx|ON DUPLICATE|insertIgnore|uk_[a-z]|unique[[:space:]]+key|consumeOnce'; then
       idem_bad="${idem_bad}${lf}
 "
     fi
@@ -126,7 +118,7 @@ ${idem_bad}"
   else
     local conc_hit=0
     for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-      _fw_kafka_code_only "$j" | grep -qE 'concurrency' && { conc_hit=1; break; }
+      _fw_strip_comments_c "$j" | grep -qE 'concurrency' && { conc_hit=1; break; }
     done
     if [[ "$conc_hit" -eq 0 ]]; then
       for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
@@ -152,16 +144,11 @@ ${idem_bad}"
   done
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
     local ln
-    ln=$(_fw_kafka_code_only "$j" | grep -nE 'ENABLE_IDEMPOTENCE_CONFIG[[:space:]]*,[[:space:]]*"false"' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE 'ENABLE_IDEMPOTENCE_CONFIG[[:space:]]*,[[:space:]]*"false"' || true)
     [[ -n "$ln" ]] && idp_bad="${idp_bad}${j}:${ln}
 "
   done
-  if [[ -n "$idp_bad" ]]; then
-    warn "fw_kafka_idempotent_producer: 显式关闭幂等生产者（4.x 默认开启；关闭后重试即可能重复，仅限兼容古董 broker）:
-${idp_bad}"
-  else
-    pass "fw_kafka_idempotent_producer: 未显式关闭幂等生产者"
-  fi
+  _fw_report warn fw_kafka_idempotent_producer "$idp_bad" "显式关闭幂等生产者（4.x 默认开启；关闭后重试即可能重复，仅限兼容古董 broker）" "未显式关闭幂等生产者"
 
   # ====================================================================
   # fw_kafka_transactional_producer(warn)：事务须 read_committed 配对
@@ -197,12 +184,7 @@ ${range_hit}"
   # ====================================================================
   local part_bad=""
   part_bad=$(grep -rnE 'RoundRobinPartitioner|UniformStickyPartitioner|round\.robin' "${srcarr[@]}" 2>/dev/null || true)
-  if [[ -n "$part_bad" ]]; then
-    warn "fw_kafka_partitioner: 检出 RoundRobin/UniformSticky 分区器（同 key 消息打散多分区，键序被破坏；须默认 murmur2 或自定义保序分区器）:
-${part_bad}"
-  else
-    pass "fw_kafka_partitioner: 未检出乱序分区器"
-  fi
+  _fw_report warn fw_kafka_partitioner "$part_bad" "检出 RoundRobin/UniformSticky 分区器（同 key 消息打散多分区，键序被破坏；须默认 murmur2 或自定义保序分区器）" "未检出乱序分区器"
 
   # ====================================================================
   # fw_kafka_dlq(warn)：消费失败须 DLT
@@ -240,16 +222,11 @@ ${part_bad}"
   local nokey_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
     local ln
-    ln=$(_fw_kafka_code_only "$j" | grep -nE 'ProducerRecord[^(]*\([^,)]*,[^,)]*\)' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE 'ProducerRecord[^(]*\([^,)]*,[^,)]*\)' || true)
     [[ -n "$ln" ]] && nokey_bad="${nokey_bad}${j}:${ln}
 "
   done
-  if [[ -n "$nokey_bad" ]]; then
-    warn "fw_kafka_order_partition: 检出 ProducerRecord 两参构造（topic, value 无 key → 轮询多分区全局乱序；顺序敏感业务须带业务键 key）:
-${nokey_bad}"
-  else
-    pass "fw_kafka_order_partition: 未检出无 key 发送"
-  fi
+  _fw_report warn fw_kafka_order_partition "$nokey_bad" "检出 ProducerRecord 两参构造（topic, value 无 key → 轮询多分区全局乱序；顺序敏感业务须带业务键 key）" "未检出无 key 发送"
 
   # ====================================================================
   # fw_kafka_schema_registry(warn)：schema 演进约束
@@ -288,10 +265,5 @@ ${nokey_bad}"
 "
     fi
   done <<< "$dup_groups"
-  if [[ -n "$gm_bad" ]]; then
-    warn "fw_kafka_group_mgmt: 不同业务 listener 复用同一 groupId（一 listener 一组，命名按业务域.用途.环境）:
-${gm_bad}"
-  else
-    pass "fw_kafka_group_mgmt: 无跨 topic 消费组复用"
-  fi
+  _fw_report warn fw_kafka_group_mgmt "$gm_bad" "不同业务 listener 复用同一 groupId（一 listener 一组，命名按业务域.用途.环境）" "无跨 topic 消费组复用"
 }

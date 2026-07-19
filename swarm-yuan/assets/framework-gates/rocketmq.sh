@@ -26,10 +26,7 @@ _fw_rocketmq_check() {
     esac
   done
 
-  # 代码正文过滤辅助（剥离行注释与块注释行，防注释中关键字误命中）
-  _fw_rocketmq_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_c（C 系，剥离行注释与块注释行，防注释中关键字误命中）
 
   # ====================================================================
   # fw_rocketmq_idempotent_consumer(fail)：消费端必须幂等
@@ -40,10 +37,10 @@ _fw_rocketmq_check() {
   while IFS= read -r lf; do
     [[ -z "$lf" ]] && continue
     # 跳过纯接口/抽象定义（无消费体的 RocketMQListener 接口声明文件）
-    if ! _fw_rocketmq_code_only "$lf" | grep -qE 'onMessage|consume'; then
+    if ! _fw_strip_comments_c "$lf" | grep -qE 'onMessage|consume'; then
       continue
     fi
-    if ! _fw_rocketmq_code_only "$lf" | grep -qiE '幂等|idempot|dedup|去重|setIfAbsent|setnx|ON DUPLICATE|insertIgnore|uk_[a-z]|unique[[:space:]]+key|consumeOnce|existsConsumed'; then
+    if ! _fw_strip_comments_c "$lf" | grep -qiE '幂等|idempot|dedup|去重|setIfAbsent|setnx|ON DUPLICATE|insertIgnore|uk_[a-z]|unique[[:space:]]+key|consumeOnce|existsConsumed'; then
       idem_bad="${idem_bad}${lf}
 "
     fi
@@ -101,7 +98,7 @@ ${tx_files}"
   else
     local retry_hit=0 j c
     for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-      _fw_rocketmq_code_only "$j" | grep -qE 'maxReconsumeTimes' && { retry_hit=1; break; }
+      _fw_strip_comments_c "$j" | grep -qE 'maxReconsumeTimes' && { retry_hit=1; break; }
     done
     if [[ "$retry_hit" -eq 0 ]]; then
       for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
@@ -123,7 +120,7 @@ ${tx_files}"
   else
     local conc_hit=0
     for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-      _fw_rocketmq_code_only "$j" | grep -qE 'consumeThread|consumeMessageBatchMaxSize' && { conc_hit=1; break; }
+      _fw_strip_comments_c "$j" | grep -qE 'consumeThread|consumeMessageBatchMaxSize' && { conc_hit=1; break; }
     done
     if [[ "$conc_hit" -eq 0 ]]; then
       for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
@@ -142,11 +139,11 @@ ${tx_files}"
   # ====================================================================
   local sleep_bad="" delay_api_hit=0
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    _fw_rocketmq_code_only "$j" | grep -qE 'setDelayTimeLevel|setDeliverTimeMs|withDelayTimeLevel|messageDelayLevel' && delay_api_hit=1
+    _fw_strip_comments_c "$j" | grep -qE 'setDelayTimeLevel|setDeliverTimeMs|withDelayTimeLevel|messageDelayLevel' && delay_api_hit=1
     # 仅检查含 RocketMQ 生产/消费语义的文件内的 Thread.sleep
     if grep -qE 'RocketMQ|MQProducer|MQPushConsumer' "$j" 2>/dev/null; then
       local sl
-      sl=$(_fw_rocketmq_code_only "$j" | grep -nE 'Thread\.sleep' || true)
+      sl=$(_fw_strip_comments_c "$j" | grep -nE 'Thread\.sleep' || true)
       [[ -n "$sl" ]] && sleep_bad="${sleep_bad}${j}:${sl}
 "
     fi
@@ -165,36 +162,21 @@ ${sleep_bad}"
   # ====================================================================
   local batch_hit=""
   batch_hit=$(grep -rnE 'sendBatch|\.send\([^)]*(Collection|List)<|\.send\([a-zA-Z_][a-zA-Z0-9_]*[sS]\)' "${javaarr[@]+"${javaarr[@]}"}" 2>/dev/null | grep -vE 'convertAndSend|syncSend|asyncSend' || true)
-  if [[ -n "$batch_hit" ]]; then
-    warn "fw_rocketmq_batch: 检出批量发送（须同 topic、总大小 ≤4MiB 自行切分、失败降级单发定位毒丸）:
-${batch_hit}"
-  else
-    pass "fw_rocketmq_batch: 无批量发送，跳过"
-  fi
+  _fw_report warn fw_rocketmq_batch "${batch_hit}" "检出批量发送（须同 topic、总大小 ≤4MiB 自行切分、失败降级单发定位毒丸）" "无批量发送，跳过"
 
   # ====================================================================
   # fw_rocketmq_filter(warn)：SQL92 过滤须 broker 开关
   # ====================================================================
   local sql_hit=""
   sql_hit=$(grep -rnE 'MessageSelector\.bySql|SelectorType\.SQL92|bySql' "${javaarr[@]+"${javaarr[@]}"}" 2>/dev/null || true)
-  if [[ -n "$sql_hit" ]]; then
-    warn "fw_rocketmq_filter: 检出 SQL92 过滤（broker 须 enablePropertyFilter=true；能用 tag 就不用 SQL92，大流量 CPU 开销）:
-${sql_hit}"
-  else
-    pass "fw_rocketmq_filter: 无 SQL92 过滤，跳过"
-  fi
+  _fw_report warn fw_rocketmq_filter "${sql_hit}" "检出 SQL92 过滤（broker 须 enablePropertyFilter=true；能用 tag 就不用 SQL92，大流量 CPU 开销）" "无 SQL92 过滤，跳过"
 
   # ====================================================================
   # fw_rocketmq_broadcast(warn)：广播模式确认可丢失
   # ====================================================================
   local bc_hit=""
   bc_hit=$(grep -rnE 'BROADCASTING|broadcasting' "${javaarr[@]+"${javaarr[@]}"}" 2>/dev/null || true)
-  if [[ -n "$bc_hit" ]]; then
-    warn "fw_rocketmq_broadcast: 检出广播模式（失败不重试 + 实例重启错过窗口消息，仅限缓存刷新等可丢失场景）:
-${bc_hit}"
-  else
-    pass "fw_rocketmq_broadcast: 无广播模式（默认集群模式）"
-  fi
+  _fw_report warn fw_rocketmq_broadcast "${bc_hit}" "检出广播模式（失败不重试 + 实例重启错过窗口消息，仅限缓存刷新等可丢失场景）" "无广播模式（默认集群模式）"
 
   # ====================================================================
   # fw_rocketmq_order_scope(warn)：分区顺序 vs 全局顺序
@@ -251,10 +233,5 @@ ${orderly_send}"
 "
     fi
   done <<< "$dup_groups"
-  if [[ -n "$gc_bad" ]]; then
-    warn "fw_rocketmq_group_consistency: 同一 consumerGroup 订阅不同 topic（broker 端订阅互相覆盖，消息静默丢弃）:
-${gc_bad}"
-  else
-    pass "fw_rocketmq_group_consistency: 无同组多 topic 订阅"
-  fi
+  _fw_report warn fw_rocketmq_group_consistency "${gc_bad}" "同一 consumerGroup 订阅不同 topic（broker 端订阅互相覆盖，消息静默丢弃）" "无同组多 topic 订阅"
 }

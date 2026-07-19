@@ -78,12 +78,7 @@ _fw_sharding_check() {
       [[ -n "$hits" ]] && kid_hits="${kid_hits}${hits}
 "
     done
-    if [[ -n "$kid_hits" ]]; then
-      fail "fw_sharding_key_in_dml: 分片表 UPDATE/DELETE 缺分片键（SQL 无分片字段触发全路由广播，官方 concept 文档：full routing, performance is poor）:
-${kid_hits}"
-    else
-      pass "fw_sharding_key_in_dml: 分片表 UPDATE/DELETE 均含分片键"
-    fi
+    _fw_report fail fw_sharding_key_in_dml "${kid_hits}" "分片表 UPDATE/DELETE 缺分片键（SQL 无分片字段触发全路由广播，官方 concept 文档：full routing, performance is poor）" "分片表 UPDATE/DELETE 均含分片键"
   fi
 
   # ====================================================================
@@ -102,12 +97,7 @@ ${kid_hits}"
       [[ -n "$ke_hit" ]] && ke_hits="${ke_hits}${ke_hit}
 "
     done
-    if [[ -n "$ke_hits" ]]; then
-      warn "fw_sharding_key_expr: 分片键被函数/表达式包裹（官方 limitation：分片键取值仅支持字面量/绑定参数，函数计算结果不用于分片 → 全路由或路由校验失败）:
-${ke_hits}"
-    else
-      pass "fw_sharding_key_expr: 分片键均为字面量/绑定参数直取"
-    fi
+    _fw_report warn fw_sharding_key_expr "${ke_hits}" "分片键被函数/表达式包裹（官方 limitation：分片键取值仅支持字面量/绑定参数，函数计算结果不用于分片 → 全路由或路由校验失败）" "分片键均为字面量/绑定参数直取"
   fi
 
   # ====================================================================
@@ -122,12 +112,7 @@ ${ke_hits}"
     done
     bw_pat="${bw_pat#|}"
     bw_hits=$(grep -rniE "$bw_pat" "${xmlarr[@]}" 2>/dev/null || true)
-    if [[ -n "$bw_hits" ]]; then
-      fail "fw_sharding_broadcast_write: 业务 DML 直写广播表（广播表存在于每个数据源，业务侧应只读；字典变更须走受控迁移通道，直写放大到全部节点且脱离版本管控）:
-${bw_hits}"
-    else
-      pass "fw_sharding_broadcast_write: 广播表无业务 DML 写入（只读）"
-    fi
+    _fw_report fail fw_sharding_broadcast_write "${bw_hits}" "业务 DML 直写广播表（广播表存在于每个数据源，业务侧应只读；字典变更须走受控迁移通道，直写放大到全部节点且脱离版本管控）" "广播表无业务 DML 写入（只读）"
   fi
 
   # ====================================================================
@@ -168,12 +153,7 @@ ${bw_hits}"
       [[ -n "$hits" ]] && bj_hits="${bj_hits}${hits}
 "
     done
-    if [[ -n "$bj_hits" ]]; then
-      warn "fw_sharding_binding_join: JOIN 涉及多张分片表但未用分片键关联（官方 concept：binding tables 必须以分片键关联，否则笛卡尔积/跨库关联，路由 SQL 按分片数乘积膨胀）:
-${bj_hits}"
-    else
-      pass "fw_sharding_binding_join: 多表 JOIN 均含分片键关联或无多分片表 JOIN"
-    fi
+    _fw_report warn fw_sharding_binding_join "${bj_hits}" "JOIN 涉及多张分片表但未用分片键关联（官方 concept：binding tables 必须以分片键关联，否则笛卡尔积/跨库关联，路由 SQL 按分片数乘积膨胀）" "多表 JOIN 均含分片键关联或无多分片表 JOIN"
   fi
 
   # ====================================================================
@@ -213,12 +193,7 @@ ${bj_hits}"
       [[ -n "$hits" ]] && om_hits="${om_hits}${hits}
 "
     done
-    if [[ -n "$om_hits" ]]; then
-      warn "fw_sharding_order_merge: 分片表 ORDER BY/LIMIT 查询无分片键（跨分片归并 + 深分页每分片取回 offset+count 行内存归并，IO/内存随分片数与 offset 双放大；建议加分片键条件/限页深/游标分页）:
-${om_hits}"
-    else
-      pass "fw_sharding_order_merge: 分片表排序分页均带分片键或无排序分页"
-    fi
+    _fw_report warn fw_sharding_order_merge "${om_hits}" "分片表 ORDER BY/LIMIT 查询无分片键（跨分片归并 + 深分页每分片取回 offset+count 行内存归并，IO/内存随分片数与 offset 双放大；建议加分片键条件/限页深/游标分页）" "分片表排序分页均带分片键或无排序分页"
   fi
 
   # ====================================================================
@@ -238,12 +213,7 @@ ${om_hits}"
         fi
       done
     done
-    if [[ -n "$kg_bad" ]]; then
-      warn "fw_sharding_keygen: 分片表 INSERT 依赖数据库自增回填（官方 concept：各物理表自增序列相互不知 → 跨分片主键重复；须配 keyGenerators type: SNOWFLAKE/UUID 或应用层雪花 ID）:
-${kg_bad}"
-    else
-      pass "fw_sharding_keygen: 分片表 INSERT 未依赖数据库自增回填"
-    fi
+    _fw_report warn fw_sharding_keygen "${kg_bad}" "分片表 INSERT 依赖数据库自增回填（官方 concept：各物理表自增序列相互不知 → 跨分片主键重复；须配 keyGenerators type: SNOWFLAKE/UUID 或应用层雪花 ID）" "分片表 INSERT 未依赖数据库自增回填"
   fi
 
   # ====================================================================
@@ -276,12 +246,7 @@ ${kg_bad}"
       [[ "$tcnt" -ge 2 ]] && xa_bad="${xa_bad}${jf}
 "
     done
-    if [[ -n "$xa_bad" ]]; then
-      warn "fw_sharding_xa: @Transactional 方法疑似跨分片写（官方 transaction 文档：LOCAL 模式不保证跨节点强一致/最终一致；跨分片写须显式 XA 或 Seata(BASE)，5.5.2 起 Seata Client ≥ 2.2.0）:
-${xa_bad}"
-    else
-      pass "fw_sharding_xa: 未发现 @Transactional 跨分片写风险"
-    fi
+    _fw_report warn fw_sharding_xa "${xa_bad}" "@Transactional 方法疑似跨分片写（官方 transaction 文档：LOCAL 模式不保证跨节点强一致/最终一致；跨分片写须显式 XA 或 Seata(BASE)，5.5.2 起 Seata Client ≥ 2.2.0）" "未发现 @Transactional 跨分片写风险"
   fi
 
   # ====================================================================
@@ -298,12 +263,7 @@ ${xa_bad}"
   us_case=$(grep -rniE 'case[[:space:]]+when[^!]*select' "${xmlarr[@]}" 2>/dev/null || true)
   [[ -n "$us_case" ]] && us_hits="${us_hits}${us_case}
 "
-  if [[ -n "$us_hits" ]]; then
-    warn "fw_sharding_unsupported_sql: 检出官方 limitation 不支持/受限 SQL（LOAD DATA|XML 到分片表不支持；CASE WHEN 含子查询不支持；另须人工核对 Oracle rownum+BETWEEN 分页、SQLServer WITH 分页、DISTINCT 混用聚合、; 多语句）:
-${us_hits}"
-  else
-    pass "fw_sharding_unsupported_sql: 未检出 LOAD DATA/CASE WHEN 子查询等不支持 SQL"
-  fi
+  _fw_report warn fw_sharding_unsupported_sql "${us_hits}" "检出官方 limitation 不支持/受限 SQL（LOAD DATA|XML 到分片表不支持；CASE WHEN 含子查询不支持；另须人工核对 Oracle rownum+BETWEEN 分页、SQLServer WITH 分页、DISTINCT 混用聚合、; 多语句）" "未检出 LOAD DATA/CASE WHEN 子查询等不支持 SQL"
 
   # ====================================================================
   # fw_sharding_hint(warn)：HintManager 未 close/未 try-with-resources → ThreadLocal 泄漏
@@ -323,11 +283,6 @@ ${us_hits}"
       hint_bad="${hint_bad}${jf}
 "
     done
-    if [[ -n "$hint_bad" ]]; then
-      warn "fw_sharding_hint: HintManager 使用后未 close()/未 try-with-resources（官方 Hint 文档：分片值存 ThreadLocal 仅当前线程生效，不清理会污染线程池后续请求 → 路由串库）:
-${hint_bad}"
-    else
-      pass "fw_sharding_hint: HintManager 均显式清理或无 Hint 用法"
-    fi
+    _fw_report warn fw_sharding_hint "${hint_bad}" "HintManager 使用后未 close()/未 try-with-resources（官方 Hint 文档：分片值存 ThreadLocal 仅当前线程生效，不清理会污染线程池后续请求 → 路由串库）" "HintManager 均显式清理或无 Hint 用法"
   fi
 }

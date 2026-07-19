@@ -32,10 +32,98 @@ _resolve_path() {
   return 1
 }
 
+# ===== 内部公共辅助（门禁共用的探查/解析小函数；行为与原内联写法一致）=====
+
+# 变更基线探测：优先 main 分支，不存在则退回 HEAD~1（输出基线引用名）
+_git_base() {
+  local base="main"
+  git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
+  printf '%s' "$base"
+}
+
+# 本次变更文件清单：git diff --name-only <base>...HEAD，无结果时退回 git diff --name-only HEAD
+# 输出与 git 原输出一致：非空时带结尾换行（可供 wc -l 计数），空则无输出
+_git_changed_files() {
+  local base changed
+  base=$(_git_base)
+  changed=$(git diff --name-only "$base"...HEAD 2>/dev/null || true)
+  [[ -z "$changed" ]] && changed=$(git diff --name-only HEAD 2>/dev/null || true)
+  [[ -z "$changed" ]] || printf '%s\n' "$changed"
+  return 0
+}
+
+# 按序探测候选路径（支持 glob，如 ".claude/skills/*/x.md"），回显第一个存在的文件；均无则输出空
+_first_existing_file() {
+  local cand f
+  for cand in "$@"; do
+    # 故意不加引号展开 $cand：让 glob 模式展开为实际文件列表（原内联写法即如此）
+    for f in $cand; do
+      if [[ -f "$f" ]]; then
+        printf '%s' "$f"
+        return 0
+      fi
+    done
+  done
+  return 0
+}
+
+# 通用源码扫描：在目录中按 ERE 模式 grep（限定源码扩展名），并滤除 test/mock 等噪声行
+# $1=ERE 模式；$2=逗号分隔扩展名（如 ts,js,py）；$3=排除用 BRE（\| 分隔，与原内联写法一致）
+# 其余参数=扫描目录；无目录参数时 grep -r 退化为扫描当前目录（与原内联写法一致）
+_scan_src() {
+  local pat="$1" exts="$2" excl="$3"; shift 3
+  local inc_args=() e d
+  IFS=',' read -ra _exts <<< "$exts"
+  for e in "${_exts[@]}"; do
+    [[ -n "$e" ]] && inc_args+=("--include=*.$e")
+  done
+  if [[ $# -eq 0 ]]; then
+    grep -rnE "$pat" "${inc_args[@]}" 2>/dev/null | grep -v -i "$excl" || true
+    return
+  fi
+  for d in "$@"; do
+    grep -rnE "$pat" "$d" "${inc_args[@]}" 2>/dev/null | grep -v -i "$excl" || true
+  done
+}
+
+# 数值防御：归一为非负整数（去空白；非纯数字归 0），防 git/grep 异常输出触发数值比较错误
+_norm_int() {
+  local v
+  v=$(echo "$1" | xargs)
+  [[ "$v" =~ ^[0-9]+$ ]] || v=0
+  printf '%s' "$v"
+}
+
+# 提取源文件的相对路径 import（./ ../）并解析为存在的目标文件路径（每行一个）
+# 供 check_layer 聚合引用检测与 check_contract ACL 跨上下文检测共用
+_resolve_rel_imports() {
+  local af="$1"
+  local imps imp dir target ext cand
+  imps=$(grep -hoE "from ['\"][^'\"]+['\"]|import ['\"][^'\"]+['\"]" "$af" 2>/dev/null \
+    | grep -oE "['\"][^'\"]+['\"]" | sed "s/['\"]//g" || true)
+  while IFS= read -r imp; do
+    [[ -z "$imp" ]] && continue
+    case "$imp" in
+      ./*|../*) ;;
+      *) continue ;;
+    esac
+    dir=$(dirname "$af")
+    target=""
+    for ext in ".ts" ".js" ".py" ".tsx" ".jsx"; do
+      cand=$(cd "$dir" 2>/dev/null && _resolve_path "${imp}${ext}" 2>/dev/null || echo "")
+      if [[ -n "$cand" && -f "$cand" ]]; then target="$cand"; break; fi
+    done
+    [[ -n "$target" ]] && printf '%s\n' "$target"
+  done <<< "$imps"
+}
+
 # ===== 配置加载 =====
 # 配置变量从 precheck.conf 加载（与脚本同目录）。生成目标技能时按项目实际填充。
 # 策略：先初始化全部 conf 变量默认值（避免 conf 未声明时 set -u 崩），
 #       再若有 conf 则 source 覆盖。conf 可能含字面 ${}，source 时临时关 set -u。
+# 注：框架适配变量（JAVA_BUILD_FILES/MYBATIS_* 等）由注入的 framework-gates 片段消费，
+#     本文件内看似未使用，故关闭 SC2034。
+# shellcheck disable=SC2034
 _default_conf() {
   # 基础配置
   PROJECT_DIR="."
@@ -85,7 +173,6 @@ _default_conf() {
   STYLE_DIR=""
   # 认知门禁
   COGNITION_BASELINE=""
-  COGNITION_MAP=""
   COG_SPEED_FILES=10
   COG_CUMULATIVE_TODO=20
   COG_STRENGTH_FANIN=8
@@ -110,7 +197,6 @@ _default_conf() {
   MYBATIS_MAPPER_DIRS=()
   MYBATIS_SRC_GLOBS=()
   SQL_INJECTION_WHITELIST=()
-  LOMBOK_ANNOTATIONS="@Data|@Slf4j|@Builder|@Getter|@Setter|@RequiredArgsConstructor"
   LOMBOK_SRC_GLOBS=()
   SHARDING_KEY_COLUMNS=()
   SHARDED_TABLES=()
@@ -122,32 +208,21 @@ _CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 if [[ -f "$_CONF_DIR/precheck.conf" ]]; then
   set +u
   # shellcheck disable=SC1090
+  # shellcheck source=/dev/null
   source "$_CONF_DIR/precheck.conf"
   set -u
 fi
 # 兜底：source conf 后，对 conf 仍未声明的关键变量补空默认值（已声明的保留用户值）。
 # 用 ${VAR+x} 判断是否已声明——未声明则补空数组/空串，防 set -u 崩。
 # 数组变量（门禁片段用 ${VAR[@]+"${VAR[@]}"} 或 ${#VAR[@]} 引用，未声明会 unbound）
-[[ -z "${MYBATIS_MAPPER_DIRS+x}" ]] && MYBATIS_MAPPER_DIRS=()
-[[ -z "${SQL_INJECTION_WHITELIST+x}" ]] && SQL_INJECTION_WHITELIST=()
-[[ -z "${SHARDING_KEY_COLUMNS+x}" ]] && SHARDING_KEY_COLUMNS=()
-[[ -z "${SHARDED_TABLES+x}" ]] && SHARDED_TABLES=()
-[[ -z "${SHARDING_BROADCAST_TABLES+x}" ]] && SHARDING_BROADCAST_TABLES=()
-[[ -z "${MYBATIS_SRC_GLOBS+x}" ]] && MYBATIS_SRC_GLOBS=()
-[[ -z "${LOMBOK_SRC_GLOBS+x}" ]] && LOMBOK_SRC_GLOBS=()
-[[ -z "${SPRING_BATCH_JOB_DIRS+x}" ]] && SPRING_BATCH_JOB_DIRS=()
-[[ -z "${JAVA_BUILD_FILES+x}" ]] && JAVA_BUILD_FILES=()
-[[ -z "${LAYER_DEFS+x}" ]] && LAYER_DEFS=()
-[[ -z "${TEST_DIR_PATTERNS+x}" ]] && TEST_DIR_PATTERNS=()
-[[ -z "${IMPL_DIR_PATTERNS+x}" ]] && IMPL_DIR_PATTERNS=()
-[[ -z "${MIGRATION_DIRS+x}" ]] && MIGRATION_DIRS=()
-[[ -z "${METRIC_ENDPOINTS+x}" ]] && METRIC_ENDPOINTS=()
-[[ -z "${HEALTH_CHECK_URLS+x}" ]] && HEALTH_CHECK_URLS=()
-[[ -z "${CONTEXT_DIRS+x}" ]] && CONTEXT_DIRS=()
-[[ -z "${DB_CONFIG_FILES+x}" ]] && DB_CONFIG_FILES=()
-[[ -z "${WRITE_HANDLER_DIRS+x}" ]] && WRITE_HANDLER_DIRS=()
-[[ -z "${STABLE_GLOBS+x}" ]] && STABLE_GLOBS=()
-[[ -z "${SERVICE_DIRS+x}" ]] && SERVICE_DIRS=()
+for _conf_var in MYBATIS_MAPPER_DIRS SQL_INJECTION_WHITELIST SHARDING_KEY_COLUMNS \
+    SHARDED_TABLES SHARDING_BROADCAST_TABLES MYBATIS_SRC_GLOBS LOMBOK_SRC_GLOBS \
+    SPRING_BATCH_JOB_DIRS JAVA_BUILD_FILES LAYER_DEFS TEST_DIR_PATTERNS \
+    IMPL_DIR_PATTERNS MIGRATION_DIRS METRIC_ENDPOINTS HEALTH_CHECK_URLS \
+    CONTEXT_DIRS DB_CONFIG_FILES WRITE_HANDLER_DIRS STABLE_GLOBS SERVICE_DIRS; do
+  if [[ -z "${!_conf_var+x}" ]]; then eval "$_conf_var=()"; fi
+done
+unset _conf_var
 
 MODE="${1:---all}"
 FAIL=0
@@ -156,12 +231,28 @@ SILENT=0
 [[ "$MODE" == "--all-full" ]] && SILENT=1
 pass() { echo "  ✓ $1"; }
 fail() { echo "  ✗ $1"; FAIL=1; }
-warn() { [[ $SILENT -eq 0 ]] && echo "  ⚠ $1" || true; }
+warn() { if [[ $SILENT -eq 0 ]]; then echo "  ⚠ $1"; fi; }
 # skip_if_unconfigured: 未配置时静默跳过（--all-full）或 warn 提示（显式调用）
 skip_if_unconfigured() {
   if [[ $SILENT -eq 1 ]]; then return 0; fi
   warn "$1"
   return 0
+}
+
+# ===== 门禁注册表（--all/--all-full 执行序列 + 单门禁 flag 清单）=====
+# 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
+ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
+# 全部门禁（含架构/认知门禁，未配置的静默跳过）
+ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_test)
+# 单门禁 flag 清单（Usage 顺序）。flag → 函数映射规则：check_ + flag 去 -- 前缀并将 - 转为 _
+#（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
+GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework)
+
+# Usage 文本由 GATE_FLAGS 生成
+_usage() {
+  local u="Usage: bash precheck.sh [--all|--all-full" f
+  for f in "${GATE_FLAGS[@]}"; do u="${u}|${f}"; done
+  echo "${u}]"
 }
 
 cd "$PROJECT_DIR"
@@ -174,9 +265,6 @@ has_gitnexus() { command -v gitnexus >/dev/null 2>&1; }
 has_graphify() { command -v graphify >/dev/null 2>&1; }
 has_ocr() { command -v ocr >/dev/null 2>&1; }
 has_claude_mem() { command -v claude-mem >/dev/null 2>&1 || [[ -d "$HOME/.claude-mem" ]]; }
-has_gsd_tools() { command -v gsd-tools >/dev/null 2>&1; }
-has_openspec() { command -v openspec >/dev/null 2>&1; }
-has_comet() { command -v comet >/dev/null 2>&1; }
 has_madge() { command -v madge >/dev/null 2>&1; }
 
 # gitnexus 已索引当前仓库？（检查 .gitnexus/ 或 gitnexus status）
@@ -223,10 +311,7 @@ check_scope() {
   local readonly_violation=0
   # 在 PROJECT_DIR 下检查 git diff，看是否有改动落在只读目录
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    local base="main"
-    git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
-    local changed; changed=$(git diff --name-only "$base"...HEAD 2>/dev/null || true)
-    [[ -z "$changed" ]] && changed=$(git diff --name-only HEAD 2>/dev/null || true)
+    local changed; changed=$(_git_changed_files)
     if [[ -n "$changed" ]]; then
       for rd in ${READONLY_DIRS[@]+"${READONLY_DIRS[@]}"}; do
         [[ -z "$rd" ]] && continue
@@ -264,6 +349,10 @@ check_build() {
 
 check_test() {
   echo "=== 测试检查（check §1 单测/接口/集成/回归/安全）==="
+  if [[ -z "$TEST_CMD" || "$TEST_CMD" == "<test 命令>" ]]; then
+    echo "  (跳过：未配置 TEST_CMD)"
+    return
+  fi
   if eval "$TEST_CMD" 2>&1 | tail -20; then
     pass "测试通过"
   else
@@ -306,14 +395,11 @@ check_sensitive() {
 
 check_consistency() {
   echo "=== 业务规则 + 数据勾稽核对（check §2/§3 无多漏错重）==="
-  local issues=0
   for dir in "${CONSISTENCY_DIRS[@]}"; do
     [[ -d "$dir" ]] || continue
     # 检查是否有未标注幂等的重复写入逻辑（粗筛：同名 INSERT/create 多处出现）
     local dup_writes
-    dup_writes=$(grep -rnE '(INSERT INTO|\.create\(|db\.(insert|create))' "$dir" \
-      --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' 2>/dev/null \
-      | grep -v -i 'test\|mock\|seed\|fixture\|migration' || true)
+    dup_writes=$(_scan_src '(INSERT INTO|\.create\(|db\.(insert|create))' 'ts,js,py,go,java' 'test\|mock\|seed\|fixture\|migration' "$dir")
     if [[ -n "$dup_writes" ]]; then
       local count
       count=$(echo "$dup_writes" | wc -l | xargs)
@@ -340,7 +426,7 @@ check_review() {
     pass "ocr 已安装"
     # 优先用 ocr review（diff 审查），有 git diff 时用 --from + --to
     if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-      local base="main"; git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
+      local base; base=$(_git_base)
       local head_ref; head_ref=$(git rev-parse HEAD 2>/dev/null || echo "HEAD")
       local diff_output; diff_output=$(ocr review --from "$base" --to "$head_ref" --audience agent --format text 2>&1 || true)
       if [[ -n "$diff_output" && "$diff_output" != *"Error"* ]]; then
@@ -453,7 +539,7 @@ check_layer() {
   # 辅助：查文件所属层（接受绝对或相对路径，统一去掉 PROJECT_DIR 前缀）
   # 注意 macOS 下 /tmp 是 /private/tmp 的 symlink，PROJECT_DIR 与 realpath 结果可能前缀不一致
   local _pd; _pd=$(cd "$PROJECT_DIR" 2>/dev/null && pwd -P || echo "$PROJECT_DIR")
-  _norm() { local p="$1"; p="${p#$_pd/}"; p="${p#$PROJECT_DIR/}"; p="${p#./}"; printf '%s' "$p"; }
+  _norm() { local p="$1"; p="${p#"$_pd"/}"; p="${p#"$PROJECT_DIR"/}"; p="${p#./}"; printf '%s' "$p"; }
   _layer_of() { local p; p=$(_norm "$1"); awk -F'\t' -v f="$p" '$1==f{print $2; exit}' "$tmp_file2layer"; }
   _idx_of()   { awk -F'\t' -v l="$1" '$1==l{print $2; exit}' "$tmp_layer2idx"; }
 
@@ -514,7 +600,7 @@ check_layer() {
   fi
 
   # ---- 5. 循环依赖检测（madge 若装）----
-  if command -v madge >/dev/null 2>&1; then
+  if has_madge; then
     local circ
     circ=$(madge --circular --extensions ts,js "$PROJECT_DIR" 2>/dev/null || true)
     if echo "$circ" | grep -qi "circular"; then
@@ -535,33 +621,19 @@ check_layer() {
         local aname; aname=$(basename "$ad")
         while IFS= read -r af; do
           [[ -z "$af" ]] && continue
-          local imps
-          imps=$(grep -hoE "from ['\"][^'\"]+['\"]|import ['\"][^'\"]+['\"]" "$af" 2>/dev/null \
-            | grep -oE "['\"][^'\"]+['\"]" | sed "s/['\"]//g" || true)
-          while IFS= read -r imp; do
-            [[ -z "$imp" ]] && continue
-            case "$imp" in
-              ./*|../*)
-                local dir; dir=$(dirname "$af")
-                local target=""
-                for ext in ".ts" ".js" ".py" ".tsx" ".jsx"; do
-                  local cand
-                  cand=$(cd "$dir" 2>/dev/null && _resolve_path "${imp}${ext}" 2>/dev/null || echo "")
-                  if [[ -n "$cand" && -f "$cand" ]]; then target="$cand"; break; fi
-                done
-                [[ -z "$target" ]] && continue
-                local other
-                while IFS= read -r other; do
-                  [[ -z "$other" || "$other" == "$aname" ]] && continue
-                  local other_dir; other_dir=$(cd "$AGGREGATE_DIR/$other" 2>/dev/null && pwd -P || echo "$AGGREGATE_DIR/$other")
-                  if [[ -n "$target" && "$target" == "$other_dir"* ]]; then
-                    fail "聚合跨边界对象引用：$af ($aname 聚合) 直接 import 了 $other 聚合的内部。聚合间应只引用 ID，不引用对象"
-                    found=1
-                  fi
-                done < <(find "$AGGREGATE_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null)
-                ;;
-            esac
-          done <<< "$imps"
+          local target
+          while IFS= read -r target; do
+            [[ -z "$target" ]] && continue
+            local other
+            while IFS= read -r other; do
+              [[ -z "$other" || "$other" == "$aname" ]] && continue
+              local other_dir; other_dir=$(cd "$AGGREGATE_DIR/$other" 2>/dev/null && pwd -P || echo "$AGGREGATE_DIR/$other")
+              if [[ "$target" == "$other_dir"* ]]; then
+                fail "聚合跨边界对象引用：$af ($aname 聚合) 直接 import 了 $other 聚合的内部。聚合间应只引用 ID，不引用对象"
+                found=1
+              fi
+            done < <(find "$AGGREGATE_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null)
+          done < <(_resolve_rel_imports "$af")
         done < <(find "$ad" -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' \) 2>/dev/null)
       done <<< "$aggs"
     fi
@@ -586,12 +658,7 @@ check_stable_diff() {
   fi
 
   # ---- 1. 收集本次变更（vs main）触及的稳定层文件 ----
-  local base="main"
-  git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
-  local changed; changed=$(git diff --name-only "$base"...HEAD 2>/dev/null || true)
-  if [[ -z "$changed" ]]; then
-    changed=$(git diff --name-only HEAD 2>/dev/null || true)
-  fi
+  local changed; changed=$(_git_changed_files)
   [[ -z "$changed" ]] && { pass "无变更，稳定单元篡改检查通过"; return; }
 
   # 匹配 stable globs
@@ -618,10 +685,8 @@ check_stable_diff() {
 
   # ---- 2. 对每个被改的稳定文件，检查是否有 spec 声明 MODIFIED ----
   # 找 spec 文档（含 §5.5 复用约束的 spec）
-  local spec_file=""
-  for cand in "specs/spec-template.md" "spec-template.md" "docs/spec-template.md"; do
-    if [[ -f "$cand" ]]; then spec_file="$cand"; break; fi
-  done
+  local spec_file
+  spec_file=$(_first_existing_file "specs/spec-template.md" "spec-template.md" "docs/spec-template.md")
   if [[ -z "$spec_file" ]]; then
     for dir in "${WRITABLE_DIRS[@]}" "${SCAN_DIRS[@]}"; do
       if [[ -d "$dir" ]]; then
@@ -743,10 +808,8 @@ check_reuse() {
   # 找到最近一份 spec（项目内 specs/ 或当前目录）。
   # 注意：排除 *-template.md 模板文件——模板的 §5.5 checkbox 本就该是 [ ] 待用户复制后勾选，
   # 把模板当具体 spec 检会误判 fail（范式自举检查发现的缺陷）。
-  local spec_file=""
-  for cand in "specs/spec.md" "specs/spec-template.md" "spec-template.md" "docs/spec-template.md"; do
-    if [[ -f "$cand" ]]; then spec_file="$cand"; break; fi
-  done
+  local spec_file
+  spec_file=$(_first_existing_file "specs/spec.md" "specs/spec-template.md" "spec-template.md" "docs/spec-template.md")
   # 兜底：在可改目录下找任意 *spec*.md 含 §5.5 标记，但排除 *-template.md / *template*.md。
   # 要求文件同时含"拼装合规声明"和 checkbox 结构（- [ ] 或 - [x]），避免误命中 USAGE/README 等引用文档。
   if [[ -z "$spec_file" ]] || [[ "$(basename "$spec_file")" == *template* ]]; then
@@ -785,17 +848,9 @@ check_reuse() {
   fi
 
   # ---- 2. 硬门禁：新增胶水代码单元名 vs reference-manual.md §4/5/6 稳定单元名重名检测 ----
-  local ref_file=""
-  local hit=""
-  for cand in "references/reference-manual.md" "reference-manual.md"; do
-    if [[ -f "$cand" ]]; then ref_file="$cand"; break; fi
-  done
-  if [[ -z "$ref_file" ]]; then
-    # 兜底：glob 匹配 .claude/skills/<*>/references/reference-manual.md
-    for f in .claude/skills/*/references/reference-manual.md; do
-      if [[ -f "$f" ]]; then ref_file="$f"; break; fi
-    done
-  fi
+  # 兜底候选含 glob：.claude/skills/<*>/references/reference-manual.md
+  local ref_file
+  ref_file=$(_first_existing_file "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md")
 
   if [[ -n "$spec_file" && -n "$ref_file" ]]; then
     # 从 spec §5.5 "新增胶水代码" 表提取首列单元名（跳过表头/分隔行/空行）
@@ -827,7 +882,7 @@ check_reuse() {
 
   # ---- 3. 启发式 warn：本次 diff 新增导出单元数量异常（非全量统计）----
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    local base="main"; git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
+    local base; base=$(_git_base)
     local diff_add; diff_add=$(git diff "$base"...HEAD --diff-filter=A --name-only 2>/dev/null || true)
     [[ -z "$diff_add" ]] && diff_add=$(git diff HEAD --diff-filter=A --name-only 2>/dev/null || true)
     if [[ -n "$diff_add" ]]; then
@@ -1156,8 +1211,7 @@ check_adr() {
   # ---- 3. 本次引入的新依赖/新框架必须有对应 ADR ----
   # 检测 git diff 中新增的 import 语句（package.json/requirements.txt/go.mod/pyproject.toml）
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    local base="main"
-    git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
+    local base; base=$(_git_base)
     local diff_imports
     diff_imports=$(git diff "$base"...HEAD -- '*.ts' '*.js' '*.py' '*.go' 2>/dev/null \
       | grep -E '^\+.*(import|from)\s' \
@@ -1200,9 +1254,7 @@ check_adr() {
       local td_count; td_count=$(grep -cE '^\s*[-*]\s' "$TECH_DEBT_FILE" 2>/dev/null || true)
       # 检测代码中是否有 TODO/FIXME/HACK 但未在技术债登记
       local code_todos
-      code_todos=$(grep -rnE 'TODO|FIXME|HACK|XXX' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" \
-        --include='*.ts' --include='*.js' --include='*.py' --include='*.go' 2>/dev/null \
-        | grep -v -i 'node_modules\|\.patch' | wc -l | xargs || true)
+      code_todos=$(_scan_src 'TODO|FIXME|HACK|XXX' 'ts,js,py,go' 'node_modules\|\.patch' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" | wc -l | xargs || true)
       if [[ "$code_todos" -gt 0 ]]; then
         warn "代码中有 ${code_todos} 处 TODO/FIXME/HACK——在 TECH_DEBT_FILE 追加条目：格式 '- [ ] 文件:行号 TODO内容 计划修复时间'（当前技术债条目 ${td_count} 个）"
       fi
@@ -1222,7 +1274,7 @@ check_contract() {
   if [[ -z "$CONTRACT_DIR" ]]; then
     warn "未配置 CONTRACT_DIR，跳过接口契约检查（生成目标技能时设为 docs/contracts）"
   elif [[ ! -d "$CONTRACT_DIR" ]]; then
-    warn "契约目录不存在：${CONTRACT_DIR}（新建 CONTRACT_DIR/ 并为每个 API 创建 YAML/JSON 文件，必含 version: "x.y.z" 字段）"
+    warn "契约目录不存在：${CONTRACT_DIR}（新建 CONTRACT_DIR/ 并为每个 API 创建 YAML/JSON 文件，必含 version: x.y.z 字段）"
   else
     local contracts; contracts=$(find "$CONTRACT_DIR" -type f \( -name '*.yaml' -o -name '*.yml' -o -name '*.json' -o -name '*.md' \) 2>/dev/null || true)
     if [[ -z "$contracts" ]]; then
@@ -1245,7 +1297,6 @@ check_contract() {
     if [[ ! -d "$ACL_DIR" ]]; then
       warn "ACL 目录不存在：${ACL_DIR}（新建 ACL_DIR/ 目录，跨上下文 import 须经此目录中转（在 ACL_DIR 为每个外部上下文建 adapter 文件））"
     else
-      local _pd; _pd=$(cd "$PROJECT_DIR" 2>/dev/null && pwd -P || echo "$PROJECT_DIR")
       # 预解析每个上下文目录为绝对路径
       local ctx_abs=()
       local ci
@@ -1257,40 +1308,24 @@ check_contract() {
       local i j
       for ((i=0; i<${#CONTEXT_DIRS[@]}; i++)); do
         local ctx_a="${CONTEXT_DIRS[$i]}"
-        local ctx_a_abs="${ctx_abs[$i]}"
         [[ -d "$ctx_a" ]] || continue
-        local af
+        local af target
         while IFS= read -r af; do
           [[ -z "$af" ]] && continue
-          local imps
-          imps=$(grep -hoE "from ['\"][^'\"]+['\"]|import ['\"][^'\"]+['\"]" "$af" 2>/dev/null \
-            | grep -oE "['\"][^'\"]+['\"]" | sed "s/['\"]//g" || true)
-          while IFS= read -r imp; do
-            [[ -z "$imp" ]] && continue
-            case "$imp" in
-              ./*|../*)
-                local dir; dir=$(dirname "$af")
-                local target=""
-                for ext in ".ts" ".js" ".py" ".tsx" ".jsx"; do
-                  local cand
-                  cand=$(cd "$dir" 2>/dev/null && _resolve_path "${imp}${ext}" 2>/dev/null || echo "")
-                  if [[ -n "$cand" && -f "$cand" ]]; then target="$cand"; break; fi
-                done
-                [[ -z "$target" ]] && continue
-                # 检查 target 是否落在其他上下文目录内
-                for ((j=0; j<${#CONTEXT_DIRS[@]}; j++)); do
-                  [[ $i -eq $j ]] && continue
-                  local ctx_b_abs="${ctx_abs[$j]}"
-                  [[ -z "$ctx_b_abs" ]] && continue
-                  if [[ "$target" == "$ctx_b_abs"* ]]; then
-                    fail "上下文间直接引用（绕过 ACL）：${af} (${ctx_a}) 直接 import 了 ${CONTEXT_DIRS[$j]}。跨上下文应经 ${ACL_DIR} 防腐层中转"
-                    found=1
-                    break
-                  fi
-                done
-                ;;
-            esac
-          done <<< "$imps"
+          while IFS= read -r target; do
+            [[ -z "$target" ]] && continue
+            # 检查 target 是否落在其他上下文目录内
+            for ((j=0; j<${#CONTEXT_DIRS[@]}; j++)); do
+              [[ $i -eq $j ]] && continue
+              local ctx_b_abs="${ctx_abs[$j]}"
+              [[ -z "$ctx_b_abs" ]] && continue
+              if [[ "$target" == "$ctx_b_abs"* ]]; then
+                fail "上下文间直接引用（绕过 ACL）：${af} (${ctx_a}) 直接 import 了 ${CONTEXT_DIRS[$j]}。跨上下文应经 ${ACL_DIR} 防腐层中转"
+                found=1
+                break
+              fi
+            done
+          done < <(_resolve_rel_imports "$af")
         done < <(find "$ctx_a" -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' \) 2>/dev/null)
       done
       pass "ACL 防腐层目录存在：${ACL_DIR}"
@@ -1354,12 +1389,7 @@ check_consistency_cross() {
       }
     ' "$SOR_FILE" 2>/dev/null || true)
     if [[ -n "$sor_entries" ]]; then
-      local ent sor
-      while IFS=$'\t' read -r ent sor; do
-        [[ -z "$ent" ]] && continue
-        # 检查该实体是否有写操作出现在非 SoR 系统目录（粗筛：grep INSERT/UPDATE/写操作）
-        : # 仅校验 SoR 表存在且实体有登记，详细双写检测需人工
-      done <<< "$sor_entries"
+      # 仅校验 SoR 表存在且实体有登记，详细双写检测需人工
       pass "数据所有权表存在（${SOR_FILE}），含 $(echo "$sor_entries" | wc -l | xargs) 个实体登记"
     fi
   fi
@@ -1376,9 +1406,7 @@ check_impact() {
   # ---- 1. 找 spec 文件（影响范围段应在此）----
   local spec_file="${IMPACT_SPEC_FILE:-$SPEC_FILE}"
   if [[ -z "$spec_file" ]]; then
-    for cand in "specs/spec-template.md" "spec-template.md" "docs/spec-template.md"; do
-      if [[ -f "$cand" ]]; then spec_file="$cand"; break; fi
-    done
+    spec_file=$(_first_existing_file "specs/spec-template.md" "spec-template.md" "docs/spec-template.md")
   fi
   if [[ -z "$spec_file" ]]; then
     for dir in "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" "${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}"; do
@@ -1414,12 +1442,7 @@ check_impact() {
     fi
   elif git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # 降级：git diff + grep 反查消费方
-    local base="main"
-    git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
-    local changed; changed=$(git diff --name-only "$base"...HEAD 2>/dev/null || true)
-    if [[ -z "$changed" ]]; then
-      changed=$(git diff --name-only HEAD 2>/dev/null || true)
-    fi
+    local changed; changed=$(_git_changed_files)
     if [[ -n "$changed" ]]; then
       local cf
       while IFS= read -r cf; do
@@ -1531,9 +1554,7 @@ check_service() {
       [[ -d "$svc2" ]] || continue
       # 粗筛：统计服务内 HTTP 调用语句（fetch/axios/httpClient/grpc）
       local call_count
-      call_count=$(grep -rnE '(fetch|axios|httpClient|grpc|http\.request|requests\.)\(' "$svc2" \
-        --include='*.ts' --include='*.js' --include='*.py' 2>/dev/null \
-        | grep -v -i 'test\|mock\|node_modules' | wc -l | xargs || true)
+      call_count=$(_scan_src '(fetch|axios|httpClient|grpc|http\.request|requests\.)\(' 'ts,js,py' 'test\|mock\|node_modules' "$svc2" | wc -l | xargs || true)
       if [[ "$call_count" -gt "$MAX_SYNC_CHAIN" ]]; then
         warn "${svc2} 有 ${call_count} 处对外同步调用——同步链过长易雪崩（建议熔断/降级/异步化，阈值 ${MAX_SYNC_CHAIN}）"
       fi
@@ -1612,9 +1633,7 @@ check_api() {
     [[ -d "$svc" ]] || continue
     # 检测跨服务 BEGIN TRANSACTION / @Transactional 跨服务调用
     local xa
-    xa=$(grep -rnE 'XAResource|XA_OPEN|2pc|two.?phase|distributed.?transaction|seata|@GlobalTransactional' "$svc" \
-      --include='*.ts' --include='*.js' --include='*.py' --include='*.java' 2>/dev/null \
-      | grep -v -i 'test\|mock\|node_modules' || true)
+    xa=$(_scan_src 'XAResource|XA_OPEN|2pc|two.?phase|distributed.?transaction|seata|@GlobalTransactional' 'ts,js,py,java' 'test\|mock\|node_modules' "$svc")
     if [[ -n "$xa" ]]; then
       warn "${svc} 检测到分布式事务/2PC——微服务应避免跨服务事务，改用 Saga/Outbox 模式"
       echo "$xa" | head -3 | sed 's/^/    /'
@@ -1667,9 +1686,7 @@ check_state() {
   if [[ -n "$COMPONENT_DIR" && -d "$COMPONENT_DIR" ]]; then
     # 粗筛：检测组件接收 props 后原样透传给子组件（...props / {...this.props}）
     local drilling
-    drilling=$(grep -rnE '\.\.\.props|\{\.\.\.props\}|\{\.\.\.this\.props\}|rest\.props|remaining.*props' "$COMPONENT_DIR" \
-      --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.vue' --include='*.svelte' 2>/dev/null \
-      | grep -v -i 'test\|mock\|node_modules' || true)
+    drilling=$(_scan_src '\.\.\.props|\{\.\.\.props\}|\{\.\.\.this\.props\}|rest\.props|remaining.*props' 'ts,tsx,js,jsx,vue,svelte' 'test\|mock\|node_modules' "$COMPONENT_DIR")
     if [[ -n "$drilling" ]]; then
       local dcount; dcount=$(echo "$drilling" | wc -l | xargs || true)
       if [[ "$dcount" -gt 5 ]]; then
@@ -1681,9 +1698,7 @@ check_state() {
   # ---- 3. 派生状态用 useState 检测（应改 useMemo/直接计算）----
   if [[ -n "$COMPONENT_DIR" && -d "$COMPONENT_DIR" ]]; then
     local derived
-    derived=$(grep -rnE 'useState\([^)]*(\.map|\.filter|\.reduce|\.sort|\.find|\.length|\.concat)' "$COMPONENT_DIR" \
-      --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' 2>/dev/null \
-      | grep -v -i 'test\|mock\|node_modules' || true)
+    derived=$(_scan_src 'useState\([^)]*(\.map|\.filter|\.reduce|\.sort|\.find|\.length|\.concat)' 'ts,tsx,js,jsx' 'test\|mock\|node_modules' "$COMPONENT_DIR")
     if [[ -n "$derived" ]]; then
       local dcount; dcount=$(echo "$derived" | wc -l | xargs || true)
       warn "检测到 ${dcount} 处 useState 内做派生计算（.map/.filter/.reduce 等）——派生状态应直接计算或 useMemo，存 state 会导致不同步"
@@ -1737,12 +1752,10 @@ print(maxd)
     [[ -z "$cf2" ]] && continue
     local has_io has_render
     has_io=$(grep -cE '(fetch|axios|useQuery|useMutation|useSWR|\.get\(|\.post\()' "$cf2" 2>/dev/null || true)
-    has_io=${has_io:-0}; has_io=$(echo "$has_io" | xargs)
-    [[ "$has_io" =~ ^[0-9]+$ ]] || has_io=0
+    has_io=$(_norm_int "${has_io:-0}")
     # 统计 JSX 标签出现次数（非行数），用 grep -o 计数
     has_render=$(grep -oE '<(div|span|ul|li|section|article|main|header|footer|table|button|input|form|p|h[1-6])' "$cf2" 2>/dev/null | wc -l | xargs || true)
-    has_render=${has_render:-0}; has_render=$(echo "$has_render" | xargs)
-    [[ "$has_render" =~ ^[0-9]+$ ]] || has_render=0
+    has_render=$(_norm_int "${has_render:-0}")
     if [[ "$has_io" -gt 0 && "$has_render" -gt 10 ]]; then
       warn "${cf2} 同时含数据获取（${has_io}）和大量渲染（${has_render}）——容器组件与展示组件未分离，建议拆分（容器管数据，展示管 UI），提升复用性与可测性"
       break  # 只提示一次，避免刷屏
@@ -1836,10 +1849,8 @@ check_cognition() {
     echo "    ⚠ 无业务术语表（GLOSSARY_FILE 未配置）——概念未显式定义，依赖口头约定"
   fi
   # 稳定单元清单（reference-manual §4/5/6）
-  local rm_file=""
-  for cand in "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md"; do
-    for f in $cand; do [[ -f "$f" ]] && rm_file="$f" && break 2; done
-  done
+  local rm_file
+  rm_file=$(_first_existing_file "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md")
   if [[ -n "$rm_file" ]]; then
     local unit_count; unit_count=$(awk '/^#+ .*[§4-6].*(组件|依赖链路|接口)/{in_sec=1} /^#+ /&&!/[§4-6]/{in_sec=0} in_sec&&/^\|/&&!/^\|[-: ]+\|/{c++} END{print c+0}' "$rm_file" 2>/dev/null || echo 0)
     echo "    稳定单元清单：${rm_file}（${unit_count} 个单元登记）"
@@ -1960,17 +1971,15 @@ check_cognition() {
   # 速度：单次变更文件数
   local speed_val=0
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    local base="main"; git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
-    speed_val=$(git diff --name-only "$base"...HEAD 2>/dev/null | wc -l | xargs || true)
-    [[ "$speed_val" -eq 0 ]] && speed_val=$(git diff --name-only HEAD 2>/dev/null | wc -l | xargs || true)
+    speed_val=$(_git_changed_files | wc -l | xargs || true)
   fi
-  echo "    速度：本次变更 ${speed_val} 个文件", $([[ "$COG_SPEED_FILES" -gt 0 && "$speed_val" -gt "$COG_SPEED_FILES" ]] && echo "⚠ 过快（>${COG_SPEED_FILES}，耦合扩散风险）" || echo "正常")
+  echo "    速度：本次变更 ${speed_val} 个文件", "$([[ "$COG_SPEED_FILES" -gt 0 && "$speed_val" -gt "$COG_SPEED_FILES" ]] && echo "⚠ 过快（>${COG_SPEED_FILES}，耦合扩散风险）" || echo "正常")"
 
   # 聚散：服务/组件数
   local gather_val=0
   [[ ${#SERVICE_DIRS[@]} -gt 0 ]] && gather_val=${#SERVICE_DIRS[@]}
   [[ -n "$COMPONENT_DIR" && -d "$COMPONENT_DIR" ]] && gather_val=$((gather_val + $(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.vue' -o -name '*.svelte' -o -name '*.jsx' \) 2>/dev/null | wc -l | xargs || echo 0)))
-  echo "    聚散：${gather_val} 个服务/组件单元", $([[ "$gather_val" -gt 50 ]] && echo "趋向分散" || echo "聚合适中")
+  echo "    聚散：${gather_val} 个服务/组件单元", "$([[ "$gather_val" -gt 50 ]] && echo "趋向分散" || echo "聚合适中")"
 
   # 趋势：依赖深度变化（与基线对比）
   local trend_val="未知"
@@ -1993,7 +2002,7 @@ check_cognition() {
         | awk -v th="$COG_STRENGTH_FANIN" '$1>th{c++} END{print c+0}' || true)
       strong_files=$((strong_files + ${hot:-0}))
     done
-    echo "    强度：${strong_files} 个高 fan-in 模块（被 >${COG_STRENGTH_FANIN} 处引用）", $([[ "$strong_files" -gt 3 ]] && echo "⚠ 强依赖集中" || echo "强度分散")
+    echo "    强度：${strong_files} 个高 fan-in 模块（被 >${COG_STRENGTH_FANIN} 处引用）", "$([[ "$strong_files" -gt 3 ]] && echo "⚠ 强依赖集中" || echo "强度分散")"
   fi
 
   # 能耗：巨型文件数（store/组件）
@@ -2004,10 +2013,8 @@ check_cognition() {
   # 累积量：TODO/FIXME 累积
   local cumul_val=0
   if [[ "$COG_CUMULATIVE_TODO" -gt 0 && ${#WRITABLE_DIRS[@]} -gt 0 ]]; then
-    cumul_val=$(grep -rnE 'TODO|FIXME|HACK|XXX' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" \
-      --include='*.ts' --include='*.js' --include='*.py' 2>/dev/null \
-      | grep -v -i 'node_modules\|\.patch' | wc -l | xargs || true)
-    echo "    累积量：${cumul_val} 处 TODO/FIXME", $([[ "$cumul_val" -gt "$COG_CUMULATIVE_TODO" ]] && echo "⚠ 技术债累积过载（>${COG_CUMULATIVE_TODO}）" || echo "正常")
+    cumul_val=$(_scan_src 'TODO|FIXME|HACK|XXX' 'ts,js,py' 'node_modules\|\.patch' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" | wc -l | xargs || true)
+    echo "    累积量：${cumul_val} 处 TODO/FIXME", "$([[ "$cumul_val" -gt "$COG_CUMULATIVE_TODO" ]] && echo "⚠ 技术债累积过载（>${COG_CUMULATIVE_TODO}）" || echo "正常")"
   fi
 
   # ---- 认知总结 ----
@@ -2031,9 +2038,7 @@ check_cognition() {
 
   # 第二层：思维语言框架——spec 含三导向段（§1.1现状/§1.2目标/§14交付衰减/§15蓝图）
   local spec_for_cog="${SPEC_FILE:-}"
-  [[ -z "$spec_for_cog" ]] && for cand in "spec-template.md" "specs/spec-template.md" "docs/spec-template.md"; do
-    [[ -f "$cand" ]] && spec_for_cog="$cand" && break
-  done
+  [[ -z "$spec_for_cog" ]] && spec_for_cog=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
   if [[ -n "$spec_for_cog" && -f "$spec_for_cog" ]]; then
     # 强化：要求 §14/§15 章节标题存在（非仅关键词），且段落有实质内容
     grep -qE '^## 14\..*交付衰减' "$spec_for_cog" 2>/dev/null && layer2_score=$((layer2_score+1))
@@ -2108,9 +2113,7 @@ check_domain() {
 
   # ---- 1. spec §18 领域知识段存在性 + 动态分析质量 ----
   local spec_file="${SPEC_FILE:-}"
-  [[ -z "$spec_file" ]] && for cand in "spec-template.md" "specs/spec-template.md" "docs/spec-template.md"; do
-    [[ -f "$cand" ]] && spec_file="$cand" && break
-  done
+  [[ -z "$spec_file" ]] && spec_file=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
   if [[ -n "$spec_file" && -f "$spec_file" ]]; then
     if grep -qE '^## 18\..*领域知识' "$spec_file" 2>/dev/null; then
       pass "spec §18 领域知识段存在"
@@ -2140,10 +2143,8 @@ check_domain() {
   fi
 
   # ---- 2. reference-manual 含"领域知识"段且规律有依据 ----
-  local rm_file=""
-  for cand in "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md"; do
-    for f in $cand; do [[ -f "$f" ]] && rm_file="$f" && break 2; done
-  done
+  local rm_file
+  rm_file=$(_first_existing_file "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md")
   if [[ -n "$rm_file" ]]; then
     if grep -qiE '领域知识|领域规则|客观规律|业务规则|行业知识' "$rm_file" 2>/dev/null; then
       # 检查规律是否有代码依据（非通用清单复制）
@@ -2162,9 +2163,7 @@ check_domain() {
   # ---- 3. 客观规律违规检测（硬门禁：检测代码中违反通用常识的模式）----
   # 3a. 安全常识：密码明文存储
   local pwd_violation
-  pwd_violation=$(grep -rnE "password\s*[=:]\s*['\"][^'\"]+['\"]" "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" \
-    --include='*.ts' --include='*.js' --include='*.py' --include='*.java' 2>/dev/null \
-    | grep -v -i 'test\|mock\|node_modules\|placeholder\|example\|xxx\|yyy' || true)
+  pwd_violation=$(_scan_src "password\s*[=:]\s*['\"][^'\"]+['\"]" 'ts,js,py,java' 'test\|mock\|node_modules\|placeholder\|example\|xxx\|yyy' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}")
   if [[ -n "$pwd_violation" ]]; then
     fail "违反安全客观规律：检测到密码明文存储（密码必须哈希，不可明文）"
     echo "$pwd_violation" | head -3 | sed 's/^/    /'
@@ -2172,9 +2171,7 @@ check_domain() {
   fi
   # 3b. 数据库常识：SQL 拼接（非参数化）
   local sql_violation
-  sql_violation=$(grep -rnE "SELECT.*\+.*FROM|INSERT.*\+.*VALUES|WHERE.*\+.*=" "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" \
-    --include='*.ts' --include='*.js' --include='*.py' --include='*.java' 2>/dev/null \
-    | grep -v -i 'test\|mock\|node_modules' || true)
+  sql_violation=$(_scan_src "SELECT.*\+.*FROM|INSERT.*\+.*VALUES|WHERE.*\+.*=" 'ts,js,py,java' 'test\|mock\|node_modules' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}")
   if [[ -n "$sql_violation" ]]; then
     fail "违反数据库客观规律：检测到 SQL 字符串拼接（必须参数化查询，防注入）"
     echo "$sql_violation" | head -3 | sed 's/^/    /'
@@ -2182,9 +2179,7 @@ check_domain() {
   fi
   # 3c. 前端常识：v-html / dangerouslySetInnerHTML 直接拼接动态内容（排除 sanitize/renderMarkdown/DOMPurify 等消毒场景）
   local xss_violation
-  xss_violation=$(grep -rnE 'v-html|dangerouslySetInnerHTML|innerHTML\s*=' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" \
-    --include='*.vue' --include='*.svelte' --include='*.tsx' --include='*.jsx' --include='*.ts' --include='*.js' 2>/dev/null \
-    | grep -v -i 'test\|mock\|node_modules' \
+  xss_violation=$(_scan_src 'v-html|dangerouslySetInnerHTML|innerHTML\s*=' 'vue,svelte,tsx,jsx,ts,js' 'test\|mock\|node_modules' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" \
     | grep -viE 'sanitize|renderMarkdown|DOMPurify|escape|encode|sanitizeHtml|marked\(|markdownit' || true)
   if [[ -n "$xss_violation" ]]; then
     warn "潜在前端客观规律违反：v-html/innerHTML 使用但未检测到消毒函数（sanitize/renderMarkdown/DOMPurify）。如已消毒请人工确认"
@@ -2192,9 +2187,7 @@ check_domain() {
   fi
   # 3d. 并发常识：共享可变状态无锁
   local race_violation
-  race_violation=$(grep -rnE 'global\s+\w+\s*=|window\.\w+\s*=' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" \
-    --include='*.ts' --include='*.js' 2>/dev/null \
-    | grep -v -i 'test\|mock\|node_modules\|config\|const\|readonly' || true)
+  race_violation=$(_scan_src 'global\s+\w+\s*=|window\.\w+\s*=' 'ts,js' 'test\|mock\|node_modules\|config\|const\|readonly' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}")
   if [[ -n "$race_violation" ]]; then
     warn "潜在并发违规：检测到全局可变状态（共享可变状态须同步，否则竞态）"
   fi
@@ -2232,10 +2225,8 @@ check_knowledge() {
   fi
 
   # ---- 2. 检查生成的 SKILL.md 是否引用了知识来源 ----
-  local skill_file=""
-  for cand in "$PROJECT_DIR/.claude/skills/*/SKILL.md" ".claude/skills/*/SKILL.md" "SKILL.md"; do
-    for f in $cand; do [[ -f "$f" ]] && skill_file="$f" && break 2; done
-  done
+  local skill_file
+  skill_file=$(_first_existing_file "$PROJECT_DIR/.claude/skills/*/SKILL.md" ".claude/skills/*/SKILL.md" "SKILL.md")
   if [[ -z "$skill_file" ]]; then
     skip_if_unconfigured "未找到生成的 SKILL.md，知识复用检查跳过"
     return
@@ -2279,20 +2270,16 @@ check_mermaid() {
   local found=0
 
   # 检查 reference-manual.md 是否含 mermaid 图
-  local rm_file=""
-  for cand in "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md"; do
-    for f in $cand; do [[ -f "$f" ]] && rm_file="$f" && break 2; done
-  done
+  local rm_file
+  rm_file=$(_first_existing_file "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md")
   local has_mermaid=0
   if [[ -n "$rm_file" ]]; then
     grep -qiE '```mermaid|<mermaid' "$rm_file" 2>/dev/null && has_mermaid=1
   fi
 
   # 检查 spec-template.md 是否含 mermaid 引导
-  local spec_file=""
-  for cand in "spec-template.md" "specs/spec-template.md" "docs/spec-template.md"; do
-    [[ -f "$cand" ]] && spec_file="$cand" && break
-  done
+  local spec_file
+  spec_file=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
   local spec_mermaid=0
   if [[ -n "$spec_file" ]]; then
     grep -qiE 'mermaid|架构图.*可视化|流程图.*Mermaid' "$spec_file" 2>/dev/null && spec_mermaid=1
@@ -2319,17 +2306,13 @@ check_shift_left() {
 
   # ---- 定位 spec 文件 ----
   local spec_file="${SPEC_FILE:-}"
-  [[ -z "$spec_file" ]] && for cand in "spec-template.md" "specs/spec-template.md" "docs/spec-template.md"; do
-    [[ -f "$cand" ]] && spec_file="$cand" && break
-  done
+  [[ -z "$spec_file" ]] && spec_file=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
   local test_design_file="${TEST_DESIGN_FILE:-$spec_file}"
   local obs_file="${OBSERVABILITY_FILE:-$spec_file}"
 
   # ---- 定位 plan 文件 ----
   local plan_file="${CHANGE_IMPACT_FILE:-}"
-  [[ -z "$plan_file" ]] && for cand in "plan-template.md" "plans/plan-template.md" "docs/plan-template.md"; do
-    [[ -f "$cand" ]] && plan_file="$cand" && break
-  done
+  [[ -z "$plan_file" ]] && plan_file=$(_first_existing_file "plan-template.md" "plans/plan-template.md" "docs/plan-template.md")
 
   echo "  ── 测试左移（spec §19 + test 先于 impl）──"
 
@@ -2354,15 +2337,13 @@ check_shift_left() {
 
   # 1b. git diff 中 test 文件先于或同时于 impl 文件提交（warn）
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    local base="main"; git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
+    local base; base=$(_git_base)
     local test_commits impl_commits
     test_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -E '\.test\.|\.spec\.|__tests__' | sort -u | wc -l | tr -d ' ' || true)
     impl_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -vE '\.test\.|\.spec\.|__tests__|\.md$|\.json$|\.lock$' | grep -E '\.(ts|js|py|go|java|rs)$' | sort -u | wc -l | tr -d ' ' || true)
-    test_commits=${test_commits:-0}
-    impl_commits=${impl_commits:-0}
     # 防御：若值非纯数字（git log 异常输出多行），强制归 0
-    [[ "$test_commits" =~ ^[0-9]+$ ]] || test_commits=0
-    [[ "$impl_commits" =~ ^[0-9]+$ ]] || impl_commits=0
+    test_commits=$(_norm_int "${test_commits:-0}")
+    impl_commits=$(_norm_int "${impl_commits:-0}")
     if [[ "$impl_commits" -gt 0 && "$test_commits" -eq 0 ]]; then
       warn "本次变更有 $impl_commits 个 impl 文件但无 test 文件提交——须先写/更新测试再实现（TDD/BDD）"
       found=1
@@ -2389,9 +2370,7 @@ check_shift_left() {
   if [[ -n "$spec_file" && -f "$spec_file" ]]; then
     local has_rollback
     has_rollback=$(grep -ciE "$ROLLBACK_KEYWORDS" "$spec_file" 2>/dev/null || true)
-    has_rollback=${has_rollback:-0}
-    has_rollback=$(echo "$has_rollback" | xargs)
-    [[ "$has_rollback" =~ ^[0-9]+$ ]] || has_rollback=0
+    has_rollback=$(_norm_int "${has_rollback:-0}")
     if [[ "$has_rollback" -ge 1 ]]; then
       pass "spec 含回滚预案声明（$has_rollback 处提及）"
     else
@@ -2535,79 +2514,117 @@ _fw_grep_count() {
   { grep -rlE "$pat" "$@" 2>/dev/null || true; } | wc -l | xargs
 }
 
+# ===== 框架门禁公共库（供 framework-gates 片段调用；勿改名，片段依赖）=====
+# 以下注释剥离器与各片段原内联嵌套实现字节级同语义（同 sed/grep 表达式、
+# 同 2>/dev/null 处理）；管道统一 || true 加固，不依赖 check_framework 的兜底。
+# 家族聚类依据：57 片段嵌套函数体逐字节比对（见 verifier/v1/gate-ab-diff.sh 契约注释）。
+
+# C 系（// 行内 + 块注释行；Java/Go/JS/TS 等 14 片段同体）：
+# angular/elasticjob/kafka/lombok/mapstruct/netty/quartz/rabbitmq/react/redis/
+# rocketmq/spring-batch/spring-boot/spring-cloud
+_fw_strip_comments_c() {
+  { sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null || true; }
+}
+
+# C 系变体：多剥行内 /* */（gin/gorm 同体）
+_fw_strip_comments_c_inline() {
+  { sed -E 's://.*$::; s:/\*.*\*/::g; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null || true; }
+}
+
+# Python 系（# 行内；django/fastapi/flask/sqlalchemy 同体）
+_fw_strip_comments_hash() {
+  { sed -E 's:#.*$::' "$1" 2>/dev/null || true; }
+}
+
+# 配置系（剔 # 注释行；elasticjob/quartz/redis 的 *_cfg_only 同体）
+_fw_strip_comments_cfg() {
+  { grep -vE '^[[:space:]]*#' "$1" 2>/dev/null || true; }
+}
+
+# SQL 系（-- 行内；postgresql/sqlserver 同体）
+_fw_strip_comments_sql() {
+  { sed -E 's:--.*$::' "$1" 2>/dev/null || true; }
+}
+
+# MySQL 系（-- 行内 + # 注释行；mysql 独有）
+_fw_strip_comments_mysql() {
+  { sed -E 's:--.*$::; /^[[:space:]]*#/d' "$1" 2>/dev/null || true; }
+}
+
+# JS 行首系（仅剥行首 // 与块注释行，保留行内 // 防误伤 URL；nextjs/nuxt 同语义）
+_fw_strip_comments_js_head() {
+  { sed -E 's:^[[:space:]]*//.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null || true; }
+}
+
+# XML 系（awk 状态机剥 <!-- --> 跨行注释；mapstruct 独有）
+_fw_strip_comments_xml() {
+  { awk '
+      {
+        rest=$0; out=""
+        while (length(rest)) {
+          if (inc) {
+            i=index(rest,"-->")
+            if (!i) { rest=""; break }
+            rest=substr(rest,i+3); inc=0
+          } else {
+            i=index(rest,"<!--")
+            if (!i) { out=out rest; break }
+            out=out substr(rest,1,i-1); rest=substr(rest,i+4); inc=1
+          }
+        }
+        print out
+      }' "$1" 2>/dev/null || true; }
+}
+
+# 规范形报告尾收编：bad 非空 → fail|warn "id: msg:\n<bad>"；空 → pass "id: ok"。
+# 与手写 if/else/fi 输出逐字节等价（含换行结构）。
+# 用法: _fw_report <fail|warn> <gate_id> <bad内容> <bad文案(不含结尾冒号)> <ok文案>
+_fw_report() {
+  if [[ -n "$3" ]]; then
+    "$1" "$2: $4:
+$3"
+  else
+    pass "$2: $5"
+  fi
+}
+
+# ===== shellcheck 静态锚点（运行时恒假，零副作用）=====
+# 门禁经数组循环动态分发（"$_gate" / "$_gate_fn"），静态分析无法追踪间接调用，
+# 会使全部门禁函数体被误报不可达（SC2317 级联）。此处静态引用全部门禁函数，
+# 使调用图对 shellcheck 可达；条件中 _gate_fn 在此处恒未赋值，分支体永不执行。
+if [[ -z "${_gate_fn:-x}" ]]; then
+  check_branch; check_scope; check_build; check_test; check_sensitive; check_consistency
+  check_review; check_reuse; check_deps; check_security; check_layer; check_stable_diff
+  check_link_depth; check_adr; check_contract; check_consistency_cross; check_impact
+  check_service; check_api; check_state; check_frontend; check_cognition; check_domain
+  check_knowledge; check_mermaid; check_shift_left; check_framework
+fi
+
 case "$MODE" in
   --all)
-    # 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
-    check_branch
-    check_scope
-    check_build
-    check_sensitive
-    check_consistency
-    check_review
-    check_reuse
-    check_deps
-    check_security
-    check_test
+    for _gate in "${ALL_GATES_CORE[@]}"; do "$_gate"; done
     ;;
   --all-full)
-    # 全部门禁（含架构/认知门禁，未配置的静默跳过）
-    check_branch
-    check_scope
-    check_build
-    check_sensitive
-    check_consistency
-    check_review
-    check_reuse
-    check_deps
-    check_security
-    check_layer
-    check_stable_diff
-    check_link_depth
-    check_adr
-    check_contract
-    check_consistency_cross
-    check_impact
-    check_service
-    check_api
-    check_state
-    check_frontend
-    check_cognition
-    check_domain
-    check_knowledge
-    check_mermaid
-    check_shift_left
-    check_framework
-    check_test
+    for _gate in "${ALL_GATES_FULL[@]}"; do "$_gate"; done
     ;;
-  --branch) check_branch ;;
-  --scope) check_scope ;;
-  --build) check_build ;;
-  --test) check_test ;;
-  --sensitive) check_sensitive ;;
-  --consistency) check_consistency ;;
-  --review) check_review ;;
-  --reuse) check_reuse ;;
-  --deps) check_deps ;;
-  --security) check_security ;;
-  --layer) check_layer ;;
-  --stable-diff) check_stable_diff ;;
-  --link-depth) check_link_depth ;;
-  --adr) check_adr ;;
-  --contract) check_contract ;;
-  --consistency-cross) check_consistency_cross ;;
-  --impact) check_impact ;;
-  --service) check_service ;;
-  --api) check_api ;;
-  --state) check_state ;;
-  --frontend) check_frontend ;;
-  --cognition) check_cognition ;;
-  --domain) check_domain ;;
-  --knowledge) check_knowledge ;;
-  --mermaid) check_mermaid ;;
-  --shift-left) check_shift_left ;;
-  --framework) check_framework ;;
+  --*)
+    # 单门禁分发：精确匹配 GATE_FLAGS 后按映射规则得函数名（如 --stable-diff → check_stable_diff）
+    _gate_fn=""
+    for _gate_flag in "${GATE_FLAGS[@]}"; do
+      if [[ "$MODE" == "$_gate_flag" ]]; then
+        _gate_fn="check_$(printf '%s' "${MODE#--}" | tr '-' '_')"
+        break
+      fi
+    done
+    if [[ -n "$_gate_fn" ]]; then
+      "$_gate_fn"
+    else
+      _usage
+      exit 1
+    fi
+    ;;
   *)
-    echo "Usage: bash precheck.sh [--all|--all-full|--branch|--scope|--build|--test|--sensitive|--consistency|--review|--reuse|--deps|--security|--layer|--stable-diff|--link-depth|--adr|--contract|--consistency-cross|--impact|--service|--api|--state|--frontend|--cognition|--domain|--knowledge|--mermaid|--shift-left|--framework]"
+    _usage
     exit 1
     ;;
 esac

@@ -52,12 +52,7 @@ _fw_kettle_check() {
       esac
     done <<< "$vals"
   done
-  if [[ -n "$pw_bad" ]]; then
-    fail "fw_kettle_password_encr: kjb/ktr 数据库连接密码明文（须 Encr 加密 Encrypted 前缀或 \${VAR} 变量/JNDI，入 git 即永久泄露 CWE-312/CWE-798）:
-${pw_bad}"
-  else
-    pass "fw_kettle_password_encr: 连接密码均 Encrypted/变量化"
-  fi
+  _fw_report fail fw_kettle_password_encr "$pw_bad" "kjb/ktr 数据库连接密码明文（须 Encr 加密 Encrypted 前缀或 \${VAR} 变量/JNDI，入 git 即永久泄露 CWE-312/CWE-798）" "连接密码均 Encrypted/变量化"
 
   # ====================================================================
   # fw_kettle_carte_default_auth(fail)：Carte 默认口令 / 明文口令
@@ -97,12 +92,7 @@ ${pw_bad}"
       esac
     done <<< "$carte_files"
   fi
-  if [[ -n "$carte_bad" ]]; then
-    fail "fw_kettle_carte_default_auth: Carte 远程执行凭据不合规（默认 cluster/cluster 必改；密码须 Encr/变量化）:
-${carte_bad}"
-  else
-    pass "fw_kettle_carte_default_auth: 无 Carte 默认/明文口令"
-  fi
+  _fw_report fail fw_kettle_carte_default_auth "$carte_bad" "Carte 远程执行凭据不合规（默认 cluster/cluster 必改；密码须 Encr/变量化）" "无 Carte 默认/明文口令"
 
   # ====================================================================
   # fw_kettle_git_versioned(warn)：kjb/ktr 纳入 git
@@ -127,12 +117,7 @@ ${carte_bad}"
     [[ -n "$ln" ]] && bs_hit="${bs_hit}${f}:${ln}
 "
   done
-  if [[ -n "$bs_hit" ]]; then
-    warn "fw_kettle_blocking_step: 检出 BlockingStep/SortRows（缓存全量行，须确认数据量与内存/排序目录容量）:
-${bs_hit}"
-  else
-    pass "fw_kettle_blocking_step: 未检出阻塞型步骤"
-  fi
+  _fw_report warn fw_kettle_blocking_step "$bs_hit" "检出 BlockingStep/SortRows（缓存全量行，须确认数据量与内存/排序目录容量）" "未检出阻塞型步骤"
 
   # ====================================================================
   # fw_kettle_failure_mail(warn)：作业失败邮件/告警
@@ -145,12 +130,7 @@ ${bs_hit}"
 "
     fi
   done
-  if [[ -n "$mail_bad" ]]; then
-    warn "fw_kettle_failure_mail: 作业无 MAIL entry（失败 hop 须挂邮件/告警，kitchen 调度下失败静默即缺数）:
-${mail_bad}"
-  else
-    pass "fw_kettle_failure_mail: 作业均含失败告警 entry"
-  fi
+  _fw_report warn fw_kettle_failure_mail "$mail_bad" "作业无 MAIL entry（失败 hop 须挂邮件/告警，kitchen 调度下失败静默即缺数）" "作业均含失败告警 entry"
 
   # ====================================================================
   # fw_kettle_variable_scope(warn)：环境特有值硬编码
@@ -162,12 +142,7 @@ ${mail_bad}"
     [[ -n "$ln" ]] && vs_hit="${vs_hit}${f}:${ln}
 "
   done
-  if [[ -n "$vs_hit" ]]; then
-    warn "fw_kettle_variable_scope: 检出硬编码 IP/绝对路径（环境特有值须 \${VAR} 变量化：kettle.properties/命名参数/环境变量）:
-${vs_hit}"
-  else
-    pass "fw_kettle_variable_scope: 未检出硬编码环境值"
-  fi
+  _fw_report warn fw_kettle_variable_scope "$vs_hit" "检出硬编码 IP/绝对路径（环境特有值须 \${VAR} 变量化：kettle.properties/命名参数/环境变量）" "未检出硬编码环境值"
 
   # ====================================================================
   # fw_kettle_log_level(warn)：生产日志级别收敛
@@ -179,12 +154,7 @@ ${vs_hit}"
     [[ -n "$ln" ]] && ll_hit="${ll_hit}${f}:${ln}
 "
   done
-  if [[ -n "$ll_hit" ]]; then
-    warn "fw_kettle_log_level: 检出 Detailed/Debug/Rowlevel 日志级别（生产固定 Basic/Minimal，Rowlevel 泄露行数据 CWE-532）:
-${ll_hit}"
-  else
-    pass "fw_kettle_log_level: 日志级别收敛"
-  fi
+  _fw_report warn fw_kettle_log_level "$ll_hit" "检出 Detailed/Debug/Rowlevel 日志级别（生产固定 Basic/Minimal，Rowlevel 泄露行数据 CWE-532）" "日志级别收敛"
 
   # ====================================================================
   # fw_kettle_connection_pool(warn)：连接池 / JNDI
@@ -200,12 +170,7 @@ ${ll_hit}"
 "
     fi
   done
-  if [[ -n "$pool_bad" ]]; then
-    warn "fw_kettle_connection_pool: 转换数据库连接无池化且非 JNDI（高频转换打满 max_connections 风险）:
-${pool_bad}"
-  else
-    pass "fw_kettle_connection_pool: 连接池/JNDI 已配"
-  fi
+  _fw_report warn fw_kettle_connection_pool "$pool_bad" "转换数据库连接无池化且非 JNDI（高频转换打满 max_connections 风险）" "连接池/JNDI 已配"
 
   # ====================================================================
   # fw_kettle_transaction(warn)：多表写入事务边界
@@ -219,12 +184,7 @@ ${pool_bad}"
 "
     fi
   done
-  if [[ -n "$tx_bad" ]]; then
-    warn "fw_kettle_transaction: 多表写入转换开 unique_connections（部分提交即脏数据，须明确转换级/作业级事务边界）:
-${tx_bad}"
-  else
-    pass "fw_kettle_transaction: 事务边界合理"
-  fi
+  _fw_report warn fw_kettle_transaction "$tx_bad" "多表写入转换开 unique_connections（部分提交即脏数据，须明确转换级/作业级事务边界）" "事务边界合理"
 
   # ====================================================================
   # fw_kettle_hop_migration(warn)：PDI CE 9.x 终态迁移评估
@@ -236,12 +196,7 @@ ${tx_bad}"
     [[ -n "$ln" ]] && mig_hit="${mig_hit}${f}:${ln}
 "
   done
-  if [[ -n "$mig_hit" ]]; then
-    warn "fw_kettle_hop_migration: 检出 PDI 9.x/8.x 制品（CE 9.x 终态，EOL 待验证；须评估锁版维稳/升 PDI 11/迁 Apache Hop 2.x）:
-${mig_hit}"
-  else
-    pass "fw_kettle_hop_migration: 未检出旧版本制品"
-  fi
+  _fw_report warn fw_kettle_hop_migration "$mig_hit" "检出 PDI 9.x/8.x 制品（CE 9.x 终态，EOL 待验证；须评估锁版维稳/升 PDI 11/迁 Apache Hop 2.x）" "未检出旧版本制品"
 
   # ====================================================================
   # fw_kettle_error_handling(warn)：写入步骤错误处理策略
@@ -254,10 +209,5 @@ ${mig_hit}"
 "
     fi
   done
-  if [[ -n "$eh_bad" ]]; then
-    warn "fw_kettle_error_handling: 写入步骤未定义错误处理（须错误行路由到错误表 + 原因码，或明确中止语义配作业告警）:
-${eh_bad}"
-  else
-    pass "fw_kettle_error_handling: 写入步骤错误处理已定义"
-  fi
+  _fw_report warn fw_kettle_error_handling "$eh_bad" "写入步骤未定义错误处理（须错误行路由到错误表 + 原因码，或明确中止语义配作业告警）" "写入步骤错误处理已定义"
 }

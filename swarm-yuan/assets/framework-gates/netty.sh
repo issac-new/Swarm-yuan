@@ -30,10 +30,7 @@ _fw_netty_check() {
     return
   fi
 
-  # 代码正文过滤辅助（剥离行注释与块注释行，防注释中的关键字误触发/误豁免）
-  _fw_netty_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤辅助：调公共库 _fw_strip_comments_c（剥离行注释与块注释行，防注释中的关键字误触发/误豁免）
 
   # ====================================================================
   # fw_netty_eventloop_block(fail)：EventLoop 不可阻塞
@@ -41,41 +38,31 @@ _fw_netty_check() {
   local blk_bad=""
   for f in "${javaarr[@]}"; do
     # 入站 handler 信号：channelRead 回调或继承入站 handler 基类（基于剥离注释后的代码正文）
-    if ! _fw_netty_code_only "$f" | grep -qE 'channelRead|extends ChannelInboundHandlerAdapter|extends SimpleChannelInboundHandler|extends ChannelDuplexHandler'; then
+    if ! _fw_strip_comments_c "$f" | grep -qE 'channelRead|extends ChannelInboundHandlerAdapter|extends SimpleChannelInboundHandler|extends ChannelDuplexHandler'; then
       continue
     fi
     local ln
-    ln=$(_fw_netty_code_only "$f" | grep -nE 'Thread\.sleep|DriverManager\.getConnection|executeQuery|executeUpdate' || true)
+    ln=$(_fw_strip_comments_c "$f" | grep -nE 'Thread\.sleep|DriverManager\.getConnection|executeQuery|executeUpdate' || true)
     [[ -n "$ln" ]] && blk_bad="${blk_bad}${f}:${ln}
 "
   done
-  if [[ -n "$blk_bad" ]]; then
-    fail "fw_netty_eventloop_block: EventLoop 回调内检出阻塞调用（Thread.sleep/JDBC），耗时业务须移交独立线程池:
-${blk_bad}"
-  else
-    pass "fw_netty_eventloop_block: EventLoop 回调内未检出阻塞调用"
-  fi
+  _fw_report fail fw_netty_eventloop_block "$blk_bad" "EventLoop 回调内检出阻塞调用（Thread.sleep/JDBC），耗时业务须移交独立线程池" "EventLoop 回调内未检出阻塞调用"
 
   # ====================================================================
   # fw_netty_bytebuf_release(fail)：ByteBuf 引用计数须配对释放
   # ====================================================================
   local buf_bad=""
   for f in "${javaarr[@]}"; do
-    _fw_netty_code_only "$f" | grep -qE 'channelRead' || continue
-    _fw_netty_code_only "$f" | grep -qE '\bByteBuf\b' || continue
+    _fw_strip_comments_c "$f" | grep -qE 'channelRead' || continue
+    _fw_strip_comments_c "$f" | grep -qE '\bByteBuf\b' || continue
     # 自动释放路径豁免：SimpleChannelInboundHandler / ReferenceCountUtil.release / finally release
-    if _fw_netty_code_only "$f" | grep -qE 'SimpleChannelInboundHandler|release\('; then
+    if _fw_strip_comments_c "$f" | grep -qE 'SimpleChannelInboundHandler|release\('; then
       continue
     fi
     buf_bad="${buf_bad}${f}
 "
   done
-  if [[ -n "$buf_bad" ]]; then
-    fail "fw_netty_bytebuf_release: channelRead 消费 ByteBuf 未释放（须 finally ReferenceCountUtil.release(msg) 或改用 SimpleChannelInboundHandler，池化直接内存泄漏 CWE-401）:
-${buf_bad}"
-  else
-    pass "fw_netty_bytebuf_release: ByteBuf 释放路径完整"
-  fi
+  _fw_report fail fw_netty_bytebuf_release "$buf_bad" "channelRead 消费 ByteBuf 未释放（须 finally ReferenceCountUtil.release(msg) 或改用 SimpleChannelInboundHandler，池化直接内存泄漏 CWE-401）" "ByteBuf 释放路径完整"
 
   # ====================================================================
   # fw_netty_idle_heartbeat(warn)：IdleStateHandler 心跳
@@ -107,12 +94,7 @@ ${buf_bad}"
     [[ -n "$ln" ]] && wt_hit="${wt_hit}${f}:${ln}
 "
   done
-  if [[ -n "$wt_hit" ]]; then
-    warn "fw_netty_write_thread: 检出 writeAndFlush（人工确认写路径线程归属：EventLoop 内直接写 / 外部线程经 eventLoop().execute 归位，禁止外部线程改 handler 非线程安全状态）:
-${wt_hit}"
-  else
-    pass "fw_netty_write_thread: 未检出 writeAndFlush，跳过"
-  fi
+  _fw_report warn fw_netty_write_thread "$wt_hit" "检出 writeAndFlush（人工确认写路径线程归属：EventLoop 内直接写 / 外部线程经 eventLoop().execute 归位，禁止外部线程改 handler 非线程安全状态）" "未检出 writeAndFlush，跳过"
 
   # ====================================================================
   # fw_netty_pipeline_order(warn)：ChannelPipeline 装配顺序
@@ -132,12 +114,7 @@ ${wt_hit}"
 "
     fi
   done
-  if [[ -n "$po_bad" ]]; then
-    warn "fw_netty_pipeline_order: 业务 handler 前置于编解码器（pipeline 顺序敏感，入站须先解码后业务）:
-${po_bad}"
-  else
-    pass "fw_netty_pipeline_order: pipeline 装配顺序合理"
-  fi
+  _fw_report warn fw_netty_pipeline_order "$po_bad" "业务 handler 前置于编解码器（pipeline 顺序敏感，入站须先解码后业务）" "pipeline 装配顺序合理"
 
   # ====================================================================
   # fw_netty_frame_decoder(warn)：TCP 粘包拆包须装配帧解码器
@@ -173,12 +150,7 @@ ${po_bad}"
     [[ -n "$ln" ]] && ssl_bad="${ssl_bad}${f}:${ln}
 "
   done
-  if [[ -n "$ssl_bad" ]]; then
-    warn "fw_netty_ssl_config: 检出自签证书/InsecureTrustManagerFactory（仅限本地测试；生产须 CA 证书 + 严格校验 CWE-295）:
-${ssl_bad}"
-  else
-    pass "fw_netty_ssl_config: 未检出不安全 SSL 配置"
-  fi
+  _fw_report warn fw_netty_ssl_config "$ssl_bad" "检出自签证书/InsecureTrustManagerFactory（仅限本地测试；生产须 CA 证书 + 严格校验 CWE-295）" "未检出不安全 SSL 配置"
 
   # ====================================================================
   # fw_netty_channel_option(warn)：ChannelOption 调优
@@ -208,12 +180,7 @@ ${ssl_bad}"
     [[ -n "$ln" ]] && el_bad="${el_bad}${f}:${ln}
 "
   done
-  if [[ -n "$el_bad" ]]; then
-    warn "fw_netty_eventloop_threads: EventLoopGroup 显式线程数异常（默认 = CPU 核数 × 2；1 线程饿连接，>64 线程徒增切换）:
-${el_bad}"
-  else
-    pass "fw_netty_eventloop_threads: EventLoopGroup 线程数配置合理（默认 CPU×2）"
-  fi
+  _fw_report warn fw_netty_eventloop_threads "$el_bad" "EventLoopGroup 显式线程数异常（默认 = CPU 核数 × 2；1 线程饿连接，>64 线程徒增切换）" "EventLoopGroup 线程数配置合理（默认 CPU×2）"
 
   # ====================================================================
   # fw_netty_exception_caught(warn)：handler 须覆写 exceptionCaught
@@ -226,12 +193,7 @@ ${el_bad}"
 "
     fi
   done
-  if [[ -n "$ec_bad" ]]; then
-    warn "fw_netty_exception_caught: 入站 handler 未覆写 exceptionCaught（异常裸奔到 TailContext 仅打日志不关连接）:
-${ec_bad}"
-  else
-    pass "fw_netty_exception_caught: 入站 handler 均覆写 exceptionCaught"
-  fi
+  _fw_report warn fw_netty_exception_caught "$ec_bad" "入站 handler 未覆写 exceptionCaught（异常裸奔到 TailContext 仅打日志不关连接）" "入站 handler 均覆写 exceptionCaught"
 
   # ====================================================================
   # fw_netty_sharable(warn)：@Sharable 线程安全
@@ -247,12 +209,7 @@ ${ec_bad}"
     [[ -n "$ln" ]] && sh_bad="${sh_bad}${f}:${ln}
 "
   done
-  if [[ -n "$sh_bad" ]]; then
-    warn "fw_netty_sharable: @Sharable handler 含非 final 可变成员（跨 Channel 共享实例，须确认线程安全或去掉 @Sharable 每连接 new）:
-${sh_bad}"
-  else
-    pass "fw_netty_sharable: @Sharable handler 无可变实例状态"
-  fi
+  _fw_report warn fw_netty_sharable "$sh_bad" "@Sharable handler 含非 final 可变成员（跨 Channel 共享实例，须确认线程安全或去掉 @Sharable 每连接 new）" "@Sharable handler 无可变实例状态"
 
   # ====================================================================
   # fw_netty_shutdown_gracefully(warn)：EventLoopGroup 优雅关闭

@@ -16,12 +16,7 @@ _fw_pytest_check() {
   if [[ -n "$sess_files" ]]; then
     local mut_hits
     mut_hits=$(grep -rnE '\.append\(|\.extend\(|\.insert\(|open\(.+w|\.write\(' $sess_files 2>/dev/null | grep -vE 'def |#' || true)
-    if [[ -n "$mut_hits" ]]; then
-      fail "fw_pytest_session_scope_mutable: session fixture 含可变操作（append/写文件），跨测试共享可变状态致顺序依赖:
-$mut_hits"
-    else
-      pass "fw_pytest_session_scope_mutable: session fixture 无可变操作"
-    fi
+    _fw_report fail fw_pytest_session_scope_mutable "$mut_hits" "session fixture 含可变操作（append/写文件），跨测试共享可变状态致顺序依赖" "session fixture 无可变操作"
   else
     pass "fw_pytest_session_scope_mutable: 无 session 作用域 fixture"
   fi
@@ -29,12 +24,7 @@ $mut_hits"
   # fw_pytest_assert_truthy_only(fail)：仅 assert x（无比较）
   local truthy_hits
   truthy_hits=$(grep -rnE '^\s*assert\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$' "${srcarr[@]+"${srcarr[@]}"}" 2>/dev/null || true)
-  if [[ -n "$truthy_hits" ]]; then
-    fail "fw_pytest_assert_truthy_only: 检出仅 assert x（truthy 断言无法捕获错误值），须 assert x == y:
-$truthy_hits"
-  else
-    pass "fw_pytest_assert_truthy_only: 无 truthy-only 断言"
-  fi
+  _fw_report fail fw_pytest_assert_truthy_only "$truthy_hits" "检出仅 assert x（truthy 断言无法捕获错误值），须 assert x == y" "无 truthy-only 断言"
 
   # fw_pytest_parametrize_boundary(warn)
   local param_hits
@@ -64,12 +54,7 @@ $truthy_hits"
   # fw_pytest_xdist_isolation(warn)：用 tmpdir（非 tmp_path）
   local tmpdir_hits
   tmpdir_hits=$(grep -rnE '\btmpdir\b' "${srcarr[@]+"${srcarr[@]}"}" 2>/dev/null | grep -vE 'tmp_path|#' || true)
-  if [[ -n "$tmpdir_hits" ]]; then
-    warn "fw_pytest_xdist_isolation: 用 tmpdir（非 tmp_path），xdist 并行可能共享目录:
-$tmpdir_hits"
-  else
-    pass "fw_pytest_xdist_isolation: 无 tmpdir 用法（或用 tmp_path）"
-  fi
+  _fw_report warn fw_pytest_xdist_isolation "$tmpdir_hits" "用 tmpdir（非 tmp_path），xdist 并行可能共享目录" "无 tmpdir 用法（或用 tmp_path）"
 
   # fw_pytest_asyncio_mode(warn)
   local async_hits
@@ -107,12 +92,7 @@ $tmpdir_hits"
   if [[ -n "$skip_hits" ]]; then
     local skip_noreason
     skip_noreason=$(grep -rnE '@pytest\.mark\.(skip|xfail)\s*\(\s*\)' "${srcarr[@]+"${srcarr[@]}"}" 2>/dev/null || true)
-    if [[ -n "$skip_noreason" ]]; then
-      warn "fw_pytest_skip_reason: @skip/@xfail 无 reason= 参数:
-$skip_noreason"
-    else
-      pass "fw_pytest_skip_reason: skip/xfail 均含 reason"
-    fi
+    _fw_report warn fw_pytest_skip_reason "$skip_noreason" "@skip/@xfail 无 reason= 参数" "skip/xfail 均含 reason"
   else
     pass "fw_pytest_skip_reason: 无 skip/xfail，跳过"
   fi
@@ -120,12 +100,7 @@ $skip_noreason"
   # fw_pytest_naming(warn)
   local badname_hits
   badname_hits=$(grep -rnE '^def\s+[a-z][a-z0-9_]*\s*\(' "${srcarr[@]+"${srcarr[@]}"}" 2>/dev/null | grep -vE 'def test_|def _' || true)
-  if [[ -n "$badname_hits" ]]; then
-    warn "fw_pytest_naming: 测试文件中函数非 test_ 开头（可能不被 pytest 发现）:
-$badname_hits"
-  else
-    pass "fw_pytest_naming: 测试命名规范"
-  fi
+  _fw_report warn fw_pytest_naming "$badname_hits" "测试文件中函数非 test_ 开头（可能不被 pytest 发现）" "测试命名规范"
 
   # fw_pytest_coverage_threshold(warn)
   local cov_hits

@@ -69,12 +69,7 @@ ${dp_warn}"
     [[ -n "$ln" ]] && wc_fail="${wc_fail}${c}:${ln}
 "
   done
-  if [[ -n "$wc_fail" ]]; then
-    fail "fw_es_wildcard_prefix: wildcard/query_string 前缀通配（退化为全 term 扫描，近似全表扫描拖垮集群，改用 ngram/search_as_you_type）:
-${wc_fail}"
-  else
-    pass "fw_es_wildcard_prefix: 未检出前缀通配查询"
-  fi
+  _fw_report fail fw_es_wildcard_prefix "$wc_fail" "wildcard/query_string 前缀通配（退化为全 term 扫描，近似全表扫描拖垮集群，改用 ngram/search_as_you_type）" "未检出前缀通配查询"
 
   # ====================================================================
   # fw_es_refresh_interval(warn)：bulk 写入须权衡 refresh_interval
@@ -110,12 +105,7 @@ ${wc_fail}"
 "
     fi
   done
-  if [[ -n "$bp_bad" ]]; then
-    warn "fw_es_bulk_backpressure: bulk 写入无 EsRejectedExecutionException/退避重试/BulkIngester（429 时整批丢弃数据丢失）:
-${bp_bad}"
-  else
-    pass "fw_es_bulk_backpressure: bulk 背压处理齐备或无 bulk"
-  fi
+  _fw_report warn fw_es_bulk_backpressure "$bp_bad" "bulk 写入无 EsRejectedExecutionException/退避重试/BulkIngester（429 时整批丢弃数据丢失）" "bulk 背压处理齐备或无 bulk"
 
   # ====================================================================
   # fw_es_mapping_explosion(warn)：total_fields.limit 防 mapping 爆炸
@@ -166,12 +156,7 @@ ${dyn_bad}"
     [[ -n "$ln" ]] && fc_bad="${fc_bad}${j}:${ln}
 "
   done
-  if [[ -n "$fc_bad" ]]; then
-    warn "fw_es_filter_context: term/terms/range/exists 放入 must 参与打分（精确过滤须放 filter 上下文，免 score 且可缓存）:
-${fc_bad}"
-  else
-    pass "fw_es_filter_context: 精确过滤已在 filter 上下文或无 bool 查询"
-  fi
+  _fw_report warn fw_es_filter_context "$fc_bad" "term/terms/range/exists 放入 must 参与打分（精确过滤须放 filter 上下文，免 score 且可缓存）" "精确过滤已在 filter 上下文或无 bool 查询"
 
   # ====================================================================
   # fw_es_agg_depth(warn)：聚合嵌套深度收敛
@@ -186,12 +171,7 @@ ${fc_bad}"
 "
     fi
   done
-  if [[ -n "$agg_bad" ]]; then
-    warn "fw_es_agg_depth: 聚合嵌套 ≥3 层（bucket 开销按层 size 乘积膨胀，受 search.max_buckets 65535 约束）:
-${agg_bad}"
-  else
-    pass "fw_es_agg_depth: 聚合嵌套深度可控"
-  fi
+  _fw_report warn fw_es_agg_depth "$agg_bad" "聚合嵌套 ≥3 层（bucket 开销按层 size 乘积膨胀，受 search.max_buckets 65535 约束）" "聚合嵌套深度可控"
 
   # ====================================================================
   # fw_es_ilm(warn)：时序索引须 ILM
@@ -228,12 +208,7 @@ ${ilm_bad}"
 "
     fi
   done
-  if [[ -n "$rx_bad" ]]; then
-    warn "fw_es_reindex_conflict: reindex 调用未声明 conflicts 策略（版本冲突默认中止，迁移半成品）:
-${rx_bad}"
-  else
-    pass "fw_es_reindex_conflict: reindex 已声明冲突策略或无 reindex"
-  fi
+  _fw_report warn fw_es_reindex_conflict "$rx_bad" "reindex 调用未声明 conflicts 策略（版本冲突默认中止，迁移半成品）" "reindex 已声明冲突策略或无 reindex"
 
   # ====================================================================
   # fw_es_scroll_release(warn)：scroll 须 ClearScroll 释放
@@ -246,12 +221,7 @@ ${rx_bad}"
 "
     fi
   done
-  if [[ -n "$sc_bad" ]]; then
-    warn "fw_es_scroll_release: scroll 使用未显式 ClearScroll/deletePit（上下文堆积占堆、segment 无法回收）:
-${sc_bad}"
-  else
-    pass "fw_es_scroll_release: scroll 释放齐备或无 scroll"
-  fi
+  _fw_report warn fw_es_scroll_release "$sc_bad" "scroll 使用未显式 ClearScroll/deletePit（上下文堆积占堆、segment 无法回收）" "scroll 释放齐备或无 scroll"
 
   # ====================================================================
   # fw_es_version_compat(warn)：8/9 移除 RHLC 与 type
@@ -267,12 +237,7 @@ ${sc_bad}"
     [[ -n "$ln" ]] && vc_bad="${vc_bad}${c}:${ln}
 "
   done
-  if [[ -n "$vc_bad" ]]; then
-    warn "fw_es_version_compat: 检出 RestHighLevelClient/include_type_name（8/9 已移除，须迁移 co.elastic.clients:elasticsearch-java）:
-${vc_bad}"
-  else
-    pass "fw_es_version_compat: 客户端为 elasticsearch-java 或无版本不兼容痕迹"
-  fi
+  _fw_report warn fw_es_version_compat "$vc_bad" "检出 RestHighLevelClient/include_type_name（8/9 已移除，须迁移 co.elastic.clients:elasticsearch-java）" "客户端为 elasticsearch-java 或无版本不兼容痕迹"
 
   # ====================================================================
   # fw_es_connection_pool(warn)：连接池与超时显式配置
@@ -285,10 +250,5 @@ ${vc_bad}"
 "
     fi
   done
-  if [[ -n "$cp_bad" ]]; then
-    warn "fw_es_connection_pool: RestClient.builder 未显式配连接池/超时（默认 maxConnTotal=30/maxConnPerRoute=10 偏小，须按 QPS 显式配置）:
-${cp_bad}"
-  else
-    pass "fw_es_connection_pool: 连接池/超时已配置或未自建 RestClient"
-  fi
+  _fw_report warn fw_es_connection_pool "$cp_bad" "RestClient.builder 未显式配连接池/超时（默认 maxConnTotal=30/maxConnPerRoute=10 偏小，须按 QPS 显式配置）" "连接池/超时已配置或未自建 RestClient"
 }

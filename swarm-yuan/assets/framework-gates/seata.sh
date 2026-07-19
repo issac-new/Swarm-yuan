@@ -54,12 +54,7 @@ _fw_seata_check() {
       fi
     done <<< "$gt_files"
   fi
-  if [[ -n "$mix_bad" ]]; then
-    fail "fw_seata_local_tx_mixed: 同文件检出 @GlobalTransactional + @Transactional（本地先提交全局回滚覆盖不了，数据不一致，须拆边界）:
-${mix_bad}"
-  else
-    pass "fw_seata_local_tx_mixed: 未检出全局/本地事务混用"
-  fi
+  _fw_report fail fw_seata_local_tx_mixed "${mix_bad}" "同文件检出 @GlobalTransactional + @Transactional（本地先提交全局回滚覆盖不了，数据不一致，须拆边界）" "未检出全局/本地事务混用"
 
   # ====================================================================
   # fw_seata_tcc_fence(fail)：TCC 须开启 TCC Fence
@@ -75,12 +70,7 @@ ${mix_bad}"
 "
     done <<< "$tcc_files"
   fi
-  if [[ -n "$fence_bad" ]]; then
-    fail "fw_seata_tcc_fence: @TwoPhaseBusinessAction 未开启 useTCCFence=true（空回滚/幂等/悬挂三坑无防护，生产必须开启）:
-${fence_bad}"
-  else
-    pass "fw_seata_tcc_fence: TCC 均开启 fence 或无 TCC"
-  fi
+  _fw_report fail fw_seata_tcc_fence "${fence_bad}" "@TwoPhaseBusinessAction 未开启 useTCCFence=true（空回滚/幂等/悬挂三坑无防护，生产必须开启）" "TCC 均开启 fence 或无 TCC"
 
   # ====================================================================
   # fw_seata_tcc_method_explicit(warn)：commit/rollback 方法名显式声明
@@ -94,12 +84,7 @@ ${fence_bad}"
 "
     done <<< "$tcc_files"
   fi
-  if [[ -n "$tm_bad" ]]; then
-    warn "fw_seata_tcc_method_explicit: @TwoPhaseBusinessAction 未显式 commitMethod/rollbackMethod（重构改名致二阶段 NoSuchMethodError）:
-${tm_bad}"
-  else
-    pass "fw_seata_tcc_method_explicit: TCC 方法名显式声明或无 TCC"
-  fi
+  _fw_report warn fw_seata_tcc_method_explicit "${tm_bad}" "@TwoPhaseBusinessAction 未显式 commitMethod/rollbackMethod（重构改名致二阶段 NoSuchMethodError）" "TCC 方法名显式声明或无 TCC"
 
   # ====================================================================
   # fw_seata_undo_log(warn)：AT 模式须建 undo_log 表
@@ -143,12 +128,7 @@ ${tm_bad}"
 "
     done <<< "$gt_files"
   fi
-  if [[ -n "$to_bad" ]]; then
-    warn "fw_seata_global_timeout: @GlobalTransactional 未显式 timeoutMills（默认 60s，长事务占全局锁阻塞，须按业务显式）:
-${to_bad}"
-  else
-    pass "fw_seata_global_timeout: 全局事务超时显式配置或无全局事务"
-  fi
+  _fw_report warn fw_seata_global_timeout "${to_bad}" "@GlobalTransactional 未显式 timeoutMills（默认 60s，长事务占全局锁阻塞，须按业务显式）" "全局事务超时显式配置或无全局事务"
 
   # ====================================================================
   # fw_seata_dirty_write(warn)：事务外写操作须 @GlobalLock
@@ -168,12 +148,7 @@ ${to_bad}"
       dw_bad="${dw_bad}${j}
 "
     done
-    if [[ -n "$dw_bad" ]]; then
-      warn "fw_seata_dirty_write: 全局事务外检出写 SQL 类（无 @GlobalLock 则绕过全局锁脏写，须 @GlobalLock + FOR UPDATE）:
-${dw_bad}"
-    else
-      pass "fw_seata_dirty_write: 写操作均在全局事务/全局锁内"
-    fi
+    _fw_report warn fw_seata_dirty_write "${dw_bad}" "全局事务外检出写 SQL 类（无 @GlobalLock 则绕过全局锁脏写，须 @GlobalLock + FOR UPDATE）" "写操作均在全局事务/全局锁内"
   fi
 
   # ====================================================================
@@ -191,12 +166,7 @@ ${dw_bad}"
 "
       fi
     done <<< "$gl_files"
-    if [[ -n "$gl_bad" ]]; then
-      warn "fw_seata_global_lock: @GlobalLock 同文件无 FOR UPDATE 查询（注解本身不抢锁，须 SELECT ... FOR UPDATE 触发全局锁）:
-${gl_bad}"
-    else
-      pass "fw_seata_global_lock: @GlobalLock 均配 FOR UPDATE"
-    fi
+    _fw_report warn fw_seata_global_lock "${gl_bad}" "@GlobalLock 同文件无 FOR UPDATE 查询（注解本身不抢锁，须 SELECT ... FOR UPDATE 触发全局锁）" "@GlobalLock 均配 FOR UPDATE"
   fi
 
   # ====================================================================
@@ -218,12 +188,7 @@ ${gl_bad}"
 "
       fi
     done
-    if [[ -n "$br_bad" ]]; then
-      warn "fw_seata_branch_register: 全局事务内检出远程调用且无 RootContext 绑定迹象（须确认集成模块自动透传 XID，裸调用须手工绑定）:
-${br_bad}"
-    else
-      pass "fw_seata_branch_register: 未见裸远程调用或已有 XID 绑定"
-    fi
+    _fw_report warn fw_seata_branch_register "${br_bad}" "全局事务内检出远程调用且无 RootContext 绑定迹象（须确认集成模块自动透传 XID，裸调用须手工绑定）" "未见裸远程调用或已有 XID 绑定"
   fi
 
   # ====================================================================
@@ -251,12 +216,7 @@ ${br_bad}"
       fi
     fi
   done
-  if [[ -n "$saga_bad" ]]; then
-    warn "fw_seata_saga_compensation: Saga 状态机无补偿节点（部分步骤失败无法回退，补偿须幂等）:
-${saga_bad}"
-  else
-    pass "fw_seata_saga_compensation: 无 Saga 状态机或已配补偿"
-  fi
+  _fw_report warn fw_seata_saga_compensation "${saga_bad}" "Saga 状态机无补偿节点（部分步骤失败无法回退，补偿须幂等）" "无 Saga 状态机或已配补偿"
 
   # ====================================================================
   # fw_seata_xa_proxy(warn)：XA 模式须全量数据源代理
@@ -272,12 +232,7 @@ ${saga_bad}"
     [[ -n "$ln" ]] && xa_hit="${xa_hit}${j}:${ln}
 "
   done
-  if [[ -n "$xa_hit" ]]; then
-    warn "fw_seata_xa_proxy: 检出 XA 模式代理（须全量数据源统一代理，混合代理破坏隔离）:
-${xa_hit}"
-  else
-    pass "fw_seata_xa_proxy: 未检出 XA 模式"
-  fi
+  _fw_report warn fw_seata_xa_proxy "${xa_hit}" "检出 XA 模式代理（须全量数据源统一代理，混合代理破坏隔离）" "未检出 XA 模式"
 
   # ====================================================================
   # fw_seata_at_datasource_proxy(warn)：AT 自动代理禁止关闭
@@ -293,12 +248,7 @@ ${xa_hit}"
     [[ -n "$ln" ]] && adp_bad="${adp_bad}${j}:${ln}
 "
   done
-  if [[ -n "$adp_bad" ]]; then
-    warn "fw_seata_at_datasource_proxy: 检出关闭自动代理/手工 DataSourceProxy（AT 静默失效风险，须确认代理链路完整）:
-${adp_bad}"
-  else
-    pass "fw_seata_at_datasource_proxy: 未检出代理关闭/手工代理"
-  fi
+  _fw_report warn fw_seata_at_datasource_proxy "${adp_bad}" "检出关闭自动代理/手工 DataSourceProxy（AT 静默失效风险，须确认代理链路完整）" "未检出代理关闭/手工代理"
 
   # ====================================================================
   # fw_seata_tm_rm_register(warn)：tx-service-group 与 vgroup-mapping

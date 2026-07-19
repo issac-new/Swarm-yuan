@@ -28,10 +28,7 @@ _fw_mysql_check() {
     esac
   done
 
-  # SQL 正文过滤：去 -- 与 # 行注释，防注释里的关键字造成误判
-  _fw_mysql_sql_only() {
-    sed -E 's:--.*$::; /^[[:space:]]*#/d' "$1" 2>/dev/null
-  }
+  # SQL 正文过滤：调公共库 _fw_strip_comments_mysql（去 -- 与 # 行注释，防注释里的关键字造成误判）
 
   local c s ln
 
@@ -40,32 +37,22 @@ _fw_mysql_check() {
   # ====================================================================
   local cs_bad=""
   for s in "${scharr[@]+"${scharr[@]}"}"; do
-    ln=$(_fw_mysql_sql_only "$s" | grep -inE 'CHARSET[[:space:]]*=[[:space:]]*utf8(mb3)?([^[:alnum:]_]|$)|CHARACTER[[:space:]]+SET[[:space:]]+utf8(mb3)?([^[:alnum:]_]|$)' || true)
+    ln=$(_fw_strip_comments_mysql "$s" | grep -inE 'CHARSET[[:space:]]*=[[:space:]]*utf8(mb3)?([^[:alnum:]_]|$)|CHARACTER[[:space:]]+SET[[:space:]]+utf8(mb3)?([^[:alnum:]_]|$)' || true)
     [[ -n "$ln" ]] && cs_bad="${cs_bad}${s}:${ln}
 "
   done
-  if [[ -n "$cs_bad" ]]; then
-    fail "fw_mysql_charset: 检出 utf8/utf8mb3（3 字节残缺字符集，无法存 emoji/罕用字，utf8mb3 已废弃）——必须 CHARSET=utf8mb4:
-${cs_bad}"
-  else
-    pass "fw_mysql_charset: 字符集均为 utf8mb4 或无显式声明"
-  fi
+  _fw_report fail fw_mysql_charset "$cs_bad" "检出 utf8/utf8mb3（3 字节残缺字符集，无法存 emoji/罕用字，utf8mb3 已废弃）——必须 CHARSET=utf8mb4" "字符集均为 utf8mb4 或无显式声明"
 
   # ====================================================================
   # fw_mysql_deep_paging(fail)：大 OFFSET 深分页禁上线（>10 万）
   # ====================================================================
   local dp_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mysql_sql_only "$s" | grep -inE 'LIMIT[[:space:]]+[0-9]{6,}[[:space:]]*,|OFFSET[[:space:]]+[0-9]{6,}' || true)
+    ln=$(_fw_strip_comments_mysql "$s" | grep -inE 'LIMIT[[:space:]]+[0-9]{6,}[[:space:]]*,|OFFSET[[:space:]]+[0-9]{6,}' || true)
     [[ -n "$ln" ]] && dp_bad="${dp_bad}${s}:${ln}
 "
   done
-  if [[ -n "$dp_bad" ]]; then
-    fail "fw_mysql_deep_paging: 深分页 OFFSET ≥ 10 万（O(offset) 扫描丢弃前 N 行）——改游标 WHERE id > ? 或延迟关联子查询:
-${dp_bad}"
-  else
-    pass "fw_mysql_deep_paging: 无 ≥10 万 offset 深分页"
-  fi
+  _fw_report fail fw_mysql_deep_paging "$dp_bad" "深分页 OFFSET ≥ 10 万（O(offset) 扫描丢弃前 N 行）——改游标 WHERE id > ? 或延迟关联子查询" "无 ≥10 万 offset 深分页"
 
   # ====================================================================
   # fw_mysql_isolation(warn)：事务隔离级别须显式配置
@@ -96,12 +83,7 @@ ${dp_bad}"
     [[ -n "$ln" ]] && dd_bad="${dd_bad}${c}:${ln}
 "
   done
-  if [[ -n "$dd_bad" ]]; then
-    warn "fw_mysql_deadlock_detect: innodb_deadlock_detect=OFF（死锁只能等 innodb_lock_wait_timeout 默认 50s 超时，雪崩风险）——须压测依据 + 加锁顺序一致:
-${dd_bad}"
-  else
-    pass "fw_mysql_deadlock_detect: 死锁检测未关闭（默认 ON）"
-  fi
+  _fw_report warn fw_mysql_deadlock_detect "$dd_bad" "innodb_deadlock_detect=OFF（死锁只能等 innodb_lock_wait_timeout 默认 50s 超时，雪崩风险）——须压测依据 + 加锁顺序一致" "死锁检测未关闭（默认 ON）"
 
   # ====================================================================
   # fw_mysql_slow_log(warn)：[mysqld] 须有 slow_query_log + long_query_time
@@ -128,23 +110,18 @@ ${dd_bad}"
   # ====================================================================
   local ddl_bad=""
   for s in "${scharr[@]+"${scharr[@]}"}"; do
-    ln=$(_fw_mysql_sql_only "$s" | grep -inE 'ALGORITHM[[:space:]]*=[[:space:]]*COPY|LOCK[[:space:]]*=[[:space:]]*EXCLUSIVE' || true)
+    ln=$(_fw_strip_comments_mysql "$s" | grep -inE 'ALGORITHM[[:space:]]*=[[:space:]]*COPY|LOCK[[:space:]]*=[[:space:]]*EXCLUSIVE' || true)
     [[ -n "$ln" ]] && ddl_bad="${ddl_bad}${s}:${ln}
 "
   done
-  if [[ -n "$ddl_bad" ]]; then
-    warn "fw_mysql_online_ddl: 检出 ALGORITHM=COPY/LOCK=EXCLUSIVE（整表拷贝+锁写，大表灾难）——须 ALGORITHM=INSTANT/INPLACE, LOCK=NONE 或 pt-osc/gh-ost:
-${ddl_bad}"
-  else
-    pass "fw_mysql_online_ddl: 无 COPY/EXCLUSIVE DDL"
-  fi
+  _fw_report warn fw_mysql_online_ddl "$ddl_bad" "检出 ALGORITHM=COPY/LOCK=EXCLUSIVE（整表拷贝+锁写，大表灾难）——须 ALGORITHM=INSTANT/INPLACE, LOCK=NONE 或 pt-osc/gh-ost" "无 COPY/EXCLUSIVE DDL"
 
   # ====================================================================
   # fw_mysql_too_many_indexes(warn)：单表二级索引 >5 → 写放大
   # ====================================================================
   local idx_bad=""
   for s in "${scharr[@]+"${scharr[@]}"}"; do
-    ln=$(_fw_mysql_sql_only "$s" | awk '
+    ln=$(_fw_strip_comments_mysql "$s" | awk '
       /CREATE[[:space:]]+TABLE/ { intable=1; cnt=0; tbl=$0; next }
       intable && /(KEY|INDEX)[[:space:]]/ && !/PRIMARY[[:space:]]+KEY/ { cnt++ }
       intable && /^[[:space:]]*\)/ { if (cnt>5) print "二级索引数="cnt" : "tbl; intable=0 }
@@ -153,76 +130,51 @@ ${ddl_bad}"
     [[ -n "$ln" ]] && idx_bad="${idx_bad}${s}:${ln}
 "
   done
-  if [[ -n "$idx_bad" ]]; then
-    warn "fw_mysql_too_many_indexes: 单表二级索引 >5（写放大 + 优化器误选概率升）——合并联合索引，低频查询走从库:
-${idx_bad}"
-  else
-    pass "fw_mysql_too_many_indexes: 索引数量合理或无 DDL 可检"
-  fi
+  _fw_report warn fw_mysql_too_many_indexes "$idx_bad" "单表二级索引 >5（写放大 + 优化器误选概率升）——合并联合索引，低频查询走从库" "索引数量合理或无 DDL 可检"
 
   # ====================================================================
   # fw_mysql_select_star(warn)：SELECT * 破坏覆盖索引
   # ====================================================================
   local ss_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mysql_sql_only "$s" | grep -inE 'SELECT[[:space:]]*\*[[:space:]]+FROM' || true)
+    ln=$(_fw_strip_comments_mysql "$s" | grep -inE 'SELECT[[:space:]]*\*[[:space:]]+FROM' || true)
     [[ -n "$ln" ]] && ss_bad="${ss_bad}${s}:${ln}
 "
   done
-  if [[ -n "$ss_bad" ]]; then
-    warn "fw_mysql_select_star: SELECT * 破坏覆盖索引（必回表）且放大网络/内存——列名枚举，高频查询让 SELECT 列 ⊆ 索引列:
-${ss_bad}"
-  else
-    pass "fw_mysql_select_star: 无 SELECT *"
-  fi
+  _fw_report warn fw_mysql_select_star "$ss_bad" "SELECT * 破坏覆盖索引（必回表）且放大网络/内存——列名枚举，高频查询让 SELECT 列 ⊆ 索引列" "无 SELECT *"
 
   # ====================================================================
   # fw_mysql_like_wildcard(warn)：LIKE '% 前置通配索引失效
   # ====================================================================
   local lk_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mysql_sql_only "$s" | grep -inE "LIKE[[:space:]]+'%" || true)
+    ln=$(_fw_strip_comments_mysql "$s" | grep -inE "LIKE[[:space:]]+'%" || true)
     [[ -n "$ln" ]] && lk_bad="${lk_bad}${s}:${ln}
 "
   done
-  if [[ -n "$lk_bad" ]]; then
-    warn "fw_mysql_like_wildcard: LIKE 前置通配符使 B-Tree 索引失效（全表扫描）——改 FULLTEXT(ngram)/ES，高频字段须 EXPLAIN 确认走索引:
-${lk_bad}"
-  else
-    pass "fw_mysql_like_wildcard: 无前置通配 LIKE"
-  fi
+  _fw_report warn fw_mysql_like_wildcard "$lk_bad" "LIKE 前置通配符使 B-Tree 索引失效（全表扫描）——改 FULLTEXT(ngram)/ES，高频字段须 EXPLAIN 确认走索引" "无前置通配 LIKE"
 
   # ====================================================================
   # fw_mysql_implicit_join(warn)：FROM a, b 隐式逗号连接
   # ====================================================================
   local ij_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mysql_sql_only "$s" | grep -inE 'FROM[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*,[[:space:]]*[a-zA-Z_]' || true)
+    ln=$(_fw_strip_comments_mysql "$s" | grep -inE 'FROM[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*,[[:space:]]*[a-zA-Z_]' || true)
     [[ -n "$ln" ]] && ij_bad="${ij_bad}${s}:${ln}
 "
   done
-  if [[ -n "$ij_bad" ]]; then
-    warn "fw_mysql_implicit_join: 隐式逗号 JOIN（易漏连接条件变笛卡尔积，无法表达驱动顺序）——改显式 INNER JOIN ... ON，小表驱动大表、内表连接列建索引:
-${ij_bad}"
-  else
-    pass "fw_mysql_implicit_join: 无隐式逗号 JOIN"
-  fi
+  _fw_report warn fw_mysql_implicit_join "$ij_bad" "隐式逗号 JOIN（易漏连接条件变笛卡尔积，无法表达驱动顺序）——改显式 INNER JOIN ... ON，小表驱动大表、内表连接列建索引" "无隐式逗号 JOIN"
 
   # ====================================================================
   # fw_mysql_order_rand(warn)：ORDER BY RAND() 必现 filesort+全扫
   # ====================================================================
   local or_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mysql_sql_only "$s" | grep -inE 'ORDER[[:space:]]+BY[[:space:]]+RAND[[:space:]]*\(' || true)
+    ln=$(_fw_strip_comments_mysql "$s" | grep -inE 'ORDER[[:space:]]+BY[[:space:]]+RAND[[:space:]]*\(' || true)
     [[ -n "$ln" ]] && or_bad="${or_bad}${s}:${ln}
 "
   done
-  if [[ -n "$or_bad" ]]; then
-    warn "fw_mysql_order_rand: ORDER BY RAND() 对全表 filesort（EXPLAIN 必现 ALL+filesort）——改主键区间随机/预计算随机列/应用层随机:
-${or_bad}"
-  else
-    pass "fw_mysql_order_rand: 无 ORDER BY RAND()"
-  fi
+  _fw_report warn fw_mysql_order_rand "$or_bad" "ORDER BY RAND() 对全表 filesort（EXPLAIN 必现 ALL+filesort）——改主键区间随机/预计算随机列/应用层随机" "无 ORDER BY RAND()"
 
   # ====================================================================
   # fw_mysql_long_tx(warn)：autocommit=0 或事务内 SLEEP → 长事务
@@ -234,14 +186,9 @@ ${or_bad}"
 "
   done
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mysql_sql_only "$s" | grep -inE 'SLEEP[[:space:]]*\(' || true)
+    ln=$(_fw_strip_comments_mysql "$s" | grep -inE 'SLEEP[[:space:]]*\(' || true)
     [[ -n "$ln" ]] && tx_bad="${tx_bad}${s}:${ln}
 "
   done
-  if [[ -n "$tx_bad" ]]; then
-    warn "fw_mysql_long_tx: 检出 autocommit=0 或 SQL 内 SLEEP(（长事务持锁 + RR 一致性读阻 undo purge → MVCC 膨胀）——事务短平快、禁 RPC/sleep、批量分批提交:
-${tx_bad}"
-  else
-    pass "fw_mysql_long_tx: 无长事务信号"
-  fi
+  _fw_report warn fw_mysql_long_tx "$tx_bad" "检出 autocommit=0 或 SQL 内 SLEEP(（长事务持锁 + RR 一致性读阻 undo purge → MVCC 膨胀）——事务短平快、禁 RPC/sleep、批量分批提交" "无长事务信号"
 }

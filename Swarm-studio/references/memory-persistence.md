@@ -79,6 +79,30 @@ observation XML 格式：
 - workflow 的"状态控制"要素：状态存于上下文窗外（state-machine.sh 的 `.swarm-yuan/state.yaml` + claude-mem 的 SQLite），压缩后可恢复
 - 若用 claude-mem，SessionStart(compact) hook 自动重新注入记忆——无需手动恢复
 
+## SQLite 并发安全（claude-mem v13.10.2）
+
+> 引自 claude-mem v13.10.2。worker + hook 并发访问同一 SQLite DB 时的防御。
+
+- **`busy_timeout`**：worker 进程与 PostToolUse hook 可能同时写 `claude-mem.db`，须设 `busy_timeout`（如 `5000ms`）避免 `SQLITE_BUSY` 立即失败
+- **原子 settings 写**：`~/.claude-mem/settings.json` 须原子写（write-to-temp + rename），避免 hook 读到半写状态
+- **migration column re-check**：启动时检查 schema 列是否已迁移，避免 legacy 重复行导致 boot 崩溃
+- **worktree 相对 `gitdir:` 指针解析**：在 git worktree 中运行时，相对 `gitdir:` 指针须正确解析到主仓库
+
+**在目标技能中的落地：**
+- 若项目用 claude-mem，dev-guide.md 提示：concurrent worker/hook 访问须设 `busy_timeout`，不可裸连 SQLite
+- precheck.sh 的 `--memory` 子命令（若项目自建 SQLite 记忆层）可扫描 `new Database(path)` 后无 `busy_timeout` 的模式
+
+## 代理环境变量透传（claude-mem v13.10.2）
+
+> 引自 claude-mem v13.10.2。supervisor 进程启动 SDK 子进程时须保留代理环境。
+
+- `HTTPS_PROXY` 须透传给 SDK 子进程（不能只继承部分 env）
+- Bedrock/Vertex 的 `skip-auth` env 须保留（否则子进程失去免鉴权配置）
+
+**在目标技能中的落地：**
+- security-spec §3 网络安全：若项目启动 LLM SDK 子进程，须显式透传 `HTTPS_PROXY` 等代理 env
+- precheck.sh 的 `--security` 可扫描 `spawn()` 调用是否过滤了 `env`（若显式传 `env:` 须包含 `HTTPS_PROXY`）
+
 ## Mode-JSON 分类法（生成+检索同源）
 
 引自 `plugin/modes/code.json`。一个 mode JSON 定义：
@@ -122,6 +146,206 @@ claude-mem 支持的查询维度：
 | claude-mem | SQLite + ChromaDB + observer | 跨会话/跨压缩的完整记忆（决策/发现/gotcha） |
 
 **推荐组合**：state-machine.sh 管阶段状态 + progress ledger 管任务进度 + claude-mem（若装）管跨会话知识。三者不冲突，各管一层。
+
+## WAL 安全备份（ruflo v3.23.0）
+
+> 引自 ruflo v3.23.0。SQLite WAL 模式下的安全备份模式——naive 拷贝会损坏 DB。
+
+### 为什么不能直接拷贝
+SQLite 在 WAL（Write-Ahead Logging）模式下，`*.db` + `*-wal` + `*-shm` 三个文件组成一致状态。naive `cp *.db` 只拷贝主文件，丢失 WAL 中未 checkpoint 的事务——恢复后数据不一致或损坏。
+
+### 安全备份模式
+```
+# better-sqlite3 在线备份（推荐，非破坏式只读源）
+const backup = db.backup(`${dest}.db`);
+while (backup.remaining > 0) backup.transfer(-1);
+backup.close();
+
+# 或 SQLite CLI
+sqlite3 "$DB" ".backup '$DEST'"
+```
+
+**特性：**
+- **在线非破坏**：源 DB 可继续读写，备份是一致性快照
+- **轮转保留**：保留最近 N 份（默认 7），自动删除更旧的
+- **可选异地**：备份完成后上传到 GCS (`--gcs gs://bucket/path`) 或 S3
+
+**在目标技能中的落地：**
+- 若项目用 SQLite 做状态存储（state-machine.sh 的 `.swarm-yuan/state.yaml` 是 YAML 不涉及，但若项目自建 SQLite 记忆/缓存层），dev-guide.md 须提示：WAL 模式 DB 不可直接 `cp`，须用在线 `.backup()`
+- precheck.sh 的 `--memory` 子命令可扫描 `cp *.db` 或 `fs.copyFile(*.db)` 模式并告警
+
+## Failure-signal 真实捕获（ruflo v3.22.0）
+
+> 引自 ruflo v3.22.0。PostToolUse hook 须记录真实的工具执行结果，而非硬编码 `success:true`。
+
+### 问题
+observer 之前在 PostToolUse hook 中记录 `success: true` 硬编码值（898/898 次成功，0 失败）——oracle 层永远没有负例，无法学习"什么操作会失败"。
+
+### 修复
+- PostToolUse hook 读取 Claude Code 的 PostToolUse outcome（`tool_response.success` / `tool_response.error`）
+- 记录真实 failure：`success: false` + `error_message` + `error_type`
+- 这使 oracle 层有了负例：可挖掘"哪种 tool 组合容易失败"、"哪种输入导致 exec 超时"
+
+**在目标技能中的落地：**
+- memory-persistence 的 observer 须读 PostToolUse 真实 outcome，不可硬编码 `success:true`
+- 若项目自建 observer，dev-guide.md 提示：从 `tool_response` 提取 `success/error` 字段，写入 observation 的 `<facts>` 段
+- 这让 review-methodology 的 oracle 层（spec-completion audit）有了"失败操作"的历史数据
+
+## Memory Distillation 自学习环（ruflo v3.22.0, ADR-174）
+
+> 引自 ruflo v3.22.0。从 raw observations 蒸馏出可复用的 reasoning patterns——增量、非破坏式、provenance-gated。
+
+### 蒸馏流水线
+```
+memory_entries (raw observations)
+  → episodes (相关 observation 聚合为一个事件)
+    → reasoning_patterns (从 episodes 抽象出可复用模式 + embeddings)
+      → weak relational edges (pattern 间的弱关联)
+```
+
+**特性：**
+- **增量**：只处理新增/变更的 observations，不全量重算
+- **非破坏式**：只新增 episodes/patterns，不修改或删除已有
+- **provenance-gated**：每个蒸馏产物记录来源 observation IDs，可溯源
+- **本地训练**：可训练本地 SONA/MoE 模型（$0 默认，无 API 调用）
+- CLI：`memory distill run|status|config` + `distill-tuning`（自优化检索参数）
+
+**在目标技能中的落地（可选高级模式）：**
+- 若项目长期运行（>1月），可在 check 段加"记忆蒸馏"步骤：定期从 observations 蒸馏 patterns
+- 蒸馏产物存于 `.swarm-yuan/patterns.json`（可提交，团队共享）
+- dev-guide.md 引用：查"这个模块的常见 failure pattern"→ 查蒸馏产物而非翻 raw observations
+
+## claude-mem v13.11.0 Worker-Native Cloud Sync
+
+> 引自 claude-mem v13.11.0。独立 cloud-sync daemon 退役，worker 自行同步记忆到云端。
+
+### 为什么退役独立 daemon
+- 独立 `cloud-sync.mjs` daemon 需要单独安装、启动、维护——增加运维负担
+- daemon 与 worker 之间的状态同步容易竞态（如 session memory id 注册时 prompt 上传仍在进行）
+
+### Worker-native sync 模式
+- **写入触发 flusher**：每次本地写入 nudge 一个后台 flusher，drain 未同步行到 cmem.ai
+- **1.5s debounce**：合并写入突发（burst），避免频繁 flush
+- **single-flight flush**：同一时刻只有一个 flush 在运行
+- **200 行/2MB 分页**：大批量同步时分页，避免单次请求过大
+- **30s 请求超时**：避免 hang
+- **capped exponential backoff**：失败时退避重试（有上限，不无限重试）
+
+**监控端点**：`GET /api/sync/status` 返回 pending counts per kind + last flush time + last error。
+
+**Schema v40 自修复**：升级时，所有已同步的 prompt（包括旧 daemon 上传的）重新入队，通过修复后的 mapper 重新推送；backfill lane header 抑制 realtime broadcast 风暴。
+
+**在目标技能中的落地：**
+- 若项目用 claude-mem cloud sync，dev-guide.md 提示：无需独立 daemon，worker 自行同步
+- memory-persistence 的"写入触发后台同步"模式可迁移到项目自建的记忆层（非阻塞写入 + debounce + backoff）
+
+## ruflo v3.30.2 Doctor Memory 功能性检查
+
+> 引自 ruflo v3.30.2。`ruflo doctor --component memory` 从"文件存在性检查"升级为"功能性检查"。
+
+### 问题
+旧版 `doctor --component memory` 只做 `existsSync` + `statSync`——任何存在的文件都报 PASS，即使是 99.97% 空的或 SQLite 损坏的 DB。
+
+### 三层功能性检查
+
+| 检查 | 方法 | 失败条件 |
+|------|------|---------|
+| **Memory Integrity** | `sql.js` + `PRAGMA integrity_check` | SQLite 结构损坏 |
+| **Memory Content** | ≥95% 的 `memory_entries` 行有非空 content | content 3/11133 (0.03%) → FAIL |
+| **Memory Embedding Coverage** | ≥95% 的已填充行有向量 | 向量覆盖率 <95% → FAIL |
+
+**"UNKNOWN is never PASS" 规则**：加密 DB 无法检查时报 WARN 而非 PASS（不知情 ≠ 通过）。
+
+**在目标技能中的落地：**
+- 若项目自建 SQLite 记忆层，precheck.sh 的 `--memory` 子命令可引用此三层检查
+- 每个检查打印精确测量值（如 "content 3/11133 (0.03%)"），而非泛泛的 PASS/FAIL
+- 加密/不可检查的情况报 WARN 而非 PASS
+
+## ECC v2.0 记忆与学习方法论
+
+> 来自 ECC v2.0.0。将记忆系统从"观察+检索"升级为"原子 instinct 生命周期 + observer lease + skills→rules 蒸馏"。
+
+### Atomic Instinct 生命周期（continuous-learning-v2）
+
+ECC 的 instinct 系统将观察升级为**原子 instinct**——每个观察是一个带置信度评分的独立实体：
+
+```
+session 观察（PostToolUse hook）
+  → atomic instinct（带 confidence score 0.0-1.0）
+    → instinct 演化（置信度 ≥ 阈值时）
+      → 提升为 skill / command / agent
+```
+
+**置信度评分维度：**
+- **频率**：同一模式出现次数
+- **成功率**：该模式是否成功解决问题
+- **新鲜度**：最近出现的时间衰减
+- **人工确认**：用户是否标记为"重要"
+
+**项目隔离**：instinct 按 project-scope 存储，防止跨项目泄漏（A 项目的 pattern 不污染 B 项目）。
+
+**5 层 observer 循环防护**：
+1. **observer 不观察自己**——observer agent 不观察 observer 的 tool call
+2. **循环深度限制**——observer 最多 3 层嵌套
+3. **session-aware lease**——SessionStart 写入 project-scoped lease，SessionEnd 移除；observer 检测到最后一个 lease 消失时自动退出（修复 memory-explosion/zombie-observer）
+4. **instinct 去重**——相同模式的 instinct 合并（不重复创建）
+5. **手动禁用**——`ECC_DISABLED_HOOKS` env 可禁用 instinct observer
+
+**在目标技能中的落地：**
+- 若项目用 ECC 的 continuous-learning-v2，dev-guide.md 引用：查"这个项目常用的 pattern"→ `instinct status` 而非翻 observations
+- swarm-yuan 的 memory-persistence 可引用 instinct 的**置信度评分**模式，为 observation 增加 `confidence: 0.0-1.0` 字段
+
+### Observer Lease 模式（kill idle observers deterministically）
+
+ECC 修复了 claude-mem/ruflo 的 observer 僵尸问题：
+
+| 问题 | 原因 | ECC 修复 |
+|------|------|---------|
+| Observer 内存爆炸 | observer 永不退出，累积历史 | session-aware lease：最后一个 lease 消失时退出 |
+| Zombie observer | session 结束但 observer 仍运行 | SessionEnd 移除 lease，observer 检测无 lease 退出 |
+| Observer 观察自己 | observer 的 tool call 被 observer 捕获 | 5 层循环防护（不观察自己 + 深度限制 + 去重） |
+
+**在目标技能中的落地：**
+- 若项目自建 observer，dev-guide.md 提示：实现 session lease 模式（SessionStart 写 lease / SessionEnd 移除 / 无 lease 退出）
+- precheck.sh 的 `--memory` 子命令可扫描 observer 是否有"无 lease 退出"逻辑
+
+### Skills → Rules 蒸馏（rules-distill）
+
+ECC 的 `rules-distill` 方向与 swarm-yuan 的 memory distillation 互补：
+
+| 方向 | 来源 | 产物 | swarm-yuan 映射 |
+|------|------|------|----------------|
+| sessions → memory | claude-mem/ruflo observations | reasoning patterns | 已有的 memory distillation |
+| **skills → rules** | ECC skills 扫描 | cross-cutting rule 文件 | **新增**：从已生成的目标技能中提炼规则 |
+
+**流程：**
+1. 扫描项目下所有 skills（目标技能）
+2. 提取跨技能的公共原则（如"所有 skill 都要求 TDD"）
+3. 蒸馏为 rule 文件（`.claude/rules/*.md`）
+4. 模式：append（追加新规则）/ revise（修订已有规则）/ create（创建新规则文件）
+
+**在目标技能中的落地：**
+- 若项目积累了多个目标技能，可在 check 段加"rules-distill"步骤：扫描 skills 提炼公共规则
+- 提炼的规则文件可被新 skill 的 precheck.sh 引用（如 `--security` 门禁引用公共安全规则）
+
+### 6 层知识架构（knowledge-ops）
+
+ECC 的 knowledge-ops 定义了 6 层知识架构：
+
+| 层 | 名称 | 内容 | swarm-yuan 映射 |
+|----|------|------|----------------|
+| 1 | active-truth | 当前活跃任务的事实 | state-machine.sh 的 `.swarm-yuan/state.yaml` |
+| 2 | quick-memory | 最近会话的 observation | claude-mem 的 SQLite |
+| 3 | MCP-graph | 代码知识图谱 | GitNexus/graphify |
+| 4 | durable-KB | 持久化知识库 | reference-manual.md |
+| 5 | external-store | 外部存储（GCS/S3） | 备份/归档 |
+| 6 | local-archive | 本地归档（历史版本） | git history |
+
+**"无影子工作区"规则**：知识只存于上述 6 层之一，不额外创建 shadow workspace（如临时文件缓存）。
+
+**在目标技能中的落地：**
+- 目标技能的产出物归档须映射到这 6 层之一
+- 避免"临时文件不清理"——临时上下文（对话/草稿）在节点结束后须归档或删除
 
 ## claude-mem v13 全量能力（swarm-yuan 须知道但可选引用）
 

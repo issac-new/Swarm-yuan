@@ -1,6 +1,6 @@
 ---
 name: swarm-yuan
-description: "Meta-skill generator: produces a project-specific dev skill for ANY code repo. Integrates 10 runtimes (OpenSpec/superpowers/comet/GitNexus/graphify/gsd-core/claude-mem/ocr/gstack/Ruflo), 26 quality gates (incl. shift-left: test-design/change-impact/observability in spec/plan stage), 5-layer cognition framework, 32-domain knowledge. Core capability: exhaustive component inventory (mechanical enumeration + signature extraction + count verification) and call-chain analysis (3-layer: registration assembly / module dependency matrix / component mount tree) → orchestration constraints derivation. Use when user says '为某项目生成开发技能', 'create a dev skill', '六段式 skill'."
+description: "Meta-skill generator: produces a project-specific dev skill for ANY code repo. Integrates 11 runtimes (OpenSpec/superpowers/comet/GitNexus/graphify/gsd-core/claude-mem/ocr/gstack/Ruflo), 27 quality gates (incl. shift-left: test-design/change-impact/observability in spec/plan stage), 5-layer cognition framework, 32-domain knowledge. Core capability: exhaustive component inventory (mechanical enumeration + signature extraction + count verification) and call-chain analysis (3-layer: registration assembly / module dependency matrix / component mount tree) → orchestration constraints derivation. Use when user says '为某项目生成开发技能', 'create a dev skill', '六段式 skill'."
 ---
 
 # swarm-yuan — 项目需求交付技能生成器
@@ -30,7 +30,7 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 
 ## 五层认知基底 + 执行准则
 
-swarm-yuan 的 26 个门禁服务于一条认知递进链。核心理念：**呈现递进的关系，而非仅关注计算**。
+swarm-yuan 的 27 个门禁服务于一条认知递进链。核心理念：**呈现递进的关系，而非仅关注计算**。
 
 | 层 | 解决什么 | 落点 |
 |----|---------|------|
@@ -79,9 +79,9 @@ swarm-yuan 的 26 个门禁服务于一条认知递进链。核心理念：**呈
 5. **特征卡**：16 项（项目类型→…→可复用稳定单元→…→编排约束→详尽构件库清单），每项落到具体值不用占位符。映射表见 `references/template-spec.md` §3
 6. **创建骨架**：`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ + precheck.conf）
 7. **AI 填充全部文件**：SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`。**reference-manual.md §4 构件表/§6 接口表/§9 store+类型表按形态动态填充（维度错配=未完成），§5 链路按形态选模型 + §5.1 约束注释，dev-guide.md §8 按形态选约束类别**
-8. **AI 配置 precheck.conf**：从特征卡推导 45 个变量（PROJECT_DIR/WRITABLE_DIRS/LAYER_DEFS/SERVICE_DIRS/STORE_DIR 等）——**所有 `<占位符>` 必须替换为真实值**
+8. **AI 配置 precheck.conf**：从特征卡推导 146 个变量（PROJECT_DIR/WRITABLE_DIRS/LAYER_DEFS/SERVICE_DIRS/STORE_DIR 等）——**所有 `<占位符>` 必须替换为真实值**
 9. **AI 集成 Claude Code**：生成 hooks/hooks.json + commands/ + settings.local.json + .mcp.json + workflow.md 节点标注。详见 `references/claude-code-capabilities.md`
-10. **AI 运行门禁**：`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--all-full`（全 26）
+10. **AI 运行门禁**：`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--all-full`（全 27）
 11. **AI 写回记忆**：claude-mem/.zcode/memories/.project-knowledge.md 三路写回，形成"记忆→生成→开发→记忆"闭环
 12. **AI 最终检查**：grep 目标 skill 目录，确认零"待填充"/零"填充指引"/零"<占位符>"残留；**按维度计数核验：对 §C+.0 判定的每个维度，用对应的 `find`/`grep` 命令计数，对比 reference-manual.md 对应章节行数，偏差 >5% → 回到 Step 4 补全该维度**；**维度适配核验：纯后端项目不应有 UI 组件表，纯前端项目不应有 controller 表（维度错配 → 回 Step 4 重判）**；**框架适配四要素核验：对 ACTIVE_FRAMEWORKS 每个框架——① 构件枚举计数 ≥ 实际 × 0.95（依 `references/frameworks/<fw>.md` §2 的计数基准）② `framework-knowledge.md` 规律数 ≥ 规则文件声明的深度门槛且 100% 含"证据:"字段 ③ `precheck.sh` 含 `_fw_<id>_check` 动态分发器且 `--framework <id>` 实跑 exit 0（门禁片段位于 `assets/framework-gates/<fw>.sh`，已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块）④ `dev-guide.md` §10 含该框架约束段 ≥ 3 条。任一不过 → 回 Step 4.5**。**如有残留，回到 Step 7 继续填充，直到零残留。**
 
@@ -98,7 +98,7 @@ swarm-yuan 的 26 个门禁服务于一条认知递进链。核心理念：**呈
 | reference | `references/*.md` | 参考手册（目录/安全/编译/**全量组件库**/**三层依赖链路+约束**/**全量接口端点**/**全量store+类型** + 数据 + 方法论 + 认知 + 领域知识） |
 | reference | `references/framework-knowledge.md` | **按激活框架实例化的规律与门禁依据**（骨架由 AI 在 Step 4.5 框架深化阶段依据 `references/frameworks/<fw>.md` §3+§4 构建，逐条用项目代码验证实例化；`--inject-frameworks` 只注入门禁片段到 precheck.sh，不生成此文件骨架） |
 | assets | `assets/*` | 模板（spec/plan/分支/环境/库表/状态机） |
-| check | `scripts/precheck.sh` | 26 个门禁子命令（含 `--shift-left` 左移：测试设计/变更影响/可观测性） + **框架门禁片段注入区**（`# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，由 `--inject-frameworks` 写入） |
+| check | `scripts/precheck.sh` | 27 个门禁子命令（含 `--shift-left` 左移：测试设计/变更影响/可观测性） + **框架门禁片段注入区**（`# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，由 `--inject-frameworks` 写入） |
 | scripts | `scripts/*` | 工具箱（门禁+状态机+图谱+MCP+self-check） |
 
 ## 它整合的方法论（只引用调用，不重新实现）

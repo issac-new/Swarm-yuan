@@ -44,6 +44,17 @@ detect_runtimes() {
   if [[ -d "$HOME/.kimi/skills" ]]; then printf 'Kimi\t%s\t\n' "$HOME/.kimi/skills"; fi
 }
 
+# 源目录与目标相同（已安装在此）时：跳过复制，仅确保 slash command 已注册
+skip_self_install() {
+  local cmd_dir="$1"
+  echo "  ⚠ 源目录与目标目录相同，跳过复制（已安装在此位置）"
+  if [[ -n "$cmd_dir" && -f "$SRC_DIR/.claude/commands/swarm-yuan.md" ]]; then
+    mkdir -p "$cmd_dir"
+    cp "$SRC_DIR/.claude/commands/swarm-yuan.md" "$cmd_dir/swarm-yuan.md"
+    echo "  ✓ slash command 已注册: ${cmd_dir}/swarm-yuan.md"
+  fi
+}
+
 # ===== 安装到指定目录 =====
 install_to() {
   local name="$1" skill_dir="$2" cmd_dir="$3"
@@ -52,26 +63,9 @@ install_to() {
   echo "=== 安装到 ${name} ==="
   echo "  目标: ${dest}"
 
-  # 不能自我复制（SRC_DIR == dest 时跳过）
-  if [[ "$SRC_DIR" == "$dest" ]]; then
-    echo "  ⚠ 源目录与目标目录相同，跳过（已安装在此位置）"
-    # 仍然注册 slash command
-    if [[ -n "$cmd_dir" && -f "$SRC_DIR/.claude/commands/swarm-yuan.md" ]]; then
-      mkdir -p "$cmd_dir"
-      cp "$SRC_DIR/.claude/commands/swarm-yuan.md" "$cmd_dir/swarm-yuan.md"
-      echo "  ✓ slash command 已注册: ${cmd_dir}/swarm-yuan.md"
-    fi
-    return 0
-  fi
-
   # 不能自我复制（SRC_DIR == dest 时跳过复制，只注册 slash command）
   if [[ "$SRC_DIR" == "$dest" ]]; then
-    echo "  ⚠ 源目录与目标相同，跳过复制（已在此位置）"
-    if [[ -n "$cmd_dir" && -f "$SRC_DIR/.claude/commands/swarm-yuan.md" ]]; then
-      mkdir -p "$cmd_dir"
-      cp "$SRC_DIR/.claude/commands/swarm-yuan.md" "$cmd_dir/swarm-yuan.md"
-      echo "  ✓ slash command 已注册: ${cmd_dir}/swarm-yuan.md"
-    fi
+    skip_self_install "$cmd_dir"
     return 0
   fi
 
@@ -81,9 +75,16 @@ install_to() {
     mv "$dest" "${dest}.bak.$(date +%s)"
   fi
 
-  # 复制
-  mkdir -p "$skill_dir"
-  cp -r "$SRC_DIR" "$dest"
+  # 复制（排除 offline-cache/：33MB 离线安装缓存，不应进入每个运行时 skill 目录；
+  # 逐项 cp -R 覆盖隐藏文件，三平台兼容，无需 tar --exclude）
+  mkdir -p "$skill_dir" "$dest"
+  local item base
+  for item in "$SRC_DIR"/* "$SRC_DIR"/.[!.]* "$SRC_DIR"/..?*; do
+    [[ -e "$item" ]] || continue
+    base="$(basename "$item")"
+    [[ "$base" == "offline-cache" ]] && continue
+    cp -R "$item" "$dest/"
+  done
   rm -rf "$dest/docs" "$dest/.upgrade-backup-"* "$dest/.git" "$dest/.DS_Store" 2>/dev/null || true
   find "$dest" -name '.DS_Store' -delete 2>/dev/null || true
   chmod +x "$dest/scripts/"*.sh "$dest/assets/"*.sh 2>/dev/null || true

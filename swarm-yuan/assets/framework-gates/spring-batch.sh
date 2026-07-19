@@ -15,10 +15,7 @@ _fw_spring_batch_check() {
     [[ -n "$ln" ]] && srcarr+=("$ln")
   done <<< "$srcs"
 
-  # 代码正文过滤辅助：剔除单行注释 // 与 javadoc 块注释 * 行，避免 grep 误命中 javadoc 文本
-  _fw_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_c（C 系，剔除 // 与 javadoc 块注释行，避免 grep 误命中 javadoc 文本）
 
   # ====================================================================
   # fw_batch_step_scope(fail)：@Value("#{jobParameters/stepExecutionContext ...") 的 Bean 须有 @StepScope/@JobScope
@@ -29,7 +26,7 @@ _fw_spring_batch_check() {
     local lbfile lb_bad=""
     for lbfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_code_only "$lbfile")
+      code=$(_fw_strip_comments_c "$lbfile")
       # 文件含 late-binding SpEL（@Value("#{jobParameters / stepExecutionContext）
       if ! printf '%s\n' "$code" | grep -qE '@Value\("#\{(jobParameters|stepExecutionContext)'; then
         continue
@@ -40,12 +37,7 @@ _fw_spring_batch_check() {
 "
       fi
     done
-    if [[ -n "$lb_bad" ]]; then
-      fail "fw_batch_step_scope: 使用 @Value(\"#{jobParameters/stepExecutionContext}\") late binding 的 Bean 缺 @StepScope/@JobScope（Bean 须在 Step 启动后才实例化，缺 scope 会在容器启动期注入 null 或 SpEL 求值失败）:
-${lb_bad}"
-    else
-      pass "fw_batch_step_scope: late-binding Bean 均配 @StepScope/@JobScope（或无 late-binding 用法）"
-    fi
+    _fw_report fail fw_batch_step_scope "${lb_bad}" "使用 @Value(\"#{jobParameters/stepExecutionContext}\") late binding 的 Bean 缺 @StepScope/@JobScope（Bean 须在 Step 启动后才实例化，缺 scope 会在容器启动期注入 null 或 SpEL 求值失败）" "late-binding Bean 均配 @StepScope/@JobScope（或无 late-binding 用法）"
   fi
 
   # ====================================================================
@@ -57,7 +49,7 @@ ${lb_bad}"
     local tpfile tp_bad=""
     for tpfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_code_only "$tpfile")
+      code=$(_fw_strip_comments_c "$tpfile")
       # 文件含 new StepBuilder 与 .chunk(
       if ! printf '%s\n' "$code" | grep -qE 'new[[:space:]]+StepBuilder\b'; then continue; fi
       if ! printf '%s\n' "$code" | grep -qE '\.chunk\('; then continue; fi
@@ -67,12 +59,7 @@ ${lb_bad}"
 "
       fi
     done
-    if [[ -n "$tp_bad" ]]; then
-      warn "fw_batch_step_three_pieces: chunk 步骤缺 .reader() 或 .writer()（build() 阶段抛 IllegalArgumentException: Reader/Writer must be provided）:
-${tp_bad}"
-    else
-      pass "fw_batch_step_three_pieces: chunk 步骤均声明 reader + writer"
-    fi
+    _fw_report warn fw_batch_step_three_pieces "${tp_bad}" "chunk 步骤缺 .reader() 或 .writer()（build() 阶段抛 IllegalArgumentException: Reader/Writer must be provided）" "chunk 步骤均声明 reader + writer"
   fi
 
   # ====================================================================
@@ -84,7 +71,7 @@ ${tp_bad}"
     local ccfile cc_bad=""
     for ccfile in "${srcarr[@]}"; do
       local code chunk_lines
-      code=$(_fw_code_only "$ccfile")
+      code=$(_fw_strip_comments_c "$ccfile")
       chunk_lines=$(printf '%s\n' "$code" | grep -E '\.chunk\(' || true)
       [[ -z "$chunk_lines" ]] && continue
       local bad=0
@@ -105,12 +92,7 @@ ${tp_bad}"
       [[ "$bad" -eq 1 ]] && cc_bad="${cc_bad}${ccfile}
 "
     done
-    if [[ -n "$cc_bad" ]]; then
-      warn "fw_batch_chunk_commit: .chunk() 参数非字面量整数或为 1（commit-interval=1 每条 item 一次事务开销极大；变量参数须人工核实取值合理 10–1000）:
-${cc_bad}"
-    else
-      pass "fw_batch_chunk_commit: chunk commit-interval 均为合理字面量整数"
-    fi
+    _fw_report warn fw_batch_chunk_commit "${cc_bad}" ".chunk() 参数非字面量整数或为 1（commit-interval=1 每条 item 一次事务开销极大；变量参数须人工核实取值合理 10–1000）" "chunk commit-interval 均为合理字面量整数"
   fi
 
   # ====================================================================
@@ -122,7 +104,7 @@ ${cc_bad}"
     local jtfile jt_bad=""
     for jtfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_code_only "$jtfile")
+      code=$(_fw_strip_comments_c "$jtfile")
       # 含 @EnableBatchProcessing
       if ! printf '%s\n' "$code" | grep -qE '@EnableBatchProcessing\b'; then continue; fi
       # 含自定义 transactionManager Bean（@Bean ... PlatformTransactionManager / DataSourceTransactionManager）
@@ -134,12 +116,7 @@ ${cc_bad}"
       jt_bad="${jt_bad}${jtfile}
 "
     done
-    if [[ -n "$jt_bad" ]]; then
-      warn "fw_batch_jobrepo_tx: @EnableBatchProcessing 配置类含自定义 transactionManager 但无 JobRepository 显式 setTransactionManager/DefaultBatchConfiguration 重写（元数据事务与业务 chunk 事务隔离须显式管控，5.x @EnableBatchProcessing 不再暴露事务管理器 Bean）:
-${jt_bad}"
-    else
-      pass "fw_batch_jobrepo_tx: JobRepository 事务管理器显式配置或无自定义 transactionManager"
-    fi
+    _fw_report warn fw_batch_jobrepo_tx "${jt_bad}" "@EnableBatchProcessing 配置类含自定义 transactionManager 但无 JobRepository 显式 setTransactionManager/DefaultBatchConfiguration 重写（元数据事务与业务 chunk 事务隔离须显式管控，5.x @EnableBatchProcessing 不再暴露事务管理器 Bean）" "JobRepository 事务管理器显式配置或无自定义 transactionManager"
   fi
 
   # ====================================================================
@@ -151,7 +128,7 @@ ${jt_bad}"
     local rsfile rs_bad=""
     for rsfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_code_only "$rsfile")
+      code=$(_fw_strip_comments_c "$rsfile")
       # 文件含 Job 定义（new JobBuilder 或 JobBuilderFactory）
       if ! printf '%s\n' "$code" | grep -qE 'new[[:space:]]+JobBuilder\b|JobBuilderFactory'; then continue; fi
       # 无任一重启关键字
@@ -161,12 +138,7 @@ ${jt_bad}"
       rs_bad="${rs_bad}${rsfile}
 "
     done
-    if [[ -n "$rs_bad" ]]; then
-      warn "fw_batch_restart: Job 定义文件无 allowStartIfComplete/startLimit/preventRestart/Incrementer 任一关键字（默认行为：COMPLETED step 重启时跳过、可无限重启；须人工核实是否有意依赖默认）:
-${rs_bad}"
-    else
-      pass "fw_batch_restart: Job 定义文件均含显式重启策略或 incrementer"
-    fi
+    _fw_report warn fw_batch_restart "${rs_bad}" "Job 定义文件无 allowStartIfComplete/startLimit/preventRestart/Incrementer 任一关键字（默认行为：COMPLETED step 重启时跳过、可无限重启；须人工核实是否有意依赖默认）" "Job 定义文件均含显式重启策略或 incrementer"
   fi
 
   # ====================================================================
@@ -178,7 +150,7 @@ ${rs_bad}"
     local isfile is_bad=""
     for isfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_code_only "$isfile")
+      code=$(_fw_strip_comments_c "$isfile")
       # implements ItemReader< / ItemWriter<（自定义 reader/writer）
       if ! printf '%s\n' "$code" | grep -qE 'implements\s+.*(ItemReader|ItemWriter)\s*<'; then continue; fi
       # 已实现 ItemStream 或 extends 已实现 ItemStream 的基类
@@ -188,12 +160,7 @@ ${rs_bad}"
       is_bad="${is_bad}${isfile}
 "
     done
-    if [[ -n "$is_bad" ]]; then
-      warn "fw_batch_itemstream_restart: 自定义 ItemReader/ItemWriter 未实现 ItemStream（重启时无法从断点续读，会从头执行重复处理已写数据）:
-${is_bad}"
-    else
-      pass "fw_batch_itemstream_restart: 自定义 Reader/Writer 均实现 ItemStream 或 extends ItemStream 基类"
-    fi
+    _fw_report warn fw_batch_itemstream_restart "${is_bad}" "自定义 ItemReader/ItemWriter 未实现 ItemStream（重启时无法从断点续读，会从头执行重复处理已写数据）" "自定义 Reader/Writer 均实现 ItemStream 或 extends ItemStream 基类"
   fi
 
   # ====================================================================
@@ -205,7 +172,7 @@ ${is_bad}"
     local wifile wi_bad=""
     for wifile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_code_only "$wifile")
+      code=$(_fw_strip_comments_c "$wifile")
       # implements ItemWriter<
       if ! printf '%s\n' "$code" | grep -qE 'implements\s+.*ItemWriter\s*<'; then continue; fi
       # 已含幂等信号（upsert/merge/exists/saveOrUpdate/findById 去重）
@@ -218,12 +185,7 @@ ${is_bad}"
 "
       fi
     done
-    if [[ -n "$wi_bad" ]]; then
-      warn "fw_batch_writer_idempotent: ItemWriter.write 仅含 insert/save/add 无 upsert/merge/exists（重启重写会重复写入，须幂等或去重）:
-${wi_bad}"
-    else
-      pass "fw_batch_writer_idempotent: ItemWriter 含幂等信号或无非幂等写"
-    fi
+    _fw_report warn fw_batch_writer_idempotent "${wi_bad}" "ItemWriter.write 仅含 insert/save/add 无 upsert/merge/exists（重启重写会重复写入，须幂等或去重）" "ItemWriter 含幂等信号或无非幂等写"
   fi
 
   # ====================================================================
@@ -235,7 +197,7 @@ ${wi_bad}"
     local pnfile pn_bad=""
     for pnfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_code_only "$pnfile")
+      code=$(_fw_strip_comments_c "$pnfile")
       # implements ItemProcessor<
       if ! printf '%s\n' "$code" | grep -qE 'implements\s+.*ItemProcessor\s*<'; then continue; fi
       # 不含 return null; → 跳过
@@ -245,12 +207,7 @@ ${wi_bad}"
       pn_bad="${pn_bad}${pnfile}
 "
     done
-    if [[ -n "$pn_bad" ]]; then
-      warn "fw_batch_processor_null: ItemProcessor.process 含 return null; 但无过滤意图注释（return null 表示过滤 item，误用会静默丢数据）:
-${pn_bad}"
-    else
-      pass "fw_batch_processor_null: ItemProcessor 无 return null; 或已注释过滤意图"
-    fi
+    _fw_report warn fw_batch_processor_null "${pn_bad}" "ItemProcessor.process 含 return null; 但无过滤意图注释（return null 表示过滤 item，误用会静默丢数据）" "ItemProcessor 无 return null; 或已注释过滤意图"
   fi
 
   # ====================================================================
@@ -262,7 +219,7 @@ ${pn_bad}"
     local srfile sr_bad=""
     for srfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_code_only "$srfile")
+      code=$(_fw_strip_comments_c "$srfile")
       # 含 .skipLimit( / .retryLimit(
       if ! printf '%s\n' "$code" | grep -qE '\.(skipLimit|retryLimit)\('; then continue; fi
       # 缺 .skip( / .retry( 显式异常类型
@@ -270,12 +227,7 @@ ${pn_bad}"
       sr_bad="${sr_bad}${srfile}
 "
     done
-    if [[ -n "$sr_bad" ]]; then
-      warn "fw_batch_skip_retry: skipLimit/retryLimit 未配 .skip()/.retry() 显式异常类型（默认会 skip/retry 所有异常，坏数据被静默跳过或 retry 风暴）:
-${sr_bad}"
-    else
-      pass "fw_batch_skip_retry: skip/retry 均配显式异常类型或无 skipLimit/retryLimit"
-    fi
+    _fw_report warn fw_batch_skip_retry "${sr_bad}" "skipLimit/retryLimit 未配 .skip()/.retry() 显式异常类型（默认会 skip/retry 所有异常，坏数据被静默跳过或 retry 风暴）" "skip/retry 均配显式异常类型或无 skipLimit/retryLimit"
   fi
 
   # ====================================================================
@@ -320,7 +272,7 @@ ${tp_bad}"
     local lsfile ls_bad=""
     for lsfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_code_only "$lsfile")
+      code=$(_fw_strip_comments_c "$lsfile")
       # implements 任一 Listener 接口
       if ! printf '%s\n' "$code" | grep -qE 'implements\s+.*(StepExecutionListener|ChunkListener|ItemReadListener|ItemProcessListener|ItemWriteListener|JobExecutionListener)'; then
         continue
@@ -332,12 +284,7 @@ ${tp_bad}"
 "
       fi
     done
-    if [[ -n "$ls_bad" ]]; then
-      warn "fw_batch_listener_swallow: Listener 实现类含 catch 无 throw（after* 回调吞异常会使 step 状态与实际不符，应向上传播或 addFailureException）:
-${ls_bad}"
-    else
-      pass "fw_batch_listener_swallow: Listener 实现类无 catch 吞异常或含 throw"
-    fi
+    _fw_report warn fw_batch_listener_swallow "${ls_bad}" "Listener 实现类含 catch 无 throw（after* 回调吞异常会使 step 状态与实际不符，应向上传播或 addFailureException）" "Listener 实现类无 catch 吞异常或含 throw"
   fi
 
   # ====================================================================
@@ -349,7 +296,7 @@ ${ls_bad}"
     local ptfile pt_bad=""
     for ptfile in "${srcarr[@]}"; do
       local code chunk_cnt
-      code=$(_fw_code_only "$ptfile")
+      code=$(_fw_strip_comments_c "$ptfile")
       # 含 Job 定义
       if ! printf '%s\n' "$code" | grep -qE 'new[[:space:]]+JobBuilder\b|JobBuilderFactory'; then continue; fi
       # 统计 .chunk( 出现次数（多个 chunk step 视为"大 Job"）
@@ -362,12 +309,7 @@ ${ls_bad}"
       pt_bad="${pt_bad}${ptfile}
 "
     done
-    if [[ -n "$pt_bad" ]]; then
-      warn "fw_batch_partition: 多 chunk step 的 Job 无 Partitioner/TaskExecutor/remoteChunking（大 Job 须按 IO/CPU 特征显式决策并行化，单线程跑大 IO 任务耗时过长）:
-${pt_bad}"
-    else
-      pass "fw_batch_partition: Job 已含并行化决策或为单 step 小 Job"
-    fi
+    _fw_report warn fw_batch_partition "${pt_bad}" "多 chunk step 的 Job 无 Partitioner/TaskExecutor/remoteChunking（大 Job 须按 IO/CPU 特征显式决策并行化，单线程跑大 IO 任务耗时过长）" "Job 已含并行化决策或为单 step 小 Job"
   fi
 
   # ====================================================================
@@ -379,17 +321,12 @@ ${pt_bad}"
     local bffile bf_bad=""
     for bffile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_code_only "$bffile")
+      code=$(_fw_strip_comments_c "$bffile")
       if printf '%s\n' "$code" | grep -qE '\b(JobBuilderFactory|StepBuilderFactory)\b'; then
         bf_bad="${bf_bad}${bffile}
 "
       fi
     done
-    if [[ -n "$bf_bad" ]]; then
-      warn "fw_batch_builderfactory_migration: 检出 JobBuilderFactory/StepBuilderFactory（Spring Batch 5.0 废弃、5.2 移除，须迁移到 new JobBuilder(name, jobRepository) / new StepBuilder(name, jobRepository)，且 chunk/tasklet 显式传 PlatformTransactionManager）:
-${bf_bad}"
-    else
-      pass "fw_batch_builderfactory_migration: 未检出 JobBuilderFactory/StepBuilderFactory（已用 JobBuilder/StepBuilder）"
-    fi
+    _fw_report warn fw_batch_builderfactory_migration "${bf_bad}" "检出 JobBuilderFactory/StepBuilderFactory（Spring Batch 5.0 废弃、5.2 移除，须迁移到 new JobBuilder(name, jobRepository) / new StepBuilder(name, jobRepository)，且 chunk/tasklet 显式传 PlatformTransactionManager）" "未检出 JobBuilderFactory/StepBuilderFactory（已用 JobBuilder/StepBuilder）"
   fi
 }

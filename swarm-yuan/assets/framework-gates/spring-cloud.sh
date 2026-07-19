@@ -26,11 +26,6 @@ _fw_spring_cloud_check() {
     esac
   done
 
-  # 代码正文过滤辅助
-  _fw_scloud_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
-
   # ====================================================================
   # fw_scloud_feign_fallback(warn)：@FeignClient 须配 fallback/fallbackFactory
   # ====================================================================
@@ -44,12 +39,7 @@ _fw_spring_cloud_check() {
 "
     fi
   done <<< "$feign_files"
-  if [[ -n "$ff_bad" ]]; then
-    warn "fw_scloud_feign_fallback: @FeignClient 未配 fallback/fallbackFactory（生产须降级）:
-${ff_bad}"
-  else
-    pass "fw_scloud_feign_fallback: @FeignClient 均配降级或无 Feign client"
-  fi
+  _fw_report warn fw_scloud_feign_fallback "${ff_bad}" "@FeignClient 未配 fallback/fallbackFactory（生产须降级）" "@FeignClient 均配降级或无 Feign client"
 
   # ====================================================================
   # fw_scloud_feign_timeout(warn)：Feign 超时须显式配置
@@ -89,12 +79,7 @@ ${ff_bad}"
     [[ -n "$ln" ]] && retry_hit="${retry_hit}${j}:${ln}
 "
   done
-  if [[ -n "$retry_hit" ]]; then
-    warn "fw_scloud_feign_retry: 检出 Feign Retryer（须确认目标接口幂等，非幂等 POST/DELETE 禁重试）:
-${retry_hit}"
-  else
-    pass "fw_scloud_feign_retry: 未检出 Feign 重试配置"
-  fi
+  _fw_report warn fw_scloud_feign_retry "${retry_hit}" "检出 Feign Retryer（须确认目标接口幂等，非幂等 POST/DELETE 禁重试）" "未检出 Feign 重试配置"
 
   # ====================================================================
   # fw_scloud_lb_retry_idempotent(warn)：retry-on-all-operations 风险
@@ -109,12 +94,7 @@ ${retry_hit}"
 "
     fi
   done
-  if [[ -n "$lb_all_hit" ]]; then
-    warn "fw_scloud_lb_retry_idempotent: retry-on-all-operations=true（非幂等 POST/DELETE 重复副作用风险）:
-${lb_all_hit}"
-  else
-    pass "fw_scloud_lb_retry_idempotent: 未检出 retry-on-all-operations=true"
-  fi
+  _fw_report warn fw_scloud_lb_retry_idempotent "${lb_all_hit}" "retry-on-all-operations=true（非幂等 POST/DELETE 重复副作用风险）" "未检出 retry-on-all-operations=true"
 
   # ====================================================================
   # fw_scloud_gateway_route_order(warn)：路由谓词顺序
@@ -254,12 +234,7 @@ ${bs_files}"
     [[ -n "$ln" ]] && fl_hit="${fl_hit}${c}:${ln}
 "
   done
-  if [[ -n "$fl_hit" ]]; then
-    warn "fw_scloud_feign_log_level: Feign 日志级别 FULL（生产禁用，泄露请求体 + 日志爆炸）:
-${fl_hit}"
-  else
-    pass "fw_scloud_feign_log_level: 未检出 Feign FULL 日志"
-  fi
+  _fw_report warn fw_scloud_feign_log_level "${fl_hit}" "Feign 日志级别 FULL（生产禁用，泄露请求体 + 日志爆炸）" "未检出 Feign FULL 日志"
 
   # ====================================================================
   # fw_scloud_gateway_ratelimit(warn)：Gateway 限流
@@ -305,12 +280,7 @@ ${fl_hit}"
     [[ -n "$ln" ]] && enc_bad="${enc_bad}${c}:${ln}
 "
   done
-  if [[ -n "$enc_bad" ]]; then
-      fail "fw_scloud_config_encrypt: 配置中心敏感值未加密（须 {cipher} 前缀，明文存储泄露即全泄露 CWE-312）:
-${enc_bad}"
-  else
-    pass "fw_scloud_config_encrypt: 未检出明文敏感配置"
-  fi
+  _fw_report fail fw_scloud_config_encrypt "${enc_bad}" "配置中心敏感值未加密（须 {cipher} 前缀，明文存储泄露即全泄露 CWE-312）" "未检出明文敏感配置"
 
   # ====================================================================
   # fw_scloud_version_matrix(warn)：release train 与 Boot 版本矩阵

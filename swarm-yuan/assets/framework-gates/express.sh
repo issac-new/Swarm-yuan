@@ -55,12 +55,7 @@ _fw_express_check() {
 "
     fi
   done
-  if [[ -n "$eh_bad" ]]; then
-    fail "fw_express_error_handler_last: 4 参数错误处理中间件须最后注册（在其后注册的路由错误无法被捕获）:
-${eh_bad}"
-  else
-    pass "fw_express_error_handler_last: 错误处理中间件位于最后或无 4 参数中间件"
-  fi
+  _fw_report fail fw_express_error_handler_last "$eh_bad" "4 参数错误处理中间件须最后注册（在其后注册的路由错误无法被捕获）" "错误处理中间件位于最后或无 4 参数中间件"
 
   # ====================================================================
   # fw_express_input_validation(warn)：express-validator 等输入校验
@@ -83,12 +78,7 @@ ${eh_bad}"
     [[ -n "$ln" ]] && bl_bad="${bl_bad}${f}:${ln}
 "
   done
-  if [[ -n "$bl_bad" ]]; then
-    warn "fw_express_body_limit: body 解析未配 limit（默认 100kb 可依业务调整，防大包 DoS CWE-400）:
-${bl_bad}"
-  else
-    pass "fw_express_body_limit: body 解析已配 limit 或未使用 body 解析"
-  fi
+  _fw_report warn fw_express_body_limit "$bl_bad" "body 解析未配 limit（默认 100kb 可依业务调整，防大包 DoS CWE-400）" "body 解析已配 limit 或未使用 body 解析"
 
   # ====================================================================
   # fw_express_x_powered_by(warn)：app.disable('x-powered-by')
@@ -165,12 +155,7 @@ ${ae_bad}"
 "
     fi
   done
-  if [[ -n "$sc_bad" ]]; then
-    warn "fw_express_static_cache: express.static 未配 maxAge/缓存策略（静态资源无缓存头，性能损耗）:
-${sc_bad}"
-  else
-    pass "fw_express_static_cache: 静态资源已配缓存或未用 express.static"
-  fi
+  _fw_report warn fw_express_static_cache "$sc_bad" "express.static 未配 maxAge/缓存策略（静态资源无缓存头，性能损耗）" "静态资源已配缓存或未用 express.static"
 
   # ====================================================================
   # fw_express_compression(warn)：压缩中间件
@@ -225,10 +210,5 @@ ${sc_bad}"
     [[ -n "$ln" ]] && cors_bad="${cors_bad}${f}:${ln}
 "
   done
-  if [[ -n "$cors_bad" ]]; then
-    warn "fw_express_cors: CORS 未显式配置 origin 白名单（cors() 空参 / origin:* 放行任意源 CWE-942）:
-${cors_bad}"
-  else
-    pass "fw_express_cors: CORS origin 白名单已配或未启用 CORS"
-  fi
+  _fw_report warn fw_express_cors "$cors_bad" "CORS 未显式配置 origin 白名单（cors() 空参 / origin:* 放行任意源 CWE-942）" "CORS origin 白名单已配或未启用 CORS"
 }

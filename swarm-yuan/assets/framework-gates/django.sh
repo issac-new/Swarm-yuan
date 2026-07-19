@@ -27,10 +27,7 @@ _fw_django_check() {
     esac
   done
 
-  # 代码正文过滤辅助（去 # 注释行）
-  _fw_django_code_only() {
-    sed -E 's:#.*$::' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_hash（Python 系，剔 # 注释）
 
   # ====================================================================
   # fw_django_nplusone(warn)：queryset 遍历须 select_related/prefetch_related
@@ -43,31 +40,21 @@ _fw_django_check() {
 "
     fi
   done
-  if [[ -n "$np_bad" ]]; then
-    warn "fw_django_nplusone: 检出 ORM 查询但无 select_related/prefetch_related（循环访问关联将 N+1）:
-${np_bad}"
-  else
-    pass "fw_django_nplusone: ORM 查询均带加载优化或无查询"
-  fi
+  _fw_report warn fw_django_nplusone "$np_bad" "检出 ORM 查询但无 select_related/prefetch_related（循环访问关联将 N+1）" "ORM 查询均带加载优化或无查询"
 
   # ====================================================================
   # fw_django_atomic(warn)：多写操作须 transaction.atomic
   # ====================================================================
   local at_bad="" cnt
   for f in "${codearr[@]+"${codearr[@]}"}"; do
-    cnt=$(_fw_django_code_only "$f" | grep -cE '\.(save|create|bulk_create|update|delete)\(' 2>/dev/null || true)
+    cnt=$(_fw_strip_comments_hash "$f" | grep -cE '\.(save|create|bulk_create|update|delete)\(' 2>/dev/null || true)
     cnt=${cnt:-0}
     if [[ "$cnt" -ge 2 ]] && ! grep -qE 'transaction\.atomic|with atomic\(' "$f" 2>/dev/null; then
       at_bad="${at_bad}${f}（写操作 ${cnt} 处）
 "
     fi
   done
-  if [[ -n "$at_bad" ]]; then
-    warn "fw_django_atomic: 多写操作未包 transaction.atomic（中途失败留半态）:
-${at_bad}"
-  else
-    pass "fw_django_atomic: 多写操作均有事务边界或无多写"
-  fi
+  _fw_report warn fw_django_atomic "$at_bad" "多写操作未包 transaction.atomic（中途失败留半态）" "多写操作均有事务边界或无多写"
 
   # ====================================================================
   # fw_django_csrf(warn)：CsrfViewMiddleware 缺失 / @csrf_exempt 滥用
@@ -115,12 +102,7 @@ ${csrf_bad}"
 "
     fi
   done
-  if [[ -n "$mig_bad" ]]; then
-    warn "fw_django_migration_irreversible: 数据迁移不可回滚（生产回退将失败）:
-${mig_bad}"
-  else
-    pass "fw_django_migration_irreversible: 数据迁移均有反向操作或无迁移"
-  fi
+  _fw_report warn fw_django_migration_irreversible "$mig_bad" "数据迁移不可回滚（生产回退将失败）" "数据迁移均有反向操作或无迁移"
 
   # ====================================================================
   # fw_django_settings_split(warn)：settings 多环境拆分
@@ -146,17 +128,12 @@ ${mig_bad}"
   local sk_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_django_code_only "$f" | grep -nE 'SECRET_KEY[[:space:]]*=[[:space:]]*["'"'"']' 2>/dev/null \
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE 'SECRET_KEY[[:space:]]*=[[:space:]]*["'"'"']' 2>/dev/null \
        | grep -vE 'os\.environ|getenv|env\(|config\(' || true)
     [[ -n "$ln" ]] && sk_bad="${sk_bad}${f}:${ln}
 "
   done
-  if [[ -n "$sk_bad" ]]; then
-    fail "fw_django_secret_key: SECRET_KEY 硬编码（泄露即可伪造会话/签名，CWE-798）:
-${sk_bad}"
-  else
-    pass "fw_django_secret_key: SECRET_KEY 经环境变量注入"
-  fi
+  _fw_report fail fw_django_secret_key "$sk_bad" "SECRET_KEY 硬编码（泄露即可伪造会话/签名，CWE-798）" "SECRET_KEY 经环境变量注入"
 
   # ====================================================================
   # fw_django_debug(fail)：生产配置禁 DEBUG=True（dev/local/test 设置例外）
@@ -166,17 +143,12 @@ ${sk_bad}"
     case "$(basename "$f")" in
       *dev*.py|*local*.py|*test*.py) continue ;;
     esac
-    if _fw_django_code_only "$f" | grep -qE '^DEBUG[[:space:]]*=[[:space:]]*True'; then
+    if _fw_strip_comments_hash "$f" | grep -qE '^DEBUG[[:space:]]*=[[:space:]]*True'; then
       dbg_bad="${dbg_bad}${f}: DEBUG = True 硬编码
 "
     fi
   done
-  if [[ -n "$dbg_bad" ]]; then
-    fail "fw_django_debug: 生产设置 DEBUG=True（堆栈/配置泄露 + 静态文件不安全，CWE-489）:
-${dbg_bad}"
-  else
-    pass "fw_django_debug: 生产设置无 DEBUG=True 硬编码"
-  fi
+  _fw_report fail fw_django_debug "$dbg_bad" "生产设置 DEBUG=True（堆栈/配置泄露 + 静态文件不安全，CWE-489）" "生产设置无 DEBUG=True 硬编码"
 
   # ====================================================================
   # fw_django_allowed_hosts(warn)：ALLOWED_HOSTS 空或 ['*']
@@ -189,12 +161,7 @@ ${dbg_bad}"
 "
     fi
   done
-  if [[ -n "$ah_bad" ]]; then
-    warn "fw_django_allowed_hosts: ALLOWED_HOSTS 为空或 ['*']（Host 头攻击风险）:
-${ah_bad}"
-  else
-    pass "fw_django_allowed_hosts: ALLOWED_HOSTS 收敛或未硬编码"
-  fi
+  _fw_report warn fw_django_allowed_hosts "$ah_bad" "ALLOWED_HOSTS 为空或 ['*']（Host 头攻击风险）" "ALLOWED_HOSTS 收敛或未硬编码"
 
   # ====================================================================
   # fw_django_password_hasher(warn)：禁用弱哈希（MD5/SHA1/Unsalted）
@@ -207,12 +174,7 @@ ${ah_bad}"
 "
     fi
   done
-  if [[ -n "$ph_bad" ]]; then
-    warn "fw_django_password_hasher: 弱密码哈希算法（须 PBKDF2/Argon2/bcrypt，CWE-327）:
-${ph_bad}"
-  else
-    pass "fw_django_password_hasher: 无弱哈希配置"
-  fi
+  _fw_report warn fw_django_password_hasher "$ph_bad" "弱密码哈希算法（须 PBKDF2/Argon2/bcrypt，CWE-327）" "无弱哈希配置"
 
   # ====================================================================
   # fw_django_raw_sql(fail)：raw/cursor.execute 禁止字符串拼接 SQL
@@ -220,16 +182,11 @@ ${ph_bad}"
   local raw_bad=""
   for f in "${codearr[@]+"${codearr[@]}"}"; do
     local ln
-    ln=$(_fw_django_code_only "$f" | grep -nE '(execute|raw)\(f["'"'"']|execute\([^)]*%[[:space:]]|execute\([^)]*\+[[:space:]]*[a-zA-Z_]' 2>/dev/null || true)
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE '(execute|raw)\(f["'"'"']|execute\([^)]*%[[:space:]]|execute\([^)]*\+[[:space:]]*[a-zA-Z_]' 2>/dev/null || true)
     [[ -n "$ln" ]] && raw_bad="${raw_bad}${f}:${ln}
 "
   done
-  if [[ -n "$raw_bad" ]]; then
-    fail "fw_django_raw_sql: 原生 SQL 字符串拼接（SQL 注入，CWE-89；须参数化 %s 占位）:
-${raw_bad}"
-  else
-    pass "fw_django_raw_sql: 无拼接式原生 SQL"
-  fi
+  _fw_report fail fw_django_raw_sql "$raw_bad" "原生 SQL 字符串拼接（SQL 注入，CWE-89；须参数化 %s 占位）" "无拼接式原生 SQL"
 
   # ====================================================================
   # fw_django_middleware_order(warn)：SecurityMiddleware 须在 MIDDLEWARE 首位
@@ -249,12 +206,7 @@ ${raw_bad}"
 "
     fi
   done
-  if [[ -n "$mo_bad" ]]; then
-    warn "fw_django_middleware_order: SecurityMiddleware 未在首位（安全头须最先施加）:
-${mo_bad}"
-  else
-    pass "fw_django_middleware_order: 中间件顺序合理或无 MIDDLEWARE"
-  fi
+  _fw_report warn fw_django_middleware_order "$mo_bad" "SecurityMiddleware 未在首位（安全头须最先施加）" "中间件顺序合理或无 MIDDLEWARE"
 
   # ====================================================================
   # fw_django_static_root(warn)：生产须配 STATIC_ROOT + collectstatic

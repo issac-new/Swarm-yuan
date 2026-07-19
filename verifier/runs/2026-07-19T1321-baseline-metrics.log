@@ -1,0 +1,13 @@
+=== RUN 2026-07-19T13:20:00+08:00 baseline metrics+shellcheck+e2e ===
+LOC_PRECHECK 2622
+LOC_PRECHECK_STUDIO 2247
+DUP_DIFF_LINES 469
+GATES_COUNT 57
+GATES_TOTAL_LOC 15369
+DS_STORE 5
+SHELLCHECK_ERRORS 57
+SHELLCHECK_WARNINGS_CORE 15
+E2E_RC 0
+✓ 输出含 fail id: fw_batch_step_scope
+✓ 输出含 fail id: fw_sharding_key_in_dml
+E2E OK：四框架注入与门禁 fail 全链路验证通过

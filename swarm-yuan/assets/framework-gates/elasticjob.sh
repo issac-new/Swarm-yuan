@@ -26,28 +26,22 @@ _fw_elasticjob_check() {
     esac
   done
 
-  # 代码正文过滤：去 // 行注释与块注释行，防注释里的关键字造成误判
-  _fw_ejob_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
-  # 配置正文过滤：去 # 注释行
-  _fw_ejob_cfg_only() {
-    grep -vE '^[[:space:]]*#' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_c（C 系，剔 // 与块注释行）
+  # 配置正文过滤：调公共库 _fw_strip_comments_cfg（配置系，剔 # 注释行）
 
   local j c ln
 
   # 作业存在性预检（Java 实现类 或 elasticjob.jobs 配置 或 依赖声明）
   local job_present=0
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    if _fw_ejob_code_only "$j" | grep -qE 'implements (SimpleJob|DataflowJob|ScriptJob)|ShardingContext|ScheduleJobBootstrap'; then
+    if _fw_strip_comments_c "$j" | grep -qE 'implements (SimpleJob|DataflowJob|ScriptJob)|ShardingContext|ScheduleJobBootstrap'; then
       job_present=1
       break
     fi
   done
   if [[ "$job_present" -eq 0 ]]; then
     for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
-      if _fw_ejob_cfg_only "$c" | grep -qE 'elasticjob\.jobs\.|elasticjob-lite'; then
+      if _fw_strip_comments_cfg "$c" | grep -qE 'elasticjob\.jobs\.|elasticjob-lite'; then
         job_present=1
         break
       fi
@@ -59,10 +53,10 @@ _fw_elasticjob_check() {
   # ====================================================================
   local fo_ok=0
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
-    if _fw_ejob_cfg_only "$c" | grep -qE 'failover[[:space:]]*[:=][[:space:]]*true'; then fo_ok=1; fi
+    if _fw_strip_comments_cfg "$c" | grep -qE 'failover[[:space:]]*[:=][[:space:]]*true'; then fo_ok=1; fi
   done
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    if _fw_ejob_code_only "$j" | grep -qE '\.failover\(true\)'; then fo_ok=1; fi
+    if _fw_strip_comments_c "$j" | grep -qE '\.failover\(true\)'; then fo_ok=1; fi
   done
   if [[ "$job_present" -eq 0 ]]; then
     pass "fw_elasticjob_failover: 无 ElasticJob 作业，跳过"
@@ -77,44 +71,34 @@ _fw_elasticjob_check() {
   # ====================================================================
   local idem_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    _fw_ejob_code_only "$j" | grep -qE 'implements (SimpleJob|DataflowJob|ScriptJob)' || continue
-    _fw_ejob_code_only "$j" | grep -qE '\.(insert|update|save|delete)[A-Z(]|\.(insert|update|save|delete)\(|jdbcTemplate\.(update|execute)' || continue
-    if ! _fw_ejob_code_only "$j" | grep -qE '幂等|idempot|[Dd]edup|去重|唯一键|uniqueKey|onDuplicateKey|INSERT[[:space:]]+IGNORE|insertIgnore|状态机'; then
+    _fw_strip_comments_c "$j" | grep -qE 'implements (SimpleJob|DataflowJob|ScriptJob)' || continue
+    _fw_strip_comments_c "$j" | grep -qE '\.(insert|update|save|delete)[A-Z(]|\.(insert|update|save|delete)\(|jdbcTemplate\.(update|execute)' || continue
+    if ! _fw_strip_comments_c "$j" | grep -qE '幂等|idempot|[Dd]edup|去重|唯一键|uniqueKey|onDuplicateKey|INSERT[[:space:]]+IGNORE|insertIgnore|状态机'; then
       idem_bad="${idem_bad}${j}
 "
     fi
   done
-  if [[ -n "$idem_bad" ]]; then
-    warn "fw_elasticjob_idempotent: 作业含写操作但无幂等痕迹（重分片/failover/手动触发会重复执行）:
-${idem_bad}"
-  else
-    pass "fw_elasticjob_idempotent: 作业幂等性痕迹齐备或无写操作作业"
-  fi
+  _fw_report warn fw_elasticjob_idempotent "$idem_bad" "作业含写操作但无幂等痕迹（重分片/failover/手动触发会重复执行）" "作业幂等性痕迹齐备或无写操作作业"
 
   # ====================================================================
   # fw_elasticjob_sharding(warn)：分片须确定性取模分发
   # ====================================================================
   local shard_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    _fw_ejob_code_only "$j" | grep -qE 'getShardingItem' || continue
-    if ! _fw_ejob_code_only "$j" | grep -qE 'getShardingTotalCount' || ! _fw_ejob_code_only "$j" | grep -qE '%'; then
+    _fw_strip_comments_c "$j" | grep -qE 'getShardingItem' || continue
+    if ! _fw_strip_comments_c "$j" | grep -qE 'getShardingTotalCount' || ! _fw_strip_comments_c "$j" | grep -qE '%'; then
       shard_bad="${shard_bad}${j}
 "
     fi
   done
-  if [[ -n "$shard_bad" ]]; then
-    warn "fw_elasticjob_sharding: 用 getShardingItem 但未见 getShardingTotalCount 取模（每实例将处理全量数据，副作用放大 N 倍）:
-${shard_bad}"
-  else
-    pass "fw_elasticjob_sharding: 分片取模分发正确或未用分片"
-  fi
+  _fw_report warn fw_elasticjob_sharding "$shard_bad" "用 getShardingItem 但未见 getShardingTotalCount 取模（每实例将处理全量数据，副作用放大 N 倍）" "分片取模分发正确或未用分片"
 
   # ====================================================================
   # fw_elasticjob_registry(warn)：ZK 注册中心须集群多地址
   # ====================================================================
   local reg_any=0 reg_bad=""
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
-    ln=$(_fw_ejob_cfg_only "$c" | grep -nE 'server-lists[[:space:]]*[:=]' || true)
+    ln=$(_fw_strip_comments_cfg "$c" | grep -nE 'server-lists[[:space:]]*[:=]' || true)
     [[ -z "$ln" ]] && continue
     reg_any=1
     local val
@@ -140,12 +124,12 @@ ${reg_bad}"
   # ====================================================================
   local mis_hit=0
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
-    if _fw_ejob_cfg_only "$c" | grep -qE 'elasticjob\.jobs\.|elastic-job-class'; then
-      if _fw_ejob_cfg_only "$c" | grep -qE 'misfire'; then mis_hit=1; fi
+    if _fw_strip_comments_cfg "$c" | grep -qE 'elasticjob\.jobs\.|elastic-job-class'; then
+      if _fw_strip_comments_cfg "$c" | grep -qE 'misfire'; then mis_hit=1; fi
     fi
   done
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    if _fw_ejob_code_only "$j" | grep -qE '\.misfire\('; then mis_hit=1; fi
+    if _fw_strip_comments_c "$j" | grep -qE '\.misfire\('; then mis_hit=1; fi
   done
   if [[ "$job_present" -eq 0 ]]; then
     pass "fw_elasticjob_misfire: 无 ElasticJob 作业，跳过"
@@ -160,10 +144,10 @@ ${reg_bad}"
   # ====================================================================
   local tz_hit=0
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
-    if _fw_ejob_cfg_only "$c" | grep -qE 'time-zone|timeZone'; then tz_hit=1; fi
+    if _fw_strip_comments_cfg "$c" | grep -qE 'time-zone|timeZone'; then tz_hit=1; fi
   done
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    if _fw_ejob_code_only "$j" | grep -qE '\.timeZone\(|TimeZone\.getTimeZone'; then tz_hit=1; fi
+    if _fw_strip_comments_c "$j" | grep -qE '\.timeZone\(|TimeZone\.getTimeZone'; then tz_hit=1; fi
   done
   if [[ "$job_present" -eq 0 ]]; then
     pass "fw_elasticjob_timezone: 无 ElasticJob 作业，跳过"
@@ -178,29 +162,24 @@ ${reg_bad}"
   # ====================================================================
   local eh_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    _fw_ejob_code_only "$j" | grep -qE 'implements (SimpleJob|DataflowJob|ScriptJob)' || continue
-    _fw_ejob_code_only "$j" | grep -qE 'catch[[:space:]]*\(' || continue
-    if ! _fw_ejob_code_only "$j" | grep -qE 'throw[[:space:]]|JobErrorHandler|error-handler|errorHandler'; then
+    _fw_strip_comments_c "$j" | grep -qE 'implements (SimpleJob|DataflowJob|ScriptJob)' || continue
+    _fw_strip_comments_c "$j" | grep -qE 'catch[[:space:]]*\(' || continue
+    if ! _fw_strip_comments_c "$j" | grep -qE 'throw[[:space:]]|JobErrorHandler|error-handler|errorHandler'; then
       eh_bad="${eh_bad}${j}
 "
     fi
   done
-  if [[ -n "$eh_bad" ]]; then
-    warn "fw_elasticjob_error_handler: 作业 catch 疑似吞异常（须 rethrow 或接 JobErrorHandler，否则调度层误判成功，监控失效）:
-${eh_bad}"
-  else
-    pass "fw_elasticjob_error_handler: 异常处理痕迹齐备或无 catch"
-  fi
+  _fw_report warn fw_elasticjob_error_handler "$eh_bad" "作业 catch 疑似吞异常（须 rethrow 或接 JobErrorHandler，否则调度层误判成功，监控失效）" "异常处理痕迹齐备或无 catch"
 
   # ====================================================================
   # fw_elasticjob_tracing(warn)：作业事件追踪须接 RDB
   # ====================================================================
   local tr_hit=0
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
-    if _fw_ejob_cfg_only "$c" | grep -qE 'elasticjob\.tracing|tracing\.type|event-trace'; then tr_hit=1; fi
+    if _fw_strip_comments_cfg "$c" | grep -qE 'elasticjob\.tracing|tracing\.type|event-trace'; then tr_hit=1; fi
   done
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    if _fw_ejob_code_only "$j" | grep -qE 'TracingConfiguration|TracingListener'; then tr_hit=1; fi
+    if _fw_strip_comments_c "$j" | grep -qE 'TracingConfiguration|TracingListener'; then tr_hit=1; fi
   done
   if [[ "$job_present" -eq 0 ]]; then
     pass "fw_elasticjob_tracing: 无 ElasticJob 作业，跳过"

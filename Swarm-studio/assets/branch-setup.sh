@@ -7,8 +7,9 @@ set -euo pipefail
 
 # ===== 按项目定制以下变量 =====
 PROJECT_DIR="<项目根绝对路径>"
+BASE_BRANCH="main"                        # 基线分支（按项目调整，如 master）
 BRANCH_REGEX='^(feat|fix|refactor)/.+'   # 按项目分支规范调整
-PROTECTED_BRANCHES=("main")                # 按项目保护分支调整，可追加如 "release/*" 等
+PROTECTED_BRANCHES=("main")                # 按项目保护分支调整，可追加如 "release/*" 等 glob 模式
 TEST_CMD="<test 命令>"                   # 如 npm test / pytest / go test ./...
 # ============================
 
@@ -26,12 +27,16 @@ if [[ ! "$BRANCH_NAME" =~ $BRANCH_REGEX ]]; then
   exit 1
 fi
 
-# 校验不是保护分支
+# 校验不是保护分支（case 模式不加引号以启用 glob，"release/*" 等模式才能命中；
+# 原 [[ == ]] 加引号会禁用 glob，配置的模式永远不匹配）
 for pb in "${PROTECTED_BRANCHES[@]}"; do
-  if [[ "$BRANCH_NAME" == "$pb" ]]; then
-    echo "ERROR: 绝不允许在保护分支 $pb 上开发"
-    exit 1
-  fi
+  # shellcheck disable=SC2254  # $pb 故意不加引号：是 glob 模式（如 "release/*"），须按模式匹配
+  case "$BRANCH_NAME" in
+    $pb)
+      echo "ERROR: 绝不允许在保护分支 $pb 上开发"
+      exit 1
+      ;;
+  esac
 done
 
 cd "$PROJECT_DIR"
@@ -39,15 +44,15 @@ cd "$PROJECT_DIR"
 echo "=== 起点核验 ==="
 
 CURRENT=$(git branch --show-current)
-if [[ "$CURRENT" != "main" ]]; then
-  echo "WARN: 当前分支为 '$CURRENT'，切换到 main"
-  git checkout main
+if [[ "$CURRENT" != "$BASE_BRANCH" ]]; then
+  echo "WARN: 当前分支为 '$CURRENT'，切换到 $BASE_BRANCH"
+  git checkout "$BASE_BRANCH"
 fi
 
 HEAD_REV=$(git rev-parse HEAD)
-MAIN_REV=$(git rev-parse main)
-if [[ "$HEAD_REV" != "$MAIN_REV" ]]; then
-  echo "ERROR: HEAD ($HEAD_REV) 与 main ($MAIN_REV) 不一致，可能处于游离 commit"
+BASE_REV=$(git rev-parse "$BASE_BRANCH")
+if [[ "$HEAD_REV" != "$BASE_REV" ]]; then
+  echo "ERROR: HEAD ($HEAD_REV) 与 $BASE_BRANCH ($BASE_REV) 不一致，可能处于游离 commit"
   exit 1
 fi
 
@@ -60,7 +65,7 @@ if [[ -n "$DIRTY" ]]; then
   exit 1
 fi
 
-echo "  ✓ 在 main，HEAD = main，工作树干净（文档除外）"
+echo "  ✓ 在 $BASE_BRANCH，HEAD = $BASE_BRANCH，工作树干净（文档除外）"
 
 echo "=== 创建分支: $BRANCH_NAME ==="
 git checkout -b "$BRANCH_NAME"

@@ -21,9 +21,8 @@ STATE_FILE="$STATE_DIR/state.yaml"
 PHASES=("open" "design" "build" "verify" "archive")
 # =====================
 
-FAIL=0
 pass() { echo "  ✓ $1"; }
-fail() { echo "  ✗ $1"; FAIL=1; }
+fail() { echo "  ✗ $1"; }
 
 init_state() {
   local change="${1:-}"
@@ -61,8 +60,19 @@ set_field() {
   [[ -z "$field" ]] && { echo "Usage: state-machine.sh set <field> <value>"; exit 1; }
   [[ ! -f "$STATE_FILE" ]] && { echo "ERROR: 状态文件不存在，先 init"; exit 1; }
   if grep -q "^$field:" "$STATE_FILE"; then
-    # macOS sed 兼容
-    sed -i.bak "s|^$field: .*|$field: $value|" "$STATE_FILE" && rm -f "$STATE_FILE.bak"
+    # value 含 | 会撞 sed 分隔符（报错且静默不写），含 & 会展开为匹配文本——
+    # 改用 awk 按字面前缀重写该行（三平台兼容，mktemp+cat 防中途失败清空状态文件）
+    local tmp
+    tmp="$(mktemp /tmp/swarmstate.XXXXXX)"
+    if ! awk -v f="$field" -v v="$value" \
+      'index($0, f ":") == 1 && !done { print f ": " v; done=1; next } { print }' \
+      "$STATE_FILE" > "$tmp"; then
+      rm -f "$tmp"
+      echo "ERROR: 更新字段失败: $field" >&2
+      exit 1
+    fi
+    cat "$tmp" > "$STATE_FILE" || { rm -f "$tmp"; echo "ERROR: 写入状态文件失败" >&2; exit 1; }
+    rm -f "$tmp"
   else
     echo "$field: $value" >> "$STATE_FILE"
   fi

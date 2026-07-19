@@ -16,10 +16,7 @@ _fw_nextjs_check() {
     return
   fi
 
-  _fw_nextjs_code_only() {
-    # 仅剥离行首 // 注释与块注释行（保留行内 //，避免误伤 URL 中的 https://）
-    sed -E 's:^[[:space:]]*//.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_js_head（仅剥离行首 // 注释与块注释行，保留行内 //，避免误伤 URL 中的 https://）
 
   # 判断文件首行是否标 'use client' / "use client"
   _fw_nextjs_is_client() {
@@ -43,7 +40,7 @@ _fw_nextjs_check() {
       continue
     fi
     local body
-    body=$(_fw_nextjs_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     # 跳过 'use server' 文件（Server Action 文件本身用 next/headers 等服务端 API）
     if printf '%s' "$body" | head -1 | grep -qE "^'use server'|^\"use server\"" 2>/dev/null; then
       continue
@@ -55,12 +52,7 @@ _fw_nextjs_check() {
 "
     fi
   done
-  if [[ -n "$uc_bad" ]]; then
-    fail "fw_nextjs_use_client: Server Component 内用 Hook/浏览器 API（须文件首行标 'use client'）:
-${uc_bad}"
-  else
-    pass "fw_nextjs_use_client: 交互组件均标 'use client'（或无 Hook/浏览器 API）"
-  fi
+  _fw_report fail fw_nextjs_use_client "$uc_bad" "Server Component 内用 Hook/浏览器 API（须文件首行标 'use client'）" "交互组件均标 'use client'（或无 Hook/浏览器 API）"
 
   # ====================================================================
   # fw_nextjs_server_action_auth(fail)：Server Action 须显式鉴权
@@ -68,7 +60,7 @@ ${uc_bad}"
   local sa_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_nextjs_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     # 文件级 'use server' 或函数级 'use server' 标注
     local is_server_action=0
     if printf '%s' "$body" | head -1 | grep -qE "^'use server'|^\"use server\"" 2>/dev/null; then
@@ -87,12 +79,7 @@ ${uc_bad}"
 "
     fi
   done
-  if [[ -n "$sa_bad" ]]; then
-    fail "fw_nextjs_server_action_auth: Server Action 未显式鉴权（等价公开端点，任意客户端可调，越权风险 CWE-862）:
-${sa_bad}"
-  else
-    pass "fw_nextjs_server_action_auth: Server Action 均配鉴权（或无 Server Action）"
-  fi
+  _fw_report fail fw_nextjs_server_action_auth "$sa_bad" "Server Action 未显式鉴权（等价公开端点，任意客户端可调，越权风险 CWE-862）" "Server Action 均配鉴权（或无 Server Action）"
 
   # ====================================================================
   # fw_nextjs_middleware_matcher(fail)：中间件须配 matcher
@@ -124,7 +111,7 @@ ${mw_file}"
   local fc_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_nextjs_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     local lines ln rest
     lines=$(printf '%s\n' "$body" | grep -nE '\bfetch\(' 2>/dev/null || true)
     [[ -z "$lines" ]] && continue
@@ -140,12 +127,7 @@ ${mw_file}"
       fi
     done <<< "$lines"
   done
-  if [[ -n "$fc_bad" ]]; then
-    warn "fw_nextjs_fetch_cache: fetch 未显式声明缓存语义（Next.js 15+ 默认变更，须显式 cache:/next:）:
-${fc_bad}"
-  else
-    pass "fw_nextjs_fetch_cache: fetch 均声明缓存语义（或无 fetch）"
-  fi
+  _fw_report warn fw_nextjs_fetch_cache "$fc_bad" "fetch 未显式声明缓存语义（Next.js 15+ 默认变更，须显式 cache:/next:）" "fetch 均声明缓存语义（或无 fetch）"
 
   # ====================================================================
   # fw_nextjs_headers_server_only(fail)：cookies/headers 禁 Client 调用
@@ -156,7 +138,7 @@ ${fc_bad}"
       continue
     fi
     local body
-    body=$(_fw_nextjs_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     if printf '%s\n' "$body" | grep -qE "from 'next/headers'|from \"next/headers\"|\bcookies\(\)|\bheaders\(\)" 2>/dev/null; then
       local ln
       ln=$(printf '%s\n' "$body" | grep -nE "from 'next/headers'|cookies\(\)|headers\(\)" 2>/dev/null | head -1)
@@ -164,12 +146,7 @@ ${fc_bad}"
 "
     fi
   done
-  if [[ -n "$hs_bad" ]]; then
-    fail "fw_nextjs_headers_server_only: Client Component 调用 next/headers 的 cookies()/headers()（服务端 API，Client 禁用）:
-${hs_bad}"
-  else
-    pass "fw_nextjs_headers_server_only: cookies/headers 仅在 Server Component 使用"
-  fi
+  _fw_report fail fw_nextjs_headers_server_only "$hs_bad" "Client Component 调用 next/headers 的 cookies()/headers()（服务端 API，Client 禁用）" "cookies/headers 仅在 Server Component 使用"
 
   # ====================================================================
   # fw_nextjs_dynamic_params(warn)：动态路由须声明 generateStaticParams/dynamic
@@ -189,12 +166,7 @@ ${hs_bad}"
       fi
     fi
   done
-  if [[ -n "$dp_bad" ]]; then
-    warn "fw_nextjs_dynamic_params: 动态路由页未声明 generateStaticParams/dynamic（静态/动态判定不确定）:
-${dp_bad}"
-  else
-    pass "fw_nextjs_dynamic_params: 动态路由均声明静态化策略（或无动态路由）"
-  fi
+  _fw_report warn fw_nextjs_dynamic_params "$dp_bad" "动态路由页未声明 generateStaticParams/dynamic（静态/动态判定不确定）" "动态路由均声明静态化策略（或无动态路由）"
 
   # ====================================================================
   # fw_nextjs_image_optimize(warn)：禁裸 <img>
@@ -202,18 +174,13 @@ ${dp_bad}"
   local img_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_nextjs_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     local ln
     ln=$(printf '%s\n' "$body" | grep -nE '<img[[:space:]]' 2>/dev/null || true)
     [[ -n "$ln" ]] && img_bad="${img_bad}${f}:${ln}
 "
   done
-  if [[ -n "$img_bad" ]]; then
-    warn "fw_nextjs_image_optimize: 检出裸 <img>（须用 next/image 优化：resize/WebP/lazy）:
-${img_bad}"
-  else
-    pass "fw_nextjs_image_optimize: 未检出裸 <img>"
-  fi
+  _fw_report warn fw_nextjs_image_optimize "$img_bad" "检出裸 <img>（须用 next/image 优化：resize/WebP/lazy）" "未检出裸 <img>"
 
   # ====================================================================
   # fw_nextjs_metadata_api(warn)：App Router 须用 metadata API
@@ -231,18 +198,13 @@ ${img_bad}"
     local md_bad=""
     for f in "${srcarr[@]}"; do
       local body
-      body=$(_fw_nextjs_code_only "$f")
+      body=$(_fw_strip_comments_js_head "$f")
       local ln
       ln=$(printf '%s\n' "$body" | grep -nE '<Head>|document\.head|next/head' 2>/dev/null || true)
       [[ -n "$ln" ]] && md_bad="${md_bad}${f}:${ln}
 "
     done
-    if [[ -n "$md_bad" ]]; then
-      warn "fw_nextjs_metadata_api: App Router 项目用 <Head>/document.head/next/head（须用 export const metadata / generateMetadata）:
-${md_bad}"
-    else
-      pass "fw_nextjs_metadata_api: 未检出手动 head 操作"
-    fi
+    _fw_report warn fw_nextjs_metadata_api "$md_bad" "App Router 项目用 <Head>/document.head/next/head（须用 export const metadata / generateMetadata）" "未检出手动 head 操作"
   fi
 
   # ====================================================================
@@ -263,12 +225,7 @@ ${md_bad}"
       fi
     done <<< "$pages_paths"
   fi
-  if [[ -n "$conflict" ]]; then
-    fail "fw_nextjs_router_conflict: pages/ 与 app/ 同路径双定义（路由冲突报错）:
-${conflict}"
-  else
-    pass "fw_nextjs_router_conflict: 无 pages/app 同路径冲突（或仅一种 Router）"
-  fi
+  _fw_report fail fw_nextjs_router_conflict "$conflict" "pages/ 与 app/ 同路径双定义（路由冲突报错）" "无 pages/app 同路径冲突（或仅一种 Router）"
 
   # ====================================================================
   # fw_nextjs_revalidate(warn)：revalidate 须合理
@@ -276,7 +233,7 @@ ${conflict}"
   local rev_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_nextjs_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     # export const revalidate = N
     local val
     val=$(printf '%s\n' "$body" | grep -oE 'export const revalidate[[:space:]]*=[[:space:]]*[0-9]+' 2>/dev/null \
@@ -290,10 +247,5 @@ ${conflict}"
 "
     fi
   done
-  if [[ -n "$rev_bad" ]]; then
-    warn "fw_nextjs_revalidate: revalidate 值为 0 或 >86400（0=全动态，>1天=数据陈旧，须确认）:
-${rev_bad}"
-  else
-    pass "fw_nextjs_revalidate: 未检出异常 revalidate（或无 revalidate）"
-  fi
+  _fw_report warn fw_nextjs_revalidate "$rev_bad" "revalidate 值为 0 或 >86400（0=全动态，>1天=数据陈旧，须确认）" "未检出异常 revalidate（或无 revalidate）"
 }

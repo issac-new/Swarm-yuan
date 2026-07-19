@@ -1,1 +1,6 @@
+# offline-cache 治理说明：
+# - *.whl / *.tgz 是离线安装（install.sh）直接引用的依赖包，已故意纳入 git 跟踪，
+#   请勿加入忽略或删除；新增同类依赖包时也应提交。
+# - 仅忽略 zip 打包临时产物：
 offline-cache/*.zip
+# 长期建议：二进制依赖迁移到 GitHub Release 附件，install.sh 改为下载，见根 README。

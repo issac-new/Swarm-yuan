@@ -64,12 +64,7 @@ _fw_vite_check() {
     [[ -n "$fln" ]] && env_bad="${env_bad}${envfile}:${fln}
 "
   done
-  if [[ -n "$env_bad" ]]; then
-    warn "fw_vite_env_prefix: 检出非 VITE_ 前缀的敏感环境变量引用（Vite 仅注入 VITE_ 前缀到客户端，敏感配置应放后端）:
-${env_bad}"
-  else
-    pass "fw_vite_env_prefix: 未检出敏感环境变量泄漏"
-  fi
+  _fw_report warn fw_vite_env_prefix "$env_bad" "检出非 VITE_ 前缀的敏感环境变量引用（Vite 仅注入 VITE_ 前缀到客户端，敏感配置应放后端）" "未检出敏感环境变量泄漏"
 
   # ====================================================================
   # fw_vite_manual_chunks(warn)：构建须配 manualChunks 拆分
@@ -130,12 +125,7 @@ ${env_bad}"
       proxy_bad=$(grep -nE 'proxy:' "$cfg" 2>/dev/null | head -1)
     fi
   fi
-  if [[ -n "$proxy_bad" ]]; then
-    warn "fw_vite_proxy_target: server.proxy 未配 target（代理须显式 target，否则转发无效）:
-${proxy_bad}"
-  else
-    pass "fw_vite_proxy_target: proxy 配置合理（或无 proxy）"
-  fi
+  _fw_report warn fw_vite_proxy_target "$proxy_bad" "server.proxy 未配 target（代理须显式 target，否则转发无效）" "proxy 配置合理（或无 proxy）"
 
   # ====================================================================
   # fw_vite_esbuild_minify(warn)：生产压缩须 esbuild/minify，禁留未压缩

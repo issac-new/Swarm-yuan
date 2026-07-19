@@ -27,22 +27,12 @@ _fw_validation_check() {
 "
   done
   cascade_hits=$(printf '%s\n' "$cascade_hits" | grep -E '^.+:[0-9]+:' || true)
-  if [[ -n "$cascade_hits" ]]; then
-    warn "fw_validation_cascade: 嵌套自定义对象字段未检出 @Valid（级联校验静默失效，CWE-20）:
-$(printf '%s\n' "$cascade_hits" | head -5)"
-  else
-    pass "fw_validation_cascade: 嵌套对象字段均含 @Valid 或无嵌套对象"
-  fi
+  _fw_report warn fw_validation_cascade "$(printf '%s\n' "$cascade_hits" | head -5)" "嵌套自定义对象字段未检出 @Valid（级联校验静默失效，CWE-20）" "嵌套对象字段均含 @Valid 或无嵌套对象"
 
   # ---------- fw_validation_groupsequence(warn)：分组序列顺序确认 ----------
   local gs_hits
   gs_hits=$(grep -HnE '@GroupSequence' "${srcarr[@]}" 2>/dev/null || true)
-  if [[ -n "$gs_hits" ]]; then
-    warn "fw_validation_groupsequence: 检出 @GroupSequence（组按声明顺序短路执行；Default 组须放首位或接口重定义）:
-$(printf '%s\n' "$gs_hits" | head -5)"
-  else
-    pass "fw_validation_groupsequence: 无 @GroupSequence 用法"
-  fi
+  _fw_report warn fw_validation_groupsequence "$(printf '%s\n' "$gs_hits" | head -5)" "检出 @GroupSequence（组按声明顺序短路执行；Default 组须放首位或接口重定义）" "无 @GroupSequence 用法"
 
   # ---------- fw_validation_validator_threadsafe(fail)：ConstraintValidator 须无可变实例字段 ----------
   local cv_files cv_bad="" mutable
@@ -59,23 +49,13 @@ ${mutable}
 "
       fi
     done <<< "$cv_files"
-    if [[ -n "$cv_bad" ]]; then
-      fail "fw_validation_validator_threadsafe: ConstraintValidator 含可变实例字段（ValidatorFactory 单例复用，须线程安全，CWE-362）:
-${cv_bad}"
-    else
-      pass "fw_validation_validator_threadsafe: ConstraintValidator 无可变实例字段"
-    fi
+    _fw_report fail fw_validation_validator_threadsafe "${cv_bad}" "ConstraintValidator 含可变实例字段（ValidatorFactory 单例复用，须线程安全，CWE-362）" "ConstraintValidator 无可变实例字段"
   fi
 
   # ---------- fw_validation_validated_scope(warn)：@Validated 带分组须确认类级/参数级 ----------
   local vscope_hits
   vscope_hits=$(grep -HnE '@Validated\(' "${srcarr[@]}" 2>/dev/null || true)
-  if [[ -n "$vscope_hits" ]]; then
-    warn "fw_validation_validated_scope: 检出带分组的 @Validated(...)（类级=方法级校验作用于全部 public 方法；参数级=仅该参数，确认标注位置）:
-$(printf '%s\n' "$vscope_hits" | head -5)"
-  else
-    pass "fw_validation_validated_scope: 无带分组的 @Validated"
-  fi
+  _fw_report warn fw_validation_validated_scope "$(printf '%s\n' "$vscope_hits" | head -5)" "检出带分组的 @Validated(...)（类级=方法级校验作用于全部 public 方法；参数级=仅该参数，确认标注位置）" "无带分组的 @Validated"
 
   # ---------- fw_validation_notnull_notblank(fail)：String 字段 @NotNull 选型错误 ----------
   local nn_hits nn_bad="" sameline ctxline
@@ -84,12 +64,7 @@ $(printf '%s\n' "$vscope_hits" | head -5)"
   # (b) 分行形态：@NotNull 行后 3 行内出现 String 字段声明
   ctxline=$(grep -Hn -A3 '@NotNull\b' "${srcarr[@]}" 2>/dev/null | grep -E '^[^:]*[:-][0-9]+[-:].*\b(private|protected|public)\b[^;]*\bString\s+[a-zA-Z_]' || true)
   nn_bad=$(printf '%s\n%s\n' "$sameline" "$ctxline" | grep -E '^.+[:-][0-9]+' | sort -u || true)
-  if [[ -n "$nn_bad" ]]; then
-    fail "fw_validation_notnull_notblank: String 字段使用 @NotNull（空串/空白串会穿透；应 @NotBlank，可叠加 @Size）:
-$(printf '%s\n' "$nn_bad" | head -5)"
-  else
-    pass "fw_validation_notnull_notblank: String 字段未检出 @NotNull 误用"
-  fi
+  _fw_report fail fw_validation_notnull_notblank "$(printf '%s\n' "$nn_bad" | head -5)" "String 字段使用 @NotNull（空串/空白串会穿透；应 @NotBlank，可叠加 @Size）" "String 字段未检出 @NotNull 误用"
 
   # ---------- fw_validation_size_column(warn)：@Column(length=) 与 @Size 分层一致 ----------
   local col_files sc_bad=""
@@ -104,55 +79,30 @@ $(printf '%s\n' "$nn_bad" | head -5)"
 "
       fi
     done <<< "$col_files"
-    if [[ -n "$sc_bad" ]]; then
-      warn "fw_validation_size_column: 实体有 @Column(length=) 但无 @Size（入口层无拦截，超长直达 DB 报 500；数值须一致）:
-${sc_bad}"
-    else
-      pass "fw_validation_size_column: @Column(length=) 与 @Size 分层齐备"
-    fi
+    _fw_report warn fw_validation_size_column "${sc_bad}" "实体有 @Column(length=) 但无 @Size（入口层无拦截，超长直达 DB 报 500；数值须一致）" "@Column(length=) 与 @Size 分层齐备"
   fi
 
   # ---------- fw_validation_pattern_redos(warn)：@Pattern 嵌套量词 ReDoS ----------
   local redos_hits
   redos_hits=$(grep -HnE '@Pattern' "${srcarr[@]}" 2>/dev/null | grep -E '\+\)\+|\*\)\+|\+\)\*|\*\)\*|\]\+\)|\]\*\)' || true)
-  if [[ -n "$redos_hits" ]]; then
-    warn "fw_validation_pattern_redos: @Pattern 检出嵌套量词形态（回溯型引擎指数风险，ReDoS CWE-1333）:
-$(printf '%s\n' "$redos_hits" | head -5)"
-  else
-    pass "fw_validation_pattern_redos: 未检出 @Pattern 嵌套量词"
-  fi
+  _fw_report warn fw_validation_pattern_redos "$(printf '%s\n' "$redos_hits" | head -5)" "@Pattern 检出嵌套量词形态（回溯型引擎指数风险，ReDoS CWE-1333）" "未检出 @Pattern 嵌套量词"
 
   # ---------- fw_validation_email_lax(warn)：裸 @Email 宽松度 ----------
   local email_hits
   email_hits=$(grep -HnE '@Email' "${srcarr[@]}" 2>/dev/null | grep -vE '@Email\(' || true)
-  if [[ -n "$email_hits" ]]; then
-    warn "fw_validation_email_lax: 裸 @Email 默认宽松（放行 a@b 类地址且放行空串/null；须 @NotBlank 组合或 regexp 收紧）:
-$(printf '%s\n' "$email_hits" | head -5)"
-  else
-    pass "fw_validation_email_lax: 无裸 @Email 用法"
-  fi
+  _fw_report warn fw_validation_email_lax "$(printf '%s\n' "$email_hits" | head -5)" "裸 @Email 默认宽松（放行 a@b 类地址且放行空串/null；须 @NotBlank 组合或 regexp 收紧）" "无裸 @Email 用法"
 
   # ---------- fw_validation_temporal_tz(warn)：@Future/@Past 系时区 ----------
   local tz_hits
   tz_hits=$(grep -HnE '@(Future|FutureOrPresent|Past|PastOrPresent)\b' "${srcarr[@]}" 2>/dev/null || true)
-  if [[ -n "$tz_hits" ]]; then
-    warn "fw_validation_temporal_tz: 检出时间边界约束（以 JVM 默认时区 Clock 判定；容器 UTC 与业务时区漂移会错判，必要时 ClockProvider）:
-$(printf '%s\n' "$tz_hits" | head -5)"
-  else
-    pass "fw_validation_temporal_tz: 无 @Future/@Past 系用法"
-  fi
+  _fw_report warn fw_validation_temporal_tz "$(printf '%s\n' "$tz_hits" | head -5)" "检出时间边界约束（以 JVM 默认时区 Clock 判定；容器 UTC 与业务时区漂移会错判，必要时 ClockProvider）" "无 @Future/@Past 系用法"
 
   # ---------- fw_validation_decimal_bigdecimal(warn)：@DecimalMin/@DecimalMax 须 BigDecimal ----------
   local dm_same dm_ctx dm_bad
   dm_same=$(grep -HnE '@DecimalM(in|ax)[^;]*\b(double|float|Double|Float)\s+[a-zA-Z_]' "${srcarr[@]}" 2>/dev/null || true)
   dm_ctx=$(grep -Hn -A3 '@DecimalM(in|ax)\b' "${srcarr[@]}" 2>/dev/null | grep -E '^[^:]*[:-][0-9]+[-:].*\b(private|protected|public)\b[^;]*\b(double|float|Double|Float)\s+[a-zA-Z_]' || true)
   dm_bad=$(printf '%s\n%s\n' "$dm_same" "$dm_ctx" | grep -E '^.+[:-][0-9]+' | sort -u || true)
-  if [[ -n "$dm_bad" ]]; then
-    warn "fw_validation_decimal_bigdecimal: @DecimalMin/@DecimalMax 作用于浮点字段（二进制浮点边界判定不稳定，金额/比率须 BigDecimal）:
-$(printf '%s\n' "$dm_bad" | head -5)"
-  else
-    pass "fw_validation_decimal_bigdecimal: 十进制边界约束未作用于浮点字段"
-  fi
+  _fw_report warn fw_validation_decimal_bigdecimal "$(printf '%s\n' "$dm_bad" | head -5)" "@DecimalMin/@DecimalMax 作用于浮点字段（二进制浮点边界判定不稳定，金额/比率须 BigDecimal）" "十进制边界约束未作用于浮点字段"
 
   # ---------- fw_validation_nested_collection(warn)：集合元素须 @Valid 容器元素约束 ----------
   local nc_hits=""
@@ -166,12 +116,7 @@ $(printf '%s\n' "$dm_bad" | head -5)"
 "
   done
   nc_hits=$(printf '%s\n' "$nc_hits" | grep -E '^.+:[0-9]+:' || true)
-  if [[ -n "$nc_hits" ]]; then
-    warn "fw_validation_nested_collection: 集合元素未检出 @Valid（推荐 List<@Valid Item> 容器元素约束，元素校验静默跳过风险）:
-$(printf '%s\n' "$nc_hits" | head -5)"
-  else
-    pass "fw_validation_nested_collection: 集合元素级联齐备或无嵌套集合"
-  fi
+  _fw_report warn fw_validation_nested_collection "$(printf '%s\n' "$nc_hits" | head -5)" "集合元素未检出 @Valid（推荐 List<@Valid Item> 容器元素约束，元素校验静默跳过风险）" "集合元素级联齐备或无嵌套集合"
 
   # ---------- fw_validation_advice(warn)：统一校验异常处理 ----------
   local has_constraints has_advice

@@ -40,12 +40,7 @@ _fw_typeorm_check() {
     [[ -n "$ln" ]] && sync_bad="${sync_bad}${f}:${ln}
 "
   done
-  if [[ -n "$sync_bad" ]]; then
-    fail "fw_typeorm_synchronize_prod: synchronize: true（启动按实体自动改表，生产删列丢数据 CWE-672；须 false + 迁移驱动）:
-${sync_bad}"
-  else
-    pass "fw_typeorm_synchronize_prod: synchronize 未开启字面量 true"
-  fi
+  _fw_report fail fw_typeorm_synchronize_prod "${sync_bad}" "synchronize: true（启动按实体自动改表，生产删列丢数据 CWE-672；须 false + 迁移驱动）" "synchronize 未开启字面量 true"
 
   # ====================================================================
   # fw_typeorm_eager_n1(warn)：关联 eager: true
@@ -57,12 +52,7 @@ ${sync_bad}"
     [[ -n "$ln" ]] && eager_bad="${eager_bad}${f}:${ln}
 "
   done
-  if [[ -n "$eager_bad" ]]; then
-    warn "fw_typeorm_eager_n1: 关联 eager: true（每次 find 隐式 JOIN，多层 eager 笛卡尔放大/N+1；须改显式 relations/leftJoinAndSelect）:
-${eager_bad}"
-  else
-    pass "fw_typeorm_eager_n1: 无 eager 关联"
-  fi
+  _fw_report warn fw_typeorm_eager_n1 "${eager_bad}" "关联 eager: true（每次 find 隐式 JOIN，多层 eager 笛卡尔放大/N+1；须改显式 relations/leftJoinAndSelect）" "无 eager 关联"
 
   # ====================================================================
   # fw_typeorm_transaction_runner(warn)：事务内禁混用全局 manager/getRepository
@@ -77,12 +67,7 @@ ${eager_bad}"
     [[ -n "$ln" ]] && tx_bad="${tx_bad}${f}:${ln}
 "
   done
-  if [[ -n "$tx_bad" ]]; then
-    warn "fw_typeorm_transaction_runner: 事务文件内检出 getRepository/dataSource.manager（混用全局连接绕过事务，写入不参与回滚；须用回调注入的 manager/queryRunner.manager）:
-${tx_bad}"
-  else
-    pass "fw_typeorm_transaction_runner: 事务内未混用全局连接或无事务"
-  fi
+  _fw_report warn fw_typeorm_transaction_runner "${tx_bad}" "事务文件内检出 getRepository/dataSource.manager（混用全局连接绕过事务，写入不参与回滚；须用回调注入的 manager/queryRunner.manager）" "事务内未混用全局连接或无事务"
 
   # ====================================================================
   # fw_typeorm_transaction_decorator(warn)：@Transaction 装饰器已废弃
@@ -94,12 +79,7 @@ ${tx_bad}"
     [[ -n "$ln" ]] && td_bad="${td_bad}${f}:${ln}
 "
   done
-  if [[ -n "$td_bad" ]]; then
-    warn "fw_typeorm_transaction_decorator: @Transaction 系列装饰器 0.3.x 已废弃（v1 预期移除，待验证；须改 dataSource.transaction() 显式回调）:
-${td_bad}"
-  else
-    pass "fw_typeorm_transaction_decorator: 无废弃事务装饰器"
-  fi
+  _fw_report warn fw_typeorm_transaction_decorator "${td_bad}" "@Transaction 系列装饰器 0.3.x 已废弃（v1 预期移除，待验证；须改 dataSource.transaction() 显式回调）" "无废弃事务装饰器"
 
   # ====================================================================
   # fw_typeorm_lazy_relation(warn)：懒加载关联 Promise<T>
@@ -114,12 +94,7 @@ ${td_bad}"
     [[ -n "$ln" ]] && lazy_bad="${lazy_bad}${f}:${ln}
 "
   done
-  if [[ -n "$lazy_bad" ]]; then
-    warn "fw_typeorm_lazy_relation: 懒加载关联（Promise<T>）序列化为 {} 静默丢字段，且访问须 await（HTTP 层直接返回实体须改 eager 显式 relations）:
-${lazy_bad}"
-  else
-    pass "fw_typeorm_lazy_relation: 无懒加载关联"
-  fi
+  _fw_report warn fw_typeorm_lazy_relation "${lazy_bad}" "懒加载关联（Promise<T>）序列化为 {} 静默丢字段，且访问须 await（HTTP 层直接返回实体须改 eager 显式 relations）" "无懒加载关联"
 
   # ====================================================================
   # fw_typeorm_fk_index(warn)：@ManyToOne 外键须 @Index
@@ -134,12 +109,7 @@ ${lazy_bad}"
 "
     fi
   done
-  if [[ -n "$idx_bad" ]]; then
-    warn "fw_typeorm_fk_index: 实体含 @ManyToOne 但无 @Index（外键反查全表扫描；高频反查列须显式索引）:
-${idx_bad}"
-  else
-    pass "fw_typeorm_fk_index: 关联实体均含索引或无 @ManyToOne"
-  fi
+  _fw_report warn fw_typeorm_fk_index "${idx_bad}" "实体含 @ManyToOne 但无 @Index（外键反查全表扫描；高频反查列须显式索引）" "关联实体均含索引或无 @ManyToOne"
 
   # ====================================================================
   # fw_typeorm_pagination_offset(warn)：offset/limit 禁配 JOIN 分页
@@ -154,12 +124,7 @@ ${idx_bad}"
 "
     fi
   done
-  if [[ -n "$pg_bad" ]]; then
-    warn "fw_typeorm_pagination_offset: .offset/.limit 配 JOIN 分页（行级截断切碎一对多实体，数据缺漏重复；须 take/skip 或 findAndCount）:
-${pg_bad}"
-  else
-    pass "fw_typeorm_pagination_offset: 无 JOIN+offset/limit 混用"
-  fi
+  _fw_report warn fw_typeorm_pagination_offset "${pg_bad}" ".offset/.limit 配 JOIN 分页（行级截断切碎一对多实体，数据缺漏重复；须 take/skip 或 findAndCount）" "无 JOIN+offset/limit 混用"
 
   # ====================================================================
   # fw_typeorm_soft_delete(warn)：@DeleteDateColumn 后禁物理 .delete()
@@ -181,12 +146,7 @@ ${pg_bad}"
       [[ -n "$ln" ]] && sd_bad="${sd_bad}${f}:${ln}
 "
     done
-    if [[ -n "$sd_bad" ]]; then
-      warn "fw_typeorm_soft_delete: 存在 @DeleteDateColumn 软删除实体但检出 .delete( 物理删除（审计/恢复失效；须 softDelete/recover）:
-${sd_bad}"
-    else
-      pass "fw_typeorm_soft_delete: 软删除实体未混用物理删除"
-    fi
+    _fw_report warn fw_typeorm_soft_delete "${sd_bad}" "存在 @DeleteDateColumn 软删除实体但检出 .delete( 物理删除（审计/恢复失效；须 softDelete/recover）" "软删除实体未混用物理删除"
   fi
 
   # ====================================================================
@@ -202,12 +162,7 @@ ${sd_bad}"
 "
     fi
   done
-  if [[ -n "$ac_bad" ]]; then
-    warn "fw_typeorm_audit_columns: 实体无 @CreateDateColumn/@UpdateDateColumn 审计字段（追溯无据；勿应用层手填 new Date()）:
-${ac_bad}"
-  else
-    pass "fw_typeorm_audit_columns: 实体均含审计字段或无实体"
-  fi
+  _fw_report warn fw_typeorm_audit_columns "${ac_bad}" "实体无 @CreateDateColumn/@UpdateDateColumn 审计字段（追溯无据；勿应用层手填 new Date()）" "实体均含审计字段或无实体"
 
   # ====================================================================
   # fw_typeorm_pool(warn)：连接池显式配置
@@ -239,10 +194,5 @@ ${ac_bad}"
     [[ -n "$ln" ]] && inj_bad="${inj_bad}${f}:${ln}
 "
   done
-  if [[ -n "$inj_bad" ]]; then
-    fail "fw_typeorm_qb_injection: QueryBuilder where 模板插值 \${}（SQL 注入 CWE-89；须参数绑定 .where('x = :v', { v })）:
-${inj_bad}"
-  else
-    pass "fw_typeorm_qb_injection: where 条件无模板插值"
-  fi
+  _fw_report fail fw_typeorm_qb_injection "${inj_bad}" "QueryBuilder where 模板插值 \${}（SQL 注入 CWE-89；须参数绑定 .where('x = :v', { v })）" "where 条件无模板插值"
 }

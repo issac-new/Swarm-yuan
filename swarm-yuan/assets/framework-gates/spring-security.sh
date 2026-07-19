@@ -32,12 +32,7 @@ _fw_spring_security_check() {
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local ad_hits
     ad_hits=$(grep -rnE 'extends[[:space:]]+WebSecurityConfigurerAdapter' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$ad_hits" ]]; then
-      fail "fw_ssec_adapter: 检出 extends WebSecurityConfigurerAdapter（6.x 起移除，须改 SecurityFilterChain Bean + lambda DSL）:
-${ad_hits}"
-    else
-      pass "fw_ssec_adapter: 无 WebSecurityConfigurerAdapter 继承"
-    fi
+    _fw_report fail fw_ssec_adapter "${ad_hits}" "检出 extends WebSecurityConfigurerAdapter（6.x 起移除，须改 SecurityFilterChain Bean + lambda DSL）" "无 WebSecurityConfigurerAdapter 继承"
   else
     pass "fw_ssec_adapter: 无 Java 源文件，跳过"
   fi
@@ -48,12 +43,7 @@ ${ad_hits}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local pe_hits
     pe_hits=$(grep -rnE 'NoOpPasswordEncoder|Md5PasswordEncoder|MessageDigestPasswordEncoder|StandardPasswordEncoder|SHAPasswordEncoder|LdapShaPasswordEncoder' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$pe_hits" ]]; then
-      fail "fw_ssec_password_encoder: 检出弱哈希 PasswordEncoder（须 BCryptPasswordEncoder/Argon2PasswordEncoder/DelegatingPasswordEncoder，CWE-327）:
-${pe_hits}"
-    else
-      pass "fw_ssec_password_encoder: 未检出弱哈希 PasswordEncoder"
-    fi
+    _fw_report fail fw_ssec_password_encoder "${pe_hits}" "检出弱哈希 PasswordEncoder（须 BCryptPasswordEncoder/Argon2PasswordEncoder/DelegatingPasswordEncoder，CWE-327）" "未检出弱哈希 PasswordEncoder"
   else
     pass "fw_ssec_password_encoder: 无 Java 源文件，跳过"
   fi
@@ -64,12 +54,7 @@ ${pe_hits}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local pp_hits
     pp_hits=$(grep -rnE '\.password\("[^"{]' "${javaarr[@]}" 2>/dev/null | grep -vE 'passwordEncoder|\.encode\(' || true)
-    if [[ -n "$pp_hits" ]]; then
-      fail "fw_ssec_plaintext_password: 检出 .password(\"字面量\") 明文密码（须 encoder.encode(...) 或 {id} 前缀，CWE-256）:
-${pp_hits}"
-    else
-      pass "fw_ssec_plaintext_password: 未检出明文 .password(...) 字面量"
-    fi
+    _fw_report fail fw_ssec_plaintext_password "${pp_hits}" "检出 .password(\"字面量\") 明文密码（须 encoder.encode(...) 或 {id} 前缀，CWE-256）" "未检出明文 .password(...) 字面量"
   else
     pass "fw_ssec_plaintext_password: 无 Java 源文件，跳过"
   fi
@@ -80,12 +65,7 @@ ${pp_hits}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local dpe_hits
     dpe_hits=$(grep -rnE 'withDefaultPasswordEncoder' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$dpe_hits" ]]; then
-      fail "fw_ssec_default_password_encoder: 检出 User.withDefaultPasswordEncoder（官方标注仅 demo，禁进生产）:
-${dpe_hits}"
-    else
-      pass "fw_ssec_default_password_encoder: 未检出 withDefaultPasswordEncoder"
-    fi
+    _fw_report fail fw_ssec_default_password_encoder "${dpe_hits}" "检出 User.withDefaultPasswordEncoder（官方标注仅 demo，禁进生产）" "未检出 withDefaultPasswordEncoder"
   else
     pass "fw_ssec_default_password_encoder: 无 Java 源文件，跳过"
   fi
@@ -109,12 +89,7 @@ ${dpe_hits}"
     [[ -n "$ln" ]] && js_hits="${js_hits}${c}:${ln}
 "
   done
-  if [[ -n "$js_hits" ]]; then
-    fail "fw_ssec_jwt_secret: 检出硬编码密钥（须外部化 \${ENV}/KMS/Vault 并支持轮换，CWE-321）:
-${js_hits}"
-  else
-    pass "fw_ssec_jwt_secret: 未检出硬编码密钥"
-  fi
+  _fw_report fail fw_ssec_jwt_secret "${js_hits}" "检出硬编码密钥（须外部化 \${ENV}/KMS/Vault 并支持轮换，CWE-321）" "未检出硬编码密钥"
 
   # ====================================================================
   # fw_ssec_csrf(warn)：csrf disable 须人工确认无状态 REST
@@ -122,12 +97,7 @@ ${js_hits}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local csrf_hits
     csrf_hits=$(grep -rnE 'csrf[[:space:]]*\(.*disable|AbstractHttpConfigurer::disable|\.csrf\(\)\.disable' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$csrf_hits" ]]; then
-      warn "fw_ssec_csrf: 检出 CSRF 关闭（仅无状态 REST + 非 Cookie 认证可关，表单/会话场景必须开 CWE-352）:
-${csrf_hits}"
-    else
-      pass "fw_ssec_csrf: 未检出 CSRF 关闭"
-    fi
+    _fw_report warn fw_ssec_csrf "${csrf_hits}" "检出 CSRF 关闭（仅无状态 REST + 非 Cookie 认证可关，表单/会话场景必须开 CWE-352）" "未检出 CSRF 关闭"
   else
     pass "fw_ssec_csrf: 无 Java 源文件，跳过"
   fi
@@ -138,12 +108,7 @@ ${csrf_hits}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local pa_hits
     pa_hits=$(grep -rnE '@(PreAuthorize|PostAuthorize)\(' "${javaarr[@]}" 2>/dev/null | grep -E '"' | grep -E '\+' || true)
-    if [[ -n "$pa_hits" ]]; then
-      warn "fw_ssec_preauthorize_concat: 检出 @PreAuthorize/@PostAuthorize 字符串拼接（SpEL 注入面，须改 #param 变量引用 CWE-943）:
-${pa_hits}"
-    else
-      pass "fw_ssec_preauthorize_concat: 未检出 SpEL 字符串拼接"
-    fi
+    _fw_report warn fw_ssec_preauthorize_concat "${pa_hits}" "检出 @PreAuthorize/@PostAuthorize 字符串拼接（SpEL 注入面，须改 #param 变量引用 CWE-943）" "未检出 SpEL 字符串拼接"
   else
     pass "fw_ssec_preauthorize_concat: 无 Java 源文件，跳过"
   fi
@@ -161,12 +126,7 @@ ${pa_hits}"
         fi
       fi
     done
-    if [[ -n "$cc_bad" ]]; then
-      warn "fw_ssec_cors_wildcard_creds: 检出通配 CORS 源 + allowCredentials(true) 同现（须枚举精确源 CWE-942）:
-${cc_bad}"
-    else
-      pass "fw_ssec_cors_wildcard_creds: 未检出通配源+凭据同现"
-    fi
+    _fw_report warn fw_ssec_cors_wildcard_creds "${cc_bad}" "检出通配 CORS 源 + allowCredentials(true) 同现（须枚举精确源 CWE-942）" "未检出通配源+凭据同现"
   else
     pass "fw_ssec_cors_wildcard_creds: 无 Java 源文件，跳过"
   fi
@@ -197,12 +157,7 @@ ${cc_bad}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local rp_hits
     rp_hits=$(grep -rnE 'has(Role|AnyRole)\("ROLE_' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$rp_hits" ]]; then
-      warn "fw_ssec_role_prefix: 检出 hasRole/hasAnyRole(\"ROLE_...\")（hasRole 自动补 ROLE_ 前缀，实际校验 ROLE_ROLE_X 静默失效）:
-${rp_hits}"
-    else
-      pass "fw_ssec_role_prefix: 未检出 hasRole 双前缀"
-    fi
+    _fw_report warn fw_ssec_role_prefix "${rp_hits}" "检出 hasRole/hasAnyRole(\"ROLE_...\")（hasRole 自动补 ROLE_ 前缀，实际校验 ROLE_ROLE_X 静默失效）" "未检出 hasRole 双前缀"
   else
     pass "fw_ssec_role_prefix: 无 Java 源文件，跳过"
   fi
@@ -233,12 +188,7 @@ ${rp_hits}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local sf_hits
     sf_hits=$(grep -rnE 'sessionFixation' "${javaarr[@]}" 2>/dev/null | grep -iE 'none' || true)
-    if [[ -n "$sf_hits" ]]; then
-      warn "fw_ssec_session_fixation: 检出 sessionFixation none（关闭会话固定防护，CWE-384；默认 migrateSession 应保持）:
-${sf_hits}"
-    else
-      pass "fw_ssec_session_fixation: 未检出 sessionFixation none"
-    fi
+    _fw_report warn fw_ssec_session_fixation "${sf_hits}" "检出 sessionFixation none（关闭会话固定防护，CWE-384；默认 migrateSession 应保持）" "未检出 sessionFixation none"
   else
     pass "fw_ssec_session_fixation: 无 Java 源文件，跳过"
   fi
@@ -256,12 +206,7 @@ ${sf_hits}"
         fi
       fi
     done
-    if [[ -n "$rm_bad" ]]; then
-      warn "fw_ssec_remember_me_key: 检出 rememberMe 未显式 .key(...)（随机 key 重启/多实例失效；key 须外部化管理）:
-${rm_bad}"
-    else
-      pass "fw_ssec_remember_me_key: rememberMe 均显式 key 或无 rememberMe"
-    fi
+    _fw_report warn fw_ssec_remember_me_key "${rm_bad}" "检出 rememberMe 未显式 .key(...)（随机 key 重启/多实例失效；key 须外部化管理）" "rememberMe 均显式 key 或无 rememberMe"
   else
     pass "fw_ssec_remember_me_key: 无 Java 源文件，跳过"
   fi
@@ -279,12 +224,7 @@ ${rm_bad}"
     [[ -n "$ln" ]] && or_hits="${or_hits}${c}:${ln}
 "
   done
-  if [[ -n "$or_hits" ]]; then
-    warn "fw_ssec_oauth2_redirect: 检出 redirect-uri 通配（授权码可被重定向到攻击者域名，须精确匹配 CWE-601）:
-${or_hits}"
-  else
-    pass "fw_ssec_oauth2_redirect: 未检出 redirect-uri 通配"
-  fi
+  _fw_report warn fw_ssec_oauth2_redirect "${or_hits}" "检出 redirect-uri 通配（授权码可被重定向到攻击者域名，须精确匹配 CWE-601）" "未检出 redirect-uri 通配"
 
   # ====================================================================
   # fw_ssec_deprecated_api(warn)：antMatchers/authorizeRequests 已移除
@@ -292,12 +232,7 @@ ${or_hits}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local dp_hits
     dp_hits=$(grep -rnE 'antMatchers\(|\.authorizeRequests\(' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$dp_hits" ]]; then
-      warn "fw_ssec_deprecated_api: 检出 antMatchers/authorizeRequests（7.x 已移除，迁 requestMatchers/authorizeHttpRequests lambda DSL）:
-${dp_hits}"
-    else
-      pass "fw_ssec_deprecated_api: 未检出 7.x 已移除 API"
-    fi
+    _fw_report warn fw_ssec_deprecated_api "${dp_hits}" "检出 antMatchers/authorizeRequests（7.x 已移除，迁 requestMatchers/authorizeHttpRequests lambda DSL）" "未检出 7.x 已移除 API"
   else
     pass "fw_ssec_deprecated_api: 无 Java 源文件，跳过"
   fi

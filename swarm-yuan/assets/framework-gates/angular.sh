@@ -16,9 +16,7 @@ _fw_angular_check() {
     return
   fi
 
-  _fw_angular_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_c（C 系，剔 // 与块注释行）
 
   # ====================================================================
   # fw_angular_standalone(warn)：检出 @NgModule → 新项目应 standalone
@@ -35,12 +33,7 @@ _fw_angular_check() {
         ;;
     esac
   done
-  if [[ -n "$ngmodule_files" ]]; then
-    warn "fw_angular_standalone: 检出 @NgModule 文件（Angular 17+ standalone 默认，新项目应 standalone，遗留模块须标注迁移）:
-${ngmodule_files}"
-  else
-    pass "fw_angular_standalone: 无 @NgModule（已 standalone）"
-  fi
+  _fw_report warn fw_angular_standalone "$ngmodule_files" "检出 @NgModule 文件（Angular 17+ standalone 默认，新项目应 standalone，遗留模块须标注迁移）" "无 @NgModule（已 standalone）"
 
   # ====================================================================
   # fw_angular_signals(warn)：Subject 须配合 signal/toSignal
@@ -48,7 +41,7 @@ ${ngmodule_files}"
   local sig_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_angular_code_only "$f")
+    body=$(_fw_strip_comments_c "$f")
     if printf '%s\n' "$body" | grep -qE '\b(Subject|BehaviorSubject|ReplaySubject)\b' 2>/dev/null; then
       if ! printf '%s\n' "$body" | grep -qE '\bsignal\(|\btoSignal\(|\btoObservable\(' 2>/dev/null; then
         local ln
@@ -58,12 +51,7 @@ ${ngmodule_files}"
       fi
     fi
   done
-  if [[ -n "$sig_bad" ]]; then
-    warn "fw_angular_signals: 检出 Subject 但同文件无 signal/toSignal（状态管理应优先 signal，性能优且 zoneless 下必需）:
-${sig_bad}"
-  else
-    pass "fw_angular_signals: 未检出裸 Subject 状态管理（或已配 signal）"
-  fi
+  _fw_report warn fw_angular_signals "$sig_bad" "检出 Subject 但同文件无 signal/toSignal（状态管理应优先 signal，性能优且 zoneless 下必需）" "未检出裸 Subject 状态管理（或已配 signal）"
 
   # ====================================================================
   # fw_angular_onpush(warn)：@Component 须配 OnPush
@@ -77,7 +65,7 @@ ${sig_bad}"
   done
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_angular_code_only "$f")
+    body=$(_fw_strip_comments_c "$f")
     if printf '%s\n' "$body" | grep -qE '@Component\b' 2>/dev/null; then
       if ! printf '%s\n' "$body" | grep -qE 'ChangeDetectionStrategy\.OnPush|changeDetection:' 2>/dev/null; then
         local ln
@@ -102,7 +90,7 @@ ${onpush_bad}"
   local sub_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_angular_code_only "$f")
+    body=$(_fw_strip_comments_c "$f")
     # 找每个 .subscribe( 调用行，检查前 2 行 + 本行是否含 takeUntilDestroyed / takeUntil
     local lines i
     lines=$(printf '%s\n' "$body" | grep -nE '\.subscribe\(' 2>/dev/null || true)
@@ -121,12 +109,7 @@ ${onpush_bad}"
       fi
     done <<< "$lines"
   done
-  if [[ -n "$sub_bad" ]]; then
-    fail "fw_angular_subscribe_cleanup: .subscribe 调用未配 takeUntilDestroyed/takeUntil（组件销毁后订阅泄漏）:
-${sub_bad}"
-  else
-    pass "fw_angular_subscribe_cleanup: subscribe 均配清理（或无 subscribe）"
-  fi
+  _fw_report fail fw_angular_subscribe_cleanup "$sub_bad" ".subscribe 调用未配 takeUntilDestroyed/takeUntil（组件销毁后订阅泄漏）" "subscribe 均配清理（或无 subscribe）"
 
   # ====================================================================
   # fw_angular_http_client(warn)：禁裸 fetch/XHR
@@ -134,7 +117,7 @@ ${sub_bad}"
   local http_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_angular_code_only "$f")
+    body=$(_fw_strip_comments_c "$f")
     # 跳过拦截器文件
     if printf '%s\n' "$body" | grep -qE 'HttpInterceptor|HttpInterceptorFn' 2>/dev/null; then
       continue
@@ -144,12 +127,7 @@ ${sub_bad}"
     [[ -n "$ln" ]] && http_bad="${http_bad}${f}:${ln}
 "
   done
-  if [[ -n "$http_bad" ]]; then
-    warn "fw_angular_http_client: 检出 fetch/XHR（须用 HttpClient + 拦截器，否则绕过鉴权/错误处理）:
-${http_bad}"
-  else
-    pass "fw_angular_http_client: 未检出裸 fetch/XHR"
-  fi
+  _fw_report warn fw_angular_http_client "$http_bad" "检出 fetch/XHR（须用 HttpClient + 拦截器，否则绕过鉴权/错误处理）" "未检出裸 fetch/XHR"
 
   # ====================================================================
   # fw_angular_di_inject(warn)：禁 new XxxService()
@@ -157,18 +135,13 @@ ${http_bad}"
   local di_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_angular_code_only "$f")
+    body=$(_fw_strip_comments_c "$f")
     local ln
     ln=$(printf '%s\n' "$body" | grep -nE '\bnew [A-Z][a-zA-Z]*(Service|Repository|Store)\(' 2>/dev/null || true)
     [[ -n "$ln" ]] && di_bad="${di_bad}${f}:${ln}
 "
   done
-  if [[ -n "$di_bad" ]]; then
-    warn "fw_angular_di_inject: 检出 new XxxService()（须通过 DI inject()/构造函数注入，否则丢失单例/测试替身）:
-${di_bad}"
-  else
-    pass "fw_angular_di_inject: 未检出 new 服务实例（已用 DI）"
-  fi
+  _fw_report warn fw_angular_di_inject "$di_bad" "检出 new XxxService()（须通过 DI inject()/构造函数注入，否则丢失单例/测试替身）" "未检出 new 服务实例（已用 DI）"
 
   # ====================================================================
   # fw_angular_impure_pipe(warn)：impure pipe 风险
@@ -176,18 +149,13 @@ ${di_bad}"
   local pipe_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_angular_code_only "$f")
+    body=$(_fw_strip_comments_c "$f")
     local ln
     ln=$(printf '%s\n' "$body" | grep -nE 'pure:[[:space:]]*false|pure:[[:space:]]*0\b' 2>/dev/null || true)
     [[ -n "$ln" ]] && pipe_bad="${pipe_bad}${f}:${ln}
 "
   done
-  if [[ -n "$pipe_bad" ]]; then
-    warn "fw_angular_impure_pipe: 检出 impure pipe（每次变更检测求值，性能差，须确认必要性）:
-${pipe_bad}"
-  else
-    pass "fw_angular_impure_pipe: 未检出 impure pipe"
-  fi
+  _fw_report warn fw_angular_impure_pipe "$pipe_bad" "检出 impure pipe（每次变更检测求值，性能差，须确认必要性）" "未检出 impure pipe"
 
   # ====================================================================
   # fw_angular_signal_inputs(warn)：@Input/@Output 装饰器 → 推荐信号输入
@@ -195,18 +163,13 @@ ${pipe_bad}"
   local dec_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_angular_code_only "$f")
+    body=$(_fw_strip_comments_c "$f")
     local ln
     ln=$(printf '%s\n' "$body" | grep -nE '@Input\(\)|@Output\(\)' 2>/dev/null || true)
     [[ -n "$ln" ]] && dec_bad="${dec_bad}${f}:${ln}
 "
   done
-  if [[ -n "$dec_bad" ]]; then
-    warn "fw_angular_signal_inputs: 检出 @Input()/@Output() 装饰器（Angular 17+ 推荐 signal inputs: input()/output()）:
-${dec_bad}"
-  else
-    pass "fw_angular_signal_inputs: 未检出 @Input/@Output 装饰器（已用 signal inputs）"
-  fi
+  _fw_report warn fw_angular_signal_inputs "$dec_bad" "检出 @Input()/@Output() 装饰器（Angular 17+ 推荐 signal inputs: input()/output()）" "未检出 @Input/@Output 装饰器（已用 signal inputs）"
 
   # ====================================================================
   # fw_angular_lazy_route(warn)：路由须懒加载
@@ -214,19 +177,14 @@ ${dec_bad}"
   local route_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_angular_code_only "$f")
+    body=$(_fw_strip_comments_c "$f")
     # 检出 Routes 配置中 component: 直接引用（非 loadComponent/loadChildren）
     local ln
     ln=$(printf '%s\n' "$body" | grep -nE 'component:[[:space:]]*[A-Z][a-zA-Z]*Component' 2>/dev/null || true)
     [[ -n "$ln" ]] && route_bad="${route_bad}${f}:${ln}
 "
   done
-  if [[ -n "$route_bad" ]]; then
-    warn "fw_angular_lazy_route: 路由用 component: 直接引用（须 loadComponent/loadChildren 懒加载，否则首屏 bundle 过大）:
-${route_bad}"
-  else
-    pass "fw_angular_lazy_route: 未检出 eager 路由（或无路由配置）"
-  fi
+  _fw_report warn fw_angular_lazy_route "$route_bad" "路由用 component: 直接引用（须 loadComponent/loadChildren 懒加载，否则首屏 bundle 过大）" "未检出 eager 路由（或无路由配置）"
 
   # ====================================================================
   # fw_angular_functional_guard(warn)：遗留 Guard 类
@@ -234,18 +192,13 @@ ${route_bad}"
   local guard_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_angular_code_only "$f")
+    body=$(_fw_strip_comments_c "$f")
     local ln
     ln=$(printf '%s\n' "$body" | grep -nE 'implements (CanActivate|CanMatch|CanLoad|CanActivateChild)' 2>/dev/null || true)
     [[ -n "$ln" ]] && guard_bad="${guard_bad}${f}:${ln}
 "
   done
-  if [[ -n "$guard_bad" ]]; then
-    warn "fw_angular_functional_guard: 检出遗留 Guard 类（Angular 15+ 推荐函数式守卫 canMatch/canActivate: [() => …]）:
-${guard_bad}"
-  else
-    pass "fw_angular_functional_guard: 未检出遗留 Guard 类"
-  fi
+  _fw_report warn fw_angular_functional_guard "$guard_bad" "检出遗留 Guard 类（Angular 15+ 推荐函数式守卫 canMatch/canActivate: [() => …]）" "未检出遗留 Guard 类"
 
   # ====================================================================
   # fw_angular_zoneless(warn)：zoneless + 残留 zone.js 冲突

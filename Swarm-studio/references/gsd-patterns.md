@@ -84,7 +84,7 @@ Discuss → Plan → Execute → Verify → Ship
 
 ## 4 类门禁分类法（Gates Taxonomy）
 
-引自 gsd-core 安装后的 `~/.claude/skills/gsd-core/references/gates.md`（运行 `/gsd-verify` 时由 gsd-core 提供，swarm-yuan 不含此文件）。每个检查点映射到一类：
+引自 gsd-core 安装后的 `~/.agents/skills/gsd-core/references/gates.md`（运行 `/gsd-verify` 时由 gsd-core 提供，swarm-yuan 不含此文件）。每个检查点映射到一类：
 
 | 门禁类型 | 作用 | 何时用 |
 |---------|------|--------|

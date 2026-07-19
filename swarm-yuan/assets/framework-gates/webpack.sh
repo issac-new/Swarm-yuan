@@ -66,12 +66,7 @@ _fw_webpack_check() {
     [[ -n "$ln" ]] && cn_bad="${cn_bad}${f}:${ln}
 "
   done
-  if [[ -n "$cn_bad" ]]; then
-    warn "fw_webpack_chunk_naming: 动态 import 未配 webpackChunkName（chunk 名为数字，难以调试 + 缓存失效）:
-${cn_bad}"
-  else
-    pass "fw_webpack_chunk_naming: 动态 import 均配 webpackChunkName（或无动态 import）"
-  fi
+  _fw_report warn fw_webpack_chunk_naming "${cn_bad}" "动态 import 未配 webpackChunkName（chunk 名为数字，难以调试 + 缓存失效）" "动态 import 均配 webpackChunkName（或无动态 import）"
 
   # ====================================================================
   # fw_webpack_defineplugin(warn)：环境变量须用 DefinePlugin 注入
@@ -196,12 +191,7 @@ ${dt_bad}"
 "
     fi
   done
-  if [[ -n "$lo_bad" ]]; then
-    warn "fw_webpack_loader_order: loader 链顺序错误（webpack use 数组从右到左执行，sass-loader 须在末尾）:
-${lo_bad}"
-  else
-    pass "fw_webpack_loader_order: loader 顺序合理（或无多 loader 链）"
-  fi
+  _fw_report warn fw_webpack_loader_order "${lo_bad}" "loader 链顺序错误（webpack use 数组从右到左执行，sass-loader 须在末尾）" "loader 顺序合理（或无多 loader 链）"
 
   # ====================================================================
   # fw_webpack_performance_hints(warn)：须配 performance 阈值

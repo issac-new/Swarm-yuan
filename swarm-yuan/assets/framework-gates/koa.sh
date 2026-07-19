@@ -108,12 +108,7 @@ ${hits}"
 "
     fi
   done
-  if [[ -n "$ot_bad" ]]; then
-    warn "fw_koa_onion_try_catch: await next() 未包裹 try/catch（下游错误冒泡越过本中间件，洋葱模型断裂）:
-${ot_bad}"
-  else
-    pass "fw_koa_onion_try_catch: await next() 均有 try/catch 包裹或无跨中间件逻辑"
-  fi
+  _fw_report warn fw_koa_onion_try_catch "$ot_bad" "await next() 未包裹 try/catch（下游错误冒泡越过本中间件，洋葱模型断裂）" "await next() 均有 try/catch 包裹或无跨中间件逻辑"
 
   # ====================================================================
   # fw_koa_ctx_state(warn)：跨中间件共享数据须挂 ctx.state，禁直接污染 ctx
@@ -126,12 +121,7 @@ ${ot_bad}"
     [[ -n "$ln" ]] && cs_bad="${cs_bad}${f}:${ln}
 "
   done
-  if [[ -n "$cs_bad" ]]; then
-    warn "fw_koa_ctx_state: 直接向 ctx 挂自定义属性（污染命名空间、与库冲突；共享数据须 ctx.state.xxx）:
-${cs_bad}"
-  else
-    pass "fw_koa_ctx_state: 跨中间件共享经 ctx.state 或无自定义挂载"
-  fi
+  _fw_report warn fw_koa_ctx_state "$cs_bad" "直接向 ctx 挂自定义属性（污染命名空间、与库冲突；共享数据须 ctx.state.xxx）" "跨中间件共享经 ctx.state 或无自定义挂载"
 
   # ====================================================================
   # fw_koa_body_limit(warn)：koa-bodyparser 须配 jsonLimit/formLimit
@@ -146,12 +136,7 @@ ${cs_bad}"
 "
     fi
   done
-  if [[ -n "$bl_bad" ]]; then
-    warn "fw_koa_body_limit: koa-bodyparser 未配 jsonLimit/formLimit（大包 DoS 风险 CWE-400）:
-${bl_bad}"
-  else
-    pass "fw_koa_body_limit: bodyparser 已配 limit 或未使用 bodyparser"
-  fi
+  _fw_report warn fw_koa_body_limit "$bl_bad" "koa-bodyparser 未配 jsonLimit/formLimit（大包 DoS 风险 CWE-400）" "bodyparser 已配 limit 或未使用 bodyparser"
 
   # ====================================================================
   # fw_koa_ctx_throw(warn)：业务错误须 ctx.throw(status)，禁裸 throw new Error
@@ -163,12 +148,7 @@ ${bl_bad}"
     [[ -n "$ln" ]] && ct_bad="${ct_bad}${f}:${ln}
 "
   done
-  if [[ -n "$ct_bad" ]]; then
-    warn "fw_koa_ctx_throw: 裸 throw new Error 无 HTTP 状态码语义（统一错误处理按 500 处理；业务错误须 ctx.throw(4xx)）:
-${ct_bad}"
-  else
-    pass "fw_koa_ctx_throw: 业务错误经 ctx.throw 或无裸抛"
-  fi
+  _fw_report warn fw_koa_ctx_throw "$ct_bad" "裸 throw new Error 无 HTTP 状态码语义（统一错误处理按 500 处理；业务错误须 ctx.throw(4xx)）" "业务错误经 ctx.throw 或无裸抛"
 
   # ====================================================================
   # fw_koa_async_middleware(warn)：Koa 2+/3 中间件须 async/await，禁 generator/回调式
@@ -180,12 +160,7 @@ ${ct_bad}"
     [[ -n "$ln" ]] && am_bad="${am_bad}${f}:${ln}
 "
   done
-  if [[ -n "$am_bad" ]]; then
-    warn "fw_koa_async_middleware: 检出 generator 中间件（Koa 1.x 遗产，Koa 2+/3 已移除，须改 async/await）:
-${am_bad}"
-  else
-    pass "fw_koa_async_middleware: 中间件均为 async/await 风格"
-  fi
+  _fw_report warn fw_koa_async_middleware "$am_bad" "检出 generator 中间件（Koa 1.x 遗产，Koa 2+/3 已移除，须改 async/await）" "中间件均为 async/await 风格"
 
   # ====================================================================
   # fw_koa_cors(warn)：CORS 须显式 origin
@@ -200,12 +175,7 @@ ${am_bad}"
     [[ -n "$ln" ]] && cors_bad="${cors_bad}${f}:${ln}
 "
   done
-  if [[ -n "$cors_bad" ]]; then
-    warn "fw_koa_cors: CORS 未显式配置 origin 白名单（@koa/cors 空参 / origin:* 放行任意源 CWE-942）:
-${cors_bad}"
-  else
-    pass "fw_koa_cors: CORS origin 白名单已配或未启用 CORS"
-  fi
+  _fw_report warn fw_koa_cors "$cors_bad" "CORS 未显式配置 origin 白名单（@koa/cors 空参 / origin:* 放行任意源 CWE-942）" "CORS origin 白名单已配或未启用 CORS"
 
   # ====================================================================
   # fw_koa_socketio_namespace(warn)：Socket.IO 须用 namespace 隔离

@@ -26,10 +26,7 @@ _fw_rabbitmq_check() {
     esac
   done
 
-  # 代码正文过滤辅助（剥离行注释与块注释行，防注释中关键字误命中）
-  _fw_rabbitmq_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤辅助：调公共库 _fw_strip_comments_c（剥离行注释与块注释行，防注释中关键字误命中）
 
   # 常用检出集合
   local listener_files
@@ -70,16 +67,11 @@ _fw_rabbitmq_check() {
   done
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
     local ln
-    ln=$(_fw_rabbitmq_code_only "$j" | grep -nE 'AcknowledgeMode\.NONE|basicConsume\([^)]*,[[:space:]]*true' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE 'AcknowledgeMode\.NONE|basicConsume\([^)]*,[[:space:]]*true' || true)
     [[ -n "$ln" ]] && ack_bad="${ack_bad}${j}:${ln}
 "
   done
-  if [[ -n "$ack_bad" ]]; then
-    fail "fw_rabbitmq_manual_ack: 检出 autoAck=true / AcknowledgeMode.NONE（broker 投递即视为成功，消费失败消息永久丢失；须 manual/容器确认 + basicAck 业务成功后调用）:
-${ack_bad}"
-  else
-    pass "fw_rabbitmq_manual_ack: 未检出 autoAck=true / AcknowledgeMode.NONE"
-  fi
+  _fw_report fail fw_rabbitmq_manual_ack "$ack_bad" "检出 autoAck=true / AcknowledgeMode.NONE（broker 投递即视为成功，消费失败消息永久丢失；须 manual/容器确认 + basicAck 业务成功后调用）" "未检出 autoAck=true / AcknowledgeMode.NONE"
 
   # ====================================================================
   # fw_rabbitmq_idempotent_consumer(warn)：消费端幂等（message-id 去重）
@@ -87,7 +79,7 @@ ${ack_bad}"
   local idem_bad=""
   while IFS= read -r lf; do
     [[ -z "$lf" ]] && continue
-    if ! _fw_rabbitmq_code_only "$lf" | grep -qiE '幂等|idempot|dedup|去重|setIfAbsent|setnx|ON DUPLICATE|insertIgnore|uk_[a-z]|unique[[:space:]]+key|consumeOnce|existsConsumed'; then
+    if ! _fw_strip_comments_c "$lf" | grep -qiE '幂等|idempot|dedup|去重|setIfAbsent|setnx|ON DUPLICATE|insertIgnore|uk_[a-z]|unique[[:space:]]+key|consumeOnce|existsConsumed'; then
       idem_bad="${idem_bad}${lf}
 "
     fi
@@ -122,7 +114,7 @@ ${idem_bad}"
   local dur_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
     local ln
-    ln=$(_fw_rabbitmq_code_only "$j" | grep -nE 'new Queue\([[:space:]]*"[^"]*"[[:space:]]*,[[:space:]]*false|QueueBuilder\.nonDurable|queueDeclare\([^,]+,[[:space:]]*false|MessageDeliveryMode\.NON_PERSISTENT' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE 'new Queue\([[:space:]]*"[^"]*"[[:space:]]*,[[:space:]]*false|QueueBuilder\.nonDurable|queueDeclare\([^,]+,[[:space:]]*false|MessageDeliveryMode\.NON_PERSISTENT' || true)
     [[ -n "$ln" ]] && dur_bad="${dur_bad}${j}:${ln}
 "
   done
@@ -132,12 +124,7 @@ ${idem_bad}"
     [[ -n "$ln" ]] && dur_bad="${dur_bad}${c}:${ln}
 "
   done
-  if [[ -n "$dur_bad" ]]; then
-    warn "fw_rabbitmq_durable_persistent: 检出非持久化队列/消息（durable=false 或 NON_PERSISTENT；broker 重启即丢，须 durable=true + deliveryMode=2）:
-${dur_bad}"
-  else
-    pass "fw_rabbitmq_durable_persistent: 未检出非持久化声明"
-  fi
+  _fw_report warn fw_rabbitmq_durable_persistent "$dur_bad" "检出非持久化队列/消息（durable=false 或 NON_PERSISTENT；broker 重启即丢，须 durable=true + deliveryMode=2）" "未检出非持久化声明"
 
   # ====================================================================
   # fw_rabbitmq_connection_reuse(warn)：禁止每次新建 Connection/Channel
@@ -145,16 +132,11 @@ ${dur_bad}"
   local conn_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
     local ln
-    ln=$(_fw_rabbitmq_code_only "$j" | grep -nE '\.newConnection\(|\.newChannel\(' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE '\.newConnection\(|\.newChannel\(' || true)
     [[ -n "$ln" ]] && conn_bad="${conn_bad}${j}:${ln}
 "
   done
-  if [[ -n "$conn_bad" ]]; then
-    warn "fw_rabbitmq_connection_reuse: 业务代码直接 newConnection/newChannel（连接/信道须复用：原生客户端长连接 + 每操作短 Channel；spring-amqp 用 CachingConnectionFactory 缓存，禁止绕开）:
-${conn_bad}"
-  else
-    pass "fw_rabbitmq_connection_reuse: 未检出业务侧直接建连"
-  fi
+  _fw_report warn fw_rabbitmq_connection_reuse "$conn_bad" "业务代码直接 newConnection/newChannel（连接/信道须复用：原生客户端长连接 + 每操作短 Channel；spring-amqp 用 CachingConnectionFactory 缓存，禁止绕开）" "未检出业务侧直接建连"
 
   # ====================================================================
   # fw_rabbitmq_prefetch(warn)：消费端 prefetch 限流
@@ -164,7 +146,7 @@ ${conn_bad}"
   else
     local pf_hit=0
     for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-      _fw_rabbitmq_code_only "$j" | grep -qE 'basicQos|PrefetchCount|prefetch' && { pf_hit=1; break; }
+      _fw_strip_comments_c "$j" | grep -qE 'basicQos|PrefetchCount|prefetch' && { pf_hit=1; break; }
     done
     if [[ "$pf_hit" -eq 0 ]]; then
       for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
@@ -234,7 +216,7 @@ ${queue_decl}"
   local ex_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
     local ln
-    ln=$(_fw_rabbitmq_code_only "$j" | grep -nE 'HeadersExchange|ExchangeTypes\.HEADERS' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE 'HeadersExchange|ExchangeTypes\.HEADERS' || true)
     [[ -n "$ln" ]] && ex_bad="${ex_bad}${j}:${ln}
 "
   done
@@ -244,12 +226,7 @@ ${queue_decl}"
     [[ -n "$ln" ]] && ex_bad="${ex_bad}${c}:${ln}
 "
   done
-  if [[ -n "$ex_bad" ]]; then
-    warn "fw_rabbitmq_exchange_type: 检出 headers 交换机（匹配开销大、运维可见性差，几乎总可用 topic 替代）:
-${ex_bad}"
-  else
-    pass "fw_rabbitmq_exchange_type: 未检出 headers 交换机"
-  fi
+  _fw_report warn fw_rabbitmq_exchange_type "$ex_bad" "检出 headers 交换机（匹配开销大、运维可见性差，几乎总可用 topic 替代）" "未检出 headers 交换机"
 
   # ====================================================================
   # fw_rabbitmq_consumer_concurrency(warn)：消费者并发显式配置
@@ -259,7 +236,7 @@ ${ex_bad}"
   else
     local cc_hit=0
     for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-      _fw_rabbitmq_code_only "$j" | grep -qE 'concurrency' && { cc_hit=1; break; }
+      _fw_strip_comments_c "$j" | grep -qE 'concurrency' && { cc_hit=1; break; }
     done
     if [[ "$cc_hit" -eq 0 ]]; then
       for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
@@ -279,7 +256,7 @@ ${ex_bad}"
   local ad_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
     local ln
-    ln=$(_fw_rabbitmq_code_only "$j" | grep -nE '\.autoDelete\(|\.exclusive\(|queueDeclare\([^,]+,[^,]+,[[:space:]]*true' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE '\.autoDelete\(|\.exclusive\(|queueDeclare\([^,]+,[^,]+,[[:space:]]*true' || true)
     [[ -n "$ln" ]] && ad_bad="${ad_bad}${j}:${ln}
 "
   done
@@ -289,10 +266,5 @@ ${ex_bad}"
     [[ -n "$ln" ]] && ad_bad="${ad_bad}${c}:${ln}
 "
   done
-  if [[ -n "$ad_bad" ]]; then
-    warn "fw_rabbitmq_auto_delete: 检出 autoDelete/exclusive 队列（消费者断连即删队列丢消息，仅限 RPC reply-to 等临时场景；quorum 不支持二者）:
-${ad_bad}"
-  else
-    pass "fw_rabbitmq_auto_delete: 未检出 autoDelete/exclusive 队列"
-  fi
+  _fw_report warn fw_rabbitmq_auto_delete "$ad_bad" "检出 autoDelete/exclusive 队列（消费者断连即删队列丢消息，仅限 RPC reply-to 等临时场景；quorum 不支持二者）" "未检出 autoDelete/exclusive 队列"
 }

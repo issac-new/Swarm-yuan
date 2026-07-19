@@ -26,10 +26,7 @@ _fw_gin_check() {
     esac
   done
 
-  # 代码正文过滤：去 // 行注释与块注释行（含 /* */ 单行与多行），防注释里的关键字造成误判
-  _fw_gin_code_only() {
-    sed -E 's://.*$::; s:/\*.*\*/::g; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_c_inline（C 系变体，多剥行内 /* */）
 
   local g ln
 
@@ -38,16 +35,11 @@ _fw_gin_check() {
   # ====================================================================
   local bind_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    ln=$(_fw_gin_code_only "$g" | grep -nE 'c\.(Bind|BindJSON|BindQuery|BindURI|BindWith|BindHeader|BindXML|BindYAML|BindForm)\(' || true)
+    ln=$(_fw_strip_comments_c_inline "$g" | grep -nE 'c\.(Bind|BindJSON|BindQuery|BindURI|BindWith|BindHeader|BindXML|BindYAML|BindForm)\(' || true)
     [[ -n "$ln" ]] && bind_bad="${bind_bad}${g}:${ln}
 "
   done
-  if [[ -n "$bind_bad" ]]; then
-    warn "fw_gin_should_bind_not_bind: 检出 c.Bind 系列（Must bind 自动 400+Abort，须改 ShouldBind 系列由开发者控错）:
-${bind_bad}"
-  else
-    pass "fw_gin_should_bind_not_bind: 未检出 c.Bind 系列（已用 ShouldBind 系列）"
-  fi
+  _fw_report warn fw_gin_should_bind_not_bind "$bind_bad" "检出 c.Bind 系列（Must bind 自动 400+Abort，须改 ShouldBind 系列由开发者控错）" "未检出 c.Bind 系列（已用 ShouldBind 系列）"
 
   # ====================================================================
   # fw_gin_context_copy(fail)：goroutine 内引用 c 须 c.Copy()
@@ -55,7 +47,7 @@ ${bind_bad}"
   local copy_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     local code
-    code=$(_fw_gin_code_only "$g" 2>/dev/null)
+    code=$(_fw_strip_comments_c_inline "$g" 2>/dev/null)
     [[ -z "$code" ]] && continue
     # 命中 go func / go <fn>( 启动协程的行号
     local goline
@@ -63,7 +55,7 @@ ${bind_bad}"
     [[ -z "$goline" ]] && continue
     # 文件级是否存在 c.Copy()
     local has_copy=0
-    _fw_gin_code_only "$g" | grep -qE '\.Copy\(\)' && has_copy=1
+    _fw_strip_comments_c_inline "$g" | grep -qE '\.Copy\(\)' && has_copy=1
     # 若文件内有 go 语句且引用了 c (gin.Context)，但全文无 c.Copy() → fail
     if [[ "$has_copy" -eq 0 ]]; then
       # 检查 go 语句所在行及其后 15 行内是否引用 c. / c) / c,
@@ -85,26 +77,21 @@ ${bad_lines}
 "
     fi
   done
-  if [[ -n "$copy_bad" ]]; then
-    fail "fw_gin_context_copy: goroutine 内直接用 gin.Context（Context 对象池复用，须 c.Copy() 只读副本，否则数据竞争/串响应）:
-${copy_bad}"
-  else
-    pass "fw_gin_context_copy: goroutine 内 Context 均经 c.Copy() 或无跨协程用 c"
-  fi
+  _fw_report fail fw_gin_context_copy "$copy_bad" "goroutine 内直接用 gin.Context（Context 对象池复用，须 c.Copy() 只读副本，否则数据竞争/串响应）" "goroutine 内 Context 均经 c.Copy() 或无跨协程用 c"
 
   # ====================================================================
   # fw_gin_recovery_middleware(fail)：gin.New() 须配 Recovery 且置首
   # ====================================================================
   local has_new=0 has_default=0 has_recovery=0 recovery_first=1 use_order=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    _fw_gin_code_only "$g" | grep -qE 'gin\.New\(\)' && has_new=1
-    _fw_gin_code_only "$g" | grep -qE 'gin\.Default\(\)' && has_default=1
-    if _fw_gin_code_only "$g" | grep -qE 'gin\.Recovery\(\)'; then
+    _fw_strip_comments_c_inline "$g" | grep -qE 'gin\.New\(\)' && has_new=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'gin\.Default\(\)' && has_default=1
+    if _fw_strip_comments_c_inline "$g" | grep -qE 'gin\.Recovery\(\)'; then
       has_recovery=1
       # 取所有 .Use( 行号，判断 Recovery 是否首个
       local uses rec_line
-      uses=$(_fw_gin_code_only "$g" | grep -nE '\.Use\(' || true)
-      rec_line=$(_fw_gin_code_only "$g" | grep -nE 'gin\.Recovery\(\)' | head -1 | cut -d: -f1)
+      uses=$(_fw_strip_comments_c_inline "$g" | grep -nE '\.Use\(' || true)
+      rec_line=$(_fw_strip_comments_c_inline "$g" | grep -nE 'gin\.Recovery\(\)' | head -1 | cut -d: -f1)
       if [[ -n "$uses" && -n "$rec_line" ]]; then
         local first_use
         first_use=$(printf '%s\n' "$uses" | head -1 | cut -d: -f1)
@@ -130,8 +117,8 @@ ${use_order}"
   # ====================================================================
   local run_hit=0 shutdown_hit=0
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    _fw_gin_code_only "$g" | grep -qE '\.Run\(|http\.ListenAndServe\(' && run_hit=1
-    _fw_gin_code_only "$g" | grep -qE '\.Shutdown\(' && shutdown_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE '\.Run\(|http\.ListenAndServe\(' && run_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE '\.Shutdown\(' && shutdown_hit=1
   done
   if [[ "$run_hit" -eq 1 && "$shutdown_hit" -eq 0 ]]; then
     warn "fw_gin_graceful_shutdown: 检出 engine.Run/ListenAndServe 但无 Shutdown（SIGTERM 强断在途请求，须 http.Server.Shutdown）"
@@ -145,7 +132,7 @@ ${use_order}"
   local abort_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     local code
-    code=$(_fw_gin_code_only "$g" 2>/dev/null)
+    code=$(_fw_strip_comments_c_inline "$g" 2>/dev/null)
     [[ -z "$code" ]] && continue
     local alines
     alines=$(printf '%s\n' "$code" | grep -nE 'c\.Abort(WithStatus|WithStatusJSON|WithStatusString|WithError)?\(' || true)
@@ -185,20 +172,15 @@ ${use_order}"
 "
     done <<< "$alines"
   done
-  if [[ -n "$abort_bad" ]]; then
-    warn "fw_gin_abort_return: c.Abort() 后未 return（Abort 仅阻后续中间件，当前函数仍执行，须 Abort+return）:
-${abort_bad}"
-  else
-    pass "fw_gin_abort_return: Abort 均配 return"
-  fi
+  _fw_report warn fw_gin_abort_return "$abort_bad" "c.Abort() 后未 return（Abort 仅阻后续中间件，当前函数仍执行，须 Abort+return）" "Abort 均配 return"
 
   # ====================================================================
   # fw_gin_binding_validator(warn)：ShouldBind 须配 binding: 标签
   # ====================================================================
   local sb_hit=0 tag_hit=0
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    _fw_gin_code_only "$g" | grep -qE 'c\.ShouldBind' && sb_hit=1
-    _fw_gin_code_only "$g" | grep -qE 'binding:"' && tag_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'c\.ShouldBind' && sb_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'binding:"' && tag_hit=1
   done
   if [[ "$sb_hit" -eq 1 && "$tag_hit" -eq 0 ]]; then
     warn "fw_gin_binding_validator: 检出 ShouldBind 但无 binding:\"...\" 标签（缺标签则任何输入都通过校验）"
@@ -212,7 +194,7 @@ ${abort_bad}"
   local cors_all_cred_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     local code
-    code=$(_fw_gin_code_only "$g" 2>/dev/null)
+    code=$(_fw_strip_comments_c_inline "$g" 2>/dev/null)
     [[ -z "$code" ]] && continue
     if printf '%s\n' "$code" | grep -qE 'AllowAllOrigins[[:space:]]*:[[:space:]]*true'; then
       if printf '%s\n' "$code" | grep -qE 'AllowCredentials[[:space:]]*:[[:space:]]*true'; then
@@ -221,36 +203,26 @@ ${abort_bad}"
       fi
     fi
   done
-  if [[ -n "$cors_all_cred_bad" ]]; then
-    fail "fw_gin_cors: AllowAllOrigins 与 AllowCredentials 同时 true（浏览器规范禁止 * + 凭证，CORS 凭证请求全部被拒）:
-${cors_all_cred_bad}"
-  else
-    pass "fw_gin_cors: 未检出禁用组合"
-  fi
+  _fw_report fail fw_gin_cors "$cors_all_cred_bad" "AllowAllOrigins 与 AllowCredentials 同时 true（浏览器规范禁止 * + 凭证，CORS 凭证请求全部被拒）" "未检出禁用组合"
 
   # ====================================================================
   # fw_gin_auth_middleware(fail)：鉴权用 c.Query("token") / 无 Abort 分支
   # ====================================================================
   local query_token_bad=""
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    ln=$(_fw_gin_code_only "$g" | grep -nE 'c\.Query\("(token|access_token|jwt)"\)|c\.Query\("auth"\)' || true)
+    ln=$(_fw_strip_comments_c_inline "$g" | grep -nE 'c\.Query\("(token|access_token|jwt)"\)|c\.Query\("auth"\)' || true)
     [[ -n "$ln" ]] && query_token_bad="${query_token_bad}${g}:${ln}
 "
   done
-  if [[ -n "$query_token_bad" ]]; then
-    fail "fw_gin_auth_middleware: 鉴权 token 取自 URL query（会进 access log / Referer 泄露，须用 Authorization header）:
-${query_token_bad}"
-  else
-    pass "fw_gin_auth_middleware: 未检出 URL query 取 token"
-  fi
+  _fw_report fail fw_gin_auth_middleware "$query_token_bad" "鉴权 token 取自 URL query（会进 access log / Referer 泄露，须用 Authorization header）" "未检出 URL query 取 token"
 
   # ====================================================================
   # fw_gin_upload_limit(warn)：FormFile/MultipartForm 须配 MaxMultipartMemory
   # ====================================================================
   local upload_hit=0 maxmem_hit=0
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    _fw_gin_code_only "$g" | grep -qE 'c\.FormFile\(|c\.MultipartForm\(' && upload_hit=1
-    _fw_gin_code_only "$g" | grep -qE 'MaxMultipartMemory' && maxmem_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'c\.FormFile\(|c\.MultipartForm\(' && upload_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'MaxMultipartMemory' && maxmem_hit=1
   done
   if [[ "$upload_hit" -eq 1 && "$maxmem_hit" -eq 0 ]]; then
     warn "fw_gin_upload_limit: 检出 FormFile/MultipartForm 但无 MaxMultipartMemory 设置（默认 32MB，大文件 DoS 风险）"
@@ -263,8 +235,8 @@ ${query_token_bad}"
   # ====================================================================
   local gzip_hit=0 gzip_exclude_hit=0
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    _fw_gin_code_only "$g" | grep -qE 'gzip\.Gzip\(' && gzip_hit=1
-    _fw_gin_code_only "$g" | grep -qE 'WithExcludedExtensions|WithExcludedPaths|WithExcludedPathRegexps' && gzip_exclude_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'gzip\.Gzip\(' && gzip_hit=1
+    _fw_strip_comments_c_inline "$g" | grep -qE 'WithExcludedExtensions|WithExcludedPaths|WithExcludedPathRegexps' && gzip_exclude_hit=1
   done
   if [[ "$gzip_hit" -eq 1 && "$gzip_exclude_hit" -eq 0 ]]; then
     warn "fw_gin_gzip: gzip.Gzip 未配 WithExcludedExtensions/Paths（已压缩内容二次压缩浪费 CPU）"
@@ -277,8 +249,8 @@ ${query_token_bad}"
   # ====================================================================
   local str_err_bad=0 has_cerror=0
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    _fw_gin_code_only "$g" | grep -qE 'c\.Error\(' && has_cerror=1
-    if _fw_gin_code_only "$g" | grep -qE 'c\.String\((4[0-9]{2}|5[0-9]{2})'; then
+    _fw_strip_comments_c_inline "$g" | grep -qE 'c\.Error\(' && has_cerror=1
+    if _fw_strip_comments_c_inline "$g" | grep -qE 'c\.String\((4[0-9]{2}|5[0-9]{2})'; then
       str_err_bad=1
     fi
   done
@@ -293,10 +265,10 @@ ${query_token_bad}"
   # ====================================================================
   local public_post_hit=0 has_limiter=0
   for g in "${goarr[@]+"${goarr[@]}"}"; do
-    if _fw_gin_code_only "$g" | grep -qE '\.(POST|Any)\("[^"]*(/login|/signin|/sms|/register|/signup|/verify|/captcha)"'; then
+    if _fw_strip_comments_c_inline "$g" | grep -qE '\.(POST|Any)\("[^"]*(/login|/signin|/sms|/register|/signup|/verify|/captcha)"'; then
       public_post_hit=1
     fi
-    if _fw_gin_code_only "$g" | grep -qE 'limiter|tollbooth|rate\.|ratelimit|RateLimit|throttled'; then
+    if _fw_strip_comments_c_inline "$g" | grep -qE 'limiter|tollbooth|rate\.|ratelimit|RateLimit|throttled'; then
       has_limiter=1
     fi
   done
@@ -312,13 +284,13 @@ ${query_token_bad}"
   local root_auth_hit=0 root_limit_hit=0 health_hit=0
   for g in "${goarr[@]+"${goarr[@]}"}"; do
     # 根 Engine 上的 Use（非 group 内）启发式：engine.Use / r.Use（顶层变量）
-    if _fw_gin_code_only "$g" | grep -qE '(engine|r|app|router|g)\.Use\('; then
+    if _fw_strip_comments_c_inline "$g" | grep -qE '(engine|r|app|router|g)\.Use\('; then
       # 是否 Use 的是鉴权/限流
-      if _fw_gin_code_only "$g" | grep -qE '\.Use\([^)]*(Auth|JWT|jwt|Session|auth|limiter|Limit|rate)'; then
+      if _fw_strip_comments_c_inline "$g" | grep -qE '\.Use\([^)]*(Auth|JWT|jwt|Session|auth|limiter|Limit|rate)'; then
         root_auth_hit=1
       fi
     fi
-    if _fw_gin_code_only "$g" | grep -qE '"/healthz"|"/health"|"/ready"|"/readyz"'; then
+    if _fw_strip_comments_c_inline "$g" | grep -qE '"/healthz"|"/health"|"/ready"|"/readyz"'; then
       health_hit=1
     fi
   done

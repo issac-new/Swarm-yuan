@@ -79,12 +79,7 @@ ${loc_bad}"
       fi
     fi
   done
-  if [[ -n "$hoist_bad" ]]; then
-    warn "fw_jest_mock_hoisted: vi.mock factory 引用变量未用 vi.hoisted 提升（Vitest mock 提升到顶部，外部变量未定义 ReferenceError）:
-${hoist_bad}"
-  else
-    pass "fw_jest_mock_hoisted: 未检出需 vi.hoisted 的 mock（或已用）"
-  fi
+  _fw_report warn fw_jest_mock_hoisted "$hoist_bad" "vi.mock factory 引用变量未用 vi.hoisted 提升（Vitest mock 提升到顶部，外部变量未定义 ReferenceError）" "未检出需 vi.hoisted 的 mock（或已用）"
 
   # ====================================================================
   # fw_jest_snapshot_governance(warn)：快照须有治理标记（禁无脑 --update）
@@ -96,12 +91,7 @@ ${hoist_bad}"
     [[ -n "$ln" ]] && snap_bad="${snap_bad}${f}:${ln}
 "
   done
-  if [[ -n "$snap_bad" ]]; then
-    warn "fw_jest_snapshot_governance: 检出快照断言（须定期评审 + 禁无脑 -u 更新，CI 须 --ci 防止生成新快照）:
-${snap_bad}"
-  else
-    pass "fw_jest_snapshot_governance: 未检出快照断言（或无快照风险）"
-  fi
+  _fw_report warn fw_jest_snapshot_governance "$snap_bad" "检出快照断言（须定期评审 + 禁无脑 -u 更新，CI 须 --ci 防止生成新快照）" "未检出快照断言（或无快照风险）"
 
   # ====================================================================
   # fw_jest_coverage_threshold(fail)：须配覆盖率阈值门禁
@@ -130,12 +120,7 @@ ${snap_bad}"
     [[ -n "$ln" ]] && jest_bad="${jest_bad}${f}:${ln}
 "
   done
-  if [[ -n "$jest_bad" ]]; then
-    warn "fw_jest_jest_fn_to_vi: 检出残留 Jest API（Vitest 须用 vi.fn/vi.mock，Jest API 仅兼容模式可用）:
-${jest_bad}"
-  else
-    pass "fw_jest_jest_fn_to_vi: 未检出残留 Jest API（已用 vi.*）"
-  fi
+  _fw_report warn fw_jest_jest_fn_to_vi "$jest_bad" "检出残留 Jest API（Vitest 须用 vi.fn/vi.mock，Jest API 仅兼容模式可用）" "未检出残留 Jest API（已用 vi.*）"
 
   # ====================================================================
   # fw_jest_environment(warn)：须显式配置 environment（jsdom/happy-dom/node）
@@ -198,12 +183,7 @@ ${jest_bad}"
       insrc_bad="${c}: in-source testing 须用 if(import.meta.vitest) 隔离 + 生产构建剔除"
     fi
   done
-  if [[ -n "$insrc_bad" ]]; then
-    warn "fw_jest_in_source: 配置 include src/（in-source testing 须 if(import.meta.vitest) 隔离，否则生产打包含测试）:
-${insrc_bad}"
-  else
-    pass "fw_jest_in_source: 无 in-source 配置（或已隔离）"
-  fi
+  _fw_report warn fw_jest_in_source "$insrc_bad" "配置 include src/（in-source testing 须 if(import.meta.vitest) 隔离，否则生产打包含测试）" "无 in-source 配置（或已隔离）"
 
   # ====================================================================
   # fw_jest_bench(warn)：benchmark 须用 .bench.ts 约定

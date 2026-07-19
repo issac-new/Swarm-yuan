@@ -41,12 +41,7 @@ _fw_fastify_check() {
 "
     fi
   done <<< "$route_files"
-  if [[ -n "$sv_bad" ]]; then
-    fail "fw_fastify_schema_validation: 路由未声明 schema 校验（Ajv 输入白名单缺失 CWE-20，须配 schema.body/querystring/params）:
-${sv_bad}"
-  else
-    pass "fw_fastify_schema_validation: 路由均声明 schema 或无路由"
-  fi
+  _fw_report fail fw_fastify_schema_validation "$sv_bad" "路由未声明 schema 校验（Ajv 输入白名单缺失 CWE-20，须配 schema.body/querystring/params）" "路由均声明 schema 或无路由"
 
   # ====================================================================
   # fw_fastify_response_schema(warn)：响应 schema 启用 fast-json-stringify
@@ -88,12 +83,7 @@ ${rs_bad}"
 "
     fi
   done
-  if [[ -n "$enc_bad" ]]; then
-    warn "fw_fastify_encapsulation: 插件内 .decorate() 未用 fastify-plugin 包裹（封装上下文隔离，装饰器仅插件内可见；须确认隔离有意或用 fp 共享）:
-${enc_bad}"
-  else
-    pass "fw_fastify_encapsulation: 插件装饰器封装处理明确（fp 包裹或无跨上下文共享）"
-  fi
+  _fw_report warn fw_fastify_encapsulation "$enc_bad" "插件内 .decorate() 未用 fastify-plugin 包裹（封装上下文隔离，装饰器仅插件内可见；须确认隔离有意或用 fp 共享）" "插件装饰器封装处理明确（fp 包裹或无跨上下文共享）"
 
   # ====================================================================
   # fw_fastify_onsend_return(fail)：onSend 修改 payload 须 return/done
@@ -116,12 +106,7 @@ ${enc_bad}"
 "
     fi
   done
-  if [[ -n "$os_bad" ]]; then
-    fail "fw_fastify_onsend_return: onSend 修改 payload 必须 return newPayload（async）或 done(null, payload)（callback），否则修改静默丢弃:
-${os_bad}"
-  else
-    pass "fw_fastify_onsend_return: onSend payload 修改均有 return/done 或无 onSend"
-  fi
+  _fw_report fail fw_fastify_onsend_return "$os_bad" "onSend 修改 payload 必须 return newPayload（async）或 done(null, payload)（callback），否则修改静默丢弃" "onSend payload 修改均有 return/done 或无 onSend"
 
   # ====================================================================
   # fw_fastify_error_handler(fail)：setErrorHandler 统一错误处理
@@ -173,12 +158,7 @@ ${init_file}"
 "
     fi
   done
-  if [[ -n "$po_bad" ]]; then
-    warn "fw_fastify_plugin_order: 路由先于插件注册声明（后注册插件的钩子/装饰器对先声明路由不生效，鉴权漏挂风险 CWE-862）:
-${po_bad}"
-  else
-    pass "fw_fastify_plugin_order: 插件注册先于路由或同文件无混排"
-  fi
+  _fw_report warn fw_fastify_plugin_order "$po_bad" "路由先于插件注册声明（后注册插件的钩子/装饰器对先声明路由不生效，鉴权漏挂风险 CWE-862）" "插件注册先于路由或同文件无混排"
 
   # ====================================================================
   # fw_fastify_decorate_reference(warn)：decorateRequest/Reply 禁对象字面量
@@ -190,12 +170,7 @@ ${po_bad}"
     [[ -n "$ln" ]] && dr_bad="${dr_bad}${f}:${ln}
 "
   done
-  if [[ -n "$dr_bad" ]]; then
-    warn "fw_fastify_decorate_reference: decorateRequest/decorateReply 默认值用对象/数组字面量（跨请求共享同一引用，请求间数据串扰 CWE-668；须传 null 钩子内赋值）:
-${dr_bad}"
-  else
-    pass "fw_fastify_decorate_reference: 请求/响应装饰器无共享引用字面量"
-  fi
+  _fw_report warn fw_fastify_decorate_reference "$dr_bad" "decorateRequest/decorateReply 默认值用对象/数组字面量（跨请求共享同一引用，请求间数据串扰 CWE-668；须传 null 钩子内赋值）" "请求/响应装饰器无共享引用字面量"
 
   # ====================================================================
   # fw_fastify_cors(warn)：@fastify/cors origin 白名单

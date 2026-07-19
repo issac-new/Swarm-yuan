@@ -29,12 +29,7 @@ _fw_junit5_mockito_check() {
 "
     fi
   done
-  if [[ -n "$an_bad" ]]; then
-    fail "fw_junit_assertnotnull_only: 测试仅含 assertNotNull 断言（无具体期望值，回归保护为零——须 assertEquals/assertThrows/assertThat/verify）:
-${an_bad}"
-  else
-    pass "fw_junit_assertnotnull_only: 无仅 assertNotNull 的测试文件"
-  fi
+  _fw_report fail fw_junit_assertnotnull_only "$an_bad" "测试仅含 assertNotNull 断言（无具体期望值，回归保护为零——须 assertEquals/assertThrows/assertThat/verify）" "无仅 assertNotNull 的测试文件"
 
   # ---------- fw_junit_mockbean_context(warn)：@MockBean 上下文缓存污染 ----------
   local mb_files mb_bad=""
@@ -49,12 +44,7 @@ ${an_bad}"
 "
       fi
     done <<< "$mb_files"
-    if [[ -n "$mb_bad" ]]; then
-      warn "fw_junit_mockbean_context: @MockBean/@MockitoBean 未配 @DirtiesContext/统一基类（Spring 上下文缓存重建爆炸 + mock 状态残留；纯单测优先 MockitoExtension + @Mock）:
-${mb_bad}"
-    else
-      pass "fw_junit_mockbean_context: @MockBean 均含上下文清理痕迹"
-    fi
+    _fw_report warn fw_junit_mockbean_context "$mb_bad" "@MockBean/@MockitoBean 未配 @DirtiesContext/统一基类（Spring 上下文缓存重建爆炸 + mock 状态残留；纯单测优先 MockitoExtension + @Mock）" "@MockBean 均含上下文清理痕迹"
   fi
 
   # ---------- fw_junit_transactional_rollback(warn)：真实提交须显式 ----------
@@ -100,12 +90,7 @@ $(printf '%s\n' "$pv_hits" | head -5)"
 "
       fi
     done <<< "$ba_files"
-    if [[ -n "$ba_bad" ]]; then
-      warn "fw_junit_beforeall_static: @BeforeAll 方法未检出 static（PER_METHOD 生命周期下启动即 PreconditionViolationException；非 static 仅 PER_CLASS 合法）:
-${ba_bad}"
-    else
-      pass "fw_junit_beforeall_static: @BeforeAll 均 static 或 PER_CLASS"
-    fi
+    _fw_report warn fw_junit_beforeall_static "$ba_bad" "@BeforeAll 方法未检出 static（PER_METHOD 生命周期下启动即 PreconditionViolationException；非 static 仅 PER_CLASS 合法）" "@BeforeAll 均 static 或 PER_CLASS"
   fi
 
   # ---------- fw_junit_disabled_reason(warn)：@Disabled 须注明原因 ----------
@@ -146,12 +131,7 @@ $(printf '%s\n' "$nm_bad" | head -5)"
 "
       fi
     done <<< "$tc_files"
-    if [[ -n "$tc_bad" ]]; then
-      warn "fw_junit_testcontainers: @Testcontainers 未检出 static 容器（实例字段每方法起停容器，CI 时长爆炸；数据库容器应 static 共享）:
-${tc_bad}"
-    else
-      pass "fw_junit_testcontainers: 容器均 static 声明"
-    fi
+    _fw_report warn fw_junit_testcontainers "$tc_bad" "@Testcontainers 未检出 static 容器（实例字段每方法起停容器，CI 时长爆炸；数据库容器应 static 共享）" "容器均 static 声明"
   fi
 
   # ---------- fw_junit_mock_vs_spy(warn)：@Spy 部分 mock 确认 ----------

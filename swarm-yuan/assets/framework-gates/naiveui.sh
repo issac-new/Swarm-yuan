@@ -57,12 +57,7 @@ _fw_naiveui_check() {
         ;;
     esac
   done
-  if [[ -n "$th_bad" ]]; then
-    warn "fw_naiveui_config_provider_theme: 直接覆写 .n-* 类（须用 n-config-provider theme overrides，升级即失效）:
-${th_bad}"
-  else
-    pass "fw_naiveui_config_provider_theme: 未检出直接覆写 .n-* 类（已用 config-provider）"
-  fi
+  _fw_report warn fw_naiveui_config_provider_theme "$th_bad" "直接覆写 .n-* 类（须用 n-config-provider theme overrides，升级即失效）" "未检出直接覆写 .n-* 类（已用 config-provider）"
 
   # ====================================================================
   # fw_naiveui_usemessage_inject(warn)：useMessage 须注入式，禁裸 createDiscreteApi
@@ -74,12 +69,7 @@ ${th_bad}"
     [[ -n "$ln" ]] && dm_bad="${dm_bad}${f}:${ln}
 "
   done
-  if [[ -n "$dm_bad" ]]; then
-    warn "fw_naiveui_usemessage_inject: 检出 createDiscreteApi（脱离组件树，无法消费 config-provider context；优先 useMessage/useDialog 注入式）:
-${dm_bad}"
-  else
-    pass "fw_naiveui_usemessage_inject: 未检出 createDiscreteApi（已用注入式 useMessage）"
-  fi
+  _fw_report warn fw_naiveui_usemessage_inject "$dm_bad" "检出 createDiscreteApi（脱离组件树，无法消费 config-provider context；优先 useMessage/useDialog 注入式）" "未检出 createDiscreteApi（已用注入式 useMessage）"
 
   # ====================================================================
   # fw_naiveui_datatable_virtual(warn)：n-data-table 大数据须虚拟滚动
@@ -96,12 +86,7 @@ ${dm_bad}"
       fi
     fi
   done
-  if [[ -n "$tbl_bad" ]]; then
-    warn "fw_naiveui_datatable_virtual: n-data-table 大数据源未配 virtual-scroll（>1k 行须虚拟滚动）:
-${tbl_bad}"
-  else
-    pass "fw_naiveui_datatable_virtual: 已配虚拟滚动或数据量小（或无表格）"
-  fi
+  _fw_report warn fw_naiveui_datatable_virtual "$tbl_bad" "n-data-table 大数据源未配 virtual-scroll（>1k 行须虚拟滚动）" "已配虚拟滚动或数据量小（或无表格）"
 
   # ====================================================================
   # fw_naiveui_darktheme(warn)：暗色模式须用 darkTheme，禁手写 dark CSS
@@ -143,12 +128,7 @@ ${dk_bad}"
 "
     fi
   done
-  if [[ -n "$fr_bad" ]]; then
-    warn "fw_naiveui_form_rules: n-form 未用 :rules + 手动 if 校验（须用 rules + formRef.validate）:
-${fr_bad}"
-  else
-    pass "fw_naiveui_form_rules: n-form 均用 rules 校验（或无表单）"
-  fi
+  _fw_report warn fw_naiveui_form_rules "$fr_bad" "n-form 未用 :rules + 手动 if 校验（须用 rules + formRef.validate）" "n-form 均用 rules 校验（或无表单）"
 
   # ====================================================================
   # fw_naiveui_select_remote(warn)：n-select filterable 大数据须远程搜索
@@ -165,12 +145,7 @@ ${fr_bad}"
       fi
     fi
   done
-  if [[ -n "$sel_bad" ]]; then
-    warn "fw_naiveui_select_remote: n-select filterable 未配 on-search 远程搜索（大数据选项须远程）:
-${sel_bad}"
-  else
-    pass "fw_naiveui_select_remote: 远程搜索配置合理（或无 filterable）"
-  fi
+  _fw_report warn fw_naiveui_select_remote "$sel_bad" "n-select filterable 未配 on-search 远程搜索（大数据选项须远程）" "远程搜索配置合理（或无 filterable）"
 
   # ====================================================================
   # fw_naiveui_upload_size_limit(fail)：n-upload 须配大小限制
@@ -185,12 +160,7 @@ ${sel_bad}"
 "
     fi
   done
-  if [[ -n "$up_bad" ]]; then
-    fail "fw_naiveui_upload_size_limit: n-upload 未配 before-upload 大小校验（无限制可上传超大文件致 DoS）:
-${up_bad}"
-  else
-    pass "fw_naiveui_upload_size_limit: 均配大小限制（或无上传）"
-  fi
+  _fw_report fail fw_naiveui_upload_size_limit "$up_bad" "n-upload 未配 before-upload 大小校验（无限制可上传超大文件致 DoS）" "均配大小限制（或无上传）"
 
   # ====================================================================
   # fw_naiveui_modal_preset_card(warn)：n-modal 优先 preset-card
@@ -205,10 +175,5 @@ ${up_bad}"
 "
     fi
   done
-  if [[ -n "$mdl_bad" ]]; then
-    warn "fw_naiveui_modal_preset_card: n-modal 未配 preset（推荐 preset=\"card\" 统一标题/关闭/边框，否则手写布局不一致）:
-${mdl_bad}"
-  else
-    pass "fw_naiveui_modal_preset_card: n-modal 配置合理（或无 modal）"
-  fi
+  _fw_report warn fw_naiveui_modal_preset_card "$mdl_bad" "n-modal 未配 preset（推荐 preset=\"card\" 统一标题/关闭/边框，否则手写布局不一致）" "n-modal 配置合理（或无 modal）"
 }

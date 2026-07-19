@@ -43,12 +43,7 @@ _fw_prisma_check() {
     [[ -n "$ln" ]] && md_bad="${md_bad}${f}:${ln}
 "
   done
-  if [[ -n "$md_bad" ]]; then
-    fail "fw_prisma_migrate_deploy: 部署脚本检出 prisma migrate dev（交互式/漂移 reset 风险，生产清库隐患 CWE-672；须 migrate deploy）:
-${md_bad}"
-  else
-    pass "fw_prisma_migrate_deploy: 部署脚本未检出 migrate dev"
-  fi
+  _fw_report fail fw_prisma_migrate_deploy "$md_bad" "部署脚本检出 prisma migrate dev（交互式/漂移 reset 风险，生产清库隐患 CWE-672；须 migrate deploy）" "部署脚本未检出 migrate dev"
 
   # ====================================================================
   # fw_prisma_transaction_timeout(warn)：交互式事务显式 timeout
@@ -63,12 +58,7 @@ ${md_bad}"
 "
     fi
   done
-  if [[ -n "$tx_bad" ]]; then
-    warn "fw_prisma_transaction_timeout: 交互式 \$transaction 未显式 timeout/maxWait（默认 5s/2s，长事务高并发大面积 P2028 回滚）:
-${tx_bad}"
-  else
-    pass "fw_prisma_transaction_timeout: 交互式事务均配 timeout 或无交互式事务"
-  fi
+  _fw_report warn fw_prisma_transaction_timeout "$tx_bad" "交互式 \$transaction 未显式 timeout/maxWait（默认 5s/2s，长事务高并发大面积 P2028 回滚）" "交互式事务均配 timeout 或无交互式事务"
 
   # ====================================================================
   # fw_prisma_n1_loop(warn)：循环内 await prisma.* → N+1
@@ -80,12 +70,7 @@ ${tx_bad}"
 "
     fi
   done
-  if [[ -n "$n1_bad" ]]; then
-    warn "fw_prisma_n1_loop: 同文件含 for 循环与 await prisma.*（疑似循环内查询 N+1；须 include/select 单查或 in:ids 批量）:
-${n1_bad}"
-  else
-    pass "fw_prisma_n1_loop: 未检出循环内 prisma 查询"
-  fi
+  _fw_report warn fw_prisma_n1_loop "$n1_bad" "同文件含 for 循环与 await prisma.*（疑似循环内查询 N+1；须 include/select 单查或 in:ids 批量）" "未检出循环内 prisma 查询"
 
   # ====================================================================
   # fw_prisma_queryraw_injection(fail)：原始查询注入面
@@ -100,12 +85,7 @@ ${n1_bad}"
     [[ -n "$ln" ]] && inj_bad="${inj_bad}${f}:${ln}
 "
   done
-  if [[ -n "$inj_bad" ]]; then
-    fail "fw_prisma_queryraw_injection: 原始查询非参数化（\$queryRawUnsafe/字符串拼接 → SQL 注入 CWE-89；须 tagged template \$queryRaw\`...\` 自动参数化）:
-${inj_bad}"
-  else
-    pass "fw_prisma_queryraw_injection: 原始查询均为 tagged template 或无原始查询"
-  fi
+  _fw_report fail fw_prisma_queryraw_injection "$inj_bad" "原始查询非参数化（\$queryRawUnsafe/字符串拼接 → SQL 注入 CWE-89；须 tagged template \$queryRaw\`...\` 自动参数化）" "原始查询均为 tagged template 或无原始查询"
 
   # ====================================================================
   # fw_prisma_connection_limit(warn)：连接池 connection_limit
@@ -133,12 +113,7 @@ ${inj_bad}"
     [[ -n "$ln" ]] && id_bad="${id_bad}${f}:${ln}
 "
   done
-  if [[ -n "$id_bad" ]]; then
-    warn "fw_prisma_id_strategy: Int autoincrement 主键可枚举（URL 暴露即被遍历 CWE-639；对外资源须 uuid()/cuid()）:
-${id_bad}"
-  else
-    pass "fw_prisma_id_strategy: 无 autoincrement 主键"
-  fi
+  _fw_report warn fw_prisma_id_strategy "$id_bad" "Int autoincrement 主键可枚举（URL 暴露即被遍历 CWE-639；对外资源须 uuid()/cuid()）" "无 autoincrement 主键"
 
   # ====================================================================
   # fw_prisma_relation_cascade(warn)：@relation 显式 onDelete
@@ -150,12 +125,7 @@ ${id_bad}"
     [[ -n "$ln" ]] && rc_bad="${rc_bad}${f}:${ln}
 "
   done
-  if [[ -n "$rc_bad" ]]; then
-    warn "fw_prisma_relation_cascade: @relation 未显式 onDelete（默认 NoAction/Restrict 跨库行为不一；须按业务 Cascade/SetNull/Restrict）:
-${rc_bad}"
-  else
-    pass "fw_prisma_relation_cascade: 关联均显式 onDelete 或无关联"
-  fi
+  _fw_report warn fw_prisma_relation_cascade "$rc_bad" "@relation 未显式 onDelete（默认 NoAction/Restrict 跨库行为不一；须按业务 Cascade/SetNull/Restrict）" "关联均显式 onDelete 或无关联"
 
   # ====================================================================
   # fw_prisma_relation_index(warn)：关系标量外键 @@index
@@ -170,12 +140,7 @@ ${rc_bad}"
 "
     fi
   done
-  if [[ -n "$ri_bad" ]]; then
-    warn "fw_prisma_relation_index: schema 含关系标量（@relation(fields:)）但无 @@index（Postgres 不自动建 FK 索引，反查全表扫描）:
-${ri_bad}"
-  else
-    pass "fw_prisma_relation_index: 关系外键均有 @@index 或无关系标量"
-  fi
+  _fw_report warn fw_prisma_relation_index "$ri_bad" "schema 含关系标量（@relation(fields:)）但无 @@index（Postgres 不自动建 FK 索引，反查全表扫描）" "关系外键均有 @@index 或无关系标量"
 
   # ====================================================================
   # fw_prisma_middleware_removed(warn)：$use 中间件 v7 已移除
@@ -187,12 +152,7 @@ ${ri_bad}"
     [[ -n "$ln" ]] && mw_bad="${mw_bad}${f}:${ln}
 "
   done
-  if [[ -n "$mw_bad" ]]; then
-    warn "fw_prisma_middleware_removed: 检出 prisma.\$use 中间件（Prisma v7 已移除，须改 Client Extensions \$extends 实现软删除/审计）:
-${mw_bad}"
-  else
-    pass "fw_prisma_middleware_removed: 未检出 \$use 中间件"
-  fi
+  _fw_report warn fw_prisma_middleware_removed "$mw_bad" "检出 prisma.\$use 中间件（Prisma v7 已移除，须改 Client Extensions \$extends 实现软删除/审计）" "未检出 \$use 中间件"
 
   # ====================================================================
   # fw_prisma_audit_fields(warn)：模型审计字段
@@ -207,12 +167,7 @@ ${mw_bad}"
 "
     fi
   done
-  if [[ -n "$af_bad" ]]; then
-    warn "fw_prisma_audit_fields: 模型无 createdAt/updatedAt 审计字段（追溯无据；须 @default(now())/@updatedAt 自动维护）:
-${af_bad}"
-  else
-    pass "fw_prisma_audit_fields: 模型均含审计字段或无模型"
-  fi
+  _fw_report warn fw_prisma_audit_fields "$af_bad" "模型无 createdAt/updatedAt 审计字段（追溯无据；须 @default(now())/@updatedAt 自动维护）" "模型均含审计字段或无模型"
 
   # ====================================================================
   # fw_prisma_generator_output(warn)：generator output 必填（v7）
@@ -227,12 +182,7 @@ ${af_bad}"
 "
     fi
   done
-  if [[ -n "$go_bad" ]]; then
-    warn "fw_prisma_generator_output: generator 块无 output（Prisma v7 必填，client 不再默认生成进 node_modules；import 路径须指向自定义输出）:
-${go_bad}"
-  else
-    pass "fw_prisma_generator_output: generator output 已配置"
-  fi
+  _fw_report warn fw_prisma_generator_output "$go_bad" "generator 块无 output（Prisma v7 必填，client 不再默认生成进 node_modules；import 路径须指向自定义输出）" "generator output 已配置"
 
   # ====================================================================
   # fw_prisma_query_log(warn)：生产禁 log: ['query']
@@ -244,10 +194,5 @@ ${go_bad}"
     [[ -n "$ln" ]] && ql_bad="${ql_bad}${f}:${ln}
 "
   done
-  if [[ -n "$ql_bad" ]]; then
-    warn "fw_prisma_query_log: log: ['query'] 全量查询日志（生产泄露查询敏感值 CWE-532 + 日志爆炸；须 ['warn','error'] 或事件采样）:
-${ql_bad}"
-  else
-    pass "fw_prisma_query_log: 无 query 级日志配置"
-  fi
+  _fw_report warn fw_prisma_query_log "$ql_bad" "log: ['query'] 全量查询日志（生产泄露查询敏感值 CWE-532 + 日志爆炸；须 ['warn','error'] 或事件采样）" "无 query 级日志配置"
 }

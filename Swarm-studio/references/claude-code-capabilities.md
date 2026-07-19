@@ -109,6 +109,48 @@
 > - PreToolUse(Write|Edit) → `bash scripts/precheck.sh --scope --quiet` 检查写入范围
 > - WorktreeCreate/Remove → 自定义 VCS 设置/清理
 
+### Hook Runtime Governance（ECC v2.0.0）
+
+ECC 的 hook 系统有 4 层治理——生成的目标技能的 hooks.json 可参考：
+
+| 层 | 机制 | 说明 |
+|----|------|------|
+| **Stable hook IDs** | `pre:bash:dispatcher` | 每个 hook 有稳定 ID，重装时 dedupe（不重复注册） |
+| **Runtime profiles** | `ECC_HOOK_PROFILE=minimal\|standard\|strict` | 按 profile 启用不同 hook 集合 |
+| **Env gating** | `ECC_DISABLED_HOOKS` | 环境变量禁用特定 hook，不编辑文件 |
+| **Consolidated dispatchers** | 一个 `PreToolUse(Bash)` 入口 fan-out 到多个检查 | 减少 hook 数量，降低开销 |
+
+**目标技能可参考的 hooks.json 结构：**
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "id": "pre:bash:dispatcher",
+        "matcher": "Bash",
+        "command": "bash scripts/hook-dispatcher.sh",
+        "profile": "standard"
+      }
+    ]
+  },
+  "profiles": {
+    "minimal": ["pre:bash:dispatcher"],
+    "standard": ["pre:bash:dispatcher", "pre:write:gateguard"],
+    "strict": ["pre:bash:dispatcher", "pre:write:gateguard", "pre:write:config-protection"]
+  }
+}
+```
+
+### MCP Health Check（ECC v2.0.0）
+
+ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
+- 阻断：MCP server 不健康（unreachable / error）
+- 放行：MCP server 健康
+
+**目标技能可参考：**
+- PreToolUse(mcp__*) hook 中加健康检查
+- 防止调用不健康的 MCP server（避免超时/错误）
+
 ## 五、Subagent / Background Agents
 
 | 能力 | 描述 | 来源版本 |
@@ -450,7 +492,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 | 子命令 | 描述 | 目标技能落点 |
 |--------|------|-------------|
-| `plugin init\|new <name>` | 脚手架新插件到 `~/.claude/skills/<name>/` | **创建目标技能插件** |
+| `plugin init\|new <name>` | 脚手架新插件到 `~/.agents/skills/<name>/` | **创建目标技能插件** |
 | `plugin install <plugin>` | 从市场安装插件 | 安装依赖技能 |
 | `plugin list` | 列出已安装插件（`--enabled`/`--disabled`） | 审计 |
 | `plugin enable\|disable` | 启用/禁用插件 | 管理 |

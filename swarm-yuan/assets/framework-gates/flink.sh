@@ -27,7 +27,6 @@ _fw_flink_check() {
   done
 
   # ---------- 全局信号预检（供多门禁复用） ----------
-  local all_files="${javaarr[@]+"${javaarr[@]}"} ${cfgarr[@]+"${cfgarr[@]}"}"
   # 作业入口（DataStream / Table）
   local has_job=0
   if grep -lqE 'StreamExecutionEnvironment|getExecutionEnvironment|StreamTableEnvironment' ${javaarr[@]+"${javaarr[@]}"} 2>/dev/null; then
@@ -63,12 +62,7 @@ _fw_flink_check() {
 "
     done
   fi
-  if [[ -n "$ckpt_small" ]]; then
-    warn "fw_flink_checkpoint_interval: checkpoint 间隔疑似 <60s（大状态作业过频快照拖吞吐，经验区间 1–10min，须人工确认）:
-${ckpt_small}"
-  else
-    pass "fw_flink_checkpoint_interval: 未检出过小 checkpoint 间隔"
-  fi
+  _fw_report warn fw_flink_checkpoint_interval "$ckpt_small" "checkpoint 间隔疑似 <60s（大状态作业过频快照拖吞吐，经验区间 1–10min，须人工确认）" "未检出过小 checkpoint 间隔"
 
   # ====================================================================
   # fw_flink_savepoint_uid(warn)：算子须显式 .uid()
@@ -83,12 +77,7 @@ ${ckpt_small}"
       fi
     fi
   done
-  if [[ -n "$uid_bad" ]]; then
-    warn "fw_flink_savepoint_uid: 转换算子未显式 .uid()（savepoint 升级后无法映射状态，生产须全算子 uid）:
-${uid_bad}"
-  else
-    pass "fw_flink_savepoint_uid: 算子均显式 uid 或无转换算子"
-  fi
+  _fw_report warn fw_flink_savepoint_uid "$uid_bad" "转换算子未显式 .uid()（savepoint 升级后无法映射状态，生产须全算子 uid）" "算子均显式 uid 或无转换算子"
 
   # ====================================================================
   # fw_flink_exactly_once_sink(warn)：exactly-once 须事务 Sink
@@ -103,12 +92,7 @@ ${uid_bad}"
 "
     fi
   done <<< "$eos_files"
-  if [[ -n "$eos_bad" ]]; then
-    warn "fw_flink_exactly_once_sink: EXACTLY_ONCE + addSink/SinkFunction（旧接口无两阶段提交，端到端仅 at-least-once，须迁 FLIP-143 Sink/KafkaSink 事务）:
-${eos_bad}"
-  else
-    pass "fw_flink_exactly_once_sink: 未检出 EXACTLY_ONCE+旧 Sink 组合"
-  fi
+  _fw_report warn fw_flink_exactly_once_sink "$eos_bad" "EXACTLY_ONCE + addSink/SinkFunction（旧接口无两阶段提交，端到端仅 at-least-once，须迁 FLIP-143 Sink/KafkaSink 事务）" "未检出 EXACTLY_ONCE+旧 Sink 组合"
 
   # ====================================================================
   # fw_flink_watermark(warn)：事件时间窗口必须配 Watermark
@@ -122,12 +106,7 @@ ${eos_bad}"
       fi
     fi
   done
-  if [[ -n "$wm_bad" ]]; then
-    warn "fw_flink_watermark: 检出窗口/事件时间用法但无 WatermarkStrategy（事件时间窗口无水位线永不触发或数据错乱）:
-${wm_bad}"
-  else
-    pass "fw_flink_watermark: 窗口作业均配 Watermark 或无窗口"
-  fi
+  _fw_report warn fw_flink_watermark "$wm_bad" "检出窗口/事件时间用法但无 WatermarkStrategy（事件时间窗口无水位线永不触发或数据错乱）" "窗口作业均配 Watermark 或无窗口"
 
   # ====================================================================
   # fw_flink_allowed_lateness(warn)：迟到数据须显式处置
@@ -141,12 +120,7 @@ ${wm_bad}"
       fi
     fi
   done
-  if [[ -n "$late_bad" ]]; then
-    warn "fw_flink_allowed_lateness: 窗口作业无 allowedLateness/sideOutputLateData（超水位线迟到数据默认静默丢弃，统计口径漏数）:
-${late_bad}"
-  else
-    pass "fw_flink_allowed_lateness: 迟到数据已显式处置或无窗口"
-  fi
+  _fw_report warn fw_flink_allowed_lateness "$late_bad" "窗口作业无 allowedLateness/sideOutputLateData（超水位线迟到数据默认静默丢弃，统计口径漏数）" "迟到数据已显式处置或无窗口"
 
   # ====================================================================
   # fw_flink_state_backend(warn)：KeyedState 使用须确认状态后端
@@ -179,12 +153,7 @@ ${late_bad}"
       fi
     fi
   done
-  if [[ -n "$ttl_bad" ]]; then
-    warn "fw_flink_state_ttl: StateDescriptor 未配 StateTtlConfig（key 空间增长时状态无界膨胀，须 TTL+清理策略）:
-${ttl_bad}"
-  else
-    pass "fw_flink_state_ttl: 状态均配 TTL 或无 KeyedState"
-  fi
+  _fw_report warn fw_flink_state_ttl "$ttl_bad" "StateDescriptor 未配 StateTtlConfig（key 空间增长时状态无界膨胀，须 TTL+清理策略）" "状态均配 TTL 或无 KeyedState"
 
   # ====================================================================
   # fw_flink_api_choice(warn)：DataStream vs Table API 混用边界
@@ -198,12 +167,7 @@ ${ttl_bad}"
       fi
     fi
   done
-  if [[ -n "$mix_bad" ]]; then
-    warn "fw_flink_api_choice: Table/SQL 与 DataStream 复杂状态算子混用（须明确转换边界，retract 语义易错）:
-${mix_bad}"
-  else
-    pass "fw_flink_api_choice: 未检出两套 API 混用"
-  fi
+  _fw_report warn fw_flink_api_choice "$mix_bad" "Table/SQL 与 DataStream 复杂状态算子混用（须明确转换边界，retract 语义易错）" "未检出两套 API 混用"
 
   # ====================================================================
   # fw_flink_cdc_checkpoint(warn)：CDC 源断点续传依赖 checkpoint
@@ -247,12 +211,7 @@ ${mix_bad}"
     [[ -n "$ln" ]] && par_hit="${par_hit}${jf}:${ln}
 "
   done
-  if [[ -n "$par_hit" ]]; then
-    warn "fw_flink_parallelism_slots: .setParallelism() 硬编码并行度（应外置 pipeline.parallelism/-p，与 taskmanager.numberOfTaskSlots 协同规划）:
-${par_hit}"
-  else
-    pass "fw_flink_parallelism_slots: 未检出硬编码并行度"
-  fi
+  _fw_report warn fw_flink_parallelism_slots "$par_hit" ".setParallelism() 硬编码并行度（应外置 pipeline.parallelism/-p，与 taskmanager.numberOfTaskSlots 协同规划）" "未检出硬编码并行度"
 
   # ====================================================================
   # fw_flink_async_io(warn)：算子内同步阻塞调用
@@ -268,12 +227,7 @@ ${par_hit}"
       fi
     fi
   done
-  if [[ -n "$aio_bad" ]]; then
-    warn "fw_flink_async_io: 作业内含同步 HTTP/JDBC 调用且无 AsyncDataStream（阻塞 subtask 主线程，拖垮吞吐传导反压，须异步 I/O 或维表 join）:
-${aio_bad}"
-  else
-    pass "fw_flink_async_io: 未检出算子内同步阻塞调用"
-  fi
+  _fw_report warn fw_flink_async_io "$aio_bad" "作业内含同步 HTTP/JDBC 调用且无 AsyncDataStream（阻塞 subtask 主线程，拖垮吞吐传导反压，须异步 I/O 或维表 join）" "未检出算子内同步阻塞调用"
 
   # ====================================================================
   # fw_flink_cep_within(warn)：CEP 模式须配 within
@@ -287,12 +241,7 @@ ${aio_bad}"
       fi
     fi
   done
-  if [[ -n "$cep_bad" ]]; then
-    warn "fw_flink_cep_within: CEP 模式无 .within( 时间约束（NFA 部分匹配状态永久驻留，无界增长 OOM）:
-${cep_bad}"
-  else
-    pass "fw_flink_cep_within: CEP 模式均配 within 或无 CEP"
-  fi
+  _fw_report warn fw_flink_cep_within "$cep_bad" "CEP 模式无 .within( 时间约束（NFA 部分匹配状态永久驻留，无界增长 OOM）" "CEP 模式均配 within 或无 CEP"
 
   # ====================================================================
   # fw_flink_jm_ha(warn)：flink-conf 须配 high-availability
@@ -327,10 +276,5 @@ ${cep_bad}"
     [[ -n "$ln" ]] && v2_bad="${v2_bad}${jf}:${ln}
 "
   done
-  if [[ -n "$v2_bad" ]]; then
-    warn "fw_flink_version_2x: 检出 DataSet/SourceFunction/SinkFunction 旧 API（Flink 2.0 已移除 DataSet、弃用旧 Source/Sink 接口；升级 2.x 须迁 FLIP-27/FLIP-143，savepoint 兼容矩阵待验证）:
-${v2_bad}"
-  else
-    pass "fw_flink_version_2x: 未检出 2.x 弃用 API"
-  fi
+  _fw_report warn fw_flink_version_2x "$v2_bad" "检出 DataSet/SourceFunction/SinkFunction 旧 API（Flink 2.0 已移除 DataSet、弃用旧 Source/Sink 接口；升级 2.x 须迁 FLIP-27/FLIP-143，savepoint 兼容矩阵待验证）" "未检出 2.x 弃用 API"
 }

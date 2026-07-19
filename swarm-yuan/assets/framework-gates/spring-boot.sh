@@ -18,10 +18,7 @@ _fw_spring_boot_check() {
     [[ -n "$ln" ]] && cfgarr+=("$ln")
   done <<< "$cfgs"
 
-  # 代码正文过滤辅助：剔除单行注释 // 与 javadoc 块注释 * 行
-  _fw_sboot_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_c（C 系，剔 // 与 javadoc 块注释行）
 
   # ====================================================================
   # fw_sboot_transactional_selfinvoke(fail)：@Transactional 同类自调用不走代理
@@ -33,7 +30,7 @@ _fw_spring_boot_check() {
     local selfinvoke_bad="" sfile
     for sfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_sboot_code_only "$sfile")
+      code=$(_fw_strip_comments_c "$sfile")
       # 提取 @Transactional 标注的方法名（@Transactional 后若干行内的 "方法名(" 形式）
       local tx_methods
       tx_methods=$(printf '%s\n' "$code" | grep -A3 -E '^[[:space:]]*@Transactional\b' \
@@ -52,12 +49,7 @@ ${hits}
         fi
       done
     done
-    if [[ -n "$selfinvoke_bad" ]]; then
-      fail "fw_sboot_transactional_selfinvoke: @Transactional 同类自调用不走代理，事务失效（须自注入代理或拆 Bean）:
-${selfinvoke_bad}"
-    else
-      pass "fw_sboot_transactional_selfinvoke: 未检出 @Transactional 同类自调用"
-    fi
+    _fw_report fail fw_sboot_transactional_selfinvoke "$selfinvoke_bad" "@Transactional 同类自调用不走代理，事务失效（须自注入代理或拆 Bean）" "未检出 @Transactional 同类自调用"
   fi
 
   # ====================================================================
@@ -69,7 +61,7 @@ ${selfinvoke_bad}"
     local rb_bad="" sfile
     for sfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_sboot_code_only "$sfile")
+      code=$(_fw_strip_comments_c "$sfile")
       # @Transactional 未含 rollbackFor 且方法签名 throws checked 异常（非 RuntimeException 子类按名启发）
       local no_rb
       no_rb=$(printf '%s\n' "$code" | grep -nE '@Transactional\b' | grep -vE 'rollbackFor|rollbackForClassName' || true)
@@ -89,12 +81,7 @@ ${selfinvoke_bad}"
         fi
       done <<< "$no_rb"
     done
-    if [[ -n "$rb_bad" ]]; then
-      warn "fw_sboot_transactional_rollback: @Transactional 默认仅回滚 RuntimeException，checked 异常须显式 rollbackFor:
-${rb_bad}"
-    else
-      pass "fw_sboot_transactional_rollback: 未检出 checked 异常回滚风险"
-    fi
+    _fw_report warn fw_sboot_transactional_rollback "$rb_bad" "@Transactional 默认仅回滚 RuntimeException，checked 异常须显式 rollbackFor" "未检出 checked 异常回滚风险"
   fi
 
   # ====================================================================
@@ -126,7 +113,7 @@ ${fi_hits2}"
     local pxBad="" sfile
     for sfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_sboot_code_only "$sfile")
+      code=$(_fw_strip_comments_c "$sfile")
       # 类含 proxyBeanMethods = false
       if ! printf '%s\n' "$code" | grep -qE '@Configuration\b[^)]*proxyBeanMethods[[:space:]]*=[[:space:]]*false'; then
         continue
@@ -149,12 +136,7 @@ ${hits}
         fi
       done
     done
-    if [[ -n "$pxBad" ]]; then
-      warn "fw_sboot_proxy_bean_methods: proxyBeanMethods=false 的 @Configuration 中 @Bean 方法间直接调用（单例语义失效）:
-${pxBad}"
-    else
-      pass "fw_sboot_proxy_bean_methods: 未检出 Lite @Configuration @Bean 间单例失效"
-    fi
+    _fw_report warn fw_sboot_proxy_bean_methods "$pxBad" "proxyBeanMethods=false 的 @Configuration 中 @Bean 方法间直接调用（单例语义失效）" "未检出 Lite @Configuration @Bean 间单例失效"
   fi
 
   # ====================================================================
@@ -166,7 +148,7 @@ ${pxBad}"
     local pi_bad="" sfile
     for sfile in "${srcarr[@]}"; do
       local code
-      code=$(_fw_sboot_code_only "$sfile")
+      code=$(_fw_strip_comments_c "$sfile")
       if printf '%s\n' "$code" | grep -qE '@ConfigurationProperties' \
         && printf '%s\n' "$code" | grep -qE '@Profile\b' \
         && ! printf '%s\n' "$code" | grep -qE '@Configuration\b|@Component\b'; then
@@ -174,12 +156,7 @@ ${pxBad}"
 "
       fi
     done
-    if [[ -n "$pi_bad" ]]; then
-      warn "fw_sboot_profile_isolation: @Profile 标在 @ConfigurationProperties 上（属性绑定应与 profile 解耦，用 spring.config.activate.on-profile）:
-${pi_bad}"
-    else
-      pass "fw_sboot_profile_isolation: 未检出 @Profile 误标"
-    fi
+    _fw_report warn fw_sboot_profile_isolation "$pi_bad" "@Profile 标在 @ConfigurationProperties 上（属性绑定应与 profile 解耦，用 spring.config.activate.on-profile）" "未检出 @Profile 误标"
   fi
 
   # ====================================================================
@@ -199,12 +176,7 @@ ${pi_bad}"
 "
       fi
     done
-    if [[ -n "$co_bad" ]]; then
-      warn "fw_sboot_conditional_order: 含 @ConditionalOnMissingBean 但无 @AutoConfigureBefore/After/Order（自定义 auto-config 须声明顺序）:
-${co_bad}"
-    else
-      pass "fw_sboot_conditional_order: 未检出顺序缺失的 @ConditionalOnMissingBean"
-    fi
+    _fw_report warn fw_sboot_conditional_order "$co_bad" "含 @ConditionalOnMissingBean 但无 @AutoConfigureBefore/After/Order（自定义 auto-config 须声明顺序）" "未检出顺序缺失的 @ConditionalOnMissingBean"
   fi
 
   # ====================================================================
@@ -227,12 +199,7 @@ ${co_bad}"
         fi
       fi
     done
-    if [[ -n "$expo_hits" ]]; then
-      fail "fw_sboot_actuator_expose: Actuator 端点暴露面过大（含 * 或敏感端点且无独立 management 端口，信息泄露 CWE-200）:
-${expo_hits}"
-    else
-      pass "fw_sboot_actuator_expose: Actuator 端点暴露面已收敛"
-    fi
+    _fw_report fail fw_sboot_actuator_expose "$expo_hits" "Actuator 端点暴露面过大（含 * 或敏感端点且无独立 management 端口，信息泄露 CWE-200）" "Actuator 端点暴露面已收敛"
   fi
 
   # ====================================================================
@@ -271,12 +238,7 @@ ${expo_hits}"
           ;;
       esac
     done
-    if [[ -n "$dt_bad" ]]; then
-      warn "fw_sboot_devtools_in_prod: spring-boot-devtools 未标 optional/provided/developmentOnly（生产 classpath 禁含）:
-${dt_bad}"
-    else
-      pass "fw_sboot_devtools_in_prod: 未检出 devtools 配置问题"
-    fi
+    _fw_report warn fw_sboot_devtools_in_prod "$dt_bad" "spring-boot-devtools 未标 optional/provided/developmentOnly（生产 classpath 禁含）" "未检出 devtools 配置问题"
   fi
 
   # ====================================================================
@@ -342,12 +304,7 @@ ${app_file}"
         fi
       fi
     done
-    if [[ -n "$cp_bad" ]]; then
-      warn "fw_sboot_configprops_binding: @ConfigurationProperties 类未注册（须 @Component / @ConfigurationPropertiesScan / @EnableConfigurationProperties）:
-${cp_bad}"
-    else
-      pass "fw_sboot_configprops_binding: @ConfigurationProperties 均已注册"
-    fi
+    _fw_report warn fw_sboot_configprops_binding "$cp_bad" "@ConfigurationProperties 类未注册（须 @Component / @ConfigurationPropertiesScan / @EnableConfigurationProperties）" "@ConfigurationProperties 均已注册"
   fi
 
   # ====================================================================
@@ -358,12 +315,7 @@ ${cp_bad}"
   else
     local jx_hits
     jx_hits=$(grep -rnE 'import[[:space:]]+javax\.(servlet|persistence|validation|annotation\.(PostConstruct|PreDestroy)|transaction|mail|jms|websocket)' "${srcarr[@]}" 2>/dev/null || true)
-    if [[ -n "$jx_hits" ]]; then
-      fail "fw_sboot_jakarta_migration: 残留 javax.* 导入（Boot 3.0+ 须迁移至 jakarta.*，启动期 NoClassDefFoundError）:
-${jx_hits}"
-    else
-      pass "fw_sboot_jakarta_migration: 未检出 javax.* 残留"
-    fi
+    _fw_report fail fw_sboot_jakarta_migration "$jx_hits" "残留 javax.* 导入（Boot 3.0+ 须迁移至 jakarta.*，启动期 NoClassDefFoundError）" "未检出 javax.* 残留"
   fi
 
   # ====================================================================
@@ -383,12 +335,7 @@ ${jx_hits}"
 "
       fi
     done
-    if [[ -n "$cr_hits" ]]; then
-      warn "fw_sboot_circular_refs: spring.main.allow-circular-references=true（反模式逃逸阀，建议重构消除循环依赖）:
-${cr_hits}"
-    else
-      pass "fw_sboot_circular_refs: 未开启 allow-circular-references"
-    fi
+    _fw_report warn fw_sboot_circular_refs "$cr_hits" "spring.main.allow-circular-references=true（反模式逃逸阀，建议重构消除循环依赖）" "未开启 allow-circular-references"
   fi
 
   # ====================================================================
@@ -428,11 +375,6 @@ ${cr_hits}"
 "
       fi
     done
-    if [[ -n "$ds_bad" ]]; then
-      warn "fw_sboot_datasource_pool: 配置含 datasource.url 但未显式 hikari.maximum-pool-size（默认 10 易连接耗尽）:
-${ds_bad}"
-    else
-      pass "fw_sboot_datasource_pool: 连接池参数已配置或无 datasource"
-    fi
+    _fw_report warn fw_sboot_datasource_pool "$ds_bad" "配置含 datasource.url 但未显式 hikari.maximum-pool-size（默认 10 易连接耗尽）" "连接池参数已配置或无 datasource"
   fi
 }
