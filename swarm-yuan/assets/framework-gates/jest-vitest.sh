@@ -4,16 +4,24 @@
 _fw_jest_vitest_check() {
   echo "  [jest-vitest] Vitest 3.x/4.x（Jest 兼容）框架规律"
 
-  # ---------- 收集配置文件 ----------
+  # ---------- 收集配置文件（VITEST_CONFIG_GLOBS 优先，回退 VITEST_CONFIG_FILE 单文件）----------
   local cfgs cfgarr=()
   cfgs=$(_fw_resolve_globs ${VITEST_CONFIG_GLOBS[@]+"${VITEST_CONFIG_GLOBS[@]}"} 2>/dev/null | sort -u)
+  # 回退：GLOBS 未配置或无结果时，用 VITEST_CONFIG_FILE 单文件路径（兼容旧 conf / 单配置项目）
+  if [[ -z "$cfgs" && -n "${VITEST_CONFIG_FILE:-}" && -f "$VITEST_CONFIG_FILE" ]]; then
+    cfgs="$VITEST_CONFIG_FILE"
+  fi
   while IFS= read -r ln; do
     [[ -n "$ln" ]] && cfgarr+=("$ln")
   done <<< "$cfgs"
 
-  # ---------- 收集测试文件 ----------
+  # ---------- 收集测试文件（VITEST_TEST_GLOBS 优先，回退 VITEST_TEST_DIR_PATTERNS 旧约定）----------
   local tests testarr=()
   tests=$(_fw_resolve_globs ${VITEST_TEST_GLOBS[@]+"${VITEST_TEST_GLOBS[@]}"} 2>/dev/null | sort -u)
+  # 回退：GLOBS 未配置或无结果时，用 VITEST_TEST_DIR_PATTERNS（ncwk-dev 旧约定，兼容未迁移 conf）
+  if [[ -z "$tests" && -n "${VITEST_TEST_DIR_PATTERNS+x}" && ${#VITEST_TEST_DIR_PATTERNS[@]} -gt 0 ]]; then
+    tests=$(_fw_resolve_globs ${VITEST_TEST_DIR_PATTERNS[@]+"${VITEST_TEST_DIR_PATTERNS[@]}"} 2>/dev/null | sort -u)
+  fi
   while IFS= read -r ln; do
     [[ -n "$ln" ]] && testarr+=("$ln")
   done <<< "$tests"
