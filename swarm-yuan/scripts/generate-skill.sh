@@ -3,6 +3,11 @@
 # 用法:
 #   bash generate-skill.sh <skill-name> <project-dir> [target-dir]       # 创建新技能骨架
 #   bash generate-skill.sh --upgrade <skill-name> <project-dir> [target-dir]  # 升级已存在技能
+# 可选环境变量:
+#   SKILLS_PATH_REWRITE — sed 表达式，复制通用文件后逐文件应用（create/upgrade 均生效；
+#     缺省为空 = 不重写，行为不变）。用于目标运行时的 skills 目录不是 .claude/skills 的实例。
+#     例: SKILLS_PATH_REWRITE='s|\.claude/skills|.agents/skills|g' \
+#           bash generate-skill.sh --upgrade Swarm-studio <project-dir> <target-dir>
 # 作用:
 #   创建模式: 自动检测运行环境，在对应 skill 默认目录下创建六段式骨架
 #   升级模式: 用 swarm-yuan 最新模板覆盖通用文件，保留项目特定文件
@@ -337,6 +342,9 @@ SRC_SCRIPTS="$(cd "$(dirname "$0")" && pwd)"
 SWARM_YUAN_STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)"
 
 # 按 UNIVERSAL_FILES 清单复制通用文件（create 全量；upgrade 跳过 precheck.conf 保留用户配置）
+# 可选环境变量 SKILLS_PATH_REWRITE：sed 表达式，复制后逐文件就地应用（缺省空=不重写）。
+# 用途：目标运行时的 skills 目录不是 .claude/skills 时做路径重写，
+#       如 SKILLS_PATH_REWRITE='s|\.claude/skills|.agents/skills|g'（Swarm-studio 实例）。
 copy_universal_templates() {
   local dir="$1"
   local mode="${2:-create}"   # create=覆盖 precheck.conf（新建骨架）；upgrade=不覆盖（保留用户配置，由 merge_precheck_conf 增量补）
@@ -352,6 +360,11 @@ copy_universal_templates() {
       *) echo "ERROR: UNIVERSAL_FILES 未知源类别: $entry" >&2; return 1 ;;
     esac
     cp "$src" "$dir/$dest"
+    # 路径重写（三平台兼容：sed -i.bak + rm，与 tests/e2e/run-e2e.sh 同款写法）
+    if [[ -n "${SKILLS_PATH_REWRITE:-}" ]]; then
+      sed -i.bak -e "$SKILLS_PATH_REWRITE" "$dir/$dest" || { echo "ERROR: SKILLS_PATH_REWRITE 应用失败: $dir/$dest" >&2; return 1; }
+      rm -f "$dir/$dest.bak"
+    fi
   done
   chmod +x "$dir/assets/"*.sh "$dir/scripts/"*.sh
   # Windows .bat 包装器（让 Windows 用户也能直接运行，三平台兼容；缺失则跳过）
@@ -384,6 +397,7 @@ if [[ "$MODE" == "upgrade" ]]; then
   done
   echo "  ✓ 已备份"
   echo "=== 2. 覆盖通用模板（precheck.conf 保留用户配置，不覆盖）==="
+  [[ -n "${SKILLS_PATH_REWRITE:-}" ]] && echo "  （应用 SKILLS_PATH_REWRITE: ${SKILLS_PATH_REWRITE}）"
   copy_universal_templates "$SKILL_DIR" upgrade
   echo "  ✓ 已更新（precheck.conf 保留，precheck.sh 已覆盖）"
   echo "=== 2.5 增量合并 precheck.conf（补缺失的 requires_conf 变量占位）==="
