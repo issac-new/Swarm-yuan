@@ -86,12 +86,7 @@ ${content_files}"
         ;;
     esac
   done
-  if [[ -n "$arb_bad" ]]; then
-    warn "fw_tailwind_arbitrary_abuse: 检出任意值滥用（>5 处/文件，应抽自定义 CSS 或 @apply 复用）:
-${arb_bad}"
-  else
-    pass "fw_tailwind_arbitrary_abuse: 任意值用量合理（或未滥用）"
-  fi
+  _fw_report warn fw_tailwind_arbitrary_abuse "${arb_bad}" "检出任意值滥用（>5 处/文件，应抽自定义 CSS 或 @apply 复用）" "任意值用量合理（或未滥用）"
 
   # ====================================================================
   # fw_tailwind_prefix_isolate(warn)：与组件库混用须配 prefix 隔离
@@ -143,12 +138,7 @@ ${arb_bad}"
         ;;
     esac
   done
-  if [[ -n "$gh_bad" ]]; then
-    warn "fw_tailwind_group_hover: 检出 group-hover:（须父级标 group 类，否则不生效）:
-${gh_bad}"
-  else
-    pass "fw_tailwind_group_hover: 无 group-hover（或已配 group）"
-  fi
+  _fw_report warn fw_tailwind_group_hover "${gh_bad}" "检出 group-hover:（须父级标 group 类，否则不生效）" "无 group-hover（或已配 group）"
 
   # ====================================================================
   # fw_tailwind_apply_reuse(warn)：重复类组合须用 @apply 抽组件类
@@ -184,12 +174,7 @@ ${gh_bad}"
         ;;
     esac
   done
-  if [[ -n "$pc_bad" ]]; then
-    warn "fw_tailwind_postcss_order: PostCSS 插件顺序错误（tailwindcss 须在 autoprefixer 之前）:
-${pc_bad}"
-  else
-    pass "fw_tailwind_postcss_order: PostCSS 插件顺序合理（或无 postcss 配置）"
-  fi
+  _fw_report warn fw_tailwind_postcss_order "${pc_bad}" "PostCSS 插件顺序错误（tailwindcss 须在 autoprefixer 之前）" "PostCSS 插件顺序合理（或无 postcss 配置）"
 
   # ====================================================================
   # fw_tailwind_preflight_conflict(warn)：Preflight 须按需关闭
@@ -244,12 +229,7 @@ ${pc_bad}"
         ;;
     esac
   done
-  if [[ -n "$mq_bad" ]]; then
-    warn "fw_tailwind_responsive_prefix: 检出手写 @media（须用 sm:/md:/lg: 响应式前缀，统一断点）:
-${mq_bad}"
-  else
-    pass "fw_tailwind_responsive_prefix: 未检出手写 @media（已用响应式前缀）"
-  fi
+  _fw_report warn fw_tailwind_responsive_prefix "${mq_bad}" "检出手写 @media（须用 sm:/md:/lg: 响应式前缀，统一断点）" "未检出手写 @media（已用响应式前缀）"
 
   # ====================================================================
   # fw_tailwind_prod_minify(warn)：生产构建须 minify

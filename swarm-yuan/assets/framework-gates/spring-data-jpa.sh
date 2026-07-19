@@ -57,12 +57,7 @@ _fw_spring_data_jpa_check() {
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local eager_hits
     eager_hits=$(grep -rnE '@(OneToMany|ManyToMany)\([^)]*FetchType\.EAGER' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$eager_hits" ]]; then
-      warn "fw_jpa_eager_to_many: 检出 to-many FetchType.EAGER（笛卡尔积爆炸/MultipleBagFetchException，应保持默认 LAZY）:
-${eager_hits}"
-    else
-      pass "fw_jpa_eager_to_many: 无 to-many EAGER"
-    fi
+    _fw_report warn fw_jpa_eager_to_many "${eager_hits}" "检出 to-many FetchType.EAGER（笛卡尔积爆炸/MultipleBagFetchException，应保持默认 LAZY）" "无 to-many EAGER"
   else
     pass "fw_jpa_eager_to_many: 无 Java 源文件，跳过"
   fi
@@ -103,12 +98,7 @@ ${eager_hits}"
 "
       fi
     done
-    if [[ -n "$ro_bad" ]]; then
-      warn "fw_jpa_readonly: @Transactional 查询方法未 readOnly=true（脏检查快照浪费内存，读写分离误路由）:
-${ro_bad}"
-    else
-      pass "fw_jpa_readonly: 查询方法 readOnly 配置合理或无 @Transactional"
-    fi
+    _fw_report warn fw_jpa_readonly "${ro_bad}" "@Transactional 查询方法未 readOnly=true（脏检查快照浪费内存，读写分离误路由）" "查询方法 readOnly 配置合理或无 @Transactional"
   else
     pass "fw_jpa_readonly: 无 Java 源文件，跳过"
   fi
@@ -142,12 +132,7 @@ ${ro_bad}"
         fi
       fi
     done
-    if [[ -n "$pl_bad" ]]; then
-      warn "fw_jpa_pessimistic_lock: @Lock(PESSIMISTIC_WRITE) 无 lock.timeout/@QueryHints（并发下死锁/锁堆积；且须在 @Transactional 内）:
-${pl_bad}"
-    else
-      pass "fw_jpa_pessimistic_lock: 悲观锁配置合理或无悲观锁"
-    fi
+    _fw_report warn fw_jpa_pessimistic_lock "${pl_bad}" "@Lock(PESSIMISTIC_WRITE) 无 lock.timeout/@QueryHints（并发下死锁/锁堆积；且须在 @Transactional 内）" "悲观锁配置合理或无悲观锁"
   else
     pass "fw_jpa_pessimistic_lock: 无 Java 源文件，跳过"
   fi
@@ -179,12 +164,7 @@ ${pl_bad}"
 "
       fi
     done
-    if [[ -n "$sm_bad" ]]; then
-      warn "fw_jpa_save_merge: 同文件 .setId( 与 .save( 并存（detached 实体 save=merge 全字段覆盖，部分更新须先 findById 改托管实体）:
-${sm_bad}"
-    else
-      pass "fw_jpa_save_merge: 未检出 setId+save 并存"
-    fi
+    _fw_report warn fw_jpa_save_merge "${sm_bad}" "同文件 .setId( 与 .save( 并存（detached 实体 save=merge 全字段覆盖，部分更新须先 findById 改托管实体）" "未检出 setId+save 并存"
   else
     pass "fw_jpa_save_merge: 无 Java 源文件，跳过"
   fi
@@ -217,12 +197,7 @@ ${sm_bad}"
         fi
       fi
     done
-    if [[ -n "$mod_bad" ]]; then
-      warn "fw_jpa_modifying: @Modifying 无 clearAutomatically/flushAutomatically（批量更新绕过持久化上下文，一级缓存读到旧值）:
-${mod_bad}"
-    else
-      pass "fw_jpa_modifying: @Modifying 配置合理或无批量更新"
-    fi
+    _fw_report warn fw_jpa_modifying "${mod_bad}" "@Modifying 无 clearAutomatically/flushAutomatically（批量更新绕过持久化上下文，一级缓存读到旧值）" "@Modifying 配置合理或无批量更新"
   else
     pass "fw_jpa_modifying: 无 Java 源文件，跳过"
   fi
@@ -241,12 +216,7 @@ ${mod_bad}"
         fi
       fi
     done
-    if [[ -n "$eh_bad" ]]; then
-      warn "fw_jpa_equals_hashcode: @Entity 用 @Data/@EqualsAndHashCode 全字段（懒加载关联进 equals/toString → N+1/栈溢出/hashCode 不稳定，须业务键）:
-${eh_bad}"
-    else
-      pass "fw_jpa_equals_hashcode: 实体 equals/hashCode 策略合理"
-    fi
+    _fw_report warn fw_jpa_equals_hashcode "${eh_bad}" "@Entity 用 @Data/@EqualsAndHashCode 全字段（懒加载关联进 equals/toString → N+1/栈溢出/hashCode 不稳定，须业务键）" "实体 equals/hashCode 策略合理"
   else
     pass "fw_jpa_equals_hashcode: 无 Java 源文件，跳过"
   fi
@@ -257,12 +227,7 @@ ${eh_bad}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local enum_hits
     enum_hits=$(grep -rnE '@Enumerated' "${javaarr[@]}" 2>/dev/null | grep -v 'EnumType\.STRING' || true)
-    if [[ -n "$enum_hits" ]]; then
-      fail "fw_jpa_enum_ordinal: @Enumerated 未显式 EnumType.STRING（默认 ORDINAL 存序号，枚举重排即全表数据错位）:
-${enum_hits}"
-    else
-      pass "fw_jpa_enum_ordinal: @Enumerated 均 EnumType.STRING 或无枚举映射"
-    fi
+    _fw_report fail fw_jpa_enum_ordinal "${enum_hits}" "@Enumerated 未显式 EnumType.STRING（默认 ORDINAL 存序号，枚举重排即全表数据错位）" "@Enumerated 均 EnumType.STRING 或无枚举映射"
   else
     pass "fw_jpa_enum_ordinal: 无 Java 源文件，跳过"
   fi
@@ -279,12 +244,7 @@ ${enum_hits}"
       [[ -n "$ln" ]] && pg_hits="${pg_hits}${j}:${ln}
 "
     done
-    if [[ -n "$pg_hits" ]]; then
-      warn "fw_jpa_pagination: Repository 派生查询返回 List 且无 Pageable（数据量增长即全量加载 OOM，须 Page/Slice + Pageable）:
-${pg_hits}"
-    else
-      pass "fw_jpa_pagination: 派生查询均分页或无 List 返回"
-    fi
+    _fw_report warn fw_jpa_pagination "${pg_hits}" "Repository 派生查询返回 List 且无 Pageable（数据量增长即全量加载 OOM，须 Page/Slice + Pageable）" "派生查询均分页或无 List 返回"
   else
     pass "fw_jpa_pagination: 无 Java 源文件，跳过"
   fi

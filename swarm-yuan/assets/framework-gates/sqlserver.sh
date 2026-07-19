@@ -29,10 +29,7 @@ _fw_sqlserver_check() {
     esac
   done
 
-  # SQL 正文过滤：去 -- 行注释
-  _fw_mssql_sql_only() {
-    sed -E 's:--.*$::' "$1" 2>/dev/null
-  }
+  # SQL 正文过滤：调公共库 _fw_strip_comments_sql（SQL 系，去 -- 行注释）
 
   local c s ln
 
@@ -41,35 +38,25 @@ _fw_sqlserver_check() {
   # ====================================================================
   local nl_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    if _fw_mssql_sql_only "$s" | grep -qiE 'WITH[[:space:]]*\(NOLOCK\)'; then
+    if _fw_strip_comments_sql "$s" | grep -qiE 'WITH[[:space:]]*\(NOLOCK\)'; then
       if ! grep -qiE '脏读|dirty' "$s" 2>/dev/null; then
         nl_bad="${nl_bad}${s}
 "
       fi
     fi
   done
-  if [[ -n "$nl_bad" ]]; then
-    warn "fw_mssql_nolock: WITH (NOLOCK) 未声明脏读风险（= READ UNCOMMITTED，脏读/行漂移；一致性场景禁用，替代 READ_COMMITTED_SNAPSHOT）——同文件注释须写"脏读风险已评估":
-${nl_bad}"
-  else
-    pass "fw_mssql_nolock: NOLOCK 均已声明脏读风险或未使用"
-  fi
+  _fw_report warn fw_mssql_nolock "${nl_bad}" "WITH (NOLOCK) 未声明脏读风险（= READ UNCOMMITTED，脏读/行漂移；一致性场景禁用，替代 READ_COMMITTED_SNAPSHOT）——同文件注释须写"脏读风险已评估"" "NOLOCK 均已声明脏读风险或未使用"
 
   # ====================================================================
   # fw_mssql_sql_injection(fail)：字符串拼接动态 SQL
   # ====================================================================
   local inj_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mssql_sql_only "$s" | grep -inE "'[[:space:]]*\+[[:space:]]*@|(EXEC|EXECUTE)[[:space:]]*\([^)]*\+" || true)
+    ln=$(_fw_strip_comments_sql "$s" | grep -inE "'[[:space:]]*\+[[:space:]]*@|(EXEC|EXECUTE)[[:space:]]*\([^)]*\+" || true)
     [[ -n "$ln" ]] && inj_bad="${inj_bad}${s}:${ln}
 "
   done
-  if [[ -n "$inj_bad" ]]; then
-    fail "fw_mssql_sql_injection: 字符串拼接动态 SQL（SQL 注入 CWE-89 + 计划缓存污染）——必须 sp_executesql 参数化，动态表名用 QUOTENAME():
-${inj_bad}"
-  else
-    pass "fw_mssql_sql_injection: 动态 SQL 均参数化"
-  fi
+  _fw_report fail fw_mssql_sql_injection "${inj_bad}" "字符串拼接动态 SQL（SQL 注入 CWE-89 + 计划缓存污染）——必须 sp_executesql 参数化，动态表名用 QUOTENAME()" "动态 SQL 均参数化"
 
   # ====================================================================
   # fw_mssql_batch(warn)：BEGIN TRAN + 大量 DML 无 TOP/WHILE 分批 → 锁升级
@@ -80,30 +67,25 @@ ${inj_bad}"
       *.sql) ;;
       *) continue ;;
     esac
-    if _fw_mssql_sql_only "$s" | grep -qiE 'BEGIN[[:space:]]+TRAN'; then
-      dml_cnt=$(_fw_mssql_sql_only "$s" | grep -icE '(INSERT|UPDATE|DELETE)[[:space:]]' || true)
+    if _fw_strip_comments_sql "$s" | grep -qiE 'BEGIN[[:space:]]+TRAN'; then
+      dml_cnt=$(_fw_strip_comments_sql "$s" | grep -icE '(INSERT|UPDATE|DELETE)[[:space:]]' || true)
       if [[ "$dml_cnt" -ge 10 ]]; then
-        if ! _fw_mssql_sql_only "$s" | grep -qiE 'TOP[[:space:]]*\(|WHILE'; then
+        if ! _fw_strip_comments_sql "$s" | grep -qiE 'TOP[[:space:]]*\(|WHILE'; then
           bt_bad="${bt_bad}${s}: 事务内 DML 行数=${dml_cnt} 且无分批
 "
         fi
       fi
     fi
   done
-  if [[ -n "$bt_bad" ]]; then
-    warn "fw_mssql_batch: 单事务大批量 DML 无 TOP/WHILE 分批（行锁升级表锁，全表阻塞）——WHILE + DELETE/UPDATE TOP (5000) 分批提交:
-${bt_bad}"
-  else
-    pass "fw_mssql_batch: 批量 DML 均有分批或无大批量事务"
-  fi
+  _fw_report warn fw_mssql_batch "${bt_bad}" "单事务大批量 DML 无 TOP/WHILE 分批（行锁升级表锁，全表阻塞）——WHILE + DELETE/UPDATE TOP (5000) 分批提交" "批量 DML 均有分批或无大批量事务"
 
   # ====================================================================
   # fw_mssql_isolation(warn)：BEGIN TRAN 须配显式隔离级别声明
   # ====================================================================
   local tran_hit=0 iso_hit=0
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    _fw_mssql_sql_only "$s" | grep -qiE 'BEGIN[[:space:]]+TRAN' && tran_hit=1
-    _fw_mssql_sql_only "$s" | grep -qiE 'SET[[:space:]]+TRANSACTION[[:space:]]+ISOLATION[[:space:]]+LEVEL' && iso_hit=1
+    _fw_strip_comments_sql "$s" | grep -qiE 'BEGIN[[:space:]]+TRAN' && tran_hit=1
+    _fw_strip_comments_sql "$s" | grep -qiE 'SET[[:space:]]+TRANSACTION[[:space:]]+ISOLATION[[:space:]]+LEVEL' && iso_hit=1
   done
   if [[ "$tran_hit" -eq 0 ]]; then
     pass "fw_mssql_isolation: 无显式事务，跳过"
@@ -118,32 +100,22 @@ ${bt_bad}"
   # ====================================================================
   local ls_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mssql_sql_only "$s" | grep -inE 'sp_addlinkedserver|OPENQUERY|OPENROWSET' || true)
+    ln=$(_fw_strip_comments_sql "$s" | grep -inE 'sp_addlinkedserver|OPENQUERY|OPENROWSET' || true)
     [[ -n "$ln" ]] && ls_bad="${ls_bad}${s}:${ln}
 "
   done
-  if [[ -n "$ls_bad" ]]; then
-    warn "fw_mssql_linked_server: 检出链接服务器调用（映射高权限账号 = 注入横向移动通道 CWE-732）——核对映射登录只读低权限、rpc out 关闭:
-${ls_bad}"
-  else
-    pass "fw_mssql_linked_server: 无链接服务器调用"
-  fi
+  _fw_report warn fw_mssql_linked_server "${ls_bad}" "检出链接服务器调用（映射高权限账号 = 注入横向移动通道 CWE-732）——核对映射登录只读低权限、rpc out 关闭" "无链接服务器调用"
 
   # ====================================================================
   # fw_mssql_select_star(warn)：SELECT * → Key Lookup / 覆盖索引失效
   # ====================================================================
   local ss_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mssql_sql_only "$s" | grep -inE 'SELECT[[:space:]]*\*[[:space:]]+FROM' || true)
+    ln=$(_fw_strip_comments_sql "$s" | grep -inE 'SELECT[[:space:]]*\*[[:space:]]+FROM' || true)
     [[ -n "$ln" ]] && ss_bad="${ss_bad}${s}:${ln}
 "
   done
-  if [[ -n "$ss_bad" ]]; then
-    warn "fw_mssql_select_star: SELECT * 使非聚集索引必缺列 → Key Lookup 随机 IO——列名枚举，高频索引用 INCLUDE 覆盖:
-${ss_bad}"
-  else
-    pass "fw_mssql_select_star: 无 SELECT *"
-  fi
+  _fw_report warn fw_mssql_select_star "${ss_bad}" "SELECT * 使非聚集索引必缺列 → Key Lookup 随机 IO——列名枚举，高频索引用 INCLUDE 覆盖" "无 SELECT *"
 
   # ====================================================================
   # fw_mssql_deadlock_trace(warn)：mssql 配置须含死锁追踪（1222/XE）
@@ -170,62 +142,42 @@ ${ss_bad}"
   # ====================================================================
   local pg_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mssql_sql_only "$s" | grep -inE 'ROW_NUMBER[[:space:]]*\(' || true)
+    ln=$(_fw_strip_comments_sql "$s" | grep -inE 'ROW_NUMBER[[:space:]]*\(' || true)
     [[ -n "$ln" ]] && pg_bad="${pg_bad}${s}:${ln}
 "
   done
-  if [[ -n "$pg_bad" ]]; then
-    warn "fw_mssql_pagination: ROW_NUMBER 双层嵌套分页（多一层 Spool/Sequence Project）——2012+ 用 ORDER BY ... OFFSET n ROWS FETCH NEXT m ROWS ONLY，深分页用 keyset 游标:
-${pg_bad}"
-  else
-    pass "fw_mssql_pagination: 无 ROW_NUMBER 分页"
-  fi
+  _fw_report warn fw_mssql_pagination "${pg_bad}" "ROW_NUMBER 双层嵌套分页（多一层 Spool/Sequence Project）——2012+ 用 ORDER BY ... OFFSET n ROWS FETCH NEXT m ROWS ONLY，深分页用 keyset 游标" "无 ROW_NUMBER 分页"
 
   # ====================================================================
   # fw_mssql_sp_grant_public(fail)：GRANT EXECUTE TO public
   # ====================================================================
   local gp_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mssql_sql_only "$s" | grep -inE 'GRANT[[:space:]]+EXEC(UTE)?[[:space:]].*TO[[:space:]]+public' || true)
+    ln=$(_fw_strip_comments_sql "$s" | grep -inE 'GRANT[[:space:]]+EXEC(UTE)?[[:space:]].*TO[[:space:]]+public' || true)
     [[ -n "$ln" ]] && gp_bad="${gp_bad}${s}:${ln}
 "
   done
-  if [[ -n "$gp_bad" ]]; then
-    fail "fw_mssql_sp_grant_public: GRANT EXECUTE TO public（任意登录可执行，越权 CWE-862）——按角色授权 GRANT EXECUTE ON SCHEMA::dbo TO <role>:
-${gp_bad}"
-  else
-    pass "fw_mssql_sp_grant_public: 无 public 授权"
-  fi
+  _fw_report fail fw_mssql_sp_grant_public "${gp_bad}" "GRANT EXECUTE TO public（任意登录可执行，越权 CWE-862）——按角色授权 GRANT EXECUTE ON SCHEMA::dbo TO <role>" "无 public 授权"
 
   # ====================================================================
   # fw_mssql_trigger(warn)：触发器慎用
   # ====================================================================
   local tg_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mssql_sql_only "$s" | grep -inE 'CREATE[[:space:]]+TRIGGER' || true)
+    ln=$(_fw_strip_comments_sql "$s" | grep -inE 'CREATE[[:space:]]+TRIGGER' || true)
     [[ -n "$ln" ]] && tg_bad="${tg_bad}${s}:${ln}
 "
   done
-  if [[ -n "$tg_bad" ]]; then
-    warn "fw_mssql_trigger: 检出触发器（在触发事务内同步执行，重活/外部调用拉长 DML 持锁）——重逻辑改 Service Broker/CDC/应用层事件:
-${tg_bad}"
-  else
-    pass "fw_mssql_trigger: 无触发器"
-  fi
+  _fw_report warn fw_mssql_trigger "${tg_bad}" "检出触发器（在触发事务内同步执行，重活/外部调用拉长 DML 持锁）——重逻辑改 Service Broker/CDC/应用层事件" "无触发器"
 
   # ====================================================================
   # fw_mssql_dml_nowhere(fail)：单行 UPDATE/DELETE 无 WHERE
   # ====================================================================
   local dml_bad=""
   for s in "${sqlarr[@]+"${sqlarr[@]}"}"; do
-    ln=$(_fw_mssql_sql_only "$s" | grep -inE '^[[:space:]]*(DELETE[[:space:]]+FROM|UPDATE[[:space:]]+)[^;]*;' | grep -ivE 'WHERE|TOP' || true)
+    ln=$(_fw_strip_comments_sql "$s" | grep -inE '^[[:space:]]*(DELETE[[:space:]]+FROM|UPDATE[[:space:]]+)[^;]*;' | grep -ivE 'WHERE|TOP' || true)
     [[ -n "$ln" ]] && dml_bad="${dml_bad}${s}:${ln}
 "
   done
-  if [[ -n "$dml_bad" ]]; then
-    fail "fw_mssql_dml_nowhere: 无 WHERE 的 UPDATE/DELETE（全表改写/清空 + 锁升级）——批量变更 WHERE 限定 + TOP 分批，清表用 TRUNCATE:
-${dml_bad}"
-  else
-    pass "fw_mssql_dml_nowhere: DML 均带 WHERE"
-  fi
+  _fw_report fail fw_mssql_dml_nowhere "${dml_bad}" "无 WHERE 的 UPDATE/DELETE（全表改写/清空 + 锁升级）——批量变更 WHERE 限定 + TOP 分批，清表用 TRUNCATE" "DML 均带 WHERE"
 }

@@ -16,10 +16,7 @@ _fw_sqlalchemy_check() {
     return
   fi
 
-  # 代码正文过滤辅助（去 # 注释）
-  _fw_sa_code_only() {
-    sed -E 's:#.*$::' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_hash（Python 系，去 # 注释）
 
   # ====================================================================
   # fw_sa_legacy_query(warn)：1.x session.query() 须迁 2.x select()
@@ -27,16 +24,11 @@ _fw_sqlalchemy_check() {
   local lq_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_sa_code_only "$f" | grep -nE '\.query\(' 2>/dev/null || true)
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE '\.query\(' 2>/dev/null || true)
     [[ -n "$ln" ]] && lq_bad="${lq_bad}${f}:${ln}
 "
   done
-  if [[ -n "$lq_bad" ]]; then
-    warn "fw_sa_legacy_query: 1.x 风格 session.query()（2.x 须 select() + session.scalars/execute）:
-${lq_bad}"
-  else
-    pass "fw_sa_legacy_query: 无 1.x query() 风格"
-  fi
+  _fw_report warn fw_sa_legacy_query "${lq_bad}" "1.x 风格 session.query()（2.x 须 select() + session.scalars/execute）" "无 1.x query() 风格"
 
   # ====================================================================
   # fw_sa_detached(warn)：session 关闭/提交后访问关联 → DetachedInstanceError
@@ -44,8 +36,8 @@ ${lq_bad}"
   local dt_bad=""
   for f in "${srcarr[@]}"; do
     # (a) 显式 session.close()：须人工确认关闭后无关联属性访问
-    if _fw_sa_code_only "$f" | grep -qE '\.close\(\)' && grep -qE 'session|Session' "$f" 2>/dev/null; then
-      if _fw_sa_code_only "$f" | grep -qE '(session|s)\.close\(\)'; then
+    if _fw_strip_comments_hash "$f" | grep -qE '\.close\(\)' && grep -qE 'session|Session' "$f" 2>/dev/null; then
+      if _fw_strip_comments_hash "$f" | grep -qE '(session|s)\.close\(\)'; then
         dt_bad="${dt_bad}${f}: 显式 session.close()（须确认返回对象关联已加载，否则 DetachedInstanceError）
 "
         continue
@@ -53,18 +45,13 @@ ${lq_bad}"
     fi
     # (b) with Session() as s: 块内 return ORM 对象且无加载策略/expire_on_commit=False
     if grep -qE 'with[[:space:]].*Session.*[[:space:]]as[[:space:]]' "$f" 2>/dev/null \
-       && _fw_sa_code_only "$f" | grep -qE '^[[:space:]]+return[[:space:]]' \
+       && _fw_strip_comments_hash "$f" | grep -qE '^[[:space:]]+return[[:space:]]' \
        && ! grep -qE 'joinedload|selectinload|subqueryload|expire_on_commit' "$f" 2>/dev/null; then
       dt_bad="${dt_bad}${f}: with-Session 块内 return ORM 对象且无加载策略（出块后访问关联将 DetachedInstanceError）
 "
     fi
   done
-  if [[ -n "$dt_bad" ]]; then
-    warn "fw_sa_detached: 会话边界后访问关联风险（返回前加载完关联或 expire_on_commit=False）:
-${dt_bad}"
-  else
-    pass "fw_sa_detached: 会话边界与加载策略合理"
-  fi
+  _fw_report warn fw_sa_detached "${dt_bad}" "会话边界后访问关联风险（返回前加载完关联或 expire_on_commit=False）" "会话边界与加载策略合理"
 
   # ====================================================================
   # fw_sa_pool_recycle(warn)：连接池须 pool_recycle/pool_pre_ping 防断连
@@ -99,12 +86,7 @@ ${pr_bad}"
 "
     fi
   done
-  if [[ -n "$np_bad" ]]; then
-    warn "fw_sa_nplusone: relationship 未配 selectinload/joinedload/lazy=（N+1 风险）:
-${np_bad}"
-  else
-    pass "fw_sa_nplusone: 关系加载策略已声明或无 relationship"
-  fi
+  _fw_report warn fw_sa_nplusone "${np_bad}" "relationship 未配 selectinload/joinedload/lazy=（N+1 风险）" "关系加载策略已声明或无 relationship"
 
   # ====================================================================
   # fw_sa_engine_credentials(fail)：create_engine URL 禁明文凭据
@@ -112,36 +94,26 @@ ${np_bad}"
   local ec_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_sa_code_only "$f" | grep -nE '[a-zA-Z][a-zA-Z0-9+]*://[A-Za-z0-9_-]+:[^@"'"'"'[:space:]]+@' 2>/dev/null \
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE '[a-zA-Z][a-zA-Z0-9+]*://[A-Za-z0-9_-]+:[^@"'"'"'[:space:]]+@' 2>/dev/null \
        | grep -vE 'os\.environ|getenv|%\(|format\(|example|user:pass|user:password' || true)
     [[ -n "$ln" ]] && ec_bad="${ec_bad}${f}:${ln}
 "
   done
-  if [[ -n "$ec_bad" ]]; then
-    fail "fw_sa_engine_credentials: create_engine URL 明文凭据（CWE-798，须环境变量注入）:
-${ec_bad}"
-  else
-    pass "fw_sa_engine_credentials: 无明文凭据连接串"
-  fi
+  _fw_report fail fw_sa_engine_credentials "${ec_bad}" "create_engine URL 明文凭据（CWE-798，须环境变量注入）" "无明文凭据连接串"
 
   # ====================================================================
   # fw_sa_bulk_insert(warn)：循环逐条 session.add 须 bulk_insert_mappings
   # ====================================================================
   local bi_bad=""
   for f in "${srcarr[@]}"; do
-    if _fw_sa_code_only "$f" | grep -qE '^[[:space:]]*for[[:space:]].*:' \
+    if _fw_strip_comments_hash "$f" | grep -qE '^[[:space:]]*for[[:space:]].*:' \
        && grep -qE '\.add\(' "$f" 2>/dev/null \
        && ! grep -qE 'bulk_insert_mappings|bulk_save_objects|add_all\(' "$f" 2>/dev/null; then
       bi_bad="${bi_bad}${f}: for 循环 + session.add（逐条 INSERT，批量须 bulk_insert_mappings）
 "
     fi
   done
-  if [[ -n "$bi_bad" ]]; then
-    warn "fw_sa_bulk_insert: 逐条插入性能差（N 次往返；bulk_insert_mappings/add_all 批量）:
-${bi_bad}"
-  else
-    pass "fw_sa_bulk_insert: 无逐条循环插入"
-  fi
+  _fw_report warn fw_sa_bulk_insert "${bi_bad}" "逐条插入性能差（N 次往返；bulk_insert_mappings/add_all 批量）" "无逐条循环插入"
 
   # ====================================================================
   # fw_sa_transaction_boundary(warn)：写操作须 commit/rollback 边界
@@ -154,12 +126,7 @@ ${bi_bad}"
 "
     fi
   done
-  if [[ -n "$tb_bad" ]]; then
-    warn "fw_sa_transaction_boundary: 事务边界缺失（写后须 commit，异常须 rollback）:
-${tb_bad}"
-  else
-    pass "fw_sa_transaction_boundary: 事务边界完整"
-  fi
+  _fw_report warn fw_sa_transaction_boundary "${tb_bad}" "事务边界缺失（写后须 commit，异常须 rollback）" "事务边界完整"
 
   # ====================================================================
   # fw_sa_scoped_session(warn)：scoped_session 须 remove() 防线程泄漏
@@ -183,16 +150,11 @@ ${tb_bad}"
   local fk_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_sa_code_only "$f" | grep -nE 'ForeignKey\(' 2>/dev/null | grep -vE 'index[[:space:]]*=' || true)
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE 'ForeignKey\(' 2>/dev/null | grep -vE 'index[[:space:]]*=' || true)
     [[ -n "$ln" ]] && fk_bad="${fk_bad}${f}:${ln}
 "
   done
-  if [[ -n "$fk_bad" ]]; then
-    warn "fw_sa_fk_index: ForeignKey 无 index=True（PostgreSQL 不自动建 FK 索引，JOIN/级联删除全表扫）:
-${fk_bad}"
-  else
-    pass "fw_sa_fk_index: 外键列均有索引或无外键"
-  fi
+  _fw_report warn fw_sa_fk_index "${fk_bad}" "ForeignKey 无 index=True（PostgreSQL 不自动建 FK 索引，JOIN/级联删除全表扫）" "外键列均有索引或无外键"
 
   # ====================================================================
   # fw_sa_alembic(warn)：create_all 直连建表须 Alembic 迁移管理
@@ -243,16 +205,11 @@ ${ps_bad}"
   local ti_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_sa_code_only "$f" | grep -nE 'text\(f["'"'"']|text\([^)]*%[[:space:]]|text\([^)]*\+[[:space:]]*[a-zA-Z_]' 2>/dev/null || true)
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE 'text\(f["'"'"']|text\([^)]*%[[:space:]]|text\([^)]*\+[[:space:]]*[a-zA-Z_]' 2>/dev/null || true)
     [[ -n "$ln" ]] && ti_bad="${ti_bad}${f}:${ln}
 "
   done
-  if [[ -n "$ti_bad" ]]; then
-    fail "fw_sa_text_injection: text() 拼接 SQL（SQL 注入，CWE-89；须 :param 绑定参数）:
-${ti_bad}"
-  else
-    pass "fw_sa_text_injection: 无拼接式 text() SQL"
-  fi
+  _fw_report fail fw_sa_text_injection "${ti_bad}" "text() 拼接 SQL（SQL 注入，CWE-89；须 :param 绑定参数）" "无拼接式 text() SQL"
 
   # ====================================================================
   # fw_sa_string_length(warn)：String 列须指定长度（MySQL 强制）
@@ -260,14 +217,9 @@ ${ti_bad}"
   local sl_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_sa_code_only "$f" | grep -nE 'Column\([^\n]*\bString\b\)|String[[:space:]]*,' 2>/dev/null || true)
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE 'Column\([^\n]*\bString\b\)|String[[:space:]]*,' 2>/dev/null || true)
     [[ -n "$ln" ]] && sl_bad="${sl_bad}${f}:${ln}
 "
   done
-  if [[ -n "$sl_bad" ]]; then
-    warn "fw_sa_string_length: String 无长度（MySQL 建表报错；跨方言不可移植，须 String(n)）:
-${sl_bad}"
-  else
-    pass "fw_sa_string_length: String 列均带长度"
-  fi
+  _fw_report warn fw_sa_string_length "${sl_bad}" "String 无长度（MySQL 建表报错；跨方言不可移植，须 String(n)）" "String 列均带长度"
 }

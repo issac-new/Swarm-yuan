@@ -41,12 +41,7 @@ _fw_xxl_job_check() {
 "
     fi
   done
-  if [[ -n "$idem_bad" ]]; then
-    warn "fw_xxljob_idempotent: @XxlJob 含写操作但无幂等痕迹（重试/分片/故障转移会重复执行）:
-${idem_bad}"
-  else
-    pass "fw_xxljob_idempotent: 任务处理器幂等性痕迹齐备或无写操作任务"
-  fi
+  _fw_report warn fw_xxljob_idempotent "${idem_bad}" "@XxlJob 含写操作但无幂等痕迹（重试/分片/故障转移会重复执行）" "任务处理器幂等性痕迹齐备或无写操作任务"
 
   # ====================================================================
   # fw_xxljob_access_token(fail)：accessToken 禁止空/默认/弱值
@@ -98,12 +93,7 @@ ${tk_fail}"
 "
     fi
   done
-  if [[ -n "$route_bad" ]]; then
-    warn "fw_xxljob_route_strategy: 批量特征任务未见分片痕迹（大数据量任务须分片广播 SHARDING_BROADCAST，默认 FIRST 单机热点）:
-${route_bad}"
-  else
-    pass "fw_xxljob_route_strategy: 批量任务已用分片或无批量任务"
-  fi
+  _fw_report warn fw_xxljob_route_strategy "${route_bad}" "批量特征任务未见分片痕迹（大数据量任务须分片广播 SHARDING_BROADCAST，默认 FIRST 单机热点）" "批量任务已用分片或无批量任务"
 
   # ====================================================================
   # fw_xxljob_shard_consistency(warn)：分片须取模分发
@@ -116,12 +106,7 @@ ${route_bad}"
 "
     fi
   done
-  if [[ -n "$shard_bad" ]]; then
-    warn "fw_xxljob_shard_consistency: 用 getShardIndex 但未见 getShardTotal 取模（全执行器将重复处理全量数据）:
-${shard_bad}"
-  else
-    pass "fw_xxljob_shard_consistency: 分片取模分发正确或未用分片"
-  fi
+  _fw_report warn fw_xxljob_shard_consistency "${shard_bad}" "用 getShardIndex 但未见 getShardTotal 取模（全执行器将重复处理全量数据）" "分片取模分发正确或未用分片"
 
   # ====================================================================
   # fw_xxljob_fail_retry(warn)：catch 块禁止吞异常
@@ -135,12 +120,7 @@ ${shard_bad}"
 "
     fi
   done
-  if [[ -n "$fr_bad" ]]; then
-    warn "fw_xxljob_fail_retry: catch 块疑似吞异常（须 throw / XxlJobHelper.handleFail，否则调度中心误判成功，重试告警失效）:
-${fr_bad}"
-  else
-    pass "fw_xxljob_fail_retry: 失败上报痕迹齐备或无 catch"
-  fi
+  _fw_report warn fw_xxljob_fail_retry "${fr_bad}" "catch 块疑似吞异常（须 throw / XxlJobHelper.handleFail，否则调度中心误判成功，重试告警失效）" "失败上报痕迹齐备或无 catch"
 
   # ====================================================================
   # fw_xxljob_glue_injection(fail)：动态执行 + 任务参数 = RCE 面
@@ -183,12 +163,7 @@ ${glue_warn}"
 "
     fi
   done
-  if [[ -n "$ha_bad" ]]; then
-    warn "fw_xxljob_schedule_ha: xxl.job.admin.addresses 为单地址（调度中心集群须逗号分隔多地址，单点故障执行器失联）:
-${ha_bad}"
-  else
-    pass "fw_xxljob_schedule_ha: admin.addresses 多地址或未配置"
-  fi
+  _fw_report warn fw_xxljob_schedule_ha "${ha_bad}" "xxl.job.admin.addresses 为单地址（调度中心集群须逗号分隔多地址，单点故障执行器失联）" "admin.addresses 多地址或未配置"
 
   # ====================================================================
   # fw_xxljob_executor_registry(warn)：executor.appname 须显式配置
@@ -225,12 +200,7 @@ ${ha_bad}"
     [[ "$logpath_ok" -eq 0 ]] && log_bad="${log_bad}(xxl.job.executor.logpath 未配置，默认路径随容器易失)
 "
   fi
-  if [[ -n "$log_bad" ]]; then
-    warn "fw_xxljob_log_collection: 任务日志未走 XxlJobHelper.log 或 logpath 未配（调度中心看不到执行日志）:
-${log_bad}"
-  else
-    pass "fw_xxljob_log_collection: 日志采集配置齐备"
-  fi
+  _fw_report warn fw_xxljob_log_collection "${log_bad}" "任务日志未走 XxlJobHelper.log 或 logpath 未配（调度中心看不到执行日志）" "日志采集配置齐备"
 
   # ====================================================================
   # fw_xxljob_version_align(warn)：xxl-job-core 与调度中心主版本对齐

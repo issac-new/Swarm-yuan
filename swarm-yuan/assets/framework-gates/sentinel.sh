@@ -299,12 +299,7 @@ ${auth_bad}"
       fi
     done <<< "$sr_files"
   fi
-  if [[ -n "$fl_bad" ]]; then
-    warn "fw_sentinel_fallback_light: 降级方法与远程调用同文件（降级逻辑须轻量本地兜底，禁止再调远程接口级联放大）:
-${fl_bad}"
-  else
-    pass "fw_sentinel_fallback_light: 未检出降级方法内远程调用痕迹"
-  fi
+  _fw_report warn fw_sentinel_fallback_light "${fl_bad}" "降级方法与远程调用同文件（降级逻辑须轻量本地兜底，禁止再调远程接口级联放大）" "未检出降级方法内远程调用痕迹"
 
   # ====================================================================
   # fw_sentinel_resource_naming(warn)：资源命名风格不得混用
