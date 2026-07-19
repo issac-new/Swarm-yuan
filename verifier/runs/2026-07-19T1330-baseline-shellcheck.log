@@ -1,0 +1,5 @@
+=== RUN 2026-07-19T13:44:24+08:00 baseline shellcheck (sc 0.10) ===
+SHELLCHECK_ERRORS 57
+SHELLCHECK_WARNINGS_CORE 15
+--- 明细按规则码 ---
+     57 SC2148

@@ -9,7 +9,9 @@ run_one() {  # $1=violating|compliant  $2=expect fail|pass
   tmp="$(mktemp -d /tmp/fwfx.XXXXXX)"
   mkdir -p "$tmp/scripts"
   cp "$BASE/assets/precheck.sh" "$tmp/scripts/precheck.sh"
-  cp "$FX/$mode/precheck.conf" "$tmp/scripts/precheck.conf"
+  # conf 中的 __REPO_ROOT__ 占位符替换为实际仓库根（fixture 机器无关化）
+  REPO_ROOT="$(cd "$BASE/.." && pwd)"
+  sed "s|__REPO_ROOT__|$REPO_ROOT|g" "$FX/$mode/precheck.conf" > "$tmp/scripts/precheck.conf"
   # 注入片段（直接用范式片段拼入标记区块，模拟 --inject-frameworks 结果）
   awk -v frag="$BASE/assets/framework-gates/$ID.sh" '
     /^# >>> swarm-yuan:framework-gates >>>/ { print; while ((getline l < frag) > 0) print l; skip=1; next }
