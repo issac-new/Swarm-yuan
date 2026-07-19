@@ -1,6 +1,6 @@
 # ruleset: react  requires_conf: REACT_SRC_GLOBS
-# gates: fw_react_hooks_top_level(fail) fw_react_effect_deps(fail) fw_react_list_key(warn) fw_react_immutable_state(fail) fw_react_memo_benefit(warn) fw_react_error_boundary(warn) fw_react_context_split(warn) fw_react_lazy_suspense(warn) fw_react_server_client_boundary(warn) fw_react_no_render_subscribe(warn)
-# harvested-from: P5 范例（2026-07-17），规律源自 React 19.x / 18.x 官方文档 + eslint-plugin-react-hooks
+# gates: fw_react_hooks_top_level(fail) fw_react_effect_deps(fail) fw_react_list_key(warn) fw_react_immutable_state(fail) fw_react_memo_benefit(warn) fw_react_error_boundary(warn) fw_react_context_split(warn) fw_react_lazy_suspense(warn) fw_react_server_client_boundary(warn) fw_react_no_render_subscribe(warn) fw_react_ref_callback_explicit(warn) fw_react_no_forwardref(warn)
+# harvested-from: P5 范例（2026-07-17），规律源自 React 19.x / 18.x 官方文档 + eslint-plugin-react-hooks；规律14/15 为 React 19 升级指南补充
 _fw_react_check() {
   echo "  [react] React 19.x / 18.x 框架规律"
 
@@ -259,5 +259,44 @@ ${rsc_bad}"
 ${sub_bad}"
   else
     pass "fw_react_no_render_subscribe: 未检出 render 阶段订阅（或已用 useEffect 包裹）"
+  fi
+
+  # ====================================================================
+  # fw_react_ref_callback_explicit(warn)：ref callback 须显式块语法，禁隐式返回（React 19）
+  # ====================================================================
+  local refcb_bad=""
+  for f in "${srcarr[@]}"; do
+    local body
+    body=$(_fw_react_code_only "$f")
+    # 检出 ref={... => ( 隐式返回箭头（无块 {} 包裹）——简化：ref= 后跟箭头函数且 => 后紧跟 ( 而非 {
+    local ln
+    ln=$(printf '%s\n' "$body" | grep -nE 'ref=\{[^}]*=>[[:space:]]*\(' 2>/dev/null || true)
+    [[ -n "$ln" ]] && refcb_bad="${refcb_bad}${f}:${ln}
+"
+  done
+  if [[ -n "$refcb_bad" ]]; then
+    warn "fw_react_ref_callback_explicit: ref callback 隐式返回（React 19 须块语法 ref={c => { x = c }}，否则返回值误判 cleanup 函数报错）:
+${refcb_bad}"
+  else
+    pass "fw_react_ref_callback_explicit: 未检出 ref callback 隐式返回"
+  fi
+
+  # ====================================================================
+  # fw_react_no_forwardref(warn)：React 19 起 ref 可作 prop，新组件禁用 forwardRef
+  # ====================================================================
+  local fwd_hit=""
+  for f in "${srcarr[@]}"; do
+    local body
+    body=$(_fw_react_code_only "$f")
+    local ln
+    ln=$(printf '%s\n' "$body" | grep -nE '\bforwardRef\(' 2>/dev/null || true)
+    [[ -n "$ln" ]] && fwd_hit="${fwd_hit}${f}:${ln}
+"
+  done
+  if [[ -n "$fwd_hit" ]]; then
+    warn "fw_react_no_forwardref: 检出 forwardRef（React 19 起 ref 可作 prop 直传，新组件禁用 forwardRef 包裹；存量组件标注待迁移）:
+${fwd_hit}"
+  else
+    pass "fw_react_no_forwardref: 未检出 forwardRef"
   fi
 }

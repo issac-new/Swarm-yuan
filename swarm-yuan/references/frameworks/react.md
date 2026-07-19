@@ -2,7 +2,7 @@
 ruleset_id: react
 适用版本: React 19.x（19.2 现行稳定；React Compiler v1.0 稳定）/ 18.x（差异单独标注）
 最后调研: 2026-07-17（来源：https://react.dev/blog ；https://react.dev/reference/react ；https://react.dev/reference/eslint-plugin-react-hooks ）
-深度门槛: 10
+深度门槛: 15
 ---
 
 # React 规则集
@@ -135,8 +135,22 @@ detect 信号命中任一高置信度行即可激活 react 框架规则集。
 - **验证方法**: 检出 `addEventListener|setInterval|setTimeout` 出现在组件函数体顶层（非 useEffect 内）→ warn。
 - **对应门禁**: fw_react_no_render_subscribe(warn)
 
+### 规律：ref callback 须显式块语法，禁隐式返回（React 19）
+- **适用版本**: React 19+（ref cleanup 函数特性稳定引入）
+- **规律**: React 19 引入 ref callback 可返回 cleanup 函数（卸载时调用），因此 ref callback 不再允许隐式返回（`ref={current => (instance = current)}`），必须用块语法（`ref={current => { instance = current }}`）。隐式返回的值会被 TypeScript/运行时误认为 cleanup 函数而报错。返回非函数值（如 DOM 实例）会被拒绝。来源：React 19 升级指南 https://react.dev/blog/2024/04/25/react-19-upgrade-guide 。
+- **违反后果**: ref callback 隐式返回 → 返回值被误判为 cleanup 函数 → TypeScript 报错 / 运行期卸载时调用非函数崩溃。
+- **验证方法**: 检出 `ref=\{[^}]*=>\s*\(` 箭头函数隐式返回（无块 `{}` 包裹）→ warn（须改块语法）。
+- **对应门禁**: fw_react_ref_callback_explicit(warn)
+
+### 规律：React 19 起 ref 可作 prop 直传，新组件禁用 forwardRef 包裹
+- **适用版本**: React 19+（forwardRef 将在未来版本 deprecated）
+- **规律**: React 19 起 `ref` 是普通 prop，函数组件可直接 `function Comp({ ref, ...props })` 接收，无需 `forwardRef` 包裹。`forwardRef` 将在未来版本 deprecated。新组件不应再用 `forwardRef`；存量 `forwardRef` 组件可在升级时逐步迁移。来源：React 19 升级指南 https://react.dev/blog/2024/04/25/react-19-upgrade-guide 。
+- **违反后果**: 新组件用 forwardRef → 增加无谓包裹层、与未来 deprecated 方向相悖、迁移债务累积。
+- **验证方法**: 检出 `forwardRef(` 调用 → warn（新组件建议直接接 ref prop；存量组件标注待迁移）。
+- **对应门禁**: fw_react_no_forwardref(warn)
+
 <!--
-共 13 条规律（≥10 门槛）。8 条挂门禁（fw_react_*），5 条标"人工检查"（语义相关规律，机械 grep 易误报）。
+共 15 条规律（≥15 门槛）。10 条挂门禁（fw_react_*），5 条标"人工检查"（语义相关规律，机械 grep 易误报）。
 每条规律均挂门禁 id 或"人工检查"，无游离规律。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
@@ -155,13 +169,16 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 | fw_react_lazy_suspense | warn | React.lazy 调用但同文件无 <Suspense 包裹 → warn | REACT_SRC_GLOBS |
 | fw_react_server_client_boundary | warn | 含 useState/useEffect/window./document. 的组件文件首行无 'use client' → warn（App Router 项目） | REACT_SRC_GLOBS |
 | fw_react_no_render_subscribe | warn | addEventListener/setInterval/setTimeout 出现在 render 阶段（非 useEffect 内）→ warn | REACT_SRC_GLOBS |
+| fw_react_ref_callback_explicit | warn | ref callback 箭头函数隐式返回（无块 {} 包裹）→ warn（React 19 须块语法，否则返回值误判 cleanup） | REACT_SRC_GLOBS |
+| fw_react_no_forwardref | warn | 检出 forwardRef( 调用 → warn（React 19 起 ref 可作 prop，新组件禁用 forwardRef 包裹） | REACT_SRC_GLOBS |
 
 <!--
 门禁 id 命名规范：fw_react_<rule>（rule 全小写下划线）。
-本表 10 条 id 须在 assets/framework-gates/react.sh 中有同名实现痕迹（grep 命中）。
+本表 12 条 id 须在 assets/framework-gates/react.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_react_<rule>(warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: react  requires_conf: REACT_SRC_GLOBS` 声明。
 fixture 验证覆盖：violating 含 useEffect 无依赖数组（fw_react_effect_deps fail 主触发）+ key={index}（warn）+ 直接 mutate state（fail）；compliant 全 pass。
+规律14/15 为 React 19 稳定特性新增（ref callback cleanup / forwardRef deprecated），来源 react.dev/blog/2024/04/25/react-19-upgrade-guide。
 -->
 
 ## §5 跨框架交互规则
