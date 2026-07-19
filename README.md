@@ -249,7 +249,7 @@ Swarm-yuan/
 │   ├── 2026-07-17-framework-rules-engine-design.md
 │   └── plans/
 ├── swarm-yuan/                   ← 生成器 skill
-│   ├── SKILL.md                  ← AI 入口（111 行）
+│   ├── SKILL.md                  ← AI 入口（135 行）
 │   ├── install.sh                ← 一键安装（7 环境检测）
 │   ├── assets/                   ← 模板 + 门禁 + 状态机
 │   │   ├── precheck.sh           ← 27 个门禁（2600+ 行，随门禁扩展演进）
