@@ -2,7 +2,7 @@
 ruleset_id: vue
 适用版本: Vue 3.5.x（现行稳定）/ 3.6.x（Vapor Mode RC，待验证 GA 时点；差异单独标注）
 最后调研: 2026-07-17（来源：https://github.com/vuejs/core/releases ；https://vuejs.org/guide/extras/reactivity-in-depth.html ；https://vuejs.org/api/sfc-script-setup.html ；https://vuejs.org/guide/built-ins/teleport.html ）
-深度门槛: 10
+深度门槛: 15
 ---
 
 # Vue 规则集
@@ -153,9 +153,23 @@ detect 信号命中任一高置信度行即可激活 vue 框架规则集。
 - **验证方法**: 检出 .vue 文件名为单词（如 `Header.vue`、`Button.vue`）→ 人工确认是否与原生元素冲突。
 - **对应门禁**: 人工检查
 
+### 规律：Pinia store 须用 defineStore 定义，禁散落 mutation
+- **适用版本**: Pinia 2.x / 3.x（随 vue 合并管理，原 pinia 规则集已并入）
+- **规律**: Pinia store 须用 `defineStore('id', { state, getters, actions })` 或 setup 风格 `defineStore('id', () => { … })` 集中定义，state 须函数返回对象（避免跨实例共享引用）。散落 mutation（直接改 store.xxx = ...）在 setup store 风格下虽允许，但组合式 API 须用 action 包裹以保持可追踪性与 devtools 支持。
+- **违反后果**: 缺 defineStore → 状态无响应式追踪 / devtools 不可见；散落 mutation → 难以审计状态变更来源。
+- **验证方法**: `grep -rlE 'defineStore' "${VUE_PINIA_FILE_GLOBS[@]+"${VUE_PINIA_FILE_GLOBS[@]}"}"` 计数；启用 `VUE_PINIA_DEFINESTORE_REQUIRED=1` 时 defineStore 文件数 = 0 → warn（疑似未用 Pinia 或漏定义）。
+- **对应门禁**: fw_vue_pinia_definestore(warn)
+
+### 规律：聚合层 store 须存在且只读消费，禁跨 store 直接写
+- **适用版本**: Pinia 2.x / 3.x
+- **规律**: 多 store 项目须设聚合层 store（如 `useGlobalStore` / `useRootStore`）统一编排跨域状态，子 store 须通过 action 调用聚合层而非直接写其他 store 的 state。聚合层 store 文件须实际存在（非占位）。
+- **违反后果**: 跨 store 直接写 → 状态来源混乱、循环依赖、SSR 请求间状态泄漏；无聚合层 → 多 store 协调无统一入口。
+- **验证方法**: `VUE_PINIA_AGGREGATE_STORE` 指向聚合层 store 文件路径，`[[ -f "$VUE_PINIA_AGGREGATE_STORE" ]]` 校验存在性；未配置或不存在 → warn。
+- **对应门禁**: fw_vue_pinia_aggregate(warn)
+
 <!--
-共 15 条规律（≥10 门槛）。前 5 条挂现有 vue.sh 门禁（与 # gates: 头注释一致），
-后 10 条标"人工检查"（语义/上下文相关规律，不新增门禁避免与现有 vue.sh 头注释漂移）。
+共 17 条规律（≥15 门槛，pinia 合并后 +2）。前 5 条挂现有 vue.sh 门禁（script_setup/no_options_api/vhtml_sanitize/vfor_index_key/reactivity_threshold），
+pinia 合并新增 2 条门禁（fw_vue_pinia_definestore/fw_vue_pinia_aggregate），后 10 条标"人工检查"（语义/上下文相关规律）。
 每条规律均挂门禁 id 或"人工检查"，无游离规律。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
@@ -169,13 +183,16 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 | fw_vue_vhtml_sanitize | fail | 检出 `v-html` 的 SFC 同文件未检出 sanitize 模式 → fail | VUE_FILE_GLOBS VUE_VHTML_SANITIZE_REQUIRED VUE_VHTML_SANITIZE_PATTERNS |
 | fw_vue_vfor_index_key | warn | v-for 用数组 index 作 key → warn（稳定数组可接受） | VUE_FILE_GLOBS VUE_VFOR_FORBIDDEN_INDEX_KEY |
 | fw_vue_reactivity_threshold | warn | reactive 调用次数超阈值 → warn 建议收敛 | VUE_FILE_GLOBS VUE_REACTIVE_WARN_THRESHOLD |
+| fw_vue_pinia_definestore | warn | 启用 VUE_PINIA_DEFINESTORE_REQUIRED=1 时 defineStore 文件数 = 0 → warn（疑似未用 Pinia 或漏定义） | VUE_PINIA_FILE_GLOBS VUE_PINIA_DEFINESTORE_REQUIRED |
+| fw_vue_pinia_aggregate | warn | VUE_PINIA_AGGREGATE_STORE 指向聚合层 store 文件不存在 → warn | VUE_PINIA_AGGREGATE_STORE |
 
 <!--
 门禁 id 命名规范：fw_vue_<rule>（rule 全小写下划线）。
-本表 5 条 id 与现有 assets/framework-gates/vue.sh 的 `# gates:` 头注释严格一致（T1 收割产物，未扩张门禁集）。
+本表 7 条 id 与 assets/framework-gates/vue.sh 的 `# gates:` 头注释严格一致（5 条原 vue + 2 条 pinia 合并）。
 §3 其余规律标"人工检查"，不新增门禁——避免 .md 与 .sh 头注释漂移。
 依赖变量在片段头注释 `# ruleset: vue  requires_conf: VAR1 VAR2` 声明（见 vue.sh 第 1 行）。
 fixture 验证覆盖：violating 含 v-html 无 sanitize（fw_vue_vhtml_sanitize fail 主触发）+ v-for 用 index（warn）；compliant 全 pass。
+pinia 合并自原独立 pinia.sh（harvested-from: ncwk-dev precheck.sh:2536-2555），门禁 id 由 fw_pinia_* 改为 fw_vue_pinia_* 以遵循命名规范。
 -->
 
 ## §5 跨框架交互规则
