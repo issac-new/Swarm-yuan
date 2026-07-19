@@ -26,13 +26,48 @@ MERGED_FRAMEWORK_MAP=(
   "vitest:jest-vitest" # B2: vitest 合并入 jest-vitest
 )
 
+# ============================================================
+# 通用文件清单（唯一数据源，create 复制 / upgrade 备份+覆盖 共用）
+# 格式：目标相对路径|源类别（源文件统一按 basename 取自源目录）
+#   assets = $ASSETS_DIR  ref = $SRC_REF  gen = $SRC_SCRIPTS（scripts/ 自身）
+# 注：scripts/precheck.conf 仅 create 覆盖；upgrade 保留用户配置（merge_precheck_conf 增量补）
+# ============================================================
+UNIVERSAL_FILES=(
+  "assets/spec-template.md|assets"
+  "assets/plan-template.md|assets"
+  "assets/branch-setup.sh|assets"
+  "assets/env-setup.sh|assets"
+  "assets/data-sample-template.md|assets"
+  "assets/state-machine.sh|assets"
+  "scripts/precheck.sh|assets"
+  "scripts/precheck.conf|assets"
+  "scripts/snippets.md|assets"
+  "scripts/mcp-tools.md|assets"
+  "scripts/state-machine.sh|assets"
+  "scripts/self-check.sh|gen"
+  "references/subagent-orchestration.md|ref"
+  "references/review-methodology.md|ref"
+  "references/code-graph-tools.md|ref"
+  "references/gsd-patterns.md|ref"
+  "references/memory-persistence.md|ref"
+  "references/security-spec.md|ref"
+  "references/cognition-framework.md|ref"
+  "references/logic-razor.md|ref"
+  "references/cognitive-bias.md|ref"
+  "references/domain-knowledge.md|ref"
+  "references/claude-code-capabilities.md|ref"
+)
+
+# 项目特定文件（upgrade 保留不覆盖、不备份）
+PROJECT_SPECIFIC_FILES=("SKILL.md" "references/workflow.md" "references/codebase.md" "references/dev-guide.md" "references/release.md" "references/reference-manual.md")
+
 # 迁移 ACTIVE_FRAMEWORKS 里的旧 id 到母框架（原地修改全局 ACTIVE_FRAMEWORKS 数组）
 # 迁移后 warn 提示用户更新 conf 的 ACTIVE_FRAMEWORKS 行
 # 置全局 MIGRATION_HAPPENED=1 表示发生了迁移（供调用方判断是否写回 conf）
 MIGRATION_HAPPENED=0
 migrate_merged_frameworks() {
   MIGRATION_HAPPENED=0
-  local i fw old new migrated=0 newlist=()
+  local fw new migrated=0 newlist=()
   for fw in "${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"}"; do
     new="$fw"
     for m in "${MERGED_FRAMEWORK_MAP[@]+"${MERGED_FRAMEWORK_MAP[@]}"}"; do
@@ -62,15 +97,16 @@ merge_precheck_conf() {
   local paradigm_dir; paradigm_dir="$(cd "$(dirname "$0")/.." && pwd)"
   local conf="$skill_dir/scripts/precheck.conf"
   [[ -f "$conf" ]] || { echo "⚠ precheck.conf 不存在，跳过合并"; return 0; }
-  # 读取用户 ACTIVE_FRAMEWORKS（含旧 id，迁移后补对应母框架变量）
-  ACTIVE_FRAMEWORKS=()
-  ( set +u; # shellcheck disable=SC1090
-    . "$conf" 2>/dev/null
-  )
-  # 在当前 shell 重新 source（上面子 shell 的变量带不出来）
-  ACTIVE_FRAMEWORKS=()
+  # 读取用户 ACTIVE_FRAMEWORKS（含旧 id，迁移后补对应母框架变量）。
+  # 子 shell 内 set +u source（conf 可能含字面 ${}），把数组逐行打印出来供当前 shell 读；
+  # 子 shell 的变量带不出来，故只取打印输出。
   local _af
-  _af=$( ( set +u; . "$conf" 2>/dev/null; printf '%s\n' "${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"}" ) )
+  _af=$( (
+    set +u
+    # shellcheck disable=SC1090
+    . "$conf" 2>/dev/null
+    printf '%s\n' "${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"}"
+  ) )
   # 迁移旧 id 到母框架，确定要补占位的框架清单
   local fws=() seen="" fw m new
   while IFS= read -r fw; do
@@ -135,8 +171,8 @@ inject_frameworks() {
   # 读取 ACTIVE_FRAMEWORKS（conf 可能含字面 ${} 如 SQL_INJECTION_WHITELIST，set -u 下会 unbound；
   # 在函数内临时关闭 set -u 做 source，读完立即恢复）
   ACTIVE_FRAMEWORKS=()
-  # shellcheck disable=SC1090
   set +u
+  # shellcheck disable=SC1090
   . "$conf"
   set -u
   if [[ ${#ACTIVE_FRAMEWORKS[@]} -eq 0 ]]; then
@@ -185,7 +221,7 @@ inject_frameworks() {
   done
   echo '# <<< swarm-yuan:framework-gates <<<' >> "$block"
 
-  # 2) 幂等替换标记区块（awk 三平台兼容；无标记区块则追加到文件末尾）
+  # 2) 幂等替换标记区块（awk 三平台兼容）
   local tmp; tmp="$(mktemp /tmp/fwprecheck.XXXXXX)"
   if grep -q '^# >>> swarm-yuan:framework-gates >>>' "$sh"; then
     awk -v blockfile="$block" '
@@ -193,9 +229,26 @@ inject_frameworks() {
       /^# <<< swarm-yuan:framework-gates <<</ { skip=0; next }
       !skip { print }
     ' "$sh" > "$tmp"
+  elif grep -q '^case "\$MODE" in' "$sh"; then
+    # 无标记区块：追加到文件末尾会落在 main case/exit 之后，注入的函数永不被定义。
+    # 改为插入 main case（case "$MODE" in）之前，保证函数先定义后被调用。
+    awk -v blockfile="$block" '
+      /^case "\$MODE" in/ && !inserted {
+        print ""
+        while ((getline l < blockfile) > 0) print l
+        print ""
+        inserted=1
+      }
+      { print }
+    ' "$sh" > "$tmp"
+    echo "⚠ $sh 中无标记区块，已插入 main case 之前（建议人工在 check_framework 之后补标记区块）"
   else
-    { cat "$sh"; echo ''; cat "$block"; } > "$tmp"
-    echo "⚠ $sh 中无标记区块，已追加到文件末尾（建议人工调整位置至 check_framework 之后）"
+    rm -f "$tmp" "$block"
+    echo "✗ $sh 既无标记区块也无 main case（case \"\$MODE\" in），无法安全注入" >&2
+    echo "  须人工在 check_framework 函数之后加入标记区块：" >&2
+    echo "    # >>> swarm-yuan:framework-gates >>>" >&2
+    echo "    # <<< swarm-yuan:framework-gates <<<" >&2
+    return 1
   fi
   cat "$tmp" > "$sh"
   rm -f "$tmp" "$block"
@@ -283,52 +336,37 @@ SRC_REF="$(cd "$(dirname "$0")/.." && pwd)/references"
 SRC_SCRIPTS="$(cd "$(dirname "$0")" && pwd)"
 SWARM_YUAN_STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)"
 
+# 按 UNIVERSAL_FILES 清单复制通用文件（create 全量；upgrade 跳过 precheck.conf 保留用户配置）
 copy_universal_templates() {
   local dir="$1"
   local mode="${2:-create}"   # create=覆盖 precheck.conf（新建骨架）；upgrade=不覆盖（保留用户配置，由 merge_precheck_conf 增量补）
-  cp "$ASSETS_DIR/spec-template.md" "$dir/assets/spec-template.md"
-  cp "$ASSETS_DIR/plan-template.md" "$dir/assets/plan-template.md"
-  cp "$ASSETS_DIR/branch-setup.sh" "$dir/assets/branch-setup.sh"
-  cp "$ASSETS_DIR/env-setup.sh" "$dir/assets/env-setup.sh"
-  cp "$ASSETS_DIR/data-sample-template.md" "$dir/assets/data-sample-template.md"
-  cp "$ASSETS_DIR/state-machine.sh" "$dir/assets/state-machine.sh"
-  chmod +x "$dir/assets/branch-setup.sh" "$dir/assets/env-setup.sh" "$dir/assets/state-machine.sh"
-  cp "$ASSETS_DIR/precheck.sh" "$dir/scripts/precheck.sh"
-  # precheck.conf：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
-  if [[ "$mode" == "create" ]]; then
-    cp "$ASSETS_DIR/precheck.conf" "$dir/scripts/precheck.conf"
-  fi
-  cp "$ASSETS_DIR/snippets.md" "$dir/scripts/snippets.md"
-  cp "$ASSETS_DIR/mcp-tools.md" "$dir/scripts/mcp-tools.md"
-  cp "$ASSETS_DIR/state-machine.sh" "$dir/scripts/state-machine.sh"
-  cp "$SRC_SCRIPTS/self-check.sh" "$dir/scripts/self-check.sh"
-  chmod +x "$dir/scripts/precheck.sh" "$dir/scripts/state-machine.sh" "$dir/scripts/self-check.sh"
-  # Windows .bat 包装器（让 Windows 用户也能直接运行，三平台兼容）
-  local bat_src="$(cd "$(dirname "$0")" && pwd)"
-  local assets_bat_src="$ASSETS_DIR"
+  local entry dest kind src
+  for entry in "${UNIVERSAL_FILES[@]}"; do
+    dest="${entry%%|*}"; kind="${entry##*|}"
+    # precheck.conf：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
+    [[ "$mode" == "upgrade" && "$dest" == "scripts/precheck.conf" ]] && continue
+    case "$kind" in
+      assets) src="$ASSETS_DIR/${dest##*/}" ;;
+      ref)    src="$SRC_REF/${dest##*/}" ;;
+      gen)    src="$SRC_SCRIPTS/${dest##*/}" ;;
+      *) echo "ERROR: UNIVERSAL_FILES 未知源类别: $entry" >&2; return 1 ;;
+    esac
+    cp "$src" "$dir/$dest"
+  done
+  chmod +x "$dir/assets/"*.sh "$dir/scripts/"*.sh
+  # Windows .bat 包装器（让 Windows 用户也能直接运行，三平台兼容；缺失则跳过）
   # scripts/ 下的 .bat（install/generate-skill/self-check/precheck/state-machine）
-  [[ -f "$bat_src/../install.bat" ]] && cp "$bat_src/../install.bat" "$dir/scripts/install.bat" 2>/dev/null || true
-  [[ -f "$bat_src/generate-skill.bat" ]] && cp "$bat_src/generate-skill.bat" "$dir/scripts/generate-skill.bat" 2>/dev/null || true
-  [[ -f "$bat_src/self-check.bat" ]] && cp "$bat_src/self-check.bat" "$dir/scripts/self-check.bat" 2>/dev/null || true
-  [[ -f "$bat_src/precheck.bat" ]] && cp "$bat_src/precheck.bat" "$dir/scripts/precheck.bat" 2>/dev/null || true
-  [[ -f "$bat_src/state-machine.bat" ]] && cp "$bat_src/state-machine.bat" "$dir/scripts/state-machine.bat" 2>/dev/null || true
+  local b
+  for b in install generate-skill self-check precheck state-machine; do
+    src="$SRC_SCRIPTS/$b.bat"
+    [[ "$b" == "install" ]] && src="$SRC_SCRIPTS/../install.bat"
+    if [[ -f "$src" ]]; then cp "$src" "$dir/scripts/$b.bat" 2>/dev/null || true; fi
+  done
   # assets/ 下的 .bat（branch-setup/env-setup）
-  [[ -f "$assets_bat_src/branch-setup.bat" ]] && cp "$assets_bat_src/branch-setup.bat" "$dir/assets/branch-setup.bat" 2>/dev/null || true
-  [[ -f "$assets_bat_src/env-setup.bat" ]] && cp "$assets_bat_src/env-setup.bat" "$dir/assets/env-setup.bat" 2>/dev/null || true
-  cp "$SRC_REF/subagent-orchestration.md" "$dir/references/subagent-orchestration.md"
-  cp "$SRC_REF/review-methodology.md" "$dir/references/review-methodology.md"
-  cp "$SRC_REF/code-graph-tools.md" "$dir/references/code-graph-tools.md"
-  cp "$SRC_REF/gsd-patterns.md" "$dir/references/gsd-patterns.md"
-  cp "$SRC_REF/memory-persistence.md" "$dir/references/memory-persistence.md"
-  cp "$SRC_REF/security-spec.md" "$dir/references/security-spec.md"
-  cp "$SRC_REF/cognition-framework.md" "$dir/references/cognition-framework.md"
-  cp "$SRC_REF/logic-razor.md" "$dir/references/logic-razor.md"
-  cp "$SRC_REF/cognitive-bias.md" "$dir/references/cognitive-bias.md"
-  cp "$SRC_REF/domain-knowledge.md" "$dir/references/domain-knowledge.md"
-  cp "$SRC_REF/claude-code-capabilities.md" "$dir/references/claude-code-capabilities.md"
+  for b in branch-setup env-setup; do
+    if [[ -f "$ASSETS_DIR/$b.bat" ]]; then cp "$ASSETS_DIR/$b.bat" "$dir/assets/$b.bat" 2>/dev/null || true; fi
+  done
 }
-
-PROJECT_SPECIFIC_FILES=("SKILL.md" "references/workflow.md" "references/codebase.md" "references/dev-guide.md" "references/release.md" "references/reference-manual.md")
 
 # ============================================================
 # 升级模式
@@ -340,7 +378,8 @@ if [[ "$MODE" == "upgrade" ]]; then
   backup_dir="$SKILL_DIR/.upgrade-backup-${SWARM_YUAN_STAMP}"
   mkdir -p "$backup_dir/assets" "$backup_dir/scripts" "$backup_dir/references"
   echo "=== 1. 备份 ==="
-  for f in assets/spec-template.md assets/plan-template.md assets/branch-setup.sh assets/env-setup.sh assets/data-sample-template.md assets/state-machine.sh scripts/precheck.sh scripts/precheck.conf scripts/snippets.md scripts/mcp-tools.md scripts/state-machine.sh scripts/self-check.sh references/subagent-orchestration.md references/review-methodology.md references/code-graph-tools.md references/gsd-patterns.md references/memory-persistence.md references/security-spec.md references/cognition-framework.md references/logic-razor.md references/cognitive-bias.md references/domain-knowledge.md references/claude-code-capabilities.md; do
+  for entry in "${UNIVERSAL_FILES[@]}"; do
+    f="${entry%%|*}"
     [[ -f "$SKILL_DIR/$f" ]] && { mkdir -p "$backup_dir/$(dirname "$f")"; cp "$SKILL_DIR/$f" "$backup_dir/$f"; }
   done
   echo "  ✓ 已备份"
@@ -365,9 +404,14 @@ EOF
   # upgrade 场景下 .swarm-yuan-version 的 framework_gates_sha 已在第 4 步重置（cat 覆盖），
   # inject_frameworks 的 sha 冲突检测走"无 old_sha"分支，直接注入不中止。
   if [[ -f "$SKILL_DIR/scripts/precheck.conf" ]] && grep -q '^ACTIVE_FRAMEWORKS=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null; then
+    # conf 可能含字面 ${}（如 SQL_INJECTION_WHITELIST），set -u 下 source 会 unbound 崩溃、
+    # 导致计数为 0、门禁重注入被静默跳过。照搬 inject_frameworks 的 set +u / source / set -u 模式。
     local_af_count=$(
+      set +u
       # shellcheck disable=SC1090
-      . "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null && echo "${#ACTIVE_FRAMEWORKS[@]}" || echo 0
+      . "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null || true
+      # set +u 仍生效，ACTIVE_FRAMEWORKS 未定义时计数为 0 而不报错
+      echo "${#ACTIVE_FRAMEWORKS[@]}"
     )
     if [[ "${local_af_count:-0}" -eq 0 ]]; then
       echo "  （ACTIVE_FRAMEWORKS 未配置或为空，跳过门禁注入）"
