@@ -28,7 +28,7 @@ warn(){ echo "  ⚠ $1"; }
 
 # ---------- 推断 RESEARCH_DIR（research 目录下有各项目 git clone）----------
 SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)"
-# swarm-yuan/scripts/self-check.sh → 上 3 级是项目根，再 upstream/research
+# swarm-yuan/scripts/self-check.sh → 上 4 级（scripts→swarm-yuan→skills→.claude→HOME），再 upstream/research
 _default_research=""
 for cand in \
   "$SCRIPT_PATH/../../../../upstream/research" \
@@ -48,18 +48,42 @@ pick_pm(){
   else echo "npm"; fi
 }
 
-# ---------- 检测函数（miss 时 return 1，pass 时 return 0）----------
-check_openspec(){ command -v openspec &>/dev/null && pass "OpenSpec: $(openspec --version 2>&1|head -1)" || miss "OpenSpec"; }
-check_comet(){ command -v comet &>/dev/null && pass "comet: $(comet --version 2>&1|head -1)" || miss "comet"; }
-check_gitnexus(){ command -v gitnexus &>/dev/null && pass "GitNexus: $(gitnexus --version 2>&1|head -1)" || miss "GitNexus"; }
-check_gsd_core(){ command -v gsd-tools &>/dev/null && pass "gsd-core: gsd-tools 可用" || miss "gsd-core"; }
-check_claude_mem(){ command -v claude-mem &>/dev/null && pass "claude-mem: $(claude-mem --version 2>&1|head -1)" || { [[ -d ~/.claude-mem ]] && pass "claude-mem: 已安装（~/.claude-mem 存在）" || miss "claude-mem"; }; }
-check_ocr(){ command -v ocr &>/dev/null && pass "open-code-review: $(ocr --version 2>&1|head -1)" || miss "open-code-review (ocr)"; }
-check_graphify(){ command -v graphify &>/dev/null && pass "graphify: $(graphify --help 2>&1|head -1)" || miss "graphify"; }
-check_superpowers(){ [[ -d ~/.claude/plugins/superpowers || -d ~/.claude/skills/superpowers ]] && pass "superpowers: 已安装" || miss "superpowers（需 /plugin install）"; }
-check_gstack(){ [[ -d ~/.claude/skills/gstack ]] && pass "gstack: 已安装" || miss "gstack（需 git clone + setup）"; }
-check_ruflo(){ command -v ruflo &>/dev/null && pass "ruflo: $(ruflo --version 2>&1|head -1)" || miss "ruflo"; }
-check_ecc(){ [[ -d ~/.claude/plugins/ecc || -d ~/.claude/skills/ecc ]] && pass "ECC: 已安装" || miss "ECC（需 /plugin marketplace add https://github.com/affaan-m/ECC && /plugin install ecc）"; }
+# ---------- 检测函数（miss 时 return 1，pass 时 return 0；if/else 形式避免 A&&B||C 误判）----------
+check_openspec(){
+  if command -v openspec &>/dev/null; then pass "OpenSpec: $(openspec --version 2>&1|head -1)"; else miss "OpenSpec"; fi
+}
+check_comet(){
+  if command -v comet &>/dev/null; then pass "comet: $(comet --version 2>&1|head -1)"; else miss "comet"; fi
+}
+check_gitnexus(){
+  if command -v gitnexus &>/dev/null; then pass "GitNexus: $(gitnexus --version 2>&1|head -1)"; else miss "GitNexus"; fi
+}
+check_gsd_core(){
+  if command -v gsd-tools &>/dev/null; then pass "gsd-core: gsd-tools 可用"; else miss "gsd-core"; fi
+}
+check_claude_mem(){
+  if command -v claude-mem &>/dev/null; then pass "claude-mem: $(claude-mem --version 2>&1|head -1)"
+  elif [[ -d ~/.claude-mem ]]; then pass "claude-mem: 已安装（~/.claude-mem 存在）"
+  else miss "claude-mem"; fi
+}
+check_ocr(){
+  if command -v ocr &>/dev/null; then pass "open-code-review: $(ocr --version 2>&1|head -1)"; else miss "open-code-review (ocr)"; fi
+}
+check_graphify(){
+  if command -v graphify &>/dev/null; then pass "graphify: $(graphify --help 2>&1|head -1)"; else miss "graphify"; fi
+}
+check_superpowers(){
+  if [[ -d ~/.claude/plugins/superpowers || -d ~/.claude/skills/superpowers ]]; then pass "superpowers: 已安装"; else miss "superpowers（需 /plugin install）"; fi
+}
+check_gstack(){
+  if [[ -d ~/.claude/skills/gstack ]]; then pass "gstack: 已安装"; else miss "gstack（需 git clone + setup）"; fi
+}
+check_ruflo(){
+  if command -v ruflo &>/dev/null; then pass "ruflo: $(ruflo --version 2>&1|head -1)"; else miss "ruflo"; fi
+}
+check_ecc(){
+  if [[ -d ~/.claude/plugins/ecc || -d ~/.claude/skills/ecc ]]; then pass "ECC: 已安装"; else miss "ECC（需 /plugin marketplace add https://github.com/affaan-m/ECC && /plugin install ecc）"; fi
+}
 
 # ---------- 通用：从 research 源码安装（git pull + install + build + link）----------
 # 参数: <项目名> <源码根目录> [可选 bin 名用于 link]
@@ -184,8 +208,8 @@ install_graphify(){
   fi
 }
 install_ruflo(){
-  echo "  → npm i -g ruflo"
-  npm i -g ruflo 2>&1|tail -2
+  echo "  → npm i -g ruflo@latest"
+  npm i -g ruflo@latest 2>&1|tail -2
 }
 
 # 升级已安装的 npm 包到最新版（静默，仅在有新版本时输出）
@@ -194,8 +218,10 @@ upgrade_npm_pkg(){
   command -v "$bin" &>/dev/null || return 0
   local cur latest
   cur=$("$bin" --version 2>/dev/null | head -1 | tr -d '[:space:]')
+  cur="${cur#v}"   # 剥离前导 v（v3.25.6 → 3.25.6）再比对
   [[ -z "$cur" ]] && return 0
   latest=$(npm view "$pkg" version 2>/dev/null | head -1 | tr -d '[:space:]')
+  latest="${latest#v}"
   [[ -z "$latest" ]] && return 0
   if [[ "$cur" != "$latest" ]]; then
     echo "  ↻ 升级 $pkg: $cur → $latest"
@@ -211,35 +237,64 @@ upgrade_from_source(){
   install_from_source "$name" "$root" 2>&1 | tail -2 || warn "$name 源码升级失败"
 }
 
-# 11 个项目定义：name|check_func|install_func|auto_installable
+# 11 个项目定义（唯一数据源，检测/安装/升级/复查全部从此表驱动）：
+#   name|check_func|install_func|auto_installable|src_root_func|npm_pkg
+#   src_root_func：research 源码根函数（--latest 源码模式升级用）；空=无源码入口
+#   npm_pkg：npm 全局包名（--latest npm 模式比对 version 用）；空=npx 调用或不可自动装
 # 注：self-check 生成的 hooks.json PreToolUse 命令须发射 Claude Code 和 Cursor 都接受的
 #   {"permission":"allow"} verdict（参考 ruflo v3.25.6 #2613 修复）
 # 注：若目标技能注册 MCP，须检测重复注册（同一 binary 注册 claude-flow + ruflo 两个 key）
 #   并通过 ruflo doctor 自愈——canonical MCP key 保留一个（参考 ruflo v3.25.6 #2612 修复）
 # 注：hooks.json 须无 BOM（UTF-8 无 BOM），否则 Codex 严格 JSON 解析失败（参考 ruflo v3.32.1 修复）
 PROJECTS=(
-  "openspec|check_openspec|install_openspec|1"
-  "comet|check_comet|install_comet|1"
-  "gitnexus|check_gitnexus|install_gitnexus|1"
-  "gsd-core|check_gsd_core|install_gsd_core|1"
-  "claude-mem|check_claude_mem|install_claude_mem|1"
-  "ocr|check_ocr|install_ocr|1"
-  "graphify|check_graphify|install_graphify|1"
-  "superpowers|check_superpowers||0"
-  "gstack|check_gstack||0"
-  "ruflo|check_ruflo|install_ruflo|1"
-  "ECC|check_ecc||0"
+  "openspec|check_openspec|install_openspec|1|src_root_openspec|@fission-ai/openspec"
+  "comet|check_comet|install_comet|1|src_root_comet|@rpamis/comet"
+  "gitnexus|check_gitnexus|install_gitnexus|1|src_root_gitnexus|gitnexus"
+  "gsd-core|check_gsd_core|install_gsd_core|1|src_root_gsd_core|"
+  "claude-mem|check_claude_mem|install_claude_mem|1|src_root_claude_mem|"
+  "ocr|check_ocr|install_ocr|1|src_root_ocr|@alibaba-group/open-code-review"
+  "graphify|check_graphify|install_graphify|1||"
+  "superpowers|check_superpowers||0||"
+  "gstack|check_gstack||0||"
+  "ruflo|check_ruflo|install_ruflo|1||ruflo"
+  "ECC|check_ecc||0||"
 )
+
+# 无法 bash 自动安装项目的人工安装提示（按 name 查，集中于一处）
+install_hint() {
+  case "$1" in
+    superpowers)
+      echo "    在 Claude Code 中运行: /plugin install superpowers@claude-plugins-official"
+      echo "    或: /plugin marketplace add obra/superpowers-marketplace && /plugin install superpowers"
+      ;;
+    gstack)
+      echo "    git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack"
+      echo "    cd ~/.claude/skills/gstack && ./setup"
+      ;;
+    ECC)
+      echo "    在 Claude Code 中运行:"
+      echo "    /plugin marketplace add https://github.com/affaan-m/ECC"
+      echo "    /plugin install ecc"
+      ;;
+    *) echo "    （无人工安装指引，请查阅项目文档）" ;;
+  esac
+}
 
 CHECK_ONLY=0
 SINGLE=""
 FORCE_LATEST=1   # 默认拉最新版
 USE_NPM_ONLY=0   # --npm 时跳过 research 源码
 
-[[ "${1:-}" == "--check-only" ]] && { CHECK_ONLY=1; FORCE_LATEST=0; }
-[[ "${1:-}" == "--install" ]] && SINGLE="${2:-}"
-[[ "${1:-}" == "--latest" ]] && FORCE_LATEST=1
-[[ "${1:-}" == "--npm" ]] && USE_NPM_ONLY=1
+# 循环解析全部参数（原只解析 $1，组合参数被静默忽略）
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --check-only) CHECK_ONLY=1; FORCE_LATEST=0; shift ;;
+    --install) SINGLE="${2:-}"; shift; [[ $# -gt 0 ]] && shift ;;
+    --latest) FORCE_LATEST=1; shift ;;
+    --npm) USE_NPM_ONLY=1; shift ;;
+    *) echo "✗ 未知参数: $1"; echo "用法: bash self-check.sh [--check-only] [--install <name>] [--latest] [--npm]"; exit 1 ;;
+  esac
+done
 
 echo "=========================================="
 echo "  swarm-yuan 自检：11 个项目运行时"
@@ -261,7 +316,7 @@ echo ""
 if [[ -n "$SINGLE" ]]; then
   # 仅安装单个
   for p in "${PROJECTS[@]}"; do
-    IFS='|' read -r name chk inst auto <<< "$p"
+    IFS='|' read -r name chk inst auto srcf npmpkg <<< "$p"
     [[ "$name" == "$SINGLE" ]] || continue
     if [[ -z "$inst" ]]; then
       echo "✗ $name 无法 bash 自动安装（需 Claude Code /plugin 或手动 clone）"
@@ -272,19 +327,21 @@ if [[ -n "$SINGLE" ]]; then
     exit 0
   done
   echo "✗ 未知项目: $SINGLE"
-  echo "  可用: openspec comet gitnexus gsd-core claude-mem ocr graphify superpowers gstack"
+  avail=""
+  for p in "${PROJECTS[@]}"; do IFS='|' read -r name _ <<< "$p"; avail="$avail $name"; done
+  echo "  可用:$avail"
   exit 1
 fi
 
-# 检测全部
+# 检测全部（MISSING 条目携带 check 函数，供安装后复查直接调用）
 echo "=== 检测 ==="
 MISSING=()
 for p in "${PROJECTS[@]}"; do
-  IFS='|' read -r name chk inst auto <<< "$p"
+  IFS='|' read -r name chk inst auto srcf npmpkg <<< "$p"
   if "$chk" 2>/dev/null; then
     :
   else
-    MISSING+=("$name|$inst|$auto")
+    MISSING+=("$name|$chk|$inst|$auto")
   fi
 done
 
@@ -298,13 +355,17 @@ if [[ $FORCE_LATEST -eq 1 && $CHECK_ONLY -eq 0 ]]; then
   echo ""
   echo "=== 升级到最新版 ==="
   if [[ -n "$RESEARCH_DIR" && -d "$RESEARCH_DIR" && $USE_NPM_ONLY -eq 0 ]]; then
-    # research 源码模式：对每个有源码的项目 git pull + rebuild + re-link
-    upgrade_from_source "openspec" "$(src_root_openspec)"
-    upgrade_from_source "comet"    "$(src_root_comet)"
-    upgrade_from_source "gitnexus" "$(src_root_gitnexus)"
-    upgrade_from_source "gsd-core" "$(src_root_gsd_core)"
-    upgrade_from_source "claude-mem" "$(src_root_claude_mem)"
-    upgrade_from_source "open-code-review" "$(src_root_ocr)"
+    # research 源码模式（表驱动）：有源码根的项目 git pull + rebuild + re-link；
+    # 无源码根但有 npm 包的项目（如 ruflo）走 npm 版本比对
+    for p in "${PROJECTS[@]}"; do
+      IFS='|' read -r name chk inst auto srcf npmpkg <<< "$p"
+      [[ "$name" == "graphify" ]] && continue   # python 项目，下面单独处理
+      if [[ -n "$srcf" ]]; then
+        upgrade_from_source "$name" "$("$srcf")"
+      elif [[ -n "$npmpkg" ]]; then
+        upgrade_npm_pkg "$npmpkg" "$name"
+      fi
+    done
     # graphify python
     if [[ -d "$RESEARCH_DIR/graphify" ]]; then
       echo "  ↻ [graphify] 源码升级: git pull + uv tool reinstall"
@@ -316,11 +377,12 @@ if [[ $FORCE_LATEST -eq 1 && $CHECK_ONLY -eq 0 ]]; then
     echo "  （gsd-core 额外运行 npx 拉最新运行时 artifacts）"
     npx -y @opengsd/gsd-core@latest --claude --global 2>&1 | tail -3 || true
   else
-    # npm 模式：比对 npm view version 升级
-    upgrade_npm_pkg "@fission-ai/openspec" "openspec"
-    upgrade_npm_pkg "@rpamis/comet" "comet"
-    upgrade_npm_pkg "gitnexus" "gitnexus"
-    upgrade_npm_pkg "@alibaba-group/open-code-review" "ocr"
+    # npm 模式（表驱动）：比对 npm view version 升级
+    for p in "${PROJECTS[@]}"; do
+      IFS='|' read -r name chk inst auto srcf npmpkg <<< "$p"
+      [[ -n "$npmpkg" ]] || continue
+      upgrade_npm_pkg "$npmpkg" "$name"
+    done
     # gsd-core / claude-mem 是 npx 调用，无法本地查版本，跳过自动升级（下次 install 时自动拉最新）
     echo "  （gsd-core / claude-mem 为 npx 调用，下次运行自动拉最新版）"
   fi
@@ -335,7 +397,7 @@ fi
 echo ""
 echo "=== 缺失: ${#MISSING[@]} 个 ==="
 for m in "${MISSING[@]}"; do
-  IFS='|' read -r name inst auto <<< "$m"
+  IFS='|' read -r name chk inst auto <<< "$m"
   echo "  - $name"
 done
 
@@ -348,49 +410,39 @@ fi
 echo ""
 echo "=== 自动安装最新版（可自动装的）==="
 for m in "${MISSING[@]}"; do
-  IFS='|' read -r name inst auto <<< "$m"
+  IFS='|' read -r name chk inst auto <<< "$m"
   if [[ "$auto" == "1" && -n "$inst" ]]; then
     echo "--- $name ---"
     "$inst"
     echo ""
   else
     warn "$name 无法 bash 自动安装："
-    case "$name" in
-      superpowers)
-        echo "    在 Claude Code 中运行: /plugin install superpowers@claude-plugins-official"
-        echo "    或: /plugin marketplace add obra/superpowers-marketplace && /plugin install superpowers"
-        ;;
-      gstack)
-        echo "    git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack"
-        echo "    cd ~/.claude/skills/gstack && ./setup"
-        ;;
-      ECC)
-        echo "    在 Claude Code 中运行:"
-        echo "    /plugin marketplace add https://github.com/affaan-m/ECC"
-        echo "    /plugin install ecc"
-        ;;
-    esac
+    install_hint "$name"
     echo ""
   fi
 done
 
 echo "=== 安装后复查 ==="
+# 复查重算 FAIL：初检 miss 置位不代表终态——自动安装成功且复查 pass 的项目不算失败，
+# 只有复查仍 miss（含需手动安装的）才保持 FAIL=1。
+FAIL=0
 for m in "${MISSING[@]}"; do
-  IFS='|' read -r name inst auto <<< "$m"
-  case "$name" in
-    openspec) check_openspec ;; comet) check_comet ;; gitnexus) check_gitnexus ;;
-    gsd-core) check_gsd_core ;; claude-mem) check_claude_mem ;; ocr) check_ocr ;;
-    graphify) check_graphify ;; superpowers) check_superpowers ;; gstack) check_gstack ;; ruflo) check_ruflo ;; ECC) check_ecc ;;
-  esac
+  IFS='|' read -r name chk inst auto <<< "$m"
+  "$chk"
 done
 
 echo ""
 # ===== 框架规则库时效检查 =====
 fw_freshness_check() {
+  local fw_dir; fw_dir="$(cd "$(dirname "$0")/.." && pwd)/references/frameworks"
+  # 存在性守卫：生成的目标 skill 不含 references/frameworks/（generate-skill.sh 不复制），
+  # 无目录时 glob 不展开会打印垃圾告警（"⚠ *.md 缺'最后调研'日期"），直接跳过。
+  [[ -d "$fw_dir" ]] || return 0
   echo "▶ 框架规则库时效检查"
   local now d ts age f id
   now=$(date -u +%s)
-  for f in "$(cd "$(dirname "$0")/.." && pwd)/references/frameworks"/*.md; do
+  for f in "$fw_dir"/*.md; do
+    [[ -f "$f" ]] || continue
     id=$(basename "$f" .md)
     [[ "$id" == "_template" ]] && continue
     d=$(sed -n 's/^最后调研: *\([0-9-]*\).*/\1/p' "$f" | head -1)
