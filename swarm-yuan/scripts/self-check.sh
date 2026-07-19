@@ -377,9 +377,6 @@ for m in "${MISSING[@]}"; do
 done
 
 echo ""
-[[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
-exit $FAIL
-
 # ===== 框架规则库时效检查 =====
 fw_freshness_check() {
   echo "▶ 框架规则库时效检查"
@@ -389,6 +386,7 @@ fw_freshness_check() {
     id=$(basename "$f" .md)
     [[ "$id" == "_template" ]] && continue
     d=$(sed -n 's/^最后调研: *\([0-9-]*\).*/\1/p' "$f" | head -1)
+    d=${d:-}
     if [[ -z "$d" ]]; then
       warn "$(basename "$f") 缺'最后调研'日期"
       continue
@@ -408,3 +406,7 @@ fw_freshness_check() {
   done
 }
 fw_freshness_check
+
+echo ""
+[[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
+exit $FAIL
