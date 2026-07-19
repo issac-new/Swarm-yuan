@@ -26,39 +26,18 @@ _fw_mapstruct_check() {
     esac
   done
 
-  # 代码正文过滤辅助：java 去 // 行注释与块注释行；xml 去 <!-- --> 注释（跨行状态机）
-  _fw_mapstruct_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
-  _fw_mapstruct_xml_code_only() {
-    awk '
-      {
-        rest=$0; out=""
-        while (length(rest)) {
-          if (inc) {
-            i=index(rest,"-->")
-            if (!i) { rest=""; break }
-            rest=substr(rest,i+3); inc=0
-          } else {
-            i=index(rest,"<!--")
-            if (!i) { out=out rest; break }
-            out=out substr(rest,1,i-1); rest=substr(rest,i+4); inc=1
-          }
-        }
-        print out
-      }' "$1" 2>/dev/null
-  }
+  # 代码正文过滤辅助：调公共库 _fw_strip_comments_c（java 去 // 与块注释行）/ _fw_strip_comments_xml（xml 去 <!-- --> 跨行状态机）
   _fw_mapstruct_build_code_only() {  # pom 走 xml 剥离；gradle 走 java 剥离
     case "$(basename "$1")" in
-      pom.xml) _fw_mapstruct_xml_code_only "$1" ;;
-      *) _fw_mapstruct_code_only "$1" ;;
+      pom.xml) _fw_strip_comments_xml "$1" ;;
+      *) _fw_strip_comments_c "$1" ;;
     esac
   }
 
   # 公用：@Mapper 文件清单（注解行须行首，排除 @MapperConfig 与 import）
   local mapper_files=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    if _fw_mapstruct_code_only "$j" | grep -qE '^[[:space:]]*@Mapper([[:space:]]*\(|[[:space:]]*$)'; then
+    if _fw_strip_comments_c "$j" | grep -qE '^[[:space:]]*@Mapper([[:space:]]*\(|[[:space:]]*$)'; then
       mapper_files="${mapper_files}${j}
 "
     fi
@@ -69,8 +48,8 @@ _fw_mapstruct_check() {
   # ====================================================================
   local global_policy=0
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    if _fw_mapstruct_code_only "$j" | grep -qE '@MapperConfig' \
-      && _fw_mapstruct_code_only "$j" | grep -qE 'unmappedTargetPolicy'; then
+    if _fw_strip_comments_c "$j" | grep -qE '@MapperConfig' \
+      && _fw_strip_comments_c "$j" | grep -qE 'unmappedTargetPolicy'; then
       global_policy=1
     fi
   done
@@ -82,17 +61,12 @@ _fw_mapstruct_check() {
     local ut_bad=""
     while IFS= read -r j; do
       [[ -z "$j" ]] && continue
-      if ! _fw_mapstruct_code_only "$j" | grep -qE 'unmappedTargetPolicy'; then
+      if ! _fw_strip_comments_c "$j" | grep -qE 'unmappedTargetPolicy'; then
         ut_bad="${ut_bad}${j}
 "
       fi
     done <<< "$mapper_files"
-    if [[ -n "$ut_bad" ]]; then
-      fail "fw_mapstruct_unmapped_target: @Mapper 未显式 unmappedTargetPolicy（默认 IGNORE 静默漏映射，须 ReportingPolicy.ERROR）:
-${ut_bad}"
-    else
-      pass "fw_mapstruct_unmapped_target: @Mapper 均显式 unmappedTargetPolicy"
-    fi
+    _fw_report fail fw_mapstruct_unmapped_target "$ut_bad" "@Mapper 未显式 unmappedTargetPolicy（默认 IGNORE 静默漏映射，须 ReportingPolicy.ERROR）" "@Mapper 均显式 unmappedTargetPolicy"
   fi
 
   # ====================================================================
@@ -143,12 +117,7 @@ ${ut_bad}"
 "
       fi
     done
-    if [[ -n "$po_bad" ]]; then
-      warn "fw_mapstruct_processor_order: annotationProcessorPaths 中 mapstruct-processor 先于 lombok（须 lombok 先序，推荐 lombok→binding→mapstruct-processor）:
-${po_bad}"
-    else
-      pass "fw_mapstruct_processor_order: processor 顺序正确或非 Maven"
-    fi
+    _fw_report warn fw_mapstruct_processor_order "$po_bad" "annotationProcessorPaths 中 mapstruct-processor 先于 lombok（须 lombok 先序，推荐 lombok→binding→mapstruct-processor）" "processor 顺序正确或非 Maven"
   fi
 
   # ====================================================================
@@ -157,19 +126,14 @@ ${po_bad}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local mt_bad=""
     for j in "${javaarr[@]}"; do
-      if _fw_mapstruct_code_only "$j" | grep -qE '@MappingTarget'; then
-        if ! _fw_mapstruct_code_only "$j" | grep -qE 'NullValuePropertyMappingStrategy'; then
+      if _fw_strip_comments_c "$j" | grep -qE '@MappingTarget'; then
+        if ! _fw_strip_comments_c "$j" | grep -qE 'NullValuePropertyMappingStrategy'; then
           mt_bad="${mt_bad}${j}
 "
         fi
       fi
     done
-    if [[ -n "$mt_bad" ]]; then
-      warn "fw_mapstruct_mapping_target_null: @MappingTarget 更新方法无 NullValuePropertyMappingStrategy（默认源 null 覆盖目标已有值 → 数据丢失，PATCH 须 IGNORE）:
-${mt_bad}"
-    else
-      pass "fw_mapstruct_mapping_target_null: @MappingTarget 更新语义安全"
-    fi
+    _fw_report warn fw_mapstruct_mapping_target_null "$mt_bad" "@MappingTarget 更新方法无 NullValuePropertyMappingStrategy（默认源 null 覆盖目标已有值 → 数据丢失，PATCH 须 IGNORE）" "@MappingTarget 更新语义安全"
   else
     pass "fw_mapstruct_mapping_target_null: 无 Java 源文件，跳过"
   fi
@@ -194,12 +158,7 @@ ${mt_bad}"
         fi
       done
     done
-    if [[ -n "$cycle_pairs" ]]; then
-      warn "fw_mapstruct_cycle: 检出 Mapper uses 互相引用（循环引用生成无限递归代码 → StackOverflowError，须 CycleAvoidingStrategy 或打破环）:
-${cycle_pairs}"
-    else
-      pass "fw_mapstruct_cycle: 无 uses 循环引用"
-    fi
+    _fw_report warn fw_mapstruct_cycle "$cycle_pairs" "检出 Mapper uses 互相引用（循环引用生成无限递归代码 → StackOverflowError，须 CycleAvoidingStrategy 或打破环）" "无 uses 循环引用"
   else
     pass "fw_mapstruct_cycle: 无 Java 源文件，跳过"
   fi
@@ -213,17 +172,12 @@ ${cycle_pairs}"
     local cm_bad=""
     while IFS= read -r j; do
       [[ -z "$j" ]] && continue
-      if ! _fw_mapstruct_code_only "$j" | grep -qE 'componentModel'; then
+      if ! _fw_strip_comments_c "$j" | grep -qE 'componentModel'; then
         cm_bad="${cm_bad}${j}
 "
       fi
     done <<< "$mapper_files"
-    if [[ -n "$cm_bad" ]]; then
-      warn "fw_mapstruct_component_model: @Mapper 未声明 componentModel（Spring 项目须 \"spring\" 走 DI；default 模型下自定义转换器无法注入依赖）:
-${cm_bad}"
-    else
-      pass "fw_mapstruct_component_model: @Mapper 均声明 componentModel"
-    fi
+    _fw_report warn fw_mapstruct_component_model "$cm_bad" "@Mapper 未声明 componentModel（Spring 项目须 \"spring\" 走 DI；default 模型下自定义转换器无法注入依赖）" "@Mapper 均声明 componentModel"
   fi
 
   # ====================================================================
@@ -232,12 +186,7 @@ ${cm_bad}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local ig_hits
     ig_hits=$(grep -rnE 'ignore[[:space:]]*=[[:space:]]*true' "${javaarr[@]}" 2>/dev/null | grep -vE ':[[:space:]]*\*|:[[:space:]]*//' || true)
-    if [[ -n "$ig_hits" ]]; then
-      warn "fw_mapstruct_ignore_reason: 检出 ignore = true（须同行注释说明忽略原因，防意图失传）:
-$(printf '%s\n' "$ig_hits" | head -5)"
-    else
-      pass "fw_mapstruct_ignore_reason: 无显式 ignore"
-    fi
+    _fw_report warn fw_mapstruct_ignore_reason "$(printf '%s\n' "$ig_hits" | head -5)" "检出 ignore = true（须同行注释说明忽略原因，防意图失传）" "无显式 ignore"
   else
     pass "fw_mapstruct_ignore_reason: 无 Java 源文件，跳过"
   fi
@@ -253,12 +202,7 @@ $(printf '%s\n' "$ig_hits" | head -5)"
 "
       fi
     done
-    if [[ -n "$nt_bad" ]]; then
-      warn "fw_mapstruct_named_threadsafe: @Named 方法所在文件用 SimpleDateFormat（Mapper 单例多线程并发 → CWE-362 竞态，须 DateTimeFormatter/无状态）:
-${nt_bad}"
-    else
-      pass "fw_mapstruct_named_threadsafe: @Named 方法无线程安全隐患"
-    fi
+    _fw_report warn fw_mapstruct_named_threadsafe "$nt_bad" "@Named 方法所在文件用 SimpleDateFormat（Mapper 单例多线程并发 → CWE-362 竞态，须 DateTimeFormatter/无状态）" "@Named 方法无线程安全隐患"
   else
     pass "fw_mapstruct_named_threadsafe: 无 Java 源文件，跳过"
   fi
@@ -269,12 +213,7 @@ ${nt_bad}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local ex_hits
     ex_hits=$(grep -rnE 'expression[[:space:]]*=' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$ex_hits" ]]; then
-      warn "fw_mapstruct_expression: 检出 expression =（重构不可追踪/单测不可达，优先 qualifiedByName+@Named；人工核表达式内容防注入）:
-$(printf '%s\n' "$ex_hits" | head -5)"
-    else
-      pass "fw_mapstruct_expression: 无 expression 用法"
-    fi
+    _fw_report warn fw_mapstruct_expression "$(printf '%s\n' "$ex_hits" | head -5)" "检出 expression =（重构不可追踪/单测不可达，优先 qualifiedByName+@Named；人工核表达式内容防注入）" "无 expression 用法"
   else
     pass "fw_mapstruct_expression: 无 Java 源文件，跳过"
   fi
@@ -285,12 +224,7 @@ $(printf '%s\n' "$ex_hits" | head -5)"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local ih_hits
     ih_hits=$(grep -rnE '@Inherit(Configuration|InverseConfiguration)' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$ih_hits" ]]; then
-      warn "fw_mapstruct_inherit: 检出 @Inherit(Inverse)Configuration（ignore/嵌套/表达式不按直觉反转，人工核对正反方法字段镜像性）:
-$(printf '%s\n' "$ih_hits" | head -5)"
-    else
-      pass "fw_mapstruct_inherit: 无 Inherit 配置继承"
-    fi
+    _fw_report warn fw_mapstruct_inherit "$(printf '%s\n' "$ih_hits" | head -5)" "检出 @Inherit(Inverse)Configuration（ignore/嵌套/表达式不按直觉反转，人工核对正反方法字段镜像性）" "无 Inherit 配置继承"
   else
     pass "fw_mapstruct_inherit: 无 Java 源文件，跳过"
   fi
@@ -301,12 +235,7 @@ $(printf '%s\n' "$ih_hits" | head -5)"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local ns_hits
     ns_hits=$(grep -rnE 'target[[:space:]]*=[[:space:]]*"[A-Za-z0-9_]+\.[A-Za-z0-9_.]+"' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$ns_hits" ]]; then
-      warn "fw_mapstruct_nested: 检出嵌套 target 点语法（更新场景中间对象未映射字段保留旧值；中间类型须无参构造）:
-$(printf '%s\n' "$ns_hits" | head -5)"
-    else
-      pass "fw_mapstruct_nested: 无嵌套 target 点语法"
-    fi
+    _fw_report warn fw_mapstruct_nested "$(printf '%s\n' "$ns_hits" | head -5)" "检出嵌套 target 点语法（更新场景中间对象未映射字段保留旧值；中间类型须无参构造）" "无嵌套 target 点语法"
   else
     pass "fw_mapstruct_nested: 无 Java 源文件，跳过"
   fi
@@ -324,12 +253,7 @@ $(printf '%s\n' "$ns_hits" | head -5)"
         fi
       fi
     done
-    if [[ -n "$ce_bad" ]]; then
-      warn "fw_mapstruct_collection_element: 集合映射方法无 @IterableMapping（元素级 @Mapping/qualifiedByName 配置静默不生效）:
-${ce_bad}"
-    else
-      pass "fw_mapstruct_collection_element: 集合映射元素配置齐备"
-    fi
+    _fw_report warn fw_mapstruct_collection_element "$ce_bad" "集合映射方法无 @IterableMapping（元素级 @Mapping/qualifiedByName 配置静默不生效）" "集合映射元素配置齐备"
   else
     pass "fw_mapstruct_collection_element: 无 Java 源文件，跳过"
   fi
@@ -340,12 +264,7 @@ ${ce_bad}"
   if [[ ${#javaarr[@]} -gt 0 ]]; then
     local bd_hits
     bd_hits=$(grep -rlE '@Builder\.Default' "${javaarr[@]}" 2>/dev/null || true)
-    if [[ -n "$bd_hits" ]]; then
-      warn "fw_mapstruct_builder_default: 检出 @Builder.Default（MapStruct 逐字段 set 时默认值不生效，未映射字段拿 builder 零值）:
-${bd_hits}"
-    else
-      pass "fw_mapstruct_builder_default: 无 @Builder.Default"
-    fi
+    _fw_report warn fw_mapstruct_builder_default "$bd_hits" "检出 @Builder.Default（MapStruct 逐字段 set 时默认值不生效，未映射字段拿 builder 零值）" "无 @Builder.Default"
   else
     pass "fw_mapstruct_builder_default: 无 Java 源文件，跳过"
   fi

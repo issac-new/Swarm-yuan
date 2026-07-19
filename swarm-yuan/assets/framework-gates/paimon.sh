@@ -51,12 +51,7 @@ _fw_paimon_check() {
 "
     fi
   done <<< "$pk_tables"
-  if [[ -n "$bkt_bad" ]]; then
-    fail "fw_paimon_pk_bucket: 主键表未显式配 'bucket'（默认单 bucket 写入串行/compaction 无法并行/查询无法分桶裁剪，事后改 bucket 须重建表重灌）:
-${bkt_bad}"
-  else
-    pass "fw_paimon_pk_bucket: 主键表均显式配 bucket 或无主键表"
-  fi
+  _fw_report fail fw_paimon_pk_bucket "$bkt_bad" "主键表未显式配 'bucket'（默认单 bucket 写入串行/compaction 无法并行/查询无法分桶裁剪，事后改 bucket 须重建表重灌）" "主键表均显式配 bucket 或无主键表"
 
   # ====================================================================
   # fw_paimon_compaction(warn)：主键表须配 compaction 参数
@@ -69,12 +64,7 @@ ${bkt_bad}"
 "
     fi
   done <<< "$pk_tables"
-  if [[ -n "$cp_bad" ]]; then
-    warn "fw_paimon_compaction: 主键表无 num-sorted-run/compaction.* 配置（依赖默认阈值待验证，读放大/小文件风险，须按写入速率显式调优）:
-${cp_bad}"
-  else
-    pass "fw_paimon_compaction: 主键表均配 compaction 参数或无主键表"
-  fi
+  _fw_report warn fw_paimon_compaction "$cp_bad" "主键表无 num-sorted-run/compaction.* 配置（依赖默认阈值待验证，读放大/小文件风险，须按写入速率显式调优）" "主键表均配 compaction 参数或无主键表"
 
   # ====================================================================
   # fw_paimon_merge_engine(warn)：非 deduplicate merge-engine 须确认语义
@@ -87,12 +77,7 @@ ${cp_bad}"
     [[ -n "$ln" ]] && me_hit="${me_hit}${tf}:${ln}
 "
   done <<< "$pm_tables"
-  if [[ -n "$me_hit" ]]; then
-    warn "fw_paimon_merge_engine: 检出非默认 merge-engine（partial-update/aggregation/first-row 语义须人工确认匹配业务，误用整行覆盖丢列）:
-${me_hit}"
-  else
-    pass "fw_paimon_merge_engine: 无非默认 merge-engine（deduplicate 默认安全）"
-  fi
+  _fw_report warn fw_paimon_merge_engine "$me_hit" "检出非默认 merge-engine（partial-update/aggregation/first-row 语义须人工确认匹配业务，误用整行覆盖丢列）" "无非默认 merge-engine（deduplicate 默认安全）"
 
   # ====================================================================
   # fw_paimon_changelog_producer(warn)：流读 changelog 须配 changelog-producer
@@ -130,12 +115,7 @@ ${me_hit}"
     [[ -n "$ln" ]] && sm_hit="${sm_hit}${sf}:${ln}
 "
   done
-  if [[ -n "$sm_hit" ]]; then
-    warn "fw_paimon_stream_scan_mode: 检出 scan.mode 配置（latest 不扫存量/full 先快照后增量/compacted 读合并快照，补数场景用 latest 丢存量，须人工确认）:
-${sm_hit}"
-  else
-    pass "fw_paimon_stream_scan_mode: 未检出 scan.mode（默认 latest 语义已知）"
-  fi
+  _fw_report warn fw_paimon_stream_scan_mode "$sm_hit" "检出 scan.mode 配置（latest 不扫存量/full 先快照后增量/compacted 读合并快照，补数场景用 latest 丢存量，须人工确认）" "未检出 scan.mode（默认 latest 语义已知）"
 
   # ====================================================================
   # fw_paimon_snapshot_retention(warn)：快照须配过期保留
@@ -148,12 +128,7 @@ ${sm_hit}"
 "
     fi
   done <<< "$pm_tables"
-  if [[ -n "$sr_bad" ]]; then
-    warn "fw_paimon_snapshot_retention: paimon 表无 snapshot.time-retained/num-retained（默认 1h 待验证，长周期快照/manifest 无限膨胀，须显式配保留窗口）:
-${sr_bad}"
-  else
-    pass "fw_paimon_snapshot_retention: 表均配快照保留或无 paimon 表"
-  fi
+  _fw_report warn fw_paimon_snapshot_retention "$sr_bad" "paimon 表无 snapshot.time-retained/num-retained（默认 1h 待验证，长周期快照/manifest 无限膨胀，须显式配保留窗口）" "表均配快照保留或无 paimon 表"
 
   # ====================================================================
   # fw_paimon_time_travel(warn)：回溯须在保留窗口内
@@ -165,12 +140,7 @@ ${sr_bad}"
     [[ -n "$ln" ]] && tt_hit="${tt_hit}${sf}:${ln}
 "
   done
-  if [[ -n "$tt_hit" ]]; then
-    warn "fw_paimon_time_travel: 检出快照回溯（scan.snapshot-id/timestamp，目标快照须落在 time-retained 窗口内，长跨度须 tag/branch 固化）:
-${tt_hit}"
-  else
-    pass "fw_paimon_time_travel: 未检出快照回溯"
-  fi
+  _fw_report warn fw_paimon_time_travel "$tt_hit" "检出快照回溯（scan.snapshot-id/timestamp，目标快照须落在 time-retained 窗口内，长跨度须 tag/branch 固化）" "未检出快照回溯"
 
   # ====================================================================
   # fw_paimon_partition(warn)：主键表须评估分区
@@ -183,12 +153,7 @@ ${tt_hit}"
 "
     fi
   done <<< "$pk_tables"
-  if [[ -n "$pt_bad" ]]; then
-    warn "fw_paimon_partition: 主键表无 PARTITIONED BY（亿级+大表单表 bucket 压力集中且查询无法分区裁剪，须确认数据量级或按低基数业务字段分区）:
-${pt_bad}"
-  else
-    pass "fw_paimon_partition: 主键表均分区或无主键表"
-  fi
+  _fw_report warn fw_paimon_partition "$pt_bad" "主键表无 PARTITIONED BY（亿级+大表单表 bucket 压力集中且查询无法分区裁剪，须确认数据量级或按低基数业务字段分区）" "主键表均分区或无主键表"
 
   # ====================================================================
   # fw_paimon_bucket_key(warn)：bucket-key 须为主键子集
@@ -201,12 +166,7 @@ ${pt_bad}"
     [[ -n "$ln" ]] && bk_hit="${bk_hit}${tf}:${ln}
 "
   done <<< "$pm_tables"
-  if [[ -n "$bk_hit" ]]; then
-    warn "fw_paimon_bucket_key: 检出 bucket-key（须人工核对为 PRIMARY KEY 子集，否则同 key 落多桶、merge 去重失效产生重复行）:
-${bk_hit}"
-  else
-    pass "fw_paimon_bucket_key: 未检出 bucket-key（默认按主键整体分桶）"
-  fi
+  _fw_report warn fw_paimon_bucket_key "$bk_hit" "检出 bucket-key（须人工核对为 PRIMARY KEY 子集，否则同 key 落多桶、merge 去重失效产生重复行）" "未检出 bucket-key（默认按主键整体分桶）"
 
   # ====================================================================
   # fw_paimon_lookup_join(warn)：维表 lookup join 须配缓存
@@ -220,12 +180,7 @@ ${bk_hit}"
       fi
     fi
   done
-  if [[ -n "$lj_bad" ]]; then
-    warn "fw_paimon_lookup_join: 检出 temporal/lookup join 但无 lookup.cache 配置（每条流记录一次点查，吞吐断崖反压；须配缓存与 TTL 平衡新鲜度）:
-${lj_bad}"
-  else
-    pass "fw_paimon_lookup_join: lookup join 均配缓存或无 lookup join"
-  fi
+  _fw_report warn fw_paimon_lookup_join "$lj_bad" "检出 temporal/lookup join 但无 lookup.cache 配置（每条流记录一次点查，吞吐断崖反压；须配缓存与 TTL 平衡新鲜度）" "lookup join 均配缓存或无 lookup join"
 
   # ====================================================================
   # fw_paimon_write_buffer(warn)：写入须评估 write-buffer
@@ -239,12 +194,7 @@ ${lj_bad}"
       fi
     fi
   done
-  if [[ -n "$wb_bad" ]]; then
-    warn "fw_paimon_write_buffer: paimon sink 作业无 write-buffer 配置（buffer 过小 spill 小文件爆炸/过大 TM OOM，默认值待验证，须按 TM 内存显式调）:
-${wb_bad}"
-  else
-    pass "fw_paimon_write_buffer: 作业均配 write-buffer 或无 paimon sink 作业源"
-  fi
+  _fw_report warn fw_paimon_write_buffer "$wb_bad" "paimon sink 作业无 write-buffer 配置（buffer 过小 spill 小文件爆炸/过大 TM OOM，默认值待验证，须按 TM 内存显式调）" "作业均配 write-buffer 或无 paimon sink 作业源"
 
   # ====================================================================
   # fw_paimon_schema_evolution(warn)：列类型变更禁 narrowing
@@ -257,12 +207,7 @@ ${wb_bad}"
     [[ -n "$ln" ]] && se_hit="${se_hit}${tf}:${ln}
 "
   done <<< "$pm_tables"
-  if [[ -n "$se_hit" ]]; then
-    warn "fw_paimon_schema_evolution: 检出 ALTER TABLE 列类型变更（仅支持 widening，narrowing 截断历史数据；主键/分区列变更须重建表，人工确认）:
-${se_hit}"
-  else
-    pass "fw_paimon_schema_evolution: 未检出列类型变更（ADD COLUMN 安全）"
-  fi
+  _fw_report warn fw_paimon_schema_evolution "$se_hit" "检出 ALTER TABLE 列类型变更（仅支持 widening，narrowing 截断历史数据；主键/分区列变更须重建表，人工确认）" "未检出列类型变更（ADD COLUMN 安全）"
 
   # ====================================================================
   # fw_paimon_file_format(warn)：file.format 选型确认
@@ -275,10 +220,5 @@ ${se_hit}"
     [[ -n "$ln" ]] && ff_hit="${ff_hit}${tf}:${ln}
 "
   done <<< "$pm_tables"
-  if [[ -n "$ff_hit" ]]; then
-    warn "fw_paimon_file_format: 检出 file.format 配置（orc/parquet 分析列裁剪优、avro 行存 CDC 写入开销低；跨引擎须全支持，人工确认选型）:
-${ff_hit}"
-  else
-    pass "fw_paimon_file_format: 未配 file.format（默认 orc 待验证）"
-  fi
+  _fw_report warn fw_paimon_file_format "$ff_hit" "检出 file.format 配置（orc/parquet 分析列裁剪优、avro 行存 CDC 写入开销低；跨引擎须全支持，人工确认选型）" "未配 file.format（默认 orc 待验证）"
 }

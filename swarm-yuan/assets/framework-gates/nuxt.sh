@@ -16,10 +16,7 @@ _fw_nuxt_check() {
     return
   fi
 
-  _fw_nuxt_code_only() {
-    # 仅剥离行首 // 注释与块注释行（保留行内 //，避免误伤 URL）
-    sed -E 's:^[[:space:]]*//.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_js_head（仅剥离行首 // 注释与块注释行，保留行内 //，避免误伤 URL）
 
   local f
 
@@ -29,7 +26,7 @@ _fw_nuxt_check() {
   local fk_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_nuxt_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     # useAsyncData( 无 key 参数 → fail
     local ln
     ln=$(printf '%s\n' "$body" | grep -nE 'useAsyncData\(' 2>/dev/null || true)
@@ -48,12 +45,7 @@ _fw_nuxt_check() {
     fi
     # useFetch( 动态 url（含 ${} 模板或变量拼接）无 key → warn（并入 fk_bad warn 级，但门禁为 fail，故仅 useAsyncData fail）
   done
-  if [[ -n "$fk_bad" ]]; then
-    fail "fw_nuxt_fetch_key: useAsyncData 调用未传 key 参数（无 url 须必传 key，否则 key 推导脆弱致缓存串）:
-${fk_bad}"
-  else
-    pass "fw_nuxt_fetch_key: useAsyncData 均传 key（或无 useAsyncData）"
-  fi
+  _fw_report fail fw_nuxt_fetch_key "$fk_bad" "useAsyncData 调用未传 key 参数（无 url 须必传 key，否则 key 推导脆弱致缓存串）" "useAsyncData 均传 key（或无 useAsyncData）"
 
   # ====================================================================
   # fw_nuxt_hydration(fail)：render 阶段禁 Date.now/Math.random/uuid
@@ -65,7 +57,7 @@ ${fk_bad}"
       *) continue ;;
     esac
     local body
-    body=$(_fw_nuxt_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     # 仅检查 <script setup> 顶层（粗粒度：检出这些 API 调用即可，onMounted 内的由人工区分）
     # 简化：检出 Date.now()/Math.random()/crypto.randomUUID() 且同文件无 onMounted 包裹 → fail
     local has_random has_mounted
@@ -78,12 +70,7 @@ ${fk_bad}"
 "
     fi
   done
-  if [[ -n "$hyd_bad" ]]; then
-    fail "fw_nuxt_hydration: render 阶段用 Date.now/Math.random/uuid（SSR 与客户端 hydration 不一致）:
-${hyd_bad}"
-  else
-    pass "fw_nuxt_hydration: 未检出 render 阶段随机 API（或已用 onMounted 包裹）"
-  fi
+  _fw_report fail fw_nuxt_hydration "$hyd_bad" "render 阶段用 Date.now/Math.random/uuid（SSR 与客户端 hydration 不一致）" "未检出 render 阶段随机 API（或已用 onMounted 包裹）"
 
   # ====================================================================
   # fw_nuxt_usestate_key(fail)：useState 须 key
@@ -91,7 +78,7 @@ ${hyd_bad}"
   local us_bad=""
   for f in "${srcarr[@]}"; do
     local body
-    body=$(_fw_nuxt_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     local ln
     ln=$(printf '%s\n' "$body" | grep -nE 'useState\(' 2>/dev/null || true)
     [[ -z "$ln" ]] && continue
@@ -107,12 +94,7 @@ ${hyd_bad}"
       fi
     fi
   done
-  if [[ -n "$us_bad" ]]; then
-    fail "fw_nuxt_usestate_key: useState 调用未传 key（须唯一稳定 key，否则状态互相覆盖）:
-${us_bad}"
-  else
-    pass "fw_nuxt_usestate_key: useState 均传 key（或无 useState）"
-  fi
+  _fw_report fail fw_nuxt_usestate_key "$us_bad" "useState 调用未传 key（须唯一稳定 key，否则状态互相覆盖）" "useState 均传 key（或无 useState）"
 
   # ====================================================================
   # fw_nuxt_autoimport_conflict(fail)：composables/ 导出禁与内置同名
@@ -122,19 +104,14 @@ ${us_bad}"
   for f in "${srcarr[@]}"; do
     if printf '%s' "$f" | grep -qE '/composables/' 2>/dev/null; then
       local body
-      body=$(_fw_nuxt_code_only "$f")
+      body=$(_fw_strip_comments_js_head "$f")
       local ln
       ln=$(printf '%s\n' "$body" | grep -nE "export (function|const) (${builtin_re})\b" 2>/dev/null || true)
       [[ -n "$ln" ]] && ai_bad="${ai_bad}${f}:${ln}
 "
     fi
   done
-  if [[ -n "$ai_bad" ]]; then
-    fail "fw_nuxt_autoimport_conflict: composables/ 导出与 Nuxt 内置同名（覆盖内置致行为异常）:
-${ai_bad}"
-  else
-    pass "fw_nuxt_autoimport_conflict: 未检出 composable 与内置同名"
-  fi
+  _fw_report fail fw_nuxt_autoimport_conflict "$ai_bad" "composables/ 导出与 Nuxt 内置同名（覆盖内置致行为异常）" "未检出 composable 与内置同名"
 
   # ====================================================================
   # fw_nuxt_middleware_scope(warn)：全局中间件页面级逻辑
@@ -144,7 +121,7 @@ ${ai_bad}"
     case "$(basename "$f")" in
       *.global.ts)
         local body
-        body=$(_fw_nuxt_code_only "$f")
+        body=$(_fw_strip_comments_js_head "$f")
         # 含多个特定路径判断（>2 处 to.path 判断）→ 疑似页面级逻辑
         local cnt
         cnt=$(printf '%s\n' "$body" | grep -cE "to\.path|to\.name|to\.fullPath" 2>/dev/null || true)
@@ -155,12 +132,7 @@ ${ai_bad}"
         ;;
     esac
   done
-  if [[ -n "$mw_bad" ]]; then
-    warn "fw_nuxt_middleware_scope: 全局中间件含页面级逻辑（应拆命名中间件按页引用）:
-${mw_bad}"
-  else
-    pass "fw_nuxt_middleware_scope: 全局中间件仅做全局逻辑（或无全局中间件）"
-  fi
+  _fw_report warn fw_nuxt_middleware_scope "$mw_bad" "全局中间件含页面级逻辑（应拆命名中间件按页引用）" "全局中间件仅做全局逻辑（或无全局中间件）"
 
   # ====================================================================
   # fw_nuxt_component_naming(warn)：components/ 不同目录同名
@@ -184,12 +156,7 @@ ${mw_bad}"
       dup_bad="$dups"
     fi
   fi
-  if [[ -n "$dup_bad" ]]; then
-    warn "fw_nuxt_component_naming: components/ 不同目录同名 .vue（自动导入冲突）:
-${dup_bad}"
-  else
-    pass "fw_nuxt_component_naming: 未检出同名组件（或无 components/）"
-  fi
+  _fw_report warn fw_nuxt_component_naming "$dup_bad" "components/ 不同目录同名 .vue（自动导入冲突）" "未检出同名组件（或无 components/）"
 
   # ====================================================================
   # fw_nuxt_composable_export(warn)：composables/ 导出 const/class
@@ -198,19 +165,14 @@ ${dup_bad}"
   for f in "${srcarr[@]}"; do
     if printf '%s' "$f" | grep -qE '/composables/' 2>/dev/null; then
       local body
-      body=$(_fw_nuxt_code_only "$f")
+      body=$(_fw_strip_comments_js_head "$f")
       local ln
       ln=$(printf '%s\n' "$body" | grep -nE 'export const [a-zA-Z]+ *=|export class ' 2>/dev/null || true)
       [[ -n "$ln" ]] && ce_bad="${ce_bad}${f}:${ln}
 "
     fi
   done
-  if [[ -n "$ce_bad" ]]; then
-    warn "fw_nuxt_composable_export: composables/ 导出 const/class（约定导出函数 use*，常量移 utils/）:
-${ce_bad}"
-  else
-    pass "fw_nuxt_composable_export: 未检出 const/class 导出（或无 composables/）"
-  fi
+  _fw_report warn fw_nuxt_composable_export "$ce_bad" "composables/ 导出 const/class（约定导出函数 use*，常量移 utils/）" "未检出 const/class 导出（或无 composables/）"
 
   # ====================================================================
   # fw_nuxt_server_boundary(fail)：app/ 禁 import server/
@@ -220,19 +182,14 @@ ${ce_bad}"
     # 仅检查客户端目录（app/ 下，排除 server/ 自身）
     if printf '%s' "$f" | grep -qE '/app/' 2>/dev/null; then
       local body
-      body=$(_fw_nuxt_code_only "$f")
+      body=$(_fw_strip_comments_js_head "$f")
       local ln
       ln=$(printf '%s\n' "$body" | grep -nE "from ['\"](~|~/|\\.*/)(server|server/)" 2>/dev/null || true)
       [[ -n "$ln" ]] && sb_bad="${sb_bad}${f}:${ln}
 "
     fi
   done
-  if [[ -n "$sb_bad" ]]; then
-    fail "fw_nuxt_server_boundary: app/ 下文件 import server/ 内部（服务端代码泄露到客户端 bundle）:
-${sb_bad}"
-  else
-    pass "fw_nuxt_server_boundary: 未检出 client import server 内部"
-  fi
+  _fw_report fail fw_nuxt_server_boundary "$sb_bad" "app/ 下文件 import server/ 内部（服务端代码泄露到客户端 bundle）" "未检出 client import server 内部"
 
   # ====================================================================
   # fw_nuxt_seo_meta(warn)：禁手动 document.head/title
@@ -244,18 +201,13 @@ ${sb_bad}"
       *) continue ;;
     esac
     local body
-    body=$(_fw_nuxt_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     local ln
     ln=$(printf '%s\n' "$body" | grep -nE 'document\.head|document\.title' 2>/dev/null || true)
     [[ -n "$ln" ]] && seo_bad="${seo_bad}${f}:${ln}
 "
   done
-  if [[ -n "$seo_bad" ]]; then
-    warn "fw_nuxt_seo_meta: 组件内 document.head/document.title（须用 useSeoMeta/useHead，SSR 友好）:
-${seo_bad}"
-  else
-    pass "fw_nuxt_seo_meta: 未检出手动 head 操作"
-  fi
+  _fw_report warn fw_nuxt_seo_meta "$seo_bad" "组件内 document.head/document.title（须用 useSeoMeta/useHead，SSR 友好）" "未检出手动 head 操作"
 
   # ====================================================================
   # fw_nuxt_error_page(warn)：须配 error.vue
@@ -285,7 +237,7 @@ ${seo_bad}"
       *) continue ;;
     esac
     local body
-    body=$(_fw_nuxt_code_only "$f")
+    body=$(_fw_strip_comments_js_head "$f")
     # 检出 public: 块内含 secret/password/apiKey/privateKey/token
     local ln
     ln=$(printf '%s\n' "$body" | grep -nE '(secret|password|api[_-]?[Kk]ey|private[_-]?[Kk]ey|token)[[:space:]]*:' 2>/dev/null || true)
@@ -303,10 +255,5 @@ ${seo_bad}"
       fi
     fi
   done
-  if [[ -n "$rc_bad" ]]; then
-    fail "fw_nuxt_runtime_config_secret: runtimeConfig.public 含敏感 key（public 打包进客户端 bundle 泄露 CWE-312）:
-${rc_bad}"
-  else
-    pass "fw_nuxt_runtime_config_secret: 未检出 public 含敏感值（或无 nuxt.config）"
-  fi
+  _fw_report fail fw_nuxt_runtime_config_secret "$rc_bad" "runtimeConfig.public 含敏感 key（public 打包进客户端 bundle 泄露 CWE-312）" "未检出 public 含敏感值（或无 nuxt.config）"
 }

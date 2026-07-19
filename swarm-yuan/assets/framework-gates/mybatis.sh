@@ -47,12 +47,7 @@ _fw_mybatis_check() {
       [[ "$safe" -eq 0 ]] && bad_lines="${bad_lines}${line}
 "
     done <<< "$dollar_hits"
-    if [[ -n "$bad_lines" ]]; then
-      fail "fw_mybatis_dollar: \${} 未命中白名单（SQL 注入风险 CWE-89）:
-${bad_lines}"
-    else
-      pass "fw_mybatis_dollar: 全部 \${} 命中白名单"
-    fi
+    _fw_report fail fw_mybatis_dollar "$bad_lines" "\${} 未命中白名单（SQL 注入风险 CWE-89）" "全部 \${} 命中白名单"
   fi
 
   # ---------- fw_mybatis_binding(fail)：Mapper 接口数 vs XML namespace 数 ----------
@@ -87,12 +82,7 @@ ${bad_lines}"
   if [[ "$has_mp" -eq 1 ]]; then
     local np
     np=$(grep -rnE 'selectList\(' "${srcarr[@]}" 2>/dev/null | grep -v 'Page' | head -5 || true)
-    if [[ -n "$np" ]]; then
-      warn "fw_mybatis_plus_page: 疑似无分页 selectList（须用 Page 对象）:
-${np}"
-    else
-      pass "fw_mybatis_plus_page: 未检出无分页 selectList"
-    fi
+    _fw_report warn fw_mybatis_plus_page "$np" "疑似无分页 selectList（须用 Page 对象）" "未检出无分页 selectList"
   else
     pass "fw_mybatis_plus_page: 非 MP 项目（未检出 extends BaseMapper），跳过"
   fi
@@ -106,12 +96,7 @@ ${np}"
     else
       local no_dbtype
       no_dbtype=$(printf '%s\n' "$pgi" | grep -E 'new PaginationInnerInterceptor\(\)' || true)
-      if [[ -n "$no_dbtype" ]]; then
-        warn "fw_mybatis_plus_dbtype: 检出无参 PaginationInnerInterceptor()，单数据源建议显式 DbType:
-${no_dbtype}"
-      else
-        pass "fw_mybatis_plus_dbtype: PaginationInnerInterceptor 已声明 DbType"
-      fi
+      _fw_report warn fw_mybatis_plus_dbtype "$no_dbtype" "检出无参 PaginationInnerInterceptor()，单数据源建议显式 DbType" "PaginationInnerInterceptor 已声明 DbType"
     fi
   else
     pass "fw_mybatis_plus_dbtype: 非 MP 项目，跳过"
@@ -120,12 +105,7 @@ ${no_dbtype}"
   # ---------- fw_mybatis_nplus1(warn)：嵌套 select 防 N+1 ----------
   local n1
   n1=$(grep -rnE '<(association|collection)[[:space:]]+[^>]*\bselect=' "${xmlarr[@]}" 2>/dev/null || true)
-  if [[ -n "$n1" ]]; then
-    warn "fw_mybatis_nplus1: 检出嵌套 select（列表场景须改 nested result 或 fetchType=lazy）:
-${n1}"
-  else
-    pass "fw_mybatis_nplus1: 无嵌套 select（无 N+1 风险）"
-  fi
+  _fw_report warn fw_mybatis_nplus1 "$n1" "检出嵌套 select（列表场景须改 nested result 或 fetchType=lazy）" "无嵌套 select（无 N+1 风险）"
 
   # ---------- fw_mybatis_resultmap_id(warn)：resultMap 须含 <id> ----------
   local rmid_bad="" rfile
@@ -140,22 +120,12 @@ ${n1}"
 "
     fi
   done
-  if [[ -n "$rmid_bad" ]]; then
-    warn "fw_mybatis_resultmap_id: 含 <resultMap> 但无 <id> 的 XML（防去重失效）:
-${rmid_bad}"
-  else
-    pass "fw_mybatis_resultmap_id: resultMap 均含 <id> 或无 resultMap"
-  fi
+  _fw_report warn fw_mybatis_resultmap_id "$rmid_bad" "含 <resultMap> 但无 <id> 的 XML（防去重失效）" "resultMap 均含 <id> 或无 resultMap"
 
   # ---------- fw_mybatis_ognl_empty(warn)：OGNL 空串陷阱 ----------
   local ognl_hits
   ognl_hits=$(grep -rnE "<if test=\"[^\"]*!= *''" "${xmlarr[@]}" 2>/dev/null || true)
-  if [[ -n "$ognl_hits" ]]; then
-    warn "fw_mybatis_ognl_empty: 检出 <if test=\"… != ''\">（数值字段须仅判 != null）:
-${ognl_hits}"
-  else
-    pass "fw_mybatis_ognl_empty: 未检出 OGNL 空串陷阱"
-  fi
+  _fw_report warn fw_mybatis_ognl_empty "$ognl_hits" "检出 <if test=\"… != ''\">（数值字段须仅判 != null）" "未检出 OGNL 空串陷阱"
 
   # ---------- fw_mybatis_generatedkeys(warn)：useGeneratedKeys + foreach ----------
   local gk_hits
@@ -168,12 +138,7 @@ ${ognl_hits}"
 "
       fi
     done
-    if [[ -n "$gk_with_foreach" ]]; then
-      warn "fw_mybatis_generatedkeys: useGeneratedKeys + <foreach> 并存（非 MySQL 驱动主键回填不保证）:
-${gk_with_foreach}"
-    else
-      pass "fw_mybatis_generatedkeys: useGeneratedKeys 未与 foreach 并存"
-    fi
+    _fw_report warn fw_mybatis_generatedkeys "$gk_with_foreach" "useGeneratedKeys + <foreach> 并存（非 MySQL 驱动主键回填不保证）" "useGeneratedKeys 未与 foreach 并存"
   else
     pass "fw_mybatis_generatedkeys: 无 useGeneratedKeys 用法"
   fi
@@ -181,22 +146,12 @@ ${gk_with_foreach}"
   # ---------- fw_mybatis_select_dup_result(fail)：select 同时含 resultType 与 resultMap ----------
   local dup_hits
   dup_hits=$(grep -rnE '<select[^>]*\bresultType=[^>]*\bresultMap=' "${xmlarr[@]}" 2>/dev/null || true)
-  if [[ -n "$dup_hits" ]]; then
-    fail "fw_mybatis_select_dup_result: <select> 同时声明 resultType 与 resultMap（行为跨版本不一致）:
-${dup_hits}"
-  else
-    pass "fw_mybatis_select_dup_result: 无 resultType/resultMap 并存"
-  fi
+  _fw_report fail fw_mybatis_select_dup_result "$dup_hits" "<select> 同时声明 resultType 与 resultMap（行为跨版本不一致）" "无 resultType/resultMap 并存"
 
   # ---------- fw_mybatis_jdbc_type(warn)：可空 #{param} 须带 jdbcType ----------
   local no_jdbctype_hits
   no_jdbctype_hits=$(grep -rnE '#\{[a-zA-Z_][a-zA-Z0-9_]*\}' "${xmlarr[@]}" 2>/dev/null | grep -vE 'jdbcType' || true)
-  if [[ -n "$no_jdbctype_hits" ]]; then
-    warn "fw_mybatis_jdbc_type: 检出无 jdbcType 的 #{param}（Oracle 等 NULL 值须显式 jdbcType 防 TypeHandler 失配），请人工核实是否可空:
-$(printf '%s\n' "$no_jdbctype_hits" | head -5)"
-  else
-    pass "fw_mybatis_jdbc_type: #{param} 均带 jdbcType 或无裸 #{}"
-  fi
+  _fw_report warn fw_mybatis_jdbc_type "$(printf '%s\n' "$no_jdbctype_hits" | head -5)" "检出无 jdbcType 的 #{param}（Oracle 等 NULL 值须显式 jdbcType 防 TypeHandler 失配），请人工核实是否可空" "#{param} 均带 jdbcType 或无裸 #{}"
 
   # ---------- fw_mybatis_cache_dirty(warn)：二级缓存跨 namespace 关联 ----------
   local cache_files="" cfile
@@ -217,24 +172,14 @@ $(printf '%s\n' "$no_jdbctype_hits" | head -5)"
 "
       fi
     done <<< "${cache_files}"
-    if [[ -n "$cache_assoc" ]]; then
-      warn "fw_mybatis_cache_dirty: 二级缓存 + 跨 namespace 嵌套 select（须 cache-ref 或禁用二级缓存）:
-${cache_assoc}"
-    else
-      pass "fw_mybatis_cache_dirty: 二级缓存无跨 namespace 关联"
-    fi
+    _fw_report warn fw_mybatis_cache_dirty "$cache_assoc" "二级缓存 + 跨 namespace 嵌套 select（须 cache-ref 或禁用二级缓存）" "二级缓存无跨 namespace 关联"
   fi
 
   # ---------- fw_mybatis_logic_delete(warn)：MP 项目手写 deleted 条件 ----------
   if [[ "$has_mp" -eq 1 ]]; then
     local ld_hits
     ld_hits=$(grep -rnE '\bdeleted\s*=' "${xmlarr[@]}" "${srcarr[@]}" 2>/dev/null | grep -vE 'logic-delete|@TableLogic' || true)
-    if [[ -n "$ld_hits" ]]; then
-      warn "fw_mybatis_logic_delete: 检出手写 deleted= 条件（MP 拦截器会自动追加，避免叠加/绕过）:
-$(printf '%s\n' "$ld_hits" | head -5)"
-    else
-      pass "fw_mybatis_logic_delete: 无手写 deleted 条件"
-    fi
+    _fw_report warn fw_mybatis_logic_delete "$(printf '%s\n' "$ld_hits" | head -5)" "检出手写 deleted= 条件（MP 拦截器会自动追加，避免叠加/绕过）" "无手写 deleted 条件"
   else
     pass "fw_mybatis_logic_delete: 非 MP 项目，跳过"
   fi
@@ -243,12 +188,7 @@ $(printf '%s\n' "$ld_hits" | head -5)"
   if [[ ${#srcarr[@]} -gt 0 ]]; then
     local w_hits
     w_hits=$(grep -rnE '\.(last|having|apply)\(' "${srcarr[@]}" 2>/dev/null | grep -vE 'checkSqlInjection' || true)
-    if [[ -n "$w_hits" ]]; then
-      warn "fw_mybatis_wrapper_injection: 检出 Wrapper last()/having()/apply()（须核对参数来源，建议 checkSqlInjection(true)）:
-$(printf '%s\n' "$w_hits" | head -5)"
-    else
-      pass "fw_mybatis_wrapper_injection: 无 Wrapper 字符串 API 调用"
-    fi
+    _fw_report warn fw_mybatis_wrapper_injection "$(printf '%s\n' "$w_hits" | head -5)" "检出 Wrapper last()/having()/apply()（须核对参数来源，建议 checkSqlInjection(true)）" "无 Wrapper 字符串 API 调用"
   else
     pass "fw_mybatis_wrapper_injection: 无 Java 源文件，跳过"
   fi

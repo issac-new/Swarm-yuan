@@ -92,24 +92,14 @@ ${fr_hit}"
   # ====================================================================
   local rs_hit
   rs_hit=$(grep -rnE 'Scope\.REQUEST|scope[[:space:]]*:[[:space:]]*Scope\.REQUEST' "${tsarr[@]+"${tsarr[@]}"}" 2>/dev/null || true)
-  if [[ -n "$rs_hit" ]]; then
-    warn "fw_nest_request_scope: 检出 REQUEST 作用域 provider（每请求实例化整条依赖链，性能损耗；须确认确需请求态，优先 DEFAULT 单例 + AsyncLocalStorage）:
-${rs_hit}"
-  else
-    pass "fw_nest_request_scope: 无 REQUEST 作用域滥用"
-  fi
+  _fw_report warn fw_nest_request_scope "$rs_hit" "检出 REQUEST 作用域 provider（每请求实例化整条依赖链，性能损耗；须确认确需请求态，优先 DEFAULT 单例 + AsyncLocalStorage）" "无 REQUEST 作用域滥用"
 
   # ====================================================================
   # fw_nest_global_module(warn)：@Global() 模块滥用破坏边界
   # ====================================================================
   local gm_hit
   gm_hit=$(grep -rnE '@Global\(\)' "${tsarr[@]+"${tsarr[@]}"}" 2>/dev/null || true)
-  if [[ -n "$gm_hit" ]]; then
-    warn "fw_nest_global_module: 检出 @Global() 模块（provider 全局可见，破坏模块边界；仅基础设施模块允许，须评审）:
-${gm_hit}"
-  else
-    pass "fw_nest_global_module: 无 @Global() 模块滥用"
-  fi
+  _fw_report warn fw_nest_global_module "$gm_hit" "检出 @Global() 模块（provider 全局可见，破坏模块边界；仅基础设施模块允许，须评审）" "无 @Global() 模块滥用"
 
   # ====================================================================
   # fw_nest_exception_filter(warn)：统一异常过滤器
@@ -143,12 +133,7 @@ ${gm_hit}"
     [[ -n "$ln" ]] && ts_bad="${ts_bad}${f}:${ln}
 "
   done
-  if [[ -n "$ts_bad" ]]; then
-    fail "fw_nest_typeorm_sync: TypeORM synchronize: true（启动即改生产库结构，数据丢失风险；须 false + migration）:
-${ts_bad}"
-  else
-    pass "fw_nest_typeorm_sync: 未检出 synchronize: true"
-  fi
+  _fw_report fail fw_nest_typeorm_sync "$ts_bad" "TypeORM synchronize: true（启动即改生产库结构，数据丢失风险；须 false + migration）" "未检出 synchronize: true"
 
   # ====================================================================
   # fw_nest_swagger(warn)：Swagger 文档

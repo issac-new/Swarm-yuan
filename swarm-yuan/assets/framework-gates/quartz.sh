@@ -26,14 +26,7 @@ _fw_quartz_check() {
     esac
   done
 
-  # 代码正文过滤：去 // 行注释与块注释行，防注释里的关键字造成误判
-  _fw_quartz_code_only() {
-    sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null
-  }
-  # 配置正文过滤：去 # 注释行
-  _fw_quartz_cfg_only() {
-    grep -vE '^[[:space:]]*#' "$1" 2>/dev/null
-  }
+  # 代码正文过滤：调公共库 _fw_strip_comments_c（去 // 行注释与块注释行）；配置正文过滤：调公共库 _fw_strip_comments_cfg（去 # 注释行）
 
   local j c ln
 
@@ -42,11 +35,11 @@ _fw_quartz_check() {
   # ====================================================================
   local has_scheduled=0 has_lock=0
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    if _fw_quartz_code_only "$j" | grep -qE '@Scheduled\b'; then has_scheduled=1; fi
-    if _fw_quartz_code_only "$j" | grep -qE '@SchedulerLock|ShedLock|shedlock|RedissonClient|tryLock'; then has_lock=1; fi
+    if _fw_strip_comments_c "$j" | grep -qE '@Scheduled\b'; then has_scheduled=1; fi
+    if _fw_strip_comments_c "$j" | grep -qE '@SchedulerLock|ShedLock|shedlock|RedissonClient|tryLock'; then has_lock=1; fi
   done
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
-    if _fw_quartz_cfg_only "$c" | grep -qE 'shedlock'; then has_lock=1; fi
+    if _fw_strip_comments_cfg "$c" | grep -qE 'shedlock'; then has_lock=1; fi
   done
   if [[ "$has_scheduled" -eq 0 ]]; then
     pass "fw_quartz_scheduled_lock: 无 @Scheduled 任务，跳过"
@@ -61,19 +54,19 @@ _fw_quartz_check() {
   # ====================================================================
   local ram_hit="" qcfg=0 clustered=0
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
-    ln=$(_fw_quartz_cfg_only "$c" | grep -nE 'RAMJobStore' || true)
+    ln=$(_fw_strip_comments_cfg "$c" | grep -nE 'RAMJobStore' || true)
     [[ -n "$ln" ]] && ram_hit="${ram_hit}${c}:${ln}
 "
-    if _fw_quartz_cfg_only "$c" | grep -qE 'org\.quartz|spring\.quartz|quartz-scheduler|spring-boot-starter-quartz'; then qcfg=1; fi
-    if _fw_quartz_cfg_only "$c" | grep -qE 'job-store-type.*jdbc|jobStore\.class|isClustered|LocalDataSourceJobStore|JDBCJobStore'; then clustered=1; fi
+    if _fw_strip_comments_cfg "$c" | grep -qE 'org\.quartz|spring\.quartz|quartz-scheduler|spring-boot-starter-quartz'; then qcfg=1; fi
+    if _fw_strip_comments_cfg "$c" | grep -qE 'job-store-type.*jdbc|jobStore\.class|isClustered|LocalDataSourceJobStore|JDBCJobStore'; then clustered=1; fi
   done
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    if _fw_quartz_code_only "$j" | grep -qE 'RAMJobStore|SchedulerFactoryBean|StdSchedulerFactory'; then
+    if _fw_strip_comments_c "$j" | grep -qE 'RAMJobStore|SchedulerFactoryBean|StdSchedulerFactory'; then
       qcfg=1
-      ln=$(_fw_quartz_code_only "$j" | grep -nE 'RAMJobStore' || true)
+      ln=$(_fw_strip_comments_c "$j" | grep -nE 'RAMJobStore' || true)
       [[ -n "$ln" ]] && ram_hit="${ram_hit}${j}:${ln}
 "
-      if _fw_quartz_code_only "$j" | grep -qE 'LocalDataSourceJobStore|JDBCJobStore|setDataSource'; then clustered=1; fi
+      if _fw_strip_comments_c "$j" | grep -qE 'LocalDataSourceJobStore|JDBCJobStore|setDataSource'; then clustered=1; fi
     fi
   done
   if [[ -n "$ram_hit" ]]; then
@@ -90,11 +83,11 @@ ${ram_hit}"
   # ====================================================================
   local cron_hit=0 mis_ok=0
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    if _fw_quartz_code_only "$j" | grep -qE 'CronScheduleBuilder|CronTrigger'; then cron_hit=1; fi
-    if _fw_quartz_code_only "$j" | grep -qE 'withMisfireHandlingInstruction|MISFIRE_INSTRUCTION'; then mis_ok=1; fi
+    if _fw_strip_comments_c "$j" | grep -qE 'CronScheduleBuilder|CronTrigger'; then cron_hit=1; fi
+    if _fw_strip_comments_c "$j" | grep -qE 'withMisfireHandlingInstruction|MISFIRE_INSTRUCTION'; then mis_ok=1; fi
   done
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
-    if _fw_quartz_cfg_only "$c" | grep -qE 'misfire'; then mis_ok=1; fi
+    if _fw_strip_comments_cfg "$c" | grep -qE 'misfire'; then mis_ok=1; fi
   done
   if [[ "$cron_hit" -eq 0 ]]; then
     pass "fw_quartz_misfire: 无 CronTrigger 定义，跳过"
@@ -109,8 +102,8 @@ ${ram_hit}"
   # ====================================================================
   local qprop=0 tc_ok=0
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
-    if _fw_quartz_cfg_only "$c" | grep -qE 'org\.quartz|spring\.quartz'; then qprop=1; fi
-    if _fw_quartz_cfg_only "$c" | grep -qE 'threadCount|thread-count'; then tc_ok=1; fi
+    if _fw_strip_comments_cfg "$c" | grep -qE 'org\.quartz|spring\.quartz'; then qprop=1; fi
+    if _fw_strip_comments_cfg "$c" | grep -qE 'threadCount|thread-count'; then tc_ok=1; fi
   done
   if [[ "$qprop" -eq 0 ]]; then
     pass "fw_quartz_threadpool: 无 quartz 配置，跳过"
@@ -125,53 +118,38 @@ ${ram_hit}"
   # ====================================================================
   local jdm_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    ln=$(_fw_quartz_code_only "$j" | grep -nE 'usingJobData\(|getJobDataMap\(\)\.put\(|jobDataMap\.put\(|dataMap\.put\(' | grep -E 'new[[:space:]]+[A-Z]' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE 'usingJobData\(|getJobDataMap\(\)\.put\(|jobDataMap\.put\(|dataMap\.put\(' | grep -E 'new[[:space:]]+[A-Z]' || true)
     [[ -n "$ln" ]] && jdm_bad="${jdm_bad}${j}:${ln}
 "
   done
-  if [[ -n "$jdm_bad" ]]; then
-    warn "fw_quartz_jobdatamap: JobDataMap 存入对象构造（JDBC JobStore 序列化进 QRTZ 表，禁存 DTO/Entity，仅放 String/基本类型 id 回源查库）:
-${jdm_bad}"
-  else
-    pass "fw_quartz_jobdatamap: JobDataMap 未见对象存储"
-  fi
+  _fw_report warn fw_quartz_jobdatamap "$jdm_bad" "JobDataMap 存入对象构造（JDBC JobStore 序列化进 QRTZ 表，禁存 DTO/Entity，仅放 String/基本类型 id 回源查库）" "JobDataMap 未见对象存储"
 
   # ====================================================================
   # fw_quartz_idempotent(warn)：任务含写操作须幂等
   # ====================================================================
   local idem_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    _fw_quartz_code_only "$j" | grep -qE 'implements Job|extends QuartzJobBean|@Scheduled\b' || continue
-    _fw_quartz_code_only "$j" | grep -qE '\.(insert|update|save|delete)[A-Z(]|\.(insert|update|save|delete)\(|jdbcTemplate\.(update|execute)' || continue
-    if ! _fw_quartz_code_only "$j" | grep -qE '幂等|idempot|[Dd]edup|去重|唯一键|uniqueKey|onDuplicateKey|INSERT[[:space:]]+IGNORE|insertIgnore|状态机'; then
+    _fw_strip_comments_c "$j" | grep -qE 'implements Job|extends QuartzJobBean|@Scheduled\b' || continue
+    _fw_strip_comments_c "$j" | grep -qE '\.(insert|update|save|delete)[A-Z(]|\.(insert|update|save|delete)\(|jdbcTemplate\.(update|execute)' || continue
+    if ! _fw_strip_comments_c "$j" | grep -qE '幂等|idempot|[Dd]edup|去重|唯一键|uniqueKey|onDuplicateKey|INSERT[[:space:]]+IGNORE|insertIgnore|状态机'; then
       idem_bad="${idem_bad}${j}
 "
     fi
   done
-  if [[ -n "$idem_bad" ]]; then
-    warn "fw_quartz_idempotent: 任务类含写操作但无幂等痕迹（misfire 补跑/故障转移/手动重触发会重复执行）:
-${idem_bad}"
-  else
-    pass "fw_quartz_idempotent: 任务幂等性痕迹齐备或无写操作任务"
-  fi
+  _fw_report warn fw_quartz_idempotent "$idem_bad" "任务类含写操作但无幂等痕迹（misfire 补跑/故障转移/手动重触发会重复执行）" "任务幂等性痕迹齐备或无写操作任务"
 
   # ====================================================================
   # fw_quartz_disallow_concurrent(warn)：有状态 Job 须串行
   # ====================================================================
   local dc_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
-    _fw_quartz_code_only "$j" | grep -qE 'implements Job|extends QuartzJobBean' || continue
-    if ! _fw_quartz_code_only "$j" | grep -qE '@DisallowConcurrentExecution'; then
+    _fw_strip_comments_c "$j" | grep -qE 'implements Job|extends QuartzJobBean' || continue
+    if ! _fw_strip_comments_c "$j" | grep -qE '@DisallowConcurrentExecution'; then
       dc_bad="${dc_bad}${j}
 "
     fi
   done
-  if [[ -n "$dc_bad" ]]; then
-    warn "fw_quartz_disallow_concurrent: Job 实现类无 @DisallowConcurrentExecution（同一 JobDetail 多 Trigger 并发执行，有共享状态须串行 + @PersistJobDataAfterExecution）:
-${dc_bad}"
-  else
-    pass "fw_quartz_disallow_concurrent: Job 类已声明串行或无 Job 实现"
-  fi
+  _fw_report warn fw_quartz_disallow_concurrent "$dc_bad" "Job 实现类无 @DisallowConcurrentExecution（同一 JobDetail 多 Trigger 并发执行，有共享状态须串行 + @PersistJobDataAfterExecution）" "Job 类已声明串行或无 Job 实现"
 
   # ====================================================================
   # fw_quartz_timezone(warn)：cron 须显式时区
@@ -179,19 +157,14 @@ ${dc_bad}"
   local tz_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
     # @Scheduled cron 无 zone
-    ln=$(_fw_quartz_code_only "$j" | grep -nE '@Scheduled\(' | grep -E 'cron' | grep -vE 'zone' || true)
+    ln=$(_fw_strip_comments_c "$j" | grep -nE '@Scheduled\(' | grep -E 'cron' | grep -vE 'zone' || true)
     [[ -n "$ln" ]] && tz_bad="${tz_bad}${j}:${ln}
 "
     # CronScheduleBuilder 无 inTimeZone
-    if _fw_quartz_code_only "$j" | grep -qE 'CronScheduleBuilder' && ! _fw_quartz_code_only "$j" | grep -qE 'inTimeZone'; then
+    if _fw_strip_comments_c "$j" | grep -qE 'CronScheduleBuilder' && ! _fw_strip_comments_c "$j" | grep -qE 'inTimeZone'; then
       tz_bad="${tz_bad}${j}(CronScheduleBuilder 无 inTimeZone)
 "
     fi
   done
-  if [[ -n "$tz_bad" ]]; then
-    warn "fw_quartz_timezone: cron 触发未显式声明时区（容器默认 UTC，与 Asia/Shanghai 差 8h，须 @Scheduled zone= 或 inTimeZone）:
-${tz_bad}"
-  else
-    pass "fw_quartz_timezone: cron 时区显式声明或无 cron 定义"
-  fi
+  _fw_report warn fw_quartz_timezone "$tz_bad" "cron 触发未显式声明时区（容器默认 UTC，与 Asia/Shanghai 差 8h，须 @Scheduled zone= 或 inTimeZone）" "cron 时区显式声明或无 cron 定义"
 }

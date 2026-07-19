@@ -73,12 +73,7 @@ _fw_nacos_check() {
     [[ -n "$ln" ]] && enc_bad="${enc_bad}${c}:${ln}
 "
   done <<< "$nacos_cfgs"
-  if [[ -n "$enc_bad" ]]; then
-    fail "fw_nacos_config_encrypt: 敏感配置明文（须 \${ENV} 外部化注入 / 加密插件 / KMS，明文入 Nacos 泄露即全泄露 CWE-312）:
-${enc_bad}"
-  else
-    pass "fw_nacos_config_encrypt: 未检出明文敏感配置"
-  fi
+  _fw_report fail fw_nacos_config_encrypt "$enc_bad" "敏感配置明文（须 \${ENV} 外部化注入 / 加密插件 / KMS，明文入 Nacos 泄露即全泄露 CWE-312）" "未检出明文敏感配置"
 
   # ====================================================================
   # fw_nacos_instance_ephemeral(warn)：持久化实例选型须人工确认
@@ -90,12 +85,7 @@ ${enc_bad}"
     [[ -n "$ln" ]] && eph_hit="${eph_hit}${c}:${ln}
 "
   done
-  if [[ -n "$eph_hit" ]]; then
-    warn "fw_nacos_instance_ephemeral: ephemeral=false 持久化实例（CP/Raft，宕机不剔除仅标不健康）——须人工确认选型必要性，普通微服务应用默认临时实例:
-${eph_hit}"
-  else
-    pass "fw_nacos_instance_ephemeral: 未检出持久化实例声明（默认临时实例 AP/Distro）"
-  fi
+  _fw_report warn fw_nacos_instance_ephemeral "$eph_hit" "ephemeral=false 持久化实例（CP/Raft，宕机不剔除仅标不健康）——须人工确认选型必要性，普通微服务应用默认临时实例" "未检出持久化实例声明（默认临时实例 AP/Distro）"
 
   # ====================================================================
   # fw_nacos_gray_release(warn)：生产配置变更须走灰度发布
@@ -187,12 +177,7 @@ ${sa_single}"
     [[ -n "$ln" ]] && hb_bad="${hb_bad}${j}:${ln}（代码自定义心跳，须人工核对值）
 "
   done
-  if [[ -n "$hb_bad" ]]; then
-    warn "fw_nacos_client_heartbeat: 心跳间隔 <5000ms 或代码自定义（默认 5s 基线；过频心跳风暴，过疏故障发现延迟）:
-${hb_bad}"
-  else
-    pass "fw_nacos_client_heartbeat: 未检出异常心跳配置"
-  fi
+  _fw_report warn fw_nacos_client_heartbeat "$hb_bad" "心跳间隔 <5000ms 或代码自定义（默认 5s 基线；过频心跳风暴，过疏故障发现延迟）" "未检出异常心跳配置"
 
   # ====================================================================
   # fw_nacos_config_listener(warn)：@Value 注入 Nacos 配置须配 @RefreshScope
@@ -252,12 +237,7 @@ ${val_files}"
     [[ -n "$ln" ]] && prof_bad="${prof_bad}${c}:${ln}
 "
   done
-  if [[ -n "$prof_bad" ]]; then
-    warn "fw_nacos_profile_isolation: profiles.active 硬编码字面值（dataId 按 \${prefix}-\${profiles.active} 解析，环境须部署期注入 \${DEPLOY_ENV:dev}）:
-${prof_bad}"
-  else
-    pass "fw_nacos_profile_isolation: profiles.active 由占位符注入或未配置"
-  fi
+  _fw_report warn fw_nacos_profile_isolation "$prof_bad" "profiles.active 硬编码字面值（dataId 按 \${prefix}-\${profiles.active} 解析，环境须部署期注入 \${DEPLOY_ENV:dev}）" "profiles.active 由占位符注入或未配置"
 
   # ====================================================================
   # fw_nacos_metadata(warn)：服务元数据须支撑版本/权重路由
