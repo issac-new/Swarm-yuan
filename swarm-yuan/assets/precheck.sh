@@ -740,25 +740,34 @@ check_reuse() {
   local found=0
 
   # ---- 1. 硬门禁：spec-template.md §5.5 复用约束段必须已填写 ----
-  # 找到最近一份 spec-template（项目内 specs/ 或当前目录）
+  # 找到最近一份 spec（项目内 specs/ 或当前目录）。
+  # 注意：排除 *-template.md 模板文件——模板的 §5.5 checkbox 本就该是 [ ] 待用户复制后勾选，
+  # 把模板当具体 spec 检会误判 fail（范式自举检查发现的缺陷）。
   local spec_file=""
-  for cand in "specs/spec-template.md" "spec-template.md" "docs/spec-template.md"; do
+  for cand in "specs/spec.md" "specs/spec-template.md" "spec-template.md" "docs/spec-template.md"; do
     if [[ -f "$cand" ]]; then spec_file="$cand"; break; fi
   done
-  # 兜底：在可改目录下找任意 *spec*.md 含 §5.5 标记
-  if [[ -z "$spec_file" ]]; then
+  # 兜底：在可改目录下找任意 *spec*.md 含 §5.5 标记，但排除 *-template.md / *template*.md。
+  # 要求文件同时含"拼装合规声明"和 checkbox 结构（- [ ] 或 - [x]），避免误命中 USAGE/README 等引用文档。
+  if [[ -z "$spec_file" ]] || [[ "$(basename "$spec_file")" == *template* ]]; then
+    spec_file=""
     for dir in "${WRITABLE_DIRS[@]}" "${SCAN_DIRS[@]}"; do
       if [[ -d "$dir" ]]; then
         local hit
-        hit=$(grep -rliE '复用约束|拼装合规声明' "$dir" --include='*.md' 2>/dev/null | head -1 || true)
+        hit=$(grep -rliE '拼装合规声明' "$dir" --include='*.md' 2>/dev/null \
+              | grep -vE 'template' \
+              | while read -r f; do
+                  grep -qE '^\s*-\s*\[[ x]\]' "$f" 2>/dev/null && echo "$f"
+                done | head -1 || true)
         if [[ -n "$hit" ]]; then spec_file="$hit"; break; fi
       fi
     done
   fi
 
   if [[ -z "$spec_file" ]]; then
-    fail "未找到含 §5.5 复用约束段的 spec 文档——拼装式开发要求每个变更先声明复用（见 spec-template.md §5.5）"
-    found=1
+    # 无 spec 文档（项目本身无具体变更 spec，如范式仓库自身/纯工具仓库）：跳过而非 fail。
+    # --all-full 静默跳过；显式 --reuse 时 warn 提示（拼装式开发项目应配 spec）。
+    skip_if_unconfigured "未找到含 §5.5 复用约束段的 spec 文档（拼装式开发项目应在 specs/ 下配 spec；纯工具/范式仓库可跳过）"
   else
     # 校验 §5.5 拼装合规声明 4 个 checkbox 已勾选
     local decl; decl=$(awk '/复用约束|拼装合规声明/,/^## [0-9]/' "$spec_file" 2>/dev/null)
