@@ -2514,6 +2514,80 @@ _fw_grep_count() {
   { grep -rlE "$pat" "$@" 2>/dev/null || true; } | wc -l | xargs
 }
 
+# ===== 框架门禁公共库（供 framework-gates 片段调用；勿改名，片段依赖）=====
+# 以下注释剥离器与各片段原内联嵌套实现字节级同语义（同 sed/grep 表达式、
+# 同 2>/dev/null 处理）；管道统一 || true 加固，不依赖 check_framework 的兜底。
+# 家族聚类依据：57 片段嵌套函数体逐字节比对（见 verifier/v1/gate-ab-diff.sh 契约注释）。
+
+# C 系（// 行内 + 块注释行；Java/Go/JS/TS 等 14 片段同体）：
+# angular/elasticjob/kafka/lombok/mapstruct/netty/quartz/rabbitmq/react/redis/
+# rocketmq/spring-batch/spring-boot/spring-cloud
+_fw_strip_comments_c() {
+  { sed -E 's://.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null || true; }
+}
+
+# C 系变体：多剥行内 /* */（gin/gorm 同体）
+_fw_strip_comments_c_inline() {
+  { sed -E 's://.*$::; s:/\*.*\*/::g; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null || true; }
+}
+
+# Python 系（# 行内；django/fastapi/flask/sqlalchemy 同体）
+_fw_strip_comments_hash() {
+  { sed -E 's:#.*$::' "$1" 2>/dev/null || true; }
+}
+
+# 配置系（剔 # 注释行；elasticjob/quartz/redis 的 *_cfg_only 同体）
+_fw_strip_comments_cfg() {
+  { grep -vE '^[[:space:]]*#' "$1" 2>/dev/null || true; }
+}
+
+# SQL 系（-- 行内；postgresql/sqlserver 同体）
+_fw_strip_comments_sql() {
+  { sed -E 's:--.*$::' "$1" 2>/dev/null || true; }
+}
+
+# MySQL 系（-- 行内 + # 注释行；mysql 独有）
+_fw_strip_comments_mysql() {
+  { sed -E 's:--.*$::; /^[[:space:]]*#/d' "$1" 2>/dev/null || true; }
+}
+
+# JS 行首系（仅剥行首 // 与块注释行，保留行内 // 防误伤 URL；nextjs/nuxt 同语义）
+_fw_strip_comments_js_head() {
+  { sed -E 's:^[[:space:]]*//.*$::; /^[[:space:]]*\*/d; /^[[:space:]]*\/\*/d' "$1" 2>/dev/null || true; }
+}
+
+# XML 系（awk 状态机剥 <!-- --> 跨行注释；mapstruct 独有）
+_fw_strip_comments_xml() {
+  { awk '
+      {
+        rest=$0; out=""
+        while (length(rest)) {
+          if (inc) {
+            i=index(rest,"-->")
+            if (!i) { rest=""; break }
+            rest=substr(rest,i+3); inc=0
+          } else {
+            i=index(rest,"<!--")
+            if (!i) { out=out rest; break }
+            out=out substr(rest,1,i-1); rest=substr(rest,i+4); inc=1
+          }
+        }
+        print out
+      }' "$1" 2>/dev/null || true; }
+}
+
+# 规范形报告尾收编：bad 非空 → fail|warn "id: msg:\n<bad>"；空 → pass "id: ok"。
+# 与手写 if/else/fi 输出逐字节等价（含换行结构）。
+# 用法: _fw_report <fail|warn> <gate_id> <bad内容> <bad文案(不含结尾冒号)> <ok文案>
+_fw_report() {
+  if [[ -n "$3" ]]; then
+    "$1" "$2: $4:
+$3"
+  else
+    pass "$2: $5"
+  fi
+}
+
 # ===== shellcheck 静态锚点（运行时恒假，零副作用）=====
 # 门禁经数组循环动态分发（"$_gate" / "$_gate_fn"），静态分析无法追踪间接调用，
 # 会使全部门禁函数体被误报不可达（SC2317 级联）。此处静态引用全部门禁函数，
