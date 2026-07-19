@@ -215,6 +215,52 @@ memory_entries (raw observations)
 - 蒸馏产物存于 `.swarm-yuan/patterns.json`（可提交，团队共享）
 - dev-guide.md 引用：查"这个模块的常见 failure pattern"→ 查蒸馏产物而非翻 raw observations
 
+## claude-mem v13.11.0 Worker-Native Cloud Sync
+
+> 引自 claude-mem v13.11.0。独立 cloud-sync daemon 退役，worker 自行同步记忆到云端。
+
+### 为什么退役独立 daemon
+- 独立 `cloud-sync.mjs` daemon 需要单独安装、启动、维护——增加运维负担
+- daemon 与 worker 之间的状态同步容易竞态（如 session memory id 注册时 prompt 上传仍在进行）
+
+### Worker-native sync 模式
+- **写入触发 flusher**：每次本地写入 nudge 一个后台 flusher，drain 未同步行到 cmem.ai
+- **1.5s debounce**：合并写入突发（burst），避免频繁 flush
+- **single-flight flush**：同一时刻只有一个 flush 在运行
+- **200 行/2MB 分页**：大批量同步时分页，避免单次请求过大
+- **30s 请求超时**：避免 hang
+- **capped exponential backoff**：失败时退避重试（有上限，不无限重试）
+
+**监控端点**：`GET /api/sync/status` 返回 pending counts per kind + last flush time + last error。
+
+**Schema v40 自修复**：升级时，所有已同步的 prompt（包括旧 daemon 上传的）重新入队，通过修复后的 mapper 重新推送；backfill lane header 抑制 realtime broadcast 风暴。
+
+**在目标技能中的落地：**
+- 若项目用 claude-mem cloud sync，dev-guide.md 提示：无需独立 daemon，worker 自行同步
+- memory-persistence 的"写入触发后台同步"模式可迁移到项目自建的记忆层（非阻塞写入 + debounce + backoff）
+
+## ruflo v3.30.2 Doctor Memory 功能性检查
+
+> 引自 ruflo v3.30.2。`ruflo doctor --component memory` 从"文件存在性检查"升级为"功能性检查"。
+
+### 问题
+旧版 `doctor --component memory` 只做 `existsSync` + `statSync`——任何存在的文件都报 PASS，即使是 99.97% 空的或 SQLite 损坏的 DB。
+
+### 三层功能性检查
+
+| 检查 | 方法 | 失败条件 |
+|------|------|---------|
+| **Memory Integrity** | `sql.js` + `PRAGMA integrity_check` | SQLite 结构损坏 |
+| **Memory Content** | ≥95% 的 `memory_entries` 行有非空 content | content 3/11133 (0.03%) → FAIL |
+| **Memory Embedding Coverage** | ≥95% 的已填充行有向量 | 向量覆盖率 <95% → FAIL |
+
+**"UNKNOWN is never PASS" 规则**：加密 DB 无法检查时报 WARN 而非 PASS（不知情 ≠ 通过）。
+
+**在目标技能中的落地：**
+- 若项目自建 SQLite 记忆层，precheck.sh 的 `--memory` 子命令可引用此三层检查
+- 每个检查打印精确测量值（如 "content 3/11133 (0.03%)"），而非泛泛的 PASS/FAIL
+- 加密/不可检查的情况报 WARN 而非 PASS
+
 ## ECC v2.0 记忆与学习方法论
 
 > 来自 ECC v2.0.0。将记忆系统从"观察+检索"升级为"原子 instinct 生命周期 + observer lease + skills→rules 蒸馏"。

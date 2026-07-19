@@ -4,7 +4,7 @@
 >
 > 14 项特征卡让 AI 认识你的项目，25 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
 
-[![Release](https://img.shields.io/badge/release-v2026.07.17-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.17)
+[![Release](https://img.shields.io/badge/release-v2026.07.19-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.19)
 [![Feature Card](https://img.shields.io/badge/feature%20card-14-green)]()
 [![Quality Gates](https://img.shields.io/badge/quality%20gates-25-orange)]()
 [![Runtimes](https://img.shields.io/badge/runtimes-10-yellow)]()
