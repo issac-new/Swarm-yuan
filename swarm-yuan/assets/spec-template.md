@@ -249,6 +249,8 @@
 - [ ] 已对照 3+ 思维模型，决策有据
 - [ ] 承认不确定性的部分已标注（防达克效应）
 
+> **razor 适用条件（裁决条款落地）**：对本 spec 做逻辑剃刀对抗审查前，先按 `references/logic-razor.md`「razor↔abstain 裁决条款」的证据完备度 checklist 判定轮次——证据充分（审查轮次）方可强制挑 ≥10% 严谨性瑕疵；证据不足（探查轮次）须输出 `abstain: insufficient_spec` 并列出待补信息清单，不得编造瑕疵凑数。
+
 ## 17. ★辩证映射分析（第五层：本次变更的矛盾辩证关系）
 > 事物发展的根本动力是内部矛盾。本段识别本次变更涉及的主要矛盾与 7 对辩证关系。
 > 详见 `references/cognition-framework.md` 第五层 + `references/cognitive-bias.md`。

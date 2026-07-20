@@ -37,7 +37,6 @@
 | `/diff` | 查看差异面板（切换分支/commit 后自动刷新） | v2.1.198 |
 | `/btw` | 附带"c to copy"快捷键复制原始 markdown | v2.1.163 |
 | `/dataviz` | 图表/仪表盘设计指导 + 可运行调色板验证器 | v2.1.198 |
-| `/recap` | 会话回顾 | v2.1.181 |
 | `/background` | 后台化会话 | v2.1.199 |
 | `/loop` | 循环调度（v2.1.140 修复冗余唤醒） | v2.1.140 |
 | `/goal` | 目标导向（v2.1.140 修复 hook 禁用时静挂） | v2.1.140 |
@@ -413,7 +412,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ---
 
-## 十三、CLI 命令全量（`claude --help`）
+## 十四、CLI 命令全量（`claude --help`）
 
 > 以下来自 `claude --help` 实际输出，是 releases 中未详述的 CLI 级能力。
 
@@ -538,7 +537,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ---
 
-## 十四、目标技能可用的全部能力速查（按开发阶段）
+## 十五、目标技能可用的全部能力速查（按开发阶段）
 
 | 阶段 | Claude Code 原生 | CLI 命令 | 运行时工具 | MCP 工具 |
 |------|-----------------|---------|-----------|---------|

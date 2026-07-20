@@ -68,6 +68,47 @@ Discuss → Plan → Execute → Verify → Ship
 
 > 与 swarm-yuan 的 workflow 8 节点映射：Discuss≈①②，Plan≈③，Execute≈⑤，Verify≈⑥，Ship≈⑦⑧。gsd 的 5 步是更高层抽象，swarm-yuan 的 8 节点更细。目标技能可选用哪种粒度。
 
+## swarm-yuan 4-Phase SOP 定义页（第三层认知辩证 · 本范式自有方法论）
+
+> **定位**：4-Phase SOP 是 swarm-yuan 第三层"认知辩证"的流程组织方法论，与逻辑剃刀配对——SOP 管"推演流程"（如何推进），剃刀管"论证质量"（如何自证伪，见 `references/logic-razor.md`）。本节是其**唯一定义页**：SKILL.md（五层框架段/reference 清单）、`template-spec.md` 生成后核对清单、`subagent-orchestration.md`、`claude-code-capabilities.md`、`cognition-framework.md` 等处的"4-Phase SOP"引用均指向本节。
+> **非 gsd-core 引用**：本方法论为 swarm-yuan 自有；gsd-core 五步循环（Discuss→Plan→Execute→Verify→Ship）是其可替换的运行时载体，映射见末节。
+
+### 四阶段定义（概念澄清 → 破局重构 → 七步推演 → 行动落地）
+
+| Phase | 名称 | 做什么 | 入口准则 | 出口准则 | workflow 节点映射 |
+|-------|------|--------|---------|---------|------------------|
+| 1 | 概念澄清 | Socratic 多轮提问，锁定概念定义、价值与边界，把含混需求问清楚 | 存在需求输入但概念/边界含混（术语未定义、目标不可衡量、范围不明） | 术语无歧义（可入 glossary）；目标 SMART 化 + 非目标显式；用户确认"已问清" | ≈节点① 需求理解 |
+| 2 | 破局重构 | 挑战既有假设、重构问题空间；**强制联网检索（WebSearch）**引入外部证据，防止在旧框架里打转 | Phase 1 出口达成；已有初步思路但未证伪 | 假设清单被显式挑战（≥1 条外部证据）；spec 成形且含 §19 测试设计 + §21 可观测性约束（左移产出物） | ≈节点② 设计 spec |
+| 3 | 七步推演 | 按"界定→分解→优先→分析→关键分析→综合→实施"七步（与第二层 7×7 双循环阶段轴同源，见 `cognition-framework.md` §2）推演实施方案 | Phase 2 出口达成；spec 通过逻辑剃刀对抗审查 | plan 成形：任务分解至可执行粒度，含 §20 变更影响范围 + 回滚预案；plan 经 checker 角色对抗检查 | ≈节点③ 实施 plan |
+| 4 | 行动落地 | 执行→验证→交付；以 goal-backward 立场证伪"任务完成≠目标达成" | Phase 3 出口达成；用户确认 plan（暂停点） | 目标达成有证据（测试/门禁通过 + spec §14 交付衰减分析），非仅凭任务自述完成 | ≈节点④-⑧ |
+
+### 多轮交互纪律（每 Phase 暂停）
+
+- **每 Phase 结束即暂停**：向用户呈现本 Phase 产出 + 出口准则自检，获确认后方可进入下一 Phase——不允许一口气跑完四阶段。
+- 暂停点的运行时对应：comet `build_pause: plan-ready`（Phase 3→4 可恢复暂停）；state-machine.sh `guard` 实现各 Phase 转换的 pre-flight 门禁（门禁分类见上文「4 类门禁分类法」）。
+- 允许回退：任一 Phase 出口准则不满足即回退上一 Phase（Revision 门禁语义），不带伤前进。
+
+### 与 `--shift-left` 门禁的关系
+
+左移三件套（测试/变更/运维监控左移）是 4-Phase SOP 出口准则的**机械执法层**：
+
+- Phase 2（= spec 阶段）出口"含 §19 测试设计 + §21 可观测性约束"由 `precheck --shift-left` 校验；
+- Phase 3（= plan 阶段）出口"含 §20 变更影响 + 回滚预案"由 `precheck --shift-left` 校验；
+- Phase 4 的"先测试后实现（test 先于/同于 impl 提交）"同样由 `--shift-left` 校验。
+
+即：SOP 定"应该有什么"，`--shift-left` 判"实际有没有"。门禁未配置时静默跳过，SOP 的阶段语义与自律要求不变。
+
+### 与外部运行时的可替换映射（引用点对照）
+
+| 4-Phase | gsd-core | superpowers | comet | 其他增强 |
+|---------|----------|-------------|-------|---------|
+| Phase 1 概念澄清 | `/gsd-discuss-phase` | brainstorming（Socratic 设计精炼） | — | ECC council（模糊决策时） |
+| Phase 2 破局重构 | `/gsd-spec-phase` | — | `/comet-design`（Design Doc） | WebSearch 强制联网检索（`claude-code-capabilities.md`） |
+| Phase 3 七步推演 | `/gsd-plan-phase`（researcher→planner→plan-checker） | writing-plans | — | GOAP A* 目标规划（增强版，见 `subagent-orchestration.md`） |
+| Phase 4 行动落地 | `/gsd-execute-phase` + `/gsd-verify` + `/gsd-ship` | subagent-driven 执行 | state-machine.sh | goal-backward UAT |
+
+> 未安装对应运行时时降级为 swarm-yuan 自带载体（workflow 节点 + state-machine.sh + subagent-orchestration.md 手动编排）——SOP 语义不变。
+
 ## Goal-Backward 对抗验证（核心创新）
 
 **核心口号（引自 gsd-verifier）：** "Task completion ≠ Goal achievement"
@@ -81,6 +122,24 @@ Discuss → Plan → Execute → Verify → Ship
 ### 在目标技能中的落地
 - check 段的 `--review` 子命令采用 goal-backward：先读 spec/tasks 的"应该交付什么"，再验证代码实际有什么
 - reference-manual.md 审查段增加"对抗验证"小节：FORCE 立场 + 不信任自述 + BLOCKER/WARNING 分类
+
+### razor↔abstain 裁决条款（与 logic-razor.md 互引）
+
+**冲突**：`references/logic-razor.md` 铁律"审查者不得全盘肯定——即使方案看似无懈可击，也须挑出至少 10% 严谨性瑕疵"与 gsd-core honest verifier 原则"spec 信息不足时**弃权**（`abstain: insufficient_spec`）而非猜测"（`references/review-methodology.md` Honest Verifier Abstain 段）不可同时为真——一个强制产出批评，一个禁止无据产出。
+
+**裁决（按轮次证据完备度分治）**：
+
+- **razor 适用于证据充分的审查轮次**：被审查对象材料完整、可推演、可反证时，禁止以"信息不足"为由全盘肯定或弃权——仍须挑出 ≥10% 严谨性瑕疵。
+- **abstain 适用于证据不足的探查轮次**：材料不足以推断 backstop truth 时，禁止编造瑕疵凑满 10%——输出 `abstain: insufficient_spec` + 待补信息清单，补充后重新验证。弃权 ≠ 通过（`--review` 中计为"需人工确认"，非 pass 非 fail）。
+- **判据 = 证据完备度 checklist**（全部满足 = 审查轮次；任一不满足 = 探查轮次，abstain 输出须指明缺哪条）：
+  - [ ] 主张明确：核心论点可一句话复述（观点镜像无歧义）
+  - [ ] 数据可得：关键证据可追溯（文件:行 或命令输出）
+  - [ ] 假设可识别：隐含假设（Warrant）可显式提取
+  - [ ] 反例可构造：材料充分到能推演极端场景/边界反例
+  - [ ] 结论可复验：第三方按同样材料可复现审查结论
+- **两条严禁**：证据不足强行挑 10% 瑕疵 = 编造（违反 honest verifier）；证据充分却弃权 = 逃避对抗审查（违反 razor 铁律）。
+
+> 本条款在 `references/logic-razor.md` 文末同步登记（razor 侧源文件），两处文本须保持一致，修改时同步。
 
 ## 4 类门禁分类法（Gates Taxonomy）
 
