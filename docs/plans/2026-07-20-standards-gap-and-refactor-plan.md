@@ -79,7 +79,7 @@
 
 - **P0（本批，T1–T10）**：已核实缺陷修复 + 标准立法层 + 4 个合规新门禁 + 零占位符机器执法 + SILENT 披露 + 配套 fixture/verifier。
 - **P1（下一批，P1-1–P1-10）**：fixture 断言全面升级、跨平台矩阵、安全门禁族深化、conf lint、证据落盘、方法论修补。
-- **P2（长期）**：26 门禁全量 fixture、RTM、度量趋势、国密/行业 profile、发布签名、AI 过程信息项。
+- **P2（长期→已全部落地，见 §八 P3 完成项）**：26 门禁全量 fixture、RTM、度量趋势、国密/行业 profile、发布签名、AI 过程信息项。
 
 ### 2.2 文件归属表（一个文件仅一个 owner）
 
@@ -263,7 +263,9 @@
 
 ## 八、P1/P2 执行状态附录（2026-07-20 第二批）
 
-> 终态真值：门禁 34（核心 10 + 架构 17 + 合规 7）、conf 171 变量、references 16、框架 61（规则库目录 62 文件含 `_template.md`）、特征卡 16、运行时 11。gate-fixtures 34 组（6 P0 组 + 28 新增组）全绿；61/61 框架 fixture 双态绿。
+> 终态真值（2026-07-20 第三批 P3 收口后）：门禁 36（核心 10 + 架构 17 + 合规 9）、conf 179 变量、references 18、框架 61（规则库目录 62 文件含 `_template.md`）、特征卡 16、运行时 11。gate-fixtures 36 组（6 P0 组 + 28 P1/P2 组 + rtm/release-sign 2 组）全绿；61/61 框架 fixture 双态绿。
+>
+> 历史真值（第二批 P1/P2 收口时）：门禁 34（核心 10 + 架构 17 + 合规 7）、conf 171 变量、references 16。
 
 ### P1 逐项完成度
 
@@ -289,10 +291,16 @@
 - **AI 过程信息项制度化**（`references/ai-process-records.md`，8566 附录 A/B 扩展，文档层制度）
 - **功能安全域占位**（standards-compliance.md §E.5：ISO 26262/IEC 62304/IEC 61508-62443）
 
-### 转 P3 清单
+### P3 完成项（2026-07-20 第三批，feat/p3-longterm，五项全部完成）
 
-1. **RTM 门禁**（Q-11：需求↔测试追溯矩阵，29148 深化）
-2. **发布签名 provenance**（SLSA v1.0 Build L2 + cosign，对齐 SSDF v1.2 草案 PS.2）
-3. **多平台规则渲染**（规则库 → 各 harness 渲染管线）
-4. **行业 profile**（等保/密评/金融/医疗，在 `--crypto` gm profile 模式上扩展）
-5. **趋势可视化深化**（弱点密度/通过率趋势 Q-08/Q-20，gate-runs.jsonl 为数据源）
+| 项 | 内容 | 状态 | 证据 |
+|---|---|---|---|
+| P3-1 | RTM 门禁（Q-11：需求↔测试追溯矩阵，29148 深化） | ✅ 完成 | `check_rtm`（REQ- ↔ 测试目录/矩阵双向追溯，`RTM_MATRIX_REQUIRED=1` fail-closed）；fixture 组 `tests/gate-fixtures/rtm/`（3） |
+| P3-2 | 发布签名 provenance（SLSA v1.0 Build L2 + cosign，对齐 SSDF v1.2 草案 PS.2） | ✅ 完成 | `check_release_sign`（伴随签名存在性 + cosign verify-blob + provenance fail-closed）；fixture 组 `tests/gate-fixtures/release-sign/`（5） |
+| P3-3 | 多平台规则渲染（规则库 → 各 harness 渲染管线） | ✅ 完成 | `generate-skill.sh --render-tools` + `assets/tool-adapters/`（common.sh + 7 适配器）；install.sh 安装后自动渲染；二次渲染幂等 |
+| P3-4 | 行业 profile（金融/医疗） | ✅ 完成 | `references/industry-profile-finance.md` / `industry-profile-medical.md` + `assets/industry-profiles/{finance,medical}.conf`（追加式用法，--doctor 自检 0 fail） |
+| P3-5 | 趋势可视化深化（Q-08/Q-20，gate-runs.jsonl 数据源） | ✅ 完成 | `scripts/gate-trends.sh --html`（自包含 SVG 报告）+ `scripts/gate-report.sh`（GB/T 15532 对齐运行报告） |
+
+### P3 后仅余环境项
+
+- **shellcheck 环境项**：本机无 shellcheck，C4 判定挂起（fail-closed 报 SHELLCHECK_UNAVAILABLE，非代码回归；全部 shell 脚本 `bash -n` 语法通过）。待有 shellcheck 环境时复跑 `verifier/v1/run-verifier.sh shellcheck` 补判。
