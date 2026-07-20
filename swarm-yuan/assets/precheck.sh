@@ -9,6 +9,10 @@
 #   bash precheck.sh --test           # 测试（check §1）
 #   bash precheck.sh --sensitive      # 敏感信息脱敏（check §4）
 #   bash precheck.sh --consistency    # 业务规则 + 数据勾稽核对（check §2/§3）
+#   bash precheck.sh --compliance     # 标准合规矩阵校验
+#   bash precheck.sh --docs-pack      # 文档包完备性检查
+#   bash precheck.sh --sbom           # SBOM 生成与许可证扫描
+#   bash precheck.sh --privacy        # 个人信息（PII）扫描
 # 生成目标技能时，替换 PROJECT_DIR / 可改目录 / 只读目录 / 命令 为项目实际值
 
 set -euo pipefail
@@ -210,6 +214,23 @@ _default_conf() {
   SHARDED_TABLES=()
   SHARDING_BROADCAST_TABLES=()
   SPRING_BATCH_JOB_DIRS=()
+  # 标准合规
+  COMPLIANCE_MATRIX_FILE=""
+  COMPLIANCE_REQUIRED_SECTIONS=()
+  DOCS_PACK_PROFILE=""
+  DOCS_PACK_DIR=""
+  DOCS_PACK_REQUIRED=()
+  DOCS_PACK_ALLOW_TBD=0
+  SBOM_REQUIRED=0
+  SBOM_OUTPUT_DIR=""
+  SBOM_FORMAT=""
+  SBOM_TOOL=""
+  SBOM_LICENSE_BLOCKLIST=()
+  SBOM_LICENSE_EXEMPTIONS=()
+  PRIVACY_SCAN_DIRS=()
+  PRIVACY_EXTRA_PATTERNS=()
+  PRIVACY_SENSITIVE_KEYWORDS=()
+  PRIVACY_EXEMPTIONS=()
 }
 _default_conf
 _CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
@@ -227,7 +248,10 @@ for _conf_var in MYBATIS_MAPPER_DIRS SQL_INJECTION_WHITELIST SHARDING_KEY_COLUMN
     SHARDED_TABLES SHARDING_BROADCAST_TABLES MYBATIS_SRC_GLOBS LOMBOK_SRC_GLOBS \
     SPRING_BATCH_JOB_DIRS JAVA_BUILD_FILES LAYER_DEFS TEST_DIR_PATTERNS \
     IMPL_DIR_PATTERNS MIGRATION_DIRS METRIC_ENDPOINTS HEALTH_CHECK_URLS \
-    CONTEXT_DIRS DB_CONFIG_FILES WRITE_HANDLER_DIRS STABLE_GLOBS SERVICE_DIRS; do
+    CONTEXT_DIRS DB_CONFIG_FILES WRITE_HANDLER_DIRS STABLE_GLOBS SERVICE_DIRS \
+    COMPLIANCE_REQUIRED_SECTIONS DOCS_PACK_REQUIRED SBOM_LICENSE_BLOCKLIST \
+    SBOM_LICENSE_EXEMPTIONS PRIVACY_SCAN_DIRS PRIVACY_EXTRA_PATTERNS \
+    PRIVACY_SENSITIVE_KEYWORDS PRIVACY_EXEMPTIONS; do
   if [[ -z "${!_conf_var+x}" ]]; then eval "$_conf_var=()"; fi
 done
 unset _conf_var
@@ -237,11 +261,26 @@ FAIL=0
 # SILENT=1 时，未配置的门禁静默跳过（不打印 warn），减少 --all-full 噪音
 SILENT=0
 [[ "$MODE" == "--all-full" ]] && SILENT=1
+# 执行汇总计数器（非破坏披露：只统计与末次汇总打印，不改任何门禁判定与输出行）
+INVOKE_COUNT=0
+SKIP_COUNT=0
+SKIP_LIST=""
+WARN_COUNT=0
+FAIL_COUNT=0
+# _CURRENT_GATE：当前分发中的门禁函数名（三个分发循环赋值），供跳过计数去重
+_CURRENT_GATE=""
 pass() { echo "  ✓ $1"; }
-fail() { echo "  ✗ $1"; FAIL=1; }
-warn() { if [[ $SILENT -eq 0 ]]; then echo "  ⚠ $1"; fi; }
+fail() { echo "  ✗ $1"; FAIL=1; FAIL_COUNT=$((FAIL_COUNT+1)); }
+warn() { WARN_COUNT=$((WARN_COUNT+1)); if [[ $SILENT -eq 0 ]]; then echo "  ⚠ $1"; fi; }
 # skip_if_unconfigured: 未配置时静默跳过（--all-full）或 warn 提示（显式调用）
 skip_if_unconfigured() {
+  # 跳过计数按 _CURRENT_GATE 去重（同一门禁内多次跳过只计一次）
+  if [[ -n "$_CURRENT_GATE" ]]; then
+    case " $SKIP_LIST " in
+      *" $_CURRENT_GATE "*) ;;
+      *) SKIP_LIST="${SKIP_LIST} ${_CURRENT_GATE}"; SKIP_COUNT=$((SKIP_COUNT+1));;
+    esac
+  fi
   if [[ $SILENT -eq 1 ]]; then return 0; fi
   warn "$1"
   return 0
@@ -250,11 +289,13 @@ skip_if_unconfigured() {
 # ===== 门禁注册表（--all/--all-full 执行序列 + 单门禁 flag 清单）=====
 # 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
 ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
-# 全部门禁（含架构/认知门禁，未配置的静默跳过）
-ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_test)
+# 合规门禁（标准合规族，仅 --all-full/单门禁执行；未配置的静默跳过）
+ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy)
+# 全部门禁（含架构/认知/合规门禁，未配置的静默跳过）
+ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_test)
 # 单门禁 flag 清单（Usage 顺序）。flag → 函数映射规则：check_ + flag 去 -- 前缀并将 - 转为 _
 #（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
-GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework)
+GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy)
 
 # Usage 文本由 GATE_FLAGS 生成
 _usage() {
@@ -382,6 +423,10 @@ check_sensitive() {
     'postgres(ql)?://[^/\s]+:[^/@\s]+@'
   )
   local found=0
+  # 空 SCAN_DIRS 为 fail-open 风险（原恒 pass「未发现」），改 warn 如实披露；判定语义不变
+  if [[ ${#SCAN_DIRS[@]} -eq 0 ]]; then
+    warn "SCAN_DIRS 未配置，敏感信息扫描未执行（fail-open 风险）"
+  fi
   for dir in ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
     [[ -d "$dir" ]] || continue
     for pattern in "${patterns[@]}"; do
@@ -2048,13 +2093,13 @@ check_cognition() {
   local total_score=$((concept_score + struct_score + space_score + map_score + handle_score))
   echo "  ── 认知递进总结（第一层）──"
   echo "    ①概念(${concept_score}/2) → ②结构(${struct_score}/3) → ③空间(${space_score}/3) → ④映射(${map_score}/3) → ⑤规律(${rule_count}条) → ⑥处理(${handle_score}/3)"
-  echo "    认知总分：${total_score}/11 + ${rule_count} 条规律编码"
+  echo "    认知总分：${total_score}/14 + ${rule_count} 条规律编码"
   if [[ $total_score -ge 8 && $rule_count -ge 4 ]]; then
-    pass "第一层认知递进完整（${total_score}/11 + ${rule_count} 条规律）——关系脉络清晰，可处理关系而非仅计数"
+    pass "第一层认知递进完整（${total_score}/14 + ${rule_count} 条规律）——关系脉络清晰，可处理关系而非仅计数"
   elif [[ $total_score -ge 5 ]]; then
-    warn "第一层认知递进部分建立（${total_score}/11）——存在认知断层，建议补全缺失阶（见上表 ⚠ 项）"
+    warn "第一层认知递进部分建立（${total_score}/14）——存在认知断层，建议补全缺失阶（见上表 ⚠ 项）"
   else
-    warn "第一层认知递进不足（${total_score}/11）——概念/结构/空间未显式定义，门禁沦为计数，建议先建立 ①概念定义"
+    warn "第一层认知递进不足（${total_score}/14）——概念/结构/空间未显式定义，门禁沦为计数，建议先建立 ①概念定义"
   fi
 
   # ---- 五层认知基底完整性检查（第二/三/四/五层）----
@@ -2122,7 +2167,7 @@ check_cognition() {
 
   # 五层总评
   local five_layer_total=$((total_score + layer2_score + layer3_score + layer4_score + layer5_score))
-  local five_layer_max=19  # 11 + 3 + 2 + 2 + 1
+  local five_layer_max=22  # 14 + 3 + 2 + 2 + 1
   echo "    五层认知基底总分：${five_layer_total}/${five_layer_max}"
   if [[ $five_layer_total -ge 15 ]]; then
     pass "五层认知基底完整（${five_layer_total}/${five_layer_max}）——本质(①-④)+实践认识(思维语言)+现象分析(逻辑剃刀)+真理边界(偏差防范)+辩证统一(7对范畴)"
@@ -2487,6 +2532,273 @@ check_shift_left() {
   fi
 }
 
+# ===== 标准合规门禁族（--compliance/--docs-pack/--sbom/--privacy）=====
+# 语义全新，不改既有门禁判定；未配置静默跳过，安全类启用后 fail-closed。
+
+# --compliance：标准合规矩阵校验（6 锚点存在性 + 全文占位符扫描 + spec §22 段）
+check_compliance() {
+  echo "=== 标准合规矩阵校验（25000.51/8566/8567+9386/安全/国际/门禁姿态）==="
+  # 矩阵路径：优先 COMPLIANCE_MATRIX_FILE，缺省探测 SKILL_DIR/references/standards-compliance.md
+  local matrix="${COMPLIANCE_MATRIX_FILE:-}"
+  if [[ -z "$matrix" ]]; then
+    # SKILL_DIR 用 _CONF_DIR（配置加载时已解析为绝对路径，规避 cd 后 $0 相对路径失效）
+    local skill_dir cand
+    skill_dir=$(cd "${_CONF_DIR}/.." 2>/dev/null && pwd || echo "$PROJECT_DIR")
+    cand="${skill_dir}/references/standards-compliance.md"
+    [[ -f "$cand" ]] && matrix="$cand"
+  fi
+  if [[ -z "$matrix" || ! -f "$matrix" ]]; then
+    if [[ -n "${COMPLIANCE_MATRIX_FILE:-}" ]]; then
+      # 显式配置但文件不存在 → fail-closed
+      fail "gate_compliance_matrix_missing: 配置的矩阵文件不存在：${COMPLIANCE_MATRIX_FILE}"
+    else
+      skip_if_unconfigured "标准合规矩阵未配置（references/standards-compliance.md 缺失）"
+    fi
+    return
+  fi
+  local found=0
+  # 6 锚点默认集（与 references/standards-compliance.md 锚点契约一致，可用 COMPLIANCE_REQUIRED_SECTIONS 覆盖）
+  local anchors=(
+    '## A. GB/T 25000.51 八特性 × 门禁映射'
+    '## B. GB/T 8566 过程 × 生成流程映射'
+    '## C. GB/T 8567+9386 文档包 × 交付物映射'
+    '## D. 安全标准 × 门禁映射（等保/三法/38674/34943/39786）'
+    '## E. 国际工程标准映射（ISO 5055/SSDF/ASVS/SBOM-SLSA）'
+    '## F. 门禁姿态与豁免登记'
+  )
+  if [[ ${#COMPLIANCE_REQUIRED_SECTIONS[@]} -gt 0 ]]; then
+    anchors=("${COMPLIANCE_REQUIRED_SECTIONS[@]}")
+  fi
+  local a
+  for a in "${anchors[@]}"; do
+    if ! grep -qF "$a" "$matrix" 2>/dev/null; then
+      fail "gate_compliance_anchor_incomplete:${a}: 矩阵缺少锚点章节"
+      found=1
+    fi
+  done
+  # 全文占位符扫描（骨架填充残留）
+  local ph
+  ph=$(grep -nE '待填充|（待填充）|<占位符>|填充指引' "$matrix" 2>/dev/null || true)
+  if [[ -n "$ph" ]]; then
+    fail "gate_compliance_placeholder: 矩阵存在未填充占位符："
+    echo "$ph" | head -10
+    found=1
+  fi
+  # SPEC_FILE 存在时查「## 22. 标准合规」段
+  if [[ -n "${SPEC_FILE:-}" && -f "$SPEC_FILE" ]]; then
+    if ! grep -qE '^## 22\. 标准合规' "$SPEC_FILE" 2>/dev/null; then
+      fail "gate_compliance_spec_section_missing: spec 缺少「## 22. 标准合规」段"
+      found=1
+    fi
+  fi
+  [[ $found -eq 0 ]] && pass "标准合规矩阵校验通过（锚点齐备，无占位符）"
+}
+
+# --docs-pack：交付文档包完备性（profile→必备清单，存在性 + TBD 扫描）
+check_docs_pack() {
+  echo "=== 交付文档包完备性检查（GB/T 8567/9386、RUSP）==="
+  [[ -z "${DOCS_PACK_PROFILE:-}" ]] && { skip_if_unconfigured "DOCS_PACK_PROFILE 未配置"; return; }
+  local docs_dir="${DOCS_PACK_DIR:-docs}"
+  local required=()
+  case "$DOCS_PACK_PROFILE" in
+    rusp)
+      # RUSP（GB/T 25000.51）内置清单
+      required=("产品说明" "用户手册" "测试计划" "测试说明" "测试报告")
+      ;;
+    gbt9386)
+      # GB/T 9386 测试文档内置清单（4 计划/说明 + 4 报告/日志）
+      required=("测试计划" "测试设计说明" "测试用例说明" "测试规程说明" "测试项传递报告" "测试日志" "测试事件报告" "测试总结报告")
+      ;;
+    gbt8567|custom)
+      # gbt8567 与 custom 均取 DOCS_PACK_REQUIRED 自定义清单
+      required=(${DOCS_PACK_REQUIRED[@]+"${DOCS_PACK_REQUIRED[@]}"})
+      ;;
+    *)
+      warn "未知 DOCS_PACK_PROFILE：${DOCS_PACK_PROFILE}（按 custom 处理，取 DOCS_PACK_REQUIRED）"
+      required=(${DOCS_PACK_REQUIRED[@]+"${DOCS_PACK_REQUIRED[@]}"})
+      ;;
+  esac
+  [[ ${#required[@]} -eq 0 ]] && { skip_if_unconfigured "文档包必备清单为空（profile=${DOCS_PACK_PROFILE}）"; return; }
+  local found=0 req hit tbd
+  for req in "${required[@]}"; do
+    hit=""
+    [[ -d "$docs_dir" ]] && hit=$(find "$docs_dir" -type f -name "*${req}*" 2>/dev/null | head -1)
+    if [[ -z "$hit" ]]; then
+      fail "gate_docs_pack_missing:${req}: 文档包缺少必备文档（${docs_dir} 下未找到 *${req}*）"
+      found=1
+      continue
+    fi
+    # TBD 扫描（ALLOW_TBD=1 时降级 warn）
+    tbd=$(grep -nE 'TBD|待补充|待完善' "$hit" 2>/dev/null || true)
+    if [[ -n "$tbd" ]]; then
+      if [[ "${DOCS_PACK_ALLOW_TBD:-0}" == "1" ]]; then
+        warn "gate_docs_pack_tbd:${hit}: 文档含 TBD（ALLOW_TBD=1 降级 warn）"
+      else
+        fail "gate_docs_pack_tbd:${hit}: 文档含 TBD/待补充占位"
+        echo "$tbd" | head -5
+        found=1
+      fi
+    fi
+  done
+  [[ $found -eq 0 ]] && pass "文档包完备性检查通过（profile=${DOCS_PACK_PROFILE}）"
+}
+
+# --sbom：SBOM 生成与许可证块名单扫描（SBOM_REQUIRED=1 启用，启用后 fail-closed）
+check_sbom() {
+  echo "=== SBOM 物料清单与许可证扫描 ==="
+  [[ "${SBOM_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "SBOM_REQUIRED 未启用"; return; }
+  local out_dir="${SBOM_OUTPUT_DIR:-.sbom}"
+  local ts sbom_file lic_file
+  ts=$(date '+%Y%m%d-%H%M%S')
+  sbom_file="${out_dir}/sbom-${ts}.txt"
+  lic_file="${out_dir}/licenses-${ts}.txt"
+  mkdir -p "$out_dir" 2>/dev/null || true
+  local generated=0 tool="${SBOM_TOOL:-}"
+  # 工具降级链：$SBOM_TOOL → syft → cdxgen → 内置 lockfile 解析
+  if [[ -z "$tool" ]]; then
+    if command -v syft >/dev/null 2>&1; then tool="syft"
+    elif command -v cdxgen >/dev/null 2>&1; then tool="cdxgen"
+    fi
+  fi
+  if [[ -n "$tool" ]] && command -v "$tool" >/dev/null 2>&1; then
+    case "$tool" in
+      syft) syft "dir:${PROJECT_DIR:-.}" -o text > "$sbom_file" 2>/dev/null || true ;;
+      cdxgen) cdxgen -o "$sbom_file" 2>/dev/null || true ;;
+      *) "$tool" > "$sbom_file" 2>/dev/null || true ;;
+    esac
+    [[ -s "$sbom_file" ]] && generated=1
+  fi
+  if [[ $generated -eq 0 ]]; then
+    # 内置 lockfile 解析（无外部工具时降级）：提取依赖名+版本
+    local locks="" lf
+    for lf in package-lock.json yarn.lock pnpm-lock.yaml go.sum requirements.txt pom.xml; do
+      [[ -f "$lf" ]] && locks="${locks} ${lf}"
+    done
+    if [[ -z "$locks" ]]; then
+      # 无工具且无 lockfile → fail-closed
+      fail "gate_sbom_toolchain_unavailable: 无 SBOM 工具（syft/cdxgen）且未找到 lockfile，无法生成 SBOM"
+      return
+    fi
+    : > "$sbom_file"
+    for lf in $locks; do
+      echo "# ${lf}" >> "$sbom_file"
+      case "$lf" in
+        package-lock.json)
+          grep -oE '"node_modules/[^"]+"' "$lf" 2>/dev/null | sed 's/"node_modules\///; s/"$//' | sort -u >> "$sbom_file" || true ;;
+        yarn.lock|pnpm-lock.yaml)
+          grep -E '^[^#[:space:]][^:]*:' "$lf" 2>/dev/null | sed 's/["'\'']//g; s/:$//' | sort -u >> "$sbom_file" || true ;;
+        go.sum)
+          awk '{print $1" "$2}' "$lf" 2>/dev/null | sort -u >> "$sbom_file" || true ;;
+        requirements.txt)
+          grep -vE '^[[:space:]]*(#|$)' "$lf" 2>/dev/null >> "$sbom_file" || true ;;
+        pom.xml)
+          grep -oE '<artifactId>[^<]+</artifactId>' "$lf" 2>/dev/null | sed 's/<[^>]*>//g' | sort -u >> "$sbom_file" || true ;;
+      esac
+    done
+    generated=1
+  fi
+  # license 提取：node_modules 下 package.json 的 license 字段
+  : > "$lic_file"
+  if [[ -d node_modules ]]; then
+    find node_modules -maxdepth 2 -name package.json 2>/dev/null | while read -r pj; do
+      local nm lic
+      nm=$(grep -oE '"name"[[:space:]]*:[[:space:]]*"[^"]+"' "$pj" 2>/dev/null | head -1 | sed 's/.*: *"//; s/"$//')
+      lic=$(grep -oE '"license"[[:space:]]*:[[:space:]]*"[^"]+"' "$pj" 2>/dev/null | head -1 | sed 's/.*: *"//; s/"$//')
+      [[ -n "$lic" ]] && echo "${nm:-unknown} ${lic}" >> "$lic_file"
+    done
+  fi
+  # 许可证块名单扫描（license 清单 + SBOM 产物）
+  local found=0 b hits _lic_line
+  if [[ ${#SBOM_LICENSE_BLOCKLIST[@]} -gt 0 ]]; then
+    for b in "${SBOM_LICENSE_BLOCKLIST[@]}"; do
+      hits=$(grep -iE "$b" "$lic_file" 2>/dev/null || true)
+      if [[ -n "$hits" ]]; then
+        while IFS= read -r _lic_line; do
+          [[ -n "$_lic_line" ]] && fail "gate_sbom_license_blocked:${_lic_line%% *}: 命中许可证块名单「${b}」（${_lic_line}）"
+        done <<< "$hits"
+        found=1
+      fi
+    done
+  fi
+  # 豁免登记：5 字段（对象|规则|理由|审批人|日期）校验 + 回显
+  if [[ ${#SBOM_LICENSE_EXEMPTIONS[@]} -gt 0 ]]; then
+    local ex nf
+    for ex in "${SBOM_LICENSE_EXEMPTIONS[@]}"; do
+      nf=$(awk -F'|' '{print NF}' <<< "$ex")
+      if [[ "$nf" -ne 5 ]]; then
+        fail "gate_sbom_exemption_invalid: 豁免须为 5 字段（对象|规则|理由|审批人|日期）：${ex}"
+        found=1
+      else
+        echo "  ⓘ 豁免登记：${ex}"
+      fi
+    done
+  fi
+  [[ $found -eq 0 ]] && pass "SBOM 已生成：${sbom_file}（许可证块名单未命中，证据归档）"
+}
+
+# --privacy：个人信息（PII）扫描（PRIVACY_SCAN_DIRS 配置启用，启用后 fail-closed）
+check_privacy() {
+  echo "=== 个人信息（PII）扫描（个保法 / GB/T 35273）==="
+  [[ ${#PRIVACY_SCAN_DIRS[@]} -eq 0 ]] && { skip_if_unconfigured "PRIVACY_SCAN_DIRS 未配置"; return; }
+  # 配置目录全不存在 → fail-closed
+  local existing=() d
+  for d in "${PRIVACY_SCAN_DIRS[@]}"; do
+    [[ -d "$d" ]] && existing+=("$d")
+  done
+  if [[ ${#existing[@]} -eq 0 ]]; then
+    fail "gate_privacy_dirs_missing: PRIVACY_SCAN_DIRS 配置的目录全部不存在：${PRIVACY_SCAN_DIRS[*]}"
+    return
+  fi
+  # 内置 ERE：18 位身份证 / 手机号 / 16-19 位银行卡
+  local patterns=(
+    '[1-9][0-9]{5}(19|20)[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{3}[0-9Xx]'
+    '1[3-9][0-9]{9}'
+    '[0-9]{16,19}'
+  )
+  if [[ ${#PRIVACY_EXTRA_PATTERNS[@]} -gt 0 ]]; then
+    patterns+=("${PRIVACY_EXTRA_PATTERNS[@]}")
+  fi
+  local found=0 pat kw hits pii_files=""
+  for d in "${existing[@]}"; do
+    for pat in "${patterns[@]}"; do
+      # 滤 example/mock/dummy/placeholder/样例 噪声行；-I 跳过二进制
+      hits=$(grep -rnIE "$pat" "$d" 2>/dev/null | grep -v -i 'example\|mock\|dummy\|placeholder\|样例' || true)
+      [[ -n "$hits" ]] && pii_files="${pii_files}$(echo "$hits" | cut -d: -f1)
+"
+    done
+    # 敏感关键词（固定串、忽略大小写）
+    if [[ ${#PRIVACY_SENSITIVE_KEYWORDS[@]} -gt 0 ]]; then
+      for kw in "${PRIVACY_SENSITIVE_KEYWORDS[@]}"; do
+        hits=$(grep -rniF "$kw" "$d" 2>/dev/null | grep -v -i 'example\|mock\|dummy\|placeholder\|样例' || true)
+        [[ -n "$hits" ]] && pii_files="${pii_files}$(echo "$hits" | cut -d: -f1)
+"
+      done
+    fi
+  done
+  # 按文件聚合去重后逐文件 fail
+  if [[ -n "$pii_files" ]]; then
+    local f
+    while IFS= read -r f; do
+      [[ -n "$f" ]] && fail "gate_privacy_pii_found:${f}: 疑似个人信息命中（身份证/手机号/银行卡/敏感关键词）"
+    done <<< "$(printf '%s' "$pii_files" | sort -u)"
+    found=1
+  fi
+  # 豁免登记：5 字段（对象|规则|理由|审批人|日期）校验 + 回显
+  if [[ ${#PRIVACY_EXEMPTIONS[@]} -gt 0 ]]; then
+    local ex nf
+    for ex in "${PRIVACY_EXEMPTIONS[@]}"; do
+      nf=$(awk -F'|' '{print NF}' <<< "$ex")
+      if [[ "$nf" -ne 5 ]]; then
+        fail "gate_privacy_exemption_invalid: 豁免须为 5 字段（对象|规则|理由|审批人|日期）：${ex}"
+        found=1
+      else
+        echo "  ⓘ 豁免登记：${ex}"
+      fi
+    done
+  fi
+  [[ $found -eq 0 ]] && pass "未发现个人信息泄露风险"
+}
+
 # ===== 框架适配门禁（--framework）：由 --inject-frameworks 注入片段，动态分发 =====
 check_framework() {
   echo "▶ 框架适配门禁 (--framework)"
@@ -2624,16 +2936,17 @@ if [[ -z "${_gate_fn:-x}" ]]; then
   check_link_depth; check_adr; check_contract; check_consistency_cross; check_impact
   check_service; check_api; check_state; check_frontend; check_cognition; check_domain
   check_knowledge; check_mermaid; check_shift_left; check_framework
+  check_compliance; check_docs_pack; check_sbom; check_privacy
 fi
 
 case "$MODE" in
   --all)
     # `|| true`：单门禁 fail 路径若以非零返回（如 check_scope/sensitive/review 末句 `[[ ]] && pass`），
     # 不得因 set -e 中断后续门禁——FAIL 全局已记录失败，最终由末尾汇总判定（见 2655）。
-    for _gate in "${ALL_GATES_CORE[@]}"; do "$_gate" || true; done
+    for _gate in "${ALL_GATES_CORE[@]}"; do _CURRENT_GATE="$_gate"; INVOKE_COUNT=$((INVOKE_COUNT+1)); "$_gate" || true; done
     ;;
   --all-full)
-    for _gate in "${ALL_GATES_FULL[@]}"; do "$_gate" || true; done
+    for _gate in "${ALL_GATES_FULL[@]}"; do _CURRENT_GATE="$_gate"; INVOKE_COUNT=$((INVOKE_COUNT+1)); "$_gate" || true; done
     ;;
   --*)
     # 单门禁分发：精确匹配 GATE_FLAGS 后按映射规则得函数名（如 --stable-diff → check_stable_diff）
@@ -2645,7 +2958,7 @@ case "$MODE" in
       fi
     done
     if [[ -n "$_gate_fn" ]]; then
-      "$_gate_fn"
+      _CURRENT_GATE="$_gate_fn"; INVOKE_COUNT=$((INVOKE_COUNT+1)); "$_gate_fn"
     else
       _usage
       exit 1
@@ -2658,6 +2971,8 @@ case "$MODE" in
 esac
 
 echo ""
+# 执行汇总披露（非破坏：仅追加本行，不改既有输出行与退出码判定）
+echo "—— 执行汇总：调用 ${INVOKE_COUNT}，执行 $((INVOKE_COUNT-SKIP_COUNT))，跳过 ${SKIP_COUNT}（${SKIP_LIST# }），fail ${FAIL_COUNT}，warn ${WARN_COUNT} ——"
 if [[ $FAIL -eq 0 ]]; then
   echo "✓ 门禁检查通过"
   exit 0
