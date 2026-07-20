@@ -19,7 +19,6 @@ There is no compiled artifact and no conventional build — the product is a set
   - `references/` — 13 methodology docs + `references/frameworks/<fw>.md` (57 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).
-- **`Swarm-studio/`** — a **sample generated skill instance** (a real overlay project's output). Its *universal* files are synced from `swarm-yuan/` — **do not hand-edit them** (see sync rule below).
 - **`verifier/`** — a self-contained acceptance harness that re-runs the whole suite and compares against a golden vector.
 - **`docs/`** — design docs & decision records (`paradigm-decisions.md` explains *why* gates are the way they are — read before "fixing" a gate).
 
@@ -78,18 +77,6 @@ Gate fragments are **injected** into a generated skill's `precheck.sh` between t
 **Four-element acceptance** (enforced by `verify-framework-ruleset.sh` and CI): ① component-inventory count ≥ actual × 0.95; ② rule count ≥ the `.md`'s `深度门槛` AND every rule has an `证据:` field; ③ `_fw_<id>_check` exists, `--framework <id>` runs with exit 0; ④ `dev-guide.md §10` has ≥3 framework constraints.
 
 ## Key architecture rules
-
-### Swarm-studio single-source-of-truth (do not double-maintain)
-`Swarm-studio/`'s *universal* files (precheck.sh, self-check.sh, state-machine.sh, assets templates, methodology references) are **owned by `swarm-yuan/`**. Evolve templates in `swarm-yuan/`, then re-sync with the generator — never edit the studio copies directly:
-```bash
-# From repo root. PROJECT_DIR / TARGET_DIR are both the repo root; the path rewrite is required.
-SKILLS_PATH_REWRITE='s|\.claude/skills|.agents/skills|g' \
-  bash swarm-yuan/scripts/generate-skill.sh --upgrade Swarm-studio . .
-# Two files are "fill-type" (project-specific content lives in them); restore after resync:
-git restore Swarm-studio/scripts/snippets.md Swarm-studio/scripts/mcp-tools.md
-# Clean up generated artifacts: .upgrade-backup-*/ dirs and *.bat wrappers (not tracked for studio).
-```
-Project-specific files the upgrade preserves: `SKILL.md`, `references/{workflow,codebase,dev-guide,release,reference-manual}.md`, `scripts/precheck.conf`. `.swarm-yuan-version` records the sync baseline — keep it.
 
 ### Cross-platform bash constraint (swarm-yuan's own scripts)
 The generator's own scripts must run on **Windows/macOS/Linux**. Windows gets `.bat` wrappers that locate Git Bash/WSL/MSYS2. In bash: **no `declare -A`** (use parallel arrays / strings), use `sed -i.bak` then `rm`, `grep -E`, `date -u`, `$(cd ... && pwd)` instead of `readlink -f`, and `${var}` quoting for C-locale safety. See `swarm-yuan/references/security-spec.md` §六.

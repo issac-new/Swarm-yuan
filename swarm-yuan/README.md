@@ -259,7 +259,6 @@ Swarm-yuan/
 │   ├── references/               ← 13 个参考文档
 │   ├── scripts/                  ← 生成器 + 自检
 │   └── tests/                    ← fixture 测试（conf 中 __REPO_ROOT__ 占位符运行时替换为仓库根，任意机器可跑）
-└── Swarm-studio/                 ← 示例项目（SwarmStudio overlay 生成物）
 ```
 
 ---
