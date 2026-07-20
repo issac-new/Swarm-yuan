@@ -13,6 +13,11 @@
 #   bash precheck.sh --docs-pack      # 文档包完备性检查
 #   bash precheck.sh --sbom           # SBOM 生成与许可证扫描
 #   bash precheck.sh --privacy        # 个人信息（PII）扫描
+#   bash precheck.sh --authz          # 授权类弱点检查（CWE-862/863/639/284）
+#   bash precheck.sh --requirements   # 需求质量 lint（ISO/IEC/IEEE 29148）
+#   bash precheck.sh --crypto         # 密码算法合规（GB/T 39786-2021 密评 profile=gm）
+#   bash precheck.sh --doctor         # conf 诊断（lint：路径/glob 可达/死变量/框架 requires_conf；非门禁、不入注册表）
+#   bash precheck.sh --format json --all-full   # 运行结束追加 SARIF 子集 JSON（默认 stdout；GATE_JSON_OUT 环境变量可指定落盘）
 # 生成目标技能时，替换 PROJECT_DIR / 可改目录 / 只读目录 / 命令 为项目实际值
 
 set -euo pipefail
@@ -231,15 +236,46 @@ _default_conf() {
   PRIVACY_EXTRA_PATTERNS=()
   PRIVACY_SENSITIVE_KEYWORDS=()
   PRIVACY_EXEMPTIONS=()
+  # 安全门禁族深化（P1-3/P1-9）：工具链降级 + 授权/需求/密码门禁
+  SENSITIVE_TOOL="auto"
+  SECURITY_TOOL="auto"
+  AUTHZ_SCAN_DIRS=()
+  AUTHZ_EXTRA_PATTERNS=()
+  REQUIREMENTS_STRICT=0
+  REQUIREMENTS_ID_REQUIRED=0
+  CRYPTO_PROFILE=""
+  CRYPTO_SCAN_DIRS=()
+  # 门禁工具化（P1-4/P1-5）：gate-runs 证据落盘目录（空=关闭，不影响任何既有输出）
+  GATE_RUNS_DIR=""
 }
 _default_conf
 _CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 if [[ -f "$_CONF_DIR/precheck.conf" ]]; then
-  set +u
-  # shellcheck disable=SC1090
-  # shellcheck source=/dev/null
-  source "$_CONF_DIR/precheck.conf"
-  set -u
+  # 语法判定口径：bash 3.2 的 bash -n 对 EOF 类错误（如未闭合数组/引号）报错却仍 exit 0，
+  # 故「stderr 非空 或 非零退出」才算语法错误。
+  _conf_synerr=$(bash -n "$_CONF_DIR/precheck.conf" 2>&1 || true)
+  if [[ -z "$_conf_synerr" ]]; then
+    set +u
+    # shellcheck disable=SC1090
+    # shellcheck source=/dev/null
+    source "$_CONF_DIR/precheck.conf"
+    set -u
+  else
+    # conf 语法错误（P1-4 前置守卫）：原行为是 source 直接崩（exit 2 且报错文本随 bash 版本漂移）。
+    # --doctor 是 conf lint，须能带病启动（走内置默认值，由 doctor ⑤ 报 fail）；
+    # 其余模式配置不可靠，报清错误后 exit 2（与原 source 崩溃路径同码）。
+    case " $* " in
+      *\ --doctor\ *)
+        echo "⚠ precheck.conf 语法错误——内置默认值兜底，--doctor 继续诊断" >&2
+        ;;
+      *)
+        printf '%s\n' "$_conf_synerr" | head -3 >&2
+        echo "✗ precheck.conf 语法错误，无法加载（可运行 --doctor 做完整诊断）" >&2
+        exit 2
+        ;;
+    esac
+  fi
+  unset _conf_synerr
 fi
 # 兜底：source conf 后，对 conf 仍未声明的关键变量补空默认值（已声明的保留用户值）。
 # 用 ${VAR+x} 判断是否已声明——未声明则补空数组/空串，防 set -u 崩。
@@ -251,12 +287,38 @@ for _conf_var in MYBATIS_MAPPER_DIRS SQL_INJECTION_WHITELIST SHARDING_KEY_COLUMN
     CONTEXT_DIRS DB_CONFIG_FILES WRITE_HANDLER_DIRS STABLE_GLOBS SERVICE_DIRS \
     COMPLIANCE_REQUIRED_SECTIONS DOCS_PACK_REQUIRED SBOM_LICENSE_BLOCKLIST \
     SBOM_LICENSE_EXEMPTIONS PRIVACY_SCAN_DIRS PRIVACY_EXTRA_PATTERNS \
-    PRIVACY_SENSITIVE_KEYWORDS PRIVACY_EXEMPTIONS; do
+    PRIVACY_SENSITIVE_KEYWORDS PRIVACY_EXEMPTIONS \
+    AUTHZ_SCAN_DIRS AUTHZ_EXTRA_PATTERNS CRYPTO_SCAN_DIRS; do
   if [[ -z "${!_conf_var+x}" ]]; then eval "$_conf_var=()"; fi
 done
 unset _conf_var
 
-MODE="${1:---all}"
+# CLI 解析（P1-4/P1-5 扩展）：--format json|text（默认 text，text 模式输出与原实现逐字节一致）、
+# --doctor 子命令（conf lint，非门禁、不入注册表）。其余参数沿用原语义：
+# 第一个位置参数为 MODE，多余位置参数忽略（与原 MODE="${1:---all}" 行为一致——
+# ${1:-} 对未设/空串同取默认值，故空串参数同样回落 --all）。
+FORMAT="text"
+MODE=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --format)
+      [[ $# -ge 2 ]] || { echo "✗ --format 缺少取值（json|text）" >&2; exit 1; }
+      FORMAT="$2"; shift 2
+      ;;
+    --format=*)
+      FORMAT="${1#--format=}"; shift
+      ;;
+    *)
+      [[ -z "$MODE" ]] && MODE="$1"
+      shift
+      ;;
+  esac
+done
+[[ -n "$MODE" ]] || MODE="--all"
+case "$FORMAT" in
+  json|text) ;;
+  *) echo "✗ --format 仅支持 json|text（收到: $FORMAT）" >&2; exit 1 ;;
+esac
 FAIL=0
 # SILENT=1 时，未配置的门禁静默跳过（不打印 warn），减少 --all-full 噪音
 SILENT=0
@@ -289,13 +351,13 @@ skip_if_unconfigured() {
 # ===== 门禁注册表（--all/--all-full 执行序列 + 单门禁 flag 清单）=====
 # 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
 ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
-# 合规门禁（标准合规族，仅 --all-full/单门禁执行；未配置的静默跳过）
-ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy)
+# 合规门禁（标准合规族 + P1 安全门禁族深化，仅 --all-full/单门禁执行；未配置的静默跳过）
+ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto)
 # 全部门禁（含架构/认知/合规门禁，未配置的静默跳过）
-ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_test)
+ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_test)
 # 单门禁 flag 清单（Usage 顺序）。flag → 函数映射规则：check_ + flag 去 -- 前缀并将 - 转为 _
 #（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
-GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy)
+GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto)
 
 # Usage 文本由 GATE_FLAGS 生成
 _usage() {
@@ -304,7 +366,279 @@ _usage() {
   echo "${u}]"
 }
 
+# ===== --doctor：conf 诊断（P1-4；非门禁、不入注册表、不参与门禁判定）=====
+# 逐项 lint：①PROJECT_DIR 存在；②WRITABLE_DIRS/READONLY_DIRS/SCAN_DIRS 各 glob
+# 可解出至少一个路径（不可解 warn）；③死变量（conf 定义但 precheck.sh 正文与
+# framework-gates 片段均零引用，正文口径=剔除 _default_conf 与数组兜底循环；
+# 参照 R2 审计的既有死变量先例——注意本注释不得点名具体变量，否则自引用失真）；
+# ④ACTIVE_FRAMEWORKS 每个框架的 requires_conf 齐备；⑤conf 语法 sanity（bash -n）。
+# 输出 pass/warn/fail 汇总，fail 才 exit 1。
+_DR_PASS=0; _DR_WARN=0; _DR_FAIL=0
+_dr_ok()   { _DR_PASS=$((_DR_PASS+1)); echo "  ✓ $1"; }
+_dr_warn() { _DR_WARN=$((_DR_WARN+1)); echo "  ⚠ $1"; }
+_dr_bad()  { _DR_FAIL=$((_DR_FAIL+1)); echo "  ✗ $1"; }
+
+# 单条 glob/路径可解出判定（cwd 须已是 PROJECT_DIR）：与 _fw_resolve_globs 同算法拆 **；
+# 无 ** 的通配走 nullglob 子壳展开（bash 3.2 兼容，不依赖 compgen -G），普通路径 -e 判定。
+_dr_glob_resolves() {
+  local g="$1" dir name
+  case "$g" in
+    *\*\**|*\[*|*\?*)
+      dir="${g%%/\*\*/*}"
+      if [[ "$dir" != "$g" ]]; then
+        name="${g##*/}"
+        [[ -d "$dir" ]] || return 1
+        [[ -n "$(find "$dir" -name "$name" -print -quit 2>/dev/null)" ]]
+      else
+        ( shopt -s nullglob; set -- $g; [[ $# -gt 0 ]] )
+      fi
+      ;;
+    *) [[ -e "$g" ]] ;;
+  esac
+}
+
+# 目录数组逐 glob 可达检查（bash 3.2 无 nameref，用 eval 间接展开）
+_dr_glob_check() { # $1=数组变量名
+  local vn="$1" n i g
+  eval "n=\${#${vn}[@]}"
+  if [[ "$n" -eq 0 ]]; then
+    _dr_warn "$vn 为空数组——未配置"
+    return 0
+  fi
+  for (( i=0; i<n; i++ )); do
+    eval "g=\"\${${vn}[$i]}\""
+    if _dr_glob_resolves "$g"; then
+      _dr_ok "$vn[$i] '$g' 可解出"
+    else
+      _dr_warn "$vn[$i] '$g' 不可解出任何路径（相对 PROJECT_DIR）"
+    fi
+  done
+  return 0
+}
+
+_run_doctor() {
+  local sh_dir conf sh
+  sh_dir="$_CONF_DIR"
+  conf="$sh_dir/precheck.conf"
+  sh="$sh_dir/precheck.sh"
+  echo "=== conf 诊断（--doctor）==="
+
+  # ⑤ conf 语法 sanity（含数组语法；先于其余项，语法错时 source 语义已不可靠）
+  # 判定口径同启动守卫：stderr 非空 或 非零退出 即语法错误（bash 3.2 -n 对 EOF 类错误仍 exit 0）
+  if [[ -f "$conf" ]]; then
+    local _synerr
+    _synerr=$(bash -n "$conf" 2>&1 || true)
+    if [[ -z "$_synerr" ]]; then
+      _dr_ok "conf 语法 sanity：bash -n 通过"
+    else
+      _dr_bad "conf 语法错误：$(printf '%s\n' "$_synerr" | head -1)"
+    fi
+  else
+    _dr_warn "conf 不存在（$conf）——全部变量走内置默认值"
+  fi
+
+  # ① PROJECT_DIR 存在
+  if [[ -d "$PROJECT_DIR" ]]; then
+    _dr_ok "PROJECT_DIR 存在：$PROJECT_DIR"
+  else
+    _dr_bad "PROJECT_DIR 不存在：$PROJECT_DIR"
+  fi
+
+  # ② 三组目录数组逐 glob 可达（不可达只 warn；PROJECT_DIR 缺失时整项跳过）
+  if [[ -d "$PROJECT_DIR" ]]; then
+    cd "$PROJECT_DIR" 2>/dev/null || true
+    local _dv
+    for _dv in WRITABLE_DIRS READONLY_DIRS SCAN_DIRS; do
+      _dr_glob_check "$_dv"
+    done
+  else
+    _dr_warn "PROJECT_DIR 不可达——WRITABLE_DIRS/READONLY_DIRS/SCAN_DIRS glob 检查跳过"
+  fi
+
+  # ③ 死变量：conf 定义但「precheck.sh 正文（剔除 _default_conf 与数组兜底循环）
+  #    + framework-gates/*.sh」均零引用 → warn 汇总列出
+  if [[ -f "$conf" && -f "$sh" ]]; then
+    local _refs _v _dead="" _f
+    _refs=$(awk '
+      /^_default_conf[(][)] [{]/ {indef=1; next}
+      indef==1 && /^[}]/ {indef=0; next}
+      indef==1 {next}
+      /^for _conf_var in/ {inloop=1; next}
+      inloop==1 && /^done/ {inloop=0; next}
+      inloop==1 {next}
+      {print}
+    ' "$sh")
+    for _f in "$sh_dir"/framework-gates/*.sh; do
+      [[ -f "$_f" ]] && _refs="${_refs}
+$(cat "$_f")"
+    done
+    for _v in $(sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' "$conf" | sort -u); do
+      # 注：不能用 grep -q——pipefail 下 grep -q 提前退出会使 printf 收 SIGPIPE(141)，
+      # 管道整体非零而把全部变量误判为死变量。grep -c 读全量输入，无此问题。
+      if [[ $(printf '%s\n' "$_refs" | grep -c -w "$_v" || true) -eq 0 ]]; then
+        _dead="${_dead} ${_v}"
+      fi
+    done
+    if [[ -n "$_dead" ]]; then
+      _dr_warn "死变量（conf 定义但脚本/片段零引用）：${_dead# }"
+    else
+      _dr_ok "无死变量（conf 定义项均有消费方）"
+    fi
+  elif [[ ! -f "$conf" ]]; then
+    _dr_warn "conf 缺失——死变量检查跳过"
+  fi
+
+  # ④ ACTIVE_FRAMEWORKS 逐框架：实现存在（片段文件或已注入内联函数）+ requires_conf 齐备
+  if [[ ${#ACTIVE_FRAMEWORKS[@]} -eq 0 ]]; then
+    _dr_ok "ACTIVE_FRAMEWORKS 为空——无框架 requires_conf 待核"
+  else
+    local fw fn frag req v miss
+    for fw in ${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"}; do
+      fn="_fw_$(printf '%s' "$fw" | tr '-' '_')_check"
+      frag="$sh_dir/framework-gates/$fw.sh"
+      req=""
+      if [[ -f "$frag" ]]; then
+        req=$(sed -n 's/^# ruleset:.*requires_conf: *//p' "$frag" | tr -s ' ')
+      elif [[ -f "$sh" ]] && grep -q "^${fn}()" "$sh" 2>/dev/null; then
+        # 已注入内联：requires_conf 头注释随片段一并注入（generate-skill.sh 注入契约）
+        req=$(sed -n "s/^# ruleset: ${fw}  *requires_conf: *//p" "$sh" | tr -s ' ')
+      else
+        _dr_bad "框架 '$fw' 已激活但无门禁实现（$frag 缺失且未内联注入）"
+        continue
+      fi
+      miss=""
+      for v in $req; do
+        [[ -z "${!v+x}" ]] && miss="${miss} ${v}"
+      done
+      if [[ -n "$miss" ]]; then
+        _dr_warn "框架 '$fw' requires_conf 未声明：${miss# }（须补 conf 声明或重跑 generate-skill.sh --inject-frameworks）"
+      else
+        _dr_ok "框架 '$fw' requires_conf 齐备（${req:-无声明}）"
+      fi
+    done
+  fi
+
+  echo "—— doctor 汇总：pass ${_DR_PASS}，warn ${_DR_WARN}，fail ${_DR_FAIL} ——"
+  [[ $_DR_FAIL -eq 0 ]]
+}
+
+# --doctor 在 cd 前拦截：PROJECT_DIR 本身即诊断对象，不存在时不能先 cd 崩溃
+if [[ "$MODE" == "--doctor" ]]; then
+  _dr_rc=0
+  _run_doctor || _dr_rc=$?
+  exit "$_dr_rc"
+fi
+
 cd "$PROJECT_DIR"
+
+# ===== 门禁工具化运行时（P1-4/P1-5）：--format json + gate-runs 证据落盘 =====
+# 铁律约束：FORMAT=text 且 GATE_RUNS_DIR 为空时 _gate_exec 走原始分发路径
+#（零包装、零输出差异，golden-vector / cli-ab 契约不破）；仅 json 模式或证据
+# 落盘开启时才捕获门禁输出到临时文件再 cat 回放（stdout 仍逐字节一致）。
+GATE_JSON_OUT="${GATE_JSON_OUT:-}"   # 环境变量：json 结果落盘路径（空=打印到 stdout 末尾）
+GATE_RUNS_DIR="${GATE_RUNS_DIR:-}"   # conf 变量：证据落盘目录（空=关闭；_default_conf 兜底）
+_EVIDENCE_ON=0
+[[ "$FORMAT" == "json" || -n "$GATE_RUNS_DIR" ]] && _EVIDENCE_ON=1
+_GATE_TMP=""
+_JSON_RESULTS=""
+_JSON_SEP=""
+_JSON_EMITTED=0
+# EXIT 兜底：单门禁 fail-fast 路径（set -e 直退、跳过末尾汇总，遗留语义）下
+# json 结果仍会输出；text 模式永不触发 _emit_json（零输出差异）。trap 不改退出码。
+_on_exit() {
+  if [[ "$FORMAT" == "json" && "$_JSON_EMITTED" -eq 0 && -n "$_JSON_RESULTS" ]]; then
+    _emit_json
+  fi
+  [[ -n "$_GATE_TMP" ]] && rm -f "$_GATE_TMP"
+  return 0
+}
+if [[ "$_EVIDENCE_ON" -eq 1 ]]; then
+  _GATE_TMP=$(mktemp /tmp/precheck-gate-capture.XXXXXX)
+  trap '_on_exit' EXIT
+  if [[ -n "$GATE_RUNS_DIR" ]]; then
+    mkdir -p "$GATE_RUNS_DIR" 2>/dev/null || true
+    if [[ ! -d "$GATE_RUNS_DIR" ]]; then
+      warn "GATE_RUNS_DIR($GATE_RUNS_DIR) 不可创建——gate-runs 证据落盘降级关闭"
+      GATE_RUNS_DIR=""
+    fi
+  fi
+fi
+
+# 从门禁捕获输出提取 id 清单（best-effort）：取 "✓ id:"/"✗ id:"/"⚠ id:" 行第二令牌，
+# 剥结尾冒号后须为纯 id 字符集（过滤散文行/多级行号行），sort -u 去重。
+_gate_ids() { # $1=捕获输出文件；stdout=空格分隔 id 清单
+  awk '{ t=$2; if (t != "" && sub(/:$/, "", t) && t ~ /^[A-Za-z0-9_.-]+$/) print t }' "$1" \
+    | sort -u | tr '\n' ' '
+}
+
+# 累加单门禁 SARIF result 片段（bash 3.2 无关联数组，按执行序串接）
+_json_add_result() { # $1=gate $2=status $3=ids(空格分隔)
+  local _ids_json="" _sep="" _id
+  for _id in $3; do
+    _ids_json="${_ids_json}${_sep}\"${_id}\""
+    _sep=","
+  done
+  _JSON_RESULTS="${_JSON_RESULTS}${_JSON_SEP}{\"gate\":\"$1\",\"status\":\"$2\",\"ids\":[${_ids_json}]}"
+  _JSON_SEP=","
+}
+
+# gate-runs.jsonl 追加一行（ts 为 UTC；对齐 GB/T 15532 过程文档与 standards-compliance.md §F 证据列）
+_gate_evidence() { # $1=gate $2=status $3=ids(空格分隔) $4=duration_s
+  local _ids_json="" _sep="" _id
+  for _id in $3; do
+    _ids_json="${_ids_json}${_sep}\"${_id}\""
+    _sep=","
+  done
+  printf '{"ts":"%s","gate":"%s","status":"%s","ids":[%s],"duration_s":%s}\n' \
+    "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$1" "$2" "$_ids_json" "$4" \
+    >> "$GATE_RUNS_DIR/gate-runs.jsonl"
+}
+
+# SARIF 2.1.0 子集输出：version/runs/results（每门禁 {gate,status,ids[]}）
+_emit_json() {
+  local _out
+  _out="{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"swarm-yuan precheck.sh\"}},\"results\":[${_JSON_RESULTS}]}]}"
+  _JSON_EMITTED=1
+  if [[ -n "$GATE_JSON_OUT" ]]; then
+    if ! printf '%s\n' "$_out" > "$GATE_JSON_OUT" 2>/dev/null; then
+      echo "✗ GATE_JSON_OUT($GATE_JSON_OUT) 写入失败——改打印到 stdout" >&2
+      printf '%s\n' "$_out"
+    fi
+  else
+    printf '%s\n' "$_out"
+  fi
+}
+
+# 门禁执行包装：$1=门禁函数名 $2=容错标志（1=--all 循环 `|| true` 语义；0=单门禁原样直通）
+_gate_exec() {
+  _CURRENT_GATE="$1"
+  INVOKE_COUNT=$((INVOKE_COUNT+1))
+  # 非证据模式：与原分发语句逐语句等价（含 set -e 传播语义）
+  if [[ "$_EVIDENCE_ON" -eq 0 ]]; then
+    if [[ "$2" == "1" ]]; then "$1" || true; else "$1"; fi
+    return
+  fi
+  # 证据模式：捕获输出→回放→按计数器增量判定状态→登记 json/jsonl
+  local _bf=$FAIL_COUNT _bw=$WARN_COUNT _bs=$SKIP_COUNT _rc=0 _t0 _t1 _st _ids
+  _t0=$(date +%s)
+  if [[ "$2" == "1" ]]; then
+    "$1" > "$_GATE_TMP" || true
+  else
+    "$1" > "$_GATE_TMP" || _rc=$?
+  fi
+  _t1=$(date +%s)
+  cat "$_GATE_TMP"
+  # 状态优先级 fail > skip > warn > pass（skip_if_unconfigured 非静默时同时计 warn，fail 最严）
+  if [[ $FAIL_COUNT -gt $_bf ]]; then _st="fail"
+  elif [[ $SKIP_COUNT -gt $_bs ]]; then _st="skip"
+  elif [[ $WARN_COUNT -gt $_bw ]]; then _st="warn"
+  else _st="pass"; fi
+  _ids=$(_gate_ids "$_GATE_TMP")
+  _json_add_result "$1" "$_st" "$_ids"
+  if [[ -n "$GATE_RUNS_DIR" ]]; then _gate_evidence "$1" "$_st" "$_ids" "$((_t1-_t0))" || true; fi
+  if [[ "$2" == "1" ]]; then return 0; fi
+  return "$_rc"
+}
 
 # ===== 运行时工具检测辅助 =====
 # swarm-yuan 的门禁优先调用已安装的运行时工具（gitnexus/graphify/ocr/claude-mem/gsd-tools），
@@ -409,8 +743,65 @@ check_test() {
   fi
 }
 
+# --sensitive 工具链降级辅助（P1-3）：gitleaks 路径。
+# 返回：0=已处理（pass/fail 已记录）；1=gitleaks 执行失败（调用方降级内置）；2=SCAN_DIRS 空（交回内置披露路径）
+_check_sensitive_gitleaks() {
+  # 空 SCAN_DIRS 交回内置路径（与基线同一 warn 披露文案，避免双份漂移）
+  [[ ${#SCAN_DIRS[@]} -eq 0 ]] && return 2
+  local found=0 dir report hits files f rc
+  for dir in ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
+    [[ -d "$dir" ]] || continue
+    report=$(mktemp)
+    # --no-git 按文件系统扫描（与内置路径同口径）；--exit-code 0 统一由报告计数判定，不靠工具退出码
+    rc=0
+    gitleaks detect --no-git -s "$dir" --report-format json --report-path "$report" --exit-code 0 >/dev/null 2>&1 || rc=$?
+    if [[ "$rc" -ne 0 ]]; then
+      rm -f "$report"
+      return 1
+    fi
+    # 报告为 JSON 数组：finding 元素含 RuleID（v8+）/rule（旧版）字段，元素数即命中数
+    hits=$(grep -oE '"(RuleID|rule)"' "$report" 2>/dev/null | wc -l | xargs || true)
+    hits=$(_norm_int "$hits")
+    if [[ "$hits" -gt 0 ]]; then
+      # 逐文件聚合去重（v8+ 字段 File；旧版小写 file 兜底）
+      files=$(grep -oE '"File": ?"[^"]+"' "$report" 2>/dev/null | sed 's/"File": *"//; s/"$//' | sort -u || true)
+      [[ -z "$files" ]] && files=$(grep -oE '"file": ?"[^"]+"' "$report" 2>/dev/null | sed 's/"file": *"//; s/"$//' | sort -u || true)
+      while IFS= read -r f; do
+        [[ -n "$f" ]] && fail "gate_sensitive_gitleaks:${f}: gitleaks 检出疑似硬编码密钥（GB/T 34944-2017 6.2.6.3）"
+      done <<< "$files"
+      found=1
+    fi
+    rm -f "$report"
+  done
+  if [[ $found -eq 0 ]]; then
+    pass "未发现明显敏感信息（gitleaks）"
+  fi
+  return 0
+}
+
 check_sensitive() {
   echo "=== 敏感信息脱敏扫描（check §4 UI脱敏/日志）==="
+  # 工具链降级（P1-3）：SENSITIVE_TOOL=auto/builtin/gitleaks；auto=有 gitleaks 用 gitleaks，否则内置
+  # 内置路径（下方原逻辑）行为一字不变；gitleaks 执行失败降级内置（不静默 fail-open）
+  local _sensitive_tool="${SENSITIVE_TOOL:-auto}"
+  if [[ "$_sensitive_tool" == "auto" ]]; then
+    if command -v gitleaks >/dev/null 2>&1; then _sensitive_tool="gitleaks"; else _sensitive_tool="builtin"; fi
+  elif [[ "$_sensitive_tool" == "gitleaks" ]] && ! command -v gitleaks >/dev/null 2>&1; then
+    warn "SENSITIVE_TOOL=gitleaks 但 gitleaks 未安装，降级内置正则扫描"
+    _sensitive_tool="builtin"
+  fi
+  if [[ "$_sensitive_tool" == "gitleaks" ]]; then
+    local _gitleaks_rc=0
+    if _check_sensitive_gitleaks; then
+      return
+    else
+      _gitleaks_rc=$?
+    fi
+    if [[ "$_gitleaks_rc" -eq 1 ]]; then
+      warn "gitleaks 执行失败，降级内置正则扫描"
+    fi
+    # rc=2：SCAN_DIRS 空，落入内置路径的同文案披露
+  fi
   local patterns=(
     'sk-[a-zA-Z0-9]{20,}'
     'AKIA[0-9A-Z]{16}'
@@ -543,7 +934,9 @@ check_layer() {
   # 临时映射文件（兼容 bash 3.2，不用 declare -A）
   local tmp_file2layer tmp_layer2idx tmp_layer_files
   tmp_file2layer=$(mktemp); tmp_layer2idx=$(mktemp); tmp_layer_files=$(mktemp)
-  trap 'rm -f "$tmp_file2layer" "$tmp_layer2idx" "$tmp_layer_files"' RETURN
+  # RETURN trap 会随外层函数（如 _gate_exec）返回二次触发——双引号定义期烘焙路径使其自包含，
+  # 避免 set -u 下单引号延迟求值引用已销毁的局部变量；二次触发对已删文件 rm -f 为无害 no-op。
+  trap "rm -f '$tmp_file2layer' '$tmp_layer2idx' '$tmp_layer_files'" RETURN
 
   # ---- 1. 构建层→文件映射 + 文件→层映射 ----
   local ld
@@ -1143,8 +1536,66 @@ _sec_scan() {
   done
 }
 
+# --security 工具链降级辅助（P1-3）：semgrep 路径（--config auto --json，ERROR 级命中 → fail）。
+# 返回：0=已处理（pass/fail 已记录）；1=semgrep 执行失败（调用方降级内置）；2=无可扫目录（交回内置披露路径）
+_check_security_semgrep() {
+  # 与内置路径同一目标集：WRITABLE_DIRS + SCAN_DIRS 去重（语义同下方原逻辑）
+  local targets=() seen="" d
+  for d in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
+    [[ -z "$d" || ! -d "$d" ]] && continue
+    case " $seen " in *" $d "*) continue ;; esac
+    seen="$seen $d"; targets+=("$d")
+  done
+  [[ ${#targets[@]} -eq 0 ]] && return 2
+  local out rc=0 err_hits
+  out=$(mktemp)
+  # --error：有命中（任意级）时退出码 1；0=无命中；≥2=执行错误（降级内置）
+  semgrep --config auto --json --quiet --error -o "$out" "${targets[@]}" >/dev/null 2>&1 || rc=$?
+  if [[ "$rc" -ge 2 ]]; then
+    rm -f "$out"
+    return 1
+  fi
+  # ERROR 级命中 → fail（WARNING/INFO 不判，与内置「硬 fail / 软 warn」分层语义一致）
+  err_hits=$(grep -cE '"severity":[[:space:]]*"ERROR"' "$out" 2>/dev/null || true)
+  err_hits=$(_norm_int "$err_hits")
+  if [[ "$err_hits" -gt 0 ]]; then
+    fail "gate_security_semgrep_error: semgrep ERROR 级命中 ${err_hits} 处（--config auto）"
+    # 粗解析多行 JSON：同一 result 内 check_id/path 先于 extra.severity 出现，按序配对取前 10 条
+    awk '
+      /"check_id":/ { cid=$0; sub(/^.*"check_id":[[:space:]]*"/,"",cid); sub(/".*$/,"",cid) }
+      /"path":/     { p=$0;   sub(/^.*"path":[[:space:]]*"/,"",p);   sub(/".*$/,"",p) }
+      /"severity":[[:space:]]*"ERROR"/ { if (p != "") { print cid" @ "p; p="" } }
+    ' "$out" 2>/dev/null | head -10 | sed 's/^/    /'
+  else
+    pass "semgrep 扫描通过（ERROR 级 0 命中）"
+  fi
+  rm -f "$out"
+  return 0
+}
+
 check_security() {
   echo "=== 安全规范检查（OWASP Top 10 / 代码安全 / 网络安全）==="
+  # 工具链降级（P1-3）：SECURITY_TOOL=auto/builtin/semgrep；auto=有 semgrep 用 semgrep，否则内置
+  # 内置路径（下方原逻辑）行为一字不变；semgrep 执行失败降级内置（不静默 fail-open）
+  local _security_tool="${SECURITY_TOOL:-auto}"
+  if [[ "$_security_tool" == "auto" ]]; then
+    if command -v semgrep >/dev/null 2>&1; then _security_tool="semgrep"; else _security_tool="builtin"; fi
+  elif [[ "$_security_tool" == "semgrep" ]] && ! command -v semgrep >/dev/null 2>&1; then
+    warn "SECURITY_TOOL=semgrep 但 semgrep 未安装，降级内置规则扫描"
+    _security_tool="builtin"
+  fi
+  if [[ "$_security_tool" == "semgrep" ]]; then
+    local _semgrep_rc=0
+    if _check_security_semgrep; then
+      return
+    else
+      _semgrep_rc=$?
+    fi
+    if [[ "$_semgrep_rc" -eq 1 ]]; then
+      warn "semgrep 执行失败（rc≥2），降级内置规则扫描"
+    fi
+    # rc=2：无可扫目录，落入内置路径的同文案披露
+  fi
   local found=0
   # 合并 WRITABLE_DIRS + SCAN_DIRS 并去重（避免同一目录扫两遍产生重复告警）
   local targets=() seen=""
@@ -2655,7 +3106,11 @@ check_sbom() {
   mkdir -p "$out_dir" 2>/dev/null || true
   local generated=0 tool="${SBOM_TOOL:-}"
   # 工具降级链：$SBOM_TOOL → syft → cdxgen → 内置 lockfile 解析
-  if [[ -z "$tool" ]]; then
+  # SBOM_TOOL=none：显式屏蔽外部工具，强制走内置 lockfile 解析（无工具链环境依赖的确定性路径，
+  # 修 fixture 环境依赖遗留——机器装有 syft/cdxgen 时 fixture 结果不应漂移）
+  if [[ "$tool" == "none" ]]; then
+    tool=""
+  elif [[ -z "$tool" ]]; then
     if command -v syft >/dev/null 2>&1; then tool="syft"
     elif command -v cdxgen >/dev/null 2>&1; then tool="cdxgen"
     fi
@@ -2799,6 +3254,168 @@ check_privacy() {
   [[ $found -eq 0 ]] && pass "未发现个人信息泄露风险"
 }
 
+# ===== 安全门禁族深化（P1-3/P1-9：--authz/--requirements/--crypto）=====
+# 语义全新，不改既有门禁判定；未配置静默跳过，启用后按门禁姿态 fail-closed / 开关执法 / warn-only。
+
+# --authz：授权类弱点检查（CWE-862 缺失授权 / CWE-863 不正确授权 / CWE-639 用户可控键值 / CWE-284 不当访问控制）
+# 粗放词法检测，fail 项（3 个稳定 id）与 warn-only 项分清：
+#   fail：控制器缺鉴权注解（missing_check）、IDOR 主键直取（idor）、CORS 全放行带凭据（permissive）
+#   warn-only：permitAll() 全放行、AUTHZ_EXTRA_PATTERNS 自定义模式（可能为有意设计，须人工复核）
+check_authz() {
+  echo "=== 授权类弱点检查（CWE-862/863/639/284：服务端授权覆盖）==="
+  [[ ${#AUTHZ_SCAN_DIRS[@]} -eq 0 ]] && { skip_if_unconfigured "AUTHZ_SCAN_DIRS 未配置"; return; }
+  local found=0 d f hits files pat
+  local inc=(--include='*.java' --include='*.kt' --include='*.ts' --include='*.js')
+  for d in "${AUTHZ_SCAN_DIRS[@]}"; do
+    if [[ ! -d "$d" ]]; then
+      warn "AUTHZ_SCAN_DIRS 目录不存在：${d}（跳过该目录）"
+      continue
+    fi
+    # —— 1. 敏感操作缺鉴权注解（粗放：文件含请求映射方法但全文无鉴权注解/安全配置声明）→ fail
+    files=$(grep -rlE '@(Get|Post|Put|Delete|Patch|Request)Mapping' "$d" "${inc[@]}" 2>/dev/null \
+      | grep -viE 'test|mock|node_modules' || true)
+    while IFS= read -r f; do
+      [[ -z "$f" ]] && continue
+      if ! grep -qE '@PreAuthorize|@Secured|@RolesAllowed|SecurityFilter|@EnableWebSecurity|@RequiresPermissions|@PreAuth' "$f" 2>/dev/null; then
+        fail "gate_authz_missing_check:${f}: 控制器含请求映射但无鉴权注解/安全配置（CWE-862 缺失授权）"
+        found=1
+      fi
+    done <<< "$files"
+    # —— 2. IDOR 风险：findById(request.…) / findById(…getParameter(…)) 用户可控主键直取 → fail
+    hits=$(grep -rnE 'findById\(\s*request\.|findById\([^)]*getParameter\(' "$d" "${inc[@]}" 2>/dev/null \
+      | grep -viE 'test|mock|node_modules' || true)
+    if [[ -n "$hits" ]]; then
+      while IFS= read -r f; do
+        [[ -n "$f" ]] && fail "gate_authz_idor:${f}: 用户可控主键直取对象（IDOR 风险，CWE-639）"
+      done <<< "$(printf '%s\n' "$hits" | cut -d: -f1 | sort -u)"
+      found=1
+    fi
+    # —— 3. CORS 全放行且带凭据（allowedOrigins("*") 与 allowCredentials(true) 同文件并存）→ fail
+    files=$(grep -rlE 'allowedOrigins\(\s*"\*"\s*\)|allowedOriginPatterns\(\s*"\*"\s*\)' "$d" "${inc[@]}" 2>/dev/null \
+      | grep -viE 'test|mock|node_modules' || true)
+    while IFS= read -r f; do
+      [[ -z "$f" ]] && continue
+      if grep -qE 'allowCredentials\(\s*true\s*\)' "$f" 2>/dev/null; then
+        fail "gate_authz_permissive:${f}: CORS allowedOrigins(\"*\") 且 allowCredentials(true)（CWE-284 不当访问控制）"
+        found=1
+      fi
+    done <<< "$files"
+    # —— 4. permitAll() 全放行 → warn-only（可能为有意公开端点，须人工复核，不计 fail）
+    hits=$(grep -rnE 'permitAll\(\)' "$d" "${inc[@]}" 2>/dev/null \
+      | grep -viE 'test|mock|node_modules' || true)
+    if [[ -n "$hits" ]]; then
+      warn "permitAll() 全放行 $(printf '%s\n' "$hits" | wc -l | xargs) 处（warn-only，确认均为有意公开端点）："
+      printf '%s\n' "$hits" | head -5 | sed 's/^/    /'
+    fi
+    # —— 5. 自定义授权风险模式（AUTHZ_EXTRA_PATTERNS）→ warn-only
+    if [[ ${#AUTHZ_EXTRA_PATTERNS[@]} -gt 0 ]]; then
+      for pat in "${AUTHZ_EXTRA_PATTERNS[@]}"; do
+        [[ -z "$pat" ]] && continue
+        hits=$(grep -rnE "$pat" "$d" "${inc[@]}" 2>/dev/null | grep -viE 'test|mock|node_modules' || true)
+        if [[ -n "$hits" ]]; then
+          warn "授权自定义模式命中（warn-only，须人工复核）：${pat}"
+          printf '%s\n' "$hits" | head -5 | sed 's/^/    /'
+        fi
+      done
+    fi
+  done
+  echo "  提示: 授权铁律——服务端每个 API 默认拒绝、显式授权（OWASP ASVS V8 / CWE Top25:2025 授权类四弱点）"
+  if [[ $found -eq 0 ]]; then
+    pass "授权类弱点检查通过（fail 项未命中；warn 项请人工复核）"
+  fi
+}
+
+# --requirements：需求质量 lint（ISO/IEC/IEEE 29148：需求完备无待定项、唯一标识、EARS 句式）
+# SPEC_FILE 存在才执行；STRICT/ID_REQUIRED 开关默认 0（不执法），EARS 覆盖率为 warn-only。
+check_requirements() {
+  echo "=== 需求质量检查（ISO/IEC/IEEE 29148：无 TBD / 唯一 ID / EARS）==="
+  local spec="${SPEC_FILE:-}"
+  if [[ -z "$spec" || ! -f "$spec" ]]; then
+    skip_if_unconfigured "SPEC_FILE 未配置或不存在，需求 lint 跳过"
+    return
+  fi
+  local found=0 hits l
+  # —— 1. TBD 零容忍（REQUIREMENTS_STRICT=1）：spec 含 TBD/待定/待明确 → fail（id 带行号）
+  if [[ "${REQUIREMENTS_STRICT:-0}" == "1" ]]; then
+    hits=$(grep -nE 'TBD|待定|待明确' "$spec" 2>/dev/null || true)
+    if [[ -n "$hits" ]]; then
+      while IFS= read -r l; do
+        [[ -n "$l" ]] && fail "gate_requirements_tbd:${l%%:*}: spec 含 TBD/待定/待明确（29148 要求需求集完备、不允许待定项）"
+      done <<< "$hits"
+      found=1
+    fi
+  fi
+  # —— 2. 唯一标识（REQUIREMENTS_ID_REQUIRED=1）：需求条目（含 应当/应该/必须/shall/must 的列表项）缺 REQ- 编号 → fail
+  if [[ "${REQUIREMENTS_ID_REQUIRED:-0}" == "1" ]]; then
+    hits=$(grep -nE '^[[:space:]]*([-*+]|[0-9]+[.)])[[:space:]]+' "$spec" 2>/dev/null \
+      | grep -E '应当|应该|必须|shall|must|SHALL|MUST' \
+      | grep -vE 'REQ-[0-9A-Za-z-]+' || true)
+    if [[ -n "$hits" ]]; then
+      local noid_count
+      noid_count=$(printf '%s\n' "$hits" | wc -l | xargs)
+      fail "gate_requirements_no_id: ${noid_count} 条需求条目缺 REQ- 唯一编号（29148 要求每条需求可唯一标识）"
+      printf '%s\n' "$hits" | head -10 | sed 's/^/    /'
+      found=1
+    fi
+  fi
+  # —— 3. EARS 句式覆盖率 → warn-only（粗估：需求句中含 当…时/如果/若/when/while/if 触发词的比例 <50% 提示）
+  local total=0 ears=0
+  total=$(_norm_int "$(grep -cE '应当|应该|必须|shall|must|SHALL|MUST' "$spec" 2>/dev/null || true)")
+  ears=$(_norm_int "$(grep -cE '当.*时|如果|若|在.*时|when|while|if |When |While |If ' "$spec" 2>/dev/null || true)")
+  if [[ "$total" -gt 0 ]]; then
+    local pct=$((ears*100/total))
+    if [[ "$pct" -lt 50 ]]; then
+      warn "EARS 句式覆盖率约 ${pct}%（${ears}/${total}，<50%）——建议按 EARS（Ubiquitous/Event/State/Optional/Complex）改写需求句"
+    fi
+  fi
+  if [[ $found -eq 0 ]]; then
+    pass "需求质量检查通过（执法项未命中；EARS 覆盖率为 warn-only 提示）"
+  fi
+}
+
+# --crypto：密码算法合规（GB/T 39786-2021 密评，profile=gm）
+# CRYPTO_PROFILE 空 → 静默跳过；=gm 时在 CRYPTO_SCAN_DIRS 扫描弱算法 ERE
+#（MD5/SHA1/DES/RSA-1024/ECDSA，滤注释行与 example/mock）→ fail；国密白名单 SM2/SM3/SM4。
+check_crypto() {
+  echo "=== 密码算法合规检查（GB/T 39786-2021 密评，国密白名单 SM2/SM3/SM4）==="
+  local profile="${CRYPTO_PROFILE:-}"
+  if [[ -z "$profile" ]]; then
+    skip_if_unconfigured "CRYPTO_PROFILE 未配置（密评场景设为 gm）"
+    return
+  fi
+  if [[ "$profile" != "gm" ]]; then
+    warn "未知 CRYPTO_PROFILE：${profile}（当前仅内置 gm=GB/T 39786-2021 密评弱算法扫描），未执行"
+    return
+  fi
+  local found=0 d f hits files
+  if [[ ${#CRYPTO_SCAN_DIRS[@]} -eq 0 ]]; then
+    # 与 check_sensitive 同姿态：profile 已启用但扫描目录未配置 → warn 如实披露 fail-open 风险
+    warn "CRYPTO_SCAN_DIRS 未配置，密码算法扫描未执行（fail-open 风险）"
+  fi
+  local inc=(--include='*.java' --include='*.kt' --include='*.ts' --include='*.js' --include='*.py' --include='*.go')
+  for d in ${CRYPTO_SCAN_DIRS[@]+"${CRYPTO_SCAN_DIRS[@]}"}; do
+    if [[ ! -d "$d" ]]; then
+      warn "CRYPTO_SCAN_DIRS 目录不存在：${d}（跳过该目录）"
+      continue
+    fi
+    # 弱算法 ERE（\b 词界防 SHA1PRNG/DESede 误命中）；滤 example/mock 噪声与注释行
+    hits=$(grep -rnE '\bMD5\b|\bSHA1\b|\bDES\b|RSA[-_]?1024|\bECDSA\b' "$d" "${inc[@]}" 2>/dev/null \
+      | grep -viE 'example|mock|node_modules' \
+      | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|#|\*|/\*)' || true)
+    if [[ -n "$hits" ]]; then
+      files=$(printf '%s\n' "$hits" | cut -d: -f1 | sort -u)
+      while IFS= read -r f; do
+        [[ -n "$f" ]] && fail "gate_crypto_weak_algorithm:${f}: 检出弱密码算法（MD5/SHA1/DES/RSA-1024/ECDSA；GB/T 39786 密评应用 SM2/SM3/SM4 白名单）"
+      done <<< "$files"
+      printf '%s\n' "$hits" | head -10 | sed 's/^/    /'
+      found=1
+    fi
+  done
+  if [[ $found -eq 0 ]]; then
+    pass "密码算法合规检查通过（未检出弱算法；国密白名单 SM2/SM3/SM4）"
+  fi
+}
+
 # ===== 框架适配门禁（--framework）：由 --inject-frameworks 注入片段，动态分发 =====
 check_framework() {
   echo "▶ 框架适配门禁 (--framework)"
@@ -2937,16 +3554,17 @@ if [[ -z "${_gate_fn:-x}" ]]; then
   check_service; check_api; check_state; check_frontend; check_cognition; check_domain
   check_knowledge; check_mermaid; check_shift_left; check_framework
   check_compliance; check_docs_pack; check_sbom; check_privacy
+  check_authz; check_requirements; check_crypto
 fi
 
 case "$MODE" in
   --all)
-    # `|| true`：单门禁 fail 路径若以非零返回（如 check_scope/sensitive/review 末句 `[[ ]] && pass`），
-    # 不得因 set -e 中断后续门禁——FAIL 全局已记录失败，最终由末尾汇总判定（见 2655）。
-    for _gate in "${ALL_GATES_CORE[@]}"; do _CURRENT_GATE="$_gate"; INVOKE_COUNT=$((INVOKE_COUNT+1)); "$_gate" || true; done
+    # 容错标志 1（原 `|| true`）：单门禁 fail 路径若以非零返回（如 check_scope/sensitive/review 末句 `[[ ]] && pass`），
+    # 不得因 set -e 中断后续门禁——FAIL 全局已记录失败，最终由末尾汇总判定。
+    for _gate in "${ALL_GATES_CORE[@]}"; do _gate_exec "$_gate" 1; done
     ;;
   --all-full)
-    for _gate in "${ALL_GATES_FULL[@]}"; do _CURRENT_GATE="$_gate"; INVOKE_COUNT=$((INVOKE_COUNT+1)); "$_gate" || true; done
+    for _gate in "${ALL_GATES_FULL[@]}"; do _gate_exec "$_gate" 1; done
     ;;
   --*)
     # 单门禁分发：精确匹配 GATE_FLAGS 后按映射规则得函数名（如 --stable-diff → check_stable_diff）
@@ -2958,7 +3576,7 @@ case "$MODE" in
       fi
     done
     if [[ -n "$_gate_fn" ]]; then
-      _CURRENT_GATE="$_gate_fn"; INVOKE_COUNT=$((INVOKE_COUNT+1)); "$_gate_fn"
+      _gate_exec "$_gate_fn" 0
     else
       _usage
       exit 1
@@ -2975,8 +3593,11 @@ echo ""
 echo "—— 执行汇总：调用 ${INVOKE_COUNT}，执行 $((INVOKE_COUNT-SKIP_COUNT))，跳过 ${SKIP_COUNT}（${SKIP_LIST# }），fail ${FAIL_COUNT}，warn ${WARN_COUNT} ——"
 if [[ $FAIL -eq 0 ]]; then
   echo "✓ 门禁检查通过"
-  exit 0
+  _final_rc=0
 else
   echo "✗ 门禁检查未通过，请修复上述问题"
-  exit 1
+  _final_rc=1
 fi
+# P1-5：json 模式在运行结束输出 SARIF 子集（text 默认模式无此行，输出与改造前逐字节一致）
+if [[ "$FORMAT" == "json" ]]; then _emit_json; fi
+exit "$_final_rc"
