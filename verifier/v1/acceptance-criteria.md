@@ -18,12 +18,18 @@
 ## C4 Shellcheck 不恶化
 - 核心脚本（precheck.sh、generate-skill.sh、self-check.sh、state-machine.sh、全部 framework-gates）error 级总数 ≤ 基线；重构涉及文件目标为 0 error。
 
-## C5 CLI 兼容
-- precheck.sh 的既有用法（--branch/--scope/--build/--test/--sensitive/--consistency/--framework 等）在重构后保持可用；--list/--help 类输出不破坏。
+## C5 CLI 兼容（脚本断言自动判定）
+- 判定入口：`bash verifier/v1/run-verifier.sh cli-ab`（已纳入 `all`），退出码 0 为通过；断言实现 `v1/cli-ab-test.sh`。
+- A/B 沙箱逐字节等价：A=git HEAD 版、B=工作区版 precheck.sh；对 GATE_FLAGS 全部 flag（运行时自注册表解析，当前 31 个）× compliant/violating 双语料（tests/gate-fixtures 现有 fixture 项目样本，conf 运行时生成）× A/B 双版本，stdout 逐字节一致且退出码一致；附加无参数（默认 --all）/ --all-full / 未知 flag 固定用例同断言。
+- 退出码 ∈ {0,1}（崩溃/用法错误等异常退出即失败）。
+- --all 核心 10 门禁执行序列（stdout '^=== ' 段头按序提取）与基线 `v1/core10-sequence.txt` 逐字节一致（防 ALL_GATES_CORE 调序/段头改名）。
+- 环境约定：无 git / HEAD 无对象 / 语料缺失 → 未配置静默跳过（CLI_AB_SKIP，RC=0）；A/B 口径须在工作区静止期判定。
 
-## C6 可维护性提升（量化）
-- precheck.sh 单文件行数下降或源级模块化（多文件 + 构建生成单文件产物），生成物与源一致可重建验证。
-- framework-gates 重复样板行数下降（提取公共函数库）。
+## C6 可维护性（阈值断言自动判定）
+- 判定入口：`bash verifier/v1/run-verifier.sh metrics`（先输出既有测量行，再执行断言；已纳入 `all`），退出码 0 为通过；断言实现 `v1/metrics-assert.sh`，阈值真值 `v1/metrics-baseline.txt`（缺失=未配置静默跳过，启用后 fail-closed）。
+- LOC 增长：precheck.sh 行数较基线（2982 行，2026-07-20 P0 提交后实测）增长 <40%（整数判定 5*loc < 7*baseline）。
+- 重复度：framework-gates 注入双副本 diff 行数 <30（口径：57 片段全量 `--inject-frameworks` 产物标记块 vs `assets/framework-gates/*.sh` 同序串联，计 diff 输出 `^[<>]` 行数；正常为 0）。
+- 文档一致性：`self-check.sh` 输出「▶ 文档一致性检查」段无 ✗/FAIL 行，段缺失即 FAIL（fail-closed）；self-check 整体 RC 受环境缺工具影响，不作断言对象。
 
 ## C7 交付物
 - 《全面分析与重构报告》含：架构分析、问题清单（分级）、重构项前后量化对比、验证记录索引。
