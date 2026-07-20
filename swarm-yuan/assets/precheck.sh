@@ -22,7 +22,12 @@ _resolve_path() {
     *) dir="."; base="$p";;
   esac
   if [[ -d "$dir" ]]; then
-    cand=$(cd "$dir" 2>/dev/null && pwd -P 2>/dev/null || cd "$dir" 2>/dev/null && pwd) 
+    # 修复左结合 bug：原 'cd && pwd -P || cd && pwd' 在 bash 左结合下解析为
+    # ((cd && pwd -P) || cd) && pwd，正常路径会执行两次 pwd 返回两行值，
+    # 致 -f "$cand" 永远 false（check_layer §3/§6、check_contract §2 沉睡）。
+    # 方案 C：直接 cd && pwd -P（POSIX 规定 -P 物理路径，bash/BSD/GNU pwd 均支持）；
+    # 失败时 cand 为空，走下方 echo "$p" + return 1 回退，与原失败路径行为等价。
+    cand=$(cd "$dir" 2>/dev/null && pwd -P)
     if [[ -n "$cand" ]]; then
       echo "${cand%/}/$base"
       return 0
@@ -505,9 +510,26 @@ check_layer() {
       [[ -z "$g" ]] && continue
       local m=""
       # 优先 find（覆盖未 git add 的新文件），再并 git ls-files（覆盖 git 历史但已删除的工作区文件）
-      local base="${g%%/\**}"
+      # base 解析：去掉末尾的 /**（用 % 最短匹配，不能用 %% 最长匹配——%% 会跨越中间的 * 把
+      # 'overlay/custom/client/*/components/**' 误截成 'overlay/custom/client'，导致 find 扫整个 client 目录，
+      # 把 __tests__/adapters/composables 全归入 component 层，check_layer §3 大量误判）。
+      local base="${g%/\*\*}"
+      # base 可能含 * 通配（如 overlay/custom/client/*/components），[[ -d ]] 不展开 glob 会 false。
+      # 用 compgen -d 展开 glob 为实际目录列表，逐个 find（兼容 bash 3.2）。
       if [[ -d "$base" ]]; then
         m=$(find "$base" -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.java' \) 2>/dev/null || true)
+      else
+        # base 含 glob 字符，展开后逐个 find
+        local expanded
+        expanded=$(compgen -d "$base" 2>/dev/null || true)
+        if [[ -n "$expanded" ]]; then
+          local d
+          while IFS= read -r d; do
+            [[ -z "$d" ]] && continue
+            local dm; dm=$(find "$d" -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.java' \) 2>/dev/null || true)
+            [[ -n "$dm" ]] && m="${m}${m:+$'\n'}$dm"
+          done <<< "$expanded"
+        fi
       fi
       if [[ -z "$m" ]] && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         m=$(git ls-files "$g" 2>/dev/null || true)
