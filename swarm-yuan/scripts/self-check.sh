@@ -467,6 +467,42 @@ fw_freshness_check() {
 }
 fw_freshness_check
 
+# ===== 文档一致性检查（防文档-实现漂移）=====
+check_doc_consistency() {
+  echo "▶ 文档一致性检查"
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  # 1. 框架规则文件数 == 门禁片段数（57 == 57）
+  local rule_cnt gate_cnt
+  rule_cnt=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
+  gate_cnt=$(ls "$base/assets/framework-gates/"*.sh 2>/dev/null | wc -l | xargs)
+  if [[ "$rule_cnt" == "$gate_cnt" ]]; then
+    echo "  ✓ 框架规则文件数($rule_cnt) == 门禁片段数($gate_cnt)"
+  else
+    warn "框架规则文件数($rule_cnt) != 门禁片段数($gate_cnt)——孤立片段或缺片段"
+    FAIL=1
+  fi
+  # 2. SKILL.md 声明的门禁数 vs precheck.sh 实际 check_* 函数数（口径可能不同，仅 warn 提示）
+  local skill_gates declared_gates actual_gates
+  declared_gates=$(grep -oE "[0-9]+ ?个?质量门禁|[0-9]+ ?quality gates" "$base/SKILL.md" 2>/dev/null | head -1 | grep -oE "[0-9]+" || echo "?")
+  actual_gates=$(grep -cE "^check_[a-z]+\(\)" "$base/assets/precheck.sh" 2>/dev/null | xargs)
+  echo "  ℹ SKILL.md 声明 $declared_gates 门禁，precheck.sh 顶层 check_* 函数 $actual_gates 个（差额为子门禁/聚合门禁，人工确认）"
+  # 3. SKILL.md 声明的 conf 变量数 vs precheck.conf 实际变量数
+  local declared_vars actual_vars
+  declared_vars=$(grep -oE "precheck\.conf[^。]*([0-9]+) ?变量\|([0-9]+) ?变量" "$base/SKILL.md" 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "?")
+  actual_vars=$(grep -cE '^[A-Z_][A-Z0-9_]*=' "$base/assets/precheck.conf" 2>/dev/null | xargs)
+  if [[ "$declared_vars" != "?" && "$declared_vars" != "$actual_vars" ]]; then
+    warn "SKILL.md 声明 precheck.conf $declared_vars 变量，实际 $actual_vars 个——文档漂移，请更新 SKILL.md"
+    FAIL=1
+  else
+    echo "  ✓ conf 变量数一致($actual_vars)"
+  fi
+  # 4. references/ 文件数 vs SKILL.md 声明数（粗略）
+  local ref_cnt declared_refs
+  ref_cnt=$(ls "$base/references/"*.md 2>/dev/null | wc -l | xargs)
+  echo "  ℹ references/*.md 共 $ref_cnt 个（SKILL.md 表格行数人工确认）"
+}
+check_doc_consistency
+
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
 exit $FAIL

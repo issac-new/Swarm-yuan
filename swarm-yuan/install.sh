@@ -11,6 +11,7 @@
 #   bash install.sh --kimi             # 强制安装到 ~/.kimi/skills/
 #   bash install.sh --all              # 安装到所有已检测到的环境
 #   bash install.sh --list             # 仅列出检测到的环境，不安装
+#   bash install.sh --version          # 显示版本号 + bash 版本
 
 set -euo pipefail
 
@@ -103,6 +104,20 @@ install_to() {
 MODE="${1:-auto}"
 
 case "$MODE" in
+  --version)
+    # 范式版本（与 .swarm-yuan-version 的 upgraded_at 对齐，由 git describe 自动派生）
+    ver="unknown"
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      ver=$(git describe --tags --always --dirty 2>/dev/null || echo "unknown")
+    fi
+    echo "swarm-yuan installer $ver"
+    echo "bash ${BASH_VERSION:-unknown}"
+    # 最低 bash 版本校验（bash 3.2 即可，macOS 默认满足）
+    if [[ "${BASH_VERSINFO[0]:-0}" -lt 3 ]]; then
+      echo "⚠ bash 版本过低（${BASH_VERSION}），需 bash 3.2+（macOS 默认 BSD bash 3.2 兼容）"
+    fi
+    exit 0
+    ;;
   --list)
     echo "=== 检测到的运行环境 ==="
     found="$(detect_runtimes)"
@@ -187,7 +202,7 @@ case "$MODE" in
     fi
     ;;
   *)
-    echo "Usage: bash install.sh [--claude|--cursor|--codex|--opencode|--windsurf|--gemini|--kimi|--all|--list]"
+    echo "Usage: bash install.sh [--claude|--cursor|--codex|--opencode|--windsurf|--gemini|--kimi|--all|--list|--version]"
     exit 1
     ;;
 esac
