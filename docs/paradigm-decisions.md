@@ -80,8 +80,24 @@
 - 建议 4 的 `git filter-repo` 历史瘦身：force push 风险高，留独立决策
 - 建议 5 的 sentinel 内联 grep：收益小/有风险
 
+## 重构报告（2026-07-20）评估的 8 条建议处置
+
+外部重构报告提出 8 条建议，评估后处置如下：
+
+| # | 建议 | 决策 | 理由 |
+|---|------|------|------|
+| 1 | precheck.sh 拆分为模块化（precheck/lib/gates/） | ❌ 不做 | 范式核心约束：单文件可移植（目标 skill 只需 cp 一个 precheck.sh）。拆分会破坏 install.sh 的"复制即用"设计 |
+| 2 | 分层配置 schema + local | ❌ 不做 | 已用 `_default_conf()` + `${VAR+x}` 兜底解决 set -u 崩溃；schema 文件增加复杂度但收益有限 |
+| 3 | Shell 可移植性（install.sh 加严格模式） | ✅ 部分做 | install.sh 已有 `set -euo pipefail`（报告不属实）；已加 `--version` + bash 版本校验 |
+| 4 | 框架片段 META 头标准化 | 🟡 标注 | 需改 57 片段，工作量大。当前注释约定 + verify-framework-ruleset.sh 已兜底四要素核验 |
+| 5 | bats-core 测试框架 | 🟡 标注 | 引入 bats-core 是大工程。已做 CI 骨架（ci.yml 4 Job）+ self-check 文档一致性检查这种轻量项 |
+| 6 | 文档一致性检查 | ✅ 做 | self-check.sh 加 `check_doc_consistency`（片段数/门禁数/conf 变量数/references 数）；已发现并修复 SKILL.md "45 变量"→"146 变量"漂移 |
+| 7 | 降级策略可观测性 | 🟡 标注 | 改降级函数是大重构（涉及多个 check_* 门禁），先标注，后续版本评估 |
+| 8 | 状态机持久化（断点续传） | ❌ 不做 | SKILL.md 明确"不允许中途停在骨架阶段"是设计哲学，断点续传违背零占位符铁律 |
+
 ## 风险与缓解
 
 - **建议 1 苏醒 check_layer §3**：已用 ncwk-dev 实证（249 假违规 → 0），且修复了连带暴露的 glob 解析 bug
 - **建议 4 Release 迁移**：不删历史 blob（只停止跟踪），install-offline-win.sh 加本地 cache 优先逻辑保证已有 cache 不受影响
 - **建议 6 SKIP_BAT**：默认 0 保持兼容，只影响显式设 1 的用户
+- **重构报告建议 1/2/8 不做**：保护范式核心设计（单文件可移植 / 已有兜底 / 零占位符铁律）
