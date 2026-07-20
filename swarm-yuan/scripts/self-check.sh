@@ -483,7 +483,7 @@ fw_freshness_check() {
 }
 fw_freshness_check
 
-# ===== 框架规则集核验（57 规则集四要素机械核验）=====
+# ===== 框架规则集核验（61 规则集四要素机械核验）=====
 fw_ruleset_verify() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local vfy="$base/scripts/verify-framework-ruleset.sh"
@@ -625,7 +625,7 @@ check_doc_consistency() {
         # regen 已就地修正（幂等），提示但不判 fail——索引已被重写为最新
         echo "  ⚠ framework-signal-index 已漂移，本次由 gen-framework-index.sh 自动重写为最新（建议提交）"
       else
-        echo "  ✓ framework-signal-index 与 57 框架同步"
+        echo "  ✓ framework-signal-index 与 61 框架同步"
       fi
     fi
     rm -f "$guide_tmp"
