@@ -258,3 +258,41 @@
 | conf 扩容（T3⑤） | bash 3.2 空数组崩溃 | `_default_conf` 兜底 + 旧 conf（无新变量）`--all-full` 实跑不崩 |
 
 回退策略：全部改动在 `feat/standards-compliance` 分支，按 T1–T10 逐任务 commit；任一 DoD 不过即回滚该任务 commit，不带病进入下一任务。
+
+---
+
+## 八、P1/P2 执行状态附录（2026-07-20 第二批）
+
+> 终态真值：门禁 34（核心 10 + 架构 17 + 合规 7）、conf 171 变量、references 16、框架 61（规则库目录 62 文件含 `_template.md`）、特征卡 16、运行时 11。gate-fixtures 34 组（6 P0 组 + 28 新增组）全绿；61/61 框架 fixture 双态绿。
+
+### P1 逐项完成度
+
+| 项 | 内容 | 状态 | 证据 |
+|---|---|---|---|
+| P1-1 | fixture 断言升级（57 框架 expected-fail-ids 全覆盖） | ✅ 完成 | 61 框架全登记 expected-fail-ids；verify-framework-ruleset 61/61 |
+| P1-2 | 跨平台（CI macOS runner + NOBSD 静态检查） | ✅ 完成 | ci.yml macOS Job；verify-framework-ruleset.sh 要素 3c 五类禁则（白名单仅 tailwind.sh:81） |
+| P1-3 | 安全门禁族深化（gitleaks/semgrep/授权类） | ✅ 完成 | sensitive 扩 gitleaks 子 fixture；semgrep 降级链 17 处挂接；`--authz`（CWE-862/863/639/284） |
+| P1-4 | conf lint（--doctor） | ✅ 完成 | precheck.sh `--doctor`（conf lint：路径/glob 可达/死变量/框架 requires_conf，带病启动） |
+| P1-5 | 证据落盘（--format json + gate-runs） | ✅ 完成 | `--format json`（SARIF 2.1.0 子集）+ `GATE_RUNS_DIR`/gate-runs.jsonl；`_gate_exec` 包装；text 模式零差异铁律守住（cli-ab 核心 10 逐字节一致） |
+| P1-6 | verifier 断言化（cli-ab/metrics + 生成器自门禁） | ✅ 完成 | verifier/v1/cli-ab-test.sh（147 调用）+ metrics 断言；ci.yml generator-self-gate Job |
+| P1-7 | 上游基线制度化 | ✅ 完成 | docs/upstream-baseline.md 扩 32 行登记；self-check 漂移忠告已接入 |
+| P1-8 | MCP 默认最小化政策 | ✅ 完成 | `references/mcp-governance.md` 新增 |
+| P1-9 | 需求 lint（29148 门禁化） | ✅ 完成 | `--requirements`（TBD/REQ- 唯一 ID 严格模式 fail-closed，EARS 覆盖率 warn-only） |
+| P1-10 | 方法论修补 | ✅ 完成 | gsd-patterns.md「4-Phase SOP 定义页」（:71）；logic-razor.md「razor↔abstain 裁决条款」（:108）+ 纯阅读执法姿态标注（:6）；template-spec.md EARS↔29148 对齐声明（:360） |
+
+### P2 本批已完成项
+
+- **新门禁 fixture 28 组**（branch/scope/build/deps/test/review/security/domain/authz/reuse/layer/stable-diff/link-depth/contract/consistency-cross/adr/service/api/state/frontend/impact/knowledge/consistency/mermaid/shift-left/cognition/requirements/crypto，加 P0 6 组合 34 组；运行器无参数遍历全量 RC=0）
+- **57 框架 CWE 元数据**（ruleset 登记全覆盖）
+- **4 个新框架规则集**（dameng/langchain/terraform/kratos，57→61；索引已由 gen-framework-index.sh 重建）
+- **国密 `--crypto`**（GB/T 39786-2021 密评 profile=gm：弱算法 fail，SM2/SM3/SM4 白名单；standards-compliance §D.5 挂接）
+- **AI 过程信息项制度化**（`references/ai-process-records.md`，8566 附录 A/B 扩展，文档层制度）
+- **功能安全域占位**（standards-compliance.md §E.5：ISO 26262/IEC 62304/IEC 61508-62443）
+
+### 转 P3 清单
+
+1. **RTM 门禁**（Q-11：需求↔测试追溯矩阵，29148 深化）
+2. **发布签名 provenance**（SLSA v1.0 Build L2 + cosign，对齐 SSDF v1.2 草案 PS.2）
+3. **多平台规则渲染**（规则库 → 各 harness 渲染管线）
+4. **行业 profile**（等保/密评/金融/医疗，在 `--crypto` gm profile 模式上扩展）
+5. **趋势可视化深化**（弱点密度/通过率趋势 Q-08/Q-20，gate-runs.jsonl 为数据源）
