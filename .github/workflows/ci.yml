@@ -53,6 +53,15 @@ jobs:
             fi
           done
           [[ "$fail" -eq 0 ]] && echo "✓ All 57 fixtures passed" || { echo "✗ $fail fixtures failed"; exit 1; }
+      - name: Compliance gate fixtures (6 组双态 + id 级断言)
+        run: |
+          for g in compliance docs-pack sbom privacy sensitive summary; do
+            if ! bash tests/run-gate-fixture.sh "$g"; then
+              echo "GATE FIXTURE FAIL: $g"
+              exit 1
+            fi
+          done
+          echo "✓ All 6 gate-fixture groups passed"
 
   # ---------- Job 3：self-check 时效检查 + 运行时工具检测 ----------
   self-check:

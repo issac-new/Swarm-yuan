@@ -27,3 +27,8 @@
 
 ## C7 交付物
 - 《全面分析与重构报告》含：架构分析、问题清单（分级）、重构项前后量化对比、验证记录索引。
+
+## C8 合规门禁 fixture（双态 + id 级断言）
+- `swarm-yuan/tests/gate-fixtures/` 六组（compliance/docs-pack/sbom/privacy/sensitive/summary）全部双态通过：violating* 退出非 0、compliant* 退出 0。
+- id 级断言全绿：violating 侧 `expected-ids` 逐行命中（fail id 契约：gate_compliance_*/gate_docs_pack_*/gate_sbom_*/gate_privacy_*），compliant 侧 `forbidden-ids` 零命中；sensitive/summary 的 `expect-output` 字面串（warn 披露文案、执行汇总行）全部包含。
+- 度量：`bash verifier/v1/run-verifier.sh gate-fixtures` 输出 `GATE_FIXTURES_FAILS 0` 且退出码为 0。

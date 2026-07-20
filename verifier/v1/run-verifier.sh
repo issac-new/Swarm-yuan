@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # run-verifier.sh — Swarm-yuan 重构验收器 v1
 # 用法: bash verifier/v1/run-verifier.sh <mode> [repo_root]
-#   mode = fixtures | e2e | shellcheck | metrics | all
+#   mode = fixtures | gate-fixtures | e2e | shellcheck | metrics | all
 # 输出: 机器可读结果到 stdout，供 verifier/runs/ 记录
 set -u
 MODE="${1:-all}"
@@ -46,6 +46,22 @@ e2e() {
   echo "E2E_RC $?"
 }
 
+# 合规门禁 fixture（C8）：遍历 6 组 gate fixture，双态 + id 级断言
+gate_fixtures() {
+  local g fails=0 total=0
+  for g in compliance docs-pack sbom privacy sensitive summary; do
+    total=$((total+1))
+    if bash "$SY/tests/run-gate-fixture.sh" "$g" >/tmp/verifier-gatefx-$g.log 2>&1; then
+      echo "GATE_FIXTURE $g OK"
+    else
+      echo "GATE_FIXTURE $g BAD（日志 /tmp/verifier-gatefx-$g.log）"; fails=$((fails+1))
+    fi
+  done
+  echo "GATE_FIXTURES_TOTAL $total FAILS $fails"
+  echo "GATE_FIXTURES_FAILS $fails"
+  [ "$fails" -eq 0 ]
+}
+
 shellcheck_scan() {
   if [ -z "$SC" ]; then
     echo "SHELLCHECK_UNAVAILABLE (无 shellcheck：设 \$SHELLCHECK、装入 PATH，或提供 /tmp/shellcheck)"
@@ -76,8 +92,9 @@ metrics() {
 
 case "$MODE" in
   fixtures) fixtures ;;
+  gate-fixtures) gate_fixtures ;;
   e2e) e2e ;;
   shellcheck) shellcheck_scan ;;
   metrics) metrics ;;
-  all) metrics; shellcheck_scan; e2e; fixtures ;;
+  all) metrics; shellcheck_scan; e2e; fixtures; gate_fixtures ;;
 esac
