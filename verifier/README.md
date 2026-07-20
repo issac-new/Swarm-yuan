@@ -54,3 +54,23 @@
 - 真值核对 ✅：check_*=34、GATE_FLAGS=34、conf 变量=171、references/*.md（不含 frameworks/）=16、framework-gates/*.sh=61、references/frameworks/*.md=62（含模板）、gate-fixtures=34 组
 - self-check ✅：RC=1 唯一 ✗ 为 superpowers 环境 miss（既有允许项）；文档一致性段 0 违规无新增 ERROR；注：--check-only 在工具缺失时早期 exit 为 HEAD 既有行为
 - 本轮修复项：无（未发现回归，未改动任何源码；仅覆盖更新 golden-vector.txt 并新增 runs 归档）
+
+## 回归记录（2026-07-20，p3-regression，P3 长期清单批次终态，feat/p3-longterm 工作区未提交，HEAD=94d43e3）
+- 2026-07-20T2227 fixtures RC=0 ｜ FIXTURES_TOTAL 61 FAILS 0 ｜ 日志 runs/2026-07-20T2227-p3-regression-fixtures.log
+- 2026-07-20T2227 gate-fixtures RC=0 ｜ GATE_FIXTURES_TOTAL 6 FAILS 0（全量 36 组经 run-gate-fixture.sh 无参数遍历另证全绿「共 36 组，失败组 0」，rtm/release-sign 经 GATE_FLAGS 动态解析自动命中，运行器无补映射）｜ 日志 runs/2026-07-20T2227-p3-regression-gate-fixtures.log
+- 2026-07-20T2227 metrics RC=0 ｜ LOC=3755/2982（+25.9% <40%）DUP_DIFF=0 DOC_VIOLATIONS=0 METRICS_ASSERT_FAILS=0 ｜ 环境登记：Swarm-studio 兄弟仓库不在本机，LOC_PRECHECK_STUDIO/DUP_DIFF_LINES 测量行留空（断言不依赖该路径，同 p1p2 登记先例）｜ 日志 runs/2026-07-20T2227-p3-regression-metrics.log
+- 2026-07-20T2227 cli-ab RC=1（预期内，如实登记非通过）｜ CALLS=155 DIFFS=7 RC_INVALID=0 ｜ 7 处 DIFF 逐条核对全部合法：--rtm/--release-sign 各×2 语料（A=HEAD 无此 flag 报未知 rc=1，B 正常执行 skip-if-unconfigured rc=0）、--all-full comp/viol×2（仅新增 2 门禁段头 + 汇总行 调用34→36/跳过13→15，fail 0/2 与 warn 23/21 逐值不变）、--bogus-flag×1（Usage 行追加 --rtm|--release-sign）；既有 34 flag 全部逐字节一致，core10 序列 OK；主会话提交后 HEAD==工作区自动复绿 ｜ 日志 runs/2026-07-20T2227-p3-regression-cli-ab.log
+- golden-vector diff 为空：fixtures 日志与 v1/golden-vector.txt 逐行一致（61 框架退出码向量 (v=1 c=0)，框架数未变，golden 无需更新）
+- C1 ✅：61/61 fixture 双态退出码 (v=1 c=0) + 全量 run-framework-fixture.sh 循环 61/61（双态+expected-fail-ids id 断言）PASS=61 FAIL=0
+- C2 ✅：`swarm-yuan/tests/e2e/run-e2e.sh` RC=0（四框架注入 + 4 fail id 断言）
+- C3 ✅：本轮未触及双副本机制；metrics DUP_DIFF_LINES 因兄弟仓库缺失记环境 SKIP（非 0 计数，非通过判定）
+- C4 ⚠️ 无法判定：本机无 shellcheck（PATH//tmp 均无），fail-closed 报 SHELLCHECK_UNAVAILABLE，非代码回归；bash -n 89 个脚本/conf（precheck+scripts+tests+e2e+verifier+61 gates+tool-adapters+industry-profiles conf）FAILS=0
+- C5 ⚠️ 预期内挂起：cli-ab RC=1，7 处 DIFF 全部合法（见上），提交后复绿
+- C6 ✅：metrics 断言 3/3 OK（LOC +25.9%<40% / 注入双副本 diff=0<30 / 文档一致性 0 违规，段含 36 门禁/179 变量/61 框架/四文档头部数字全 ✓）
+- C7 ✅：报告交付物既有，本轮不重复产出
+- C8 ✅：gate-fixtures 6/6 OK + 全量 36 组遍历全绿（含新组 rtm 3 fixture / release-sign 5 fixture 双态+id 断言全过）
+- 真值核对 ✅：check_*=36、GATE_FLAGS=36、ALL_GATES_CORE=10/ALL_GATES_COMPLIANCE=9/ALL_GATES_FULL=36（架构=36−10−9=17）、conf 变量=179、references/*.md（不含 frameworks/）=18、framework-gates/*.sh=61、references/frameworks/*.md=62（含模板）、gate-fixtures=36 组
+- self-check ✅：--check-only RC=1 唯一 ✗ 为 superpowers 环境 miss（既有允许项）；文档一致性段经等代码路径 harness（仅中和 --check-only 早期 exit，HEAD 既有行为）验证全绿：61 框架规则/36 门禁/conf 179/refs 18/四文档头部数字/framework-signal-index 全部一致；上游基线 drifted（comet/graphify/ruflo）为 warn-only 忠告不置 FAIL
+- 行业 profile 冒烟 ✅：finance.conf / medical.conf 各自追加到最小 conf 后 --doctor 均 fail=0（finance pass 4/warn 3；medical pass 3/warn 4，warn 均为未配置目录类披露）
+- 渲染器冒烟 ✅：临时目录 create 骨架 RC=0 → --render-tools 首轮生成 6 工具原生规则文件（Cursor/Windsurf/Gemini/Codex/OpenCode/Kimi，Claude 维持现状）→ 二次渲染全 no-op，产物 sha256 逐文件一致（幂等）
+- 本轮修复项：1 处口径 bug——P3 子代理将 check_rtm/check_release_sign 注册进 ALL_GATES_FULL 与 GATE_FLAGS 但漏挂 ALL_GATES_COMPLIANCE（7≠9），致 self-check 真值算术 架构=36−10−7=19≠17 与文档「合规 9」口径冲突；最小修复=数组补两函数（根因：五代理并行各自只改 FULL/FLAGS，合规族数组无 owner；证据：修复后 COMPLIANCE=9、四文档头部数字一致性 ✓、36 组 fixture 仍全绿）

@@ -16,6 +16,8 @@
 #   bash precheck.sh --authz          # 授权类弱点检查（CWE-862/863/639/284）
 #   bash precheck.sh --requirements   # 需求质量 lint（ISO/IEC/IEEE 29148）
 #   bash precheck.sh --crypto         # 密码算法合规（GB/T 39786-2021 密评 profile=gm）
+#   bash precheck.sh --rtm            # 需求追溯矩阵（ISO/IEC/IEEE 29148 RTM：REQ ↔ 测试/矩阵追溯）
+#   bash precheck.sh --release-sign   # 发布签名与 provenance（SLSA Build L2 / SSDF PS.2 发布完整性）
 #   bash precheck.sh --doctor         # conf 诊断（lint：路径/glob 可达/死变量/框架 requires_conf；非门禁、不入注册表）
 #   bash precheck.sh --format json --all-full   # 运行结束追加 SARIF 子集 JSON（默认 stdout；GATE_JSON_OUT 环境变量可指定落盘）
 # 生成目标技能时，替换 PROJECT_DIR / 可改目录 / 只读目录 / 命令 为项目实际值
@@ -245,6 +247,15 @@ _default_conf() {
   REQUIREMENTS_ID_REQUIRED=0
   CRYPTO_PROFILE=""
   CRYPTO_SCAN_DIRS=()
+  # 长期清单收口（P3）：需求追溯矩阵（--rtm）+ 发布签名（--release-sign，SLSA Build L2）
+  RTM_REQUIRED=0
+  RTM_MATRIX_FILE=""
+  RTM_MATRIX_REQUIRED=0
+  RELEASE_SIGN_REQUIRED=0
+  RELEASE_ARTIFACTS_GLOB=""
+  RELEASE_SIGN_TOOL=""
+  RELEASE_PROVENANCE_REQUIRED=0
+  RELEASE_PROVENANCE_FILE=""
   # 门禁工具化（P1-4/P1-5）：gate-runs 证据落盘目录（空=关闭，不影响任何既有输出）
   GATE_RUNS_DIR=""
 }
@@ -351,13 +362,13 @@ skip_if_unconfigured() {
 # ===== 门禁注册表（--all/--all-full 执行序列 + 单门禁 flag 清单）=====
 # 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
 ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
-# 合规门禁（标准合规族 + P1 安全门禁族深化，仅 --all-full/单门禁执行；未配置的静默跳过）
-ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto)
+# 合规门禁（标准合规族 + P1 安全门禁族深化 + P3 长期清单 rtm/release-sign，仅 --all-full/单门禁执行；未配置的静默跳过）
+ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_release_sign)
 # 全部门禁（含架构/认知/合规门禁，未配置的静默跳过）
-ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_test)
+ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_release_sign check_test)
 # 单门禁 flag 清单（Usage 顺序）。flag → 函数映射规则：check_ + flag 去 -- 前缀并将 - 转为 _
 #（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
-GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto)
+GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --release-sign)
 
 # Usage 文本由 GATE_FLAGS 生成
 _usage() {
@@ -3416,6 +3427,147 @@ check_crypto() {
   fi
 }
 
+# ===== 长期清单收口（P3）：--rtm / --release-sign =====
+# 语义全新，不改既有门禁判定；未配置静默跳过，启用后 fail-closed。
+
+# --rtm：需求追溯矩阵（ISO/IEC/IEEE 29148 RTM 落地：每条 REQ- 编号需求须可追溯）
+# 追溯源二选一命中即算已追溯：① TEST_DIR_PATTERNS 测试目录内含该 REQ 引用；
+# ② 追溯矩阵文件（RTM_MATRIX_FILE，缺省 docs/rtm.md）含该 REQ 引用。
+# RTM_MATRIX_REQUIRED=1 时矩阵文件必须存在（fail-closed 锚点）；输出追溯率百分比。
+check_rtm() {
+  echo "=== 需求追溯矩阵（RTM）检查（ISO/IEC/IEEE 29148：需求↔测试/矩阵追溯）==="
+  [[ "${RTM_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "RTM_REQUIRED 未启用，RTM 检查跳过"; return; }
+  local found=0
+  local matrix="${RTM_MATRIX_FILE:-docs/rtm.md}"
+  local matrix_ok=1
+  if [[ ! -f "$matrix" ]]; then
+    matrix_ok=0
+    if [[ "${RTM_MATRIX_REQUIRED:-0}" == "1" ]]; then
+      # fail-closed 锚点：声明矩阵强制而文件缺失即 fail 并返回（不再级联检查 REQ，防误报放大）
+      fail "gate_rtm_matrix_missing: 追溯矩阵文件不存在：${matrix}（RTM_MATRIX_REQUIRED=1，fail-closed；可用 RTM_MATRIX_FILE 指定路径）"
+      return
+    fi
+    warn "追溯矩阵文件不存在：${matrix}——降级为仅测试目录追溯（RTM_MATRIX_REQUIRED=1 可升级为 fail）"
+  fi
+  local spec="${SPEC_FILE:-}"
+  if [[ -z "$spec" || ! -f "$spec" ]]; then
+    warn "SPEC_FILE 未配置或不存在，无法提取 REQ- 编号——RTM 降级为仅矩阵存在性检查"
+    pass "需求追溯矩阵检查通过（无需求源，0/0）"
+    return
+  fi
+  # 从 spec 提取 REQ-[0-9]+ 编号集合（去重排序，与 --requirements 的 REQ- 机制同源）
+  local reqs
+  reqs=$(grep -oE 'REQ-[0-9]+' "$spec" 2>/dev/null | sort -u || true)
+  if [[ -z "$reqs" ]]; then
+    pass "需求追溯矩阵检查通过（spec 无 REQ- 编号条目，0/0）"
+    return
+  fi
+  # 测试目录文件清单（TEST_DIR_PATTERNS 经 _fw_resolve_globs 解析，兼容 bash 3.2 无 globstar）
+  local test_files=""
+  if [[ ${#TEST_DIR_PATTERNS[@]} -gt 0 ]]; then
+    test_files=$(_fw_resolve_globs ${TEST_DIR_PATTERNS[@]+"${TEST_DIR_PATTERNS[@]}"} || true)
+  fi
+  local total=0 traced=0 req hit _thits
+  while IFS= read -r req; do
+    [[ -z "$req" ]] && continue
+    total=$((total+1))
+    hit=0
+    # 编号边界防护：REQ-001 不得误命中 REQ-0010（ERE 后置 [^0-9] 或行尾）
+    if [[ $matrix_ok -eq 1 ]] && grep -qE "${req}([^0-9]|\$)" "$matrix" 2>/dev/null; then
+      hit=1
+    fi
+    if [[ $hit -eq 0 && -n "$test_files" ]]; then
+      _thits=$(printf '%s\n' "$test_files" | xargs grep -lE "${req}([^0-9]|\$)" 2>/dev/null || true)
+      [[ -n "$_thits" ]] && hit=1
+    fi
+    if [[ $hit -eq 1 ]]; then
+      traced=$((traced+1))
+    else
+      fail "gate_rtm_untraced:${req}: 需求未追溯——测试目录与追溯矩阵（${matrix}）均无 ${req} 引用（29148 RTM）"
+      found=1
+    fi
+  done <<< "$reqs"
+  local pct=$((traced*100/total))
+  echo "  ⓘ 追溯率：${pct}%（${traced}/${total}，矩阵：${matrix}）"
+  [[ $found -eq 0 ]] && pass "需求追溯矩阵检查通过（全部 ${total} 个 REQ 已追溯，追溯率 ${pct}%）"
+}
+
+# --release-sign：发布签名与 provenance 检查（SLSA Build L2 对齐 / NIST SSDF PS.2 发布完整性）
+# 每个发布产物（RELEASE_ARTIFACTS_GLOB，缺省 dist/*.tar.gz dist/*.zip dist/*.jar）须有
+# 伴随签名/证明（.sig/.asc/.att/.bundle 其一）；cosign 可用时走 verify-blob 验签
+#（.bundle keyless 优先，其次 .sig；.asc/.att 非 cosign 可验，存在性兜底），验签失败即 fail；
+# 无 cosign 时降级为存在性检查（输出注明降级）。RELEASE_PROVENANCE_REQUIRED=1 时
+# 还要求 SLSA provenance 文件存在（fail-closed）。
+check_release_sign() {
+  echo "=== 发布签名与 provenance 检查（SLSA Build L2 / SSDF PS.2 发布完整性）==="
+  [[ "${RELEASE_SIGN_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "RELEASE_SIGN_REQUIRED 未启用，发布签名检查跳过"; return; }
+  local found=0
+  # 工具降级：RELEASE_SIGN_TOOL（空=auto：有 cosign 用 cosign；"none"=强制存在性检查，无工具链环境依赖）
+  local tool="${RELEASE_SIGN_TOOL:-}"
+  if [[ "$tool" == "none" ]]; then
+    tool=""
+  elif [[ -z "$tool" ]] && command -v cosign >/dev/null 2>&1; then
+    tool="cosign"
+  fi
+  if [[ -n "$tool" ]] && ! command -v "$tool" >/dev/null 2>&1; then
+    warn "RELEASE_SIGN_TOOL=${tool} 不可用，降级为签名文件存在性检查"
+    tool=""
+  fi
+  if [[ -z "$tool" ]]; then
+    echo "  ⓘ 降级为签名文件存在性检查（cosign 不可用或未启用，SLSA 验签未执行）"
+  fi
+  # 产物枚举（glob 空格分隔；nullglob 展开防未命中模式退化为字面量；shopt 状态保存/恢复）
+  local globs="${RELEASE_ARTIFACTS_GLOB:-dist/*.tar.gz dist/*.zip dist/*.jar}"
+  local _ng_save
+  _ng_save=$(shopt -p nullglob || true)
+  shopt -s nullglob
+  local artifacts=() a
+  for a in $globs; do [[ -e "$a" ]] && artifacts+=("$a"); done
+  eval "$_ng_save"
+  if [[ ${#artifacts[@]} -eq 0 ]]; then
+    warn "未匹配到发布产物（${globs}）——签名检查无对象"
+  fi
+  local sig ext vrc
+  for a in ${artifacts[@]+"${artifacts[@]}"}; do
+    sig=""
+    for ext in .sig .asc .att .bundle; do
+      if [[ -f "${a}${ext}" ]]; then sig="${a}${ext}"; break; fi
+    done
+    if [[ -z "$sig" ]]; then
+      fail "gate_release_sign_missing:${a}: 发布产物缺伴随签名/证明（.sig/.asc/.att/.bundle 其一；SLSA Build L2 / SSDF PS.2）"
+      found=1
+      continue
+    fi
+    if [[ -n "$tool" ]]; then
+      vrc=0
+      if [[ -f "${a}.bundle" ]]; then
+        "$tool" verify-blob --bundle "${a}.bundle" "$a" >/dev/null 2>&1 || vrc=$?
+      elif [[ "$sig" == "${a}.sig" ]]; then
+        "$tool" verify-blob --signature "$sig" "$a" >/dev/null 2>&1 || vrc=$?
+      fi
+      if [[ "$vrc" -ne 0 ]]; then
+        fail "gate_release_sign_verify_failed:${a}: cosign verify-blob 验签失败（${sig}）"
+        found=1
+      fi
+    fi
+  done
+  # SLSA provenance（RELEASE_PROVENANCE_REQUIRED=1，fail-closed）
+  if [[ "${RELEASE_PROVENANCE_REQUIRED:-0}" == "1" ]]; then
+    local prov="${RELEASE_PROVENANCE_FILE:-dist/provenance.json}"
+    if [[ ! -f "$prov" ]]; then
+      fail "gate_release_provenance_missing: SLSA provenance 文件不存在：${prov}（RELEASE_PROVENANCE_REQUIRED=1，fail-closed；可用 RELEASE_PROVENANCE_FILE 指定路径）"
+      found=1
+    elif ! grep -q '"predicateType"' "$prov" 2>/dev/null; then
+      warn "provenance 文件未见 \"predicateType\" 字段（${prov}）——请确认为 in-toto/SLSA 格式"
+    fi
+  fi
+  if [[ -n "$tool" ]]; then
+    [[ $found -eq 0 ]] && pass "发布签名检查通过（${#artifacts[@]} 个产物签名齐备，cosign 验签通过）"
+  else
+    [[ $found -eq 0 ]] && pass "发布签名检查通过（${#artifacts[@]} 个产物签名齐备，存在性检查）"
+  fi
+}
+
 # ===== 框架适配门禁（--framework）：由 --inject-frameworks 注入片段，动态分发 =====
 check_framework() {
   echo "▶ 框架适配门禁 (--framework)"
@@ -3554,7 +3706,7 @@ if [[ -z "${_gate_fn:-x}" ]]; then
   check_service; check_api; check_state; check_frontend; check_cognition; check_domain
   check_knowledge; check_mermaid; check_shift_left; check_framework
   check_compliance; check_docs_pack; check_sbom; check_privacy
-  check_authz; check_requirements; check_crypto
+  check_authz; check_requirements; check_crypto; check_rtm; check_release_sign
 fi
 
 case "$MODE" in

@@ -12,6 +12,8 @@
 #   bash install.sh --all              # 安装到所有已检测到的环境
 #   bash install.sh --list             # 仅列出检测到的环境，不安装
 #   bash install.sh --version          # 显示版本号 + bash 版本
+# 安装后动作：对每个安装目标自动调用 scripts/generate-skill.sh --render-tools 补生成
+#   该工具原生规则文件（.cursor/rules/*.mdc、AGENTS.md/GEMINI.md 段等；失败仅警告，不影响安装）
 
 set -euo pipefail
 
@@ -45,15 +47,39 @@ detect_runtimes() {
   if [[ -d "$HOME/.kimi/skills" ]]; then printf 'Kimi\t%s\t\n' "$HOME/.kimi/skills"; fi
 }
 
+# ===== 多平台规则渲染（P3）：安装后补生成该工具原生规则文件 =====
+# 失败仅 warn 不 fail——不破坏现有目录复制主流程。Claude Code 已深度集成，适配器内 no-op。
+render_native_rules() {
+  local name="$1" dest="$2" key
+  case "$name" in
+    "Claude Code"|"通用") key="claude" ;;
+    "Cursor")      key="cursor" ;;
+    "Codex")       key="codex" ;;
+    "OpenCode")    key="opencode" ;;
+    "Windsurf")    key="windsurf" ;;
+    "Gemini CLI")  key="gemini" ;;
+    "Kimi")        key="kimi" ;;
+    *)             key="" ;;
+  esac
+  [[ -n "$key" ]] || return 0
+  local gen="$SRC_DIR/scripts/generate-skill.sh"
+  [[ -f "$gen" ]] || { echo "  ⚠ 未找到 $gen，跳过原生规则渲染"; return 0; }
+  if ! bash "$gen" --render-tools "$dest" "" "$key"; then
+    echo "  ⚠ ${name} 原生规则渲染返回非 0（仅警告，不影响安装主流程）"
+  fi
+  return 0
+}
+
 # 源目录与目标相同（已安装在此）时：跳过复制，仅确保 slash command 已注册
 skip_self_install() {
-  local cmd_dir="$1"
+  local name="$1" cmd_dir="$2"
   echo "  ⚠ 源目录与目标目录相同，跳过复制（已安装在此位置）"
   if [[ -n "$cmd_dir" && -f "$SRC_DIR/.claude/commands/swarm-yuan.md" ]]; then
     mkdir -p "$cmd_dir"
     cp "$SRC_DIR/.claude/commands/swarm-yuan.md" "$cmd_dir/swarm-yuan.md"
     echo "  ✓ slash command 已注册: ${cmd_dir}/swarm-yuan.md"
   fi
+  render_native_rules "$name" "$SRC_DIR"
 }
 
 # ===== 安装到指定目录 =====
@@ -66,7 +92,7 @@ install_to() {
 
   # 不能自我复制（SRC_DIR == dest 时跳过复制，只注册 slash command）
   if [[ "$SRC_DIR" == "$dest" ]]; then
-    skip_self_install "$cmd_dir"
+    skip_self_install "$name" "$cmd_dir"
     return 0
   fi
 
@@ -88,7 +114,7 @@ install_to() {
   done
   rm -rf "$dest/docs" "$dest/.upgrade-backup-"* "$dest/.git" "$dest/.DS_Store" 2>/dev/null || true
   find "$dest" -name '.DS_Store' -delete 2>/dev/null || true
-  chmod +x "$dest/scripts/"*.sh "$dest/assets/"*.sh 2>/dev/null || true
+  chmod +x "$dest/scripts/"*.sh "$dest/assets/"*.sh "$dest/assets/tool-adapters/"*.sh 2>/dev/null || true
 
   echo "  ✓ 已安装: ${dest}"
 
@@ -98,6 +124,9 @@ install_to() {
     cp "$dest/.claude/commands/swarm-yuan.md" "$cmd_dir/swarm-yuan.md"
     echo "  ✓ slash command 已注册: ${cmd_dir}/swarm-yuan.md"
   fi
+
+  # 多平台规则渲染（P3）：补生成该工具原生规则文件；渲染失败仅 warn，不影响安装
+  render_native_rules "$name" "$dest"
 }
 
 # ===== 主逻辑 =====
