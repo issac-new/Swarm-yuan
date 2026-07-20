@@ -22,7 +22,12 @@ _resolve_path() {
     *) dir="."; base="$p";;
   esac
   if [[ -d "$dir" ]]; then
-    cand=$(cd "$dir" 2>/dev/null && pwd -P 2>/dev/null || cd "$dir" 2>/dev/null && pwd) 
+    # 修复左结合 bug：原 'cd && pwd -P || cd && pwd' 在 bash 左结合下解析为
+    # ((cd && pwd -P) || cd) && pwd，正常路径会执行两次 pwd 返回两行值，
+    # 致 -f "$cand" 永远 false（check_layer §3/§6、check_contract §2 沉睡）。
+    # 方案 C：直接 cd && pwd -P（POSIX 规定 -P 物理路径，bash/BSD/GNU pwd 均支持）；
+    # 失败时 cand 为空，走下方 echo "$p" + return 1 回退，与原失败路径行为等价。
+    cand=$(cd "$dir" 2>/dev/null && pwd -P)
     if [[ -n "$cand" ]]; then
       echo "${cand%/}/$base"
       return 0
@@ -374,7 +379,7 @@ check_sensitive() {
     'postgres(ql)?://[^/\s]+:[^/@\s]+@'
   )
   local found=0
-  for dir in "${SCAN_DIRS[@]}"; do
+  for dir in ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
     [[ -d "$dir" ]] || continue
     for pattern in "${patterns[@]}"; do
       local matches
@@ -395,7 +400,7 @@ check_sensitive() {
 
 check_consistency() {
   echo "=== 业务规则 + 数据勾稽核对（check §2/§3 无多漏错重）==="
-  for dir in "${CONSISTENCY_DIRS[@]}"; do
+  for dir in ${CONSISTENCY_DIRS[@]+"${CONSISTENCY_DIRS[@]}"}; do
     [[ -d "$dir" ]] || continue
     # 检查是否有未标注幂等的重复写入逻辑（粗筛：同名 INSERT/create 多处出现）
     local dup_writes
@@ -505,9 +510,26 @@ check_layer() {
       [[ -z "$g" ]] && continue
       local m=""
       # 优先 find（覆盖未 git add 的新文件），再并 git ls-files（覆盖 git 历史但已删除的工作区文件）
-      local base="${g%%/\**}"
+      # base 解析：去掉末尾的 /**（用 % 最短匹配，不能用 %% 最长匹配——%% 会跨越中间的 * 把
+      # 'overlay/custom/client/*/components/**' 误截成 'overlay/custom/client'，导致 find 扫整个 client 目录，
+      # 把 __tests__/adapters/composables 全归入 component 层，check_layer §3 大量误判）。
+      local base="${g%/\*\*}"
+      # base 可能含 * 通配（如 overlay/custom/client/*/components），[[ -d ]] 不展开 glob 会 false。
+      # 用 compgen -d 展开 glob 为实际目录列表，逐个 find（兼容 bash 3.2）。
       if [[ -d "$base" ]]; then
         m=$(find "$base" -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.java' \) 2>/dev/null || true)
+      else
+        # base 含 glob 字符，展开后逐个 find
+        local expanded
+        expanded=$(compgen -d "$base" 2>/dev/null || true)
+        if [[ -n "$expanded" ]]; then
+          local d
+          while IFS= read -r d; do
+            [[ -z "$d" ]] && continue
+            local dm; dm=$(find "$d" -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.java' \) 2>/dev/null || true)
+            [[ -n "$dm" ]] && m="${m}${m:+$'\n'}$dm"
+          done <<< "$expanded"
+        fi
       fi
       if [[ -z "$m" ]] && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         m=$(git ls-files "$g" 2>/dev/null || true)
@@ -669,8 +691,9 @@ check_stable_diff() {
     for sg in "${STABLE_GLOBS[@]}"; do
       # 用 bash 的 extglob/globstar 近似匹配（** → 递归）
       shopt -s globstar extglob nullglob 2>/dev/null || true
-      # 简单前缀匹配：把 glob 的 ** 之前部分作为前缀
-      local prefix="${sg%%/\**}"
+      # 简单前缀匹配：把 glob 的 ** 之前部分作为前缀（% 最短匹配——与 check_layer §516 同款修复；
+      # %% 会把 'overlay/custom/client/*/components/**' 误截成 'overlay/custom/client'，导致整目录被误判为稳定层改动）
+      local prefix="${sg%/\**}"
       if [[ "$c" == "$prefix"* ]]; then
         stable_changed+=("$c")
         break
@@ -688,7 +711,7 @@ check_stable_diff() {
   local spec_file
   spec_file=$(_first_existing_file "specs/spec-template.md" "spec-template.md" "docs/spec-template.md")
   if [[ -z "$spec_file" ]]; then
-    for dir in "${WRITABLE_DIRS[@]}" "${SCAN_DIRS[@]}"; do
+    for dir in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
       if [[ -d "$dir" ]]; then
         local hit; hit=$(grep -rliE '复用约束|拼装合规声明|MODIFIED' "$dir" --include='*.md' 2>/dev/null | head -1 || true)
         if [[ -n "$hit" ]]; then spec_file="$hit"; break; fi
@@ -781,7 +804,7 @@ check_link_depth() {
   # ---- 2. 降级：统计"纯转发函数"（只调用下一个函数、无其他逻辑）作为链路膨胀信号 ----
   local forwarders=0
   local dir
-  for dir in "${WRITABLE_DIRS[@]}"; do
+  for dir in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}; do
     [[ -d "$dir" ]] || continue
     # 粗筛：函数体只有一行 return xxx()，疑似纯转发
     local hits
@@ -814,7 +837,7 @@ check_reuse() {
   # 要求文件同时含"拼装合规声明"和 checkbox 结构（- [ ] 或 - [x]），避免误命中 USAGE/README 等引用文档。
   if [[ -z "$spec_file" ]] || [[ "$(basename "$spec_file")" == *template* ]]; then
     spec_file=""
-    for dir in "${WRITABLE_DIRS[@]}" "${SCAN_DIRS[@]}"; do
+    for dir in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
       if [[ -d "$dir" ]]; then
         local hit
         hit=$(grep -rliE '拼装合规声明' "$dir" --include='*.md' 2>/dev/null \
@@ -1077,7 +1100,7 @@ check_security() {
   local found=0
   # 合并 WRITABLE_DIRS + SCAN_DIRS 并去重（避免同一目录扫两遍产生重复告警）
   local targets=() seen=""
-  for d in "${WRITABLE_DIRS[@]}" "${SCAN_DIRS[@]}"; do
+  for d in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
     [[ -z "$d" || ! -d "$d" ]] && continue
     case " $seen " in *" $d "*) continue ;; esac
     seen="$seen $d"; targets+=("$d")
@@ -2411,15 +2434,15 @@ check_shift_left() {
 
   # 3b. 代码中 metrics/日志/trace 埋点存在（warn）
   local scan_targets=()
-  for d in "${WRITABLE_DIRS[@]}"; do [[ -d "$d" ]] && scan_targets+=("$d"); done
+  for d in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}; do [[ -d "$d" ]] && scan_targets+=("$d"); done
   [[ ${#scan_targets[@]} -eq 0 ]] && scan_targets=(".")
 
   local metric_hits=0 log_hits=0 trace_hits=0
   for d in "${scan_targets[@]}"; do
     local mh lh th
-    mh=$(grep -rlE "$METRIC_CODE_PATTERNS" "$d" 2>/dev/null --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' | wc -l | xargs)
-    lh=$(grep -rlE "$LOG_CODE_PATTERNS" "$d" 2>/dev/null --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' | wc -l | xargs)
-    th=$(grep -rlE "$TRACE_CODE_PATTERNS" "$d" 2>/dev/null --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' | wc -l | xargs)
+    mh=$(grep -rlE "$METRIC_CODE_PATTERNS" "$d" 2>/dev/null --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' | wc -l | xargs || true)
+    lh=$(grep -rlE "$LOG_CODE_PATTERNS" "$d" 2>/dev/null --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' | wc -l | xargs || true)
+    th=$(grep -rlE "$TRACE_CODE_PATTERNS" "$d" 2>/dev/null --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' | wc -l | xargs || true)
     metric_hits=$((metric_hits + ${mh:-0}))
     log_hits=$((log_hits + ${lh:-0}))
     trace_hits=$((trace_hits + ${th:-0}))
@@ -2602,10 +2625,12 @@ fi
 
 case "$MODE" in
   --all)
-    for _gate in "${ALL_GATES_CORE[@]}"; do "$_gate"; done
+    # `|| true`：单门禁 fail 路径若以非零返回（如 check_scope/sensitive/review 末句 `[[ ]] && pass`），
+    # 不得因 set -e 中断后续门禁——FAIL 全局已记录失败，最终由末尾汇总判定（见 2655）。
+    for _gate in "${ALL_GATES_CORE[@]}"; do "$_gate" || true; done
     ;;
   --all-full)
-    for _gate in "${ALL_GATES_FULL[@]}"; do "$_gate"; done
+    for _gate in "${ALL_GATES_FULL[@]}"; do "$_gate" || true; done
     ;;
   --*)
     # 单门禁分发：精确匹配 GATE_FLAGS 后按映射规则得函数名（如 --stable-diff → check_stable_diff）

@@ -467,6 +467,92 @@ fw_freshness_check() {
 }
 fw_freshness_check
 
+# ===== 文档一致性检查（防文档-实现漂移）=====
+check_doc_consistency() {
+  echo "▶ 文档一致性检查"
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  # 1. 框架规则文件数 == 门禁片段数（57 == 57）
+  local rule_cnt gate_cnt
+  rule_cnt=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
+  gate_cnt=$(ls "$base/assets/framework-gates/"*.sh 2>/dev/null | wc -l | xargs)
+  if [[ "$rule_cnt" == "$gate_cnt" ]]; then
+    echo "  ✓ 框架规则文件数($rule_cnt) == 门禁片段数($gate_cnt)"
+  else
+    warn "框架规则文件数($rule_cnt) != 门禁片段数($gate_cnt)——孤立片段或缺片段"
+    FAIL=1
+  fi
+  # 2. SKILL.md 声明的门禁数 vs precheck.sh 实际 check_* 函数数（口径可能不同，仅 warn 提示）
+  local skill_gates declared_gates actual_gates
+  declared_gates=$(grep -oE "[0-9]+ ?个?质量门禁|[0-9]+ ?quality gates" "$base/SKILL.md" 2>/dev/null | head -1 | grep -oE "[0-9]+" || echo "?")
+  actual_gates=$(grep -cE "^check_[a-z_]+\(\)" "$base/assets/precheck.sh" 2>/dev/null | xargs)
+  echo "  ℹ SKILL.md 声明 $declared_gates 门禁，precheck.sh 顶层 check_* 函数 $actual_gates 个（差额为子门禁/聚合门禁，人工确认）"
+  # 3. SKILL.md 声明的 conf 变量数 vs precheck.conf 实际变量数
+  local declared_vars actual_vars
+  declared_vars=$(grep -oE "precheck\.conf[^。]*([0-9]+) ?变量\|([0-9]+) ?变量" "$base/SKILL.md" 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "?")
+  actual_vars=$(grep -cE '^[A-Z_][A-Z0-9_]*=' "$base/assets/precheck.conf" 2>/dev/null | xargs)
+  if [[ "$declared_vars" != "?" && "$declared_vars" != "$actual_vars" ]]; then
+    warn "SKILL.md 声明 precheck.conf $declared_vars 变量，实际 $actual_vars 个——文档漂移，请更新 SKILL.md"
+    FAIL=1
+  else
+    echo "  ✓ conf 变量数一致($actual_vars)"
+  fi
+  # 4. references/ 文件数 vs SKILL.md 声明数（粗略）
+  local ref_cnt declared_refs
+  ref_cnt=$(ls "$base/references/"*.md 2>/dev/null | wc -l | xargs)
+  echo "  ℹ references/*.md 共 $ref_cnt 个（SKILL.md 表格行数人工确认）"
+
+  # 5. 头部数字跨文档一致性（特征卡 / 门禁 / 架构门禁 / conf 变量）。
+  #    历史漂移：USAGE.md/PROMO.md 曾长期停留在 14特征/25门禁/45变量/架构15，
+  #    与代码实际（16/27/146/17）不符——故此处从代码计算真值并扫描全部散文文档。
+  #    口径注意：门禁总数按「N 个质量门禁 / N 个门禁」匹配，避免误伤「核心 10」等子计数；
+  #    conf 变量按「N 个(配置|门禁)?变量」匹配，避免把「146 个门禁」误判为变量数。
+  local true_gates true_vars true_fw
+  # 门禁函数含下划线（stable_diff/shift_left/...），须用 [a-z_]+ 计数，否则漏数（23≠27）
+  true_gates=$(grep -cE "^check_[a-z_]+\(\)" "$base/assets/precheck.sh" 2>/dev/null | xargs)
+  local true_arch=$((true_gates - 10))
+  true_vars=$(grep -cE '^[A-Z_][A-Z0-9_]*=' "$base/assets/precheck.conf" 2>/dev/null | xargs)
+  true_fw=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
+  local doc dfound bad
+  for doc in README.md docs/USAGE.md docs/PROMO.md; do
+    [[ -f "$base/$doc" ]] || continue
+    dfound=""
+    # 门禁总数：仅匹配「N 个质量门禁」（带「质量」前缀，是总数的固定表述），不匹配
+    # 「核心 10」「架构 17」「146 个门禁(变量驱动)」等子计数/指代，避免误伤。
+    bad=$(grep -oE "[0-9]+ ?个质量门禁" "$base/$doc" 2>/dev/null \
+          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_gates" || true)
+    [[ -n "$bad" ]] && dfound="${dfound} 门禁数出现非${true_gates}值($(echo $bad | tr '\n' ' '));"
+    # 架构门禁数：「架构 17」「架构门禁额外 17 个」「（核心 10 + 架构 17）」等。
+    bad=$(grep -oE "架构门禁[^0-9]{0,8}[0-9]+ ?个|架构 [0-9]+" "$base/$doc" 2>/dev/null \
+          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_arch" || true)
+    [[ -n "$bad" ]] && dfound="${dfound} 架构门禁数出现非${true_arch}值($(echo $bad | tr '\n' ' '));"
+    # conf 变量数：「N 个变量」「N 个配置变量」「N 个门禁变量」
+    bad=$(grep -oE "[0-9]+ ?个(配置|门禁)?变量" "$base/$doc" 2>/dev/null \
+          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_vars" || true)
+    [[ -n "$bad" ]] && dfound="${dfound} conf变量数出现非${true_vars}值($(echo $bad | tr '\n' ' '));"
+    if [[ -n "$dfound" ]]; then
+      warn "$doc 头部数字与代码真值不符（真值: 门禁${true_gates}/架构${true_arch}/conf${true_vars}）：${dfound}"
+      FAIL=1
+    else
+      echo "  ✓ $doc 头部数字一致（门禁${true_gates}/架构${true_arch}/conf${true_vars}）"
+    fi
+  done
+  # 6. 框架信号索引时效：regen 后比对是否漂移（提示运行 gen-framework-index.sh）
+  if [[ -x "$base/scripts/gen-framework-index.sh" || -f "$base/scripts/gen-framework-index.sh" ]]; then
+    local guide_tmp; guide_tmp="$(mktemp /tmp/egcheck.XXXXXX)"
+    cp "$base/references/exploration-guide.md" "$guide_tmp"
+    if bash "$base/scripts/gen-framework-index.sh" >/dev/null 2>&1; then
+      if ! diff -q "$guide_tmp" "$base/references/exploration-guide.md" >/dev/null 2>&1; then
+        # regen 已就地修正（幂等），提示但不判 fail——索引已被重写为最新
+        echo "  ⚠ framework-signal-index 已漂移，本次由 gen-framework-index.sh 自动重写为最新（建议提交）"
+      else
+        echo "  ✓ framework-signal-index 与 57 框架同步"
+      fi
+    fi
+    rm -f "$guide_tmp"
+  fi
+}
+check_doc_consistency
+
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
 exit $FAIL
