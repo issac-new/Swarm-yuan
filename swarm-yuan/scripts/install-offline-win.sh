@@ -1,11 +1,41 @@
 #!/usr/bin/env bash
 # install-offline-win.sh — Windows 离线安装（从 offline-cache/ 本地安装 10 个运行时 + swarm-yuan 技能）
 # 由 install-offline-win.bat 调用，也可直接 bash 运行
+#
+# offline-cache 降级链（建议4 迁移 Release 后）：
+#   1. 本地 offline-cache/ 存在 → 直接用（开发仓库自带 / 用户手动放入）
+#   2. 本地不存在 → 从 GitHub Release v<date>-offline 下载 swarm-yuan-offline-cache-<date>.zip 解压
+#   3. 下载失败 → 在线安装各运行时（各步骤内部已有在线 fallback）
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 CACHE_DIR="$SKILL_DIR/offline-cache"
+
+# ===== offline-cache 降级链：本地无 cache 时从 Release 下载 =====
+# OFFLINE_CACHE_RELEASE 变量可覆盖默认 Release tag（默认用最新 -offline tag）
+OFFLINE_CACHE_RELEASE="${OFFLINE_CACHE_RELEASE:-v2026.07.20-offline}"
+OFFLINE_CACHE_URL="https://github.com/issac-new/Swarm-yuan/releases/download/${OFFLINE_CACHE_RELEASE}/swarm-yuan-offline-cache.zip"
+
+if [[ ! -d "$CACHE_DIR" || $(find "$CACHE_DIR" -type f \( -name "*.whl" -o -name "*.tgz" \) 2>/dev/null | wc -l) -eq 0 ]]; then
+  echo "=== offline-cache 本地不存在，从 Release 下载 ==="
+  echo "  Release: $OFFLINE_CACHE_RELEASE"
+  echo "  URL: $OFFLINE_CACHE_URL"
+  if command -v curl >/dev/null 2>&1; then
+    mkdir -p "$CACHE_DIR"
+    tmp_zip="$(mktemp /tmp/swarm-yuan-cache.XXXXXX.zip)"
+    if curl -fL --retry 2 "$OFFLINE_CACHE_URL" -o "$tmp_zip" 2>/dev/null; then
+      echo "  ✓ 下载完成，解压到 $CACHE_DIR"
+      unzip -q -o "$tmp_zip" -d "$CACHE_DIR" 2>/dev/null && echo "  ✓ 解压完成" || { echo "  ✗ 解压失败（unzip 不可用或 zip 损坏）"; }
+      rm -f "$tmp_zip"
+    else
+      echo "  ⚠ 下载失败（$OFFLINE_CACHE_RELEASE 可能不存在或网络问题），降级到在线安装"
+      rm -f "$tmp_zip"
+    fi
+  else
+    echo "  ⚠ curl 不可用，无法下载，降级到在线安装"
+  fi
+fi
 
 echo "=== swarm-yuan Windows 离线安装 ==="
 echo "  技能目录: $SKILL_DIR"
