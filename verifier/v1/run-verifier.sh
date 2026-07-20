@@ -8,9 +8,19 @@ MODE="${1:-all}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 [ $# -ge 2 ] && ROOT="$(cd "$2" && pwd)"
 SY="$ROOT/swarm-yuan"
-# shellcheck 静态二进制存于 /mnt/agents/tools（noexec），每次复制到 /tmp 执行
-if [ ! -x /tmp/shellcheck ]; then cp /mnt/agents/tools/shellcheck /tmp/shellcheck && chmod +x /tmp/shellcheck; fi
-SC="${SHELLCHECK:-/tmp/shellcheck}"
+# shellcheck 解析顺序：$SHELLCHECK 环境变量 → PATH 中的 shellcheck → /tmp/shellcheck（历史 /mnt/agents/tools 拷贝）。
+# 失败关闭（fail-closed）：若以上均无，shellcheck_scan 报告 SHELLCHECK_UNAVAILABLE 并返回非零，
+# 而不是在每台缺 shellcheck 的机器上谎报 SHELLCHECK_ERRORS 0（历史缺陷：cp /mnt/agents/tools 失败被静默吞掉）。
+SC=""
+if [ -n "${SHELLCHECK:-}" ] && [ -x "${SHELLCHECK:-}" ]; then
+  SC="$SHELLCHECK"
+elif command -v shellcheck >/dev/null 2>&1; then
+  SC="$(command -v shellcheck)"
+elif [ -x /tmp/shellcheck ]; then
+  SC="/tmp/shellcheck"
+elif [ -f /mnt/agents/tools/shellcheck ]; then
+  cp /mnt/agents/tools/shellcheck /tmp/shellcheck 2>/dev/null && chmod +x /tmp/shellcheck 2>/dev/null && SC="/tmp/shellcheck"
+fi
 
 fixtures() {
   local ids id rc_v rc_c outcome fails=0 total=0
@@ -37,6 +47,10 @@ e2e() {
 }
 
 shellcheck_scan() {
+  if [ -z "$SC" ]; then
+    echo "SHELLCHECK_UNAVAILABLE (无 shellcheck：设 \$SHELLCHECK、装入 PATH，或提供 /tmp/shellcheck)"
+    return 1
+  fi
   local f total_e=0 total_w=0 c
   for f in "$SY/assets/precheck.sh" "$SY/scripts/generate-skill.sh" "$SY/scripts/self-check.sh" "$SY/assets/state-machine.sh" "$SY"/assets/framework-gates/*.sh "$ROOT/Swarm-studio/scripts/precheck.sh"; do
     [ -f "$f" ] || continue
