@@ -34,7 +34,7 @@ _fw_spring_boot_check() {
       # 提取 @Transactional 标注的方法名（@Transactional 后若干行内的 "方法名(" 形式）
       local tx_methods
       tx_methods=$(printf '%s\n' "$code" | grep -A3 -E '^[[:space:]]*@Transactional\b' \
-        | grep -oE '\b(public|protected|private)?[[:space:]]*(static[[:space:]]+)?[A-Za-z_][A-Za-z0-9_<>,.\[\] ]*[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)\(' \
+        | grep -oE '\b(public|protected|private)?[[:space:]]*(static[[:space:]]+)?[A-Za-z_][][A-Za-z0-9_<>,. ]*[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)\(' \
         | sed -E 's/.*[[:space:]]([a-zA-Z_][a-zA-Z0-9_]*)\(/\1/' | sort -u)
       [[ -z "$tx_methods" ]] && continue
       local m
@@ -121,7 +121,7 @@ ${fi_hits2}"
       # 提取本类 @Bean 方法名
       local bean_methods
       bean_methods=$(printf '%s\n' "$code" | grep -A2 -E '^[[:space:]]*@Bean\b' \
-        | grep -oE '\b(public|protected)?[[:space:]]*[A-Za-z_][A-Za-z0-9_<>,.\[\] ]*[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)\(' \
+        | grep -oE '\b(public|protected)?[[:space:]]*[A-Za-z_][][A-Za-z0-9_<>,. ]*[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)\(' \
         | sed -E 's/.*[[:space:]]([a-zA-Z_][a-zA-Z0-9_]*)\(/\1/' | sort -u)
       [[ -z "$bean_methods" ]] && continue
       local m
