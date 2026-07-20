@@ -138,28 +138,28 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_koa_router_factory | warn | 无 create.*Router( factory → warn 路由未注入化 | KOA_SRC_GLOBS |
-| fw_koa_no_bare_appuse | warn | app.use(router) 未跟 .routes() → warn | KOA_SRC_GLOBS |
-| fw_koa_input_guard | warn | 无 validate/joi/zod 输入校验 → warn | KOA_SRC_GLOBS |
-| fw_koa_error_handler | fail | 无 app.on('error') 且无 try+await next() 兜底中间件 → fail | KOA_SRC_GLOBS |
-| fw_koa_helmet | fail | 无 koa-helmet 引用 → fail 安全头基线缺失 | KOA_SRC_GLOBS |
-| fw_koa_onion_try_catch | warn | await next() 无 try 包裹 → warn 洋葱断裂 | KOA_SRC_GLOBS |
-| fw_koa_ctx_state | warn | ctx.<自定义属性> 直接赋值 → warn 须 ctx.state | KOA_SRC_GLOBS |
-| fw_koa_body_limit | warn | bodyParser 无 jsonLimit/formLimit → warn | KOA_SRC_GLOBS |
-| fw_koa_ctx_throw | warn | 裸 throw new Error → warn 须 ctx.throw(4xx) | KOA_SRC_GLOBS |
-| fw_koa_async_middleware | warn | generator 中间件 → warn Koa 2+/3 废弃 | KOA_SRC_GLOBS |
-| fw_koa_cors | warn | cors() 空参或 origin:* → warn | KOA_SRC_GLOBS |
-| fw_koa_socketio_namespace | warn | KOA_SOCKETIO_NAMESPACE_REQUIRED=1 时未检出 namespace setup → warn | KOA_SOCKETIO_FILE_GLOBS KOA_SOCKETIO_NAMESPACE_REQUIRED |
-| fw_koa_socketio_no_bare_socket | warn | KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET 正则检出裸 socket.on → warn | KOA_SOCKETIO_FILE_GLOBS KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE / GB 映射 |
+|---------|------|---------|---------|--------------|
+| fw_koa_router_factory | warn | 无 create.*Router( factory → warn 路由未注入化 | KOA_SRC_GLOBS | — |
+| fw_koa_no_bare_appuse | warn | app.use(router) 未跟 .routes() → warn | KOA_SRC_GLOBS | — |
+| fw_koa_input_guard | warn | 无 validate/joi/zod 输入校验 → warn | KOA_SRC_GLOBS | CWE-20；GB/T 38674-2020 §5.1 |
+| fw_koa_error_handler | fail | 无 app.on('error') 且无 try+await next() 兜底中间件 → fail | KOA_SRC_GLOBS | CWE-209 |
+| fw_koa_helmet | fail | 无 koa-helmet 引用 → fail 安全头基线缺失 | KOA_SRC_GLOBS | CWE-693 |
+| fw_koa_onion_try_catch | warn | await next() 无 try 包裹 → warn 洋葱断裂 | KOA_SRC_GLOBS | — |
+| fw_koa_ctx_state | warn | ctx.<自定义属性> 直接赋值 → warn 须 ctx.state | KOA_SRC_GLOBS | — |
+| fw_koa_body_limit | warn | bodyParser 无 jsonLimit/formLimit → warn | KOA_SRC_GLOBS | CWE-400 |
+| fw_koa_ctx_throw | warn | 裸 throw new Error → warn 须 ctx.throw(4xx) | KOA_SRC_GLOBS | — |
+| fw_koa_async_middleware | warn | generator 中间件 → warn Koa 2+/3 废弃 | KOA_SRC_GLOBS | — |
+| fw_koa_cors | warn | cors() 空参或 origin:* → warn | KOA_SRC_GLOBS | CWE-942 |
+| fw_koa_socketio_namespace | warn | KOA_SOCKETIO_NAMESPACE_REQUIRED=1 时未检出 namespace setup → warn | KOA_SOCKETIO_FILE_GLOBS KOA_SOCKETIO_NAMESPACE_REQUIRED | — |
+| fw_koa_socketio_no_bare_socket | warn | KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET 正则检出裸 socket.on → warn | KOA_SOCKETIO_FILE_GLOBS KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET | — |
 
 <!--
 门禁 id 命名规范：fw_koa_<rule>（rule 全小写下划线）。
 本表 13 条 id（11 原有 + 2 socketio 合并）均在 assets/framework-gates/koa.sh 中有同名实现，片段头注释 # gates: 与本表一致。
 KOA_SRC_GLOBS 未配置时实现回退 ncwk-dev 约定 KOA_FILE_GLOBS；KOA_ROUTER_FACTORY_REQUIRED /
 KOA_FORBIDDEN_GLOBAL_APPUSE / KOA_INPUT_GUARD 缺省给默认值保持门禁生效。
-fixture 验证覆盖：violating 含全局裸 app.use(router) + 无错误处理 + 无 helmet → error_handler/helmet fail 主触发；
+fixture 验证覆盖：violating 含全局裸 app.use(router) + 无错误处理 + 无 helmet → error_handler/helmet fail 主触发（2/2 已断言）；
 compliant 用 factory 注入 + try/catch 错误兜底 + koa-helmet 修正后全 pass。
 socketio 合并自原独立 socketio.sh（harvested-from: ncwk-dev precheck.sh:2582-2601），门禁 id 由 fw_socketio_* 改为 fw_koa_socketio_* 以遵循命名规范。
 -->

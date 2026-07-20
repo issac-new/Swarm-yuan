@@ -133,26 +133,27 @@ detect 信号命中任一高置信度行即可激活 flask 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_flask_secret_key | fail | SECRET_KEY/app.secret_key 字面量硬编码（非环境注入）→ fail | FLASK_SRC_GLOBS |
-| fw_flask_debug | fail | app.run(debug=True)/app.debug=True → fail | FLASK_SRC_GLOBS |
-| fw_flask_errorhandler | warn | 有路由但无 errorhandler/register_error_handler → warn | FLASK_SRC_GLOBS |
-| fw_flask_blueprint_circular | warn | 蓝图文件 from app/main import → warn 循环导入 | FLASK_SRC_GLOBS |
-| fw_flask_session_teardown | warn | scoped_session/sessionmaker 无 teardown/remove → warn | FLASK_SRC_GLOBS |
-| fw_flask_app_factory | warn | Flask(__name__) 无 create_app 工厂 → warn | FLASK_SRC_GLOBS |
-| fw_flask_db_credentials | fail | scheme://user:pass@ 明文 URI → fail | FLASK_SRC_GLOBS |
-| fw_flask_request_validation | warn | request.get_json/form 无 validate/Schema → warn | FLASK_SRC_GLOBS |
-| fw_flask_json_response | warn | return json.dumps( → warn 须 jsonify | FLASK_SRC_GLOBS |
-| fw_flask_xss | warn | Markup(/render_template_string 拼接 → warn | FLASK_SRC_GLOBS |
-| fw_flask_cors | warn | CORS origins=* 或裸 CORS(app) → warn | FLASK_SRC_GLOBS |
-| fw_flask_ratelimit | warn | 登录路由无 Limiter → warn | FLASK_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |
+|---------|------|---------|---------|---------|
+| fw_flask_secret_key | fail | SECRET_KEY/app.secret_key 字面量硬编码（非环境注入）→ fail | FLASK_SRC_GLOBS | CWE-798；GB/T 34944-2017 6.2.6.3 口径（口令硬编码） |
+| fw_flask_debug | fail | app.run(debug=True)/app.debug=True → fail | FLASK_SRC_GLOBS | CWE-489；CWE-94 |
+| fw_flask_errorhandler | warn | 有路由但无 errorhandler/register_error_handler → warn | FLASK_SRC_GLOBS | CWE-209 |
+| fw_flask_blueprint_circular | warn | 蓝图文件 from app/main import → warn 循环导入 | FLASK_SRC_GLOBS | — |
+| fw_flask_session_teardown | warn | scoped_session/sessionmaker 无 teardown/remove → warn | FLASK_SRC_GLOBS | — |
+| fw_flask_app_factory | warn | Flask(__name__) 无 create_app 工厂 → warn | FLASK_SRC_GLOBS | — |
+| fw_flask_db_credentials | fail | scheme://user:pass@ 明文 URI → fail | FLASK_SRC_GLOBS | CWE-798；GB/T 34944-2017 6.2.6.3 口径（口令硬编码） |
+| fw_flask_request_validation | warn | request.get_json/form 无 validate/Schema → warn | FLASK_SRC_GLOBS | — |
+| fw_flask_json_response | warn | return json.dumps( → warn 须 jsonify | FLASK_SRC_GLOBS | — |
+| fw_flask_xss | warn | Markup(/render_template_string 拼接 → warn | FLASK_SRC_GLOBS | CWE-79；GB/T 38674-2020 §5.1 |
+| fw_flask_cors | warn | CORS origins=* 或裸 CORS(app) → warn | FLASK_SRC_GLOBS | CWE-942 |
+| fw_flask_ratelimit | warn | 登录路由无 Limiter → warn | FLASK_SRC_GLOBS | CWE-307；GB/T 22239-2019 7.1.4.1 b) 口径（登录失败处理） |
 
 <!--
 门禁 id 命名规范：fw_flask_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/flask.sh 中有同名实现痕迹（grep 命中）。
+标准映射列 2026-07-20 P1 补登：CWE 取自本文件 §3/门禁输出口径与通行分类，GB 条款沿用 references/standards-compliance.md §D 口径，无明确映射标 —。
 片段头注释 `# gates: fw_flask_<rule>(warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: flask  requires_conf: FLASK_SRC_GLOBS` 声明。
 fixture 验证覆盖：violating 含 SECRET_KEY 硬编码 + debug=True + 明文 DB URI + 无错误处理 + 蓝图循环导入 → secret_key/debug/db_credentials fail 主触发；compliant 全 pass。

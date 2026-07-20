@@ -160,21 +160,21 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
 |---------|------|---------|---------|
-| fw_ssec_adapter | fail | `extends WebSecurityConfigurerAdapter` 命中即 fail（6.x+ 已移除） | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_password_encoder | fail | NoOp/Md5/MessageDigest/Standard/SHA/LdapSha PasswordEncoder 命中即 fail | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_plaintext_password | fail | `.password("字面量")`（无 { 前缀）命中即 fail 明文存储 | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_default_password_encoder | fail | `withDefaultPasswordEncoder` 命中即 fail（官方标注仅 demo） | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_jwt_secret | fail | `signWith("字面量")`/`hmacShaKeyFor("字面量".getBytes` 或 yml `secret: 长字面量`（无 ${）命中即 fail | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_csrf | warn | `csrf(...disable)` 命中 → warn 人工确认无状态 REST + 非 Cookie 认证 | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_preauthorize_concat | warn | @PreAuthorize/@PostAuthorize 表达式含 `+` 拼接 → warn SpEL 注入面 | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_cors_wildcard_creds | warn | 同文件 `allowedOrigin(s\|Patterns)("*")` + `allowCredentials(true)` → warn | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_cors_config | warn | 检出 CorsConfigurationSource 但无 `.cors(` → warn 过滤链顺序 | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_role_prefix | warn | `hasRole("ROLE_`/`hasAnyRole("ROLE_` 命中 → warn 双前缀 | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_method_security | warn | 有 @PreAuthorize 但无 @EnableMethodSecurity/@EnableGlobalMethodSecurity → warn | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_session_fixation | warn | `sessionFixation` + `none` 同现 → warn 会话固定防护被关 | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_remember_me_key | warn | 文件含 rememberMe( 但无 .key( → warn 随机 key/多实例失效 | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_oauth2_redirect | warn | yml `redirect-uri` 含 `*` → warn 通配开放重定向 | SPRINGSEC_SRC_GLOBS |
-| fw_ssec_deprecated_api | warn | `antMatchers(`/`.authorizeRequests(` 命中 → warn 7.x 已移除 | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_adapter | fail | `extends WebSecurityConfigurerAdapter` 命中即 fail（6.x+ 已移除）(n/a) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_password_encoder | fail | NoOp/Md5/MessageDigest/Standard/SHA/LdapSha PasswordEncoder 命中即 fail (CWE-327) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_plaintext_password | fail | `.password("字面量")`（无 { 前缀）命中即 fail 明文存储 (CWE-256) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_default_password_encoder | fail | `withDefaultPasswordEncoder` 命中即 fail（官方标注仅 demo）(CWE-327) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_jwt_secret | fail | `signWith("字面量")`/`hmacShaKeyFor("字面量".getBytes` 或 yml `secret: 长字面量`（无 ${）命中即 fail (CWE-321) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_csrf | warn | `csrf(...disable)` 命中 → warn 人工确认无状态 REST + 非 Cookie 认证 (CWE-352) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_preauthorize_concat | warn | @PreAuthorize/@PostAuthorize 表达式含 `+` 拼接 → warn SpEL 注入面 (CWE-943) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_cors_wildcard_creds | warn | 同文件 `allowedOrigin(s\|Patterns)("*")` + `allowCredentials(true)` → warn (CWE-942) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_cors_config | warn | 检出 CorsConfigurationSource 但无 `.cors(` → warn 过滤链顺序 (CWE-942) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_role_prefix | warn | `hasRole("ROLE_`/`hasAnyRole("ROLE_` 命中 → warn 双前缀 (n/a) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_method_security | warn | 有 @PreAuthorize 但无 @EnableMethodSecurity/@EnableGlobalMethodSecurity → warn (CWE-862) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_session_fixation | warn | `sessionFixation` + `none` 同现 → warn 会话固定防护被关 (CWE-384) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_remember_me_key | warn | 文件含 rememberMe( 但无 .key( → warn 随机 key/多实例失效 (CWE-321) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_oauth2_redirect | warn | yml `redirect-uri` 含 `*` → warn 通配开放重定向 (CWE-601) | SPRINGSEC_SRC_GLOBS |
+| fw_ssec_deprecated_api | warn | `antMatchers(`/`.authorizeRequests(` 命中 → warn 7.x 已移除 (n/a) | SPRINGSEC_SRC_GLOBS |
 
 <!--
 门禁 id 命名规范：fw_ssec_<rule>（rule 全小写下划线）。

@@ -155,29 +155,29 @@ detect 信号命中任一高置信度行即可激活 react 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / CWE·GB 元数据）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_react_hooks_top_level | fail | Hook 调用出现在 if/for/while/else 块内或嵌套函数内 → fail | REACT_SRC_GLOBS |
-| fw_react_effect_deps | fail | useEffect 调用未配第二参数（依赖数组）→ fail | REACT_SRC_GLOBS |
-| fw_react_list_key | warn | 列表渲染用 index 作 key → warn（稳定列表可接受） | REACT_SRC_GLOBS |
-| fw_react_immutable_state | fail | setState 后紧接 .push/.splice/直接属性赋值 mutate → fail | REACT_SRC_GLOBS |
-| fw_react_memo_benefit | warn | useMemo/useCallback 依赖为 [] 且函数体引用 props/state（疑似漏依赖）→ warn | REACT_SRC_GLOBS |
-| fw_react_error_boundary | warn | JSX 渲染存在但全项目无 componentDidCatch/getDerivedStateFromError → warn | REACT_SRC_GLOBS |
-| fw_react_context_split | warn | 单个 Context value 含 >5 字段巨型对象 → warn | REACT_SRC_GLOBS |
-| fw_react_lazy_suspense | warn | React.lazy 调用但同文件无 <Suspense 包裹 → warn | REACT_SRC_GLOBS |
-| fw_react_server_client_boundary | warn | 含 useState/useEffect/window./document. 的组件文件首行无 'use client' → warn（App Router 项目） | REACT_SRC_GLOBS |
-| fw_react_no_render_subscribe | warn | addEventListener/setInterval/setTimeout 出现在 render 阶段（非 useEffect 内）→ warn | REACT_SRC_GLOBS |
-| fw_react_ref_callback_explicit | warn | ref callback 箭头函数隐式返回（无块 {} 包裹）→ warn（React 19 须块语法，否则返回值误判 cleanup） | REACT_SRC_GLOBS |
-| fw_react_no_forwardref | warn | 检出 forwardRef( 调用 → warn（React 19 起 ref 可作 prop，新组件禁用 forwardRef 包裹） | REACT_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_react_hooks_top_level | fail | Hook 调用出现在 if/for/while/else 块内或嵌套函数内 → fail | REACT_SRC_GLOBS | — |
+| fw_react_effect_deps | fail | useEffect 调用未配第二参数（依赖数组）→ fail | REACT_SRC_GLOBS | — |
+| fw_react_list_key | warn | 列表渲染用 index 作 key → warn（稳定列表可接受） | REACT_SRC_GLOBS | — |
+| fw_react_immutable_state | fail | setState 后紧接 .push/.splice/直接属性赋值 mutate → fail | REACT_SRC_GLOBS | — |
+| fw_react_memo_benefit | warn | useMemo/useCallback 依赖为 [] 且函数体引用 props/state（疑似漏依赖）→ warn | REACT_SRC_GLOBS | — |
+| fw_react_error_boundary | warn | JSX 渲染存在但全项目无 componentDidCatch/getDerivedStateFromError → warn | REACT_SRC_GLOBS | CWE-755（异常状况处理不当，渲染错误白屏） |
+| fw_react_context_split | warn | 单个 Context value 含 >5 字段巨型对象 → warn | REACT_SRC_GLOBS | — |
+| fw_react_lazy_suspense | warn | React.lazy 调用但同文件无 <Suspense 包裹 → warn | REACT_SRC_GLOBS | — |
+| fw_react_server_client_boundary | warn | 含 useState/useEffect/window./document. 的组件文件首行无 'use client' → warn（App Router 项目） | REACT_SRC_GLOBS | — |
+| fw_react_no_render_subscribe | warn | addEventListener/setInterval/setTimeout 出现在 render 阶段（非 useEffect 内）→ warn | REACT_SRC_GLOBS | CWE-772（资源/订阅未释放致泄漏） |
+| fw_react_ref_callback_explicit | warn | ref callback 箭头函数隐式返回（无块 {} 包裹）→ warn（React 19 须块语法，否则返回值误判 cleanup） | REACT_SRC_GLOBS | — |
+| fw_react_no_forwardref | warn | 检出 forwardRef( 调用 → warn（React 19 起 ref 可作 prop，新组件禁用 forwardRef 包裹） | REACT_SRC_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_react_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/react.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_react_<rule>(warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: react  requires_conf: REACT_SRC_GLOBS` 声明。
-fixture 验证覆盖：violating 含 useEffect 无依赖数组（fw_react_effect_deps fail 主触发）+ key={index}（warn）+ 直接 mutate state（fail）；compliant 全 pass。
+fixture 验证覆盖：violating 含 useEffect 无依赖数组 + 直接 mutate state + Conditional.tsx 条件内 Hook（3/3 fail 主触发，hooks_top_level 于 2026-07-20 P1 唤醒实例化）+ key={index}（warn）；compliant 全 pass。expected-fail-ids 已登记 3/3 fail id。CWE/GB 映射列（2026-07-20 P1 补录）：仅对具直接安全/可靠性语义的行引证，其余标 —。
 规律14/15 为 React 19 稳定特性新增（ref callback cleanup / forwardRef deprecated），来源 react.dev/blog/2024/04/25/react-19-upgrade-guide。
 -->
 

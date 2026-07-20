@@ -137,18 +137,18 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
 |---------|------|---------|---------|
-| fw_seata_local_tx_mixed | fail | 同文件检出 @GlobalTransactional + @Transactional → fail | SEATA_SRC_GLOBS |
-| fw_seata_tcc_fence | fail | @TwoPhaseBusinessAction 无 useTCCFence=true → fail | SEATA_SRC_GLOBS |
-| fw_seata_tcc_method_explicit | warn | @TwoPhaseBusinessAction 无显式 commitMethod/rollbackMethod → warn | SEATA_SRC_GLOBS |
-| fw_seata_undo_log | warn | 有全局事务但工程无 undo_log SQL → warn | SEATA_SRC_GLOBS |
-| fw_seata_global_timeout | warn | @GlobalTransactional 无 timeoutMills → warn | SEATA_SRC_GLOBS |
-| fw_seata_dirty_write | warn | 事务外 UPDATE/DELETE 类无 @GlobalLock（工程存在全局事务）→ warn | SEATA_SRC_GLOBS |
-| fw_seata_global_lock | warn | @GlobalLock 无 FOR UPDATE 查询 → warn | SEATA_SRC_GLOBS |
-| fw_seata_branch_register | warn | 全局事务工程检出裸远程调用无 XID 绑定迹象 → warn | SEATA_SRC_GLOBS |
-| fw_seata_saga_compensation | warn | Saga 状态机 json 无 Compensate → warn | SEATA_SRC_GLOBS |
-| fw_seata_xa_proxy | warn | 检出 XA 代理配置 → warn 人工确认全量代理 | SEATA_SRC_GLOBS |
-| fw_seata_at_datasource_proxy | warn | enable-auto-data-source-proxy=false 或手工 DataSourceProxy → warn | SEATA_SRC_GLOBS |
-| fw_seata_tm_rm_register | warn | 有 seata 使用但无 tx-service-group/vgroup-mapping → warn | SEATA_SRC_GLOBS |
+| fw_seata_local_tx_mixed | fail | 同文件检出 @GlobalTransactional + @Transactional → fail (n/a) | SEATA_SRC_GLOBS |
+| fw_seata_tcc_fence | fail | @TwoPhaseBusinessAction 无 useTCCFence=true → fail (n/a) | SEATA_SRC_GLOBS |
+| fw_seata_tcc_method_explicit | warn | @TwoPhaseBusinessAction 无显式 commitMethod/rollbackMethod → warn (n/a) | SEATA_SRC_GLOBS |
+| fw_seata_undo_log | warn | 有全局事务但工程无 undo_log SQL → warn (n/a) | SEATA_SRC_GLOBS |
+| fw_seata_global_timeout | warn | @GlobalTransactional 无 timeoutMills → warn (n/a) | SEATA_SRC_GLOBS |
+| fw_seata_dirty_write | warn | 事务外 UPDATE/DELETE 类无 @GlobalLock（工程存在全局事务）→ warn (CWE-362) | SEATA_SRC_GLOBS |
+| fw_seata_global_lock | warn | @GlobalLock 无 FOR UPDATE 查询 → warn (n/a) | SEATA_SRC_GLOBS |
+| fw_seata_branch_register | warn | 全局事务工程检出裸远程调用无 XID 绑定迹象 → warn (n/a) | SEATA_SRC_GLOBS |
+| fw_seata_saga_compensation | warn | Saga 状态机 json 无 Compensate → warn (n/a) | SEATA_SRC_GLOBS |
+| fw_seata_xa_proxy | warn | 检出 XA 代理配置 → warn 人工确认全量代理 (n/a) | SEATA_SRC_GLOBS |
+| fw_seata_at_datasource_proxy | warn | enable-auto-data-source-proxy=false 或手工 DataSourceProxy → warn (n/a) | SEATA_SRC_GLOBS |
+| fw_seata_tm_rm_register | warn | 有 seata 使用但无 tx-service-group/vgroup-mapping → warn (n/a) | SEATA_SRC_GLOBS |
 
 <!--
 门禁 id 命名规范：fw_seata_<rule>（rule 全小写下划线）。

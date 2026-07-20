@@ -143,28 +143,31 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_kafka_offset_semantics | fail | 检出 enable-auto-commit/enable.auto.commit=true（yml/properties/Java Config）→ fail 消息丢失 | KAFKA_SRC_GLOBS |
-| fw_kafka_acks | fail | 检出 acks=0/acks: 0 → fail；acks=1 → warn 确认可丢失 | KAFKA_SRC_GLOBS |
-| fw_kafka_idempotent_consumer | warn | @KafkaListener 文件无幂等痕迹 → warn | KAFKA_SRC_GLOBS |
-| fw_kafka_consumer_le_partitions | warn | @KafkaListener 无 concurrency 显式配置 → warn 核对消费者数≤分区数 | KAFKA_SRC_GLOBS |
-| fw_kafka_idempotent_producer | warn | enable-idempotence=false 显式关闭 → warn | KAFKA_SRC_GLOBS |
-| fw_kafka_transactional_producer | warn | transactional.id 存在但无 read_committed 配对 → warn | KAFKA_SRC_GLOBS |
-| fw_kafka_rebalance_cooperative | warn | 显式 RangeAssignor → warn 回退 eager；CooperativeSticky → pass | KAFKA_SRC_GLOBS |
-| fw_kafka_partitioner | warn | RoundRobinPartitioner/UniformStickyPartitioner → warn 键序破坏 | KAFKA_SRC_GLOBS |
-| fw_kafka_dlq | warn | @KafkaListener 无 DLT/DefaultErrorHandler → warn | KAFKA_SRC_GLOBS |
-| fw_kafka_lag_monitor | warn | Kafka 使用但无 micrometer/MeterRegistry/exporter → warn | KAFKA_SRC_GLOBS |
-| fw_kafka_order_partition | warn | ProducerRecord 两参构造（无 key）→ warn 乱序风险 | KAFKA_SRC_GLOBS |
-| fw_kafka_schema_registry | warn | StringSerializer 且无 schema registry 痕迹 → warn | KAFKA_SRC_GLOBS |
-| fw_kafka_group_mgmt | warn | 多 listener 同 groupId 不同 topic → warn | KAFKA_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_kafka_offset_semantics | fail | 检出 enable-auto-commit/enable.auto.commit=true（yml/properties/Java Config）→ fail 消息丢失 | KAFKA_SRC_GLOBS | —（提交语义契约，消息丢失无对应 CWE 弱点类） |
+| fw_kafka_acks | fail | 检出 acks=0/acks: 0 → fail；acks=1 → warn 确认可丢失 | KAFKA_SRC_GLOBS | —（持久性契约） |
+| fw_kafka_idempotent_consumer | warn | @KafkaListener 文件无幂等痕迹 → warn | KAFKA_SRC_GLOBS | —（幂等契约） |
+| fw_kafka_consumer_le_partitions | warn | @KafkaListener 无 concurrency 显式配置 → warn 核对消费者数≤分区数 | KAFKA_SRC_GLOBS | —（容量核对） |
+| fw_kafka_idempotent_producer | warn | enable-idempotence=false 显式关闭 → warn | KAFKA_SRC_GLOBS | —（重试语义） |
+| fw_kafka_transactional_producer | warn | transactional.id 存在但无 read_committed 配对 → warn | KAFKA_SRC_GLOBS | —（读已提交配对） |
+| fw_kafka_rebalance_cooperative | warn | 显式 RangeAssignor → warn 回退 eager；CooperativeSticky → pass | KAFKA_SRC_GLOBS | —（协议选型） |
+| fw_kafka_partitioner | warn | RoundRobinPartitioner/UniformStickyPartitioner → warn 键序破坏 | KAFKA_SRC_GLOBS | —（键序契约） |
+| fw_kafka_dlq | warn | @KafkaListener 无 DLT/DefaultErrorHandler → warn | KAFKA_SRC_GLOBS | CWE-755（毒丸消息异常无处置通道） |
+| fw_kafka_lag_monitor | warn | Kafka 使用但无 micrometer/MeterRegistry/exporter → warn | KAFKA_SRC_GLOBS | CWE-778（积压无监控=故障信号无记录） |
+| fw_kafka_order_partition | warn | ProducerRecord 两参构造（无 key）→ warn 乱序风险 | KAFKA_SRC_GLOBS | —（顺序契约） |
+| fw_kafka_schema_registry | warn | StringSerializer 且无 schema registry 痕迹 → warn | KAFKA_SRC_GLOBS | —（演进约束） |
+| fw_kafka_group_mgmt | warn | 多 listener 同 groupId 不同 topic → warn | KAFKA_SRC_GLOBS | —（订阅管理） |
 
 <!--
 门禁 id 命名规范：fw_kafka_<rule>（rule 全小写下划线）。
 本表 13 条 id 须在 assets/framework-gates/kafka.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_kafka_<rule>(fail|warn) ...` 与本表 id 集合一致。
 fixture 验证覆盖：violating 含 @KafkaListener 无幂等 + enable-auto-commit=true + acks=0
-  → offset_semantics / acks 双 fail 主触发；compliant 修正（手动提交 + acks=all + 幂等 + DLT + schema registry）全 pass。
+  → offset_semantics / acks 双 fail 主触发（expected-fail-ids 2/2 已登记）；compliant 修正（手动提交 + acks=all + 幂等 + DLT + schema registry）全 pass。
+CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
+- CWE 编号依据 MITRE CWE 词典与 CWE Top 25:2025（R8 §⑨）；「—」为工程一致性/性能契约类规律，无对应 CWE 弱点类，归 ISO/IEC 5055:2021 性能/可靠性度量面（138 弱点经 CWE 对齐，见 standards-compliance.md §E.1）。
+- GB/T 34944-2017（Java，9 大类 44 种）/ GB/T 34946-2017（C#）总则 §5 要求 SAST 扫描 + 人工复核 + 测试四件套；本表作用于源码的门禁即该流程的词法层 SAST 面（R8 §⑥）。
 -->
 
 ## §5 跨框架交互规则

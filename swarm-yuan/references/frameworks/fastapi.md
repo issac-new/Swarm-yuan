@@ -133,26 +133,27 @@ detect 信号命中任一高置信度行即可激活 fastapi 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_fastapi_blocking_async | fail | async def 文件检出 time.sleep( → fail 事件循环阻塞 | FASTAPI_SRC_GLOBS |
-| fw_fastapi_pydantic_v1 | fail | @validator(/@root_validator(/.parse_obj(/.dict()/class Config: → fail | FASTAPI_SRC_GLOBS |
-| fw_fastapi_response_model | warn | 路由文件无 response_model → warn | FASTAPI_SRC_GLOBS |
-| fw_fastapi_depends_yield | warn | Depends + yield 无 finally: → warn | FASTAPI_SRC_GLOBS |
-| fw_fastapi_background | warn | BackgroundTasks + time.sleep( → warn 长任务须队列 | FASTAPI_SRC_GLOBS |
-| fw_fastapi_http_exception | warn | 路由文件裸 raise Exception/ValueError → warn | FASTAPI_SRC_GLOBS |
-| fw_fastapi_router_modular | warn | 有路由无 APIRouter( → warn | FASTAPI_SRC_GLOBS |
-| fw_fastapi_auth | warn | 有路由无 OAuth2/Security(/HTTPBearer → warn | FASTAPI_SRC_GLOBS |
-| fw_fastapi_lifespan | warn | @app.on_event( → warn 须 lifespan | FASTAPI_SRC_GLOBS |
-| fw_fastapi_sync_io_async | warn | async def 文件检出 requests./urllib → warn | FASTAPI_SRC_GLOBS |
-| fw_fastapi_websocket | warn | websocket 路由无 WebSocketDisconnect → warn | FASTAPI_SRC_GLOBS |
-| fw_fastapi_cors | warn | CORSMiddleware allow_origins=["*"] → warn | FASTAPI_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |
+|---------|------|---------|---------|---------|
+| fw_fastapi_blocking_async | fail | async def 文件检出 time.sleep( → fail 事件循环阻塞 | FASTAPI_SRC_GLOBS | CWE-400 |
+| fw_fastapi_pydantic_v1 | fail | @validator(/@root_validator(/.parse_obj(/.dict()/class Config: → fail | FASTAPI_SRC_GLOBS | — |
+| fw_fastapi_response_model | warn | 路由文件无 response_model → warn | FASTAPI_SRC_GLOBS | — |
+| fw_fastapi_depends_yield | warn | Depends + yield 无 finally: → warn | FASTAPI_SRC_GLOBS | — |
+| fw_fastapi_background | warn | BackgroundTasks + time.sleep( → warn 长任务须队列 | FASTAPI_SRC_GLOBS | — |
+| fw_fastapi_http_exception | warn | 路由文件裸 raise Exception/ValueError → warn | FASTAPI_SRC_GLOBS | CWE-209 |
+| fw_fastapi_router_modular | warn | 有路由无 APIRouter( → warn | FASTAPI_SRC_GLOBS | — |
+| fw_fastapi_auth | warn | 有路由无 OAuth2/Security(/HTTPBearer → warn | FASTAPI_SRC_GLOBS | CWE-306；GB/T 38674-2020 §5.3 |
+| fw_fastapi_lifespan | warn | @app.on_event( → warn 须 lifespan | FASTAPI_SRC_GLOBS | — |
+| fw_fastapi_sync_io_async | warn | async def 文件检出 requests./urllib → warn | FASTAPI_SRC_GLOBS | — |
+| fw_fastapi_websocket | warn | websocket 路由无 WebSocketDisconnect → warn | FASTAPI_SRC_GLOBS | — |
+| fw_fastapi_cors | warn | CORSMiddleware allow_origins=["*"] → warn | FASTAPI_SRC_GLOBS | CWE-942 |
 
 <!--
 门禁 id 命名规范：fw_fastapi_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/fastapi.sh 中有同名实现痕迹（grep 命中）。
+标准映射列 2026-07-20 P1 补登：CWE 取自本文件 §3/门禁输出口径与通行分类，GB 条款沿用 references/standards-compliance.md §D 口径，无明确映射标 —。
 片段头注释 `# gates: fw_fastapi_<rule>(warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: fastapi  requires_conf: FASTAPI_SRC_GLOBS` 声明。
 fixture 验证覆盖：violating 含 async 路由 time.sleep + Pydantic v1 @validator + 无 response_model/auth → blocking_async/pydantic_v1 fail 主触发；compliant 全 pass。

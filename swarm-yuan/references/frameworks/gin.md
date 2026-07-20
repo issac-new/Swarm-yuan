@@ -143,28 +143,33 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_gin_should_bind_not_bind | warn | 检出 c.Bind/BindJSON/BindQuery/BindURI 等 Must bind → warn | GIN_SRC_GLOBS |
-| fw_gin_context_copy | fail | goroutine 内引用 c 但同作用域无 c.Copy() → fail | GIN_SRC_GLOBS |
-| fw_gin_recovery_middleware | fail | gin.New() 无 gin.Recovery() → fail；Recovery 非首中间件 → warn | GIN_SRC_GLOBS |
-| fw_gin_graceful_shutdown | warn | engine.Run/ListenAndServe 无 Shutdown → warn | GIN_SRC_GLOBS |
-| fw_gin_abort_return | warn | c.Abort() 后无 return → warn | GIN_SRC_GLOBS |
-| fw_gin_binding_validator | warn | ShouldBind 无 binding: 标签 → warn | GIN_SRC_GLOBS |
-| fw_gin_cors | fail | AllowAllOrigins+AllowCredentials 同时 true → fail | GIN_SRC_GLOBS |
-| fw_gin_auth_middleware | fail | 鉴权用 c.Query("token") → fail；无 Abort 分支 → warn | GIN_SRC_GLOBS |
-| fw_gin_upload_limit | warn | FormFile/MultipartForm 无 MaxMultipartMemory → warn | GIN_SRC_GLOBS |
-| fw_gin_gzip | warn | gzip.Gzip 无 WithExcludedExtensions/Paths → warn | GIN_SRC_GLOBS |
-| fw_gin_error_handling | warn | c.String(4xx/5xx) 且无 c.Error → warn | GIN_SRC_GLOBS |
-| fw_gin_rate_limit | warn | 公开 POST 路由无限流中间件 → warn | GIN_SRC_GLOBS |
-| fw_gin_health_check | warn | 根级鉴权/限流 + /healthz 路由 → warn | GIN_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE / GB 映射 |
+|---------|------|---------|---------|--------------|
+| fw_gin_should_bind_not_bind | warn | 检出 c.Bind/BindJSON/BindQuery/BindURI 等 Must bind → warn | GIN_SRC_GLOBS | — |
+| fw_gin_context_copy | fail | goroutine 内引用 c 但同作用域无 c.Copy() → fail | GIN_SRC_GLOBS | — |
+| fw_gin_recovery_middleware | fail | gin.New() 无 gin.Recovery() → fail；Recovery 非首中间件 → warn | GIN_SRC_GLOBS | — |
+| fw_gin_graceful_shutdown | warn | engine.Run/ListenAndServe 无 Shutdown → warn | GIN_SRC_GLOBS | — |
+| fw_gin_abort_return | warn | c.Abort() 后无 return → warn | GIN_SRC_GLOBS | — |
+| fw_gin_binding_validator | warn | ShouldBind 无 binding: 标签 → warn | GIN_SRC_GLOBS | CWE-20；GB/T 38674-2020 §5.1 |
+| fw_gin_cors | fail | AllowAllOrigins+AllowCredentials 同时 true → fail | GIN_SRC_GLOBS | CWE-942 |
+| fw_gin_auth_middleware | fail | 鉴权用 c.Query("token") → fail；无 Abort 分支 → warn | GIN_SRC_GLOBS | CWE-598 |
+| fw_gin_upload_limit | warn | FormFile/MultipartForm 无 MaxMultipartMemory → warn | GIN_SRC_GLOBS | CWE-400 / CWE-22 |
+| fw_gin_gzip | warn | gzip.Gzip 无 WithExcludedExtensions/Paths → warn | GIN_SRC_GLOBS | — |
+| fw_gin_error_handling | warn | c.String(4xx/5xx) 且无 c.Error → warn | GIN_SRC_GLOBS | — |
+| fw_gin_rate_limit | warn | 公开 POST 路由无限流中间件 → warn | GIN_SRC_GLOBS | CWE-770 |
+| fw_gin_health_check | warn | 根级鉴权/限流 + /healthz 路由 → warn | GIN_SRC_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_gin_<rule>（rule 全小写下划线）。
 本表 13 条 id 须在 assets/framework-gates/gin.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_gin_<rule>(...) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: gin  requires_conf: GIN_SRC_GLOBS` 声明。
-fixture 验证覆盖：violating 含 c.Bind + goroutine 用 c（非 c.Copy）→ context_copy fail 主触发；compliant 修正后全 pass。
+fixture 验证覆盖：violating 含 c.Bind + goroutine 用 c（非 c.Copy）+ gin.New 无 Recovery
++ AllowAllOrigins/AllowCredentials 双 true + c.Query("token") 鉴权
+→ context_copy/recovery_middleware/cors/auth_middleware fail 主触发（4/4 已断言）；compliant 修正后全 pass。
+2026-07-20 唤醒登记：cors/auth_middleware 门禁逻辑健全但原 fixture 缺触发内容（原 2/4 命中），补触发后命中（门禁脚本未动）。
+CWE/GB 列中 fw_gin_cors→CWE-942、fw_gin_rate_limit→CWE-770、fw_gin_upload_limit→CWE-400
+为跨框架同类弱点补齐标注（express/koa/fastify 同规律已挂）；CWE-22/CWE-598 出自本文件 §3 规律。
 -->
 
 ## §5 跨框架交互规则

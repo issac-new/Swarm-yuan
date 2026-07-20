@@ -130,29 +130,29 @@ detect 信号命中任一高置信度行即可激活 tailwind 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / CWE·GB 元数据）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_tailwind_content_scan | fail | 无 content/@source 或无 ** 通配 → fail 样式丢失 | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_css_first_config | warn | 4.x @import 但仍用 config.js 无 @theme → warn | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_arbitrary_abuse | warn | 单文件任意值 ≥5 处 → warn 滥用 | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_prefix_isolate | warn | 与组件库混用无 prefix → warn 冲突 | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_dark_mode | warn | 无 darkMode 配置 → warn | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_group_hover | warn | group-hover: 须父级 group → warn 提示 | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_apply_reuse | warn | 无 @apply 抽组件类 → warn | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_postcss_order | warn | PostCSS 顺序错 → warn 前缀丢失 | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_preflight_conflict | warn | 组件库混用未关 preflight → warn | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_custom_color | warn | 无 theme 自定义颜色 → warn | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_responsive_prefix | warn | 手写 @media → warn | TAILWIND_CONFIG_GLOBS |
-| fw_tailwind_prod_minify | warn | minify 关闭 → warn | TAILWIND_CONFIG_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_tailwind_content_scan | fail | 无 content/@source 或无 ** 通配 → fail 样式丢失 | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_css_first_config | warn | 4.x @import 但仍用 config.js 无 @theme → warn | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_arbitrary_abuse | warn | 单文件任意值 ≥5 处 → warn 滥用 | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_prefix_isolate | warn | 与组件库混用无 prefix → warn 冲突 | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_dark_mode | warn | 无 darkMode 配置 → warn | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_group_hover | warn | group-hover: 须父级 group → warn 提示 | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_apply_reuse | warn | 无 @apply 抽组件类 → warn | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_postcss_order | warn | PostCSS 顺序错 → warn 前缀丢失 | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_preflight_conflict | warn | 组件库混用未关 preflight → warn | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_custom_color | warn | 无 theme 自定义颜色 → warn | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_responsive_prefix | warn | 手写 @media → warn | TAILWIND_CONFIG_GLOBS | — |
+| fw_tailwind_prod_minify | warn | minify 关闭 → warn | TAILWIND_CONFIG_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_tailwind_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/tailwind.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_tailwind_<rule>(fail/warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: tailwind  requires_conf: TAILWIND_CONFIG_GLOBS` 声明。
-fixture 验证覆盖：violating 含 content 漏扫 + 大量任意值 + 无 prefix 与组件库冲突 → content_scan fail 主触发；compliant 全 pass。
+fixture 验证覆盖：violating 含 content 漏扫 + 大量任意值 + 无 prefix 与组件库冲突 → content_scan fail 主触发（1/1）；compliant 全 pass。expected-fail-ids 已登记 1/1 fail id（2026-07-20 P1）。CWE/GB 映射列（同批补录）：本框架门禁均为工程规范/性能类，无直接安全语义，全行标 —。
 -->
 
 ## §5 跨框架交互规则

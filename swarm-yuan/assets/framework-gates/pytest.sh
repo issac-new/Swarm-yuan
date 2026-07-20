@@ -23,7 +23,7 @@ _fw_pytest_check() {
 
   # fw_pytest_assert_truthy_only(fail)：仅 assert x（无比较）
   local truthy_hits
-  truthy_hits=$(grep -rnE '^\s*assert\s+[a-zA-Z_][a-zA-Z0-9_]*\s*$' "${srcarr[@]+"${srcarr[@]}"}" 2>/dev/null || true)
+  truthy_hits=$(grep -rnE '^\s*assert\s+[a-zA-Z_][a-zA-Z0-9_]*\s*(#.*)?$' "${srcarr[@]+"${srcarr[@]}"}" 2>/dev/null || true)
   _fw_report fail fw_pytest_assert_truthy_only "$truthy_hits" "检出仅 assert x（truthy 断言无法捕获错误值），须 assert x == y" "无 truthy-only 断言"
 
   # fw_pytest_parametrize_boundary(warn)

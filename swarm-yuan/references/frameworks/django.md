@@ -140,27 +140,28 @@ detect 信号命中任一高置信度行即可激活 django 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_django_nplusone | warn | .objects.all/filter/get 查询文件无 select_related/prefetch_related → warn | DJANGO_SRC_GLOBS |
-| fw_django_atomic | warn | 单文件写操作（save/create/update/delete/bulk_create）≥2 处且无 transaction.atomic → warn | DJANGO_SRC_GLOBS |
-| fw_django_csrf | warn | MIDDLEWARE 缺 CsrfViewMiddleware 或检出 @csrf_exempt → warn | DJANGO_SRC_GLOBS |
-| fw_django_migration_irreversible | warn | RunPython 无 reverse_code/RunPython.noop 或 RunSQL 无 reverse_sql → warn | DJANGO_SRC_GLOBS |
-| fw_django_settings_split | warn | 存在 settings.py 但无 settings/base.py → warn 建议多环境拆分 | DJANGO_SRC_GLOBS |
-| fw_django_secret_key | fail | SECRET_KEY 字面量硬编码（非 os.environ/getenv）→ fail | DJANGO_SRC_GLOBS |
-| fw_django_debug | fail | 非 dev/local/test 设置文件 DEBUG = True 字面量 → fail | DJANGO_SRC_GLOBS |
-| fw_django_allowed_hosts | warn | ALLOWED_HOSTS = [] 或 ['*'] → warn | DJANGO_SRC_GLOBS |
-| fw_django_password_hasher | warn | PASSWORD_HASHERS 含 MD5/SHA1/Unsalted → warn | DJANGO_SRC_GLOBS |
-| fw_django_raw_sql | fail | execute/raw 以 f-string、%、+ 拼接 SQL → fail | DJANGO_SRC_GLOBS |
-| fw_django_middleware_order | warn | MIDDLEWARE 首个中间件非 SecurityMiddleware → warn | DJANGO_SRC_GLOBS |
-| fw_django_static_root | warn | settings 无 STATIC_ROOT → warn | DJANGO_SRC_GLOBS |
-| fw_django_session_cookie | warn | settings 无 SESSION_COOKIE_SECURE/CSRF_COOKIE_SECURE → warn | DJANGO_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |
+|---------|------|---------|---------|---------|
+| fw_django_nplusone | warn | .objects.all/filter/get 查询文件无 select_related/prefetch_related → warn | DJANGO_SRC_GLOBS | — |
+| fw_django_atomic | warn | 单文件写操作（save/create/update/delete/bulk_create）≥2 处且无 transaction.atomic → warn | DJANGO_SRC_GLOBS | — |
+| fw_django_csrf | warn | MIDDLEWARE 缺 CsrfViewMiddleware 或检出 @csrf_exempt → warn | DJANGO_SRC_GLOBS | CWE-352 |
+| fw_django_migration_irreversible | warn | RunPython 无 reverse_code/RunPython.noop 或 RunSQL 无 reverse_sql → warn | DJANGO_SRC_GLOBS | — |
+| fw_django_settings_split | warn | 存在 settings.py 但无 settings/base.py → warn 建议多环境拆分 | DJANGO_SRC_GLOBS | — |
+| fw_django_secret_key | fail | SECRET_KEY 字面量硬编码（非 os.environ/getenv）→ fail | DJANGO_SRC_GLOBS | CWE-798；GB/T 34944-2017 6.2.6.3 口径（口令硬编码） |
+| fw_django_debug | fail | 非 dev/local/test 设置文件 DEBUG = True 字面量 → fail | DJANGO_SRC_GLOBS | CWE-489 |
+| fw_django_allowed_hosts | warn | ALLOWED_HOSTS = [] 或 ['*'] → warn | DJANGO_SRC_GLOBS | — |
+| fw_django_password_hasher | warn | PASSWORD_HASHERS 含 MD5/SHA1/Unsalted → warn | DJANGO_SRC_GLOBS | CWE-327；GB/T 34944-2017 6.2.6.7 口径（危险加密算法） |
+| fw_django_raw_sql | fail | execute/raw 以 f-string、%、+ 拼接 SQL → fail | DJANGO_SRC_GLOBS | CWE-89；GB/T 38674-2020 §5.1 |
+| fw_django_middleware_order | warn | MIDDLEWARE 首个中间件非 SecurityMiddleware → warn | DJANGO_SRC_GLOBS | — |
+| fw_django_static_root | warn | settings 无 STATIC_ROOT → warn | DJANGO_SRC_GLOBS | — |
+| fw_django_session_cookie | warn | settings 无 SESSION_COOKIE_SECURE/CSRF_COOKIE_SECURE → warn | DJANGO_SRC_GLOBS | CWE-614 |
 
 <!--
 门禁 id 命名规范：fw_django_<rule>（rule 全小写下划线）。
 本表 13 条 id 须在 assets/framework-gates/django.sh 中有同名实现痕迹（grep 命中）。
+标准映射列 2026-07-20 P1 补登：CWE 取自本文件 §3/门禁输出口径与通行分类，GB 条款沿用 references/standards-compliance.md §D 口径，无明确映射标 —。
 片段头注释 `# gates: fw_django_<rule>(warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: django  requires_conf: DJANGO_SRC_GLOBS` 声明。
 fixture 验证覆盖：violating 含 N+1 查询 + SECRET_KEY 硬编码 + DEBUG=True + f-string 拼接 SQL → secret_key/debug/raw_sql fail 主触发；compliant 全 pass。

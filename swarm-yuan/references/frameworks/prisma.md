@@ -143,20 +143,20 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_prisma_migrate_deploy | fail | Dockerfile/*.sh 检出 prisma migrate dev → fail 生产禁 dev 迁移 | PRISMA_SRC_GLOBS |
-| fw_prisma_transaction_timeout | warn | 含 $transaction(async 文件无 timeout: → warn 默认 5s 超时风险 | PRISMA_SRC_GLOBS |
-| fw_prisma_n1_loop | warn | 同文件 for( + await prisma. → warn 循环内查询 N+1 | PRISMA_SRC_GLOBS |
-| fw_prisma_queryraw_injection | fail | $queryRawUnsafe/$executeRawUnsafe 或 $queryRaw(...) 同行 + 拼接 → fail SQL 注入 CWE-89 | PRISMA_SRC_GLOBS |
-| fw_prisma_connection_limit | warn | 全部源码未检出 connection_limit → warn 池未规划 | PRISMA_SCHEMA_GLOBS PRISMA_SRC_GLOBS |
-| fw_prisma_id_strategy | warn | Int @id @default(autoincrement()) → warn 主键可枚举 CWE-639 | PRISMA_SCHEMA_GLOBS |
-| fw_prisma_relation_cascade | warn | @relation( 行无 onDelete → warn 参照动作未显式 | PRISMA_SCHEMA_GLOBS |
-| fw_prisma_relation_index | warn | 含 @relation(fields: 无 @@index → warn 外键无索引 | PRISMA_SCHEMA_GLOBS |
-| fw_prisma_middleware_removed | warn | 检出 .$use( → warn v7 已移除中间件 | PRISMA_SRC_GLOBS |
-| fw_prisma_audit_fields | warn | 含 model 块无 createdAt/updatedAt → warn | PRISMA_SCHEMA_GLOBS |
-| fw_prisma_generator_output | warn | generator 块无 output → warn v7 必填 | PRISMA_SCHEMA_GLOBS |
-| fw_prisma_query_log | warn | log: ['query'] → warn 生产查询日志泄露 CWE-532 | PRISMA_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE / GB 映射 |
+|---------|------|---------|---------|--------------|
+| fw_prisma_migrate_deploy | fail | Dockerfile/*.sh 检出 prisma migrate dev → fail 生产禁 dev 迁移 | PRISMA_SRC_GLOBS | CWE-672 |
+| fw_prisma_transaction_timeout | warn | 含 $transaction(async 文件无 timeout: → warn 默认 5s 超时风险 | PRISMA_SRC_GLOBS | — |
+| fw_prisma_n1_loop | warn | 同文件 for( + await prisma. → warn 循环内查询 N+1 | PRISMA_SRC_GLOBS | — |
+| fw_prisma_queryraw_injection | fail | $queryRawUnsafe/$executeRawUnsafe 或 $queryRaw(...) 同行 + 拼接 → fail SQL 注入 CWE-89 | PRISMA_SRC_GLOBS | CWE-89；GB/T 38674-2020 §5.1 |
+| fw_prisma_connection_limit | warn | 全部源码未检出 connection_limit → warn 池未规划 | PRISMA_SCHEMA_GLOBS PRISMA_SRC_GLOBS | — |
+| fw_prisma_id_strategy | warn | Int @id @default(autoincrement()) → warn 主键可枚举 CWE-639 | PRISMA_SCHEMA_GLOBS | CWE-639 |
+| fw_prisma_relation_cascade | warn | @relation( 行无 onDelete → warn 参照动作未显式 | PRISMA_SCHEMA_GLOBS | — |
+| fw_prisma_relation_index | warn | 含 @relation(fields: 无 @@index → warn 外键无索引 | PRISMA_SCHEMA_GLOBS | — |
+| fw_prisma_middleware_removed | warn | 检出 .$use( → warn v7 已移除中间件 | PRISMA_SRC_GLOBS | — |
+| fw_prisma_audit_fields | warn | 含 model 块无 createdAt/updatedAt → warn | PRISMA_SCHEMA_GLOBS | — |
+| fw_prisma_generator_output | warn | generator 块无 output → warn v7 必填 | PRISMA_SCHEMA_GLOBS | — |
+| fw_prisma_query_log | warn | log: ['query'] → warn 生产查询日志泄露 CWE-532 | PRISMA_SRC_GLOBS | CWE-532 |
 
 <!--
 门禁 id 命名规范：fw_prisma_<rule>（rule 全小写下划线）。
@@ -164,7 +164,7 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 片段头注释 `# gates: fw_prisma_<rule>(...) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: prisma  requires_conf: PRISMA_SCHEMA_GLOBS PRISMA_SRC_GLOBS` 声明。
 fixture 验证覆盖：violating 含手改已应用迁移（证据件）+ $queryRawUnsafe 拼接 + 循环 N+1
-+ Dockerfile migrate dev → migrate_deploy/queryraw_injection fail 主触发；compliant 修正后全 pass。
++ Dockerfile migrate dev → migrate_deploy/queryraw_injection fail 主触发（2/2 已断言）；compliant 修正后全 pass。
 -->
 
 ## §5 跨框架交互规则

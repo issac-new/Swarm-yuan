@@ -140,27 +140,31 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_jest_test_location | warn | 测试文件不在 test/spec/__tests__ → warn | VITEST_TEST_GLOBS VITEST_CONFIG_GLOBS |
-| fw_jest_mock_hoisted | warn | vi.mock factory 无 vi.hoisted → warn | VITEST_TEST_GLOBS |
-| fw_jest_snapshot_governance | warn | 快照断言 → warn 治理提示 | VITEST_TEST_GLOBS |
-| fw_jest_coverage_threshold | fail | 无 coverage.thresholds → fail | VITEST_CONFIG_GLOBS |
-| fw_jest_jest_fn_to_vi | warn | 残留 jest.fn/jest.mock → warn | VITEST_TEST_GLOBS |
-| fw_jest_environment | warn | 无 environment 配置 → warn | VITEST_CONFIG_GLOBS |
-| fw_jest_setup_files | warn | DOM 环境无 setupFiles → warn | VITEST_CONFIG_GLOBS |
-| fw_jest_globals | warn | globals: true → warn | VITEST_CONFIG_GLOBS |
-| fw_jest_in_source | warn | in-source 未隔离 → warn | VITEST_CONFIG_GLOBS |
-| fw_jest_bench | warn | 无 benchmark 配置 → warn | VITEST_CONFIG_GLOBS |
-| fw_jest_typecheck | warn | 无 typecheck → warn | VITEST_CONFIG_GLOBS |
-| fw_jest_no_upstream_test | fail | VITEST_FORBIDDEN_UPSTREAM_TEST 正则检出 upstream 直属测试文件 → fail（ncwk 仓库契约，prune upstream/<子包>/） | VITEST_FORBIDDEN_UPSTREAM_TEST |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE / GB 映射 |
+|---------|------|---------|---------|--------------|
+| fw_jest_test_location | warn | 测试文件不在 test/spec/__tests__ → warn | VITEST_TEST_GLOBS VITEST_CONFIG_GLOBS | — |
+| fw_jest_mock_hoisted | warn | vi.mock factory 无 vi.hoisted → warn | VITEST_TEST_GLOBS | — |
+| fw_jest_snapshot_governance | warn | 快照断言 → warn 治理提示 | VITEST_TEST_GLOBS | — |
+| fw_jest_coverage_threshold | fail | 无 coverage.thresholds → fail | VITEST_CONFIG_GLOBS | — |
+| fw_jest_jest_fn_to_vi | warn | 残留 jest.fn/jest.mock → warn | VITEST_TEST_GLOBS | — |
+| fw_jest_environment | warn | 无 environment 配置 → warn | VITEST_CONFIG_GLOBS | — |
+| fw_jest_setup_files | warn | DOM 环境无 setupFiles → warn | VITEST_CONFIG_GLOBS | — |
+| fw_jest_globals | warn | globals: true → warn | VITEST_CONFIG_GLOBS | — |
+| fw_jest_in_source | warn | in-source 未隔离 → warn | VITEST_CONFIG_GLOBS | — |
+| fw_jest_bench | warn | 无 benchmark 配置 → warn | VITEST_CONFIG_GLOBS | — |
+| fw_jest_typecheck | warn | 无 typecheck → warn | VITEST_CONFIG_GLOBS | — |
+| fw_jest_no_upstream_test | fail | VITEST_FORBIDDEN_UPSTREAM_TEST 正则检出 upstream 直属测试文件 → fail（ncwk 仓库契约，prune upstream/<子包>/） | VITEST_FORBIDDEN_UPSTREAM_TEST | — |
 
 <!--
 门禁 id 命名规范：fw_jest_<rule>（rule 全小写下划线）。
 本表 12 条 id（11 原有 + 1 vitest 合并的 no_upstream_test）须在 assets/framework-gates/jest-vitest.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_jest_<rule>(fail/warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: jest-vitest  requires_conf: VITEST_CONFIG_GLOBS VITEST_TEST_GLOBS VITEST_CONFIG_FILE VITEST_FORBIDDEN_UPSTREAM_TEST` 声明。
-fixture 验证覆盖：violating 含无覆盖率阈值 + 残留 jest.fn + globals:true → coverage_threshold fail 主触发；compliant 全 pass。
+fixture 验证覆盖：violating 含无覆盖率阈值 + 残留 jest.fn + globals:true + upstream/ 直属测试文件
+→ coverage_threshold/no_upstream_test fail 主触发（2/2 已断言）；compliant 全 pass（upstream/ 仅子包嵌套测试）。
+2026-07-20 沉睡修复：no_upstream_test 的 find prune 由 `-path "./upstream/*"` 改 `-path "./upstream/*/*"`
+（原写法把 upstream/ 直属文件一并剪掉，门禁永不命中；修复前后合成样本对照见 tests/fixtures/jest-vitest/README.md），
+pass/fail 输出行未动。
 vitest 合并自原独立 vitest.sh（harvested-from: ncwk-dev precheck.sh:2633-2654），原 include_custom 规律折叠进 fw_jest_test_location，原 no_upstream_test 改名 fw_jest_no_upstream_test 保留 fail 级。
 -->
 

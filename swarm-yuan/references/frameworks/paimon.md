@@ -159,27 +159,28 @@ detect 信号命中任一高置信度行即可激活 paimon 框架规则集。
 verify-framework-ruleset.sh 扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_paimon_pk_bucket | fail | 主键表 DDL 无 'bucket'/bucket-key → fail 单 bucket 瓶颈 | PAIMON_SRC_GLOBS PAIMON_TABLE_GLOBS |
-| fw_paimon_compaction | warn | 主键表 DDL 无 num-sorted-run/compaction. → warn 依赖默认阈值 | PAIMON_TABLE_GLOBS |
-| fw_paimon_merge_engine | warn | 检出非 deduplicate merge-engine → warn 语义匹配确认 | PAIMON_TABLE_GLOBS |
-| fw_paimon_changelog_producer | warn | 检出 scan.mode 流读但表无 changelog-producer → warn 缺前像 | PAIMON_SRC_GLOBS PAIMON_TABLE_GLOBS |
-| fw_paimon_stream_scan_mode | warn | 检出 scan.mode 配置 → warn 选型语义确认 | PAIMON_SRC_GLOBS |
-| fw_paimon_snapshot_retention | warn | 表 DDL 无 snapshot.time-retained/num-retained → warn 快照膨胀 | PAIMON_TABLE_GLOBS |
-| fw_paimon_time_travel | warn | 检出 scan.snapshot-id/timestamp → warn 回溯须在保留窗口 | PAIMON_SRC_GLOBS |
-| fw_paimon_partition | warn | 主键表无 PARTITIONED BY → warn 确认数据量级 | PAIMON_TABLE_GLOBS |
-| fw_paimon_bucket_key | warn | 检出 bucket-key → warn 须为主键子集 | PAIMON_TABLE_GLOBS |
-| fw_paimon_lookup_join | warn | temporal join 无 lookup.cache → warn 吞吐断崖 | PAIMON_SRC_GLOBS |
-| fw_paimon_write_buffer | warn | paimon sink 作业无 write-buffer → warn 评估内存/spill | PAIMON_SRC_GLOBS |
-| fw_paimon_schema_evolution | warn | ALTER TABLE MODIFY/CHANGE COLUMN → warn 禁 narrowing | PAIMON_TABLE_GLOBS |
-| fw_paimon_file_format | warn | 检出 file.format → warn 选型与跨引擎兼容 | PAIMON_TABLE_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |
+|---------|------|---------|---------|---------|
+| fw_paimon_pk_bucket | fail | 主键表 DDL 无 'bucket'/bucket-key → fail 单 bucket 瓶颈 | PAIMON_SRC_GLOBS PAIMON_TABLE_GLOBS | — |
+| fw_paimon_compaction | warn | 主键表 DDL 无 num-sorted-run/compaction. → warn 依赖默认阈值 | PAIMON_TABLE_GLOBS | — |
+| fw_paimon_merge_engine | warn | 检出非 deduplicate merge-engine → warn 语义匹配确认 | PAIMON_TABLE_GLOBS | — |
+| fw_paimon_changelog_producer | warn | 检出 scan.mode 流读但表无 changelog-producer → warn 缺前像 | PAIMON_SRC_GLOBS PAIMON_TABLE_GLOBS | — |
+| fw_paimon_stream_scan_mode | warn | 检出 scan.mode 配置 → warn 选型语义确认 | PAIMON_SRC_GLOBS | — |
+| fw_paimon_snapshot_retention | warn | 表 DDL 无 snapshot.time-retained/num-retained → warn 快照膨胀 | PAIMON_TABLE_GLOBS | — |
+| fw_paimon_time_travel | warn | 检出 scan.snapshot-id/timestamp → warn 回溯须在保留窗口 | PAIMON_SRC_GLOBS | — |
+| fw_paimon_partition | warn | 主键表无 PARTITIONED BY → warn 确认数据量级 | PAIMON_TABLE_GLOBS | — |
+| fw_paimon_bucket_key | warn | 检出 bucket-key → warn 须为主键子集 | PAIMON_TABLE_GLOBS | — |
+| fw_paimon_lookup_join | warn | temporal join 无 lookup.cache → warn 吞吐断崖 | PAIMON_SRC_GLOBS | — |
+| fw_paimon_write_buffer | warn | paimon sink 作业无 write-buffer → warn 评估内存/spill | PAIMON_SRC_GLOBS | — |
+| fw_paimon_schema_evolution | warn | ALTER TABLE MODIFY/CHANGE COLUMN → warn 禁 narrowing | PAIMON_TABLE_GLOBS | — |
+| fw_paimon_file_format | warn | 检出 file.format → warn 选型与跨引擎兼容 | PAIMON_TABLE_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_paimon_<rule>（rule 全小写下划线）。
 本表 13 条 id 须在 assets/framework-gates/paimon.sh 中有同名实现痕迹（grep 命中）。
+标准映射列 2026-07-20 P1 补登：CWE 取自本文件 §3/门禁输出口径与通行分类，GB 条款沿用 references/standards-compliance.md §D 口径，无明确映射标 —。
 片段头注释 `# gates: fw_paimon_<rule>(level) ...` 与本表 id 集合一致。
 依赖变量在片段头注释 `# ruleset: paimon  requires_conf: PAIMON_SRC_GLOBS PAIMON_TABLE_GLOBS` 声明。
 fixture 验证覆盖：violating 含主键表无 bucket + 无 compaction → fw_paimon_pk_bucket fail 主触发；compliant 修正后全 pass。

@@ -147,19 +147,19 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
 |---------|------|---------|---------|
-| fw_jpa_nplus1 | warn | 有 @(OneToMany\|ManyToMany) 但无 @EntityGraph/JOIN FETCH/@BatchSize/batch_size → warn N+1 | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_eager_to_many | warn | @(OneToMany\|ManyToMany)(...FetchType.EAGER 命中 → warn 笛卡尔积 | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_osiv | warn | open-in-view=true → warn；JPA 项目无 open-in-view: false 显式配置 → warn（默认 true） | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_readonly | warn | 含 @Transactional + find/get/list/query/search 方法但全文无 readOnly → warn | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_auditing | warn | 有 @CreatedDate 等审计注解但无 @EnableJpaAuditing → warn | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_pessimistic_lock | warn | @Lock(...PESSIMISTIC...) 无 lock.timeout/@QueryHints → warn 死锁风险 | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_optimistic_lock | warn | 有 @Version 但无 OptimisticLock 异常处理 → warn | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_save_merge | warn | 同文件 .setId( 与 .save( 并存 → warn detached merge 覆盖语义 | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_lazy_exception | warn | to-many + open-in-view: false + 全项目无 @Transactional → warn | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_modifying | warn | @Modifying 无 clearAutomatically/flushAutomatically → warn 上下文脏读 | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_equals_hashcode | warn | @Entity + @Data/@EqualsAndHashCode（无 exclude/onlyExplicitlyIncluded）→ warn | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_enum_ordinal | fail | @Enumerated 未带 EnumType.STRING → fail（ORDINAL 重排错位） | SPRINGJPA_SRC_GLOBS |
-| fw_jpa_pagination | warn | Repository 中 List<...> find/get/query/list/search 方法无 Pageable → warn | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_nplus1 | warn | 有 @(OneToMany\|ManyToMany) 但无 @EntityGraph/JOIN FETCH/@BatchSize/batch_size → warn N+1 (CWE-1049) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_eager_to_many | warn | @(OneToMany\|ManyToMany)(...FetchType.EAGER 命中 → warn 笛卡尔积 (CWE-400) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_osiv | warn | open-in-view=true → warn；JPA 项目无 open-in-view: false 显式配置 → warn（默认 true）(n/a) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_readonly | warn | 含 @Transactional + find/get/list/query/search 方法但全文无 readOnly → warn (n/a) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_auditing | warn | 有 @CreatedDate 等审计注解但无 @EnableJpaAuditing → warn (n/a) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_pessimistic_lock | warn | @Lock(...PESSIMISTIC...) 无 lock.timeout/@QueryHints → warn 死锁风险 (CWE-667) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_optimistic_lock | warn | 有 @Version 但无 OptimisticLock 异常处理 → warn (n/a) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_save_merge | warn | 同文件 .setId( 与 .save( 并存 → warn detached merge 覆盖语义 (n/a) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_lazy_exception | warn | to-many + open-in-view: false + 全项目无 @Transactional → warn (n/a) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_modifying | warn | @Modifying 无 clearAutomatically/flushAutomatically → warn 上下文脏读 (n/a) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_equals_hashcode | warn | @Entity + @Data/@EqualsAndHashCode（无 exclude/onlyExplicitlyIncluded）→ warn (n/a) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_enum_ordinal | fail | @Enumerated 未带 EnumType.STRING → fail（ORDINAL 重排错位）(n/a) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_pagination | warn | Repository 中 List<...> find/get/query/list/search 方法无 Pageable → warn (n/a) | SPRINGJPA_SRC_GLOBS |
 
 <!--
 门禁 id 命名规范：fw_jpa_<rule>（rule 全小写下划线）。

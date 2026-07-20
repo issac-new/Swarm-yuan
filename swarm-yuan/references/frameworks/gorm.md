@@ -140,27 +140,28 @@ detect 信号命中任一高置信度行即可激活 gorm 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_gorm_n_plus_one | fail | for-range 循环内 db.First/Find/Where 且无 Preload/Joins → fail | GORM_SRC_GLOBS |
-| fw_gorm_nested_transaction | warn | Begin( 嵌套或无配对 Commit/Rollback → warn | GORM_SRC_GLOBS |
-| fw_gorm_soft_delete | warn | 软删除字段非 gorm.DeletedAt 且无显式 WHERE → warn | GORM_SRC_GLOBS |
-| fw_gorm_conn_pool | fail | gorm.Open( 无 SetMaxOpenConns → fail | GORM_SRC_GLOBS |
-| fw_gorm_dryrun_audit | warn | LogMode(logger.Info/Silent) → warn | GORM_SRC_GLOBS |
-| fw_gorm_model_convention | warn | GORM 模型无主键声明 → warn | GORM_SRC_GLOBS |
-| fw_gorm_automigrate_prod | warn | AutoMigrate( 在生产入口/非测试 → warn | GORM_SRC_GLOBS |
-| fw_gorm_batch_insert | warn | for-range 内 Create( 单条且无 CreateInBatches → warn | GORM_SRC_GLOBS |
-| fw_gorm_record_not_found | warn | First( 无 ErrRecordNotFound 判断 → warn | GORM_SRC_GLOBS |
-| fw_gorm_index | warn | Where( 查询字段对应模型字段无 gorm:index → warn | GORM_SRC_GLOBS |
-| fw_gorm_error_handling | warn | db.Error 无 ErrRecordNotFound/ErrDuplicatedKey 判断 → warn | GORM_SRC_GLOBS |
-| fw_gorm_association | warn | 多 ID 字段关联无 foreignKey 标签 → warn | GORM_SRC_GLOBS |
-| fw_gorm_naming | warn | TableName 与 NamingStrategy 混用 → warn | GORM_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |
+|---------|------|---------|---------|---------|
+| fw_gorm_n_plus_one | fail | for-range 循环内 db.First/Find/Where 且无 Preload/Joins → fail | GORM_SRC_GLOBS | — |
+| fw_gorm_nested_transaction | warn | Begin( 嵌套或无配对 Commit/Rollback → warn | GORM_SRC_GLOBS | — |
+| fw_gorm_soft_delete | warn | 软删除字段非 gorm.DeletedAt 且无显式 WHERE → warn | GORM_SRC_GLOBS | — |
+| fw_gorm_conn_pool | fail | gorm.Open( 无 SetMaxOpenConns → fail | GORM_SRC_GLOBS | CWE-770 |
+| fw_gorm_dryrun_audit | warn | LogMode(logger.Info/Silent) → warn | GORM_SRC_GLOBS | CWE-532；GB/T 38674-2020 §5.4 |
+| fw_gorm_model_convention | warn | GORM 模型无主键声明 → warn | GORM_SRC_GLOBS | — |
+| fw_gorm_automigrate_prod | warn | AutoMigrate( 在生产入口/非测试 → warn | GORM_SRC_GLOBS | — |
+| fw_gorm_batch_insert | warn | for-range 内 Create( 单条且无 CreateInBatches → warn | GORM_SRC_GLOBS | — |
+| fw_gorm_record_not_found | warn | First( 无 ErrRecordNotFound 判断 → warn | GORM_SRC_GLOBS | — |
+| fw_gorm_index | warn | Where( 查询字段对应模型字段无 gorm:index → warn | GORM_SRC_GLOBS | — |
+| fw_gorm_error_handling | warn | db.Error 无 ErrRecordNotFound/ErrDuplicatedKey 判断 → warn | GORM_SRC_GLOBS | — |
+| fw_gorm_association | warn | 多 ID 字段关联无 foreignKey 标签 → warn | GORM_SRC_GLOBS | — |
+| fw_gorm_naming | warn | TableName 与 NamingStrategy 混用 → warn | GORM_SRC_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_gorm_<rule>（rule 全小写下划线）。
 本表 13 条 id 须在 assets/framework-gates/gorm.sh 中有同名实现痕迹（grep 命中）。
+标准映射列 2026-07-20 P1 补登：CWE 取自本文件 §3/门禁输出口径与通行分类，GB 条款沿用 references/standards-compliance.md §D 口径，无明确映射标 —。
 片段头注释 `# gates: fw_gorm_<rule>(...) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: gorm  requires_conf: GORM_SRC_GLOBS` 声明。
 fixture 验证覆盖：violating 含 for-range 内 Find（N+1）+ AutoMigrate 在 main.go + gorm.Open 无连接池 → n_plus_one/automigrate_prod/conn_pool 主触发；compliant 修正后全 pass。

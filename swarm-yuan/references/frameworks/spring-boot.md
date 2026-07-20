@@ -161,20 +161,20 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
 |---------|------|---------|---------|
-| fw_sboot_transactional_selfinvoke | fail | 同类内 @Transactional 方法被本类其他方法直接调用（无代理引用）→ fail 事务失效 | SPRINGBOOT_SRC_GLOBS |
-| fw_sboot_transactional_rollback | warn | @Transactional 未声明 rollbackFor 且方法 throws checked 异常 → warn | SPRINGBOOT_SRC_GLOBS |
-| fw_sboot_constructor_inject | warn | `@Autowired private` 字段注入 → warn 建议构造器注入 | SPRINGBOOT_SRC_GLOBS |
-| fw_sboot_proxy_bean_methods | warn | proxyBeanMethods=false 的 @Configuration 中 @Bean 方法间直接调用 → warn 单例失效 | SPRINGBOOT_SRC_GLOBS |
-| fw_sboot_profile_isolation | warn | @Profile 误标在 @ConfigurationProperties 上 → warn | SPRINGBOOT_SRC_GLOBS |
-| fw_sboot_conditional_order | warn | 自定义 auto-config 含 @ConditionalOnMissingBean 无 @AutoConfigureBefore/After → warn | SPRINGBOOT_SRC_GLOBS |
-| fw_sboot_actuator_expose | fail | management.endpoints.web.exposure.include=* 或含敏感端点且无独立 management 端口 → fail | SPRINGBOOT_CONFIG_FILES |
-| fw_sboot_devtools_in_prod | warn | spring-boot-devtools 依赖未标 optional/provided/developmentOnly → warn | SPRINGBOOT_CONFIG_FILES |
-| fw_sboot_scan_scope | warn | @SpringBootApplication 类非根包且未声明 scanBasePackages → warn | SPRINGBOOT_SRC_GLOBS |
-| fw_sboot_configprops_binding | warn | @ConfigurationProperties 类未注册（无 @Component/@ConfigurationPropertiesScan/@EnableConfigurationProperties）→ warn | SPRINGBOOT_SRC_GLOBS |
-| fw_sboot_jakarta_migration | fail | import javax.(servlet|persistence|validation|...) → fail 须替换为 jakarta | SPRINGBOOT_SRC_GLOBS |
-| fw_sboot_circular_refs | warn | spring.main.allow-circular-references=true → warn | SPRINGBOOT_CONFIG_FILES |
-| fw_sboot_banner_mode | warn | 生产 profile 缺 spring.main.banner-mode 配置（默认 console）→ warn | SPRINGBOOT_CONFIG_FILES |
-| fw_sboot_datasource_pool | warn | 配置含 datasource.url 但无 hikari.maximum-pool-size → warn | SPRINGBOOT_CONFIG_FILES |
+| fw_sboot_transactional_selfinvoke | fail | 同类内 @Transactional 方法被本类其他方法直接调用（无代理引用）→ fail 事务失效 (n/a) | SPRINGBOOT_SRC_GLOBS |
+| fw_sboot_transactional_rollback | warn | @Transactional 未声明 rollbackFor 且方法 throws checked 异常 → warn (n/a) | SPRINGBOOT_SRC_GLOBS |
+| fw_sboot_constructor_inject | warn | `@Autowired private` 字段注入 → warn 建议构造器注入 (n/a) | SPRINGBOOT_SRC_GLOBS |
+| fw_sboot_proxy_bean_methods | warn | proxyBeanMethods=false 的 @Configuration 中 @Bean 方法间直接调用 → warn 单例失效 (n/a) | SPRINGBOOT_SRC_GLOBS |
+| fw_sboot_profile_isolation | warn | @Profile 误标在 @ConfigurationProperties 上 → warn (n/a) | SPRINGBOOT_SRC_GLOBS |
+| fw_sboot_conditional_order | warn | 自定义 auto-config 含 @ConditionalOnMissingBean 无 @AutoConfigureBefore/After → warn (n/a) | SPRINGBOOT_SRC_GLOBS |
+| fw_sboot_actuator_expose | fail | management.endpoints.web.exposure.include=* 或含敏感端点且无独立 management 端口 → fail (CWE-200) | SPRINGBOOT_CONFIG_FILES |
+| fw_sboot_devtools_in_prod | warn | spring-boot-devtools 依赖未标 optional/provided/developmentOnly → warn (CWE-489) | SPRINGBOOT_CONFIG_FILES |
+| fw_sboot_scan_scope | warn | @SpringBootApplication 类非根包且未声明 scanBasePackages → warn (n/a) | SPRINGBOOT_SRC_GLOBS |
+| fw_sboot_configprops_binding | warn | @ConfigurationProperties 类未注册（无 @Component/@ConfigurationPropertiesScan/@EnableConfigurationProperties）→ warn (n/a) | SPRINGBOOT_SRC_GLOBS |
+| fw_sboot_jakarta_migration | fail | import javax.(servlet|persistence|validation|...) → fail 须替换为 jakarta (n/a) | SPRINGBOOT_SRC_GLOBS |
+| fw_sboot_circular_refs | warn | spring.main.allow-circular-references=true → warn (n/a) | SPRINGBOOT_CONFIG_FILES |
+| fw_sboot_banner_mode | warn | 生产 profile 缺 spring.main.banner-mode 配置（默认 console）→ warn (CWE-200) | SPRINGBOOT_CONFIG_FILES |
+| fw_sboot_datasource_pool | warn | 配置含 datasource.url 但无 hikari.maximum-pool-size → warn (CWE-400) | SPRINGBOOT_CONFIG_FILES |
 
 <!--
 门禁 id 命名规范：fw_sboot_<rule>（rule 全小写下划线）。

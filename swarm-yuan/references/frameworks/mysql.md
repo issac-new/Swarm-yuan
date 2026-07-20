@@ -136,27 +136,30 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_mysql_charset | fail | DDL 检出 CHARSET=utf8/utf8mb3（非 utf8mb4）→ fail | MYSQL_SQL_GLOBS MYSQL_SCHEMA_GLOBS |
-| fw_mysql_deep_paging | fail | LIMIT/OFFSET 偏移量 ≥ 100000 → fail | MYSQL_SQL_GLOBS |
-| fw_mysql_isolation | warn | 检出 mysql 数据源但无 transaction-isolation 显式配置 → warn | MYSQL_SQL_GLOBS |
-| fw_mysql_deadlock_detect | warn | innodb_deadlock_detect=OFF/0 → warn 要求压测依据 | MYSQL_SQL_GLOBS |
-| fw_mysql_slow_log | warn | [mysqld] 段缺 slow_query_log/long_query_time → warn | MYSQL_SQL_GLOBS |
-| fw_mysql_online_ddl | warn | ALGORITHM=COPY 或 LOCK=EXCLUSIVE → warn | MYSQL_SCHEMA_GLOBS |
-| fw_mysql_too_many_indexes | warn | 单 CREATE TABLE 块非 PRIMARY KEY/INDEX 行 >5 → warn | MYSQL_SCHEMA_GLOBS |
-| fw_mysql_select_star | warn | SELECT * FROM → warn 破坏覆盖索引 | MYSQL_SQL_GLOBS |
-| fw_mysql_like_wildcard | warn | LIKE '% 前置通配 → warn 索引失效 | MYSQL_SQL_GLOBS |
-| fw_mysql_implicit_join | warn | FROM a, b 隐式逗号连接 → warn | MYSQL_SQL_GLOBS |
-| fw_mysql_order_rand | warn | ORDER BY RAND() → warn filesort 全扫 | MYSQL_SQL_GLOBS |
-| fw_mysql_long_tx | warn | autocommit=0 或事务内 SLEEP( → warn 长事务 | MYSQL_SQL_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_mysql_charset | fail | DDL 检出 CHARSET=utf8/utf8mb3（非 utf8mb4）→ fail | MYSQL_SQL_GLOBS MYSQL_SCHEMA_GLOBS | —（字符集工程约束） |
+| fw_mysql_deep_paging | fail | LIMIT/OFFSET 偏移量 ≥ 100000 → fail | MYSQL_SQL_GLOBS | CWE-400（O(offset) 扫描丢弃，资源消耗） |
+| fw_mysql_isolation | warn | 检出 mysql 数据源但无 transaction-isolation 显式配置 → warn | MYSQL_SQL_GLOBS | —（隔离级别显式化） |
+| fw_mysql_deadlock_detect | warn | innodb_deadlock_detect=OFF/0 → warn 要求压测依据 | MYSQL_SQL_GLOBS | —（可用性权衡） |
+| fw_mysql_slow_log | warn | [mysqld] 段缺 slow_query_log/long_query_time → warn | MYSQL_SQL_GLOBS | CWE-778（无慢日志=性能事件无记录） |
+| fw_mysql_online_ddl | warn | ALGORITHM=COPY 或 LOCK=EXCLUSIVE → warn | MYSQL_SCHEMA_GLOBS | —（可用性规律） |
+| fw_mysql_too_many_indexes | warn | 单 CREATE TABLE 块非 PRIMARY KEY/INDEX 行 >5 → warn | MYSQL_SCHEMA_GLOBS | —（写放大） |
+| fw_mysql_select_star | warn | SELECT * FROM → warn 破坏覆盖索引 | MYSQL_SQL_GLOBS | —（性能规律） |
+| fw_mysql_like_wildcard | warn | LIKE '% 前置通配 → warn 索引失效 | MYSQL_SQL_GLOBS | —（索引失效） |
+| fw_mysql_implicit_join | warn | FROM a, b 隐式逗号连接 → warn | MYSQL_SQL_GLOBS | —（笛卡尔积风险） |
+| fw_mysql_order_rand | warn | ORDER BY RAND() → warn filesort 全扫 | MYSQL_SQL_GLOBS | —（filesort 全扫） |
+| fw_mysql_long_tx | warn | autocommit=0 或事务内 SLEEP( → warn 长事务 | MYSQL_SQL_GLOBS | —（MVCC 膨胀） |
 
 <!--
 门禁 id 命名规范：fw_mysql_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/mysql.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_mysql_<rule>(fail|warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: mysql  requires_conf: MYSQL_SQL_GLOBS MYSQL_SCHEMA_GLOBS` 声明。
-fixture 验证覆盖：violating 含 CHARSET=utf8 + LIMIT 100000,10 深分页 + SELECT * 前置通配 LIKE → charset/deep_paging fail 主触发；compliant 修正后全 pass。
+fixture 验证覆盖：violating 含 CHARSET=utf8 + LIMIT 100000,10 深分页 + SELECT * 前置通配 LIKE → charset/deep_paging fail 主触发（expected-fail-ids 2/2 已登记）；compliant 修正后全 pass。
+CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
+- CWE 编号依据 MITRE CWE 词典与 CWE Top 25:2025（R8 §⑨）；「—」为工程一致性/性能契约类规律，无对应 CWE 弱点类，归 ISO/IEC 5055:2021 性能/可靠性度量面（138 弱点经 CWE 对齐，见 standards-compliance.md §E.1）。
+- GB/T 34944-2017（Java，9 大类 44 种）/ GB/T 34946-2017（C#）总则 §5 要求 SAST 扫描 + 人工复核 + 测试四件套；本表作用于源码的门禁即该流程的词法层 SAST 面（R8 §⑥）。
 -->
 
 ## §5 跨框架交互规则

@@ -1,7 +1,7 @@
 // violating fixture:
 //  - 路由无 schema 校验 → fw_fastify_schema_validation(fail)
 //  - onSend 改写 payload 未回传 → fw_fastify_onsend_return(fail)
-//  - 无 setErrorHandler → fw_fastify_error_handler(fail)
+//  - 无统一错误处理钩子 → fw_fastify_error_handler(fail)
 //  - 路由先于 register 声明 / 无 logger / 无限流 / 无认证 → 多处 warn
 //
 // 期望：bash run-framework-fixture.sh fastify → violating 退出码 != 0（FAIL）
@@ -27,6 +27,21 @@ fastify.register(require('./plugins/util'));
 fastify.addHook('onSend', async (request, reply, payload) => {
   const wrapped = JSON.stringify({ code: 0, data: JSON.parse(payload) });
   request.log.info('wrapped length', wrapped.length);
+});
+
+// 以下为 hook 之后的常规注册与启动逻辑（窗口内无回传语句，onSend 修改静默丢弃）
+fastify.register(require('./plugins/util'), { prefix: '/v1' });
+
+fastify.get('/health', async (request, reply) => {
+  reply.send({ status: 'ok' });
+});
+
+fastify.get('/ready', async (request, reply) => {
+  reply.send({ ready: true });
+});
+
+fastify.addHook('onResponse', async (request, reply) => {
+  request.log.info({ statusCode: reply.statusCode }, 'response sent');
 });
 
 fastify.listen({ port: 3000 });

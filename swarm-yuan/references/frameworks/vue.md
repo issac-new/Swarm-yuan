@@ -174,24 +174,27 @@ pinia 合并新增 2 条门禁（fw_vue_pinia_definestore/fw_vue_pinia_aggregate
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / CWE·GB 元数据）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_vue_script_setup | fail | 含 `<script` 的 SFC 总数 ≠ 含 `<script setup` 的 SFC 数 → fail | VUE_FILE_GLOBS VUE_REQUIRE_SCRIPT_SETUP |
-| fw_vue_no_options_api | fail | 检出 Options API 选项式写法（data/methods/computed 选项）→ fail | VUE_FILE_GLOBS VUE_FORBIDDEN_OPTIONS_API |
-| fw_vue_vhtml_sanitize | fail | 检出 `v-html` 的 SFC 同文件未检出 sanitize 模式 → fail | VUE_FILE_GLOBS VUE_VHTML_SANITIZE_REQUIRED VUE_VHTML_SANITIZE_PATTERNS |
-| fw_vue_vfor_index_key | warn | v-for 用数组 index 作 key → warn（稳定数组可接受） | VUE_FILE_GLOBS VUE_VFOR_FORBIDDEN_INDEX_KEY |
-| fw_vue_reactivity_threshold | warn | reactive 调用次数超阈值 → warn 建议收敛 | VUE_FILE_GLOBS VUE_REACTIVE_WARN_THRESHOLD |
-| fw_vue_pinia_definestore | warn | 启用 VUE_PINIA_DEFINESTORE_REQUIRED=1 时 defineStore 文件数 = 0 → warn（疑似未用 Pinia 或漏定义） | VUE_PINIA_FILE_GLOBS VUE_PINIA_DEFINESTORE_REQUIRED |
-| fw_vue_pinia_aggregate | warn | VUE_PINIA_AGGREGATE_STORE 指向聚合层 store 文件不存在 → warn | VUE_PINIA_AGGREGATE_STORE |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_vue_script_setup | fail | 含 `<script` 的 SFC 总数 ≠ 含 `<script setup` 的 SFC 数 → fail | VUE_FILE_GLOBS VUE_REQUIRE_SCRIPT_SETUP | — |
+| fw_vue_no_options_api | fail | 检出 Options API 选项式写法（data/methods/computed 选项）→ fail | VUE_FILE_GLOBS VUE_FORBIDDEN_OPTIONS_API | — |
+| fw_vue_vhtml_sanitize | fail | 检出 `v-html` 的 SFC 同文件未检出 sanitize 模式 → fail | VUE_FILE_GLOBS VUE_VHTML_SANITIZE_REQUIRED VUE_VHTML_SANITIZE_PATTERNS | CWE-79（XSS 跨站脚本）；GB/T 38674-2020 §8.1（输入验证类安全设计） |
+| fw_vue_vfor_index_key | warn | v-for 用数组 index 作 key → warn（稳定数组可接受） | VUE_FILE_GLOBS VUE_VFOR_FORBIDDEN_INDEX_KEY | — |
+| fw_vue_reactivity_threshold | warn | reactive 调用次数超阈值 → warn 建议收敛 | VUE_FILE_GLOBS VUE_REACTIVE_WARN_THRESHOLD | — |
+| fw_vue_pinia_definestore | warn | 启用 VUE_PINIA_DEFINESTORE_REQUIRED=1 时 defineStore 文件数 = 0 → warn（疑似未用 Pinia 或漏定义） | VUE_PINIA_FILE_GLOBS VUE_PINIA_DEFINESTORE_REQUIRED | — |
+| fw_vue_pinia_aggregate | warn | VUE_PINIA_AGGREGATE_STORE 指向聚合层 store 文件不存在 → warn | VUE_PINIA_AGGREGATE_STORE | — |
 
 <!--
 门禁 id 命名规范：fw_vue_<rule>（rule 全小写下划线）。
 本表 7 条 id 与 assets/framework-gates/vue.sh 的 `# gates:` 头注释严格一致（5 条原 vue + 2 条 pinia 合并）。
 §3 其余规律标"人工检查"，不新增门禁——避免 .md 与 .sh 头注释漂移。
 依赖变量在片段头注释 `# ruleset: vue  requires_conf: VAR1 VAR2` 声明（见 vue.sh 第 1 行）。
-fixture 验证覆盖：violating 含 v-html 无 sanitize（fw_vue_vhtml_sanitize fail 主触发）+ v-for 用 index（warn）；compliant 全 pass。
+fixture 验证覆盖：violating 含 v-html 无 sanitize（fw_vue_vhtml_sanitize fail 主触发）+ Legacy.vue 普通 script + Options API
+（fw_vue_script_setup + fw_vue_no_options_api fail，2026-07-20 P1 唤醒实例化）+ v-for 用 index（warn）；compliant 全 pass。
+expected-fail-ids 已登记 3/3 fail id（tests/fixtures/vue/violating/expected-fail-ids）。
+CWE/GB 映射列（2026-07-20 P1 补录）：仅对具直接安全语义的行引证（CWE 主分类 + 可对应 GB/T 条款），无直接安全语义标 —。
 pinia 合并自原独立 pinia.sh（harvested-from: ncwk-dev precheck.sh:2536-2555），门禁 id 由 fw_pinia_* 改为 fw_vue_pinia_* 以遵循命名规范。
 -->
 

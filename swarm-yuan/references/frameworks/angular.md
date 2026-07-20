@@ -141,28 +141,28 @@ detect 信号命中任一高置信度行即可激活 angular 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / CWE·GB 元数据）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_angular_standalone | warn | 检出 @NgModule 文件（非迁移标注）→ warn 新项目应 standalone | ANGULAR_SRC_GLOBS |
-| fw_angular_signals | warn | 检出 Subject/BehaviorSubject 但同文件无 signal/toSignal → warn 状态管理应优先 signal | ANGULAR_SRC_GLOBS |
-| fw_angular_onpush | warn | @Component 未配 OnPush 且无 zoneless 配置 → warn | ANGULAR_SRC_GLOBS |
-| fw_angular_subscribe_cleanup | fail | .subscribe 调用前 2 行无 takeUntilDestroyed/takeUntil → fail 泄漏风险 | ANGULAR_SRC_GLOBS |
-| fw_angular_http_client | warn | 组件/服务中检出 fetch/XMLHttpRequest（非拦截器内）→ warn | ANGULAR_SRC_GLOBS |
-| fw_angular_di_inject | warn | 检出 new XxxService() 绕过 DI → warn | ANGULAR_SRC_GLOBS |
-| fw_angular_impure_pipe | warn | @Pipe 配 pure: false → warn（每次变更检测求值） | ANGULAR_SRC_GLOBS |
-| fw_angular_signal_inputs | warn | 检出 @Input()/@Output() 装饰器 → warn 推荐迁移 signal inputs | ANGULAR_SRC_GLOBS |
-| fw_angular_lazy_route | warn | 路由配置 component: 直接引用组件（非 loadComponent）→ warn | ANGULAR_SRC_GLOBS |
-| fw_angular_functional_guard | warn | 检出 implements CanActivate/CanMatch/CanLoad 的类 → warn 推荐函数式 | ANGULAR_SRC_GLOBS |
-| fw_angular_zoneless | warn | provideZonelessChangeDetection 但 polyfills 仍含 zone.js → warn 配置冲突 | ANGULAR_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_angular_standalone | warn | 检出 @NgModule 文件（非迁移标注）→ warn 新项目应 standalone | ANGULAR_SRC_GLOBS | — |
+| fw_angular_signals | warn | 检出 Subject/BehaviorSubject 但同文件无 signal/toSignal → warn 状态管理应优先 signal | ANGULAR_SRC_GLOBS | — |
+| fw_angular_onpush | warn | @Component 未配 OnPush 且无 zoneless 配置 → warn | ANGULAR_SRC_GLOBS | — |
+| fw_angular_subscribe_cleanup | fail | .subscribe 调用前 2 行无 takeUntilDestroyed/takeUntil → fail 泄漏风险 | ANGULAR_SRC_GLOBS | CWE-772（订阅未释放致内存泄漏/回调悬置） |
+| fw_angular_http_client | warn | 组件/服务中检出 fetch/XMLHttpRequest（非拦截器内）→ warn | ANGULAR_SRC_GLOBS | — |
+| fw_angular_di_inject | warn | 检出 new XxxService() 绕过 DI → warn | ANGULAR_SRC_GLOBS | — |
+| fw_angular_impure_pipe | warn | @Pipe 配 pure: false → warn（每次变更检测求值） | ANGULAR_SRC_GLOBS | — |
+| fw_angular_signal_inputs | warn | 检出 @Input()/@Output() 装饰器 → warn 推荐迁移 signal inputs | ANGULAR_SRC_GLOBS | — |
+| fw_angular_lazy_route | warn | 路由配置 component: 直接引用组件（非 loadComponent）→ warn | ANGULAR_SRC_GLOBS | — |
+| fw_angular_functional_guard | warn | 检出 implements CanActivate/CanMatch/CanLoad 的类 → warn 推荐函数式 | ANGULAR_SRC_GLOBS | — |
+| fw_angular_zoneless | warn | provideZonelessChangeDetection 但 polyfills 仍含 zone.js → warn 配置冲突 | ANGULAR_SRC_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_angular_<rule>（rule 全小写下划线）。
 本表 11 条 id 须在 assets/framework-gates/angular.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_angular_<rule>(warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: angular  requires_conf: ANGULAR_SRC_GLOBS` 声明。
-fixture 验证覆盖：violating 含 subscribe 无 takeUntilDestroyed（fw_angular_subscribe_cleanup fail 主触发）+ @NgModule 非 standalone（warn）+ 模板复杂表达式；compliant 全 pass。
+fixture 验证覆盖：violating 含 subscribe 无 takeUntilDestroyed（fw_angular_subscribe_cleanup fail 主触发，1/1）+ @NgModule 非 standalone（warn）+ 模板复杂表达式；compliant 全 pass。expected-fail-ids 已登记 1/1 fail id（2026-07-20 P1）。CWE/GB 映射列（同批补录）：仅对具直接安全/可靠性语义的行引证，其余标 —。
 -->
 
 ## §5 跨框架交互规则

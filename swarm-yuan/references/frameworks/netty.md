@@ -138,18 +138,18 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
 |---------|------|---------|---------|
-| fw_netty_eventloop_block | fail | handler 文件（channelRead/继承入站 handler）内检出 Thread.sleep/DriverManager/executeQuery/executeUpdate/.get() → fail | NETTY_SRC_GLOBS |
-| fw_netty_bytebuf_release | fail | 含 channelRead + ByteBuf 但无 release( 且非 SimpleChannelInboundHandler → fail | NETTY_SRC_GLOBS |
-| fw_netty_idle_heartbeat | warn | 检出 ServerBootstrap 但无 IdleStateHandler/ReadTimeoutHandler → warn | NETTY_SRC_GLOBS |
-| fw_netty_write_thread | warn | 检出 writeAndFlush → warn 人工确认写路径线程归属 | NETTY_SRC_GLOBS |
-| fw_netty_pipeline_order | warn | 业务 handler addLast 先于 Decoder/SslHandler → warn 顺序错置 | NETTY_SRC_GLOBS |
-| fw_netty_frame_decoder | warn | ServerBootstrap + 入站业务 handler 但无帧/协议解码器 → warn 粘包拆包缺失 | NETTY_SRC_GLOBS |
-| fw_netty_ssl_config | warn | 检出 SelfSignedCertificate/InsecureTrustManagerFactory → warn 仅限测试 | NETTY_SRC_GLOBS |
-| fw_netty_channel_option | warn | ServerBootstrap 无 SO_BACKLOG/TCP_NODELAY → warn | NETTY_SRC_GLOBS |
-| fw_netty_eventloop_threads | warn | new NioEventLoopGroup(1) 或显式线程数 >64 → warn | NETTY_SRC_GLOBS |
-| fw_netty_exception_caught | warn | 入站 handler 无 exceptionCaught 覆写 → warn | NETTY_SRC_GLOBS |
-| fw_netty_sharable | warn | @Sharable + 非 final 可变成员字段 → warn 线程安全确认 | NETTY_SRC_GLOBS |
-| fw_netty_shutdown_gracefully | warn | 创建 EventLoopGroup 但无 shutdownGracefully → warn | NETTY_SRC_GLOBS |
+| fw_netty_eventloop_block | fail | handler 文件（channelRead/继承入站 handler）内检出 Thread.sleep/DriverManager/executeQuery/executeUpdate/.get() → fail (CWE-400) | NETTY_SRC_GLOBS |
+| fw_netty_bytebuf_release | fail | 含 channelRead + ByteBuf 但无 release( 且非 SimpleChannelInboundHandler → fail (CWE-401) | NETTY_SRC_GLOBS |
+| fw_netty_idle_heartbeat | warn | 检出 ServerBootstrap 但无 IdleStateHandler/ReadTimeoutHandler → warn (n/a) | NETTY_SRC_GLOBS |
+| fw_netty_write_thread | warn | 检出 writeAndFlush → warn 人工确认写路径线程归属 (n/a) | NETTY_SRC_GLOBS |
+| fw_netty_pipeline_order | warn | 业务 handler addLast 先于 Decoder/SslHandler → warn 顺序错置 (n/a) | NETTY_SRC_GLOBS |
+| fw_netty_frame_decoder | warn | ServerBootstrap + 入站业务 handler 但无帧/协议解码器 → warn 粘包拆包缺失 (n/a) | NETTY_SRC_GLOBS |
+| fw_netty_ssl_config | warn | 检出 SelfSignedCertificate/InsecureTrustManagerFactory → warn 仅限测试 (CWE-295) | NETTY_SRC_GLOBS |
+| fw_netty_channel_option | warn | ServerBootstrap 无 SO_BACKLOG/TCP_NODELAY → warn (n/a) | NETTY_SRC_GLOBS |
+| fw_netty_eventloop_threads | warn | new NioEventLoopGroup(1) 或显式线程数 >64 → warn (n/a) | NETTY_SRC_GLOBS |
+| fw_netty_exception_caught | warn | 入站 handler 无 exceptionCaught 覆写 → warn (n/a) | NETTY_SRC_GLOBS |
+| fw_netty_sharable | warn | @Sharable + 非 final 可变成员字段 → warn 线程安全确认 (CWE-362) | NETTY_SRC_GLOBS |
+| fw_netty_shutdown_gracefully | warn | 创建 EventLoopGroup 但无 shutdownGracefully → warn (n/a) | NETTY_SRC_GLOBS |
 
 <!--
 门禁 id 命名规范：fw_netty_<rule>（rule 全小写下划线）。

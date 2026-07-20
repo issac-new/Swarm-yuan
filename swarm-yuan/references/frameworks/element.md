@@ -130,29 +130,29 @@ detect 信号命中任一高置信度行即可激活 element 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / CWE·GB 元数据）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_element_on_demand_import | warn | 全量 import element-plus → warn 包体过大 | ELEMENT_SRC_GLOBS |
-| fw_element_form_rules | warn | el-form 未用 :rules + 手动 if 校验 → warn | ELEMENT_SRC_GLOBS |
-| fw_element_table_virtual | warn | el-table 大数据源未配虚拟滚动 → warn | ELEMENT_SRC_GLOBS |
-| fw_element_i18n_no_hardcode_cn | warn | 硬编码中文文案 → warn 无法国际化 | ELEMENT_SRC_GLOBS |
-| fw_element_theme_no_override_component | warn | 直接改 element-plus 内部 SCSS → warn | ELEMENT_SRC_GLOBS |
-| fw_element_imperative_api | warn | 命令式 API 未显式 import → warn | ELEMENT_SRC_GLOBS |
-| fw_element_form_item_prop | warn | el-form-item 无 prop → warn | ELEMENT_SRC_GLOBS |
-| fw_element_dialog_destroy_on_close | warn | el-dialog 无 destroy-on-close → warn | ELEMENT_SRC_GLOBS |
-| fw_element_tree_virtual | warn | el-tree 未配虚拟滚动 → warn | ELEMENT_SRC_GLOBS |
-| fw_element_date_value_format | warn | 日期组件无 value-format → warn | ELEMENT_SRC_GLOBS |
-| fw_element_upload_size_limit | fail | el-upload 无 before-upload 大小校验 → fail DoS | ELEMENT_SRC_GLOBS |
-| fw_element_select_remote_search | warn | el-select filterable 无 remote-method → warn | ELEMENT_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_element_on_demand_import | warn | 全量 import element-plus → warn 包体过大 | ELEMENT_SRC_GLOBS | — |
+| fw_element_form_rules | warn | el-form 未用 :rules + 手动 if 校验 → warn | ELEMENT_SRC_GLOBS | — |
+| fw_element_table_virtual | warn | el-table 大数据源未配虚拟滚动 → warn | ELEMENT_SRC_GLOBS | — |
+| fw_element_i18n_no_hardcode_cn | warn | 硬编码中文文案 → warn 无法国际化 | ELEMENT_SRC_GLOBS | — |
+| fw_element_theme_no_override_component | warn | 直接改 element-plus 内部 SCSS → warn | ELEMENT_SRC_GLOBS | — |
+| fw_element_imperative_api | warn | 命令式 API 未显式 import → warn | ELEMENT_SRC_GLOBS | — |
+| fw_element_form_item_prop | warn | el-form-item 无 prop → warn | ELEMENT_SRC_GLOBS | — |
+| fw_element_dialog_destroy_on_close | warn | el-dialog 无 destroy-on-close → warn | ELEMENT_SRC_GLOBS | — |
+| fw_element_tree_virtual | warn | el-tree 未配虚拟滚动 → warn | ELEMENT_SRC_GLOBS | — |
+| fw_element_date_value_format | warn | 日期组件无 value-format → warn | ELEMENT_SRC_GLOBS | — |
+| fw_element_upload_size_limit | fail | el-upload 无 before-upload 大小校验 → fail DoS | ELEMENT_SRC_GLOBS | CWE-770（资源分配无限制，门禁文案 DoS）；GB/T 38674-2020 §8.1（输入/资源限制类安全设计） |
+| fw_element_select_remote_search | warn | el-select filterable 无 remote-method → warn | ELEMENT_SRC_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_element_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/element.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_element_<rule>(warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: element  requires_conf: ELEMENT_SRC_GLOBS` 声明。
-fixture 验证覆盖：violating 含全量 import + 手动表单校验 + 硬编码中文 + el-upload 无大小限制 → upload_size_limit fail 主触发；compliant 全 pass。
+fixture 验证覆盖：violating 含全量 import + 手动表单校验 + 硬编码中文 + el-upload 无大小限制 → upload_size_limit fail 主触发（1/1）；compliant 全 pass。expected-fail-ids 已登记 1/1 fail id（2026-07-20 P1）。CWE/GB 映射列（同批补录）：仅对具直接安全语义的行引证，其余标 —。
 -->
 
 ## §5 跨框架交互规则

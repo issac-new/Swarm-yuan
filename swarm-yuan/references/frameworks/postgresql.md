@@ -142,27 +142,30 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_pgsql_pk_identity | fail | 检出 max(id)+1 / max(x_id)+1 应用层取号 → fail | PGSQL_SQL_GLOBS |
-| fw_pgsql_json_vs_jsonb | warn | DDL 列类型 json（词边界排除 jsonb）→ warn | PGSQL_SCHEMA_GLOBS |
-| fw_pgsql_jsonb_index | warn | 文件含 jsonb 但无 USING gin → warn 核对 | PGSQL_SCHEMA_GLOBS |
-| fw_pgsql_autovacuum | warn | autovacuum=off → warn 膨胀/xid 回卷风险 | PGSQL_SQL_GLOBS |
-| fw_pgsql_conn_pool | warn | 检出 PG 数据源但无连接池配置 → warn | PGSQL_SQL_GLOBS |
-| fw_pgsql_isolation | warn | ISOLATION LEVEL SERIALIZABLE → warn 核对重试 | PGSQL_SQL_GLOBS |
-| fw_pgsql_index_type | warn | 双侧通配 LIKE 且无 pg_trgm 引用 → warn | PGSQL_SQL_GLOBS PGSQL_SCHEMA_GLOBS |
-| fw_pgsql_partition | warn | log/history/event 表无 PARTITION BY → warn | PGSQL_SCHEMA_GLOBS |
-| fw_pgsql_dml_where | fail | 单行 UPDATE/DELETE 无 WHERE → fail | PGSQL_SQL_GLOBS |
-| fw_pgsql_copy_vs_insert | warn | 单文件 INSERT INTO ≥50 行 → warn 建议 COPY | PGSQL_SQL_GLOBS PGSQL_SCHEMA_GLOBS |
-| fw_pgsql_seq_cache | warn | CREATE SEQUENCE 显式 CACHE 1 → warn | PGSQL_SCHEMA_GLOBS |
-| fw_pgsql_constraint_naming | warn | REFERENCES 存在但全文无 CONSTRAINT 命名 → warn | PGSQL_SCHEMA_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_pgsql_pk_identity | fail | 检出 max(id)+1 / max(x_id)+1 应用层取号 → fail | PGSQL_SQL_GLOBS | CWE-362（并发取号竞态） |
+| fw_pgsql_json_vs_jsonb | warn | DDL 列类型 json（词边界排除 jsonb）→ warn | PGSQL_SCHEMA_GLOBS | —（类型选型） |
+| fw_pgsql_jsonb_index | warn | 文件含 jsonb 但无 USING gin → warn 核对 | PGSQL_SCHEMA_GLOBS | —（索引配套） |
+| fw_pgsql_autovacuum | warn | autovacuum=off → warn 膨胀/xid 回卷风险 | PGSQL_SQL_GLOBS | —（运维约束） |
+| fw_pgsql_conn_pool | warn | 检出 PG 数据源但无连接池配置 → warn | PGSQL_SQL_GLOBS | CWE-770（连接无池化，后端进程 fork 无节制） |
+| fw_pgsql_isolation | warn | ISOLATION LEVEL SERIALIZABLE → warn 核对重试 | PGSQL_SQL_GLOBS | —（重试契约） |
+| fw_pgsql_index_type | warn | 双侧通配 LIKE 且无 pg_trgm 引用 → warn | PGSQL_SQL_GLOBS PGSQL_SCHEMA_GLOBS | —（扩展配套） |
+| fw_pgsql_partition | warn | log/history/event 表无 PARTITION BY → warn | PGSQL_SCHEMA_GLOBS | —（归档策略） |
+| fw_pgsql_dml_where | fail | 单行 UPDATE/DELETE 无 WHERE → fail | PGSQL_SQL_GLOBS | —（数据完整性） |
+| fw_pgsql_copy_vs_insert | warn | 单文件 INSERT INTO ≥50 行 → warn 建议 COPY | PGSQL_SQL_GLOBS PGSQL_SCHEMA_GLOBS | —（批量装载效率） |
+| fw_pgsql_seq_cache | warn | CREATE SEQUENCE 显式 CACHE 1 → warn | PGSQL_SCHEMA_GLOBS | —（WAL 热点） |
+| fw_pgsql_constraint_naming | warn | REFERENCES 存在但全文无 CONSTRAINT 命名 → warn | PGSQL_SCHEMA_GLOBS | —（命名一致性） |
 
 <!--
 门禁 id 命名规范：fw_pgsql_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/postgresql.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_pgsql_<rule>(fail|warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: postgresql  requires_conf: PGSQL_SQL_GLOBS PGSQL_SCHEMA_GLOBS` 声明。
-fixture 验证覆盖：violating 含 max(id)+1 取号 + json（非 jsonb）无 GIN + 数据源无连接池 → pk_identity fail 主触发；compliant 修正后全 pass。
+fixture 验证覆盖：violating 含 max(id)+1 取号 + 无 WHERE 全表 DELETE + json（非 jsonb）无 GIN + 数据源无连接池 → pk_identity/dml_where 双 fail 主触发（expected-fail-ids 2/2 已登记）；compliant 修正后全 pass。
+CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
+- CWE 编号依据 MITRE CWE 词典与 CWE Top 25:2025（R8 §⑨）；「—」为工程一致性/性能契约类规律，无对应 CWE 弱点类，归 ISO/IEC 5055:2021 性能/可靠性度量面（138 弱点经 CWE 对齐，见 standards-compliance.md §E.1）。
+- GB/T 34944-2017（Java，9 大类 44 种）/ GB/T 34946-2017（C#）总则 §5 要求 SAST 扫描 + 人工复核 + 测试四件套；本表作用于源码的门禁即该流程的词法层 SAST 面（R8 §⑥）。
 -->
 
 ## §5 跨框架交互规则

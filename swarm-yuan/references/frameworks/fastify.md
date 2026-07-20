@@ -142,20 +142,20 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_fastify_schema_validation | fail | 含路由声明的文件未含 schema: → fail 输入未校验 | FASTIFY_SRC_GLOBS |
-| fw_fastify_response_schema | warn | 含 schema: 但无 response: → warn 序列化未优化 | FASTIFY_SRC_GLOBS |
-| fw_fastify_encapsulation | warn | 插件函数内 .decorate( 且未引入 fastify-plugin/fp( → warn | FASTIFY_SRC_GLOBS |
-| fw_fastify_onsend_return | fail | onSend 窗口内含 payload 改写但无 return/done → fail 修改静默丢弃 | FASTIFY_SRC_GLOBS |
-| fw_fastify_error_handler | fail | 有路由但无 setErrorHandler → fail 错误响应未收敛 | FASTIFY_SRC_GLOBS |
-| fw_fastify_logger | warn | fastify 初始化无 logger: 且无 pino → warn | FASTIFY_SRC_GLOBS |
-| fw_fastify_plugin_order | warn | 同文件首个路由先于首个 register( → warn 钩子不生效 | FASTIFY_SRC_GLOBS |
-| fw_fastify_decorate_reference | warn | decorateRequest/decorateReply 第二参为对象/数组字面量 → warn 跨请求共享引用 | FASTIFY_SRC_GLOBS |
-| fw_fastify_cors | warn | @fastify/cors origin: true/'*' → warn 任意源放行 | FASTIFY_SRC_GLOBS |
-| fw_fastify_rate_limit | warn | 未检出 @fastify/rate-limit → warn | FASTIFY_SRC_GLOBS |
-| fw_fastify_auth | warn | 有路由但无 @fastify/auth/preHandler/authenticate → warn | FASTIFY_SRC_GLOBS |
-| fw_fastify_swagger | warn | 未检出 @fastify/swagger → warn 文档漂移风险 | FASTIFY_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE / GB 映射 |
+|---------|------|---------|---------|--------------|
+| fw_fastify_schema_validation | fail | 含路由声明的文件未含 schema: → fail 输入未校验 | FASTIFY_SRC_GLOBS | CWE-20；GB/T 38674-2020 §5.1 |
+| fw_fastify_response_schema | warn | 含 schema: 但无 response: → warn 序列化未优化 | FASTIFY_SRC_GLOBS | CWE-200 |
+| fw_fastify_encapsulation | warn | 插件函数内 .decorate( 且未引入 fastify-plugin/fp( → warn | FASTIFY_SRC_GLOBS | — |
+| fw_fastify_onsend_return | fail | onSend 窗口内含 payload 改写但无 return/done → fail 修改静默丢弃 | FASTIFY_SRC_GLOBS | — |
+| fw_fastify_error_handler | fail | 有路由但无 setErrorHandler → fail 错误响应未收敛 | FASTIFY_SRC_GLOBS | CWE-209 |
+| fw_fastify_logger | warn | fastify 初始化无 logger: 且无 pino → warn | FASTIFY_SRC_GLOBS | — |
+| fw_fastify_plugin_order | warn | 同文件首个路由先于首个 register( → warn 钩子不生效 | FASTIFY_SRC_GLOBS | CWE-862；GB/T 38674-2020 §5.3 |
+| fw_fastify_decorate_reference | warn | decorateRequest/decorateReply 第二参为对象/数组字面量 → warn 跨请求共享引用 | FASTIFY_SRC_GLOBS | CWE-668 |
+| fw_fastify_cors | warn | @fastify/cors origin: true/'*' → warn 任意源放行 | FASTIFY_SRC_GLOBS | CWE-942 |
+| fw_fastify_rate_limit | warn | 未检出 @fastify/rate-limit → warn | FASTIFY_SRC_GLOBS | CWE-770 |
+| fw_fastify_auth | warn | 有路由但无 @fastify/auth/preHandler/authenticate → warn | FASTIFY_SRC_GLOBS | CWE-862；GB/T 38674-2020 §5.3 |
+| fw_fastify_swagger | warn | 未检出 @fastify/swagger → warn 文档漂移风险 | FASTIFY_SRC_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_fastify_<rule>（rule 全小写下划线）。
@@ -163,7 +163,10 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 片段头注释 `# gates: fw_fastify_<rule>(...) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: fastify  requires_conf: FASTIFY_SRC_GLOBS` 声明。
 fixture 验证覆盖：violating 含无 schema 路由 + onSend 改写未 return + 无 setErrorHandler
-→ schema_validation/onsend_return/error_handler fail 主触发；compliant 修正后全 pass。
+→ schema_validation/onsend_return/error_handler fail 主触发（3/3 已断言）；compliant 修正后全 pass。
+2026-07-20 唤醒登记：error_handler 曾因 fixture 注释自含 setErrorHandler 字面量假 pass、
+onsend_return 因 hook 距 EOF 不足 15 行窗口不闭合，均经 fixture 修正唤醒（门禁脚本未动）；
+EOF 窗口不兜底属已知限制，留 P1 评估（见 tests/fixtures/fastify/README.md）。
 -->
 
 ## §5 跨框架交互规则

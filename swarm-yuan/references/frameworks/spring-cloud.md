@@ -144,19 +144,19 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
 |---------|------|---------|---------|
-| fw_scloud_feign_fallback | warn | @FeignClient 未含 fallback/fallbackFactory → warn 降级缺失 | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_feign_timeout | warn | 检出 @FeignClient 但无 feign.client.config.*connect-timeout/read-timeout → warn | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_feign_retry | warn | 检出 Retryer 配置 → warn 确认接口幂等性 | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_lb_retry_idempotent | warn | retry-on-all-operations=true → warn 非幂等风险 | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_gateway_route_order | warn | Path=/** 前置于具体路径路由 → warn | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_refresh_scope | warn | 无配置中心项目误用 @RefreshScope → warn | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_config_failfast | warn | spring.cloud.config.uri 无 fail-fast=true → warn | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_bootstrap_deprecated | warn | bootstrap.yml 存在且无 spring-cloud-starter-bootstrap → warn | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_discovery_healthcheck | warn | eureka.client 无 healthcheck.enabled → warn | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_feign_log_level | warn | Feign 日志级别 FULL → warn | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_gateway_ratelimit | warn | Gateway 路由无 RequestRateLimiter → warn | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_config_encrypt | fail | 配置中心敏感 key 值非 {cipher} 前缀 → fail 明文泄露 | SPRINGCLOUD_SRC_GLOBS |
-| fw_scloud_version_matrix | warn | spring-cloud-dependencies 版本与 Boot 不符矩阵 → warn | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_feign_fallback | warn | @FeignClient 未含 fallback/fallbackFactory → warn 降级缺失 (n/a) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_feign_timeout | warn | 检出 @FeignClient 但无 feign.client.config.*connect-timeout/read-timeout → warn (n/a) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_feign_retry | warn | 检出 Retryer 配置 → warn 确认接口幂等性 (n/a) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_lb_retry_idempotent | warn | retry-on-all-operations=true → warn 非幂等风险 (n/a) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_gateway_route_order | warn | Path=/** 前置于具体路径路由 → warn (n/a) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_refresh_scope | warn | 无配置中心项目误用 @RefreshScope → warn (n/a) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_config_failfast | warn | spring.cloud.config.uri 无 fail-fast=true → warn (n/a) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_bootstrap_deprecated | warn | bootstrap.yml 存在且无 spring-cloud-starter-bootstrap → warn (n/a) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_discovery_healthcheck | warn | eureka.client 无 healthcheck.enabled → warn (n/a) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_feign_log_level | warn | Feign 日志级别 FULL → warn (CWE-532) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_gateway_ratelimit | warn | Gateway 路由无 RequestRateLimiter → warn (CWE-770) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_config_encrypt | fail | 配置中心敏感 key 值非 {cipher} 前缀 → fail 明文泄露 (CWE-312) | SPRINGCLOUD_SRC_GLOBS |
+| fw_scloud_version_matrix | warn | spring-cloud-dependencies 版本与 Boot 不符矩阵 → warn (n/a) | SPRINGCLOUD_SRC_GLOBS |
 
 <!--
 门禁 id 命名规范：fw_scloud_<rule>（rule 全小写下划线）。
