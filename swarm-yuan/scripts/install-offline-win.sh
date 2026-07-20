@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install-offline-win.sh — Windows 离线安装（从 offline-cache/ 本地安装 10 个运行时 + swarm-yuan 技能）
+# install-offline-win.sh — Windows 离线安装（从 offline-cache/ 本地安装 11 个运行时 + swarm-yuan 技能）
 # 由 install-offline-win.bat 调用，也可直接 bash 运行
 #
 # offline-cache 降级链（建议4 迁移 Release 后）：

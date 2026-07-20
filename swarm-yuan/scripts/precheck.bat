@@ -5,7 +5,7 @@ REM   precheck.bat                  # 全部门禁
 REM   precheck.bat --branch         # 分支规范
 REM   precheck.bat --scope          # 改动范围
 REM   precheck.bat --all            # 核心 10 门禁
-REM   precheck.bat --all-full       # 全部 25 门禁
+REM   precheck.bat --all-full       # 全部 31 门禁
 REM   precheck.bat <gate>           # 单个门禁（--reuse/--security/--deps ...）
 
 setlocal enabledelayedexpansion
