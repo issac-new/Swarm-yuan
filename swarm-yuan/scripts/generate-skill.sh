@@ -368,17 +368,20 @@ copy_universal_templates() {
   done
   chmod +x "$dir/assets/"*.sh "$dir/scripts/"*.sh
   # Windows .bat 包装器（让 Windows 用户也能直接运行，三平台兼容；缺失则跳过）
-  # scripts/ 下的 .bat（install/generate-skill/self-check/precheck/state-machine）
-  local b
-  for b in install generate-skill self-check precheck state-machine; do
-    src="$SRC_SCRIPTS/$b.bat"
-    [[ "$b" == "install" ]] && src="$SRC_SCRIPTS/../install.bat"
-    if [[ -f "$src" ]]; then cp "$src" "$dir/scripts/$b.bat" 2>/dev/null || true; fi
-  done
-  # assets/ 下的 .bat（branch-setup/env-setup）
-  for b in branch-setup env-setup; do
-    if [[ -f "$ASSETS_DIR/$b.bat" ]]; then cp "$ASSETS_DIR/$b.bat" "$dir/assets/$b.bat" 2>/dev/null || true; fi
-  done
+  # 设 SKIP_BAT=1 可跳过 .bat 复制（macOS/Linux 用户无需 .bat，让 skill 目录更干净）
+  if [[ "${SKIP_BAT:-0}" != "1" ]]; then
+    # scripts/ 下的 .bat（install/generate-skill/self-check/precheck/state-machine）
+    local b
+    for b in install generate-skill self-check precheck state-machine; do
+      src="$SRC_SCRIPTS/$b.bat"
+      [[ "$b" == "install" ]] && src="$SRC_SCRIPTS/../install.bat"
+      if [[ -f "$src" ]]; then cp "$src" "$dir/scripts/$b.bat" 2>/dev/null || true; fi
+    done
+    # assets/ 下的 .bat（branch-setup/env-setup）
+    for b in branch-setup env-setup; do
+      if [[ -f "$ASSETS_DIR/$b.bat" ]]; then cp "$ASSETS_DIR/$b.bat" "$dir/assets/$b.bat" 2>/dev/null || true; fi
+    done
+  fi
 }
 
 # ============================================================

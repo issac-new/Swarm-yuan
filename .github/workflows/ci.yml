@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------- Job 1：57 框架规则集四要素核验 ----------
+  verify-framework-rulesets:
+    name: Verify 57 framework rulesets
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: swarm-yuan
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify all framework rulesets (四要素 + 片段语法 + 函数存在)
+        run: |
+          fail=0
+          for md in references/frameworks/*.md; do
+            id=$(basename "$md" .md)
+            [[ "$id" == "_template" ]] && continue
+            if ! bash scripts/verify-framework-ruleset.sh "$id"; then
+              echo "FAIL: $id"
+              fail=$((fail+1))
+            fi
+          done
+          [[ "$fail" -eq 0 ]] && echo "✓ All 57 rulesets verified" || { echo "✗ $fail rulesets failed"; exit 1; }
+
+  # ---------- Job 2：57 框架 fixture 双态测试 ----------
+  fixture-double-state:
+    name: Run 57 fixture double-state tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: swarm-yuan
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fixture double-state (violating → FAIL / compliant → PASS)
+        run: |
+          fail=0
+          for md in references/frameworks/*.md; do
+            id=$(basename "$md" .md)
+            [[ "$id" == "_template" ]] && continue
+            if ! bash tests/run-framework-fixture.sh "$id" >/dev/null 2>&1; then
+              echo "FIXTURE FAIL: $id"
+              fail=$((fail+1))
+            fi
+          done
+          [[ "$fail" -eq 0 ]] && echo "✓ All 57 fixtures passed" || { echo "✗ $fail fixtures failed"; exit 1; }
+
+  # ---------- Job 3：self-check 时效检查 + 运行时工具检测 ----------
+  self-check:
+    name: Self-check (freshness + runtimes)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: swarm-yuan
+    steps:
+      - uses: actions/checkout@v4
+      - name: self-check.sh (framework freshness + runtime detection)
+        # self-check 检测 11 个运行时工具（openspec/comet/graphify 等），
+        # CI 环境未装这些工具会 miss 但不 fail（设计如此：手动安装的需按提示操作）。
+        # 重点验证：fw_freshness_check 实际执行（非死代码）+ 脚本无语法错。
+        run: |
+          bash -n scripts/self-check.sh
+          bash scripts/self-check.sh 2>&1 | grep -q "框架规则库时效检查" || { echo "✗ fw_freshness_check 未执行"; exit 1; }
+          echo "✓ self-check 时效检查执行正常"
+
+  # ---------- Job 4：shellcheck 静态检查（核心脚本）----------
+  shellcheck:
+    name: Shellcheck core scripts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: swarm-yuan
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+      - name: Shellcheck core scripts (precheck/generate-skill/self-check/verify)
+        # 不全量 shellcheck 所有 60 个片段（噪声大），只查核心脚本。
+        # 片段由 verify-framework-ruleset.sh 的 bash -n 兜底语法。
+        run: |
+          sc_fail=0
+          for f in assets/precheck.sh scripts/generate-skill.sh scripts/self-check.sh scripts/verify-framework-ruleset.sh tests/run-framework-fixture.sh scripts/gen-framework-index.sh; do
+            [[ -f "$f" ]] || continue
+            # 允许 SC2086（word splitting 是故意的，如 find $includes）等常见豁免
+            if ! shellcheck -x -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312 "$f"; then
+              echo "SHELLCHECK FAIL: $f"
+              sc_fail=$((sc_fail+1))
+            fi
+          done
+          [[ "$sc_fail" -eq 0 ]] && echo "✓ Core scripts shellcheck passed" || exit 1

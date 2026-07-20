@@ -24,7 +24,7 @@ _fw_seata_check() {
       *.java) javaarr+=("$f") ;;
       *.sql) sqlarr+=("$f") ;;
       *.json) jsonarr+=("$f") ;;
-      *.yml|*.yaml|*.properties|*.conf|*.xml|pom.xml|build.gradle|*.gradle|*.gradle.kts) cfgarr+=("$f") ;;
+      *.yml|*.yaml|*.properties|*.conf|*.xml|build.gradle|*.gradle|*.gradle.kts) cfgarr+=("$f") ;;
     esac
   done
 
