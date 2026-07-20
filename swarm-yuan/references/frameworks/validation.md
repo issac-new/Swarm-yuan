@@ -138,22 +138,23 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_validation_cascade | warn | 自定义类型（*DTO/*Form/*Request/*VO/*Item 后缀）字段同行+前 3 行无 @Valid → warn | VALIDATION_SRC_GLOBS |
-| fw_validation_groupsequence | warn | 存在 @GroupSequence 即提示人工确认组顺序与 Default 组位置 | VALIDATION_SRC_GLOBS |
-| fw_validation_validator_threadsafe | fail | ConstraintValidator 实现类含非 static/final 实例字段 → fail（单例复用须无状态） | VALIDATION_SRC_GLOBS |
-| fw_validation_validated_scope | warn | @Validated(…) 带分组命中 → warn 确认类级/参数级语义 | VALIDATION_SRC_GLOBS |
-| fw_validation_notnull_notblank | fail | @NotNull 同行或后 3 行内声明 String 字段 → fail（应 @NotBlank） | VALIDATION_SRC_GLOBS |
-| fw_validation_size_column | warn | 含 @Column(length=) 的实体文件无 @Size → warn 分层一致 | VALIDATION_SRC_GLOBS |
-| fw_validation_pattern_redos | warn | @Pattern 行检出嵌套量词（+)+ 等）→ warn ReDoS 复核 | VALIDATION_SRC_GLOBS |
-| fw_validation_email_lax | warn | 裸 @Email（无 regexp 属性）→ warn 确认宽松度 | VALIDATION_SRC_GLOBS |
-| fw_validation_temporal_tz | warn | @Future/@Past 系使用 → warn 确认 JVM 时区/ClockProvider | VALIDATION_SRC_GLOBS |
-| fw_validation_decimal_bigdecimal | warn | @DecimalMin/@DecimalMax 作用于 double/float 字段 → warn 改 BigDecimal | VALIDATION_SRC_GLOBS |
-| fw_validation_nested_collection | warn | List/Set/Collection/Map<自定义类型> 字段行内+前 3 行无 @Valid → warn | VALIDATION_SRC_GLOBS |
-| fw_validation_advice | warn | 有约束注解使用但无 Advice 类处理校验异常 → warn | VALIDATION_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|---------|
+| fw_validation_cascade | warn | 自定义类型（*DTO/*Form/*Request/*VO/*Item 后缀）字段同行+前 3 行无 @Valid → warn | VALIDATION_SRC_GLOBS | CWE-20；GB/T 34944-2017 |
+| fw_validation_groupsequence | warn | 存在 @GroupSequence 即提示人工确认组顺序与 Default 组位置 | VALIDATION_SRC_GLOBS | — |
+| fw_validation_validator_threadsafe | fail | ConstraintValidator 实现类含非 static/final 实例字段 → fail（单例复用须无状态） | VALIDATION_SRC_GLOBS | CWE-362；GB/T 34944-2017 |
+| fw_validation_validated_scope | warn | @Validated(…) 带分组命中 → warn 确认类级/参数级语义 | VALIDATION_SRC_GLOBS | — |
+| fw_validation_notnull_notblank | fail | @NotNull 同行或后 3 行内声明 String 字段 → fail（应 @NotBlank） | VALIDATION_SRC_GLOBS | — |
+| fw_validation_size_column | warn | 含 @Column(length=) 的实体文件无 @Size → warn 分层一致 | VALIDATION_SRC_GLOBS | — |
+| fw_validation_pattern_redos | warn | @Pattern 行检出嵌套量词（+)+ 等）→ warn ReDoS 复核 | VALIDATION_SRC_GLOBS | CWE-1333/CWE-400；GB/T 34944-2017 |
+| fw_validation_email_lax | warn | 裸 @Email（无 regexp 属性）→ warn 确认宽松度 | VALIDATION_SRC_GLOBS | — |
+| fw_validation_temporal_tz | warn | @Future/@Past 系使用 → warn 确认 JVM 时区/ClockProvider | VALIDATION_SRC_GLOBS | — |
+| fw_validation_decimal_bigdecimal | warn | @DecimalMin/@DecimalMax 作用于 double/float 字段 → warn 改 BigDecimal | VALIDATION_SRC_GLOBS | — |
+| fw_validation_nested_collection | warn | List/Set/Collection/Map<自定义类型> 字段行内+前 3 行无 @Valid → warn | VALIDATION_SRC_GLOBS | — |
+| fw_validation_advice | warn | 有约束注解使用但无 Advice 类处理校验异常 → warn | VALIDATION_SRC_GLOBS | — |
 
 <!--
+CWE/GB 映射列（2026-07-20 P1 补）：仅登记仓库内已有证据（.sh 告警文案/§3 违反后果）的弱点映射；— = 质量/规范类门禁，无 CWE 直挂。GB/T 34944-2017 为 Java 语言源代码漏洞测试规范。
 门禁 id 命名规范：fw_validation_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/validation.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_validation_<rule>(fail|warn) ...` 与本表 id 集合一致。

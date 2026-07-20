@@ -3,6 +3,7 @@
 # 用法:
 #   bash generate-skill.sh <skill-name> <project-dir> [target-dir]       # 创建新技能骨架
 #   bash generate-skill.sh --upgrade <skill-name> <project-dir> [target-dir]  # 升级已存在技能
+#   bash generate-skill.sh --verify-completeness <skill-dir>   # 零占位符机器执法（骨架填充完成度校验）
 # 可选环境变量:
 #   SKILLS_PATH_REWRITE — sed 表达式，复制通用文件后逐文件应用（create/upgrade 均生效；
 #     缺省为空 = 不重写，行为不变）。用于目标运行时的 skills 目录不是 .claude/skills 的实例。
@@ -61,6 +62,7 @@ UNIVERSAL_FILES=(
   "references/cognitive-bias.md|ref"
   "references/domain-knowledge.md|ref"
   "references/claude-code-capabilities.md|ref"
+  "references/standards-compliance.md|ref"
 )
 
 # 项目特定文件（upgrade 保留不覆盖、不备份）
@@ -300,6 +302,48 @@ if [[ "${1:-}" == "--inject-frameworks" ]]; then
   exit $?
 fi
 
+# ============================================================
+# --verify-completeness 子命令（独立于 create/upgrade，单独拦截）
+# 用法: bash generate-skill.sh --verify-completeness <skill-dir>
+# 零占位符机器执法：扫描目标 skill 的 SKILL.md / references/*.md /
+# scripts/precheck.conf / hooks/hooks.json（存在才查），命中占位符模式
+# 或未勾 checkbox（- [ ]）则打印 file:line 清单并 exit 1；零命中 exit 0。
+# ============================================================
+verify_completeness() {
+  local skill_dir="$1"
+  [[ -d "$skill_dir" ]] || { echo "✗ 目录不存在: $skill_dir" >&2; return 1; }
+  # 收集检查目标（存在才查；空数组在 bash 3.2 + set -u 下须用 ${arr[@]+...} 防空崩）
+  local targets=() f
+  [[ -f "$skill_dir/SKILL.md" ]] && targets+=("$skill_dir/SKILL.md")
+  for f in "$skill_dir"/references/*.md; do
+    [[ -f "$f" ]] && targets+=("$f")
+  done
+  [[ -f "$skill_dir/scripts/precheck.conf" ]] && targets+=("$skill_dir/scripts/precheck.conf")
+  [[ -f "$skill_dir/hooks/hooks.json" ]] && targets+=("$skill_dir/hooks/hooks.json")
+  if [[ ${#targets[@]} -eq 0 ]]; then
+    echo "⚠ 未找到可检查文件（SKILL.md / references/*.md / precheck.conf / hooks.json 均不存在）"
+    echo "✓ 零占位符确认"
+    return 0
+  fi
+  # grep -F 固定串多模式（-e 叠加），三平台兼容；输出 file:line:内容 清单
+  local hits
+  hits=$(grep -Fn -e '待填充' -e '（待填充）' -e '<占位符>' -e '填充指引' -e '- [ ]' \
+    ${targets[@]+"${targets[@]}"} 2>/dev/null || true)
+  if [[ -n "$hits" ]]; then
+    echo "✗ 占位符/未勾项未清零（$(printf '%s\n' "$hits" | wc -l | tr -d ' ') 处）:"
+    printf '%s\n' "$hits"
+    return 1
+  fi
+  echo "✓ 零占位符确认"
+  return 0
+}
+
+if [[ "${1:-}" == "--verify-completeness" ]]; then
+  [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --verify-completeness <skill-dir>"; exit 1; }
+  verify_completeness "$2"
+  exit $?
+fi
+
 # ---- 检测运行环境 ----
 detect_skill_dir() {
   local project="$1"
@@ -446,6 +490,7 @@ EOF
       inject_frameworks "$SKILL_DIR" || echo "  ⚠ 门禁注入返回非 0（$?），请人工检查"
     fi
   fi
+  echo "提示：precheck.conf 保留原值，新增标准合规 16 变量由 _default_conf 兜底（未配置静默跳过），如需启用请按特征卡补配"
   exit 0
 fi
 
@@ -519,7 +564,7 @@ description: （填充指引：触发条件 + 项目关键词）
 - [ ] workflow: 八节点+4-Phase SOP+每节点读取项目知识
 - [ ] reference: codebase/dev-guide/release/reference-manual + 方法论+认知 reference
 - [ ] assets: spec-template(§5.5-§18) + plan + branch + env + data + state-machine
-- [ ] check: precheck.sh 25 门禁
+- [ ] check: precheck.sh 31 门禁
 - [ ] scripts: precheck + state-machine + snippets + mcp-tools
 EOF
 

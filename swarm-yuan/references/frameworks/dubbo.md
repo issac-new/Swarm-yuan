@@ -144,19 +144,19 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
 |---------|------|---------|---------|
-| fw_dubbo_timeout_idempotent | warn | 检出 retries>0 配置/注解 → warn 确认接口幂等 | DUBBO_SRC_GLOBS |
-| fw_dubbo_timeout_config | warn | @DubboService/@DubboReference 无 timeout 且无全局 timeout → warn | DUBBO_SRC_GLOBS |
-| fw_dubbo_version_required | warn | @DubboService 行未含 version → warn | DUBBO_SRC_GLOBS |
-| fw_dubbo_generic_security | warn | generic=true 或 GenericService 检出 → warn 人工确认鉴权 | DUBBO_SRC_GLOBS |
-| fw_dubbo_qos_exposure | fail | qos accept-foreign-ip=true 或 qos.host=0.0.0.0 → fail | DUBBO_SRC_GLOBS |
-| fw_dubbo_serialization | warn | serialization=java/nativejava/fastjson → warn | DUBBO_SRC_GLOBS |
-| fw_dubbo_cluster_failover | warn | 检出 cluster 显式策略 → warn 人工确认语义匹配 | DUBBO_SRC_GLOBS |
-| fw_dubbo_loadbalance | warn | 检出 loadbalance 显式配置 → warn 人工确认 | DUBBO_SRC_GLOBS |
-| fw_dubbo_mock_degrade | fail | mock=force: 检出 → fail（force 上生产屏蔽真实调用）；mock=return → warn 提示 | DUBBO_SRC_GLOBS |
-| fw_dubbo_rpc_context | warn | RpcContext Attachment + 异步/线程切换同现 → warn | DUBBO_SRC_GLOBS |
-| fw_dubbo_async | warn | async=true 或 getCompletableFuture 无异常/超时兜底 → warn | DUBBO_SRC_GLOBS |
-| fw_dubbo_direct_url | fail | @DubboReference url=dubbo:// 或 dubbo.reference.*.url → fail | DUBBO_SRC_GLOBS |
-| fw_dubbo_registry | warn | 有 Dubbo 服务但无 dubbo.registry.address → warn | DUBBO_SRC_GLOBS |
+| fw_dubbo_timeout_idempotent | warn | 检出 retries>0 配置/注解 → warn 确认接口幂等 (n/a) | DUBBO_SRC_GLOBS |
+| fw_dubbo_timeout_config | warn | @DubboService/@DubboReference 无 timeout 且无全局 timeout → warn (n/a) | DUBBO_SRC_GLOBS |
+| fw_dubbo_version_required | warn | @DubboService 行未含 version → warn (n/a) | DUBBO_SRC_GLOBS |
+| fw_dubbo_generic_security | warn | generic=true 或 GenericService 检出 → warn 人工确认鉴权 (CWE-862) | DUBBO_SRC_GLOBS |
+| fw_dubbo_qos_exposure | fail | qos accept-foreign-ip=true 或 qos.host=0.0.0.0 → fail (CWE-749) | DUBBO_SRC_GLOBS |
+| fw_dubbo_serialization | warn | serialization=java/nativejava/fastjson → warn (CWE-502) | DUBBO_SRC_GLOBS |
+| fw_dubbo_cluster_failover | warn | 检出 cluster 显式策略 → warn 人工确认语义匹配 (n/a) | DUBBO_SRC_GLOBS |
+| fw_dubbo_loadbalance | warn | 检出 loadbalance 显式配置 → warn 人工确认 (n/a) | DUBBO_SRC_GLOBS |
+| fw_dubbo_mock_degrade | fail | mock=force: 检出 → fail（force 上生产屏蔽真实调用）；mock=return → warn 提示 (n/a) | DUBBO_SRC_GLOBS |
+| fw_dubbo_rpc_context | warn | RpcContext Attachment + 异步/线程切换同现 → warn (n/a) | DUBBO_SRC_GLOBS |
+| fw_dubbo_async | warn | async=true 或 getCompletableFuture 无异常/超时兜底 → warn (n/a) | DUBBO_SRC_GLOBS |
+| fw_dubbo_direct_url | fail | @DubboReference url=dubbo:// 或 dubbo.reference.*.url → fail (n/a) | DUBBO_SRC_GLOBS |
+| fw_dubbo_registry | warn | 有 Dubbo 服务但无 dubbo.registry.address → warn (n/a) | DUBBO_SRC_GLOBS |
 
 <!--
 门禁 id 命名规范：fw_dubbo_<rule>（rule 全小写下划线）。

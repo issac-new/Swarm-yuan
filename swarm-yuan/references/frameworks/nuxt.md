@@ -141,28 +141,28 @@ detect 信号命中任一高置信度行即可激活 nuxt 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / CWE·GB 元数据）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_nuxt_fetch_key | fail | useAsyncData 无 key 参数 → fail；useFetch 动态 url 无 key → warn | NUXT_SRC_GLOBS |
-| fw_nuxt_hydration | fail | Date.now()/Math.random()/crypto.randomUUID() 出现在 setup 顶层 → fail hydration mismatch | NUXT_SRC_GLOBS |
-| fw_nuxt_usestate_key | fail | useState 无 key 或多 useState 同 key → fail | NUXT_SRC_GLOBS |
-| fw_nuxt_autoimport_conflict | fail | composables/ 导出与内置同名（useState/useFetch/ref 等）→ fail | NUXT_SRC_GLOBS |
-| fw_nuxt_middleware_scope | warn | *.global.ts 中间件含页面级逻辑 → warn | NUXT_SRC_GLOBS |
-| fw_nuxt_component_naming | warn | components/ 不同目录同名 .vue → warn | NUXT_SRC_GLOBS |
-| fw_nuxt_composable_export | warn | composables/ 导出 const/class → warn | NUXT_SRC_GLOBS |
-| fw_nuxt_server_boundary | fail | app/ 下文件 import ~/server/ → fail 服务端代码泄露 | NUXT_SRC_GLOBS |
-| fw_nuxt_seo_meta | warn | 组件内 document.head/document.title → warn 须用 useSeoMeta/useHead | NUXT_SRC_GLOBS |
-| fw_nuxt_error_page | warn | Nuxt 项目无 error.vue → warn | NUXT_SRC_GLOBS |
-| fw_nuxt_runtime_config_secret | fail | runtimeConfig.public 含 secret/password/apiKey/privateKey → fail 泄露 | NUXT_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_nuxt_fetch_key | fail | useAsyncData 无 key 参数 → fail；useFetch 动态 url 无 key → warn | NUXT_SRC_GLOBS | — |
+| fw_nuxt_hydration | fail | Date.now()/Math.random()/crypto.randomUUID() 出现在 setup 顶层 → fail hydration mismatch | NUXT_SRC_GLOBS | — |
+| fw_nuxt_usestate_key | fail | useState 无 key 或多 useState 同 key → fail | NUXT_SRC_GLOBS | — |
+| fw_nuxt_autoimport_conflict | fail | composables/ 导出与内置同名（useState/useFetch/ref 等）→ fail | NUXT_SRC_GLOBS | — |
+| fw_nuxt_middleware_scope | warn | *.global.ts 中间件含页面级逻辑 → warn | NUXT_SRC_GLOBS | — |
+| fw_nuxt_component_naming | warn | components/ 不同目录同名 .vue → warn | NUXT_SRC_GLOBS | — |
+| fw_nuxt_composable_export | warn | composables/ 导出 const/class → warn | NUXT_SRC_GLOBS | — |
+| fw_nuxt_server_boundary | fail | app/ 下文件 import ~/server/ → fail 服务端代码泄露 | NUXT_SRC_GLOBS | CWE-200（服务端代码泄露至客户端 bundle） |
+| fw_nuxt_seo_meta | warn | 组件内 document.head/document.title → warn 须用 useSeoMeta/useHead | NUXT_SRC_GLOBS | — |
+| fw_nuxt_error_page | warn | Nuxt 项目无 error.vue → warn | NUXT_SRC_GLOBS | CWE-209（错误信息含敏感细节：缺 error.vue 可能泄露堆栈） |
+| fw_nuxt_runtime_config_secret | fail | runtimeConfig.public 含 secret/password/apiKey/privateKey → fail 泄露 | NUXT_SRC_GLOBS | CWE-312（敏感信息明文存储/打包，门禁文案已引） |
 
 <!--
 门禁 id 命名规范：fw_nuxt_<rule>（rule 全小写下划线）。
 本表 11 条 id 须在 assets/framework-gates/nuxt.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_nuxt_<rule>(warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: nuxt  requires_conf: NUXT_SRC_GLOBS` 声明。
-fixture 验证覆盖：violating 含 useFetch 无 key + Date.now 在 render（fw_nuxt_hydration fail 主触发）；compliant 全 pass。
+fixture 验证覆盖：violating 6/6 fail 全触发（fetch_key / hydration / usestate_key / autoimport_conflict / server_boundary / runtime_config_secret）；后四项 2026-07-20 P1 新增样本实例化唤醒（index.vue 追加 + composables/useFetch.ts + nuxt.config.ts），门禁判定逻辑未动。expected-fail-ids 已登记 6/6 fail id。CWE/GB 映射列（同批补录）：仅对具直接安全语义的行引证，其余标 —。
 -->
 
 ## §5 跨框架交互规则

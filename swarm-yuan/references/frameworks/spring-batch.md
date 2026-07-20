@@ -158,19 +158,19 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
 |---------|------|---------|---------|
-| fw_batch_step_scope | fail | SPRING_BATCH_JOB_DIRS 下含 `@Value("#{jobParameters`/`@Value("#{stepExecutionContext` 的 Bean 所在文件无 `@StepScope`/`@JobScope` → fail | SPRING_BATCH_JOB_DIRS |
-| fw_batch_step_three_pieces | warn | 含 `new StepBuilder` + `.chunk(` 的文件缺 `.reader(` 或 `.writer(` → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_chunk_commit | warn | `.chunk(` 参数非字面量整数或为字面量 1 → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_jobrepo_tx | warn | `@EnableBatchProcessing` 配置类含自定义 `transactionManager` Bean 但无 `JobRepositoryFactoryBean`/`DefaultBatchConfiguration`/`setTransactionManager` → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_restart | warn | Job 定义文件无 `allowStartIfComplete`/`startLimit`/`preventRestart`/`Incrementer`/`incrementer` 任一关键字 → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_itemstream_restart | warn | `implements ItemReader/ItemWriter<` 的类未实现 `ItemStream` 且未 extends ItemStream 基类 → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_writer_idempotent | warn | `implements ItemWriter<` 类的 write 方法体仅含 insert/save/add 无 upsert/merge/exists → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_processor_null | warn | `implements ItemProcessor<` 类的 process 方法含 `return null;` 且无过滤意图注释 → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_skip_retry | warn | `.skipLimit(`/`.retryLimit(` 命中但同文件无 `.skip(`/`.retry(` 显式异常 → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_table_prefix | warn | application 配置含 `spring.batch` 但无 `table-prefix` 且 `initialize-schema=always` → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_listener_swallow | warn | Listener 实现类的 after* 方法含 catch 无 throw → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_partition | warn | 大 Job（多个 chunk step）无 Partitioner/TaskExecutor/remoteChunking 关键字 → warn | SPRING_BATCH_JOB_DIRS |
-| fw_batch_builderfactory_migration | warn | 检出 `JobBuilderFactory`/`StepBuilderFactory` → warn 迁移到 JobBuilder/StepBuilder | SPRING_BATCH_JOB_DIRS |
+| fw_batch_step_scope | fail | SPRING_BATCH_JOB_DIRS 下含 `@Value("#{jobParameters`/`@Value("#{stepExecutionContext` 的 Bean 所在文件无 `@StepScope`/`@JobScope` → fail (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_step_three_pieces | warn | 含 `new StepBuilder` + `.chunk(` 的文件缺 `.reader(` 或 `.writer(` → warn (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_chunk_commit | warn | `.chunk(` 参数非字面量整数或为字面量 1 → warn (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_jobrepo_tx | warn | `@EnableBatchProcessing` 配置类含自定义 `transactionManager` Bean 但无 `JobRepositoryFactoryBean`/`DefaultBatchConfiguration`/`setTransactionManager` → warn (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_restart | warn | Job 定义文件无 `allowStartIfComplete`/`startLimit`/`preventRestart`/`Incrementer`/`incrementer` 任一关键字 → warn (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_itemstream_restart | warn | `implements ItemReader/ItemWriter<` 的类未实现 `ItemStream` 且未 extends ItemStream 基类 → warn (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_writer_idempotent | warn | `implements ItemWriter<` 类的 write 方法体仅含 insert/save/add 无 upsert/merge/exists → warn (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_processor_null | warn | `implements ItemProcessor<` 类的 process 方法含 `return null;` 且无过滤意图注释 → warn (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_skip_retry | warn | `.skipLimit(`/`.retryLimit(` 命中但同文件无 `.skip(`/`.retry(` 显式异常 → warn (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_table_prefix | warn | application 配置含 `spring.batch` 但无 `table-prefix` 且 `initialize-schema=always` → warn (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_listener_swallow | warn | Listener 实现类的 after* 方法含 catch 无 throw → warn (CWE-390) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_partition | warn | 大 Job（多个 chunk step）无 Partitioner/TaskExecutor/remoteChunking 关键字 → warn (n/a) | SPRING_BATCH_JOB_DIRS |
+| fw_batch_builderfactory_migration | warn | 检出 `JobBuilderFactory`/`StepBuilderFactory` → warn 迁移到 JobBuilder/StepBuilder (n/a) | SPRING_BATCH_JOB_DIRS |
 
 <!--
 门禁 id 命名规范：fw_batch_<rule>（rule 全小写下划线）。

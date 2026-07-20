@@ -10,9 +10,9 @@ permissions:
   contents: read
 
 jobs:
-  # ---------- Job 1：57 框架规则集四要素核验 ----------
+  # ---------- Job 1：61 框架规则集四要素核验 ----------
   verify-framework-rulesets:
-    name: Verify 57 framework rulesets
+    name: Verify 61 framework rulesets
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,11 +30,11 @@ jobs:
               fail=$((fail+1))
             fi
           done
-          [[ "$fail" -eq 0 ]] && echo "✓ All 57 rulesets verified" || { echo "✗ $fail rulesets failed"; exit 1; }
+          [[ "$fail" -eq 0 ]] && echo "✓ All 61 rulesets verified" || { echo "✗ $fail rulesets failed"; exit 1; }
 
-  # ---------- Job 2：57 框架 fixture 双态测试 ----------
+  # ---------- Job 2：61 框架 fixture 双态测试 ----------
   fixture-double-state:
-    name: Run 57 fixture double-state tests
+    name: Run 61 fixture double-state tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,7 +52,91 @@ jobs:
               fail=$((fail+1))
             fi
           done
-          [[ "$fail" -eq 0 ]] && echo "✓ All 57 fixtures passed" || { echo "✗ $fail fixtures failed"; exit 1; }
+          [[ "$fail" -eq 0 ]] && echo "✓ All 61 fixtures passed" || { echo "✗ $fail fixtures failed"; exit 1; }
+      - name: Compliance gate fixtures (6 组双态 + id 级断言)
+        run: |
+          for g in compliance docs-pack sbom privacy sensitive summary; do
+            if ! bash tests/run-gate-fixture.sh "$g"; then
+              echo "GATE FIXTURE FAIL: $g"
+              exit 1
+            fi
+          done
+          echo "✓ All 6 gate-fixture groups passed"
+
+  # ---------- Job 3b：macOS/BSD 兼容矩阵（P1-2，R4 §五 平台盲区闭环）----------
+  # 背景：R4 实测 spring-boot 两处门禁的字符类 \[\] 在 BSD grep 2.6.0-FreeBSD 下解析失败→沉睡，
+  #   而 ubuntu（GNU grep）不发病——Linux-only CI 对平台相关沉睡不可见。
+  #   本 Job 在 macOS（/bin/bash 3.2 + BSD grep/awk）重跑 fixture 双态，让此类沉睡现形。
+  macos-bsd-compat:
+    name: macOS BSD compat (bash 3.2 + BSD grep)
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: swarm-yuan
+    steps:
+      - uses: actions/checkout@v4
+      - name: bash -n（bash 3.2 语法面）核心脚本 + 61 门禁片段
+        run: |
+          bash --version | head -1
+          fail=0
+          for f in assets/precheck.sh scripts/*.sh tests/run-framework-fixture.sh tests/run-gate-fixture.sh assets/framework-gates/*.sh; do
+            bash -n "$f" || { echo "BASH-N FAIL: $f"; fail=$((fail+1)); }
+          done
+          [[ "$fail" -eq 0 ]] && echo "✓ bash -n all passed" || exit 1
+      - name: Verify 61 rulesets on BSD（NOBSD awk 状态机同步在 BSD awk 下实跑）
+        run: |
+          fail=0
+          for md in references/frameworks/*.md; do
+            id=$(basename "$md" .md)
+            [[ "$id" == "_template" ]] && continue
+            if ! bash scripts/verify-framework-ruleset.sh "$id"; then
+              echo "FAIL: $id"
+              fail=$((fail+1))
+            fi
+          done
+          [[ "$fail" -eq 0 ]] && echo "✓ All 61 rulesets verified on macOS/BSD" || { echo "✗ $fail rulesets failed"; exit 1; }
+      - name: Fixture double-state on BSD（平台相关沉睡门禁在此现形）
+        run: |
+          fail=0
+          for md in references/frameworks/*.md; do
+            id=$(basename "$md" .md)
+            [[ "$id" == "_template" ]] && continue
+            if ! bash tests/run-framework-fixture.sh "$id" >/dev/null 2>&1; then
+              echo "FIXTURE FAIL: $id"
+              fail=$((fail+1))
+            fi
+          done
+          [[ "$fail" -eq 0 ]] && echo "✓ All 61 fixtures passed on macOS/BSD" || { echo "✗ $fail fixtures failed"; exit 1; }
+      - name: Compliance gate fixtures on BSD
+        run: |
+          for g in compliance docs-pack sbom privacy sensitive summary; do
+            if ! bash tests/run-gate-fixture.sh "$g"; then
+              echo "GATE FIXTURE FAIL: $g"
+              exit 1
+            fi
+          done
+          echo "✓ All 6 gate-fixture groups passed on macOS/BSD"
+
+  # ---------- Job 3c：生成器自举门禁（P1-6，CI 首次对生成器仓库自身跑 precheck --all）----------
+  # 用 ci/self-precheck.conf 最小配置（__REPO_ROOT__ 由 sed 替换为仓库根），
+  # precheck.sh 与 conf 拷入临时目录（conf 须与脚本同目录，precheck.sh:237 加载约定）。
+  # 断言目标：自举闭环全链路 RC=0（未配置门禁按设计跳过/warn，warn 不影响 RC）。
+  generator-self-gate:
+    name: Generator self-gate (precheck --all on this repo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bootstrap precheck with minimal conf (ci/self-precheck.conf)
+        run: |
+          tmpdir="$(mktemp -d)"
+          cp swarm-yuan/assets/precheck.sh "$tmpdir/precheck.sh"
+          sed "s|__REPO_ROOT__|$GITHUB_WORKSPACE|g" swarm-yuan/ci/self-precheck.conf > "$tmpdir/precheck.conf"
+          # CI checkout 为 detached HEAD：建临时 feat 分支让分支门禁真实执行（而非降级跳过）
+          git checkout -b feat/generator-self-gate
+          bash "$tmpdir/precheck.sh" --all
+          rc=$?
+          rm -rf "$tmpdir"
+          [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --all RC=0)" || { echo "✗ Generator self-gate failed RC=$rc"; exit 1; }
 
   # ---------- Job 3：self-check 时效检查 + 运行时工具检测 ----------
   self-check:

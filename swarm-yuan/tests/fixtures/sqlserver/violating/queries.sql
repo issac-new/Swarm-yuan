@@ -18,3 +18,7 @@ INSERT INTO dbo.AccessLog (path, created_at) VALUES ('/a8', GETDATE());
 INSERT INTO dbo.AccessLog (path, created_at) VALUES ('/a9', GETDATE());
 INSERT INTO dbo.AccessLog (path, created_at) VALUES ('/a10', GETDATE());
 COMMIT;
+-- P1 扩充：GRANT EXECUTE TO public 越权 → fw_mssql_sp_grant_public(fail)
+GRANT EXECUTE ON dbo.usp_ExportData TO public;
+-- P1 扩充：无 WHERE/TOP 全表 DELETE → fw_mssql_dml_nowhere(fail)
+DELETE FROM dbo.AuditLog;

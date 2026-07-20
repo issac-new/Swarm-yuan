@@ -123,28 +123,28 @@ detect 信号命中任一高置信度行即可激活 antd 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / CWE·GB 元数据）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_antd_app_useapp | fail | message/notification/modal 静态调用 → fail context 失效 | ANTD_SRC_GLOBS |
-| fw_antd_on_demand_import | warn | 全量 import antd → warn 包体过大 | ANTD_SRC_GLOBS |
-| fw_antd_form_useform | warn | Form.create 废弃 API → warn | ANTD_SRC_GLOBS |
-| fw_antd_table_virtual | warn | Table 大数据源未配虚拟滚动 → warn | ANTD_SRC_GLOBS |
-| fw_antd_configprovider_theme | warn | 直接覆写 .ant-* 类 CSS → warn | ANTD_SRC_GLOBS |
-| fw_antd_form_item_name | warn | Form.Item 无 name → warn | ANTD_SRC_GLOBS |
-| fw_antd_modal_destroyonclose | warn | Modal 无 destroyOnClose → warn | ANTD_SRC_GLOBS |
-| fw_antd_select_remote | warn | Select showSearch 无 onSearch → warn | ANTD_SRC_GLOBS |
-| fw_antd_upload_size_limit | fail | Upload 无 beforeUpload 大小校验 → fail DoS | ANTD_SRC_GLOBS |
-| fw_antd_typography_ellipsis | warn | 手写 .slice 截断 → warn | ANTD_SRC_GLOBS |
-| fw_antd_grid_responsive | warn | Col 仅 span 无断点 → warn | ANTD_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_antd_app_useapp | fail | message/notification/modal 静态调用 → fail context 失效 | ANTD_SRC_GLOBS | — |
+| fw_antd_on_demand_import | warn | 全量 import antd → warn 包体过大 | ANTD_SRC_GLOBS | — |
+| fw_antd_form_useform | warn | Form.create 废弃 API → warn | ANTD_SRC_GLOBS | — |
+| fw_antd_table_virtual | warn | Table 大数据源未配虚拟滚动 → warn | ANTD_SRC_GLOBS | — |
+| fw_antd_configprovider_theme | warn | 直接覆写 .ant-* 类 CSS → warn | ANTD_SRC_GLOBS | — |
+| fw_antd_form_item_name | warn | Form.Item 无 name → warn | ANTD_SRC_GLOBS | — |
+| fw_antd_modal_destroyonclose | warn | Modal 无 destroyOnClose → warn | ANTD_SRC_GLOBS | — |
+| fw_antd_select_remote | warn | Select showSearch 无 onSearch → warn | ANTD_SRC_GLOBS | — |
+| fw_antd_upload_size_limit | fail | Upload 无 beforeUpload 大小校验 → fail DoS | ANTD_SRC_GLOBS | CWE-770（资源分配无限制，门禁文案 DoS）；GB/T 38674-2020 §8.1（输入/资源限制类安全设计） |
+| fw_antd_typography_ellipsis | warn | 手写 .slice 截断 → warn | ANTD_SRC_GLOBS | — |
+| fw_antd_grid_responsive | warn | Col 仅 span 无断点 → warn | ANTD_SRC_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_antd_<rule>（rule 全小写下划线）。
 本表 11 条 id 须在 assets/framework-gates/antd.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_antd_<rule>(fail/warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: antd  requires_conf: ANTD_SRC_GLOBS` 声明。
-fixture 验证覆盖：violating 含 message.success 静态调用 + Form.create + Upload 无 beforeUpload → app_useapp + upload_size_limit fail 主触发；compliant 全 pass。
+fixture 验证覆盖：violating 含 message.success 静态调用 + Form.create + Upload 无 beforeUpload → app_useapp + upload_size_limit fail 主触发（2/2）；compliant 全 pass。expected-fail-ids 已登记 2/2 fail id（2026-07-20 P1）。CWE/GB 映射列（同批补录）：仅对具直接安全语义的行引证，其余标 —。
 -->
 
 ## §5 跨框架交互规则

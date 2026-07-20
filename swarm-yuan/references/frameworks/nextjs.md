@@ -141,27 +141,27 @@ detect 信号命中任一高置信度行即可激活 nextjs 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / CWE·GB 元数据）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_nextjs_use_client | fail | 含 useState/useEffect/window./document. 的组件文件首行无 'use client' → fail | NEXTJS_SRC_GLOBS |
-| fw_nextjs_server_action_auth | fail | 'use server' 文件内 async 函数未含 auth/session/getServerSession → fail 越权风险 | NEXTJS_SRC_GLOBS |
-| fw_nextjs_middleware_matcher | fail | middleware.ts 存在但无 matcher 配置 → fail 全站拦截 | NEXTJS_SRC_GLOBS |
-| fw_nextjs_fetch_cache | warn | fetch 调用无 cache:/next: 参数 → warn（15+ 默认变更须显式） | NEXTJS_SRC_GLOBS |
-| fw_nextjs_headers_server_only | fail | 含 next/headers/cookies()/headers() 的文件首行标 'use client' → fail | NEXTJS_SRC_GLOBS |
-| fw_nextjs_dynamic_params | warn | app/**/[param]/**/page.tsx 无 generateStaticParams 且无 dynamic 导出 → warn | NEXTJS_SRC_GLOBS |
-| fw_nextjs_image_optimize | warn | 检出裸 <img>（非 next/image）→ warn 无优化 | NEXTJS_SRC_GLOBS |
-| fw_nextjs_metadata_api | warn | App Router 项目用 <Head>/document.head → warn 须用 metadata API | NEXTJS_SRC_GLOBS |
-| fw_nextjs_router_conflict | fail | 同路径在 pages/ 与 app/ 双定义 → fail 路由冲突 | NEXTJS_SRC_GLOBS |
-| fw_nextjs_revalidate | warn | revalidate 导出值为 0 或 >86400 → warn 缓存语义风险 | NEXTJS_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_nextjs_use_client | fail | 含 useState/useEffect/window./document. 的组件文件首行无 'use client' → fail | NEXTJS_SRC_GLOBS | — |
+| fw_nextjs_server_action_auth | fail | 'use server' 文件内 async 函数未含 auth/session/getServerSession → fail 越权风险 | NEXTJS_SRC_GLOBS | CWE-862（缺失授权，门禁文案已引）；GB/T 22239-2019 7.1.4.2（访问控制） |
+| fw_nextjs_middleware_matcher | fail | middleware.ts 存在但无 matcher 配置 → fail 全站拦截 | NEXTJS_SRC_GLOBS | — |
+| fw_nextjs_fetch_cache | warn | fetch 调用无 cache:/next: 参数 → warn（15+ 默认变更须显式） | NEXTJS_SRC_GLOBS | — |
+| fw_nextjs_headers_server_only | fail | 含 next/headers/cookies()/headers() 的文件首行标 'use client' → fail | NEXTJS_SRC_GLOBS | CWE-200（敏感信息暴露：Client 组件读取服务端 cookies/headers） |
+| fw_nextjs_dynamic_params | warn | app/**/[param]/**/page.tsx 无 generateStaticParams 且无 dynamic 导出 → warn | NEXTJS_SRC_GLOBS | — |
+| fw_nextjs_image_optimize | warn | 检出裸 <img>（非 next/image）→ warn 无优化 | NEXTJS_SRC_GLOBS | — |
+| fw_nextjs_metadata_api | warn | App Router 项目用 <Head>/document.head → warn 须用 metadata API | NEXTJS_SRC_GLOBS | — |
+| fw_nextjs_router_conflict | fail | 同路径在 pages/ 与 app/ 双定义 → fail 路由冲突 | NEXTJS_SRC_GLOBS | — |
+| fw_nextjs_revalidate | warn | revalidate 导出值为 0 或 >86400 → warn 缓存语义风险 | NEXTJS_SRC_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_nextjs_<rule>（rule 全小写下划线）。
 本表 10 条 id 须在 assets/framework-gates/nextjs.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_nextjs_<rule>(warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: nextjs  requires_conf: NEXTJS_SRC_GLOBS` 声明。
-fixture 验证覆盖：violating 含 Server Component 用 useState（fw_nextjs_use_client fail 主触发）+ Server Action 无鉴权（fail）+ 中间件无 matcher（fail）；compliant 全 pass。
+fixture 验证覆盖：violating 5/5 fail 全触发（use_client / server_action_auth / middleware_matcher / headers_server_only / router_conflict）；2026-07-20 P1 唤醒三项：middleware_matcher（注释字面量中和，改写注释唤醒）、headers_server_only（新增 client-cookie.tsx 实例化）、router_conflict（门禁 sed 分隔符与 ERE 交替冲突沉睡 bug，nextjs.sh 分隔符 `|`→`:` 修复 + pages//app/ 同路径样本，详见 tests/fixtures/nextjs/README.md）。expected-fail-ids 已登记 5/5 fail id。CWE/GB 映射列（同批补录）：仅对具直接安全语义的行引证，其余标 —。
 -->
 
 ## §5 跨框架交互规则

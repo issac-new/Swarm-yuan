@@ -56,7 +56,11 @@ check_comet(){
   if command -v comet &>/dev/null; then pass "comet: $(comet --version 2>&1|head -1)"; else miss "comet"; fi
 }
 check_gitnexus(){
-  if command -v gitnexus &>/dev/null; then pass "GitNexus: $(gitnexus --version 2>&1|head -1)"; else miss "GitNexus"; fi
+  local rc=0
+  if command -v gitnexus &>/dev/null; then pass "GitNexus: $(gitnexus --version 2>&1|head -1)"; else miss "GitNexus"; rc=1; fi
+  # 许可证忠告（无论是否安装都提示，防商用项目误用；注意保持函数退出码不被本行覆盖）
+  warn "许可证提示：GitNexus 为 PolyForm Noncommercial 1.0.0（禁商用），商用项目请用 graphify（MIT）"
+  return $rc
 }
 check_gsd_core(){
   if command -v gsd-tools &>/dev/null; then pass "gsd-core: gsd-tools 可用"; else miss "gsd-core"; fi
@@ -73,7 +77,19 @@ check_graphify(){
   if command -v graphify &>/dev/null; then pass "graphify: $(graphify --help 2>&1|head -1)"; else miss "graphify"; fi
 }
 check_superpowers(){
-  if [[ -d ~/.claude/plugins/superpowers || -d ~/.claude/skills/superpowers ]]; then pass "superpowers: 已安装"; else miss "superpowers（需 /plugin install）"; fi
+  # 实质检测（R5 实证）：目录存在 ≠ 已安装。离线包曾只 vendor superpowers-marketplace
+  # 目录仓（LICENSE/README/.claude-plugin/marketplace.json 等市场元数据），核心插件
+  # v6.1.1 本体不在包内。须含核心插件证据——skills/ 子目录或 .claude-plugin/plugin.json
+  # ——才视为已安装；仅 marketplace 元数据判空壳 miss（fail-closed）。
+  local d
+  for d in ~/.claude/plugins/superpowers ~/.claude/skills/superpowers; do
+    [[ -d "$d" ]] || continue
+    if [[ -d "$d/skills" || -f "$d/.claude-plugin/plugin.json" ]]; then
+      pass "superpowers: 已安装（核心插件证据齐备）"; return 0
+    fi
+    miss "superpowers（空壳：marketplace 元数据非核心插件，需在线 /plugin install）"; return 1
+  done
+  miss "superpowers（需 /plugin install）"
 }
 check_gstack(){
   if [[ -d ~/.claude/skills/gstack ]]; then pass "gstack: 已安装"; else miss "gstack（需 git clone + setup）"; fi
@@ -467,7 +483,52 @@ fw_freshness_check() {
 }
 fw_freshness_check
 
+# ===== 框架规则集核验（61 规则集四要素机械核验）=====
+fw_ruleset_verify() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local vfy="$base/scripts/verify-framework-ruleset.sh"
+  # 存在性守卫：生成的目标 skill 不带规则库与核验脚本（generate-skill.sh 不复制），静默跳过
+  [[ -f "$vfy" && -d "$base/references/frameworks" ]] || return 0
+  echo "▶ 框架规则集核验"
+  local f id ok_cnt=0 fail_cnt=0 fail_ids=""
+  for f in "$base/references/frameworks/"*.md; do
+    [[ -f "$f" ]] || continue
+    id=$(basename "$f" .md)
+    [[ "$id" == "_template" ]] && continue
+    # 逐 id 调四要素核验（与本脚本同目录），聚合计数不逐条刷屏
+    if bash "$vfy" "$id" >/dev/null 2>&1; then
+      ok_cnt=$((ok_cnt + 1))
+    else
+      fail_cnt=$((fail_cnt + 1))
+      fail_ids="$fail_ids $id"
+    fi
+  done
+  if [[ $fail_cnt -eq 0 ]]; then
+    echo "  ✓ 框架规则集核验全部通过（$ok_cnt/$((ok_cnt + fail_cnt))）"
+  else
+    warn "框架规则集核验未通过 $fail_cnt/$((ok_cnt + fail_cnt)) 个:${fail_ids}（bash scripts/verify-framework-ruleset.sh <id> 查看详情）"
+    FAIL=1
+  fi
+}
+fw_ruleset_verify
+
 # ===== 文档一致性检查（防文档-实现漂移）=====
+# 从 shell 文件机械解析数组赋值的元素个数（支持跨行数组；数组未定义时输出 0）
+_count_gate_array() {
+  awk -v name="$1" '
+    $0 ~ "^" name "=\\(" { inarr=1 }
+    inarr {
+      line=$0
+      sub(/^[^(]*\(/, "", line)
+      if (index(line, ")") > 0) { sub(/\).*/, "", line); done=1 }
+      n=split(line, a, /[ \t]+/)
+      for (i=1; i<=n; i++) if (a[i] != "") cnt++
+      if (done) exit
+    }
+    END { print cnt+0 }
+  ' "$2" 2>/dev/null || echo 0
+}
+
 check_doc_consistency() {
   echo "▶ 文档一致性检查"
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
@@ -487,8 +548,10 @@ check_doc_consistency() {
   actual_gates=$(grep -cE "^check_[a-z_]+\(\)" "$base/assets/precheck.sh" 2>/dev/null | xargs)
   echo "  ℹ SKILL.md 声明 $declared_gates 门禁，precheck.sh 顶层 check_* 函数 $actual_gates 个（差额为子门禁/聚合门禁，人工确认）"
   # 3. SKILL.md 声明的 conf 变量数 vs precheck.conf 实际变量数
+  #    修复(2026-07-20)：交替须用 ERE 标准 `|`——grep -E 下 `\|` 按字面管道解析、永不命中，
+  #    导致 declared_vars 恒为空而误报文档漂移（docs/paradigm-decisions.md 记录的 `\|` 字面 bug 家族又一例）。
   local declared_vars actual_vars
-  declared_vars=$(grep -oE "precheck\.conf[^。]*([0-9]+) ?变量\|([0-9]+) ?变量" "$base/SKILL.md" 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "?")
+  declared_vars=$(grep -oE "precheck\.conf[^。]*([0-9]+) ?变量|([0-9]+) ?变量" "$base/SKILL.md" 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "?")
   actual_vars=$(grep -cE '^[A-Z_][A-Z0-9_]*=' "$base/assets/precheck.conf" 2>/dev/null | xargs)
   if [[ "$declared_vars" != "?" && "$declared_vars" != "$actual_vars" ]]; then
     warn "SKILL.md 声明 precheck.conf $declared_vars 变量，实际 $actual_vars 个——文档漂移，请更新 SKILL.md"
@@ -501,19 +564,26 @@ check_doc_consistency() {
   ref_cnt=$(ls "$base/references/"*.md 2>/dev/null | wc -l | xargs)
   echo "  ℹ references/*.md 共 $ref_cnt 个（SKILL.md 表格行数人工确认）"
 
-  # 5. 头部数字跨文档一致性（特征卡 / 门禁 / 架构门禁 / conf 变量）。
+  # 5. 头部数字跨文档一致性（特征卡 / 门禁 / 架构门禁 / 合规门禁 / conf 变量 / references 数）。
   #    历史漂移：USAGE.md/PROMO.md 曾长期停留在 14特征/25门禁/45变量/架构15，
-  #    与代码实际（16/27/146/17）不符——故此处从代码计算真值并扫描全部散文文档。
+  #    与代码实际不符——故此处从代码计算真值并扫描全部散文文档（真值随代码演进：
+  #    门禁 27→31、conf 146→162、references 13→14，均机械解析，不写死）。
   #    口径注意：门禁总数按「N 个质量门禁 / N 个门禁」匹配，避免误伤「核心 10」等子计数；
   #    conf 变量按「N 个(配置|门禁)?变量」匹配，避免把「146 个门禁」误判为变量数。
   local true_gates true_vars true_fw
   # 门禁函数含下划线（stable_diff/shift_left/...），须用 [a-z_]+ 计数，否则漏数（23≠27）
   true_gates=$(grep -cE "^check_[a-z_]+\(\)" "$base/assets/precheck.sh" 2>/dev/null | xargs)
-  local true_arch=$((true_gates - 10))
+  # 架构/合规门禁数真值：从 precheck.sh 注册表数组机械解析——架构=FULL−CORE−COMPLIANCE。
+  # 合规族未合入时 ALL_GATES_COMPLIANCE 未定义，按 0 计（向后兼容旧版 precheck.sh）。
+  local true_core true_compliance true_full
+  true_core=$(_count_gate_array ALL_GATES_CORE "$base/assets/precheck.sh")
+  true_compliance=$(_count_gate_array ALL_GATES_COMPLIANCE "$base/assets/precheck.sh")
+  true_full=$(_count_gate_array ALL_GATES_FULL "$base/assets/precheck.sh")
+  local true_arch=$((true_full - true_core - true_compliance))
   true_vars=$(grep -cE '^[A-Z_][A-Z0-9_]*=' "$base/assets/precheck.conf" 2>/dev/null | xargs)
   true_fw=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
   local doc dfound bad
-  for doc in README.md docs/USAGE.md docs/PROMO.md; do
+  for doc in README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md; do
     [[ -f "$base/$doc" ]] || continue
     dfound=""
     # 门禁总数：仅匹配「N 个质量门禁」（带「质量」前缀，是总数的固定表述），不匹配
@@ -529,11 +599,21 @@ check_doc_consistency() {
     bad=$(grep -oE "[0-9]+ ?个(配置|门禁)?变量" "$base/$doc" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_vars" || true)
     [[ -n "$bad" ]] && dfound="${dfound} conf变量数出现非${true_vars}值($(echo $bad | tr '\n' ' '));"
+    # 合规门禁数：「合规 4」「合规门禁额外 4 个」等（真值为 0 即合规族未合入，跳过该口径）
+    if [[ "$true_compliance" -gt 0 ]]; then
+      bad=$(grep -oE "合规门禁[^0-9]{0,8}[0-9]+ ?个|合规 [0-9]+" "$base/$doc" 2>/dev/null \
+            | grep -oE "[0-9]+" | sort -u | grep -vx "$true_compliance" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} 合规门禁数出现非${true_compliance}值($(echo $bad | tr '\n' ' '));"
+    fi
+    # references 参考文档数：「N 个参考文档」（真值=references/*.md 实际计数，不含 frameworks/ 子目录）
+    bad=$(grep -oE "[0-9]+ ?个参考文档" "$base/$doc" 2>/dev/null \
+          | grep -oE "[0-9]+" | sort -u | grep -vx "$ref_cnt" || true)
+    [[ -n "$bad" ]] && dfound="${dfound} references数出现非${ref_cnt}值($(echo $bad | tr '\n' ' '));"
     if [[ -n "$dfound" ]]; then
-      warn "$doc 头部数字与代码真值不符（真值: 门禁${true_gates}/架构${true_arch}/conf${true_vars}）：${dfound}"
+      warn "$doc 头部数字与代码真值不符（真值: 门禁${true_gates}/架构${true_arch}/合规${true_compliance}/conf${true_vars}/refs${ref_cnt}）：${dfound}"
       FAIL=1
     else
-      echo "  ✓ $doc 头部数字一致（门禁${true_gates}/架构${true_arch}/conf${true_vars}）"
+      echo "  ✓ $doc 头部数字一致（门禁${true_gates}/架构${true_arch}/合规${true_compliance}/conf${true_vars}/refs${ref_cnt}）"
     fi
   done
   # 6. 框架信号索引时效：regen 后比对是否漂移（提示运行 gen-framework-index.sh）
@@ -545,13 +625,32 @@ check_doc_consistency() {
         # regen 已就地修正（幂等），提示但不判 fail——索引已被重写为最新
         echo "  ⚠ framework-signal-index 已漂移，本次由 gen-framework-index.sh 自动重写为最新（建议提交）"
       else
-        echo "  ✓ framework-signal-index 与 57 框架同步"
+        echo "  ✓ framework-signal-index 与 61 框架同步"
       fi
     fi
     rm -f "$guide_tmp"
   fi
 }
 check_doc_consistency
+
+# ===== 上游基线漂移忠告（不联网，仅读登记表机器标记行）=====
+upstream_baseline_check() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  # 登记表在仓库根 docs/（T8 维护）；安装到 ~/.claude/skills 后无此文件，静默跳过
+  local bl="$base/../docs/upstream-baseline.md"
+  [[ -f "$bl" ]] || return 0
+  local drifted
+  drifted=$(grep -c 'baseline_status=drifted' "$bl" 2>/dev/null)
+  [[ "${drifted:-0}" -eq 0 ]] && return 0
+  echo "▶ 上游基线漂移忠告"
+  # 契约：drifted 条目所在行必含字面 baseline_status=drifted（表格行，第二列为名称）；
+  # 仅 warn 不置 FAIL——版本漂移是提醒而非门禁失败
+  grep 'baseline_status=drifted' "$bl" | while IFS='|' read -r _ name _rest; do
+    name=$(echo "$name" | sed 's/^ *//;s/ *$//')
+    warn "上游基线 drifted：${name:-（未命名行）}——引用基线落后上游最新版，详见 docs/upstream-baseline.md（重核列入 P1-7）"
+  done
+}
+upstream_baseline_check
 
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"

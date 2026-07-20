@@ -135,26 +135,29 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_mssql_nolock | warn | WITH (NOLOCK) 且同文件无脏读风险声明 → warn | MSSQL_SQL_GLOBS |
-| fw_mssql_sql_injection | fail | EXEC(...+...) 拼接执行 / 拼接赋 SQL 串 → fail | MSSQL_SQL_GLOBS |
-| fw_mssql_batch | warn | BEGIN TRAN + DML ≥10 行且无 TOP/WHILE 分批 → warn | MSSQL_SQL_GLOBS |
-| fw_mssql_isolation | warn | 含 BEGIN TRAN 但无 SET TRANSACTION ISOLATION LEVEL → warn | MSSQL_SQL_GLOBS |
-| fw_mssql_linked_server | warn | sp_addlinkedserver/OPENQUERY/OPENROWSET → warn 核对权限 | MSSQL_SQL_GLOBS |
-| fw_mssql_select_star | warn | SELECT * FROM → warn 覆盖索引失效/Key Lookup | MSSQL_SQL_GLOBS |
-| fw_mssql_deadlock_trace | warn | mssql 配置存在但无 1222/deadlock/system_health 引用 → warn | MSSQL_SQL_GLOBS |
-| fw_mssql_pagination | warn | ROW_NUMBER( 分页模式 → warn 建议 OFFSET FETCH | MSSQL_SQL_GLOBS |
-| fw_mssql_sp_grant_public | fail | GRANT EXECUTE TO public → fail 越权 | MSSQL_SQL_GLOBS |
-| fw_mssql_trigger | warn | CREATE TRIGGER → warn 核对体量 | MSSQL_SQL_GLOBS |
-| fw_mssql_dml_nowhere | fail | 单行 UPDATE/DELETE 无 WHERE → fail | MSSQL_SQL_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_mssql_nolock | warn | WITH (NOLOCK) 且同文件无脏读风险声明 → warn | MSSQL_SQL_GLOBS | —（脏读一致性权衡） |
+| fw_mssql_sql_injection | fail | EXEC(...+...) 拼接执行 / 拼接赋 SQL 串 → fail | MSSQL_SQL_GLOBS | CWE-89（SQL 注入，Top25:2025 #2） |
+| fw_mssql_batch | warn | BEGIN TRAN + DML ≥10 行且无 TOP/WHILE 分批 → warn | MSSQL_SQL_GLOBS | —（锁升级） |
+| fw_mssql_isolation | warn | 含 BEGIN TRAN 但无 SET TRANSACTION ISOLATION LEVEL → warn | MSSQL_SQL_GLOBS | —（显式声明） |
+| fw_mssql_linked_server | warn | sp_addlinkedserver/OPENQUERY/OPENROWSET → warn 核对权限 | MSSQL_SQL_GLOBS | CWE-732（高权限映射=横向移动通道） |
+| fw_mssql_select_star | warn | SELECT * FROM → warn 覆盖索引失效/Key Lookup | MSSQL_SQL_GLOBS | —（Key Lookup） |
+| fw_mssql_deadlock_trace | warn | mssql 配置存在但无 1222/deadlock/system_health 引用 → warn | MSSQL_SQL_GLOBS | CWE-778（死锁无图可查=事件无记录） |
+| fw_mssql_pagination | warn | ROW_NUMBER( 分页模式 → warn 建议 OFFSET FETCH | MSSQL_SQL_GLOBS | —（分页形态） |
+| fw_mssql_sp_grant_public | fail | GRANT EXECUTE TO public → fail 越权 | MSSQL_SQL_GLOBS | CWE-862（缺失授权，Top25:2025 #4） |
+| fw_mssql_trigger | warn | CREATE TRIGGER → warn 核对体量 | MSSQL_SQL_GLOBS | —（持锁放大） |
+| fw_mssql_dml_nowhere | fail | 单行 UPDATE/DELETE 无 WHERE → fail | MSSQL_SQL_GLOBS | —（数据完整性） |
 
 <!--
 门禁 id 命名规范：fw_mssql_<rule>（rule 全小写下划线）。
 本表 11 条 id 须在 assets/framework-gates/sqlserver.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_mssql_<rule>(fail|warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: sqlserver  requires_conf: MSSQL_SQL_GLOBS MSSQL_SCHEMA_GLOBS` 声明（本规则集门禁均作用于 MSSQL_SQL_GLOBS，SCHEMA 变量保留给 DDL 侧扩展与 §C+.1-FW 枚举）。
-fixture 验证覆盖：violating 含 NOLOCK 无脏读声明 + 大批量事务无分批 + 字符串拼接 EXEC → sql_injection fail 主触发；compliant 修正后全 pass。
+fixture 验证覆盖：violating 含 NOLOCK 无脏读声明 + 大批量事务无分批 + 字符串拼接 EXEC + GRANT EXECUTE TO public + 无 WHERE 全表 DELETE → sql_injection/sp_grant_public/dml_nowhere 三 fail 主触发（expected-fail-ids 3/3 已登记）；compliant 修正后全 pass。
+CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
+- CWE 编号依据 MITRE CWE 词典与 CWE Top 25:2025（R8 §⑨）；「—」为工程一致性/性能契约类规律，无对应 CWE 弱点类，归 ISO/IEC 5055:2021 性能/可靠性度量面（138 弱点经 CWE 对齐，见 standards-compliance.md §E.1）。
+- GB/T 34944-2017（Java，9 大类 44 种）/ GB/T 34946-2017（C#）总则 §5 要求 SAST 扫描 + 人工复核 + 测试四件套；本表作用于源码的门禁即该流程的词法层 SAST 面（R8 §⑥）。
 -->
 
 ## §5 跨框架交互规则

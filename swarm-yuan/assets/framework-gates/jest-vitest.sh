@@ -220,10 +220,13 @@ ${loc_bad}"
   # （合并自原 vitest.sh，门禁 id 由 fw_vitest_no_upstream_test 改名以遵循 fw_jest_ 命名规范）
   # ncwk 仓库契约：upstream/ 子目录全为只读第三方快照，prune 掉 upstream/<子包>/，
   # 仅保留对 upstream/ 直属文件的检测。迁移到其他仓库时须按该仓库只读目录约定调整 prune 路径。
+  # 2026-07-20 沉睡修复：prune 原为 -path "./upstream/*"，upstream/ 直属文件亦被剪掉，
+  # 门禁永不命中（实测 upstream/direct.test.ts 修复前不打印、修复后打印且 upstream/pkg/ 嵌套仍 prune）；
+  # 改 -path "./upstream/*/*" 后行为与上行注释意图一致，pass/fail 输出行未动。
   # ====================================================================
   if [[ -n "${VITEST_FORBIDDEN_UPSTREAM_TEST:-}" ]]; then
     local up_hits
-    up_hits=$( { find . \( -path ./node_modules -o -path "./upstream/*" \) -prune -o -name "*.test.ts" -print 2>/dev/null | grep -E "$VITEST_FORBIDDEN_UPSTREAM_TEST" | head -5 || true; } )
+    up_hits=$( { find . \( -path ./node_modules -o -path "./upstream/*/*" \) -prune -o -name "*.test.ts" -print 2>/dev/null | grep -E "$VITEST_FORBIDDEN_UPSTREAM_TEST" | head -5 || true; } )
     if [[ -z "$up_hits" ]]; then
       pass "fw_jest_no_upstream_test: 无 upstream 直属测试文件"
     else

@@ -146,23 +146,24 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_junit_assertnotnull_only | fail | 测试文件 assertNotNull 计数>0 且其他断言/verify 计数==0 → fail | JUNIT_SRC_GLOBS |
-| fw_junit_mockbean_context | warn | @MockBean/@MockitoBean 文件无 @DirtiesContext → warn 确认上下文缓存策略 | JUNIT_SRC_GLOBS |
-| fw_junit_transactional_rollback | warn | 检出 @Commit/@Rollback(false) → warn 确认真实提交+清理 | JUNIT_SRC_GLOBS |
-| fw_junit_strict_stubs | warn | 检出 Strictness.LENIENT/lenient() → warn 须精准豁免 | JUNIT_SRC_GLOBS |
-| fw_junit_parameterized_boundary | warn | @ValueSource 单值（无逗号）→ warn 补边界值 | JUNIT_SRC_GLOBS |
-| fw_junit_beforeall_static | warn | @BeforeAll 后方法声明无 static 且无 PER_CLASS → warn | JUNIT_SRC_GLOBS |
-| fw_junit_disabled_reason | warn | 裸 @Disabled（无原因串）→ warn | JUNIT_SRC_GLOBS |
-| fw_junit_naming | warn | 含 @Test 的文件零 @DisplayName → warn 命名/描述规范 | JUNIT_SRC_GLOBS |
-| fw_junit_testcontainers | warn | @Testcontainers 但无 static 容器声明 → warn 生命周期 | JUNIT_SRC_GLOBS |
-| fw_junit_mock_vs_spy | warn | 检出 @Spy → warn 确认部分 mock 意图 | JUNIT_SRC_GLOBS |
-| fw_junit_verify_times | warn | verify( 行无 times/never/atLeast/atMost/only → warn | JUNIT_SRC_GLOBS |
-| fw_junit_test_order | warn | 检出 @TestMethodOrder/@Order( → warn 顺序依赖 | JUNIT_SRC_GLOBS |
-| fw_junit_timeout | warn | 测试文件检出 Thread.sleep → warn 改 Awaitility/@Timeout | JUNIT_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|---------|
+| fw_junit_assertnotnull_only | fail | 测试文件 assertNotNull 计数>0 且其他断言/verify 计数==0 → fail | JUNIT_SRC_GLOBS | — |
+| fw_junit_mockbean_context | warn | @MockBean/@MockitoBean 文件无 @DirtiesContext → warn 确认上下文缓存策略 | JUNIT_SRC_GLOBS | — |
+| fw_junit_transactional_rollback | warn | 检出 @Commit/@Rollback(false) → warn 确认真实提交+清理 | JUNIT_SRC_GLOBS | — |
+| fw_junit_strict_stubs | warn | 检出 Strictness.LENIENT/lenient() → warn 须精准豁免 | JUNIT_SRC_GLOBS | — |
+| fw_junit_parameterized_boundary | warn | @ValueSource 单值（无逗号）→ warn 补边界值 | JUNIT_SRC_GLOBS | — |
+| fw_junit_beforeall_static | warn | @BeforeAll 后方法声明无 static 且无 PER_CLASS → warn | JUNIT_SRC_GLOBS | — |
+| fw_junit_disabled_reason | warn | 裸 @Disabled（无原因串）→ warn | JUNIT_SRC_GLOBS | — |
+| fw_junit_naming | warn | 含 @Test 的文件零 @DisplayName → warn 命名/描述规范 | JUNIT_SRC_GLOBS | — |
+| fw_junit_testcontainers | warn | @Testcontainers 但无 static 容器声明 → warn 生命周期 | JUNIT_SRC_GLOBS | — |
+| fw_junit_mock_vs_spy | warn | 检出 @Spy → warn 确认部分 mock 意图 | JUNIT_SRC_GLOBS | — |
+| fw_junit_verify_times | warn | verify( 行无 times/never/atLeast/atMost/only → warn | JUNIT_SRC_GLOBS | — |
+| fw_junit_test_order | warn | 检出 @TestMethodOrder/@Order( → warn 顺序依赖 | JUNIT_SRC_GLOBS | — |
+| fw_junit_timeout | warn | 测试文件检出 Thread.sleep → warn 改 Awaitility/@Timeout | JUNIT_SRC_GLOBS | — |
 
 <!--
+CWE/GB 映射列（2026-07-20 P1 补）：仅登记仓库内已有证据（.sh 告警文案/§3 违反后果）的弱点映射；— = 质量/规范类门禁，无 CWE 直挂。GB/T 34944-2017 为 Java 语言源代码漏洞测试规范。
 门禁 id 命名规范：fw_junit_<rule>（ruleset 为 junit5-mockito，id 前缀按任务约定用 fw_junit_）。
 本表 13 条 id 须在 assets/framework-gates/junit5-mockito.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_junit_<rule>(fail|warn) ...` 与本表 id 集合一致。

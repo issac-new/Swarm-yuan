@@ -232,7 +232,7 @@ graphify export callflow-html                    # Mermaid 调用流（用于组
 
 #### C+.0.5 框架探查（从依赖清单+注解+配置文件识别具体框架，激活规则集）
 
-> **★铁律：§C+.0 只判前端/后端/异步等大类，§C+.0.5 进一步识别具体框架。** 探查到什么框架，就激活 domain-knowledge.md 中对应的框架规则集 + §C+.1-B 框架特定构件枚举 + precheck.conf 框架配置变量。**不预设——按探查到的信号动态激活。**
+> **★铁律：§C+.0 只判前端/后端/异步等大类，§C+.0.5 进一步识别具体框架。** 探查到什么框架，就激活 `references/frameworks/<fw>.md` 中对应的框架规则集（唯一来源，T4 起自 domain-knowledge.md 迁出）+ §C+.1-B 框架特定构件枚举 + precheck.conf 框架配置变量。**不预设——按探查到的信号动态激活。**
 
 **探查方法：从构建文件依赖清单提取框架 starter**
 
@@ -278,6 +278,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | celery | 注解 | @shared_task / @app.task / @task | 高 |
 | celery | 文件 | celery.py / celeryconfig.py / tasks.py | 中 |
 | celery | 配置 | CELERY_BROKER_URL / CELERY_RESULT_BACKEND / task_routes / beat_schedule | 高 |
+| dameng | 依赖 | `com.dameng:DmJdbcDriver18` / `Dm8JdbcDriver18` / `DmDialect-for-hibernate*` / `dm-python` / `sqlalchemy-dm` | 高 |
+| dameng | 配置 | `jdbc:dm://` / `dm.jdbc.driver.DmDriver` / 5236 端口数据源 | 高 |
+| dameng | 文件 | `**/dm.ini` / `**/dm_svc.conf` / DDL 含 `IDENTITY(` 或 `STORAGE(` 子句 | 中（需排除他用） |
+| dameng | 代码 | `ROWNUM` / `LISTAGG(` / `SET IDENTITY_INSERT` / `NEXTVAL(` / `SYSDATE` | 中（Oracle 系同源，需组合信号） |
+| dameng | 注解/方言 | `org.hibernate.dialect.DmDialect` / `DmDialect-for-hibernate` | 高 |
 | django | 依赖 | `Django` / `django`（requirements.txt / pyproject.toml / Pipfile） | 高 |
 | django | 文件 | `**/manage.py` / `**/settings.py` / `**/wsgi.py` / `**/asgi.py` | 高 |
 | django | 代码 | `from django.` / `import django` / `django.db.models` / `models.Model` | 高 |
@@ -363,6 +368,15 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | koa | 代码 | `new Koa()` / `require('koa')` / `await next()` / `ctx.body =` / `ctx.throw(` | 高 |
 | koa | 文件 | `**/app.js` / `**/server.js`（含 koa 引用）/ `**/routes/**/*.js`（含 Router） | 中（需组合依赖信号） |
 | koa | 配置 | `PORT` + 中间件链 `app.use(` 且含 `ctx` 参数签名 | 中 |
+| kratos | 依赖 | `github.com/go-kratos/kratos/v2`（go.mod） | 高 |
+| kratos | 文件 | `**/wire.go` + `**/wire_gen.go`（wire 编译期注入对） | 高 |
+| kratos | 文件 | `internal/{server,service,biz,data}/` 四层目录（kratos-layout 标准布局） | 中（需组合信号） |
+| kratos | 配置 | `configs/config.yaml` + `internal/conf/*.proto`（Bootstrap 配置契约） | 中 |
+| kratos | 代码 | `kratos.New(` / `http.NewServer(` / `grpc.NewServer(` / `recovery.Recovery()` / `RegisterXxxHTTPServer(` | 高 |
+| langchain | 依赖 | `langchain` / `langchain-core` / `langchain-community` / `langgraph`（requirements.txt / pyproject.toml） | 高 |
+| langchain | 代码 | `from langchain` / `from langchain_core` / `from langchain_openai` / `from langgraph` | 高 |
+| langchain | 代码 | `PromptTemplate(` / `ChatPromptTemplate` / `AgentExecutor` / `create_react_agent` / `StateGraph(` | 中（需与依赖信号组合） |
+| langchain | 配置 | `LANGCHAIN_TRACING_V2` / `LANGSMITH_API_KEY` / `OPENAI_API_KEY` 环境变量 | 中 |
 | lombok | 依赖 | `org.projectlombok:lombok` / `org.projectlombok:lombok-mapstruct-binding` | 高 |
 | lombok | 注解 | `@Data` / `@Getter` / `@Setter` / `@Builder` / `@Jacksonized` / `@AllArgsConstructor` / `@NoArgsConstructor` / `@RequiredArgsConstructor` / `@Slf4j` / `@Log` / `@SneakyThrows` / `@Cleanup` / `@NonNull` / `@Value` / `@EqualsAndHashCode` / `val` / `var` | 高 |
 | lombok | 配置 | `lombok.config`（含 `config.stopBubbling` / `lombok.log.fieldName` / `lombok.copyJacksonAnnotationsToAccessors` / `lombok.anyConstructor.addConstructorProperties` 等 key） | 高 |
@@ -512,6 +526,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | tailwind | 文件 | `tailwind.config.{js,ts,cjs,mjs}` / `postcss.config.*` 含 `tailwindcss` / `app.css` 含 `@import "tailwindcss"` | 高 |
 | tailwind | 代码 | `class="[^"]*\b(flex|grid|p-[0-9]|text-[a-z]+|bg-[a-z]+)` / `@apply` / `@theme` | 高 |
 | tailwind | 配置 | `content:` / `theme.extend` / `darkMode:` / `@source` | 高 |
+| terraform | 文件 | `**/*.tf` / `**/*.tfvars` | 高（HCL 专属扩展名） |
+| terraform | 文件 | `.terraform.lock.hcl` | 高（provider 锁文件，init 产物） |
+| terraform | 配置 | `terraform {` 块 / `required_providers` / `backend "` | 高 |
+| terraform | 配置 | `resource "aws_|resource "azurerm_|resource "google_` | 中（云 provider 前缀可组合判定） |
+| terraform | 目录结构 | `modules/<name>/main.tf` 模块布局 | 低（仅作辅助） |
 | typeorm | 依赖 | `package.json` 含 `"typeorm"` / `"@nestjs/typeorm"` / `"typeorm-naming-strategies"` | 高 |
 | typeorm | 注解/装饰器 | `@Entity` / `@Column` / `@PrimaryGeneratedColumn` / `@ManyToOne` / `@OneToMany` / `@Index` | 高 |
 | typeorm | 文件 | `**/data-source.ts` / `**/ormconfig.json` / `**/migrations/*.ts`（含 `MigrationInterface`） | 中（migrations 目录须组合 MigrationInterface 确认） |
@@ -544,7 +563,7 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 
 > **★版本号提取（与规则文件 §3 适用版本区间匹配，T4 新增铁律）**：探查时须同时提取各框架**版本号**（来源：JVM 项目 `pom.xml` `<version>` / `build.gradle` implementation；Node 项目 `package.json` `"vue": "^3.x"`；Go 项目 `go.mod` `module vX.Y.Z`；Python 项目 `pyproject.toml`/`requirements.txt` `fastapi==0.x`）。将提取到的版本与 `references/frameworks/<fw>.md` §3 规律的"适用版本"区间匹配——区间内规律实例化时附证据；区间外规律标"⚠ 待验证（项目版本 X，规律适用区间 Y）"；框架版本号须写入特征卡第 4 项技术栈摘要。
 
-> **判定产出**：记录"本项目激活以下框架规则集：[spring-boot, mybatis, lombok, sharding, ...]"。后续 §C+.1-B 枚举框架特定构件 / §C+.3 推导框架约束 / domain-knowledge 引用框架规则表 / precheck.conf 填充框架配置变量。
+> **判定产出**：记录"本项目激活以下框架规则集：[spring-boot, mybatis, lombok, sharding, ...]"。后续 §C+.1-B 枚举框架特定构件 / §C+.3 推导框架约束 / `references/frameworks/<fw>.md` 引用框架规则表 / precheck.conf 填充框架配置变量。
 
 #### C+.1 全量穷举方法论（按维度动态适配，确保一个不漏）
 

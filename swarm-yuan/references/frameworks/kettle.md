@@ -135,21 +135,21 @@ detect 信号命中任一高置信度行即可激活 kettle 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_kettle_password_encr | fail | kjb/ktr 中 `<password>` 值非 Encrypted 前缀且非 ${ 变量 → fail 明文口令 | KETTLE_JOB_GLOBS |
-| fw_kettle_carte_default_auth | fail | Carte 配置 cluster/cluster 默认口令或明文 slaveserver 口令 → fail | KETTLE_JOB_GLOBS |
-| fw_kettle_git_versioned | warn | 工作区有 kjb/ktr 但 git ls-files 无跟踪 → warn | KETTLE_JOB_GLOBS |
-| fw_kettle_blocking_step | warn | ktr 检出 BlockingStep/SortRows → warn 内存评估 | KETTLE_JOB_GLOBS |
-| fw_kettle_failure_mail | warn | kjb 含 entries 但无 MAIL entry → warn 失败静默 | KETTLE_JOB_GLOBS |
-| fw_kettle_variable_scope | warn | ktr/kjb 检出 server IP 字面量或 /home/ /opt/ C:\ 路径字面量 → warn | KETTLE_JOB_GLOBS |
-| fw_kettle_log_level | warn | loglevel 为 Detailed/Debug/Rowlevel → warn | KETTLE_JOB_GLOBS |
-| fw_kettle_connection_pool | warn | ktr 有 connection 但无 pooling 且 access 非 JNDI → warn | KETTLE_JOB_GLOBS |
-| fw_kettle_transaction | warn | ≥2 个 TableOutput 且 unique_connections=Y → warn 事务边界 | KETTLE_JOB_GLOBS |
-| fw_kettle_hop_migration | warn | transversion 9.x/8.x → warn 评估 Hop/PDI 11 迁移 | KETTLE_JOB_GLOBS |
-| fw_kettle_error_handling | warn | TableOutput 无 error_handling 块 → warn | KETTLE_JOB_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |
+|---------|------|---------|---------|---------|
+| fw_kettle_password_encr | fail | kjb/ktr 中 `<password>` 值非 Encrypted 前缀且非 ${ 变量 → fail 明文口令 | KETTLE_JOB_GLOBS | CWE-312；CWE-798；GB/T 34944-2017 6.2.6.3 口径（口令硬编码） |
+| fw_kettle_carte_default_auth | fail | Carte 配置 cluster/cluster 默认口令或明文 slaveserver 口令 → fail | KETTLE_JOB_GLOBS | CWE-1391；GB/T 22239-2019 7.1.4.2 口径（默认账户/默认口令） |
+| fw_kettle_git_versioned | warn | 工作区有 kjb/ktr 但 git ls-files 无跟踪 → warn | KETTLE_JOB_GLOBS | — |
+| fw_kettle_blocking_step | warn | ktr 检出 BlockingStep/SortRows → warn 内存评估 | KETTLE_JOB_GLOBS | — |
+| fw_kettle_failure_mail | warn | kjb 含 entries 但无 MAIL entry → warn 失败静默 | KETTLE_JOB_GLOBS | — |
+| fw_kettle_variable_scope | warn | ktr/kjb 检出 server IP 字面量或 /home/ /opt/ C:\ 路径字面量 → warn | KETTLE_JOB_GLOBS | — |
+| fw_kettle_log_level | warn | loglevel 为 Detailed/Debug/Rowlevel → warn | KETTLE_JOB_GLOBS | CWE-532；GB/T 38674-2020 §5.4 |
+| fw_kettle_connection_pool | warn | ktr 有 connection 但无 pooling 且 access 非 JNDI → warn | KETTLE_JOB_GLOBS | — |
+| fw_kettle_transaction | warn | ≥2 个 TableOutput 且 unique_connections=Y → warn 事务边界 | KETTLE_JOB_GLOBS | — |
+| fw_kettle_hop_migration | warn | transversion 9.x/8.x → warn 评估 Hop/PDI 11 迁移 | KETTLE_JOB_GLOBS | — |
+| fw_kettle_error_handling | warn | TableOutput 无 error_handling 块 → warn | KETTLE_JOB_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_kettle_<rule>（rule 全小写下划线）。
@@ -159,6 +159,7 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 依赖变量在片段头注释 `# ruleset: kettle  requires_conf: KETTLE_JOB_GLOBS` 声明。
 fixture 验证覆盖：violating 含 .ktr 明文数据库密码 + carte-config.xml 默认 cluster/cluster 口令
 → password_encr / carte_default_auth 双 fail 主触发；compliant 用 Encrypted 密文 + 改口令 → 全 pass。
+标准映射列 2026-07-20 P1 补登：CWE 取自本文件 §3/门禁输出口径与通行分类，GB 条款沿用 references/standards-compliance.md §D 口径，无明确映射标 —。
 -->
 
 ## §5 跨框架交互规则

@@ -132,27 +132,27 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_webpack_persistent_cache | warn | 无 cache.type='filesystem' → warn | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_splitchunks | warn | 无 splitChunks → warn | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_chunk_naming | warn | 动态 import 无 webpackChunkName → warn | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_defineplugin | warn | 无 DefinePlugin → warn | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_mode_minimize | warn | production + minimize=false → warn | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_tree_shaking | warn | 无 usedExports/sideEffects → warn | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_resolve_alias | warn | resolve 块无 alias → warn | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_devtool | fail | 生产 mode + devtool 为 eval 类 → fail 源码泄漏 | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_externals | warn | 无 externals → warn | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_loader_order | warn | loader 链顺序反 → warn | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_performance_hints | warn | 无 performance → warn | WEBPACK_CONFIG_GLOBS |
-| fw_webpack_copy_plugin | warn | 无 CopyWebpackPlugin → warn | WEBPACK_CONFIG_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE / GB 映射 |
+|---------|------|---------|---------|--------------|
+| fw_webpack_persistent_cache | warn | 无 cache.type='filesystem' → warn | WEBPACK_CONFIG_GLOBS | — |
+| fw_webpack_splitchunks | warn | 无 splitChunks → warn | WEBPACK_CONFIG_GLOBS | — |
+| fw_webpack_chunk_naming | warn | 动态 import 无 webpackChunkName → warn | WEBPACK_CONFIG_GLOBS | — |
+| fw_webpack_defineplugin | warn | 无 DefinePlugin → warn | WEBPACK_CONFIG_GLOBS | — |
+| fw_webpack_mode_minimize | warn | production + minimize=false → warn | WEBPACK_CONFIG_GLOBS | — |
+| fw_webpack_tree_shaking | warn | 无 usedExports/sideEffects → warn | WEBPACK_CONFIG_GLOBS | — |
+| fw_webpack_resolve_alias | warn | resolve 块无 alias → warn | WEBPACK_CONFIG_GLOBS | — |
+| fw_webpack_devtool | fail | 生产 mode + devtool 为 eval 类 → fail 源码泄漏 | WEBPACK_CONFIG_GLOBS | CWE-540 |
+| fw_webpack_externals | warn | 无 externals → warn | WEBPACK_CONFIG_GLOBS | — |
+| fw_webpack_loader_order | warn | loader 链顺序反 → warn | WEBPACK_CONFIG_GLOBS | — |
+| fw_webpack_performance_hints | warn | 无 performance → warn | WEBPACK_CONFIG_GLOBS | — |
+| fw_webpack_copy_plugin | warn | 无 CopyWebpackPlugin → warn | WEBPACK_CONFIG_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_webpack_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/webpack.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_webpack_<rule>(warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: webpack  requires_conf: WEBPACK_CONFIG_GLOBS` 声明。
-fixture 验证覆盖：violating 含生产 mode + eval devtool + 无 splitChunks + 无 cache + 动态 import 无 chunk 命名 → devtool fail 主触发；compliant 全 pass。
+fixture 验证覆盖：violating 含生产 mode + eval devtool + 无 splitChunks + 无 cache + 动态 import 无 chunk 命名 → devtool fail 主触发（1/1 已断言）；compliant 全 pass。
 -->
 
 ## §5 跨框架交互规则

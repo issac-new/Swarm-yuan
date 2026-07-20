@@ -137,28 +137,31 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_rabbitmq_manual_ack | fail | 检出 AcknowledgeMode.NONE / acknowledge-mode: none / basicConsume(...,true) → fail 消息丢失 | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_idempotent_consumer | warn | @RabbitListener 文件无幂等痕迹 → warn | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_dlq | warn | RabbitMQ 使用但无 x-dead-letter/dlx/dlq 痕迹 → warn | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_durable_persistent | warn | new Queue(name,false) / QueueBuilder.nonDurable / queueDeclare durable=false / NON_PERSISTENT → warn | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_connection_reuse | warn | 业务代码检出 .newConnection( / .newChannel( → warn 确认复用 | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_prefetch | warn | 有消费者但无 prefetch/basicQos 配置 → warn | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_publisher_confirm | warn | 有生产者但无 ConfirmCallback/ReturnsCallback/publisher-confirm 痕迹 → warn | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_delay | warn | x-message-ttl/setExpiration 与 x-dead-letter 共存（TTL+DLX 延迟）→ warn 建议插件 | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_quorum | warn | 显式 classic 或队列声明无 x-queue-type=quorum → warn | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_exchange_type | warn | 检出 HeadersExchange/ExchangeTypes.HEADERS/type: headers → warn | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_consumer_concurrency | warn | @RabbitListener 无 concurrency 显式配置 → warn | RABBITMQ_SRC_GLOBS |
-| fw_rabbitmq_auto_delete | warn | 检出 .autoDelete(/.exclusive(/auto-delete: true/exclusive: true → warn | RABBITMQ_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_rabbitmq_manual_ack | fail | 检出 AcknowledgeMode.NONE / acknowledge-mode: none / basicConsume(...,true) → fail 消息丢失 | RABBITMQ_SRC_GLOBS | —（确认语义契约） |
+| fw_rabbitmq_idempotent_consumer | warn | @RabbitListener 文件无幂等痕迹 → warn | RABBITMQ_SRC_GLOBS | —（幂等契约） |
+| fw_rabbitmq_dlq | warn | RabbitMQ 使用但无 x-dead-letter/dlx/dlq 痕迹 → warn | RABBITMQ_SRC_GLOBS | CWE-755（毒丸 requeue 无死信处置） |
+| fw_rabbitmq_durable_persistent | warn | new Queue(name,false) / QueueBuilder.nonDurable / queueDeclare durable=false / NON_PERSISTENT → warn | RABBITMQ_SRC_GLOBS | —（持久化契约） |
+| fw_rabbitmq_connection_reuse | warn | 业务代码检出 .newConnection( / .newChannel( → warn 确认复用 | RABBITMQ_SRC_GLOBS | CWE-770（每操作新建连接无节制） |
+| fw_rabbitmq_prefetch | warn | 有消费者但无 prefetch/basicQos 配置 → warn | RABBITMQ_SRC_GLOBS | CWE-770（默认 prefetch 250 堆满内存） |
+| fw_rabbitmq_publisher_confirm | warn | 有生产者但无 ConfirmCallback/ReturnsCallback/publisher-confirm 痕迹 → warn | RABBITMQ_SRC_GLOBS | —（发布确认契约） |
+| fw_rabbitmq_delay | warn | x-message-ttl/setExpiration 与 x-dead-letter 共存（TTL+DLX 延迟）→ warn 建议插件 | RABBITMQ_SRC_GLOBS | —（延迟模式选型） |
+| fw_rabbitmq_quorum | warn | 显式 classic 或队列声明无 x-queue-type=quorum → warn | RABBITMQ_SRC_GLOBS | —（队列类型选型） |
+| fw_rabbitmq_exchange_type | warn | 检出 HeadersExchange/ExchangeTypes.HEADERS/type: headers → warn | RABBITMQ_SRC_GLOBS | —（交换机选型） |
+| fw_rabbitmq_consumer_concurrency | warn | @RabbitListener 无 concurrency 显式配置 → warn | RABBITMQ_SRC_GLOBS | —（并发配置） |
+| fw_rabbitmq_auto_delete | warn | 检出 .autoDelete(/.exclusive(/auto-delete: true/exclusive: true → warn | RABBITMQ_SRC_GLOBS | —（临时队列风险） |
 
 <!--
 门禁 id 命名规范：fw_rabbitmq_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/rabbitmq.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_rabbitmq_<rule>(fail|warn) ...` 与本表 id 集合一致。
 fixture 验证覆盖：violating 含 @RabbitListener + acknowledge-mode: none + 无幂等 + 无 DLQ
-  + 每次新建 Connection + nonDurable/autoDelete → manual_ack fail 主触发；
+  + 每次新建 Connection + nonDurable/autoDelete → manual_ack fail 主触发（expected-fail-ids 1/1 已登记）；
   compliant 修正（manual ack + setIfAbsent 幂等 + DLX + quorum + prefetch + confirm + concurrency）全 pass。
+CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
+- CWE 编号依据 MITRE CWE 词典与 CWE Top 25:2025（R8 §⑨）；「—」为工程一致性/性能契约类规律，无对应 CWE 弱点类，归 ISO/IEC 5055:2021 性能/可靠性度量面（138 弱点经 CWE 对齐，见 standards-compliance.md §E.1）。
+- GB/T 34944-2017（Java，9 大类 44 种）/ GB/T 34946-2017（C#）总则 §5 要求 SAST 扫描 + 人工复核 + 测试四件套；本表作用于源码的门禁即该流程的词法层 SAST 面（R8 §⑥）。
 -->
 
 ## §5 跨框架交互规则

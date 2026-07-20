@@ -138,19 +138,19 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_typeorm_synchronize_prod | fail | synchronize: true 字面量 → fail 生产自动改表 | TYPEORM_SRC_GLOBS |
-| fw_typeorm_eager_n1 | warn | 关联 eager: true → warn 隐式 JOIN/N+1 | TYPEORM_SRC_GLOBS |
-| fw_typeorm_transaction_runner | warn | 同文件事务调用 + getRepository/dataSource.manager → warn 混用全局连接 | TYPEORM_SRC_GLOBS |
-| fw_typeorm_transaction_decorator | warn | @Transaction/@TransactionManager/@TransactionRepository → warn 已废弃 | TYPEORM_SRC_GLOBS |
-| fw_typeorm_lazy_relation | warn | 关联属性 Promise&lt;T&gt; 懒加载 → warn 序列化丢字段 | TYPEORM_SRC_GLOBS |
-| fw_typeorm_fk_index | warn | 实体含 @ManyToOne 无 @Index → warn 外键无索引 | TYPEORM_SRC_GLOBS |
-| fw_typeorm_pagination_offset | warn | 同文件 .offset/.limit + Join → warn 行级截断错位 | TYPEORM_SRC_GLOBS |
-| fw_typeorm_soft_delete | warn | 有 @DeleteDateColumn 且检出 .delete( → warn 物理删绕过软删 | TYPEORM_SRC_GLOBS |
-| fw_typeorm_audit_columns | warn | 实体无 @CreateDateColumn/@UpdateDateColumn → warn | TYPEORM_SRC_GLOBS |
-| fw_typeorm_pool | warn | new DataSource/createConnection 无 poolSize/extra → warn | TYPEORM_SRC_GLOBS |
-| fw_typeorm_qb_injection | fail | where/orWhere/andWhere 模板插值 ${} → fail SQL 注入 CWE-89 | TYPEORM_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE / GB 映射 |
+|---------|------|---------|---------|--------------|
+| fw_typeorm_synchronize_prod | fail | synchronize: true 字面量 → fail 生产自动改表 | TYPEORM_SRC_GLOBS | CWE-672 |
+| fw_typeorm_eager_n1 | warn | 关联 eager: true → warn 隐式 JOIN/N+1 | TYPEORM_SRC_GLOBS | — |
+| fw_typeorm_transaction_runner | warn | 同文件事务调用 + getRepository/dataSource.manager → warn 混用全局连接 | TYPEORM_SRC_GLOBS | — |
+| fw_typeorm_transaction_decorator | warn | @Transaction/@TransactionManager/@TransactionRepository → warn 已废弃 | TYPEORM_SRC_GLOBS | — |
+| fw_typeorm_lazy_relation | warn | 关联属性 Promise&lt;T&gt; 懒加载 → warn 序列化丢字段 | TYPEORM_SRC_GLOBS | — |
+| fw_typeorm_fk_index | warn | 实体含 @ManyToOne 无 @Index → warn 外键无索引 | TYPEORM_SRC_GLOBS | — |
+| fw_typeorm_pagination_offset | warn | 同文件 .offset/.limit + Join → warn 行级截断错位 | TYPEORM_SRC_GLOBS | — |
+| fw_typeorm_soft_delete | warn | 有 @DeleteDateColumn 且检出 .delete( → warn 物理删绕过软删 | TYPEORM_SRC_GLOBS | — |
+| fw_typeorm_audit_columns | warn | 实体无 @CreateDateColumn/@UpdateDateColumn → warn | TYPEORM_SRC_GLOBS | — |
+| fw_typeorm_pool | warn | new DataSource/createConnection 无 poolSize/extra → warn | TYPEORM_SRC_GLOBS | — |
+| fw_typeorm_qb_injection | fail | where/orWhere/andWhere 模板插值 ${} → fail SQL 注入 CWE-89 | TYPEORM_SRC_GLOBS | CWE-89；GB/T 38674-2020 §5.1 |
 
 <!--
 门禁 id 命名规范：fw_typeorm_<rule>（rule 全小写下划线）。
@@ -158,7 +158,7 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 片段头注释 `# gates: fw_typeorm_<rule>(...) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: typeorm  requires_conf: TYPEORM_SRC_GLOBS` 声明。
 fixture 验证覆盖：violating 含 synchronize: true + QB 模板插值 + 手改已执行迁移（证据文件）
-→ synchronize_prod/qb_injection fail 主触发；compliant 修正后全 pass。
+→ synchronize_prod/qb_injection fail 主触发（2/2 已断言）；compliant 修正后全 pass。
 -->
 
 ## §5 跨框架交互规则

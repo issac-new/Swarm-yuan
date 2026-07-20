@@ -145,19 +145,19 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
 |---------|------|---------|---------|
-| fw_sentinel_rule_persist | fail | 检出 Sentinel 使用但无 datasource 持久化配置 → fail 规则内存丢失风险 | SENTINEL_SRC_GLOBS |
-| fw_sentinel_resource_fallback | warn | @SentinelResource 无 blockHandler 且无 fallback → warn | SENTINEL_SRC_GLOBS |
-| fw_sentinel_blockhandler_split | warn | @SentinelResource 有 fallback 无 blockHandler → warn BlockException 上抛 | SENTINEL_SRC_GLOBS |
-| fw_sentinel_degrade_strategy | warn | 检出熔断规则但无 minRequestAmount → warn 小样本误熔断 | SENTINEL_SRC_GLOBS |
-| fw_sentinel_param_flow | warn | 检出 ParamFlowRule 但工程无 blockHandler → warn | SENTINEL_SRC_GLOBS |
-| fw_sentinel_flow_shape | warn | 检出 FlowRule 无 controlBehavior → warn 确认整形策略 | SENTINEL_SRC_GLOBS |
-| fw_sentinel_system_rule | warn | 检出 Sentinel 使用但无 SystemRule → warn 无全局兜底 | SENTINEL_SRC_GLOBS |
-| fw_sentinel_gateway_flow | warn | gateway + sentinel 但无 gateway-adapter/GatewayFlowRule → warn | SENTINEL_SRC_GLOBS |
-| fw_sentinel_dashboard_auth | warn | dashboard.password=sentinel 默认口令 → fail；dashboard 无 auth 痕迹 → warn | SENTINEL_SRC_GLOBS |
-| fw_sentinel_dynamic_refresh | warn | transport.dashboard + datasource 同存 → warn 确认 push 模式双向同步 | SENTINEL_SRC_GLOBS |
-| fw_sentinel_fallback_light | warn | fallback/blockHandler 方法体内含远程调用 → warn | SENTINEL_SRC_GLOBS |
-| fw_sentinel_resource_naming | warn | @SentinelResource value 风格混用（路径/标识符） → warn | SENTINEL_SRC_GLOBS |
-| fw_sentinel_biz_exception | warn | 异常比例熔断 + 无 exceptionsToIgnore/Trace → warn | SENTINEL_SRC_GLOBS |
+| fw_sentinel_rule_persist | fail | 检出 Sentinel 使用但无 datasource 持久化配置 → fail 规则内存丢失风险 (n/a) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_resource_fallback | warn | @SentinelResource 无 blockHandler 且无 fallback → warn (n/a) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_blockhandler_split | warn | @SentinelResource 有 fallback 无 blockHandler → warn BlockException 上抛 (n/a) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_degrade_strategy | warn | 检出熔断规则但无 minRequestAmount → warn 小样本误熔断 (n/a) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_param_flow | warn | 检出 ParamFlowRule 但工程无 blockHandler → warn (n/a) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_flow_shape | warn | 检出 FlowRule 无 controlBehavior → warn 确认整形策略 (n/a) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_system_rule | warn | 检出 Sentinel 使用但无 SystemRule → warn 无全局兜底 (CWE-400) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_gateway_flow | warn | gateway + sentinel 但无 gateway-adapter/GatewayFlowRule → warn (n/a) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_dashboard_auth | warn | dashboard.password=sentinel 默认口令 → fail；dashboard 无 auth 痕迹 → warn (CWE-521) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_dynamic_refresh | warn | transport.dashboard + datasource 同存 → warn 确认 push 模式双向同步 (n/a) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_fallback_light | warn | fallback/blockHandler 方法体内含远程调用 → warn (n/a) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_resource_naming | warn | @SentinelResource value 风格混用（路径/标识符） → warn (n/a) | SENTINEL_SRC_GLOBS |
+| fw_sentinel_biz_exception | warn | 异常比例熔断 + 无 exceptionsToIgnore/Trace → warn (n/a) | SENTINEL_SRC_GLOBS |
 
 <!--
 门禁 id 命名规范：fw_sentinel_<rule>（rule 全小写下划线）。

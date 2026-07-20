@@ -139,22 +139,23 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_jackson_jsr310 | warn | 有 java.time 字段但无 JavaTimeModule/registerModule 痕迹 → warn（3.0/Spring 自动注册须人工确认） | JACKSON_SRC_GLOBS |
-| fw_jackson_password | fail | String password/secret/apiKey/token 字段同行+前 3 行无 @JsonIgnore/WRITE_ONLY → fail | JACKSON_SRC_GLOBS |
-| fw_jackson_polymorphic | fail | @JsonTypeInfo 块含 Id.CLASS/Id.MINIMAL_CLASS 或缺 defaultImpl → fail（CVE-2017-7525 类） | JACKSON_SRC_GLOBS |
-| fw_jackson_unknown_props | warn | 有 Jackson DTO 但无 FAIL_ON_UNKNOWN_PROPERTIES 配置且无 @JsonIgnoreProperties → warn 显式选型 | JACKSON_SRC_GLOBS |
-| fw_jackson_dates_as_timestamps | warn | 有 java.time 字段但无 timestamps 关闭/JsonFormat 痕迹 → warn | JACKSON_SRC_GLOBS |
-| fw_jackson_jsonformat_tz | warn | @JsonFormat(pattern) 行无 timezone → warn | JACKSON_SRC_GLOBS |
-| fw_jackson_include_nonnull | warn | 有 Jackson DTO 但全项目无 @JsonInclude/default-property-inclusion → warn 统一口径 | JACKSON_SRC_GLOBS |
-| fw_jackson_property_naming | warn | 同类内 snake_case 与 camelCase @JsonProperty 混用 → warn | JACKSON_SRC_GLOBS |
-| fw_jackson_creator | warn | @JsonCreator 参数列表无 @JsonProperty → warn（参数名擦除） | JACKSON_SRC_GLOBS |
-| fw_jackson_bigdecimal | warn | price/amount/money/fee/cost/total 命名的 double/float 字段 → warn 改 BigDecimal | JACKSON_SRC_GLOBS |
-| fw_jackson_mapper_singleton | warn | new ObjectMapper() 出现在 ≥2 文件 → warn 单例复用 | JACKSON_SRC_GLOBS |
-| fw_jackson_jsonview | warn | 检出 @JsonView → warn 复核 DEFAULT_VIEW_INCLUSION 与继承方向 | JACKSON_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|---------|
+| fw_jackson_jsr310 | warn | 有 java.time 字段但无 JavaTimeModule/registerModule 痕迹 → warn（3.0/Spring 自动注册须人工确认） | JACKSON_SRC_GLOBS | — |
+| fw_jackson_password | fail | String password/secret/apiKey/token 字段同行+前 3 行无 @JsonIgnore/WRITE_ONLY → fail | JACKSON_SRC_GLOBS | CWE-200/CWE-359；GB/T 34944-2017 |
+| fw_jackson_polymorphic | fail | @JsonTypeInfo 块含 Id.CLASS/Id.MINIMAL_CLASS 或缺 defaultImpl → fail（CVE-2017-7525 类） | JACKSON_SRC_GLOBS | CWE-502（CVE-2017-7525）；GB/T 34944-2017 |
+| fw_jackson_unknown_props | warn | 有 Jackson DTO 但无 FAIL_ON_UNKNOWN_PROPERTIES 配置且无 @JsonIgnoreProperties → warn 显式选型 | JACKSON_SRC_GLOBS | — |
+| fw_jackson_dates_as_timestamps | warn | 有 java.time 字段但无 timestamps 关闭/JsonFormat 痕迹 → warn | JACKSON_SRC_GLOBS | — |
+| fw_jackson_jsonformat_tz | warn | @JsonFormat(pattern) 行无 timezone → warn | JACKSON_SRC_GLOBS | — |
+| fw_jackson_include_nonnull | warn | 有 Jackson DTO 但全项目无 @JsonInclude/default-property-inclusion → warn 统一口径 | JACKSON_SRC_GLOBS | — |
+| fw_jackson_property_naming | warn | 同类内 snake_case 与 camelCase @JsonProperty 混用 → warn | JACKSON_SRC_GLOBS | — |
+| fw_jackson_creator | warn | @JsonCreator 参数列表无 @JsonProperty → warn（参数名擦除） | JACKSON_SRC_GLOBS | — |
+| fw_jackson_bigdecimal | warn | price/amount/money/fee/cost/total 命名的 double/float 字段 → warn 改 BigDecimal | JACKSON_SRC_GLOBS | CWE-681；GB/T 34944-2017 |
+| fw_jackson_mapper_singleton | warn | new ObjectMapper() 出现在 ≥2 文件 → warn 单例复用 | JACKSON_SRC_GLOBS | — |
+| fw_jackson_jsonview | warn | 检出 @JsonView → warn 复核 DEFAULT_VIEW_INCLUSION 与继承方向 | JACKSON_SRC_GLOBS | CWE-200；GB/T 34944-2017 |
 
 <!--
+CWE/GB 映射列（2026-07-20 P1 补）：仅登记仓库内已有证据（.sh 告警文案/§3 违反后果）的弱点映射；— = 质量/规范类门禁，无 CWE 直挂。GB/T 34944-2017 为 Java 语言源代码漏洞测试规范。
 门禁 id 命名规范：fw_jackson_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/jackson.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_jackson_<rule>(fail|warn) ...` 与本表 id 集合一致。

@@ -116,28 +116,28 @@ detect 信号命中任一高置信度行即可激活 naiveui 框架规则集。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁"关键字，缺失则 NOGATE 报错。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / CWE·GB 元数据）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_naiveui_named_import | warn | 无具名 from 'naive-ui' → warn | NAIVEUI_FILE_GLOBS |
-| fw_naiveui_no_global_register | fail | app.use(n)/app.component('n-') 全局注册 → fail | NAIVEUI_FILE_GLOBS |
-| fw_naiveui_no_dual_ui | fail | 检出 element-plus/ant-design-vue/vant → fail | NAIVEUI_FILE_GLOBS |
-| fw_naiveui_config_provider_theme | warn | 直接覆写 .n-* 类 CSS → warn | NAIVEUI_FILE_GLOBS |
-| fw_naiveui_usemessage_inject | warn | createDiscreteApi 脱离组件树 → warn | NAIVEUI_FILE_GLOBS |
-| fw_naiveui_datatable_virtual | warn | n-data-table 大数据源无 virtual-scroll → warn | NAIVEUI_FILE_GLOBS |
-| fw_naiveui_darktheme | warn | 手写 dark CSS 无 darkTheme → warn | NAIVEUI_FILE_GLOBS |
-| fw_naiveui_form_rules | warn | n-form 无 :rules + 手动 if 校验 → warn | NAIVEUI_FILE_GLOBS |
-| fw_naiveui_select_remote | warn | n-select filterable 无 @search → warn | NAIVEUI_FILE_GLOBS |
-| fw_naiveui_upload_size_limit | fail | n-upload 无 before-upload 大小校验 → fail DoS | NAIVEUI_FILE_GLOBS |
-| fw_naiveui_modal_preset_card | warn | n-modal 无 preset/title → warn | NAIVEUI_FILE_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_naiveui_named_import | warn | 无具名 from 'naive-ui' → warn | NAIVEUI_FILE_GLOBS | — |
+| fw_naiveui_no_global_register | fail | app.use(n)/app.component('n-') 全局注册 → fail | NAIVEUI_FILE_GLOBS | — |
+| fw_naiveui_no_dual_ui | fail | 检出 element-plus/ant-design-vue/vant → fail | NAIVEUI_FILE_GLOBS | — |
+| fw_naiveui_config_provider_theme | warn | 直接覆写 .n-* 类 CSS → warn | NAIVEUI_FILE_GLOBS | — |
+| fw_naiveui_usemessage_inject | warn | createDiscreteApi 脱离组件树 → warn | NAIVEUI_FILE_GLOBS | — |
+| fw_naiveui_datatable_virtual | warn | n-data-table 大数据源无 virtual-scroll → warn | NAIVEUI_FILE_GLOBS | — |
+| fw_naiveui_darktheme | warn | 手写 dark CSS 无 darkTheme → warn | NAIVEUI_FILE_GLOBS | — |
+| fw_naiveui_form_rules | warn | n-form 无 :rules + 手动 if 校验 → warn | NAIVEUI_FILE_GLOBS | — |
+| fw_naiveui_select_remote | warn | n-select filterable 无 @search → warn | NAIVEUI_FILE_GLOBS | — |
+| fw_naiveui_upload_size_limit | fail | n-upload 无 before-upload 大小校验 → fail DoS | NAIVEUI_FILE_GLOBS | CWE-770（资源分配无限制，门禁文案 DoS）；GB/T 38674-2020 §8.1（输入/资源限制类安全设计） |
+| fw_naiveui_modal_preset_card | warn | n-modal 无 preset/title → warn | NAIVEUI_FILE_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_naiveui_<rule>（rule 全小写下划线）。
 本表 11 条 id 须在 assets/framework-gates/naiveui.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_naiveui_<rule>(fail/warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: naiveui  requires_conf: NAIVEUI_FILE_GLOBS` 声明。
-fixture 验证覆盖：violating 含全局注册 + createDiscreteApi + n-upload 无大小校验 → no_global_register + upload_size_limit fail 主触发；compliant 全 pass。
+fixture 验证覆盖：violating 3/3 fail 全触发（no_global_register / no_dual_ui / upload_size_limit）；no_dual_ui 于 2026-07-20 P1 新增 element-plus 混用样本实例化唤醒，门禁判定逻辑未动。expected-fail-ids 已登记 3/3 fail id。CWE/GB 映射列（同批补录）：仅对具直接安全语义的行引证，其余标 —。
 -->
 
 ## §5 跨框架交互规则

@@ -118,26 +118,28 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_vite_alias_array_form | fail | alias 非数组形式 → fail | VITE_CONFIG_FILE |
-| fw_vite_alias_order | fail | @/custom 不在 @ 之前 → fail | VITE_CONFIG_FILE |
-| fw_vite_inject_clean | fail | inject.mjs 无 --clean 回滚 → fail | VITE_INJECT_SCRIPT |
-| fw_vite_env_prefix | warn | 非 VITE_ 前缀敏感环境变量 → warn 泄漏 | VITE_CONFIG_FILE |
-| fw_vite_manual_chunks | warn | 无 manualChunks 分包 → warn | VITE_CONFIG_FILE |
-| fw_vite_build_target | warn | 无 build.target → warn | VITE_CONFIG_FILE |
-| fw_vite_sourcemap_prod | warn | sourcemap 开启无环境判断 → warn | VITE_CONFIG_FILE |
-| fw_vite_base_path | warn | 无 base 路径 → warn | VITE_CONFIG_FILE |
-| fw_vite_optimize_deps | warn | 无 optimizeDeps → warn | VITE_CONFIG_FILE |
-| fw_vite_proxy_target | warn | proxy 无 target → warn | VITE_CONFIG_FILE |
-| fw_vite_esbuild_minify | warn | minify 关闭 → warn | VITE_CONFIG_FILE |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE / GB 映射 |
+|---------|------|---------|---------|--------------|
+| fw_vite_alias_array_form | fail | alias 非数组形式 → fail | VITE_CONFIG_FILE | — |
+| fw_vite_alias_order | fail | @/custom 不在 @ 之前 → fail | VITE_CONFIG_FILE | — |
+| fw_vite_inject_clean | fail | inject.mjs 无 --clean 回滚 → fail | VITE_INJECT_SCRIPT | — |
+| fw_vite_env_prefix | warn | 非 VITE_ 前缀敏感环境变量 → warn 泄漏 | VITE_CONFIG_FILE | CWE-540 / CWE-312 |
+| fw_vite_manual_chunks | warn | 无 manualChunks 分包 → warn | VITE_CONFIG_FILE | — |
+| fw_vite_build_target | warn | 无 build.target → warn | VITE_CONFIG_FILE | — |
+| fw_vite_sourcemap_prod | warn | sourcemap 开启无环境判断 → warn | VITE_CONFIG_FILE | CWE-540 |
+| fw_vite_base_path | warn | 无 base 路径 → warn | VITE_CONFIG_FILE | — |
+| fw_vite_optimize_deps | warn | 无 optimizeDeps → warn | VITE_CONFIG_FILE | — |
+| fw_vite_proxy_target | warn | proxy 无 target → warn | VITE_CONFIG_FILE | — |
+| fw_vite_esbuild_minify | warn | minify 关闭 → warn | VITE_CONFIG_FILE | — |
 
 <!--
 门禁 id 命名规范：fw_vite_<rule>（rule 全小写下划线）。
 本表 11 条 id 须在 assets/framework-gates/vite.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_vite_<rule>(fail/warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: vite  requires_conf: VITE_CONFIG_FILE VITE_INJECT_SCRIPT` 声明。
-fixture 验证覆盖：violating 含 alias 对象形式 + @/custom 在 @ 之后 → alias_array_form + alias_order fail 主触发；compliant 全 pass。
+fixture 验证覆盖：violating 含 alias 对象形式 + @/custom 在 @ 之后 + inject.mjs 无 --clean 回滚
+→ alias_array_form + alias_order + inject_clean fail 主触发（3/3 已断言）；compliant 全 pass。
+2026-07-20 唤醒登记：inject_clean 原 conf VITE_INJECT_SCRIPT="" 静默跳过，violating 配置指向新增 inject.mjs 后命中（门禁脚本未动）。
 -->
 
 ## §5 跨框架交互规则

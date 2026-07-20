@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # 用法: run-framework-fixture.sh <ruleset_id> —— violating 期望 FAIL / compliant 期望 PASS
+# 可选断言：<fixture>/<mode>/expected-fail-ids 存在时，逐行字面串断言 precheck 输出命中。
 set -u
 BASE="$(cd "$(dirname "$0")/.." && pwd)"
 ID="$1"
 FX="$BASE/tests/fixtures/$ID"
 run_one() {  # $1=violating|compliant  $2=expect fail|pass
-  local mode="$1" expect="$2" tmp
+  local mode="$1" expect="$2" tmp out rc
   tmp="$(mktemp -d /tmp/fwfx.XXXXXX)"
   mkdir -p "$tmp/scripts"
   cp "$BASE/assets/precheck.sh" "$tmp/scripts/precheck.sh"
@@ -18,10 +19,28 @@ run_one() {  # $1=violating|compliant  $2=expect fail|pass
     /^# <<< swarm-yuan:framework-gates <<</ { skip=0 }
     !skip { print }
   ' "$tmp/scripts/precheck.sh" > "$tmp/scripts/p2.sh" && mv "$tmp/scripts/p2.sh" "$tmp/scripts/precheck.sh"
-  ( cd "$FX/$mode" && bash "$tmp/scripts/precheck.sh" --framework ) >/dev/null 2>&1
-  local rc=$?
+  out="$( cd "$FX/$mode" && bash "$tmp/scripts/precheck.sh" --framework 2>&1 )"
+  rc=$?
   rm -rf "$tmp"
-  if [[ "$expect" == "fail" ]]; then [[ $rc -ne 0 ]]; else [[ $rc -eq 0 ]]; fi
+  # 退出码双态断言
+  if [[ "$expect" == "fail" ]]; then
+    [[ $rc -ne 0 ]] || return 1
+  else
+    [[ $rc -eq 0 ]] || return 1
+  fi
+  # expected-fail-ids 可选断言：逐行字面串（空行与 # 注释行跳过）须在输出中命中
+  if [[ -f "$FX/$mode/expected-fail-ids" ]]; then
+    local fid
+    while IFS= read -r fid || [[ -n "$fid" ]]; do
+      [[ -z "$fid" ]] && continue
+      case "$fid" in \#*) continue;; esac
+      if ! printf '%s\n' "$out" | grep -qF "$fid"; then
+        echo "  ✗ expected-fail-ids 未命中：$fid"
+        return 1
+      fi
+    done < "$FX/$mode/expected-fail-ids"
+  fi
+  return 0
 }
 run_one violating fail && echo "✓ violating → FAIL（符合预期）" || { echo "✗ violating 未 FAIL"; exit 1; }
 run_one compliant pass && echo "✓ compliant → PASS（符合预期）" || { echo "✗ compliant 未 PASS"; exit 1; }

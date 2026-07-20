@@ -180,30 +180,31 @@ detect 信号命中任一高置信度行即可激活 flink 框架规则集。
 verify-framework-ruleset.sh 扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字。
 -->
 
-## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_flink_checkpoint_enabled | fail | 检出 DataStream 作业入口但无 enableCheckpointing/execution.checkpointing → fail 无容错 | FLINK_SRC_GLOBS |
-| fw_flink_checkpoint_interval | warn | enableCheckpointing(N<60000) → warn 间隔过小拖吞吐 | FLINK_SRC_GLOBS |
-| fw_flink_savepoint_uid | warn | 检出转换算子但无 .uid( → warn savepoint 不可映射 | FLINK_SRC_GLOBS |
-| fw_flink_exactly_once_sink | warn | EXACTLY_ONCE + addSink(/SinkFunction → warn Sink 无事务 | FLINK_SRC_GLOBS |
-| fw_flink_watermark | warn | EventTime 窗口无 WatermarkStrategy → warn 窗口不触发 | FLINK_SRC_GLOBS |
-| fw_flink_allowed_lateness | warn | EventTime 窗口无 allowedLateness/sideOutputLateData → warn 迟到数据静默丢弃 | FLINK_SRC_GLOBS |
-| fw_flink_state_backend | warn | KeyedState 使用但无 state.backend 配置 → warn 默认堆内大状态风险 | FLINK_SRC_GLOBS |
-| fw_flink_state_ttl | warn | *StateDescriptor 无 StateTtlConfig → warn 状态无界增长 | FLINK_SRC_GLOBS |
-| fw_flink_api_choice | warn | 同文件 StreamTableEnvironment + KeyedProcessFunction 混用 → warn 选型边界 | FLINK_SRC_GLOBS |
-| fw_flink_cdc_checkpoint | warn | 检出 CDC 源但无 checkpoint 配置 → warn 断点续传失效 | FLINK_SRC_GLOBS |
-| fw_flink_restart_strategy | warn | 作业无 restart-strategy/RestartStrategy → warn 默认不足 | FLINK_SRC_GLOBS |
-| fw_flink_parallelism_slots | warn | .setParallelism( 硬编码 → warn 并行度与 slot 脱节 | FLINK_SRC_GLOBS |
-| fw_flink_async_io | warn | 算子内同步 HTTP/JDBC 无 AsyncDataStream → warn 阻塞反压 | FLINK_SRC_GLOBS |
-| fw_flink_cep_within | warn | CEP.pattern 无 .within( → warn NFA 状态无界 | FLINK_SRC_GLOBS |
-| fw_flink_jm_ha | warn | flink-conf.yaml 无 high-availability → warn JM 单点 | FLINK_SRC_GLOBS |
-| fw_flink_version_2x | warn | 检出 DataSet/SourceFunction/SinkFunction 旧 API → warn 2.x 迁移 | FLINK_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |
+|---------|------|---------|---------|---------|
+| fw_flink_checkpoint_enabled | fail | 检出 DataStream 作业入口但无 enableCheckpointing/execution.checkpointing → fail 无容错 | FLINK_SRC_GLOBS | — |
+| fw_flink_checkpoint_interval | warn | enableCheckpointing(N<60000) → warn 间隔过小拖吞吐 | FLINK_SRC_GLOBS | — |
+| fw_flink_savepoint_uid | warn | 检出转换算子但无 .uid( → warn savepoint 不可映射 | FLINK_SRC_GLOBS | — |
+| fw_flink_exactly_once_sink | warn | EXACTLY_ONCE + addSink(/SinkFunction → warn Sink 无事务 | FLINK_SRC_GLOBS | — |
+| fw_flink_watermark | warn | EventTime 窗口无 WatermarkStrategy → warn 窗口不触发 | FLINK_SRC_GLOBS | — |
+| fw_flink_allowed_lateness | warn | EventTime 窗口无 allowedLateness/sideOutputLateData → warn 迟到数据静默丢弃 | FLINK_SRC_GLOBS | — |
+| fw_flink_state_backend | warn | KeyedState 使用但无 state.backend 配置 → warn 默认堆内大状态风险 | FLINK_SRC_GLOBS | — |
+| fw_flink_state_ttl | warn | *StateDescriptor 无 StateTtlConfig → warn 状态无界增长 | FLINK_SRC_GLOBS | — |
+| fw_flink_api_choice | warn | 同文件 StreamTableEnvironment + KeyedProcessFunction 混用 → warn 选型边界 | FLINK_SRC_GLOBS | — |
+| fw_flink_cdc_checkpoint | warn | 检出 CDC 源但无 checkpoint 配置 → warn 断点续传失效 | FLINK_SRC_GLOBS | — |
+| fw_flink_restart_strategy | warn | 作业无 restart-strategy/RestartStrategy → warn 默认不足 | FLINK_SRC_GLOBS | — |
+| fw_flink_parallelism_slots | warn | .setParallelism( 硬编码 → warn 并行度与 slot 脱节 | FLINK_SRC_GLOBS | — |
+| fw_flink_async_io | warn | 算子内同步 HTTP/JDBC 无 AsyncDataStream → warn 阻塞反压 | FLINK_SRC_GLOBS | — |
+| fw_flink_cep_within | warn | CEP.pattern 无 .within( → warn NFA 状态无界 | FLINK_SRC_GLOBS | — |
+| fw_flink_jm_ha | warn | flink-conf.yaml 无 high-availability → warn JM 单点 | FLINK_SRC_GLOBS | — |
+| fw_flink_version_2x | warn | 检出 DataSet/SourceFunction/SinkFunction 旧 API → warn 2.x 迁移 | FLINK_SRC_GLOBS | — |
 
 <!--
 门禁 id 命名规范：fw_flink_<rule>（rule 全小写下划线）。
 本表 16 条 id 须在 assets/framework-gates/flink.sh 中有同名实现痕迹（grep 命中）。
+标准映射列 2026-07-20 P1 补登：CWE 取自本文件 §3/门禁输出口径与通行分类，GB 条款沿用 references/standards-compliance.md §D 口径，无明确映射标 —。
 片段头注释 `# gates: fw_flink_<rule>(level) ...` 与本表 id 集合一致。
 依赖变量在片段头注释 `# ruleset: flink  requires_conf: FLINK_SRC_GLOBS` 声明。
 fixture 验证覆盖：violating 含无 checkpoint + 无 watermark + 无 restart strategy + 无 uid → fw_flink_checkpoint_enabled fail 主触发；compliant 修正后全 pass。

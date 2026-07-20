@@ -145,23 +145,24 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_mapstruct_unmapped_target | fail | @Mapper 文件无 unmappedTargetPolicy 且无全局 @MapperConfig 带该属性 → fail | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_lombok_binding | fail | 构建文件含 lombok + mapstruct 但无 lombok-mapstruct-binding → fail | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_processor_order | warn | pom annotationProcessorPaths 内 mapstruct-processor 先于 lombok → warn | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_mapping_target_null | warn | @MappingTarget 文件无 NullValuePropertyMappingStrategy → warn null 覆盖 | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_cycle | warn | A uses=BMapper 且 B uses=AMapper → warn CycleAvoidingStrategy | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_component_model | warn | @Mapper 无 componentModel → warn Spring 项目须 "spring" DI | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_ignore_reason | warn | ignore = true 命中 → warn 人工确认原因注释 | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_named_threadsafe | warn | @Named + SimpleDateFormat 同文件 → warn 线程安全 | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_expression | warn | expression = 命中 → warn 人工核表达式内容 | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_inherit | warn | @InheritConfiguration/@InheritInverseConfiguration 命中 → warn 镜像核对 | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_nested | warn | target = "a.b" 点语法命中 → warn 中间对象生命周期 | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_collection_element | warn | List<X> m(List<Y>) 集合方法无 @IterableMapping → warn 元素配置 | MAPSTRUCT_SRC_GLOBS |
-| fw_mapstruct_builder_default | warn | @Builder.Default 检出 → warn 默认值在 builder 映射不生效 | MAPSTRUCT_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|---------|
+| fw_mapstruct_unmapped_target | fail | @Mapper 文件无 unmappedTargetPolicy 且无全局 @MapperConfig 带该属性 → fail | MAPSTRUCT_SRC_GLOBS | — |
+| fw_mapstruct_lombok_binding | fail | 构建文件含 lombok + mapstruct 但无 lombok-mapstruct-binding → fail | MAPSTRUCT_SRC_GLOBS | — |
+| fw_mapstruct_processor_order | warn | pom annotationProcessorPaths 内 mapstruct-processor 先于 lombok → warn | MAPSTRUCT_SRC_GLOBS | — |
+| fw_mapstruct_mapping_target_null | warn | @MappingTarget 文件无 NullValuePropertyMappingStrategy → warn null 覆盖 | MAPSTRUCT_SRC_GLOBS | — |
+| fw_mapstruct_cycle | warn | A uses=BMapper 且 B uses=AMapper → warn CycleAvoidingStrategy | MAPSTRUCT_SRC_GLOBS | — |
+| fw_mapstruct_component_model | warn | @Mapper 无 componentModel → warn Spring 项目须 "spring" DI | MAPSTRUCT_SRC_GLOBS | — |
+| fw_mapstruct_ignore_reason | warn | ignore = true 命中 → warn 人工确认原因注释 | MAPSTRUCT_SRC_GLOBS | — |
+| fw_mapstruct_named_threadsafe | warn | @Named + SimpleDateFormat 同文件 → warn 线程安全 | MAPSTRUCT_SRC_GLOBS | CWE-362；GB/T 34944-2017 |
+| fw_mapstruct_expression | warn | expression = 命中 → warn 人工核表达式内容 | MAPSTRUCT_SRC_GLOBS | CWE-94；GB/T 34944-2017 |
+| fw_mapstruct_inherit | warn | @InheritConfiguration/@InheritInverseConfiguration 命中 → warn 镜像核对 | MAPSTRUCT_SRC_GLOBS | — |
+| fw_mapstruct_nested | warn | target = "a.b" 点语法命中 → warn 中间对象生命周期 | MAPSTRUCT_SRC_GLOBS | — |
+| fw_mapstruct_collection_element | warn | List<X> m(List<Y>) 集合方法无 @IterableMapping → warn 元素配置 | MAPSTRUCT_SRC_GLOBS | — |
+| fw_mapstruct_builder_default | warn | @Builder.Default 检出 → warn 默认值在 builder 映射不生效 | MAPSTRUCT_SRC_GLOBS | — |
 
 <!--
+CWE/GB 映射列（2026-07-20 P1 补）：仅登记仓库内已有证据（.sh 告警文案/§3 违反后果）的弱点映射；— = 质量/规范类门禁，无 CWE 直挂。GB/T 34944-2017 为 Java 语言源代码漏洞测试规范。
 门禁 id 命名规范：fw_mapstruct_<rule>（rule 全小写下划线）。
 本表 13 条 id 须在 assets/framework-gates/mapstruct.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_mapstruct_<rule>(fail|warn) ...` 与本表 id 集合应一致。

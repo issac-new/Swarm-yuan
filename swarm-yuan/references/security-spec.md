@@ -286,7 +286,7 @@ ruflo v3.32.1 修复了 Codex 集成中的 hooks.json 解析失败：
 - Windows 上的 npm shim 须用 `cmd /c` 启动（不能当原生 exe）
 - precheck.sh 的 `--security` 可扫描 hooks.json 是否有 BOM
 
-### 6.5 文件系统兼容
+### 6.9 文件系统兼容
 - 文件名大小写：Windows 不区分、macOS 默认不区分、Linux 区分 → 统一用小写
 - 文件名特殊字符：避免 `:` `*` `?` `<` `>` `|` `"`（Windows 禁用）
 - 权限：Windows 无 `chmod`，脚本中 `chmod +x` 需 try/容错

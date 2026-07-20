@@ -26,7 +26,7 @@ set "BASH_DIR=!BASH_DIR:C:=/c!"
 set "BASH_DIR=!BASH_DIR:D:=/d!"
 set "BASH_DIR=!BASH_DIR:E:=/e!"
 
-echo 正在安装 swarm-yuan + 10 个运行时（离线模式）...
+echo 正在安装 swarm-yuan + 11 个运行时（离线模式）...
 !BASH_CMD! "!BASH_DIR!/install-offline-win.sh" %*
 
 echo.

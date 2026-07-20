@@ -136,27 +136,30 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_rocketmq_idempotent_consumer | fail | @RocketMQMessageListener 文件无幂等痕迹（setIfAbsent/去重/idempot 等）→ fail 重复消费风险 | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_orderly_listener | fail | 检出 sendOrderly/MessageQueueSelector 但消费端无 ORDERLY/MessageListenerOrderly → fail 顺序破坏 | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_tx_checkback | fail | 检出 TransactionListener/sendMessageInTransaction 但无 checkLocalTransaction → fail 半消息悬挂 | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_retry_dlq | warn | @RocketMQMessageListener 无 maxReconsumeTimes → warn 重试/DLQ 兜底缺失 | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_backlog | warn | @RocketMQMessageListener 无 consumeThread/consumeMessageBatchMaxSize → warn 并发度未配防堆积 | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_delay | warn | RocketMQ 代码文件内检出 Thread.sleep → warn 禁 sleep 模拟延迟；检出 delayTime API → pass | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_batch | warn | 检出批量发送 → warn 确认 ≤4MiB 切分与降级单发 | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_filter | warn | 检出 bySql/SQL92 → warn 确认 broker enablePropertyFilter=true | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_broadcast | warn | 检出 BROADCASTING → warn 确认场景可丢失 | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_order_scope | warn | 检出 sendOrderly → warn 确认分区顺序而非全局单队列 | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_trace | warn | 检出 RocketMQ 使用但无 enableMsgTrace/enable-msg-trace → warn | ROCKETMQ_SRC_GLOBS |
-| fw_rocketmq_group_consistency | warn | 多 listener 同 consumerGroup 不同 topic → warn 订阅关系不一致 | ROCKETMQ_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_rocketmq_idempotent_consumer | fail | @RocketMQMessageListener 文件无幂等痕迹（setIfAbsent/去重/idempot 等）→ fail 重复消费风险 | ROCKETMQ_SRC_GLOBS | —（重复投递契约） |
+| fw_rocketmq_orderly_listener | fail | 检出 sendOrderly/MessageQueueSelector 但消费端无 ORDERLY/MessageListenerOrderly → fail 顺序破坏 | ROCKETMQ_SRC_GLOBS | CWE-662（并发监听破坏顺序同步语义） |
+| fw_rocketmq_tx_checkback | fail | 检出 TransactionListener/sendMessageInTransaction 但无 checkLocalTransaction → fail 半消息悬挂 | ROCKETMQ_SRC_GLOBS | CWE-755（half 消息悬挂=异常状态无处置） |
+| fw_rocketmq_retry_dlq | warn | @RocketMQMessageListener 无 maxReconsumeTimes → warn 重试/DLQ 兜底缺失 | ROCKETMQ_SRC_GLOBS | CWE-755（重试/DLQ 兜底缺失） |
+| fw_rocketmq_backlog | warn | @RocketMQMessageListener 无 consumeThread/consumeMessageBatchMaxSize → warn 并发度未配防堆积 | ROCKETMQ_SRC_GLOBS | CWE-770（消费并发无节制→堆积） |
+| fw_rocketmq_delay | warn | RocketMQ 代码文件内检出 Thread.sleep → warn 禁 sleep 模拟延迟；检出 delayTime API → pass | ROCKETMQ_SRC_GLOBS | —（延迟实现方式） |
+| fw_rocketmq_batch | warn | 检出批量发送 → warn 确认 ≤4MiB 切分与降级单发 | ROCKETMQ_SRC_GLOBS | —（批量约束） |
+| fw_rocketmq_filter | warn | 检出 bySql/SQL92 → warn 确认 broker enablePropertyFilter=true | ROCKETMQ_SRC_GLOBS | —（broker 开关契约） |
+| fw_rocketmq_broadcast | warn | 检出 BROADCASTING → warn 确认场景可丢失 | ROCKETMQ_SRC_GLOBS | —（可丢失场景确认） |
+| fw_rocketmq_order_scope | warn | 检出 sendOrderly → warn 确认分区顺序而非全局单队列 | ROCKETMQ_SRC_GLOBS | —（顺序范围选型） |
+| fw_rocketmq_trace | warn | 检出 RocketMQ 使用但无 enableMsgTrace/enable-msg-trace → warn | ROCKETMQ_SRC_GLOBS | CWE-778（无消息轨迹=链路无记录） |
+| fw_rocketmq_group_consistency | warn | 多 listener 同 consumerGroup 不同 topic → warn 订阅关系不一致 | ROCKETMQ_SRC_GLOBS | —（订阅一致性） |
 
 <!--
 门禁 id 命名规范：fw_rocketmq_<rule>（rule 全小写下划线）。
 本表 12 条 id 须在 assets/framework-gates/rocketmq.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_rocketmq_<rule>(fail|warn) ...` 与本表 id 集合一致。
-fixture 验证覆盖：violating 含 @RocketMQMessageListener 无幂等 + 无 maxReconsumeTimes/死信配置
-  → idempotent_consumer fail 主触发；compliant 修正（setIfAbsent 幂等 + 显式重试/并发/轨迹）全 pass。
+fixture 验证覆盖：violating 含 @RocketMQMessageListener 无幂等 + MessageQueueSelector 顺序选队列发送无顺序监听 + 事务消息无回查
+  → idempotent_consumer/orderly_listener/tx_checkback 三 fail 主触发（expected-fail-ids 3/3 已登记）；compliant 修正（setIfAbsent 幂等 + 显式重试/并发/轨迹）全 pass。
+CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
+- CWE 编号依据 MITRE CWE 词典与 CWE Top 25:2025（R8 §⑨）；「—」为工程一致性/性能契约类规律，无对应 CWE 弱点类，归 ISO/IEC 5055:2021 性能/可靠性度量面（138 弱点经 CWE 对齐，见 standards-compliance.md §E.1）。
+- GB/T 34944-2017（Java，9 大类 44 种）/ GB/T 34946-2017（C#）总则 §5 要求 SAST 扫描 + 人工复核 + 测试四件套；本表作用于源码的门禁即该流程的词法层 SAST 面（R8 §⑥）。
 -->
 
 ## §5 跨框架交互规则

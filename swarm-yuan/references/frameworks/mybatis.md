@@ -181,33 +181,35 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_mybatis_dollar | fail | XML 中 `${}` 命中行必须落入 SQL_INJECTION_WHITELIST，否则 SQL 注入风险 | MYBATIS_MAPPER_DIRS SQL_INJECTION_WHITELIST |
-| fw_mybatis_binding | fail | MYBATIS_SRC_GLOBS 非空时 Mapper 接口数(mcnt) = XML namespace 数(xcnt)；空 SRC_GLOBS 跳过 | MYBATIS_MAPPER_DIRS MYBATIS_SRC_GLOBS |
-| fw_mybatis_foreach | warn | 存在 `<foreach>` 即提示人工确认 IN 列表分批上限 | MYBATIS_MAPPER_DIRS |
-| fw_mybatis_plus_page | warn | MP 项目（检出 `extends BaseMapper`）中 `selectList(` 行附近无 Page → warn | MYBATIS_MAPPER_DIRS MYBATIS_SRC_GLOBS |
-| fw_mybatis_plus_dbtype | warn | `PaginationInnerInterceptor()` 无参且非多数据源 → warn 显式 DbType | MYBATIS_SRC_GLOBS |
-| fw_mybatis_nplus1 | warn | `<association select=` / `<collection select=` 命中即 warn 核对列表场景 | MYBATIS_MAPPER_DIRS |
-| fw_mybatis_resultmap_id | warn | 含 `<resultMap>` 的 XML 中每个 resultMap 须含 `<id` | MYBATIS_MAPPER_DIRS |
-| fw_mybatis_ognl_empty | warn | `<if test="…!= ''">` 命中提示复核参数类型 | MYBATIS_MAPPER_DIRS |
-| fw_mybatis_generatedkeys | warn | `useGeneratedKeys` + `<foreach>` 多值插入 → 提示驱动兼容 | MYBATIS_MAPPER_DIRS |
-| fw_mybatis_select_dup_result | fail | `<select>` 同行同时声明 resultType 与 resultMap → fail | MYBATIS_MAPPER_DIRS |
-| fw_mybatis_jdbc_type | warn | 可空参数 `#{name}` 未带 `jdbcType` → warn | MYBATIS_MAPPER_DIRS |
-| fw_mybatis_cache_dirty | warn | 含 `<cache/>` 且跨 namespace select 关联 → warn 脏读风险 | MYBATIS_MAPPER_DIRS |
-| fw_mybatis_logic_delete | warn | MP 项目 XML/Wrapper 手写 `deleted=` → warn 拦截器叠加 | MYBATIS_MAPPER_DIRS MYBATIS_SRC_GLOBS |
-| fw_mybatis_wrapper_injection | warn | `.last(`/`.having(`/`.apply(` 命中 → warn 核对参数来源 | MYBATIS_SRC_GLOBS |
-| fw_mybatis_mapper_locations | warn | 配置缺 `mybatis.mapper-locations` 且有 Mapper.xml → warn | MYBATIS_MAPPER_DIRS |
-| fw_mybatis_multi_ds_isolation | warn | 多 DataSource 共用 SqlSessionFactory → warn | MYBATIS_SRC_GLOBS |
-| fw_mybatis_typehandler | warn | 自定义 TypeHandler 类存在但未注册 → warn | MYBATIS_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_mybatis_dollar | fail | XML 中 `${}` 命中行必须落入 SQL_INJECTION_WHITELIST，否则 SQL 注入风险 | MYBATIS_MAPPER_DIRS SQL_INJECTION_WHITELIST | CWE-89（SQL 注入，Top25:2025 #2） |
+| fw_mybatis_binding | fail | MYBATIS_SRC_GLOBS 非空时 Mapper 接口数(mcnt) = XML namespace 数(xcnt)；空 SRC_GLOBS 跳过 | MYBATIS_MAPPER_DIRS MYBATIS_SRC_GLOBS | —（绑定一致性） |
+| fw_mybatis_foreach | warn | 存在 `<foreach>` 即提示人工确认 IN 列表分批上限 | MYBATIS_MAPPER_DIRS | CWE-770（IN 列表无上限，资源分配无节制） |
+| fw_mybatis_plus_page | warn | MP 项目（检出 `extends BaseMapper`）中 `selectList(` 行附近无 Page → warn | MYBATIS_MAPPER_DIRS MYBATIS_SRC_GLOBS | —（分页契约） |
+| fw_mybatis_plus_dbtype | warn | `PaginationInnerInterceptor()` 无参且非多数据源 → warn 显式 DbType | MYBATIS_SRC_GLOBS | —（方言配置一致性） |
+| fw_mybatis_nplus1 | warn | `<association select=` / `<collection select=` 命中即 warn 核对列表场景 | MYBATIS_MAPPER_DIRS | CWE-400（嵌套 select 逐行查询，资源消耗放大） |
+| fw_mybatis_resultmap_id | warn | 含 `<resultMap>` 的 XML 中每个 resultMap 须含 `<id` | MYBATIS_MAPPER_DIRS | —（映射一致性） |
+| fw_mybatis_ognl_empty | warn | `<if test="…!= ''">` 命中提示复核参数类型 | MYBATIS_MAPPER_DIRS | —（逻辑陷阱） |
+| fw_mybatis_generatedkeys | warn | `useGeneratedKeys` + `<foreach>` 多值插入 → 提示驱动兼容 | MYBATIS_MAPPER_DIRS | —（驱动兼容） |
+| fw_mybatis_select_dup_result | fail | `<select>` 同行同时声明 resultType 与 resultMap → fail | MYBATIS_MAPPER_DIRS | —（行为跨版本不一致） |
+| fw_mybatis_jdbc_type | warn | 可空参数 `#{name}` 未带 `jdbcType` → warn | MYBATIS_MAPPER_DIRS | —（类型失配防护） |
+| fw_mybatis_cache_dirty | warn | 含 `<cache/>` 且跨 namespace select 关联 → warn 脏读风险 | MYBATIS_MAPPER_DIRS | —（缓存一致性） |
+| fw_mybatis_logic_delete | warn | MP 项目 XML/Wrapper 手写 `deleted=` → warn 拦截器叠加 | MYBATIS_MAPPER_DIRS MYBATIS_SRC_GLOBS | —（拦截器叠加） |
+| fw_mybatis_wrapper_injection | warn | `.last(`/`.having(`/`.apply(` 命中 → warn 核对参数来源 | MYBATIS_SRC_GLOBS | CWE-89（Wrapper 字符串拼接注入面） |
+| fw_mybatis_mapper_locations | warn | 配置缺 `mybatis.mapper-locations` 且有 Mapper.xml → warn | MYBATIS_MAPPER_DIRS | —（装配完整性） |
+| fw_mybatis_multi_ds_isolation | warn | 多 DataSource 共用 SqlSessionFactory → warn | MYBATIS_SRC_GLOBS | —（隔离配置） |
+| fw_mybatis_typehandler | warn | 自定义 TypeHandler 类存在但未注册 → warn | MYBATIS_SRC_GLOBS | —（注册完整性） |
 
 <!--
 门禁 id 命名规范：fw_mybatis_<rule>（rule 全小写下划线）。
 本表 17 条 id 须在 assets/framework-gates/mybatis.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_mybatis_<rule>(fail|warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: mybatis  requires_conf: VAR1 VAR2` 声明。
-fixture 验证只覆盖 dollar（violating→fail）+ 其余 warn/pass（compliant 全 pass）。
-binding 门禁在 fixture 空 SRC_GLOBS 场景加守卫跳过，否则 compliant 因 mcnt=0/xcnt=1 误 fail。
+fixture 验证覆盖 dollar/binding/select_dup_result 三 fail（violating：${col} 未白名单 + 2 Mapper 接口 vs 1 XML namespace + resultType/resultMap 并存；expected-fail-ids 3/3 已登记）；compliant 全 pass（空 SRC_GLOBS 走 binding 守卫跳过，避免 mcnt=0/xcnt=1 误 fail）。
+CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
+- CWE 编号依据 MITRE CWE 词典与 CWE Top 25:2025（R8 §⑨）；「—」为工程一致性/性能契约类规律，无对应 CWE 弱点类，归 ISO/IEC 5055:2021 性能/可靠性度量面（138 弱点经 CWE 对齐，见 standards-compliance.md §E.1）。
+- GB/T 34944-2017（Java，9 大类 44 种）/ GB/T 34946-2017（C#）总则 §5 要求 SAST 扫描 + 人工复核 + 测试四件套；本表作用于源码的门禁即该流程的词法层 SAST 面（R8 §⑥）。
 -->
 
 ## §5 跨框架交互规则

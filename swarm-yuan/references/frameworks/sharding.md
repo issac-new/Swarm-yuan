@@ -155,17 +155,17 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_sharding_key_in_dml | fail | 对 SHARDED_TABLES 每表抽取 mapper XML 的 `<update>`/`<delete>` 块，引用该表但无对应分片键列名 → fail | SHARDED_TABLES SHARDING_KEY_COLUMNS MYBATIS_MAPPER_DIRS |
-| fw_sharding_key_expr | warn | 检索"分片键列名出现在函数调用括号内"（如 `to_date(user_id`）→ warn 路由失效 | SHARDING_KEY_COLUMNS MYBATIS_MAPPER_DIRS |
-| fw_sharding_broadcast_write | fail | 对 SHARDING_BROADCAST_TABLES 检索 `insert into`/`update`/`delete from` 命中 → fail（业务侧只读） | SHARDING_BROADCAST_TABLES MYBATIS_MAPPER_DIRS |
-| fw_sharding_binding_join | warn | `<select>` 块含 JOIN 且 ≥2 张分片表、任一被引用分片表缺其分片键 → warn | SHARDED_TABLES SHARDING_KEY_COLUMNS MYBATIS_MAPPER_DIRS |
-| fw_sharding_order_merge | warn | 引用分片表且含 ORDER BY/LIMIT 的 select 块无分片键 → warn 归并/深分页 | SHARDED_TABLES SHARDING_KEY_COLUMNS MYBATIS_MAPPER_DIRS |
-| fw_sharding_keygen | warn | `useGeneratedKeys` + insert 目标为分片表 → warn 改用 SNOWFLAKE/UUID keyGenerator | SHARDED_TABLES MYBATIS_MAPPER_DIRS |
-| fw_sharding_xa | warn | 同 Java 文件含 `@Transactional` 与 ≥2 个分片表名 → warn 显式 XA/Seata | SHARDED_TABLES |
-| fw_sharding_unsupported_sql | warn | 检出 `LOAD DATA`/`LOAD XML`/`CASE WHEN…SELECT` → warn 核对 limitation 清单 | MYBATIS_MAPPER_DIRS |
-| fw_sharding_hint | warn | Java 含 `HintManager` 但无 `close()` 且无 try-with-resources → warn ThreadLocal 泄漏 | （扫描 PROJECT_DIR 下 *.java） |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|------------|
+| fw_sharding_key_in_dml | fail | 对 SHARDED_TABLES 每表抽取 mapper XML 的 `<update>`/`<delete>` 块，引用该表但无对应分片键列名 → fail | SHARDED_TABLES SHARDING_KEY_COLUMNS MYBATIS_MAPPER_DIRS | CWE-400（全路由广播打满全部节点） |
+| fw_sharding_key_expr | warn | 检索"分片键列名出现在函数调用括号内"（如 `to_date(user_id`）→ warn 路由失效 | SHARDING_KEY_COLUMNS MYBATIS_MAPPER_DIRS | CWE-400（路由失效全路由，同 key_in_dml 机制） |
+| fw_sharding_broadcast_write | fail | 对 SHARDING_BROADCAST_TABLES 检索 `insert into`/`update`/`delete from` 命中 → fail（业务侧只读） | SHARDING_BROADCAST_TABLES MYBATIS_MAPPER_DIRS | —（版本管控脱离） |
+| fw_sharding_binding_join | warn | `<select>` 块含 JOIN 且 ≥2 张分片表、任一被引用分片表缺其分片键 → warn | SHARDED_TABLES SHARDING_KEY_COLUMNS MYBATIS_MAPPER_DIRS | CWE-400（跨库笛卡尔积按分片乘积膨胀） |
+| fw_sharding_order_merge | warn | 引用分片表且含 ORDER BY/LIMIT 的 select 块无分片键 → warn 归并/深分页 | SHARDED_TABLES SHARDING_KEY_COLUMNS MYBATIS_MAPPER_DIRS | —（归并放大） |
+| fw_sharding_keygen | warn | `useGeneratedKeys` + insert 目标为分片表 → warn 改用 SNOWFLAKE/UUID keyGenerator | SHARDED_TABLES MYBATIS_MAPPER_DIRS | —（主键重复风险） |
+| fw_sharding_xa | warn | 同 Java 文件含 `@Transactional` 与 ≥2 个分片表名 → warn 显式 XA/Seata | SHARDED_TABLES | —（分布式一致性） |
+| fw_sharding_unsupported_sql | warn | 检出 `LOAD DATA`/`LOAD XML`/`CASE WHEN…SELECT` → warn 核对 limitation 清单 | MYBATIS_MAPPER_DIRS | —（limitation 契约） |
+| fw_sharding_hint | warn | Java 含 `HintManager` 但无 `close()` 且无 try-with-resources → warn ThreadLocal 泄漏 | （扫描 PROJECT_DIR 下 *.java） | CWE-772（ThreadLocal 未释放，资源生命周期） |
 
 <!--
 门禁 id 命名规范：fw_sharding_<rule>（rule 全小写下划线）。
@@ -173,8 +173,11 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 片段头注释 `# gates: fw_sharding_<rule>(fail|warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: sharding  requires_conf: VAR1 VAR2` 声明。
 SHARDING_KEY_COLUMNS 元素形如 "t_order=user_id"（表=分片键列），门禁实现按 = 拆分。
-fixture 验证只覆盖 key_in_dml + broadcast_write（violating→fail）+ 其余 warn/pass（compliant 全 pass）。
+fixture 验证覆盖 key_in_dml + broadcast_write（violating→fail，expected-fail-ids 2/2 已登记）+ 其余 warn/pass（compliant 全 pass）。
 分片算法扩容/读写分离/Proxy 选型/inline 二选一/表边界五规律为人工检查，不入机械门禁。
+CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
+- CWE 编号依据 MITRE CWE 词典与 CWE Top 25:2025（R8 §⑨）；「—」为工程一致性/性能契约类规律，无对应 CWE 弱点类，归 ISO/IEC 5055:2021 性能/可靠性度量面（138 弱点经 CWE 对齐，见 standards-compliance.md §E.1）。
+- GB/T 34944-2017（Java，9 大类 44 种）/ GB/T 34946-2017（C#）总则 §5 要求 SAST 扫描 + 人工复核 + 测试四件套；本表作用于源码的门禁即该流程的词法层 SAST 面（R8 §⑥）。
 -->
 
 ## §5 跨框架交互规则

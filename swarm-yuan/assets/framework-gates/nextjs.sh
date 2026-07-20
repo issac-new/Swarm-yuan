@@ -211,10 +211,15 @@ ${mw_file}"
   # fw_nextjs_router_conflict(fail)：pages/ 与 app/ 同路径双定义
   # ====================================================================
   local pages_paths app_paths conflict=""
+  # 2026-07-20 P1 沉睡修复：原 sed 以 `|` 为分隔符且模式内含 ERE 交替 `(tsx|jsx|ts|js)`，
+  # GNU/BSD sed 均解析报错（gsed: unknown option to `s'；BSD: parentheses not balanced），
+  # 2>/dev/null 吞错后 pages_paths/app_paths 恒为空 → 本门禁沉睡恒 pass。
+  # 仅将两条含交替的 s 命令分隔符 `|`→`:`（路径不含 `:`），判定语义与输出行不动。
+  # 对照证据：修复前两侧 stderr 报错且 stdout 为空；修复后同一合成样本 GNU/BSD 输出逐字节一致。
   pages_paths=$(printf '%s\n' "${srcarr[@]}" | grep -E '/pages/' 2>/dev/null \
-    | sed -E 's|.*/pages/||; s|/page\.(tsx|jsx|ts|js)$|/|; s|\.(tsx|jsx|ts|js)$||; s|^index$||' 2>/dev/null || true)
+    | sed -E 's|.*/pages/||; s:/page\.(tsx|jsx|ts|js)$:/:; s:\.(tsx|jsx|ts|js)$::; s:^index$::' 2>/dev/null || true)
   app_paths=$(printf '%s\n' "${srcarr[@]}" | grep -E '/app/' 2>/dev/null \
-    | sed -E 's|.*/app/||; s|/page\.(tsx|jsx|ts|js)$||; s|\.(tsx|jsx|ts|js)$||' 2>/dev/null || true)
+    | sed -E 's|.*/app/||; s:/page\.(tsx|jsx|ts|js)$::; s:\.(tsx|jsx|ts|js)$::' 2>/dev/null || true)
   if [[ -n "$pages_paths" && -n "$app_paths" ]]; then
     local p
     while IFS= read -r p; do

@@ -149,23 +149,24 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_lombok_data_jpa | fail | LOMBOK_SRC_GLOBS 非空时，含 `@Entity` 的 .java 文件若同时含 `@Data` → fail | LOMBOK_SRC_GLOBS |
-| fw_lombok_slf4j_dup | fail | 含 `@Slf4j` 的 .java 文件若同时含 `LoggerFactory.getLogger` → fail | LOMBOK_SRC_GLOBS |
-| fw_lombok_builder_jackson | warn | 含 `@Builder` 的 .java 文件若缺 `@Jacksonized`/`@NoArgsConstructor`+`@AllArgsConstructor`/`@JsonDeserialize(builder=` → warn | LOMBOK_SRC_GLOBS |
-| fw_lombok_requiredargs_circular | warn | 两类互引 final 字段且均带 `@RequiredArgsConstructor`/`@AllArgsConstructor` → warn 提示重构 | LOMBOK_SRC_GLOBS |
-| fw_lombok_equals_callsuper | warn | `@EqualsAndHashCode` 无 `callSuper=` 且所在类 `extends` 非 Object → warn | LOMBOK_SRC_GLOBS |
-| fw_lombok_equals_lazy | warn | `@EqualsAndHashCode` 无 `exclude=`/`of=` 且类含 `@OneToMany`/`@ManyToOne`/`@ManyToMany`/`@OneToOne` → warn | LOMBOK_SRC_GLOBS |
-| fw_lombok_sneaky_throws | warn | `@SneakyThrows` 命中且所在类名含 Service/Controller/Facade/Api → warn | LOMBOK_SRC_GLOBS |
-| fw_lombok_cleanup | warn | `@Cleanup` 命中即 warn 改 try-with-resources | LOMBOK_SRC_GLOBS |
-| fw_lombok_val_usage | warn | `val`/`var` 声明 + `import lombok.val`/`var` → warn 改 Java 原生 var | LOMBOK_SRC_GLOBS |
-| fw_lombok_getter_lazy | warn | `@Getter(... lazy=true ...)` 命中即 warn 核对访问方式与必要性 | LOMBOK_SRC_GLOBS |
-| fw_lombok_nonnull_validation | warn | `@Valid` DTO 类字段标 lombok `@NonNull` 但缺 jakarta `@NotNull` → warn | LOMBOK_SRC_GLOBS |
-| fw_lombok_config | warn | PROJECT_DIR 根无 `lombok.config` 或无 `config.stopBubbling` → warn | PROJECT_DIR |
-| fw_lombok_mapstruct | warn | pom/build 同时检出 lombok 与 mapstruct 但 `lombok.config` 缺 `lombok.anyConstructor.addConstructorProperties` → warn | PROJECT_DIR LOMBOK_SRC_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|---------|
+| fw_lombok_data_jpa | fail | LOMBOK_SRC_GLOBS 非空时，含 `@Entity` 的 .java 文件若同时含 `@Data` → fail | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_slf4j_dup | fail | 含 `@Slf4j` 的 .java 文件若同时含 `LoggerFactory.getLogger` → fail | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_builder_jackson | warn | 含 `@Builder` 的 .java 文件若缺 `@Jacksonized`/`@NoArgsConstructor`+`@AllArgsConstructor`/`@JsonDeserialize(builder=` → warn | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_requiredargs_circular | warn | 两类互引 final 字段且均带 `@RequiredArgsConstructor`/`@AllArgsConstructor` → warn 提示重构 | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_equals_callsuper | warn | `@EqualsAndHashCode` 无 `callSuper=` 且所在类 `extends` 非 Object → warn | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_equals_lazy | warn | `@EqualsAndHashCode` 无 `exclude=`/`of=` 且类含 `@OneToMany`/`@ManyToOne`/`@ManyToMany`/`@OneToOne` → warn | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_sneaky_throws | warn | `@SneakyThrows` 命中且所在类名含 Service/Controller/Facade/Api → warn | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_cleanup | warn | `@Cleanup` 命中即 warn 改 try-with-resources | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_val_usage | warn | `val`/`var` 声明 + `import lombok.val`/`var` → warn 改 Java 原生 var | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_getter_lazy | warn | `@Getter(... lazy=true ...)` 命中即 warn 核对访问方式与必要性 | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_nonnull_validation | warn | `@Valid` DTO 类字段标 lombok `@NonNull` 但缺 jakarta `@NotNull` → warn | LOMBOK_SRC_GLOBS | — |
+| fw_lombok_config | warn | PROJECT_DIR 根无 `lombok.config` 或无 `config.stopBubbling` → warn | PROJECT_DIR | — |
+| fw_lombok_mapstruct | warn | pom/build 同时检出 lombok 与 mapstruct 但 `lombok.config` 缺 `lombok.anyConstructor.addConstructorProperties` → warn | PROJECT_DIR LOMBOK_SRC_GLOBS | — |
 
 <!--
+CWE/GB 映射列（2026-07-20 P1 补）：仅登记仓库内已有证据（.sh 告警文案/§3 违反后果）的弱点映射；— = 质量/规范类门禁，无 CWE 直挂。GB/T 34944-2017 为 Java 语言源代码漏洞测试规范。
 门禁 id 命名规范：fw_lombok_<rule>（rule 全小写下划线）。
 本表 13 条 id 须在 assets/framework-gates/lombok.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_lombok_<rule>(fail|warn) ...` 与本表 id 集合应一致。

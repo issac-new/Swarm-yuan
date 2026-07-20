@@ -34,7 +34,7 @@ _fw_spring_boot_check() {
       # 提取 @Transactional 标注的方法名（@Transactional 后若干行内的 "方法名(" 形式）
       local tx_methods
       tx_methods=$(printf '%s\n' "$code" | grep -A3 -E '^[[:space:]]*@Transactional\b' \
-        | grep -oE '\b(public|protected|private)?[[:space:]]*(static[[:space:]]+)?[A-Za-z_][A-Za-z0-9_<>,.\[\] ]*[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)\(' \
+        | grep -oE '\b(public|protected|private)?[[:space:]]*(static[[:space:]]+)?[A-Za-z_][][A-Za-z0-9_<>,. ]*[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)\(' \
         | sed -E 's/.*[[:space:]]([a-zA-Z_][a-zA-Z0-9_]*)\(/\1/' | sort -u)
       [[ -z "$tx_methods" ]] && continue
       local m
@@ -121,7 +121,7 @@ ${fi_hits2}"
       # 提取本类 @Bean 方法名
       local bean_methods
       bean_methods=$(printf '%s\n' "$code" | grep -A2 -E '^[[:space:]]*@Bean\b' \
-        | grep -oE '\b(public|protected)?[[:space:]]*[A-Za-z_][A-Za-z0-9_<>,.\[\] ]*[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)\(' \
+        | grep -oE '\b(public|protected)?[[:space:]]*[A-Za-z_][][A-Za-z0-9_<>,. ]*[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)\(' \
         | sed -E 's/.*[[:space:]]([a-zA-Z_][a-zA-Z0-9_]*)\(/\1/' | sort -u)
       [[ -z "$bean_methods" ]] && continue
       local m
@@ -189,13 +189,55 @@ ${hits}
     for cfile in "${cfgarr[@]}"; do
       local ln
       ln=$(grep -nE 'management\.endpoints\.web\.exposure\.include' "$cfile" 2>/dev/null || true)
-      [[ -z "$ln" ]] && continue
-      # 值含 * 或敏感端点
-      if printf '%s\n' "$ln" | grep -qE 'include:[[:space:]]*\*|include[[:space:]]*=[[:space:]]*\*|env|beans|heapdump|configprops|loggers'; then
-        # 检查是否有独立 management 端口隔离
-        if ! grep -qE 'management\.server\.port' "$cfile" 2>/dev/null; then
-          expo_hits="${expo_hits}${cfile}:${ln}
+      # 嵌套 YAML 还原点号键（management:\n  endpoints:... 惯用分层写法），与点平铺键同口径判定（P1-1 判定面补全）
+      local flat
+      flat=$(awk '
+        /^[[:space:]]*(#|$)/ { next }
+        {
+          line = $0
+          match(line, /^[[:space:]]*/)
+          indent = RLENGTH
+          sub(/^[[:space:]]*/, "", line)
+          if (line !~ /^[A-Za-z0-9_.-]+[[:space:]]*:/) next
+          key = line
+          sub(/[[:space:]]*:.*/, "", key)
+          sub(/[[:space:]]+$/, "", key)
+          while (depth > 0 && ind[depth] >= indent) depth--
+          depth++
+          ind[depth] = indent
+          name[depth] = key
+          path = name[1]
+          for (i = 2; i <= depth; i++) path = path "." name[i]
+          if (path == "management.endpoints.web.exposure.include" || path == "management.server.port") {
+            val = line
+            sub(/^[^:]*:[[:space:]]*/, "", val)
+            printf "%s=%s\n", path, val
+          }
+        }
+      ' "$cfile" 2>/dev/null || true)
+      # 独立 management 端口隔离：点平铺键或嵌套 YAML 任一命中即视为已隔离
+      local mgmt_port=0
+      grep -qE 'management\.server\.port' "$cfile" 2>/dev/null && mgmt_port=1
+      printf '%s\n' "$flat" | grep -q '^management\.server\.port=' && mgmt_port=1
+      # 点平铺键判定（原有口径不变）
+      if [[ -n "$ln" ]]; then
+        # 值含 * 或敏感端点
+        if printf '%s\n' "$ln" | grep -qE 'include:[[:space:]]*\*|include[[:space:]]*=[[:space:]]*\*|env|beans|heapdump|configprops|loggers'; then
+          if [[ "$mgmt_port" -eq 0 ]]; then
+            expo_hits="${expo_hits}${cfile}:${ln}
 "
+          fi
+        fi
+      fi
+      # 嵌套 YAML 判定（值含 * 或敏感端点）
+      local nested_inc
+      nested_inc=$(printf '%s\n' "$flat" | grep '^management\.endpoints\.web\.exposure\.include=' || true)
+      if [[ -n "$nested_inc" ]]; then
+        if printf '%s\n' "$nested_inc" | grep -qE "include=['\"([]*\*|env|beans|heapdump|configprops|loggers"; then
+          if [[ "$mgmt_port" -eq 0 ]]; then
+            expo_hits="${expo_hits}${cfile}:${nested_inc}（嵌套 YAML）
+"
+          fi
         fi
       fi
     done

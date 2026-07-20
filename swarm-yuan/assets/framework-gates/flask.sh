@@ -24,7 +24,7 @@ _fw_flask_check() {
   local sk_bad=""
   for f in "${srcarr[@]}"; do
     local ln
-    ln=$(_fw_strip_comments_hash "$f" | grep -nE '(secret_key|SECRET_KEY)["'"'"'\]]*[[:space:]]*=[[:space:]]*["'"'"']' 2>/dev/null \
+    ln=$(_fw_strip_comments_hash "$f" | grep -nE '(secret_key|SECRET_KEY)[]"'"'"']*[[:space:]]*=[[:space:]]*["'"'"']' 2>/dev/null \
        | grep -vE 'os\.environ|getenv|env\(|config\.get' || true)
     [[ -n "$ln" ]] && sk_bad="${sk_bad}${f}:${ln}
 "

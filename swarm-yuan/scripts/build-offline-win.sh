@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # build-offline-win.sh — 构建 Windows 离线安装包
-# 预下载 swarm-yuan 的 10 个运行时到 offline-cache/，然后打包成 zip
+# 预下载 swarm-yuan 的 11 个运行时到 offline-cache/，然后打包成 zip
 # 用法: bash scripts/build-offline-win.sh [输出目录]
 set -euo pipefail
 

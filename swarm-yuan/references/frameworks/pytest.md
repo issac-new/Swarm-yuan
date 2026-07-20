@@ -100,18 +100,23 @@ ruleset_id: pytest
 - **验证方法**: grep -rnE 'cov-fail-under|fail_under' 配置文件
 - **对应门禁**: fw_pytest_coverage_threshold(warn)
 
-## §4 门禁清单
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-| fw_pytest_session_scope_mutable | fail | session fixture 含可变操作（append/写文件）→ fail | PYTEST_TEST_GLOBS |
-| fw_pytest_assert_truthy_only | fail | 仅 assert x（无 == / != / in / is）→ fail | PYTEST_TEST_GLOBS |
-| fw_pytest_parametrize_boundary | warn | @parametrize 存在但无边界值信号（0/None/空/max）→ warn | PYTEST_TEST_GLOBS |
-| fw_pytest_conftest_hierarchy | warn | 无 conftest.py 但有 @pytest.fixture → warn | PYTEST_TEST_GLOBS |
-| fw_pytest_xdist_isolation | warn | 用 tmpdir（非 tmp_path）→ warn | PYTEST_TEST_GLOBS |
-| fw_pytest_asyncio_mode | warn | async 测试存在但无 asyncio_mode 配置 → warn | PYTEST_TEST_GLOBS |
-| fw_pytest_mock_cleanup | warn | mocker.patch 在测试体内（非 fixture）→ warn | PYTEST_TEST_GLOBS |
-| fw_pytest_skip_reason | warn | @skip/@xfail 无 reason= → warn | PYTEST_TEST_GLOBS |
-| fw_pytest_naming | warn | 测试函数非 test_ 开头 → warn | PYTEST_TEST_GLOBS |
-| fw_pytest_coverage_threshold | warn | 无 cov-fail-under 配置 → warn | PYTEST_TEST_GLOBS |
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |
+|---------|------|---------|---------|---------|
+| fw_pytest_session_scope_mutable | fail | session fixture 含可变操作（append/写文件）→ fail | PYTEST_TEST_GLOBS | — |
+| fw_pytest_assert_truthy_only | fail | 仅 assert x（无 == / != / in / is）→ fail | PYTEST_TEST_GLOBS | — |
+| fw_pytest_parametrize_boundary | warn | @parametrize 存在但无边界值信号（0/None/空/max）→ warn | PYTEST_TEST_GLOBS | — |
+| fw_pytest_conftest_hierarchy | warn | 无 conftest.py 但有 @pytest.fixture → warn | PYTEST_TEST_GLOBS | — |
+| fw_pytest_xdist_isolation | warn | 用 tmpdir（非 tmp_path）→ warn | PYTEST_TEST_GLOBS | — |
+| fw_pytest_asyncio_mode | warn | async 测试存在但无 asyncio_mode 配置 → warn | PYTEST_TEST_GLOBS | — |
+| fw_pytest_mock_cleanup | warn | mocker.patch 在测试体内（非 fixture）→ warn | PYTEST_TEST_GLOBS | — |
+| fw_pytest_skip_reason | warn | @skip/@xfail 无 reason= → warn | PYTEST_TEST_GLOBS | — |
+| fw_pytest_naming | warn | 测试函数非 test_ 开头 → warn | PYTEST_TEST_GLOBS | — |
+| fw_pytest_coverage_threshold | warn | 无 cov-fail-under 配置 → warn | PYTEST_TEST_GLOBS | — |
+
+<!--
+标准映射列 2026-07-20 P1 补登：CWE 取自本文件 §3/门禁输出口径与通行分类，GB 条款沿用 references/standards-compliance.md §D 口径，无明确映射标 —。
+-->
 
 ## §5 跨框架交互
 | 交互对 | 规则 | 理由 |

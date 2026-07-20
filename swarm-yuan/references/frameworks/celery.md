@@ -98,19 +98,24 @@ ruleset_id: celery
 - **验证方法**: grep -rnE 'chain\(|group\(|chord\(' 任务文件，核对错误处理
 - **对应门禁**: fw_celery_canvas_error(warn)
 
-## §4 门禁清单
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-| fw_celery_acks_late_idempotent | fail | acks_late=True 且无幂等信号（去重表/SETNX/状态字段）→ fail | CELERY_SRC_GLOBS |
-| fw_celery_serializer_pickle | fail | task_serializer=pickle → fail | CELERY_SRC_GLOBS |
-| fw_celery_retry_backoff | warn | @task 无 retry_backoff=True → warn | CELERY_SRC_GLOBS |
-| fw_celery_result_backend | warn | 无 result_backend 配置 → warn | CELERY_SRC_GLOBS |
-| fw_celery_timezone | warn | 无 enable_utc/timezone → warn | CELERY_SRC_GLOBS |
-| fw_celery_concurrency_model | warn | 无 pool/worker_concurrency 配置 → warn | CELERY_SRC_GLOBS |
-| fw_celery_task_routes | warn | 无 task_routes → warn | CELERY_SRC_GLOBS |
-| fw_celery_time_limit | warn | @task 无 time_limit/soft_time_limit → warn | CELERY_SRC_GLOBS |
-| fw_celery_monitoring | warn | 无 Flower/on_failure/prometheus → warn | CELERY_SRC_GLOBS |
-| fw_celery_beat_idempotent | warn | beat_schedule 存在但任务无幂等信号 → warn | CELERY_SRC_GLOBS |
-| fw_celery_canvas_error | warn | chain/group/chord 存在但无错误处理 → warn | CELERY_SRC_GLOBS |
+## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |
+|---------|------|---------|---------|---------|
+| fw_celery_acks_late_idempotent | fail | acks_late=True 且无幂等信号（去重表/SETNX/状态字段）→ fail | CELERY_SRC_GLOBS | — |
+| fw_celery_serializer_pickle | fail | task_serializer=pickle → fail | CELERY_SRC_GLOBS | CWE-502 |
+| fw_celery_retry_backoff | warn | @task 无 retry_backoff=True → warn | CELERY_SRC_GLOBS | — |
+| fw_celery_result_backend | warn | 无 result_backend 配置 → warn | CELERY_SRC_GLOBS | — |
+| fw_celery_timezone | warn | 无 enable_utc/timezone → warn | CELERY_SRC_GLOBS | — |
+| fw_celery_concurrency_model | warn | 无 pool/worker_concurrency 配置 → warn | CELERY_SRC_GLOBS | — |
+| fw_celery_task_routes | warn | 无 task_routes → warn | CELERY_SRC_GLOBS | — |
+| fw_celery_time_limit | warn | @task 无 time_limit/soft_time_limit → warn | CELERY_SRC_GLOBS | — |
+| fw_celery_monitoring | warn | 无 Flower/on_failure/prometheus → warn | CELERY_SRC_GLOBS | — |
+| fw_celery_beat_idempotent | warn | beat_schedule 存在但任务无幂等信号 → warn | CELERY_SRC_GLOBS | — |
+| fw_celery_canvas_error | warn | chain/group/chord 存在但无错误处理 → warn | CELERY_SRC_GLOBS | — |
+
+<!--
+标准映射列 2026-07-20 P1 补登：CWE 取自本文件 §3/门禁输出口径与通行分类，GB 条款沿用 references/standards-compliance.md §D 口径，无明确映射标 —。
+-->
 
 ## §5 跨框架交互
 | 交互对 | 规则 | 理由 |

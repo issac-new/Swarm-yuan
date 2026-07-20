@@ -136,21 +136,22 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 
-| 门禁 id | 级别 | 实现逻辑 | 依赖变量 |
-|---------|------|---------|---------|
-| fw_nacos_namespace_isolation | warn | nacos 配置无 namespace → warn 环境未隔离 | NACOS_CONFIG_GLOBS |
-| fw_nacos_config_encrypt | fail | 含 nacos 引用的配置中敏感 key 明文（非 ${}/{cipher}）→ fail | NACOS_CONFIG_GLOBS |
-| fw_nacos_instance_ephemeral | warn | ephemeral=false → warn 确认持久化实例选型 | NACOS_CONFIG_GLOBS |
-| fw_nacos_gray_release | warn | prod 配置无 gray/beta 痕迹 → warn 发布流程须含灰度 | NACOS_CONFIG_GLOBS |
-| fw_nacos_value_refresh | warn | @NacosValue 无 autoRefreshed=true → warn 不刷新 | NACOS_SRC_GLOBS |
-| fw_nacos_server_cluster | warn | server-addr 单地址 / standalone → warn 单点风险 | NACOS_CONFIG_GLOBS |
-| fw_nacos_client_heartbeat | warn | heart-beat-interval < 5000 → warn 心跳风暴 | NACOS_CONFIG_GLOBS NACOS_SRC_GLOBS |
-| fw_nacos_config_listener | warn | Nacos config + @Value 无 @RefreshScope/@NacosValue → warn | NACOS_SRC_GLOBS NACOS_CONFIG_GLOBS |
-| fw_nacos_config_priority | warn | shared-configs 与 extension-configs 同存 → warn 核对覆盖 | NACOS_CONFIG_GLOBS |
-| fw_nacos_profile_isolation | warn | profiles.active 硬编码字面值 → warn 环境硬编码 | NACOS_CONFIG_GLOBS |
-| fw_nacos_metadata | warn | discovery 配置无 metadata → warn 无流量治理数据 | NACOS_CONFIG_GLOBS |
+| 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
+|---------|------|---------|---------|---------|
+| fw_nacos_namespace_isolation | warn | nacos 配置无 namespace → warn 环境未隔离 | NACOS_CONFIG_GLOBS | — |
+| fw_nacos_config_encrypt | fail | 含 nacos 引用的配置中敏感 key 明文（非 ${}/{cipher}）→ fail | NACOS_CONFIG_GLOBS | CWE-312；GB/T 34944-2017 §6.2.6.3（口令硬编码） |
+| fw_nacos_instance_ephemeral | warn | ephemeral=false → warn 确认持久化实例选型 | NACOS_CONFIG_GLOBS | — |
+| fw_nacos_gray_release | warn | prod 配置无 gray/beta 痕迹 → warn 发布流程须含灰度 | NACOS_CONFIG_GLOBS | — |
+| fw_nacos_value_refresh | warn | @NacosValue 无 autoRefreshed=true → warn 不刷新 | NACOS_SRC_GLOBS | — |
+| fw_nacos_server_cluster | warn | server-addr 单地址 / standalone → warn 单点风险 | NACOS_CONFIG_GLOBS | — |
+| fw_nacos_client_heartbeat | warn | heart-beat-interval < 5000 → warn 心跳风暴 | NACOS_CONFIG_GLOBS NACOS_SRC_GLOBS | — |
+| fw_nacos_config_listener | warn | Nacos config + @Value 无 @RefreshScope/@NacosValue → warn | NACOS_SRC_GLOBS NACOS_CONFIG_GLOBS | — |
+| fw_nacos_config_priority | warn | shared-configs 与 extension-configs 同存 → warn 核对覆盖 | NACOS_CONFIG_GLOBS | — |
+| fw_nacos_profile_isolation | warn | profiles.active 硬编码字面值 → warn 环境硬编码 | NACOS_CONFIG_GLOBS | — |
+| fw_nacos_metadata | warn | discovery 配置无 metadata → warn 无流量治理数据 | NACOS_CONFIG_GLOBS | — |
 
 <!--
+CWE/GB 映射列（2026-07-20 P1 补）：仅登记仓库内已有证据（.sh 告警文案/§3 违反后果）的弱点映射；— = 质量/规范类门禁，无 CWE 直挂。GB/T 34944-2017 为 Java 语言源代码漏洞测试规范。
 门禁 id 命名规范：fw_nacos_<rule>（rule 全小写下划线）。
 本表 11 条 id 须在 assets/framework-gates/nacos.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_nacos_<rule>(warn) ...` 与本表 id 集合应一致。

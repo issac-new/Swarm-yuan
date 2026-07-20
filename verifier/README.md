@@ -16,3 +16,41 @@
 - C5 CLI 兼容 ✅：precheck.sh A/B 沙箱 131 次调用 stdout+退出码逐字节一致（唯一例外为授权的 check_test 空值守卫修复）
 - C6 可维护性 ✅：framework-gates 15369→13168 行（-14.3%）；precheck.sh 提取 6 helper+8 家族公共剥离库；397 处报告尾收编 _fw_report；27 个嵌套重复函数删除
 - 基线演进：R0 前 fixtures 57/57 BAD（conf 硬编码 /Volumes 路径，violating 为假阳性）→ R0 后 57/57 OK
+
+## 终验记录（2026-07-20，standards-refactor 标准合规增强重构，工作区未提交）
+- C1 行为等价 ✅：57/57 fixture，退出码向量与 v1/golden-vector.txt diff 为空（runs/2026-07-20T1606-standards-refactor-fixtures.log）；spring-boot POSIX 字符类修复未改变其向量（v=1 c=0），golden 无需更新
+- C2 e2e ✅：`swarm-yuan/tests/e2e/run-e2e.sh` RC=0（四框架注入 + 4 fail id 断言全过）
+- C3 重复消除 ✅：本轮未触及双副本机制，既有 SKILLS_PATH_REWRITE 同步机制维持
+- C4 shellcheck ⚠️ 无法判定：本机无 shellcheck（PATH//tmp//mnt/agents/tools 均无），run-verifier.sh shellcheck 按 fail-closed 设计报 SHELLCHECK_UNAVAILABLE 退出 1（runs/2026-07-20T1606-standards-refactor-shellcheck.log），非代码回归；全部 13 个 shell 脚本 `bash -n` 语法通过
+- C8 合规门禁 fixture ✅：6/6 组双态 + id 级断言全过（runs/2026-07-20T1606-standards-refactor-gate-fixtures.log，GATE_FIXTURES_FAILS 0）
+- 真值核对 ✅：check_* 函数 31 = GATE_FLAGS 31；precheck.conf 变量 162；UNIVERSAL_FILES 24；references/*.md（不含 frameworks/）14
+- 最小 conf A/B ✅：`--all` 核心 10 序列（调用 10/执行 9/跳过 1 check_reuse）不含 4 新门禁；`--all-full` 执行汇总行「调用 31，执行 21，跳过 10」且 check_compliance/check_docs_pack/check_sbom/check_privacy 均计入跳过
+- self-check 修复 ✅：check_doc_consistency 的 conf 变量提取 grep -E 模式 `\|`→`|`（`\|` 在 ERE 下按字面管道解析永不命中，致「SKILL.md 声明 precheck.conf 变量漂移」活跃误报；paradigm-decisions.md 记录的 `\|` 字面 bug 家族又一例）。修复后未篡改态「✓ conf 变量数一致(162)」，篡改 162→163 复现 ⚠ 漂移告警，恢复后转绿
+- 既有行为留档：`--check-only` 在工具缺失时于 doc_consistency 之前早期 exit（HEAD 既有，非本轮引入）；本环境 superpowers 未装（既有环境 miss，唯一 ✗），故 doc_consistency 段经等代码路径 harness（仅中和早期 exit）验证全绿：57 框架规则/31 门禁/conf 162/refs 14/四文档头部数字/framework-signal-index 全部一致；上游基线 drifted（comet/graphify/ruflo）为 warn-only 忠告不置 FAIL
+
+## 回归记录格式预留（P1-6 断言化后适用，由后续回归代理填写，只增不改）
+- 判定入口：`bash verifier/v1/run-verifier.sh all`（子模式 `cli-ab` / `metrics` 可单独复跑；C5/C6 判据见 v1/acceptance-criteria.md，阈值真值 v1/metrics-baseline.txt、序列基线 v1/core10-sequence.txt）。
+- 记录格式（每次运行一条，追加于本文件末尾新节，不改动既有节）：
+  - `<ts> all RC=<n> ｜ cli-ab CALLS=<n> DIFFS=<n> RC_INVALID=<n> ｜ metrics LOC=<n>/<baseline> DUP_DIFF=<n> DOC_VIOLATIONS=<n> ｜ 日志 runs/<ts>-*.log`
+- 填写要求：
+  - 异常行须附对照证据（A/B diff 前 20 行，或阈值实测值 vs 基线值的命令+输出）。
+  - 基线变更（v1/metrics-baseline.txt、v1/core10-sequence.txt）须单行说明理由并链 commit，不得静默改值。
+  - 环境性 SKIP（无 git / 语料缺失 / shellcheck 不可用）须如实登记 SKIP 行，不得记为通过。
+
+## 回归记录（2026-07-20，p1p2-regression，P1/P2 第二批标准合规增强终态，feat/standards-compliance 工作区未提交，HEAD=c27c8bc）
+- 2026-07-20T2041 fixtures RC=0 ｜ FIXTURES_TOTAL 61 FAILS 0 ｜ 日志 runs/2026-07-20T2041-p1p2-regression-fixtures.log
+- 2026-07-20T2041 gate-fixtures RC=0 ｜ GATE_FIXTURES_TOTAL 6 FAILS 0（全量 34 组经 run-gate-fixture.sh 无参数遍历另证全绿）｜ 日志 runs/2026-07-20T2041-p1p2-regression-gate-fixtures.log
+- 2026-07-20T2041 metrics RC=0 ｜ LOC=3603/2982（+20.8% <40%）DUP_DIFF=0 DOC_VIOLATIONS=0 METRICS_ASSERT_FAILS=0 ｜ 环境登记：Swarm-studio 兄弟仓库不在本机，LOC_PRECHECK_STUDIO/DUP_DIFF_LINES 测量行留空（断言不依赖该路径）｜ 日志 runs/2026-07-20T2041-p1p2-regression-metrics.log
+- 2026-07-20T2041 cli-ab RC=1（预期内，如实登记非通过）｜ CALLS=147 DIFFS=9 RC_INVALID=0 ｜ 9 处 DIFF 逐条核对全部合法：--authz/--requirements/--crypto 各×2 语料（A=HEAD 无此 flag 报未知 rc=1，B 正常执行）、--all-full comp/viol×2（仅新增 3 合规门禁段头 + 汇总行 调用31→34/跳过10→13，fail/warn 计数逐值不变）、--bogus-flag×1（Usage 行追加 3 新 flag）；既有 31 flag 全部逐字节一致，core10 序列 OK；主会话提交后 HEAD==工作区自动复绿 ｜ 日志 runs/2026-07-20T2041-p1p2-regression-cli-ab.log
+- 基线变更：v1/golden-vector.txt 57→61 框架向量（理由：P1/P2 新增 dameng/kratos/langchain/terraform 4 框架门禁；diff 摘要：57 条旧记录纯 a-hunk 追加逐值不变 + 4 条新记录字典序插入 + TOTAL 57→61）｜ 日志 runs/2026-07-20T2041-p1p2-regression-golden-vector-rebuild.log
+- C1 ✅：61/61 fixture 双态退出码 (v=1 c=0)，新 golden diff 为空（61 框架全量经 run-framework-fixture.sh 循环另证 61/61）
+- C2 ✅：`swarm-yuan/tests/e2e/run-e2e.sh` RC=0（四框架注入 + 4 fail id 断言）
+- C3 ✅：本轮未触及双副本机制；metrics DUP_DIFF_LINES 因兄弟仓库缺失记环境 SKIP（非 0 计数，非通过判定）
+- C4 ⚠️ 无法判定：本机无 shellcheck，fail-closed 报 SHELLCHECK_UNAVAILABLE；bash -n 77 个脚本（precheck+scripts+tests+e2e+verifier+61 gates）语法 FAILS=0
+- C5 ⚠️ 预期内挂起：cli-ab RC=1，9 处 DIFF 全部合法（见上），提交后复绿
+- C6 ✅：metrics 断言 3/3 OK（LOC +20.8%<40% / 注入双副本 diff=0<30 / 文档一致性 0 违规，段含 34 门禁/171 变量/61 框架/四文档头部数字全 ✓）
+- C7 ✅：报告交付物既有，本轮不重复产出
+- C8 ✅：gate-fixtures 6/6 OK + 全量 34 组遍历全绿（run-gate-fixture.sh 无参数「共 34 组，失败组 0」）
+- 真值核对 ✅：check_*=34、GATE_FLAGS=34、conf 变量=171、references/*.md（不含 frameworks/）=16、framework-gates/*.sh=61、references/frameworks/*.md=62（含模板）、gate-fixtures=34 组
+- self-check ✅：RC=1 唯一 ✗ 为 superpowers 环境 miss（既有允许项）；文档一致性段 0 违规无新增 ERROR；注：--check-only 在工具缺失时早期 exit 为 HEAD 既有行为
+- 本轮修复项：无（未发现回归，未改动任何源码；仅覆盖更新 golden-vector.txt 并新增 runs 归档）
