@@ -191,7 +191,7 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 
 ## 在目标技能中的落地
 
-目标技能的 `scripts/code-graph-tools.md` 应：
+目标技能的 `references/code-graph-tools.md` 应：
 1. 引用上述安装与命令（按项目实际选择 GitNexus/graphify/两者）
 2. 在探查阶段（Step 1）先运行图谱工具索引仓库
 3. 在 `reference-manual.md` 的"组件依赖链路"段引用图谱输出（`GRAPH_REPORT.md` / Mermaid 调用流）

@@ -359,7 +359,7 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | kettle | 文件 | `**/*.kjb` / `**/*.ktr` / `kettle.properties` / `carte-config*.xml` / `slave-server-config*.xml` / `pwd/kettle.pwd` | 高 |
 | kettle | 配置 | `<transformation>` / `<job>` 根元素 / `<connection>` 块 / `<transversion>` | 高 |
 | kettle | 脚本调用 | `pan.sh` / `kitchen.sh` / `carte.sh` / `spoon.sh` 命令行调用 | 高 |
-| koa | 依赖 | `package.json` dependencies 含 `"koa"` / `"@koa/router"` / `"koa-bodyparser"` / `"koa-helmet"` | 高 |
+| koa | 依赖 | `package.json` dependencies 含 `"koa"` / `"@koa/router"` / `"koa-bodyparser"` / `"koa-helmet"` / `"socket.io"` | 高 |
 | koa | 代码 | `new Koa()` / `require('koa')` / `await next()` / `ctx.body =` / `ctx.throw(` | 高 |
 | koa | 文件 | `**/app.js` / `**/server.js`（含 koa 引用）/ `**/routes/**/*.js`（含 Router） | 中（需组合依赖信号） |
 | koa | 配置 | `PORT` + 中间件链 `app.use(` 且含 `ctx` 参数签名 | 中 |
