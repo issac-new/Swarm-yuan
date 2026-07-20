@@ -229,6 +229,16 @@ inject_frameworks() {
   # 2) 幂等替换标记区块（awk 三平台兼容）
   local tmp; tmp="$(mktemp /tmp/fwprecheck.XXXXXX)"
   if grep -q '^# >>> swarm-yuan:framework-gates >>>' "$sh"; then
+    # 失败关闭（fail-closed）：开标记存在但闭标记缺失时，awk 的 skip 会一直为 1 直到 EOF，
+    # 把区块之后的全部内容（公共库 _fw_resolve_globs/_fw_report、main case 分发，约 150 行）静默删除，
+    # 且 --inject-frameworks 路径不备份（仅 --upgrade 备份）→ 不可恢复。故必须先校验闭标记存在。
+    if ! grep -q '^# <<< swarm-yuan:framework-gates <<<' "$sh"; then
+      rm -f "$tmp" "$block"
+      echo "✗ $sh 含开标记 '# >>> swarm-yuan:framework-gates >>>' 但缺闭标记 '# <<< ... <<<'。" >&2
+      echo "  为避免静默删除区块之后的公共库/main 分发，已中止注入（未改动 $sh）。" >&2
+      echo "  请补全闭标记 '# <<< swarm-yuan:framework-gates <<<' 后重跑。" >&2
+      return 1
+    fi
     awk -v blockfile="$block" '
       /^# >>> swarm-yuan:framework-gates >>>/ { while ((getline l < blockfile) > 0) print l; skip=1; next }
       /^# <<< swarm-yuan:framework-gates <<</ { skip=0; next }
