@@ -43,6 +43,64 @@ done
 bash -n "$GATE" 2>/dev/null && ok "片段语法 OK" || err "片段语法错误"
 grep -q 'declare -A' "$GATE" && err "片段用了 declare -A（违反三平台铁律）"
 
+# 要素3c: NOBSD 可移植性静态检查（P1-2；证据：docs/research/R4-frameworks.md §五 :162/:189）
+# 背景：spring-boot 的 [A-Za-z0-9_<>,.\[\] ] 字符类在 BSD grep 2.6.0-FreeBSD 下 \] 被提前闭类，
+#   正则结构改变 → 门禁恒 pass 沉睡（GNU CI 不发病，macOS 本地与 CI 判定不一致）。本节把此类模式变静态红线。
+# 五类禁则（仅检可执行行；整行注释豁免——说明性文字允许出现模式字面量）：
+#   CLASS-ESC  字符类内转义方括号 \[ \]（POSIX 写法：] 置类首、[ 直接作字面量写入类中）
+#   GREP-PZ    grep GNU-only 短选项 -P/-z（含 -rzoP 组合，对照审计已知问题；--include 为 BSD 兼容组合，不误伤）
+#   SED-I      sed -i 不带 .bak 后缀（GNU/BSD 的 -i 语义不兼容；仓库惯例 sed -i.bak + rm）
+#   READLINK-F readlink -f（BSD readlink 无 -f；用 $(cd dir && pwd) 替代）
+#   DECLARE-A  declare -A（bash 3.2 无关联数组；要素3b 已检，此处并入统一报告）
+# 备查登记：sentinel.sh:32/75 等 grep -rlE '<pat>' "${arr[@]+...}" 内联文件列表用法已评审——
+#   显式文件操作数下 -r 在 GNU/BSD 均为普通文件读取，无递归语义分歧，不列入禁则。
+# 白名单（已确认存量，逐项注释理由；条目格式 <basename>:<行号>——行位移会 fail-closed 强制复核，刻意为之）：
+NOBSD_WHITELIST=(
+  # tailwind.sh:81 类 [^\]] 内 \]：GNU=「非 ]」，BSD 额外排除反斜杠；
+  #   Tailwind 原子类内容不含字面反斜杠，计数结果实际一致。
+  #   改 POSIX 写法属既有门禁行为变更，按「不贸然唤醒」原则留独立批+fixture 处置。
+  "tailwind.sh:81"
+)
+if [[ -f "$GATE" ]]; then
+  NOBSD_BAD=0
+  while IFS=$'\t' read -r _nb_rule _nb_ln; do
+    [[ -z "${_nb_rule:-}" || -z "${_nb_ln:-}" ]] && continue
+    _nb_key="$(basename "$GATE"):${_nb_ln}"
+    _nb_wl=0
+    for _nb_w in ${NOBSD_WHITELIST[@]+"${NOBSD_WHITELIST[@]}"}; do
+      [[ "$_nb_w" == "$_nb_key" ]] && { _nb_wl=1; break; }
+    done
+    if [[ "$_nb_wl" -eq 1 ]]; then
+      echo "  ○ NOBSD 豁免（白名单已确认存量）: ${_nb_key} [${_nb_rule}]"
+    else
+      NOBSD_BAD=$((NOBSD_BAD+1))
+      err "NOBSD 非可移植模式 ${_nb_key} [${_nb_rule}]（五类禁则见脚本要素3c注释）"
+    fi
+  done < <(awk -v SQ="'" '
+    /^[[:space:]]*#/ { next }
+    {
+      if (index($0, "declare -A") > 0) print "DECLARE-A\t" NR
+      if ($0 ~ /readlink[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*-[a-zA-Z]*f/) print "READLINK-F\t" NR
+      sedre = "sed[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*-i([[:space:]\"" SQ "]|$)"
+      if ($0 ~ sedre && $0 !~ /-i\.bak/) print "SED-I\t" NR
+      if ($0 ~ /grep[[:space:]]+(-[a-zA-Z]+[[:space:]]+)*-[a-zA-Z]*[Pz][a-zA-Z]*([[:space:]]|$)/) print "GREP-PZ\t" NR
+      # CLASS-ESC 字符级状态机（避免正则误伤 \[mysqld\] 等类外合法转义）
+      inclass=0; cstart=0; n=length($0)
+      for (i=1; i<=n; i++) {
+        c=substr($0,i,1); nx=substr($0,i+1,1)
+        if (!inclass) {
+          if (c=="\\") { i++; continue }              # 类外转义序列整体跳过（合法）
+          if (c=="[") { inclass=1; cstart=i }
+        } else {
+          if (c=="\\" && (nx=="[" || nx=="]")) { print "CLASS-ESC\t" NR; break }
+          if (c=="\\") { i++; continue }              # 类内成对反斜杠跳过
+          if (c=="]" && i>cstart+1) inclass=0         # 类首 ] 是字面量
+        }
+      }
+    }' "$GATE")
+  [[ "$NOBSD_BAD" -eq 0 ]] && ok "NOBSD 可移植性静态检查通过（五类禁则零新增命中）"
+fi
+
 # 要素4: fixture 双态（存在 fixtures 才核验）
 FX="$BASE/tests/fixtures/$ID"
 if [[ -d "${FX}/violating" && -d "${FX}/compliant" ]]; then
