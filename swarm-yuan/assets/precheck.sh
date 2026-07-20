@@ -186,7 +186,10 @@ _default_conf() {
   TEST_DIR_PATTERNS=()
   IMPL_DIR_PATTERNS=()
   CHANGE_IMPACT_FILE=""
-  ROLLBACK_KEYWORDS="回滚\|revert\|rollback\|灰度\|canary\|feature.flag\|功能开关"
+  # ROLLBACK_KEYWORDS 用 ERE 交替符（不带反斜杠）：grep -E 下 `\|` 是字面量永不匹配，
+  # 会把「有回滚预案」的 spec 误判为缺（fail）。本变量经 SPEC_FILE 可达且是硬门禁，2026-07-20 修复。
+  # 注：BREAKING_DDL/METRIC/LOG/TRACE 等 warn-only 模式的 `\|` 按 paradigm-decisions.md 决策「保留沉睡」不动。
+  ROLLBACK_KEYWORDS="回滚|revert|rollback|灰度|canary|feature.flag|功能开关"
   MIGRATION_DIRS=()
   BREAKING_DDL_PATTERNS="DROP TABLE\|DROP COLUMN\|TRUNCATE\|RENAME TABLE"
   OBSERVABILITY_FILE=""
