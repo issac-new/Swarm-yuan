@@ -22,7 +22,7 @@ _fw_dubbo_check() {
   for f in "${srcarr[@]}"; do
     case "$(basename "$f")" in
       *.java) javaarr+=("$f") ;;
-      *.yml|*.yaml|*.properties|*.xml|pom.xml|build.gradle|*.gradle|*.gradle.kts) cfgarr+=("$f") ;;
+      *.yml|*.yaml|*.properties|*.xml|build.gradle|*.gradle|*.gradle.kts) cfgarr+=("$f") ;;
     esac
   done
 
