@@ -4,6 +4,7 @@
 #   bash generate-skill.sh <skill-name> <project-dir> [target-dir]       # 创建新技能骨架
 #   bash generate-skill.sh --upgrade <skill-name> <project-dir> [target-dir]  # 升级已存在技能
 #   bash generate-skill.sh --verify-completeness <skill-dir>   # 零占位符机器执法（骨架填充完成度校验）
+#   bash generate-skill.sh --render-tools <skill-dir> [project-root] [tool]   # 派生各 AI 工具原生规则文件（幂等）
 # 可选环境变量:
 #   SKILLS_PATH_REWRITE — sed 表达式，复制通用文件后逐文件应用（create/upgrade 均生效；
 #     缺省为空 = 不重写，行为不变）。用于目标运行时的 skills 目录不是 .claude/skills 的实例。
@@ -341,6 +342,28 @@ verify_completeness() {
 if [[ "${1:-}" == "--verify-completeness" ]]; then
   [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --verify-completeness <skill-dir>"; exit 1; }
   verify_completeness "$2"
+  exit $?
+fi
+
+# ============================================================
+# --render-tools 子命令（独立于 create/upgrade，单独拦截）
+# 用法: bash generate-skill.sh --render-tools <skill-dir> [project-root] [tool]
+# 从目标 skill 的 SKILL.md + scripts/precheck.conf 派生各 AI 工具原生规则文件：
+#   Cursor .cursor/rules/<skill>.mdc（description/globs/alwaysApply 三字段）
+#   Windsurf .windsurf/rules/<skill>.md（trigger: model_decision）
+#   Gemini/Codex/OpenCode/Kimi 的 GEMINI.md/AGENTS.md 段（标记区块包裹，幂等重渲染）
+#   Claude Code 维持现状（hooks/commands 已深度集成，不渲染）
+# project-root 缺省自动推导（用户级工具 home → 各工具全局规则位；否则取项目根）；
+# tool 缺省渲染全部 7 工具，指定则只渲染其一。适配器：assets/tool-adapters/<tool>.sh
+# （install.sh 共用 source）。重渲染同一项目为 no-op（内容一致跳过）。
+# ============================================================
+if [[ "${1:-}" == "--render-tools" ]]; then
+  [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --render-tools <skill-dir> [project-root] [tool]"; exit 1; }
+  TA_DIR="$(cd "$(dirname "$0")/.." && pwd)/assets/tool-adapters"
+  export TA_DIR
+  # shellcheck disable=SC1090
+  . "$TA_DIR/common.sh"
+  ta_render_tools "$2" "${3:-}" "${4:-}"
   exit $?
 fi
 
