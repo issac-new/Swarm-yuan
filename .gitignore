@@ -27,7 +27,9 @@ node_modules/
 swarm-yuan/offline-cache/gstack/
 swarm-yuan/offline-cache/superpowers/
 
-# 注意：swarm-yuan/offline-cache/ 下的 *.whl/*.tgz 为离线安装流程所引用，
-# 已故意纳入 git 跟踪——请勿加入忽略或删除（长期建议迁移到 Release 附件）。
+# 注意：swarm-yuan/offline-cache/ 的二进制（*.whl/*.tgz/*.zip）自 v2026.07.20 起
+# 已迁移 GitHub Release 附件（v2026.07.20-offline tag），不再纳入 git 跟踪
+#（忽略规则见 swarm-yuan/.gitignore；拉取用 swarm-yuan/scripts/fetch-offline-cache.sh）。
+# git 索引内仅保留 offline-cache/UPSTREAM.md（上游溯源登记）。
 .claude/worktrees/
 .zcode/

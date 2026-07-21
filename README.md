@@ -268,7 +268,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 ```
 Swarm-yuan/
 ├── README.md                     ← 本文件
-├── .gitignore                    ← 含 offline-cache 治理说明（whl/tgz 为离线安装所需，故意跟踪勿删）
+├── .gitignore                    ← 含 offline-cache 治理说明（whl/tgz 已迁 Release 附件，拉取：swarm-yuan/scripts/fetch-offline-cache.sh）
 ├── docs/                         ← 设计文档 + 计划（USAGE/PROMO/FIVE_DIMENSIONS 唯一来源在 swarm-yuan/docs/）
 │   ├── 2026-07-17-framework-rules-engine-design.md
 │   └── plans/

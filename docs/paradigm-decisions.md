@@ -172,3 +172,12 @@
 **决策**：正式废止"断点续传违背零占位符铁律"的否决，以 draft/active 状态门替代。零占位符铁律的适用点从"流程结束"移到"draft→active 迁移"。
 
 **联动**：WP-E 三档 profile（零占位符按档适用）+ WP-G 特征卡 P0/P1 分级（P1 可「（P1 待补）」，--mark-active 前清零）+ WP-A 合规门禁拆出（27+9）。
+
+### 决策 14：offline-cache 治理收口（2026-07-21 减重 WP-J）
+
+**事实核查**：git 索引内 offline-cache 实际只剩 UPSTREAM.md（8KB）——whl/tgz/zip 自 v2026.07.20 起已迁 GitHub Release 附件（install-offline-win.sh 的降级链自动下载），196MB 均为本地 ignored 内容。根 .gitignore 旧注释"已故意纳入 git 跟踪"是迁移前的表述残留，与 swarm-yuan/.gitignore 矛盾。
+
+**决策**：
+1. 根 .gitignore 矛盾注释重写（指向 Release 迁移事实与 fetch 脚本）
+2. 新增 scripts/fetch-offline-cache.sh（从 Release v2026.07.20-offline 拉取，已存在跳过，失败附手工指引）
+3. 无索引手术可做（索引早已只有 UPSTREAM.md）——本项为表述与工具收口，非新决策方向
