@@ -368,29 +368,33 @@ if [[ "${1:-}" == "--render-tools" ]]; then
 fi
 
 # ---- 检测运行环境 ----
+# 默认目标：项目内 .claude/skills/（"为目标项目生成 skill"名副其实）。
+# 历史行为（2026-07-21 前）：项目内无 .claude/skills 时 fallback 到 $HOME/.claude/skills 全局目录，
+# 导致 generate-skill.sh <name> <project> 把骨架生成到用户全局 skills 目录、项目目录内却什么都没有，
+# 与 README/SKILL.md 宣称的"为某项目生成开发技能"不符。改为默认在项目内创建 .claude/skills/。
+# 全局安装走 install.sh；用户仍可用第 3 参数 target-dir 显式指定任意目录。
 detect_skill_dir() {
   local project="$1"
-  if [[ -d "$project/.claude/skills" ]]; then echo "$project/.claude/skills"; return; fi
-  if [[ -d "$HOME/.claude/skills" ]]; then echo "$HOME/.claude/skills"; return; fi
-  if [[ -d "$HOME/.codex/skills" ]]; then echo "$HOME/.codex/skills"; return; fi
-  if [[ -d "$HOME/.cursor/skills" ]]; then echo "$HOME/.cursor/skills"; return; fi
-  if [[ -d "$HOME/.codeium/windsurf/skills" ]]; then echo "$HOME/.codeium/windsurf/skills"; return; fi
-  if [[ -d "$HOME/.config/opencode/skills" ]]; then echo "$HOME/.config/opencode/skills"; return; fi
-  if [[ -d "$HOME/.gemini/skills" ]]; then echo "$HOME/.gemini/skills"; return; fi
-  if [[ -d "$HOME/.kimi/skills" ]]; then echo "$HOME/.kimi/skills"; return; fi
+  # 1) 项目内已有 skills 目录（任意受支持运行时）→ 优先复用
+  local rt
+  for rt in .claude/skills .codex/skills .cursor/skills .codeium/windsurf/skills .config/opencode/skills .gemini/skills .kimi/skills; do
+    if [[ -d "$project/$rt" ]]; then echo "$project/$rt"; return; fi
+  done
+  # 2) 项目内无 skills 目录 → 默认在项目内创建 .claude/skills/
   echo "$project/.claude/skills"
 }
 
 detect_runtime_name() {
   local project="$1"
-  if [[ -d "$project/.claude/skills" || -d "$HOME/.claude/skills" ]]; then echo "Claude Code"
-  elif [[ -d "$HOME/.codex/skills" ]]; then echo "Codex"
-  elif [[ -d "$HOME/.cursor/skills" ]]; then echo "Cursor"
-  elif [[ -d "$HOME/.codeium/windsurf/skills" ]]; then echo "Windsurf"
-  elif [[ -d "$HOME/.config/opencode/skills" ]]; then echo "OpenCode"
-  elif [[ -d "$HOME/.gemini/skills" ]]; then echo "Gemini CLI"
-  elif [[ -d "$HOME/.kimi/skills" ]]; then echo "Kimi"
-  else echo "通用"
+  # 仅按项目内已有的 skills 目录判定运行时；不再因 $HOME 下有全局 skills 目录就误报。
+  if [[ -d "$project/.claude/skills" ]]; then echo "Claude Code"
+  elif [[ -d "$project/.codex/skills" ]]; then echo "Codex"
+  elif [[ -d "$project/.cursor/skills" ]]; then echo "Cursor"
+  elif [[ -d "$project/.codeium/windsurf/skills" ]]; then echo "Windsurf"
+  elif [[ -d "$project/.config/opencode/skills" ]]; then echo "OpenCode"
+  elif [[ -d "$project/.gemini/skills" ]]; then echo "Gemini CLI"
+  elif [[ -d "$project/.kimi/skills" ]]; then echo "Kimi"
+  else echo "通用（将在项目内创建 .claude/skills/）"
   fi
 }
 
