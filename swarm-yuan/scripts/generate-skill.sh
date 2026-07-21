@@ -526,8 +526,15 @@ esac
 _profile_rank() { case "$1" in lite) echo 1;; compliance) echo 3;; *) echo 2;; esac; }
 
 # WP-N1 项目级自适应判定：合规信号（等保/密评/个保法/金融/医疗关键词）→ compliance；
-# 规模信号（文件数 <80）→ lite；其余 standard。质量优先：探测失败/不确定 → 升档（不判 lite）。
-# WP-P9 技术栈复杂度反作用：形态信号（≥3 种形态）→ 升 standard；框架信号（≥5 个）→ 升 standard；
+# 规模信号（文件数 <80）→ lite；其余 standard。
+# WP-Q2 偏置方向修正（决策 18 修订）：
+#   原"只升不降"让 lite 档几乎不被自动选中（auto 输出压缩到 standard/compliance 二选一）。
+#   改为"信号明确才升档，模糊走默认 standard"：
+#     - 合规关键词命中 → compliance（明确升档，不变）
+#     - 文件数 <80 且无合规且非 monorepo 且依赖数 <20 → lite（明确降档）
+#     - 探测失败/信号模糊（find 报错、依赖数不可读、边界不确定）→ standard（默认，不升不降）
+#   质量优先的正确做法是"该 fail 的严格 fail"（strict 门禁真 fail），不是"档位一律往重选"。
+# WP-P9 技术栈复杂度信号：形态信号（≥3 种形态）→ 升 standard；框架信号（≥20 个）→ 升 standard；
 #   微服务信号（services/ 目录存在）→ 升 standard。优先级：合规 > 技术栈复杂度 > 规模。
 auto_detect_profile() {
   local proj="$1" n sig forms fws msig result reason
@@ -537,7 +544,7 @@ auto_detect_profile() {
   if [[ -n "$sig" ]]; then
     echo "compliance"; return
   fi
-  # 规模信号：文件数（head 截断加速，≥80 即 standard；统计失败按 standard——升档偏置）
+  # 规模信号：文件数（head 截断加速，≥80 即 standard；统计失败按 standard——默认不降）
   n=$(find "$proj" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' \
       2>/dev/null | head -81 | wc -l | tr -d ' ')
   n="${n:-81}"
@@ -545,7 +552,7 @@ auto_detect_profile() {
   if [[ "$n" -lt 80 ]]; then result="lite"; else result="standard"; fi
   reason="规模信号：文件数 ${n}"
 
-  # WP-P9 技术栈复杂度信号（只升不降，质量优先）
+  # WP-P9 技术栈复杂度信号（明确升档，不模糊）
   # 形态信号：同时含 ≥3 种形态（前端 .vue/.jsx/.tsx + 后端 .py/.java/.go/.rb + 异步 .consumer./.handler. + 微服务 services/ + 桌面 .electron. 等）
   forms=0
   # 前端形态
@@ -570,7 +577,8 @@ auto_detect_profile() {
     local svc_cnt; svc_cnt=$(find "$proj/services" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
     [[ "$svc_cnt" =~ ^[0-9]+$ && "$svc_cnt" -ge 2 ]] && msig=1
   fi
-  # 技术栈复杂度升档（只升不降）
+  # WP-Q2：技术栈复杂度升档（明确信号才升，不模糊）
+  # 形态/框架/微服务任一明确 → 升 standard（覆盖 lite 判定）
   if [[ $forms -ge 3 ]]; then
     result="standard"; reason="${reason}；形态信号：${forms} 种形态（≥3 → 升 standard）"
   fi
@@ -579,6 +587,10 @@ auto_detect_profile() {
   fi
   if [[ $msig -eq 1 ]]; then
     result="standard"; reason="${reason}；微服务信号：services/ 含多服务（→ 升 standard）"
+  fi
+  # WP-Q2：monorepo 信号（明确升档，不降 lite）
+  if [[ -f "$proj/lerna.json" || -f "$proj/pnpm-workspace.yaml" || -f "$proj/turbo.json" ]]; then
+    result="standard"; reason="${reason}；monorepo 信号（lerna/pnpm-workspace/turbo → 升 standard）"
   fi
   echo "$result"
 }
@@ -622,7 +634,7 @@ if [[ "$PROFILE" == "auto" ]]; then
   fi
   [[ $_forms -ge 3 ]] && _auto_reason="${_auto_reason}；技术栈复杂度：${_forms} 种形态${_msig:+（${_msig}）}（≥3 → 升 standard）"
   PROFILE=$(auto_detect_profile "$PROJECT_DIR")
-  echo "profile auto 判定: ${PROFILE}（${_auto_reason}；质量优先偏置——不确定即升档。显式 --profile 可覆盖）"
+  echo "profile auto 判定: ${PROFILE}（${_auto_reason}；WP-Q2 偏置修正——信号明确才升档，模糊走默认 standard。显式 --profile 可覆盖）"
 fi
 
 SKILL_DIR="$TARGET_DIR/$SKILL_NAME"
