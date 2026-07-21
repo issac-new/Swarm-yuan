@@ -155,8 +155,18 @@ merge_precheck_conf() {
   fi
 }
 
+# WP-D3：trace_tool 辅助函数（全链路追踪——设计理念 2，generate-skill 侧）
+# 定义在 inject_frameworks 之前，确保 --inject-frameworks 独立拦截分支也能调用。
+# trace-log.sh 路径：脚本所在目录的 ../assets/trace-log.sh
+_TRACE_LOG_SH="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)/assets/trace-log.sh"
+trace_tool() {  # $1=操作(create/inject/verify/upgrade) $2=说明
+  [[ -f "$_TRACE_LOG_SH" ]] || return 0
+  bash "$_TRACE_LOG_SH" --node "生成" --actor "generate-skill" --tool "$1" --status started --note "$2" >&2 2>/dev/null || true
+}
+
 inject_frameworks() {
   local skill_dir="$1"
+  trace_tool "inject-frameworks" "$skill_dir"
   local paradigm_dir; paradigm_dir="$(cd "$(dirname "$0")/.." && pwd)"
   local sh="$skill_dir/scripts/precheck.sh"
   local conf="$skill_dir/scripts/precheck.conf"
@@ -316,6 +326,7 @@ fi
 # ============================================================
 verify_completeness() {
   local skill_dir="$1"
+  trace_tool "verify-completeness" "$skill_dir"
   [[ -d "$skill_dir" ]] || { echo "✗ 目录不存在: $skill_dir" >&2; return 1; }
   # 收集检查目标（存在才查；空数组在 bash 3.2 + set -u 下须用 ${arr[@]+...} 防空崩）
   local targets=() f
@@ -512,6 +523,7 @@ copy_universal_templates() {
 if [[ "$MODE" == "upgrade" ]]; then
   [[ ! -d "$SKILL_DIR" ]] && { echo "ERROR: 目标技能不存在: $SKILL_DIR"; exit 1; }
   echo "=== 升级: $SKILL_DIR ==="
+  trace_tool "upgrade" "$SKILL_DIR"
   echo "  时间戳: $SWARM_YUAN_STAMP"
   backup_dir="$SKILL_DIR/.upgrade-backup-${SWARM_YUAN_STAMP}"
   mkdir -p "$backup_dir/assets" "$backup_dir/scripts" "$backup_dir/references"
@@ -610,6 +622,7 @@ fi
 [[ -d "$SKILL_DIR" ]] && { echo "ERROR: 已存在: ${SKILL_DIR}（用 --upgrade 升级）"; exit 1; }
 
 echo "=== 创建: $SKILL_DIR ==="
+trace_tool "create" "$SKILL_DIR"
 mkdir -p "$SKILL_DIR"/{references,assets,scripts,hooks,commands}
 copy_universal_templates "$SKILL_DIR"
 
