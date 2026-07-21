@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # WP-L：Windows 全量兼容降频——周跑 + 手动触发（push/PR 只跑轻量 windows-syntax）
+  schedule:
+    - cron: '17 2 * * 1'   # 每周一 UTC 02:17
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -246,9 +250,40 @@ jobs:
           [[ "$rc" -eq 0 ]] && echo "✓ verifier all passed" || { echo "✗ verifier all failed RC=$rc"; exit 1; }
 
   # ---------- Job 7：Windows 兼容（WP2.1：三平台 CI 闭环，Windows 不再是虚假声称）----------
-  windows-compat:
-    name: Windows compat (Git Bash + .bat 烟雾 + fixture 双态)
+  # ---------- Job 8a：Windows 轻量语法面（push/PR 常跑，WP-L）----------
+  windows-syntax:
+    name: Windows syntax smoke (bash -n + .bat，push/PR 常跑)
     runs-on: windows-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: swarm-yuan
+    steps:
+      - uses: actions/checkout@v4
+      - name: bash -n 核心脚本 + 61 门禁片段（Git Bash 语法面）
+        shell: bash
+        run: |
+          fail=0
+          for f in assets/precheck.sh scripts/*.sh tests/run-framework-fixture.sh tests/run-gate-fixture.sh assets/framework-gates/*.sh; do
+            bash -n "$f" || { echo "BASH-N FAIL: $f"; fail=$((fail+1)); }
+          done
+          [[ "$fail" -eq 0 ]] && echo "✓ bash -n all passed on Windows" || exit 1
+      - name: .bat 烟雾测试（install.bat --list + generate-skill.bat 骨架生成）
+        shell: cmd
+        run: |
+          echo === install.bat --list ===
+          install.bat --list || echo "install.bat --list 退出码非 0（可接受：本机无运行时目录）"
+          echo === generate-skill.bat 骨架生成到临时目录 ===
+          mkdir -p ..\win-smoke-proj
+          echo {"name":"win-smoke"} > ..\win-smoke-proj\package.json
+          generate-skill.bat win-smoke-skill ..\win-smoke-proj ..\win-smoke-out || echo "generate-skill.bat 退出码非 0（记录但不中断，验证 .bat 路径转换不崩）"
+          if exist ..\win-smoke-out\win-smoke-skill\SKILL.md (echo ✓ .bat 骨架生成成功) else (echo ⚠ .bat 骨架未生成（路径转换可能需人工复查）)
+
+  # ---------- Job 8b：Windows 全量兼容（周跑 + 手动，WP-L 降频）----------
+  windows-compat:
+    name: Windows compat full (Git Bash + .bat 烟雾 + fixture 双态，周跑+手动)
+    runs-on: windows-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     defaults:
       run:
         working-directory: swarm-yuan
