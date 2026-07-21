@@ -32,6 +32,7 @@
 | 拼装式开发 | 新功能 = 既有稳定单元拼装 + 最小新增胶水代码。禁止重复造轮子/侵入式重构/破坏性改造 |
 | 呈现递进的关系 | 门禁不是"数 import 数"——每个计数背后指向一条关系规律 |
 | 特征卡是立法，门禁是执法 | 16 项特征卡定义「项目应该是什么样的」，36 个门禁验证「代码是否符合」 |
+| 分层整合，诚实降级 | 11 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深接 |
 
 ---
 
@@ -214,7 +215,15 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ## 11 个运行时 + 32 个领域
 
-**运行时**（只引用调用不重新实现）：OpenSpec / superpowers / comet / GitNexus / graphify / gsd-core / claude-mem / open-code-review / gstack / Ruflo / ECC
+**运行时**（只引用调用不重新实现，按接线深度分三层）：
+
+| 层 | 运行时 | 接线方式 |
+|----|--------|---------|
+| 深度接线（4） | GitNexus / graphify / claude-mem / ocr | precheck.sh 门禁内真实子进程调用 + 多级降级链 |
+| CLI 接线（3） | OpenSpec / comet / gsd-core | 门禁/状态机按需调用 CLI（`openspec validate`/`comet guard`/`gsd-tools validate health`）+ 降级到自带载体 |
+| 方法论引用（4） | superpowers / gstack / Ruflo / ECC | AI 按 workflow 节点引用其模式，swarm-yuan 自带等价降级载体 |
+
+每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深接。
 
 **领域知识**：数据库 ACID / 网络 CORS / 安全密码哈希 / IM 消息保序 / 电商库存原子扣减 / 金融金额 Decimal……32 个领域客观规律。
 
@@ -306,7 +315,7 @@ SKILLS_PATH_REWRITE='s|\.claude/skills|.agents/skills|g' \
 | 领域知识 | 32 个领域 |
 | 认知基底 | 5 层 |
 | 兼容 AI 工具 | 7 个 |
-| 三平台 | macOS / Linux / Windows |
+| 三平台 | macOS / Linux / Windows（CI 全覆盖：ubuntu-latest + macos-latest + windows-latest） |
 | 零占位符 | ✅ |
 | 自举 | ✅ |
 

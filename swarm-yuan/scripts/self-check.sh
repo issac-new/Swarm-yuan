@@ -365,6 +365,12 @@ echo ""
 if [[ ${#MISSING[@]} -eq 0 ]]; then
   echo "✓ 全部 11 个项目运行时已安装"
 fi
+# 运行时接线分层标注（WP1.4）：让用户清楚每个运行时的真实接线程度，不假装全深接
+echo "  接线分层："
+echo "    深度接线(4,precheck.sh 真实命令调用)：gitnexus / graphify / claude-mem / ocr"
+echo "    CLI 接线(3,门禁/状态机按需调用 CLI)：openspec / comet / gsd-core"
+echo "    方法论引用(4,AI 按节点引用模式)：superpowers / gstack / ruflo / ECC"
+echo "  （每层有自带降级载体，未装不阻塞——详见 SKILL.md「它整合的方法论」分层表）"
 
 # 即便全部已装，若启用 --latest 则升级到最新版
 if [[ $FORCE_LATEST -eq 1 && $CHECK_ONLY -eq 0 ]]; then
@@ -419,10 +425,13 @@ done
 
 if [[ $CHECK_ONLY -eq 1 ]]; then
   echo ""
-  echo "（--check-only 模式，不自动安装）"
-  exit 1
-fi
-
+  echo "（--check-only 模式，不自动安装；继续执行本地检查段：文档一致性 / 框架规则集核验 / 上游基线）"
+  # 历史缺陷修复（2026-07-21）：原此处直接 `exit 1`，导致后续纯本地的
+  # 文档一致性 / 框架规则集核验 / 上游基线检查段在 --check-only（CLAUDE.md/README
+  # 推荐的人工检测命令）下永不执行——号称的"自举文档一致性门禁"在自己推荐的
+  # 检测模式下是死的。改为跳过自动安装段，继续跑本地检查段，末尾统一 exit $FAIL。
+  # 运行时缺失的 FAIL=1 已在 miss() 置位，不会丢失。
+else
 echo ""
 echo "=== 自动安装最新版（可自动装的）==="
 for m in "${MISSING[@]}"; do
@@ -446,6 +455,7 @@ for m in "${MISSING[@]}"; do
   IFS='|' read -r name chk inst auto <<< "$m"
   "$chk"
 done
+fi  # end of `if CHECK_ONLY -eq 1`
 
 echo ""
 # ===== 框架规则库时效检查 =====
@@ -582,38 +592,47 @@ check_doc_consistency() {
   local true_arch=$((true_full - true_core - true_compliance))
   true_vars=$(grep -cE '^[A-Z_][A-Z0-9_]*=' "$base/assets/precheck.conf" 2>/dev/null | xargs)
   true_fw=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
-  local doc dfound bad
-  for doc in README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md; do
-    [[ -f "$base/$doc" ]] || continue
+  local doc dfound bad docpath
+  # 根 CLAUDE.md（仓库根，$base 的上一层）是 AI 进入仓库首读文件，必须纳入一致性扫描；
+  # 安装到 ~/.claude/skills/<skill>/ 后该文件不存在，[[ -f ]] 守卫自动跳过。
+  # 注意：$doc 可能是相对路径（拼 $base/）或绝对路径（$root_claude），用 case 区分。
+  local root_claude="$base/../CLAUDE.md"
+  for doc in README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md "$root_claude"; do
+    case "$doc" in
+      /*) docpath="$doc" ;;
+      *)  docpath="$base/$doc" ;;
+    esac
+    [[ -f "$docpath" ]] || continue
     dfound=""
+    local docname; docname="$(basename "$docpath")"
     # 门禁总数：仅匹配「N 个质量门禁」（带「质量」前缀，是总数的固定表述），不匹配
     # 「核心 10」「架构 17」「146 个门禁(变量驱动)」等子计数/指代，避免误伤。
-    bad=$(grep -oE "[0-9]+ ?个质量门禁" "$base/$doc" 2>/dev/null \
+    bad=$(grep -oE "[0-9]+ ?个质量门禁" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_gates" || true)
     [[ -n "$bad" ]] && dfound="${dfound} 门禁数出现非${true_gates}值($(echo $bad | tr '\n' ' '));"
     # 架构门禁数：「架构 17」「架构门禁额外 17 个」「（核心 10 + 架构 17）」等。
-    bad=$(grep -oE "架构门禁[^0-9]{0,8}[0-9]+ ?个|架构 [0-9]+" "$base/$doc" 2>/dev/null \
+    bad=$(grep -oE "架构门禁[^0-9]{0,8}[0-9]+ ?个|架构 [0-9]+" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_arch" || true)
     [[ -n "$bad" ]] && dfound="${dfound} 架构门禁数出现非${true_arch}值($(echo $bad | tr '\n' ' '));"
     # conf 变量数：「N 个变量」「N 个配置变量」「N 个门禁变量」
-    bad=$(grep -oE "[0-9]+ ?个(配置|门禁)?变量" "$base/$doc" 2>/dev/null \
+    bad=$(grep -oE "[0-9]+ ?个(配置|门禁)?变量" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_vars" || true)
     [[ -n "$bad" ]] && dfound="${dfound} conf变量数出现非${true_vars}值($(echo $bad | tr '\n' ' '));"
     # 合规门禁数：「合规 4」「合规门禁额外 4 个」等（真值为 0 即合规族未合入，跳过该口径）
     if [[ "$true_compliance" -gt 0 ]]; then
-      bad=$(grep -oE "合规门禁[^0-9]{0,8}[0-9]+ ?个|合规 [0-9]+" "$base/$doc" 2>/dev/null \
+      bad=$(grep -oE "合规门禁[^0-9]{0,8}[0-9]+ ?个|合规 [0-9]+" "$docpath" 2>/dev/null \
             | grep -oE "[0-9]+" | sort -u | grep -vx "$true_compliance" || true)
       [[ -n "$bad" ]] && dfound="${dfound} 合规门禁数出现非${true_compliance}值($(echo $bad | tr '\n' ' '));"
     fi
     # references 参考文档数：「N 个参考文档」（真值=references/*.md 实际计数，不含 frameworks/ 子目录）
-    bad=$(grep -oE "[0-9]+ ?个参考文档" "$base/$doc" 2>/dev/null \
+    bad=$(grep -oE "[0-9]+ ?个参考文档" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$ref_cnt" || true)
     [[ -n "$bad" ]] && dfound="${dfound} references数出现非${ref_cnt}值($(echo $bad | tr '\n' ' '));"
     if [[ -n "$dfound" ]]; then
-      warn "$doc 头部数字与代码真值不符（真值: 门禁${true_gates}/架构${true_arch}/合规${true_compliance}/conf${true_vars}/refs${ref_cnt}）：${dfound}"
+      warn "$docname 头部数字与代码真值不符（真值: 门禁${true_gates}/架构${true_arch}/合规${true_compliance}/conf${true_vars}/refs${ref_cnt}）：${dfound}"
       FAIL=1
     else
-      echo "  ✓ $doc 头部数字一致（门禁${true_gates}/架构${true_arch}/合规${true_compliance}/conf${true_vars}/refs${ref_cnt}）"
+      echo "  ✓ $docname 头部数字一致（门禁${true_gates}/架构${true_arch}/合规${true_compliance}/conf${true_vars}/refs${ref_cnt}）"
     fi
   done
   # 6. 框架信号索引时效：regen 后比对是否漂移（提示运行 gen-framework-index.sh）

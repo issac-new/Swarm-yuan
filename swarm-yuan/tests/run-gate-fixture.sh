@@ -31,7 +31,7 @@ flag_for() { # $1=gate；stdout=flag
 }
 
 if [[ -n "$GATE" ]]; then
-  FLAG="$(flag_for "$GATE")" || { echo "✗ 未知门禁组：$GATE（注册表无同名 flag 且非 summary）" >&2; exit 2; }
+  FLAG="$(flag_for "$GATE")" || { echo "✗ 未知门禁组：${GATE}（注册表无同名 flag 且非 summary）" >&2; exit 2; }
 else
   FLAG=""
 fi
@@ -77,15 +77,15 @@ run_one() {
   rm -rf "$fx/.sbom-out"
   local ok=0
   if [[ "$expect" == "fail" ]]; then
-    [[ $rc -ne 0 ]] || { echo "  ✗ $name：期望退出非 0，实际 $rc"; ok=1; }
+    [[ $rc -ne 0 ]] || { echo "  ✗ ${name}：期望退出非 0，实际 ${rc}"; ok=1; }
   else
-    [[ $rc -eq 0 ]] || { echo "  ✗ $name：期望退出 0，实际 $rc"; ok=1; }
+    [[ $rc -eq 0 ]] || { echo "  ✗ ${name}：期望退出 0，实际 ${rc}"; ok=1; }
   fi
   assert_lines "$fx/expected-ids" must "$out" || ok=1
   assert_lines "$fx/forbidden-ids" miss "$out" || ok=1
   assert_lines "$fx/expect-output" must "$out" || ok=1
   if [[ $ok -eq 0 ]]; then
-    echo "  ✓ $name → 退出 $rc（符合预期：$expect）"
+    echo "  ✓ $name → 退出 ${rc}（符合预期：${expect}）"
     return 0
   fi
   return 1
@@ -94,7 +94,7 @@ run_one() {
 # 单组运行：$1=组名；FLAG 为 run_one 读取的全局；逐组独立计数（set -u 安全：先初始化）
 run_group() {
   local g="$1" fx FAIL_N=0 TOTAL=0
-  FLAG="$(flag_for "$g")" || { echo "✗ 未知门禁组：$g（注册表无同名 flag 且非 summary）" >&2; return 2; }
+  FLAG="$(flag_for "$g")" || { echo "✗ 未知门禁组：${g}（注册表无同名 flag 且非 summary）" >&2; return 2; }
   for fx in "$BASE/tests/gate-fixtures/$g"/violating*/ "$BASE/tests/gate-fixtures/$g"/compliant*/; do
     [[ -d "$fx" ]] || continue
     fx="${fx%/}"
@@ -104,7 +104,7 @@ run_group() {
       compliant*)  run_one "$fx" pass || FAIL_N=$((FAIL_N+1));;
     esac
   done
-  echo "gate-fixture [$g]：共 $TOTAL，PASS $((TOTAL-FAIL_N))，FAIL $FAIL_N"
+  echo "gate-fixture [$g]：共 ${TOTAL}，PASS $((TOTAL-FAIL_N))，FAIL ${FAIL_N}"
   [[ $FAIL_N -eq 0 ]]
 }
 

@@ -310,6 +310,7 @@ unset _conf_var
 # ${1:-} 对未设/空串同取默认值，故空串参数同样回落 --all）。
 FORMAT="text"
 MODE=""
+FRAMEWORK_ID=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --format)
@@ -318,6 +319,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     --format=*)
       FORMAT="${1#--format=}"; shift
+      ;;
+    --framework)
+      # --framework <id>：MODE=--framework，FRAMEWORK_ID=<id>（缺 id 则全量串联，兼容原行为）
+      MODE="--framework"
+      if [[ $# -ge 2 && "$2" != --* ]]; then FRAMEWORK_ID="$2"; shift 2; else shift; fi
       ;;
     *)
       [[ -z "$MODE" ]] && MODE="$1"
@@ -659,6 +665,10 @@ has_gitnexus() { command -v gitnexus >/dev/null 2>&1; }
 has_graphify() { command -v graphify >/dev/null 2>&1; }
 has_ocr() { command -v ocr >/dev/null 2>&1; }
 has_claude_mem() { command -v claude-mem >/dev/null 2>&1 || [[ -d "$HOME/.claude-mem" ]]; }
+# CLI 接线层运行时守卫（WP1：OpenSpec/comet/gsd-core 半接线→真接线）
+has_openspec() { command -v openspec >/dev/null 2>&1; }
+has_comet() { command -v comet >/dev/null 2>&1; }
+has_gsd_tools() { command -v gsd-tools >/dev/null 2>&1; }
 has_madge() { command -v madge >/dev/null 2>&1; }
 
 # gitnexus 已索引当前仓库？（检查 .gitnexus/ 或 gitnexus status）
@@ -912,6 +922,25 @@ check_review() {
   # 附加：如果装了 gstack，提示可用的扩展审查维度
   if [[ -d "$HOME/.claude/skills/gstack" ]]; then
     echo "  gstack 扩展审查可用：/cso（安全 OWASP+STRIDE）/ /investigate（根因调试）/ /codex（跨模型第二意见）/ /benchmark（性能）"
+  fi
+
+  # 附加：gsd-tools CLI 接线（WP1.3）：若装了 gsd-tools 且项目用了 gsd-core（有 .planning/ 或 .gsd/），
+  # 跑 `gsd-tools validate health` 检查项目一致性健康度。status!=healthy → warn（项目配置问题，非代码缺陷，不 fail）。
+  # 未装/项目未用 gsd-core 时降级（本函数上方 ocr/手动清单已覆盖代码审查）。
+  if has_gsd_tools; then
+    local gsd_root="${GSD_PROJECT_DIR:-$PROJECT_DIR}"
+    if [[ -n "$gsd_root" && ( -d "$gsd_root/.planning" || -d "$gsd_root/.gsd" ) ]]; then
+      local gsd_health; gsd_health=$(gsd-tools validate health --cwd "$gsd_root" 2>/dev/null || true)
+      if [[ -n "$gsd_health" ]]; then
+        local gsd_status; gsd_status=$(echo "$gsd_health" | grep -oE '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"status"[[:space:]]*:[[:space:]]*"//;s/"$//')
+        if [[ "$gsd_status" == "healthy" ]]; then
+          pass "gsd-tools validate health: 项目一致性健康度通过"
+        else
+          warn "gsd-tools validate health: status=${gsd_status:-unknown}（项目 gsd-core 配置不一致，建议修复）"
+          echo "$gsd_health" | grep -oE '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | head -5 | sed 's/^/    /'
+        fi
+      fi
+    fi
   fi
 
   [[ $found -eq 0 ]] && pass "代码审查检查完成"
@@ -1366,7 +1395,7 @@ check_reuse() {
         [[ -z "$nf" ]] && continue
         case "$nf" in
           *.ts|*.js|*.vue|*.py)
-            local exports; exports=$(grep -cE '^\s*(export\s+)?(function|const|class|def)\s+[A-Za-z_]' "$nf" 2>/dev/null || echo 0)
+            local exports; exports=$(grep -cE '^\s*(export\s+)?(function|const|class|def)\s+[A-Za-z_]' "$nf" 2>/dev/null | head -1); exports=${exports:-0}
             new_count=$((new_count + exports))
             ;;
         esac
@@ -1543,7 +1572,7 @@ _sec_scan() {
       includes="$includes --include=*.xml"
     fi
     grep -rnE "$pattern" "$d" $includes 2>/dev/null \
-      | grep -viE 'test|mock|node_modules|\.patch|__fixtures__|__mocks__|\.spec\.|\.d\.ts' || true
+      | grep -viE 'test|mock|node_modules|\.patch|__fixtures__|__mocks__|\.spec\.|\.d\.ts|/dist/|/\.tmp/|/out/|/build/|/\.next/|/coverage/' || true
   done
 }
 
@@ -1638,8 +1667,16 @@ check_security() {
         echo "$line" | grep -qF "$wl" && in_whitelist=1 && break
       done
     fi
+    # ★TS/JS 生态安全形态豁免（机械可判，better-sqlite3/fetch 标准写法）：
+    #   列名常量插值 ${COLS}（值仍经 ? 参数化）/ URL 模板经 encodeURIComponent / IN 占位符 ${placeholders}
+    if echo "$line" | grep -qE '\$\{[A-Z_][A-Z_0-9]*\}|\$\{placeholders\}|encodeURIComponent'; then
+      continue
+    fi
     if [[ $in_whitelist -eq 1 ]]; then
       warn "MyBatis \${} 白名单命中（须人工确认安全）：$line"
+    # ★语义豁免（变量经 sanitize 函数，ERE 不可判）：降级 warn 人工复核，不 fail
+    elif echo "$line" | grep -qE '\$\{(safe|sanitized|escaped)[A-Za-z]*\}'; then
+      warn "SQL 插值变量疑似已经 sanitize（须人工确认校验覆盖）：$line"
     else
       fail "疑似 SQL 注入（字符串拼接 SQL）：$line"; found=1
     fi
@@ -3340,12 +3377,31 @@ check_authz() {
 # SPEC_FILE 存在才执行；STRICT/ID_REQUIRED 开关默认 0（不执法），EARS 覆盖率为 warn-only。
 check_requirements() {
   echo "=== 需求质量检查（ISO/IEC/IEEE 29148：无 TBD / 唯一 ID / EARS）==="
+  local found=0 hits l
+  # —— 0. OpenSpec CLI 接线（WP1.1）：若装了 openspec 且配置了 OPENSPEC_SPEC_DIR，
+  #     跑 `openspec validate --all --strict` 校验 delta spec 合法性；未装/未配置则降级（下方文档检查已覆盖）。
+  #     语义：openspec validate 退出码不稳定（部分版本 failed 时仍 rc=0），故靠输出判断——
+  #     输出含 "failed" 且 "passed" 项为 0 → spec 非法 → fail。独立于 SPEC_FILE，openspec 有自己的 spec 目录。
+  local ospec_dir="${OPENSPEC_SPEC_DIR:-}"
+  if has_openspec && [[ -n "$ospec_dir" && -d "$ospec_dir" ]]; then
+    local ospec_out; ospec_out=$(openspec validate --all --strict --no-interactive "$ospec_dir" 2>&1 || true)
+    if echo "$ospec_out" | grep -qE '[1-9][0-9]* failed' && ! echo "$ospec_out" | grep -qE '[1-9][0-9]* passed'; then
+      fail "gate_requirements_openspec_invalid: openspec validate 失败（delta spec 非法，详见输出）"
+      echo "$ospec_out" | tail -10 | sed 's/^/    /'
+      found=1
+    else
+      pass "openspec validate 通过（delta spec 合法）"
+    fi
+  fi
   local spec="${SPEC_FILE:-}"
   if [[ -z "$spec" || ! -f "$spec" ]]; then
-    skip_if_unconfigured "SPEC_FILE 未配置或不存在，需求 lint 跳过"
-    return
+    if [[ $found -eq 0 ]]; then
+      skip_if_unconfigured "SPEC_FILE 未配置或不存在，需求 lint 跳过（openspec 守卫已在上方执行）"
+      return
+    fi
+    # openspec 已 fail，仍返回非 0
+    return 1
   fi
-  local found=0 hits l
   # —— 1. TBD 零容忍（REQUIREMENTS_STRICT=1）：spec 含 TBD/待定/待明确 → fail（id 带行号）
   if [[ "${REQUIREMENTS_STRICT:-0}" == "1" ]]; then
     hits=$(grep -nE 'TBD|待定|待明确' "$spec" 2>/dev/null || true)
@@ -3379,6 +3435,7 @@ check_requirements() {
       warn "EARS 句式覆盖率约 ${pct}%（${ears}/${total}，<50%）——建议按 EARS（Ubiquitous/Event/State/Optional/Complex）改写需求句"
     fi
   fi
+
   if [[ $found -eq 0 ]]; then
     pass "需求质量检查通过（执法项未命中；EARS 覆盖率为 warn-only 提示）"
   fi
@@ -3578,8 +3635,23 @@ check_framework() {
     [[ -n "$hit" ]] && warn "发现 $hit 但 ACTIVE_FRAMEWORKS 未配置——疑似漏配 mybatis"
     skip_if_unconfigured "ACTIVE_FRAMEWORKS 未配置"; return
   fi
-  local fw fn
-  for fw in "${ACTIVE_FRAMEWORKS[@]}"; do
+  local fw fn _run_list=()
+  # --framework <id>：仅跑指定框架（单框架隔离）；未指定 id 则全量串联（兼容原行为）
+  if [[ -n "${FRAMEWORK_ID:-}" ]]; then
+    local _found=0 _cand
+    for _cand in ${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"}; do
+      [[ "$_cand" == "$FRAMEWORK_ID" ]] && _found=1 && break
+    done
+    if [[ $_found -eq 0 ]]; then
+      fail "框架 '$FRAMEWORK_ID' 不在 ACTIVE_FRAMEWORKS（${ACTIVE_FRAMEWORKS[*]}）——无法单跑"
+      return
+    fi
+    _run_list=("$FRAMEWORK_ID")
+    echo "  （单框架模式：仅 $FRAMEWORK_ID）"
+  else
+    _run_list=(${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"})
+  fi
+  for fw in ${_run_list[@]+"${_run_list[@]}"}; do
     fn="_fw_$(echo "$fw" | tr '-' '_')_check"
     if declare -f "$fn" >/dev/null 2>&1; then
       # || true 兜底：单个框架函数内若有命令返回非 0（如 grep 无匹配），

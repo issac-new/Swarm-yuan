@@ -24,19 +24,22 @@ elif [ -f /mnt/agents/tools/shellcheck ]; then
 fi
 
 fixtures() {
-  local ids id rc_v rc_c outcome fails=0 total=0
+  local ids id rc_v rc_c id_fail outcome fails=0 total=0
   ids=$(ls "$SY/tests/fixtures" 2>/dev/null)
   for id in $ids; do
     [ -d "$SY/tests/fixtures/$id/violating" ] || continue
     [ -f "$SY/assets/framework-gates/$id.sh" ] || continue
     total=$((total+1))
     outcome=$(bash "$(dirname "$0")/run-one-fixture.sh" "$SY" "$id")
-    rc_v="${outcome% *}"; rc_c="${outcome#* }"
-    # violating 期望非 0，compliant 期望 0
-    if [ "$rc_v" != "0" ] && [ "$rc_c" = "0" ]; then
-      echo "FIXTURE $id OK (v=$rc_v c=$rc_c)"
+    # outcome = "<rc_v> <rc_c> <id_failures>"（三段，空格分隔）
+    rc_v=$(echo "$outcome" | awk '{print $1}')
+    rc_c=$(echo "$outcome" | awk '{print $2}')
+    id_fail=$(echo "$outcome" | awk '{print $3}')
+    # id 级双态断言（P2 #5）：violating 期望非 0，compliant 期望 0，且 expected-fail-ids 全命中（id_fail=0）
+    if [ "$rc_v" != "0" ] && [ "$rc_c" = "0" ] && [ "$id_fail" = "0" ]; then
+      echo "FIXTURE $id OK (v=$rc_v c=$rc_c ids=0)"
     else
-      echo "FIXTURE $id BAD (v=$rc_v c=$rc_c)"; fails=$((fails+1))
+      echo "FIXTURE $id BAD (v=$rc_v c=$rc_c ids=$id_fail)"; fails=$((fails+1))
     fi
   done
   echo "FIXTURES_TOTAL $total FAILS $fails"
@@ -47,10 +50,11 @@ e2e() {
   echo "E2E_RC $?"
 }
 
-# 合规门禁 fixture（C8）：遍历 6 组 gate fixture，双态 + id 级断言
+# 合规门禁 fixture（C8）：遍历全部 gate fixture 组（WP3.3：从硬编码 6 组改为全量遍历），双态 + id 级断言
 gate_fixtures() {
   local g fails=0 total=0
-  for g in compliance docs-pack sbom privacy sensitive summary; do
+  for g in $(ls "$SY/tests/gate-fixtures" 2>/dev/null); do
+    [ -d "$SY/tests/gate-fixtures/$g" ] || continue
     total=$((total+1))
     if bash "$SY/tests/run-gate-fixture.sh" "$g" >/tmp/verifier-gatefx-$g.log 2>&1; then
       echo "GATE_FIXTURE $g OK"
@@ -84,8 +88,17 @@ shellcheck_scan() {
 
 metrics() {
   echo "LOC_PRECHECK $(wc -l < "$SY/assets/precheck.sh")"
-  echo "LOC_PRECHECK_STUDIO $(wc -l < "$ROOT/Swarm-studio/scripts/precheck.sh")"
-  echo "DUP_DIFF_LINES $(diff "$SY/assets/precheck.sh" "$ROOT/Swarm-studio/scripts/precheck.sh" | grep -c '^[<>]')"
+  # Swarm-studio 是兄弟仓库（不在本仓库内）；存在时报告双副本漂移度量，不存在时显式标记
+  # ABSENT 而非让 wc -l/diff 对缺失文件报错被静默吞掉（历史缺陷：cp 失败被静默吞掉的同类）。
+  # 该度量属信息性，metrics-assert.sh 不对其断言（C3 双副本一致性已由 ② 注入双副本 diff 覆盖）。
+  local studio="$ROOT/Swarm-studio/scripts/precheck.sh"
+  if [ -f "$studio" ]; then
+    echo "LOC_PRECHECK_STUDIO $(wc -l < "$studio")"
+    echo "DUP_DIFF_LINES $(diff "$SY/assets/precheck.sh" "$studio" | grep -c '^[<>]')"
+  else
+    echo "LOC_PRECHECK_STUDIO ABSENT（Swarm-studio 兄弟仓库不在本机）"
+    echo "DUP_DIFF_LINES ABSENT（同上）"
+  fi
   echo "GATES_COUNT $(ls "$SY"/assets/framework-gates/*.sh | wc -l)"
   echo "GATES_TOTAL_LOC $(cat "$SY"/assets/framework-gates/*.sh | wc -l)"
   echo "DS_STORE $(find "$ROOT" -name .DS_Store -not -path "*/.git/*" | wc -l)"

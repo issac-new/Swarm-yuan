@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **16-item feature card** （特征卡， the "legislation") and enforces them with **27 quality gates** （质量门禁， the "enforcement"). It integrates 11 external runtimes (OpenSpec, superpowers, comet, GitNexus, graphify, gsd-core, claude-mem, ocr, gstack, Ruflo, ECC) by **invoking them, never reimplementing**.
+`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **16-item feature card** （特征卡， the "legislation") and enforces them with **36 quality gates** （36 个质量门禁， the "enforcement": core 10 + architecture 17 + compliance 9). It integrates 11 external runtimes (OpenSpec, superpowers, comet, GitNexus, graphify, gsd-core, claude-mem, ocr, gstack, Ruflo, ECC) by **invoking them, never reimplementing** —按接线深度分三层:深度接线(GitNexus/graphify/claude-mem/ocr,precheck.sh 真实命令调用)、CLI 接线(OpenSpec/comet/gsd-core,门禁按需调用 CLI)、方法论引用(superpowers/gstack/Ruflo/ECC,AI 引用模式);每层有自带降级载体,未装不阻塞。
 
 There is no compiled artifact and no conventional build — the product is a set of bash scripts, markdown templates/references, and shell gate fragments that get copied into a target skill directory.
 
@@ -15,8 +15,8 @@ There is no compiled artifact and no conventional build — the product is a set
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
   - `SKILL.md` — the AI entry point / operating manual (the generation pipeline Step 0–10).
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
-  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~2600 lines, all 27 gates), `precheck.conf` (146 config vars), `spec-template.md` (22-section spec), `framework-gates/<fw>.sh` (57 per-framework gate fragments).
-  - `references/` — 13 methodology docs + `references/frameworks/<fw>.md` (57 framework rule sources).
+  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~3750 lines, all 36 gates), `precheck.conf` (179 config vars), `spec-template.md` (22-section spec), `framework-gates/<fw>.sh` (61 per-framework gate fragments).
+  - `references/` — 18 methodology docs + `references/frameworks/<fw>.md` (61 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).
 - **`verifier/`** — a self-contained acceptance harness that re-runs the whole suite and compares against a golden vector.
@@ -64,9 +64,9 @@ bash swarm-yuan/scripts/verify-framework-ruleset.sh <id> && \
 bash swarm-yuan/tests/run-framework-fixture.sh <id>
 ```
 
-## The 57-framework system (most edits touch this)
+## The 61-framework system (most edits touch this)
 
-Each of 57 supported frameworks (vue, koa, mybatis, django, gin, kafka, …) has **three coupled artifacts** that must stay consistent:
+Each of 61 supported frameworks (vue, koa, mybatis, django, gin, kafka, …) has **three coupled artifacts** that must stay consistent:
 
 1. `swarm-yuan/references/frameworks/<fw>.md` — the rules/规律 (frontmatter declares a `深度门槛:` = min number of rules).
 2. `swarm-yuan/assets/framework-gates/<fw>.sh` — the executable gate fragment defining a `_fw_<id>_check` function.
@@ -89,5 +89,5 @@ Many gates "sleep" (match nothing) on purpose; `docs/paradigm-decisions.md` docu
 - **No unit-test framework.** Correctness = fixture double-state tests + e2e + shellcheck + the `verifier/` golden-vector comparison.
 - **Single test** = `run-framework-fixture.sh <id>` (one framework) or `run-verifier.sh fixtures` (all).
 - **Fixture `precheck.conf` uses a `__REPO_ROOT__` placeholder** that the runner substitutes at runtime, so fixtures are machine-independent.
-- `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 57-fixture exit-code vector.
-- CI (`.github/workflows/ci.yml`) runs all four jobs on push/PR to `main`: 57 ruleset verifies, 57 fixture double-states, self-check freshness, and shellcheck on core scripts.
+- `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 61-fixture exit-code vector.
+- CI (`.github/workflows/ci.yml`) runs all four jobs on push/PR to `main`: 61 ruleset verifies, 61 fixture double-states, self-check freshness, and shellcheck on core scripts.

@@ -1,5 +1,7 @@
 # Plan — swarm-yuan 研发范式 skill 深度调研 + 标准合规增强重构
 
+> **状态：已完成归档（2026-07-20）。** 本文档是 Stage 1 研究阶段的调度计划，配套产出见 `docs/research/R1-R8*.md`（8 份研究文档）与 `docs/plans/2026-07-20-standards-gap-and-refactor-plan.md`（Stage 2 重构计划）。文内数字（27 门禁/146 变量/58 框架/14 references）为 2026-07-20 当时的快照，**不作当前真值**——当前真值以 `swarm-yuan/scripts/self-check.sh` 的 `check_doc_consistency` 机械解析为准（36 门禁/179 变量/61 框架/18 references）。
+
 > 日期：2026-07-20 ｜ 触发：深入调研分析当前项目 + 第三方运行时组件 → 补充完善 + 重构优化 → 交付物满足行业及国家质量/安全标准
 > 执行模式：四阶段 Stage-Gate，研究/设计/实现/验证分离，子代理并行。
 
