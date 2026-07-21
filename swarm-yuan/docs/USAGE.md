@@ -233,6 +233,18 @@ bash install.sh
 
 ---
 
+### 三档骨架（--profile）
+
+按项目规模与合规要求选择生成档位（默认 standard；upgrade 自动继承既有档，`--profile` 显式指定可改档）：
+
+| 档 | 适用 | 骨架内容 |
+|----|------|---------|
+| `lite` | 小项目 / 试水 / 增量采用 | 特征卡 + reference-manual + 核心门禁脚本（precheck/state-machine/trace-log/self-check/cost-report）+ spec/plan 模板；无 hooks/commands/settings/.mcp.json |
+| `standard` | 一般项目（默认） | 全量骨架（hooks + commands + 方法论 references 全集） |
+| `compliance` | 金融/医疗等强监管交付 | standard + 标准合规矩阵参考（`references/standards-compliance.md`，配套 `--compliance-suite` 合规 9 门禁） |
+
+零占位符铁律按档适用：只要求当前档包含的文件零占位符。
+
 ## 6. 日常使用
 
 ### 开始新需求

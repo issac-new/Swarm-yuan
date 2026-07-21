@@ -39,34 +39,37 @@ MERGED_FRAMEWORK_MAP=(
 #   assets = $ASSETS_DIR  ref = $SRC_REF  gen = $SRC_SCRIPTS（scripts/ 自身）
 # 注：scripts/precheck.conf 仅 create 覆盖；upgrade 保留用户配置（merge_precheck_conf 增量补）
 # ============================================================
+# 通用文件清单：<目标路径>|<源类别>[|<最低 profile 档>]
+# 档序 lite(1)<standard(2)<compliance(3)：骨架只拷「最低档 ≤ 当前档」的文件；
+# 无第三段 = standard（向后兼容既有清单语义）。
 UNIVERSAL_FILES=(
-  "assets/spec-template.md|assets"
-  "assets/plan-template.md|assets"
+  "assets/spec-template.md|assets|lite"
+  "assets/plan-template.md|assets|lite"
   "assets/branch-setup.sh|assets"
   "assets/env-setup.sh|assets"
   "assets/data-sample-template.md|assets"
-  "assets/state-machine.sh|assets"
-  "assets/trace-log.sh|assets"
-  "scripts/precheck.sh|assets"
-  "scripts/precheck.conf|assets"
+  "assets/state-machine.sh|assets|lite"
+  "assets/trace-log.sh|assets|lite"
+  "scripts/precheck.sh|assets|lite"
+  "scripts/precheck.conf|assets|lite"
   "scripts/snippets.md|assets"
   "scripts/mcp-tools.md|assets"
-  "scripts/state-machine.sh|assets"
-  "scripts/trace-log.sh|assets"
-  "scripts/self-check.sh|gen"
-  "scripts/cost-report.sh|gen"
+  "scripts/state-machine.sh|assets|lite"
+  "scripts/trace-log.sh|assets|lite"
+  "scripts/self-check.sh|gen|lite"
+  "scripts/cost-report.sh|gen|lite"
   "references/subagent-orchestration.md|ref"
   "references/review-methodology.md|ref"
   "references/code-graph-tools.md|ref"
   "references/gsd-patterns.md|ref"
   "references/memory-persistence.md|ref"
-  "references/security-spec.md|ref"
+  "references/security-spec.md|ref|lite"
   "references/cognition-framework.md|ref"
   "references/logic-razor.md|ref"
   "references/cognitive-bias.md|ref"
   "references/domain-knowledge.md|ref"
   "references/claude-code-capabilities.md|ref"
-  "references/standards-compliance.md|ref"
+  "references/standards-compliance.md|ref|compliance"
 )
 
 # 项目特定文件（upgrade 保留不覆盖、不备份）
@@ -454,8 +457,25 @@ detect_runtime_name() {
 MODE="create"
 if [[ "${1:-}" == "--upgrade" ]]; then MODE="upgrade"; shift; fi
 
-SKILL_NAME="${1:?Usage: generate-skill.sh [--upgrade] <skill-name> <project-dir> [target-dir]}"
-PROJECT_DIR="${2:?Usage: generate-skill.sh [--upgrade] <skill-name> <project-dir> [target-dir]}"
+# ---- 解析 --profile（WP-E 三档骨架：lite/standard/compliance，默认 standard）----
+# 档序：lite(1) 只拷认知档最小集；standard(2) 当前默认全集（不含合规档文件）；
+#       compliance(3) = standard + 合规档文件（references/standards-compliance.md 等）。
+PROFILE="standard"
+PROFILE_EXPLICIT=0
+while [[ "${1:-}" == --* ]]; do
+  case "$1" in
+    --profile) PROFILE="${2:?--profile 需要 lite|standard|compliance}"; PROFILE_EXPLICIT=1; shift 2 ;;
+    *) break ;;
+  esac
+done
+case "$PROFILE" in
+  lite|standard|compliance) ;;
+  *) echo "ERROR: --profile 仅支持 lite|standard|compliance（收到: ${PROFILE}）" >&2; exit 1 ;;
+esac
+_profile_rank() { case "$1" in lite) echo 1;; compliance) echo 3;; *) echo 2;; esac; }
+
+SKILL_NAME="${1:?Usage: generate-skill.sh [--upgrade] [--profile lite|standard|compliance] <skill-name> <project-dir> [target-dir]}"
+PROJECT_DIR="${2:?Usage: generate-skill.sh [--upgrade] [--profile lite|standard|compliance] <skill-name> <project-dir> [target-dir]}"
 if [[ -z "${3:-}" ]]; then
   TARGET_DIR=$(detect_skill_dir "$PROJECT_DIR")
   RUNTIME_NAME=$(detect_runtime_name "$PROJECT_DIR")
@@ -481,9 +501,12 @@ SWARM_YUAN_STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H
 copy_universal_templates() {
   local dir="$1"
   local mode="${2:-create}"   # create=覆盖 precheck.conf（新建骨架）；upgrade=不覆盖（保留用户配置，由 merge_precheck_conf 增量补）
-  local entry dest kind src
+  local entry dest kind minprof src
   for entry in "${UNIVERSAL_FILES[@]}"; do
-    dest="${entry%%|*}"; kind="${entry##*|}"
+    dest="${entry%%|*}"; kind="${entry#*|}"; minprof="${kind#*|}"; kind="${kind%%|*}"
+    [[ "$minprof" == "$kind" ]] && minprof="standard"   # 无第三段 = standard
+    # profile 过滤：文件最低档 > 当前档则跳过（WP-E）
+    [[ $(_profile_rank "$minprof") -gt $(_profile_rank "$PROFILE") ]] && continue
     # precheck.conf：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
     [[ "$mode" == "upgrade" && "$dest" == "scripts/precheck.conf" ]] && continue
     case "$kind" in
@@ -523,7 +546,15 @@ copy_universal_templates() {
 # ============================================================
 if [[ "$MODE" == "upgrade" ]]; then
   [[ ! -d "$SKILL_DIR" ]] && { echo "ERROR: 目标技能不存在: $SKILL_DIR"; exit 1; }
+  # WP-E：upgrade 继承既有 profile（frontmatter `profile: <档>`）；显式 --profile 优先
+  if [[ "$PROFILE_EXPLICIT" -eq 0 && -f "$SKILL_DIR/SKILL.md" ]]; then
+    _existing_profile=$(grep -m1 '^profile: ' "$SKILL_DIR/SKILL.md" 2>/dev/null | sed 's/^profile: *//' | tr -d '[:space:]')
+    case "${_existing_profile:-}" in
+      lite|standard|compliance) PROFILE="$_existing_profile" ;;
+    esac
+  fi
   echo "=== 升级: $SKILL_DIR ==="
+  echo "  profile: $PROFILE"
   trace_tool "upgrade" "$SKILL_DIR"
   echo "  时间戳: $SWARM_YUAN_STAMP"
   backup_dir="$SKILL_DIR/.upgrade-backup-${SWARM_YUAN_STAMP}"
@@ -623,8 +654,14 @@ fi
 [[ -d "$SKILL_DIR" ]] && { echo "ERROR: 已存在: ${SKILL_DIR}（用 --upgrade 升级）"; exit 1; }
 
 echo "=== 创建: $SKILL_DIR ==="
+echo "  profile: ${PROFILE}（lite=认知档最小集 / standard=标准档 / compliance=强监管档）"
 trace_tool "create" "$SKILL_DIR"
-mkdir -p "$SKILL_DIR"/{references,assets,scripts,hooks,commands}
+# WP-E：lite 档只建三目录（无 hooks/commands/settings/.mcp.json）
+if [[ "$PROFILE" == "lite" ]]; then
+  mkdir -p "$SKILL_DIR"/{references,assets,scripts}
+else
+  mkdir -p "$SKILL_DIR"/{references,assets,scripts,hooks,commands}
+fi
 copy_universal_templates "$SKILL_DIR"
 
 fill_guide() {
@@ -637,13 +674,18 @@ fill_guide() {
     *) echo "见 template-spec.md" ;;
   esac
 }
-for f in workflow.md codebase.md dev-guide.md release.md reference-manual.md; do
+# WP-E：lite 档只生成 reference-manual.md 占位（特征卡+参考手册承载认知；其余段随升档补）
+_placeholder_refs="workflow.md codebase.md dev-guide.md release.md reference-manual.md"
+[[ "$PROFILE" == "lite" ]] && _placeholder_refs="reference-manual.md"
+for f in $_placeholder_refs; do
   cat > "$SKILL_DIR/references/$f" <<EOF
 # （待填充）$f
 > 填充指引：$(fill_guide "$f")
 EOF
 done
 
+# WP-E：lite 档跳过 hooks/settings/.mcp.json/commands（无 hooks 生命周期与 slash 命令负担）
+if [[ "$PROFILE" != "lite" ]]; then
 cat > "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
 {
   "hooks": {
@@ -709,22 +751,35 @@ description: 探查项目结构
 ---
 用 gitnexus/graphify/claude-mem 探查项目，更新特征卡。
 CEOF
+fi  # PROFILE != lite
 
 cat > "$SKILL_DIR/SKILL.md" <<EOF
 ---
 name: $SKILL_NAME
 description: （填充指引：触发条件 + 项目关键词）
+profile: $PROFILE
 ---
 # $SKILL_NAME — （填充指引：项目名 + 需求交付全流程技能）
-> 由 swarm-yuan 生成器创建（${SWARM_YUAN_STAMP}），需 AI agent 探查后填充。
+> 由 swarm-yuan 生成器创建（${SWARM_YUAN_STAMP}，profile=${PROFILE}），需 AI agent 探查后填充。
 > 填充规范见 swarm-yuan/references/template-spec.md
 ## 填充指引
 - [ ] meta: 核心理念+改造分类+流程总览+命令速查+门禁
+EOF
+# WP-E：checklist 按档裁剪（lite 无 workflow/commands/hooks 条目）
+if [[ "$PROFILE" != "lite" ]]; then
+cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] workflow: 八节点+每节点 10 要素（含★调用追踪）+4-Phase SOP+每节点读取项目知识
 - [ ] reference: codebase/dev-guide/release/reference-manual + 方法论+认知 reference
+EOF
+else
+cat >> "$SKILL_DIR/SKILL.md" <<EOF
+- [ ] reference: reference-manual（特征卡 P0 六项 + 全量构件库清单）
+EOF
+fi
+cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] assets: spec-template(§5.5-§18) + plan + branch + env + data + state-machine
-- [ ] check: precheck.sh 36 门禁
-- [ ] scripts: precheck + state-machine + trace-log + snippets + mcp-tools
+- [ ] check: precheck.sh 门禁（标准 27 随 --all-full；合规 9 随 --compliance-suite 按需）
+- [ ] scripts: precheck + state-machine + trace-log + cost-report
 EOF
 
 cat > "$SKILL_DIR/.swarm-yuan-version" <<EOF

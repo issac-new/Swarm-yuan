@@ -2,3 +2,4 @@
 {"ts":"2026-07-21T05:56:43Z","node":"生成","actor":"generate-skill","tool":"verify-completeness","status":"started","note":"/tmp/skilltest.xX1mcr/test-skill"}
 {"ts":"2026-07-21T06:28:35Z","node":"生成","actor":"generate-skill","tool":"create","status":"started","note":"/tmp/audit.0g3IBT/test-skill"}
 {"ts":"2026-07-21T06:28:36Z","node":"生成","actor":"generate-skill","tool":"verify-completeness","status":"started","note":"/tmp/audit.0g3IBT/test-skill"}
+{"ts":"2026-07-21T08:22:08Z","node":"生成","actor":"generate-skill","tool":"inject-frameworks","status":"started","note":"/tmp/fwe2e.eqp6DU"}
