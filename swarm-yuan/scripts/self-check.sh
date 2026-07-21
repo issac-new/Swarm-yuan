@@ -542,6 +542,10 @@ check_doc_consistency() {
   # WP-P1：source facts.conf（catchphrase 单一事实源）。
   # facts.conf 是文档口径的权威源；本函数先用代码真值对账 facts.conf 自身是否漂移，
   # 再用 ${FACT_*} 值扫描散文文档（文档口径 → facts.conf → 代码真值，单向传递）。
+  # 注意：目标 skill 是 swarm-yuan 生成的"子 skill"（如 .claude/skills/<proj>-dev/），
+  # 其 precheck.sh 拷贝自 swarm-yuan 但 ACTIVE_FRAMEWORKS/conf 文件已被项目定制，
+  # GATES_TOTAL/CONF_VARS 等口径与 swarm-yuan 声明的 facts.conf 不同——此时跳过对账。
+  # 仅当本 skill 自身的真值与 facts.conf 声明同量级时才对账（即 swarm-yuan 自身或未定制的副本）。
   local facts_conf="$base/assets/facts.conf"
   if [[ -f "$facts_conf" ]]; then
     set +u; # shellcheck disable=SC1090
@@ -558,17 +562,20 @@ check_doc_consistency() {
     warn "框架规则文件数($rule_cnt) != 门禁片段数($gate_cnt)——孤立片段或缺片段"
     FAIL=1
   fi
+  # 1.5 precheck.sh 实际位置（scripts/ 或 assets/，按 UNIVERSAL_FILES 历史）
+  local precheck_sh="$base/scripts/precheck.sh"
+  [[ -f "$precheck_sh" ]] || precheck_sh="$base/assets/precheck.sh"
   # 2. SKILL.md 声明的门禁数 vs precheck.sh 实际 check_* 函数数（口径可能不同，仅 warn 提示）
   local skill_gates declared_gates actual_gates
   declared_gates=$(grep -oE "[0-9]+ ?个?质量门禁|[0-9]+ ?quality gates" "$base/SKILL.md" 2>/dev/null | head -1 | grep -oE "[0-9]+" || echo "?")
-  actual_gates=$(grep -cE "^check_[a-z_]+\(\)" "$base/assets/precheck.sh" 2>/dev/null | xargs)
+  actual_gates=$(grep -cE "^check_[a-z_]+\(\)" "$precheck_sh" 2>/dev/null | xargs)
   echo "  ℹ SKILL.md 声明 $declared_gates 门禁，precheck.sh 顶层 check_* 函数 $actual_gates 个（差额为子门禁/聚合门禁，人工确认）"
   # 3. SKILL.md 声明的 conf 变量数 vs precheck.conf 实际变量数
   #    修复(2026-07-20)：交替须用 ERE 标准 `|`——grep -E 下 `\|` 按字面管道解析、永不命中，
   #    导致 declared_vars 恒为空而误报文档漂移（docs/paradigm-decisions.md 记录的 `\|` 字面 bug 家族又一例）。
   local declared_vars actual_vars
   declared_vars=$(grep -oE "precheck\.conf[^。]*([0-9]+) ?变量|([0-9]+) ?变量" "$base/SKILL.md" 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "?")
-  actual_vars=$(cat "$base/assets/precheck.conf" "$base/assets/precheck.arch.conf" "$base/assets/precheck.compliance.conf" 2>/dev/null | grep -cE '^[A-Z_][A-Z0-9_]*=' | xargs)  # WP-I：三文件合计
+  actual_vars=$(cat "$base/scripts/precheck.conf" "$base/scripts/precheck.arch.conf" "$base/scripts/precheck.compliance.conf" "$base/assets/precheck.conf" "$base/assets/precheck.arch.conf" "$base/assets/precheck.compliance.conf" 2>/dev/null | grep -cE '^[A-Z_][A-Z0-9_]*=' | xargs)  # WP-I：三文件合计（scripts/ + assets/ 双路径兜底）
   if [[ "$declared_vars" != "?" && "$declared_vars" != "$actual_vars" ]]; then
     warn "SKILL.md 声明 precheck.conf $declared_vars 变量，实际 $actual_vars 个——文档漂移，请更新 SKILL.md"
     FAIL=1
@@ -588,21 +595,25 @@ check_doc_consistency() {
   #    conf 变量按「N 个(配置|门禁)?变量」匹配，避免把「146 个门禁」误判为变量数。
   local true_gates true_vars true_fw
   # 门禁函数含下划线（stable_diff/shift_left/...），须用 [a-z_]+ 计数，否则漏数（23≠27）
-  true_gates=$(grep -cE "^check_[a-z_]+\(\)" "$base/assets/precheck.sh" 2>/dev/null | xargs)
+  true_gates=$(grep -cE "^check_[a-z_]+\(\)" "$precheck_sh" 2>/dev/null | xargs)
   # 架构/合规门禁数真值：从 precheck.sh 注册表数组机械解析——架构=FULL−CORE−COMPLIANCE。
   # 合规族未合入时 ALL_GATES_COMPLIANCE 未定义，按 0 计（向后兼容旧版 precheck.sh）。
   local true_core true_compliance true_full
-  true_core=$(_count_gate_array ALL_GATES_CORE "$base/assets/precheck.sh")
-  true_compliance=$(_count_gate_array ALL_GATES_COMPLIANCE "$base/assets/precheck.sh")
-  true_full=$(_count_gate_array ALL_GATES_FULL "$base/assets/precheck.sh")
+  true_core=$(_count_gate_array ALL_GATES_CORE "$precheck_sh")
+  true_compliance=$(_count_gate_array ALL_GATES_COMPLIANCE "$precheck_sh")
+  true_full=$(_count_gate_array ALL_GATES_FULL "$precheck_sh")
   local true_arch=$((true_full - true_core - true_compliance))
-  true_vars=$(cat "$base/assets/precheck.conf" "$base/assets/precheck.arch.conf" "$base/assets/precheck.compliance.conf" 2>/dev/null | grep -cE '^[A-Z_][A-Z0-9_]*=' | xargs)  # WP-I：三文件合计
+  true_vars=$(cat "$base/scripts/precheck.conf" "$base/scripts/precheck.arch.conf" "$base/scripts/precheck.compliance.conf" "$base/assets/precheck.conf" "$base/assets/precheck.arch.conf" "$base/assets/precheck.compliance.conf" 2>/dev/null | grep -cE '^[A-Z_][A-Z0-9_]*=' | xargs)  # WP-I：三文件合计（scripts/ + assets/ 双路径兜底）
   true_fw=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
 
   # WP-P1：facts.conf 自身一致性对账（代码真值 vs 声明真值）。
   # 如果 facts.conf 自身漂移，文档扫描结果不可信——先 fail-soft 报告 facts.conf 漂移，
   # 然后仍用代码真值做文档扫描（不阻塞）。
-  if [[ -n "${FACT_GATES_TOTAL:-}" ]]; then
+  # 边界：目标 skill（swarm-yuan 生成的 .claude/skills/<proj>-dev/）拷贝了 facts.conf
+  # 但其 precheck.sh/conf 已按项目定制（ACTIVE_FRAMEWORKS/conf 文件被改），GATES_TOTAL
+  # 等口径与 facts.conf 声明不同——此时跳过对账（仅 swarm-yuan 自身对账）。
+  # 启发式：真值 ≥ 声明 × 0.5 且 ≠ 0 才对账（目标 skill 的真值常为 0 或远小于声明）。
+  if [[ -n "${FACT_GATES_TOTAL:-}" && "$true_gates" -ge $((FACT_GATES_TOTAL / 2)) && "$true_gates" -gt 0 ]]; then
     local facts_drift=""
     [[ "${FACT_GATES_TOTAL:-0}" != "$true_gates" ]] && facts_drift="${facts_drift} GATES_TOTAL(声明=${FACT_GATES_TOTAL}/真值=${true_gates});"
     [[ "${FACT_GATES_CORE:-0}" != "$true_core" ]] && facts_drift="${facts_drift} GATES_CORE(声明=${FACT_GATES_CORE}/真值=${true_core});"
