@@ -7,6 +7,8 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 
 元技能（生成器）：针对任意代码仓库，按六段式模板生成项目专属开发技能（下称"目标技能"）。跨项目复用，不依赖任何具体项目内容。
 
+> **口径权威源**：`assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
+
 **★核心能力（v2 增强）**：基于代码结构与调用链路分析，产出**详尽的组件库清单**（全量穷举，非代表性样本）与**编排调用关系及约束**（导入方向/注册顺序/路由挂载/状态所有权/测试边界，每条含代码证据），完善目标技能的研发 skill。方法论见 `references/exploration-guide.md` §C+。
 
 **★核心能力（v3 左移）**：测试、变更影响、运维监控不等到测试/发布阶段才考虑，在 spec/plan 阶段就嵌入约束（spec §19 测试设计 + §20 变更影响 + §21 可观测性约束），编码阶段先测试后实现，合入前确认回滚预案，发布前确认灰度+告警+runbook。门禁 `--shift-left` 校验各阶段左移产出物。详见 `references/template-spec.md` §左移要求。
@@ -19,6 +21,12 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 - 用户给了一个代码仓库，要求产出研发用 skill
 
 **安装**：`bash install.sh`（自动检测运行环境 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi，安装到对应 skill 目录。详见 `install.sh --list`）
+
+**不适用场景**（WP-P10 范式定位，详见 `docs/paradigm-positioning.md`）：
+- 个人脚本/一次性原型/学习用 demo——建议直接用 AI 裸写，不套范式
+- 极小改动（改 typo/调样式）——直接改，不走 spec 流程
+- 无 AI 辅助的纯人工开发——范式设计为 AI 驱动，纯人工无法消费
+- 替代方案：单文件 `precheck.sh` 做门禁不套生成器；或传统 lint/test 工具链
 
 **不适用**：用户只是要在某项目里做具体开发任务（那应该用该项目的目标技能）。
 
@@ -45,7 +53,7 @@ swarm-yuan 的 36 个门禁服务于一条认知递进链。核心理念：**呈
 
 **AI 主导 + 用户决策原则**：在目标 skill 的完整生命周期中，特征卡提取、门禁配置、spec 填充、代码实现、问题排查等所有环节均**优先以 AI 为主导生成建议项**——AI 探查项目后主动提出特征卡建议、主动推导门禁配置、主动填充 spec 模板、主动给出代码方案、主动诊断门禁 fail 原因并给出修复建议。用户的角色是**评估决策或修订后批准执行**，而非手动编写。具体：
 - 特征卡 16 项：AI 探查后**主动生成建议值**，用户评估修订后确认
-- 门禁 precheck.conf 179 变量：AI 从特征卡**主动推导建议配置**，用户评估后确认
+- 门禁 precheck.conf 141 变量：AI 从特征卡**主动推导建议配置**，用户评估后确认
 - spec 模板填充：AI **主动预填**（含 §5.5 复用约束从第 11 项检索预填），用户评估修订后确认
 - 门禁 fail：AI **主动诊断原因 + 给出修复建议**，用户评估后批准执行
 - 编码实现：AI **主动给出代码方案**（含复用了哪些稳定单元），用户评估后确认
@@ -72,7 +80,7 @@ swarm-yuan 的 36 个门禁服务于一条认知递进链。核心理念：**呈
 
 1. **自检**：`bash scripts/self-check.sh`（11 个运行时检测+自动安装）
 2. **读取项目知识**：AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特征卡（不读=重复造轮子）
-3. **探查仓库**：三路并行子代理（结构/规范/代码组织），优先用 gitnexus/graphify/claude-mem/LSP，大型项目用 Dynamic Workflow 并行扇出。工具矩阵+降级策略见 `references/exploration-guide.md`。**★全链路追踪（设计理念 2）**：每路子代理启动前 AI 调 `bash scripts/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`（规范/代码组织子代理同理），完成后 `--status done`——用户可见每步调用何种工具，无需确认（trace 输出 stderr + 落盘 trace.jsonl，不阻塞主流程）
+3. **探查仓库**：三路并行子代理（结构/规范/代码组织），优先用 gitnexus/graphify/claude-mem/LSP，大型项目用 Dynamic Workflow 并行扇出。工具矩阵+降级策略见 `references/exploration-guide.md`。**★WP-P8 per-phase profile 探查分级**：按 `auto_detect_profile` 的规模信号分级——lite（<80 文件）单路探查不用图谱；standard（80-500）三路并行图谱可选；compliance（合规信号或 >500）三路并行 + 强制图谱工具。规模边界不确定按更重档处理（质量优先）。**★全链路追踪（设计理念 2）**：每路子代理启动前 AI 调 `bash scripts/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`（规范/代码组织子代理同理），完成后 `--status done`——用户可见每步调用何种工具，无需确认（trace 输出 stderr + 落盘 trace.jsonl，不阻塞主流程）
 4. **★项目形态判定 + 详尽构件库清单 + 调用链路分析**（探查的深化，不可跳过）：
    - **项目形态判定（§C+.0）**：探查文件类型/框架特征 → 判定含哪些维度（前端UI/后端API/异步消费/桌面IPC/移动端/库导出）→ 后续只枚举存在的维度
    - **全量穷举（§C+.1 按维度动态）**：按判定结果选择的维度（C+.1-F前端/C+.1-B后端/C+.1-A异步/C+.1-D桌面移动/C+.1-L库/C+.1-T通用）做 `find`+`grep` 机械枚举 → 提取导出签名 → 每维度独立计数核验
@@ -83,7 +91,7 @@ swarm-yuan 的 36 个门禁服务于一条认知递进链。核心理念：**呈
 5. **特征卡**：16 项（项目类型→…→可复用稳定单元→…→编排约束→详尽构件库清单），P0 六项（1/4/5/11/15/16）每项落到具体值不用占位符；P1 十项 draft 期可「（P1 待补）」，`--mark-active` 前清零。映射表见 `references/template-spec.md` §3
 6. **创建骨架**：`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ + precheck.conf）。`--profile auto|lite|standard|compliance` 四档，**默认 auto 项目级自适应**（合规关键词 → compliance；文件数 <80 → lite；其余 standard；**质量优先偏置：探测不确定即升档不降级**，auto 会打印判定依据供用户评估）：**lite**（认知档）= 特征卡 + reference-manual + 核心门禁脚本最小集（无 hooks/commands/settings/.mcp.json）；**standard** = 全量骨架；**compliance** = standard + 标准合规矩阵参考（references/standards-compliance.md）。**零占位符铁律适用范围 = 当前 profile 的文件集**（profile 是显式声明不启用，与"未配置静默跳过"本质不同）。默认生成到 `<project-dir>/.claude/skills/`（"为目标项目生成"名副其实）；可用第 3 参数 `target-dir` 显式指定其他目录，如 `--upgrade <name> <project-dir> <target-dir>`。全局安装到 `~/.claude/skills/` 等运行时目录走 `install.sh`。
 7. **AI 填充全部文件**：SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`。**reference-manual.md §4 构件表/§6 接口表/§9 store+类型表按形态动态填充（维度错配=未完成），§5 链路按形态选模型 + §5.1 约束注释，dev-guide.md §8 按形态选约束类别**
-8. **AI 配置 precheck.conf**：从特征卡推导 179 个变量（PROJECT_DIR/WRITABLE_DIRS/LAYER_DEFS/SERVICE_DIRS/STORE_DIR 等）——**所有 `<占位符>` 必须替换为真实值**
+8. **AI 配置 precheck.conf**：从特征卡推导 141 个变量（PROJECT_DIR/WRITABLE_DIRS/LAYER_DEFS/SERVICE_DIRS/STORE_DIR 等）——**所有 `<占位符>` 必须替换为真实值**
 9. **AI 集成 Claude Code**：生成 hooks/hooks.json + commands/ + settings.local.json + .mcp.json + workflow.md 节点标注。详见 `references/claude-code-capabilities.md`
 10. **AI 运行门禁**：`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--mark-active` 翻 active 后 `--all-full`（标准 27：核心 10+架构 17）；强监管交付按需追加 `--compliance-suite`（合规 9）
 11. **AI 写回记忆**：claude-mem/.zcode/memories/.project-knowledge.md 三路写回，形成"记忆→生成→开发→记忆"闭环

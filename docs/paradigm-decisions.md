@@ -2,6 +2,7 @@
 
 > 日期：2026-07-20 ｜ 分支：`chore/leftover-suggestions`
 > 记录 7 项遗留建议的处置决策与理由，供后续版本维护参考，避免重复调研。
+> **口径权威源**：`swarm-yuan/assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 ## 处置总览
 
@@ -233,3 +234,160 @@
 4. **质量 > 效率**落实点：auto 阈值偏置（<80 才 lite）、任务门禁映射的强制升级条款（公共接口/数据模型/权限改动无"简单"档）、draft 状态门（半成品无法伪装交付）——效率类优化（trace 降级/Windows CI 降频）不触碰任何质量判定逻辑。
 
 **与减重批（决策 12-14）的关系**：减重不是"做轻"而是"恰当的重量"——三档 profile 让重量显式可选，auto 让选择自动化且偏向重的一侧。
+
+---
+
+### 决策 19：catchphrase 单一事实源 facts.conf（2026-07-21 减重 WP-P1）
+
+**问题**：36 门禁/27+9、179 变量、16 特征卡、11 运行时、32 领域、13 步流程 等口径在 8+ 文件手抄，`self-check.sh check_doc_consistency` 用 6 类正则扫描 5 份文档兜底——手动同步已不可靠，`docs/PROMO.md:215` 曾长期残留"11 步"旧口径（决策 17 已修，但同类漂移会复发）。
+
+**决策**：
+1. 新增 `swarm-yuan/assets/facts.conf`（bash 可 source 的 KEY=value），穷举所有 catchphrase 数字的权威值（FACT_GATES_TOTAL=36 / FACT_GATES_CORE=10 / FACT_GATES_ARCH=17 / FACT_GATES_COMPLIANCE=9 / FACT_GATES_STANDARD=27 / FACT_CONF_VARS=179 / FACT_FEATURE_CARDS=16 / FACT_RUNTIMES=11 / FACT_DOMAINS=32 / FACT_FLOW_STEPS=13 / FACT_FRAMEWORKS=61 / FACT_REFERENCES=18 等）
+2. `self-check.sh check_doc_consistency` 开头 `source facts.conf`，先用代码真值对账 facts.conf 自身（GATES_TOTAL/CORE/ARCH/COMPLIANCE/CONF_VARS/FRAMEWORKS/REFERENCES 七项），漂移即 FAIL；再用 `${FACT_*}` 值扫描散文文档（原有 6 类正则降级为"叙事漂移检测"，逻辑不变）
+3. 8 份文档（README/SKILL/USAGE/PROMO/template-spec/standards-compliance/CLAUDE/paradigm-decisions）头部加 `> 口径权威源：assets/facts.conf` 引用行，指向单一事实源
+4. 修 `PROMO.md:215` 残留"11 步"→"13 步"
+
+**理由**：catchphrase 手抄导致数字漂移是范式"过重"观感的一部分——文档与代码脱节会让外部观察者误以为"全是空壳"。单一事实源把"改一处→全局同步"自动化，self-check 机器执法先对账 facts.conf 自身（防 facts.conf 漂移），再扫描文档（防文档漂移），双向兜底。
+
+**边界**：文档头部引用行不替换正文数字（保留可读性），仅声明权威源；facts.conf 只声明"会变的数字"（门禁数/变量数/框架数等），不声明"稳定的架构"（六段式/五层认知基底等）；facts.conf 自身漂移由 self-check 机器执法（改门禁数必须同步改 facts.conf，否则 FAIL）。
+
+---
+
+### 决策 20：任务类型维度实装（2026-07-21 减重 WP-P4）
+
+**问题**：`template-spec.md:32-33`「快速入口（按任务类型）」是空占位表——只有"（任务类型 → 起始节点 → 关键参考 的表）"一行，无实际映射。分支命名有 feat/fix/refactor 但无对应门禁集差异化。spec 三级（简单/标准/完整）按变更规模分级，与任务类型正交——一个 fix 可能是"完整"级（跨服务 fix），一个 feature 可能是"简单"级（加字段）。
+
+**决策**：
+1. 新增 `swarm-yuan/assets/task-type-gates.conf`（bash 可 source），7 类任务映射（对齐用户级 AGENTS.md 分支命名）：
+   - feature → `--all-full`（无豁免）
+   - fix → `--all --reuse`（§14-§18 认知段可免）
+   - refactor → `--all-full --reuse --stable-diff`（§14-§18 可免）
+   - chore → `--all`（spec 全段可免）
+   - docs → `--docs-pack`（其他门禁免）
+   - test → `--all --shift-left`（§14-§18 可免；§19 必填）
+   - exp → `--all`（合入前须转 feature/fix）
+2. `template-spec.md` L32-33 填实任务类型映射表 + 引用 task-type-gates.conf
+3. `generate-skill.sh` 生成的 `commands/spec.md` 指引改为"先判任务类型后判规模，两者取并集（更重档）"
+4. `self-check.sh` 加 task-type-gates.conf 一致性断言（7 类必须齐全）
+
+**与 spec 规模维度的关系（正交，取并集）**：
+- 任务类型决定门禁子集（哪些门禁跑/豁免）
+- spec 规模决定档位（--all/--all-full/--all-full+--shift-left）
+- 两者取并集（更重档，质量优先，决策 18）
+
+**边界**：
+- compliance 档项目无"简单任务"豁免（决策 18）
+- 公共接口/数据模型/权限改动无"简单"档（强制 ≥ --all-full）
+- exp 任务合入前须转 feature/fix 正式流程（不阻塞合入是探查期特权，非交付特权）
+
+---
+
+### 决策 21：WP-P5 enforce_level 随 profile 调整——延后到 WP-Q1 合入后（2026-07-21）
+
+**问题**：WP-P5 计划让 enforce_level（strict/warn/advisory）随 profile 调整——lite 档降一档（strict→warn，保护核心 strict 不降）、compliance 档升一档（advisory→warn，纯观测类保留 advisory）。
+
+**事实核查**：enforce_level 机制（`gen-enforce-level.sh` + `gate-enforce-level.conf` + `_enforce_of`）目前仅在 `wp-q1-gate-stratification` 分支，**未合入 origin/main**。WP-P5 的实现依赖该机制存在。
+
+**决策**：WP-P5 延后——不在本 worktree 实施 enforce_level 随 profile 调整，等 WP-Q1 合入 main 后作为独立 WP 处理。本 worktree 的自适应减重聚焦：
+- 项目级（profile auto + 动态升档 WP-P6 + 技术栈反作用 WP-P9）
+- 任务级（任务类型 WP-P4 + spec 三级机器执法 WP-P7）
+- 阶段级（per-phase profile WP-P8）
+- 结构性（catchphrase 单一事实源 WP-P1 + 冗余合并 WP-P2 + arch.conf 懒生成 WP-P3）
+
+enforce_level 随 profile 调整是"门禁内部分级随项目档变化"的维度，与上述"项目/任务/阶段"三级自适应正交，且依赖未合入的 WP-Q1 基础设施，故延后。
+
+**边界**：本决策不否定 WP-P5 的价值，仅记录依赖约束与延后理由。WP-Q1 合入后应优先补做。
+
+---
+
+### 决策 22：profile 动态升档——detect-profile-drift 只升不降（2026-07-21 减重 WP-P6）
+
+**问题**：profile 在 `generate-skill.sh` create/upgrade 时写入 frontmatter 后固化；项目演进（<80 文件长到 >80，或新接入合规要求）不会自动升档，需手动 `--upgrade --profile`。固定 profile 与项目实际状态脱节是范式"不自适应"的典型表现。
+
+**决策**：
+1. 新增 `swarm-yuan/scripts/detect-profile-drift.sh`：重跑 `auto_detect_profile` 逻辑对比 frontmatter profile，漂移则输出建议
+2. 偏置规则（质量优先，只升不降）：
+   - 合规信号新增（docs/README 出现等保/密评/个保法/金融/医疗关键词）→ 强制提示升 compliance
+   - 规模信号升档（文件数从 <80 涨到 ≥80）→ 提示升 standard
+   - 规模信号降档（文件数从 ≥80 降到 <80）→ **不提示降 lite**（只升不降）
+   - 探测失败/边界不确定 → 不提示（保守不误报）
+3. 触发点：
+   - precheck.sh `--all`/`--all-full` 启动时调用（轻量，stderr 输出，不阻塞主流程）
+   - self-check.sh `check_profile_drift` 子检查（warn 不 fail）
+
+**理由**：profile 固化是范式"生成时一次定死"的局限。动态升档让范式持续感知项目演进——文件数增长或新增合规要求时主动提示升级。只升不降是质量优先偏置的延续（决策 18）：降档可能放过原本被门禁覆盖的风险，升档只是增加保护。
+
+**边界**：
+- 漂移检测是 warn 不 fail（不阻塞 precheck 主流程；仅提示用户评估）
+- 不自动执行升级（升级是用户决策，detect 只给建议命令）
+- 合规信号优先于规模信号（合规最强，与 auto_detect_profile 一致）
+- 降档不提示（避免项目临时减文件后误降档）
+
+---
+
+### 决策 23：spec 三级机器执法——detect-spec-scale 从 spec 推断规模（2026-07-21 减重 WP-P7）
+
+**问题**：spec 三级（简单/标准/完整）由 AI 按 `commands/spec.md` 文本指引判定，无脚本执法——一旦判"简单"选 `--all`，中途规模变化（如编码期发现实际跨模块）不会自动升档到 `--all-full + --shift-left`。文本指引依赖 AI 自觉，无机器兜底。
+
+**决策**：
+1. 新增 `swarm-yuan/scripts/detect-spec-scale.sh`：解析 spec.md 结构化字段，推断规模等级（简单/标准/完整）
+2. 推断规则（质量优先，不确定升档）：
+   - 侵入点 ≤3 文件（反引号路径计数）且 无风险信号 → 简单
+   - 侵入点 4-10 文件 或 含任一风险信号 → 标准
+   - 侵入点 >10 文件 或 含 ≥2 风险信号 或 架构变更 → 完整
+   - 风险信号：跨服务 / 公共接口 / 数据模型 / 权限 / 架构变更 / 新上下文
+3. precheck.sh `--all`/`--all-full` 启动时：若 SPEC_FILE 存在，跑 detect-spec-scale，当前 MODE < 推断等级 → warn 提示升档（只升不降）
+4. commands/spec.md 指引改为"填完 spec 跑 detect-spec-scale 确认规模"
+
+**与 WP-P4 任务类型正交**：任务类型决定门禁子集（哪些门禁跑/豁免），spec 规模决定档位（--all/--all-full/--all-full+--shift-left），两者取并集（更重档，决策 18）。
+
+**边界**：
+- 规模检测是 warn 不 fail（不阻塞 precheck 主流程）
+- 只升不降（spec 判"完整"但跑 `--all` → warn 提示升；spec 判"简单"但跑 `--all-full` → 不提示降）
+- 无法解析侵入点保守按标准（不降简单）
+- 架构变更信号强制完整档（最高优先级）
+
+---
+
+### 决策 24：技术栈复杂度反作用 profile——形态/框架/微服务信号升档（2026-07-21 减重 WP-P9）
+
+**问题**：C+.0 形态判定 + C+.0.5 框架探查只影响枚举维度和 ACTIVE_FRAMEWORKS，不影响 profile 档——纯前端小项目 <80 文件判 lite，Spring 全栈大项目 >80 文件判 standard，但形态差异不进入 profile 判定。技术栈复杂度是项目"重量"的真实信号，仅按文件数判定会漏掉"小而复杂"的项目（如 50 文件的微服务多形态项目）。
+
+**决策**：
+1. `auto_detect_profile` 追加技术栈复杂度信号（在合规/规模信号之后，优先级：合规 > 技术栈复杂度 > 规模）：
+   - **形态信号**：同时含 ≥3 种形态（前端 .vue/.jsx/.tsx + 后端 .py/.java/.go/.rb/.php/.kt + 异步 consumer/listener/subscriber + 微服务 services/多服务 + 桌面 electron/tauri/android/ios）→ 升 standard
+   - **框架信号**：依赖文件中框架数 ≥20（package.json dependencies + pom.xml artifactId + go.mod require 粗计）→ 升 standard
+   - **微服务信号**：services/ 目录存在且含 ≥2 子目录 → 升 standard
+2. 偏置：技术栈复杂度信号触发时**只升不降**（与决策 18 一致）
+3. auto 判定输出 reason 含技术栈信号详情（供用户评估）
+
+**理由**：文件数是项目"体积"信号，技术栈复杂度是项目"结构"信号——两者正交。一个 50 文件的微服务多形态项目，其认知负担和门禁需求远高于 100 文件的单体前端项目。技术栈复杂度反作用 profile 让自适应从"单维（规模）"升级为"双维（规模+结构）"，更贴合项目实际重量。
+
+**边界**：
+- 技术栈复杂度信号只升不降（不因形态少而降档）
+- 形态判定是粗粒度（按文件扩展名 + 目录结构），不替代 §C+.0 的精细形态判定（后者影响枚举维度）
+- 框架数粗计（依赖文件行数），不替代 §C+.0.5 的框架探查（后者激活规则集）
+
+---
+
+### 决策 25：范式定位声明——适用/不适用场景显式化（2026-07-21 减重 WP-P10）
+
+**问题**：无"适用规模门槛"声明，"过重"被外部观察者视为缺陷而非显式适用域。范式定位不清晰导致：(1) 小项目用户套范式后抱怨"太重"；(2) 大项目用户不知道范式能帮他们减负。
+
+**决策**：
+1. 新增 `docs/paradigm-positioning.md`：显式声明适用/不适用场景 + 轻量替代方案 + "过重"的诚实评估
+2. README.md 加"适用场景"章节（链接定位文档）
+3. SKILL.md 加"不适用场景"段（扩展既有"不适用"一句话）
+4. CLAUDE.md 加范式定位段
+
+**适用场景**：团队协作（≥2 人）、中大型项目（≥80 文件或 ≥3 形态）、强监管交付（合规要求）、长期维护项目（需沉淀记忆）、多技术栈混合项目（微服务/全栈）。
+
+**不适用场景**：个人脚本/一次性原型、学习用 demo、极小改动（改 typo/调样式）、无 AI 辅助的纯人工开发。
+
+**轻量替代**：
+- 范式内：`--profile lite`（只建三目录 + 核心门禁最小集）
+- 范式外：单文件 `precheck.sh` 做门禁不套生成器；传统 lint/test 工具链；AI 原生开发
+
+**定位声明**："swarm-yuan 是重量级范式，重量是设计选择不是缺陷——通过 profile 自适应让重量显式可选。"
+
+**理由**：范式定位显式化是"诚实化"的延续——不假装适合所有项目，明确告诉用户何时该用、何时不该用。这既是对用户的尊重（避免小项目用户踩坑），也是对范式价值的保护（避免在不适用场景被误判为"无用"）。
