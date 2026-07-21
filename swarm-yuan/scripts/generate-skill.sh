@@ -65,6 +65,7 @@ UNIVERSAL_FILES=(
   "scripts/cost-report.sh|gen|lite"
   "scripts/detect-profile-drift.sh|gen|lite"
   "scripts/detect-spec-scale.sh|gen|lite"
+  "scripts/task-scale.sh|gen|lite"
   "references/subagent-orchestration.md|ref"
   "references/review-methodology.md|ref"
   "references/code-graph-tools.md|ref"
@@ -371,9 +372,16 @@ verify_completeness() {
   fi
   # grep -F 固定串多模式（-e 叠加），三平台兼容；输出 file:line:内容 清单
   # 占位符四模式（骨架未填充痕迹）：待填充/（待填充）/<占位符>/填充指引
-  local hits
-  hits=$(grep -Fn -e '待填充' -e '（待填充）' -e '<占位符>' -e '填充指引' \
-    ${targets[@]+"${targets[@]}"} 2>/dev/null || true)
+  # WP-Q4 P0/P1 分级机器化：
+  #   - P1 占位符（含「（P1 待补）」标记）：draft 期允许，--strict（--mark-active）前须清零
+  #   - P0 占位符（不含 P1 标记的常规占位符）：draft 期也仅 warn（draft 允许残留），--strict 时 exit 1
+  #   区分方式：占位符所在行含「P1 待补」或「P1待补」→ 归 P1；否则归 P0
+  local hits p1_hits="" p0_hits="" p0_ln p1_ln
+  p0_hits=$(grep -Fn -e '待填充' -e '（待填充）' -e '<占位符>' -e '填充指引' \
+    ${targets[@]+"${targets[@]}"} 2>/dev/null | grep -vE 'P1[[:space:]]*待补' || true)
+  p1_hits=$(grep -Fn -e '待填充' -e '（待填充）' -e '<占位符>' -e '填充指引' \
+    ${targets[@]+"${targets[@]}"} 2>/dev/null | grep -E 'P1[[:space:]]*待补' || true)
+  hits="$p0_hits"
   # 未勾 checkbox（- [ ]）：仅骨架"填充指引"清单算占位；
   # 目标 skill 的"完成检查表/流程完成检查表"段是给使用者运行中勾选的，剔除该段防误伤。
   # 实现：对每个目标文件用 awk 标记"检查表段"区间，仅输出段外的 - [ ] 行。
@@ -390,6 +398,12 @@ verify_completeness() {
 }${out}"
   done
   hits=$(printf '%s\n%s\n' "$hits" "$cb_hits" | grep -v '^$' || true)
+  # P1 占位符追加到 hits（--strict 模式下也算，draft 模式下仅 warn 不计入 hits）
+  if [[ "$strict" == "--strict" && -n "$p1_hits" ]]; then
+    hits=$(printf '%s\n%s\n' "$hits" "$p1_hits" | grep -v '^$' || true)
+  fi
+  local p1_cnt=0
+  [[ -n "$p1_hits" ]] && p1_cnt=$(printf '%s\n' "$p1_hits" | grep -c . | tr -d ' \n' || echo 0)
   # 调用追踪要素机器执法（理念 2：全链路追踪落实到 workflow 模板）：
   # workflow.md 每个「## 节点…」段须含「调用追踪」字样（第 ⑨ 要素）。
   # 骨架阶段（待填充）已被上方占位符检查拦截；此处针对已填充内容。
@@ -414,9 +428,15 @@ verify_completeness() {
     printf '%s\n' "$hits"
     if [[ "$_vc_status" == "draft" && "$strict" != "--strict" ]]; then
       echo "ℹ draft 状态：允许残留（填充中段，断点续传安全）；--mark-active 前须清零"
+      [[ "$p1_cnt" -gt 0 ]] && echo "  （含 ${p1_cnt} 处 P1 占位符：WP-Q4 分级，draft 期允许，--mark-active 前 exit 1）"
       return 0
     fi
     return 1
+  fi
+  # P1 占位符在非 --strict 模式下单独 warn（不 exit 1）
+  if [[ "$p1_cnt" -gt 0 && "$strict" != "--strict" ]]; then
+    echo "⚠ 发现 ${p1_cnt} 处 P1 占位符（WP-Q4 分级，draft 期允许，--mark-active 前须清零）:"
+    printf '%s\n' "$p1_hits"
   fi
   echo "✓ 零占位符确认"
   return 0
@@ -921,14 +941,16 @@ argument-hint: <需求描述>
 AI 自动：
 1.创建 spec 文件
 2.判断任务类型（WP-P4，从分支名/用户意图）：feature/fix/refactor/chore/docs/test/exp——映射见 assets/task-type-gates.conf
-3.判断规模（detect-spec-scale.sh）：简单/标准/完整
+3.判断规模（优先 task-scale.sh 事前判定；spec 写完后用 detect-spec-scale.sh 复核）：
+  - bash scripts/task-scale.sh → simple/standard/full（基于 git diff，不需要 spec）
+  - 规则：simple（≤5 文件且不触碰敏感目录）；standard（6-10 文件单一模块）；full（>10 或触碰 public/api/schema/migration/auth/model 等敏感目录 或 跨多服务）
+  - 规模不确定按更大规模处理（升档不降级）；公共接口/数据模型/权限改动无"简单"档
 4.预填 §5.5 复用约束（从特征卡第 11 项检索可复用稳定单元）
 5.运行 --reuse 验证
 6.执行门禁集（任务类型 × 规模档取并集，质量优先取更重档）：
   - 任务类型基础集（task-type-gates.conf）：feature→--all-full；fix→--all --reuse；refactor→--all-full --reuse --stable-diff；chore→--all；docs→--docs-pack；test→--all --shift-left；exp→--all
-  - 规模档叠加（detect-spec-scale.sh）：简单→--all；标准→--all-full；完整（架构/跨服务/公共接口/数据模型/权限）→--all-full --shift-left
+  - 规模档叠加：simple→--all；standard→--all-full；full→--all-full --shift-left
   - 两者取并集（更重档）；compliance 档项目追加 --compliance-suite；compliance 档无"简单任务"豁免
-  - 规模不确定按更大规模处理（升档不降级）；公共接口/数据模型/权限改动无"简单"档
 $ARGUMENTS
 CEOF
 _write_if_absent "$SKILL_DIR/commands/precheck.md" <<'CEOF'
