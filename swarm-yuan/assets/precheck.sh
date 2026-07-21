@@ -710,8 +710,11 @@ has_madge() { command -v madge >/dev/null 2>&1; }
 # 在第三方工具调用前调用，打印"→ [工具] 调用 X · Y（started）"到 **stderr**（不污染 stdout/cli-ab 逐字节等价）
 # + 落盘 trace.jsonl。trace-log.sh 路径优先 $_CONF_DIR/trace-log.sh，缺失则静默跳过（不阻塞）。
 # 口径：只 trace 实际工作调用；has_*/indexed/built 等守卫探测（如 gitnexus status）不 trace，避免噪音。
+# 分级（WP-C 减重）：本函数全部调用点均为第三方工具「调用级」细节——默认不落盘不输出，
+# 仅 SWARM_YUAN_TRACE=verbose 时启用；门禁级（_gate_exec）节点追踪不受影响，始终落盘。
 TRACE_LOG_SH="${_CONF_DIR:-$(cd "$(dirname "$0")" 2>/dev/null && pwd)}/trace-log.sh"
 trace_tool() {  # $1=工具名 $2=命令/操作描述 [--note 说明]（第 3 参数可选作 note）
+  [[ "${SWARM_YUAN_TRACE:-}" == "verbose" ]] || return 0
   local _tool="$1" _op="$2" _note="${3:-}"
   [[ -f "$TRACE_LOG_SH" ]] || return 0
   if [[ -n "$_note" ]]; then

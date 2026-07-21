@@ -168,7 +168,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 
 **⑨ 调用追踪（全链路提示，无需用户确认）：**
 - 公告：进入本节点时 AI 输出一行结构化提示，格式 `→ [节点X <节点名>] 调用 <技能/子代理/工具> · <目的>`
-- 落盘：本节点每次具体调用（子代理扇出/技能调用/CLI 工具/门禁脚本）前执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令>`，追加到 `.swarm-yuan/trace.jsonl`
+- 落盘：节点级默认——进入/完成本节点时执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令>`，追加到 `.swarm-yuan/trace.jsonl`；调用级细节（每次具体调用）仅在 `SWARM_YUAN_TRACE=verbose` 时落盘
 
 （其他节点同结构）
 
@@ -190,7 +190,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 
 > 项目可能有额外节点（如"代码审查"、"部署验证"），或无发布环节。按项目实际裁剪。
 > **方法论整合：** 节点②③用 OpenSpec 的 proposal→spec(delta)→design→tasks 模式（specs as source of truth）；节点⑤用 superpowers 的 subagent 编排（见 subagent-orchestration.md）；节点间状态用 comet 风格脚本背书（state-machine.sh，非 prompt-only）；节点⑥含 gstack/OCR 审查维度（见 review-methodology.md）。
-> **★调用追踪（设计理念 2 落地）：** 每个节点必须含第 ⑨ 要素——进入节点先公告（`→ [节点X] 调用 …`），每次具体调用前用 `scripts/trace-log.sh` 落盘 `.swarm-yuan/trace.jsonl`。机器执法：`generate-skill.sh --verify-completeness` 校验每节点段含「调用追踪」字样，缺则 exit 1。
+> **★调用追踪（设计理念 2 落地）：** 每个节点必须含第 ⑨ 要素——进入节点先公告（`→ [节点X] 调用 …`），节点级落盘 `.swarm-yuan/trace.jsonl`（`SWARM_YUAN_TRACE=verbose` 含每次具体调用）。机器执法：`generate-skill.sh --verify-completeness` 校验每节点段含「调用追踪」字样，缺则 exit 1。
 > **★左移原则（Shift-Left）：测试、变更影响、运维监控不等到节点⑥⑦⑧才考虑，须在节点②③⑤就嵌入约束**——spec 阶段写测试设计+可观测性约束，plan 阶段写变更影响+回滚预案，编码阶段先测试后实现，合入前确认回滚+迁移兼容，发布前确认灰度+告警+runbook。precheck `--shift-left` 门禁校验各阶段左移产出物存在。
 
 **填充规则（10 要素逐项）：**

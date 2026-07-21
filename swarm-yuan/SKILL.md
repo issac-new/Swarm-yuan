@@ -58,7 +58,7 @@ swarm-yuan 的 36 个门禁服务于一条认知递进链。核心理念：**呈
 
 **铁律：AI 必须执行完整流程（Step 0-10）后才算生成完成。不允许中途停止在骨架阶段——骨架中的占位符必须全部被真实内容替换。生成完成时检查：目标 skill 中不得残留任何"待填充"/"填充指引"/占位符。**
 
-**★调用追踪铁律（设计理念 2：全链路追踪）：生成流程与目标 skill 的使用流程中，每一步具体调用都必须有信息提示（无需用户确认），显示调用了何种工具及技能。** 双通道：① stdout 结构化公告——每 Step/节点开始时输出 `→ [Step N/节点X] 调用 <技能/子代理/工具> · <目的>`；② 落盘——每次具体调用（子代理扇出/技能调用/CLI 工具/门禁脚本）前执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令>`，追加到 `<项目>/.swarm-yuan/trace.jsonl`。机器执法：`--verify-completeness` 校验目标 skill 的 workflow.md 每节点含「调用追踪」要素（template-spec §2 第 ⑨ 要素），缺则 exit 1。
+**★调用追踪铁律（设计理念 2：全链路追踪）：生成流程与目标 skill 的使用流程中，每一步具体调用都必须有信息提示（无需用户确认），显示调用了何种工具及技能。** 双通道：① stdout 结构化公告——每 Step/节点开始时输出 `→ [Step N/节点X] 调用 <技能/子代理/工具> · <目的>`；② 落盘——**节点级默认**：每 Step/节点开始/结束时执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令>`，追加到 `<项目>/.swarm-yuan/trace.jsonl`；**调用级细节**（每个 CLI 工具/第三方调用的逐次落盘）仅在 `SWARM_YUAN_TRACE=verbose` 时启用（聚合分析见 `scripts/cost-report.sh`）。机器执法：`--verify-completeness` 校验目标 skill 的 workflow.md 每节点含「调用追踪」要素（template-spec §2 第 ⑨ 要素），缺则 exit 1。
 
 **★核心铁律（详尽构件库清单 + 编排约束，按项目形态动态适配）：swarm-yuan 不预设项目是前端/后端/全栈/移动/桌面/库。** 必须先做 §C+.0 项目形态判定（探查文件类型/框架特征 → 判定含哪些维度），再按判定结果选择的维度做全量穷举 + 签名提取 + 计数核验（清单计数 ≥ 枚举计数 × 0.95）。特征卡第 15 项（编排调用关系及约束）必须从 §C+.2 按形态选择的链路模型（前端注册装配/后端请求管道/异步消息流/微服务跨服务链）推导得出，每条约束须有代码证据。两者配套：只列构件不推约束 = 未完成；维度错配（纯后端项目填 UI 组件表）= 未完成。
 
@@ -87,7 +87,7 @@ swarm-yuan 的 36 个门禁服务于一条认知递进链。核心理念：**呈
 11. **AI 写回记忆**：claude-mem/.zcode/memories/.project-knowledge.md 三路写回，形成"记忆→生成→开发→记忆"闭环
 12. **AI 最终检查**：运行 `bash scripts/generate-skill.sh --verify-completeness <skill_dir>` 做零占位符 + workflow 调用追踪要素机器执法（命中即列 file:line 并 exit 1，零命中打印「✓ 零占位符确认」），确认零"待填充"/零"填充指引"/零"<占位符>"残留；**按维度计数核验：对 §C+.0 判定的每个维度，用对应的 `find`/`grep` 命令计数，对比 reference-manual.md 对应章节行数，偏差 >5% → 回到 Step 4 补全该维度**；**维度适配核验：纯后端项目不应有 UI 组件表，纯前端项目不应有 controller 表（维度错配 → 回 Step 4 重判）**；**框架适配四要素核验：对 ACTIVE_FRAMEWORKS 每个框架——① 构件枚举计数 ≥ 实际 × 0.95（依 `references/frameworks/<fw>.md` §2 的计数基准）② `framework-knowledge.md` 规律数 ≥ 规则文件声明的深度门槛且 100% 含"证据:"字段 ③ `precheck.sh` 含 `_fw_<id>_check` 动态分发器且 `--framework <id>` 实跑 exit 0（门禁片段位于 `assets/framework-gates/<fw>.sh`，已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块）④ `dev-guide.md` §10 含该框架约束段 ≥ 3 条。任一不过 → 回 Step 4.5**。**如有残留，回到 Step 7 继续填充，直到零残留。**
 
-> **铁律**：用户不编辑任何配置文件，不手动复制模板。开始新需求时对 AI 说"开始新需求 xxx"，AI 自动创建 spec 文件 + 引导填写 + 运行门禁。门禁误报 AI 自动调 conf 后重跑。每节点须有降级策略（联网/云端不可用→降级本地工具）。节点工具表+降级表见 `references/claude-code-capabilities.md` §十五。**全链路追踪：AI 每进入一节点先公告（`→ [节点X] 调用 …`），每次具体调用前用 `scripts/trace-log.sh` 落盘 `.swarm-yuan/trace.jsonl`——用户全程可见调用了何种工具及技能，无需任何确认。**
+> **铁律**：用户不编辑任何配置文件，不手动复制模板。开始新需求时对 AI 说"开始新需求 xxx"，AI 自动创建 spec 文件 + 引导填写 + 运行门禁。门禁误报 AI 自动调 conf 后重跑。每节点须有降级策略（联网/云端不可用→降级本地工具）。节点工具表+降级表见 `references/claude-code-capabilities.md` §十五。**全链路追踪：AI 每进入一节点先公告（`→ [节点X] 调用 …`）并用 `scripts/trace-log.sh` 节点级落盘 `.swarm-yuan/trace.jsonl`（`SWARM_YUAN_TRACE=verbose` 时含每次具体调用）——用户全程可见调用了何种工具及技能，无需任何确认。**
 
 ## 六段式模板
 

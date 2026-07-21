@@ -64,12 +64,12 @@ GB/T 8566-2022 要求每个采用的过程留有信息项（留痕证据）。AI
 
 ### 2.4 第四级：调用留痕（全链路追踪，2026-07-21 新增）
 
-**范围**：AI 的每一次具体调用——子代理扇出、技能（skill）调用、CLI 工具（gitnexus/graphify/claude-mem/ocr/openspec/comet/gsd-tools）、门禁与状态机脚本。
+**范围**：节点级默认——每个 workflow 节点/生成 Step 的进出；调用级（每一次具体调用——子代理扇出、技能（skill）调用、CLI 工具（gitnexus/graphify/claude-mem/ocr/openspec/comet/gsd-tools）、门禁与状态机脚本）仅在 `SWARM_YUAN_TRACE=verbose` 时落盘。
 
 **双通道**（均无需用户确认）：
 
 1. **stdout 公告**：进入每个 workflow 节点先输出一行结构化提示，格式 `→ [节点X <节点名>] 调用 <技能/子代理/工具> · <目的>`；
-2. **落盘**：每次具体调用前执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]`，追加 JSON 行到 `.swarm-yuan/trace.jsonl`。
+2. **落盘**：节点级默认——进入/完成节点时执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]`，追加 JSON 行到 `.swarm-yuan/trace.jsonl`；调用级细节设 `SWARM_YUAN_TRACE=verbose` 时全量落盘。聚合分析用 `scripts/cost-report.sh`。
 
 **trace.jsonl 行格式**（与 `gate-runs/gate-runs.jsonl` 同目录、同构风格）：
 

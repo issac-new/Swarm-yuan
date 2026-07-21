@@ -229,7 +229,7 @@ bash install.sh
 | 7 | AI 写回项目记忆（闭环） |
 | 8 | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**零占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
 
-> **全链路追踪（每步必做，无需确认）**：每步开始先公告 `→ [Step N] 调用 <技能/工具> · <目的>`，每次具体调用前用 `scripts/trace-log.sh` 落盘 `.swarm-yuan/trace.jsonl`。
+> **全链路追踪（每步必做，无需确认）**：每步开始先公告 `→ [Step N] 调用 <技能/工具> · <目的>`，节点级落盘 `.swarm-yuan/trace.jsonl`（`SWARM_YUAN_TRACE=verbose` 时含每次具体调用）。
 
 ---
 
@@ -241,7 +241,7 @@ bash install.sh
 
 AI 自动：创建 spec → 判断规模 → **从特征卡第 11 项检索可复用单元，预填 §5.5 复用约束** → 验证。
 
-**全程可见（全链路追踪，无需确认）**：AI 每进入一节点先公告 `→ [节点X] 调用 <技能/工具> · <目的>`，每次具体调用落盘 `.swarm-yuan/trace.jsonl`（`scripts/trace-log.sh`）。你随时知道正在调用何种工具及技能。
+**全程可见（全链路追踪，无需确认）**：AI 每进入一节点先公告 `→ [节点X] 调用 <技能/工具> · <目的>`，节点级落盘 `.swarm-yuan/trace.jsonl`（`scripts/trace-log.sh`；`SWARM_YUAN_TRACE=verbose` 时含每次具体调用）。你随时知道正在调用何种工具及技能。
 
 | 规模 | 填哪些段 | 典型场景 |
 |------|---------|---------|

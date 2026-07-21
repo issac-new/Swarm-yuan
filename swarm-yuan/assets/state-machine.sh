@@ -32,9 +32,12 @@ has_comet() { command -v comet >/dev/null 2>&1; }
 
 # WP-D3：trace_tool 辅助函数（全链路追踪——设计理念 2，state-machine 侧）
 # 打印"→ [状态流转] 调用 工具 · X（started）"到 stderr + 落盘 trace.jsonl。
+# 分级（WP-C 减重）：第三方工具「调用级」细节默认关闭，SWARM_YUAN_TRACE=verbose 时启用；
+# 节点级（阶段迁移）追踪不受影响。
 TRACE_LOG_SH="${STATE_DIR:-${PROJECT_DIR:-$(pwd)}/.swarm-yuan}/../scripts/trace-log.sh"
 [[ -f "$TRACE_LOG_SH" ]] || TRACE_LOG_SH="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/trace-log.sh"
 trace_tool() {  # $1=工具名 $2=操作
+  [[ "${SWARM_YUAN_TRACE:-}" == "verbose" ]] || return 0
   [[ -f "$TRACE_LOG_SH" ]] || return 0
   bash "$TRACE_LOG_SH" --node "状态流转" --actor "工具" --tool "${1} ${2}" --status started >&2 2>/dev/null || true
 }
