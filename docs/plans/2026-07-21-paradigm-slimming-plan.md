@@ -386,7 +386,7 @@ _conf_self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 **Files:** 全部文档数字/表述（SKILL.md、README.md、USAGE.md、template-spec.md、standards-compliance.md、FIVE_DIMENSIONS.md、CLAUDE.md、PROMO.md）+ `docs/paradigm-decisions.md` 增补汇总
 
-- [x] **Step 1: 数字grep收口**：`grep -rn '36 个门禁\|36 门禁\|179 个变量\|179 变量' swarm-yuan/ CLAUDE.md --include='*.md'` 逐一核对为 27+9 / 179（三文件合计）新表述。
+- [x] **Step 1: 数字grep收口**：`grep -rn '36 个门禁\|36 门禁\|141 个变量\|141 变量' swarm-yuan/ CLAUDE.md --include='*.md'` 逐一核对为 27+9 / 179（三文件合计）新表述。
 - [x] **Step 2: 全量测试**：`bash tests/run-gate-fixture.sh`（36 组）+ `for f in tests/fixtures/*/; do bash tests/run-framework-fixture.sh $(basename $f); done`（61）+ `bash tests/e2e/run-e2e.sh` + `bash scripts/self-check.sh` 全绿。
 - [x] **Step 3: generator-self-gate 本地等价复跑**（ci/self-precheck.conf + sed __REPO_ROOT__ + --all）。
 - [x] **Step 4: 三 profile e2e**：lite/standard/compliance 各生成骨架 → draft 守卫 → --mark-active 流程全通。

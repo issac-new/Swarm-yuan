@@ -77,7 +77,7 @@ bash install.sh
 
 **特征卡 → 文件填充（Step 4）：** SKILL.md 的铁律来自第 2/6 项 → codebase.md 的技术栈来自第 4 项 → dev-guide.md 的改造分类来自第 3 项 → reference-manual.md 的组件库来自第 11 项 → release.md 的命令来自第 5 项……16 项特征卡是目标 skill 所有文件的「数据源」。
 
-**特征卡 → 门禁配置（Step 5）：** precheck.conf 的 179 个变量从特征卡推导：
+**特征卡 → 门禁配置（Step 5）：** precheck.conf 的 141 个变量从特征卡推导：
 
 | 配置变量 | 来自特征卡第几项 |
 |---------|----------------|
@@ -224,7 +224,7 @@ bash install.sh
 | 3 | 创建骨架（含 hooks / commands / precheck.conf） |
 | 4 | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
 | 4.5 | **框架深化**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + 门禁清单对齐 |
-| 5 | AI 配置 precheck.conf——**179 个变量从特征卡推导** |
+| 5 | AI 配置 precheck.conf——**141 个变量从特征卡推导** |
 | 5.5 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
 | 6 | AI 运行门禁（--all 核心 10 → --all-full 标准 27；合规 9 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
 | 7.5 | **门禁注入**——`generate-skill.sh --inject-frameworks` 把激活框架门禁片段写入 precheck.sh 标记区块 |
@@ -389,7 +389,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 | 维度 | 数值 |
 |------|------|
-| **特征卡** | **16 项（驱动全部文件 + 179 个门禁变量 + 开发流程）** |
+| **特征卡** | **16 项（驱动全部文件 + 141 个门禁变量 + 开发流程）** |
 | **质量门禁** | **36 个（核心 10 + 架构 17 + 合规 9，特征卡立法 + 门禁执法）** |
 | 运行时工具 | 11 |
 | spec 模板 | 22 主段（§22=标准合规） |
