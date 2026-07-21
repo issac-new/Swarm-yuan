@@ -684,6 +684,20 @@ has_comet() { command -v comet >/dev/null 2>&1; }
 has_gsd_tools() { command -v gsd-tools >/dev/null 2>&1; }
 has_madge() { command -v madge >/dev/null 2>&1; }
 
+# WP-D1：trace_tool 辅助函数（全链路追踪——设计理念 2）
+# 在第三方工具调用前调用，打印"→ [工具] 调用 X · Y（started）"到 **stderr**（不污染 stdout/cli-ab 逐字节等价）
+# + 落盘 trace.jsonl。trace-log.sh 路径优先 $_CONF_DIR/trace-log.sh，缺失则静默跳过（不阻塞）。
+TRACE_LOG_SH="${_CONF_DIR:-$(cd "$(dirname "$0")" 2>/dev/null && pwd)}/trace-log.sh"
+trace_tool() {  # $1=工具名 $2=命令/操作描述 [--note 说明]（第 3 参数可选作 note）
+  local _tool="$1" _op="$2" _note="${3:-}"
+  [[ -f "$TRACE_LOG_SH" ]] || return 0
+  if [[ -n "$_note" ]]; then
+    bash "$TRACE_LOG_SH" --node "门禁" --actor "工具" --tool "${_tool} ${_op}" --status started --note "$_note" >&2 2>/dev/null || true
+  else
+    bash "$TRACE_LOG_SH" --node "门禁" --actor "工具" --tool "${_tool} ${_op}" --status started >&2 2>/dev/null || true
+  fi
+}
+
 # gitnexus 已索引当前仓库？（检查 .gitnexus/ 或 gitnexus status）
 gitnexus_indexed() {
   [[ -d "$PROJECT_DIR/.gitnexus" ]] && return 0
