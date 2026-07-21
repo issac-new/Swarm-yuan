@@ -299,6 +299,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | django | 代码 | `from django.` / `import django` / `django.db.models` / `models.Model` | 高 |
 | django | 配置 | `SECRET_KEY` / `MIDDLEWARE` / `INSTALLED_APPS` / `DATABASES` / `ALLOWED_HOSTS` | 高 |
 | django | 目录结构 | `**/migrations/`（含 `__init__.py` 与数字前缀迁移文件） | 中（需组合信号） |
+| druid | 依赖 | `com.alibaba:druid` / `com.alibaba:druid-spring-boot-starter` / `com.alibaba:druid-spring-boot-3-starter` | 高 |
+| druid | 配置 | `spring.datasource.druid.*` / `druid.initial-size` / `druid.max-active` / `druid.filters` / `druid.filter.stat.*` / `druid.filter.wall.*` | 高 |
+| druid | 代码 | `DruidDataSource` / `DruidDataSourceBuilder` / `DruidFilterConfiguration` / `StatViewServlet` / `WebStatFilter` | 高 |
+| druid | XML | `<bean.*DruidDataSource` / `<property name="filters" value="stat,wall"` | 中（Spring XML 配置） |
+| druid | 注解 | `@DruidStat` / `@StatFilter` | 低（非官方，部分封装库） |
 | dubbo | 依赖 | `org.apache.dubbo:dubbo` / `dubbo-spring-boot-starter` / `dubbo-registry-nacos` / `dubbo-registry-zookeeper` / `dubbo-rpc-triple` | 高 |
 | dubbo | 注解 | `@DubboService` / `@DubboReference` / `@EnableDubbo` / `@DubboMethod` | 高 |
 | dubbo | 文件 | `**/dubbo.properties` / `**/dubbo.xml` / `**/dubbo-provider.xml` / `**/dubbo-consumer.xml` | 中（需排除他用） |
