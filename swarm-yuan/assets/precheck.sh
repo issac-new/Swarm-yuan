@@ -344,6 +344,20 @@ FAIL=0
 # SILENT=1 时，未配置的门禁静默跳过（不打印 warn），减少 --all-full/--compliance-suite 噪音
 SILENT=0
 [[ "$MODE" == "--all-full" || "$MODE" == "--compliance-suite" ]] && SILENT=1
+# ===== WP-H 状态门：所属 skill 为 draft（骨架填充未完成）时禁用全量门禁集 =====
+# draft = 生成器产出的未填充骨架（SKILL.md frontmatter `status: draft`）。
+# 半填充产物跑全量门禁会给"接近可用"的错觉——禁用 --all-full/--compliance-suite；
+# 单门禁与 --all 不受影响（填充中段仍需局部自检）。--mark-active 核验零占位符后解锁。
+# 位置：须在 cd "$PROJECT_DIR" 之前（draft 骨架 conf 含占位路径，cd 会先失败掩盖本提示）。
+_skill_md="${_CONF_DIR}/../SKILL.md"
+if [[ -f "$_skill_md" ]] && grep -q '^status: draft' "$_skill_md" 2>/dev/null; then
+  case "$MODE" in
+    --all-full|--compliance-suite)
+      echo "✗ 所属 skill 为 draft 状态（骨架填充未完成），--all-full/--compliance-suite 已禁用" >&2
+      echo "  完成填充后运行: bash generate-skill.sh --mark-active <skill_dir>" >&2
+      exit 2 ;;
+  esac
+fi
 # 执行汇总计数器（非破坏披露：只统计与末次汇总打印，不改任何门禁判定与输出行）
 INVOKE_COUNT=0
 SKIP_COUNT=0

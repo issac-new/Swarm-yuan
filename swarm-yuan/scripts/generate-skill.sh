@@ -329,9 +329,14 @@ fi
 # （## 节点… 标题起）须含「调用追踪」要素，缺则列 file:line 并 exit 1。
 # ============================================================
 verify_completeness() {
-  local skill_dir="$1"
+  local skill_dir="$1" strict="${2:-}"
   trace_tool "verify-completeness" "$skill_dir"
   [[ -d "$skill_dir" ]] || { echo "✗ 目录不存在: $skill_dir" >&2; return 1; }
+  # WP-H 状态门：draft 骨架允许占位符残留（报告模式 exit 0）；--strict（--mark-active 路径）保持 exit 1
+  local _vc_status=""
+  if [[ -f "$skill_dir/SKILL.md" ]]; then
+    _vc_status=$(grep -m1 '^status: ' "$skill_dir/SKILL.md" 2>/dev/null | sed 's/^status: *//' | tr -d '[:space:]')
+  fi
   # 收集检查目标（存在才查；空数组在 bash 3.2 + set -u 下须用 ${arr[@]+...} 防空崩）
   local targets=() f
   [[ -f "$skill_dir/SKILL.md" ]] && targets+=("$skill_dir/SKILL.md")
@@ -388,6 +393,10 @@ verify_completeness() {
   if [[ -n "$hits" ]]; then
     echo "✗ 占位符/未勾项/缺失要素未清零（$(printf '%s\n' "$hits" | wc -l | tr -d ' ') 处）:"
     printf '%s\n' "$hits"
+    if [[ "$_vc_status" == "draft" && "$strict" != "--strict" ]]; then
+      echo "ℹ draft 状态：允许残留（填充中段，断点续传安全）；--mark-active 前须清零"
+      return 0
+    fi
     return 1
   fi
   echo "✓ 零占位符确认"
@@ -398,6 +407,30 @@ if [[ "${1:-}" == "--verify-completeness" ]]; then
   [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --verify-completeness <skill-dir>"; exit 1; }
   verify_completeness "$2"
   exit $?
+fi
+
+# ============================================================
+# --mark-active 子命令（WP-H 状态门：draft → active）
+# 用法: bash generate-skill.sh --mark-active <skill-dir>
+# 严格零占位符核验（--strict）通过才把 SKILL.md frontmatter 的 status: draft 翻为 active；
+# active 后目标 skill 的 precheck.sh --all-full/--compliance-suite 才解除禁用（precheck 侧状态门）。
+# ============================================================
+if [[ "${1:-}" == "--mark-active" ]]; then
+  [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --mark-active <skill-dir>"; exit 1; }
+  _ma_dir="$2"
+  [[ -f "$_ma_dir/SKILL.md" ]] || { echo "✗ SKILL.md 不存在: $_ma_dir" >&2; exit 1; }
+  if ! grep -q '^status: draft' "$_ma_dir/SKILL.md"; then
+    echo "ℹ 非 draft 状态（已是 active 或无 status 字段），无需标记"
+    exit 0
+  fi
+  if verify_completeness "$_ma_dir" --strict; then
+    sed -i.bak 's/^status: draft/status: active/' "$_ma_dir/SKILL.md" && rm -f "$_ma_dir/SKILL.md.bak"
+    echo "✓ 已标记 status: active（--all-full/--compliance-suite 已解锁）"
+    exit 0
+  else
+    echo "✗ 占位符未清零，保持 draft（--all-full/--compliance-suite 仍禁用）" >&2
+    exit 1
+  fi
 fi
 
 # ============================================================
@@ -500,13 +533,15 @@ SWARM_YUAN_STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H
 #       如 SKILLS_PATH_REWRITE='s|\.claude/skills|.agents/skills|g'（非标准 skills 目录实例）。
 copy_universal_templates() {
   local dir="$1"
-  local mode="${2:-create}"   # create=覆盖 precheck.conf（新建骨架）；upgrade=不覆盖（保留用户配置，由 merge_precheck_conf 增量补）
+  local mode="${2:-create}"   # create=覆盖 precheck.conf（新建骨架）；upgrade=不覆盖（保留用户配置，由 merge_precheck_conf 增量补）；resume=断点续传（已有文件一律不覆盖）
   local entry dest kind minprof src
   for entry in "${UNIVERSAL_FILES[@]}"; do
     dest="${entry%%|*}"; kind="${entry#*|}"; minprof="${kind#*|}"; kind="${kind%%|*}"
     [[ "$minprof" == "$kind" ]] && minprof="standard"   # 无第三段 = standard
     # profile 过滤：文件最低档 > 当前档则跳过（WP-E）
     [[ $(_profile_rank "$minprof") -gt $(_profile_rank "$PROFILE") ]] && continue
+    # resume：断点续传只补缺失文件，已有一律不覆盖（WP-H）
+    [[ "$mode" == "resume" && -f "$dir/$dest" ]] && continue
     # precheck.conf：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
     [[ "$mode" == "upgrade" && "$dest" == "scripts/precheck.conf" ]] && continue
     case "$kind" in
@@ -649,9 +684,22 @@ EOF
 fi
 
 # ============================================================
-# 创建模式
+# 创建模式（WP-H：draft 状态门 + 断点续传）
 # ============================================================
-[[ -d "$SKILL_DIR" ]] && { echo "ERROR: 已存在: ${SKILL_DIR}（用 --upgrade 升级）"; exit 1; }
+# 已存在目录：draft 骨架 → 续传（幂等补齐缺失文件，不覆盖已有内容）；active/无 status → 报错走 --upgrade
+RESUME=0
+if [[ -d "$SKILL_DIR" ]]; then
+  if grep -q '^status: draft' "$SKILL_DIR/SKILL.md" 2>/dev/null; then
+    echo "→ 检测到 draft 状态骨架，断点续传（幂等补齐缺失文件，不覆盖已有内容）"
+    RESUME=1
+  else
+    echo "ERROR: 已存在: ${SKILL_DIR}（用 --upgrade 升级；draft 骨架自动续传）"; exit 1
+  fi
+fi
+# 续传幂等写入：RESUME=1 且目标已存在时跳过（吃掉 stdin 不落盘）
+_write_if_absent() {  # $1=目标路径；stdin=内容
+  if [[ "$RESUME" -eq 1 && -f "$1" ]]; then echo "  续传跳过（已存在）: $1"; cat >/dev/null; else cat > "$1"; fi
+}
 
 echo "=== 创建: $SKILL_DIR ==="
 echo "  profile: ${PROFILE}（lite=认知档最小集 / standard=标准档 / compliance=强监管档）"
@@ -662,7 +710,11 @@ if [[ "$PROFILE" == "lite" ]]; then
 else
   mkdir -p "$SKILL_DIR"/{references,assets,scripts,hooks,commands}
 fi
-copy_universal_templates "$SKILL_DIR"
+if [[ "$RESUME" -eq 1 ]]; then
+  copy_universal_templates "$SKILL_DIR" resume
+else
+  copy_universal_templates "$SKILL_DIR"
+fi
 
 fill_guide() {
   case "$1" in
@@ -678,7 +730,7 @@ fill_guide() {
 _placeholder_refs="workflow.md codebase.md dev-guide.md release.md reference-manual.md"
 [[ "$PROFILE" == "lite" ]] && _placeholder_refs="reference-manual.md"
 for f in $_placeholder_refs; do
-  cat > "$SKILL_DIR/references/$f" <<EOF
+  _write_if_absent "$SKILL_DIR/references/$f" <<EOF
 # （待填充）$f
 > 填充指引：$(fill_guide "$f")
 EOF
@@ -686,7 +738,7 @@ done
 
 # WP-E：lite 档跳过 hooks/settings/.mcp.json/commands（无 hooks 生命周期与 slash 命令负担）
 if [[ "$PROFILE" != "lite" ]]; then
-cat > "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
+_write_if_absent "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
 {
   "hooks": {
     "SessionStart": [{"matcher": "startup|clear|compact", "command": "echo \"→ [hook:SessionStart] 调用 state-machine.sh status（阶段状态追踪）\"; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true"}],
@@ -697,7 +749,7 @@ HEOF
 
 # settings.local.json（WP-A1：真生成，落实 SKILL.md Step 9 宣称）
 # 最小权限模板：允许本 skill 自带脚本执行；deny 危险命令。项目特定权限由 AI 填充。
-cat > "$SKILL_DIR/settings.local.json" <<'SEOF'
+_write_if_absent "$SKILL_DIR/settings.local.json" <<'SEOF'
 {
   "permissions": {
     "allow": [
@@ -721,7 +773,7 @@ SEOF
 # .mcp.json（WP-A2：真生成，落实 SKILL.md Step 9 宣称）
 # 注释模板：列出可选 MCP server 接入示例，默认全 commented out，由 AI 按项目已装运行时激活。
 # JSON 不支持注释，用 "_comment" 字段承载说明；激活时删除对应 server 前的注释行（改为有效 JSON）。
-cat > "$SKILL_DIR/.mcp.json" <<'MEOF'
+_write_if_absent "$SKILL_DIR/.mcp.json" <<'MEOF'
 {
   "_comment": "MCP server 接入模板（由 swarm-yuan 生成）。默认无激活 server——AI 按项目已装运行时激活对应 server。激活示例：把 mcpServers 对象内对应 server 的注释去掉（改为有效 JSON 键值）。常用 server：gitnexus（代码图谱，PolyForm 非商用）/ claude-mem（跨会话记忆）/ graphify（MIT 代码图谱，默认推荐）。",
   "mcpServers": {
@@ -730,7 +782,7 @@ cat > "$SKILL_DIR/.mcp.json" <<'MEOF'
 MEOF
 
 
-cat > "$SKILL_DIR/commands/spec.md" <<'CEOF'
+_write_if_absent "$SKILL_DIR/commands/spec.md" <<'CEOF'
 ---
 description: 开始新需求——AI 自动创建 spec + 判断规模 + 预填复用约束
 argument-hint: <需求描述>
@@ -738,14 +790,14 @@ argument-hint: <需求描述>
 AI 自动：1.创建 spec 文件 2.判断规模 3.预填 §5.5 4.运行 --reuse 验证
 $ARGUMENTS
 CEOF
-cat > "$SKILL_DIR/commands/precheck.md" <<'CEOF'
+_write_if_absent "$SKILL_DIR/commands/precheck.md" <<'CEOF'
 ---
 description: 运行门禁检查
 argument-hint: --all | --all-full | <gate>
 ---
 bash scripts/precheck.sh $ARGUMENTS
 CEOF
-cat > "$SKILL_DIR/commands/explore.md" <<'CEOF'
+_write_if_absent "$SKILL_DIR/commands/explore.md" <<'CEOF'
 ---
 description: 探查项目结构
 ---
@@ -753,11 +805,14 @@ description: 探查项目结构
 CEOF
 fi  # PROFILE != lite
 
+# WP-H：SKILL.md 含续传追加段，整段按存在性守卫（draft 骨架的 SKILL.md 已存在时整体跳过）
+if [[ "$RESUME" -eq 0 || ! -f "$SKILL_DIR/SKILL.md" ]]; then
 cat > "$SKILL_DIR/SKILL.md" <<EOF
 ---
 name: $SKILL_NAME
 description: （填充指引：触发条件 + 项目关键词）
 profile: $PROFILE
+status: draft
 ---
 # $SKILL_NAME — （填充指引：项目名 + 需求交付全流程技能）
 > 由 swarm-yuan 生成器创建（${SWARM_YUAN_STAMP}，profile=${PROFILE}），需 AI agent 探查后填充。
@@ -781,8 +836,11 @@ cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] check: precheck.sh 门禁（标准 27 随 --all-full；合规 9 随 --compliance-suite 按需）
 - [ ] scripts: precheck + state-machine + trace-log + cost-report
 EOF
+else
+  echo "  续传跳过（已存在）: $SKILL_DIR/SKILL.md"
+fi
 
-cat > "$SKILL_DIR/.swarm-yuan-version" <<EOF
+_write_if_absent "$SKILL_DIR/.swarm-yuan-version" <<EOF
 created_at=$SWARM_YUAN_STAMP
 generator=swarm-yuan
 mode=create
@@ -794,4 +852,7 @@ find "$SKILL_DIR" -type f | sort
 echo ""
 echo "下一步: AI 自动探查 $PROJECT_DIR 并填充全部文件 + 配置 precheck.conf + 运行门禁验证。"
 echo "  用户无需手动编辑任何配置文件。"
+echo "  骨架状态: draft（--all-full/--compliance-suite 禁用）——填充完成后:"
+echo "    bash generate-skill.sh --mark-active $SKILL_DIR"
+echo "  中断后可重跑本命令断点续传（幂等补齐，不覆盖已有内容）。"
 echo "  升级已有技能: bash generate-skill.sh --upgrade $SKILL_NAME $PROJECT_DIR"
