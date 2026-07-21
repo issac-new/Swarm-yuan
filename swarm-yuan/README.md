@@ -171,7 +171,7 @@ bash install.sh
 
 或用 slash 命令：`/swarm-yuan /path/to/my-project`
 
-AI 自动执行 11 步流程（**不允许中途停在骨架阶段**）：
+AI 自动执行 13 步流程（**不允许中途停在骨架阶段**）：
 
 ```
 自检 → 读取项目知识 → 探查仓库 → 提取 16 项特征卡 → 创建骨架 → 填充全部文件（消除占位符）→ 配置 precheck.conf → 生成 hooks/commands → 运行 36 个门禁 → 写回记忆 → 脚本确认零占位符（`generate-skill.sh --verify-completeness`）
