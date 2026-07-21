@@ -329,6 +329,11 @@ while [[ $# -gt 0 ]]; do
       MODE="--framework"
       if [[ $# -ge 2 && "$2" != --* ]]; then FRAMEWORK_ID="$2"; shift 2; else shift; fi
       ;;
+    --list-gates)
+      # WP-Q1.5：列出所有门禁的 flag / 函数名 / enforce_level 三列表
+      MODE="--list-gates"
+      shift
+      ;;
     *)
       [[ -z "$MODE" ]] && MODE="$1"
       shift
@@ -429,9 +434,67 @@ ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consi
 #（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
 GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --release-sign)
 
+# ===== 门禁分层 enforce_level（决策 19：strict/warn/advisory 三档）=====
+# 自动按 fail() 调用数归类（gen-enforce-level.sh 生成 gate-enforce-level.conf）：
+#   strict   ≥3 fail —— 真正能阻断交付的硬门禁（lite/standard/compliance 档都跑，真 fail）
+#   warn     1-2 fail —— 混合 warn，能 fail 但触发条件窄（standard+ 档跑，fail+warn 都计数）
+#   advisory 0 fail  —— 永不 fail，只 warn/pass（认知/观测类；advisory 路径在子shell 内
+#                       重定义 fail/warn 为纯 echo，永不进 FAIL_COUNT/WARN_COUNT）
+# 横切维度：与 core/standard/compliance 正交（一个门禁同时属于 core + strict，或 standard + advisory）。
+# 手动覆盖：在下方 _ENFORCE_OVERRIDE 数组登记（优先级高于自动生成的 conf）。
+_ENFORCE_OVERRIDE_K=()   # 手动覆盖的 check_<fn> 名（与 _ENFORCE_OVERRIDE_V 同下标对齐）
+_ENFORCE_OVERRIDE_V=()   # 对应的 enforce_level（strict|warn|advisory）
+# 示例（需用时取消注释）：
+# _ENFORCE_OVERRIDE_K+=(check_review)
+# _ENFORCE_OVERRIDE_V+=(strict)
+
+# _enforce_of：查门禁的 enforce_level。$1=check_<fn>，stdout 输出 strict|warn|advisory。
+# 优先级：_ENFORCE_OVERRIDE > gate-enforce-level.conf > 默认 warn（未登记走 warn，保守）。
+# bash 3.2 兼容：不用 declare -A，用并行索引数组 + for 循环查表。
+_enforce_of() {
+  local fn="$1" i k
+  # 1. 手动覆盖优先
+  for i in "${!_ENFORCE_OVERRIDE_K[@]}"; do
+    k="${_ENFORCE_OVERRIDE_K[$i]:-}"
+    [[ "$k" == "$fn" ]] && { echo "${_ENFORCE_OVERRIDE_V[$i]:-warn}"; return; }
+  done
+  # 2. 读 gate-enforce-level.conf（若存在且已 source 过 GATE_ENFORCE_LEVEL_KV 字符串）
+  if [[ -n "${GATE_ENFORCE_LEVEL_KV:-}" ]]; then
+    # GATE_ENFORCE_LEVEL_KV 是换行分隔的 "fn=level" 字符串（bash 3.2 关联数组替代）
+    local _lv
+    _lv=$(printf '%s\n' "$GATE_ENFORCE_LEVEL_KV" | awk -F= -v k="$fn" '$1==k{print $2; exit}')
+    [[ -n "$_lv" ]] && { echo "$_lv"; return; }
+  fi
+  # 3. 默认 warn（保守：未登记的门禁按 warn 处理，不降级 advisory）
+  echo "warn"
+}
+
+# _load_enforce_levels：启动时读 gate-enforce-level.conf 到 GATE_ENFORCE_LEVEL_KV 字符串。
+# 兼容 bash 3.2（不用 declare -A）。开发态：与 precheck.sh 同目录读 conf；
+# 打包态（SWARM_YUAN_BUNDLED=1）：conf 内容已内联，本函数为 noop。
+GATE_ENFORCE_LEVEL_KV=""
+_load_enforce_levels() {
+  local conf
+  # 开发态：与 precheck.sh 同目录的 gate-enforce-level.conf
+  conf="$(dirname "$0")/gate-enforce-level.conf"
+  if [[ -f "$conf" ]]; then
+    # 只取 "check_xxx=level" 行，跳过注释与空行
+    GATE_ENFORCE_LEVEL_KV=$(grep -E '^check_[a-z_]+=(strict|warn|advisory)$' "$conf" 2>/dev/null || true)
+    return
+  fi
+  # 打包态：conf 内容由 install.sh 内联为 GATE_ENFORCE_LEVEL_INLINE（多行字符串字面量）
+  if [[ -n "${GATE_ENFORCE_LEVEL_INLINE:-}" ]]; then
+    GATE_ENFORCE_LEVEL_KV="$GATE_ENFORCE_LEVEL_INLINE"
+    return
+  fi
+  # conf 不存在且无内联：所有门禁走默认 warn（保守）
+  :
+}
+_load_enforce_levels
+
 # Usage 文本由 GATE_FLAGS 生成
 _usage() {
-  local u="Usage: bash precheck.sh [--all|--all-full|--compliance-suite" f
+  local u="Usage: bash precheck.sh [--all|--all-full|--compliance-suite|--list-gates" f
   for f in "${GATE_FLAGS[@]}"; do u="${u}|${f}"; done
   echo "${u}]"
 }
@@ -617,6 +680,35 @@ if [[ "$MODE" == "--doctor" ]]; then
   exit "$_dr_rc"
 fi
 
+# --list-gates 在 cd 前拦截：不需要 PROJECT_DIR，只读门禁注册表与 enforce_level
+if [[ "$MODE" == "--list-gates" ]]; then
+  printf '%-18s %-26s %-10s %s\n' "FLAG" "GATE_FN" "ENFORCE" "TIER"
+  _i=""; _flag=""; _fn=""; _enf=""; _tier=""; _g=""; _s=0; _w=0; _a=0
+  for _i in "${!GATE_FLAGS[@]}"; do
+    _flag="${GATE_FLAGS[$_i]}"
+    _fn="check_$(printf '%s' "${_flag#--}" | tr '-' '_')"
+    _enf=$(_enforce_of "$_fn")
+    _tier=""
+    for _g in "${ALL_GATES_CORE[@]}"; do [[ "$_g" == "$_fn" ]] && _tier="${_tier}${_tier:+ }core"; done
+    for _g in "${ALL_GATES_STANDARD[@]}"; do [[ "$_g" == "$_fn" ]] && _tier="${_tier}${_tier:+ }standard"; done
+    for _g in "${ALL_GATES_COMPLIANCE[@]}"; do [[ "$_g" == "$_fn" ]] && _tier="${_tier}${_tier:+ }compliance"; done
+    [[ -z "$_tier" ]] && _tier="(none)"
+    printf '%-18s %-26s %-10s %s\n' "$_flag" "$_fn" "$_enf" "$_tier"
+  done
+  echo ""
+  _s=0; _w=0; _a=0
+  for _i in "${!GATE_FLAGS[@]}"; do
+    _fn="check_$(printf '%s' "${GATE_FLAGS[$_i]#--}" | tr '-' '_')"
+    case "$(_enforce_of "$_fn")" in
+      strict) _s=$((_s+1)) ;;
+      warn)   _w=$((_w+1)) ;;
+      advisory) _a=$((_a+1)) ;;
+    esac
+  done
+  echo "汇总：strict ${_s} / warn ${_w} / advisory ${_a} = ${#GATE_FLAGS[@]}"
+  exit 0
+fi
+
 cd "$PROJECT_DIR"
 
 # ===== 门禁工具化运行时（P1-4/P1-5）：--format json + gate-runs 证据落盘 =====
@@ -708,6 +800,48 @@ _gate_exec() {
     bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status started >&2 2>/dev/null || true
   fi
   local _trace_bf=$FAIL_COUNT _trace_bw=$WARN_COUNT
+  # WP-Q1（决策 19）：门禁分层 enforce_level 分流——advisory 门禁永不 fail/warn 计数。
+  # 在子 shell 内重定义 fail()/warn()/pass() 为纯 echo，advisory 门禁的 fail/warn 调用变成纯输出行，
+  # 不进 FAIL_COUNT/WARN_COUNT/SKIP_COUNT——"advisory 是观测类门禁，不阻断交付"语义机器化。
+  # strict/warn 门禁走原路径（fail/warn 正常计数），行为不变。
+  local _enforce
+  _enforce=$(_enforce_of "$1")
+  if [[ "$_enforce" == "advisory" ]]; then
+    # 非证据模式：子 shell 内重定义 fail/warn/pass，原样调用门禁
+    if [[ "$_EVIDENCE_ON" -eq 0 ]]; then
+      (
+        fail() { echo "  ⚠ advisory: $1"; }   # advisory 不进 FAIL_COUNT
+        warn() { echo "  ⚠ advisory: $1"; }   # advisory 不进 WARN_COUNT
+        pass() { echo "  ✓ advisory: $1"; }
+        if [[ "$2" == "1" ]]; then "$1" || true; else "$1"; fi
+      )
+      if [[ -f "${TRACE_LOG_SH:-}" ]]; then
+        bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status advisory >&2 2>/dev/null || true
+      fi
+      return 0
+    fi
+    # 证据模式：子 shell 内捕获输出（advisory 门禁状态恒为 advisory，不进 fail/warn/skip 计数）
+    _t0=$(date +%s)
+    (
+      fail() { echo "  ⚠ advisory: $1"; }
+      warn() { echo "  ⚠ advisory: $1"; }
+      pass() { echo "  ✓ advisory: $1"; }
+      if [[ "$2" == "1" ]]; then "$1" || true; else "$1"; fi
+    ) > "$_GATE_TMP" 2>&1 || true
+    _t1=$(date +%s)
+    cat "$_GATE_TMP"
+    _st="advisory"
+    _ids=$(_gate_ids "$_GATE_TMP")
+    _json_add_result "$1" "$_st" "$_ids"
+    if [[ -n "$GATE_RUNS_DIR" ]]; then _gate_evidence "$1" "$_st" "$_ids" "$((_t1-_t0))" || true; fi
+    if [[ -f "${TRACE_LOG_SH:-}" ]]; then
+      bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status advisory >&2 2>/dev/null || true
+    fi
+    # advisory 永不 fail（子shell 内重定义保证），容错标志 1 时直接返回 0
+    [[ "$2" == "1" ]] && return 0
+    return 0
+  fi
+  # strict/warn 门禁：走原分发路径（fail/warn 正常计数）
   # 非证据模式：与原分发语句逐语句等价（含 set -e 传播语义）
   if [[ "$_EVIDENCE_ON" -eq 0 ]]; then
     if [[ "$2" == "1" ]]; then "$1" || true; else "$1"; fi

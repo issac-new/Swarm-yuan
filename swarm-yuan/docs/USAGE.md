@@ -132,6 +132,22 @@ bash install.sh
 
 特征卡定义了「项目应该是什么样的」，36 个门禁验证「代码是否符合特征卡定义的规则」。
 
+### 门禁分层（决策 19，横切维度）
+
+36 门禁按 `fail()` 调用能力分三档，与 core/standard/compliance 三档正交（一个门禁同时属于 core + strict，或 standard + advisory）：
+
+| 分层 | 数量 | fail() 能力 | 行为 | 门禁清单 |
+|------|------|------------|------|----------|
+| **strict** | 12 | ≥3 fail | 真 fail 阻断交付 | branch / layer / reuse / security / shift-left / compliance / sbom / privacy / authz / requirements / rtm / release-sign |
+| **warn** | 18 | 1-2 fail | 能 fail 但触发窄，混合 warn | scope / build / test / sensitive / review / stable-diff / deps / adr / contract / impact / service / api / frontend / domain / knowledge / docs-pack / crypto / framework |
+| **advisory** | 6 | 0 fail | 永不 fail，只 warn/pass（认知/观测类） | consistency / link-depth / consistency-cross / state / cognition / mermaid |
+
+- **advisory 机器化**：子 shell 内重定义 `fail()`/`warn()` 为纯 echo，永不进 FAIL_COUNT/WARN_COUNT——"advisory 是观测类，不阻断交付"语义机器化
+- **查看分层**：`bash scripts/precheck.sh --list-gates`（输出 flag / gate_fn / enforce / tier 四列）
+- **自动归类**：`bash scripts/gen-enforce-level.sh` 扫 precheck.sh fail() 数，重生成 `assets/gate-enforce-level.conf`（幂等）
+- **手动覆盖**：precheck.sh 顶部 `_ENFORCE_OVERRIDE_K`/`_ENFORCE_OVERRIDE_V` 数组（如 `check_review` 想从 warn 升 strict）
+- **自检**：`self-check.sh` 校验 conf 与 precheck.sh fail 数一致 + strict 门禁必含 ≥1 fail()（防 strict 声明空壳）
+
 **特征卡是立法，门禁是执法。**
 
 | 特征卡项 | 立法定义 | 门禁执法 |

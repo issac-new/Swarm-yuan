@@ -715,6 +715,49 @@ check_doc_consistency() {
       echo "  ✓ profile 漂移检测：无漂移"
     fi
   fi
+
+  # 7. WP-Q1 门禁分层一致性（决策 19）：gate-enforce-level.conf 与 precheck.sh 实际 fail() 数一致。
+  #    gen-enforce-level.sh 重生成 conf，与现文件 diff——漂移则 warn + FAIL=1（防 fail 数变了 conf 没更新）。
+  if [[ -f "$base/scripts/gen-enforce-level.sh" ]]; then
+    local gel_tmp; gel_tmp="$(mktemp /tmp/gelcheck.XXXXXX)"
+    cp "$base/assets/gate-enforce-level.conf" "$gel_tmp" 2>/dev/null || true
+    if bash "$base/scripts/gen-enforce-level.sh" >/dev/null 2>&1; then
+      if ! diff -q "$gel_tmp" "$base/assets/gate-enforce-level.conf" >/dev/null 2>&1; then
+        warn "gate-enforce-level.conf 与 precheck.sh fail() 数不一致——已由 gen-enforce-level.sh 自动重写为最新（建议提交）"
+      else
+        local _s _w _a
+        _s=$(grep -cE '=strict$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
+        _w=$(grep -cE '=warn$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
+        _a=$(grep -cE '=advisory$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
+        echo "  ✓ 门禁分层一致（strict ${_s} / warn ${_w} / advisory ${_a}）"
+      fi
+    fi
+    rm -f "$gel_tmp"
+  fi
+
+  # 8. WP-Q1 strict 门禁必含 fail()（决策 19）：声明 strict 的门禁函数体必须有 ≥1 个 fail() 调用，
+  #    防 strict 声明空壳（fail_calls=0 却标 strict）。advisory 必须是 0 fail（否则分类矛盾）。
+  if [[ -f "$base/assets/gate-enforce-level.conf" ]]; then
+    local _fn _lv _fc _bad=""
+    # WP-Q1.3：拆分后 check_* 在 gates-*.sh，须扫四文件统计 fail() 数
+    local _gate_files; _gate_files=$(_all_gate_files "$base")
+    while IFS='=' read -r _fn _lv; do
+      [[ "$_fn" =~ ^check_[a-z_]+$ ]] || continue
+      _fc=$(awk -v target="$_fn" '
+        /^check_[a-z_]+\(\)/ { in_fn = ($0 ~ "^"target"\\(\\)"); cnt=0; next }
+        in_fn && /^\}/ { in_fn=0; print cnt; exit }
+        in_fn { s=$0; while (match(s, /(^|[^a-zA-Z0-9_])fail[ \t]+/)) { cnt++; s=substr(s, RSTART+RLENGTH) } }
+      ' $_gate_files 2>/dev/null || echo 0)
+      case "$_lv" in
+        strict) [[ "$_fc" -lt 1 ]] && _bad="${_bad} ${_fn}(strict 但 ${_fc} fail);" ;;
+        advisory) [[ "$_fc" -gt 0 ]] && _bad="${_bad} ${_fn}(advisory 但 ${_fc} fail——分类矛盾);" ;;
+      esac
+    done < "$base/assets/gate-enforce-level.conf"
+    if [[ -n "$_bad" ]]; then
+      warn "门禁分层矛盾：$_bad"
+      FAIL=1
+    fi
+  fi
 }
 check_doc_consistency
 
