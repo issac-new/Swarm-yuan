@@ -10,6 +10,10 @@ run_one() {  # $1=violating|compliant  $2=expect fail|pass
   tmp="$(mktemp -d /tmp/fwfx.XXXXXX)"
   mkdir -p "$tmp/scripts"
   cp "$BASE/assets/precheck.sh" "$tmp/scripts/precheck.sh"
+  # WP-Q1.3：拆分后 precheck.sh 依赖 gates-strict/warn/advisory.sh 三文件（source 守卫）
+  for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
+    [[ -f "$BASE/assets/$_gf" ]] && cp "$BASE/assets/$_gf" "$tmp/scripts/$_gf"
+  done
   # conf 中的 __REPO_ROOT__ 占位符替换为实际仓库根（fixture 机器无关化）
   REPO_ROOT="$(cd "$BASE/.." && pwd)"
   sed "s|__REPO_ROOT__|$REPO_ROOT|g" "$FX/$mode/precheck.conf" > "$tmp/scripts/precheck.conf"

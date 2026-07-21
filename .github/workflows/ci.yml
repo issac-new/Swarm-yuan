@@ -187,9 +187,10 @@ jobs:
         run: |
           set +e  # 手动控制退出码，避免 set -e + pipefail 误杀 shellcheck 管道
           sc_fail=0
-          # 严格层：原 6 核心脚本——只 error 级 fail（靠 grep 判定，不靠 shellcheck 退出码：
-          # shellcheck 退出码由所有 severity 决定，-S 只控制显示不控制退出码）
-          for f in assets/precheck.sh scripts/generate-skill.sh scripts/self-check.sh \
+          # 严格层：原 6 核心脚本 + WP-Q1.3 拆出的三档门禁文件 + gen-enforce-level——只 error 级 fail
+          # （靠 grep 判定，不靠 shellcheck 退出码：shellcheck 退出码由所有 severity 决定，-S 只控制显示不控制退出码）
+          for f in assets/precheck.sh assets/gates-strict.sh assets/gates-warn.sh assets/gates-advisory.sh \
+                   scripts/generate-skill.sh scripts/self-check.sh scripts/gen-enforce-level.sh \
                    scripts/verify-framework-ruleset.sh tests/run-framework-fixture.sh \
                    scripts/gen-framework-index.sh assets/trace-log.sh scripts/cost-report.sh; do
             [[ -f "$f" ]] || continue

@@ -20,6 +20,14 @@ if [[ ! -f "${PRECHECK}" ]]; then
   exit 1
 fi
 
+# WP-Q1.3：拆分后 check_* 函数在 gates-strict/warn/advisory.sh 三文件。
+# 打包态（install.sh bundle）下三文件已内联回 precheck.sh，gates-*.sh 不存在。
+# 扫描文件清单：precheck.sh + 存在的 gates-*.sh。
+GATE_FILES="${PRECHECK}"
+for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
+  [[ -f "${BASE}/assets/${_gf}" ]] && GATE_FILES="${GATE_FILES} ${BASE}/assets/${_gf}"
+done
+
 # 用 awk 按行边界提取函数体（从 ^check_xxx() 到下一行 ^}）。
 # 不跟大括号深度——python -c / heredoc / case 里的 { } 会污染 depth 跟踪。
 # 匹配 fail 调用：词边界 fail 后跟空白（非字母数字下划线前缀），覆盖 `fail "msg"` / `fail "$var"`。
@@ -41,7 +49,7 @@ in_fn {
   }
 }
 END { if (cur != "") print cnt "\t" cur }
-' "${PRECHECK}" | sort -t$'\t' -k2 > "${OUT}.tmp"
+' $GATE_FILES | sort -t$'\t' -k2 > "${OUT}.tmp"
 
 if [[ ! -s "${OUT}.tmp" ]]; then
   echo "✗ 未扫到任何 check_* 函数（precheck.sh 损坏？）" >&2

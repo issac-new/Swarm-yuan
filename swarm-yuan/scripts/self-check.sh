@@ -535,6 +535,21 @@ _count_gate_array() {
   ' "$2" 2>/dev/null || echo 0
 }
 
+# WP-Q1.3：拆分后 check_* 函数在 gates-strict/warn/advisory.sh 三文件，不在 precheck.sh 主文件。
+# 所有"数 check_* 函数"的 grep 须扫四文件（precheck.sh + gates-*.sh）。
+# 打包态（install.sh bundle）下三文件已内联回 precheck.sh，gates-*.sh 不存在，此时只扫 precheck.sh。
+_all_gate_files() {
+  local base="$1" f
+  printf '%s\n' "$base/assets/precheck.sh"
+  for f in gates-strict.sh gates-warn.sh gates-advisory.sh; do
+    [[ -f "$base/assets/$f" ]] && printf '%s\n' "$base/assets/$f"
+  done
+}
+_count_check_fns() {
+  local base="$1"
+  _all_gate_files "$base" | xargs grep -hcE '^check_[a-z_]+\(\)' 2>/dev/null | awk '{s+=$1} END{print s+0}'
+}
+
 check_doc_consistency() {
   echo "▶ 文档一致性检查"
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
@@ -568,8 +583,8 @@ check_doc_consistency() {
   # 2. SKILL.md 声明的门禁数 vs precheck.sh 实际 check_* 函数数（口径可能不同，仅 warn 提示）
   local skill_gates declared_gates actual_gates
   declared_gates=$(grep -oE "[0-9]+ ?个?质量门禁|[0-9]+ ?quality gates" "$base/SKILL.md" 2>/dev/null | head -1 | grep -oE "[0-9]+" || echo "?")
-  actual_gates=$(grep -cE "^check_[a-z_]+\(\)" "$precheck_sh" 2>/dev/null | xargs)
-  echo "  ℹ SKILL.md 声明 $declared_gates 门禁，precheck.sh 顶层 check_* 函数 $actual_gates 个（差额为子门禁/聚合门禁，人工确认）"
+  actual_gates=$(_count_check_fns "$base")
+  echo "  ℹ SKILL.md 声明 $declared_gates 门禁，precheck.sh+gates-*.sh check_* 函数 $actual_gates 个（差额为子门禁/聚合门禁，人工确认）"
   # 3. SKILL.md 声明的 conf 变量数 vs precheck.conf 实际变量数
   #    修复(2026-07-20)：交替须用 ERE 标准 `|`——grep -E 下 `\|` 按字面管道解析、永不命中，
   #    导致 declared_vars 恒为空而误报文档漂移（docs/paradigm-decisions.md 记录的 `\|` 字面 bug 家族又一例）。
@@ -595,7 +610,7 @@ check_doc_consistency() {
   #    conf 变量按「N 个(配置|门禁)?变量」匹配，避免把「146 个门禁」误判为变量数。
   local true_gates true_vars true_fw
   # 门禁函数含下划线（stable_diff/shift_left/...），须用 [a-z_]+ 计数，否则漏数（23≠27）
-  true_gates=$(grep -cE "^check_[a-z_]+\(\)" "$precheck_sh" 2>/dev/null | xargs)
+  true_gates=$(_count_check_fns "$base")
   # 架构/合规门禁数真值：从 precheck.sh 注册表数组机械解析——架构=FULL−CORE−COMPLIANCE。
   # 合规族未合入时 ALL_GATES_COMPLIANCE 未定义，按 0 计（向后兼容旧版 precheck.sh）。
   local true_core true_compliance true_full
@@ -743,6 +758,7 @@ check_doc_consistency() {
     local _gate_files; _gate_files=$(_all_gate_files "$base")
     while IFS='=' read -r _fn _lv; do
       [[ "$_fn" =~ ^check_[a-z_]+$ ]] || continue
+      # 用 gen-enforce-level.sh 同款 awk 统计该函数 fail() 数（扫四文件）
       _fc=$(awk -v target="$_fn" '
         /^check_[a-z_]+\(\)/ { in_fn = ($0 ~ "^"target"\\(\\)"); cnt=0; next }
         in_fn && /^\}/ { in_fn=0; print cnt; exit }

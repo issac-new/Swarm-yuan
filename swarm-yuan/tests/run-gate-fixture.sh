@@ -65,6 +65,11 @@ run_one() {
   tmp="$(mktemp -d /tmp/gfx.XXXXXX)"
   mkdir -p "$tmp/scripts"
   cp "$BASE/assets/precheck.sh" "$tmp/scripts/precheck.sh"
+  # WP-Q1.3：拆分后 precheck.sh 依赖 gates-strict/warn/advisory.sh 三文件（source 守卫）
+  # 打包态（install.sh bundle）下三文件已内联，无需 cp；开发态需 cp 三文件
+  for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
+    [[ -f "$BASE/assets/$_gf" ]] && cp "$BASE/assets/$_gf" "$tmp/scripts/$_gf"
+  done
   # conf 中 __REPO_ROOT__ 占位符替换为 fixture 根（机器无关化）
   sed "s|__REPO_ROOT__|$fx|g" "$fx/scripts/precheck.conf" > "$tmp/scripts/precheck.conf"
   # setup 钩子：运行时生成被 .gitignore 排除的样本（如 node_modules mock）
