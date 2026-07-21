@@ -47,7 +47,8 @@ _fw_nextjs_check() {
     fi
     if printf '%s\n' "$body" | grep -qE 'useState\(|useEffect\(|useRef\(|useMemo\(|useCallback\(|window\.|document\.|localStorage\.' 2>/dev/null; then
       local ln
-      ln=$(printf '%s\n' "$body" | grep -nE 'useState\(|useEffect\(|useRef\(|window\.|document\.|localStorage\.' 2>/dev/null | head -1)
+      # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+      ln=$(printf '%s\n' "$body" | grep -nE 'useState\(|useEffect\(|useRef\(|window\.|document\.|localStorage\.' 2>/dev/null | head -1 || true)
       uc_bad="${uc_bad}${f}:${ln}
 "
     fi
@@ -74,7 +75,7 @@ _fw_nextjs_check() {
     # async 函数体内须含鉴权关键字
     if ! printf '%s\n' "$body" | grep -qE '\bauth\(|getServerSession|requireAuth|currentUser|getSession|cookies\(\)\.get' 2>/dev/null; then
       local ln
-      ln=$(printf '%s\n' "$body" | grep -nE "'use server'|async function [a-zA-Z]+Action" 2>/dev/null | head -1)
+      ln=$(printf '%s\n' "$body" | grep -nE "'use server'|async function [a-zA-Z]+Action" 2>/dev/null | head -1 || true)
       sa_bad="${sa_bad}${f}:${ln}: Server Action 未检出鉴权
 "
     fi
@@ -141,7 +142,7 @@ ${mw_file}"
     body=$(_fw_strip_comments_js_head "$f")
     if printf '%s\n' "$body" | grep -qE "from 'next/headers'|from \"next/headers\"|\bcookies\(\)|\bheaders\(\)" 2>/dev/null; then
       local ln
-      ln=$(printf '%s\n' "$body" | grep -nE "from 'next/headers'|cookies\(\)|headers\(\)" 2>/dev/null | head -1)
+      ln=$(printf '%s\n' "$body" | grep -nE "from 'next/headers'|cookies\(\)|headers\(\)" 2>/dev/null | head -1 || true)
       hs_bad="${hs_bad}${f}:${ln}
 "
     fi
@@ -247,7 +248,7 @@ ${mw_file}"
     # 值为 0 或 >86400（1 天）→ warn
     if [[ "$val" -eq 0 || "$val" -gt 86400 ]]; then
       local ln
-      ln=$(printf '%s\n' "$body" | grep -nE "export const revalidate" 2>/dev/null | head -1)
+      ln=$(printf '%s\n' "$body" | grep -nE "export const revalidate" 2>/dev/null | head -1 || true)
       rev_bad="${rev_bad}${f}:${ln}: revalidate=${val}
 "
     fi

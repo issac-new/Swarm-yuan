@@ -132,11 +132,12 @@ ${pr_bad}"
   # fw_sa_scoped_session(warn)：scoped_session 须 remove() 防线程泄漏
   # ====================================================================
   local has_scoped=0 has_remove=0
-  has_scoped=$(grep -rlE 'scoped_session\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+  # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+  has_scoped=$(grep -rlE 'scoped_session\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
   if [[ "$has_scoped" -eq 0 ]]; then
     pass "fw_sa_scoped_session: 无 scoped_session，跳过"
   else
-    has_remove=$(grep -rlE '\.remove\(\)' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+    has_remove=$(grep -rlE '\.remove\(\)' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
     if [[ "$has_remove" -eq 1 ]]; then
       pass "fw_sa_scoped_session: scoped_session 有 remove() 边界"
     else
@@ -160,7 +161,7 @@ ${pr_bad}"
   # fw_sa_alembic(warn)：create_all 直连建表须 Alembic 迁移管理
   # ====================================================================
   local has_ca=0 has_alembic=0
-  has_ca=$(grep -rlE 'create_all\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+  has_ca=$(grep -rlE 'create_all\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
   if [[ "$has_ca" -eq 0 ]]; then
     pass "fw_sa_alembic: 无 create_all，跳过"
   else

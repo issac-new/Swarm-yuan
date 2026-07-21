@@ -218,7 +218,9 @@ inject_frameworks() {
   ACTIVE_FRAMEWORKS=()
   set +u
   # shellcheck disable=SC1090
-  . "$conf"
+  # WP-R Bug#2: . "$conf" 末条语句可能返回非零（[[ -f ]] && source 兄弟 conf 不存在时返回 1），
+  # set -e 下会使 inject_frameworks 退出。|| true 兜底（对齐 L827 既有范式）。
+  . "$conf" || true
   set -u
   if [[ ${#ACTIVE_FRAMEWORKS[@]} -eq 0 ]]; then
     echo "⚠ ACTIVE_FRAMEWORKS 未配置，跳过门禁注入"
@@ -582,13 +584,21 @@ auto_detect_profile() {
   # 形态信号：同时含 ≥3 种形态（前端 .vue/.jsx/.tsx + 后端 .py/.java/.go/.rb + 异步 .consumer./.handler. + 微服务 services/ + 桌面 .electron. 等）
   forms=0
   # 前端形态
-  find "$proj" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) 2>/dev/null | head -1 | grep -q . && forms=$((forms+1))
+  # WP-R Bug#1: find -print -quit 替代 find|head -1（避免 set -euo pipefail 下 SIGPIPE 崩溃）
+  find "$proj" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
   # 后端形态（非前端的 .py/.java/.go/.rb/.php/.kt/.scala）
-  find "$proj" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" \) 2>/dev/null | head -1 | grep -q . && forms=$((forms+1))
+  find "$proj" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
   # 异步/MQ 形态（含 consumer/handler/listener/subscriber 文件名）
-  find "$proj" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" \) 2>/dev/null | head -1 | grep -q . && forms=$((forms+1))
+  find "$proj" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
   # 微服务形态（services/ 或 apps/ 多服务目录）
-  [[ -d "$proj/services" || -d "$proj/apps" ]] && find "$proj/services" "$proj/apps" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -2 | wc -l | tr -d ' ' | grep -qE '^[2-9]|[1-9][0-9]' && forms=$((forms+1))
+  # WP-R Bug#1: find -maxdepth 1 -mindepth 1 -type d 列目录后 wc -l，find 目录数有限不会触发 SIGPIPE；
+  # 但原 head -2 截断在 pipefail 下有风险。改用 find ... -print -quit 两次判定 ≥2：先确认 services/ 有子目录，
+  # 再用 wc -l 计数（无 head 截断）。services/apps 可能其一不存在，find 对不存在路径 stderr 已 2>/dev/null。
+  if [[ -d "$proj/services" || -d "$proj/apps" ]]; then
+    local _svc_n
+    _svc_n=$(find "$proj/services" "$proj/apps" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+    [[ "$_svc_n" =~ ^[0-9]+$ && "$_svc_n" -ge 2 ]] && forms=$((forms+1))
+  fi
   # 桌面/移动形态（electron/tauri/android/ios 目录）
   { [[ -d "$proj/electron" || -d "$proj/src-tauri" || -d "$proj/android" || -d "$proj/ios" ]]; } && forms=$((forms+1))
   # 框架信号：依赖文件中的框架数（package.json dependencies + pom.xml + go.mod 等，粗计）
@@ -644,14 +654,20 @@ if [[ "$PROFILE" == "auto" ]]; then
   if [[ -n "$_sig" ]]; then
     _auto_reason="命中合规信号（等保/密评/个保法/金融/医疗关键词：${_sig}）"
   else
-    _fc=$(find "$PROJECT_DIR" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' 2>/dev/null | head -81 | wc -l | tr -d ' ')
+    # WP-R Bug#1: find|head -81|wc -l 在 $(...) 内 set -e 不传播，但 pipefail 下 find SIGPIPE(141)
+    # 会使赋值非零（虽 head -81 有意截断计数）。改用 find -printf '' 计数或 awk 统计避免截断管道。
+    # 这里只需"是否 ≥80 文件"判定，用 find ... | wc -l 全量计数（不截断）更准且无 SIGPIPE。
+    _fc=$(find "$PROJECT_DIR" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' 2>/dev/null | wc -l | tr -d ' ')
     _auto_reason="规模信号：文件数 ${_fc:-?}（<80 → lite，否则 standard）"
   fi
   # WP-P9：技术栈复杂度信号（只升不降，质量优先）
+  # WP-R Bug#1: 原 find|head -1|grep -q . 在 set -euo pipefail 下，find 输出被 head 截断收 SIGPIPE(141)，
+  # pipefail 使管道非零 → && 链非零 → set -e 触发脚本退出（5/5 真实项目崩溃 exit 141）。
+  # 改用 find -print -quit：find 原生首匹配即停，无管道无 SIGPIPE。
   _forms=0
-  find "$PROJECT_DIR" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) 2>/dev/null | head -1 | grep -q . && _forms=$((_forms+1))
-  find "$PROJECT_DIR" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" \) 2>/dev/null | head -1 | grep -q . && _forms=$((_forms+1))
-  find "$PROJECT_DIR" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" \) 2>/dev/null | head -1 | grep -q . && _forms=$((_forms+1))
+  find "$PROJECT_DIR" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
+  find "$PROJECT_DIR" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
+  find "$PROJECT_DIR" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
   { [[ -d "$PROJECT_DIR/electron" || -d "$PROJECT_DIR/src-tauri" || -d "$PROJECT_DIR/android" || -d "$PROJECT_DIR/ios" ]]; } && _forms=$((_forms+1))
   _msig=""
   if [[ -d "$PROJECT_DIR/services" ]]; then
@@ -669,7 +685,8 @@ _wq3_script="$(cd "$(dirname "$0")" && pwd)/detect-frameworks.sh"
 if [[ "$PROFILE" != "lite" && -f "$_wq3_script" ]]; then
   _dfw_out=$(bash "$_wq3_script" "$PROJECT_DIR" 2>/dev/null || true)
   if [[ -n "$_dfw_out" ]]; then
-    _dfw_fws=$(printf '%s\n' "$_dfw_out" | grep '^ACTIVE_FRAMEWORKS=' | head -1)
+    # WP-R Bug#1: printf|grep|head -1 上游 printf 输出有限(几行)无 SIGPIPE 风险,但 pipefail 下防御性 || true
+    _dfw_fws=$(printf '%s\n' "$_dfw_out" | grep '^ACTIVE_FRAMEWORKS=' | head -1 || true)
     if [[ -n "$_dfw_fws" && "$_dfw_fws" != 'ACTIVE_FRAMEWORKS=()' ]]; then
       echo "框架探测: $_dfw_fws"
     fi

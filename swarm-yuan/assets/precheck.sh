@@ -283,7 +283,9 @@ elif [[ -f "$_CONF_DIR/precheck.conf" ]]; then
     set +u
     # shellcheck disable=SC1090
     # shellcheck source=/dev/null
-    source "$_CONF_DIR/precheck.conf"
+    # WP-R Bug#2: source conf 末条语句可能返回非零（[[ -f ]] && source 兄弟 conf 不存在时返回 1），
+    # set -e 下会使 precheck.sh 在此退出（所有门禁静默失效）。|| true 兜底，conf 内容已 source 生效。
+    source "$_CONF_DIR/precheck.conf" || true
     set -u
   else
     # conf 语法错误（P1-4 前置守卫）：原行为是 source 直接崩（exit 2 且报错文本随 bash 版本漂移）。
@@ -508,7 +510,8 @@ _load_enforce_levels
 if [[ -z "${SWARM_YUAN_BUNDLED:-}" ]]; then
   for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
     _gp="$(dirname "$0")/$_gf"
-    [[ -f "$_gp" ]] && source "$_gp"
+    # WP-R Bug#2: [[ -f ]] && source 在循环末条时，文件缺失返回 1 会触发 set -e。|| true 兜底。
+    [[ -f "$_gp" ]] && source "$_gp" || true
   done
 fi
 

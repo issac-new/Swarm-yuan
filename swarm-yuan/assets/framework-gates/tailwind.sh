@@ -166,8 +166,9 @@ ${content_files}"
       postcss.config.*)
         # 检出 autoprefixer 在 tailwindcss 之前
         local tw_l ap_l
-        tw_l=$(grep -nE "tailwindcss|@tailwindcss" "$f" 2>/dev/null | head -1 | cut -d: -f1)
-        ap_l=$(grep -nE 'autoprefixer' "$f" 2>/dev/null | head -1 | cut -d: -f1)
+        # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+        tw_l=$(grep -nE "tailwindcss|@tailwindcss" "$f" 2>/dev/null | head -1 | cut -d: -f1 || true)
+        ap_l=$(grep -nE 'autoprefixer' "$f" 2>/dev/null | head -1 | cut -d: -f1 || true)
         if [[ -n "$tw_l" && -n "$ap_l" && "$ap_l" -lt "$tw_l" ]]; then
           pc_bad="${pc_bad}${f}: autoprefixer(行${ap_l}) 在 tailwindcss(行${tw_l}) 之前（须 tailwindcss 先）"
         fi

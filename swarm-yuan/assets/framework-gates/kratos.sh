@@ -50,8 +50,9 @@ _fw_kratos_check() {
     fi
     # Recovery 行号须等于文件内最早中间件构造调用行号（即链首）
     local rec_line first_mid
-    rec_line=$(printf '%s\n' "$code" | grep -nE 'recovery\.Recovery\(' | head -1 | cut -d: -f1)
-    first_mid=$(printf '%s\n' "$code" | grep -nE '(recovery\.Recovery|logging\.Server|validate\.Validate|tracing\.Server|metrics\.Server|ratelimit\.Server|circuitbreaker\.Server|selector\.Server|metadata\.Server)\(' | head -1 | cut -d: -f1)
+    # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+    rec_line=$(printf '%s\n' "$code" | grep -nE 'recovery\.Recovery\(' | head -1 | cut -d: -f1 || true)
+    first_mid=$(printf '%s\n' "$code" | grep -nE '(recovery\.Recovery|logging\.Server|validate\.Validate|tracing\.Server|metrics\.Server|ratelimit\.Server|circuitbreaker\.Server|selector\.Server|metadata\.Server)\(' | head -1 | cut -d: -f1 || true)
     if [[ -n "$first_mid" && -n "$rec_line" && "$rec_line" -ne "$first_mid" ]]; then
       rec_order_bad="${rec_order_bad}${g}: Recovery(line ${rec_line}) 非链首中间件(链首 line ${first_mid})
 "
@@ -236,7 +237,7 @@ ${rec_order_bad}"
   local http_bad="" svc gg
   for g in "${protoarr[@]+"${protoarr[@]}"}"; do
     grep -qE 'google\.api\.http' "$g" 2>/dev/null || continue
-    svc=$(grep -oE '^service[[:space:]]+[A-Za-z0-9_]+' "$g" 2>/dev/null | head -1 | awk '{print $2}')
+    svc=$(grep -oE '^service[[:space:]]+[A-Za-z0-9_]+' "$g" 2>/dev/null | head -1 | awk '{print $2}' || true)
     [[ -z "$svc" ]] && continue
     local hit=0
     for gg in "${goarr[@]+"${goarr[@]}"}"; do

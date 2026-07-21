@@ -80,7 +80,8 @@ _fw_naiveui_check() {
     if grep -qE ':data="[a-zA-Z_]*(list|List|rows|Rows|data|Data)"' "$f" 2>/dev/null; then
       if ! grep -qE 'virtual-scroll|:virtual|:max-height|:max-height' "$f" 2>/dev/null; then
         local ln
-        ln=$(grep -nE '<n-data-table\b' "$f" 2>/dev/null | head -1)
+        # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+        ln=$(grep -nE '<n-data-table\b' "$f" 2>/dev/null | head -1 || true)
         tbl_bad="${tbl_bad}${f}:${ln}
 "
       fi
@@ -139,7 +140,7 @@ ${dk_bad}"
     if grep -qE 'filterable' "$f" 2>/dev/null; then
       if ! grep -qE 'on-search|@search|:loading|remote' "$f" 2>/dev/null; then
         local ln
-        ln=$(grep -nE 'filterable' "$f" 2>/dev/null | head -1)
+        ln=$(grep -nE 'filterable' "$f" 2>/dev/null | head -1 || true)
         sel_bad="${sel_bad}${f}:${ln}
 "
       fi
@@ -155,7 +156,7 @@ ${dk_bad}"
     if ! grep -qE '<n-upload\b' "$f" 2>/dev/null; then continue; fi
     if ! grep -qE 'before-upload|@before-upload|:max|:limit' "$f" 2>/dev/null; then
       local ln
-      ln=$(grep -nE '<n-upload\b' "$f" 2>/dev/null | head -1)
+      ln=$(grep -nE '<n-upload\b' "$f" 2>/dev/null | head -1 || true)
       up_bad="${up_bad}${f}:${ln}
 "
     fi
@@ -170,7 +171,7 @@ ${dk_bad}"
     if ! grep -qE '<n-modal\b' "$f" 2>/dev/null; then continue; fi
     if ! grep -qE 'preset|:title|:bordered' "$f" 2>/dev/null; then
       local ln
-      ln=$(grep -nE '<n-modal\b' "$f" 2>/dev/null | head -1)
+      ln=$(grep -nE '<n-modal\b' "$f" 2>/dev/null | head -1 || true)
       mdl_bad="${mdl_bad}${f}:${ln}
 "
     fi

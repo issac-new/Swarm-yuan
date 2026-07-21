@@ -107,8 +107,9 @@ _fw_spring_cloud_check() {
     gw_hit=1
     # 简化检测：Path=/** 或 Path=/api/** 出现在具体 Path=/api/xxx 之前
     local lines star_line specific_line
-    star_line=$(grep -nE 'Path=/\*\*|Path=/api/\*\*|Path:[[:space:]]*/\*\*|Path:[[:space:]]*/api/\*\*' "$c" 2>/dev/null | head -1 | cut -d: -f1)
-    specific_line=$(grep -nE 'Path=/api/[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*$|Path:[[:space:]]*/api/[a-zA-Z0-9_-]+(/[a-zA-Z0-9_{}-]+)*' "$c" 2>/dev/null | head -1 | cut -d: -f1)
+    # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+    star_line=$(grep -nE 'Path=/\*\*|Path=/api/\*\*|Path:[[:space:]]*/\*\*|Path:[[:space:]]*/api/\*\*' "$c" 2>/dev/null | head -1 | cut -d: -f1 || true)
+    specific_line=$(grep -nE 'Path=/api/[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*$|Path:[[:space:]]*/api/[a-zA-Z0-9_-]+(/[a-zA-Z0-9_{}-]+)*' "$c" 2>/dev/null | head -1 | cut -d: -f1 || true)
     if [[ -n "$star_line" && -n "$specific_line" && "$star_line" -lt "$specific_line" ]]; then
       gw_bad="${gw_bad}${c}: 宽泛 Path 路由(line ${star_line}) 前置于具体路由(line ${specific_line})
 "
@@ -290,13 +291,13 @@ ${bs_files}"
     case "$(basename "$c")" in
       pom.xml|*.xml)
         local v
-        v=$(grep -A2 -E 'spring-cloud-dependencies' "$c" 2>/dev/null | grep -oE '<version>[^<]+</version>' | head -1 | sed -E 's/<\/?version>//g')
+        v=$(grep -A2 -E 'spring-cloud-dependencies' "$c" 2>/dev/null | grep -oE '<version>[^<]+</version>' | head -1 | sed -E 's/<\/?version>//g' || true)
         [[ -n "$v" && -z "$sc_ver" ]] && sc_ver="$v"
-        v=$(grep -E '<spring-boot.version>|<parent>' "$c" 2>/dev/null | head -2)
+        v=$(grep -E '<spring-boot.version>|<parent>' "$c" 2>/dev/null | head -2 || true)
         ;;
       build.gradle|*.gradle|*.gradle.kts)
         local v
-        v=$(grep -oE 'spring.cloud.dependencies[^\"]*\"[^\"]+\"' "$c" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"/\1/')
+        v=$(grep -oE 'spring.cloud.dependencies[^\"]*\"[^\"]+\"' "$c" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"/\1/' || true)
         [[ -n "$v" && -z "$sc_ver" ]] && sc_ver="$v"
         ;;
     esac

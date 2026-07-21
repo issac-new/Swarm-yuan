@@ -122,7 +122,8 @@ _fw_vite_check() {
   local proxy_bad=""
   if grep -qE 'proxy:' "$cfg" 2>/dev/null; then
     if ! grep -qE 'target:' "$cfg" 2>/dev/null; then
-      proxy_bad=$(grep -nE 'proxy:' "$cfg" 2>/dev/null | head -1)
+      # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+      proxy_bad=$(grep -nE 'proxy:' "$cfg" 2>/dev/null | head -1 || true)
     fi
   fi
   _fw_report warn fw_vite_proxy_target "$proxy_bad" "server.proxy 未配 target（代理须显式 target，否则转发无效）" "proxy 配置合理（或无 proxy）"

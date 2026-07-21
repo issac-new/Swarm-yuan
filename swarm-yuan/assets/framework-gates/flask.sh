@@ -47,8 +47,9 @@ _fw_flask_check() {
   # fw_flask_errorhandler(warn)：须有统一错误处理
   # ====================================================================
   local has_routes=0 has_eh=0
-  has_routes=$(grep -rlE '@[A-Za-z_]+\.route\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
-  has_eh=$(grep -rlE 'errorhandler|register_error_handler' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+  # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+  has_routes=$(grep -rlE '@[A-Za-z_]+\.route\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
+  has_eh=$(grep -rlE 'errorhandler|register_error_handler' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
   if [[ "$has_routes" -eq 0 ]]; then
     pass "fw_flask_errorhandler: 无路由，跳过"
   elif [[ "$has_eh" -eq 1 ]]; then
@@ -74,11 +75,11 @@ _fw_flask_check() {
   # fw_flask_session_teardown(warn)：SQLAlchemy 会话须 teardown/remove
   # ====================================================================
   local has_sm=0 has_td=0
-  has_sm=$(grep -rlE 'scoped_session\(|sessionmaker\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+  has_sm=$(grep -rlE 'scoped_session\(|sessionmaker\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
   if [[ "$has_sm" -eq 0 ]]; then
     pass "fw_flask_session_teardown: 无 sessionmaker/scoped_session，跳过"
   else
-    has_td=$(grep -rlE 'teardown_appcontext|\.remove\(\)' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+    has_td=$(grep -rlE 'teardown_appcontext|\.remove\(\)' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
     if [[ "$has_td" -eq 1 ]]; then
       pass "fw_flask_session_teardown: 会话有 teardown/remove 边界"
     else
@@ -90,11 +91,11 @@ _fw_flask_check() {
   # fw_flask_app_factory(warn)：应用工厂模式
   # ====================================================================
   local has_flaskapp=0 has_factory=0
-  has_flaskapp=$(grep -rlE 'Flask\(__name__\)' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+  has_flaskapp=$(grep -rlE 'Flask\(__name__\)' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
   if [[ "$has_flaskapp" -eq 0 ]]; then
     pass "fw_flask_app_factory: 未检出 Flask 应用，跳过"
   else
-    has_factory=$(grep -rlE 'def create_app' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+    has_factory=$(grep -rlE 'def create_app' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
     if [[ "$has_factory" -eq 1 ]]; then
       pass "fw_flask_app_factory: 使用 create_app 工厂"
     else
@@ -172,11 +173,11 @@ _fw_flask_check() {
   # fw_flask_ratelimit(warn)：登录等敏感路由须限流
   # ====================================================================
   local has_login=0 has_limiter=0
-  has_login=$(grep -rlE '["'"'"']/(login|signin|auth/token)["'"'"']' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+  has_login=$(grep -rlE '["'"'"']/(login|signin|auth/token)["'"'"']' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
   if [[ "$has_login" -eq 0 ]]; then
     pass "fw_flask_ratelimit: 无登录路由，跳过"
   else
-    has_limiter=$(grep -rlE 'Limiter|flask_limiter|ratelimit' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+    has_limiter=$(grep -rlE 'Limiter|flask_limiter|ratelimit' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
     if [[ "$has_limiter" -eq 1 ]]; then
       pass "fw_flask_ratelimit: 已配限流（flask-limiter）"
     else

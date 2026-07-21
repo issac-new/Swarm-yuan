@@ -184,8 +184,9 @@ ${dt_bad}"
     [[ -n "$ln" ]] || continue
     # 简化：检出 use 数组含 sass-loader + css-loader，且 sass-loader 行号 < css-loader 行号
     local sass_l css_l
-    sass_l=$(grep -nE 'sass-loader' "$f" 2>/dev/null | head -1 | cut -d: -f1)
-    css_l=$(grep -nE 'css-loader' "$f" 2>/dev/null | head -1 | cut -d: -f1)
+    # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+    sass_l=$(grep -nE 'sass-loader' "$f" 2>/dev/null | head -1 | cut -d: -f1 || true)
+    css_l=$(grep -nE 'css-loader' "$f" 2>/dev/null | head -1 | cut -d: -f1 || true)
     if [[ -n "$sass_l" && -n "$css_l" && "$sass_l" -lt "$css_l" ]]; then
       lo_bad="${lo_bad}${f}: sass-loader(行${sass_l}) 在 css-loader(行${css_l}) 之前（webpack 从右到左执行，须 css-loader 在前）
 "

@@ -29,7 +29,8 @@ _fw_sentinel_check() {
   # ---------- Sentinel 使用痕迹总判定 ----------
   local sentinel_used=0
   local su_hit
-  su_hit=$(grep -rlE '@SentinelResource|SphU\.|SphO\.|FlowRule|DegradeRule|ParamFlowRule|SystemRule|BlockException|com\.alibaba\.csp|spring\.cloud\.sentinel|sentinel-' "${javaarr[@]+"${javaarr[@]}"}" "${cfgarr[@]+"${cfgarr[@]}"}" 2>/dev/null | head -1)
+  # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+  su_hit=$(grep -rlE '@SentinelResource|SphU\.|SphO\.|FlowRule|DegradeRule|ParamFlowRule|SystemRule|BlockException|com\.alibaba\.csp|spring\.cloud\.sentinel|sentinel-' "${javaarr[@]+"${javaarr[@]}"}" "${cfgarr[@]+"${cfgarr[@]}"}" 2>/dev/null | head -1 || true)
   [[ -n "$su_hit" ]] && sentinel_used=1
 
   # ====================================================================
