@@ -363,6 +363,20 @@ fi
 if [[ -f "${_CONF_DIR}/detect-profile-drift.sh" ]]; then
   bash "${_CONF_DIR}/detect-profile-drift.sh" "${_CONF_DIR}/.." 2>/dev/null || true
 fi
+# WP-P7：spec 规模检测（轻量，stderr 输出，不阻塞主流程；规模与门禁集不匹配 warn 提示升档）
+# 若 SPEC_FILE 存在，推断规模等级，当前 MODE < 推断档则 warn 提示升档（只升不降）
+if [[ -n "${SPEC_FILE:-}" && -f "${SPEC_FILE}" && -f "${_CONF_DIR}/detect-spec-scale.sh" ]]; then
+  _spec_scale=$(bash "${_CONF_DIR}/detect-spec-scale.sh" "${SPEC_FILE}" 2>/dev/null | tail -1 || true)
+  case "$_spec_scale" in
+    完整)
+      case "$MODE" in --all) echo "⚠ spec 规模推断为「完整」，当前 --all 偏轻，建议升级 --all-full --shift-left（质量优先）" >&2;; esac
+      ;;
+    标准)
+      case "$MODE" in --all) echo "⚠ spec 规模推断为「标准」，当前 --all 偏轻，建议升级 --all-full（质量优先）" >&2;; esac
+      ;;
+  esac
+  unset _spec_scale
+fi
 # 执行汇总计数器（非破坏披露：只统计与末次汇总打印，不改任何门禁判定与输出行）
 INVOKE_COUNT=0
 SKIP_COUNT=0
