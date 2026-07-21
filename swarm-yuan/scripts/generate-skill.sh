@@ -51,6 +51,7 @@ UNIVERSAL_FILES=(
   "assets/state-machine.sh|assets|lite"
   "assets/trace-log.sh|assets|lite"
   "assets/task-type-gates.conf|assets|lite"
+  "assets/profile-thresholds.conf|assets|lite"
   "scripts/precheck.sh|assets|lite"
   "scripts/precheck.conf|assets|lite"
   "scripts/precheck.arch.conf|assets"
@@ -60,6 +61,7 @@ UNIVERSAL_FILES=(
   "scripts/state-machine.sh|assets|lite"
   "scripts/trace-log.sh|assets|lite"
   "scripts/self-check.sh|gen|lite"
+  "scripts/detect-frameworks.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
   "scripts/detect-profile-drift.sh|gen|lite"
   "scripts/detect-spec-scale.sh|gen|lite"
@@ -635,6 +637,19 @@ if [[ "$PROFILE" == "auto" ]]; then
   [[ $_forms -ge 3 ]] && _auto_reason="${_auto_reason}；技术栈复杂度：${_forms} 种形态${_msig:+（${_msig}）}（≥3 → 升 standard）"
   PROFILE=$(auto_detect_profile "$PROJECT_DIR")
   echo "profile auto 判定: ${PROFILE}（${_auto_reason}；WP-Q2 偏置修正——信号明确才升档，模糊走默认 standard。显式 --profile 可覆盖）"
+fi
+
+# WP-Q3：auto 档时探测框架，写入 precheck.arch.conf 的 ACTIVE_FRAMEWORKS（standard+ 档）
+# 替代 AI 手工探查 §C+.0.5。lite 档不拷 precheck.arch.conf，跳过。
+_wq3_script="$(cd "$(dirname "$0")" && pwd)/detect-frameworks.sh"
+if [[ "$PROFILE" != "lite" && -f "$_wq3_script" ]]; then
+  _dfw_out=$(bash "$_wq3_script" "$PROJECT_DIR" 2>/dev/null || true)
+  if [[ -n "$_dfw_out" ]]; then
+    _dfw_fws=$(printf '%s\n' "$_dfw_out" | grep '^ACTIVE_FRAMEWORKS=' | head -1)
+    if [[ -n "$_dfw_fws" && "$_dfw_fws" != 'ACTIVE_FRAMEWORKS=()' ]]; then
+      echo "框架探测: $_dfw_fws"
+    fi
+  fi
 fi
 
 SKILL_DIR="$TARGET_DIR/$SKILL_NAME"
