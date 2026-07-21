@@ -3383,6 +3383,11 @@ check_requirements() {
   #     语义：openspec validate 退出码不稳定（部分版本 failed 时仍 rc=0），故靠输出判断——
   #     输出含 "failed" 且 "passed" 项为 0 → spec 非法 → fail。独立于 SPEC_FILE，openspec 有自己的 spec 目录。
   local ospec_dir="${OPENSPEC_SPEC_DIR:-}"
+  # 相对路径解析为 PROJECT_DIR 下（与 precheck 其他路径解析一致；run-gate-fixture 不 cd 到 fixture，
+  # cwd 可能是 swarm-yuan/，相对路径 openspec 会解析到错误位置）
+  if [[ -n "$ospec_dir" && "${ospec_dir:0:1}" != "/" && -n "${PROJECT_DIR:-}" ]]; then
+    ospec_dir="$PROJECT_DIR/$ospec_dir"
+  fi
   if has_openspec && [[ -n "$ospec_dir" && -d "$ospec_dir" ]]; then
     local ospec_out; ospec_out=$(openspec validate --all --strict --no-interactive "$ospec_dir" 2>&1 || true)
     if echo "$ospec_out" | grep -qE '[1-9][0-9]* failed' && ! echo "$ospec_out" | grep -qE '[1-9][0-9]* passed'; then
@@ -3647,7 +3652,7 @@ check_framework() {
       return
     fi
     _run_list=("$FRAMEWORK_ID")
-    echo "  （单框架模式：仅 $FRAMEWORK_ID）"
+    echo "  （单框架模式：仅 ${FRAMEWORK_ID}）"
   else
     _run_list=(${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"})
   fi

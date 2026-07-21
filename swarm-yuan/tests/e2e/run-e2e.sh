@@ -48,4 +48,51 @@ for gid in fw_mybatis_dollar fw_lombok_data_jpa fw_batch_step_scope fw_sharding_
   echo "$out" | grep -q "$gid" && echo "✓ 输出含 fail id: $gid" || { echo "✗ 输出缺 fail id: $gid"; echo "$out" | grep -E '✗|✓' | head -15; exit 1; }
 done
 
+# 3.5 核心门禁回归（实战暴露的 P0/P1/P2 缺陷防退化）：
+#   check_reuse 多文件 diff 不再 syntax error；_sec_scan 排除 dist/；SQL 注入 ERE 的
+#   TS 安全形态豁免 + sanitize 降 warn + 真阳性仍 fail。
+echo "== Step 2.5: 核心门禁回归（reuse/security）=="
+REG_DIR="$(mktemp -d /tmp/fwreg.XXXXXX)"
+trap 'rm -rf "${FIX_DIR}" "${REG_DIR}"' EXIT
+mkdir -p "${REG_DIR}/scripts" "${REG_DIR}/src" "${REG_DIR}/dist"
+cp "${PARADIGM}/assets/precheck.sh" "${REG_DIR}/scripts/precheck.sh"
+cat > "${REG_DIR}/scripts/precheck.conf" <<EOF
+PROJECT_DIR="${REG_DIR}"
+WRITABLE_DIRS=("src")
+SCAN_DIRS=("src")
+SECURITY_TOOL="builtin"
+EOF
+# 3.5a P0 回归：git 仓库内两个新增文件均有导出，--reuse 不得 syntax error
+( cd "${REG_DIR}" && git init -q && git config user.email t@t && git config user.name t \
+  && printf 'export const a = 1\n' > src/keep.ts && git add -A && git commit -qm init \
+  && printf 'export function f1() {}\nexport const c1 = 1\n' > src/new1.ts \
+  && printf 'export class C2 {}\nexport function f2() {}\n' > src/new2.ts )
+reuse_out="$(cd "${REG_DIR}" && bash scripts/precheck.sh --reuse 2>&1 || true)"
+echo "$reuse_out" | grep -q 'syntax error' && { echo "✗ --reuse 出现 syntax error（P0 退化）"; echo "$reuse_out" | tail -10; exit 1; }
+echo "✓ --reuse 无 syntax error（P0 回归通过）"
+# 3.5b P1 回归：dist/ 下的注入拼接不触发 fail
+printf 'const q = "SELECT * FROM users WHERE id=" + uid;\n' > "${REG_DIR}/dist/bundle.js"
+sec_out="$(cd "${REG_DIR}" && bash scripts/precheck.sh --security 2>&1 || true)"
+echo "$sec_out" | grep -q 'bundle.js' && { echo "✗ --security 命中 dist/ 构建产物（P1 退化）"; echo "$sec_out" | grep 'bundle.js' | head -3; exit 1; }
+echo "✓ --security 不扫 dist/（P1 回归通过）"
+# 3.5c P2 回归：TS 安全形态豁免 / sanitize 降 warn / 真阳性仍 fail
+cat > "${REG_DIR}/src/db.ts" <<'TS'
+const COLS = "id,name";
+const q1 = `SELECT ${COLS} FROM users WHERE id = ?`;
+const q2 = `SELECT * FROM t WHERE id IN (${placeholders})`;
+const url = `/api/x/${encodeURIComponent(id)}`;
+const q3 = `SELECT * FROM users WHERE name='${userName}'`;
+const safe = sanitize(raw);
+const q4 = `SELECT * FROM users WHERE name='${safe}'`;
+TS
+sec_out="$(cd "${REG_DIR}" && bash scripts/precheck.sh --security 2>&1 || true)"
+echo "$sec_out" | grep -q 'q1' && { echo "✗ 列名常量插值被误报（P2 退化）"; exit 1; }
+echo "$sec_out" | grep -q 'q2' && { echo "✗ IN 占位符插值被误报（P2 退化）"; exit 1; }
+echo "$sec_out" | grep -q 'encodeURIComponent' && { echo "✗ URL 模板被误报（P2 退化）"; exit 1; }
+echo "✓ TS 安全形态豁免（P2 回归通过）"
+echo "$sec_out" | grep -q '疑似 SQL 注入.*userName' || { echo "✗ 真阳性未 fail（P2 过度豁免）"; echo "$sec_out" | tail -10; exit 1; }
+echo "✓ 真阳性仍 fail（P2 无过度豁免）"
+echo "$sec_out" | grep -q '疑似已经 sanitize' || { echo "✗ sanitize 变量未降 warn（P2 退化）"; exit 1; }
+echo "✓ sanitize 变量降 warn（P2 回归通过）"
+
 echo "E2E OK：四框架注入与门禁 fail 全链路验证通过"
