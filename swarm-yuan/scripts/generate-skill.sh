@@ -529,6 +529,48 @@ if [[ "$MODE" == "upgrade" ]]; then
   merge_precheck_conf "$SKILL_DIR"
   echo "=== 3. 保留项目特定文件 ==="
   for f in "${PROJECT_SPECIFIC_FILES[@]}"; do [[ -f "$SKILL_DIR/$f" ]] && echo "  ✓ $f"; done
+  # WP-A3：settings.local.json / .mcp.json 不存在则生成（存在则保留用户定制，不覆盖）
+  for cfg in settings.local.json .mcp.json; do
+    if [[ ! -f "$SKILL_DIR/$cfg" ]]; then
+      echo "  → 补生成 $cfg（旧版生成器未产出）"
+      case "$cfg" in
+        settings.local.json)
+          cat > "$SKILL_DIR/$cfg" <<'SEOF'
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash scripts/precheck.sh:*)",
+      "Bash(bash scripts/state-machine.sh:*)",
+      "Bash(bash scripts/self-check.sh:*)",
+      "Bash(bash scripts/trace-log.sh:*)",
+      "Bash(bash scripts/generate-skill.sh:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf ~:*)",
+      "Bash(sudo:*)",
+      "Bash(curl:* | sh)",
+      "Bash(curl:* | bash)"
+    ]
+  }
+}
+SEOF
+          ;;
+        .mcp.json)
+          cat > "$SKILL_DIR/$cfg" <<'MEOF'
+{
+  "_comment": "MCP server 接入模板（由 swarm-yuan 生成）。默认无激活 server——AI 按项目已装运行时激活对应 server。常用：gitnexus（代码图谱，PolyForm 非商用）/ claude-mem（跨会话记忆）/ graphify（MIT 代码图谱，默认推荐）。",
+  "mcpServers": {
+  }
+}
+MEOF
+          ;;
+      esac
+      echo "  ✓ $cfg 已生成"
+    else
+      echo "  ✓ $cfg（保留用户定制）"
+    fi
+  done
   echo "=== 4. 版本戳 ==="
   cat > "$SKILL_DIR/.swarm-yuan-version" <<EOF
 upgraded_at=$SWARM_YUAN_STAMP
@@ -597,6 +639,41 @@ cat > "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
 }
 HEOF
 
+# settings.local.json（WP-A1：真生成，落实 SKILL.md Step 9 宣称）
+# 最小权限模板：允许本 skill 自带脚本执行；deny 危险命令。项目特定权限由 AI 填充。
+cat > "$SKILL_DIR/settings.local.json" <<'SEOF'
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash scripts/precheck.sh:*)",
+      "Bash(bash scripts/state-machine.sh:*)",
+      "Bash(bash scripts/self-check.sh:*)",
+      "Bash(bash scripts/trace-log.sh:*)",
+      "Bash(bash scripts/generate-skill.sh:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf ~:*)",
+      "Bash(sudo:*)",
+      "Bash(curl:* | sh)",
+      "Bash(curl:* | bash)"
+    ]
+  }
+}
+SEOF
+
+# .mcp.json（WP-A2：真生成，落实 SKILL.md Step 9 宣称）
+# 注释模板：列出可选 MCP server 接入示例，默认全 commented out，由 AI 按项目已装运行时激活。
+# JSON 不支持注释，用 "_comment" 字段承载说明；激活时删除对应 server 前的注释行（改为有效 JSON）。
+cat > "$SKILL_DIR/.mcp.json" <<'MEOF'
+{
+  "_comment": "MCP server 接入模板（由 swarm-yuan 生成）。默认无激活 server——AI 按项目已装运行时激活对应 server。激活示例：把 mcpServers 对象内对应 server 的注释去掉（改为有效 JSON 键值）。常用 server：gitnexus（代码图谱，PolyForm 非商用）/ claude-mem（跨会话记忆）/ graphify（MIT 代码图谱，默认推荐）。",
+  "mcpServers": {
+  }
+}
+MEOF
+
+
 cat > "$SKILL_DIR/commands/spec.md" <<'CEOF'
 ---
 description: 开始新需求——AI 自动创建 spec + 判断规模 + 预填复用约束
@@ -629,11 +706,11 @@ description: （填充指引：触发条件 + 项目关键词）
 > 填充规范见 swarm-yuan/references/template-spec.md
 ## 填充指引
 - [ ] meta: 核心理念+改造分类+流程总览+命令速查+门禁
-- [ ] workflow: 八节点+4-Phase SOP+每节点读取项目知识
+- [ ] workflow: 八节点+每节点 10 要素（含★调用追踪）+4-Phase SOP+每节点读取项目知识
 - [ ] reference: codebase/dev-guide/release/reference-manual + 方法论+认知 reference
 - [ ] assets: spec-template(§5.5-§18) + plan + branch + env + data + state-machine
 - [ ] check: precheck.sh 36 门禁
-- [ ] scripts: precheck + state-machine + snippets + mcp-tools
+- [ ] scripts: precheck + state-machine + trace-log + snippets + mcp-tools
 EOF
 
 cat > "$SKILL_DIR/.swarm-yuan-version" <<EOF

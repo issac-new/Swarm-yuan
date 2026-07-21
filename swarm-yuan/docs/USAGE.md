@@ -217,14 +217,19 @@ bash install.sh
 | 0 | 自检 11 个运行时工具 |
 | 0.5 | 读取项目知识（AGENTS.md / CLAUDE.md / 记忆 / hermes-agent） |
 | 1 | 三路并行探查代码库（结构 / 规范 / 代码组织） |
+| 1.5 | **项目形态判定 + 详尽构件库清单 + 调用链路分析**（§C+.0-C+.5，按形态选维度，全量穷举 + 计数核验） |
 | 2 | **提取 16 项特征卡**（每项落到真实路径，不用占位符） |
 | 3 | 创建骨架（含 hooks / commands / precheck.conf） |
 | 4 | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
+| 4.5 | **框架深化**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + 门禁清单对齐 |
 | 5 | AI 配置 precheck.conf——**179 个变量从特征卡推导** |
 | 5.5 | AI 生成 hooks / commands / MCP 集成 |
 | 6 | AI 运行 36 个门禁——**特征卡定义规则，门禁验证合规** |
+| 7.5 | **门禁注入**——`generate-skill.sh --inject-frameworks` 把激活框架门禁片段写入 precheck.sh 标记区块 |
 | 7 | AI 写回项目记忆（闭环） |
-| 8 | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**零占位符残留**（命中即列 file:line 并 exit 1，零命中才通过） |
+| 8 | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**零占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
+
+> **全链路追踪（每步必做，无需确认）**：每步开始先公告 `→ [Step N] 调用 <技能/工具> · <目的>`，每次具体调用前用 `scripts/trace-log.sh` 落盘 `.swarm-yuan/trace.jsonl`。
 
 ---
 

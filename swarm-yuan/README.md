@@ -4,7 +4,7 @@
 >
 > 16 项特征卡让 AI 认识你的项目，36 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
 
-[![Release](https://img.shields.io/badge/release-v2026.07.19-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.19)
+[![Release](https://img.shields.io/badge/release-v2026.07.20-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.20)
 [![Feature Card](https://img.shields.io/badge/feature%20card-16-green)]()
 [![Quality Gates](https://img.shields.io/badge/quality%20gates-36-orange)]()
 [![Runtimes](https://img.shields.io/badge/runtimes-11-yellow)]()
@@ -272,12 +272,13 @@ Swarm-yuan/
 │   ├── 2026-07-17-framework-rules-engine-design.md
 │   └── plans/
 ├── swarm-yuan/                   ← 生成器 skill
-│   ├── SKILL.md                  ← AI 入口（136 行）
+│   ├── SKILL.md                  ← AI 入口（150 行）
 │   ├── install.sh                ← 一键安装（7 环境检测）
-│   ├── assets/                   ← 模板 + 门禁 + 状态机
-│   │   ├── precheck.sh           ← 36 个门禁（3600+ 行，随门禁扩展演进）
+│   ├── assets/                   ← 模板 + 门禁 + 状态机 + 调用追踪
+│   │   ├── precheck.sh           ← 36 个门禁（3800+ 行，随门禁扩展演进）
 │   │   ├── precheck.conf         ← 179 个配置变量模板
-│   │   └── spec-template.md      ← 22 主段 spec 模板（§22=标准合规）
+│   │   ├── spec-template.md      ← 22 主段 spec 模板（§22=标准合规）
+│   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
 │   ├── references/               ← 18 个参考文档
 │   ├── scripts/                  ← 生成器 + 自检

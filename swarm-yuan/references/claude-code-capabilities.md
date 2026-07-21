@@ -551,5 +551,6 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 | **发布** | Bash | `claude agents`（后台 PR） | graphify prs --triage | — |
 | **记忆** | Write/Read | — | claude-mem search/timeline/get_observations | claude-mem search |
 | **状态管理** | Bash/Read/Write | — | state-machine.sh init/get/set/transition | — |
+| **调用追踪（贯穿全程）** | 每步 stdout 公告 `→ [节点X] 调用 …` | — | trace-log.sh --node/--actor/--tool（落盘 `.swarm-yuan/trace.jsonl`） | — |
 | **插件管理** | — | `claude plugin init/list/eval` | — | — |
 | **MCP 管理** | — | `claude mcp add/list/get/serve` | — | — |

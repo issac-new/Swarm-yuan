@@ -542,7 +542,7 @@ _count_gate_array() {
 check_doc_consistency() {
   echo "▶ 文档一致性检查"
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
-  # 1. 框架规则文件数 == 门禁片段数（57 == 57）
+  # 1. 框架规则文件数 == 门禁片段数（真值机械计数，当前 61 == 61）
   local rule_cnt gate_cnt
   rule_cnt=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
   gate_cnt=$(ls "$base/assets/framework-gates/"*.sh 2>/dev/null | wc -l | xargs)

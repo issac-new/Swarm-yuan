@@ -272,35 +272,18 @@ Swarm-yuan/
 │   ├── 2026-07-17-framework-rules-engine-design.md
 │   └── plans/
 ├── swarm-yuan/                   ← 生成器 skill
-│   ├── SKILL.md                  ← AI 入口（136 行）
+│   ├── SKILL.md                  ← AI 入口（150 行）
 │   ├── install.sh                ← 一键安装（7 环境检测）
-│   ├── assets/                   ← 模板 + 门禁 + 状态机
-│   │   ├── precheck.sh           ← 36 个门禁（3600+ 行，随门禁扩展演进）
+│   ├── assets/                   ← 模板 + 门禁 + 状态机 + 调用追踪
+│   │   ├── precheck.sh           ← 36 个门禁（3800+ 行，随门禁扩展演进）
 │   │   ├── precheck.conf         ← 179 个配置变量模板
-│   │   └── spec-template.md      ← 22 主段 spec 模板（§22=标准合规）
+│   │   ├── spec-template.md      ← 22 主段 spec 模板（§22=标准合规）
+│   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
 │   ├── references/               ← 18 个参考文档
 │   ├── scripts/                  ← 生成器 + 自检
 │   └── tests/                    ← fixture 测试（conf 中 __REPO_ROOT__ 占位符运行时替换为仓库根，任意机器可跑）
-└── Swarm-studio/                 ← 示例项目（SwarmStudio overlay 生成物，由生成器同步维护，见下）
 ```
-
-### Swarm-studio 的同步维护（单一事实来源，禁止双维护）
-
-`Swarm-studio/` 是 swarm-yuan 生成器产出的示例 skill 实例。其通用文件（`UNIVERSAL_FILES`：precheck.sh、self-check.sh、state-machine.sh、assets 模板、references 方法论等）的**唯一事实来源是 `swarm-yuan/assets` + `swarm-yuan/references` + `swarm-yuan/scripts`**；studio 侧唯一定制是 skills 目录路径（`.claude/skills` → `.agents/skills`）。模板演进后用生成器重同步，不手改 studio 通用文件：
-
-```bash
-# 在仓库根执行；PROJECT_DIR / TARGET_DIR 均为仓库根（SKILL_DIR = TARGET_DIR/Swarm-studio）
-SKILLS_PATH_REWRITE='s|\.claude/skills|.agents/skills|g' \
-  bash swarm-yuan/scripts/generate-skill.sh --upgrade Swarm-studio . .
-```
-
-- `SKILLS_PATH_REWRITE`：可选 sed 表达式，复制通用文件后逐文件应用；缺省为空（行为不变）。studio 运行时为 `.agents/skills`，故重同步必须带上。
-- 生成器保留不动的项目内容：`SKILL.md`、`references/workflow|codebase|dev-guide|release|reference-manual.md`、`scripts/precheck.conf`（原值保留，仅按 ACTIVE_FRAMEWORKS 增量补缺失变量）。
-- **例外——填充型通用文件（重同步后须恢复）**：`scripts/snippets.md`、`scripts/mcp-tools.md` 是填充型模板（同 precheck.conf 性质），studio 已填入项目真实内容；`--upgrade` 会用模板覆盖它们，重同步后执行 `git restore Swarm-studio/scripts/snippets.md Swarm-studio/scripts/mcp-tools.md` 恢复。
-- 同步后清理生成物：`.upgrade-backup-*` 目录、`*.bat` 包装器（studio 不跟踪 Windows 包装器）；`.swarm-yuan-version` 保留（记录同步基线）。
-
-同步基线：2026-07-19（当时门禁 27 个 + 公共库 `_fw_report`/`_fw_strip_comments_*`，该批口径为 31 门禁；现行口径 36 门禁见上方「数字一览」；记录于 `Swarm-studio/.swarm-yuan-version` 与 `verifier/runs/2026-07-19T1741-swarm-studio-resync.log`）。
 
 ---
 

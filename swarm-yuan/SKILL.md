@@ -147,4 +147,4 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 2. `bash scripts/self-check.sh` 自检 11 项目运行时
 3. 按需读 reference（探查→exploration-guide；填充→template-spec；方法论→各 reference 文件）
 4. `scripts/generate-skill.sh <name> <project-dir>` 创建骨架（或 `--upgrade` 升级已有）
-5. 按 5 步流程执行，每段落盘后用 `template-spec.md` 末尾核对表验证
+5. 按上方「生成流程」Step 0-12 全量执行（铁律：不可中途停在骨架；每步先公告调用 + trace-log 落盘），每段落盘后用 `template-spec.md` 末尾核对表验证
