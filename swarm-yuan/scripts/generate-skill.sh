@@ -527,8 +527,10 @@ _profile_rank() { case "$1" in lite) echo 1;; compliance) echo 3;; *) echo 2;; e
 
 # WP-N1 项目级自适应判定：合规信号（等保/密评/个保法/金融/医疗关键词）→ compliance；
 # 规模信号（文件数 <80）→ lite；其余 standard。质量优先：探测失败/不确定 → 升档（不判 lite）。
+# WP-P9 技术栈复杂度反作用：形态信号（≥3 种形态）→ 升 standard；框架信号（≥5 个）→ 升 standard；
+#   微服务信号（services/ 目录存在）→ 升 standard。优先级：合规 > 技术栈复杂度 > 规模。
 auto_detect_profile() {
-  local proj="$1" n sig
+  local proj="$1" n sig forms fws msig result reason
   # 合规信号（最强，命中即 compliance）：docs/ 与根 README 的关键词扫描（限量提速）
   sig=$(grep -rliE '等保|密评|GB/T[[:space:]]*39786|GB/T[[:space:]]*22239|个人信息保护|个保法|金融行业|医疗行业' \
         "$proj/docs" "$proj"/README* 2>/dev/null | head -1 || true)
@@ -540,7 +542,45 @@ auto_detect_profile() {
       2>/dev/null | head -81 | wc -l | tr -d ' ')
   n="${n:-81}"
   [[ "$n" =~ ^[0-9]+$ ]] || n=81
-  if [[ "$n" -lt 80 ]]; then echo "lite"; else echo "standard"; fi
+  if [[ "$n" -lt 80 ]]; then result="lite"; else result="standard"; fi
+  reason="规模信号：文件数 ${n}"
+
+  # WP-P9 技术栈复杂度信号（只升不降，质量优先）
+  # 形态信号：同时含 ≥3 种形态（前端 .vue/.jsx/.tsx + 后端 .py/.java/.go/.rb + 异步 .consumer./.handler. + 微服务 services/ + 桌面 .electron. 等）
+  forms=0
+  # 前端形态
+  find "$proj" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) 2>/dev/null | head -1 | grep -q . && forms=$((forms+1))
+  # 后端形态（非前端的 .py/.java/.go/.rb/.php/.kt/.scala）
+  find "$proj" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" \) 2>/dev/null | head -1 | grep -q . && forms=$((forms+1))
+  # 异步/MQ 形态（含 consumer/handler/listener/subscriber 文件名）
+  find "$proj" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" \) 2>/dev/null | head -1 | grep -q . && forms=$((forms+1))
+  # 微服务形态（services/ 或 apps/ 多服务目录）
+  [[ -d "$proj/services" || -d "$proj/apps" ]] && find "$proj/services" "$proj/apps" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -2 | wc -l | tr -d ' ' | grep -qE '^[2-9]|[1-9][0-9]' && forms=$((forms+1))
+  # 桌面/移动形态（electron/tauri/android/ios 目录）
+  { [[ -d "$proj/electron" || -d "$proj/src-tauri" || -d "$proj/android" || -d "$proj/ios" ]]; } && forms=$((forms+1))
+  # 框架信号：依赖文件中的框架数（package.json dependencies + pom.xml + go.mod 等，粗计）
+  fws=0
+  [[ -f "$proj/package.json" ]] && fws=$(grep -cE '"[a-z@/][^"]+":\s*"' "$proj/package.json" 2>/dev/null | head -1 || echo 0)
+  [[ -f "$proj/pom.xml" ]] && fws=$((fws + $(grep -cE "<artifactId>" "$proj/pom.xml" 2>/dev/null || echo 0)))
+  [[ -f "$proj/go.mod" ]] && fws=$((fws + $(grep -cE "^\s*[a-z]" "$proj/go.mod" 2>/dev/null || echo 0)))
+  [[ "$fws" =~ ^[0-9]+$ ]] || fws=0
+  # 微服务信号：services/ 目录存在且含 ≥2 子目录
+  msig=0
+  if [[ -d "$proj/services" ]]; then
+    local svc_cnt; svc_cnt=$(find "$proj/services" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+    [[ "$svc_cnt" =~ ^[0-9]+$ && "$svc_cnt" -ge 2 ]] && msig=1
+  fi
+  # 技术栈复杂度升档（只升不降）
+  if [[ $forms -ge 3 ]]; then
+    result="standard"; reason="${reason}；形态信号：${forms} 种形态（≥3 → 升 standard）"
+  fi
+  if [[ $fws -ge 20 ]]; then
+    result="standard"; reason="${reason}；框架信号：${fws} 依赖（≥20 → 升 standard）"
+  fi
+  if [[ $msig -eq 1 ]]; then
+    result="standard"; reason="${reason}；微服务信号：services/ 含多服务（→ 升 standard）"
+  fi
+  echo "$result"
 }
 
 SKILL_NAME="${1:?Usage: generate-skill.sh [--upgrade] [--profile lite|standard|compliance] <skill-name> <project-dir> [target-dir]}"
@@ -569,6 +609,18 @@ if [[ "$PROFILE" == "auto" ]]; then
     _fc=$(find "$PROJECT_DIR" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' 2>/dev/null | head -81 | wc -l | tr -d ' ')
     _auto_reason="规模信号：文件数 ${_fc:-?}（<80 → lite，否则 standard）"
   fi
+  # WP-P9：技术栈复杂度信号（只升不降，质量优先）
+  _forms=0
+  find "$PROJECT_DIR" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) 2>/dev/null | head -1 | grep -q . && _forms=$((_forms+1))
+  find "$PROJECT_DIR" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" \) 2>/dev/null | head -1 | grep -q . && _forms=$((_forms+1))
+  find "$PROJECT_DIR" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" \) 2>/dev/null | head -1 | grep -q . && _forms=$((_forms+1))
+  { [[ -d "$PROJECT_DIR/electron" || -d "$PROJECT_DIR/src-tauri" || -d "$PROJECT_DIR/android" || -d "$PROJECT_DIR/ios" ]]; } && _forms=$((_forms+1))
+  _msig=""
+  if [[ -d "$PROJECT_DIR/services" ]]; then
+    _svc_cnt=$(find "$PROJECT_DIR/services" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+    [[ "$_svc_cnt" =~ ^[0-9]+$ && "$_svc_cnt" -ge 2 ]] && { _forms=$((_forms+1)); _msig="services/ 含 ${_svc_cnt} 服务"; }
+  fi
+  [[ $_forms -ge 3 ]] && _auto_reason="${_auto_reason}；技术栈复杂度：${_forms} 种形态${_msig:+（${_msig}）}（≥3 → 升 standard）"
   PROFILE=$(auto_detect_profile "$PROJECT_DIR")
   echo "profile auto 判定: ${PROFILE}（${_auto_reason}；质量优先偏置——不确定即升档。显式 --profile 可覆盖）"
 fi
