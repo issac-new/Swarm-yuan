@@ -178,7 +178,8 @@ _fw_kettle_check() {
   local tx_bad=""
   for f in "${transarr[@]+"${transarr[@]}"}"; do
     local n_out
-    n_out=$(grep -cE '<type>TableOutput</type>|<type>InsertUpdate</type>' "$f" 2>/dev/null || echo 0)
+    # grep -c 零命中打印 0 但 exit 1——|| true 保留输出 "0"（|| echo 0 会得 "0\n0" 使 -ge 比较报语法错）
+    n_out=$(grep -cE '<type>TableOutput</type>|<type>InsertUpdate</type>' "$f" 2>/dev/null || true)
     if [[ "$n_out" -ge 2 ]] && grep -qE '<unique_connections>Y</unique_connections>' "$f" 2>/dev/null; then
       tx_bad="${tx_bad}${f}: ${n_out} 个写入步骤 + unique_connections=Y（每步独立连接，无统一事务）
 "

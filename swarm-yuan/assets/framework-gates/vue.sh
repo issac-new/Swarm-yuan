@@ -53,7 +53,7 @@ _fw_vue_check() {
   # 规律5: reactive 用量预警
   local rc; rc=$( { grep -rhoE "\breactive\b" "${fa[@]}" 2>/dev/null || true; } | wc -l | xargs)
   if [[ -n "$VUE_REACTIVE_WARN_THRESHOLD" && "$rc" -gt "$VUE_REACTIVE_WARN_THRESHOLD" ]]; then
-    warn "fw_vue_reactivity_threshold: reactive 用量 $rc 处（阈值 $VUE_REACTIVE_WARN_THRESHOLD），建议优先 ref/computed"
+    warn "fw_vue_reactivity_threshold: reactive 用量 $rc 处（阈值 ${VUE_REACTIVE_WARN_THRESHOLD}），建议优先 ref/computed"
   fi
 
   # ====================================================================
@@ -82,9 +82,9 @@ _fw_vue_check() {
   # ====================================================================
   if [[ -n "${VUE_PINIA_AGGREGATE_STORE:-}" ]]; then
     if [[ -f "$VUE_PINIA_AGGREGATE_STORE" ]]; then
-      pass "fw_vue_pinia_aggregate: 聚合层 store 存在（$VUE_PINIA_AGGREGATE_STORE）"
+      pass "fw_vue_pinia_aggregate: 聚合层 store 存在（${VUE_PINIA_AGGREGATE_STORE}）"
     else
-      warn "fw_vue_pinia_aggregate: 聚合层 store 未配置或不存在（VUE_PINIA_AGGREGATE_STORE=$VUE_PINIA_AGGREGATE_STORE）"
+      warn "fw_vue_pinia_aggregate: 聚合层 store 未配置或不存在（VUE_PINIA_AGGREGATE_STORE=${VUE_PINIA_AGGREGATE_STORE}）"
     fi
   fi
 }

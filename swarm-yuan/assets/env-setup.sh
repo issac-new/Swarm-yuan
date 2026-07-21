@@ -46,11 +46,11 @@ check_runtime() {
     # 提取首个数字版本号（v23.0.0 → 23.0.0；openjdk version "17.0.1" → 17.0.1）
     ver=$(printf '%s\n' "$ver_line" | grep -oE '[0-9]+(\.[0-9]+)*' | head -1)
     if [[ -z "$ver" ]]; then
-      warn "$name: $ver_line（无法解析版本号，要求 >= $min_ver，请人工确认）"
+      warn "$name: ${ver_line}（无法解析版本号，要求 >= ${min_ver}，请人工确认）"
     elif ver_ge "$ver" "$min_ver"; then
-      pass "$name: $ver_line（满足 >= $min_ver）"
+      pass "$name: ${ver_line}（满足 >= ${min_ver}）"
     else
-      fail "$name: $ver_line（版本过低，要求 >= $min_ver）"
+      fail "$name: ${ver_line}（版本过低，要求 >= ${min_ver}）"
     fi
   else
     fail "${name} 未安装（要求 >= ${min_ver}）"

@@ -93,14 +93,25 @@ guard_phase() {
   local ok=1
   case "$phase" in
     design)
-      # 门禁：open 阶段产出 proposal.md
-      # 生成时按项目实际调整产出物路径
-      echo "  (检查 open 阶段产出物存在)"
-      pass "design 准入检查（按项目定制产出物路径）"
+      # WP-C1：实装产出物检查（替换原占位 pass）。检查 open 阶段产出 proposal.md 存在。
+      # 可配 PROPOSAL_FILE（默认 $PROJECT_DIR/.swarm-yuan/proposal.md 或 $SPEC_FILE）。
+      local proposal="${PROPOSAL_FILE:-}"
+      [[ -z "$proposal" ]] && proposal="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/proposal.md"
+      if [[ -f "$proposal" ]]; then
+        pass "design 准入: open 阶段产出存在（${proposal}）"
+      else
+        # 降级：未配置 PROPOSAL_FILE 且默认路径无文件时，检查 SPEC_FILE（项目可能用 spec.md 替代 proposal）
+        local spec_f="${SPEC_FILE:-}"
+        if [[ -n "$spec_f" && -f "$spec_f" ]]; then
+          pass "design 准入: spec 存在（${spec_f}，作为 proposal 等价物）"
+        else
+          fail "design 准入失败: 缺 open 阶段产出（$proposal 不存在；可在 precheck.conf 配 PROPOSAL_FILE 指向实际路径）"
+          ok=0
+        fi
+      fi
       ;;
     build)
       # 门禁：design 阶段产出 design doc + tasks
-      echo "  (检查 design 阶段产出物 + build_mode/isolation 已设置)"
       local bm iso
       bm=$(get_field build_mode); iso=$(get_field isolation)
       [[ -z "$bm" ]] && { fail "build_mode 未设置"; ok=0; }
@@ -108,9 +119,25 @@ guard_phase() {
       [[ $ok -eq 1 ]] && pass "build 准入: build_mode=$bm, isolation=$iso"
       ;;
     verify)
-      # 门禁：build 完成（tasks 全勾）
-      echo "  (检查 tasks.md 全部 - [x])"
-      pass "verify 准入检查（按项目定制 tasks 路径）"
+      # WP-C1：实装产出物检查（替换原占位 pass）。检查 tasks.md 全部 - [x]（所有任务完成）。
+      # 可配 TASKS_FILE（默认 $PROJECT_DIR/.swarm-yuan/tasks.md）。未配置/不存在时降级 skip（不阻塞）。
+      local tasks_f="${TASKS_FILE:-}"
+      [[ -z "$tasks_f" ]] && tasks_f="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/tasks.md"
+      if [[ -f "$tasks_f" ]]; then
+        local unchecked
+        # grep -c 零命中时打印 0 但 exit 1——用 || true 保留输出 "0"；
+        # 误用 || echo 0 会得到 "0\n0"，-eq 判失败把全勾 tasks 误判为未完成
+        unchecked=$(grep -cE '^- \[ \]' "$tasks_f" 2>/dev/null || true)
+        if [[ "$unchecked" -eq 0 ]]; then
+          pass "verify 准入: tasks 全部完成（${tasks_f}）"
+        else
+          fail "verify 准入失败: ${tasks_f} 有 ${unchecked} 项未勾选（- [ ]）"
+          ok=0
+        fi
+      else
+        # 降级：无 tasks.md 时不阻塞（项目可能用其他任务追踪方式），仅提示
+        echo "  (未找到 ${tasks_f}，verify 准入降级跳过——可配 TASKS_FILE 启用检查)"
+      fi
       ;;
     archive)
       # 门禁：verify 通过
@@ -177,6 +204,34 @@ next_phase() {
   fi
 }
 
+# WP-C2：auto 子命令——自动判定下一阶段并尝试流转（免去用户记阶段名）。
+# 语义：读当前 phase → 找下一个 → 跑 guard → 通过则 transition，失败则提示缺什么产出物。
+# 不跳过 guard（守卫仍检查产出物），只免去显式传阶段名。设计理念 1：连贯动作。
+auto_phase() {
+  [[ ! -f "$STATE_FILE" ]] && { echo "ERROR: 状态文件不存在，先 init"; exit 1; }
+  local current; current=$(get_field phase)
+  local cur_idx=-1
+  for i in "${!PHASES[@]}"; do
+    [[ "${PHASES[$i]}" == "$current" ]] && cur_idx=$i
+  done
+  local next_idx=$((cur_idx + 1))
+  if [[ $next_idx -ge ${#PHASES[@]} ]]; then
+    echo "已是最后阶段: ${current}（无可流转的下一阶段）"
+    return 0
+  fi
+  local target="${PHASES[$next_idx]}"
+  echo "=== auto: 当前 $current → 尝试流转到 $target ==="
+  # guard 检查（guard_phase 内部 exit 1 时会中断；这里捕获其退出码不直接 exit）
+  if guard_phase "$target"; then
+    set_field phase "$target"
+    echo "✓ auto 流转成功: $current → $target"
+  else
+    echo "✗ auto 流转失败: $target 准入未通过（上方 guard 输出说明了缺什么产出物）"
+    echo "  提示: 补齐产出物后重新运行 auto，或手动 transition <phase> 指定其他阶段"
+    return 1
+  fi
+}
+
 show_status() {
   [[ ! -f "$STATE_FILE" ]] && { echo "ERROR: 状态文件不存在，先 init"; exit 1; }
   echo "=== 状态: $STATE_FILE ==="
@@ -190,6 +245,7 @@ case "${1:-}" in
   transition) transition_phase "${2:-}" ;;
   guard) guard_phase "${2:-}" ;;
   next) next_phase ;;
+  auto) auto_phase ;;
   status) show_status ;;
   # update: 原地修订 plan + reconcile 关联 artifacts（openspec v1.6.0 /opsx:update 能力的脚本背书）
   # 不回退到 open 阶段，在当前 design 阶段内修订 plan

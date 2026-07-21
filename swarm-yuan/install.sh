@@ -63,7 +63,7 @@ render_native_rules() {
   esac
   [[ -n "$key" ]] || return 0
   local gen="$SRC_DIR/scripts/generate-skill.sh"
-  [[ -f "$gen" ]] || { echo "  ⚠ 未找到 $gen，跳过原生规则渲染"; return 0; }
+  [[ -f "$gen" ]] || { echo "  ⚠ 未找到 ${gen}，跳过原生规则渲染"; return 0; }
   if ! bash "$gen" --render-tools "$dest" "" "$key"; then
     echo "  ⚠ ${name} 原生规则渲染返回非 0（仅警告，不影响安装主流程）"
   fi

@@ -240,7 +240,7 @@ inject_frameworks() {
     if ! grep -q '^# <<< swarm-yuan:framework-gates <<<' "$sh"; then
       rm -f "$tmp" "$block"
       echo "✗ $sh 含开标记 '# >>> swarm-yuan:framework-gates >>>' 但缺闭标记 '# <<< ... <<<'。" >&2
-      echo "  为避免静默删除区块之后的公共库/main 分发，已中止注入（未改动 $sh）。" >&2
+      echo "  为避免静默删除区块之后的公共库/main 分发，已中止注入（未改动 ${sh}）。" >&2
       echo "  请补全闭标记 '# <<< swarm-yuan:framework-gates <<<' 后重跑。" >&2
       return 1
     fi
@@ -532,7 +532,7 @@ if [[ "$MODE" == "upgrade" ]]; then
   # WP-A3：settings.local.json / .mcp.json 不存在则生成（存在则保留用户定制，不覆盖）
   for cfg in settings.local.json .mcp.json; do
     if [[ ! -f "$SKILL_DIR/$cfg" ]]; then
-      echo "  → 补生成 $cfg（旧版生成器未产出）"
+      echo "  → 补生成 ${cfg}（旧版生成器未产出）"
       case "$cfg" in
         settings.local.json)
           cat > "$SKILL_DIR/$cfg" <<'SEOF'
@@ -568,7 +568,7 @@ MEOF
       esac
       echo "  ✓ $cfg 已生成"
     else
-      echo "  ✓ $cfg（保留用户定制）"
+      echo "  ✓ ${cfg}（保留用户定制）"
     fi
   done
   echo "=== 4. 版本戳 ==="
@@ -607,7 +607,7 @@ fi
 # ============================================================
 # 创建模式
 # ============================================================
-[[ -d "$SKILL_DIR" ]] && { echo "ERROR: 已存在: $SKILL_DIR（用 --upgrade 升级）"; exit 1; }
+[[ -d "$SKILL_DIR" ]] && { echo "ERROR: 已存在: ${SKILL_DIR}（用 --upgrade 升级）"; exit 1; }
 
 echo "=== 创建: $SKILL_DIR ==="
 mkdir -p "$SKILL_DIR"/{references,assets,scripts,hooks,commands}

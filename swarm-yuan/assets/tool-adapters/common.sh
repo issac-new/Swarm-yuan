@@ -106,7 +106,7 @@ ta_upsert_marker_block() {  # <dest> <tool> <skill_name> <body_file>
       $0 == cmark { skip = 0; next }
       !skip { print }
     ' "$dest" > "$merged"; then
-      echo "  ✗ 标记区块替换失败（awk 错误），中止（未改动 $dest）" >&2
+      echo "  ✗ 标记区块替换失败（awk 错误），中止（未改动 ${dest}）" >&2
       rm -f "$new" "$merged"
       return 1
     fi
@@ -166,7 +166,7 @@ ta_render_tools() {  # <skill_dir> [project_root] [tool]
   local t rc=0
   for t in $tools; do
     if [[ ! -f "$TA_DIR/$t.sh" ]]; then
-      echo "  ⚠ 适配器缺失: $TA_DIR/$t.sh（跳过 $t）"
+      echo "  ⚠ 适配器缺失: $TA_DIR/$t.sh（跳过 ${t}）"
       continue
     fi
     # shellcheck disable=SC1090
@@ -177,7 +177,7 @@ ta_render_tools() {  # <skill_dir> [project_root] [tool]
         rc=1
       fi
     else
-      echo "  ⚠ 适配器 $t 未定义 render_tool_$t（跳过）"
+      echo "  ⚠ 适配器 $t 未定义 render_tool_${t}（跳过）"
     fi
   done
   rm -f "$TA_BODY"

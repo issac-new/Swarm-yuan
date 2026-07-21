@@ -65,7 +65,7 @@ if [[ -n "$DIRTY" ]]; then
   exit 1
 fi
 
-echo "  ✓ 在 $BASE_BRANCH，HEAD = $BASE_BRANCH，工作树干净（文档除外）"
+echo "  ✓ 在 ${BASE_BRANCH}，HEAD = ${BASE_BRANCH}，工作树干净（文档除外）"
 
 echo "=== 创建分支: $BRANCH_NAME ==="
 git checkout -b "$BRANCH_NAME"

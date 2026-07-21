@@ -55,6 +55,6 @@ if mkdir -p "$STATE_DIR" 2>/dev/null; then
     echo "⚠ trace-log: 落盘失败（$STATE_DIR/trace.jsonl 不可写），仅保留 stdout 提示" >&2
   fi
 else
-  echo "⚠ trace-log: 无法创建 $STATE_DIR，仅保留 stdout 提示" >&2
+  echo "⚠ trace-log: 无法创建 ${STATE_DIR}，仅保留 stdout 提示" >&2
 fi
 exit 0

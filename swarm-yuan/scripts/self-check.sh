@@ -485,9 +485,9 @@ fw_freshness_check() {
     fi
     age=$(( (now - ts) / 86400 ))
     if [[ "$age" -gt 365 ]]; then
-      warn "$(basename "$f") 调研于 $d（${age} 天前 >365 天），建议重新核实版本区间"
+      warn "$(basename "$f") 调研于 ${d}（${age} 天前 >365 天），建议重新核实版本区间"
     elif [[ "$age" -gt 180 ]]; then
-      warn "$(basename "$f") 调研于 $d（${age} 天前 >180 天），建议关注版本变化"
+      warn "$(basename "$f") 调研于 ${d}（${age} 天前 >180 天），建议关注版本变化"
     fi
   done
 }

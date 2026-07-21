@@ -334,7 +334,7 @@ done
 [[ -n "$MODE" ]] || MODE="--all"
 case "$FORMAT" in
   json|text) ;;
-  *) echo "✗ --format 仅支持 json|text（收到: $FORMAT）" >&2; exit 1 ;;
+  *) echo "✗ --format 仅支持 json|text（收到: ${FORMAT}）" >&2; exit 1 ;;
 esac
 FAIL=0
 # SILENT=1 时，未配置的门禁静默跳过（不打印 warn），减少 --all-full 噪音
@@ -464,7 +464,7 @@ _run_doctor() {
       _dr_bad "conf 语法错误：$(printf '%s\n' "$_synerr" | head -1)"
     fi
   else
-    _dr_warn "conf 不存在（$conf）——全部变量走内置默认值"
+    _dr_warn "conf 不存在（${conf}）——全部变量走内置默认值"
   fi
 
   # ① PROJECT_DIR 存在
@@ -975,7 +975,7 @@ check_layer() {
   if has_gitnexus && gitnexus_indexed; then
     local gn_layer_issues; gn_layer_issues=$(gitnexus query "cross-layer imports" --format text 2>/dev/null | head -20 || true)
     if [[ -n "$gn_layer_issues" ]]; then
-      local issue_count; issue_count=$(echo "$gn_layer_issues" | grep -cE '^\s+\S' || echo 0)
+      local issue_count; issue_count=$(echo "$gn_layer_issues" | grep -cE '^\s+\S' || true)
       if [[ "$issue_count" -gt 0 ]]; then
         warn "gitnexus 检测到 ${issue_count} 处可能的跨层依赖（详见输出）"
         echo "$gn_layer_issues" | head -5 | sed 's/^/    /'
@@ -2016,7 +2016,7 @@ check_impact() {
     # gitnexus detect_changes: git diff → 受影响进程（最准确）
     local gn_impact; gn_impact=$(gitnexus detect_changes 2>/dev/null | head -30 || true)
     if [[ -n "$gn_impact" ]]; then
-      local affected_count; affected_count=$(echo "$gn_impact" | grep -cE '^\s+\S' || echo 0)
+      local affected_count; affected_count=$(echo "$gn_impact" | grep -cE '^\s+\S' || true)
       if [[ "$affected_count" -gt 5 ]]; then
         warn "gitnexus 检测到 ${affected_count} 个受影响进程——变更影响范围较大，确认 spec 已列出受影响方"
       fi
@@ -2908,7 +2908,7 @@ check_shift_left() {
       if [[ "$case_rows" -ge 3 ]]; then
         pass "§19.2 用例骨架有 $case_rows 行（含边界/异常用例）"
       else
-        warn "§19.2 用例骨架行数不足（$case_rows），须覆盖正常/边界/异常路径"
+        warn "§19.2 用例骨架行数不足（${case_rows}），须覆盖正常/边界/异常路径"
       fi
     else
       fail "spec 缺 §19 测试左移段——测试设计须在 spec 阶段写，不可编码后才补"

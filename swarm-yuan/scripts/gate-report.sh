@@ -18,7 +18,7 @@ RUNS_DIR="${GATE_RUNS_DIR:-}"
 [[ -z "$JSONL" ]] && JSONL="${RUNS_DIR:-.}/gate-runs.jsonl"
 
 if [[ ! -s "$JSONL" ]]; then
-  echo "ℹ 未找到 gate-runs 证据文件（$JSONL）——请先在 precheck.conf 配置 GATE_RUNS_DIR 并运行门禁"
+  echo "ℹ 未找到 gate-runs 证据文件（${JSONL}）——请先在 precheck.conf 配置 GATE_RUNS_DIR 并运行门禁"
   exit 0
 fi
 
@@ -129,14 +129,14 @@ if [[ $_rc -eq 3 ]]; then
   echo "ℹ $JSONL 中无有效门禁记录（行格式须符合 precheck.sh gate-runs JSONL 契约）"
   exit 0
 fi
-[[ $_rc -eq 0 ]] || { rm -f /tmp/.gate-report.$$.tmp; echo "✗ 报告聚合失败（awk 退出 $_rc）" >&2; exit 1; }
+[[ $_rc -eq 0 ]] || { rm -f /tmp/.gate-report.$$.tmp; echo "✗ 报告聚合失败（awk 退出 ${_rc}）" >&2; exit 1; }
 
 if [[ -n "$OUT" ]]; then
   if cp /tmp/.gate-report.$$.tmp "$OUT" 2>/dev/null; then
     rm -f /tmp/.gate-report.$$.tmp
-    echo "✓ 门禁运行报告已生成：$OUT（数据源: $JSONL）"
+    echo "✓ 门禁运行报告已生成：${OUT}（数据源: ${JSONL}）"
   else
-    echo "✗ 报告写入失败：$OUT——改打印到 stdout" >&2
+    echo "✗ 报告写入失败：${OUT}——改打印到 stdout" >&2
     cat /tmp/.gate-report.$$.tmp
     rm -f /tmp/.gate-report.$$.tmp
   fi

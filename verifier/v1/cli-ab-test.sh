@@ -33,8 +33,8 @@ command -v git >/dev/null 2>&1 || { echo "CLI_AB_SKIP: 无 git，A 版（HEAD）
 
 COMP_CORPUS="$SY/tests/gate-fixtures/summary/compliant"
 VIOL_CORPUS="$SY/tests/gate-fixtures/sensitive/violating"
-[ -d "$COMP_CORPUS" ] || { echo "CLI_AB_SKIP: compliant 语料缺失（$COMP_CORPUS），未配置静默跳过"; exit 0; }
-[ -d "$VIOL_CORPUS" ] || { echo "CLI_AB_SKIP: violating 语料缺失（$VIOL_CORPUS），未配置静默跳过"; exit 0; }
+[ -d "$COMP_CORPUS" ] || { echo "CLI_AB_SKIP: compliant 语料缺失（${COMP_CORPUS}），未配置静默跳过"; exit 0; }
+[ -d "$VIOL_CORPUS" ] || { echo "CLI_AB_SKIP: violating 语料缺失（${VIOL_CORPUS}），未配置静默跳过"; exit 0; }
 
 WORK="$(mktemp -d /tmp/cli-ab.XXXXXX)"
 trap 'rm -rf "$WORK"' EXIT

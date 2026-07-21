@@ -40,7 +40,7 @@ case "$N" in
 esac
 
 if [[ ! -s "$JSONL" ]]; then
-  echo "ℹ 未找到 gate-runs 证据文件（$JSONL）——请先在 precheck.conf 配置 GATE_RUNS_DIR 并运行门禁"
+  echo "ℹ 未找到 gate-runs 证据文件（${JSONL}）——请先在 precheck.conf 配置 GATE_RUNS_DIR 并运行门禁"
   exit 0
 fi
 
@@ -78,7 +78,7 @@ fi
 
 # ---- 文本模式（默认）：输出与原实现逐行一致（既有断言/人工判读契约不变）----
 if [[ -z "$HTML_OUT" ]]; then
-  echo "gate-runs 趋势（数据源: $JSONL；窗口: 近 $N 次/门禁）"
+  echo "gate-runs 趋势（数据源: ${JSONL}；窗口: 近 $N 次/门禁）"
   printf "%-28s %6s %6s %6s %6s %6s %8s  %s\n" "gate" "样本" "pass" "fail" "warn" "skip" "通过率" "趋势(旧→新)"
   printf '%s\n' "$rows" | sort
   exit 0
@@ -191,7 +191,7 @@ if [[ $_rc -eq 3 ]]; then
   echo "ℹ $JSONL 中无有效门禁记录（行格式须符合 precheck.sh gate-runs JSONL 契约）"
   exit 0
 fi
-[[ $_rc -eq 0 ]] || { rm -f "${TMP_TOP}.body"; echo "✗ HTML 数据聚合失败（awk 退出 $_rc）" >&2; exit 1; }
+[[ $_rc -eq 0 ]] || { rm -f "${TMP_TOP}.body"; echo "✗ HTML 数据聚合失败（awk 退出 ${_rc}）" >&2; exit 1; }
 
 # 拼装：头（内联 CSS，低饱和暖色系）→ 主体 → fail TOP → 尾
 {
@@ -252,5 +252,5 @@ FOOT_EOF
 } > "$HTML_OUT" || { rm -f "${TMP_TOP}.body"; echo "✗ HTML 写入失败：$HTML_OUT" >&2; exit 1; }
 rm -f "${TMP_TOP}.body"
 
-echo "✓ HTML 趋势报告已生成：$HTML_OUT（数据源: $JSONL；窗口: 近 $N 次/门禁）"
+echo "✓ HTML 趋势报告已生成：${HTML_OUT}（数据源: ${JSONL}；窗口: 近 $N 次/门禁）"
 exit 0
