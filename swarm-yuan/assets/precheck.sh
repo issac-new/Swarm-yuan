@@ -346,10 +346,23 @@ SKIP_COUNT=0
 SKIP_LIST=""
 WARN_COUNT=0
 FAIL_COUNT=0
+# WP-B2：FAIL_IDS 收集 fail id（fail 首参数含 gate_xxx/fw_xxx id），供 fail 汇总段输出修复建议。
+# 兼容 bash 3.2：用换行分隔的字符串累积（不用 declare -A），去重靠 grep -F。
+FAIL_IDS=""
 # _CURRENT_GATE：当前分发中的门禁函数名（三个分发循环赋值），供跳过计数去重
 _CURRENT_GATE=""
 pass() { echo "  ✓ $1"; }
-fail() { echo "  ✗ $1"; FAIL=1; FAIL_COUNT=$((FAIL_COUNT+1)); }
+# WP-B2：fail() 除 FAIL_COUNT++ 外，提取首参数的 fail id（gate_xxx/fw_xxx 前缀）追加到 FAIL_IDS。
+# 首参数形如 "gate_requirements_tbd:12: spec 含 TBD" 或 "fw_vue_script_setup: ..."——取首个 : 前或整串。
+fail() {
+  echo "  ✗ $1"; FAIL=1; FAIL_COUNT=$((FAIL_COUNT+1));
+  local _id="${1%%:*}"
+  [[ "$_id" == "$1" ]] && _id="$1"
+  # 去重累积
+  if [[ -z "$FAIL_IDS" ]] || ! printf '%s\n' "$FAIL_IDS" | grep -qxF "$_id"; then
+    FAIL_IDS="${FAIL_IDS}${FAIL_IDS:+$'\n'}${_id}"
+  fi
+}
 warn() { WARN_COUNT=$((WARN_COUNT+1)); if [[ $SILENT -eq 0 ]]; then echo "  ⚠ $1"; fi; }
 # skip_if_unconfigured: 未配置时静默跳过（--all-full）或 warn 提示（显式调用）
 skip_if_unconfigured() {
@@ -3795,6 +3808,22 @@ case "$MODE" in
   --all-full)
     for _gate in "${ALL_GATES_FULL[@]}"; do _gate_exec "$_gate" 1; done
     ;;
+  --fix-suggest)
+    # WP-B3：跑全量门禁收集 fail，只输出修复建议不 exit 1（rc=0）。供 AI/用户 fail 后单独看建议。
+    for _gate in "${ALL_GATES_FULL[@]}"; do _gate_exec "$_gate" 1; done
+    echo ""
+    echo "—— 修复建议（--fix-suggest 模式：只输出建议，不阻塞，rc=0）——"
+    if [[ -z "$FAIL_IDS" ]]; then
+      echo "  ✓ 无 fail，无需修复建议"
+    else
+      _fs_id=""
+      while IFS= read -r _fs_id || [[ -n "$_fs_id" ]]; do
+        [[ -z "$_fs_id" ]] && continue
+        _fix_suggest "$_fs_id"
+      done <<< "$FAIL_IDS"
+    fi
+    exit 0
+    ;;
   --*)
     # 单门禁分发：精确匹配 GATE_FLAGS 后按映射规则得函数名（如 --stable-diff → check_stable_diff）
     _gate_fn=""
@@ -3820,11 +3849,57 @@ esac
 echo ""
 # 执行汇总披露（非破坏：仅追加本行，不改既有输出行与退出码判定）
 echo "—— 执行汇总：调用 ${INVOKE_COUNT}，执行 $((INVOKE_COUNT-SKIP_COUNT))，跳过 ${SKIP_COUNT}（${SKIP_LIST# }），fail ${FAIL_COUNT}，warn ${WARN_COUNT} ——"
+# WP-B1：fail 修复建议映射表（常见 fail id → 建议文案）。未映射的输出通用建议。
+# 设计理念 1（连贯动作）：门禁 fail 后脚本自动给出修复建议，而非只 exit 1 让用户/AI 猜。
+_fix_suggest() {
+  local id="$1" suggest=""
+  case "$id" in
+    gate_requirements_tbd*)         suggest="删除 spec 中的 TBD/待定/待明确项，或显式标注暂缓理由（29148 要求需求集完备）";;
+    gate_requirements_no_id*)       suggest="为每条需求条目补 REQ- 唯一编号（29148 要求可唯一标识）";;
+    gate_requirements_openspec*)    suggest="修正 openspec delta spec 合法性（缺 scenario WHEN-THEN / markdown 结构错）——运行 openspec validate <spec> --strict 查详情";;
+    gate_sbom_license_blocked*)     suggest="更换被禁许可证依赖，或把该依赖加入 precheck.conf 的 LICENSE_WHITELIST";;
+    gate_privacy_pii_found*)        suggest="扫描出的 PII 须脱敏/加密存储，或加入 PRIVACY_WHITELIST（确认非 PII 的误报）";;
+    gate_release_sign_missing*)     suggest="发布前用 cosign/gpg 对产物签名，并生成 provenance.json（SLSA L2）";;
+    gate_release_provenance_missing*) suggest="补 provenance.json（SLSA Build L2 provenance，含 buildType/materials/byproducts）";;
+    gate_docs_pack_missing*)        suggest="补齐交付文档包缺失项（按 DOCS_PACK_PROFILE=gbt8567/rusp 校验）";;
+    gate_docs_pack_tbd*)            suggest="交付文档中不得残留 TBD/待定，补全内容或移除占位";;
+    gate_compliance_anchor_incomplete*) suggest="补全 standards-compliance.md 的 6 锚点矩阵（A-F），缺哪个补哪个";;
+    gate_compliance_placeholder*)   suggest="standards-compliance.md 不得残留占位符，填实际值";;
+    gate_authz_*)                   suggest="服务端 API 须默认拒绝+显式授权（OWASP ASVS V8），补 @PreAuthorize/@RequiresPermissions 等授权注解";;
+    gate_crypto_*)                  suggest="替换弱密码算法（MD5/SHA1/DES/RSA-1024）为国密 SM2/SM3/SM4 或强算法（GB/T 39786）";;
+    fw_vue_script_setup*)           suggest="将 Vue SFC 改为 <script setup> 语法（项目特征卡要求）";;
+    fw_vue_no_options_api*)         suggest="移除 Options API（data/methods/computed），改用 Composition API";;
+    fw_vue_vhtml_sanitize*)         suggest="v-html 须配套 sanitize（DOMPurify 等），防 XSS";;
+    fw_mybatis_dollar*)             suggest="MyBatis mapper 把 ${} 改为 #{}（防 SQL 注入），或在 SQL_INJECTION_WHITELIST 登记确认安全的动态列名";;
+    fw_sboot_transactional_selfinvoke*) suggest="@Transactional 方法不得同类自调用（代理失效），拆到另一个 Bean 或用 AopContext.currentProxy()";;
+    fw_lombok_data_jpa*)            suggest="@Data + @Entity 冲突（equals/hashCode 破坏 JPA），改用 @Getter @Setter 或单独实现 equals/hashCode";;
+    fw_batch_step_scope*)           suggest="Spring Batch ItemReader/Processor/Writer 须加 @StepScope（late binding 失效）";;
+    fw_sharding_key_in_dml*)        suggest="分表 DML 须含分片键（sharding-key），否则全表扫描";;
+    gate_scope_*)                   suggest="修改超出了 WRITABLE_DIRS 范围，把改动收回到可写目录或在 conf 登记只读区修改机制";;
+    gate_sensitive_*)               suggest="扫描出敏感信息（密钥/凭证/IP），移除或改用环境变量/密钥管理服务";;
+    gate_layer_*|gate_stable_diff_*|gate_link_depth_*) suggest="分层/稳定单元/调用链门禁——查看上方具体 fail 行，按 DDD 层边界调整依赖方向";;
+    gate_test_*)                    suggest="测试未通过——运行 TEST_CMD 查看失败用例，修复测试或被测代码";;
+    gate_build_*)                   suggest="构建失败——运行 BUILD_CMD 查看编译错误，修复语法/依赖/配置";;
+    *)                              suggest="运行 precheck.sh <对应门禁> --doctor 查看详情，或参考 references/ 对应方法论文档";;
+  esac
+  echo "  • ${id}: ${suggest}"
+}
+
 if [[ $FAIL -eq 0 ]]; then
   echo "✓ 门禁检查通过"
   _final_rc=0
 else
   echo "✗ 门禁检查未通过，请修复上述问题"
+  # WP-B1：fail 修复建议（设计理念 1：连贯动作——fail 后自动给修复建议，非让用户猜）
+  if [[ -n "$FAIL_IDS" ]]; then
+    echo "—— 修复建议（${FAIL_COUNT} 项 fail，按 id 去重后 $(printf '%s\n' "$FAIL_IDS" | grep -c .) 项）——"
+    local_id=""
+    while IFS= read -r local_id || [[ -n "$local_id" ]]; do
+      [[ -z "$local_id" ]] && continue
+      _fix_suggest "$local_id"
+    done <<< "$FAIL_IDS"
+    echo "—— 修复建议结束（执行修复仍需 AI/用户确认，与「用户决策」原则一致）——"
+  fi
   _final_rc=1
 fi
 # P1-5：json 模式在运行结束输出 SARIF 子集（text 默认模式无此行，输出与改造前逐字节一致）
