@@ -181,19 +181,20 @@ jobs:
         # 不 fail Job）——扩展脚本含历史写法，逐个修工作量大，先让问题可见不阻塞。
         # 片段由 verify-framework-ruleset.sh 的 bash -n 兜底语法。
         run: |
+          set +e  # 手动控制退出码，避免 set -e + pipefail 误杀 shellcheck 管道
           sc_fail=0
           # 严格层：原 6 核心脚本——只 error 级 fail（靠 grep 判定，不靠 shellcheck 退出码：
           # shellcheck 退出码由所有 severity 决定，-S 只控制显示不控制退出码）
           for f in assets/precheck.sh scripts/generate-skill.sh scripts/self-check.sh \
                    scripts/verify-framework-ruleset.sh tests/run-framework-fixture.sh \
-                   scripts/gen-framework-index.sh; do
+                   scripts/gen-framework-index.sh assets/trace-log.sh; do
             [[ -f "$f" ]] || continue
             # SC1087 豁免：precheck.sh 字面 "$vn[$i]" 显示变量名+索引非数组展开，shellcheck 误报
             errs=$(shellcheck -x -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312,SC1087 "$f" 2>&1 \
-                   | grep -c 'SC[0-9]\+ (error)')
+                   | grep -cE 'SC[0-9]+ \(error\)')
             if [[ "$errs" -gt 0 ]]; then
               echo "SHELLCHECK FAIL (严格, $errs errors): $f"
-              shellcheck -x -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312,SC1087 "$f" 2>&1 | grep 'SC[0-9]\+ (error)' | head -5
+              shellcheck -x -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312,SC1087 "$f" 2>&1 | grep -E 'SC[0-9]+ \(error\)' | head -5
               sc_fail=$((sc_fail+1))
             fi
           done
