@@ -56,11 +56,7 @@ check_comet(){
   if command -v comet &>/dev/null; then pass "comet: $(comet --version 2>&1|head -1)"; else miss "comet"; fi
 }
 check_gitnexus(){
-  local rc=0
-  if command -v gitnexus &>/dev/null; then pass "GitNexus: $(gitnexus --version 2>&1|head -1)"; else miss "GitNexus"; rc=1; fi
-  # 许可证忠告（无论是否安装都提示，防商用项目误用；注意保持函数退出码不被本行覆盖）
-  warn "许可证提示：GitNexus 为 PolyForm Noncommercial 1.0.0（禁商用），商用项目请用 graphify（MIT）"
-  return $rc
+  if command -v gitnexus &>/dev/null; then pass "GitNexus: $(gitnexus --version 2>&1|head -1)"; else miss "GitNexus"; fi
 }
 check_gsd_core(){
   if command -v gsd-tools &>/dev/null; then pass "gsd-core: gsd-tools 可用"; else miss "gsd-core"; fi

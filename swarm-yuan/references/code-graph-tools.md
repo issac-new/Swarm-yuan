@@ -7,22 +7,25 @@
 
 AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关系、上下文爆炸。代码图谱工具将整个代码库索引为知识图（依赖、调用链、簇、执行流），agent 查询图谱而非 grep，**不漏关系、省上下文**。
 
-## 许可证与选型
+## 选型（按技术能力）
 
 > 数据实测 2026-07-20（见 `docs/research/R6-upstream-web.md` §0/§1.3/§1.4）。
+> **选型方针（决策 18，2026-07-21 起）：范式层面按技术能力选型，不因开源组件商业授权条款降级或调整优先级。** 授权合规评估是使用方组织自身的责任（登记见下表「许可证」列，仅供使用方自查），不进入 swarm-yuan 的工具默认/降级决策。
 
-**冻结措辞（全仓库统一引用）：GitNexus（PolyForm Noncommercial 禁商用）降级为非默认；graphify（MIT）提为默认代码图谱工具。**
+| 工具 | 许可证（事实登记，供使用方自查） | 能力定位 |
+|------|--------|----------|
+| **graphify** | MIT | 广谱知识图（代码+文档+媒体）、可提交 graph.json、Mermaid 导出；91.7k stars、活跃（2026-07-18） |
+| **GitNexus** | PolyForm Noncommercial 1.0.0（GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20） | 深度代码调用图、Tree-sitter 原生解析、LadybugDB 持久图、`--pdg` 污点分析、PreToolUse/PostToolUse hooks、多仓库 group query |
 
-| 工具 | 许可证 | 选型定位 | 依据 |
-|------|--------|----------|------|
-| **graphify** | MIT | **默认首选** | 许可证干净；功能与 GitNexus 重叠度高；91.7k stars、活跃（2026-07-18） |
-| **GitNexus** | **PolyForm Noncommercial 1.0.0**（禁止商业使用；GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20） | **非默认**，仅非商用场景可选 | 若目标技能面向企业/商用场景，默认引用 GitNexus 存在许可证冲突 |
+两者**平权**，按项目需要选择或并用：
+- 侧重深度调用链分析、持久 DB、多仓库、 hooks 集成 → GitNexus
+- 侧重广谱（代码+文档+媒体）、可提交的图、Mermaid 可视化 → graphify
+- 大型项目可并用：GitNexus 做深度调用图，graphify 做广谱知识图 + Mermaid 可视化
 
 补充说明：
 
 - **graphify 仓库已迁移**：org URL 由 `safishamsi/graphify` 迁至 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)（GitHub API 2026-07-20 实测），引用一律用新 URL。
 - **graphify 引用基线：v0.9.x**（本文能力清单基于 v0.9.5 源码调研 + v0.9.6–v0.9.19 release notes）。上游已发布 **0.10.0**（npm graphifyy，2026-07-20 实测；PyPI 仍 0.9.20），**0.10.0 待评估**，评估前不引用其新能力（登记见 `docs/upstream-baseline.md`）。
-- **GitNexus 仍可用于非商用项目**：其 PreToolUse/PostToolUse hooks、`--pdg` 污点分析等机制仍有参考价值，但生成商用目标技能时不得列为默认工具。
 
 ## GitNexus（Node 生态，深度代码调用图）
 
@@ -201,11 +204,10 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | 依赖链查询 | MCP 图工具；`gitnexus group query`（多仓库） | `graphify path A B`、`graphify explain X`、MCP `shortest_path` |
 | 主要输出 | 知识图 + MCP 工具 + wiki + AGENTS/CLAUDE.md | `graph.html` + `GRAPH_REPORT.md` + `graph.json` + Mermaid |
 
-**选择建议（许可证优先，详见「许可证与选型」节）：**
-- **默认：graphify**（MIT）——商用/非商用场景均安全
-- **仅非商用场景可选 GitNexus**：侧重代码调用图、需持久 DB、多仓库
+**选择建议（按技术能力，决策 18：不做授权驱动的降级）：**
+- 侧重深度调用图、持久 DB、多仓库 → GitNexus
 - 侧重广谱（代码+文档+媒体）、需可提交的图、Mermaid 导出 → graphify
-- 非商用项目中两者可并用：GitNexus 做深度调用图，graphify 做广谱知识图 + Mermaid 可视化
+- 两者可并用：GitNexus 做深度调用图，graphify 做广谱知识图 + Mermaid 可视化
 
 ## 在目标技能中的落地
 
