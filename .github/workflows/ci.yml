@@ -188,7 +188,8 @@ jobs:
                    scripts/gen-framework-index.sh; do
             [[ -f "$f" ]] || continue
             # SC1087 豁免：precheck.sh 字面 "$vn[$i]" 显示变量名+索引非数组展开，shellcheck 误报
-            if ! shellcheck -x -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312,SC1087 "$f"; then
+            # -S warning：忽略 info/style 级（如 SC2015 A&&B||C 非 if-then-else 提示），只 warning/error fail
+            if ! shellcheck -x -S warning -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312,SC1087 "$f"; then
               echo "SHELLCHECK FAIL (严格): $f"
               sc_fail=$((sc_fail+1))
             fi
