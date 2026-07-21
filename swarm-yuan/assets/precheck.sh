@@ -358,6 +358,11 @@ if [[ -f "$_skill_md" ]] && grep -q '^status: draft' "$_skill_md" 2>/dev/null; t
       exit 2 ;;
   esac
 fi
+# WP-P6：profile 漂移检测（轻量，stderr 输出，不阻塞主流程；只升不降，质量优先）
+# 重跑 auto_detect_profile 逻辑对比 frontmatter profile，升档漂移 warn 提示升级
+if [[ -f "${_CONF_DIR}/detect-profile-drift.sh" ]]; then
+  bash "${_CONF_DIR}/detect-profile-drift.sh" "${_CONF_DIR}/.." 2>/dev/null || true
+fi
 # 执行汇总计数器（非破坏披露：只统计与末次汇总打印，不改任何门禁判定与输出行）
 INVOKE_COUNT=0
 SKIP_COUNT=0

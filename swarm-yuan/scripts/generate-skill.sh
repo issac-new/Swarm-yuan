@@ -61,6 +61,7 @@ UNIVERSAL_FILES=(
   "scripts/trace-log.sh|assets|lite"
   "scripts/self-check.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
+  "scripts/detect-profile-drift.sh|gen|lite"
   "references/subagent-orchestration.md|ref"
   "references/review-methodology.md|ref"
   "references/code-graph-tools.md|ref"

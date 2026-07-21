@@ -703,6 +703,18 @@ check_doc_consistency() {
       echo "  ✓ task-type-gates.conf 7 类任务齐全（feature/fix/refactor/chore/docs/test/exp）"
     fi
   fi
+
+  # WP-P6：profile 漂移检测（只升不降，warn 不阻塞）
+  local drift_sh="$base/scripts/detect-profile-drift.sh"
+  if [[ -f "$drift_sh" ]]; then
+    local drift_out
+    drift_out=$(bash "$drift_sh" "$base" 2>&1 || true)
+    if [[ -n "$drift_out" ]]; then
+      echo "  ⚠ profile 漂移检测：${drift_out}"
+    else
+      echo "  ✓ profile 漂移检测：无漂移"
+    fi
+  fi
 }
 check_doc_consistency
 

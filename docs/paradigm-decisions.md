@@ -297,3 +297,28 @@
 enforce_level 随 profile 调整是"门禁内部分级随项目档变化"的维度，与上述"项目/任务/阶段"三级自适应正交，且依赖未合入的 WP-Q1 基础设施，故延后。
 
 **边界**：本决策不否定 WP-P5 的价值，仅记录依赖约束与延后理由。WP-Q1 合入后应优先补做。
+
+---
+
+### 决策 22：profile 动态升档——detect-profile-drift 只升不降（2026-07-21 减重 WP-P6）
+
+**问题**：profile 在 `generate-skill.sh` create/upgrade 时写入 frontmatter 后固化；项目演进（<80 文件长到 >80，或新接入合规要求）不会自动升档，需手动 `--upgrade --profile`。固定 profile 与项目实际状态脱节是范式"不自适应"的典型表现。
+
+**决策**：
+1. 新增 `swarm-yuan/scripts/detect-profile-drift.sh`：重跑 `auto_detect_profile` 逻辑对比 frontmatter profile，漂移则输出建议
+2. 偏置规则（质量优先，只升不降）：
+   - 合规信号新增（docs/README 出现等保/密评/个保法/金融/医疗关键词）→ 强制提示升 compliance
+   - 规模信号升档（文件数从 <80 涨到 ≥80）→ 提示升 standard
+   - 规模信号降档（文件数从 ≥80 降到 <80）→ **不提示降 lite**（只升不降）
+   - 探测失败/边界不确定 → 不提示（保守不误报）
+3. 触发点：
+   - precheck.sh `--all`/`--all-full` 启动时调用（轻量，stderr 输出，不阻塞主流程）
+   - self-check.sh `check_profile_drift` 子检查（warn 不 fail）
+
+**理由**：profile 固化是范式"生成时一次定死"的局限。动态升档让范式持续感知项目演进——文件数增长或新增合规要求时主动提示升级。只升不降是质量优先偏置的延续（决策 18）：降档可能放过原本被门禁覆盖的风险，升档只是增加保护。
+
+**边界**：
+- 漂移检测是 warn 不 fail（不阻塞 precheck 主流程；仅提示用户评估）
+- 不自动执行升级（升级是用户决策，detect 只给建议命令）
+- 合规信号优先于规模信号（合规最强，与 auto_detect_profile 一致）
+- 降档不提示（避免项目临时减文件后误降档）
