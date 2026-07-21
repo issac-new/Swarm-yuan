@@ -244,7 +244,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ## 零占位符 + 自举
 
-**零占位符：** AI 执行完整 11 步后由脚本机器执法（`bash scripts/generate-skill.sh --verify-completeness <skill_dir>`）——零残留才算完成。
+**零占位符：** AI 执行完整 13 步后由脚本机器执法（`bash scripts/generate-skill.sh --verify-completeness <skill_dir>`）——零残留才算完成。
 
 **自举：** swarm-yuan 能用自身的 36 个门禁检查自身。一个连自己都检查不了的工具，凭什么检查你的项目？
 

@@ -164,6 +164,8 @@ _default_conf() {
   # 依赖版本
   CODEBASE_REF=""
   SPEC_FILE=""
+  # 认知映射表（check_cognition ④映射可选输入；conf 中 COGNITION_MAP 配置后接入）
+  COGNITION_MAP=""
   # TOGAF 架构契约
   ADR_DIR=""
   TECH_DEBT_FILE=""
@@ -2465,6 +2467,7 @@ print(maxd)
 check_cognition() {
   echo "=== 认知递进体检（六阶认知链 + 六维动力学）==="
   echo "  理念：先有概念→结构→空间→映射→规律→处理；关系在时空变化中呈现速度/聚散/趋势/强度/能耗/累积量"
+  echo "  ℹ 性质：认知体检报告（warn-only，永不 fail，不参与门禁否决；计分供认知基线参考）"
   echo ""
 
   # ---- ①概念定义：项目核心概念是否被定义 ----
@@ -2475,7 +2478,7 @@ check_cognition() {
     echo "    业务术语表：${GLOSSARY_FILE}（${term_count} 个概念定义）"
     [[ "$term_count" -gt 0 ]] && concept_score=$((concept_score+1))
   else
-    echo "    ⚠ 无业务术语表（GLOSSARY_FILE 未配置）——概念未显式定义，依赖口头约定"
+    warn "无业务术语表（GLOSSARY_FILE 未配置）——概念未显式定义，依赖口头约定"
   fi
   # 稳定单元清单（reference-manual §4/5/6）
   local rm_file
@@ -2485,7 +2488,7 @@ check_cognition() {
     echo "    稳定单元清单：${rm_file}（${unit_count} 个单元登记）"
     [[ "$unit_count" -gt 0 ]] && concept_score=$((concept_score+1))
   else
-    echo "    ⚠ 无 reference-manual.md——稳定单元未盘点"
+    warn "无 reference-manual.md——稳定单元未盘点"
   fi
   echo "    ①概念定义认知度：${concept_score}/2"
 
@@ -2497,7 +2500,7 @@ check_cognition() {
     echo "    分层定义：${#LAYER_DEFS[@]} 层（${LAYER_ORDER[*]+"${LAYER_ORDER[*]}"})"
     struct_score=$((struct_score+1))
   else
-    echo "    ⚠ 无分层定义（LAYER_DEFS）——结构未显式声明"
+    warn "无分层定义（LAYER_DEFS）——结构未显式声明"
   fi
   if [[ -n "$AGGREGATE_DIR" && -d "$AGGREGATE_DIR" ]]; then
     local agg_count; agg_count=$(find "$AGGREGATE_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | xargs || echo 0)
@@ -2533,6 +2536,10 @@ check_cognition() {
   echo ""
   echo "  ④三者映射（概念↔结构↔空间是否一致）"
   local map_score=0
+  # COGNITION_MAP：认知映射表（可选；配置且存在时纳入映射检查输入——原死变量接入，不改变 /3 计分口径）
+  if [[ -n "${COGNITION_MAP:-}" && -f "${COGNITION_MAP}" ]]; then
+    echo "    认知映射表：${COGNITION_MAP}（已配置，纳入映射检查）"
+  fi
   # 术语表标识符 vs 代码存在性（概念↔空间映射）
   if [[ -n "$GLOSSARY_FILE" && -f "$GLOSSARY_FILE" && ${#WRITABLE_DIRS[@]} -gt 0 ]]; then
     local drift_count=0
@@ -2555,7 +2562,7 @@ check_cognition() {
         echo "    术语↔代码映射：一致（无漂移）"
         map_score=$((map_score+1))
       else
-        echo "    ⚠ 术语↔代码映射：${drift_count} 个术语在代码中未找到（概念↔空间漂移）"
+        warn "术语↔代码映射：${drift_count} 个术语在代码中未找到（概念↔空间漂移）"
       fi
     fi
   fi
@@ -2676,7 +2683,7 @@ check_cognition() {
     awk '/^## 1\.1|^### 1\.1/{in_sec=1} /^## [0-9]/{if(in_sec)in_sec=0} in_sec && /痛点|根因|溯因|为什么/{found=1} END{exit !found}' "$spec_for_cog" 2>/dev/null && layer2_score=$((layer2_score+1))
     echo "    第二层(思维语言)：spec §14交付衰减/§15蓝图/§1.1现状溯因 ${layer2_score}/3"
   else
-    echo "    第二层(思维语言)：⚠ 未找到 spec，三导向段无法检查"
+    warn "第二层(思维语言)：未找到 spec，三导向段无法检查"
   fi
 
   # 第三层：认知辩证——reference-manual 含逻辑谬误图谱 + spec 含思维模型对照
