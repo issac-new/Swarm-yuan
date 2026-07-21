@@ -185,8 +185,9 @@ jobs:
             ../verifier/v1/run-verifier.sh ../verifier/v1/run-one-fixture.sh \
             ../verifier/v1/metrics-assert.sh ../verifier/v1/cli-ab-test.sh; do
             [[ -f "$f" ]] || continue
-            # 允许 SC2086（word splitting 是故意的，如 find $includes）等常见豁免
-            if ! shellcheck -x -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312 "$f"; then
+            # 允许 SC2086（word splitting 是故意的，如 find $includes）等常见豁免；
+            # SC1087（数组展开用花括号）豁免：precheck.sh 有字面 "$vn[$i]" 显示变量名+索引非数组展开，shellcheck 误报
+            if ! shellcheck -x -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312,SC1087 "$f"; then
               echo "SHELLCHECK FAIL: $f"
               sc_fail=$((sc_fail+1))
             fi
