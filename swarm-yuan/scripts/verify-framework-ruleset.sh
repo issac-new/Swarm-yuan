@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# 用法: verify-framework-ruleset.sh <ruleset_id>  —— 范式侧四要素机械核验
+# 用法: verify-framework-ruleset.sh <ruleset_id> [--strict-freshness]  —— 范式侧四要素机械核验
+#   --strict-freshness：要素5（freshness）从 warn 升级为 fail-closed（默认 warn——时间流逝不应破坏构建）
 set -u
 BASE="$(cd "$(dirname "$0")/.." && pwd)"
 ID="$1"
+STRICT_FRESHNESS=0
+[[ "${2:-}" == "--strict-freshness" ]] && STRICT_FRESHNESS=1
 FN="_fw_$(echo "$ID" | tr '-' '_')_check"
 RULE="$BASE/references/frameworks/$ID.md"
 GATE="$BASE/assets/framework-gates/$ID.sh"
@@ -101,12 +104,41 @@ if [[ -f "$GATE" ]]; then
   [[ "$NOBSD_BAD" -eq 0 ]] && ok "NOBSD 可移植性静态检查通过（五类禁则零新增命中）"
 fi
 
-# 要素4: fixture 双态（存在 fixtures 才核验）
+# 要素4: fixture 双态（WP-K 分级：核心 10 强制，其余建议）
+# 核心集（按生态活跃度与真实使用面选定）：缺 fixture = fail；非核心集缺 fixture = warn 建议补
+CORE_RULESETS="spring-boot mybatis react vue gin kafka mysql django fastapi nextjs"
 FX="$BASE/tests/fixtures/$ID"
 if [[ -d "${FX}/violating" && -d "${FX}/compliant" ]]; then
   bash "$BASE/tests/run-framework-fixture.sh" "$ID" >/dev/null 2>&1 \
     && ok "fixture 双态通过" || err "fixture 双态失败（运行 tests/run-framework-fixture.sh $ID 查看）"
 else
-  echo "⚠ 无 fixture（${FX}），跳过双态核验"
+  case " $CORE_RULESETS " in
+    *" $ID "*) err "核心规则集 $ID 缺 fixture 双态（${FX}）——核心集强制双态覆盖" ;;
+    *) echo "⚠ 无 fixture（${FX}），跳过双态核验（非核心集，建议补 fixture）" ;;
+  esac
+fi
+
+# 要素5: freshness——frontmatter「最后调研」日期时效（WP-K；self-check.sh 有同构全量检查）
+# 默认 warn（时间流逝不应破坏构建）；--strict-freshness 时 >365 天 fail-closed
+_fd=$(sed -n 's/^最后调研: *\([0-9-]*\).*/\1/p' "$RULE" | head -1)
+if [[ -z "$_fd" ]]; then
+  echo "⚠ 规则文件缺「最后调研」日期"
+else
+  _fts=$(date -u -j -f "%Y-%m-%d" "$_fd" +%s 2>/dev/null || date -u -d "$_fd" +%s 2>/dev/null || echo 0)
+  if [[ "$_fts" -eq 0 ]]; then
+    echo "⚠ 「最后调研」日期格式异常: $_fd"
+  else
+    _now=$(date -u +%s)
+    _age=$(( (_now - _fts) / 86400 ))
+    if [[ "$_age" -gt 365 ]]; then
+      if [[ "$STRICT_FRESHNESS" -eq 1 ]]; then
+        err "规则集过期：调研于 ${_fd}（${_age} 天前 >365 天，--strict-freshness fail-closed）"
+      else
+        echo "⚠ 规则集过期：调研于 ${_fd}（${_age} 天前 >365 天），建议重新核实版本区间"
+      fi
+    else
+      ok "freshness：调研于 ${_fd}（${_age} 天前，≤365 天）"
+    fi
+  fi
 fi
 [[ "$FAIL" -eq 0 ]] && echo "规则集 $ID 核验通过" || { echo "规则集 $ID 核验未通过"; exit 1; }
