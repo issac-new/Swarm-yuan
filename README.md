@@ -286,6 +286,8 @@ Swarm-yuan/
 │   └── tests/                    ← fixture 测试（conf 中 __REPO_ROOT__ 占位符运行时替换为仓库根，任意机器可跑）
 ```
 
+> **生成的目标 skill 含**：SKILL.md / references/*.md / assets/* / scripts/(precheck.sh+precheck.conf+state-machine.sh+trace-log.sh+self-check.sh+generate-skill.sh+snippets.md+mcp-tools.md) / hooks/hooks.json / commands/(spec+precheck+explore) / settings.local.json / .mcp.json / .swarm-yuan-version
+
 ---
 
 ## 数字一览

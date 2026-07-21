@@ -368,7 +368,8 @@ fail() {
   fi
 }
 warn() { WARN_COUNT=$((WARN_COUNT+1)); if [[ $SILENT -eq 0 ]]; then echo "  ⚠ $1"; fi; }
-# skip_if_unconfigured: 未配置时静默跳过（--all-full）或 warn 提示（显式调用）
+# skip_if_unconfigured: 未配置时静默跳过（--all-full/--compliance-suite）或 SKIPPED 单列提示（显式调用）
+# WP-F 诚实化：跳过 ≠ 警告——不进 WARN_COUNT（防"绿≠合规"虚增），用独立 ⊘ SKIPPED 标记单列
 skip_if_unconfigured() {
   # 跳过计数按 _CURRENT_GATE 去重（同一门禁内多次跳过只计一次）
   if [[ -n "$_CURRENT_GATE" ]]; then
@@ -378,7 +379,7 @@ skip_if_unconfigured() {
     esac
   fi
   if [[ $SILENT -eq 1 ]]; then return 0; fi
-  warn "$1"
+  echo "  ⊘ SKIPPED（未配置）: $1"
   return 0
 }
 
@@ -632,8 +633,10 @@ _gate_evidence() { # $1=gate $2=status $3=ids(空格分隔) $4=duration_s
 
 # SARIF 2.1.0 子集输出：version/runs/results（每门禁 {gate,status,ids[]}）
 _emit_json() {
-  local _out
-  _out="{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"swarm-yuan precheck.sh\"}},\"results\":[${_JSON_RESULTS}]}]}"
+  local _out _sk_json="" _g
+  # WP-F：skipped 数组披露未配置跳过的门禁（绿≠合规在 JSON 侧同样显式化）
+  for _g in $SKIP_LIST; do _sk_json="${_sk_json}${_sk_json:+,}\"${_g}\""; done
+  _out="{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"swarm-yuan precheck.sh\",\"properties\":{\"skipped\":[${_sk_json}]}}},\"results\":[${_JSON_RESULTS}]}]}"
   _JSON_EMITTED=1
   if [[ -n "$GATE_JSON_OUT" ]]; then
     if ! printf '%s\n' "$_out" > "$GATE_JSON_OUT" 2>/dev/null; then
@@ -3912,6 +3915,10 @@ esac
 echo ""
 # 执行汇总披露（非破坏：仅追加本行，不改既有输出行与退出码判定）
 echo "—— 执行汇总：调用 ${INVOKE_COUNT}，执行 $((INVOKE_COUNT-SKIP_COUNT))，跳过 ${SKIP_COUNT}（${SKIP_LIST# }），fail ${FAIL_COUNT}，warn ${WARN_COUNT} ——"
+# WP-F 诚实化收口：跳过单列披露——「通过」≠ 全量覆盖（绿≠合规洞显式化）
+if [[ $SKIP_COUNT -gt 0 ]]; then
+  echo "—— 注意：${SKIP_COUNT} 个门禁未配置跳过（${SKIP_LIST# }），「通过」≠ 全量覆盖——"
+fi
 # WP-B1：fail 修复建议映射表（常见 fail id → 建议文案）。未映射的输出通用建议。
 # 设计理念 1（连贯动作）：门禁 fail 后脚本自动给出修复建议，而非只 exit 1 让用户/AI 猜。
 _fix_suggest() {
