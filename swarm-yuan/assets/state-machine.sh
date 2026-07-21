@@ -30,6 +30,15 @@ fail() { echo "  ✗ $1"; }
 # 未装/项目未用 comet 时降级到本脚本自带的文件检查 guard_phase 逻辑。
 has_comet() { command -v comet >/dev/null 2>&1; }
 
+# WP-D3：trace_tool 辅助函数（全链路追踪——设计理念 2，state-machine 侧）
+# 打印"→ [状态流转] 调用 工具 · X（started）"到 stderr + 落盘 trace.jsonl。
+TRACE_LOG_SH="${STATE_DIR:-${PROJECT_DIR:-$(pwd)}/.swarm-yuan}/../scripts/trace-log.sh"
+[[ -f "$TRACE_LOG_SH" ]] || TRACE_LOG_SH="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/trace-log.sh"
+trace_tool() {  # $1=工具名 $2=操作
+  [[ -f "$TRACE_LOG_SH" ]] || return 0
+  bash "$TRACE_LOG_SH" --node "状态流转" --actor "工具" --tool "${1} ${2}" --status started >&2 2>/dev/null || true
+}
+
 init_state() {
   local change="${1:-}"
   [[ -z "$change" ]] && { echo "Usage: state-machine.sh init <change-name>"; exit 1; }
@@ -155,6 +164,7 @@ guard_phase() {
   if has_comet; then
     local comet_root="${PROJECT_DIR:-$(pwd)}"
     if [[ -d "$comet_root/.comet" ]]; then
+      trace_tool "comet" "guard"
       local comet_out; comet_out=$(cd "$comet_root" && comet guard 2>&1 || true)
       if echo "$comet_out" | grep -qiE 'error|fail|invalid|不一致'; then
         fail "comet guard: 状态一致性校验失败（详见输出）"

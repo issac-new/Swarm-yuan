@@ -643,9 +643,21 @@ _emit_json() {
 _gate_exec() {
   _CURRENT_GATE="$1"
   INVOKE_COUNT=$((INVOKE_COUNT+1))
+  # WP-D1：门禁级 trace-log（设计理念 2：全链路追踪）——每门禁调用前/后向 stderr 输出追踪行 + 落盘 trace.jsonl
+  if [[ -f "${TRACE_LOG_SH:-}" ]]; then
+    bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status started >&2 2>/dev/null || true
+  fi
+  local _trace_bf=$FAIL_COUNT _trace_bw=$WARN_COUNT
   # 非证据模式：与原分发语句逐语句等价（含 set -e 传播语义）
   if [[ "$_EVIDENCE_ON" -eq 0 ]]; then
     if [[ "$2" == "1" ]]; then "$1" || true; else "$1"; fi
+    # 门禁级 trace-log done/fail/warn（按计数器增量判定）
+    if [[ -f "${TRACE_LOG_SH:-}" ]]; then
+      local _tst="done"
+      [[ $FAIL_COUNT -gt $_trace_bf ]] && _tst="fail"
+      [[ "$_tst" == "done" && $WARN_COUNT -gt $_trace_bw ]] && _tst="warn"
+      bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status "$_tst" >&2 2>/dev/null || true
+    fi
     return
   fi
   # 证据模式：捕获输出→回放→按计数器增量判定状态→登记 json/jsonl
@@ -666,6 +678,10 @@ _gate_exec() {
   _ids=$(_gate_ids "$_GATE_TMP")
   _json_add_result "$1" "$_st" "$_ids"
   if [[ -n "$GATE_RUNS_DIR" ]]; then _gate_evidence "$1" "$_st" "$_ids" "$((_t1-_t0))" || true; fi
+  # WP-D1：门禁级 trace-log done/fail/skip/warn/pass（证据模式）
+  if [[ -f "${TRACE_LOG_SH:-}" ]]; then
+    bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status "$_st" >&2 2>/dev/null || true
+  fi
   if [[ "$2" == "1" ]]; then return 0; fi
   return "$_rc"
 }
@@ -687,6 +703,7 @@ has_madge() { command -v madge >/dev/null 2>&1; }
 # WP-D1：trace_tool 辅助函数（全链路追踪——设计理念 2）
 # 在第三方工具调用前调用，打印"→ [工具] 调用 X · Y（started）"到 **stderr**（不污染 stdout/cli-ab 逐字节等价）
 # + 落盘 trace.jsonl。trace-log.sh 路径优先 $_CONF_DIR/trace-log.sh，缺失则静默跳过（不阻塞）。
+# 口径：只 trace 实际工作调用；has_*/indexed/built 等守卫探测（如 gitnexus status）不 trace，避免噪音。
 TRACE_LOG_SH="${_CONF_DIR:-$(cd "$(dirname "$0")" 2>/dev/null && pwd)}/trace-log.sh"
 trace_tool() {  # $1=工具名 $2=命令/操作描述 [--note 说明]（第 3 参数可选作 note）
   local _tool="$1" _op="$2" _note="${3:-}"
@@ -920,6 +937,7 @@ check_review() {
     if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       local base; base=$(_git_base)
       local head_ref; head_ref=$(git rev-parse HEAD 2>/dev/null || echo "HEAD")
+      trace_tool "ocr" "review --from $base --to $head_ref"
       local diff_output; diff_output=$(ocr review --from "$base" --to "$head_ref" --audience agent --format text 2>&1 || true)
       if [[ -n "$diff_output" && "$diff_output" != *"Error"* ]]; then
         echo "$diff_output" | tail -30
@@ -933,11 +951,13 @@ check_review() {
         warn "ocr review --from/--to 失败（可能无 diff 或参数不支持），降级 ocr scan"
         local scan_dirs=""; scan_dirs=$(printf '%s ' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}")
         if [[ -n "$scan_dirs" ]]; then
+          trace_tool "ocr" "scan --path $scan_dirs"
           ocr scan --path "$scan_dirs" --audience agent --format text 2>&1 | tail -30 || true
         fi
       fi
     else
       # 非 git 仓库：用 ocr scan
+      trace_tool "ocr" "scan"
       ocr scan --audience agent --format text 2>&1 | tail -30 || warn "ocr scan 返回非零"
     fi
   else
@@ -957,6 +977,7 @@ check_review() {
   if has_gsd_tools; then
     local gsd_root="${GSD_PROJECT_DIR:-$PROJECT_DIR}"
     if [[ -n "$gsd_root" && ( -d "$gsd_root/.planning" || -d "$gsd_root/.gsd" ) ]]; then
+      trace_tool "gsd-tools" "validate health --cwd $gsd_root"
       local gsd_health; gsd_health=$(gsd-tools validate health --cwd "$gsd_root" 2>/dev/null || true)
       if [[ -n "$gsd_health" ]]; then
         local gsd_status; gsd_status=$(echo "$gsd_health" | grep -oE '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"status"[[:space:]]*:[[:space:]]*"//;s/"$//')
@@ -987,6 +1008,7 @@ check_layer() {
 
   # ---- 0. 优先用 gitnexus query 查跨层依赖（最准确）----
   if has_gitnexus && gitnexus_indexed; then
+    trace_tool "gitnexus" "query cross-layer imports"
     local gn_layer_issues; gn_layer_issues=$(gitnexus query "cross-layer imports" --format text 2>/dev/null | head -20 || true)
     if [[ -n "$gn_layer_issues" ]]; then
       local issue_count; issue_count=$(echo "$gn_layer_issues" | grep -cE '^\s+\S' || true)
@@ -995,6 +1017,9 @@ check_layer() {
         echo "$gn_layer_issues" | head -5 | sed 's/^/    /'
       fi
       pass "分层检查增强（基于 gitnexus 代码图谱）"
+    else
+      # WP-D3：空结果也提示（修静默——原代码 gitnexus 无跨层问题时连 pass 都不打印）
+      pass "gitnexus 查询跨层依赖:无问题"
     fi
   fi
 
@@ -1269,6 +1294,7 @@ check_link_depth() {
 
   # ---- 1. 优先用 gitnexus trace（最准确，基于代码图谱）----
   if has_gitnexus && gitnexus_indexed; then
+    trace_tool "gitnexus" "trace --format text"
     local depth_output; depth_output=$(gitnexus trace --format text 2>/dev/null | head -50 || true)
     if [[ -n "$depth_output" ]]; then
       local max_depth; max_depth=$(echo "$depth_output" | grep -oE '[0-9]+' | sort -n | tail -1 || echo 0)
@@ -1282,6 +1308,7 @@ check_link_depth() {
 
   # ---- 2. 降级 graphify path ----
   if has_graphify && graphify_built; then
+    trace_tool "graphify" "explain"
     local report; report=$(graphify explain 2>/dev/null | head -50 || true)
     if echo "$report" | grep -qiE "depth|max.*path|longest"; then
       local depths; depths=$(echo "$report" | grep -oE '[0-9]+' | sort -n | tail -1 || true)
@@ -2028,6 +2055,7 @@ check_impact() {
   # ---- 3. 变更影响分析：优先用 gitnexus impact/detect_changes，降级 grep ----
   if has_gitnexus && gitnexus_indexed; then
     # gitnexus detect_changes: git diff → 受影响进程（最准确）
+    trace_tool "gitnexus" "detect_changes"
     local gn_impact; gn_impact=$(gitnexus detect_changes 2>/dev/null | head -30 || true)
     if [[ -n "$gn_impact" ]]; then
       local affected_count; affected_count=$(echo "$gn_impact" | grep -cE '^\s+\S' || true)
@@ -2800,6 +2828,7 @@ check_knowledge() {
 
   # ---- 0. 优先用 claude-mem search 查项目记忆 ----
   if has_claude_mem; then
+    trace_tool "claude-mem" "search project rules conventions"
     local mem_results; mem_results=$(claude-mem search "project rules conventions" 2>/dev/null | head -10 || true)
     if [[ -n "$mem_results" ]]; then
       pass "claude-mem 记忆库有历史记录（项目知识已积累）"
@@ -3416,6 +3445,7 @@ check_requirements() {
     ospec_dir="$PROJECT_DIR/$ospec_dir"
   fi
   if has_openspec && [[ -n "$ospec_dir" && -d "$ospec_dir" ]]; then
+    trace_tool "openspec" "validate --all --strict $ospec_dir"
     local ospec_out; ospec_out=$(openspec validate --all --strict --no-interactive "$ospec_dir" 2>&1 || true)
     if echo "$ospec_out" | grep -qE '[1-9][0-9]* failed' && ! echo "$ospec_out" | grep -qE '[1-9][0-9]* passed'; then
       fail "gate_requirements_openspec_invalid: openspec validate 失败（delta spec 非法，详见输出）"

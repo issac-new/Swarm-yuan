@@ -62,7 +62,7 @@
 | 理念 | 落实点 | 机器执法 | 状态 |
 |------|--------|---------|------|
 | **1. 连贯动作**（一键生成 + 一键使用，无需用户指定阶段/工具） | `/swarm-yuan <项目路径>` → Step 0-10 全自动；目标 skill 用户只说"开始新需求 xxx" → 8 节点自动驱动；hooks.json 自动接线（SessionStart 状态恢复 + PreToolUse 范围门禁）；工具选择走 has_* 守卫 + 降级链（gitnexus→graphify→madge→启发式） | `--verify-completeness` 零占位符；骨架铁律禁中途停止 | ✅ 已落实（设计性例外：特征卡/spec/合入/发布等 7 处用户决策点保留确认——确认≠指定阶段/工具） |
-| **2. 全链路追踪**（每步调用有信息提示，显示调用了何种工具及技能，无需用户确认） | ① stdout 公告：每 Step/节点输出 `→ [Step N/节点X] 调用 <技能/工具> · <目的>`；② 落盘：`scripts/trace-log.sh` 追加 `.swarm-yuan/trace.jsonl`（ai-process-records §2.4 第四级调用留痕）；③ 门禁执行层：每门禁 `=== 检查 ===` 横幅 + pass/warn 归因工具 + gate-runs.jsonl + SARIF；④ hooks 单行摘要（原 `--quiet` 为无效参数已移除，改为一行 ✓/✗ 提示） | `--verify-completeness` 校验 workflow.md 每节点含「调用追踪」要素（template-spec §2 第 ⑨ 要素），缺则列 file:line + exit 1 | ✅ 已落实 |
+| **2. 全链路追踪**（每步调用有信息提示，显示调用了何种工具及技能，无需用户确认） | ① stdout 公告：每 Step/节点输出 `→ [Step N/节点X] 调用 <技能/工具> · <目的>`；② 落盘：`scripts/trace-log.sh` 追加 `.swarm-yuan/trace.jsonl`（ai-process-records §2.4 第四级调用留痕）；③ 门禁执行层：每门禁 `=== 检查 ===` 横幅 + pass/warn 归因工具 + gate-runs.jsonl + SARIF；④ hooks 单行摘要（原 `--quiet` 为无效参数已移除，改为一行 ✓/✗ 提示）；⑤ **第三方工具调用点全接线（WP-D1/D3）**：`trace_tool()` 桥（precheck.sh + state-machine.sh）——gitnexus query/trace/detect_changes、graphify explain、claude-mem search、ocr review/scan、openspec validate、gsd-tools validate health、comet guard 共 7 工具 10 个调用点逐一接入，输出走 **stderr**（cli-ab stdout 逐字节契约不破），守卫探测（has_*/indexed）不 trace 防噪音 | `--verify-completeness` 校验 workflow.md 每节点含「调用追踪」要素（template-spec §2 第 ⑨ 要素），缺则列 file:line + exit 1 | ✅ 已落实 |
 
 **核对结论**：理念 1 此前已落实；理念 2 的缺口（AI 行为层无调用公告铁律、无机器校验、hooks 静默）由 WP4 补齐——workflow 10 要素（新增第 ⑨ 调用追踪）+ trace-log.sh 双通道 + verify-completeness 机器执法 + hooks 单行摘要。
 
