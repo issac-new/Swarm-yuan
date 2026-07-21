@@ -52,6 +52,8 @@ UNIVERSAL_FILES=(
   "assets/trace-log.sh|assets|lite"
   "scripts/precheck.sh|assets|lite"
   "scripts/precheck.conf|assets|lite"
+  "scripts/precheck.arch.conf|assets"
+  "scripts/precheck.compliance.conf|assets|compliance"
   "scripts/snippets.md|assets"
   "scripts/mcp-tools.md|assets"
   "scripts/state-machine.sh|assets|lite"
@@ -111,6 +113,9 @@ merge_precheck_conf() {
   local paradigm_dir; paradigm_dir="$(cd "$(dirname "$0")/.." && pwd)"
   local conf="$skill_dir/scripts/precheck.conf"
   [[ -f "$conf" ]] || { echo "⚠ precheck.conf 不存在，跳过合并"; return 0; }
+  # WP-I：框架变量属 arch 组——补占位落 precheck.arch.conf（旧版 skill 无此文件则回落主 conf）
+  local merge_target="$skill_dir/scripts/precheck.arch.conf"
+  [[ -f "$merge_target" ]] || merge_target="$conf"
   # 读取用户 ACTIVE_FRAMEWORKS（含旧 id，迁移后补对应母框架变量）。
   # 子 shell 内 set +u source（conf 可能含字面 ${}），把数组逐行打印出来供当前 shell 读；
   # 子 shell 的变量带不出来，故只取打印输出。
@@ -140,7 +145,10 @@ merge_precheck_conf() {
     local req
     req=$(sed -n 's/^# ruleset:.*requires_conf: *//p' "$frag" | tr -s ' ')
     for var in $req; do
-      grep -q "^${var}=" "$conf" 2>/dev/null || missing+=("$var")
+      # WP-I：变量可能定义在主 conf 或 arch conf（物理三分），两处都查
+      grep -q "^${var}=" "$conf" 2>/dev/null && continue
+      [[ -f "$merge_target" ]] && grep -q "^${var}=" "$merge_target" 2>/dev/null && continue
+      missing+=("$var")
     done
   done
   # 去重
@@ -150,10 +158,10 @@ merge_precheck_conf() {
     useen="$useen $var"; uniq_missing+=("$var")
   done
   if [[ ${#uniq_missing[@]} -gt 0 ]]; then
-    echo "" >> "$conf"
-    echo "# ===== 由 upgrade 增量补充（激活框架需要的变量，用户未声明）=====" >> "$conf"
+    echo "" >> "$merge_target"
+    echo "# ===== 由 upgrade 增量补充（激活框架需要的变量，用户未声明）=====" >> "$merge_target"
     for var in "${uniq_missing[@]}"; do
-      printf '%s=()  # TODO(upgrade): 由用户按项目实际填充\n' "$var" >> "$conf"
+      printf '%s=()  # TODO(upgrade): 由用户按项目实际填充\n' "$var" >> "$merge_target"
       echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
     done
   fi
@@ -177,6 +185,9 @@ inject_frameworks() {
   local ver="$skill_dir/.swarm-yuan-version"
   [[ -f "$sh" ]]  || { echo "✗ 未找到 $sh"; return 1; }
   [[ -f "$conf" ]] || { echo "✗ 未找到 $conf"; return 1; }
+  # WP-I：框架变量属 arch 组——缺失判定与补占位落 precheck.arch.conf（旧版 skill 无此文件则回落主 conf）
+  local arch_conf="$skill_dir/scripts/precheck.arch.conf"
+  [[ -f "$arch_conf" ]] || arch_conf="$conf"
 
   # 冲突检测：若 .swarm-yuan-version 已记 framework_gates_sha，且现有区块哈希不符 → 裁决
   if [[ -f "$ver" ]]; then
@@ -237,7 +248,10 @@ inject_frameworks() {
       # 解析 requires_conf（兼容行内多空格/无声明）
       req=$(sed -n 's/^# ruleset:.*requires_conf: *//p' "$frag" | tr -s ' ')
       for var in $req; do
-        grep -q "^${var}=" "$conf" 2>/dev/null || missing_conf+=("$var")
+        # WP-I：变量可能定义在主 conf 或 arch conf（物理三分），两处都查
+        grep -q "^${var}=" "$conf" 2>/dev/null && continue
+        [[ "$arch_conf" != "$conf" ]] && grep -q "^${var}=" "$arch_conf" 2>/dev/null && continue
+        missing_conf+=("$var")
       done
     else
       uncovered+=("$fw")
@@ -287,9 +301,9 @@ inject_frameworks() {
   cat "$tmp" > "$sh"
   rm -f "$tmp" "$block"
 
-  # 3) 缺失 conf 变量：注入占位 + warn（不静默）
+  # 3) 缺失 conf 变量：注入占位 + warn（不静默）——WP-I：落 arch conf（框架变量组）
   for var in ${missing_conf[@]+"${missing_conf[@]}"}; do
-    printf '%s=()  # TODO(framework-gates): 由生成流程 Step 7.5 填充\n' "${var}" >> "$conf"
+    printf '%s=()  # TODO(framework-gates): 由生成流程 Step 7.5 填充\n' "${var}" >> "$arch_conf"
     echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
   done
 
@@ -542,8 +556,8 @@ copy_universal_templates() {
     [[ $(_profile_rank "$minprof") -gt $(_profile_rank "$PROFILE") ]] && continue
     # resume：断点续传只补缺失文件，已有一律不覆盖（WP-H）
     [[ "$mode" == "resume" && -f "$dir/$dest" ]] && continue
-    # precheck.conf：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
-    [[ "$mode" == "upgrade" && "$dest" == "scripts/precheck.conf" ]] && continue
+    # precheck.conf 三件套：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
+    [[ "$mode" == "upgrade" && ( "$dest" == "scripts/precheck.conf" || "$dest" == "scripts/precheck.arch.conf" || "$dest" == "scripts/precheck.compliance.conf" ) ]] && continue
     case "$kind" in
       assets) src="$ASSETS_DIR/${dest##*/}" ;;
       ref)    src="$SRC_REF/${dest##*/}" ;;

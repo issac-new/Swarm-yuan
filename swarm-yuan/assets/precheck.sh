@@ -487,6 +487,18 @@ _run_doctor() {
   else
     _dr_warn "conf 不存在（${conf}）——全部变量走内置默认值"
   fi
+  # WP-I：兄弟 conf（arch/compliance）语法 sanity（存在才查）
+  local _sib
+  for _sib in "$sh_dir/precheck.arch.conf" "$sh_dir/precheck.compliance.conf"; do
+    [[ -f "$_sib" ]] || continue
+    local _synerr2
+    _synerr2=$(bash -n "$_sib" 2>&1 || true)
+    if [[ -z "$_synerr2" ]]; then
+      _dr_ok "$(basename "$_sib") 语法 sanity：bash -n 通过"
+    else
+      _dr_bad "$(basename "$_sib") 语法错误：$(printf '%s\n' "$_synerr2" | head -1)"
+    fi
+  done
 
   # ① PROJECT_DIR 存在
   if [[ -d "$PROJECT_DIR" ]]; then
@@ -523,7 +535,13 @@ _run_doctor() {
       [[ -f "$_f" ]] && _refs="${_refs}
 $(cat "$_f")"
     done
-    for _v in $(sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' "$conf" | sort -u); do
+    # WP-I：conf 物理三分——变量定义扫描合并三个文件（存在的才拼），core/arch/compliance 全覆盖
+    local _conf_all=""
+    for _f in "$conf" "$sh_dir/precheck.arch.conf" "$sh_dir/precheck.compliance.conf"; do
+      [[ -f "$_f" ]] && _conf_all="${_conf_all}
+$(cat "$_f")"
+    done
+    for _v in $(printf '%s\n' "$_conf_all" | sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' | sort -u); do
       # 注：不能用 grep -q——pipefail 下 grep -q 提前退出会使 printf 收 SIGPIPE(141)，
       # 管道整体非零而把全部变量误判为死变量。grep -c 读全量输入，无此问题。
       if [[ $(printf '%s\n' "$_refs" | grep -c -w "$_v" || true) -eq 0 ]]; then
