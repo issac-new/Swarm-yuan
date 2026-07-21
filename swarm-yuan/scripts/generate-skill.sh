@@ -50,6 +50,7 @@ UNIVERSAL_FILES=(
   "assets/data-sample-template.md|assets"
   "assets/state-machine.sh|assets|lite"
   "assets/trace-log.sh|assets|lite"
+  "assets/task-type-gates.conf|assets|lite"
   "scripts/precheck.sh|assets|lite"
   "scripts/precheck.conf|assets|lite"
   "scripts/precheck.arch.conf|assets"
@@ -833,11 +834,20 @@ MEOF
 
 _write_if_absent "$SKILL_DIR/commands/spec.md" <<'CEOF'
 ---
-description: 开始新需求——AI 自动创建 spec + 判断规模 + 预填复用约束
+description: 开始新需求——AI 自动创建 spec + 判断任务类型 + 判断规模 + 预填复用约束
 argument-hint: <需求描述>
 ---
-AI 自动：1.创建 spec 文件 2.判断规模 3.预填 §5.5 4.运行 --reuse 验证
-5.按规模执行门禁集（任务级自适应）：简单→--all；标准→--all-full；完整（架构/跨服务/公共接口/数据模型/权限）→--all-full+--shift-left；compliance 档项目追加 --compliance-suite。规模不确定时按更大规模处理（质量优先，升档不降级）。
+AI 自动：
+1.创建 spec 文件
+2.判断任务类型（WP-P4，从分支名/用户意图）：feature/fix/refactor/chore/docs/test/exp——映射见 assets/task-type-gates.conf
+3.判断规模（detect-spec-scale.sh）：简单/标准/完整
+4.预填 §5.5 复用约束（从特征卡第 11 项检索可复用稳定单元）
+5.运行 --reuse 验证
+6.执行门禁集（任务类型 × 规模档取并集，质量优先取更重档）：
+  - 任务类型基础集（task-type-gates.conf）：feature→--all-full；fix→--all --reuse；refactor→--all-full --reuse --stable-diff；chore→--all；docs→--docs-pack；test→--all --shift-left；exp→--all
+  - 规模档叠加（detect-spec-scale.sh）：简单→--all；标准→--all-full；完整（架构/跨服务/公共接口/数据模型/权限）→--all-full --shift-left
+  - 两者取并集（更重档）；compliance 档项目追加 --compliance-suite；compliance 档无"简单任务"豁免
+  - 规模不确定按更大规模处理（升档不降级）；公共接口/数据模型/权限改动无"简单"档
 $ARGUMENTS
 CEOF
 _write_if_absent "$SKILL_DIR/commands/precheck.md" <<'CEOF'

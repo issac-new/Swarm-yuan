@@ -686,6 +686,23 @@ check_doc_consistency() {
     fi
     rm -f "$guide_tmp"
   fi
+
+  # WP-P4：task-type-gates.conf 一致性断言（7 类任务齐全）
+  local ttg="$base/assets/task-type-gates.conf"
+  if [[ -f "$ttg" ]]; then
+    local tt_types="feature fix refactor chore docs test exp" tt_missing="" tt
+    for tt in $tt_types; do
+      if ! grep -q "^TASK_TYPE_${tt}=" "$ttg" 2>/dev/null; then
+        tt_missing="${tt_missing} ${tt}"
+      fi
+    done
+    if [[ -n "$tt_missing" ]]; then
+      warn "task-type-gates.conf 缺失任务类型映射：${tt_missing# }（须补 TASK_TYPE_<type>）"
+      FAIL=1
+    else
+      echo "  ✓ task-type-gates.conf 7 类任务齐全（feature/fix/refactor/chore/docs/test/exp）"
+    fi
+  fi
 }
 check_doc_consistency
 

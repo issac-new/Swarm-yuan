@@ -250,3 +250,32 @@
 **理由**：catchphrase 手抄导致数字漂移是范式"过重"观感的一部分——文档与代码脱节会让外部观察者误以为"全是空壳"。单一事实源把"改一处→全局同步"自动化，self-check 机器执法先对账 facts.conf 自身（防 facts.conf 漂移），再扫描文档（防文档漂移），双向兜底。
 
 **边界**：文档头部引用行不替换正文数字（保留可读性），仅声明权威源；facts.conf 只声明"会变的数字"（门禁数/变量数/框架数等），不声明"稳定的架构"（六段式/五层认知基底等）；facts.conf 自身漂移由 self-check 机器执法（改门禁数必须同步改 facts.conf，否则 FAIL）。
+
+---
+
+### 决策 20：任务类型维度实装（2026-07-21 减重 WP-P4）
+
+**问题**：`template-spec.md:32-33`「快速入口（按任务类型）」是空占位表——只有"（任务类型 → 起始节点 → 关键参考 的表）"一行，无实际映射。分支命名有 feat/fix/refactor 但无对应门禁集差异化。spec 三级（简单/标准/完整）按变更规模分级，与任务类型正交——一个 fix 可能是"完整"级（跨服务 fix），一个 feature 可能是"简单"级（加字段）。
+
+**决策**：
+1. 新增 `swarm-yuan/assets/task-type-gates.conf`（bash 可 source），7 类任务映射（对齐用户级 AGENTS.md 分支命名）：
+   - feature → `--all-full`（无豁免）
+   - fix → `--all --reuse`（§14-§18 认知段可免）
+   - refactor → `--all-full --reuse --stable-diff`（§14-§18 可免）
+   - chore → `--all`（spec 全段可免）
+   - docs → `--docs-pack`（其他门禁免）
+   - test → `--all --shift-left`（§14-§18 可免；§19 必填）
+   - exp → `--all`（合入前须转 feature/fix）
+2. `template-spec.md` L32-33 填实任务类型映射表 + 引用 task-type-gates.conf
+3. `generate-skill.sh` 生成的 `commands/spec.md` 指引改为"先判任务类型后判规模，两者取并集（更重档）"
+4. `self-check.sh` 加 task-type-gates.conf 一致性断言（7 类必须齐全）
+
+**与 spec 规模维度的关系（正交，取并集）**：
+- 任务类型决定门禁子集（哪些门禁跑/豁免）
+- spec 规模决定档位（--all/--all-full/--all-full+--shift-left）
+- 两者取并集（更重档，质量优先，决策 18）
+
+**边界**：
+- compliance 档项目无"简单任务"豁免（决策 18）
+- 公共接口/数据模型/权限改动无"简单"档（强制 ≥ --all-full）
+- exp 任务合入前须转 feature/fix 正式流程（不阻塞合入是探查期特权，非交付特权）
