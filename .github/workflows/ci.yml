@@ -187,7 +187,7 @@ jobs:
           # shellcheck 退出码由所有 severity 决定，-S 只控制显示不控制退出码）
           for f in assets/precheck.sh scripts/generate-skill.sh scripts/self-check.sh \
                    scripts/verify-framework-ruleset.sh tests/run-framework-fixture.sh \
-                   scripts/gen-framework-index.sh assets/trace-log.sh; do
+                   scripts/gen-framework-index.sh assets/trace-log.sh scripts/cost-report.sh; do
             [[ -f "$f" ]] || continue
             # SC1087 豁免：precheck.sh 字面 "$vn[$i]" 显示变量名+索引非数组展开，shellcheck 误报
             errs=$(shellcheck -x -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312,SC1087 "$f" 2>&1 \

@@ -54,6 +54,7 @@ UNIVERSAL_FILES=(
   "scripts/state-machine.sh|assets"
   "scripts/trace-log.sh|assets"
   "scripts/self-check.sh|gen"
+  "scripts/cost-report.sh|gen"
   "references/subagent-orchestration.md|ref"
   "references/review-methodology.md|ref"
   "references/code-graph-tools.md|ref"
