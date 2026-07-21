@@ -22,6 +22,12 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 
 **安装**：`bash install.sh`（自动检测运行环境 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi，安装到对应 skill 目录。详见 `install.sh --list`）
 
+**不适用场景**（WP-P10 范式定位，详见 `docs/paradigm-positioning.md`）：
+- 个人脚本/一次性原型/学习用 demo——建议直接用 AI 裸写，不套范式
+- 极小改动（改 typo/调样式）——直接改，不走 spec 流程
+- 无 AI 辅助的纯人工开发——范式设计为 AI 驱动，纯人工无法消费
+- 替代方案：单文件 `precheck.sh` 做门禁不套生成器；或传统 lint/test 工具链
+
 **不适用**：用户只是要在某项目里做具体开发任务（那应该用该项目的目标技能）。
 
 ## 三条铁律
