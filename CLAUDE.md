@@ -15,7 +15,7 @@ There is no compiled artifact and no conventional build — the product is a set
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
   - `SKILL.md` — the AI entry point / operating manual (the generation pipeline Step 0–10).
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
-  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~3800 lines, all 36 gates), `precheck.conf` (179 config vars), `spec-template.md` (22-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`), `framework-gates/<fw>.sh` (61 per-framework gate fragments).
+  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~4000 lines, 36 gates = standard 27 via `--all-full` + compliance 9 via `--compliance-suite`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (179 config vars across the three, WP-I split), `spec-template.md` (22-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (61 per-framework gate fragments).
   - `references/` — 18 methodology docs + `references/frameworks/<fw>.md` (61 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).

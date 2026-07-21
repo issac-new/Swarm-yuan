@@ -224,7 +224,7 @@ bash install.sh
 | 4.5 | **框架深化**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + 门禁清单对齐 |
 | 5 | AI 配置 precheck.conf——**179 个变量从特征卡推导** |
 | 5.5 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
-| 6 | AI 运行 36 个门禁——**特征卡定义规则，门禁验证合规** |
+| 6 | AI 运行门禁（--all 核心 10 → --all-full 标准 27；合规 9 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
 | 7.5 | **门禁注入**——`generate-skill.sh --inject-frameworks` 把激活框架门禁片段写入 precheck.sh 标记区块 |
 | 7 | AI 写回项目记忆（闭环） |
 | 8 | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**零占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
