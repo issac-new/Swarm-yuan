@@ -279,3 +279,21 @@
 - compliance 档项目无"简单任务"豁免（决策 18）
 - 公共接口/数据模型/权限改动无"简单"档（强制 ≥ --all-full）
 - exp 任务合入前须转 feature/fix 正式流程（不阻塞合入是探查期特权，非交付特权）
+
+---
+
+### 决策 21：WP-P5 enforce_level 随 profile 调整——延后到 WP-Q1 合入后（2026-07-21）
+
+**问题**：WP-P5 计划让 enforce_level（strict/warn/advisory）随 profile 调整——lite 档降一档（strict→warn，保护核心 strict 不降）、compliance 档升一档（advisory→warn，纯观测类保留 advisory）。
+
+**事实核查**：enforce_level 机制（`gen-enforce-level.sh` + `gate-enforce-level.conf` + `_enforce_of`）目前仅在 `wp-q1-gate-stratification` 分支，**未合入 origin/main**。WP-P5 的实现依赖该机制存在。
+
+**决策**：WP-P5 延后——不在本 worktree 实施 enforce_level 随 profile 调整，等 WP-Q1 合入 main 后作为独立 WP 处理。本 worktree 的自适应减重聚焦：
+- 项目级（profile auto + 动态升档 WP-P6 + 技术栈反作用 WP-P9）
+- 任务级（任务类型 WP-P4 + spec 三级机器执法 WP-P7）
+- 阶段级（per-phase profile WP-P8）
+- 结构性（catchphrase 单一事实源 WP-P1 + 冗余合并 WP-P2 + arch.conf 懒生成 WP-P3）
+
+enforce_level 随 profile 调整是"门禁内部分级随项目档变化"的维度，与上述"项目/任务/阶段"三级自适应正交，且依赖未合入的 WP-Q1 基础设施，故延后。
+
+**边界**：本决策不否定 WP-P5 的价值，仅记录依赖约束与延后理由。WP-Q1 合入后应优先补做。
