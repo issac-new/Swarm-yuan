@@ -365,6 +365,12 @@ echo ""
 if [[ ${#MISSING[@]} -eq 0 ]]; then
   echo "✓ 全部 11 个项目运行时已安装"
 fi
+# 运行时接线分层标注（WP1.4）：让用户清楚每个运行时的真实接线程度，不假装全深接
+echo "  接线分层："
+echo "    深度接线(4,precheck.sh 真实命令调用)：gitnexus / graphify / claude-mem / ocr"
+echo "    CLI 接线(3,门禁/状态机按需调用 CLI)：openspec / comet / gsd-core"
+echo "    方法论引用(4,AI 按节点引用模式)：superpowers / gstack / ruflo / ECC"
+echo "  （每层有自带降级载体，未装不阻塞——详见 SKILL.md「它整合的方法论」分层表）"
 
 # 即便全部已装，若启用 --latest 则升级到最新版
 if [[ $FORCE_LATEST -eq 1 && $CHECK_ONLY -eq 0 ]]; then

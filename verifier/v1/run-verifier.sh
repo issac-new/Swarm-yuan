@@ -50,10 +50,11 @@ e2e() {
   echo "E2E_RC $?"
 }
 
-# 合规门禁 fixture（C8）：遍历 6 组 gate fixture，双态 + id 级断言
+# 合规门禁 fixture（C8）：遍历全部 gate fixture 组（WP3.3：从硬编码 6 组改为全量遍历），双态 + id 级断言
 gate_fixtures() {
   local g fails=0 total=0
-  for g in compliance docs-pack sbom privacy sensitive summary; do
+  for g in $(ls "$SY/tests/gate-fixtures" 2>/dev/null); do
+    [ -d "$SY/tests/gate-fixtures/$g" ] || continue
     total=$((total+1))
     if bash "$SY/tests/run-gate-fixture.sh" "$g" >/tmp/verifier-gatefx-$g.log 2>&1; then
       echo "GATE_FIXTURE $g OK"

@@ -21,8 +21,15 @@ set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "BASH_DIR=%SCRIPT_DIR%"
 set "BASH_DIR=!BASH_DIR:\=/!"
-set "BASH_DIR=!BASH_DIR:C:=/c!"
-set "BASH_DIR=!BASH_DIR:D:=/d!"
-set "BASH_DIR=!BASH_DIR:E:=/e!"
+REM WP2.2: WSL 路径转换修复——WSL 用 /mnt/c/，Git Bash/MSYS2 用 /c/
+echo !BASH_CMD! | findstr /i "wsl" >nul 2>&1 && (
+    set "BASH_DIR=!BASH_DIR:C:=/mnt/c!"
+    set "BASH_DIR=!BASH_DIR:D:=/mnt/d!"
+    set "BASH_DIR=!BASH_DIR:E:=/mnt/e!"
+) || (
+    set "BASH_DIR=!BASH_DIR:C:=/c!"
+    set "BASH_DIR=!BASH_DIR:D:=/d!"
+    set "BASH_DIR=!BASH_DIR:E:=/e!"
+)
 
 !BASH_CMD! "!BASH_DIR!/self-check.sh" %*

@@ -50,12 +50,18 @@ set "SCRIPT_DIR=%~dp0"
 REM 去掉末尾反斜杠
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 
-REM 将 Windows 路径转换为 bash 路径（替换 \ 为 /，替换 C: 为 /c）
+REM 将 Windows 路径转换为 bash 路径（WP2.2: WSL 用 /mnt/c/，Git Bash/MSYS2 用 /c/）
 set "BASH_DIR=%SCRIPT_DIR%"
 set "BASH_DIR=!BASH_DIR:\=/!"
-set "BASH_DIR=!BASH_DIR:C:=/c!"
-set "BASH_DIR=!BASH_DIR:D:=/d!"
-set "BASH_DIR=!BASH_DIR:E:=/e!"
+echo !BASH_CMD! | findstr /i "wsl" >nul 2>&1 && (
+    set "BASH_DIR=!BASH_DIR:C:=/mnt/c!"
+    set "BASH_DIR=!BASH_DIR:D:=/mnt/d!"
+    set "BASH_DIR=!BASH_DIR:E:=/mnt/e!"
+) || (
+    set "BASH_DIR=!BASH_DIR:C:=/c!"
+    set "BASH_DIR=!BASH_DIR:D:=/d!"
+    set "BASH_DIR=!BASH_DIR:E:=/e!"
+)
 
 REM 运行 install.sh
 !BASH_CMD! "!BASH_DIR!/install.sh" %*

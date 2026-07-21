@@ -327,9 +327,26 @@ verify_completeness() {
     return 0
   fi
   # grep -F 固定串多模式（-e 叠加），三平台兼容；输出 file:line:内容 清单
+  # 占位符四模式（骨架未填充痕迹）：待填充/（待填充）/<占位符>/填充指引
   local hits
-  hits=$(grep -Fn -e '待填充' -e '（待填充）' -e '<占位符>' -e '填充指引' -e '- [ ]' \
+  hits=$(grep -Fn -e '待填充' -e '（待填充）' -e '<占位符>' -e '填充指引' \
     ${targets[@]+"${targets[@]}"} 2>/dev/null || true)
+  # 未勾 checkbox（- [ ]）：仅骨架"填充指引"清单算占位；
+  # 目标 skill 的"完成检查表/流程完成检查表"段是给使用者运行中勾选的，剔除该段防误伤。
+  # 实现：对每个目标文件用 awk 标记"检查表段"区间，仅输出段外的 - [ ] 行。
+  local cb_hits="" tf
+  for tf in ${targets[@]+"${targets[@]}"}; do
+    [[ -f "$tf" ]] || continue
+    local out
+    out=$(awk '
+      /^#+ .*(检查表|检查清单|自检|审查清单|裁决条款|清单（)/ { intable=1; next }
+      /^#+ / { intable=0 }
+      /- \[ \]/ && !intable { print FILENAME":"FNR":"$0 }
+    ' "$tf" 2>/dev/null || true)
+    [[ -n "$out" ]] && cb_hits="${cb_hits}${cb_hits:+
+}${out}"
+  done
+  hits=$(printf '%s\n%s\n' "$hits" "$cb_hits" | grep -v '^$' || true)
   if [[ -n "$hits" ]]; then
     echo "✗ 占位符/未勾项未清零（$(printf '%s\n' "$hits" | wc -l | tr -d ' ') 处）:"
     printf '%s\n' "$hits"
@@ -591,7 +608,7 @@ description: （填充指引：触发条件 + 项目关键词）
 - [ ] workflow: 八节点+4-Phase SOP+每节点读取项目知识
 - [ ] reference: codebase/dev-guide/release/reference-manual + 方法论+认知 reference
 - [ ] assets: spec-template(§5.5-§18) + plan + branch + env + data + state-machine
-- [ ] check: precheck.sh 31 门禁
+- [ ] check: precheck.sh 36 门禁
 - [ ] scripts: precheck + state-machine + snippets + mcp-tools
 EOF
 

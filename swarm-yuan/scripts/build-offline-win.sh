@@ -36,18 +36,40 @@ for pkg in "${NPM_PKGS[@]}"; do
 done
 echo "  npm tarball 数: $(ls "$CACHE_DIR/npm/"*.tgz 2>/dev/null | wc -l | xargs)"
 
-# ===== 2. graphify（Python wheel）=====
-echo "=== 2/5 下载 graphify Python wheels ==="
-if command -v uv >/dev/null 2>&1; then
-  echo "  → uv pip download graphifyy ..."
-  uv pip download graphifyy -o "$CACHE_DIR/graphify-wheels/" 2>/dev/null && echo "    ✓ graphify wheels" || echo "    ✗ graphify 下载失败（跳过）"
-elif command -v pip3 >/dev/null 2>&1; then
-  echo "  → pip3 download graphifyy ..."
-  pip3 download graphifyy -d "$CACHE_DIR/graphify-wheels/" 2>/dev/null && echo "    ✓ graphify wheels" || echo "    ✗ graphify 下载失败（跳过）"
+# ===== 2. graphify（Python wheel，WP2.3: 多平台覆盖 macOS arm64 + Linux x86_64 + Windows amd64）=====
+echo "=== 2/5 下载 graphify Python wheels（多平台）==="
+# 离线包名义 -win 但需三平台覆盖：tree_sitter/numpy/rapidfuzz 是 C 扩展，须按平台下载预编译 wheel；
+# graphifyy/networkx 是纯 Python（py3-none-any），无平台标签，一次下载即跨平台。
+# pip download --platform 需 --only-binary=:all:（禁止源码包，否则只下当前平台）。
+PLATFORMS="macosx_11_0_arm64 manylinux2014_x86_64 win_amd64"
+download_platform_wheels() {
+  local plat="$1"
+  if command -v pip3 >/dev/null 2>&1; then
+    pip3 download graphifyy -d "$CACHE_DIR/graphify-wheels/" \
+      --platform "$plat" --only-binary=:all: --no-deps 2>/dev/null \
+      && echo "    ✓ graphifyy ($plat)" || echo "    ⚠ graphifyy ($plat) 无预编译 wheel（纯 Python 包应已由其他平台覆盖）"
+    # 依赖（tree_sitter 系列/numpy/rapidfuzz）分平台下载
+    pip3 download tree_sitter tree_sitter_languages numpy rapidfuzz networkx \
+      -d "$CACHE_DIR/graphify-wheels/" \
+      --platform "$plat" --only-binary=:all: 2>/dev/null \
+      && echo "    ✓ 依赖 ($plat)" || echo "    ⚠ 部分依赖 ($plat) 无预编译 wheel（记录但不中断）"
+  else
+    echo "  ⚠ pip3 不可用，跳过 $plat 平台 wheel"
+  fi
+}
+if command -v pip3 >/dev/null 2>&1; then
+  for plat in $PLATFORMS; do
+    echo "  → 平台 $plat"
+    download_platform_wheels "$plat"
+  done
+elif command -v uv >/dev/null 2>&1; then
+  echo "  → uv pip download（不支持 --platform，仅当前平台；建议装 pip3 做多平台）"
+  uv pip download graphifyy -o "$CACHE_DIR/graphify-wheels/" 2>/dev/null && echo "    ✓ graphify wheels（仅当前平台）" || echo "    ✗ graphify 下载失败"
 else
-  echo "  ⚠ uv/pip3 均不可用，跳过 graphify"
+  echo "  ⚠ pip3/uv 均不可用，跳过 graphify"
 fi
 echo "  wheel 文件数: $(ls "$CACHE_DIR/graphify-wheels/"*.whl 2>/dev/null | wc -l | xargs)"
+echo "  平台覆盖: $(ls "$CACHE_DIR/graphify-wheels/"*.whl 2>/dev/null | grep -oE 'macosx|manylinux|win_amd64|py3-none-any' | sort -u | tr '\n' ' ')"
 
 # ===== 3. superpowers（git clone）=====
 echo "=== 3/5 克隆 superpowers ==="

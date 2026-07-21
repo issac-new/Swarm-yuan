@@ -24,6 +24,12 @@ PHASES=("open" "design" "build" "verify" "archive")
 pass() { echo "  ✓ $1"; }
 fail() { echo "  ✗ $1"; }
 
+# CLI 接线层运行时守卫（WP1.2）：comet CLI 真实接线
+# comet 提供 `comet guard`（检查 Classic workflow phase guard）/ `comet state`（读写状态）。
+# 项目用 comet 时（有 .comet/ 或 active change），guard_phase 调 comet guard 做状态一致性补充校验；
+# 未装/项目未用 comet 时降级到本脚本自带的文件检查 guard_phase 逻辑。
+has_comet() { command -v comet >/dev/null 2>&1; }
+
 init_state() {
   local change="${1:-}"
   [[ -z "$change" ]] && { echo "Usage: state-machine.sh init <change-name>"; exit 1; }
@@ -117,6 +123,21 @@ guard_phase() {
       fail "未知阶段: $phase"; ok=0
       ;;
   esac
+  # comet CLI 接线（WP1.2）：项目用 comet 时，跑 `comet guard` 做状态一致性补充校验。
+  # comet guard 无 active change 时 rc=0 不报错；有 change 时校验 phase guard 一致性，失败 → fail。
+  if has_comet; then
+    local comet_root="${PROJECT_DIR:-$(pwd)}"
+    if [[ -d "$comet_root/.comet" ]]; then
+      local comet_out; comet_out=$(cd "$comet_root" && comet guard 2>&1 || true)
+      if echo "$comet_out" | grep -qiE 'error|fail|invalid|不一致'; then
+        fail "comet guard: 状态一致性校验失败（详见输出）"
+        echo "$comet_out" | tail -5 | sed 's/^/    /'
+        ok=0
+      else
+        pass "comet guard: 状态一致性校验通过（或无 active change）"
+      fi
+    fi
+  fi
   [[ $ok -eq 1 ]] && echo "✓ 门禁通过" || { echo "✗ 门禁未通过"; exit 1; }
 }
 

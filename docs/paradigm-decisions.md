@@ -101,3 +101,48 @@
 - **建议 4 Release 迁移**：不删历史 blob（只停止跟踪），install-offline-win.sh 加本地 cache 优先逻辑保证已有 cache 不受影响
 - **建议 6 SKIP_BAT**：默认 0 保持兼容，只影响显式设 1 的用户
 - **重构报告建议 1/2/8 不做**：保护范式核心设计（单文件可移植 / 已有兜底 / 零占位符铁律）
+
+---
+
+## 2026-07-21 设计理念落地一致性整改决策
+
+> 触发：用户要求"整理项目设计理念，确保落地实现与设计一致，目标 skill 要能在实际项目中使用，运行时要真实使用不能是花架子，三平台自测回归集成测试"。
+> 三路并行探查（运行时接线 / 全流程覆盖 / 跨平台兼容）后，3 项决策。
+
+### 决策 9：11 运行时半接线→真接线（OpenSpec/comet/gsd-core）—— ✅ 做
+
+**问题**：探查发现 11 运行时里 4 个深度接线（GitNexus/graphify/claude-mem/ocr，precheck.sh 真实命令调用）、3 个半接线（OpenSpec/comet/gsd-core，self-check 能装但 precheck/hooks 不调用，靠 AI 自主用 slash）、4 个纯文档引用（superpowers/gstack/ECC/Ruflo）。与"整合 11 运行时"宣称有落差。
+
+**决策**：把 3 个半接线提升为 CLI 真接线——OpenSpec 接进 check_requirements（`openspec validate --all --strict`）、comet 接进 state-machine guard_phase（`comet guard`）、gsd-core 接进 check_review（`gsd-tools validate health`，warn 级）。全部带 `has_*` 守卫 + 降级到自带载体，未装不阻塞。4 个纯文档引用保持方法论引用层，诚实标注不假装深接。
+
+**理由**：用户明确选"提升半接线为真接线"。3 个运行时都有真实 CLI（本机实测 comet/openspec/gsd-tools 子命令），接线后目标 skill 在装了这些运行时的项目里能真实调用其能力，不再是花架子。降级设计保护未装场景。
+
+**fixture**：requirements-openspec（mock bin/openspec）、review-gsd（mock bin/gsd-tools）、state-machine comet guard 实测（mock bin/comet）。36 gate-fixture 全量验证无回归。
+
+### 决策 10：Windows 平台真实化（CI + .bat + 离线包）—— ✅ 做
+
+**问题**：Windows 是虚假声称——CI 无 windows-latest、.bat 包装器从未测试、离线包 wheel 全是 macosx arm64 却叫 `-win`、.bat 的 WSL 路径转换有 bug（WSL 用 `/mnt/c/` 但 .bat 用 `/c/`）。
+
+**决策**：
+1. CI 加 windows-latest Job（bash -n + 61 fixture + 36 gate-fixture + .bat 烟雾测试）
+2. 修 8 个 .bat 的 WSL 路径转换（`echo !BASH_CMD! | findstr /i "wsl"` 判断，WSL 用 `/mnt/c/`，Git Bash 用 `/c/`）
+3. build-offline-win.sh 加多平台 wheel 下载（`pip3 download --platform macosx_11_0_arm64/manylinux2014_x86_64/win_amd64 --only-binary=:all:`）
+4. UPSTREAM.md 补离线包平台覆盖说明
+
+**理由**：用户明确选"补 Windows CI + 修离线包"。这是最实的虚假声称，必须让"三平台"名副其实。.bat WSL 路径 bug 是 bash 3.2 全角字符 bug 同类（平台相关沉睡），CI 实跑才能现形。
+
+**风险**：Windows CI 可能暴露既有 bash 兼容问题——缓解：windows Job 初期 bash -n + fixture 双态 + .bat 烟雾，发现问题逐个修；不追求一次全绿，先让问题现形。
+
+### 决策 11：测试覆盖补齐（e2e + verifier + 36 gate-fixture 进 CI）—— ✅ 做
+
+**问题**：CI 不跑 e2e、不跑 verifier、36 gate-fixture 只跑 6 组、shellcheck 只查 6 个脚本。验收体系（C1-C8）形同虚设——CI 不执行验收器。
+
+**决策**：
+1. CI 加 e2e Job（四框架注入全链路）
+2. CI 加 verifier all Job（C1-C8 全量：fixtures + gate-fixtures + e2e + cli-ab + metrics-assert，timeout 15min）
+3. run-verifier.sh 的 gate_fixtures 从硬编码 6 组改为全量遍历 36 组；CI 的 fixture-double-state Job 同步改全量
+4. shellcheck 覆盖从 6 个脚本扩展到 18 个（含 verifier/v1/* + tests/* + state-machine.sh + offline 脚本）
+
+**理由**：用户明确选"全补"。验收体系不进 CI 等于没有验收——本次让 C1-C8 真正生效。36 gate-fixture 全量覆盖所有门禁组（含 WP1 新增的 openspec/gsd fixture）。
+
+**教训**：验收体系（verifier/）和 CI 长期脱节是组织缺陷——verifier 是 P1 重构时建的验收器，但只手动跑过（runs/ 留 7 个日志），从未进 CI。本次补齐后，任何门禁语义变更都会被 verifier all 的 cli-ab 逐字节等价断言抓住。

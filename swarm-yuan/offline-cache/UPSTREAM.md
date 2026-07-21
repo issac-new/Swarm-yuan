@@ -40,3 +40,21 @@
 gstack 自带 **opt-in 遥测与设备 ID**（安装时问询流程见 `offline-cache/gstack/SKILL.md:191-217`）。swarm-yuan 离线分发 gstack 即间接分发其遥测提示。
 
 **面向数据出境敏感的行业/国家合规场景，建议关闭遥测：安装问询时选择拒绝，或执行 `telemetry off`。** 遥测为 opt-in，不启用则不外发数据。
+
+## 四、离线包平台覆盖（WP2.3）
+
+graphify-wheels 须三平台覆盖（离线包名义 `-win`，但实际服务 macOS/Linux/Windows 三平台）：
+
+| 平台 | wheel 标签 | C 扩展依赖 |
+|------|-----------|-----------|
+| macOS arm64 | `macosx_11_0_arm64` / `macosx_14_0_arm64` | tree_sitter 系列 / numpy / rapidfuzz |
+| Linux x86_64 | `manylinux2014_x86_64` | 同上 |
+| Windows amd64 | `win_amd64` | 同上 |
+| 跨平台（纯 Python） | `py3-none-any` | graphifyy / networkx |
+
+构建脚本 `scripts/build-offline-win.sh` 用 `pip3 download --platform <plat> --only-binary=:all:` 分平台下载预编译 wheel。
+
+**已知限制**：
+- 部分 tree_sitter 语言绑定（如较冷门语言）可能无 Windows/Linux 预编译 wheel，下载时记录警告但不中断——这些语言在该平台离线不可用，主流语言（python/js/ts/go/java/rust/c/cpp 等）三平台均有 wheel。
+- 若构建机无 pip3，降级为 `uv pip download`（仅下载当前平台 wheel，多平台覆盖失效）——建议构建机装 pip3。
+- 验证命令：`ls offline-cache/graphify-wheels/*.whl | grep -oE 'macosx|manylinux|win_amd64|py3-none-any' | sort -u` 须至少含 4 个标签。
