@@ -33,3 +33,4 @@ swarm-yuan/offline-cache/superpowers/
 # git 索引内仅保留 offline-cache/UPSTREAM.md（上游溯源登记）。
 .claude/worktrees/
 .zcode/
+.swarm-yuan/

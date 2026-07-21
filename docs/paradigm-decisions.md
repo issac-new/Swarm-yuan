@@ -181,3 +181,43 @@
 1. 根 .gitignore 矛盾注释重写（指向 Release 迁移事实与 fetch 脚本）
 2. 新增 scripts/fetch-offline-cache.sh（从 Release v2026.07.20-offline 拉取，已存在跳过，失败附手工指引）
 3. 无索引手术可做（索引早已只有 UPSTREAM.md）——本项为表述与工具收口，非新决策方向
+
+### 决策 15：连贯动作理念落实——generate-skill 真生成 settings/.mcp + fail 诊断 + state-machine auto（2026-07-21）
+
+**问题**：设计理念 1（连贯动作）3 处虚假——SKILL.md Step 9 宣称生成 settings.local.json/.mcp.json 但 generate-skill.sh 不生成；precheck fail 仅 exit 1 无诊断修复建议；state-machine guard 占位直接 pass、transition 需显式传阶段。
+
+**决策**：
+1. generate-skill.sh create + upgrade 段真生成 settings.local.json（最小权限模板）+ .mcp.json（MCP server 接入模板，默认空 mcpServers，AI 按已装运行时激活）
+2. precheck.sh fail() 收集 FAIL_IDS + _fix_suggest 映射表（30+ 常见 fail id → 建议文案）+ --fix-suggest 子命令（只输出建议不 exit 1）
+3. state-machine.sh guard_phase 实装产出物检查（design 查 proposal.md/SPEC_FILE、verify 查 tasks.md 全勾）+ auto 子命令（自动判下一阶段 + guard + transition，免去记阶段名）
+
+**理由**：用户要求"连贯动作落实"。3 处虚假让"一键全流程"名不副实。修复后生成器真产出全套配置、fail 有修复建议、状态机自动流转。
+
+**边界**：fail 修复建议只建议不自动执行（与"用户决策"原则一致）；auto 不跳过 guard（守卫仍检查产出物）；settings/.mcp 是模板带占位符由 AI 填充（配置模板允许占位符，--verify-completeness 不扫这两文件）。
+
+### 决策 16：全链路追踪理念落实——trace-log 孤儿转真接线（2026-07-21）
+
+**问题**：设计理念 2（全链路追踪）3 处虚假——trace-log.sh 功能完整但 precheck/state-machine/generate-skill/self-check 四脚本无一处调用（孤儿）；9 个第三方工具调用点调用前无公告、空结果时静默；探查阶段无进度提示。
+
+**决策**：
+1. precheck.sh _gate_exec 门禁级接 trace-log（每门禁 started + done/fail/warn/pass 双状态，输出 stderr 不污染 stdout/cli-ab）
+2. 新增 trace_tool() 辅助函数，9 个工具调用点（gitnexus query/trace/detect_changes、graphify explain、ocr review、claude-mem search、openspec validate、gsd-tools validate health、comet guard）调用前各加一行 trace_tool
+3. check_layer 空结果加 pass（修静默：gitnexus 无跨层问题时不再完全静默）
+4. state-machine.sh / generate-skill.sh 各接 trace_tool（comet guard / create / upgrade / inject / verify）
+5. SKILL.md Step 1 探查进度 prompt 补强（三路子代理每路启动前调 trace-log）
+
+**理由**：用户要求"全链路追踪落实"。trace-log 设计正确却自己是孤儿是最大虚假。修复后每步调用有 `→ [节点] 调用 actor · tool（status）` 公告 + trace.jsonl 落盘。
+
+**边界**：trace 输出 stderr（stdout 纯净不破坏 cli-ab 逐字节等价）；trace-log 落盘失败仅 warn 不阻塞主流程；探查阶段进度靠 prompt 约束 AI（无脚本强制，因探查是 AI 行为非脚本）。
+
+### 决策 17：全局一致性收口——文档口径与实现对齐（2026-07-21）
+
+**问题**：全局排查发现文档残留过时口径——acceptance-criteria.md 仍写 57 fixture/31 flag/六组（实际 61/36/全量 36 组）；USAGE.md "hermes-agent"（应为 agent 运行时）；README "11 步"（实际 13 节点 0~8）；README 目录树未列 settings.local.json/.mcp.json。
+
+**决策**：
+1. acceptance-criteria.md 全量更新：57→61、31→36、六组→全量 36 组、C3 补 Swarm-studio ABSENT、C4 补严格层/信息层分离、C8 补全量 36 组
+2. USAGE.md 步骤表 5.5 补 settings.local.json/.mcp.json 生成；hermes-agent→agent 运行时
+3. README（根 + swarm-yuan/）11 步→13 步；目录树后补"生成的目标 skill 含"清单（含 settings.local.json/.mcp.json）
+4. 本决策 15/16/17 记录入 paradigm-decisions.md
+
+**理由**：用户要求"全局排查并彻底完成"。文档口径与实现脱节会让外部观察者误以为"全是空壳"。本次把所有过时数字/术语/清单与当前实现对齐。

@@ -9,3 +9,4 @@ offline-cache/**/*.whl
 offline-cache/**/*.tgz
 offline-cache/gstack/
 offline-cache/superpowers/
+.swarm-yuan/
