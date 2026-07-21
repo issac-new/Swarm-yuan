@@ -538,6 +538,16 @@ _count_gate_array() {
 check_doc_consistency() {
   echo "▶ 文档一致性检查"
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+
+  # WP-P1：source facts.conf（catchphrase 单一事实源）。
+  # facts.conf 是文档口径的权威源；本函数先用代码真值对账 facts.conf 自身是否漂移，
+  # 再用 ${FACT_*} 值扫描散文文档（文档口径 → facts.conf → 代码真值，单向传递）。
+  local facts_conf="$base/assets/facts.conf"
+  if [[ -f "$facts_conf" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$facts_conf"; set -u
+  fi
+
   # 1. 框架规则文件数 == 门禁片段数（真值机械计数，当前 61 == 61）
   local rule_cnt gate_cnt
   rule_cnt=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
@@ -588,6 +598,26 @@ check_doc_consistency() {
   local true_arch=$((true_full - true_core - true_compliance))
   true_vars=$(cat "$base/assets/precheck.conf" "$base/assets/precheck.arch.conf" "$base/assets/precheck.compliance.conf" 2>/dev/null | grep -cE '^[A-Z_][A-Z0-9_]*=' | xargs)  # WP-I：三文件合计
   true_fw=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
+
+  # WP-P1：facts.conf 自身一致性对账（代码真值 vs 声明真值）。
+  # 如果 facts.conf 自身漂移，文档扫描结果不可信——先 fail-soft 报告 facts.conf 漂移，
+  # 然后仍用代码真值做文档扫描（不阻塞）。
+  if [[ -n "${FACT_GATES_TOTAL:-}" ]]; then
+    local facts_drift=""
+    [[ "${FACT_GATES_TOTAL:-0}" != "$true_gates" ]] && facts_drift="${facts_drift} GATES_TOTAL(声明=${FACT_GATES_TOTAL}/真值=${true_gates});"
+    [[ "${FACT_GATES_CORE:-0}" != "$true_core" ]] && facts_drift="${facts_drift} GATES_CORE(声明=${FACT_GATES_CORE}/真值=${true_core});"
+    [[ "${FACT_GATES_COMPLIANCE:-0}" != "$true_compliance" ]] && facts_drift="${facts_drift} GATES_COMPLIANCE(声明=${FACT_GATES_COMPLIANCE}/真值=${true_compliance});"
+    [[ "${FACT_GATES_ARCH:-0}" != "$true_arch" ]] && facts_drift="${facts_drift} GATES_ARCH(声明=${FACT_GATES_ARCH}/真值=${true_arch});"
+    [[ "${FACT_CONF_VARS:-0}" != "$true_vars" ]] && facts_drift="${facts_drift} CONF_VARS(声明=${FACT_CONF_VARS}/真值=${true_vars});"
+    [[ "${FACT_FRAMEWORKS:-0}" != "$true_fw" ]] && facts_drift="${facts_drift} FRAMEWORKS(声明=${FACT_FRAMEWORKS}/真值=${true_fw});"
+    [[ "${FACT_REFERENCES:-0}" != "$ref_cnt" ]] && facts_drift="${facts_drift} REFERENCES(声明=${FACT_REFERENCES}/真值=${ref_cnt});"
+    if [[ -n "$facts_drift" ]]; then
+      warn "facts.conf 与代码真值漂移（请先同步 facts.conf）：${facts_drift}"
+      FAIL=1
+    else
+      echo "  ✓ facts.conf 与代码真值一致（权威断言通过）"
+    fi
+  fi
   local doc dfound bad docpath
   # 根 CLAUDE.md（仓库根，$base 的上一层）是 AI 进入仓库首读文件，必须纳入一致性扫描；
   # 安装到 ~/.claude/skills/<skill>/ 后该文件不存在，[[ -f ]] 守卫自动跳过。

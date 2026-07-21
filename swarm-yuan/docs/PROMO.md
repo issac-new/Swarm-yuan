@@ -4,6 +4,8 @@
 
 一句话摘要：swarm-yuan 用 16 项特征卡让 AI 认识你的项目，用 36 个质量门禁守护代码合规——特征卡是立法，门禁是执法，两者构成从认知到交付的完整闭环。
 
+> **口径权威源**：`assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
+
 ---
 
 ## 一、为什么「AI 写代码」已经不够了？
@@ -212,7 +214,7 @@ claude-mem search（记忆库）→ 文件检测
 
 ## 八、零占位符 + 自举
 
-**零占位符：** AI 执行完整 11 步流程后由脚本机器执法（`bash scripts/generate-skill.sh --verify-completeness <skill_dir>`）——零残留才算完成。
+**零占位符：** AI 执行完整 13 步流程后由脚本机器执法（`bash scripts/generate-skill.sh --verify-completeness <skill_dir>`）——零残留才算完成。
 
 **自举：** swarm-yuan 能用自身的 36 个门禁检查自身。一个连自己都检查不了的工具，凭什么检查你的项目？
 

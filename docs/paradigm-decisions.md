@@ -2,6 +2,7 @@
 
 > 日期：2026-07-20 ｜ 分支：`chore/leftover-suggestions`
 > 记录 7 项遗留建议的处置决策与理由，供后续版本维护参考，避免重复调研。
+> **口径权威源**：`swarm-yuan/assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 ## 处置总览
 
@@ -233,3 +234,19 @@
 4. **质量 > 效率**落实点：auto 阈值偏置（<80 才 lite）、任务门禁映射的强制升级条款（公共接口/数据模型/权限改动无"简单"档）、draft 状态门（半成品无法伪装交付）——效率类优化（trace 降级/Windows CI 降频）不触碰任何质量判定逻辑。
 
 **与减重批（决策 12-14）的关系**：减重不是"做轻"而是"恰当的重量"——三档 profile 让重量显式可选，auto 让选择自动化且偏向重的一侧。
+
+---
+
+### 决策 19：catchphrase 单一事实源 facts.conf（2026-07-21 减重 WP-P1）
+
+**问题**：36 门禁/27+9、179 变量、16 特征卡、11 运行时、32 领域、13 步流程 等口径在 8+ 文件手抄，`self-check.sh check_doc_consistency` 用 6 类正则扫描 5 份文档兜底——手动同步已不可靠，`docs/PROMO.md:215` 曾长期残留"11 步"旧口径（决策 17 已修，但同类漂移会复发）。
+
+**决策**：
+1. 新增 `swarm-yuan/assets/facts.conf`（bash 可 source 的 KEY=value），穷举所有 catchphrase 数字的权威值（FACT_GATES_TOTAL=36 / FACT_GATES_CORE=10 / FACT_GATES_ARCH=17 / FACT_GATES_COMPLIANCE=9 / FACT_GATES_STANDARD=27 / FACT_CONF_VARS=179 / FACT_FEATURE_CARDS=16 / FACT_RUNTIMES=11 / FACT_DOMAINS=32 / FACT_FLOW_STEPS=13 / FACT_FRAMEWORKS=61 / FACT_REFERENCES=18 等）
+2. `self-check.sh check_doc_consistency` 开头 `source facts.conf`，先用代码真值对账 facts.conf 自身（GATES_TOTAL/CORE/ARCH/COMPLIANCE/CONF_VARS/FRAMEWORKS/REFERENCES 七项），漂移即 FAIL；再用 `${FACT_*}` 值扫描散文文档（原有 6 类正则降级为"叙事漂移检测"，逻辑不变）
+3. 8 份文档（README/SKILL/USAGE/PROMO/template-spec/standards-compliance/CLAUDE/paradigm-decisions）头部加 `> 口径权威源：assets/facts.conf` 引用行，指向单一事实源
+4. 修 `PROMO.md:215` 残留"11 步"→"13 步"
+
+**理由**：catchphrase 手抄导致数字漂移是范式"过重"观感的一部分——文档与代码脱节会让外部观察者误以为"全是空壳"。单一事实源把"改一处→全局同步"自动化，self-check 机器执法先对账 facts.conf 自身（防 facts.conf 漂移），再扫描文档（防文档漂移），双向兜底。
+
+**边界**：文档头部引用行不替换正文数字（保留可读性），仅声明权威源；facts.conf 只声明"会变的数字"（门禁数/变量数/框架数等），不声明"稳定的架构"（六段式/五层认知基底等）；facts.conf 自身漂移由 self-check 机器执法（改门禁数必须同步改 facts.conf，否则 FAIL）。

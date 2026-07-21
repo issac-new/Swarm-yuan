@@ -2,6 +2,7 @@
 
 > 版本：v1（2026-07-20，随 `feat/standards-compliance` 批次冻结 6 个锚点标题）
 > 证据基线：`docs/research/R7-quality-standards.md`、`docs/research/R8-security-standards.md`（2026-07-20，条款号均出自该两报告，禁止虚构）；门禁语义基线：`swarm-yuan/assets/precheck.sh`（36 门禁 = 27 既有 + 9 合规：4 P0 新增 + 3 P1 新增 authz/requirements/crypto + 2 P3 新增 rtm/release-sign）与 `swarm-yuan/assets/precheck.conf`。
+> **口径权威源**：`../assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 ## 本文件作用与用法
 

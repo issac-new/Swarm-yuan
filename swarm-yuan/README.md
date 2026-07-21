@@ -3,6 +3,8 @@
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 >
 > 16 项特征卡让 AI 认识你的项目，36 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
+>
+> **口径权威源**：`assets/facts.conf`（所有 catchphrase 数字的单一事实源，self-check 机器执法）。
 
 [![Release](https://img.shields.io/badge/release-v2026.07.20-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.20)
 [![Feature Card](https://img.shields.io/badge/feature%20card-16-green)]()

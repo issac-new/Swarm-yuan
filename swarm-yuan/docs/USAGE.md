@@ -1,6 +1,8 @@
 # swarm-yuan 使用说明
 
 > 对 AI 说"为这个项目生成 skill"，AI 全自动探查 → 生成 → 配置 → 验证，你拿到一套零占位符的项目专属开发技能。
+>
+> **口径权威源**：`assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 ---
 

@@ -3,6 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 > Working language of this repo is **Chinese** (docs, commit messages, inline comments). Match it when editing prose; code/identifiers stay English.
+> **口径权威源**：`swarm-yuan/assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 ## What this repo is
 
