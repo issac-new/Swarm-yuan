@@ -46,11 +46,13 @@ UNIVERSAL_FILES=(
   "assets/env-setup.sh|assets"
   "assets/data-sample-template.md|assets"
   "assets/state-machine.sh|assets"
+  "assets/trace-log.sh|assets"
   "scripts/precheck.sh|assets"
   "scripts/precheck.conf|assets"
   "scripts/snippets.md|assets"
   "scripts/mcp-tools.md|assets"
   "scripts/state-machine.sh|assets"
+  "scripts/trace-log.sh|assets"
   "scripts/self-check.sh|gen"
   "references/subagent-orchestration.md|ref"
   "references/review-methodology.md|ref"
@@ -309,6 +311,8 @@ fi
 # 零占位符机器执法：扫描目标 skill 的 SKILL.md / references/*.md /
 # scripts/precheck.conf / hooks/hooks.json（存在才查），命中占位符模式
 # 或未勾 checkbox（- [ ]）则打印 file:line 清单并 exit 1；零命中 exit 0。
+# 调用追踪机器执法（设计理念 2）：references/workflow.md 每个节点段
+# （## 节点… 标题起）须含「调用追踪」要素，缺则列 file:line 并 exit 1。
 # ============================================================
 verify_completeness() {
   local skill_dir="$1"
@@ -347,8 +351,27 @@ verify_completeness() {
 }${out}"
   done
   hits=$(printf '%s\n%s\n' "$hits" "$cb_hits" | grep -v '^$' || true)
+  # 调用追踪要素机器执法（理念 2：全链路追踪落实到 workflow 模板）：
+  # workflow.md 每个「## 节点…」段须含「调用追踪」字样（第 ⑨ 要素）。
+  # 骨架阶段（待填充）已被上方占位符检查拦截；此处针对已填充内容。
+  # 无节点段（项目裁剪后无 workflow 节点）不查，放行。
+  local wf="$skill_dir/references/workflow.md" trace_miss=""
+  if [[ -f "$wf" ]]; then
+    # 节点段标题判定：标题行含「节点」且含冒号（如「## 节点①：需求理解」）。
+    # 不用正则字符类匹配①-⑩/CJK数字——BSD awk 20200816 把多字节字符类按字节解析
+    # 导致 [一] 匹配任意 ASCII 字符（已实测）。index() 固定子串匹配对 UTF-8 安全。
+    trace_miss=$(awk '
+      /^#{1,6} / && index($0, "节点") > 0 && (index($0, "：") > 0 || index($0, ":") > 0) {
+        if (node != "" && !has) print FILENAME":"line": 节点段缺「调用追踪」要素（template-spec §2 第⑨要素）: " node
+        node=$0; line=FNR; has=0; next
+      }
+      /调用追踪/ { has=1 }
+      END { if (node != "" && !has) print FILENAME":"line": 节点段缺「调用追踪」要素（template-spec §2 第⑨要素）: " node }
+    ' "$wf" 2>/dev/null || true)
+  fi
+  hits=$(printf '%s\n%s\n' "$hits" "$trace_miss" | grep -v '^$' || true)
   if [[ -n "$hits" ]]; then
-    echo "✗ 占位符/未勾项未清零（$(printf '%s\n' "$hits" | wc -l | tr -d ' ') 处）:"
+    echo "✗ 占位符/未勾项/缺失要素未清零（$(printf '%s\n' "$hits" | wc -l | tr -d ' ') 处）:"
     printf '%s\n' "$hits"
     return 1
   fi
@@ -468,11 +491,12 @@ copy_universal_templates() {
   # Windows .bat 包装器（让 Windows 用户也能直接运行，三平台兼容；缺失则跳过）
   # 设 SKIP_BAT=1 可跳过 .bat 复制（macOS/Linux 用户无需 .bat，让 skill 目录更干净）
   if [[ "${SKIP_BAT:-0}" != "1" ]]; then
-    # scripts/ 下的 .bat（install/generate-skill/self-check/precheck/state-machine）
+    # scripts/ 下的 .bat（install/generate-skill/self-check/precheck/state-machine/trace-log）
     local b
-    for b in install generate-skill self-check precheck state-machine; do
+    for b in install generate-skill self-check precheck state-machine trace-log; do
       src="$SRC_SCRIPTS/$b.bat"
       [[ "$b" == "install" ]] && src="$SRC_SCRIPTS/../install.bat"
+      [[ "$b" == "trace-log" ]] && src="$ASSETS_DIR/trace-log.bat"
       if [[ -f "$src" ]]; then cp "$src" "$dir/scripts/$b.bat" 2>/dev/null || true; fi
     done
     # assets/ 下的 .bat（branch-setup/env-setup）
@@ -549,7 +573,7 @@ copy_universal_templates "$SKILL_DIR"
 
 fill_guide() {
   case "$1" in
-    workflow.md) echo "八节点全流程，每节点 9 要素，4-Phase SOP，节点①含读取项目知识子步骤" ;;
+    workflow.md) echo "八节点全流程，每节点 10 要素（含★调用追踪），4-Phase SOP，节点①含读取项目知识子步骤" ;;
     codebase.md) echo "目录结构+技术栈版本表+端口+配置" ;;
     dev-guide.md) echo "改造分类+拼装式开发原则+安全编码规范" ;;
     release.md) echo "编译规则+构建命令+产物位置" ;;
@@ -567,8 +591,8 @@ done
 cat > "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
 {
   "hooks": {
-    "SessionStart": [{"matcher": "startup|clear|compact", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true"}],
-    "PreToolUse": [{"matcher": "Write|Edit", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --scope --quiet 2>/dev/null || true"}]
+    "SessionStart": [{"matcher": "startup|clear|compact", "command": "echo \"→ [hook:SessionStart] 调用 state-machine.sh status（阶段状态追踪）\"; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true"}],
+    "PreToolUse": [{"matcher": "Write|Edit", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --scope >/dev/null 2>&1 && echo \"→ [hook:PreToolUse] 调用 precheck --scope：✓ pass\" || echo \"→ [hook:PreToolUse] 调用 precheck --scope：✗ FAIL——运行 bash scripts/precheck.sh --scope 查看详情\""}]
   }
 }
 HEOF

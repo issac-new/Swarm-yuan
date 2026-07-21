@@ -1,6 +1,6 @@
 # AI 过程信息项制度（GB/T 8566-2022 过程信息项的 AI 扩展）
 
-> 版本：v1（2026-07-20，P1 方法论修补批次）
+> 版本：v1.1（2026-07-21，新增第四级调用留痕 trace.jsonl——设计理念 2 全链路追踪落地；前三级不变）
 > 依据：GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）附录 A 过程剪裁 + 附录 B 信息项；联动 `references/standards-compliance.md` §B"剪裁声明写法示例"中"AI 过程信息项扩展"条目（prompt 记录、AI 产出 diff、人工复核记录纳入配置管理）——本文件即该声明的制度化落地。
 > 姿态：本文档为**文档层制度，无专属门禁**。未建立留痕目录时体系行为不变（静默）；启用后与全局姿态一致——新门禁未配置时静默跳过、启用后 fail-closed。配套机制：门禁运行记录落盘 `.swarm-yuan/gate-runs/`（P1-5 证据落盘，GB/T 15532 过程文档对齐）由独立任务承担，本文件只引用、不复述其格式。
 
@@ -13,10 +13,11 @@ GB/T 8566-2022 要求每个采用的过程留有信息项（留痕证据）。AI
 | 过程输入（需求/指令） | 决策性 prompt | prompt 只存在于会话上下文，随会话结束蒸发 |
 | 过程产出（工件） | AI 生成 diff | diff 在 git 可见，但"哪部分是 AI 生成、谁复核过"不可见 |
 | 质量保证（评审记录） | 人工复核记录 | 复核行为发生但无落盘，验收时无法出示 |
+| 过程执行（工具/技能调用） | AI 的子代理/技能/CLI 调用链 | 调用了何种工具及技能只存在于会话上下文，无法回查 |
 
-三级留痕制度即对这三行逐项补齐：prompt（输入留痕）→ 生成 diff（产出留痕）→ 人工复核（复核留痕）。
+三级留痕制度即对前三行逐项补齐：prompt（输入留痕）→ 生成 diff（产出留痕）→ 人工复核（复核留痕）。第四级（§2.4 调用留痕，2026-07-21 新增）补齐最后一行，对应设计理念 2（全链路追踪）。
 
-## 2. 三级留痕规范
+## 2. 四级留痕规范
 
 ### 2.1 第一级：prompt 记录（输入留痕）
 
@@ -61,6 +62,32 @@ GB/T 8566-2022 要求每个采用的过程留有信息项（留痕证据）。AI
 
 **豁免类复核**：安全类门禁豁免的复核不走本格式，按 `references/standards-compliance.md` §F 五字段（对象|规则|理由|审批人|日期）登记——spec §22.3 安全豁免登记表与本级记录同源互认，登记其一即视为留痕。
 
+### 2.4 第四级：调用留痕（全链路追踪，2026-07-21 新增）
+
+**范围**：AI 的每一次具体调用——子代理扇出、技能（skill）调用、CLI 工具（gitnexus/graphify/claude-mem/ocr/openspec/comet/gsd-tools）、门禁与状态机脚本。
+
+**双通道**（均无需用户确认）：
+
+1. **stdout 公告**：进入每个 workflow 节点先输出一行结构化提示，格式 `→ [节点X <节点名>] 调用 <技能/子代理/工具> · <目的>`；
+2. **落盘**：每次具体调用前执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]`，追加 JSON 行到 `.swarm-yuan/trace.jsonl`。
+
+**trace.jsonl 行格式**（与 `gate-runs/gate-runs.jsonl` 同目录、同构风格）：
+
+```json
+{"ts":"2026-07-21T08:30:00Z","node":"节点⑤ 编码实现","actor":"superpowers:subagent-driven-development","tool":"precheck.sh --scope","status":"started","note":"写前范围校验"}
+```
+
+| 字段 | 说明 |
+|------|------|
+| ts | UTC 时间戳（`date -u`） |
+| node | 所属 workflow 节点 / 生成流程 Step |
+| actor | 技能 / 子代理 / 角色（可空） |
+| tool | 具体工具或命令（必填） |
+| status | started（默认）/ done / fail |
+| note | 一句话目的（可空） |
+
+**与 workflow 的绑定**：调用追踪是 workflow 每节点第 ⑨ 要素（`references/template-spec.md` §2）；机器执法由 `generate-skill.sh --verify-completeness` 承担（每节点段缺「调用追踪」要素 → exit 1）。trace-log.sh 自身永不交互、落盘失败仅 warn 不阻塞主流程。
+
 ## 3. verifier 归档格式
 
 verifier 运行记录统一归档于 `verifier/runs/`，作为 GB/T 25000.51 §7.5 符合性评价报告与 GB/T 15532 测试文档的原始证据。
@@ -86,7 +113,7 @@ verifier 运行记录统一归档于 `verifier/runs/`，作为 GB/T 25000.51 §7
 
 - **§22.1 剪裁声明**：声明本变更采用 AI 过程信息项的级别与剪裁理由——
   - **最小集**（简单变更）：commit message 标注"AI 生成 + 复核人" + 关键决策 prompt 摘要；
-  - **完整集**（标准/完整变更）：三级留痕全量 + verifier 归档。
+  - **完整集**（标准/完整变更）：四级留痕全量 + verifier 归档。
   剪裁示例见 `references/standards-compliance.md` §B"剪裁声明写法示例"。
 - **§22.2 文档包清单**：勾选文档包时，AI 过程记录作为对应文档的证据附件（如测试报告附 gate-runs / verifier 归档路径）。
 - **§22.3 安全豁免登记**：与第三级人工复核记录同源互认（见 §2.3）。
