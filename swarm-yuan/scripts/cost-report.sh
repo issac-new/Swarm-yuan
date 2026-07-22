@@ -74,6 +74,31 @@ _top() { # $1=字段名
     echo "## 门禁运行证据（gate-runs.jsonl）"
     echo "- 记录数: $_gt"
   fi
+
+  # G1 决策治理聚合（decisions.jsonl，对齐 ISO/IEC 42001 §9.1 监视测量）
+  _dec="$DIR/.swarm-yuan/decisions.jsonl"
+  if [[ -f "$_dec" && -s "$_dec" ]]; then
+    _dt=$(wc -l < "$_dec" | tr -d ' ')
+    echo ""
+    echo "## 决策治理（decisions.jsonl，ISO/IEC 42001 §9.1）"
+    echo "- 决策总数: $_dt"
+    echo "- 按类型:"
+    echo '```'
+    sed -E 's/.*"type":"([^"]*)".*/\1/' "$_dec" 2>/dev/null | sort | uniq -c | sort -rn || true
+    echo '```'
+    echo "- 按用户裁定:"
+    echo '```'
+    sed -E 's/.*"user_action":"([^"]*)".*/\1/' "$_dec" 2>/dev/null | sort | uniq -c | sort -rn || true
+    echo '```'
+    echo "- 按阶段:"
+    echo '```'
+    sed -E 's/.*"phase":"([^"]*)".*/\1/' "$_dec" 2>/dev/null | grep -v '^$' | sort | uniq -c | sort -rn || true
+    echo '```'
+    # UserChallenge 裁定率（approved/rejected/revised 分布是人工监督有效性的信号）
+    _uc=$(grep -c '"type":"UserChallenge"' "$_dec" 2>/dev/null || echo 0)
+    _uc="${_uc:-0}"
+    [[ "$_uc" -gt 0 ]] && echo "- UserChallenge 决策: ${_uc}（含五要素的方向性决策）"
+  fi
   echo ""
   echo "> 生成: $(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ) · 调用级细节设 SWARM_YUAN_TRACE=verbose 后数据更全"
 } > "$OUT.tmp"

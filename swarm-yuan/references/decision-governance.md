@@ -101,3 +101,18 @@ bash scripts/trace-log.sh --decision \
 | Annex A.2 人工监督 | 人可干预 AI 决策 | UserChallenge 永不自动 + 用户裁定后继续 |
 
 **对齐边界**：本文件落地的是"人工监督留痕"这一个点，不覆盖 ISO/IEC 42001 全部（管理体系范围评估/AI 系统影响评估/外部供应商管理属标准补全范畴）。
+
+## 8. 跨会话决策回溯（claude-mem 集成）
+
+决策落盘 `decisions.jsonl` 是**当前变更**的审计轨迹；跨会话/跨压缩的历史决策回溯借助 claude-mem（见 `references/memory-persistence.md`）：
+
+```bash
+# 会话启动/压缩后，先 search 找相关历史决策
+claude-mem search "UserChallenge 依赖升级"
+# 再 timeline 看该决策的上下文
+claude-mem timeline <observation-id>
+```
+
+**组合闭环**：`decisions.jsonl`（本次变更决策，机器可校验）+ `trace.jsonl`（调用轨迹）+ claude-mem（跨会话长期记忆）——三层覆盖"当前可审计 + 过程可追溯 + 长期可回溯"。AI 在新会话接手时，先 `claude-mem search` 相关决策历史，再读当前 `decisions.jsonl`，形成完整的决策上下文。
+
+**聚合分析**：`scripts/cost-report.sh` 输出决策治理段（按类型/裁定/阶段分布 + UserChallenge 计数），对齐 ISO/IEC 42001 §9.1 监视测量——决策绩效数据可用于评估"AI 主导+用户决策"的运行质量（如 UserChallenge 的 approved/rejected/revised 分布反映人工监督有效性）。
