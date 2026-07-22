@@ -845,6 +845,38 @@ check_sbom() {
       fi
     done
   fi
+  # B 方向：CVE 漏洞阈值门禁（SCA 补全）——SBOM 生成后 grype --fail-on 扫描，超阈值 fail。
+  # 姿态：skip_if_unconfigured（CVE_THRESHOLD 未配置静默跳过）→ 配置后 fail-closed。
+  # 工具降级链 grype → osv-scanner（仅提示，无阈值判定能力）→ warn 跳过（fail-open 风险如实披露）。
+  if [[ -n "${CVE_THRESHOLD:-}" && -s "$sbom_file" ]]; then
+    if command -v grype >/dev/null 2>&1; then
+      trace_tool "grype" "sbom cve scan"
+      if ! grype "sbom:${sbom_file}" --fail-on "$CVE_THRESHOLD" >/dev/null 2>&1; then
+        fail "gate_sbom_cve_threshold: SBOM 检出 ≥${CVE_THRESHOLD} 级 CVE（grype --fail-on ${CVE_THRESHOLD}；豁免须 5 字段留痕 CVE_EXEMPTIONS）"
+        found=1
+      fi
+    elif command -v osv-scanner >/dev/null 2>&1; then
+      trace_tool "osv-scanner" "sbom cve scan"
+      osv-scanner --sbom="$sbom_file" >/dev/null 2>&1 || true
+      warn "grype 不可用，降级 osv-scanner（无阈值判定能力，结果须人工复核阈值）"
+    else
+      warn "CVE_THRESHOLD=${CVE_THRESHOLD} 已配置但 grype/osv-scanner 均不可用，跳过漏洞扫描（fail-open 风险如实披露）"
+    fi
+  fi
+  # CVE 豁免登记：5 字段（对象|规则|理由|审批人|日期）校验 + 回显（与许可证豁免同机制）
+  # bash 3.2 + set -u：CVE_EXEMPTIONS 可能未声明（conf 默认注释），先判声明再取长度
+  if [[ -n "${CVE_EXEMPTIONS+x}" && ${#CVE_EXEMPTIONS[@]} -gt 0 ]]; then
+    local cex cnf
+    for cex in "${CVE_EXEMPTIONS[@]}"; do
+      cnf=$(awk -F'|' '{print NF}' <<< "$cex")
+      if [[ "$cnf" -ne 5 ]]; then
+        fail "gate_sbom_cve_exemption_invalid: CVE 豁免须为 5 字段（对象|规则|理由|审批人|日期）：${cex}"
+        found=1
+      else
+        echo "  ⓘ CVE 豁免登记：${cex}"
+      fi
+    done
+  fi
   [[ $found -eq 0 ]] && pass "SBOM 已生成：${sbom_file}（许可证块名单未命中，证据归档）"
 }
 

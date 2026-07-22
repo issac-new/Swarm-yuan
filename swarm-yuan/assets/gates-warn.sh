@@ -1210,6 +1210,24 @@ check_crypto() {
       found=1
     fi
   done
+  # B 方向：国密正向使用核查（warn 级——加密场景判断难自动化，不 fail 避免误报淹没；
+  # 依据 references/crypto-spec.md §3 国密选型；机构密评测评仍属线下）
+  local _enc_use _gm_use _rng_hit
+  for d in ${CRYPTO_SCAN_DIRS[@]+"${CRYPTO_SCAN_DIRS[@]}"}; do
+    [[ -d "$d" ]] || continue
+    # 国密正向核查：检测到加密操作但全目录无 SM2/SM3/SM4 引用 → warn
+    _enc_use=$(grep -rlE '\bencrypt\b|\bdecrypt\b|加密|解密' "$d" "${inc[@]}" 2>/dev/null \
+      | grep -viE 'example|mock|node_modules' | head -1 || true)
+    _gm_use=$(grep -rlE '\bSM2\b|\bSM3\b|\bSM4\b' "$d" "${inc[@]}" 2>/dev/null \
+      | grep -viE 'example|mock|node_modules' | head -1 || true)
+    if [[ -n "$_enc_use" && -z "$_gm_use" ]]; then
+      warn "gate_crypto_gm_positive: 检测到加密操作但未使用国密算法（GB/T 39786 密评场景须 SM2/SM3/SM4）：${_enc_use}"
+    fi
+    # 随机数质量：安全上下文（password/token/secret/key/加密 同行）使用弱随机数 → warn
+    _rng_hit=$(grep -rnE 'Math\.random|\brand[[:space:]]*\(' "$d" --include='*.js' --include='*.ts' --include='*.py' 2>/dev/null \
+      | grep -viE 'example|mock|node_modules' | grep -iE 'password|token|secret|key|加密' | head -1 || true)
+    [[ -n "$_rng_hit" ]] && warn "gate_crypto_weak_rng: 安全上下文使用弱随机数（Math.random/rand），安全场景须 CSPRNG：${_rng_hit}"
+  done
   if [[ $found -eq 0 ]]; then
     pass "密码算法合规检查通过（未检出弱算法；国密白名单 SM2/SM3/SM4）"
   fi
