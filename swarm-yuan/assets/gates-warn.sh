@@ -1219,6 +1219,73 @@ check_crypto() {
   fi
 }
 
+# 内置词法降级载体（check_sast_deep 两降级分支共用：TOOL=builtin 强制 / 工具执行失败降级）。
+# 仅高危 sink 直查，与 check_security 互补不重复。$1=fail 消息（含降级缘由）；返回 0=有命中 1=无命中。
+# 独立为 helper（非 check_* 命名）：gen-enforce-level.sh 只统计 check_* 函数体的 fail() 调用数，
+# 共用 helper 使 check_sast_deep 保持 1 个 fail 点、落 warn 档（决策 19 分类规则：warn 1-2 fail）。
+_sast_deep_lexical_scan() {
+  local hits
+  hits=$(grep -rnE '\beval\s*\(|\bexec\s*\(|Runtime\.getRuntime\(\)\.exec|child_process\.exec' "${SECURITY_SCAN_DIRS[@]}" \
+    --include='*.java' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' 2>/dev/null \
+    | grep -viE 'example|mock|node_modules' \
+    | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|#|\*|/\*)' || true)
+  [[ -z "$hits" ]] && return 1
+  fail "$1"
+  printf '%s\n' "$hits" | head -10 | sed 's/^/    /'
+  return 0
+}
+
+check_sast_deep() {
+  echo "=== 深度 SAST 检查（AST/数据流层；GB/T 34943/34944/34946-2017 源代码漏洞测试规范）==="
+  if [[ ${#SECURITY_SCAN_DIRS[@]} -eq 0 ]]; then
+    skip_if_unconfigured "SECURITY_SCAN_DIRS 未配置，深度 SAST 跳过"
+    return
+  fi
+  local tool="${SAST_DEEP_TOOL:-auto}" sev="${SAST_DEEP_SEVERITY:-error}" found=0
+  local bin=""
+  # 载体解析：builtin=强制内置；可执行路径=直接调用（fixture mock 亦走此分支）；空/auto=降级链探测
+  if [[ "$tool" == "builtin" ]]; then
+    bin="builtin"
+  elif [[ "$tool" != "auto" && -n "$tool" ]]; then
+    if [[ -x "$tool" ]]; then bin="$tool"; else warn "SAST_DEEP_TOOL=${tool} 不可执行，降级自动探测"; fi
+  fi
+  if [[ -z "$bin" ]]; then
+    if command -v semgrep >/dev/null 2>&1; then bin="semgrep"
+    elif command -v opengrep >/dev/null 2>&1; then bin="opengrep"
+    else bin="builtin"; fi
+  fi
+  if [[ "$bin" == "builtin" ]]; then
+    # 自带降级载体（词法模式族，明示降级；AST/数据流层未执行）
+    echo "  ⓘ 降级为内置词法模式族（semgrep/opengrep 不可用；AST/数据流层未执行）"
+    trace_tool "sast-deep" "builtin-lexical"
+    if _sast_deep_lexical_scan "gate_sast_deep_builtin: 内置模式族检出高危代码执行 sink（eval/exec/Runtime.exec/child_process.exec；GB/T 34943/34944/34946 漏洞类别，降级词法检出）："; then
+      found=1
+    fi
+  else
+    echo "  ⓘ SAST 载体：${bin}（AST/规则层）"
+    trace_tool "sast-deep" "$bin"
+    local json _rc=0
+    json=$("$bin" scan --config p/default --json --quiet "${SECURITY_SCAN_DIRS[@]}" 2>/dev/null) || _rc=$?
+    if [[ $_rc -ne 0 || -z "$json" ]]; then
+      # 网络/规则包不可达（离线环境 p/default 拉取失败）→ 降级内置，明示
+      warn "${bin} 执行失败或无输出（rc=${_rc}；离线环境规则包不可达）——降级内置词法模式族"
+      if _sast_deep_lexical_scan "gate_sast_deep_builtin: 内置模式族检出高危代码执行 sink（${bin} 执行失败后降级检出；GB/T 34943/34944/34946 漏洞类别）："; then
+        found=1
+      fi
+    else
+      local _e _w
+      _e=$(printf '%s\n' "$json" | grep -cE '"severity"[^,]*ERROR' || true)
+      _w=$(printf '%s\n' "$json" | grep -cE '"severity"[^,]*WARNING' || true)
+      echo "  ⓘ ${bin} 结果：ERROR=${_e} WARNING=${_w}"
+      if [[ "$sev" == "warning" && $((_e+_w)) -gt 0 ]] || [[ "$sev" == "error" && "$_e" -gt 0 ]]; then
+        fail "gate_sast_deep_findings: ${bin} 检出达标严重级别（${sev}）以上发现 ERROR=${_e} WARNING=${_w}（GB/T 34943/34944/34946 漏洞类别）——详见 ${bin} JSON 输出"
+        found=1
+      fi
+    fi
+  fi
+  [[ $found -eq 0 ]] && pass "深度 SAST 检查通过（载体：${bin}）"
+}
+
 check_framework() {
   echo "▶ 框架适配门禁 (--framework)"
   if [[ ${#ACTIVE_FRAMEWORKS[@]} -eq 0 ]]; then
