@@ -407,3 +407,5 @@ ocr 新增 LLM provider 支持：
 **门禁承载**：`precheck.sh check_review`——ocr review 输出对含 finding 关键词但缺 `file:line` 引用的行降级 warn（pre-emit 引用门）；AI 5 维度审查降级路径输出 pre-emit 指引。姿态为 **warn 级 advisory**（不新增 fail），与现有降级策略一致。
 
 **FP_EXCLUSIONS 配置（轻量固化）**：`precheck.conf` 可配 `FP_EXCLUSIONS`（`|` 分隔的 ERE 模式），check_review 的 ocr 输出对命中已知误报类的 finding 降级提示。内置默认排除：`README|\.md:|\.txt:|// |# |\* `（文档/注释行）。置信度标定为 **AI 审查的结构化输出要求**（finding 带 high/medium/low，低置信压附录），非硬门禁——完整标定学习闭环（标定历史反哺）留后续（需真实项目数据校准，硬门禁化风险高）。
+
+**标定学习闭环（已固化）**：`precheck.sh --review-calibrate record --confidence <high|medium|low> --verdict <true|false>` 落盘 finding 置信度+用户确认到 `.swarm-yuan/review-calibration.jsonl`；`--review-calibrate stats` 统计各置信度真发现率，某级别真发现率 <30%（≥5 样本）时建议压附录或提 pre-emit 引用门阈值——这是 gstack 标定学习（用户确认低置信 finding 为真→反哺后续审查）的最小闭环。
