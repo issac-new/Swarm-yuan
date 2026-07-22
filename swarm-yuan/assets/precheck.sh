@@ -1062,7 +1062,17 @@ _fw_resolve_globs() {
     name="${g##*/}"
     # 若拆分后 dir == g 说明无 **，整体当作单个路径/文件
     if [[ "$dir" == "$g" ]]; then
-      [[ -e "$g" ]] && printf '%s\n' "$g"
+      # WP-R P1-1: 无 ** 的 glob（如 src/store/modules/*.js）原仅 [[ -e ]] 判定，
+      # 对含通配符的 glob 永远 false（字面路径 *.js 不存在）→ 门禁静默失效（假 warn）。
+      # 修复：含通配符的用 shopt nullglob + compgen 展开；纯路径/文件用 [[ -e ]]
+      if [[ "$g" == *['*?[]'* ]]; then
+        # 含通配符：在当前目录(cwd=PROJECT_DIR)下用 compgen 展开
+        local _expanded
+        _expanded=$(compgen -G "$g" 2>/dev/null || true)
+        [[ -n "$_expanded" ]] && printf '%s\n' "$_expanded"
+      else
+        [[ -e "$g" ]] && printf '%s\n' "$g"
+      fi
     else
       [[ -d "$dir" ]] || continue
       find "$dir" -type f -name "$name" 2>/dev/null

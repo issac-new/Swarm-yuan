@@ -1,5 +1,5 @@
 # ruleset: vite  requires_conf: VITE_CONFIG_FILE VITE_INJECT_SCRIPT
-# gates: fw_vite_alias_array_form(fail) fw_vite_alias_order(fail) fw_vite_inject_clean(fail) fw_vite_env_prefix(warn) fw_vite_manual_chunks(warn) fw_vite_build_target(warn) fw_vite_sourcemap_prod(warn) fw_vite_base_path(warn) fw_vite_optimize_deps(warn) fw_vite_proxy_target(warn) fw_vite_esbuild_minify(warn)
+# gates: fw_vite_alias_array_form(warn) fw_vite_alias_order(warn) fw_vite_inject_clean(warn) fw_vite_env_prefix(warn) fw_vite_manual_chunks(warn) fw_vite_build_target(warn) fw_vite_sourcemap_prod(warn) fw_vite_base_path(warn) fw_vite_optimize_deps(warn) fw_vite_proxy_target(warn) fw_vite_esbuild_minify(warn)
 # harvested-from: ncwk-dev precheck.sh:2602-2632 (2026-07-17) + P5 扩展（2026-07-17），规律源自 Vite 8.x / 7.x 官方文档
 _fw_vite_check() {
   echo "  [vite] Vite 8.x / 7.x 框架规律"
@@ -11,37 +11,62 @@ _fw_vite_check() {
   fi
 
   # ====================================================================
-  # fw_vite_alias_array_form(fail)：alias 须数组形式
+  # fw_vite_alias_array_form(warn)：alias 须数组形式
+  # WP-R P2: 原 fail 对"对象形式 alias"过严——对象形式是 vite 合法用法(Vite resolve.alias
+  # 接受 Record<string,string>)。降为 warn:对象形式存在时提示建议数组(保证顺序),不 fail。
+  # 仅当完全无 alias 配置时才保持原 fail 语义(配置缺失)。
   # ====================================================================
   if grep -qE "alias:[[:space:]]*\[" "$cfg" 2>/dev/null; then
     pass "fw_vite_alias_array_form: alias 数组形式"
+  elif grep -qE "alias:[[:space:]]*\{" "$cfg" 2>/dev/null; then
+    warn "fw_vite_alias_array_form: alias 对象形式(Vite 合法,但数组形式保证顺序更佳)"
   else
-    fail "fw_vite_alias_array_form: alias 须用数组形式（保证顺序）"
+    fail "fw_vite_alias_array_form: alias 须用数组或对象形式(当前缺失)"
   fi
 
   # ====================================================================
-  # fw_vite_alias_order(fail)：@/custom 须在 @ 之前
+  # fw_vite_alias_order(warn)：@/custom 须在 @ 之前
+  # WP-R P2: alias_order 依赖 alias_array_form 的数组形式,对象形式无顺序保证概念。
+  # 对象形式时降为 warn(无法判定顺序);无 @/custom 时 skip。
   # ====================================================================
   local custom_line at_line
   custom_line=$( { grep -nE "@/custom" "$cfg" 2>/dev/null || true; } | head -1 | cut -d: -f1)
   at_line=$( { grep -nE "find:[[:space:]]*['\"]@['\"]" "$cfg" 2>/dev/null || true; } | head -1 | cut -d: -f1)
-  if [[ -n "$custom_line" && -n "$at_line" && "$custom_line" -lt "$at_line" ]]; then
+  if [[ -z "$custom_line" ]]; then
+    pass "fw_vite_alias_order: 无 @/custom 别名,跳过顺序检查"
+  elif grep -qE "alias:[[:space:]]*\{" "$cfg" 2>/dev/null; then
+    warn "fw_vite_alias_order: alias 对象形式无法保证顺序(@/custom 须在 @ 前,建议改数组形式)"
+  elif [[ -n "$at_line" && "$custom_line" -lt "$at_line" ]]; then
     pass "fw_vite_alias_order: @/custom 在 @ 之前 (行 $custom_line < $at_line)"
   else
     fail "fw_vite_alias_order: @/custom 须在 @ 之前 (custom=$custom_line at=$at_line)"
   fi
 
   # ====================================================================
-  # fw_vite_inject_clean(fail)：inject.mjs 须支持 --clean 回滚
+  # fw_vite_inject_clean(warn)：inject.mjs 须支持 --clean 回滚
+  # WP-R P1-2: 原 fail 对"VITE_INJECT_SCRIPT 指向非 inject.mjs 文件"的项目过严。
+  # 如 RuoYi-Vue3 把 VITE_INJECT_SCRIPT 填为 vite/plugins/index.js(非 inject 脚本)，
+  # 门禁 grep 不到 --clean 直接 fail。修复：文件存在但非 inject 脚本(无 inject 特征)
+  # 降为 warn(可能误配);仅当明确是 inject.mjs 但缺 --clean 才 fail。空值仍 skip。
   # ====================================================================
   if [[ -n "$VITE_INJECT_SCRIPT" && -f "$VITE_INJECT_SCRIPT" ]]; then
-    if grep -qE "\-\-clean" "$VITE_INJECT_SCRIPT" 2>/dev/null; then
-      pass "fw_vite_inject_clean: inject.mjs 含 --clean 回滚分支"
+    # 判定是否 inject 脚本:文件名含 inject 或内容含 inject 相关特征(transform/inject/replace)
+    local _is_inject=0
+    case "$(basename "$VITE_INJECT_SCRIPT")" in
+      *inject*) _is_inject=1 ;;
+    esac
+    [[ $_is_inject -eq 0 ]] && grep -qiE "inject|transform.*plugin|replace.*code" "$VITE_INJECT_SCRIPT" 2>/dev/null && _is_inject=1
+    if [[ $_is_inject -eq 1 ]]; then
+      if grep -qE "\-\-clean" "$VITE_INJECT_SCRIPT" 2>/dev/null; then
+        pass "fw_vite_inject_clean: inject 脚本含 --clean 回滚分支"
+      else
+        fail "fw_vite_inject_clean: inject 脚本须支持 --clean 回滚"
+      fi
     else
-      fail "fw_vite_inject_clean: inject.mjs 须支持 --clean 回滚"
+      warn "fw_vite_inject_clean: VITE_INJECT_SCRIPT 指向非 inject 脚本($VITE_INJECT_SCRIPT),可能误配——若项目无 inject 需求请置空该变量"
     fi
   else
-    pass "fw_vite_inject_clean: 无 inject 脚本，跳过"
+    pass "fw_vite_inject_clean: 无 inject 脚本,跳过"
   fi
 
   # ====================================================================
