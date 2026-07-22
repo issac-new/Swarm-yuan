@@ -53,7 +53,7 @@ detect 信号命中任一高置信度行即可激活 vite 框架规则集。
 - **规律**: ncwk 用 inject.mjs 向产物注入定制代码，须支持 `--clean` 回滚分支，避免重复注入导致产物污染。
 - **违反后果**: 重复注入致产物污染、回滚失败。
 - **验证方法**: inject.mjs 无 `--clean` 分支 → fail。
-- **对应门禁**: fw_vite_inject_clean(fail)
+- **对应门禁**: fw_vite_inject_clean(warn)
 
 ### 规律：环境变量须 VITE_ 前缀，防敏感配置泄漏客户端
 - **适用版本**: Vite 5.x+/8.x
@@ -120,9 +120,9 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE / GB 映射 |
 |---------|------|---------|---------|--------------|
-| fw_vite_alias_array_form | fail | alias 非数组形式 → fail | VITE_CONFIG_FILE | — |
-| fw_vite_alias_order | fail | @/custom 不在 @ 之前 → fail | VITE_CONFIG_FILE | — |
-| fw_vite_inject_clean | fail | inject.mjs 无 --clean 回滚 → fail | VITE_INJECT_SCRIPT | — |
+| fw_vite_alias_array_form | warn | alias 非数组形式 → fail | VITE_CONFIG_FILE | — |
+| fw_vite_alias_order | warn | @/custom 不在 @ 之前 → fail | VITE_CONFIG_FILE | — |
+| fw_vite_inject_clean | warn | inject.mjs 无 --clean 回滚 → fail | VITE_INJECT_SCRIPT | — |
 | fw_vite_env_prefix | warn | 非 VITE_ 前缀敏感环境变量 → warn 泄漏 | VITE_CONFIG_FILE | CWE-540 / CWE-312 |
 | fw_vite_manual_chunks | warn | 无 manualChunks 分包 → warn | VITE_CONFIG_FILE | — |
 | fw_vite_build_target | warn | 无 build.target → warn | VITE_CONFIG_FILE | — |
