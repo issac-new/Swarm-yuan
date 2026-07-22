@@ -16,9 +16,12 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 # 上游仓库（与 self-check.sh install_from_src_release 的 zip 名一致）
+# 注意：superpowers 源是 obra/superpowers（核心插件本体，含 skills/ 与 plugin.json），
+#   非 obra/superpowers-marketplace（仅 marketplace 元数据，无 skills/ 本体，会被
+#   check_superpowers 的 fail-closed 空壳检测判 miss）。
 declare -a SOURCES=(
   "gstack|https://github.com/garrytan/gstack.git"
-  "superpowers|https://github.com/obra/superpowers-marketplace.git"
+  "superpowers|https://github.com/obra/superpowers.git"
   "ecc|https://github.com/affaan-m/ECC.git"
 )
 
