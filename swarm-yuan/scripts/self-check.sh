@@ -746,6 +746,32 @@ check_bootstrap_gate() {
 }
 check_bootstrap_gate
 
+# ===== AI 工具兼容三档对账（G7）=====
+# 对账 tool-adapters/common.sh 的 TA_TIER_<tool> 声明数 vs facts.conf 口径
+# （FACT_COMPAT_DEEP=1 / FACT_COMPAT_CLI=6）。口径漂移机器执法：不符 warn + FAIL=1。
+check_compat_tier() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local adapters="$base/assets/tool-adapters"
+  [[ -f "$adapters/common.sh" ]] || return 0
+  # facts.conf 若已被 check_doc_consistency source 则直接用；否则此处兜底 source
+  if [[ -z "${FACT_COMPAT_TIERS:-}" && -f "$base/assets/facts.conf" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$base/assets/facts.conf"; set -u
+  fi
+  echo "▶ AI 工具兼容三档对账（G7）"
+  local deep_cnt cli_cnt
+  deep_cnt=$(grep -c '^TA_TIER_[a-z]*=deep' "$adapters/common.sh" 2>/dev/null || echo 0)
+  cli_cnt=$(grep -c '^TA_TIER_[a-z]*=cli' "$adapters/common.sh" 2>/dev/null || echo 0)
+  local exp_deep="${FACT_COMPAT_DEEP:-1}" exp_cli="${FACT_COMPAT_CLI:-6}"
+  if [[ "$deep_cnt" == "$exp_deep" && "$cli_cnt" == "$exp_cli" ]]; then
+    echo "  ✓ 三档声明（deep=${deep_cnt} cli=${cli_cnt}）与 facts.conf 一致（DEEP=${exp_deep} CLI=${exp_cli}）"
+  else
+    [[ "$deep_cnt" == "$exp_deep" ]] || { warn "deep 档声明数=${deep_cnt} ≠ facts.conf FACT_COMPAT_DEEP=${exp_deep}"; FAIL=1; }
+    [[ "$cli_cnt" == "$exp_cli" ]] || { warn "cli 档声明数=${cli_cnt} ≠ facts.conf FACT_COMPAT_CLI=${exp_cli}"; FAIL=1; }
+  fi
+}
+check_compat_tier
+
 # ===== 上游基线漂移忠告（不联网，仅读登记表机器标记行）=====
 upstream_baseline_check() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
