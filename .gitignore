@@ -20,17 +20,6 @@ node_modules/
 .idea/
 .vscode/
 
-# ---- 悬空子模块占位 ----
-# swarm-yuan/offline-cache/{gstack,superpowers} 曾是无 .gitmodules 的 gitlink(160000)，
-# clone 后为空目录且 submodule update 报错，已从索引移除并在此忽略。
-# 如需本地使用请手动 clone 到对应路径；勿重新 git add 成 gitlink。
-swarm-yuan/offline-cache/gstack/
-swarm-yuan/offline-cache/superpowers/
-
-# 注意：swarm-yuan/offline-cache/ 的二进制（*.whl/*.tgz/*.zip）自 v2026.07.20 起
-# 已迁移 GitHub Release 附件（v2026.07.20-offline tag），不再纳入 git 跟踪
-#（忽略规则见 swarm-yuan/.gitignore；拉取用 swarm-yuan/scripts/fetch-offline-cache.sh）。
-# git 索引内仅保留 offline-cache/UPSTREAM.md（上游溯源登记）。
 .claude/worktrees/
 .zcode/
 .swarm-yuan/

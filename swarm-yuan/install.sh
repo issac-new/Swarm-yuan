@@ -102,14 +102,11 @@ install_to() {
     mv "$dest" "${dest}.bak.$(date +%s)"
   fi
 
-  # 复制（排除 offline-cache/：33MB 离线安装缓存，不应进入每个运行时 skill 目录；
-  # 逐项 cp -R 覆盖隐藏文件，三平台兼容，无需 tar --exclude）
+  # 复制（逐项 cp -R 覆盖隐藏文件，三平台兼容，无需 tar --exclude）
   mkdir -p "$skill_dir" "$dest"
-  local item base
+  local item
   for item in "$SRC_DIR"/* "$SRC_DIR"/.[!.]* "$SRC_DIR"/..?*; do
     [[ -e "$item" ]] || continue
-    base="$(basename "$item")"
-    [[ "$base" == "offline-cache" ]] && continue
     cp -R "$item" "$dest/"
   done
   rm -rf "$dest/docs" "$dest/.upgrade-backup-"* "$dest/.git" "$dest/.DS_Store" 2>/dev/null || true
