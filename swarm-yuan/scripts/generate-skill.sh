@@ -1019,7 +1019,7 @@ EOF
 fi
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] assets: spec-template(§5.5-§18) + plan + branch + env + data + state-machine
-- [ ] check: precheck.sh 门禁（标准 27 随 --all-full；合规 9 随 --compliance-suite 按需）
+- [ ] check: precheck.sh 门禁（标准 27 随 --all-full；合规 13 随 --compliance-suite 按需）
 - [ ] scripts: precheck + state-machine + trace-log + cost-report
 EOF
 else

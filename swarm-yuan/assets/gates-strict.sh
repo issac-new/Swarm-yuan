@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# strict (12) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
+# strict (14) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
 # 被 precheck.sh source（开发态）或 install.sh 内联（打包态）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
@@ -618,7 +618,7 @@ check_shift_left() {
     local md
     for md in "${MIGRATION_DIRS[@]}"; do
       [[ -d "$md" ]] || continue
-      local hits; hits=$(grep -rnEi "$BREAKING_DDL_PATTERNS" "$md" 2>/dev/null | grep -v -i 'down\|rollback\|revert' || true)
+      local hits; hits=$(grep -rnEi "$BREAKING_DDL_PATTERNS" "$md" 2>/dev/null | grep -viE 'down|rollback|revert' || true)
       if [[ -n "$hits" ]]; then
         warn "迁移目录 $md 含破坏性 DDL（DROP/TRUNCATE），须确认向前兼容或双写期："
         echo "$hits" | head -5

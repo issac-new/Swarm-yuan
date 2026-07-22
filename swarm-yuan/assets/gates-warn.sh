@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# warn (18) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
+# warn (20) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
 # 被 precheck.sh source（开发态）或 install.sh 内联（打包态）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
