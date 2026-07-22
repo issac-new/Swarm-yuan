@@ -19,7 +19,7 @@ trap 'rm -rf "$TMP"' EXIT
 declare -a SOURCES=(
   "gstack|https://github.com/garrytan/gstack.git"
   "superpowers|https://github.com/obra/superpowers-marketplace.git"
-  "ECC|https://github.com/affaan-m/ECC.git"
+  "ecc|https://github.com/affaan-m/ECC.git"
 )
 
 echo "=== swarm-yuan 源码包发版 ==="
