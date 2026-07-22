@@ -1247,6 +1247,48 @@ check_dengbao() {
   [[ $found -eq 0 ]] && pass "等保 ${level} 级控制点映射检查通过（GB/T 22239-2019）"
 }
 
+check_pia() {
+  echo "=== 隐私影响评估（PIA）检查（个人信息保护法第55-56条 / GB/T 35273-2020）==="
+  [[ "${PIA_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "PIA_REQUIRED 未启用，PIA 检查跳过"; return; }
+  local dir="${PIA_DOCS_DIR:-docs/privacy}"
+  local found=0
+  if [[ ! -d "$dir" ]]; then
+    fail "gate_pia_doc_missing: PIA 文档目录不存在：${dir}（PIA_REQUIRED=1，fail-closed；个保法第55条：处理敏感个人信息等情形须事前进行个人信息保护影响评估）"
+    return
+  fi
+  # ① PIA 评估文档存在性
+  local _pia_doc
+  _pia_doc=$(find "$dir" -maxdepth 2 -type f \( -iname '*pia*' -o -name '*隐私影响评估*' -o -name '*影响评估*' \) 2>/dev/null | head -1)
+  if [[ -z "$_pia_doc" ]]; then
+    fail "gate_pia_doc_missing: PIA 评估文档不存在（${dir} 下未见 *pia*/ *隐私影响评估* 文件；个保法第55-56条）"
+    found=1
+  fi
+  # ② 个人信息处理活动清单存在性
+  local _inv
+  _inv=$(find "$dir" -maxdepth 2 -type f \( -name '*清单*' -o -iname '*inventory*' -o -iname '*register*' -o -iname '*activities*' \) 2>/dev/null | head -1)
+  if [[ -z "$_inv" ]]; then
+    fail "gate_pia_inventory_missing: 个人信息处理活动清单不存在（${dir} 下未见 *清单*/*inventory*/*register* 文件；GB/T 35273-2020 处理活动记录）"
+    found=1
+  fi
+  # ③ PIA 文档零 TBD（评估报告不得含待定项）
+  local _tbd
+  _tbd=$(grep -rnE 'TBD|待定|待明确|待补充' "$dir" 2>/dev/null || true)
+  if [[ -n "$_tbd" ]]; then
+    fail "gate_pia_tbd: PIA 文档含待定项（TBD/待定/待明确/待补充）——评估结论必须完整：
+$(printf '%s\n' "$_tbd" | head -5 | sed 's/^/    /')"
+    found=1
+  fi
+  # ④ 清单覆盖勾稽（warn-only：PRIVACY_SCAN_DIRS 各目录应在清单中有引用）
+  if [[ -n "$_inv" && ${#PRIVACY_SCAN_DIRS[@]} -gt 0 ]]; then
+    local d _base
+    for d in ${PRIVACY_SCAN_DIRS[@]+"${PRIVACY_SCAN_DIRS[@]}"}; do
+      _base=$(basename "$d")
+      grep -qF "$_base" "$_inv" 2>/dev/null || warn "处理活动清单（${_inv}）未引用 PRIVACY_SCAN_DIRS 目录：${d}——请核对登记完整性"
+    done
+  fi
+  [[ $found -eq 0 ]] && pass "PIA 检查通过（评估文档+处理活动清单齐备，零待定项）"
+}
+
 check_release_sign() {
   echo "=== 发布签名与 provenance 检查（SLSA Build L2 / SSDF PS.2 发布完整性）==="
   [[ "${RELEASE_SIGN_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "RELEASE_SIGN_REQUIRED 未启用，发布签名检查跳过"; return; }
