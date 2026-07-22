@@ -272,7 +272,7 @@ _CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 # set -e 下 source 返回 1 会退出。--list-gates / --doctor 不依赖 conf，提前拦截。
 # 用 $1 直接判断（MODE 在 321 行才赋值，此处尚未解析）。
 case "${1:-}" in
-  --list-gates|--doctor|--gate-stats) _skip_conf=1 ;;
+  --list-gates|--doctor|--gate-stats|--review-calibrate) _skip_conf=1 ;;
   *) _skip_conf=0 ;;
 esac
 if [[ "$_skip_conf" -eq 1 ]]; then
@@ -330,6 +330,7 @@ unset _conf_var
 FORMAT="text"
 MODE=""
 FRAMEWORK_ID=""
+_CAL_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --format)
@@ -348,6 +349,13 @@ while [[ $# -gt 0 ]]; do
       # WP-Q1.5：列出所有门禁的 flag / 函数名 / enforce_level 三列表
       MODE="--list-gates"
       shift
+      ;;
+    --review-calibrate)
+      # A 方向：置信度标定——保留后续参数（record --confidence/--verdict/--finding 或 stats）
+      MODE="--review-calibrate"
+      shift
+      _CAL_ARGS=("$@")
+      break
       ;;
     *)
       [[ -z "$MODE" ]] && MODE="$1"
@@ -762,6 +770,63 @@ if [[ "$MODE" == "--gate-stats" ]]; then
       echo "  ⚠ ${_g} 连续 ${_streak} 次零发现，建议评估降级（adaptive gating；安全类 NEVER_GATE 已豁免）"
   done
   echo "  （仅提示不自动降级——用户决策；安全类门 sensitive/security/authz/privacy/crypto/sbom/release-sign 永不降级）"
+  exit 0
+fi
+
+# --review-calibrate（A 方向：置信度标定学习闭环，gstack 吸收）
+# 用法：--review-calibrate record --confidence <high|medium|low> --verdict <true|false> [--finding <描述>]
+#       --review-calibrate stats
+# record：落盘一条标定记录（置信度 + 用户确认结果）到 .swarm-yuan/review-calibration.jsonl
+# stats：统计各置信度级别的真发现率（confirmed/total），反哺后续审查置信度阈值校准
+# 姿态：独立子命令（非门禁），exit 0 不阻塞；标定历史反哺是 advisory。
+if [[ "$MODE" == "--review-calibrate" ]]; then
+  _cal_file="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/review-calibration.jsonl"
+  _cal_act="${_CAL_ARGS[0]:-stats}"
+  case "$_cal_act" in
+    record)
+      _cal_conf=""; _cal_verdict=""; _cal_finding=""
+      set -- ${_CAL_ARGS[@]+"${_CAL_ARGS[@]}"}
+      shift 2>/dev/null || true  # 去掉 record
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --confidence) _cal_conf="${2:-}"; shift 2 ;;
+          --verdict) _cal_verdict="${2:-}"; shift 2 ;;
+          --finding) _cal_finding="${2:-}"; shift 2 ;;
+          *) shift ;;
+        esac
+      done
+      if [[ -z "$_cal_conf" || -z "$_cal_verdict" ]]; then
+        echo "Usage: precheck.sh --review-calibrate record --confidence <high|medium|low> --verdict <true|false> [--finding <描述>]" >&2
+        exit 1
+      fi
+      mkdir -p "$(dirname "$_cal_file")" 2>/dev/null
+      printf '{"ts":"%s","confidence":"%s","verdict":"%s","finding":"%s"}\n' \
+        "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$_cal_conf" "$_cal_verdict" \
+        "$(printf '%s' "$_cal_finding" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n')" >> "$_cal_file"
+      echo "✓ 标定记录已落盘：confidence=${_cal_conf} verdict=${_cal_verdict} → ${_cal_file}"
+      ;;
+    stats|"")
+      if [[ ! -f "$_cal_file" ]]; then
+        echo "（无标定历史——用 '--review-calibrate record' 记录 finding 置信度+用户确认）"
+        exit 0
+      fi
+      echo "=== 置信度标定统计（review-calibration.jsonl，gstack 标定学习）==="
+      for _lv in high medium low; do
+        # grep -c 零命中时输出 0 但 exit 1；|| true 保留 "0"，避免 || echo 0 双输出 "0\n0"
+        _total=$(grep -c "\"confidence\":\"$_lv\"" "$_cal_file" 2>/dev/null || true)
+        _true=$(grep "\"confidence\":\"$_lv\"" "$_cal_file" 2>/dev/null | grep -c '"verdict":"true"' || true)
+        _total="${_total:-0}"; _true="${_true:-0}"
+        if [[ "$_total" -gt 0 ]]; then
+          _rate=$(( _true * 100 / _total ))
+          echo "  ${_lv}: ${_true}/${_total} 真发现（${_rate}%）"
+          # 标定反哺建议：某置信度真发现率过低 → 建议压附录/丢弃
+          [[ "$_rate" -lt 30 && "$_total" -ge 5 ]] && \
+            echo "    ⚠ ${_lv} 置信度真发现率仅 ${_rate}%（≥5 样本），建议该级 finding 压附录或提 pre-emit 引用门阈值"
+        fi
+      done
+      ;;
+    *) echo "未知操作: $_cal_act（record|stats）" >&2; exit 1 ;;
+  esac
   exit 0
 fi
 
