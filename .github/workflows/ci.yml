@@ -141,7 +141,9 @@ jobs:
       - name: Bootstrap precheck with minimal conf (ci/self-precheck.conf)
         run: |
           tmpdir="$(mktemp -d)"
-          cp swarm-yuan/assets/precheck.sh "$tmpdir/precheck.sh"
+          # 必须同时拷贝 gates-strict/warn/advisory.sh（precheck.sh 按 dirname $0 source，
+          # 缺失时 || true 静默降级——check_* 未定义会让门禁假通过，自举失真）
+          cp swarm-yuan/assets/precheck.sh swarm-yuan/assets/gates-strict.sh swarm-yuan/assets/gates-warn.sh swarm-yuan/assets/gates-advisory.sh "$tmpdir/"
           sed "s|__REPO_ROOT__|$GITHUB_WORKSPACE|g" swarm-yuan/ci/self-precheck.conf > "$tmpdir/precheck.conf"
           # CI checkout 为 detached HEAD：建临时 feat 分支让分支门禁真实执行（而非降级跳过）
           git checkout -b feat/generator-self-gate
@@ -149,6 +151,26 @@ jobs:
           rc=$?
           rm -rf "$tmpdir"
           [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --all RC=0)" || { echo "✗ Generator self-gate failed RC=$rc"; exit 1; }
+      # G4 自举闭环：--all-full（标准 27 门）+ --compliance-suite（合规 9 门），三档全 RC=0
+      - name: Self-gate --all-full (27 gates)
+        run: |
+          tmpdir="$(mktemp -d)"
+          cp swarm-yuan/assets/precheck.sh swarm-yuan/assets/gates-strict.sh swarm-yuan/assets/gates-warn.sh swarm-yuan/assets/gates-advisory.sh "$tmpdir/"
+          sed "s|__REPO_ROOT__|$GITHUB_WORKSPACE|g" swarm-yuan/ci/self-precheck.conf > "$tmpdir/precheck.conf"
+          git checkout -b feat/generator-self-gate-full
+          bash "$tmpdir/precheck.sh" --all-full
+          rc=$?
+          rm -rf "$tmpdir"
+          [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --all-full RC=0)" || { echo "✗ Generator self-gate --all-full failed RC=$rc"; exit 1; }
+      - name: Self-gate --compliance-suite (9 gates)
+        run: |
+          tmpdir="$(mktemp -d)"
+          cp swarm-yuan/assets/precheck.sh swarm-yuan/assets/gates-strict.sh swarm-yuan/assets/gates-warn.sh swarm-yuan/assets/gates-advisory.sh "$tmpdir/"
+          sed "s|__REPO_ROOT__|$GITHUB_WORKSPACE|g" swarm-yuan/ci/self-precheck.conf > "$tmpdir/precheck.conf"
+          bash "$tmpdir/precheck.sh" --compliance-suite
+          rc=$?
+          rm -rf "$tmpdir"
+          [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --compliance-suite RC=0)" || { echo "✗ Generator self-gate --compliance-suite failed RC=$rc"; exit 1; }
 
   # ---------- Job 3：self-check 时效检查 + 运行时工具检测 ----------
   self-check:

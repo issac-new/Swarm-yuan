@@ -17,6 +17,26 @@
 #     ~/.config/opencode/AGENTS.md、Gemini ~/.gemini/GEMINI.md、Kimi 仅项目 AGENTS.md）：
 #     https://gist.github.com/hungson175/76131bb8434f9d58ee7b2f08c3242624
 
+# ---- G7：AI 工具兼容三档机器可读元数据 ----
+# runnable（可运行，目录复制即被该工具加载约定消费）
+# cli（集成，runnable + --render-tools 派生该工具原生规则文件）
+# deep（深度集成，cli + slash command 注册 + hooks/commands/MCP）
+# 声明式元数据；未声明工具 ta_tier_of 默认按 runnable（最低档）处理，不阻塞。
+# 口径权威源：assets/facts.conf（FACT_COMPAT_TIERS=3/DEEP=1/CLI=6），self-check 对账。
+TA_TIER_claude=deep
+TA_TIER_cursor=cli
+TA_TIER_windsurf=cli
+TA_TIER_codex=cli
+TA_TIER_opencode=cli
+TA_TIER_gemini=cli
+TA_TIER_kimi=cli
+
+# 按工具查 tier（bash 3.2 兼容：间接展开 eval，不用 declare -A 关联数组）
+ta_tier_of() {  # $1=tool → stdout tier（runnable/cli/deep）
+  local tool="$1"
+  eval "echo \"\${TA_TIER_${tool}:-runnable}\""
+}
+
 # ---- 用户级工具 home 判定（与 install.sh detect_runtimes 的 7 目录一一对应）----
 ta_is_user_level() {  # $1=tool_home
   case "$1" in

@@ -712,6 +712,66 @@ check_doc_consistency() {
 }
 check_doc_consistency
 
+# ===== 自举门禁三档断言（G4）=====
+# 对账 ci/self-precheck.conf 存在 + SPEC_FILE 显式配置（impact 门 --all-full fail 面）
+# + CI generator-self-gate Job 含 --all/--all-full/--compliance-suite 三档 step。
+# 口径漂移机器执法：任一项不符 warn + FAIL=1。
+check_bootstrap_gate() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local conf="$base/ci/self-precheck.conf" ci="$base/../.github/workflows/ci.yml"
+  # 安装态（~/.claude/skills/swarm-yuan/）无 ci/ 目录与 .github/，静默跳过
+  [[ -f "$conf" ]] || return 0
+  echo "▶ 自举门禁三档断言（G4）"
+  # conf 显式配置 SPEC_FILE（impact 门在候选+兜底全空时 fail，必须 conf 指向自家模板）
+  if grep -q '^SPEC_FILE=' "$conf"; then
+    echo "  ✓ self-precheck.conf 显式配置 SPEC_FILE（impact 门 fail 面已闭合）"
+  else
+    warn "self-precheck.conf 缺 SPEC_FILE（impact 门 --all-full fail 面）"
+    FAIL=1
+  fi
+  # CI 含三档 step（--all/--all-full/--compliance-suite）
+  if [[ -f "$ci" ]]; then
+    local n
+    n=$(grep -cE 'precheck\.sh"? --(all|all-full|compliance-suite)' "$ci" 2>/dev/null || echo 0)
+    if [[ "$n" -ge 3 ]]; then
+      echo "  ✓ CI 自举三档 step 齐全（$n 处，含 --all/--all-full/--compliance-suite）"
+    else
+      warn "CI 自举 step 数=$n < 3（应含 --all/--all-full/--compliance-suite）"
+      FAIL=1
+    fi
+  else
+    warn "CI workflow 不存在: $ci（无法对账三档 step）"
+    FAIL=1
+  fi
+}
+check_bootstrap_gate
+
+# ===== AI 工具兼容三档对账（G7）=====
+# 对账 tool-adapters/common.sh 的 TA_TIER_<tool> 声明数 vs facts.conf 口径
+# （FACT_COMPAT_DEEP=1 / FACT_COMPAT_CLI=6）。口径漂移机器执法：不符 warn + FAIL=1。
+check_compat_tier() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local adapters="$base/assets/tool-adapters"
+  [[ -f "$adapters/common.sh" ]] || return 0
+  # facts.conf 若已被 check_doc_consistency source 则直接用；否则此处兜底 source
+  if [[ -z "${FACT_COMPAT_TIERS:-}" && -f "$base/assets/facts.conf" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$base/assets/facts.conf"; set -u
+  fi
+  echo "▶ AI 工具兼容三档对账（G7）"
+  local deep_cnt cli_cnt
+  deep_cnt=$(grep -c '^TA_TIER_[a-z]*=deep' "$adapters/common.sh" 2>/dev/null || echo 0)
+  cli_cnt=$(grep -c '^TA_TIER_[a-z]*=cli' "$adapters/common.sh" 2>/dev/null || echo 0)
+  local exp_deep="${FACT_COMPAT_DEEP:-1}" exp_cli="${FACT_COMPAT_CLI:-6}"
+  if [[ "$deep_cnt" == "$exp_deep" && "$cli_cnt" == "$exp_cli" ]]; then
+    echo "  ✓ 三档声明（deep=${deep_cnt} cli=${cli_cnt}）与 facts.conf 一致（DEEP=${exp_deep} CLI=${exp_cli}）"
+  else
+    [[ "$deep_cnt" == "$exp_deep" ]] || { warn "deep 档声明数=${deep_cnt} ≠ facts.conf FACT_COMPAT_DEEP=${exp_deep}"; FAIL=1; }
+    [[ "$cli_cnt" == "$exp_cli" ]] || { warn "cli 档声明数=${cli_cnt} ≠ facts.conf FACT_COMPAT_CLI=${exp_cli}"; FAIL=1; }
+  fi
+}
+check_compat_tier
+
 # ===== 上游基线漂移忠告（不联网，仅读登记表机器标记行）=====
 upstream_baseline_check() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"

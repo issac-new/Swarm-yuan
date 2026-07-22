@@ -519,6 +519,8 @@ fi
 # ============================================================
 # --render-tools 子命令（独立于 create/upgrade，单独拦截）
 # 用法: bash generate-skill.sh --render-tools <skill-dir> [project-root] [tool]
+# G7 三档对齐：runnable（全部 7 工具目录复制即可运行）/ cli（6 工具派生原生规则）/
+#   deep（Claude Code 已深度集成，no-op）。档位元数据：assets/tool-adapters/common.sh TA_TIER_*。
 # 从目标 skill 的 SKILL.md + scripts/precheck.conf 派生各 AI 工具原生规则文件：
 #   Cursor .cursor/rules/<skill>.mdc（description/globs/alwaysApply 三字段）
 #   Windsurf .windsurf/rules/<skill>.md（trigger: model_decision）

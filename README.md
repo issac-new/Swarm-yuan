@@ -170,7 +170,7 @@ cd Swarm-yuan/swarm-yuan
 bash install.sh
 ```
 
-自动检测 7 个 AI 工具：Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi
+自动检测 7 个 AI 工具：Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi（按兼容深度分三档，见「AI 工具兼容三档」）
 
 ### 生成项目技能
 
@@ -234,6 +234,21 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深接。
 
 **领域知识**：数据库 ACID / 网络 CORS / 安全密码哈希 / IM 消息保序 / 电商库存原子扣减 / 金融金额 Decimal……32 个领域客观规律。
+
+---
+
+## AI 工具兼容三档（诚实分层，不假装全深接）
+
+与 11 个运行时的三层接线范式平行——7 个 AI 工具的兼容深度同样分档声明：
+
+| 档 | 名称 | 能力 | 工具 |
+|---|------|------|------|
+| runnable | 可运行 | 目录复制（该工具自身对 skills 目录的加载约定） | 全部 7 个 |
+| cli | 集成 | runnable + `--render-tools` 派生原生规则文件（.mdc/.windsurf/AGENTS.md/GEMINI.md 标记区块） | Cursor/Windsurf/Codex/OpenCode/Gemini/Kimi（6 个） |
+| deep | 深度集成 | cli + slash command 注册 + hooks/commands/MCP（hooks.json/.mcp.json/commands/*.md 随骨架生成） | Claude Code（1 个） |
+
+> 非 Claude 工具安装的骨架中 hooks/commands 目录为 deep 档（Claude Code）专属，cli 档不消费（死重，不影响功能）。
+> 档位元数据机器可读：`assets/tool-adapters/common.sh` 的 `TA_TIER_<tool>` 声明，self-check 对账 facts.conf 口径。
 
 ---
 
@@ -307,7 +322,7 @@ Swarm-yuan/
 | spec 模板 | 22 主段（§22=标准合规） |
 | 领域知识 | 32 个领域 |
 | 认知基底 | 5 层 |
-| 兼容 AI 工具 | 7 个 |
+| 兼容 AI 工具 | 7 个（三档：runnable 7 / cli 6 / deep 1，见「AI 工具兼容三档」） |
 | 三平台 | macOS / Linux / Windows（CI 全覆盖：ubuntu-latest + macos-latest + windows-latest） |
 | 零占位符 | ✅ |
 | 自举 | ✅ |

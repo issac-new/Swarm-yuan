@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # kimi.sh — Kimi 适配器：仅项目级 <proj>/AGENTS.md（标记区块包裹）
+# TA_TIER=cli（目录复制 + --render-tools 规则派生）
 # 依据（访问 2026-07-20）：https://gist.github.com/hungson175/76131bb8434f9d58ee7b2f08c3242624
 #   Kimi 仅读项目树内 AGENTS.md / .kimi/AGENTS.md（root→cwd），无全局指令文件位，故 user 级跳过。
 render_tool_kimi() {  # <skill_dir> <proj> <level>
