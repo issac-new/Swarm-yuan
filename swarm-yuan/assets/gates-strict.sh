@@ -749,6 +749,36 @@ check_compliance() {
       found=1
     fi
   fi
+  # ---- WP-S1 标准映射表核验（STANDARDS_MAP_FILE 配置或默认探测；文件不存在则跳过）----
+  local _smap="${STANDARDS_MAP_FILE:-}"
+  if [[ -z "$_smap" ]]; then
+    # 默认探测 SKILL_DIR/assets/standards-map.conf（SKILL_DIR 用 _CONF_DIR 推导，同矩阵探测口径）
+    local _smap_dir _smap_cand
+    _smap_dir=$(cd "${_CONF_DIR}/.." 2>/dev/null && pwd || echo "")
+    _smap_cand="${_smap_dir}/assets/standards-map.conf"
+    [[ -n "$_smap_dir" && -f "$_smap_cand" ]] && _smap="$_smap_cand"
+  fi
+  if [[ -n "$_smap" && -f "$_smap" ]]; then
+    local _ln_no=0 _bad_fmt="" _bad_conf="" _row _nf _cf
+    while IFS= read -r _row || [[ -n "$_row" ]]; do
+      _ln_no=$((_ln_no+1))
+      case "$_row" in ''|\#*) continue;; esac
+      _nf=$(printf '%s\n' "$_row" | awk -F'|' '{print NF}')
+      if [[ "$_nf" -ne 5 ]]; then
+        _bad_fmt="${_bad_fmt}${_ln_no}行(${_nf}字段) "
+        continue
+      fi
+      _cf=$(printf '%s\n' "$_row" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$5); print $5}')
+      case "$_cf" in high|medium|unverified) ;; *) _bad_conf="${_bad_conf}${_ln_no}行(${_cf}) ";; esac
+    done < "$_smap"
+    if [[ -n "$_bad_fmt" ]]; then
+      fail "gate_compliance_standards_map_format: 标准映射表字段数≠5：${_bad_fmt}（须为 rule|cwe|gb_iso|asvs5|confidence 五字段）"
+    fi
+    if [[ -n "$_bad_conf" ]]; then
+      fail "gate_compliance_standards_map_confidence: 标准映射表 confidence 非法值：${_bad_conf}（仅 high|medium|unverified）"
+    fi
+    [[ -z "$_bad_fmt" && -z "$_bad_conf" ]] && pass "标准映射表核验通过（${_smap}）"
+  fi
   [[ $found -eq 0 ]] && pass "标准合规矩阵校验通过（锚点齐备，无占位符）"
 }
 
