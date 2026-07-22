@@ -297,9 +297,94 @@ auto_phase() {
 }
 
 show_status() {
-  [[ ! -f "$STATE_FILE" ]] && { echo "ERROR: 状态文件不存在，先 init"; exit 1; }
+  [[ ! -f "$STATE_FILE" ]] && { echo "ERROR: 状态文件不存在"; exit 1; }
   echo "=== 状态: $STATE_FILE ==="
   cat "$STATE_FILE"
+}
+
+# ===== G1 C 档：checkpoint/restore 阶段级可回滚 =====
+# 与决策 13 断点续传（文件级幂等补缺）正交——checkpoint 是显式的阶段级一致性快照，
+# restore 回滚到指定快照（恢复 phase + 截断 decisions.jsonl 到快照行数 + 报告关键文件哈希变化）。
+# 快照存 $STATE_DIR/checkpoints/<ts>-<phase>.ckpt（bash 3.2 兼容：KEY=VALUE 行，无 declare -A）。
+
+# 计算关键文件哈希（decisions.jsonl / trace.jsonl / state.yaml 行数 + cksum）
+_ckpt_fingerprint() {
+  local dec="$STATE_DIR/decisions.jsonl" tr="$STATE_DIR/trace.jsonl"
+  local dec_lines=0 tr_lines=0 dec_sum="-" tr_sum="-"
+  [[ -f "$dec" ]] && dec_lines=$(wc -l < "$dec" | tr -d ' ')
+  [[ -f "$tr" ]] && tr_lines=$(wc -l < "$tr" | tr -d ' ')
+  command -v cksum >/dev/null 2>&1 || { echo "nocksum"; return; }
+  [[ -f "$dec" ]] && dec_sum=$(cksum < "$dec" | awk '{print $1}')
+  [[ -f "$tr" ]] && tr_sum=$(cksum < "$tr" | awk '{print $1}')
+  echo "decisions_lines=$dec_lines trace_lines=$tr_lines decisions_cksum=$dec_sum trace_cksum=$tr_sum"
+}
+
+checkpoint_phase() {
+  [[ ! -f "$STATE_FILE" ]] && { echo "ERROR: 状态文件不存在，先 init"; exit 1; }
+  local current; current=$(get_field phase)
+  local cp_dir="$STATE_DIR/checkpoints"
+  mkdir -p "$cp_dir" 2>/dev/null || { echo "ERROR: 无法创建 $cp_dir"; exit 1; }
+  local ts; ts="$(date -u +%Y%m%dT%H%M%SZ)"
+  local cp_file="$cp_dir/${ts}-${current}.ckpt"
+  {
+    echo "checkpoint_ts=$ts"
+    echo "phase=$current"
+    echo "created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    _ckpt_fingerprint
+  } > "$cp_file"
+  echo "✓ checkpoint 已创建: $cp_file"
+  echo "  phase=$current · $(_ckpt_fingerprint)"
+}
+
+list_checkpoints() {
+  local cp_dir="$STATE_DIR/checkpoints"
+  if [[ ! -d "$cp_dir" ]] || [[ -z "$(ls -A "$cp_dir" 2>/dev/null)" ]]; then
+    echo "（无 checkpoint；用 'state-machine.sh checkpoint' 创建阶段级快照）"
+    return 0
+  fi
+  echo "=== checkpoints（${cp_dir}）==="
+  local f
+  for f in "$cp_dir"/*.ckpt; do
+    [[ -f "$f" ]] || continue
+    echo "--- $(basename "$f") ---"
+    cat "$f"
+  done
+}
+
+restore_phase() {
+  local target_ckpt="${1:-}"
+  local cp_dir="$STATE_DIR/checkpoints"
+  # 未指定则用最新 checkpoint
+  if [[ -z "$target_ckpt" ]]; then
+    target_ckpt=$(ls -t "$cp_dir"/*.ckpt 2>/dev/null | head -1)
+    [[ -z "$target_ckpt" ]] && { echo "ERROR: 无 checkpoint 可恢复（先 'checkpoint' 创建）"; exit 1; }
+  fi
+  [[ -f "$target_ckpt" ]] || target_ckpt="$cp_dir/$target_ckpt"
+  [[ -f "$target_ckpt" ]] || { echo "ERROR: checkpoint 不存在: $target_ckpt"; exit 1; }
+  # 读快照（KEY=VALUE；fingerprint 行是单行多空格串，取首个字段值）
+  local cp_phase cp_dec_lines
+  cp_phase=$(grep '^phase=' "$target_ckpt" | sed 's/^phase=//' | awk '{print $1}')
+  cp_dec_lines=$(grep '^decisions_lines=' "$target_ckpt" | sed 's/^decisions_lines=//' | awk '{print $1}')
+  echo "=== restore 到 checkpoint: $(basename "$target_ckpt") ==="
+  # 恢复 phase（允许回退——restore 是显式回滚操作，与 transition 的"不可回退"约束正交）
+  set_field phase "$cp_phase" >/dev/null
+  echo "  phase 已回滚到: $cp_phase"
+  # 截断 decisions.jsonl 到快照行数（回滚快照之后的决策）
+  local dec="$STATE_DIR/decisions.jsonl"
+  # 防御：cp_dec_lines 规范化（fingerprint 单行多值时取首字段，非数字降级为空）
+  cp_dec_lines=$(printf '%s' "$cp_dec_lines" | awk '{print $1}')
+  echo "$cp_dec_lines" | grep -qE '^[0-9]+$' || cp_dec_lines=""
+  if [[ -f "$dec" && -n "$cp_dec_lines" && "$cp_dec_lines" -ge 0 ]]; then
+    local cur_lines; cur_lines=$(wc -l < "$dec" | tr -d ' ')
+    if [[ "$cur_lines" -gt "$cp_dec_lines" ]]; then
+      local tmp; tmp="$(mktemp /tmp/swarmdec.XXXXXX)"
+      head -n "$cp_dec_lines" "$dec" > "$tmp" && cat "$tmp" > "$dec" && rm -f "$tmp"
+      echo "  decisions.jsonl 截断: ${cur_lines} → ${cp_dec_lines} 行（回滚 $((cur_lines-cp_dec_lines)) 条快照后决策）"
+    else
+      echo "  decisions.jsonl 无需截断（当前 $cur_lines 行 ≤ 快照 $cp_dec_lines 行）"
+    fi
+  fi
+  echo "✓ restore 完成（仅回滚 phase 与决策记录；文件内容不回滚——文件级恢复走决策 13 断点续传/git）"
 }
 
 case "${1:-}" in
@@ -311,6 +396,9 @@ case "${1:-}" in
   next) next_phase ;;
   auto) auto_phase ;;
   status) show_status ;;
+  checkpoint) checkpoint_phase ;;
+  checkpoints|list-checkpoints) list_checkpoints ;;
+  restore) restore_phase "${2:-}" ;;
   # update: 原地修订 plan + reconcile 关联 artifacts（openspec v1.6.0 /opsx:update 能力的脚本背书）
   # 不回退到 open 阶段，在当前 design 阶段内修订 plan
   update)
