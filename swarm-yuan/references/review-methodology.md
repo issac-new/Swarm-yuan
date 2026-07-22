@@ -405,3 +405,5 @@ ocr 新增 LLM provider 支持：
 **FP 硬排除**：对已知误报类（如"文档文件不是可执行代码"、"SKILL.md 是可执行提示代码不适用文档豁免"）建立排除清单，审查时先过滤。
 
 **门禁承载**：`precheck.sh check_review`——ocr review 输出对含 finding 关键词但缺 `file:line` 引用的行降级 warn（pre-emit 引用门）；AI 5 维度审查降级路径输出 pre-emit 指引。姿态为 **warn 级 advisory**（不新增 fail），与现有降级策略一致。
+
+**FP_EXCLUSIONS 配置（轻量固化）**：`precheck.conf` 可配 `FP_EXCLUSIONS`（`|` 分隔的 ERE 模式），check_review 的 ocr 输出对命中已知误报类的 finding 降级提示。内置默认排除：`README|\.md:|\.txt:|// |# |\* `（文档/注释行）。置信度标定为 **AI 审查的结构化输出要求**（finding 带 high/medium/low，低置信压附录），非硬门禁——完整标定学习闭环（标定历史反哺）留后续（需真实项目数据校准，硬门禁化风险高）。

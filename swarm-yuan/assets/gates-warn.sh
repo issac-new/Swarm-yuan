@@ -177,6 +177,16 @@ check_review() {
         if [[ "${_noref_cnt:-0}" -gt 0 ]]; then
           warn "pre-emit 引用门：${_noref_cnt} 条 finding 未引用动机代码行（file:line），按 gstack #1539 降级（未验证 finding 不进主报告）"
         fi
+        # A 方向：FP 硬排除清单（gstack cso 22 条硬排除吸收，治误报）——
+        # 已知误报类模式命中时降级提示（可配 FP_EXCLUSIONS，| 分隔的 ERE 模式）。
+        # 内置默认排除：文档文件误报（md/txt 不是可执行代码）、注释行、test/mock 样本。
+        local _fp_patterns="${FP_EXCLUSIONS:-README|\.md:|\.txt:|// |# |\* }"
+        local _fp_cnt
+        _fp_cnt=$(echo "$diff_output" | grep -iE 'issue|finding|问题|风险|漏洞' \
+          | grep -E "$_fp_patterns" | grep -c . || true)
+        if [[ "${_fp_cnt:-0}" -gt 0 ]]; then
+          warn "FP 硬排除：${_fp_cnt} 条 finding 命中已知误报类（文档/注释/样本），降级提示（可配 FP_EXCLUSIONS 扩展）"
+        fi
       else
         # --from/--to 失败时降级为 ocr scan
         warn "ocr review --from/--to 失败（可能无 diff 或参数不支持），降级 ocr scan"
@@ -198,6 +208,9 @@ check_review() {
     # A 方向：pre-emit 引用门指引（gstack #1539）——AI 审查每条 finding 须引用动机代码行（file:line），
     # 缺引用的 finding 视为未验证，压出主报告。置信度标定：high/medium/low，低置信压附录。
     echo "  pre-emit 引用门（gstack #1539）：每条 finding 须引用动机代码行（file:line），缺引用=未验证压出主报告"
+    # A 方向：置信度标定 + FP 硬排除指引（gstack cso 吸收）——
+    # finding 带置信度（high/medium/low，低置信压附录）；已知误报类（文档/注释/样本）先排除。
+    echo "  置信度标定（gstack cso）：finding 带 high/medium/low 置信度，低置信压附录；FP 硬排除：文档/注释/test/mock 样本误报先过滤（可配 FP_EXCLUSIONS）"
   fi
 
   # 附加：如果装了 gstack，提示可用的扩展审查维度
