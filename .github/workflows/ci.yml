@@ -205,7 +205,7 @@ jobs:
           done
           # 信息层：扩展脚本（只报 error 级，不 fail）
           for f in assets/state-machine.sh scripts/gate-report.sh scripts/gate-trends.sh \
-                   scripts/install-offline-win.sh scripts/build-offline-win.sh \
+                   scripts/release-src-packages.sh \
                    tests/run-gate-fixture.sh tests/e2e/run-e2e.sh \
                    ../verifier/v1/run-verifier.sh ../verifier/v1/run-one-fixture.sh \
                    ../verifier/v1/metrics-assert.sh ../verifier/v1/cli-ab-test.sh; do
