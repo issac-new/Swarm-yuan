@@ -171,16 +171,30 @@ ${lazy_files}"
   # ====================================================================
   # fw_react_server_client_boundary(warn)：RSC 内禁 Hook/浏览器 API
   # ====================================================================
-  # 仅在 Next.js App Router 项目（检出 app/ 目录或 'use client' 用法）触发
+  # WP-R P3-1: 原"任一文件含 'use client' 即判 is_app_router=1"对 CSR SPA 误报——
+  # shadcn ui 组件自带 'use client'(模板残留)但项目是 react-router CSR 非 Next.js RSC。
+  # 修复: 须同时满足"含 use client"且"是 Next.js App Router 项目"(检出 next.config 或
+  # app/ 目录含 page.tsx/layout.tsx)。仅 use client 不够——CSR 项目也可能有残留。
   local is_app_router=0
+  local _has_use_client=0
   for f in "${srcarr[@]}"; do
     if grep -qE "'use client'|\"use client\"" "$f" 2>/dev/null; then
-      is_app_router=1
+      _has_use_client=1
       break
     fi
   done
+  if [[ "$_has_use_client" -eq 1 ]]; then
+    # 有 use client,进一步判定是否真 Next.js App Router(非 CSR SPA 误带)
+    # 信号: next.config.{js,ts,mjs} 存在,或 app/ 目录含 page.tsx/layout.tsx
+    local _proj_root="${PROJECT_DIR:-.}"
+    if [[ -f "$_proj_root/next.config.js" || -f "$_proj_root/next.config.ts" || -f "$_proj_root/next.config.mjs" ]] \
+       || find "$_proj_root" -maxdepth 3 -type f \( -name "page.tsx" -o -name "layout.tsx" \) \
+            -not -path '*/node_modules/*' -print -quit 2>/dev/null | grep -q .; then
+      is_app_router=1
+    fi
+  fi
   if [[ "$is_app_router" -eq 0 ]]; then
-    pass "fw_react_server_client_boundary: 非 App Router 项目，跳过"
+    pass "fw_react_server_client_boundary: 非 Next.js App Router 项目，跳过（CSR SPA 的 use client 残留不触发）"
   else
     local rsc_bad=""
     for f in "${srcarr[@]}"; do
