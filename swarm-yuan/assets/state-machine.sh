@@ -17,8 +17,8 @@ set -euo pipefail
 # ===== 按项目定制 =====
 STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
 STATE_FILE="$STATE_DIR/state.yaml"
-# 阶段顺序（comet 5 阶段模式，可按项目裁剪）
-PHASES=("open" "design" "build" "verify" "archive")
+# 阶段顺序（comet 5 阶段模式 + D 方向 operate 发布后运营，可按项目裁剪）
+PHASES=("open" "design" "build" "verify" "archive" "operate")
 # =====================
 
 pass() { echo "  ✓ $1"; }
@@ -177,6 +177,19 @@ guard_phase() {
       vr=$(get_field verify_result)
       [[ "$vr" != "pass" ]] && { fail "verify_result=${vr}，须先 pass"; ok=0; }
       [[ $ok -eq 1 ]] && pass "archive 准入: verify_result=${vr}"
+      ;;
+    operate)
+      # D 方向：operate 发布后运营准入——verify 通过 + 运营报告（warn 不 fail，可选延伸阶段）
+      local vr
+      vr=$(get_field verify_result)
+      [[ "$vr" != "pass" ]] && echo "  ⚠ operate 准入: verify_result=${vr}（建议先 verify pass）"
+      local op_report="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/operate-report.md"
+      if [[ -f "$op_report" ]]; then
+        pass "operate 准入: 运营报告存在（${op_report}）"
+      else
+        echo "  ⚠ operate 准入: 运营报告未创建（可选延伸阶段，warn 不阻塞）"
+      fi
+      pass "operate 阶段（发布后运营，可选延伸）"
       ;;
     *)
       fail "未知阶段: $phase"; ok=0
