@@ -18,6 +18,10 @@ run_one_capture() {  # $1=violating|compliant ；stdout=precheck 输出，$rc=�
   tmp="$(mktemp -d /tmp/vfx.XXXXXX)"
   mkdir -p "$tmp/scripts"
   cp "$BASE/assets/precheck.sh" "$tmp/scripts/precheck.sh"
+  # WP-Q1.3：拆分后 precheck.sh 依赖 gates-strict/warn/advisory.sh 三文件（source 守卫）
+  for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
+    [[ -f "$BASE/assets/$_gf" ]] && cp "$BASE/assets/$_gf" "$tmp/scripts/$_gf"
+  done
   REPO_ROOT="$(cd "$BASE/.." && pwd)"
   sed "s|__REPO_ROOT__|$REPO_ROOT|g" "$FX/$mode/precheck.conf" > "$tmp/scripts/precheck.conf"
   awk -v frag="$BASE/assets/framework-gates/$ID.sh" '

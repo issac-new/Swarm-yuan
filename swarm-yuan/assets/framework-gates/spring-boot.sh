@@ -34,7 +34,7 @@ _fw_spring_boot_check() {
       # 提取 @Transactional 标注的方法名（@Transactional 后若干行内的 "方法名(" 形式）
       local tx_methods
       tx_methods=$(printf '%s\n' "$code" | grep -A3 -E '^[[:space:]]*@Transactional\b' \
-        | grep -oE '\b(public|protected|private)?[[:space:]]*(static[[:space:]]+)?[A-Za-z_][][A-Za-z0-9_<>,. ]*[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)\(' \
+        | grep -oE '\b(public|protected|private)?[[:space:]]*(static[[:space:]]+)?[A-Za-z_][][A-Za-z0-9_<>,.[]*[[:space:]]+([a-zA-Z_][a-zA-Z0-9_]*)\(' \
         | sed -E 's/.*[[:space:]]([a-zA-Z_][a-zA-Z0-9_]*)\(/\1/' | sort -u)
       [[ -z "$tx_methods" ]] && continue
       local m
@@ -198,6 +198,12 @@ ${hits}
           match(line, /^[[:space:]]*/)
           indent = RLENGTH
           sub(/^[[:space:]]*/, "", line)
+          # 块列表项：上一命中键为 include 且缩进更深 → 取值
+          if (line ~ /^-[[:space:]]/ && inc_path != "" && indent > inc_indent) {
+            val = line; sub(/^-[[:space:]]*/, "", val)
+            printf "%s=%s\n", inc_path, val
+            next
+          }
           if (line !~ /^[A-Za-z0-9_.-]+[[:space:]]*:/) next
           key = line
           sub(/[[:space:]]*:.*/, "", key)
@@ -212,6 +218,13 @@ ${hits}
             val = line
             sub(/^[^:]*:[[:space:]]*/, "", val)
             printf "%s=%s\n", path, val
+            if (path == "management.endpoints.web.exposure.include" && val == "") {
+              inc_path = path; inc_indent = indent
+            } else {
+              inc_path = ""
+            }
+          } else {
+            inc_path = ""
           }
         }
       ' "$cfile" 2>/dev/null || true)

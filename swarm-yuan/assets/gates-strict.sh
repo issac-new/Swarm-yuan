@@ -873,14 +873,14 @@ check_privacy() {
   for d in "${existing[@]}"; do
     for pat in "${patterns[@]}"; do
       # 滤 example/mock/dummy/placeholder/样例 噪声行；-I 跳过二进制
-      hits=$(grep -rnIE "$pat" "$d" 2>/dev/null | grep -v -i 'example\|mock\|dummy\|placeholder\|样例' || true)
+      hits=$(grep -rnIE "$pat" "$d" 2>/dev/null | grep -viE 'example|mock|dummy|placeholder|样例' || true)
       [[ -n "$hits" ]] && pii_files="${pii_files}$(echo "$hits" | cut -d: -f1)
 "
     done
     # 敏感关键词（固定串、忽略大小写）
     if [[ ${#PRIVACY_SENSITIVE_KEYWORDS[@]} -gt 0 ]]; then
       for kw in "${PRIVACY_SENSITIVE_KEYWORDS[@]}"; do
-        hits=$(grep -rniF "$kw" "$d" 2>/dev/null | grep -v -i 'example\|mock\|dummy\|placeholder\|样例' || true)
+        hits=$(grep -rniF "$kw" "$d" 2>/dev/null | grep -viE 'example|mock|dummy|placeholder|样例' || true)
         [[ -n "$hits" ]] && pii_files="${pii_files}$(echo "$hits" | cut -d: -f1)
 "
       done

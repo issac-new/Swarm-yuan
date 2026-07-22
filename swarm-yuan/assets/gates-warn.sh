@@ -138,7 +138,7 @@ check_sensitive() {
         --include='*.ts' --include='*.vue' --include='*.svelte' --include='*.js' --include='*.mjs' \
         --include='*.patch' --include='*.py' --include='*.go' --include='*.rs' \
         --include='*.scss' --include='*.java' 2>/dev/null \
-        | grep -v -i 'example\|placeholder\|test\|mock\|dummy\|<.*>' || true)
+        | grep -viE 'example|placeholder|test|mock|dummy|<.*>' || true)
       if [[ -n "$matches" ]]; then
         fail "疑似敏感信息 ($dir):"
         echo "$matches" | head -10
