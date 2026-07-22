@@ -123,9 +123,16 @@ install_to() {
   fi
 
   # G7：按档位输出 + 非 Claude 死重标注（cmd_dir 空 = 非 Claude 环境 = cli 档）
-  # 只标注不改复制逻辑（C 档骨架裁剪留验证稳定后）；hooks/commands 为 deep 档专属。
   if [[ -z "$cmd_dir" ]]; then
-    echo "  ℹ ${name} 为 cli 档（目录复制 + --render-tools 规则派生）；骨架中 hooks/commands 目录为 deep 档（Claude Code）专属，cli 档不消费（死重，不影响功能）"
+    # G7 C 档：骨架裁剪（opt-in）——SWARM_YUAN_SLIM=1 时删除 cli 档不消费的 deep 档死重
+    # （hooks/commands/.mcp.json/settings.local.json）。默认保持现状不破坏既有用户升级路径。
+    if [[ "${SWARM_YUAN_SLIM:-0}" == "1" ]]; then
+      rm -rf "$dest/hooks" "$dest/commands" "$dest/.claude" "$dest/.mcp.json" "$dest/settings.local.json" 2>/dev/null || true
+      echo "  ✓ 骨架裁剪（SWARM_YUAN_SLIM=1）：已删除 cli 档死重（hooks/commands/.claude/.mcp.json/settings.local.json）"
+      echo "  ℹ ${name} 为 cli 档（目录复制 + --render-tools 规则派生）；deep 档专属文件已裁剪"
+    else
+      echo "  ℹ ${name} 为 cli 档（目录复制 + --render-tools 规则派生）；骨架中 hooks/commands 目录为 deep 档（Claude Code）专属，cli 档不消费（死重，不影响功能；设 SWARM_YUAN_SLIM=1 可裁剪）"
+    fi
   fi
 
   # 多平台规则渲染（P3）：补生成该工具原生规则文件；渲染失败仅 warn，不影响安装

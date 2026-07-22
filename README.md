@@ -247,7 +247,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | cli | 集成 | runnable + `--render-tools` 派生原生规则文件（.mdc/.windsurf/AGENTS.md/GEMINI.md 标记区块） | Cursor/Windsurf/Codex/OpenCode/Gemini/Kimi（6 个） |
 | deep | 深度集成 | cli + slash command 注册 + hooks/commands/MCP（hooks.json/.mcp.json/commands/*.md 随骨架生成） | Claude Code（1 个） |
 
-> 非 Claude 工具安装的骨架中 hooks/commands 目录为 deep 档（Claude Code）专属，cli 档不消费（死重，不影响功能）。
+> 非 Claude 工具安装的骨架中 hooks/commands 目录为 deep 档（Claude Code）专属，cli 档不消费（死重，不影响功能）。设 `SWARM_YUAN_SLIM=1` 可在安装时裁剪这些死重（opt-in，默认保留不影响既有用户）。
 > 档位元数据机器可读：`assets/tool-adapters/common.sh` 的 `TA_TIER_<tool>` 声明，self-check 对账 facts.conf 口径。
 
 ---
