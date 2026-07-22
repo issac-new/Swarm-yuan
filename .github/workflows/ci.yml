@@ -250,6 +250,51 @@ jobs:
           rc=$?
           [[ "$rc" -eq 0 ]] && echo "✓ verifier all passed" || { echo "✗ verifier all failed RC=$rc"; exit 1; }
 
+  # ---------- Job 6b：真实项目冒烟（R9 核心建议：fixture 不能替代真实项目测试）----------
+  # 背景：R9 三缺陷类（骨架在真实项目上不可用）fixture 测不出来——fixture 目录受控，
+  #   真实项目（RuoYi-Vue3/yudao-cloud）的体量/结构/分支名才会暴露 R9 P0 类崩溃。
+  # 断言目标：骨架生成成功 + precheck --all 有输出不崩溃（门禁真实执行）；
+  #   不断言填充完整度（填充是 AI 行为，R9 已注明），门禁 fail/warn 结果本身不算崩溃。
+  # 真实用法核对（Task 9）：generate-skill.sh 无 --skill-root flag，输出目录用第 3 位置
+  #   参数 target-dir（SKILL_DIR=$TARGET_DIR/$SKILL_NAME）；生成后 precheck.conf 的
+  #   PROJECT_DIR 占位符必须 sed 替换为真实项目根，否则 precheck cd 占位符路径即崩。
+  real-project-smoke:
+    name: Real-project smoke (R9 fixture ≠ 真实项目)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone real projects (gitee 优先 GitHub 兜底；SHA 落 artifact 供复现)
+        run: |
+          mkdir -p /tmp/real && cd /tmp/real
+          git clone --depth 1 https://gitee.com/mingyue/RuoYi-Vue3.git ruoyi 2>/dev/null || \
+            git clone --depth 1 https://github.com/yangzongzhuan/RuoYi-Vue3.git ruoyi
+          git clone --depth 1 https://github.com/YunaiV/yudao-cloud.git yudao || \
+            echo "yudao clone 失败——记 artifact 继续（冒烟循环按目录存在性跳过）"
+          (cd ruoyi && git rev-parse HEAD) > /tmp/real/SHAS.txt
+          (cd yudao && git rev-parse HEAD) >> /tmp/real/SHAS.txt 2>/dev/null || true
+      - name: Generate skill + precheck smoke（骨架生成 + precheck --all 不崩溃）
+        run: |
+          cd "$GITHUB_WORKSPACE/swarm-yuan"
+          for proj in ruoyi yudao; do
+            [[ -d "/tmp/real/$proj" ]] || continue
+            bash scripts/generate-skill.sh "smoke-$proj" "/tmp/real/$proj" /tmp/real/skills
+            SK="/tmp/real/skills/smoke-$proj"
+            [[ -f "$SK/scripts/precheck.sh" ]] || { echo "✗ $proj 骨架缺 precheck.sh"; exit 1; }
+            sed -i "s|PROJECT_DIR=\"<项目根绝对路径>\"|PROJECT_DIR=\"/tmp/real/$proj\"|" "$SK/scripts/precheck.conf"
+            out=$(cd "/tmp/real/$proj" && bash "$SK/scripts/precheck.sh" --all 2>&1 || true)
+            # 崩溃类（无输出/门禁未真实执行）才 fail；门禁结果 fail/warn 属正常冒烟发现
+            [[ -n "$out" ]] || { echo "✗ $proj precheck --all 无输出（R9 P0 类崩溃）"; exit 1; }
+            echo "$out" | grep -q "门禁" || { echo "✗ $proj precheck --all 门禁未真实执行（疑似崩溃）"; echo "$out" | tail -10; exit 1; }
+            echo "$out" | tail -5
+            echo "✓ $proj smoke passed（骨架生成 + precheck --all 有输出不崩溃）"
+          done
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-project-smoke
+          path: /tmp/real/SHAS.txt
+
   # ---------- Job 7：Windows 兼容（WP2.1：三平台 CI 闭环，Windows 不再是虚假声称）----------
   # ---------- Job 8a：Windows 轻量语法面（push/PR 常跑，WP-L）----------
   windows-syntax:
