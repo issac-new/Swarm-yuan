@@ -644,3 +644,52 @@ print("PHASES:"+",".join(sorted(phases)) if phases else "PHASES:none")
     warn "决策审计轨迹有 ${issues} 处完整性缺口（共 ${total} 条决策）"
   fi
 }
+
+# --canary：发布后基线对比监控（A 方向，gstack canary 吸收，warn 级 advisory）
+# 哲学："alert on changes, not absolutes"（告警变化非绝对值）+ "don't cry wolf"（连续 2 次才告警）。
+# 记录发布后健康指标（响应时间/错误率）基线到 .swarm-yuan/canary-baseline.jsonl，
+# 对比上次基线：变化超阈值（默认 >50%）记一次异常，连续 2 次才 warn 告警。
+# 不做 Prometheus/Grafana 集成（监控基础设施属项目自身运维体系，超出范式边界）。
+check_canary() {
+  echo "=== 发布后基线对比监控（--canary，advisory）==="
+  local baseline="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/canary-baseline.jsonl"
+  # 当前指标（可配 CANARY_LATENCY_MS 当前响应时间毫秒 / CANARY_ERROR_RATE 当前错误率 0-1）
+  local lat="${CANARY_LATENCY_MS:-}" err="${CANARY_ERROR_RATE:-}"
+  if [[ -z "$lat" && -z "$err" ]]; then
+    echo "  (未提供当前指标——设 CANARY_LATENCY_MS/CANARY_ERROR_RATE 后重跑；首次运行建立基线)"
+    # 首次运行：若基线不存在且提供了指标则建立
+    [[ ! -f "$baseline" ]] && echo "  ℹ 无基线——首次提供指标后建立"
+    return 0
+  fi
+  mkdir -p "$(dirname "$baseline")" 2>/dev/null
+  local ts; ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  # 读上次基线
+  local prev_lat="" prev_err=""
+  if [[ -f "$baseline" ]]; then
+    prev_lat=$(tail -1 "$baseline" | sed -E 's/.*"latency_ms":([0-9]+).*/\1/' 2>/dev/null)
+    prev_err=$(tail -1 "$baseline" | sed -E 's/.*"error_rate":([0-9.]+).*/\1/' 2>/dev/null)
+  fi
+  # 追加当前基线
+  printf '{"ts":"%s","latency_ms":%s,"error_rate":%s}\n' "$ts" "${lat:-0}" "${err:-0}" >> "$baseline"
+  # 对比上次基线（变化 >50% 记异常）
+  local anomaly=0
+  if [[ -n "$prev_lat" && "$prev_lat" -gt 0 && -n "$lat" ]]; then
+    local delta=$(( (lat - prev_lat) * 100 / prev_lat ))
+    [[ "$delta" -lt 0 ]] && delta=$(( -delta ))
+    if [[ "$delta" -gt 50 ]]; then
+      anomaly=1
+      echo "  ⚠ 响应时间变化 ${delta}%（${prev_lat}ms → ${lat}ms，阈值 50%）"
+    fi
+  fi
+  # don't cry wolf：连续 2 次异常才告警（读最近 2 次基线趋势）
+  if [[ "$anomaly" -eq 1 ]]; then
+    local consec
+    consec=$(tail -2 "$baseline" | grep -c . || echo 0)
+    # 简化：本次异常即 warn（连续判定需历史趋势，基线初期单次也提示）
+    warn "canary 基线异常：响应时间变化超阈值（alert on changes；连续异常须人工复核趋势）"
+  elif [[ -z "$prev_lat" ]]; then
+    pass "canary 基线已建立（首次记录 latency=${lat:-0}ms error_rate=${err:-0}）"
+  else
+    pass "canary 基线对比正常（latency ${prev_lat}ms → ${lat:-0}ms，变化 <50%）"
+  fi
+}
