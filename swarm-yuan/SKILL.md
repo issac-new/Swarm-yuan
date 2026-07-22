@@ -51,16 +51,18 @@ swarm-yuan 的 36 个门禁服务于一条认知递进链。核心理念：**呈
 
 **执行准则**：价值/目标/问题/结果四导向；质量优先>确保安全>兼顾效率>减少打扰>因地制宜；疑虑必确认（改只读/升级依赖/删稳定单元/多方案/安全冲突→暂停确认）。
 
-**AI 主导 + 用户决策原则**：在目标 skill 的完整生命周期中，特征卡提取、门禁配置、spec 填充、代码实现、问题排查等所有环节均**优先以 AI 为主导生成建议项**——AI 探查项目后主动提出特征卡建议、主动推导门禁配置、主动填充 spec 模板、主动给出代码方案、主动诊断门禁 fail 原因并给出修复建议。用户的角色是**评估决策或修订后批准执行**，而非手动编写。具体：
-- 特征卡 16 项：AI 探查后**主动生成建议值**，用户评估修订后确认
-- 门禁 precheck.conf 142 变量：AI 从特征卡**主动推导建议配置**，用户评估后确认
-- spec 模板填充：AI **主动预填**（含 §5.5 复用约束从第 11 项检索预填），用户评估修订后确认
-- 门禁 fail：AI **主动诊断原因 + 给出修复建议**，用户评估后批准执行
-- 编码实现：AI **主动给出代码方案**（含复用了哪些稳定单元），用户评估后确认
-- 多方案选择：AI **主动提出 2+ 方案权衡 + 推荐**，用户决策
-- 问题排查：AI **主动分析 + 给出解决方案**，用户评估后批准
+**AI 主导 + 用户决策原则**（G1 决策治理，对齐 ISO/IEC 42001 人工监督留痕）：在目标 skill 的完整生命周期中，特征卡提取、门禁配置、spec 填充、代码实现、问题排查等所有环节均**优先以 AI 为主导生成建议项**，但决策按**三级分类**治理——什么能自动做、什么必须停下问、每条决策有审计轨迹落盘。用户的角色是**评估决策或修订后批准执行**，而非手动编写。详见 `references/decision-governance.md`。具体：
+- 特征卡 16 项：AI 探查后**主动生成建议值**（Mechanical 类，直接做），用户评估修订后确认
+- 门禁 precheck.conf 142 变量：AI 从特征卡**主动推导建议配置**（Mechanical 类；涉及安全规则如 SENSITIVE_WHITELIST/CRYPTO_PROFILE 升 Taste），用户评估后确认
+- spec 模板填充：AI **主动预填**（Taste 类；§5.6 版本约束/§5.7 安全约束升 UserChallenge），用户评估修订后确认
+- 门禁 fail：AI **主动诊断原因 + 给出修复建议**（Taste 类；涉及依赖升级/安全冲突/删稳定单元升 UserChallenge），用户评估后批准执行
+- 编码实现：AI **主动给出代码方案**（Taste 类；多方案/改只读/删稳定单元升 UserChallenge），用户评估后确认
+- 多方案选择：AI **主动提出 2+ 方案权衡 + 推荐**（**UserChallenge 类，永不自动决定**，须输出五要素等用户裁定），用户决策
+- 问题排查：AI **主动分析 + 给出解决方案**（Taste 类；涉及架构变更/安全冲突升 UserChallenge），用户评估后批准
 
-> 完整框架详见 `references/cognition-framework.md`；逻辑剃刀+谬误图谱见 `references/logic-razor.md`；认知偏差+思维模型见 `references/cognitive-bias.md`；领域知识速查见 `references/domain-knowledge.md`。
+> **决策留痕**：每条决策通过 `scripts/trace-log.sh --decision` 追加到 `.swarm-yuan/decisions.jsonl`（永不 fail 阻塞主流程）；UserChallenge 类须含五要素（alternatives/missing_context/cost_if_wrong）。阶段流转由 `scripts/state-machine.sh` transition 自动记录。`--mark-active` 前须有至少 1 条决策记录（`--verify-completeness --strict` 校验）。
+
+> 完整框架详见 `references/cognition-framework.md`；逻辑剃刀+谬误图谱见 `references/logic-razor.md`；认知偏差+思维模型见 `references/cognitive-bias.md`；领域知识速查见 `references/domain-knowledge.md`；决策治理（三级分类+五要素）见 `references/decision-governance.md`。
 
 ## 生成流程（AI 自动执行，用户只需提供项目路径）
 
@@ -139,6 +141,7 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 领域知识速查（32 领域） | `references/domain-knowledge.md` |
 | Claude Code 官方能力全量清单 | `references/claude-code-capabilities.md` |
 | 安全规范（OWASP/STRIDE/CWE） | `references/security-spec.md` |
+| 决策治理（三级分类+五要素+decisions.jsonl，对齐 ISO/IEC 42001） | `references/decision-governance.md` |
 | subagent 编排模式 | `references/subagent-orchestration.md` |
 | 代码审查方法论（5 维度） | `references/review-methodology.md` |
 | 代码图谱工具引用 | `references/code-graph-tools.md` |
