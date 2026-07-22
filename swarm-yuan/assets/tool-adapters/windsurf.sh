@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # windsurf.sh — Windsurf 适配器：项目级 .windsurf/rules/<skill>.md；用户级全局 memories/global_rules.md
+# TA_TIER=cli（目录复制 + --render-tools 规则派生）
 # 格式依据（访问 2026-07-20）：https://thepromptshelf.dev/blog/windsurf-vs-cursor-vs-agents-md-2026/
 #   trigger 四值 always_on|model_decision|glob|manual；model_decision 凭 description 由模型决定加载，
 #   与 Cursor 的 Agent Requested 对齐。2026-06 起新版偏好 .devin/rules/，.windsurf/rules/ 保留回退

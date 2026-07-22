@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # cursor.sh — Cursor 适配器：<proj>/.cursor/rules/<skill>.mdc
+# TA_TIER=cli（目录复制 + --render-tools 规则派生）
 # 格式依据（访问 2026-07-20）：https://qaskills.sh/blog/cursor-skill-md-frontmatter-schema-guide
 #   frontmatter 三字段 description/globs/alwaysApply；description 有值 + globs 空 + alwaysApply:false
 #   = Agent Requested（按描述相关性激活），与 skill 的语义触发一致。
