@@ -22,8 +22,8 @@ swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 40 门禁
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
   - `SKILL.md` — the AI entry point / operating manual (the generation pipeline Step 0–10).
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
-  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~4000 lines, 36 gates = standard 27 via `--all-full` + compliance 9 via `--compliance-suite`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (179 config vars across the three, WP-I split), `spec-template.md` (22-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (61 per-framework gate fragments).
-  - `references/` — 18 methodology docs + `references/frameworks/<fw>.md` (61 framework rule sources).
+  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~4000 lines, 40 gates = standard 27 via `--all-full` + compliance 13 via `--compliance-suite`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (151 config vars across the three, WP-I split), `spec-template.md` (22-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (62 per-framework gate fragments).
+  - `references/` — 18 methodology docs + `references/frameworks/<fw>.md` (62 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).
 - **`verifier/`** — a self-contained acceptance harness that re-runs the whole suite and compares against a golden vector.
@@ -96,5 +96,5 @@ Many gates "sleep" (match nothing) on purpose; `docs/paradigm-decisions.md` docu
 - **No unit-test framework.** Correctness = fixture double-state tests + e2e + shellcheck + the `verifier/` golden-vector comparison.
 - **Single test** = `run-framework-fixture.sh <id>` (one framework) or `run-verifier.sh fixtures` (all).
 - **Fixture `precheck.conf` uses a `__REPO_ROOT__` placeholder** that the runner substitutes at runtime, so fixtures are machine-independent.
-- `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 61-fixture exit-code vector.
-- CI (`.github/workflows/ci.yml`) runs all four jobs on push/PR to `main`: 61 ruleset verifies, 61 fixture double-states, self-check freshness, and shellcheck on core scripts.
+- `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 62-fixture exit-code vector.
+- CI (`.github/workflows/ci.yml`) runs all four jobs on push/PR to `main`: 62 ruleset verifies, 62 fixture double-states, self-check freshness, and shellcheck on core scripts.

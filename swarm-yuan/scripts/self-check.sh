@@ -415,7 +415,7 @@ fw_freshness_check() {
 }
 fw_freshness_check
 
-# ===== 框架规则集核验（61 规则集四要素机械核验）=====
+# ===== 框架规则集核验（62 规则集四要素机械核验）=====
 fw_ruleset_verify() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local vfy="$base/scripts/verify-framework-ruleset.sh"
@@ -493,7 +493,7 @@ check_doc_consistency() {
     source "$facts_conf"; set -u
   fi
 
-  # 1. 框架规则文件数 == 门禁片段数（真值机械计数，当前 61 == 61）
+  # 1. 框架规则文件数 == 门禁片段数（真值机械计数，当前 62 == 62）
   local rule_cnt gate_cnt
   rule_cnt=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
   gate_cnt=$(ls "$base/assets/framework-gates/"*.sh 2>/dev/null | wc -l | xargs)

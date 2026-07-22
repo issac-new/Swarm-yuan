@@ -8,7 +8,7 @@
 
 [![Release](https://img.shields.io/badge/release-v2026.07.20-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.20)
 [![Feature Card](https://img.shields.io/badge/feature%20card-16-green)]()
-[![Quality Gates](https://img.shields.io/badge/quality%20gates-36-orange)]()
+[![Quality Gates](https://img.shields.io/badge/quality%20gates-40-orange)]()
 [![Runtimes](https://img.shields.io/badge/runtimes-11-yellow)]()
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
