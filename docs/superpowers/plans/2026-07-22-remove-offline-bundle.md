@@ -430,7 +430,7 @@ trap 'rm -rf "$TMP"' EXIT
 # 上游仓库（与 self-check.sh install_from_src_release 的 zip 名一致）
 declare -a SOURCES=(
   "gstack|https://github.com/garrytan/gstack.git"
-  "superpowers|https://github.com/obra/superpowers-marketplace.git"
+  "superpowers|https://github.com/obra/superpowers.git"
   "ECC|https://github.com/affaan-m/ECC.git"
 )
 

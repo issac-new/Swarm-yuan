@@ -42,7 +42,7 @@ swarm-yuan 当前并存两套依赖安装体系:
 ### 3.2 新增
 
 - `swarm-yuan/scripts/release-src-packages.sh` —— 手动发版脚本:
-  1. `git clone --depth 1` 三个上游仓库(gstack `garrytan/gstack`、superpowers `obra/superpowers-marketplace`、ECC `affaan-m/ECC`)到临时目录
+  1. `git clone --depth 1` 三个上游仓库(gstack `garrytan/gstack`、superpowers `obra/superpowers`(核心插件本体，含 skills/ 与 plugin.json，非 `obra/superpowers-marketplace` 空壳)、ECC `affaan-m/ECC`)到临时目录
   2. 各自打成 `<name>-src.zip`(排除 `.git`)
   3. `gh release create v<ver>-src` / `gh release upload v<ver>-src *.zip`(tag 由调用者传参或脚本自派版本号 `date -u +%Y%m%d`)
   4. 用法:`bash scripts/release-src-packages.sh [version]`
@@ -144,7 +144,7 @@ SRC_RELEASE_TAG="${SRC_RELEASE_TAG:-v$(date -u +%Y%m%d)-src}"  # 可被环境变
 # 在仓库根
 bash swarm-yuan/scripts/release-src-packages.sh 20260722
 # 脚本内部:
-#   1. git clone --depth 1 garrytan/gstack / obra/superpowers-marketplace / affaan-m/ECC 到 tmp
+#   1. git clone --depth 1 garrytan/gstack / obra/superpowers / affaan-m/ECC 到 tmp
 #   2. zip -r --exclude=.git gstack-src.zip gstack/  (×3)
 #   3. gh release create v20260722-src --title ... 或 gh release upload v20260722-src *.zip
 # 输出: Release v20260722-src 含 gstack-src.zip / superpowers-src.zip / ecc-src.zip
