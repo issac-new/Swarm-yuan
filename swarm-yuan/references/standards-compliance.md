@@ -1,7 +1,7 @@
 # 标准合规映射矩阵（standards-compliance）
 
 > 版本：v1（2026-07-20，随 `feat/standards-compliance` 批次冻结 6 个锚点标题）
-> 证据基线：`docs/research/R7-quality-standards.md`、`docs/research/R8-security-standards.md`（2026-07-20，条款号均出自该两报告，禁止虚构）；门禁语义基线：`swarm-yuan/assets/precheck.sh`（36 门禁 = 27 既有 + 9 合规：4 P0 新增 + 3 P1 新增 authz/requirements/crypto + 2 P3 新增 rtm/release-sign）与 `swarm-yuan/assets/precheck.conf`。
+> 证据基线：`docs/research/R7-quality-standards.md`、`docs/research/R8-security-standards.md`（2026-07-20，条款号均出自该两报告，禁止虚构）；门禁语义基线：`swarm-yuan/assets/precheck.sh`（40 门禁 = 27 既有 + 13 合规：4 P0 新增 + 3 P1 新增 authz/requirements/crypto + 2 P3 新增 rtm/release-sign + 4 WP-S1 新增 dengbao/pia/sast-deep/oss-eval）与 `swarm-yuan/assets/precheck.conf`。
 > **口径权威源**：`../assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 ## 本文件作用与用法
@@ -19,7 +19,7 @@
 
 ## A. GB/T 25000.51 八特性 × 门禁映射
 
-依据 GB/T 25000.51-2016（RUSP）§5.2 用户文档集要求、§5.3 软件质量要求（八特性，与 GB/T 25000.10-2016 质量模型一致），将 36 个门禁按八特性逐行登记；「测量函数/阈值/证据」列对齐 GB/T 25000.21-2019 测度元素格式（R7 Q-06，本文件即 P0 级「门禁级四元组登记」的落地）。特性名同时标注 ISO/IEC 25010:2023 双轨命名（R7 ⑦：国标尚未跟进 2023 版）。
+依据 GB/T 25000.51-2016（RUSP）§5.2 用户文档集要求、§5.3 软件质量要求（八特性，与 GB/T 25000.10-2016 质量模型一致），将 40 个门禁按八特性逐行登记；「测量函数/阈值/证据」列对齐 GB/T 25000.21-2019 测度元素格式（R7 Q-06，本文件即 P0 级「门禁级四元组登记」的落地）。特性名同时标注 ISO/IEC 25010:2023 双轨命名（R7 ⑦：国标尚未跟进 2023 版）。
 
 ### A.1 功能适合性（Functional Suitability）
 

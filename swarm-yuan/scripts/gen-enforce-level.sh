@@ -67,7 +67,7 @@ _total=$(wc -l < "${OUT}.tmp" | tr -d ' ')
   echo "# gate-enforce-level.conf —— 由 gen-enforce-level.sh 自动生成，勿手改"
   echo "# 手动覆盖见 precheck.sh 顶部 _ENFORCE_OVERRIDE（_enforce_of 优先读覆盖）。"
   echo "# 分类规则：strict ≥3 fail / warn 1-2 fail / advisory 0 fail"
-  echo "# 统计：strict ${_strict} + warn ${_warn} + advisory ${_advisory} = ${_total}（应 = 36）"
+  echo "# 统计：strict ${_strict} + warn ${_warn} + advisory ${_advisory} = ${_total}（机械计数，随门禁增删自动变化）"
   echo "#"
   echo "# strict (>=3 fail):"
   awk -F'\t' '$1>=3{printf "#   %s (%d fail)\n", $2, $1}' "${OUT}.tmp" | sort

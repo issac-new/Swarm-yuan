@@ -7,13 +7,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **16-item feature card** （特征卡， the "legislation") and enforces them with **36 quality gates** （36 个质量门禁， the "enforcement": core 10 + architecture 17 + compliance 9). It integrates 11 external runtimes (OpenSpec, superpowers, comet, GitNexus, graphify, gsd-core, claude-mem, ocr, gstack, Ruflo, ECC) by **invoking them, never reimplementing** —按接线深度分三层:深度接线(GitNexus/graphify/claude-mem/ocr,precheck.sh 真实命令调用)、CLI 接线(OpenSpec/comet/gsd-core,门禁按需调用 CLI)、方法论引用(superpowers/gstack/Ruflo/ECC,AI 引用模式);每层有自带降级载体,未装不阻塞。
+`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **16-item feature card** （特征卡， the "legislation") and enforces them with **40 quality gates** （40 个质量门禁， the "enforcement": core 10 + architecture 17 + compliance 13). It integrates 11 external runtimes (OpenSpec, superpowers, comet, GitNexus, graphify, gsd-core, claude-mem, ocr, gstack, Ruflo, ECC) by **invoking them, never reimplementing** —按接线深度分三层:深度接线(GitNexus/graphify/claude-mem/ocr,precheck.sh 真实命令调用)、CLI 接线(OpenSpec/comet/gsd-core,门禁按需调用 CLI)、方法论引用(superpowers/gstack/Ruflo/ECC,AI 引用模式);每层有自带降级载体,未装不阻塞。
 
 There is no compiled artifact and no conventional build — the product is a set of bash scripts, markdown templates/references, and shell gate fragments that get copied into a target skill directory.
 
 ## 范式定位（WP-P10）
 
-swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 36 门禁 + 142 变量 + 62 框架规则。重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。
+swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 40 门禁 + 151 变量 + 62 框架规则。重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。
 
 **适用**：团队协作/中大型项目/强监管交付/长期维护/多技术栈混合。**不适用**：个人脚本/一次性原型/极小改动/无 AI 辅助。详见 `docs/paradigm-positioning.md`。
 

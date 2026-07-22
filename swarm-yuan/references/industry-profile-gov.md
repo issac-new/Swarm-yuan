@@ -3,7 +3,7 @@
 > 版本：v1（2026-07-22，WP-S1 批次）
 > 条款纪律：条款号仅采用已核验事实；不虚构条款号、不虚构 URL——标准统一指向国家标准全文公开系统检索页、法律统一指向国家法律法规数据库，访问日期均 2026-07-22。
 > 配套配置包：`assets/industry-profiles/gov.conf`（用法：`cat` 追加到 `precheck.conf` 末尾后按项目裁剪）。
-> 门禁基线：34 既有（`precheck.sh` GATE_FLAGS 注册表）+ WP-S 批次新增合规门禁（`--dengbao` 等保、`--pia` 隐私影响评估、`--oss-eval` 开源评价、`--rtm` 需求追溯、`--release-sign` 发布签名）。
+> 门禁基线：34 既有（`precheck.sh` GATE_FLAGS 注册表）+ WP-S 批次新增合规门禁（`--dengbao` 等保、`--pia` 隐私影响评估、`--sast-deep` 深度 SAST、`--oss-eval` 开源评价、`--rtm` 需求追溯、`--release-sign` 发布签名）。
 
 ## 0. 定位与适用
 

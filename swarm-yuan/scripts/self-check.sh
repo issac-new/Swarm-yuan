@@ -332,12 +332,11 @@ if [[ $FORCE_LATEST -eq 1 && $CHECK_ONLY -eq 0 ]]; then
   done
 fi
 
-if [[ ${#MISSING[@]} -eq 0 ]]; then
-  echo ""
-  [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过"
-  exit $FAIL
-fi
-
+# 修复（2026-07-22 WP-S1 收口）：原此处 MISSING==0 时直接 exit，导致运行时齐全环境下
+# 文档一致性 / 框架规则集核验 / enforce 分层等本地检查段永不执行——与 2026-07-21 修复的
+# --check-only 死代码属同类缺陷的另一分支。改为缺失段仅在 MISSING>0 时执行，
+# 本地检查段无条件执行，末尾统一 exit $FAIL。
+if [[ ${#MISSING[@]} -gt 0 ]]; then
 echo ""
 echo "=== 缺失: ${#MISSING[@]} 个 ==="
 for m in "${MISSING[@]}"; do
@@ -378,6 +377,7 @@ for m in "${MISSING[@]}"; do
   "$chk"
 done
 fi  # end of `if CHECK_ONLY -eq 1`
+fi  # end of `if MISSING -gt 0`
 
 echo ""
 # ===== 框架规则库时效检查 =====
