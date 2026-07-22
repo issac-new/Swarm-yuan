@@ -19,6 +19,7 @@
 #   bash precheck.sh --requirements   # 需求质量 lint（ISO/IEC/IEEE 29148）
 #   bash precheck.sh --crypto         # 密码算法合规（GB/T 39786-2021 密评 profile=gm）
 #   bash precheck.sh --rtm            # 需求追溯矩阵（ISO/IEC/IEEE 29148 RTM：REQ ↔ 测试/矩阵追溯）
+#   bash precheck.sh --dengbao        # 等保 2.0 控制点映射（GB/T 22239-2019，DENGBAO_LEVEL=2/3）
 #   bash precheck.sh --release-sign   # 发布签名与 provenance（SLSA Build L2 / SSDF PS.2 发布完整性）
 #   bash precheck.sh --doctor         # conf 诊断（lint：路径/glob 可达/死变量/框架 requires_conf；非门禁、不入注册表）
 #   bash precheck.sh --format json --all-full   # 运行结束追加 SARIF 子集 JSON（默认 stdout；GATE_JSON_OUT 环境变量可指定落盘）
@@ -438,14 +439,14 @@ skip_if_unconfigured() {
 # 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
 ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
 # 合规门禁（标准合规族 + P1 安全门禁族深化 + P3 长期清单 rtm/release-sign，仅 --compliance-suite/单门禁执行；未配置的静默跳过）
-ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_release_sign)
+ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_release_sign)
 # 标准门禁（核心 10 + 架构 17 = 27）：--all-full 执行序列（合规 9 已拆出为 --compliance-suite 按需执行）
 ALL_GATES_STANDARD=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_test)
 # 全部门禁（含架构/认知/合规门禁，未配置的静默跳过；--fix-suggest 用）
-ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_release_sign check_test)
+ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_release_sign check_test)
 # 单门禁 flag 清单（Usage 顺序）。flag → 函数映射规则：check_ + flag 去 -- 前缀并将 - 转为 _
 #（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
-GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --release-sign)
+GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --dengbao --release-sign)
 
 # ===== 门禁分层 enforce_level（决策 19：strict/warn/advisory 三档）=====
 # 自动按 fail() 调用数归类（gen-enforce-level.sh 生成 gate-enforce-level.conf）：
@@ -1172,7 +1173,7 @@ if [[ -z "${_gate_fn:-x}" ]]; then
   check_service; check_api; check_state; check_frontend; check_cognition; check_domain
   check_knowledge; check_mermaid; check_shift_left; check_framework
   check_compliance; check_docs_pack; check_sbom; check_privacy
-  check_authz; check_requirements; check_crypto; check_rtm; check_release_sign
+  check_authz; check_requirements; check_crypto; check_rtm; check_dengbao; check_release_sign
 fi
 
 case "$MODE" in
@@ -1252,6 +1253,7 @@ _fix_suggest() {
     gate_compliance_placeholder*)   suggest="standards-compliance.md 不得残留占位符，填实际值";;
     gate_authz_*)                   suggest="服务端 API 须默认拒绝+显式授权（OWASP ASVS V8），补 @PreAuthorize/@RequiresPermissions 等授权注解";;
     gate_crypto_*)                  suggest="替换弱密码算法（MD5/SHA1/DES/RSA-1024）为国密 SM2/SM3/SM4 或强算法（GB/T 39786）";;
+    gate_dengbao_*)                suggest="等保控制点缺口（GB/T 22239-2019）——补双因子/审计日志/审计字段声明，或在 DENGBAO_EXEMPT_FILE 四字段登记豁免";;
     fw_vue_script_setup*)           suggest="将 Vue SFC 改为 <script setup> 语法（项目特征卡要求）";;
     fw_vue_no_options_api*)         suggest="移除 Options API（data/methods/computed），改用 Composition API";;
     fw_vue_vhtml_sanitize*)         suggest="v-html 须配套 sanitize（DOMPurify 等），防 XSS";;
