@@ -199,6 +199,31 @@ ECC 的 `governance-capture.js` hook 捕获安全相关事件为 `governanceEven
 | 弱密码哈希 | `md5\(|sha1\(|createHash.*md5` | High |
 | 调试模式生产 | `debug.*true|NODE_ENV.*development` (prod 检查) | Medium |
 
+### 5.1 CWE 元数据分级参考表（ISO/IEC 5055 / GB/T 34943 文档级锚点）
+
+> 对齐 ISO/IEC 5055:2021（自动化源代码质量度量，138 弱点映射 CWE）与 GB/T 34943-34946（源代码漏洞测试规范）。本节把现有 `--security` 10 检测项 + `--authz` 授权类四弱点映射到 CWE 编号与 OWASP 分类，作为"门禁↔CWE↔标准"的文档级锚点。**边界**：完整 CWE 元数据分级（676 子门禁逐条 CWE 标注 + 数据库集成）是 P1 大工程（需 CWE 数据库映射 138 弱点），本节先做高频弱点的轻量映射，完整分级留后续。
+
+| 检测项 | CWE | OWASP | 严重度 | 标准依据 |
+|--------|-----|-------|--------|---------|
+| 硬编码密钥 | CWE-798 | A07 认证失效 | High | ISO 5055 / GB/T 34943 |
+| SQL 拼接（注入） | CWE-89 | A03 注入 | High | ISO 5055 / GB/T 34943 |
+| 命令注入 | CWE-78 | A03 注入 | High | ISO 5055 |
+| eval/Function | CWE-95 | A03 注入 | High | ISO 5055 |
+| v-html/innerHTML（XSS） | CWE-79 | A03 注入 | Medium | ISO 5055 / GB/T 34943 |
+| 路径穿越 | CWE-22 | A01 失效访问控制 | High | ISO 5055 |
+| 禁用 TLS | CWE-319 | A02 加密失效 | High | ISO 5055 |
+| CORS * 放行 | CWE-942 | A05 安全配置 | Medium | ISO 5055 |
+| 弱密码哈希 | CWE-327/328 | A02 加密失效 | High | ISO 5055 / GB/T 39786 |
+| SSRF | CWE-918 | A10 SSRF | High | ISO 5055 |
+| 不安全反序列化 | CWE-502 | A08 数据完整性 | High | ISO 5055 |
+| **授权类（--authz）** | | | | |
+| 缺鉴权注解 | CWE-862 | A01 失效访问控制 | High | ASVS V6-V10 / CWE Top 25 |
+| 授权绕过 | CWE-863 | A01 失效访问控制 | High | ASVS / CWE Top 25 |
+| CORS 放行带凭据 | CWE-284 | A05 安全配置 | High | ASVS / CWE Top 25 |
+| IDOR 直接对象引用 | CWE-639 | A01 失效访问控制 | High | ASVS / CWE Top 25 |
+
+> **GB/T 34943-34946 说明**：C/C++（34943）/Java（34944）/嵌入式（34946）源代码漏洞测试规范，要求 SAST + 人工复核 + 测试四件套报告。当前 `--security`（SAST 词法层）+ `--review`（人工复核）+ `--docs-pack`（测试包）已覆盖流程，CWE 元数据分级（每条弱点带 CWE 编号+严重度+标准依据）如上表逐步补全。
+
 ---
 
 ## 六、三平台兼容（swarm-yuan 自身的脚本须遵守，Windows / macOS / Linux）
