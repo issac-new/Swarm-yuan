@@ -712,6 +712,40 @@ check_doc_consistency() {
 }
 check_doc_consistency
 
+# ===== 自举门禁三档断言（G4）=====
+# 对账 ci/self-precheck.conf 存在 + SPEC_FILE 显式配置（impact 门 --all-full fail 面）
+# + CI generator-self-gate Job 含 --all/--all-full/--compliance-suite 三档 step。
+# 口径漂移机器执法：任一项不符 warn + FAIL=1。
+check_bootstrap_gate() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local conf="$base/ci/self-precheck.conf" ci="$base/../.github/workflows/ci.yml"
+  # 安装态（~/.claude/skills/swarm-yuan/）无 ci/ 目录与 .github/，静默跳过
+  [[ -f "$conf" ]] || return 0
+  echo "▶ 自举门禁三档断言（G4）"
+  # conf 显式配置 SPEC_FILE（impact 门在候选+兜底全空时 fail，必须 conf 指向自家模板）
+  if grep -q '^SPEC_FILE=' "$conf"; then
+    echo "  ✓ self-precheck.conf 显式配置 SPEC_FILE（impact 门 fail 面已闭合）"
+  else
+    warn "self-precheck.conf 缺 SPEC_FILE（impact 门 --all-full fail 面）"
+    FAIL=1
+  fi
+  # CI 含三档 step（--all/--all-full/--compliance-suite）
+  if [[ -f "$ci" ]]; then
+    local n
+    n=$(grep -cE 'precheck\.sh"? --(all|all-full|compliance-suite)' "$ci" 2>/dev/null || echo 0)
+    if [[ "$n" -ge 3 ]]; then
+      echo "  ✓ CI 自举三档 step 齐全（$n 处，含 --all/--all-full/--compliance-suite）"
+    else
+      warn "CI 自举 step 数=$n < 3（应含 --all/--all-full/--compliance-suite）"
+      FAIL=1
+    fi
+  else
+    warn "CI workflow 不存在: $ci（无法对账三档 step）"
+    FAIL=1
+  fi
+}
+check_bootstrap_gate
+
 # ===== 上游基线漂移忠告（不联网，仅读登记表机器标记行）=====
 upstream_baseline_check() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
