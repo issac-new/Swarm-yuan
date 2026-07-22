@@ -16,12 +16,15 @@ _fw_druid_check() {
   fi
 
   # 合并所有配置文件文本（配置项可能跨文件，yml/properties/xml 混合）
+  # WP-R: 剥离注释行（# 开头），防止注释里的关键词被误判为配置存在
   local all_cfg
-  all_cfg=$(cat "${fa[@]}" 2>/dev/null || true)
+  all_cfg=$(grep -vE '^[[:space:]]*#' "${fa[@]}" 2>/dev/null || true)
 
-  # 判定 druid 是否实际启用（数据源声明或 druid. 前缀配置）
+  # 判定 druid 是否实际启用（数据源声明或 druid 配置键）
+  # yml 嵌套结构下 druid 配置是独立行 `druid:`（缩进），非 `spring.datasource.druid` 连续串；
+  # properties 是 `druid.xxx=` 或 `spring.datasource.druid.xxx=`。须覆盖两种格式。
   local druid_active=0
-  if printf '%s\n' "$all_cfg" | grep -qE 'DruidDataSource|druid\.|spring\.datasource\.druid' 2>/dev/null; then
+  if printf '%s\n' "$all_cfg" | grep -qE 'DruidDataSource|^[[:space:]]*druid:|druid\.|spring\.datasource\.druid' 2>/dev/null; then
     druid_active=1
   fi
   if [[ "$druid_active" -eq 0 ]]; then
