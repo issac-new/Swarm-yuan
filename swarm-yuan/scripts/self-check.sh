@@ -334,13 +334,16 @@ fi
 
 if [[ ${#MISSING[@]} -eq 0 ]]; then
   echo ""
-  [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过"
-  exit $FAIL
+  # A 方向修复：原此处直接 exit $FAIL，导致全部运行时已装时 check_doc_consistency
+  # （文档一致性/门禁数口径）永不执行——README 数字漂移（36 vs 38 门禁）抓不到。
+  # 改为：运行时全装也继续走本地检查段（文档一致性/自举/兼容三档/上游基线），
+  # 末尾统一 exit $FAIL（L796）。
+  echo "（全部运行时已装，继续执行本地检查段：文档一致性 / 自举 / 兼容三档 / 上游基线）"
 fi
 
 echo ""
 echo "=== 缺失: ${#MISSING[@]} 个 ==="
-for m in "${MISSING[@]}"; do
+for m in ${MISSING[@]+"${MISSING[@]}"}; do
   IFS='|' read -r name chk inst auto <<< "$m"
   echo "  - $name"
 done
@@ -356,7 +359,7 @@ if [[ $CHECK_ONLY -eq 1 ]]; then
 else
 echo ""
 echo "=== 自动安装最新版（可自动装的）==="
-for m in "${MISSING[@]}"; do
+for m in ${MISSING[@]+"${MISSING[@]}"}; do
   IFS='|' read -r name chk inst auto <<< "$m"
   if [[ "$auto" == "1" && -n "$inst" ]]; then
     echo "--- $name ---"
@@ -373,7 +376,7 @@ echo "=== 安装后复查 ==="
 # 复查重算 FAIL：初检 miss 置位不代表终态——自动安装成功且复查 pass 的项目不算失败，
 # 只有复查仍 miss（含需手动安装的）才保持 FAIL=1。
 FAIL=0
-for m in "${MISSING[@]}"; do
+for m in ${MISSING[@]+"${MISSING[@]}"}; do
   IFS='|' read -r name chk inst auto <<< "$m"
   "$chk"
 done
