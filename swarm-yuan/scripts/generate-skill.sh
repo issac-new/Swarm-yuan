@@ -431,6 +431,42 @@ verify_completeness() {
     ' "$wf" 2>/dev/null || true)
   fi
   hits=$(printf '%s\n%s\n' "$hits" "$trace_miss" | grep -v '^$' || true)
+  # G1：decisions.jsonl 校验（decisions_miss 并入 hits 统一裁决）
+  # 检查 ① 每行 JSON 合法性 ② UserChallenge 行五要素非空（文件不存在不告警——draft 期允许空）
+  local dec_file="$skill_dir/.swarm-yuan/decisions.jsonl" decisions_miss=""
+  if [[ -f "$dec_file" ]]; then
+    if command -v python3 >/dev/null 2>&1; then
+      local py_out
+      py_out=$(python3 -c '
+import sys, json
+for i, line in enumerate(sys.stdin, 1):
+    line = line.strip()
+    if not line: continue
+    try:
+        obj = json.loads(line)
+    except Exception as e:
+        print(f"%d: 非法JSON (%s)" % (i, e))
+        continue
+    if obj.get("type") == "UserChallenge":
+        for k in ("alternatives", "missing_context", "cost_if_wrong"):
+            if not obj.get(k):
+                print("%d: UserChallenge 缺 %s" % (i, k))
+' < "$dec_file" 2>/dev/null || true)
+      [[ -n "$py_out" ]] && decisions_miss=$(printf '%s\n' "$py_out" | sed "s|^|$dec_file:|")
+    else
+      # 降级：grep 字段存在性（bash 3.2 兼容，不阻塞）
+      local ln=0 dline
+      while IFS= read -r dline; do
+        ln=$((ln + 1))
+        echo "$dline" | grep -q '"type"' || { decisions_miss="${decisions_miss}${decisions_miss:+$'\n'}$dec_file:$ln: 非法JSON（缺 type 字段）"; continue; }
+        echo "$dline" | grep -q '"type":"UserChallenge"' || continue
+        echo "$dline" | grep -q '"alternatives"' || decisions_miss="${decisions_miss}${decisions_miss:+$'\n'}$dec_file:$ln: UserChallenge 缺 alternatives"
+        echo "$dline" | grep -q '"missing_context"' || decisions_miss="${decisions_miss}${decisions_miss:+$'\n'}$dec_file:$ln: UserChallenge 缺 missing_context"
+        echo "$dline" | grep -q '"cost_if_wrong"' || decisions_miss="${decisions_miss}${decisions_miss:+$'\n'}$dec_file:$ln: UserChallenge 缺 cost_if_wrong"
+      done < "$dec_file"
+    fi
+  fi
+  hits=$(printf '%s\n%s\n' "$hits" "$decisions_miss" | grep -v '^$' || true)
   if [[ -n "$hits" ]]; then
     echo "✗ 占位符/未勾项/缺失要素未清零（$(printf '%s\n' "$hits" | wc -l | tr -d ' ') 处）:"
     printf '%s\n' "$hits"
