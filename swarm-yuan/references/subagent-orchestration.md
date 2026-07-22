@@ -461,3 +461,9 @@ ruflo 修复了"N 个 worktree 调度 N 个独立 AI worker"的基数 bug：
 **在目标技能中的落地：**
 - swarm-yuan 自身的版本可引用 ANV 模式：版本号 + advisory 后缀（agent 数/skill 数/工具数）
 - 生成的目标技能可附 `catalog-manifest.json`，记录真实计数
+
+## context-save 输入消毒（gstack 吸收，防注入）
+
+gstack context-save 的标题在 **bash 层**用允许表消毒（仅 `a-z 0-9 - .` 存活），文件名仅追加不覆盖、同秒碰撞加随机后缀——"用户输入永不进 LLM 层拼路径"（`context-save/SKILL.md:870-897`，防注入设计明确写在注释里）。
+
+swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input()` 白名单字符集过滤（`a-zA-Z0-9._-`），应用于 init 的 change name——用户输入经 bash 层过滤后才写入 state.yaml，防路径穿越/命令注入。与 `references/security-spec.md` §六 bash 脚本安全一致。

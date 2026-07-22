@@ -24,6 +24,12 @@ PHASES=("open" "design" "build" "verify" "archive")
 pass() { echo "  ✓ $1"; }
 fail() { echo "  ✗ $1"; }
 
+# A 方向：context-save 输入消毒（gstack 吸收，防注入）
+# 用户输入白名单字符集过滤，防路径穿越/命令注入——"用户输入永不进 LLM 层拼路径"
+sanitize_input() {
+  printf '%s' "$1" | tr -cd 'a-zA-Z0-9._-'
+}
+
 # CLI 接线层运行时守卫（WP1.2）：comet CLI 真实接线
 # comet 提供 `comet guard`（检查 Classic workflow phase guard）/ `comet state`（读写状态）。
 # 项目用 comet 时（有 .comet/ 或 active change），guard_phase 调 comet guard 做状态一致性补充校验；
@@ -45,6 +51,9 @@ trace_tool() {  # $1=工具名 $2=操作
 init_state() {
   local change="${1:-}"
   [[ -z "$change" ]] && { echo "Usage: state-machine.sh init <change-name>"; exit 1; }
+  # A 方向：change name 经白名单消毒（防路径穿越/命令注入）
+  change=$(sanitize_input "$change")
+  [[ -z "$change" ]] && { echo "ERROR: change name 全被过滤（含非法字符），请重命名"; exit 1; }
   mkdir -p "$STATE_DIR"
   if [[ -f "$STATE_FILE" ]]; then
     echo "WARN: 状态文件已存在: $STATE_FILE"
