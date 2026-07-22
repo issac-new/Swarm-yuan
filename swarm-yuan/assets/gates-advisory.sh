@@ -67,18 +67,26 @@ check_link_depth() {
 
   # ---- 3. 降级 madge ----
   if has_madge; then
-    local tree; tree=$(madge --tree --extensions ts,js "$PROJECT_DIR" 2>/dev/null || true)
-    local max_indent=0
-    while IFS= read -r line; do
-      local spaces; spaces=$(echo "$line" | grep -oE '^[ ]*' | wc -c | xargs)
-      [[ "$spaces" -gt "$max_indent" ]] && max_indent=$spaces
-    done <<< "$tree"
-    local depth=$(( max_indent / 2 ))
-    if [[ "$depth" -gt "$MAX_LINK_DEPTH" ]]; then
-      warn "调用链最大深度约 ${depth}（madge 估算）超过阈值 ${MAX_LINK_DEPTH}，建议拆分中转层"
+    local tree _madge_err
+    _madge_err=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-madge.XXXXXX")
+    tree=$(madge --tree --extensions ts,js "$PROJECT_DIR" 2>"$_madge_err" || true)
+    if [[ -z "$tree" ]]; then
+      warn "madge 执行无输出（stderr: $(head -1 "$_madge_err" 2>/dev/null || echo 空)）——调用链深度降级为纯转发统计"
+      rm -f "$_madge_err"
+    else
+      rm -f "$_madge_err"
+      local max_indent=0
+      while IFS= read -r line; do
+        local spaces; spaces=$(echo "$line" | grep -oE '^[ ]*' | wc -c | xargs)
+        [[ "$spaces" -gt "$max_indent" ]] && max_indent=$spaces
+      done <<< "$tree"
+      local depth=$(( max_indent / 2 ))
+      if [[ "$depth" -gt "$MAX_LINK_DEPTH" ]]; then
+        warn "调用链最大深度约 ${depth}（madge 估算）超过阈值 ${MAX_LINK_DEPTH}，建议拆分中转层"
+      fi
+      pass "调用链深度检查完成（基于 madge，最大深度约 ${depth}）"
+      return
     fi
-    pass "调用链深度检查完成（基于 madge，最大深度约 ${depth}）"
-    return
   fi
 
   # ---- 2. 降级：统计"纯转发函数"（只调用下一个函数、无其他逻辑）作为链路膨胀信号 ----

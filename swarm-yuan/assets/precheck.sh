@@ -1270,6 +1270,12 @@ _fix_suggest() {
   echo "  • ${id}: ${suggest}"
 }
 
+# WP-S1 跳过透明化（R1-G5）：SILENT 模式被抑制的未配置跳过在汇总段显式披露——绿≠合规
+if [[ $SKIP_COUNT -gt 0 ]]; then
+  echo "⊘ 跳过 ${SKIP_COUNT} 个门禁（未配置；逐门禁详情见 --doctor 或单跑该门禁）："
+  for _sk in $SKIP_LIST; do echo "    - ${_sk#check_}"; done
+fi
+
 if [[ $FAIL -eq 0 ]]; then
   echo "✓ 门禁检查通过"
   _final_rc=0

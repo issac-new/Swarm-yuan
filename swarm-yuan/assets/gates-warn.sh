@@ -927,13 +927,17 @@ print(maxd)
 
   # ---- 4. 循环依赖检测（madge 优先，降级 grep）----
   if command -v madge >/dev/null 2>&1; then
-    local circ
-    circ=$(madge --circular --extensions ts,tsx,js,jsx "$COMPONENT_DIR" 2>/dev/null || true)
+    local circ _circ_err
+    _circ_err=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-madge.XXXXXX")
+    circ=$(madge --circular --extensions ts,tsx,js,jsx "$COMPONENT_DIR" 2>"$_circ_err" || true)
     if echo "$circ" | grep -qi 'circular'; then
       fail "检测到组件循环依赖（madge）——A↔B 互相 import 会导致运行时 undefined："
       echo "$circ" | sed 's/^/    /'
       found=1
+    elif [[ -z "$circ" && -s "$_circ_err" ]]; then
+      warn "madge 循环依赖检测执行失败（stderr: $(head -1 "$_circ_err" 2>/dev/null)）——本项未判定"
     fi
+    rm -f "$_circ_err"
   else
     # 降级：检测同目录文件互引（粗筛）
     warn "未安装 madge，循环依赖检测跳过（npm i -g madge）"
