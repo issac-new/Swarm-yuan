@@ -123,6 +123,15 @@ guard_phase() {
           ok=0
         fi
       fi
+      # G1：design 准入 warn 检查 decisions.jsonl（warn 不 fail，不阻塞流转）
+      local _dec_file="${STATE_DIR}/decisions.jsonl"
+      if [[ ! -f "$_dec_file" ]]; then
+        echo "  ⚠ decisions.jsonl 未创建（决策未留痕，G1 决策治理）"
+      elif [[ ! -s "$_dec_file" ]]; then
+        echo "  ℹ decisions.jsonl 存在但为空（draft 期允许）"
+      else
+        pass "decisions.jsonl 已有决策记录"
+      fi
       ;;
     build)
       # 门禁：design 阶段产出 design doc + tasks
@@ -201,6 +210,15 @@ transition_phase() {
   # 门禁
   guard_phase "$target" || exit 1
   set_field phase "$target"
+  # G1：阶段流转决策留痕（Taste 类，guard 通过即 approved）
+  _sm_tl="${STATE_DIR:-${PROJECT_DIR:-$(pwd)}/.swarm-yuan}/../scripts/trace-log.sh"
+  [[ -f "$_sm_tl" ]] || _sm_tl="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/trace-log.sh"
+  if [[ -f "$_sm_tl" ]]; then
+    bash "$_sm_tl" --decision --type Taste \
+      --suggestion "$target" --user-action approved \
+      --rationale "guard 通过，阶段从 $current 流转到 $target" \
+      --phase "$target" >&2 2>/dev/null || true
+  fi
   echo "✓ 已转换到: $target"
 }
 
@@ -239,6 +257,15 @@ auto_phase() {
   # guard 检查（guard_phase 内部 exit 1 时会中断；这里捕获其退出码不直接 exit）
   if guard_phase "$target"; then
     set_field phase "$target"
+    # G1：auto 流转决策留痕
+    _sm_tl="${STATE_DIR:-${PROJECT_DIR:-$(pwd)}/.swarm-yuan}/../scripts/trace-log.sh"
+    [[ -f "$_sm_tl" ]] || _sm_tl="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/trace-log.sh"
+    if [[ -f "$_sm_tl" ]]; then
+      bash "$_sm_tl" --decision --type Taste \
+        --suggestion "$target" --user-action approved \
+        --rationale "auto: guard 通过，$current → $target" \
+        --phase "$target" >&2 2>/dev/null || true
+    fi
     echo "✓ auto 流转成功: $current → $target"
   else
     echo "✗ auto 流转失败: $target 准入未通过（上方 guard 输出说明了缺什么产出物）"

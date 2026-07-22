@@ -1268,6 +1268,8 @@ _fix_suggest() {
     *)                              suggest="运行 precheck.sh <对应门禁> --doctor 查看详情，或参考 references/ 对应方法论文档";;
   esac
   echo "  • ${id}: ${suggest}"
+  # G1：决策留痕提示（不改变 fail 语义，只增强诊断输出）
+  echo "    （决策留痕：若涉及多方案/依赖升级/安全冲突，须按 references/decision-governance.md §User Challenge 记录到 decisions.jsonl）"
 }
 
 if [[ $FAIL -eq 0 ]]; then

@@ -570,6 +570,15 @@ check_doc_consistency() {
       echo "  ✓ facts.conf 与代码真值一致（权威断言通过）"
     fi
   fi
+
+  # G1：决策治理口径存在性断言（FACT_DECISION_TYPES/LOG/ELEMENTS + decision-governance.md）
+  if [[ -n "${FACT_DECISION_TYPES:-}" ]]; then
+    [[ -f "$base/references/decision-governance.md" ]] || { warn "decision-governance.md 缺失（G1 决策治理）"; FAIL=1; }
+    grep -q 'Mechanical' "$base/references/decision-governance.md" 2>/dev/null && \
+    grep -q 'UserChallenge' "$base/references/decision-governance.md" 2>/dev/null || \
+      { warn "decision-governance.md 缺决策分类（Mechanical/UserChallenge）"; FAIL=1; }
+    echo "  ✓ 决策治理口径（${FACT_DECISION_TYPES} 类 + ${FACT_DECISION_LOG:-decisions.jsonl}）"
+  fi
   local doc dfound bad docpath
   # 根 CLAUDE.md（仓库根，$base 的上一层）是 AI 进入仓库首读文件，必须纳入一致性扫描；
   # 安装到 ~/.claude/skills/<skill>/ 后该文件不存在，[[ -f ]] 守卫自动跳过。
