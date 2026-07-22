@@ -7,13 +7,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **16-item feature card** （特征卡， the "legislation") and enforces them with **36 quality gates** （40 个质量门禁， the "enforcement": core 10 + architecture 17 + compliance 9). It integrates 11 external runtimes (OpenSpec, superpowers, comet, GitNexus, graphify, gsd-core, claude-mem, ocr, gstack, Ruflo, ECC) by **invoking them, never reimplementing** —按接线深度分三层:深度接线(GitNexus/graphify/claude-mem/ocr,precheck.sh 真实命令调用)、CLI 接线(OpenSpec/comet/gsd-core,门禁按需调用 CLI)、方法论引用(superpowers/gstack/Ruflo/ECC,AI 引用模式);每层有自带降级载体,未装不阻塞。
+`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **16-item feature card** （特征卡， the "legislation") and enforces them with **44 quality gates** （44 个质量门禁， the "enforcement": core 10 + architecture 17 + compliance 13). It integrates 11 external runtimes (OpenSpec, superpowers, comet, GitNexus, graphify, gsd-core, claude-mem, ocr, gstack, Ruflo, ECC) by **invoking them, never reimplementing** —按接线深度分三层:深度接线(GitNexus/graphify/claude-mem/ocr,precheck.sh 真实命令调用)、CLI 接线(OpenSpec/comet/gsd-core,门禁按需调用 CLI)、方法论引用(superpowers/gstack/Ruflo/ECC,AI 引用模式);每层有自带降级载体,未装不阻塞。
 
 There is no compiled artifact and no conventional build — the product is a set of bash scripts, markdown templates/references, and shell gate fragments that get copied into a target skill directory.
 
 ## 范式定位（WP-P10）
 
-swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 40 门禁 + 142 变量 + 62 框架规则。重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。
+swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 44 门禁 + 151 变量 + 62 框架规则。重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。
 
 **适用**：团队协作/中大型项目/强监管交付/长期维护/多技术栈混合。**不适用**：个人脚本/一次性原型/极小改动/无 AI 辅助。详见 `docs/paradigm-positioning.md`。
 
@@ -22,8 +22,8 @@ swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 40 门禁
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
   - `SKILL.md` — the AI entry point / operating manual (the generation pipeline Step 0–10).
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
-  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~4000 lines, 36 gates = standard 27 via `--all-full` + compliance 9 via `--compliance-suite`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (179 config vars across the three, WP-I split), `spec-template.md` (22-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (61 per-framework gate fragments).
-  - `references/` — 18 methodology docs + `references/frameworks/<fw>.md` (61 framework rule sources).
+  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~4000 lines, 44 gates = standard 27 via `--all-full` + compliance 13 via `--compliance-suite`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (151 config vars across the three, WP-I split), `spec-template.md` (23-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (62 per-framework gate fragments).
+  - `references/` — 23 methodology docs + `references/frameworks/<fw>.md` (62 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).
 - **`verifier/`** — a self-contained acceptance harness that re-runs the whole suite and compares against a golden vector.
@@ -96,5 +96,5 @@ Many gates "sleep" (match nothing) on purpose; `docs/paradigm-decisions.md` docu
 - **No unit-test framework.** Correctness = fixture double-state tests + e2e + shellcheck + the `verifier/` golden-vector comparison.
 - **Single test** = `run-framework-fixture.sh <id>` (one framework) or `run-verifier.sh fixtures` (all).
 - **Fixture `precheck.conf` uses a `__REPO_ROOT__` placeholder** that the runner substitutes at runtime, so fixtures are machine-independent.
-- `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 61-fixture exit-code vector.
-- CI (`.github/workflows/ci.yml`) runs all four jobs on push/PR to `main`: 61 ruleset verifies, 61 fixture double-states, self-check freshness, and shellcheck on core scripts.
+- `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 62-fixture exit-code vector.
+- CI (`.github/workflows/ci.yml`) runs all four jobs on push/PR to `main`: 62 ruleset verifies, 62 fixture double-states, self-check freshness, and shellcheck on core scripts.

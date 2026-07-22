@@ -88,7 +88,12 @@ if [ ! -f "$SY/scripts/self-check.sh" ]; then
   echo "METRIC_DOC_CONSISTENCY FAIL（self-check.sh 缺失，fail-closed）"
   FAILS=$((FAILS+1))
 else
-  bash "$SY/scripts/self-check.sh" > "$WORK/selfcheck.out" 2>&1
+  # 2026-07-22 WP-S1 收口：改 --check-only。裸跑默认 FORCE_LATEST=1——全部已装也联网
+  # 升级（npm i -g / npx / 源码包重装 / gstack setup 拉 playwright chromium ~160MB），
+  # 断言目标（文档一致性段）与升级无关，却使 verifier 非密封且篡改用户全局环境；
+  # 慢网络下升级段可挂 1h+。--check-only（FORCE_LATEST=0）跳过升级段，
+  # 文档一致性段照常执行（2026-07-22 self-check 修复后运行时齐全也会走到该段）。
+  bash "$SY/scripts/self-check.sh" --check-only > "$WORK/selfcheck.out" 2>&1
   awk '/^▶ 文档一致性检查/{f=1;next} /^▶ /{if(f)exit} f' "$WORK/selfcheck.out" > "$WORK/docsec.out"
   if [ ! -s "$WORK/docsec.out" ]; then
     echo "METRIC_DOC_CONSISTENCY FAIL（「▶ 文档一致性检查」段缺失或为空，fail-closed）"

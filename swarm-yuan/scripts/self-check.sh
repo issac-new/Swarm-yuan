@@ -332,15 +332,16 @@ if [[ $FORCE_LATEST -eq 1 && $CHECK_ONLY -eq 0 ]]; then
   done
 fi
 
+# 修复（合并自两边）：原此处 MISSING==0 时直接 exit，导致运行时齐全环境下
+# 文档一致性 / 框架规则集核验 / enforce 分层等本地检查段永不执行——与 2026-07-21 修复的
+# --check-only 死代码属同类缺陷的另一分支。改为缺失段仅在 MISSING>0 时执行，
+# 本地检查段无条件执行，末尾统一 exit $FAIL。
 if [[ ${#MISSING[@]} -eq 0 ]]; then
   echo ""
-  # A 方向修复：原此处直接 exit $FAIL，导致全部运行时已装时 check_doc_consistency
-  # （文档一致性/门禁数口径）永不执行——README 数字漂移（36 vs 38 门禁）抓不到。
-  # 改为：运行时全装也继续走本地检查段（文档一致性/自举/兼容三档/上游基线），
-  # 末尾统一 exit $FAIL（L796）。
-  echo "（全部运行时已装，继续执行本地检查段：文档一致性 / 自举 / 兼容三档 / 上游基线）"
+  echo "（全部运行时已装，继续执行本地检查段：文档一致性 / 框架规则集核验 / enforce 分层 / 上游基线）"
 fi
 
+if [[ ${#MISSING[@]} -gt 0 ]]; then
 echo ""
 echo "=== 缺失: ${#MISSING[@]} 个 ==="
 for m in ${MISSING[@]+"${MISSING[@]}"}; do
@@ -381,6 +382,7 @@ for m in ${MISSING[@]+"${MISSING[@]}"}; do
   "$chk"
 done
 fi  # end of `if CHECK_ONLY -eq 1`
+fi  # end of `if MISSING -gt 0`
 
 echo ""
 # ===== 框架规则库时效检查 =====
@@ -418,7 +420,7 @@ fw_freshness_check() {
 }
 fw_freshness_check
 
-# ===== 框架规则集核验（61 规则集四要素机械核验）=====
+# ===== 框架规则集核验（62 规则集四要素机械核验）=====
 fw_ruleset_verify() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local vfy="$base/scripts/verify-framework-ruleset.sh"
@@ -496,7 +498,7 @@ check_doc_consistency() {
     source "$facts_conf"; set -u
   fi
 
-  # 1. 框架规则文件数 == 门禁片段数（真值机械计数，当前 61 == 61）
+  # 1. 框架规则文件数 == 门禁片段数（真值机械计数，当前 62 == 62）
   local rule_cnt gate_cnt
   rule_cnt=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
   gate_cnt=$(ls "$base/assets/framework-gates/"*.sh 2>/dev/null | wc -l | xargs)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# warn (18) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
+# warn (20) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
 # 被 precheck.sh source（开发态）或 install.sh 内联（打包态）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
@@ -138,7 +138,7 @@ check_sensitive() {
         --include='*.ts' --include='*.vue' --include='*.svelte' --include='*.js' --include='*.mjs' \
         --include='*.patch' --include='*.py' --include='*.go' --include='*.rs' \
         --include='*.scss' --include='*.java' 2>/dev/null \
-        | grep -v -i 'example\|placeholder\|test\|mock\|dummy\|<.*>' || true)
+        | grep -viE 'example|placeholder|test|mock|dummy|<.*>' || true)
       if [[ -n "$matches" ]]; then
         fail "疑似敏感信息 ($dir):"
         echo "$matches" | head -10
@@ -952,13 +952,17 @@ print(maxd)
 
   # ---- 4. 循环依赖检测（madge 优先，降级 grep）----
   if command -v madge >/dev/null 2>&1; then
-    local circ
-    circ=$(madge --circular --extensions ts,tsx,js,jsx "$COMPONENT_DIR" 2>/dev/null || true)
+    local circ _circ_err
+    _circ_err=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-madge.XXXXXX")
+    circ=$(madge --circular --extensions ts,tsx,js,jsx "$COMPONENT_DIR" 2>"$_circ_err" || true)
     if echo "$circ" | grep -qi 'circular'; then
       fail "检测到组件循环依赖（madge）——A↔B 互相 import 会导致运行时 undefined："
       echo "$circ" | sed 's/^/    /'
       found=1
+    elif [[ -z "$circ" && -s "$_circ_err" ]]; then
+      warn "madge 循环依赖检测执行失败（stderr: $(head -1 "$_circ_err" 2>/dev/null)）——本项未判定"
     fi
+    rm -f "$_circ_err"
   else
     # 降级：检测同目录文件互引（粗筛）
     warn "未安装 madge，循环依赖检测跳过（npm i -g madge）"
@@ -1256,6 +1260,120 @@ check_crypto() {
   if [[ $found -eq 0 ]]; then
     pass "密码算法合规检查通过（未检出弱算法；国密白名单 SM2/SM3/SM4）"
   fi
+}
+
+# 内置词法降级载体（check_sast_deep 两降级分支共用：TOOL=builtin 强制 / 工具执行失败降级）。
+# 仅高危 sink 直查，与 check_security 互补不重复。$1=fail 消息（含降级缘由）；返回 0=有命中 1=无命中。
+# 独立为 helper（非 check_* 命名）：gen-enforce-level.sh 只统计 check_* 函数体的 fail() 调用数，
+# 共用 helper 使 check_sast_deep 保持 1 个 fail 点、落 warn 档（决策 19 分类规则：warn 1-2 fail）。
+_sast_deep_lexical_scan() {
+  local hits
+  hits=$(grep -rnE '\beval\s*\(|\bexec\s*\(|Runtime\.getRuntime\(\)\.exec|child_process\.exec' "${SECURITY_SCAN_DIRS[@]}" \
+    --include='*.java' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' 2>/dev/null \
+    | grep -viE 'example|mock|node_modules' \
+    | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|#|\*|/\*)' || true)
+  [[ -z "$hits" ]] && return 1
+  fail "$1"
+  printf '%s\n' "$hits" | head -10 | sed 's/^/    /'
+  return 0
+}
+
+check_sast_deep() {
+  echo "=== 深度 SAST 检查（AST/数据流层；GB/T 34943/34944/34946-2017 源代码漏洞测试规范）==="
+  if [[ ${#SECURITY_SCAN_DIRS[@]} -eq 0 ]]; then
+    skip_if_unconfigured "SECURITY_SCAN_DIRS 未配置，深度 SAST 跳过"
+    return
+  fi
+  local tool="${SAST_DEEP_TOOL:-auto}" sev="${SAST_DEEP_SEVERITY:-error}" found=0
+  local bin=""
+  # 载体解析：builtin=强制内置；可执行路径=直接调用（fixture mock 亦走此分支）；空/auto=降级链探测
+  if [[ "$tool" == "builtin" ]]; then
+    bin="builtin"
+  elif [[ "$tool" != "auto" && -n "$tool" ]]; then
+    if [[ -x "$tool" ]]; then bin="$tool"; else warn "SAST_DEEP_TOOL=${tool} 不可执行，降级自动探测"; fi
+  fi
+  if [[ -z "$bin" ]]; then
+    if command -v semgrep >/dev/null 2>&1; then bin="semgrep"
+    elif command -v opengrep >/dev/null 2>&1; then bin="opengrep"
+    else bin="builtin"; fi
+  fi
+  if [[ "$bin" == "builtin" ]]; then
+    # 自带降级载体（词法模式族，明示降级；AST/数据流层未执行）
+    echo "  ⓘ 降级为内置词法模式族（semgrep/opengrep 不可用；AST/数据流层未执行）"
+    trace_tool "sast-deep" "builtin-lexical"
+    if _sast_deep_lexical_scan "gate_sast_deep_builtin: 内置模式族检出高危代码执行 sink（eval/exec/Runtime.exec/child_process.exec；GB/T 34943/34944/34946 漏洞类别，降级词法检出）："; then
+      found=1
+    fi
+  else
+    echo "  ⓘ SAST 载体：${bin}（AST/规则层）"
+    trace_tool "sast-deep" "$bin"
+    local json _rc=0
+    json=$("$bin" scan --config p/default --json --quiet "${SECURITY_SCAN_DIRS[@]}" 2>/dev/null) || _rc=$?
+    if [[ $_rc -ne 0 || -z "$json" ]]; then
+      # 网络/规则包不可达（离线环境 p/default 拉取失败）→ 降级内置，明示
+      warn "${bin} 执行失败或无输出（rc=${_rc}；离线环境规则包不可达）——降级内置词法模式族"
+      if _sast_deep_lexical_scan "gate_sast_deep_builtin: 内置模式族检出高危代码执行 sink（${bin} 执行失败后降级检出；GB/T 34943/34944/34946 漏洞类别）："; then
+        found=1
+      fi
+    else
+      local _e _w
+      _e=$(printf '%s\n' "$json" | grep -cE '"severity"[^,]*ERROR' || true)
+      _w=$(printf '%s\n' "$json" | grep -cE '"severity"[^,]*WARNING' || true)
+      echo "  ⓘ ${bin} 结果：ERROR=${_e} WARNING=${_w}"
+      if [[ "$sev" == "warning" && $((_e+_w)) -gt 0 ]] || [[ "$sev" == "error" && "$_e" -gt 0 ]]; then
+        fail "gate_sast_deep_findings: ${bin} 检出达标严重级别（${sev}）以上发现 ERROR=${_e} WARNING=${_w}（GB/T 34943/34944/34946 漏洞类别）——详见 ${bin} JSON 输出"
+        found=1
+      fi
+    fi
+  fi
+  [[ $found -eq 0 ]] && pass "深度 SAST 检查通过（载体：${bin}）"
+}
+
+# check_oss_eval（--oss-eval，WP-S1）：开源代码安全评价，GB/T 43848-2024 四维
+# （来源/安全质量/知识产权/管理）。复用 --sbom 产物（SBOM_OUTPUT_DIR/SBOM_LICENSE_BLOCKLIST/
+# SBOM_LICENSE_EXEMPTIONS），不重复扫描。2 个 fail 点 → warn 档。
+# 措辞纪律：本标准将成分清单与许可证合规纳入评价体系，不宣称"强制提交 SBOM"。
+check_oss_eval() {
+  echo "=== 开源代码安全评价（GB/T 43848-2024：来源/安全质量/知识产权/管理四维）==="
+  [[ "${OSS_EVAL_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "OSS_EVAL_REQUIRED 未启用，开源代码安全评价跳过"; return; }
+  local found=0
+  # ① 成分清单存在（复用 --sbom 产物；sbom 未跑时本门禁独立核验目录）
+  local dir="${SBOM_OUTPUT_DIR:-.sbom}"
+  local _sbom_files
+  _sbom_files=$(find "$dir" -type f \( -name '*.json' -o -name '*.spdx' -o -name '*.xml' -o -name '*.txt' \) 2>/dev/null | head -20 || true)
+  if [[ -z "$_sbom_files" ]]; then
+    fail "gate_oss_eval_sbom_missing: 开源成分清单产物不存在（${dir}；GB/T 43848-2024 将成分清单纳入评价体系——先运行 --sbom 生成）"
+    found=1
+  fi
+  # ② 许可证遵从（块名单扫描成分清单）
+  if [[ -n "$_sbom_files" && ${#SBOM_LICENSE_BLOCKLIST[@]} -gt 0 ]]; then
+    local lic _hits=""
+    for lic in ${SBOM_LICENSE_BLOCKLIST[@]+"${SBOM_LICENSE_BLOCKLIST[@]}"}; do
+      local h
+      h=$(printf '%s\n' "$_sbom_files" | xargs grep -lF "$lic" 2>/dev/null || true)
+      [[ -n "$h" ]] && _hits="${_hits}${lic}→$(printf '%s\n' "$h" | head -3 | tr '\n' ' ') "
+    done
+    if [[ -n "$_hits" ]]; then
+      fail "gate_oss_eval_license_blocked: 成分清单命中许可证块名单：${_hits}（GB/T 43848-2024 知识产权维度：开源许可证遵从度评价）"
+      found=1
+    fi
+  fi
+  # ③ 上游来源登记（管理维度，warn-only）
+  if [[ ! -f docs/upstream-baseline.md && ! -f UPSTREAM.md && ! -f docs/UPSTREAM.md ]]; then
+    warn "未见上游来源登记文档（docs/upstream-baseline.md 或 UPSTREAM.md）——GB/T 43848-2024 来源维度建议登记开源成分来源"
+  fi
+  # ④ 豁免到期检查（warn-only：SBOM_LICENSE_EXEMPTIONS 五字段第 5 字段日期 < 今天）
+  if [[ ${#SBOM_LICENSE_EXEMPTIONS[@]} -gt 0 ]]; then
+    local today ex _d
+    today=$(date -u +%Y-%m-%d)
+    for ex in ${SBOM_LICENSE_EXEMPTIONS[@]+"${SBOM_LICENSE_EXEMPTIONS[@]}"}; do
+      _d=$(printf '%s\n' "$ex" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$5); print $5}')
+      if [[ -n "$_d" && "$_d" < "$today" ]]; then
+        warn "开源许可证豁免已过期：${ex}（到期日 ${_d} < ${today}）——须复审或移除"
+      fi
+    done
+  fi
+  [[ $found -eq 0 ]] && pass "开源代码安全评价通过（成分清单在案，许可证未命中块名单）"
 }
 
 check_framework() {

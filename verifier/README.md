@@ -74,3 +74,20 @@
 - 行业 profile 冒烟 ✅：finance.conf / medical.conf 各自追加到最小 conf 后 --doctor 均 fail=0（finance pass 4/warn 3；medical pass 3/warn 4，warn 均为未配置目录类披露）
 - 渲染器冒烟 ✅：临时目录 create 骨架 RC=0 → --render-tools 首轮生成 6 工具原生规则文件（Cursor/Windsurf/Gemini/Codex/OpenCode/Kimi，Claude 维持现状）→ 二次渲染全 no-op，产物 sha256 逐文件一致（幂等）
 - 本轮修复项：1 处口径 bug——P3 子代理将 check_rtm/check_release_sign 注册进 ALL_GATES_FULL 与 GATE_FLAGS 但漏挂 ALL_GATES_COMPLIANCE（7≠9），致 self-check 真值算术 架构=36−10−7=19≠17 与文档「合规 9」口径冲突；最小修复=数组补两函数（根因：五代理并行各自只改 FULL/FLAGS，合规族数组无 owner；证据：修复后 COMPLIANCE=9、四文档头部数字一致性 ✓、36 组 fixture 仍全绿）
+
+## 回归记录（2026-07-22，wp-s1-security-gates，WP-S1 标准深化批次终态收口，feat/wp-s-standards-deepening 工作区，HEAD=c1d497b）
+- 2026-07-23T0031 all RC=0 ｜ cli-ab CALLS=171 DIFFS=0 RC_INVALID=0 ｜ metrics LOC=1307/2982（WP-Q1.3 拆分后主文件行数低于基线，增长判定 OK）DUP_DIFF=0 DOC_VIOLATIONS=0 METRICS_ASSERT_FAILS=0 ｜ fixtures 62/62 FAILS 0 ｜ gate-fixtures 40/40 FAILS 0（36→40：WP-S1 +dengbao/pia/sast-deep/oss-eval 4 组）｜ e2e RC=0 ｜ 日志 runs/2026-07-23T0031-wp-s1-final-all.log（gate-fixtures/e2e/self-check/industry-profile-gov 同 ts 各一份）
+- 基线变更：无。门禁数 36→40 不触及既有三项 metrics 断言口径（LOC 增长 / 注入双副本 diff / 文档一致性段），metrics-baseline.txt 未改；golden-vector diff 为空（62 框架向量 (v=1 c=0)，框架数未变）
+- C1 ✅：62/62 fixture 双态退出码与 golden 逐行一致
+- C2 ✅：`swarm-yuan/tests/e2e/run-e2e.sh` RC=0
+- C3 ✅：本轮未触及双副本机制；LOC_PRECHECK_STUDIO/DUP_DIFF_LINES 因兄弟仓库缺失记 ABSENT（环境 SKIP，非通过判定）
+- C4 ✅ 不恶化：本机 shellcheck 0.11.0 本轮新入 PATH（此前记录均为 SHELLCHECK_UNAVAILABLE）——SHELLCHECK_ERRORS 2（precheck.sh:573/575 SC1087，bc9cdff P1 批存量代码，0.11.0 对 `$vn[$i]` 解析更严）/ WARNINGS_CORE 21；`git show HEAD:` 复测 precheck.sh error=2、self-check.sh error=0 与 warning 计数逐项一致，本轮改动 0 新增
+- C5 ✅：cli-ab 171 调用 0 diff（含 4 新门禁 flag 的 A/B 沙箱逐字节一致），core10 序列 OK
+- C6 ✅：metrics 断言 3/3 OK
+- C8 ✅：gate-fixtures 40/40 组全绿（run-gate-fixture.sh 无参数「共 40 组，失败组 0」）
+- 行业 profile ✅：`tests/run-industry-profile.sh gov` RC=0（覆盖断言通过）
+- 真值核对 ✅：check_*=40、GATE_FLAGS=40（1:1）、ALL_GATES_CORE=10/COMPLIANCE=13/FULL=40（架构=40−10−13=17）、conf 变量=151（core 12 + arch 100 + compliance 39）、references/*.md（不含 frameworks/）=19、enforce strict 14/warn 20/advisory 6（gen-enforce-level 实际输出：dengbao 6 fail/pia 4 fail → strict，sast-deep 1 fail/oss-eval 2 fail → warn）、framework-gates/*.sh=62、gate-fixtures=40 组
+- self-check ✅：--check-only RC=0 全绿（11 运行时全装；文档一致性段 0 违规：40 门禁/151 变量/62 框架/五文档头部数字/enforce 分层一致；上游基线 drifted comet/graphify/ruflo 为 warn-only 忠告不置 FAIL）
+- 本轮修复项（2 处 verifier/自检链路缺陷，非门禁语义变更）：
+  1. self-check.sh：MISSING==0（运行时全装）时早期 exit，文档一致性/框架规则集核验/enforce 分层段永不执行——2026-07-21 修复的「--check-only 死代码」同类缺陷另一分支；修复后本地检查段无条件执行。注：此前记录「--check-only 早期 exit 为 HEAD 既有行为」自本轮起不再成立
+  2. metrics-assert.sh ③：self-check 改 `--check-only`——裸跑默认 FORCE_LATEST=1，全装也联网升级全部运行时（npm i -g/npx/源码包重装/gstack setup 拉 playwright chromium ~160MB），断言目标（文档一致性段）与升级无关却使 verifier 非密封且篡改全局环境；本轮首跑即在 chromium 下载段（~40KB/s）挂 1.5h 被终止（如实登记：首跑未完成非代码失败）。--check-only（FORCE_LATEST=0）跳过升级段，文档一致性段经修复 1 后照常执行

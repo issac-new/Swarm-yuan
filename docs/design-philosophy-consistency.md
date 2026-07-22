@@ -39,9 +39,9 @@
 
 | 平台 | CI Job | 覆盖 | 状态 |
 |------|--------|------|------|
-| Linux | ubuntu-latest（verify-framework-rulesets / fixture-double-state / generator-self-gate / self-check / shellcheck / e2e / verifier） | 61 ruleset + 61 fixture + 36 gate-fixture + e2e + verifier all + shellcheck 18 脚本 | ✅ 全覆盖 |
-| macOS | macos-latest（macos-bsd-compat） | bash 3.2 语法 + 61 ruleset + 61 fixture + 36 gate-fixture（BSD grep/awk 兼容） | ✅ 全覆盖 |
-| Windows | windows-latest（windows-compat，WP2.1 新增） | Git Bash bash -n + 61 fixture + 36 gate-fixture + .bat 烟雾测试 | ✅ WP2.1 新增 |
+| Linux | ubuntu-latest（verify-framework-rulesets / fixture-double-state / generator-self-gate / self-check / shellcheck / e2e / verifier） | 62 ruleset + 62 fixture + 40 gate-fixture + e2e + verifier all + shellcheck 18 脚本 | ✅ 全覆盖 |
+| macOS | macos-latest（macos-bsd-compat） | bash 3.2 语法 + 62 ruleset + 62 fixture + 40 gate-fixture（BSD grep/awk 兼容） | ✅ 全覆盖 |
+| Windows | windows-latest（windows-compat，WP2.1 新增） | Git Bash bash -n + 62 fixture + 40 gate-fixture + .bat 烟雾测试 | ✅ WP2.1 新增 |
 
 **核对结论**：三平台 CI 全覆盖，Windows 不再是虚假声称。.bat WSL 路径转换 bug 已修（WP2.2）。离线包 wheel 三平台覆盖（WP2.3）。
 
@@ -49,13 +49,13 @@
 
 | 测试体系 | CI Job | 覆盖 | 状态 |
 |---------|--------|------|------|
-| 61 framework fixture（id 级双态） | fixture-double-state + macos + windows | 62 框架 × violating/compliant/expected-fail-ids | ✅ 三平台 |
-| 36 gate-fixture（全量双态） | fixture-double-state + macos + windows + verifier | 36 门禁组（WP3.3 从 6 组扩到全量） | ✅ 全量 |
+| 62 framework fixture（id 级双态） | fixture-double-state + macos + windows | 62 框架 × violating/compliant/expected-fail-ids | ✅ 三平台 |
+| 40 gate-fixture（全量双态） | fixture-double-state + macos + windows + verifier | 40 门禁组（WP3.3 从 6 组扩到全量） | ✅ 全量 |
 | e2e（四框架注入全链路） | e2e + verifier all | Java demo mybatis/lombok/spring-batch/sharding | ✅ WP3.1 进 CI |
 | verifier all（C1-C8 验收） | verifier（WP3.2 新增） | fixtures + gate-fixtures + e2e + cli-ab + metrics-assert | ✅ WP3.2 进 CI |
 | shellcheck | shellcheck（WP3.4 扩展） | 18 个核心+verifier+tests 脚本 | ✅ WP3.4 扩展 |
 
-**核对结论**：测试覆盖缺口补齐，e2e/verifier/36 gate-fixture 全进 CI。
+**核对结论**：测试覆盖缺口补齐，e2e/verifier/40 gate-fixture 全进 CI。
 
 ## 五、两条设计理念落实（WP4，2026-07-21）
 
@@ -72,7 +72,7 @@
 # 文档一致性（数字口径机械核对，含根 CLAUDE.md）
 bash swarm-yuan/scripts/self-check.sh --check-only
 
-# 全量验收（61 fixture id 级 + 36 gate-fixture + e2e + cli-ab + metrics-assert）
+# 全量验收（62 fixture id 级 + 40 gate-fixture + e2e + cli-ab + metrics-assert）
 bash verifier/v1/run-verifier.sh all
 
 # 理念 2 机器执法（workflow 调用追踪要素 + 零占位符）

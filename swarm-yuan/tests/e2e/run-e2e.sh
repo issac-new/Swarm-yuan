@@ -13,6 +13,11 @@ echo "▶ E2E: 四框架注入 + 门禁 fail 全链路验证"
 # 1. 构造目标 skill 骨架（precheck.sh + conf）
 mkdir -p "${FIX_DIR}/scripts"
 cp "${PARADIGM}/assets/precheck.sh" "${FIX_DIR}/scripts/precheck.sh"
+# WP-Q1.3：拆分后 precheck.sh 依赖 gates-strict/warn/advisory.sh 三文件（source 守卫，
+# check_framework 等在 gates-warn.sh）——与 tests/run-gate-fixture.sh 同款拷贝
+for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
+  [[ -f "${PARADIGM}/assets/$_gf" ]] && cp "${PARADIGM}/assets/$_gf" "${FIX_DIR}/scripts/$_gf"
+done
 cat > "${FIX_DIR}/scripts/precheck.conf" <<'EOF'
 PROJECT_DIR="__DEMO__"
 ACTIVE_FRAMEWORKS=("mybatis" "lombok" "spring-batch" "sharding")
@@ -56,6 +61,10 @@ REG_DIR="$(mktemp -d /tmp/fwreg.XXXXXX)"
 trap 'rm -rf "${FIX_DIR}" "${REG_DIR}"' EXIT
 mkdir -p "${REG_DIR}/scripts" "${REG_DIR}/src" "${REG_DIR}/dist"
 cp "${PARADIGM}/assets/precheck.sh" "${REG_DIR}/scripts/precheck.sh"
+# 同上：开发态需同目录 gates-*.sh（reuse/security 门禁函数在拆分文件中）
+for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
+  [[ -f "${PARADIGM}/assets/$_gf" ]] && cp "${PARADIGM}/assets/$_gf" "${REG_DIR}/scripts/$_gf"
+done
 cat > "${REG_DIR}/scripts/precheck.conf" <<EOF
 PROJECT_DIR="${REG_DIR}"
 WRITABLE_DIRS=("src")

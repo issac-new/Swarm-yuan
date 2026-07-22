@@ -74,8 +74,18 @@ for prof in comp viol; do
     mkdir -p "$sd"
     if [ "$ver" = "a" ]; then
       cp "$WORK/precheck-A.sh" "$sd/precheck.sh"
+      # WP-Q1.3 拆分后 precheck.sh 依赖同目录 gates-strict/warn/advisory.sh（source 守卫），
+      # 缺文件则全部门禁 command not found（rc=127）。A 版配套 gates 取自 HEAD 对象，
+      # 与 precheck-A 同一代口径；对象缺失则跳过（source 守卫容忍，对齐 fixtures/e2e 拷贝范式）。
+      for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
+        git -C "$ROOT" show "HEAD:swarm-yuan/assets/$_gf" > "$sd/$_gf" 2>/dev/null || rm -f "$sd/$_gf"
+      done
     else
       cp "$PRECHECK_B" "$sd/precheck.sh"
+      # B 版配套 gates 取自工作区（与 PRECHECK_B 同一代口径）
+      for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
+        [ -f "$SY/assets/$_gf" ] && cp "$SY/assets/$_gf" "$sd/$_gf"
+      done
     fi
     write_conf "$sd/precheck.conf" "$corpus" "$prof"
   done

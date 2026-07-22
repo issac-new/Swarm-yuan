@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# strict (12) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
+# strict (14) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
 # 被 precheck.sh source（开发态）或 install.sh 内联（打包态）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
@@ -618,7 +618,7 @@ check_shift_left() {
     local md
     for md in "${MIGRATION_DIRS[@]}"; do
       [[ -d "$md" ]] || continue
-      local hits; hits=$(grep -rnEi "$BREAKING_DDL_PATTERNS" "$md" 2>/dev/null | grep -v -i 'down\|rollback\|revert' || true)
+      local hits; hits=$(grep -rnEi "$BREAKING_DDL_PATTERNS" "$md" 2>/dev/null | grep -viE 'down|rollback|revert' || true)
       if [[ -n "$hits" ]]; then
         warn "迁移目录 $md 含破坏性 DDL（DROP/TRUNCATE），须确认向前兼容或双写期："
         echo "$hits" | head -5
@@ -748,6 +748,36 @@ check_compliance() {
       fail "gate_compliance_spec_section_missing: spec 缺少「## 22. 标准合规」段"
       found=1
     fi
+  fi
+  # ---- WP-S1 标准映射表核验（STANDARDS_MAP_FILE 配置或默认探测；文件不存在则跳过）----
+  local _smap="${STANDARDS_MAP_FILE:-}"
+  if [[ -z "$_smap" ]]; then
+    # 默认探测 SKILL_DIR/assets/standards-map.conf（SKILL_DIR 用 _CONF_DIR 推导，同矩阵探测口径）
+    local _smap_dir _smap_cand
+    _smap_dir=$(cd "${_CONF_DIR}/.." 2>/dev/null && pwd || echo "")
+    _smap_cand="${_smap_dir}/assets/standards-map.conf"
+    [[ -n "$_smap_dir" && -f "$_smap_cand" ]] && _smap="$_smap_cand"
+  fi
+  if [[ -n "$_smap" && -f "$_smap" ]]; then
+    local _ln_no=0 _bad_fmt="" _bad_conf="" _row _nf _cf
+    while IFS= read -r _row || [[ -n "$_row" ]]; do
+      _ln_no=$((_ln_no+1))
+      case "$_row" in ''|\#*) continue;; esac
+      _nf=$(printf '%s\n' "$_row" | awk -F'|' '{print NF}')
+      if [[ "$_nf" -ne 5 ]]; then
+        _bad_fmt="${_bad_fmt}${_ln_no}行(${_nf}字段) "
+        continue
+      fi
+      _cf=$(printf '%s\n' "$_row" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$5); print $5}')
+      case "$_cf" in high|medium|unverified) ;; *) _bad_conf="${_bad_conf}${_ln_no}行(${_cf}) ";; esac
+    done < "$_smap"
+    if [[ -n "$_bad_fmt" ]]; then
+      fail "gate_compliance_standards_map_format: 标准映射表字段数≠5：${_bad_fmt}（须为 rule|cwe|gb_iso|asvs5|confidence 五字段）"
+    fi
+    if [[ -n "$_bad_conf" ]]; then
+      fail "gate_compliance_standards_map_confidence: 标准映射表 confidence 非法值：${_bad_conf}（仅 high|medium|unverified）"
+    fi
+    [[ -z "$_bad_fmt" && -z "$_bad_conf" ]] && pass "标准映射表核验通过（${_smap}）"
   fi
   [[ $found -eq 0 ]] && pass "标准合规矩阵校验通过（锚点齐备，无占位符）"
 }
@@ -905,14 +935,14 @@ check_privacy() {
   for d in "${existing[@]}"; do
     for pat in "${patterns[@]}"; do
       # 滤 example/mock/dummy/placeholder/样例 噪声行；-I 跳过二进制
-      hits=$(grep -rnIE "$pat" "$d" 2>/dev/null | grep -v -i 'example\|mock\|dummy\|placeholder\|样例' || true)
+      hits=$(grep -rnIE "$pat" "$d" 2>/dev/null | grep -viE 'example|mock|dummy|placeholder|样例' || true)
       [[ -n "$hits" ]] && pii_files="${pii_files}$(echo "$hits" | cut -d: -f1)
 "
     done
     # 敏感关键词（固定串、忽略大小写）
     if [[ ${#PRIVACY_SENSITIVE_KEYWORDS[@]} -gt 0 ]]; then
       for kw in "${PRIVACY_SENSITIVE_KEYWORDS[@]}"; do
-        hits=$(grep -rniF "$kw" "$d" 2>/dev/null | grep -v -i 'example\|mock\|dummy\|placeholder\|样例' || true)
+        hits=$(grep -rniF "$kw" "$d" 2>/dev/null | grep -viE 'example|mock|dummy|placeholder|样例' || true)
         [[ -n "$hits" ]] && pii_files="${pii_files}$(echo "$hits" | cut -d: -f1)
 "
       done
@@ -1134,6 +1164,161 @@ check_rtm() {
   local pct=$((traced*100/total))
   echo "  ⓘ 追溯率：${pct}%（${traced}/${total}，矩阵：${matrix}）"
   [[ $found -eq 0 ]] && pass "需求追溯矩阵检查通过（全部 ${total} 个 REQ 已追溯，追溯率 ${pct}%）"
+}
+
+check_dengbao() {
+  echo "=== 等级保护 2.0 控制点映射检查（GB/T 22239-2019 安全计算环境/安全建设管理）==="
+  local level="${DENGBAO_LEVEL:-}"
+  if [[ -z "$level" ]]; then
+    skip_if_unconfigured "DENGBAO_LEVEL 未配置（等保测评场景设 2 或 3）"
+    return
+  fi
+  if [[ "$level" != "2" && "$level" != "3" ]]; then
+    warn "未知 DENGBAO_LEVEL：${level}（仅支持 2/3），未执行"
+    return
+  fi
+  local found=0
+  # 豁免登记（四字段：规则id|理由|审批人|日期；空理由视为无效豁免不降级）
+  local _exempt=""
+  if [[ -n "${DENGBAO_EXEMPT_FILE:-}" && -f "${DENGBAO_EXEMPT_FILE}" ]]; then
+    _exempt=$(awk -F'|' '!/^[[:space:]]*(#|$)/ { r=$2; gsub(/^[ \t]+|[ \t]+$/,"",r); if (r != "") { id=$1; gsub(/^[ \t]+|[ \t]+$/,"",id); print id } }' "$DENGBAO_EXEMPT_FILE" 2>/dev/null || true)
+  fi
+  _db_exempted() { printf '%s\n' "$_exempt" | grep -qF "$1"; }
+  # 扫描目录就绪性（与 --crypto 同姿态：启用但留空 → warn 披露）
+  if [[ ${#DENGBAO_SCAN_DIRS[@]} -eq 0 ]]; then
+    warn "DENGBAO_SCAN_DIRS 未配置，MFA/审计代码证据扫描未执行（fail-open 风险）"
+  fi
+  local _scan_hits
+  _scan_hits() { # $1=ERE；stdout=命中行（跨目录聚合，滤注释行与 example/mock）
+    local d
+    for d in ${DENGBAO_SCAN_DIRS[@]+"${DENGBAO_SCAN_DIRS[@]}"}; do
+      [[ -d "$d" ]] || continue
+      grep -rnE "$1" "$d" --include='*.java' --include='*.kt' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' 2>/dev/null \
+        | grep -viE 'example|mock|node_modules' \
+        | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|#|\*|/\*)' || true
+    done
+  }
+  # ① 双因子鉴别（三级起强制：两种及以上组合且至少一种密码技术；GB/T 22239-2019 三级安全计算环境）
+  if [[ "$level" == "3" ]]; then
+    local _mfa
+    _mfa=$(_scan_hits 'TOTP|GoogleAuthenticator|twoFactor|two_factor|2FA|\bMFA\b|\bOTP\b|短信验证码|动态口令')
+    if [[ -z "$_mfa" ]]; then
+      if _db_exempted gate_dengbao_mfa; then
+        warn "gate_dengbao_mfa: 未检出双因子鉴别证据（已豁免留痕：${DENGBAO_EXEMPT_FILE}）"
+      else
+        fail "gate_dengbao_mfa: 等保三级要求双因子身份鉴别（口令+密码技术/生物技术等两种及以上组合）——DENGBAO_SCAN_DIRS 内未检出 TOTP/OTP/MFA/短信验证码等证据（GB/T 22239-2019）"
+        found=1
+      fi
+    fi
+  fi
+  # ② 安全审计存在性（二级 warn / 三级 fail）
+  local _audit
+  _audit=$(_scan_hits 'audit|Audit|审计')
+  if [[ -z "$_audit" ]]; then
+    if [[ "$level" == "3" ]]; then
+      if _db_exempted gate_dengbao_audit_missing; then
+        warn "gate_dengbao_audit_missing: 未检出安全审计日志调用（已豁免留痕）"
+      else
+        fail "gate_dengbao_audit_missing: 未检出安全审计日志调用（audit/审计）——等保三级安全审计控制点要求记录并保护审计记录（GB/T 22239-2019）"
+        found=1
+      fi
+    else
+      warn "未检出安全审计日志调用（audit/审计）——等保二级建议补审计记录（GB/T 22239-2019）"
+    fi
+  fi
+  # ③ 审计字段四要素声明（spec §23.2：日期时间/用户/事件类型/事件是否成功）
+  local _spec="${SPEC_FILE:-}"
+  if [[ -z "$_spec" || ! -f "$_spec" ]]; then
+    if _db_exempted gate_dengbao_audit_fields; then
+      warn "gate_dengbao_audit_fields: SPEC_FILE 未配置（已豁免留痕）"
+    else
+      fail "gate_dengbao_audit_fields: SPEC_FILE 未配置或不存在——无法核验审计字段四要素声明（spec §23.2 须声明：日期时间/用户/事件类型/事件是否成功）"
+      found=1
+    fi
+  else
+    local _fmiss=""
+    grep -qF '日期时间' "$_spec" 2>/dev/null || _fmiss="${_fmiss}日期时间 "
+    grep -qF '用户' "$_spec" 2>/dev/null || _fmiss="${_fmiss}用户 "
+    grep -qF '事件类型' "$_spec" 2>/dev/null || _fmiss="${_fmiss}事件类型 "
+    grep -qE '事件是否成功|成功与否' "$_spec" 2>/dev/null || _fmiss="${_fmiss}事件是否成功 "
+    if [[ -n "$_fmiss" ]]; then
+      if _db_exempted gate_dengbao_audit_fields; then
+        warn "gate_dengbao_audit_fields: spec 审计字段声明缺：${_fmiss}（已豁免留痕）"
+      else
+        fail "gate_dengbao_audit_fields: spec §23.2 审计字段声明缺要素：${_fmiss}（GB/T 22239-2019：审计记录应包括事件的日期和时间、用户、事件类型、事件是否成功及其他审计相关信息）"
+        found=1
+      fi
+    fi
+    # ④ 等保级别一致性（spec 声明级别 vs DENGBAO_LEVEL）
+    local _spec_lv
+    _spec_lv=$(grep -oE '等保[^0-9]*[23]级' "$_spec" 2>/dev/null | grep -oE '[23]' | head -1 || true)
+    if [[ -z "$_spec_lv" ]]; then
+      warn "spec §23.2 未声明等保级别（建议补充「等保级别：X 级」）"
+    elif [[ "$_spec_lv" != "$level" ]]; then
+      if _db_exempted gate_dengbao_level_mismatch; then
+        warn "gate_dengbao_level_mismatch: spec 声明 ${_spec_lv} 级 vs DENGBAO_LEVEL=${level}（已豁免留痕）"
+      else
+        fail "gate_dengbao_level_mismatch: spec 声明等保 ${_spec_lv} 级与 DENGBAO_LEVEL=${level} 不一致——立法（spec）与执法（conf）必须同源"
+        found=1
+      fi
+    fi
+  fi
+  # ⑤ 个人信息保护勾稽（二级起要求；--privacy 须在配）
+  if [[ ${#PRIVACY_SCAN_DIRS[@]} -eq 0 ]]; then
+    if _db_exempted gate_dengbao_privacy_unconfigured; then
+      warn "gate_dengbao_privacy_unconfigured: PRIVACY_SCAN_DIRS 未配置（已豁免留痕）"
+    else
+      fail "gate_dengbao_privacy_unconfigured: PRIVACY_SCAN_DIRS 未配置——等保二级起要求个人信息保护，须启用 --privacy 扫描（GB/T 22239-2019 个人信息保护控制点）"
+      found=1
+    fi
+  fi
+  # ⑥ 剩余信息保护（warn-only：敏感数据清除证据）
+  local _resid
+  _resid=$(_scan_hits 'Arrays\.fill|shred|secureErase|SecureRandom|清除敏感|内存清零')
+  [[ -z "$_resid" ]] && warn "未检出剩余信息保护证据（敏感数据存储空间清除/释放，如 Arrays.fill/shred）——建议人工核对（GB/T 22239-2019 剩余信息保护）"
+  [[ $found -eq 0 ]] && pass "等保 ${level} 级控制点映射检查通过（GB/T 22239-2019）"
+}
+
+check_pia() {
+  echo "=== 隐私影响评估（PIA）检查（个人信息保护法第55-56条 / GB/T 35273-2020）==="
+  [[ "${PIA_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "PIA_REQUIRED 未启用，PIA 检查跳过"; return; }
+  local dir="${PIA_DOCS_DIR:-docs/privacy}"
+  local found=0
+  if [[ ! -d "$dir" ]]; then
+    fail "gate_pia_doc_missing: PIA 文档目录不存在：${dir}（PIA_REQUIRED=1，fail-closed；个保法第55条：处理敏感个人信息等情形须事前进行个人信息保护影响评估）"
+    return
+  fi
+  # ① PIA 评估文档存在性
+  local _pia_doc
+  _pia_doc=$(find "$dir" -maxdepth 2 -type f \( -iname '*pia*' -o -name '*隐私影响评估*' -o -name '*影响评估*' \) 2>/dev/null | head -1)
+  if [[ -z "$_pia_doc" ]]; then
+    fail "gate_pia_doc_missing: PIA 评估文档不存在（${dir} 下未见 *pia*/ *隐私影响评估* 文件；个保法第55-56条）"
+    found=1
+  fi
+  # ② 个人信息处理活动清单存在性
+  local _inv
+  _inv=$(find "$dir" -maxdepth 2 -type f \( -name '*清单*' -o -iname '*inventory*' -o -iname '*register*' -o -iname '*activities*' \) 2>/dev/null | head -1)
+  if [[ -z "$_inv" ]]; then
+    fail "gate_pia_inventory_missing: 个人信息处理活动清单不存在（${dir} 下未见 *清单*/*inventory*/*register* 文件；GB/T 35273-2020 处理活动记录）"
+    found=1
+  fi
+  # ③ PIA 文档零 TBD（评估报告不得含待定项）
+  local _tbd
+  _tbd=$(grep -rnE 'TBD|待定|待明确|待补充' "$dir" 2>/dev/null || true)
+  if [[ -n "$_tbd" ]]; then
+    fail "gate_pia_tbd: PIA 文档含待定项（TBD/待定/待明确/待补充）——评估结论必须完整：
+$(printf '%s\n' "$_tbd" | head -5 | sed 's/^/    /')"
+    found=1
+  fi
+  # ④ 清单覆盖勾稽（warn-only：PRIVACY_SCAN_DIRS 各目录应在清单中有引用）
+  if [[ -n "$_inv" && ${#PRIVACY_SCAN_DIRS[@]} -gt 0 ]]; then
+    local d _base
+    for d in ${PRIVACY_SCAN_DIRS[@]+"${PRIVACY_SCAN_DIRS[@]}"}; do
+      _base=$(basename "$d")
+      grep -qF "$_base" "$_inv" 2>/dev/null || warn "处理活动清单（${_inv}）未引用 PRIVACY_SCAN_DIRS 目录：${d}——请核对登记完整性"
+    done
+  fi
+  [[ $found -eq 0 ]] && pass "PIA 检查通过（评估文档+处理活动清单齐备，零待定项）"
 }
 
 check_release_sign() {
