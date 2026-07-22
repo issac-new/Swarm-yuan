@@ -393,3 +393,15 @@ ocr 新增 LLM provider 支持：
 | TDD 强制 | RED→GREEN→REFACTOR，先写测试后写代码（删违规代码） | `--test` 可引用 |
 | 系统调试 | 4 阶段根因定位（root-cause-tracing / defense-in-depth / condition-based-waiting） | `--review` 可引用 |
 | 验证前完成 | 确保"真的修了"而非"以为修了" | goal-backward 可引用 |
+
+## pre-emit 引用门与置信度标定（gstack #1539 吸收，治 fail-open/误报）
+
+> 来源：gstack review/SKILL.md:1241-1276（pre-emit 验证门）+ cso/SKILL.md:1012-1046（置信度标定 + 并行独立验证）。
+
+**pre-emit 引用门**：凡审查产出的 finding **必须逐字引用动机代码行（file:line）**，否则强制降级压出主报告——"If you cannot quote the motivating line(s), the finding is unverified"。
+
+**置信度标定**：finding 应带置信度标注（high/medium/low），3-4 分压入附录、1-2 分仅 P0 才报。一个 VERIFIED finding 即全库搜同模式变体（变体分析）；每个候选 finding 可派独立验证 subagent（只给 file:line 防锚定），低于阈值即弃。
+
+**FP 硬排除**：对已知误报类（如"文档文件不是可执行代码"、"SKILL.md 是可执行提示代码不适用文档豁免"）建立排除清单，审查时先过滤。
+
+**门禁承载**：`precheck.sh check_review`——ocr review 输出对含 finding 关键词但缺 `file:line` 引用的行降级 warn（pre-emit 引用门）；AI 5 维度审查降级路径输出 pre-emit 指引。姿态为 **warn 级 advisory**（不新增 fail），与现有降级策略一致。

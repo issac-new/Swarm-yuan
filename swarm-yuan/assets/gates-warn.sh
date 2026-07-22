@@ -168,6 +168,15 @@ check_review() {
           fail "ocr review 检测到 High/Critical 级问题（须修复）"
           found=1
         fi
+        # A 方向：pre-emit 引用门（gstack #1539 吸收，治 fail-open/误报）——
+        # finding 须逐字引用动机代码行（file:line），缺引用的 finding 降级 warn 压出主报告。
+        # "If you cannot quote the motivating line(s), the finding is unverified."
+        local _noref_cnt
+        _noref_cnt=$(echo "$diff_output" | grep -iE 'issue|finding|问题|风险|漏洞' \
+          | grep -vE '[a-zA-Z0-9_/.-]+\.[a-zA-Z]+:[0-9]+' | grep -c . || true)
+        if [[ "${_noref_cnt:-0}" -gt 0 ]]; then
+          warn "pre-emit 引用门：${_noref_cnt} 条 finding 未引用动机代码行（file:line），按 gstack #1539 降级（未验证 finding 不进主报告）"
+        fi
       else
         # --from/--to 失败时降级为 ocr scan
         warn "ocr review --from/--to 失败（可能无 diff 或参数不支持），降级 ocr scan"
@@ -186,6 +195,9 @@ check_review() {
     warn "ocr 未安装，安装 ocr（npm i -g @alibaba-group/open-code-review）或由 AI 按 5 维度审查：正确性/安全/性能/可维护/测试覆盖"
     echo "  两遍清单：CRITICAL（SQL/竞态/注入/越权/路径穿越）+ INFORMATIONAL（命名/注释/风格）"
     echo "  严重度：High（必修）/ Medium（评估）/ Low（丢弃）"
+    # A 方向：pre-emit 引用门指引（gstack #1539）——AI 审查每条 finding 须引用动机代码行（file:line），
+    # 缺引用的 finding 视为未验证，压出主报告。置信度标定：high/medium/low，低置信压附录。
+    echo "  pre-emit 引用门（gstack #1539）：每条 finding 须引用动机代码行（file:line），缺引用=未验证压出主报告"
   fi
 
   # 附加：如果装了 gstack，提示可用的扩展审查维度

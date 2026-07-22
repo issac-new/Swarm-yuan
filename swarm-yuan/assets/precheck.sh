@@ -263,6 +263,8 @@ _default_conf() {
   # 门禁工具化（P1-4/P1-5）：gate-runs 证据落盘目录（空=关闭，不影响任何既有输出）
   GATE_RUNS_DIR=""
 }
+# A 方向：--gate-stats 需读 env GATE_RUNS_DIR（_default_conf 会重置为空），重置前捕获
+_ENV_GATE_RUNS_DIR="${GATE_RUNS_DIR:-}"
 _default_conf
 _CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 # WP-Q1.5：--list-gates / --doctor 在 source conf 前拦截——
@@ -270,7 +272,7 @@ _CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 # set -e 下 source 返回 1 会退出。--list-gates / --doctor 不依赖 conf，提前拦截。
 # 用 $1 直接判断（MODE 在 321 行才赋值，此处尚未解析）。
 case "${1:-}" in
-  --list-gates|--doctor) _skip_conf=1 ;;
+  --list-gates|--doctor|--gate-stats) _skip_conf=1 ;;
   *) _skip_conf=0 ;;
 esac
 if [[ "$_skip_conf" -eq 1 ]]; then
@@ -730,6 +732,36 @@ if [[ "$MODE" == "--list-gates" ]]; then
     esac
   done
   echo "汇总：strict ${_s} / warn ${_w} / advisory ${_a} = ${#GATE_FLAGS[@]}"
+  exit 0
+fi
+
+# --gate-stats（A 方向：adaptive gating 降级提示，gstack 吸收，治沉睡门禁）
+# 读 gate-runs.jsonl 统计每门禁连续零发现（status=pass 且 ids 空）次数；
+# advisory 门连续 N 次（默认 10）零发现 → warn 提示降级；安全类 NEVER_GATE 豁免。
+# 仅提示不自动降级（用户决策）。不需 cd PROJECT_DIR（读 GATE_RUNS_DIR 或默认路径），cd 前拦截。
+if [[ "$MODE" == "--gate-stats" ]]; then
+  _stats_file="${GATE_RUNS_DIR:-${_ENV_GATE_RUNS_DIR:-${PROJECT_DIR:-$(pwd)}/.swarm-yuan/gate-runs}}/gate-runs.jsonl"
+  if [[ ! -f "$_stats_file" ]]; then
+    echo "⚠ 无 gate-runs.jsonl（${_stats_file}）——需配置 GATE_RUNS_DIR 并跑过门禁"
+    exit 0
+  fi
+  _never_gate=" sensitive security authz privacy crypto sbom release-sign "
+  echo "=== adaptive gating 降级提示（连续 10 次零发现的 advisory 门）==="
+  # 提取所有出现过的门禁名（去重）
+  _gs_gates=$(grep -oE '"gate":"[^"]*"' "$_stats_file" 2>/dev/null | sed 's/"gate":"//;s/"$//' | sort -u)
+  for _g in $_gs_gates; do
+    # 安全类 NEVER_GATE 跳过
+    echo "$_never_gate" | grep -q " ${_g#check_} " && continue
+    # 从尾部向前连续计数 had_finding=false（status=pass 且 ids 空 []）
+    _streak=$(grep "\"gate\":\"$_g\"" "$_stats_file" 2>/dev/null | tac | \
+      awk -F'"status":"' '{split($2,a,"\""); s=a[1]}
+           /"ids":\[\]/{if(s=="pass") c++; else exit}
+           /"ids":\[.\]/{exit}
+           END{print c+0}')
+    [[ "${_streak:-0}" -ge 10 ]] && \
+      echo "  ⚠ ${_g} 连续 ${_streak} 次零发现，建议评估降级（adaptive gating；安全类 NEVER_GATE 已豁免）"
+  done
+  echo "  （仅提示不自动降级——用户决策；安全类门 sensitive/security/authz/privacy/crypto/sbom/release-sign 永不降级）"
   exit 0
 fi
 
