@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
 # self-check.sh — swarm-yuan 运行前自检：11 个项目运行时是否已安装，未装则自动安装最新版
 #
-# 安装策略（优先级从高到低）：
-#   1. 本地源码（RESEARCH_DIR 下各项目 git clone）：git pull → install 依赖 → build → npm link
-#      · 适合开发/调试：能改源码、能跟上游最新 commit
-#   2. npm 全局包（@latest）：npm i -g <pkg>@latest
-#      · 适合纯使用：无源码、无 build、即装即用
-#   3. npx 一次性调用（@latest）：npx -y <pkg>@latest <args>
-#      · 适合不愿全局安装的场景
+# 安装策略（三类）：
+#   1. npm 全局包（@latest）：npm i -g <pkg>@latest  或  npx -y <pkg>@latest <args>
+#      · openspec / comet / gitnexus / gsd-core / claude-mem / ocr / ruflo
+#   2. python 工具：uv tool install → pipx install → pip install 降级
+#      · graphify
+#   3. GitHub Release 源码包：下载 <name>-src.zip → 解压到目标目录 → ./setup
+#      · gstack / superpowers / ECC（无法走包管理器的运行时）
 #
 # 用法:
-#   bash self-check.sh                  # 检测 + 自动安装/升级到最新版（优先用 research 源码）
+#   bash self-check.sh                  # 检测 + 自动安装/升级到最新版
 #   bash self-check.sh --check-only     # 仅检测不安装
 #   bash self-check.sh --install <name> # 仅装指定项目（最新版）
-#   bash self-check.sh --npm            # 强制用 npm 全局包安装（跳过 research 源码）
 #   bash self-check.sh --latest         # 已装的也升级到最新版
 #
 # 环境变量:
-#   RESEARCH_DIR  本地源码根目录（默认推断：脚本所在 skills/swarm-yuan 的上层 research 目录）
+#   SRC_RELEASE_TAG   源码包 Release tag（默认 v<当天YYYYMMDD>-src，可覆盖）
 
 # 注意：set -u 与管道中 read 配合时需谨慎；这里不用 set -e 以便单个失败不中断整体
 set -uo pipefail
@@ -26,27 +25,12 @@ pass(){ echo "  ✓ $1"; }
 miss(){ echo "  ✗ $1 未安装"; FAIL=1; return 1; }
 warn(){ echo "  ⚠ $1"; }
 
-# ---------- 推断 RESEARCH_DIR（research 目录下有各项目 git clone）----------
-SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)"
-# swarm-yuan/scripts/self-check.sh → 上 4 级（scripts→swarm-yuan→skills→.claude→HOME），再 upstream/research
-_default_research=""
-for cand in \
-  "$SCRIPT_PATH/../../../../upstream/research" \
-  "$HOME/upstream/research"; do
-  if [[ -d "$cand" ]]; then _default_research="$cand"; break; fi
-done
-RESEARCH_DIR="${RESEARCH_DIR:-$_default_research}"
+# ---------- 源码包 Release 配置 ----------
+SRC_RELEASE_REPO="issac-new/Swarm-yuan"
+SRC_RELEASE_TAG="${SRC_RELEASE_TAG:-v$(date -u +%Y%m%d)-src}"
 
-# ---------- 探测可用包管理器 ----------
+# ---------- 工具检测 ----------
 has_cmd(){ command -v "$1" &>/dev/null; }
-pick_pm(){
-  # 给定项目根目录，返回该项目的包管理器命令
-  local root="$1"
-  if [[ -f "$root/pnpm-lock.yaml" ]] && has_cmd pnpm; then echo "pnpm"
-  elif [[ -f "$root/bun.lockb" || -f "$root/bunfig.toml" ]] && has_cmd bun; then echo "bun"
-  elif [[ -f "$root/yarn.lock" ]] && has_cmd yarn; then echo "yarn"
-  else echo "npm"; fi
-}
 
 # ---------- 检测函数（miss 时 return 1，pass 时 return 0；if/else 形式避免 A&&B||C 误判）----------
 check_openspec(){
@@ -97,131 +81,88 @@ check_ecc(){
   if [[ -d ~/.claude/plugins/ecc || -d ~/.claude/skills/ecc ]]; then pass "ECC: 已安装"; else miss "ECC（需 /plugin marketplace add https://github.com/affaan-m/ECC && /plugin install ecc）"; fi
 }
 
-# ---------- 通用：从 research 源码安装（git pull + install + build + link）----------
-# 参数: <项目名> <源码根目录> [可选 bin 名用于 link]
-# 鲁棒性：install 用 --ignore-scripts 避免 prepare/postinstall 触发子 pm 失败；
-#        build 单独执行；link 用 npm link（pnpm link --global 需 PATH 配置，不稳）；
-#        任一步失败则返回非 0，调用方降级到 npm i -g @latest
-install_from_source(){
-  local name="$1" root="$2"
-  local pj="$root/package.json"
-  if [[ ! -f "$pj" ]]; then
-    echo "  ✗ $name 源码目录无 package.json: $root"
-    return 1
+# ---------- 通用：从 GitHub Release 源码包安装 ----------
+# 参数: <项目名> <zip名> <目标目录> [可选 setup 命令]
+# 流程: curl 下载 Release <tag>/<zip> → 解压 → cp 到 <目标目录> → 跑 setup
+# 失败: 下载/解压失败 return 1（调用方计入 FAIL）；setup 失败 warn 不 return 1（文件已就位）
+install_from_src_release(){
+  local name="$1" zip="$2" dest="$3" setup="${4:-}"
+  local url="https://github.com/${SRC_RELEASE_REPO}/releases/download/${SRC_RELEASE_TAG}/${zip}"
+  local tmp; tmp="$(mktemp -d)"
+  echo "  → [$name] 下载源码包: $url"
+  if ! (cd "$tmp" && curl -fsSL -o "$zip" "$url"); then
+    echo "  ✗ $name 源码包下载失败: $url"
+    echo "    手工下载: 浏览器打开 $url，或确认 Release tag $SRC_RELEASE_TAG 存在"
+    rm -rf "$tmp"; return 1
   fi
-  local pm; pm=$(pick_pm "$root")
-  echo "  → [$name] 源码安装 ($pm): $root"
-  # 1. git pull 拉最新（research 目录是只读参考，pull --ff-only 不改未提交内容）
-  if [[ -d "$root/.git" ]]; then
-    echo "  → git pull --ff-only"
-    (cd "$root" && git pull --ff-only 2>&1 | tail -2) || warn "$name git pull 失败（可能本地有改动，继续用当前版本）"
+  if ! (cd "$tmp" && unzip -q "$zip" -d extracted); then
+    echo "  ✗ $name 源码包解压失败"; rm -rf "$tmp"; return 1
   fi
-  # 2. install 依赖（--ignore-scripts 跳过 prepare/postinstall，避免子 pm 触发失败）
-  echo "  → $pm install --ignore-scripts"
-  (cd "$root" && $pm install --ignore-scripts 2>&1 | tail -2) || { warn "$name $pm install 失败"; return 1; }
-  # 3. build（单独执行，更可控）
-  local build_script
-  build_script=$(node -e "const p=require('$pj'); console.log((p.scripts&&p.scripts.build)||'')" 2>/dev/null)
-  if [[ -n "$build_script" ]]; then
-    echo "  → $pm run build"
-    (cd "$root" && $pm run build 2>&1 | tail -4) || { warn "$name build 失败"; return 1; }
+  # zip 内为单层目录，取其内容；无单层目录则直接取 extracted/
+  local inner; inner="$(find "$tmp/extracted" -mindepth 1 -maxdepth 1 -type d | head -1)"
+  local src="${inner:-$tmp/extracted}"
+  mkdir -p "$dest"
+  cp -R "$src"/. "$dest/" 2>/dev/null || cp -R "$src"/* "$dest/" 2>/dev/null
+  rm -rf "$dest/.git" 2>/dev/null || true
+  rm -rf "$tmp"
+  if [[ -n "$setup" ]]; then
+    echo "  → [$name] 运行 setup: $setup"
+    (cd "$dest" && eval "$setup") 2>&1 | tail -4 || warn "$name setup 失败（文件已就位，请手动检查）"
   fi
-  # 4. npm link 全局注册 bin（npm link 比 pnpm link --global 兼容性更好）
-  #    但 npm link 会触发 prepare，故用 --no-scripts 避免重复 build
-  echo "  → npm link --no-scripts"
-  if (cd "$root" && npm link --no-scripts 2>&1 | tail -2); then
-    echo "  ✓ $name 源码安装完成（npm link 已注册）"
-  else
-    warn "$name npm link 失败，降级 npm i -g @latest"
-    return 1
-  fi
+  echo "  ✓ $name 源码包安装完成: $dest"
 }
 
-# ---------- research 源码根目录定位 ----------
-src_root_openspec(){ echo "$RESEARCH_DIR/openspec"; }
-src_root_comet(){    echo "$RESEARCH_DIR/comet"; }
-src_root_gitnexus(){ echo "$RESEARCH_DIR/gitnexus/gitnexus"; }  # 嵌套：外层 monorepo，内层才是包
-src_root_gsd_core(){ echo "$RESEARCH_DIR/gsd-core"; }
-src_root_claude_mem(){ echo "$RESEARCH_DIR/claude-mem"; }
-src_root_ocr(){      echo "$RESEARCH_DIR/open-code-review"; }
-
-# ---------- 安装函数（优先 research 源码，降级 npm/npx）----------
-# 模式：源码优先 → 失败则降级 npm i -g @latest / npx -y @latest
+# ---------- 安装函数（三类：npm / python / 源码包）----------
 install_openspec(){
-  if [[ -n "$RESEARCH_DIR" && -d "$(src_root_openspec)" && $USE_NPM_ONLY -eq 0 ]]; then
-    install_from_source "openspec" "$(src_root_openspec)" \
-      || { echo "  ↻ 降级 npm i -g @fission-ai/openspec@latest"; npm i -g @fission-ai/openspec@latest 2>&1|tail -2; }
-  else
-    echo "  → npm i -g @fission-ai/openspec@latest"; npm i -g @fission-ai/openspec@latest 2>&1|tail -2
-  fi
+  echo "  → npm i -g @fission-ai/openspec@latest"; npm i -g @fission-ai/openspec@latest 2>&1|tail -2
 }
 install_comet(){
-  if [[ -n "$RESEARCH_DIR" && -d "$(src_root_comet)" && $USE_NPM_ONLY -eq 0 ]]; then
-    install_from_source "comet" "$(src_root_comet)" \
-      || { echo "  ↻ 降级 npm i -g @rpamis/comet@latest"; npm i -g @rpamis/comet@latest 2>&1|tail -2; }
-  else
-    echo "  → npm i -g @rpamis/comet@latest"; npm i -g @rpamis/comet@latest 2>&1|tail -2
-  fi
+  echo "  → npm i -g @rpamis/comet@latest"; npm i -g @rpamis/comet@latest 2>&1|tail -2
 }
 install_gitnexus(){
-  if [[ -n "$RESEARCH_DIR" && -d "$(src_root_gitnexus)" && $USE_NPM_ONLY -eq 0 ]]; then
-    install_from_source "gitnexus" "$(src_root_gitnexus)" \
-      || { echo "  ↻ 降级 npm i -g gitnexus@latest"; npm i -g gitnexus@latest 2>&1|tail -2; }
-  else
-    echo "  → npm i -g gitnexus@latest"; npm i -g gitnexus@latest 2>&1|tail -2
-  fi
+  echo "  → npm i -g gitnexus@latest"; npm i -g gitnexus@latest 2>&1|tail -2
 }
 install_gsd_core(){
-  # gsd-core 是运行时 artifact 安装器：源码 build+link 提供 gsd-tools bin，
-  # 但仍需 npx 调用写入 ~/.claude 运行时 artifacts
-  if [[ -n "$RESEARCH_DIR" && -d "$(src_root_gsd_core)" && $USE_NPM_ONLY -eq 0 ]]; then
-    install_from_source "gsd-core" "$(src_root_gsd_core)" || true
-  fi
+  # gsd-core 是运行时 artifact 安装器：npx 调用写入 ~/.claude 运行时 artifacts
   echo "  → npx -y @opengsd/gsd-core@latest --claude --global（写入运行时 artifacts）"
   npx -y @opengsd/gsd-core@latest --claude --global 2>&1 | tail -4
 }
 install_claude_mem(){
-  # claude-mem 用 bun（有 bunfig.toml）；research 源码 build 后 npm link
-  if [[ -n "$RESEARCH_DIR" && -d "$(src_root_claude_mem)" && $USE_NPM_ONLY -eq 0 ]]; then
-    install_from_source "claude-mem" "$(src_root_claude_mem)" \
-      || { echo "  ↻ 降级 npx -y claude-mem@latest install"; npx -y claude-mem@latest install 2>&1|tail -4; }
-  else
-    echo "  → npx -y claude-mem@latest install"; npx -y claude-mem@latest install 2>&1|tail -4
-  fi
+  echo "  → npx -y claude-mem@latest install"; npx -y claude-mem@latest install 2>&1|tail -4
 }
 install_ocr(){
-  # ocr 的 postinstall 下载平台二进制，源码 link 不稳；优先 npm i -g @latest
+  # ocr 的 postinstall 下载平台二进制，npm i -g @latest 最稳
   echo "  → npm i -g @alibaba-group/open-code-review@latest"; npm i -g @alibaba-group/open-code-review@latest 2>&1|tail -2
 }
 install_graphify(){
-  # graphify 是 python 项目（uv/pipx），research 源码可 uv tool install --from <dir>
-  local src="$RESEARCH_DIR/graphify"
-  if [[ -n "$RESEARCH_DIR" && -d "$src" && $USE_NPM_ONLY -eq 0 ]]; then
-    echo "  → git pull + uv tool install --force --from $src"
-    (cd "$src" && git pull --ff-only 2>&1 | tail -2) || warn "graphify git pull 失败"
-    if command -v uv &>/dev/null; then
-      uv tool install --force --from "$src" graphifyy 2>&1 | tail -3
-      uv tool update-shell 2>/dev/null || true
-    elif command -v pipx &>/dev/null; then
-      pipx install --force-venv --force "git+file://$src" 2>&1 | tail -3
-    else
-      echo "  ✗ 需先安装 uv (curl -LsSf https://astral.sh/uv/install.sh | sh) 或 pipx"
-    fi
+  # graphify 是 python 项目：uv → pipx → pip 降级
+  echo "  → 安装 graphify (uv → pipx → pip)"
+  if command -v uv &>/dev/null; then
+    uv tool install graphifyy 2>&1|tail -3
+    uv tool update-shell 2>/dev/null || true
+  elif command -v pipx &>/dev/null; then
+    pipx install graphifyy 2>&1|tail -3
+  elif command -v pip3 &>/dev/null || command -v pip &>/dev/null; then
+    local pipcmd; command -v pip3 &>/dev/null && pipcmd=pip3 || pipcmd=pip
+    $pipcmd install --user graphifyy 2>&1|tail -3
+    echo "  ℹ pip 安装的用户级 bin 须在 PATH（通常 ~/.local/bin 或 ~/Library/Python/*/bin）"
   else
-    echo "  → uv tool install --force graphifyy"
-    if command -v uv &>/dev/null; then
-      uv tool install --force graphifyy 2>&1|tail -3
-      uv tool update-shell 2>/dev/null || true
-    elif command -v pipx &>/dev/null; then
-      pipx install --force-venv graphifyy 2>&1|tail -3
-    else
-      echo "  ✗ 需先安装 uv (curl -LsSf https://astral.sh/uv/install.sh | sh) 或 pipx"
-    fi
+    echo "  ✗ 需先安装 uv (curl -LsSf https://astral.sh/uv/install.sh | sh) 或 pipx 或 pip"
+    return 1
   fi
 }
 install_ruflo(){
-  echo "  → npm i -g ruflo@latest"
-  npm i -g ruflo@latest 2>&1|tail -2
+  echo "  → npm i -g ruflo@latest"; npm i -g ruflo@latest 2>&1|tail -2
+}
+install_gstack(){
+  install_from_src_release "gstack" "gstack-src.zip" "$HOME/.claude/skills/gstack" "./setup" || return 1
+}
+install_superpowers(){
+  # 安装目标优先 plugins/（与 check_superpowers L81 检测路径一致）
+  install_from_src_release "superpowers" "superpowers-src.zip" "$HOME/.claude/plugins/superpowers" "" || return 1
+}
+install_ecc(){
+  install_from_src_release "ECC" "ecc-src.zip" "$HOME/.claude/plugins/ecc" "" || return 1
 }
 
 # 升级已安装的 npm 包到最新版（静默，仅在有新版本时输出）
@@ -230,7 +171,7 @@ upgrade_npm_pkg(){
   command -v "$bin" &>/dev/null || return 0
   local cur latest
   cur=$("$bin" --version 2>/dev/null | head -1 | tr -d '[:space:]')
-  cur="${cur#v}"   # 剥离前导 v（v3.25.6 → 3.25.6）再比对
+  cur="${cur#v}"
   [[ -z "$cur" ]] && return 0
   latest=$(npm view "$pkg" version 2>/dev/null | head -1 | tr -d '[:space:]')
   latest="${latest#v}"
@@ -241,52 +182,53 @@ upgrade_npm_pkg(){
   fi
 }
 
-# 从 research 源码升级（git pull + rebuild + re-link，比 npm 版本更新更激进）
-upgrade_from_source(){
-  local name="$1" root="$2"
-  [[ -z "$root" || ! -d "$root" ]] && return 0
-  echo "  ↻ [$name] 源码升级: git pull + rebuild + re-link"
-  install_from_source "$name" "$root" 2>&1 | tail -2 || warn "$name 源码升级失败"
+# 升级源码包类（重下 Release 覆盖安装）
+upgrade_src_pkg(){
+  local name="$1" zip="$2" dest="$3" setup="${4:-}"
+  [[ -d "$dest" ]] || return 0
+  echo "  ↻ [$name] 重装源码包到最新"
+  install_from_src_release "$name" "$zip" "$dest" "$setup"
 }
 
 # 11 个项目定义（唯一数据源，检测/安装/升级/复查全部从此表驱动）：
-#   name|check_func|install_func|auto_installable|src_root_func|npm_pkg
-#   src_root_func：research 源码根函数（--latest 源码模式升级用）；空=无源码入口
-#   npm_pkg：npm 全局包名（--latest npm 模式比对 version 用）；空=npx 调用或不可自动装
+#   name|check_func|install_func|auto_installable|npm_pkg
+#   npm_pkg：npm 全局包名（--latest npm 模式比对 version 用）；空=非 npm 包（python/源码包）
 # 注：self-check 生成的 hooks.json PreToolUse 命令须发射 Claude Code 和 Cursor 都接受的
 #   {"permission":"allow"} verdict（参考 ruflo v3.25.6 #2613 修复）
 # 注：若目标技能注册 MCP，须检测重复注册（同一 binary 注册 claude-flow + ruflo 两个 key）
 #   并通过 ruflo doctor 自愈——canonical MCP key 保留一个（参考 ruflo v3.25.6 #2612 修复）
 # 注：hooks.json 须无 BOM（UTF-8 无 BOM），否则 Codex 严格 JSON 解析失败（参考 ruflo v3.32.1 修复）
 PROJECTS=(
-  "openspec|check_openspec|install_openspec|1|src_root_openspec|@fission-ai/openspec"
-  "comet|check_comet|install_comet|1|src_root_comet|@rpamis/comet"
-  "gitnexus|check_gitnexus|install_gitnexus|1|src_root_gitnexus|gitnexus"
-  "gsd-core|check_gsd_core|install_gsd_core|1|src_root_gsd_core|"
-  "claude-mem|check_claude_mem|install_claude_mem|1|src_root_claude_mem|"
-  "ocr|check_ocr|install_ocr|1|src_root_ocr|@alibaba-group/open-code-review"
-  "graphify|check_graphify|install_graphify|1||"
-  "superpowers|check_superpowers||0||"
-  "gstack|check_gstack||0||"
-  "ruflo|check_ruflo|install_ruflo|1||ruflo"
-  "ECC|check_ecc||0||"
+  "openspec|check_openspec|install_openspec|1|@fission-ai/openspec"
+  "comet|check_comet|install_comet|1|@rpamis/comet"
+  "gitnexus|check_gitnexus|install_gitnexus|1|gitnexus"
+  "gsd-core|check_gsd_core|install_gsd_core|1|"
+  "claude-mem|check_claude_mem|install_claude_mem|1|"
+  "ocr|check_ocr|install_ocr|1|@alibaba-group/open-code-review"
+  "graphify|check_graphify|install_graphify|1|"
+  "superpowers|check_superpowers|install_superpowers|1|"
+  "gstack|check_gstack|install_gstack|1|"
+  "ruflo|check_ruflo|install_ruflo|1|ruflo"
+  "ECC|check_ecc|install_ecc|1|"
 )
 
-# 无法 bash 自动安装项目的人工安装提示（按 name 查，集中于一处）
+# 自动安装失败时的人工安装提示（按 name 查，集中于一处）
 install_hint() {
   case "$1" in
     superpowers)
-      echo "    在 Claude Code 中运行: /plugin install superpowers@claude-plugins-official"
-      echo "    或: /plugin marketplace add obra/superpowers-marketplace && /plugin install superpowers"
+      echo "    自动安装失败。手工：从 Release $SRC_RELEASE_TAG 下载 superpowers-src.zip"
+      echo "    解压到 ~/.claude/plugins/superpowers（须含 skills/ 或 .claude-plugin/plugin.json）"
       ;;
     gstack)
-      echo "    git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack"
-      echo "    cd ~/.claude/skills/gstack && ./setup"
+      echo "    自动安装失败。手工：从 Release $SRC_RELEASE_TAG 下载 gstack-src.zip"
+      echo "    解压到 ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup"
       ;;
     ECC)
-      echo "    在 Claude Code 中运行:"
-      echo "    /plugin marketplace add https://github.com/affaan-m/ECC"
-      echo "    /plugin install ecc"
+      echo "    自动安装失败。手工：从 Release $SRC_RELEASE_TAG 下载 ecc-src.zip"
+      echo "    解压到 ~/.claude/plugins/ecc"
+      ;;
+    graphify)
+      echo "    需先安装 uv (curl -LsSf https://astral.sh/uv/install.sh | sh) 或 pipx 或 pip"
       ;;
     *) echo "    （无人工安装指引，请查阅项目文档）" ;;
   esac
@@ -295,16 +237,14 @@ install_hint() {
 CHECK_ONLY=0
 SINGLE=""
 FORCE_LATEST=1   # 默认拉最新版
-USE_NPM_ONLY=0   # --npm 时跳过 research 源码
 
-# 循环解析全部参数（原只解析 $1，组合参数被静默忽略）
+# 循环解析全部参数
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --check-only) CHECK_ONLY=1; FORCE_LATEST=0; shift ;;
     --install) SINGLE="${2:-}"; shift; [[ $# -gt 0 ]] && shift ;;
     --latest) FORCE_LATEST=1; shift ;;
-    --npm) USE_NPM_ONLY=1; shift ;;
-    *) echo "✗ 未知参数: $1"; echo "用法: bash self-check.sh [--check-only] [--install <name>] [--latest] [--npm]"; exit 1 ;;
+    *) echo "✗ 未知参数: $1"; echo "用法: bash self-check.sh [--check-only] [--install <name>] [--latest]"; exit 1 ;;
   esac
 done
 
@@ -315,20 +255,14 @@ if [[ $FORCE_LATEST -eq 1 ]]; then
 else
   echo "  （仅检测，不安装/升级）"
 fi
-if [[ -n "$RESEARCH_DIR" && -d "$RESEARCH_DIR" && $USE_NPM_ONLY -eq 0 ]]; then
-  echo "  源码优先: $RESEARCH_DIR"
-elif [[ $USE_NPM_ONLY -eq 1 ]]; then
-  echo "  模式: npm 全局包（跳过 research 源码）"
-else
-  echo "  模式: npm/npx（未找到 research 目录）"
-fi
+echo "  源码包 Release: $SRC_RELEASE_TAG"
 echo "=========================================="
 echo ""
 
 if [[ -n "$SINGLE" ]]; then
   # 仅安装单个
   for p in "${PROJECTS[@]}"; do
-    IFS='|' read -r name chk inst auto srcf npmpkg <<< "$p"
+    IFS='|' read -r name chk inst auto npmpkg <<< "$p"
     [[ "$name" == "$SINGLE" ]] || continue
     if [[ -z "$inst" ]]; then
       echo "✗ $name 无法 bash 自动安装（需 Claude Code /plugin 或手动 clone）"
@@ -349,7 +283,7 @@ fi
 echo "=== 检测 ==="
 MISSING=()
 for p in "${PROJECTS[@]}"; do
-  IFS='|' read -r name chk inst auto srcf npmpkg <<< "$p"
+  IFS='|' read -r name chk inst auto npmpkg <<< "$p"
   if "$chk" 2>/dev/null; then
     :
   else
@@ -372,38 +306,30 @@ echo "  （每层有自带降级载体，未装不阻塞——详见 SKILL.md「
 if [[ $FORCE_LATEST -eq 1 && $CHECK_ONLY -eq 0 ]]; then
   echo ""
   echo "=== 升级到最新版 ==="
-  if [[ -n "$RESEARCH_DIR" && -d "$RESEARCH_DIR" && $USE_NPM_ONLY -eq 0 ]]; then
-    # research 源码模式（表驱动）：有源码根的项目 git pull + rebuild + re-link；
-    # 无源码根但有 npm 包的项目（如 ruflo）走 npm 版本比对
-    for p in "${PROJECTS[@]}"; do
-      IFS='|' read -r name chk inst auto srcf npmpkg <<< "$p"
-      [[ "$name" == "graphify" ]] && continue   # python 项目，下面单独处理
-      if [[ -n "$srcf" ]]; then
-        upgrade_from_source "$name" "$("$srcf")"
-      elif [[ -n "$npmpkg" ]]; then
-        upgrade_npm_pkg "$npmpkg" "$name"
-      fi
-    done
-    # graphify python
-    if [[ -d "$RESEARCH_DIR/graphify" ]]; then
-      echo "  ↻ [graphify] 源码升级: git pull + uv tool reinstall"
-      (cd "$RESEARCH_DIR/graphify" && git pull --ff-only 2>&1 | tail -2) || warn "graphify git pull 失败"
-      if command -v uv &>/dev/null; then
-        uv tool install --force --from "$RESEARCH_DIR/graphify" graphifyy 2>&1 | tail -2
-      fi
-    fi
-    echo "  （gsd-core 额外运行 npx 拉最新运行时 artifacts）"
-    npx -y @opengsd/gsd-core@latest --claude --global 2>&1 | tail -3 || true
-  else
-    # npm 模式（表驱动）：比对 npm view version 升级
-    for p in "${PROJECTS[@]}"; do
-      IFS='|' read -r name chk inst auto srcf npmpkg <<< "$p"
-      [[ -n "$npmpkg" ]] || continue
-      upgrade_npm_pkg "$npmpkg" "$name"
-    done
-    # gsd-core / claude-mem 是 npx 调用，无法本地查版本，跳过自动升级（下次 install 时自动拉最新）
-    echo "  （gsd-core / claude-mem 为 npx 调用，下次运行自动拉最新版）"
-  fi
+  for p in "${PROJECTS[@]}"; do
+    IFS='|' read -r name chk inst auto npmpkg <<< "$p"
+    case "$name" in
+      openspec|comet|gitnexus|ocr|ruflo)
+        [[ -n "$npmpkg" ]] && upgrade_npm_pkg "$npmpkg" "$name" ;;
+      gsd-core)
+        echo "  ↻ [gsd-core] npx 拉最新运行时 artifacts"
+        npx -y @opengsd/gsd-core@latest --claude --global 2>&1 | tail -3 || true ;;
+      claude-mem)
+        echo "  ↻ [claude-mem] npx 拉最新"
+        npx -y claude-mem@latest install 2>&1 | tail -3 || true ;;
+      graphify)
+        if [[ -d "$HOME/.local/share/uv/tools/graphifyy" ]] || command -v graphify &>/dev/null; then
+          echo "  ↻ [graphify] uv tool reinstall"
+          command -v uv &>/dev/null && uv tool install --force graphifyy 2>&1 | tail -2 || true
+        fi ;;
+      gstack)
+        upgrade_src_pkg "gstack" "gstack-src.zip" "$HOME/.claude/skills/gstack" "./setup" ;;
+      superpowers)
+        upgrade_src_pkg "superpowers" "superpowers-src.zip" "$HOME/.claude/plugins/superpowers" "" ;;
+      ECC)
+        upgrade_src_pkg "ECC" "ecc-src.zip" "$HOME/.claude/plugins/ecc" "" ;;
+    esac
+  done
 fi
 
 if [[ ${#MISSING[@]} -eq 0 ]]; then
