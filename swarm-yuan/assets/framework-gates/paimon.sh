@@ -83,7 +83,9 @@ _fw_paimon_check() {
   # fw_paimon_changelog_producer(warn)：流读 changelog 须配 changelog-producer
   # ====================================================================
   local scan_hit=0
-  if grep -liE 'scan\.mode' ${srcarr[@]+"${srcarr[@]}"} ${tablearr[@]+"${tablearr[@]}"} 2>/dev/null | head -1 | grep -q .; then
+  # WP-R Bug#1: grep -l|head -1|grep -q . 在 set -euo pipefail 下,head 截断使 grep 收 SIGPIPE。
+  # 改用 grep -qliE(-q 静默 + -l 列文件名,但 -q 优先不输出,无截断管道,语义等价"存在即真")。
+  if grep -qliE 'scan\.mode' ${srcarr[@]+"${srcarr[@]}"} ${tablearr[@]+"${tablearr[@]}"} 2>/dev/null; then
     scan_hit=1
   fi
   if [[ "$scan_hit" -eq 0 ]]; then

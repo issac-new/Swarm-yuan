@@ -28,7 +28,8 @@ _fw_nacos_check() {
   # ---------- Nacos 使用痕迹总判定 ----------
   local nacos_used=0
   local nu_hit
-  nu_hit=$(grep -rlE 'spring\.cloud\.nacos|nacos\.server-addr|^[[:space:]]*nacos:|@NacosValue|@NacosPropertySource|@NacosConfigListener|NamingService|ConfigService|NacosConfigManager|com\.alibaba\.nacos|nacos-client' "${javaarr[@]+"${javaarr[@]}"}" "${cfgarr[@]+"${cfgarr[@]}"}" 2>/dev/null | head -1)
+  # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+  nu_hit=$(grep -rlE 'spring\.cloud\.nacos|nacos\.server-addr|^[[:space:]]*nacos:|@NacosValue|@NacosPropertySource|@NacosConfigListener|NamingService|ConfigService|NacosConfigManager|com\.alibaba\.nacos|nacos-client' "${javaarr[@]+"${javaarr[@]}"}" "${cfgarr[@]+"${cfgarr[@]}"}" 2>/dev/null | head -1 || true)
   [[ -n "$nu_hit" ]] && nacos_used=1
 
   # ---------- 含 nacos 引用的配置文件子集（敏感值检查范围） ----------
@@ -165,7 +166,7 @@ ${sa_single}"
     local ln v
     ln=$(grep -nE 'heart-beat-interval|beatInterval|beat-interval' "$c" 2>/dev/null || true)
     [[ -z "$ln" ]] && continue
-    v=$(printf '%s\n' "$ln" | grep -oE '[0-9]+' | head -1)
+    v=$(printf '%s\n' "$ln" | grep -oE '[0-9]+' | head -1 || true)
     if [[ -n "$v" && "$v" -lt 5000 ]]; then
       hb_bad="${hb_bad}${c}:${ln}
 "

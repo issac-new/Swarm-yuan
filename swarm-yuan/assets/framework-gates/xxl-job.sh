@@ -208,8 +208,9 @@ ${glue_warn}"
   local core_ver=""
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
     local v
-    v=$(grep -A3 -E 'xxl-job-core' "$c" 2>/dev/null | grep -oE '<version>[0-9][^<]*</version>' | head -1 | sed -E 's/<\/?version>//g')
-    [[ -z "$v" ]] && v=$(grep -oE 'xxl-job-core[^0-9"]*[0-9]+\.[0-9]+(\.[0-9]+)?' "$c" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+    # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+    v=$(grep -A3 -E 'xxl-job-core' "$c" 2>/dev/null | grep -oE '<version>[0-9][^<]*</version>' | head -1 | sed -E 's/<\/?version>//g' || true)
+    [[ -z "$v" ]] && v=$(grep -oE 'xxl-job-core[^0-9"]*[0-9]+\.[0-9]+(\.[0-9]+)?' "$c" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || true)
     [[ -n "$v" && -z "$core_ver" ]] && core_ver="$v"
   done
   if [[ -z "$core_ver" ]]; then

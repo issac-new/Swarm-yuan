@@ -101,11 +101,12 @@ _fw_fastapi_check() {
   # fw_fastapi_router_modular(warn)：路由须 APIRouter 模块化
   # ====================================================================
   local has_routes=0 has_router=0
-  has_routes=$(grep -rlE '@[A-Za-z_]+\.(get|post|put|delete|patch)\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+  # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+  has_routes=$(grep -rlE '@[A-Za-z_]+\.(get|post|put|delete|patch)\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
   if [[ "$has_routes" -eq 0 ]]; then
     pass "fw_fastapi_router_modular: 无路由，跳过"
   else
-    has_router=$(grep -rlE 'APIRouter\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+    has_router=$(grep -rlE 'APIRouter\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
     if [[ "$has_router" -eq 1 ]]; then
       pass "fw_fastapi_router_modular: 路由经 APIRouter 模块化"
     else
@@ -120,7 +121,7 @@ _fw_fastapi_check() {
   if [[ "$has_routes" -eq 0 ]]; then
     pass "fw_fastapi_auth: 无路由，跳过"
   else
-    has_auth=$(grep -rlE 'OAuth2|Security\(|HTTPBearer|APIKeyHeader|Depends\([A-Za-z_]*auth' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+    has_auth=$(grep -rlE 'OAuth2|Security\(|HTTPBearer|APIKeyHeader|Depends\([A-Za-z_]*auth' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
     if [[ "$has_auth" -eq 1 ]]; then
       pass "fw_fastapi_auth: 已配认证依赖"
     else
@@ -157,11 +158,11 @@ _fw_fastapi_check() {
   # fw_fastapi_websocket(warn)：WebSocket 路由须处理 WebSocketDisconnect
   # ====================================================================
   local has_ws=0 has_wsd=0
-  has_ws=$(grep -rlE '@[A-Za-z_]+\.websocket\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+  has_ws=$(grep -rlE '@[A-Za-z_]+\.websocket\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
   if [[ "$has_ws" -eq 0 ]]; then
     pass "fw_fastapi_websocket: 无 WebSocket 路由，跳过"
   else
-    has_wsd=$(grep -rlE 'WebSocketDisconnect' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs)
+    has_wsd=$(grep -rlE 'WebSocketDisconnect' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
     if [[ "$has_wsd" -eq 1 ]]; then
       pass "fw_fastapi_websocket: WebSocket 断连有处理"
     else

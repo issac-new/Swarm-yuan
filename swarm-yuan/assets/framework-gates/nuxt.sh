@@ -65,7 +65,8 @@ _fw_nuxt_check() {
     has_mounted=$(printf '%s\n' "$body" | grep -cE 'onMounted\(' 2>/dev/null || true)
     if [[ "${has_random:-0}" -gt 0 && "${has_mounted:-0}" -eq 0 ]]; then
       local ln
-      ln=$(printf '%s\n' "$body" | grep -nE 'Date\.now\(\)|Math\.random\(\)|crypto\.randomUUID\(\)|new Date\(\)' 2>/dev/null | head -1)
+      # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+      ln=$(printf '%s\n' "$body" | grep -nE 'Date\.now\(\)|Math\.random\(\)|crypto\.randomUUID\(\)|new Date\(\)' 2>/dev/null | head -1 || true)
       hyd_bad="${hyd_bad}${f}:${ln}
 "
     fi

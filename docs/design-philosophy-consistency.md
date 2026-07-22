@@ -28,7 +28,7 @@
 | 需求 | §1 背景目标 / §4 Spec Delta | ①需求理解 → ②设计 spec | check_requirements（+openspec validate） | requirements / requirements-openspec | ✅ |
 | 分析（左移） | §19 测试设计 / §20 变更影响 / §21 可观测性 | ②spec ★左移 / ③plan ★左移 | check_shift_left / check_impact | shift-left / impact | ✅ |
 | 设计 | §3 改造类型 / §5 详细设计 / §5.5 复用 / §14-§18 | ②-③ design+tasks | check_layer / check_stable_diff / check_link_depth / check_reuse / check_deps / check_security / check_cognition / check_domain | layer/stable-diff/link-depth/reuse/deps/security/cognition/domain | ✅ |
-| 开发 | plan Task 1..N / §20 变更影响 | ④分支 → ⑤编码（subagent-driven） | check_build / check_framework（61 框架动态分发） | build / 61 framework-fixture | ✅ |
+| 开发 | plan Task 1..N / §20 变更影响 | ④分支 → ⑤编码（subagent-driven） | check_build / check_framework（62 框架动态分发） | build / 61 framework-fixture | ✅ |
 | 测试 | §11 测试策略 / §19 用例骨架 | ⑥测试验证（ocr 5 维度） | check_test / check_review（+gsd-tools health） | test / review / review-gsd | ✅ |
 | 部署/发布 | §20.3 灰度 / §21.5 告警+Runbook | ⑧构建发布（★运维左移） | check_build / check_release_sign / check_sbom / check_privacy | build / release-sign / sbom / privacy | ✅ |
 | 运维/合规交付 | §21 可观测性 / §22 标准合规 | ⑦合入 + ⑧发布 + ⑨完成检查 | check_compliance / check_docs_pack / check_shift_left §21 | compliance / docs-pack / shift-left | ✅ |
@@ -49,7 +49,7 @@
 
 | 测试体系 | CI Job | 覆盖 | 状态 |
 |---------|--------|------|------|
-| 61 framework fixture（id 级双态） | fixture-double-state + macos + windows | 61 框架 × violating/compliant/expected-fail-ids | ✅ 三平台 |
+| 61 framework fixture（id 级双态） | fixture-double-state + macos + windows | 62 框架 × violating/compliant/expected-fail-ids | ✅ 三平台 |
 | 36 gate-fixture（全量双态） | fixture-double-state + macos + windows + verifier | 36 门禁组（WP3.3 从 6 组扩到全量） | ✅ 全量 |
 | e2e（四框架注入全链路） | e2e + verifier all | Java demo mybatis/lombok/spring-batch/sharding | ✅ WP3.1 进 CI |
 | verifier all（C1-C8 验收） | verifier（WP3.2 新增） | fixtures + gate-fixtures + e2e + cli-ab + metrics-assert | ✅ WP3.2 进 CI |

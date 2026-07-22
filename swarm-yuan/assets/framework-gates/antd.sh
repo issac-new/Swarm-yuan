@@ -69,7 +69,8 @@ _fw_antd_check() {
     if grep -qE ':dataSource="[a-zA-Z_]*(list|List|rows|Rows|data|Data)"|dataSource=\{[a-zA-Z_]*(list|List|rows|Rows)' "$f" 2>/dev/null; then
       if ! grep -qE 'virtual|scroll=\{|scroll:|react-window|vxe-table|:scroll' "$f" 2>/dev/null; then
         local ln
-        ln=$(grep -nE '<Table\b|<a-table\b' "$f" 2>/dev/null | head -1)
+        # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+        ln=$(grep -nE '<Table\b|<a-table\b' "$f" 2>/dev/null | head -1 || true)
         tbl_bad="${tbl_bad}${f}:${ln}
 "
       fi
@@ -118,7 +119,7 @@ _fw_antd_check() {
     fi
     if ! grep -qE 'destroyOnClose|destroy-on-close' "$f" 2>/dev/null; then
       local ln
-      ln=$(grep -nE '<Modal\b|<a-modal\b' "$f" 2>/dev/null | head -1)
+      ln=$(grep -nE '<Modal\b|<a-modal\b' "$f" 2>/dev/null | head -1 || true)
       mdl_bad="${mdl_bad}${f}:${ln}
 "
     fi
@@ -136,7 +137,7 @@ _fw_antd_check() {
     if grep -qE 'showSearch' "$f" 2>/dev/null; then
       if ! grep -qE 'onSearch|filterOption=\{false\}|remote' "$f" 2>/dev/null; then
         local ln
-        ln=$(grep -nE 'showSearch' "$f" 2>/dev/null | head -1)
+        ln=$(grep -nE 'showSearch' "$f" 2>/dev/null | head -1 || true)
         sel_bad="${sel_bad}${f}:${ln}
 "
       fi
@@ -154,7 +155,7 @@ _fw_antd_check() {
     fi
     if ! grep -qE 'beforeUpload|maxCount|:limit|:size' "$f" 2>/dev/null; then
       local ln
-      ln=$(grep -nE '<Upload\b|<a-upload\b' "$f" 2>/dev/null | head -1)
+      ln=$(grep -nE '<Upload\b|<a-upload\b' "$f" 2>/dev/null | head -1 || true)
       up_bad="${up_bad}${f}:${ln}
 "
     fi

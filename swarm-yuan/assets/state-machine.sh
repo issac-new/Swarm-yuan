@@ -70,7 +70,9 @@ get_field() {
   local field="${1:-}"
   [[ -z "$field" ]] && { echo "Usage: state-machine.sh get <field>"; exit 1; }
   [[ ! -f "$STATE_FILE" ]] && { echo "ERROR: 状态文件不存在，先 init"; exit 1; }
-  grep "^$field:" "$STATE_FILE" | head -1 | sed "s/^$field: //"
+  # WP-R Bug#1: grep|head -1|sed 在 set -euo pipefail 下,若同字段多行 grep 被 head 截断收 SIGPIPE(141)。
+  # head -1 只取首行,改用 sed 取首行(无截断管道);grep 无匹配返回 1 也需 || true 兜底。
+  grep "^$field:" "$STATE_FILE" 2>/dev/null | sed -n "1s/^$field: //p" || true
 }
 
 set_field() {

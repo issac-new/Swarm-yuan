@@ -59,7 +59,8 @@ _fw_element_check() {
     if grep -qE ':data="[a-zA-Z_]*(list|List|rows|Rows|data|Data)"' "$f" 2>/dev/null; then
       if ! grep -qE 'virtual|virtualScroll|el-table-v2|lazy' "$f" 2>/dev/null; then
         local ln
-        ln=$(grep -nE '<el-table\b' "$f" 2>/dev/null | head -1)
+        # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+        ln=$(grep -nE '<el-table\b' "$f" 2>/dev/null | head -1 || true)
         tbl_bad="${tbl_bad}${f}:${ln}
 "
       fi
@@ -152,7 +153,7 @@ _fw_element_check() {
     fi
     if ! grep -qE 'destroy-on-close|destroyOnClose' "$f" 2>/dev/null; then
       local ln
-      ln=$(grep -nE '<el-dialog\b' "$f" 2>/dev/null | head -1)
+      ln=$(grep -nE '<el-dialog\b' "$f" 2>/dev/null | head -1 || true)
       dlg_bad="${dlg_bad}${f}:${ln}
 "
     fi
@@ -169,7 +170,7 @@ _fw_element_check() {
     fi
     if ! grep -qE 'virtual|:height|:virtual-line-height|el-tree-v2' "$f" 2>/dev/null; then
       local ln
-      ln=$(grep -nE '<el-tree\b' "$f" 2>/dev/null | head -1)
+      ln=$(grep -nE '<el-tree\b' "$f" 2>/dev/null | head -1 || true)
       tree_bad="${tree_bad}${f}:${ln}
 "
     fi
@@ -186,7 +187,7 @@ _fw_element_check() {
     fi
     if ! grep -qE 'value-format|valueFormat' "$f" 2>/dev/null; then
       local ln
-      ln=$(grep -nE '<el-date-picker\b|<el-time-picker\b' "$f" 2>/dev/null | head -1)
+      ln=$(grep -nE '<el-date-picker\b|<el-time-picker\b' "$f" 2>/dev/null | head -1 || true)
       date_bad="${date_bad}${f}:${ln}
 "
     fi
@@ -203,7 +204,7 @@ _fw_element_check() {
     fi
     if ! grep -qE 'before-upload|beforeUpload|:limit|:file-size|limit:' "$f" 2>/dev/null; then
       local ln
-      ln=$(grep -nE '<el-upload\b' "$f" 2>/dev/null | head -1)
+      ln=$(grep -nE '<el-upload\b' "$f" 2>/dev/null | head -1 || true)
       up_bad="${up_bad}${f}:${ln}
 "
     fi
@@ -222,7 +223,7 @@ _fw_element_check() {
     if grep -qE 'filterable' "$f" 2>/dev/null; then
       if ! grep -qE 'remote-method|remoteMethod|:remote' "$f" 2>/dev/null; then
         local ln
-        ln=$(grep -nE 'filterable' "$f" 2>/dev/null | head -1)
+        ln=$(grep -nE 'filterable' "$f" 2>/dev/null | head -1 || true)
         sel_bad="${sel_bad}${f}:${ln}
 "
       fi

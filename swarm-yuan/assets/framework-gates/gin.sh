@@ -91,7 +91,8 @@ ${bad_lines}
       # 取所有 .Use( 行号，判断 Recovery 是否首个
       local uses rec_line
       uses=$(_fw_strip_comments_c_inline "$g" | grep -nE '\.Use\(' || true)
-      rec_line=$(_fw_strip_comments_c_inline "$g" | grep -nE 'gin\.Recovery\(\)' | head -1 | cut -d: -f1)
+      # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+      rec_line=$(_fw_strip_comments_c_inline "$g" | grep -nE 'gin\.Recovery\(\)' | head -1 | cut -d: -f1 || true)
       if [[ -n "$uses" && -n "$rec_line" ]]; then
         local first_use
         first_use=$(printf '%s\n' "$uses" | head -1 | cut -d: -f1)
@@ -146,7 +147,7 @@ ${use_order}"
       fi
       # 检查下一非空行是否为 return
       local next
-      next=$(printf '%s\n' "$code" | sed -n "$((lineno+1)),\$p" | grep -vE '^[[:space:]]*$' | head -1)
+      next=$(printf '%s\n' "$code" | sed -n "$((lineno+1)),\$p" | grep -vE '^[[:space:]]*$' | head -1 || true)
       if printf '%s' "$next" | grep -qE '^[[:space:]]*return[[:space:]]*$|^[[:space:]]*return[[:space:]]+'; then
         continue
       fi

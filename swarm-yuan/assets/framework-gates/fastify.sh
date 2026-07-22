@@ -151,8 +151,9 @@ ${init_file}"
   local po_bad=""
   for f in "${jsarr[@]+"${jsarr[@]}"}"; do
     local route_ln reg_ln
-    route_ln=$(grep -nE '(app|fastify|server|router)\.(get|post|put|delete|patch|route)\(' "$f" 2>/dev/null | head -1 | cut -d: -f1)
-    reg_ln=$(grep -nE '\.register\(' "$f" 2>/dev/null | head -1 | cut -d: -f1)
+    # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+    route_ln=$(grep -nE '(app|fastify|server|router)\.(get|post|put|delete|patch|route)\(' "$f" 2>/dev/null | head -1 | cut -d: -f1 || true)
+    reg_ln=$(grep -nE '\.register\(' "$f" 2>/dev/null | head -1 | cut -d: -f1 || true)
     if [[ -n "$route_ln" && -n "$reg_ln" && "$route_ln" -lt "$reg_ln" ]]; then
       po_bad="${po_bad}${f}: 首个路由（行 ${route_ln}）先于首个 register（行 ${reg_ln}）声明
 "

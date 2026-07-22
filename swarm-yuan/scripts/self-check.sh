@@ -696,7 +696,7 @@ check_doc_consistency() {
         # regen 已就地修正（幂等），提示但不判 fail——索引已被重写为最新
         echo "  ⚠ framework-signal-index 已漂移，本次由 gen-framework-index.sh 自动重写为最新（建议提交）"
       else
-        echo "  ✓ framework-signal-index 与 61 框架同步"
+        echo "  ✓ framework-signal-index 与 ${true_fw} 框架同步"
       fi
     fi
     rm -f "$guide_tmp"

@@ -45,7 +45,8 @@ _fw_angular_check() {
     if printf '%s\n' "$body" | grep -qE '\b(Subject|BehaviorSubject|ReplaySubject)\b' 2>/dev/null; then
       if ! printf '%s\n' "$body" | grep -qE '\bsignal\(|\btoSignal\(|\btoObservable\(' 2>/dev/null; then
         local ln
-        ln=$(printf '%s\n' "$body" | grep -nE '\b(Subject|BehaviorSubject|ReplaySubject)\b' 2>/dev/null | head -1)
+        # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+        ln=$(printf '%s\n' "$body" | grep -nE '\b(Subject|BehaviorSubject|ReplaySubject)\b' 2>/dev/null | head -1 || true)
         sig_bad="${sig_bad}${f}:${ln}
 "
       fi
@@ -69,7 +70,7 @@ _fw_angular_check() {
     if printf '%s\n' "$body" | grep -qE '@Component\b' 2>/dev/null; then
       if ! printf '%s\n' "$body" | grep -qE 'ChangeDetectionStrategy\.OnPush|changeDetection:' 2>/dev/null; then
         local ln
-        ln=$(printf '%s\n' "$body" | grep -nE '@Component\b' 2>/dev/null | head -1)
+        ln=$(printf '%s\n' "$body" | grep -nE '@Component\b' 2>/dev/null | head -1 || true)
         onpush_bad="${onpush_bad}${f}:${ln}
 "
       fi

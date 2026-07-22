@@ -130,12 +130,13 @@ _fw_lombok_check() {
       for cfile in "${cfa[@]}"; do
         # 本文件类名（从代码行提取，忽略 javadoc）
         local my_cls other_cls other_file
-        my_cls=$(_fw_strip_comments_c "$cfile" | grep -E '^\s*(public\s+)?(final\s+|abstract\s+)*class\s+\w+' | head -1 | sed -E 's/.*class[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\1/')
+        # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+        my_cls=$(_fw_strip_comments_c "$cfile" | grep -E '^\s*(public\s+)?(final\s+|abstract\s+)*class\s+\w+' | head -1 | sed -E 's/.*class[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\1/' || true)
         [[ -z "$my_cls" ]] && continue
         # 找本文件引用的其他 ctor 文件类作为 final 字段类型
         for other_file in "${cfa[@]}"; do
           [[ "$other_file" == "$cfile" ]] && continue
-          other_cls=$(_fw_strip_comments_c "$other_file" | grep -E '^\s*(public\s+)?(final\s+|abstract\s+)*class\s+\w+' | head -1 | sed -E 's/.*class[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\1/')
+          other_cls=$(_fw_strip_comments_c "$other_file" | grep -E '^\s*(public\s+)?(final\s+|abstract\s+)*class\s+\w+' | head -1 | sed -E 's/.*class[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\1/' || true)
           [[ -z "$other_cls" ]] && continue
           # 本文件含 "private final <other_cls>" 且对方文件含 "private final <my_cls>" → 互引
           if _fw_strip_comments_c "$cfile" | grep -qE "private[[:space:]]+final[[:space:]]+${other_cls}\b" \

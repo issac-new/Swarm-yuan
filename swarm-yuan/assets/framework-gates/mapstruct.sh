@@ -145,12 +145,13 @@ _fw_mapstruct_check() {
     local cycle_pairs="" iname used u f2
     for j in "${javaarr[@]}"; do
       grep -qE 'uses[[:space:]]*=' "$j" 2>/dev/null || continue
-      iname=$(grep -oE 'interface[[:space:]]+[A-Za-z0-9_]+' "$j" 2>/dev/null | head -1 | awk '{print $2}')
+      # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+      iname=$(grep -oE 'interface[[:space:]]+[A-Za-z0-9_]+' "$j" 2>/dev/null | head -1 | awk '{print $2}' || true)
       [[ -z "$iname" ]] && continue
       used=$(grep -oE 'uses[[:space:]]*=[[:space:]]*\{?[A-Za-z0-9_.,[:space:]]+' "$j" 2>/dev/null | grep -oE '[A-Za-z0-9_]+\.class' | sed 's/\.class//' || true)
       for u in $used; do
         [[ "$u" == "CycleAvoidingStrategy" ]] && continue
-        f2=$(grep -lE "interface[[:space:]]+${u}\b" "${javaarr[@]}" 2>/dev/null | head -1)
+        f2=$(grep -lE "interface[[:space:]]+${u}\b" "${javaarr[@]}" 2>/dev/null | head -1 || true)
         [[ -z "$f2" || "$f2" == "$j" ]] && continue
         if grep -qE 'uses[[:space:]]*=' "$f2" 2>/dev/null && grep -qE "${iname}\.class" "$f2" 2>/dev/null; then
           cycle_pairs="${cycle_pairs}${j} <-> ${f2}

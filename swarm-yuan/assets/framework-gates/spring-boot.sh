@@ -305,11 +305,12 @@ ${hits}
       else
         # 检查是否有其他 @Configuration 在启动类所在包的上层包（启发：package 行与启动类包比较）
         local app_pkg
-        app_pkg=$(grep -E '^package[[:space:]]+' "$app_file" 2>/dev/null | head -1 | sed -E 's/^package[[:space:]]+//; s/;.*//')
+        # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+        app_pkg=$(grep -E '^package[[:space:]]+' "$app_file" 2>/dev/null | head -1 | sed -E 's/^package[[:space:]]+//; s/;.*//' || true)
         local deeper=0
         for sfile in "${srcarr[@]}"; do
           local pk
-          pk=$(grep -E '^package[[:space:]]+' "$sfile" 2>/dev/null | head -1 | sed -E 's/^package[[:space:]]+//; s/;.*//')
+          pk=$(grep -E '^package[[:space:]]+' "$sfile" 2>/dev/null | head -1 | sed -E 's/^package[[:space:]]+//; s/;.*//' || true)
           # 其他文件包是启动类包的父包（启动类包以其他包为前缀）
           if [[ -n "$pk" && -n "$app_pkg" && "$app_pkg" == "$pk".* ]]; then
             deeper=1

@@ -152,7 +152,8 @@ ${bad_lines}
       [[ -z "$sl" ]] && continue
       local lineno=${sl%%:*}
       local end
-      end=$(printf '%s\n' "$code" | sed -n "${lineno},\$p" | grep -nE '^\}' | head -1 | cut -d: -f1)
+      # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+      end=$(printf '%s\n' "$code" | sed -n "${lineno},\$p" | grep -nE '^\}' | head -1 | cut -d: -f1 || true)
       [[ -z "$end" ]] && continue
       local block
       block=$(printf '%s\n' "$code" | sed -n "$((lineno)),$((lineno + end - 1))p")
@@ -254,7 +255,7 @@ ${bad_lines}
     if printf '%s\n' "$code" | grep -qE '\.Where\("(user_id|order_id|tenant_id|status|deleted_at)'; then
       if ! printf '%s\n' "$code" | grep -qE 'gorm:"index'; then
         local wl
-        wl=$(printf '%s\n' "$code" | grep -nE '\.Where\("(user_id|order_id|tenant_id|status|deleted_at)' | head -3)
+        wl=$(printf '%s\n' "$code" | grep -nE '\.Where\("(user_id|order_id|tenant_id|status|deleted_at)' | head -3 || true)
         index_bad="${index_bad}${g}:${wl}
 "
       fi
@@ -292,7 +293,7 @@ ${bad_lines}
       [[ -z "$sl" ]] && continue
       local lineno=${sl%%:*}
       local end
-      end=$(printf '%s\n' "$code" | sed -n "${lineno},\$p" | grep -nE '^\}' | head -1 | cut -d: -f1)
+      end=$(printf '%s\n' "$code" | sed -n "${lineno},\$p" | grep -nE '^\}' | head -1 | cut -d: -f1 || true)
       [[ -z "$end" ]] && continue
       local block
       block=$(printf '%s\n' "$code" | sed -n "$((lineno)),$((lineno + end - 1))p")
