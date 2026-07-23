@@ -24,12 +24,24 @@ ruleset_id: c-cpp
 - **验证方法**: `strcpy(` 或 `strcat(` 或 `sprintf(` 命中 → fail。
 - **对应门禁**: fw_ccpp_unsafe_str(fail)
 
+```verify
+id: c-cpp-r1
+cmd: 
+expect: always
+```
+
 ### 规律：禁用 gets()
 - **适用版本**: C11 已移除
 - **规律**: gets() 无长度限制，须用 fgets()。
 - **违反后果**: 缓冲区溢出（CWE-242）。
 - **验证方法**: `gets(` 命中 → fail。
 - **对应门禁**: fw_ccpp_gets(fail)
+
+```verify
+id: c-cpp-r2
+cmd: 
+expect: always
+```
 
 ### 规律：禁 malloc 无 free
 - **适用版本**: 全版本
@@ -38,12 +50,24 @@ ruleset_id: c-cpp
 - **验证方法**: `malloc(` 命中但同文件无 `free(` → warn。
 - **对应门禁**: fw_ccpp_memleak(warn)
 
+```verify
+id: c-cpp-r3
+cmd: 
+expect: always
+```
+
 ### 规律：禁 printf 格式串拼接
 - **适用版本**: 全版本
 - **规律**: 须用 `printf("%s", str)`，禁 `printf(str)`。
 - **违反后果**: 格式串漏洞（CWE-134）。
 - **验证方法**: `printf(` 参数为变量（非格式串字面量） → warn。
 - **对应门禁**: fw_ccpp_format_str(warn)
+
+```verify
+id: c-cpp-r4
+cmd: 
+expect: always
+```
 
 ### 规律：须用 RAII/智能指针
 - **适用版本**: C++11+
@@ -52,12 +76,24 @@ ruleset_id: c-cpp
 - **验证方法**: `new ` 命中但无 `unique_ptr|shared_ptr` → warn。
 - **对应门禁**: fw_ccpp_raii(warn)
 
+```verify
+id: c-cpp-r5
+cmd: 
+expect: always
+```
+
 ### 规律：须配 const correctness
 - **适用版本**: 全版本
 - **规律**: 成员函数/参数须加 const。
 - **违反后果**: 意外修改。
 - **验证方法**: 无 `const` 关键字的 .cpp 文件 → warn。
 - **对应门禁**: fw_ccpp_const(warn)
+
+```verify
+id: c-cpp-r6
+cmd: 
+expect: always
+```
 
 ### 规律：须用 nullptr（禁 NULL/0）
 - **适用版本**: C++11+
@@ -66,12 +102,24 @@ ruleset_id: c-cpp
 - **验证方法**: `= NULL` 或 `= 0` 作为指针赋值 → warn。
 - **对应门禁**: fw_ccpp_nullptr(warn)
 
+```verify
+id: c-cpp-r7
+cmd: 
+expect: always
+```
+
 ### 规律：须用 static_cast（禁 C 风格强转）
 - **适用版本**: C++11+
 - **规律**: 禁 `(int*)x` C 风格强转，须用 static_cast/reinterpret_cast。
 - **违反后果**: 类型安全（CWE-704）。
 - **验证方法**: C 风格强转 `(int|char|void|double)\*` 命中 → warn。
 - **对应门禁**: fw_ccpp_static_cast(warn)
+
+```verify
+id: c-cpp-r8
+cmd: 
+expect: always
+```
 
 ### 规律：须配 clang-tidy
 - **适用版本**: 全版本
@@ -80,12 +128,24 @@ ruleset_id: c-cpp
 - **验证方法**: 无 .clang-tidy 文件 → warn。
 - **对应门禁**: fw_ccpp_clang_tidy(warn)
 
+```verify
+id: c-cpp-r9
+cmd: 
+expect: always
+```
+
 ### 规律：须用 std::string（禁 char* 字符串操作）
 - **适用版本**: C++11+
 - **规律**: 须用 std::string，禁裸 char* 字符串操作。
 - **违反后果**: 缓冲区溢出/内存管理复杂。
 - **验证方法**: `char\s*\*` 字符串操作且无 `std::string` → warn。
 - **对应门禁**: fw_ccpp_std_string(warn)
+
+```verify
+id: c-cpp-r10
+cmd: 
+expect: always
+```
 
 ## §4 门禁清单
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |

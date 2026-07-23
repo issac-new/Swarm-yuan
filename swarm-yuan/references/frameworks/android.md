@@ -41,6 +41,12 @@ ruleset_id: android
 - **对应门禁**: fw_android_webview_js_enabled（fail 级）
 - **证据**: Android 官方 WebView 文档 "Enabling JavaScript... can introduce cross-site-scripting attacks"；OWASP MASVS "WebViews 须限制可加载的源并最小化 JS 暴露面"
 
+```verify
+id: android-r1
+cmd: 
+expect: always
+```
+
 ### 规律：SharedPreferences 禁止明文存敏感数据（token/密码/密钥）
 - **适用版本**: 全版本（EncryptedSharedPreferences 需 androidx.security:security-crypto 1.0+）
 - **规律**: `getSharedPreferences(...).edit().putString(...)` 的 key 不得含 `token|password|passwd|secret|credential|api_key|session` 等敏感语义；凭证一律走 `EncryptedSharedPreferences`（Keystore 主密钥）或纯 Keystore 方案。
@@ -48,6 +54,12 @@ ruleset_id: android
 - **验证方法**: `grep -inE '\.put(String|Int|Long|Boolean|Float|StringSet)\(.{0,60}(token|password|passwd|secret|credential|api_?key|session)' --include='*.kt' --include='*.java' .`（命中文件须含 SharedPreferences 使用且非 EncryptedSharedPreferences）
 - **对应门禁**: fw_android_sharedprefs_secret（fail 级）
 - **证据**: androidx security-crypto 官方文档 "EncryptedSharedPreferences wraps SharedPreferences and encrypts keys and values"；OWASP MASVS-STORAGE-1 敏感数据须系统级安全存储
+
+```verify
+id: android-r2
+cmd: grep -inE '\.put(String|Int|Long|Boolean|Float|StringSet)\(.{0,60}(token|password|passwd|secret|credential|api_?key|session)' --include='*.kt' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：生产代码禁止 Log.d/Log.v 残留
 - **适用版本**: 全版本
@@ -57,6 +69,12 @@ ruleset_id: android
 - **对应门禁**: fw_android_log_debug（warn 级）
 - **证据**: Android 官方性能文档 "Remove Log statements in release builds"；ProGuard 手册 assumenosideeffects 剥离 Log 的标准做法
 
+```verify
+id: android-r3
+cmd: grep -rnE 'Log\.(d|v)\(' --include='*.kt' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：必须使用 HTTPS（禁止明文 HTTP 流量）
 - **适用版本**: API 23+ `usesCleartextTraffic` 可配；API 28+ 默认禁止明文
 - **规律**: AndroidManifest 不得显式 `android:usesCleartextTraffic="true"`；业务代码 `loadUrl`/`OkHttp`/`HttpURLConnection` 不得请求 `http://` 明文地址。明文例外（如内网调试域名）必须经 Network Security Config 按域名白名单收窄。
@@ -64,6 +82,12 @@ ruleset_id: android
 - **验证方法**: XML 命中 `usesCleartextTraffic="true"` → 违规；源码 `loadUrl("http://` / `URL("http://` → 违规
 - **对应门禁**: fw_android_cleartext_traffic（fail 级）
 - **证据**: Android 官方 Network security configuration 文档 "Android P 起 cleartext 默认禁用"；OWASP MASVS-NETWORK-1 数据须 TLS 加密传输
+
+```verify
+id: android-r4
+cmd: 
+expect: always
+```
 
 ### 规律：release 构建必须启用 ProGuard/R8 混淆
 - **适用版本**: AGP 3.4+ 默认 R8；AGP 7+/8.x 同口径
@@ -73,6 +97,12 @@ ruleset_id: android
 - **对应门禁**: fw_android_proguard（warn 级）
 - **证据**: Android 官方《Shrink, obfuscate, and optimize your app》"R8 is the default compiler"；Play 上架逆向防护基线
 
+```verify
+id: android-r5
+cmd: 
+expect: always
+```
+
 ### 规律：必须配置 Network Security Config 声明明文策略
 - **适用版本**: API 23+（`android:networkSecurityConfig` 属性）
 - **规律**: AndroidManifest.xml 的 `<application>` 应显式 `android:networkSecurityConfig="@xml/network_security_config"`，在 `res/xml/network_security_config.xml` 声明 `<base-config cleartextTrafficPermitted="false">` 与证书固定/调试覆盖；隐式依赖系统默认值不利于审计与按域收紧。
@@ -80,6 +110,12 @@ ruleset_id: android
 - **验证方法**: 扫描范围内 AndroidManifest.xml 无 `networkSecurityConfig` 属性 → 提醒
 - **对应门禁**: fw_android_network_security_config（warn 级）
 - **证据**: Android 官方 Network security configuration 文档 `<domain-config>`/`<base-config>` 语义；Google Play 安全基线建议显式声明
+
+```verify
+id: android-r6
+cmd: 
+expect: always
+```
 
 ### 规律：权限必须最小化（AndroidManifest）
 - **适用版本**: 全版本（API 23+ 运行时权限；API 33+ 通知权限细化）
@@ -89,6 +125,12 @@ ruleset_id: android
 - **对应门禁**: fw_android_permissions（warn 级）
 - **证据**: Google Play 政策 "Request the minimum permissions necessary"；工信部 App 侵害用户权益专项整治过度索权通报口径
 
+```verify
+id: android-r7
+cmd: grep -nE 'android\.permission\.(READ_SMS|SEND_SMS|READ_CONTACTS|WRITE_CONTACTS|RECORD_AUDIO|CAMERA|ACCESS_FINE_LOCATION|ACCESS_BACKGROUND_LOCATION|READ_CALL_LOG|BODY_SENSORS)' --include='AndroidManifest.xml' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：必须使用 ViewBinding/DataBinding（禁止裸 findViewById）
 - **适用版本**: AGP 3.6+ ViewBinding 稳定；DataBinding AGP 4+
 - **规律**: 视图引用一律走 `ActivityMainBinding.inflate(...)` / `DataBindingUtil` 编译期绑定；裸 `findViewById` 靠运行时转型，id 漂移/类型不匹配即 NPE/ClassCastException，且跨模块重构无编译期校验。
@@ -96,6 +138,12 @@ ruleset_id: android
 - **验证方法**: 剥注释后 Kotlin/Java 文件命中 `findViewById` 且无 `ViewBinding|DataBinding|Binding\b` 痕迹 → 嫌疑（启发式，人工复核）
 - **对应门禁**: fw_android_findviewbyid（warn 级）
 - **证据**: Android 官方 View Binding 文档 "View binding is null-safe and type-safe"；官方迁移指南建议以 ViewBinding 替代 findViewById
+
+```verify
+id: android-r8
+cmd: 
+expect: always
+```
 
 ### 规律：持久化必须走 Room（禁止裸 SQLite API）
 - **适用版本**: Room 1.x/2.x（androidx.persistence；KSP 2.x 同口径）
@@ -105,6 +153,12 @@ ruleset_id: android
 - **对应门禁**: fw_android_room_sqlite（warn 级）
 - **证据**: Android 官方 Room 文档 "Room provides compile-time verification of SQL queries"；官方持久化指南明确推荐 Room 替代裸 SQLite
 
+```verify
+id: android-r9
+cmd: 
+expect: always
+```
+
 ### 规律：必须接入 LeakCanary 内存泄漏检测（debug 构建）
 - **适用版本**: LeakCanary 2.x（`com.squareup.leakcanary:leakcanary-android` debugImplementation）
 - **规律**: 应用模块 `build.gradle(.kts)`（含 `com.android.application` 或 `applicationId`）应有 `leakcanary` 依赖痕迹（debugImplementation 自动初始化）；release 构建不打包（LeakCanary 2.x debug 依赖天然隔离）。
@@ -112,6 +166,12 @@ ruleset_id: android
 - **验证方法**: 含 `com.android.application|applicationId` 的 gradle 文件无 `leakcanary`（大小写不敏感）→ 提醒
 - **对应门禁**: fw_android_leakcanary（warn 级）
 - **证据**: LeakCanary 官方 README "LeakCanary is a memory leak detection library for Android，debugImplementation 即自动生效"；Square 工程实践基线
+
+```verify
+id: android-r10
+cmd: 
+expect: always
+```
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
 

@@ -24,12 +24,24 @@ ruleset_id: ios-swiftui
 - **验证方法**: 检出 `WKWebView` 且 `javaScriptEnabled` 未设为 false → fail。
 - **对应门禁**: fw_ios_webview_js(fail)
 
+```verify
+id: ios-swiftui-r1
+cmd: 
+expect: always
+```
+
 ### 规律：UserDefaults 禁存敏感数据
 - **适用版本**: 全版本
 - **规律**: UserDefaults 为明文 plist 存储，禁存 token/password/secret。敏感数据须用 Keychain。
 - **违反后果**: 敏感数据明文泄露（CWE-312）。
 - **验证方法**: UserDefaults 操作含敏感 key（token/password/secret）且无 Keychain → fail。
 - **对应门禁**: fw_ios_userdefaults_secret(fail)
+
+```verify
+id: ios-swiftui-r2
+cmd: 
+expect: always
+```
 
 ### 规律：禁 print() 生产代码
 - **适用版本**: 全版本
@@ -38,12 +50,24 @@ ruleset_id: ios-swiftui
 - **验证方法**: 检出 `print(` → warn。
 - **对应门禁**: fw_ios_print(warn)
 
+```verify
+id: ios-swiftui-r3
+cmd: 
+expect: always
+```
+
 ### 规律：须用 ATS（App Transport Security）
 - **适用版本**: iOS 9+
 - **规律**: ATS 强制 HTTPS，禁用 NSAllowsArbitraryLoads。
 - **违反后果**: 明文传输（CWE-319）。
 - **验证方法**: Info.plist 含 `NSAllowsArbitraryLoads` = true → fail。
 - **对应门禁**: fw_ios_ats(fail)
+
+```verify
+id: ios-swiftui-r4
+cmd: 
+expect: always
+```
 
 ### 规律：须用 Keychain 存敏感数据
 - **适用版本**: 全版本
@@ -52,12 +76,24 @@ ruleset_id: ios-swiftui
 - **验证方法**: 含密码/token 操作但无 Keychain 痕迹 → warn。
 - **对应门禁**: fw_ios_keychain(warn)
 
+```verify
+id: ios-swiftui-r5
+cmd: 
+expect: always
+```
+
 ### 规律：须配隐私清单（PrivacyInfo.xcprivacy）
 - **适用版本**: iOS 17+ / 2024 年起 Apple 要求
 - **规律**: App 须声明使用的隐私 API 与数据类型。
 - **违反后果**: App Store 审核被拒。
 - **验证方法**: 无 PrivacyInfo.xcprivacy 文件 → warn。
 - **对应门禁**: fw_ios_privacy_manifest(warn)
+
+```verify
+id: ios-swiftui-r6
+cmd: 
+expect: always
+```
 
 ### 规律：须用 @StateObject/@ObservedObject 状态管理
 - **适用版本**: iOS 14+
@@ -66,12 +102,24 @@ ruleset_id: ios-swiftui
 - **验证方法**: 多 @State 但无 @StateObject/@ObservedObject → warn。
 - **对应门禁**: fw_ios_state_object(warn)
 
+```verify
+id: ios-swiftui-r7
+cmd: 
+expect: always
+```
+
 ### 规律：须用 LazyVStack/LazyHStack 长列表
 - **适用版本**: iOS 14+
 - **规律**: 长列表须用 LazyVStack，非 VStack 全量渲染。
 - **违反后果**: 内存溢出/性能退化。
 - **验证方法**: VStack 含 ForEach 且无 LazyVStack → warn。
 - **对应门禁**: fw_ios_lazy_list(warn)
+
+```verify
+id: ios-swiftui-r8
+cmd: 
+expect: always
+```
 
 ### 规律：须配 SwiftLint 静态分析
 - **适用版本**: 全版本
@@ -80,12 +128,24 @@ ruleset_id: ios-swiftui
 - **验证方法**: 无 .swiftlint.yml → warn。
 - **对应门禁**: fw_ios_swiftlint(warn)
 
+```verify
+id: ios-swiftui-r9
+cmd: 
+expect: always
+```
+
 ### 规律：须用 async/await 网络请求
 - **适用版本**: iOS 15+
 - **规律**: 网络请求须用 async/await，禁 completion handler 回调地狱。
 - **违反后果**: 代码可维护性差。
 - **验证方法**: URLSession 含 completionHandler 且无 async → warn。
 - **对应门禁**: fw_ios_async(warn)
+
+```verify
+id: ios-swiftui-r10
+cmd: 
+expect: always
+```
 
 ## §4 门禁清单
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |

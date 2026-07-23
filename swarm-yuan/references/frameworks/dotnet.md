@@ -23,12 +23,24 @@ ruleset_id: dotnet
 - **验证方法**: `ExecuteSqlRaw` 或 `CommandText` 含 `$"` 或 `+` 拼接 → fail。
 - **对应门禁**: fw_dotnet_sql_injection(fail)
 
+```verify
+id: dotnet-r1
+cmd: 
+expect: always
+```
+
 ### 规律：密码须哈希存储
 - **适用版本**: 全版本
 - **规律**: 密码须用 BCrypt/PBKDF2/Argon2 哈希，禁明文存储。
 - **违反后果**: 密码泄露（CWE-916）。
 - **验证方法**: 含 password 赋值但无 Hash/BCrypt/PBKDF2 → fail。
 - **对应门禁**: fw_dotnet_password_hash(fail)
+
+```verify
+id: dotnet-r2
+cmd: 
+expect: always
+```
 
 ### 规律：须用 HTTPS
 - **适用版本**: ASP.NET Core 2.1+
@@ -37,12 +49,24 @@ ruleset_id: dotnet
 - **验证方法**: `UseHttpsRedirection` 未配置 → warn。
 - **对应门禁**: fw_dotnet_https(warn)
 
+```verify
+id: dotnet-r3
+cmd: 
+expect: always
+```
+
 ### 规律：须配 CORS
 - **适用版本**: ASP.NET Core
 - **规律**: 须显式配置 CORS，禁 AllowAnyOrigin + AllowCredentials。
 - **违反后果**: 跨域攻击（CWE-942）。
 - **验证方法**: `AllowAnyOrigin` 与 `AllowCredentials` 同时出现 → fail。
 - **对应门禁**: fw_dotnet_cors(fail)
+
+```verify
+id: dotnet-r4
+cmd: 
+expect: always
+```
 
 ### 规律：须配身份验证
 - **适用版本**: ASP.NET Core
@@ -51,12 +75,24 @@ ruleset_id: dotnet
 - **验证方法**: `[HttpGet]` / `[HttpPost]` 但无 `[Authorize]` → warn。
 - **对应门禁**: fw_dotnet_auth(warn)
 
+```verify
+id: dotnet-r5
+cmd: 
+expect: always
+```
+
 ### 规律：须用 async/await
 - **适用版本**: C# 5+
 - **规律**: 异步操作须用 async/await，禁 .Result/.Wait() 死锁。
 - **违反后果**: 线程死锁（CWE-833）。
 - **验证方法**: `.Result` 或 `.Wait()` 命中 → warn。
 - **对应门禁**: fw_dotnet_async(warn)
+
+```verify
+id: dotnet-r6
+cmd: 
+expect: always
+```
 
 ### 规律：须用依赖注入
 - **适用版本**: .NET Core+
@@ -65,12 +101,24 @@ ruleset_id: dotnet
 - **验证方法**: `new HttpClient()` 或 `new DbContext()` → warn。
 - **对应门禁**: fw_dotnet_di(warn)
 
+```verify
+id: dotnet-r7
+cmd: 
+expect: always
+```
+
 ### 规律：须用结构化日志
 - **适用版本**: .NET Core+
 - **规律**: 须用 ILogger 结构化日志，禁 Console.WriteLine 生产代码。
 - **违反后果**: 日志不可检索（CWE-209）。
 - **验证方法**: `Console.WriteLine` 命中 → warn。
 - **对应门禁**: fw_dotnet_logging(warn)
+
+```verify
+id: dotnet-r8
+cmd: 
+expect: always
+```
 
 ### 规律：须用 EF Core 迁移
 - **适用版本**: EF Core
@@ -79,12 +127,24 @@ ruleset_id: dotnet
 - **验证方法**: `ExecuteSqlRaw` 含 `CREATE TABLE` → warn。
 - **对应门禁**: fw_dotnet_ef_migration(warn)
 
+```verify
+id: dotnet-r9
+cmd: 
+expect: always
+```
+
 ### 规律：须启用 nullable 引用类型
 - **适用版本**: C# 8+
 - **规律**: 须 `#nullable enable` 或 csproj `<Nullable>enable</Nullable>`。
 - **违反后果**: 空指针异常（CWE-476）。
 - **验证方法**: 无 `#nullable enable` 且 csproj 无 `<Nullable>enable</Nullable>` → warn。
 - **对应门禁**: fw_dotnet_nullable(warn)
+
+```verify
+id: dotnet-r10
+cmd: 
+expect: always
+```
 
 ## §4 门禁清单
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 | CWE/GB 映射 |
