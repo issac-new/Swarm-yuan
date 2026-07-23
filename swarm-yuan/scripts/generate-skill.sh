@@ -927,6 +927,15 @@ if [[ "$RESUME" -eq 1 ]]; then
 else
   copy_universal_templates "$SKILL_DIR"
 fi
+# WP-P4: create 模式 precheck.conf 三件套由 conf-render.sh 渲染初稿（嗅探+溯源注释），覆盖模板拷贝
+# 仅新建（RESUME=0）时渲染；续传保留既有 conf 不覆盖。upgrade 模式在上文独立分支（merge_precheck_conf 保留用户配置）。
+if [[ "$RESUME" -eq 0 ]]; then
+  if bash "$SRC_SCRIPTS/conf-render.sh" "$PROJECT_DIR" --profile "$PROFILE" --out "$SKILL_DIR/scripts" >/dev/null 2>&1; then
+    echo "  ✓ precheck.conf 初稿由 conf-render.sh 渲染（# AUTO:detected/default + # TODO:model 清单）"
+  else
+    echo "  ⚠ conf-render.sh 不可用，保留模板占位符（须手填）"
+  fi
+fi
 
 fill_guide() {
   case "$1" in
