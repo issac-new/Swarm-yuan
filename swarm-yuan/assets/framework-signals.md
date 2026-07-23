@@ -1,8 +1,13 @@
 <!-- 由 scripts/gen-framework-index.sh 生成（WP-P1 数据化外迁），手改会被覆盖 -->
-# 框架信号索引（70 个框架）
+# 框架信号索引（74 个框架）
 
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
+| android | 文件 | `build.gradle(.kts)` 含 `com.android.application` 插件 | 高（file 类型信号；detect-frameworks.sh 不支持 file 探测，须手动 ACTIVE_FRAMEWORKS） |
+| android | 文件 | `AndroidManifest.xml`（`app/src/main/` 下） | 高（Android 工程专属清单） |
+| android | 文件 | `settings.gradle` + `gradle.properties` + `app/` 模块目录结构 | 中（目录结构组合） |
+| android | 配置 | 源码含 `import android.` / `import androidx.` | 高（平台专属导入） |
+| android | 配置 | `local.properties` 含 `sdk.dir`（Android SDK 路径） | 中（本地环境信号） |
 | angular | 依赖 | `@angular/core` / `@angular/common` / `@angular/router` / `@angular/forms` / `rxjs`（package.json dependencies） | 高 |
 | angular | 文件 | `**/*.component.ts` / `**/*.service.ts` / `**/*.module.ts` / `angular.json` / `**/*.spec.ts` | 高 |
 | angular | 装饰器 | `@Component` / `@Injectable` / `@Directive` / `@Pipe` / `@NgModule` / `@Input` / `@Output` | 高 |
@@ -12,6 +17,9 @@
 | antd | 文件 | `**/*.tsx` / `**/*.jsx` 含 `<Button` / `<Table` / `<Form`（ant 组件 PascalCase） | 高 |
 | antd | 代码 | `from 'antd'` / `App.useApp(` / `useForm(` / `ConfigProvider` / `message.success(` | 高 |
 | antd | 配置 | `vite.config.*` / `webpack.config.*` 含 `AntdResolver` / `babel-plugin-import` | 中 |
+| c-cpp | 文件 | `CMakeLists.txt` 或 `Makefile` | 高 |
+| c-cpp | 文件 | `*.c` / `*.cpp` / `*.h` / `*.hpp` | 高 |
+| c-cpp | 依赖 | `*.cpp` 含 `#include <iostream>` | 中 |
 | cargo | 文件 | `**/Cargo.toml` | 高（Cargo 工程清单，存在即激活） |
 | cargo | 文件 | `**/Cargo.lock` | 高（依赖锁文件，存在即激活） |
 | cargo | 文件 | `**/src/main.rs` / `**/src/lib.rs` | 中（Rust 入口，需组合 Cargo.toml 判定） |
@@ -37,6 +45,9 @@
 | dockerfile | 文件 | `**/docker-compose*.y*ml` 中含 `build:` 段 | 中（编排文件引用 Dockerfile，组合判定） |
 | dockerfile | 配置 | `FROM ...` / `RUN ...` / `COPY ...` / `ENTRYPOINT ...` 指令行 | 高（Dockerfile 指令特征） |
 | dockerfile | 配置 | `# syntax=docker/dockerfile:` 解析器指令 | 高（BuildKit 解析器前缀，BuildKit 工程特征） |
+| dotnet | 文件 | `*.csproj` 含 `Microsoft.NET.Sdk` | 高 |
+| dotnet | 文件 | `Program.cs` 或 `Startup.cs` | 中 |
+| dotnet | 依赖 | `*.cs` 含 `using Microsoft.AspNetCore` | 高 |
 | druid | 依赖 | `com.alibaba:druid` / `com.alibaba:druid-spring-boot-starter` / `com.alibaba:druid-spring-boot-3-starter` | 高 |
 | druid | 配置 | `spring.datasource.druid.*` / `druid.initial-size` / `druid.max-active` / `druid.filters` / `druid.filter.stat.*` / `druid.filter.wall.*` | 高 |
 | druid | 代码 | `DruidDataSource` / `DruidDataSourceBuilder` / `DruidFilterConfiguration` / `StatViewServlet` / `WebStatFilter` | 高 |
@@ -99,6 +110,9 @@
 | gorm | 文件 | `**/go.mod` 含 `gorm.io/gorm` | 高 |
 | gorm | 配置 | 无独立配置文件（DSN 走代码/env） | — |
 | gorm | 代码 | `gorm.Open(` / `gorm.DB` / `db.AutoMigrate(` / `db.Preload(` / `db.Transaction(` / `db.Model(` / `db.Create(` / `db.First(` / `db.Find(` / `gorm.Model` / `gorm.DeletedAt` / `errors.Is(err, gorm.ErrRecordNotFound)` | 高 |
+| ios-swiftui | 文件 | `*.swift` 含 `import SwiftUI` | 高 |
+| ios-swiftui | 文件 | `*.xcodeproj` 或 `Package.swift` | 高 |
+| ios-swiftui | 依赖 | `import UIKit` + `import SwiftUI` | 中 |
 | jackson | 依赖 | `com.fasterxml.jackson.core:jackson-databind` / `com.fasterxml.jackson.module:jackson-module-parameter-names` / `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` / `tools.jackson.core:jackson-databind`（3.x） | 高 |
 | jackson | 注解 | `@JsonProperty` / `@JsonIgnore` / `@JsonFormat` / `@JsonTypeInfo` / `@JsonSubTypes` / `@JsonInclude` / `@JsonCreator` / `@JsonView` / `@JsonIgnoreProperties` | 高 |
 | jackson | 文件 | `**/dto/**/*.java` 含 Jackson 注解 / `**/*ObjectMapper*.java` | 中（需组合注解信号） |

@@ -12,7 +12,7 @@ swarm-yuan 的设计基于三个关键理念：
 
 ### 理念一：先认识，再行动（认知递进）
 
-AI 写代码前必须先认识项目——概念→结构→空间→映射→规律→处理。不认识就写 = 盲动。swarm-yuan 用 **17 项特征卡** 完成认知，用 **49 个质量门禁** 守护行动。
+AI 写代码前必须先认识项目——概念→结构→空间→映射→规律→处理。不认识就写 = 盲动。swarm-yuan 用 **17 项特征卡** 完成认知，用 **50 个质量门禁** 守护行动。
 
 ### 理念二：拼装式开发（复用优先）
 
@@ -77,7 +77,7 @@ bash install.sh
 
 **特征卡 → 文件填充（Step 4）：** SKILL.md 的铁律来自第 2/6 项 → codebase.md 的技术栈来自第 4 项 → dev-guide.md 的改造分类来自第 3 项 → reference-manual.md 的组件库来自第 11 项 → release.md 的命令来自第 5 项……17 项特征卡是目标 skill 所有文件的「数据源」。
 
-**特征卡 → 门禁配置（Step 5）：** precheck.conf 的 166 个变量从特征卡推导：
+**特征卡 → 门禁配置（Step 5）：** precheck.conf 的 170 个变量从特征卡推导：
 
 | 配置变量 | 来自特征卡第几项 |
 |---------|----------------|
@@ -91,7 +91,7 @@ bash install.sh
 | SCAN_DIRS / CONSISTENCY_DIRS | 第 7/12 项（安全/数据） |
 | COG_SPEED_FILES / COG_CUMULATIVE_TODO | 第 13 项（认知基底） |
 
-**特征卡 → 开发流程（日常使用）：** 开始新需求时，AI 从特征卡第 11 项检索可复用单元，预填 spec §5.5 复用约束。编码时 AI 查特征卡第 11 项的组件库清单，拼装优先。提交前 49 个门禁按特征卡配置的规则检查。
+**特征卡 → 开发流程（日常使用）：** 开始新需求时，AI 从特征卡第 11 项检索可复用单元，预填 spec §5.5 复用约束。编码时 AI 查特征卡第 11 项的组件库清单，拼装优先。提交前 50 个门禁按特征卡配置的规则检查。
 
 ### 特征卡探查工具矩阵
 
@@ -130,11 +130,11 @@ bash install.sh
 
 ### 门禁与特征卡的关系
 
-特征卡定义了「项目应该是什么样的」，49 个门禁验证「代码是否符合特征卡定义的规则」。
+特征卡定义了「项目应该是什么样的」，50 个门禁验证「代码是否符合特征卡定义的规则」。
 
 ### 门禁分层（决策 19，横切维度）
 
-49 门禁按 `fail()` 调用能力分三档（strict 17 / warn 21 / advisory 11），与 core/standard/compliance 三档正交（一个门禁同时属于 core + strict，或 standard + advisory）：
+49 门禁按 `fail()` 调用能力分三档（strict 17 / warn 21 / advisory 12），与 core/standard/compliance 三档正交（一个门禁同时属于 core + strict，或 standard + advisory）：
 
 | 分层 | 数量 | fail() 能力 | 行为 | 门禁清单 |
 |------|------|------------|------|----------|
@@ -244,7 +244,7 @@ bash install.sh
 | 3 | 创建骨架（含 hooks / commands / precheck.conf） |
 | 4 | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
 | 4.5 | **框架深化**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + 门禁清单对齐 |
-| 5 | AI 配置 precheck.conf——**166 个变量从特征卡推导** |
+| 5 | AI 配置 precheck.conf——**170 个变量从特征卡推导** |
 | 5.5 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
 | 6 | AI 运行门禁（--all 核心 10 → --all-full 标准 27；合规 17 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
 | 7.5 | **门禁注入**——`generate-skill.sh --inject-frameworks` 把激活框架门禁片段写入 precheck.sh 标记区块 |
@@ -400,7 +400,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
         └→ 有 ⚠ → 评估
 
 架构审查：
-  对 AI 说 "跑全量门禁"（49 个门禁全跑）
+  对 AI 说 "跑全量门禁"（50 个门禁全跑）
 
 升级：
   对 AI 说 "升级 skill"（AI 重新探查 → 更新特征卡 → 更新门禁配置）
@@ -410,7 +410,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 | 维度 | 数值 |
 |------|------|
-| **特征卡** | **17 项（驱动全部文件 + 166 个门禁变量 + 开发流程）** |
+| **特征卡** | **17 项（驱动全部文件 + 170 个门禁变量 + 开发流程）** |
 | **质量门禁** | **49 个（核心 10 + 架构 17 + 合规 17 + advisory-only 5，特征卡立法 + 门禁执法）** |
 | 运行时工具 | 11 |
 | spec 模板 | 22 主段（§22=标准合规） |
