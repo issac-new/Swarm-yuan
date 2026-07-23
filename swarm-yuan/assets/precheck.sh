@@ -26,6 +26,7 @@
 #   bash precheck.sh --quality-model  # 质量特性剪裁核验（GB/T 25000.10 八特性+25010 Safety，QUALITY_MODEL_REQUIRED=1）
 #   bash precheck.sh --test-evidence  # 测试证据链（GB/T 15532/9386，TEST_EVIDENCE_DIR）
 #   bash precheck.sh --review-record  # 评审记录与AI过程信息项（GB/T 8566/ISO 42001，REVIEW_RECORD_DIR）
+#   bash precheck.sh --metrics        # 度量趋势告警（GB/T 25000.30，GATE_RUNS_DIR+METRICS_TREND_WINDOW）
 #   bash precheck.sh --release-sign   # 发布签名与 provenance（SLSA Build L2 / SSDF PS.2 发布完整性）
 #   bash precheck.sh --doctor         # conf 诊断（lint：路径/glob 可达/死变量/框架 requires_conf；非门禁、不入注册表）
 #   bash precheck.sh --format json --all-full   # 运行结束追加 SARIF 子集 JSON（默认 stdout；GATE_JSON_OUT 环境变量可指定落盘）
@@ -456,14 +457,14 @@ skip_if_unconfigured() {
 # 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
 ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
 # 合规门禁（标准合规族 + P1 安全门禁族深化 + P3 长期清单 rtm/release-sign，仅 --compliance-suite/单门禁执行；未配置的静默跳过）
-ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_release_sign)
+ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign)
 # 标准门禁（核心 10 + 架构 17 = 27）：--all-full 执行序列（合规 13 已拆出为 --compliance-suite 按需执行）
 ALL_GATES_STANDARD=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_test)
 # 全部门禁（含架构/认知/合规门禁，未配置的静默跳过；--fix-suggest 用）
-ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_release_sign check_test)
+ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_test)
 # 单门禁 flag 清单（Usage 顺序）。flag → 函数映射规则：check_ + flag 去 -- 前缀并将 - 转为 _
 #（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
-GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --dengbao --pia --sast-deep --oss-eval --quality-model --test-evidence --review-record --release-sign --operate --decision-audit --canary --cwe-audit)
+GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --dengbao --pia --sast-deep --oss-eval --quality-model --test-evidence --review-record --metrics --release-sign --operate --decision-audit --canary --cwe-audit)
 
 # ===== 门禁分层 enforce_level（决策 19：strict/warn/advisory 三档）=====
 # 自动按 fail() 调用数归类（gen-enforce-level.sh 生成 gate-enforce-level.conf）：
@@ -1277,7 +1278,7 @@ if [[ -z "${_gate_fn:-x}" ]]; then
   check_service; check_api; check_state; check_frontend; check_cognition; check_domain
   check_knowledge; check_mermaid; check_shift_left; check_framework
   check_compliance; check_docs_pack; check_sbom; check_privacy
-  check_authz; check_requirements; check_crypto; check_rtm; check_dengbao; check_pia; check_sast_deep; check_oss_eval; check_quality_model; check_test_evidence; check_review_record; check_release_sign
+  check_authz; check_requirements; check_crypto; check_rtm; check_dengbao; check_pia; check_sast_deep; check_oss_eval; check_quality_model; check_test_evidence; check_review_record; check_metrics; check_release_sign
 fi
 
 case "$MODE" in
@@ -1364,6 +1365,7 @@ _fix_suggest() {
     gate_quality_model_*)          suggest="补质量特性剪裁表（GB/T 25000.10 八特性逐项适用/剪裁+理由，ISO 25010 Safety 主动对齐），消除待定项";;
     gate_test_evidence_*)          suggest="补测试计划/说明/报告三类文档（GB/T 15532/9386），测试报告含准出结论，消除待定项";;
     gate_review_record_*)        suggest="补评审记录（评审人/日期/结论三要素，GB/T 8566），AI 生成产物声明+人工复核（ISO 42001），消除待定项";;
+    gate_metrics_*)               suggest="strict 门禁通过率趋势恶化（GB/T 25000.30）——排查根因，检查近期变更是否引入质量退化";;
     fw_vue_script_setup*)           suggest="将 Vue SFC 改为 <script setup> 语法（项目特征卡要求）";;
     fw_vue_no_options_api*)         suggest="移除 Options API（data/methods/computed），改用 Composition API";;
     fw_vue_vhtml_sanitize*)         suggest="v-html 须配套 sanitize（DOMPurify 等），防 XSS";;
