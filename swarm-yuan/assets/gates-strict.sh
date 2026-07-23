@@ -1323,6 +1323,7 @@ $(printf '%s\n' "$_tbd" | head -5 | sed 's/^/    /')"
 
 check_test_evidence() {
   echo "=== 测试证据链检查（GB/T 15532-2008 测试规范 / GB/T 9386-2008 测试文档）==="
+  [[ "${TEST_EVIDENCE_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "TEST_EVIDENCE_REQUIRED 未启用，测试证据链检查跳过"; return; }
   local dir="${TEST_EVIDENCE_DIR:-docs/test}"
   if [[ ! -d "$dir" ]]; then
     fail "gate_test_evidence_missing: 测试证据文档目录不存在：${dir}（GB/T 15532-2008 须含测试计划/测试说明/测试报告）"
@@ -1375,6 +1376,7 @@ $(printf '%s\n' "$_tbd" | head -5 | sed 's/^/    /')"
 
 check_review_record() {
   echo "=== 评审记录与 AI 过程信息项检查（GB/T 8566-2022 评审过程 / ISO/IEC 42001 成文信息+可追溯）==="
+  [[ "${REVIEW_RECORD_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "REVIEW_RECORD_REQUIRED 未启用，评审记录检查跳过"; return; }
   local dir="${REVIEW_RECORD_DIR:-docs/reviews}"
   if [[ ! -d "$dir" ]]; then
     fail "gate_review_record_missing: 评审记录目录不存在：${dir}（GB/T 8566-2022 评审过程要求留存评审记录）"
@@ -1495,7 +1497,7 @@ check_release_sign() {
 # check_quality_model（--quality-model，WP-S2）：质量特性剪裁核验
 # GB/T 25000.10-2016 八特性（功能适合性/性能效率/兼容性/易用性/可靠性/安全性/维护性/可移植性）
 # 逐项适用/剪裁声明；ISO/IEC 25010:2023 新增 Safety（无害性/人身安全），国标暂无，主动对齐。
-# 4 个 fail 点 → strict 档。启用后 fail-closed。
+# 5 个 fail 点 → strict 档。启用后 fail-closed。
 check_quality_model() {
   echo "=== 质量特性剪裁核验（GB/T 25000.10-2016 八特性 + ISO/IEC 25010:2023 Safety 主动对齐）==="
   [[ "${QUALITY_MODEL_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "QUALITY_MODEL_REQUIRED 未启用，质量特性剪裁核验跳过"; return; }

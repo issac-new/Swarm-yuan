@@ -42,8 +42,8 @@ bash ~/.claude/skills/swarm-yuan/scripts/self-check.sh
 - 路 C：代码组织与资源 — 源码目录、组件库、接口、数据模型、可复用稳定单元、AI agent 运行时
 - 优先用代码图谱（`gitnexus analyze` / `graphify .`）索引
 
-### 5. 提取 16 项特征卡
-从探查结果整理 16 项特征卡，每项落到具体值（真实路径/命令/版本/组件名），不用占位符。
+### 5. 提取 17 项特征卡
+从探查结果整理 17 项特征卡，每项落到具体值（真实路径/命令/版本/组件名），不用占位符。
 
 ### 6. 创建骨架
 ```bash
@@ -62,7 +62,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh <skill名称> <项目
 - `scripts/mcp-tools.md` — MCP 工具接入说明
 
 ### 8. AI 自动配置 precheck.conf
-从特征卡推导 156 个配置变量，自动填写 `scripts/precheck.conf`。
+从特征卡推导 158 个配置变量，自动填写 `scripts/precheck.conf`。
 
 ### 9. AI 运行门禁验证
 ```bash
