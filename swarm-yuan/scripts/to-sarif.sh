@@ -82,7 +82,13 @@ for run in runs:
         sarif_results.append({
             "ruleId": gate,
             "level": level,
-            "message": {"text": msg_text}
+            "message": {"text": msg_text},
+            "locations": [{
+                "logicalLocations": [{
+                    "name": gate,
+                    "kind": "function"
+                }]
+            }]
         })
 
 # Assemble SARIF 2.1.0

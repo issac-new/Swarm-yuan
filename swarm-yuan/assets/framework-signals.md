@@ -1,5 +1,5 @@
 <!-- 由 scripts/gen-framework-index.sh 生成（WP-P1 数据化外迁），手改会被覆盖 -->
-# 框架信号索引（62 个框架）
+# 框架信号索引（70 个框架）
 
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
@@ -12,6 +12,12 @@
 | antd | 文件 | `**/*.tsx` / `**/*.jsx` 含 `<Button` / `<Table` / `<Form`（ant 组件 PascalCase） | 高 |
 | antd | 代码 | `from 'antd'` / `App.useApp(` / `useForm(` / `ConfigProvider` / `message.success(` | 高 |
 | antd | 配置 | `vite.config.*` / `webpack.config.*` 含 `AntdResolver` / `babel-plugin-import` | 中 |
+| cargo | 文件 | `**/Cargo.toml` | 高（Cargo 工程清单，存在即激活） |
+| cargo | 文件 | `**/Cargo.lock` | 高（依赖锁文件，存在即激活） |
+| cargo | 文件 | `**/src/main.rs` / `**/src/lib.rs` | 中（Rust 入口，需组合 Cargo.toml 判定） |
+| cargo | 文件 | `**/*.rs`（含 src/） | 中（Rust 源码，需组合 Cargo.toml） |
+| cargo | 配置 | `[package]` / `[dependencies]` / `[[bin]]` TOML 节 | 高 |
+| cargo | 代码 | `use std::` / `fn main()` / `pub fn` / `impl` / `mod` | 中（Rust 语法特征） |
 | celery | 依赖 | celery / celery[redis] / celery[sqs] / kombu | 高 |
 | celery | 注解 | @shared_task / @app.task / @task | 高 |
 | celery | 文件 | celery.py / celeryconfig.py / tasks.py | 中 |
@@ -26,6 +32,11 @@
 | django | 代码 | `from django.` / `import django` / `django.db.models` / `models.Model` | 高 |
 | django | 配置 | `SECRET_KEY` / `MIDDLEWARE` / `INSTALLED_APPS` / `DATABASES` / `ALLOWED_HOSTS` | 高 |
 | django | 目录结构 | `**/migrations/`（含 `__init__.py` 与数字前缀迁移文件） | 中（需组合信号） |
+| dockerfile | 文件 | `**/Dockerfile` / `**/Dockerfile.*` / `**/*.dockerfile` | 高（Dockerfile 命名约定，存在即激活） |
+| dockerfile | 文件 | `**/.dockerignore` | 中（容器构建上下文排除清单，组合 Dockerfile 判定） |
+| dockerfile | 文件 | `**/docker-compose*.y*ml` 中含 `build:` 段 | 中（编排文件引用 Dockerfile，组合判定） |
+| dockerfile | 配置 | `FROM ...` / `RUN ...` / `COPY ...` / `ENTRYPOINT ...` 指令行 | 高（Dockerfile 指令特征） |
+| dockerfile | 配置 | `# syntax=docker/dockerfile:` 解析器指令 | 高（BuildKit 解析器前缀，BuildKit 工程特征） |
 | druid | 依赖 | `com.alibaba:druid` / `com.alibaba:druid-spring-boot-starter` / `com.alibaba:druid-spring-boot-3-starter` | 高 |
 | druid | 配置 | `spring.datasource.druid.*` / `druid.initial-size` / `druid.max-active` / `druid.filters` / `druid.filter.stat.*` / `druid.filter.wall.*` | 高 |
 | druid | 代码 | `DruidDataSource` / `DruidDataSourceBuilder` / `DruidFilterConfiguration` / `StatViewServlet` / `WebStatFilter` | 高 |
@@ -74,6 +85,11 @@
 | flink | 配置 | `execution.checkpointing.*` / `state.backend.*` / `restart-strategy.*` / `pipeline.jars` / `table.*` / `high-availability.*` | 高 |
 | flink | 代码 | `enableCheckpointing` / `assignTimestampsAndWatermarks` / `RestartStrategy` / `KeyedState` / `ValueState` / `CEP.pattern` | 高 |
 | flink | CDC | `flink-cdc.yaml`（YAML pipeline：`source:`/`sink:` + `pipeline:` 节点）/ `MySqlSource` / `FlinkSourceFunction` | 高 |
+| flutter | 文件 | `pubspec.yaml` 存在（含 `flutter:` sdk 段） | 高（file 类型信号；detect-frameworks.sh 不支持 file 探测，须手动 ACTIVE_FRAMEWORKS） |
+| flutter | 依赖 | pubspec.yaml dependencies 含 `flutter` / `flutter_test` | 高 |
+| flutter | 文件 | `lib/main.dart` 入口 + `analysis_options.yaml` | 中（目录结构组合） |
+| flutter | 配置 | `import 'package:flutter/material.dart'` / `package:flutter/cupertino.dart` | 高（框架专属导入） |
+| flutter | 文件 | `android/app/build.gradle` + `ios/Podfile` 双端工程并存 | 低（仅作辅助） |
 | gin | 依赖 | `github.com/gin-gonic/gin` / `github.com/gin-contrib/...`（gzip/cors/sessions/jwt） | 高 |
 | gin | 注解 | 无（Gin 不依赖注解，以 import + API 调用识别） | — |
 | gin | 文件 | `**/go.mod` 含 `gin-gonic/gin` | 高 |
@@ -116,6 +132,13 @@
 | kratos | 文件 | `internal/{server,service,biz,data}/` 四层目录（kratos-layout 标准布局） | 中（需组合信号） |
 | kratos | 配置 | `configs/config.yaml` + `internal/conf/*.proto`（Bootstrap 配置契约） | 中 |
 | kratos | 代码 | `kratos.New(` / `http.NewServer(` / `grpc.NewServer(` / `recovery.Recovery()` / `RegisterXxxHTTPServer(` | 高 |
+| kubernetes | 文件 | `**/*.yaml` / `**/*.yml`（含 k8s 清单） | 中（YAML 通用，须组合 apiVersion/kind 判定） |
+| kubernetes | 文件 | `**/kustomization.yaml` / `**/Chart.yaml` | 高（Kustomize/Helm 工程特征） |
+| kubernetes | 配置 | `apiVersion: apps/v1` / `kind: Deployment|StatefulSet|DaemonSet|Pod` | 高（K8s 工作负载 API 信号） |
+| kubernetes | 配置 | `apiVersion: v1` + `kind: Service|ConfigMap|Secret|Namespace` | 高（K8s 原生资源） |
+| kubernetes | 配置 | `apiVersion: rbac.authorization.k8s.io/v1` + `kind: Role|RoleBinding|ClusterRole` | 高（K8s RBAC） |
+| kubernetes | 配置 | `apiVersion: networking.k8s.io/v1` + `kind: NetworkPolicy` / `kind: Ingress` | 高（K8s 网络资源） |
+| kubernetes | 配置 | `apiVersion: policy` + `kind: PodDisruptionBudget` | 高（K8s PDB） |
 | langchain | 依赖 | `langchain` / `langchain-core` / `langchain-community` / `langgraph`（requirements.txt / pyproject.toml） | 高 |
 | langchain | 代码 | `from langchain` / `from langchain_core` / `from langchain_openai` / `from langgraph` | 高 |
 | langchain | 代码 | `PromptTemplate(` / `ChatPromptTemplate` / `AgentExecutor` / `create_react_agent` / `StateGraph(` | 中（需与依赖信号组合） |
@@ -168,6 +191,19 @@
 | nuxt | 代码 | `useFetch(` / `useAsyncData(` / `useState(` / `defineNuxtPlugin(` / `defineNuxtRouteMiddleware(` / `useSeoMeta(` | 高 |
 | nuxt | 配置 | `nuxt.config.ts` 的 `modules` / `runtimeConfig` / `app.head` / `nitro` | 高 |
 | nuxt | 目录 | `app/`（Nuxt 4 默认 srcDir）/ `server/`（nitro 服务端）/ `public/` | 高 |
+| opengauss | 依赖 | `org.opengauss:opengauss-jdbc`（pom.xml groupId/artifactId） | 高 |
+| opengauss | 依赖 | `psycopg2` / `psycopg2-binary`（requirements.txt；PG 协议兼容驱动，须与配置信号组合） | 中 |
+| opengauss | 配置 | `jdbc:opengauss://` / `org.opengauss.Driver` / 5432 端口数据源 | 高 |
+| opengauss | 文件 | `**/pg_hba.conf` / `**/postgresql.conf` 含 `audit_trail` 等 openGauss 专属参数 | 中（PG 同源，需组合信号） |
+| opengauss | 代码 | `psycopg2.connect(` / `DruidDataSource` + opengauss URL | 中 |
+| opentelemetry | 依赖 | `@opentelemetry/api` / `@opentelemetry/sdk-node` / `@opentelemetry/exporter-*`（package.json） | 高 |
+| opentelemetry | 依赖 | `opentelemetry-api` / `opentelemetry-sdk` / `opentelemetry-exporter-*`（requirements.txt / pyproject.toml） | 高 |
+| opentelemetry | 依赖 | `go.opentelemetry.io/otel` / `go.opentelemetry.io/otel/sdk` / `go.opentelemetry.io/otel/exporters/otlp`（go.mod） | 高 |
+| opentelemetry | 依赖 | `io.opentelemetry:opentelemetry-api` / `io.opentelemetry:opentelemetry-sdk` / `opentelemetry-exporter-*`（pom.xml） | 高 |
+| opentelemetry | 文件 | `**/otel{,init}.{js,ts,py,go,java}` / `**/instrumentation.{js,ts,py}` | 中 |
+| opentelemetry | 配置 | `OTEL_SERVICE_NAME=` / `OTEL_EXPORTER_OTLP_ENDPOINT=` 环境变量 | 中 |
+| opentelemetry | 代码 | `NodeSDK` / `resource.ServiceResource` / `Resource.create(` / `trace.getTracer(` / `OTEL_EXPORTER_OTLP_ENDPOINT` | 高 |
+| opentelemetry | 代码 | `tracer.startSpan(` / `span.setAttribute(` / `context.propagation` / `Baggage` / `otel.TracerProvider` | 高 |
 | paimon | 依赖 | `org.apache.paimon:paimon-flink-*` / `paimon-spark-*` / `paimon-bundle` / `paimon-hive-connector` / `paimon-trino` | 高 |
 | paimon | 配置 | `'connector'\s*=\s*'paimon'` / `catalog-type=paimon` / `warehouse` + `paimon` / `PAIMON` catalog 注册 | 高 |
 | paimon | 文件 | `**/catalog/*.sql`（含 paimon DDL）/ `warehouse/` 目录下 `*/db.db/*/manifest/` 结构 | 中（须排除他用） |
@@ -197,6 +233,16 @@
 | rabbitmq | 配置 | `spring.rabbitmq.*` / `spring.rabbitmq.listener.*` / `publisher-confirm-type` / `x-dead-letter-exchange` / `x-queue-type` | 高 |
 | rabbitmq | 代码 | `RabbitTemplate` / `ConnectionFactory` / `QueueBuilder` / `DirectExchange` / `TopicExchange` / `basicPublish` / `basicConsume` | 高 |
 | rabbitmq | 文件 | `**/docker-compose*.yml` 含 `rabbitmq:` | 中（需排除仅部署描述） |
+| rag-pipeline | 依赖 | `langchain` / `llama-index` / `chromadb` / `faiss-cpu` / `pgvector`（requirements.txt / pyproject.toml） | 高 |
+| rag-pipeline | 依赖 | `@langchain/core` / `langchainjs` / `llamaindex`（package.json） | 高 |
+| rag-pipeline | 代码 | `as_retriever(` / `similarity_search(` / `RetrievalQA` / `VectorStoreIndex` / `VectorStoreRetriever` | 高 |
+| rag-pipeline | 代码 | `TextSplitter` / `Embeddings(` / `FAISS` / `Chroma` / `Pinecone` / `Milvus` / `Qdrant` | 中（需与依赖信号组合） |
+| rag-pipeline | 配置 | `VECTOR_STORE` / `EMBEDDING_MODEL` / `RAG_` 前缀环境变量 | 中 |
+| react-native | 依赖 | package.json dependencies 含 `react-native` | 高（核心包独立可定） |
+| react-native | 依赖 | `react-native-webview` / `@react-native-async-storage/async-storage` / `react-native-safe-area-context` | 中（生态组合信号） |
+| react-native | 文件 | `metro.config.js` / `react-native.config.js` | 高（RN 专属构建配置） |
+| react-native | 文件 | `android/app/build.gradle` + `ios/Podfile` 双端工程并存 | 中（需排除原生工程） |
+| react-native | 配置 | `app.json` 含 `"expo"` 或 RN 工程名/入口 | 低（仅作辅助） |
 | react | 依赖 | `react` / `react-dom` 包（package.json dependencies）/ `next` / `react-router-dom` / `@reduxjs/toolkit` | 高 |
 | react | 文件 | `**/*.jsx` / `**/*.tsx` 含 JSX / `react.config.*` | 中（须组合代码信号） |
 | react | 代码 | `import .* from 'react'` / `useState(` / `useEffect(` / `useMemo(` / `useCallback(` / `React.createElement` / `function .*Component` | 高 |

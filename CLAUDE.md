@@ -13,7 +13,7 @@ There is no compiled artifact and no conventional build — the product is a set
 
 ## 范式定位（WP-P10）
 
-swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 49 门禁 + 162 变量 + 62 框架规则。重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。
+swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 49 门禁 + 166 变量 + 62 框架规则。重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。
 
 **适用**：团队协作/中大型项目/强监管交付/长期维护/多技术栈混合。**不适用**：个人脚本/一次性原型/极小改动/无 AI 辅助。详见 `docs/paradigm-positioning.md`。
 
