@@ -43,6 +43,13 @@ _top() { # $1=字段名
   sed -E "s/.*\"$1\":\"([^\"]*)\".*/\1/" "$TRACE" 2>/dev/null | sort | uniq -c | sort -rn | head -10 || true
 }
 
+# WP-P0: ISO8601 UTC → epoch（三平台：GNU date -d / BSD date -j，都不可用返回 0）
+_iso2epoch() {
+  if date -u -d "$1" +%s >/dev/null 2>&1; then date -u -d "$1" +%s;
+  elif date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$1" +%s >/dev/null 2>&1; then date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$1" +%s;
+  else echo 0; fi
+}
+
 {
   echo "# 成本遥测报告（cost-report.sh）"
   echo ""
@@ -63,6 +70,38 @@ _top() { # $1=字段名
   echo "## 按工具（tool）"
   echo '```'
   _top tool
+  echo '```'
+
+  # WP-P0 节点耗时（wall-clock，模型处理时间代理）：started/done|fail 按 node+tool 最近配对
+  echo ""
+  echo "## 按节点耗时（wall-clock，模型处理时间代理）"
+  echo '```'
+  _pairs=$(mktemp /tmp/costpairs.XXXXXX)
+  awk -F'"' '
+    { ts=""; node=""; tool=""; st=""
+      for (i=1; i<=NF; i++) {
+        if ($i=="ts") ts=$(i+2)
+        else if ($i=="node") node=$(i+2)
+        else if ($i=="tool") tool=$(i+2)
+        else if ($i=="status") st=$(i+2)
+      }
+      key=node SUBSEP tool
+      if (st=="started") start[key]=ts
+      else if ((st=="done" || st=="fail") && (key in start)) {
+        print node "\t" tool "\t" start[key] "\t" ts "\t" st
+        delete start[key]
+      }
+    }' "$TRACE" > "$_pairs"
+  if [[ -s "$_pairs" ]]; then
+    printf 'node\ttool\t耗时s\tstatus\n'
+    while IFS="$(printf '\t')" read -r pn pt p0 p1 pst; do
+      e0=$(_iso2epoch "$p0"); e1=$(_iso2epoch "$p1")
+      printf '%s\t%s\t%s\t%s\n' "$pn" "$pt" "$((e1 - e0))" "$pst"
+    done < "$_pairs"
+  else
+    echo "（无 started/done 配对；节点级追踪落盘后才有数据）"
+  fi
+  rm -f "$_pairs"
   echo '```'
 
   # 可选：门禁运行证据（precheck --format json + GATE_RUNS_DIR 落盘时存在）
