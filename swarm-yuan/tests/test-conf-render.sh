@@ -32,10 +32,12 @@ out="$(bash "$SH" "$TMP/proj2" --profile standard 2>/dev/null)"
 echo "$out" | grep -qE 'BUILD_CMD=.*mvn.*# AUTO:detected' && ok "Java BUILD_CMD mvn detected" || bad "态2 BUILD_CMD: $out"
 echo "$out" | grep -qE 'ACTIVE_FRAMEWORKS=.*spring-boot' && ok "spring-boot detected" || bad "态2 框架: $out"
 
-# --- 态 3：lite profile 不渲染 arch.conf ---
+# --- 态 3：lite profile 不渲染 arch.conf/compliance.conf 段（section header 不得出现） ---
+# 注：core 模板里的 `[[ -f .../precheck.arch.conf ]] && source ... || true` 功能行保留（lite 无兄弟时 no-op，
+# 未来补 arch.conf 可自动加载），故用 section header `^# ===== precheck.arch.conf =====` 判定是否渲染了完整段。
 out="$(bash "$SH" "$TMP/proj" --profile lite 2>/dev/null)"
-echo "$out" | grep -qE 'precheck.arch.conf' && bad "lite 不应渲染 arch" || ok "lite 无 arch.conf"
-echo "$out" | grep -qE 'precheck.compliance.conf' && bad "lite 不应渲染 compliance" || ok "lite 无 compliance.conf"
+echo "$out" | grep -qE '^# ===== precheck\.arch\.conf =====' && bad "lite 不应渲染 arch 段" || ok "lite 无 arch.conf 段"
+echo "$out" | grep -qE '^# ===== precheck\.compliance\.conf =====' && bad "lite 不应渲染 compliance 段" || ok "lite 无 compliance.conf 段"
 
 # --- 态 4：--out 落盘三文件 + TODO:model 清单 ---
 mkdir -p "$TMP/out"

@@ -154,10 +154,11 @@ _emit_section() { # $1=文件名 $2=内容
 }
 
 core=$(_render_conf "assets/precheck.conf")
-# lite profile：不含 arch/compliance 兄弟文件，剔除 core 模板里引用兄弟文件名的行
-# （纯注释行 + `[[ -f ... ]] && source` no-op 行；lite 无兄弟可加载，剔除语义自洽且令 lite 输出零兄弟引用）
+# lite profile：不含 arch/compliance 兄弟文件，剔除 core 模板里「描述兄弟文件」的纯注释行。
+# 注意：保留 `[[ -f ... ]] && source ... || true` 功能行——lite 无兄弟时它是 no-op（|| true），
+# 且未来手动补 arch.conf 时能自动加载（升级路径与 standard/compliance 一致）。
 if [[ "$PROFILE" == "lite" ]]; then
-  core=$(printf '%s\n' "$core" | grep -vE 'precheck\.(arch|compliance)\.conf')
+  core=$(printf '%s\n' "$core" | grep -vE '^#.*precheck\.(arch|compliance)\.conf')
 fi
 _emit_section "precheck.conf" "$core"
 
