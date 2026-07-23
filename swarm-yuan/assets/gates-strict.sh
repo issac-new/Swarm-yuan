@@ -323,7 +323,7 @@ check_reuse() {
         [[ -z "$nf" ]] && continue
         case "$nf" in
           *.ts|*.js|*.vue|*.py)
-            local exports; exports=$(grep -cE '^\s*(export\s+)?(function|const|class|def)\s+[A-Za-z_]' "$nf" 2>/dev/null | head -1); exports=${exports:-0}
+            local exports; exports=$(grep -cE '^\s*(export\s+)?(function|const|class|def)\s+[A-Za-z_]' "$nf" 2>/dev/null | head -1 || true); exports=${exports:-0}
             new_count=$((new_count + exports))
             ;;
         esac

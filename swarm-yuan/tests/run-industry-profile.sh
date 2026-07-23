@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # run-industry-profile.sh —— 行业 profile 覆盖断言：profile 追加到 precheck.conf 后关键变量生效
-# 用法: bash tests/run-industry-profile.sh <profile-id>（finance/medical/gov）
+# 用法: bash tests/run-industry-profile.sh <profile-id>（finance/medical/gov/automotive/energy）
 set -u
 BASE="$(cd "$(dirname "$0")/.." && pwd)"
 P="${1:?用法: run-industry-profile.sh <profile-id>}"
@@ -33,6 +33,17 @@ cat "$CONF_SRC" >> "$TMP/precheck.conf"
       ;;
     finance) check CRYPTO_PROFILE gm; check SBOM_REQUIRED 1 ;;
     medical) check PRIVACY_SCAN_DIRS "" ;;
+    automotive)
+      check SBOM_REQUIRED 1
+      check OSS_EVAL_REQUIRED 1
+      check RELEASE_SIGN_REQUIRED 1
+      check RTM_REQUIRED 1
+      ;;
+    energy)
+      check DENGBAO_LEVEL 3
+      check CRYPTO_PROFILE gm
+      check SBOM_REQUIRED 1
+      ;;
     *) echo "✗ 未登记的 profile 断言集：${P}"; exit 2 ;;
   esac
   exit $rc ) || { echo "✗ profile ${P} 断言失败"; exit 1; }

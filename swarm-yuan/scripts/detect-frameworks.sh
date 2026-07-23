@@ -138,6 +138,18 @@ flink|apache-flink|pyproject
 # druid（WP-R A4 新增，双信号 groupId+artifactId 兜底）
 druid|com.alibaba.druid|pom
 druid|druid-spring-boot-starter|pom
+# WP-U：opentelemetry（可观测性）——三语言生态信号
+opentelemetry|@opentelemetry/api|pkgjson
+opentelemetry|opentelemetry-sdk|pyproject
+opentelemetry|opentelemetry|pyreq
+opentelemetry|go.opentelemetry.io/otel|gomod
+opentelemetry|io.opentelemetry|pom
+# WP-U：cargo（Rust 生态）——detect-frameworks.sh 不支持 file 类型探测
+# （Cargo.toml 文件存在即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("cargo")
+# WP-U：dockerfile（IaC 容器镜像）——detect-frameworks.sh 不支持 file 类型探测
+# （Dockerfile 文件存在即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("dockerfile")
+# WP-U：kubernetes（IaC 容器编排）——detect-frameworks.sh 不支持 file 类型探测
+# （K8s 清单 *.yaml/*.yml 含 apiVersion/kind 即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("kubernetes")
 SIGNALS
 
 # WP-R Bug#3: 重构依赖收集——分桶(file_type) + pom 同时提取 groupId+artifactId +
