@@ -1013,14 +1013,18 @@ Step 3: 推导客观规律
 > 按 §C+.0 项目形态判定 → §C+.1 按维度全量穷举 → 每维度计数核验（清单计数 ≥ 枚举计数 × 0.95）。
 > 产出写入 reference-manual.md §4（全量构件表）+ §6（全量接口端点表）+ §9（全量 store/类型表）。
 
-#### 16a. 枚举计数核验表
-| 维度 | find/grep 命令 | 枚举计数 | 清单计数 | 覆盖率 | 偏差说明 |
-|------|---------------|---------|---------|--------|---------|
-| 前端 UI 组件 | `find ... \( -name "*.vue" -o -name "*.svelte" -o -name "*.tsx" -o -name "*.jsx" \)` | | | ≥95% | |
-| 后端 controller | `grep -rl "router\.(get\|post..."` | | | ≥95% | |
-| store | `grep -rl "defineStore\|createStore\|createSlice\|useReducer\|Provider.*value"` | | | ≥95% | |
-| 类型定义 | `grep -rl "^export (interface\|type)"` | | | ≥95% | |
-（按 §C+.0 判定的维度填，不存在的维度不填）
+#### 16a. 枚举计数核验表（WP-P2 脚本化）
+
+> **本表由 `scripts/inventory-verify.sh` 自动产出（维度注册表 `assets/inventory-dimensions.conf` 数据驱动）。**
+> 跑 `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <§C+.0形态> [--tsv]`：
+> - 全 PASS → 直接引用报告结论填本表「核验结果」列；
+> - FAIL（清单计数 < 枚举计数 × 0.95）→ 只针对失败维度回 §C+.1 补全清单后重跑；
+> - DIM_MISMATCH（声明形态与枚举结果矛盾，如 backend 却检出 UI 组件）→ 回 §C+.0 重判形态。
+> 红线：脚本只做计数 + 错配 lint，不替模型判断维度是否适用（适用判断由 §C+.0 形态判定驱动）。
+
+| 维度 | 枚举计数 | 清单计数 | 比率 | 核验结果 | 偏差说明 |
+|------|---------|---------|------|---------|---------|
+（由 inventory-verify.sh 报告填，按 §C+.0 判定的维度）
 
 ## 探查不到时的处理
 
