@@ -25,7 +25,7 @@ MySQL 5.7 已 EOL（2023-10）、8.0 进入维护末期（待验证：官方 EOL
 | 服务 | `docker-compose` 含 `image: mysql:` | 中（须排除仅本地开发用途） |
 
 <!--
-信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
+信号汇总由 gen-framework-index.sh 扫描本表组装入 assets/framework-signals.md（guide §C+.0.5 仅留指针）。
 detect 信号命中任一高置信度行即可激活 mysql 框架规则集。
 -->
 

@@ -437,7 +437,7 @@ swarm-yuan 内置 62 个框架规则集（references/frameworks/*.md + assets/fr
 2. 创建 `assets/framework-gates/<fw>.sh`（`_fw_<id>_check()` 函数 + 头注释 `# ruleset:` + `# gates:`）
 3. 创建 `tests/fixtures/<fw>/{violating,compliant}/`
 4. 跑 `bash scripts/verify-framework-ruleset.sh <fw>` 核验
-5. 跑 `bash scripts/gen-framework-index.sh` 更新索引
+5. 跑 `bash scripts/gen-framework-index.sh` 更新索引（产物：assets/framework-signals.md + exploration-guide.md §C+.0.5 指针）
 
 ### 门禁运行
 

@@ -270,7 +270,7 @@ grep -rlE '@Data|@Slf4j|@Builder|@Mapper|@Transactional|@DubboService|@RocketMQM
 find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2>/dev/null
 ```
 
-**框架信号→规则集激活表（由 `scripts/gen-framework-index.sh` 重写维护，初始保留下表现有 20 行作为种子，扫描 `references/frameworks/*.md` §1 探查信号重新组装）：**
+**框架信号→规则集激活表已数据化外迁（WP-P1/M4）：完整表见 `assets/framework-signals.md`（由 `scripts/gen-framework-index.sh` 扫描 `references/frameworks/*.md` §1 生成维护）。运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件。**
 
 <!-- T4 改造：本区块由 gen-framework-index.sh 自动重写，手改内容会被覆盖。脚本失败会保留原文件不动（mv 守卫），不阻塞生成流程。 -->
 

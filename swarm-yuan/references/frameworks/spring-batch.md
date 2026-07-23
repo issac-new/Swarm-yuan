@@ -28,7 +28,7 @@ Spring Batch 5.0 为重大破坏性变更：JobBuilderFactory/StepBuilderFactory
 | 接口实现 | `implements ItemReader<` / `implements ItemWriter<` / `implements ItemProcessor<` / `implements Tasklet` / `implements ItemStream` / `extends AbstractItemStreamItemReader` | 高 |
 
 <!--
-信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
+信号汇总由 gen-framework-index.sh 扫描本表组装入 assets/framework-signals.md（guide §C+.0.5 仅留指针）。
 detect 信号命中任一高置信度行即可激活 spring-batch 框架规则集。
 -->
 

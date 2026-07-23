@@ -25,7 +25,7 @@ ruleset_id: lombok
 | 工具 | `java -jar lombok.jar delombok` / `lombok-maven-plugin` / `org.mapstruct:mapstruct-processor` 与 `lombok` 同 module 路径 | 中 |
 
 <!--
-信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
+信号汇总由 gen-framework-index.sh 扫描本表组装入 assets/framework-signals.md（guide §C+.0.5 仅留指针）。
 detect 信号命中任一高置信度行即可激活 lombok 框架规则集。
 -->
 

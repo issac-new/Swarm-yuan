@@ -26,7 +26,7 @@ spring-amqp 3.x（Boot 3.x）/ 4.x（Boot 4.x，jakarta 命名空间）。
 | 文件 | `**/docker-compose*.yml` 含 `rabbitmq:` | 中（需排除仅部署描述） |
 
 <!--
-信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
+信号汇总由 gen-framework-index.sh 扫描本表组装入 assets/framework-signals.md（guide §C+.0.5 仅留指针）。
 detect 信号命中任一高置信度行即可激活 rabbitmq 框架规则集。
 -->
 

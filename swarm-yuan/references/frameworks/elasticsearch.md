@@ -26,7 +26,7 @@ ruleset_id: elasticsearch
 | 文件 | `**/elasticsearch*.yml` / `**/*mapping*.json` 中含 `"mappings"` | 中 |
 
 <!--
-信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
+信号汇总由 gen-framework-index.sh 扫描本表组装入 assets/framework-signals.md（guide §C+.0.5 仅留指针）。
 依赖/代码任一高置信度命中即可激活 elasticsearch 规则集。
 -->
 
