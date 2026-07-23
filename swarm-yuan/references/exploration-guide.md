@@ -306,6 +306,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | django | 代码 | `from django.` / `import django` / `django.db.models` / `models.Model` | 高 |
 | django | 配置 | `SECRET_KEY` / `MIDDLEWARE` / `INSTALLED_APPS` / `DATABASES` / `ALLOWED_HOSTS` | 高 |
 | django | 目录结构 | `**/migrations/`（含 `__init__.py` 与数字前缀迁移文件） | 中（需组合信号） |
+| dockerfile | 文件 | `**/Dockerfile` / `**/Dockerfile.*` / `**/*.dockerfile` | 高（Dockerfile 命名约定，存在即激活） |
+| dockerfile | 文件 | `**/.dockerignore` | 中（容器构建上下文排除清单，组合 Dockerfile 判定） |
+| dockerfile | 文件 | `**/docker-compose*.y*ml` 中含 `build:` 段 | 中（编排文件引用 Dockerfile，组合判定） |
+| dockerfile | 配置 | `FROM ...` / `RUN ...` / `COPY ...` / `ENTRYPOINT ...` 指令行 | 高（Dockerfile 指令特征） |
+| dockerfile | 配置 | `# syntax=docker/dockerfile:` 解析器指令 | 高（BuildKit 解析器前缀，BuildKit 工程特征） |
 | druid | 依赖 | `com.alibaba:druid` / `com.alibaba:druid-spring-boot-starter` / `com.alibaba:druid-spring-boot-3-starter` | 高 |
 | druid | 配置 | `spring.datasource.druid.*` / `druid.initial-size` / `druid.max-active` / `druid.filters` / `druid.filter.stat.*` / `druid.filter.wall.*` | 高 |
 | druid | 代码 | `DruidDataSource` / `DruidDataSourceBuilder` / `DruidFilterConfiguration` / `StatViewServlet` / `WebStatFilter` | 高 |
@@ -396,6 +401,13 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | kratos | 文件 | `internal/{server,service,biz,data}/` 四层目录（kratos-layout 标准布局） | 中（需组合信号） |
 | kratos | 配置 | `configs/config.yaml` + `internal/conf/*.proto`（Bootstrap 配置契约） | 中 |
 | kratos | 代码 | `kratos.New(` / `http.NewServer(` / `grpc.NewServer(` / `recovery.Recovery()` / `RegisterXxxHTTPServer(` | 高 |
+| kubernetes | 文件 | `**/*.yaml` / `**/*.yml`（含 k8s 清单） | 中（YAML 通用，须组合 apiVersion/kind 判定） |
+| kubernetes | 文件 | `**/kustomization.yaml` / `**/Chart.yaml` | 高（Kustomize/Helm 工程特征） |
+| kubernetes | 配置 | `apiVersion: apps/v1` / `kind: Deployment|StatefulSet|DaemonSet|Pod` | 高（K8s 工作负载 API 信号） |
+| kubernetes | 配置 | `apiVersion: v1` + `kind: Service|ConfigMap|Secret|Namespace` | 高（K8s 原生资源） |
+| kubernetes | 配置 | `apiVersion: rbac.authorization.k8s.io/v1` + `kind: Role|RoleBinding|ClusterRole` | 高（K8s RBAC） |
+| kubernetes | 配置 | `apiVersion: networking.k8s.io/v1` + `kind: NetworkPolicy` / `kind: Ingress` | 高（K8s 网络资源） |
+| kubernetes | 配置 | `apiVersion: policy` + `kind: PodDisruptionBudget` | 高（K8s PDB） |
 | langchain | 依赖 | `langchain` / `langchain-core` / `langchain-community` / `langgraph`（requirements.txt / pyproject.toml） | 高 |
 | langchain | 代码 | `from langchain` / `from langchain_core` / `from langchain_openai` / `from langgraph` | 高 |
 | langchain | 代码 | `PromptTemplate(` / `ChatPromptTemplate` / `AgentExecutor` / `create_react_agent` / `StateGraph(` | 中（需与依赖信号组合） |
