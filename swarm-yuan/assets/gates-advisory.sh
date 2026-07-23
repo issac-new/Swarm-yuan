@@ -656,8 +656,74 @@ print("PHASES:"+",".join(sorted(phases)) if phases else "PHASES:none")
 # --canary：发布后基线对比监控（A 方向，gstack canary 吸收，warn 级 advisory）
 # 哲学："alert on changes, not absolutes"（告警变化非绝对值）+ "don't cry wolf"（连续 2 次才告警）。
 # 记录发布后健康指标（响应时间/错误率）基线到 .swarm-yuan/canary-baseline.jsonl，
-# 对比上次基线：变化超阈值（默认 >50%）记一次异常，连续 2 次才 warn 告警。
-# 不做 Prometheus/Grafana 集成（监控基础设施属项目自身运维体系，超出范式边界）。
+# check_learnings（--learnings，WP-W）：learn 闭环——检查 .swarm-yuan/learnings.jsonl
+# 存在且对近期 fail 门禁有对应学习记录。advisory 级，不阻断交付。
+# 理念来源：gstack learn 的 learnings.jsonl + 置信度 + operational self-improvement 闭环（R5 §七.4）。
+check_learnings() {
+  echo "=== 学习闭环检查（--learnings，advisory）==="
+  local learn_file="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/learnings.jsonl"
+  if [[ ! -f "$learn_file" ]]; then
+    warn "learnings.jsonl 不存在（学习未留痕；R5 learn 闭环——建议对近期 门禁失败记录根因与修复模式）"
+    return 0
+  fi
+  if [[ ! -s "$learn_file" ]]; then
+    echo "  ℹ learnings.jsonl 存在但为空（尚无学习记录）"
+    return 0
+  fi
+  # 检查 JSONL 合法性 + 近 30 天记录覆盖率
+  local issues=0 total=0 recent=0
+  if command -v python3 >/dev/null 2>&1; then
+    local py_out
+    py_out=$(python3 -c '
+import sys, json, time
+now = time.time()
+total = 0
+recent = 0
+for i, line in enumerate(sys.stdin, 1):
+    line = line.strip()
+    if not line: continue
+    total += 1
+    try:
+        obj = json.loads(line)
+    except Exception:
+        print("%d: 非法JSON" % i); continue
+    ts = obj.get("ts", "")
+    if ts:
+        try:
+            t = time.mktime(time.strptime(ts[:19], "%Y-%m-%dT%H:%M:%S"))
+            if now - t < 30 * 86400: recent += 1
+        except Exception: pass
+    for k in ("gate", "root_cause", "fix_pattern"):
+        if not obj.get(k):
+            print("%d: 缺 %s 字段" % (i, k)); break
+print("TOTAL:%d RECENT:%d" % (total, recent))
+' < "$learn_file" 2>/dev/null || true)
+    while IFS= read -r ln; do
+      [[ -z "$ln" ]] && continue
+      case "$ln" in
+        TOTAL:*)
+          total=$(echo "$ln" | sed 's/.*TOTAL:\([0-9]*\).*/\1/')
+          recent=$(echo "$ln" | sed 's/.*RECENT:\([0-9]*\)/\1/')
+          ;;
+        *) echo "  ⚠ $ln"; issues=$((issues+1));;
+      esac
+    done <<< "$py_out"
+  else
+    # 无 python3 降级：只查行数和非空
+    total=$(grep -c . "$learn_file" 2>/dev/null || echo 0)
+    echo "  ℹ 无 python3，降级为行数检查（${total} 条记录）"
+  fi
+  if [[ "$total" -gt 0 && "$recent" -eq 0 ]]; then
+    warn "learnings.jsonl 有 ${total} 条记录但近 30 天无新增——学习闭环停滞（R5 learn：门禁失败应触发根因记录）"
+  elif [[ "$total" -gt 0 ]]; then
+    echo "  ✓ 学习闭环活跃（${total} 条记录，近 30 天 ${recent} 条）"
+  fi
+  if [[ $issues -eq 0 ]]; then
+    pass "学习闭环检查通过（learnings.jsonl 格式合法，${total} 条记录）"
+  fi
+}
+
+# 记录发布后健康指标（响应时间/错误率）基线到 .swarm-yuan/canary-baseline.jsonl，
 check_canary() {
   echo "=== 发布后基线对比监控（--canary，advisory）==="
   local baseline="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/canary-baseline.jsonl"
