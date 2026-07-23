@@ -189,7 +189,7 @@ jobs:
           bash -n scripts/self-check.sh
           bash scripts/self-check.sh 2>&1 | grep -q "框架规则库时效检查" || { echo "✗ fw_freshness_check 未执行"; exit 1; }
           echo "✓ self-check 时效检查执行正常"
-      - name: 计量/信号/维度/框架证据/conf/上下文裁剪测试（WP-P0~P5）
+      - name: 计量/信号/维度/框架证据/conf/上下文/对比报告测试（WP-P0~P6）
         run: |
           bash tests/test-context-surface.sh
           bash tests/test-cost-report.sh
@@ -200,6 +200,7 @@ jobs:
           bash tests/test-framework-evidence.sh
           bash tests/test-conf-render.sh
           bash tests/test-spec-template-gating.sh
+          bash tests/test-compare-baseline.sh
 
   # ---------- Job 4：shellcheck 静态检查（核心脚本）----------
   shellcheck:
@@ -228,7 +229,7 @@ jobs:
                    scripts/gen-framework-index.sh assets/trace-log.sh scripts/cost-report.sh \
                    scripts/context-surface.sh scripts/inventory-verify.sh \
                    scripts/migrate-verify-blocks.sh scripts/framework-evidence.sh \
-                   scripts/conf-render.sh; do
+                   scripts/conf-render.sh scripts/compare-baseline.sh; do
             [[ -f "$f" ]] || continue
             # SC1087 豁免：precheck.sh 字面 "$vn[$i]" 显示变量名+索引非数组展开，shellcheck 误报
             errs=$(shellcheck -x -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312,SC1087 "$f" 2>&1 \
