@@ -1173,8 +1173,8 @@ check_dengbao() {
     skip_if_unconfigured "DENGBAO_LEVEL 未配置（等保测评场景设 2 或 3）"
     return
   fi
-  if [[ "$level" != "2" && "$level" != "3" ]]; then
-    warn "未知 DENGBAO_LEVEL：${level}（仅支持 2/3），未执行"
+  if [[ "$level" != "2" && "$level" != "3" && "$level" != "4" ]]; then
+    warn "未知 DENGBAO_LEVEL：${level}（仅支持 2/3/4），未执行"
     return
   fi
   local found=0
@@ -1199,14 +1199,15 @@ check_dengbao() {
     done
   }
   # ① 双因子鉴别（三级起强制：两种及以上组合且至少一种密码技术；GB/T 22239-2019 三级安全计算环境）
-  if [[ "$level" == "3" ]]; then
+  #    四级增量：三种及以上组合鉴别（9.1.4.1），全部基于密码技术
+  if [[ "$level" == "3" || "$level" == "4" ]]; then
     local _mfa
     _mfa=$(_scan_hits 'TOTP|GoogleAuthenticator|twoFactor|two_factor|2FA|\bMFA\b|\bOTP\b|短信验证码|动态口令')
     if [[ -z "$_mfa" ]]; then
       if _db_exempted gate_dengbao_mfa; then
         warn "gate_dengbao_mfa: 未检出双因子鉴别证据（已豁免留痕：${DENGBAO_EXEMPT_FILE}）"
       else
-        fail "gate_dengbao_mfa: 等保三级要求双因子身份鉴别（口令+密码技术/生物技术等两种及以上组合）——DENGBAO_SCAN_DIRS 内未检出 TOTP/OTP/MFA/短信验证码等证据（GB/T 22239-2019）"
+        fail "gate_dengbao_mfa: 等保${level}级要求${level}种及以上组合鉴别（口令+密码技术/生物技术等）——DENGBAO_SCAN_DIRS 内未检出 TOTP/OTP/MFA/短信验证码等证据（GB/T 22239-2019）"
         found=1
       fi
     fi
@@ -1215,11 +1216,11 @@ check_dengbao() {
   local _audit
   _audit=$(_scan_hits 'audit|Audit|审计')
   if [[ -z "$_audit" ]]; then
-    if [[ "$level" == "3" ]]; then
+    if [[ "$level" == "3" || "$level" == "4" ]]; then
       if _db_exempted gate_dengbao_audit_missing; then
         warn "gate_dengbao_audit_missing: 未检出安全审计日志调用（已豁免留痕）"
       else
-        fail "gate_dengbao_audit_missing: 未检出安全审计日志调用（audit/审计）——等保三级安全审计控制点要求记录并保护审计记录（GB/T 22239-2019）"
+        fail "gate_dengbao_audit_missing: 未检出安全审计日志调用（audit/审计）——等保${level}级安全审计控制点要求记录并保护审计记录（GB/T 22239-2019）"
         found=1
       fi
     else
@@ -1251,7 +1252,7 @@ check_dengbao() {
     fi
     # ④ 等保级别一致性（spec 声明级别 vs DENGBAO_LEVEL）
     local _spec_lv
-    _spec_lv=$(grep -oE '等保[^0-9]*[23]级' "$_spec" 2>/dev/null | grep -oE '[23]' | head -1 || true)
+    _spec_lv=$(grep -oE '等保[^0-9]*[234]级' "$_spec" 2>/dev/null | grep -oE '[234]' | head -1 || true)
     if [[ -z "$_spec_lv" ]]; then
       warn "spec §23.2 未声明等保级别（建议补充「等保级别：X 级」）"
     elif [[ "$_spec_lv" != "$level" ]]; then
@@ -1276,6 +1277,30 @@ check_dengbao() {
   local _resid
   _resid=$(_scan_hits 'Arrays\.fill|shred|secureErase|SecureRandom|清除敏感|内存清零')
   [[ -z "$_resid" ]] && warn "未检出剩余信息保护证据（敏感数据存储空间清除/释放，如 Arrays.fill/shred）——建议人工核对（GB/T 22239-2019 剩余信息保护）"
+  # ⑦ 四级增量检查（9.1.4.x）：国密 SM4 加密传输+存储 + 异地灾备声明 + 可信验证提示
+  if [[ "$level" == "4" ]]; then
+    # 数据保密性：国密 SM4（9.1.4.8）
+    local _sm4
+    _sm4=$(_scan_hits '\bSM4\b|国密.*加密|hutool.*Sm4|bcprov.*SM4')
+    if [[ -z "$_sm4" ]]; then
+      if _db_exempted gate_dengbao4_sm4; then
+        warn "gate_dengbao4_sm4: 未检出 SM4 国密加密证据（已豁免留痕）"
+      else
+        fail "gate_dengbao4_sm4: 等保四级要求国密 SM4 加密传输+存储（9.1.4.8）——DENGBAO_SCAN_DIRS 内未检出 SM4 证据（配 CRYPTO_PROFILE=gm 启用 --crypto 联检）"
+        found=1
+      fi
+    fi
+    # 灾备恢复等级 ≥4 声明（9.1.4.9 联动 BCP5级）
+    if [[ -n "$_spec" && -f "$_spec" ]]; then
+      if ! grep -qE '灾备.*[4-6]级|灾难恢复.*[4-6]级|RTO.*[0-6]|RPO' "$_spec" 2>/dev/null; then
+        warn "gate_dengbao4_dr: spec 未声明灾备恢复等级（等保四级 9.1.4.9 要求灾备不低于4级，spec §20 须声明 RTO/RPO/灾备等级）"
+      fi
+    fi
+    # 可信验证（9.1.4.6）：硬件级 TPM/TCM，门禁无法静态核查
+    warn "gate_dengbao4_trust: 等保四级 9.1.4.6 可信验证（TPM/TCM）是硬件级要求——人工核对可信根实现"
+    # MAC 强制访问控制（9.1.4.2）：OS/DB 层
+    warn "gate_dengbao4_mac: 等保四级 9.1.4.2 强制访问控制（MAC）是 OS/DB 层——人工核对 MAC 策略配置"
+  fi
   [[ $found -eq 0 ]] && pass "等保 ${level} 级控制点映射检查通过（GB/T 22239-2019）"
 }
 
