@@ -661,6 +661,17 @@ check_impact() {
       echo "  gitnexus detect_changes 输出（前 10 行）："
       echo "$gn_impact" | head -10 | sed 's/^/    /'
     fi
+  elif has_graphify && graphify_built; then
+    # WP-X: graphify God Nodes 变更影响检测（R6 P1：God Nodes 是变更风险放大器）
+    trace_tool "graphify" "explain god-nodes"
+    local gf_report; gf_report=$(graphify explain 2>/dev/null | head -50 || true)
+    if echo "$gf_report" | grep -qiE 'god.node|hub|surprising'; then
+      local god_count; god_count=$(echo "$gf_report" | grep -icE 'god.node|hub' || true)
+      if [[ "$god_count" -gt 0 ]]; then
+        warn "graphify 检出 ${god_count} 个 God Node（高扇入枢纽节点）——变更此类节点影响范围放大，确认 spec 已评估"
+        echo "$gf_report" | grep -iE 'god.node|hub|surprising' | head -5 | sed 's/^/    /'
+      fi
+    fi
   elif git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # 降级：git diff + grep 反查消费方
     local changed; changed=$(_git_changed_files)
