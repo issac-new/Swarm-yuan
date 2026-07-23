@@ -28,12 +28,24 @@ ruleset_id: celery
 - **验证方法**: grep -rnE 'acks_late\s*=\s*True' 任务文件，核对是否有幂等保护（去重表/Redis SETNX/状态字段）
 - **对应门禁**: fw_celery_acks_late_idempotent(fail)
 
+```verify
+id: celery-r1
+cmd: 
+expect: always
+```
+
 ### 规律：重试须配退避与抖动
 - **适用版本**: 全版本
 - **规律**: @task(autoretry_for=..., retry_backoff=True, retry_jitter=True) 防雪崩重试
 - **违反后果**: 失败任务立即重试压垮下游
 - **验证方法**: grep -rnE 'retry_backoff\s*=\s*True' 任务文件
 - **对应门禁**: fw_celery_retry_backoff(warn)
+
+```verify
+id: celery-r2
+cmd: 
+expect: always
+```
 
 ### 规律：结果后端选型须匹配可靠性需求
 - **适用版本**: 全版本
@@ -42,12 +54,24 @@ ruleset_id: celery
 - **验证方法**: grep -rnE 'result_backend\s*=' 配置文件
 - **对应门禁**: fw_celery_result_backend(warn)
 
+```verify
+id: celery-r3
+cmd: 
+expect: always
+```
+
 ### 规律：时区须显式配置 enable_utc
 - **适用版本**: 全版本
 - **规律**: enable_utc=True + timezone='Asia/Shanghai' 防定时任务时区错乱
 - **违反后果**: beat 定时任务在错误时区触发
 - **验证方法**: grep -rnE 'enable_utc\s*=\s*True|timezone\s*=' 配置文件
 - **对应门禁**: fw_celery_timezone(warn)
+
+```verify
+id: celery-r4
+cmd: 
+expect: always
+```
 
 ### 规律：worker 并发模型须匹配任务类型
 - **适用版本**: 全版本
@@ -56,12 +80,24 @@ ruleset_id: celery
 - **验证方法**: grep -rnE 'worker_concurrency|pool\s*=' 配置/启动脚本
 - **对应门禁**: fw_celery_concurrency_model(warn)
 
+```verify
+id: celery-r5
+cmd: 
+expect: always
+```
+
 ### 规律：任务路由须隔离队列
 - **适用版本**: 全版本
 - **规律**: task_routes 将慢任务/关键任务路由到独立队列，防互饿
 - **违反后果**: 慢任务占满队列阻塞关键任务
 - **验证方法**: grep -rnE 'task_routes\s*=' 配置文件
 - **对应门禁**: fw_celery_task_routes(warn)
+
+```verify
+id: celery-r6
+cmd: 
+expect: always
+```
 
 ### 规律：任务须设过期时间
 - **适用版本**: 全版本
@@ -70,12 +106,24 @@ ruleset_id: celery
 - **验证方法**: grep -rnE 'time_limit|soft_time_limit|expires' 任务文件
 - **对应门禁**: fw_celery_time_limit(warn)
 
+```verify
+id: celery-r7
+cmd: 
+expect: always
+```
+
 ### 规律：任务失败须有监控告警
 - **适用版本**: 全版本
 - **规律**: 须配置 Flower/Prometheus 监控 + 任务失败告警（on_failure 回调/信号）
 - **违反后果**: 任务静默失败无人知
 - **验证方法**: grep -rnE 'on_failure| Flower|prometheus' 配置/任务文件
 - **对应门禁**: fw_celery_monitoring(warn)
+
+```verify
+id: celery-r8
+cmd: 
+expect: always
+```
 
 ### 规律：消息序列化须用 json 而非 pickle
 - **适用版本**: 全版本
@@ -84,6 +132,12 @@ ruleset_id: celery
 - **验证方法**: grep -rnE 'task_serializer\s*=\s*.pickle.' 配置文件
 - **对应门禁**: fw_celery_serializer_pickle(fail)
 
+```verify
+id: celery-r9
+cmd: 
+expect: always
+```
+
 ### 规律：beat 定时任务须幂等
 - **适用版本**: 全版本
 - **规律**: beat_schedule 中的任务须幂等（beat 可能重复触发/worker 可能重投递）
@@ -91,12 +145,24 @@ ruleset_id: celery
 - **验证方法**: grep -rnE 'beat_schedule\s*=' 配置文件，核对任务幂等
 - **对应门禁**: fw_celery_beat_idempotent(warn)
 
+```verify
+id: celery-r10
+cmd: 
+expect: always
+```
+
 ### 规律：chain/group/chord 须处理子任务失败
 - **适用版本**: 全版本
 - **规律**: chain 中子任务失败会中断链；chord 须配回调处理部分失败
 - **违反后果**: 任务链静默中断
 - **验证方法**: grep -rnE 'chain\(|group\(|chord\(' 任务文件，核对错误处理
 - **对应门禁**: fw_celery_canvas_error(warn)
+
+```verify
+id: celery-r11
+cmd: 
+expect: always
+```
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |

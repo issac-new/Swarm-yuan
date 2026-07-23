@@ -189,13 +189,15 @@ jobs:
           bash -n scripts/self-check.sh
           bash scripts/self-check.sh 2>&1 | grep -q "框架规则库时效检查" || { echo "✗ fw_freshness_check 未执行"; exit 1; }
           echo "✓ self-check 时效检查执行正常"
-      - name: 计量/信号索引/维度核验测试（WP-P0/P1/P2）
+      - name: 计量/信号/维度/框架证据测试（WP-P0~P3）
         run: |
           bash tests/test-context-surface.sh
           bash tests/test-cost-report.sh
           bash tests/test-signal-index.sh
           bash tests/test-detect-frameworks.sh
           bash tests/test-inventory-verify.sh
+          bash tests/test-migrate-verify-blocks.sh
+          bash tests/test-framework-evidence.sh
 
   # ---------- Job 4：shellcheck 静态检查（核心脚本）----------
   shellcheck:
@@ -222,7 +224,8 @@ jobs:
                    scripts/generate-skill.sh scripts/self-check.sh scripts/gen-enforce-level.sh \
                    scripts/verify-framework-ruleset.sh tests/run-framework-fixture.sh \
                    scripts/gen-framework-index.sh assets/trace-log.sh scripts/cost-report.sh \
-                   scripts/context-surface.sh scripts/inventory-verify.sh; do
+                   scripts/context-surface.sh scripts/inventory-verify.sh \
+                   scripts/migrate-verify-blocks.sh scripts/framework-evidence.sh; do
             [[ -f "$f" ]] || continue
             # SC1087 豁免：precheck.sh 字面 "$vn[$i]" 显示变量名+索引非数组展开，shellcheck 误报
             errs=$(shellcheck -x -e SC2086,SC1090,SC1091,SC2155,SC2034,SC2230,SC2004,SC2312,SC1087 "$f" 2>&1 \

@@ -57,6 +57,12 @@ detect 信号命中任一高置信度行即可激活 druid 框架规则集。
 - **证据**：`StatViewServlet` 源码 `req.getSession().setAttribute(...)` 前检查 `loginUsername == null || loginUsername.isEmpty()` 直接跳过鉴权（druid 1.2.x `StatViewServlet.java#service`）。
 - **对应门禁**：`fw_druid_statview_expose`（fail）。
 
+```verify
+id: druid-r1
+cmd: 
+expect: always
+```
+
 ### 规律：缺 wall filter 则 SQL 防火墙失效，MyBatis ${} 注入直通
 
 - **现象**：Druid wall filter（WallFilter）拦截 SQL 注入（基于 SQL 语义分析），未启用时 MyBatis `${}` 占位、字符串拼接的 SQL 直达数据库。
@@ -64,6 +70,12 @@ detect 信号命中任一高置信度行即可激活 druid 框架规则集。
 - **影响**：CWE-89（SQL 注入）——`${}` 拼接的 SQL 无过滤直达 DB，与 MyBatis 规律"${} 是文本替换非参数化"叠加放大风险。
 - **证据**：`druid.filters=stat`（仅 stat 无 wall）的配置在 Druid 官方 wiki "Druid 配置" 章节标注 wall 为可选；wall 拦截逻辑在 `WallFilter.java#statementExecuteAfter`。
 - **对应门禁**：`fw_druid_wall_filter`（warn）。
+
+```verify
+id: druid-r2
+cmd: 
+expect: always
+```
 
 ### 规律：连接池未配 max-active 导致默认值 8 在高并发下连接耗尽
 
@@ -73,6 +85,12 @@ detect 信号命中任一高置信度行即可激活 druid 框架规则集。
 - **证据**：`DruidDataSource.java` 静态常量 `DEFAULT_MAX_ACTIVE_SIZE = 8`；官方 wiki "DruidDataSource 配置属性列表" 标注 maxActive 默认 8。
 - **对应门禁**：`fw_druid_datasource_pool`（warn）。
 
+```verify
+id: druid-r3
+cmd: 
+expect: always
+```
+
 ### 规律：min-idle 与 initial-size 不一致致启动即预创建不匹配
 
 - **现象**：`initial-size`（启动时创建的物理连接数）与 `min-idle`（连接池最小空闲）不一致时，启动创建的连接若 > min-idle 会被回收，< min-idle 会补创建，产生启动期连接抖动。
@@ -80,6 +98,12 @@ detect 信号命中任一高置信度行即可激活 druid 框架规则集。
 - **影响**：启动期性能波动（非功能缺陷，warn 提示对齐）。
 - **证据**：`DruidDataSource.java#init` 中 `initialSize` 创建后由 `minIdle` 的 keepAlive 机制调整；官方 wiki 建议生产环境 initial-size = min-idle。
 - **对应门禁**：`fw_druid_datasource_pool`（warn，同一门禁附带检查）。
+
+```verify
+id: druid-r4
+cmd: 
+expect: always
+```
 
 ### 规律：未配 keepAlive 致 min-idle 连接被 DB 侧 wait_timeout 断开
 
@@ -89,6 +113,12 @@ detect 信号命中任一高置信度行即可激活 druid 框架规则集。
 - **证据**：`DruidDataSource.java` 字段 `keepAlive` 默认 false；`DestroyTask` 中 `keepAlive && …` 分支发 `validationQuery`。
 - **对应门禁**：`fw_druid_datasource_pool`（warn，同一门禁附带检查）。
 
+```verify
+id: druid-r5
+cmd: 
+expect: always
+```
+
 ### 规律：WebStatFilter 监控 URI 访问默认排除不足致监控页自身被统计
 
 - **现象**：WebStatFilter 统计 HTTP 请求的 JDBC 调用，默认 `exclusions` 含 `*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*`，但若自定义应用路径与 `/druid/*` 重叠或未排除监控页自身，会产生递归统计。
@@ -96,6 +126,12 @@ detect 信号命中任一高置信度行即可激活 druid 框架规则集。
 - **影响**：统计噪声（非安全缺陷，warn 提示核对 exclusions）。
 - **证据**：`WebStatFilter.java` 默认 `exclusions = "*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*"`。
 - **对应门禁**：人工检查（无独立门禁，dev-guide §10 提示）。
+
+```verify
+id: druid-r6
+cmd: 
+expect: always
+```
 
 ### 规律：spring.datasource.druid 与 spring.datasource 同级混用致参数失效
 
@@ -105,6 +141,12 @@ detect 信号命中任一高置信度行即可激活 druid 框架规则集。
 - **证据**：`DruidDataSourceWrapper.java` `@ConfigurationProperties("spring.datasource.druid")`；与 `HikariDataSource` 的 `spring.datasource.hikari` 前缀并列。
 - **对应门禁**：人工检查（dev-guide §10 提示区分 druid/hikari 前缀）。
 
+```verify
+id: druid-r7
+cmd: 
+expect: always
+```
+
 ### 规律：Spring Boot 3 须用 druid-spring-boot-3-starter 否则 auto-config 不生效
 
 - **现象**：Spring Boot 3（jakarta 命名空间）用 `druid-spring-boot-starter`（javax）会致 `DruidDataSourceAutoConfigure` 加载失败或 Servlet 注册异常。
@@ -112,6 +154,12 @@ detect 信号命中任一高置信度行即可激活 druid 框架规则集。
 - **影响**：Starter 不生效，Druid 退化为手动 Bean 注册或直接不生效用 HikariCP 默认。
 - **证据**：druid 1.2.21 release notes 新增 `druid-spring-boot-3-starter`；`DruidDataSourceAutoConfigure` 在 SB3 下 `@ConditionalOnClass` 检测 jakarta 失败。
 - **对应门禁**：人工检查（dev-guide §10 提示 SB3 须用 3-starter）。
+
+```verify
+id: druid-r8
+cmd: 
+expect: always
+```
 
 ### 规律：slow-sql-millis 与 log-slow-sql 未配套致慢 SQL 不记录
 
@@ -121,6 +169,12 @@ detect 信号命中任一高置信度行即可激活 druid 框架规则集。
 - **证据**：`StatFilter.java#isLogSlowSql` 检查 `logSlowSql && slowMillis > 0`；官方 wiki "Druid 配置_stat" 章节标注两者配套。
 - **对应门禁**：`fw_druid_slow_sql`（warn）。
 
+```verify
+id: druid-r9
+cmd: 
+expect: always
+```
+
 ### 规律：wall filter 的 noneBaseStatementAllow 误开致 DDL 直通
 
 - **现象**：`druid.filter.wall.none-base-statement-allow=true` 允许非基础语句（DDL：CREATE/DROP/ALTER/TRUNCATE）执行，绕过 wall 的 DDL 拦截。
@@ -128,6 +182,12 @@ detect 信号命中任一高置信度行即可激活 druid 框架规则集。
 - **影响**：CWE-89 变种——DDL 注入（攻击者通过 ${} 拼接 DROP TABLE）。
 - **证据**：`WallConfig.java` 字段 `noneBaseStatementAllow` 默认 false；`WallProvider#check` 中该字段为 true 时跳过 DDL 检查。
 - **对应门禁**：`fw_druid_wall_filter`（warn，同一门禁附带检查）。
+
+```verify
+id: druid-r10
+cmd: 
+expect: always
+```
 
 <!--
 规律数 = 10（≥ 深度门槛 10）。

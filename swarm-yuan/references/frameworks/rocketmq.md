@@ -52,12 +52,24 @@ detect 信号命中任一高置信度行即可激活 rocketmq 框架规则集。
 - **验证方法**: 检出 `@RocketMQMessageListener` 的 .java 文件内无幂等痕迹（`幂等|idempot|dedup|去重|setIfAbsent|setnx|SETNX|ON DUPLICATE|insertIgnore|uk_|unique`）→ fail。
 - **对应门禁**: fw_rocketmq_idempotent_consumer(fail)
 
+```verify
+id: rocketmq-r1
+cmd: 
+expect: always
+```
+
 ### 规律：顺序消息消费端必须用 ORDERLY 监听，并发监听破坏顺序语义
 - **适用版本**: RocketMQ 4.x / 5.x 全版本
 - **规律**: 生产端 `sendOrderly(..., MessageQueueSelector, shardingKey)` 把同 shardingKey 消息路由到同一队列；消费端必须用 `MessageListenerOrderly`（或 rocketmq-spring `@RocketMQMessageListener(consumeMode = ConsumeMode.ORDERLY)`）单线程串行拉取该队列。若消费端用并发监听（`CONCURRENTLY`，rocketmq-spring 默认值），同队列消息被多线程并发处理，顺序语义被破坏。
 - **违反后果**: 订单状态机乱序（"已支付"被"已创建"覆盖）→ 数据错乱。
 - **验证方法**: 检出 `sendOrderly` / `MessageQueueSelector`（生产端顺序发送）但消费端文件无 `ORDERLY` / `MessageListenerOrderly` → fail。
 - **对应门禁**: fw_rocketmq_orderly_listener(fail)
+
+```verify
+id: rocketmq-r2
+cmd: 
+expect: always
+```
 
 ### 规律：事务消息必须实现 checkLocalTransaction 回查，半消息不可悬挂
 - **适用版本**: RocketMQ 4.x / 5.x 全版本
@@ -66,12 +78,24 @@ detect 信号命中任一高置信度行即可激活 rocketmq 框架规则集。
 - **验证方法**: 检出 `TransactionListener` / `executeLocalTransaction` / `sendMessageInTransaction` 但全项目无 `checkLocalTransaction` → fail。
 - **对应门禁**: fw_rocketmq_tx_checkback(fail)
 
+```verify
+id: rocketmq-r3
+cmd: 
+expect: always
+```
+
 ### 规律：消费失败重试次数须显式收敛，死信队列（DLQ）须有人工兜底
 - **适用版本**: RocketMQ 4.x / 5.x 全版本
 - **规律**: 并发消费默认最大重试 16 次（4.x 默认 `maxReconsumeTimes=16`，重试间隔阶梯递增），耗尽后消息进 `%DLQ%<consumerGroup>` 死信队列。rocketmq-spring 用 `@RocketMQMessageListener(maxReconsumeTimes = N)` 显式配置；顺序消费默认重试 Integer.MAX_VALUE（会一直重试，须业务内熔断）。DLQ 消息不会自动消费，必须配监控告警 + 人工/定时任务兜底处理，否则失败消息静默沉淀。
 - **违反后果**: 默认 16 次重试对不可恢复错误无意义（白白阻塞）；DLQ 无监控 → 失败消息无人知晓。
 - **验证方法**: 检出 `@RocketMQMessageListener` 但无 `maxReconsumeTimes` / `max-reconsume-times` → warn；项目无 `%DLQ%` / DLQ 处理 → 合入同一 warn 提示。
 - **对应门禁**: fw_rocketmq_retry_dlq(warn)
+
+```verify
+id: rocketmq-r4
+cmd: 
+expect: always
+```
 
 ### 规律：消费速率必须 ≥ 生产速率，消费并发度须显式配置防堆积
 - **适用版本**: RocketMQ 4.x / 5.x 全版本
@@ -80,12 +104,24 @@ detect 信号命中任一高置信度行即可激活 rocketmq 框架规则集。
 - **验证方法**: 检出 `@RocketMQMessageListener` 但无 `consumeThread` / `consumeMessageBatchMaxSize` → warn。
 - **对应门禁**: fw_rocketmq_backlog(warn)
 
+```verify
+id: rocketmq-r5
+cmd: 
+expect: always
+```
+
 ### 规律：延迟消息必须用 broker 定时能力，禁止客户端 sleep / 轮询模拟
 - **适用版本**: RocketMQ 4.x（18 个固定 level：1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h）/ 5.x（任意时长定时消息）
 - **规律**: 4.x 延迟消息仅支持 18 个固定延迟级别（`message.setDelayTimeLevel(n)`）；5.x 支持任意时点定时消息（`setDeliverTimeMs` / 时间戳）。禁止在消费者侧 `Thread.sleep` 或定时任务轮询 DB 模拟延迟——阻塞消费线程导致堆积。延迟量级超 2h（4.x 上限）须升 5.x 或改用任务调度（xxl-job）+ 消息。
 - **违反后果**: sleep 阻塞消费线程 → 消费并发度归零 → 全线消息堆积。
 - **验证方法**: 含 RocketMQ 生产/消费代码的文件检出 `Thread.sleep` → warn；检出 `setDelayTimeLevel|setDeliverTimeMs|DELAY` → pass。
 - **对应门禁**: fw_rocketmq_delay(warn)
+
+```verify
+id: rocketmq-r6
+cmd: 
+expect: always
+```
 
 ### 规律：批量消息须同 topic 且 ≤ 4MiB，失败须降级单发
 - **适用版本**: RocketMQ 4.x / 5.x 全版本
@@ -94,12 +130,24 @@ detect 信号命中任一高置信度行即可激活 rocketmq 框架规则集。
 - **验证方法**: 检出 `sendBatch` / `send(` 接 Collection/List 参数 → warn 人工确认批次大小切分与降级单发逻辑。
 - **对应门禁**: fw_rocketmq_batch(warn)
 
+```verify
+id: rocketmq-r7
+cmd: 
+expect: always
+```
+
 ### 规律：SQL92 过滤须 broker 端开启 enablePropertyFilter，tag 过滤优先
 - **适用版本**: RocketMQ 4.x / 5.x 全版本
 - **规律**: 过滤两档：tag（简单字符串匹配，broker 端 hash 过滤，性能高）与 SQL92（`MessageSelector.bySql`，按消息属性过滤，须 broker 配置 `enablePropertyFilter=true`，默认 false）。SQL92 过滤要求消息 `putUserProperties` 写入可过滤属性。能用 tag 就不用 SQL92（SQL92 在 broker 端逐条表达式求值，大流量下 CPU 开销显著）。
 - **违反后果**: broker 未开 enablePropertyFilter → 订阅 SQL92 的消费者抛异常 / 收不到消息。
 - **验证方法**: 检出 `MessageSelector.bySql|SelectorType.SQL92|bySql` → warn 确认 broker enablePropertyFilter=true 且已评估 CPU 开销。
 - **对应门禁**: fw_rocketmq_filter(warn)
+
+```verify
+id: rocketmq-r8
+cmd: 
+expect: always
+```
 
 ### 规律：广播模式无重试与堆积兜底，非必要勿用
 - **适用版本**: RocketMQ 4.x / 5.x 全版本
@@ -108,12 +156,24 @@ detect 信号命中任一高置信度行即可激活 rocketmq 框架规则集。
 - **验证方法**: 检出 `BROADCASTING|MessageModel.BROADCASTING|broadcasting` → warn 确认场景可丢失。
 - **对应门禁**: fw_rocketmq_broadcast(warn)
 
+```verify
+id: rocketmq-r9
+cmd: 
+expect: always
+```
+
 ### 规律：顺序消息区分全局顺序与分区顺序，全局顺序吞吐极差
 - **适用版本**: RocketMQ 4.x / 5.x 全版本
 - **规律**: 全局顺序 = topic 只建 1 个队列 + 单消费者线程，吞吐被单队列物理上限锁死（数千 TPS 量级，待验证具体值），仅适用严格全局时序场景（如 binlog 同步）。业务顺序几乎都是"同一业务键有序"（如同一订单的消息有序）= 分区顺序：`sendOrderly` 以 shardingKey（订单号）哈希选队列，同键落同队列 + 消费端 ORDERLY 串行。选型错误用全局顺序 → 大促直接打爆。
 - **违反后果**: 全局顺序 topic 在大流量下成为单点瓶颈，全链路延迟飙升。
 - **验证方法**: 检出 `sendOrderly` → warn 人工确认走分区顺序（shardingKey 哈希）而非全局单队列。
 - **对应门禁**: fw_rocketmq_order_scope(warn)
+
+```verify
+id: rocketmq-r10
+cmd: 
+expect: always
+```
 
 ### 规律：生产环境须开启消息轨迹，否则问题定位靠猜
 - **适用版本**: RocketMQ 4.x / 5.x 全版本
@@ -122,12 +182,24 @@ detect 信号命中任一高置信度行即可激活 rocketmq 框架规则集。
 - **验证方法**: 检出 RocketMQ 使用（producer/listener）但配置无 `enableMsgTrace|enable-msg-trace` → warn。
 - **对应门禁**: fw_rocketmq_trace(warn)
 
+```verify
+id: rocketmq-r11
+cmd: 
+expect: always
+```
+
 ### 规律：同一消费组内订阅关系必须一致，否则消息路由错乱
 - **适用版本**: RocketMQ 4.x / 5.x 全版本
 - **规律**: 同一 consumerGroup 的所有实例必须订阅相同的 topic + 相同的 tag 表达式（"订阅关系一致"）。RocketMQ 按组维护订阅与位点：同组内 A 实例订阅 `topicA:tag1`、B 实例订阅 `topicA:tag2`（或不同 topic），broker 端订阅关系互相覆盖，导致消息被路由到不消费该 tag 的实例而被静默丢弃。不同业务必须拆不同 consumerGroup；同组多实例部署同一套代码。
 - **违反后果**: 部分消息静默丢失（被路由到不消费的实例），故障隐蔽且随机。
 - **验证方法**: 多个 `@RocketMQMessageListener` 检出相同 consumerGroup 但 topic/selectorExpression 不同 → warn。
 - **对应门禁**: fw_rocketmq_group_consistency(warn)
+
+```verify
+id: rocketmq-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

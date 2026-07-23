@@ -48,12 +48,24 @@ detect 信号命中任一高置信度行即可激活 element 框架规则集。
 - **验证方法**: `grep -rnE "from ['\"]element-plus['\"]|import ElementPlus"` 命中全量 import → warn。
 - **对应门禁**: fw_element_on_demand_import(warn)
 
+```verify
+id: element-r1
+cmd: grep -rnE "from ['\"]element-plus['\"]|import ElementPlus" "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：表单校验须用 rules，禁手动 if 校验
 - **适用版本**: Element Plus 2.x
 - **规律**: `el-form` 须配 `:rules` 校验规则与 `:model`，通过 `FormInstance.validate()` 触发校验。手动 `if` 校验 + `alert` 无法与表单项联动（错误提示、字段聚焦、resetFields），且校验逻辑分散难维护。
 - **违反后果**: 校验逻辑分散、无字段级错误提示、用户体验差。
 - **验证方法**: 检出 `<el-form` 但无 `:rules=`/`:model=` 且含 `if(...)` 手动校验 → warn。
 - **对应门禁**: fw_element_form_rules(warn)
+
+```verify
+id: element-r2
+cmd: 
+expect: always
+```
 
 ### 规律：el-table 大数据须虚拟滚动
 - **适用版本**: Element Plus 2.x
@@ -62,12 +74,24 @@ detect 信号命中任一高置信度行即可激活 element 框架规则集。
 - **验证方法**: 检出 `<el-table` 绑定疑似大数据源（list/rows/data）但无 virtual/lazy → warn。
 - **对应门禁**: fw_element_table_virtual(warn)
 
+```verify
+id: element-r3
+cmd: 
+expect: always
+```
+
 ### 规律：文案须 i18n，禁硬编码中文
 - **适用版本**: Element Plus 2.x
 - **规律**: 国际化项目须用 `$t()` / `t()` 调用文案 key，配合 `ElConfigProvider` + `element-plus/es/locale` 切换语言。硬编码中文无法切换语言，且维护时改文案需逐文件查找。
 - **违反后果**: 无法国际化、多语言版本维护困难。
 - **验证方法**: `.vue/.ts` 文件含连续中文字符且无 `$t(`/`t(`/`i18n` → warn。
 - **对应门禁**: fw_element_i18n_no_hardcode_cn(warn)
+
+```verify
+id: element-r4
+cmd: 
+expect: always
+```
 
 ### 规律：主题覆盖须用 CSS Variables，禁直接改组件包 SCSS 源
 - **适用版本**: Element Plus 2.x
@@ -76,12 +100,24 @@ detect 信号命中任一高置信度行即可激活 element 框架规则集。
 - **验证方法**: `.scss/.css` 引用 `node_modules/element-plus` 内部 SCSS → warn。
 - **对应门禁**: fw_element_theme_no_override_component(warn)
 
+```verify
+id: element-r5
+cmd: 
+expect: always
+```
+
 ### 规律：命令式 API 须显式 import，禁依赖全局挂载
 - **适用版本**: Element Plus 2.x
 - **规律**: `ElMessage`/`ElNotification`/`ElMessageBox`/`ElLoading` 为命令式 API，按需引入项目须显式 `import { ElMessage } from 'element-plus'`。依赖 `app.use(ElementPlus)` 全局挂载在按需引入/SSR 场景下失效。
 - **违反后果**: 按需引入/SSR 下命令式 API undefined 运行期报错。
 - **验证方法**: 检出 `ElMessage(`/`ElNotification(` 调用但同文件无 import → warn。
 - **对应门禁**: fw_element_imperative_api(warn)
+
+```verify
+id: element-r6
+cmd: 
+expect: always
+```
 
 ### 规律：el-form-item 须配 prop 与 model 字段对应
 - **适用版本**: Element Plus 2.x
@@ -90,12 +126,24 @@ detect 信号命中任一高置信度行即可激活 element 框架规则集。
 - **验证方法**: 检出 `<el-form-item` 但无 `prop=`/`prop:` → warn。
 - **对应门禁**: fw_element_form_item_prop(warn)
 
+```verify
+id: element-r7
+cmd: 
+expect: always
+```
+
 ### 规律：el-dialog 须配 destroy-on-close
 - **适用版本**: Element Plus 2.x
 - **规律**: `el-dialog` 默认关闭后保留子组件实例（仅 v-show），表单/校验状态残留。须配 `destroy-on-close` 销毁子组件，下次打开重新初始化。
 - **违反后果**: 关闭重开 dialog 后表单数据/校验状态残留、数据泄漏。
 - **验证方法**: 检出 `<el-dialog` 但无 `destroy-on-close` → warn。
 - **对应门禁**: fw_element_dialog_destroy_on_close(warn)
+
+```verify
+id: element-r8
+cmd: 
+expect: always
+```
 
 ### 规律：el-tree 大数据须虚拟滚动
 - **适用版本**: Element Plus 2.x
@@ -104,12 +152,24 @@ detect 信号命中任一高置信度行即可激活 element 框架规则集。
 - **验证方法**: 检出 `<el-tree` 但无 virtual/height → warn。
 - **对应门禁**: fw_element_tree_virtual(warn)
 
+```verify
+id: element-r9
+cmd: 
+expect: always
+```
+
 ### 规律：日期组件须配 value-format
 - **适用版本**: Element Plus 2.x
 - **规律**: `el-date-picker`/`el-time-picker` 默认 `value-format` 为 Date 对象，序列化为 JSON 时区不一致、反序列化需手动处理。须显式配 `value-format="YYYY-MM-DD"` 等字符串格式，保证序列化一致性。
 - **违反后果**: 时区错乱、序列化反序列化不一致、跨端展示差异。
 - **验证方法**: 检出 `<el-date-picker`/`<el-time-picker` 但无 `value-format` → warn。
 - **对应门禁**: fw_element_date_value_format(warn)
+
+```verify
+id: element-r10
+cmd: 
+expect: always
+```
 
 ### 规律：el-upload 须配文件大小限制
 - **适用版本**: Element Plus 2.x
@@ -118,12 +178,24 @@ detect 信号命中任一高置信度行即可激活 element 框架规则集。
 - **验证方法**: 检出 `<el-upload` 但无 `before-upload`/`:limit` → fail。
 - **对应门禁**: fw_element_upload_size_limit(fail)
 
+```verify
+id: element-r11
+cmd: 
+expect: always
+```
+
 ### 规律：el-select 大数据须远程搜索
 - **适用版本**: Element Plus 2.x
 - **规律**: `el-select` 配 `filterable` 后默认本地过滤，全量渲染所有选项。选项 >1k 时渲染卡顿。须配 `remote-method` 远程搜索，按需加载选项。
 - **违反后果**: 大数据选项渲染卡顿、内存占用高。
 - **验证方法**: 检出 `filterable` 但无 `remote-method` → warn。
 - **对应门禁**: fw_element_select_remote_search(warn)
+
+```verify
+id: element-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

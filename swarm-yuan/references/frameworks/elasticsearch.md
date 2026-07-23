@@ -52,12 +52,24 @@ ruleset_id: elasticsearch
 - **验证方法**: `grep -rnE '\.from\([0-9]{5,}|"from"[[:space:]]*:[[:space:]]*[0-9]{5,}'` 命中（from≥10000）→ fail；from≥1000 → warn 提示 search_after。
 - **对应门禁**: fw_es_deep_pagination(fail)
 
+```verify
+id: elasticsearch-r1
+cmd: grep -rnE '\.from\([0-9]{5,}|"from"[[:space:]]*:[[:space:]]*[0-9]{5,}' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：wildcard 查询禁止前缀通配（* 开头）
 - **适用版本**: 全版本
 - **规律**: `wildcard` 查询以 `*` 或 `?` 开头时无法利用倒排索引，退化为全字段逐个 term 匹配（近似全表扫描）。必须前缀模糊时用 ngram/edge_ngram 索引或 `match_phrase_prefix`/`search_as_you_type` 替代。`query_string` 查询同理禁止 `*abc` 写法（`allow_leading_wildcard` 默认 true，9.x 是否调整待验证）。
 - **违反后果**: 单查询扫全索引，CPU 打满，集群级联抖动。
 - **验证方法**: `grep -rnE 'wildcardQuery\([^)]*"\*|"wildcard"[^}]*"value"[^}]*"\*|queryStringQuery\("[^"]*\*'` 命中 → fail。
 - **对应门禁**: fw_es_wildcard_prefix(fail)
+
+```verify
+id: elasticsearch-r2
+cmd: grep -rnE 'wildcardQuery\([^)]*"\*|"wildcard"[^}]*"value"[^}]*"\*|queryStringQuery\("[^"]*\*' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：批量写入须权衡 refresh_interval，导入期可临时置 -1
 - **适用版本**: 全版本
@@ -66,12 +78,24 @@ ruleset_id: elasticsearch
 - **验证方法**: 检出 `BulkRequest|.bulk(` 批量写入但全仓无 `refresh_interval` 配置 → warn 提示权衡。
 - **对应门禁**: fw_es_refresh_interval(warn)
 
+```verify
+id: elasticsearch-r3
+cmd: 
+expect: always
+```
+
 ### 规律：bulk 须控批次与并发，处理 EsRejectedExecutionException 背压
 - **适用版本**: 全版本
 - **规律**: bulk 单次批次建议 5~15MB 或 1000~5000 条（官方经验区间），过大压内存、过小吞吐低。线程池满时服务端返回 `EsRejectedExecutionException`（HTTP 429），客户端必须退避重试（指数 backoff），否则数据丢失。Java API Client 提供 BulkIngester 助手封装背压。
 - **违反后果**: 无背压重试 → 429 时整批丢弃数据丢失；批次失控 → 节点 bulk 队列堆积拒绝写入。
 - **验证方法**: 检出 `BulkRequest|.bulk(` 但同文件无 `EsRejectedExecutionException|Backoff|Retry|BulkIngester` → warn。
 - **对应门禁**: fw_es_bulk_backpressure(warn)
+
+```verify
+id: elasticsearch-r4
+cmd: 
+expect: always
+```
 
 ### 规律：mapping 字段数须防爆炸，显式收敛 total_fields.limit
 - **适用版本**: 全版本
@@ -80,12 +104,24 @@ ruleset_id: elasticsearch
 - **验证方法**: 检出 `"mappings"` 或 `index.mapping` 相关文件但无 `total_fields.limit` → warn。
 - **对应门禁**: fw_es_mapping_explosion(warn)
 
+```verify
+id: elasticsearch-r5
+cmd: 
+expect: always
+```
+
 ### 规律：生产索引动态 mapping 须收敛为 false 或 strict
 - **适用版本**: 全版本
 - **规律**: 默认 `dynamic=true`，未知字段自动建 mapping，与字段爆炸互为因果。生产索引须 `"dynamic":"strict"`（未知字段拒绝写入）或 `"false"`（不索引仅存 _source），配合显式 mapping 评审。日期/数字自动检测（dynamic_date_formats/numeric_detection）亦须按业务确认。
 - **违反后果**: 上游脏字段写入 → mapping 无序膨胀，查询 mapping 冲突（同一字段不同类型）。
 - **验证方法**: `grep -rnE '"dynamic"[[:space:]]*:[[:space:]]*"?true'` 命中 → warn；检出 mappings 文件但无 dynamic 声明 → warn。
 - **对应门禁**: fw_es_dynamic_mapping(warn)
+
+```verify
+id: elasticsearch-r6
+cmd: grep -rnE '"dynamic"[[:space:]]*:[[:space:]]*"?true' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：精确过滤条件须放 filter 上下文，避免无谓 score 计算
 - **适用版本**: 全版本
@@ -94,12 +130,24 @@ ruleset_id: elasticsearch
 - **验证方法**: `grep -rnE '\.must\((QueryBuilders\.)?(termQuery|termsQuery|rangeQuery|existsQuery)'` 命中 → warn。
 - **对应门禁**: fw_es_filter_context(warn)
 
+```verify
+id: elasticsearch-r7
+cmd: grep -rnE '\.must\((QueryBuilders\.)?(termQuery|termsQuery|rangeQuery|existsQuery)' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：聚合嵌套深度与 terms size 须收敛
 - **适用版本**: 全版本
 - **规律**: 多层嵌套 bucket 聚合（terms → terms → terms）内存开销随每层 size 乘积膨胀，单请求可打爆节点堆（`search.max_buckets` 默认 65535 限制桶总数，8.x+ 生效）。生产聚合嵌套 ≤2~3 层，terms 显式设 size（默认 10），禁止 size=0/超大 size 取全量桶（9.x 中 size 语义以官方文档为准，待验证上限默认值变化）。
 - **违反后果**: 聚合请求超 max_buckets 报错，或节点 OOM。
 - **验证方法**: 单文件 `.subAggregation` 出现 ≥3 次 → warn 提示嵌套深度；`AggregationBuilders.terms` 未设 size 待人工核对。
 - **对应门禁**: fw_es_agg_depth(warn)
+
+```verify
+id: elasticsearch-r8
+cmd: 
+expect: always
+```
 
 ### 规律：时序索引必须配置 ILM（Index Lifecycle Management）
 - **适用版本**: 8.x / 9.x（ILM 早已取代 Curator）
@@ -108,12 +156,24 @@ ruleset_id: elasticsearch
 - **验证方法**: 检出日期模式索引名（`-[0-9]{4}\.[0-9]{2}|IndexRequest\("[a-z_]+-[0-9]{4}`）但全仓无 `ilm|LifecyclePolicy|lifecycle` → warn。
 - **对应门禁**: fw_es_ilm(warn)
 
+```verify
+id: elasticsearch-r9
+cmd: 
+expect: always
+```
+
 ### 规律：reindex 须显式处理版本冲突（conflicts=proceed 或按序覆盖）
 - **适用版本**: 全版本
 - **规律**: `_reindex` 默认遇到目标索引已存在同 _id 文档即中止（version conflict）。迁移/重建索引时须明确策略：`conflicts=proceed` 跳过冲突继续（须业务上可接受旧值留存），或设 `op_type=create` 仅补缺，或用外部版本号保证新覆盖旧。脚本侧调用须显式声明，禁止裸调。
 - **违反后果**: reindex 中途 abort，数据迁移半成品；或静默跳过冲突文档造成新旧不一致。
 - **验证方法**: 检出 `_reindex` 调用但同行/同文件无 `conflicts` → warn。
 - **对应门禁**: fw_es_reindex_conflict(warn)
+
+```verify
+id: elasticsearch-r10
+cmd: 
+expect: always
+```
 
 ### 规律：scroll 上下文必须显式释放（ClearScroll）
 - **适用版本**: 全版本（9.x 实时翻页推荐 search_after+PIT，scroll 仅限导出）
@@ -122,6 +182,12 @@ ruleset_id: elasticsearch
 - **验证方法**: 检出 `SearchScrollRequest|\.scroll\(` 但同文件无 `ClearScroll|clearScroll` → warn。
 - **对应门禁**: fw_es_scroll_release(warn)
 
+```verify
+id: elasticsearch-r11
+cmd: 
+expect: always
+```
+
 ### 规律：8/9 已移除 RestHighLevelClient 与 mapping type，须迁移 elasticsearch-java
 - **适用版本**: 8.x / 9.x
 - **规律**: `RestHighLevelClient` 7.15 起废弃、8.x 彻底移除；官方客户端为 `co.elastic.clients:elasticsearch-java`。mapping type（`_doc` 之外的自定义 type、`include_type_name`）7.x 起废弃、8/9 彻底移除，代码中出现即不兼容 8+ 集群。9.x 对 7.x 旧客户端兼容性不保证（待验证具体断点，按不兼容处理）。
@@ -129,12 +195,24 @@ ruleset_id: elasticsearch
 - **验证方法**: `grep -rnE 'RestHighLevelClient|include_type_name'` 命中 → warn 迁移；检出非 _doc type 使用 → warn。
 - **对应门禁**: fw_es_version_compat(warn)
 
+```verify
+id: elasticsearch-r12
+cmd: grep -rnE 'RestHighLevelClient|include_type_name' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：Java Client 连接池与超时须显式配置
 - **适用版本**: 8.x / 9.x（elasticsearch-java 基于 RestClient）
 - **规律**: 底层 `RestClient` 默认连接池（`setMaxConnTotal=30`/`setMaxConnPerRoute=10`，Apache HC 默认值，9.x 客户端是否调整待验证）对高并发服务偏小；socket/connect 超时默认过长。生产须按 QPS 显式配置 `setMaxConnTotal/PerRoute`、connect/socket timeout，并启用节点嗅探或故障转移（多 node 列表）。
 - **违反后果**: 连接池耗尽请求排队超时；单节点故障无转移。
 - **验证方法**: 检出 `RestClient.builder` 但同文件无 `setMaxConnTotal|setMaxConnPerRoute|RequestConfig|setConnectTimeout` → warn。
 - **对应门禁**: fw_es_connection_pool(warn)
+
+```verify
+id: elasticsearch-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥10 门槛），全部挂门禁 id，无游离规律。

@@ -51,12 +51,24 @@ detect 信号命中任一高置信度行即可激活 react 框架规则集。
 - **验证方法**: 检出 `useState|useEffect|useMemo|useCallback|useRef` 出现在 `if (` / `for (` / `while (` / `} else` 块内或嵌套函数内 → fail。
 - **对应门禁**: fw_react_hooks_top_level(fail)
 
+```verify
+id: react-r1
+cmd: 
+expect: always
+```
+
 ### 规律：useEffect 须配依赖数组且依赖完整，禁省略或漏依赖
 - **适用版本**: React 16.8+
 - **规律**: `useEffect(fn, deps)` 的 deps 数组须完整列出 fn 内引用的响应式值（state/props）。省略 deps 会在每次 render 后执行（可能死循环）；漏依赖会导致 effect 用到旧值（stale closure）。`eslint-plugin-react-hooks` 的 `exhaustive-deps` 规则强制。仅"挂载时执行一次且不引用响应式值"才可传 `[]`。
 - **违反后果**: 漏依赖 → effect 用旧值不更新 / 无限循环；省略 deps → 每次 render 触发副作用。
 - **验证方法**: 检出 `useEffect(` 调用未配第二个参数（依赖数组 `[…]` 或 `[]`）→ fail；配了但不完整由 exhaustive-deps lint 兜底（人工确认）。
 - **对应门禁**: fw_react_effect_deps(fail)
+
+```verify
+id: react-r2
+cmd: 
+expect: always
+```
 
 ### 规律：列表渲染 key 须稳定唯一，禁用数组 index 作 key
 - **适用版本**: React 全版本
@@ -65,12 +77,24 @@ detect 信号命中任一高置信度行即可激活 react 框架规则集。
 - **验证方法**: `grep -rnE 'key=\{(index|i|key)\}|key="\{?index' --include='*.jsx' --include='*.tsx'` 命中 → warn（稳定列表可接受，须人工确认）。
 - **对应门禁**: fw_react_list_key(warn)
 
+```verify
+id: react-r3
+cmd: grep -rnE 'key=\{(index|i|key)\}|key="\{?index' --include='*.jsx' --include='*.tsx' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：state 须不可变更新，禁直接 mutate state
 - **适用版本**: React 全版本
 - **规律**: `useState` 的 setter 须传入新引用（spread/immer/structuredClone），禁直接 mutate（`arr.push()` / `obj.x = 1`）。React 用 Object.is 比较新旧 state 引用决定 re-render，直接 mutate 引用不变 → React 跳过更新、UI 不刷新。`useReducer` 同理须返回新对象。
 - **违反后果**: 直接 mutate → 引用不变 → React 不 re-render → UI 不同步；后续浅比较优化（memo）失效。
 - **验证方法**: 检出 `setState` 后紧接 `.push(` / `.splice(` / `.pop(` / 直接属性赋值（`state.x =`）模式 → fail。
 - **对应门禁**: fw_react_immutable_state(fail)
+
+```verify
+id: react-r4
+cmd: 
+expect: always
+```
 
 ### 规律：useCallback/useMemo 须权衡收益，禁无意义 memo 全包
 - **适用版本**: React 16.8+（Compiler 启用后可省略）
@@ -79,12 +103,24 @@ detect 信号命中任一高置信度行即可激活 react 框架规则集。
 - **验证方法**: 检出 `useMemo(` / `useCallback(` 依赖数组为 `[]` 且函数体引用了 props/state → warn（疑似漏依赖）；全文件无 `React.memo` 却大量 `useCallback` → warn。
 - **对应门禁**: fw_react_memo_benefit(warn)
 
+```verify
+id: react-r5
+cmd: 
+expect: always
+```
+
 ### 规律：useState 须用函数式更新访问最新 state，禁在闭包中读旧 state
 - **适用版本**: React 全版本
 - **规律**: 基于前次 state 计算新 state 时须用函数式更新 `setCount(c => c + 1)`，禁 `setCount(count + 1)`（闭包捕获的 count 可能是旧值，连续多次调用只 +1）。批量更新场景（事件回调内多次 setState）尤甚。
 - **违反后果**: 闭包旧值 → 连续 setState 丢失更新（只生效一次）。
 - **验证方法**: 检出 `set[A-Z][a-zA-Z]+\([^,)]*\bstate` 直接用 state 变量而非函数式更新 → 人工确认（语义相关）。
 - **对应门禁**: 人工检查
+
+```verify
+id: react-r6
+cmd: 
+expect: always
+```
 
 ### 规律：ErrorBoundary 须捕获渲染错误，禁让整树白屏崩溃
 - **适用版本**: React 16+（class component componentDidCatch）
@@ -93,12 +129,24 @@ detect 信号命中任一高置信度行即可激活 react 框架规则集。
 - **验证方法**: 检出 JSX 渲染但全项目无 `componentDidCatch` / `getDerivedStateFromError` → warn（缺少错误边界）。
 - **对应门禁**: fw_react_error_boundary(warn)
 
+```verify
+id: react-r7
+cmd: 
+expect: always
+```
+
 ### 规律：自定义 Hook 须以 use 开头并返回值/无返回，禁在普通函数内调 Hook
 - **适用版本**: React 16.8+
 - **规律**: 自定义 Hook 命名须以 `use` 开头（如 `useAuth` / `useDebounce`），以便 lint 规则识别其内部 Hook 调用约束。普通函数（非 use 开头）内调 Hook 会被 lint 漏检，运行期顺序错乱。Hook 须返回值或无返回，不返回 JSX。
 - **违反后果**: 非 use 命名函数内调 Hook → lint 不报错但运行期 Hook 顺序错乱 → 崩溃。
 - **验证方法**: 检出含 `useState|useEffect` 调用的函数定义不以 `use` 开头 → 人工确认。
 - **对应门禁**: 人工检查
+
+```verify
+id: react-r8
+cmd: 
+expect: always
+```
 
 ### 规律：ref 须在 effect/event 中读写，禁在 render 阶段读写 ref.current
 - **适用版本**: React 全版本
@@ -107,12 +155,24 @@ detect 信号命中任一高置信度行即可激活 react 框架规则集。
 - **验证方法**: 检出 `ref.current` 出现在组件函数体顶层（非 useEffect/事件回调内）→ 人工确认。
 - **对应门禁**: 人工检查
 
+```verify
+id: react-r9
+cmd: 
+expect: always
+```
+
 ### 规律：Context 须拆分或用选择器，禁单一巨型 Context 触发全树 re-render
 - **适用版本**: React 16.3+（Context API）
 - **规律**: `Context.Provider` 的 value 变更会让所有消费该 Context 的组件 re-render（无 memo 优化）。单一巨型 Context（含所有全局状态）会导致任何字段变更都触发全树 re-render。须按域拆分多个 Context，或用 `use-context-selector` / zustand/jotai 等支持选择器的方案。
 - **违反后果**: 单一 Context → 任意状态变更全树 re-render → 性能瓶颈。
 - **验证方法**: 检出单个 Context value 含 >5 个字段的巨型对象 → warn。
 - **对应门禁**: fw_react_context_split(warn)
+
+```verify
+id: react-r10
+cmd: 
+expect: always
+```
 
 ### 规律：lazy 组件须配 Suspense fallback，禁无 fallback 悬挂
 - **适用版本**: React 16.6+（lazy）/ 18+（Suspense for data fetching）
@@ -121,12 +181,24 @@ detect 信号命中任一高置信度行即可激活 react 框架规则集。
 - **验证方法**: 检出 `React.lazy(` 但同文件/父组件无 `<Suspense` 包裹 → warn。
 - **对应门禁**: fw_react_lazy_suspense(warn)
 
+```verify
+id: react-r11
+cmd: 
+expect: always
+```
+
 ### 规律：Server Components 不可用浏览器 API 与 Hooks，须标 'use client'
 - **适用版本**: React 19 / Next.js App Router（RSC 稳定）
 - **规律**: React Server Components（RSC）在服务端渲染，禁用 `useState`/`useEffect`/`window`/`document` 等浏览器 API 与 Hook。需交互/浏览器 API 的组件须文件首行标 `'use client'`。Server Component 可 import Client Component（单向），Client Component 不可 import Server Component（除作 children 传递）。
 - **违反后果**: RSC 内用 Hook/浏览器 API → 编译/运行期错误 "You're importing a component that needs useState"。
 - **验证方法**: 检出含 `useState|useEffect|window\.|document\.` 的组件文件首行无 `'use client'` → warn（在 Next.js App Router 项目）。
 - **对应门禁**: fw_react_server_client_boundary(warn)
+
+```verify
+id: react-r12
+cmd: 
+expect: always
+```
 
 ### 规律：事件回调须稳定引用或用 useEffect 清理，禁在 render 内订阅
 - **适用版本**: React 全版本
@@ -135,6 +207,12 @@ detect 信号命中任一高置信度行即可激活 react 框架规则集。
 - **验证方法**: 检出 `addEventListener|setInterval|setTimeout` 出现在组件函数体顶层（非 useEffect 内）→ warn。
 - **对应门禁**: fw_react_no_render_subscribe(warn)
 
+```verify
+id: react-r13
+cmd: 
+expect: always
+```
+
 ### 规律：ref callback 须显式块语法，禁隐式返回（React 19）
 - **适用版本**: React 19+（ref cleanup 函数特性稳定引入）
 - **规律**: React 19 引入 ref callback 可返回 cleanup 函数（卸载时调用），因此 ref callback 不再允许隐式返回（`ref={current => (instance = current)}`），必须用块语法（`ref={current => { instance = current }}`）。隐式返回的值会被 TypeScript/运行时误认为 cleanup 函数而报错。返回非函数值（如 DOM 实例）会被拒绝。来源：React 19 升级指南 https://react.dev/blog/2024/04/25/react-19-upgrade-guide 。
@@ -142,12 +220,24 @@ detect 信号命中任一高置信度行即可激活 react 框架规则集。
 - **验证方法**: 检出 `ref=\{[^}]*=>\s*\(` 箭头函数隐式返回（无块 `{}` 包裹）→ warn（须改块语法）。
 - **对应门禁**: fw_react_ref_callback_explicit(warn)
 
+```verify
+id: react-r14
+cmd: 
+expect: always
+```
+
 ### 规律：React 19 起 ref 可作 prop 直传，新组件禁用 forwardRef 包裹
 - **适用版本**: React 19+（forwardRef 将在未来版本 deprecated）
 - **规律**: React 19 起 `ref` 是普通 prop，函数组件可直接 `function Comp({ ref, ...props })` 接收，无需 `forwardRef` 包裹。`forwardRef` 将在未来版本 deprecated。新组件不应再用 `forwardRef`；存量 `forwardRef` 组件可在升级时逐步迁移。来源：React 19 升级指南 https://react.dev/blog/2024/04/25/react-19-upgrade-guide 。
 - **违反后果**: 新组件用 forwardRef → 增加无谓包裹层、与未来 deprecated 方向相悖、迁移债务累积。
 - **验证方法**: 检出 `forwardRef(` 调用 → warn（新组件建议直接接 ref prop；存量组件标注待迁移）。
 - **对应门禁**: fw_react_no_forwardref(warn)
+
+```verify
+id: react-r15
+cmd: 
+expect: always
+```
 
 <!--
 共 15 条规律（≥15 门槛）。10 条挂门禁（fw_react_*），5 条标"人工检查"（语义相关规律，机械 grep 易误报）。

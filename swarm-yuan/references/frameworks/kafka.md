@@ -52,12 +52,24 @@ detect 信号命中任一高置信度行即可激活 kafka 框架规则集。
 - **验证方法**: 配置检出 `enable-auto-commit: true` / `enable.auto.commit=true` / Java `ENABLE_AUTO_COMMIT_CONFIG, "true"` → fail。
 - **对应门禁**: fw_kafka_offset_semantics(fail)
 
+```verify
+id: kafka-r1
+cmd: 
+expect: always
+```
+
 ### 规律：acks=0 消防水管语义必丢数据，可靠性按 acks 分级选型
 - **适用版本**: Kafka 全版本
 - **规律**: `acks=0`：生产者发出即忘，任何 broker 抖动/leader 选举即丢数据，且与幂等生产者（`enable.idempotence=true` 要求 acks=all）直接冲突，4.x 客户端会拒绝该组合；`acks=1`：仅 leader 落盘，leader 宕机未同步副本 → 丢；`acks=all`（= -1）+ `min.insync.replicas≥2`：ISR 多数派落盘，金融级。选型：日志埋点可 acks=1（待验证：可接受丢失率须业务确认），业务消息必须 acks=all。
 - **违反后果**: acks=0/1 + broker 故障 → 已"发送成功"的消息批量丢失。
 - **验证方法**: 检出 `acks: 0` / `acks=0` / `ACKS_CONFIG, "0"` → fail；检出 `acks: 1` / `acks=1` → warn 人工确认可丢失。
 - **对应门禁**: fw_kafka_acks(fail)
+
+```verify
+id: kafka-r2
+cmd: 
+expect: always
+```
 
 ### 规律：消费端必须幂等——at-least-once 下 rebalance/重提交必然重复
 - **适用版本**: Kafka 全版本 / spring-kafka 全版本
@@ -66,12 +78,24 @@ detect 信号命中任一高置信度行即可激活 kafka 框架规则集。
 - **验证方法**: 检出 `@KafkaListener` 文件内无幂等痕迹（`幂等|idempot|dedup|去重|setIfAbsent|setnx|ON DUPLICATE|insertIgnore|uk_`）→ warn（spring-kafka 手动提交降低丢失窗口但不去重，故 warn 级）。
 - **对应门禁**: fw_kafka_idempotent_consumer(warn)
 
+```verify
+id: kafka-r3
+cmd: 
+expect: always
+```
+
 ### 规律：消费者并发数须 ≤ 分区数，超出部分永远空转
 - **适用版本**: Kafka 全版本 / spring-kafka 全版本
 - **规律**: 同消费者组内，一个分区同一时刻只分配给一个消费者。`@KafkaListener(concurrency = "N")`（spring-kafka 并发=容器内线程数，组内总消费者数 = 实例数×concurrency）超过分区数时，超额线程分不到分区永远空转，且 rebalance 时加剧抖动。扩容消费能力的上限 = 分区数；须更高吞吐先扩分区（扩分区不影响已有 key 顺序以外的语义，但不可缩分区）。
 - **违反后果**: 盲目加线程/加实例无提速效果，资源浪费 + rebalance 频繁。
 - **验证方法**: 检出 `@KafkaListener` 但全项目无 `concurrency` 显式配置 → warn 人工核对"组内总消费者数 ≤ 分区数"。
 - **对应门禁**: fw_kafka_consumer_le_partitions(warn)
+
+```verify
+id: kafka-r4
+cmd: 
+expect: always
+```
 
 ### 规律：幂等生产者 4.x 默认开启，显式关闭须书面理由
 - **适用版本**: Kafka ≥3.0 默认 `enable.idempotence=true`（4.x 维持，待验证 4.x 是否有默认行为微调）
@@ -80,12 +104,24 @@ detect 信号命中任一高置信度行即可激活 kafka 框架规则集。
 - **验证方法**: 检出 `enable-idempotence: false` / `enable.idempotence=false` / `ENABLE_IDEMPOTENCE_CONFIG, "false"` → warn。
 - **对应门禁**: fw_kafka_idempotent_producer(warn)
 
+```verify
+id: kafka-r5
+cmd: 
+expect: always
+```
+
 ### 规律：跨分区原子写须事务生产者，消费端须 read_committed 配对
 - **适用版本**: Kafka ≥0.11 / spring-kafka 全版本
 - **规律**: 一次写多个分区/topic 须原子（要么全成要么全败）时，用事务生产者：`transactional.id`（必须唯一且稳定，重启后同 id 恢复未完成事务）+ `initTransactions/beginTransaction/commitTransaction`。消费端不配 `isolation.level=read_committed`（默认 read_uncommitted）会读到未提交/已中止事务的消息——**只配生产者不配消费者 = 白搭**。consume-transform-produce 链路用 `sendOffsetsToTransaction` 把消费位点绑入同一事务。
 - **违反后果**: 消费者读到中止事务消息 → 幽灵数据；transactional.id 冲突 → 生产者互踢（ProducerFencedException）。
 - **验证方法**: 检出 `transactional.id|transactional-id|TRANSACTIONAL_ID_CONFIG` 但无 `read_committed|READ_COMMITTED|isolation-level|isolation.level` → warn。
 - **对应门禁**: fw_kafka_transactional_producer(warn)
+
+```verify
+id: kafka-r6
+cmd: 
+expect: always
+```
 
 ### 规律：rebalance 协议选型——cooperative 增量再均衡，4.x 新版消费者协议
 - **适用版本**: Kafka ≥2.4（CooperativeStickyAssignor）/ 4.x（KIP-848 服务端再均衡协议 GA）
@@ -94,12 +130,24 @@ detect 信号命中任一高置信度行即可激活 kafka 框架规则集。
 - **验证方法**: 检出 `RangeAssignor`（显式回退 eager）→ warn；检出 `CooperativeSticky` → pass。
 - **对应门禁**: fw_kafka_rebalance_cooperative(warn)
 
+```verify
+id: kafka-r7
+cmd: 
+expect: always
+```
+
 ### 规律：分区器须保持同 key 同分区，RoundRobin 破坏键序
 - **适用版本**: Kafka 全版本
 - **规律**: 默认分区器：有 key → murmur2(key) % 分区数（同 key 恒同分区，保分区内有序）；无 key → sticky 批量轮询。显式配置 `RoundRobinPartitioner`/`UniformStickyPartitioner` 会把同 key 消息打散到多分区，消费端无法保证同业务键顺序（如订单状态机乱序）。自定义分区器必须保持"同 key → 同分区"不变式。
 - **违反后果**: 同订单事件被并发消费乱序处理 → 状态回退（已支付被已创建覆盖）。
 - **验证方法**: 检出 `RoundRobinPartitioner|UniformStickyPartitioner|round.robin` → warn。
 - **对应门禁**: fw_kafka_partitioner(warn)
+
+```verify
+id: kafka-r8
+cmd: 
+expect: always
+```
 
 ### 规律：消费失败须配死信（DLT），禁止无限重试阻塞分区
 - **适用版本**: spring-kafka ≥2.7（@RetryableTopic）/ 全版本
@@ -108,12 +156,24 @@ detect 信号命中任一高置信度行即可激活 kafka 框架规则集。
 - **验证方法**: 检出 `@KafkaListener` 但无 `DeadLetterPublishingRecoverer|@RetryableTopic|@DltHandler|DefaultErrorHandler` → warn。
 - **对应门禁**: fw_kafka_dlq(warn)
 
+```verify
+id: kafka-r9
+cmd: 
+expect: always
+```
+
 ### 规律：consumer lag 必须监控告警，积压是 Kafka 消费的第一故障信号
 - **适用版本**: Kafka 全版本 / spring-kafka 全版本
 - **规律**: Kafka 无 broker 内建"堆积告警"，消费滞后量（lag = log-end-offset − committed-offset）须外部监控：Micrometer（spring-kafka 监听器容器内建 `spring.kafka.listener.micrometer-enabled`）/ kafka_exporter / Burrow / AdminClient API 自采。lag 持续上升 = 消费速率 < 生产速率，须扩分区/扩消费者/优化处理耗时；lag 突降但业务未消费 = offset 被误提交（配合 offset_semantics 规律）。
 - **违反后果**: 积压数小时无感知，业务延迟失控后才发现。
 - **验证方法**: 检出 Kafka 使用但无 `micrometer|MeterRegistry|kafka_exporter|burrow|adminClient` → warn。
 - **对应门禁**: fw_kafka_lag_monitor(warn)
+
+```verify
+id: kafka-r10
+cmd: 
+expect: always
+```
 
 ### 规律：消息顺序仅单分区内成立，顺序敏感业务必须带 key
 - **适用版本**: Kafka 全版本
@@ -122,6 +182,12 @@ detect 信号命中任一高置信度行即可激活 kafka 框架规则集。
 - **验证方法**: 检出 `ProducerRecord` 两参构造（topic, value 无 key）→ warn。
 - **对应门禁**: fw_kafka_order_partition(warn)
 
+```verify
+id: kafka-r11
+cmd: 
+expect: always
+```
+
 ### 规律：消息格式演进须 Schema Registry 约束，裸 JSON 演进必炸消费端
 - **适用版本**: Kafka 全版本 / Confluent Schema Registry / Apicurio
 - **规律**: Kafka 不约束 payload 格式。裸 JSON/String 序列化下，生产者随意改字段（删字段、改类型）→ 老消费者反序列化爆炸或静默丢字段。生产须 Schema Registry（Avro/Protobuf/JSON Schema）+ 兼容性策略（BACKWARD 默认，消费者先升级；FORWARD/FULL 按发布顺序选型），序列化器用 `KafkaAvroSerializer`/`KafkaProtobufSerializer` + `schema.registry.url`。StringSerializer 裸 JSON 仅限内部低风险 topic。
@@ -129,12 +195,24 @@ detect 信号命中任一高置信度行即可激活 kafka 框架规则集。
 - **验证方法**: 检出 `StringSerializer|StringDeserializer` 且无 `schema.registry|schema-registry|SchemaRegistryClient|KafkaAvroSerializer|SpecificRecord` → warn。
 - **对应门禁**: fw_kafka_schema_registry(warn)
 
+```verify
+id: kafka-r12
+cmd: 
+expect: always
+```
+
 ### 规律：消费组命名与复用规范——同组不同订阅即错乱
 - **适用版本**: Kafka 全版本 / spring-kafka 全版本
 - **规律**: 同 group.id 内所有实例/线程共享订阅与位点：同一 group.id 下不同 @KafkaListener 订阅不同 topic 是合法的（Kafka 组订阅是并集），但**不同业务复用同一 group.id** 会导致 rebalance 联动（一个 listener 抖动全组重平衡）与位点管理混乱。规范：group.id 按"业务域.用途.环境"命名，一 listener 一组；静态成员资格（`group.instance.id`）减少滚动发布 rebalance（KIP-345）。
 - **违反后果**: 无关业务 listener 互相触发 rebalance 停摆；位点误提交串业务。
 - **验证方法**: 多个 @KafkaListener 检出相同 groupId 且 topic 不同 → warn 人工确认复用合理性。
 - **对应门禁**: fw_kafka_group_mgmt(warn)
+
+```verify
+id: kafka-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

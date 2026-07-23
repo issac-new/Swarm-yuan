@@ -51,12 +51,24 @@ detect 信号命中任一高置信度行即可激活 nuxt 框架规则集。
 - **验证方法**: 检出 `useAsyncData(` 调用未含 `key:` 参数 → fail（无 url 须必传 key）；`useFetch(` 动态 url（含模板串/变量）未含 `key:` → warn。
 - **对应门禁**: fw_nuxt_fetch_key(fail)
 
+```verify
+id: nuxt-r1
+cmd: 
+expect: always
+```
+
 ### 规律：SSR 水合须一致，禁 render 阶段用 Date.now/随机/Math.random
 - **适用版本**: Nuxt 3.x / 4.x
 - **规律**: SSR 渲染 HTML 与客户端 hydration 须一致，否则 hydration mismatch 警告/错误。render 阶段（setup 顶层同步）禁用 `Date.now()` / `Math.random()` / `uuid()` / `new Date()` 等每次调用返回不同值的 API（服务端渲染值 ≠ 客户端 hydration 值）。须在 `onMounted`（仅客户端）内调用，或用 `useState` 固定值。
 - **违反后果**: hydration mismatch → Vue 警告 / DOM 重建 / 闪烁 / SEO 与实际不一致。
 - **验证方法**: 检出 `Date.now()|Math.random()|crypto.randomUUID()` 出现在 `<script setup>` 顶层（非 onMounted 内）→ fail。
 - **对应门禁**: fw_nuxt_hydration(fail)
+
+```verify
+id: nuxt-r2
+cmd: 
+expect: always
+```
 
 ### 规律：useState 须带稳定 key，禁共享 key 串状态
 - **适用版本**: Nuxt 3.x / 4.x
@@ -65,12 +77,24 @@ detect 信号命中任一高置信度行即可激活 nuxt 框架规则集。
 - **验证方法**: 检出多个 `useState('same-key', …)` 同 key → fail；`useState(` 无 key 参数 → fail。
 - **对应门禁**: fw_nuxt_usestate_key(fail)
 
+```verify
+id: nuxt-r3
+cmd: 
+expect: always
+```
+
 ### 规律：auto-import 须避命名冲突，禁自定义 composable 与 Nuxt 内置同名
 - **适用版本**: Nuxt 3.x / 4.x
 - **规律**: Nuxt 自动导入 `composables/` 与 `utils/` 下的导出，以及 `#imports` 内置（useFetch/useState/ref/reactive 等）。自定义 composable 须避免与内置同名（如自定义 `useState` 会覆盖内置，行为异常）。命名冲突时后导入覆盖，难排查。
 - **违反后果**: 自定义 composable 覆盖内置 → 行为异常 / 难排查。
 - **验证方法**: 检出 `composables/` 下导出函数名为 `useState|useFetch|useAsyncData|ref|reactive|computed|navigateTo|useRouter|useRoute` → fail。
 - **对应门禁**: fw_nuxt_autoimport_conflict(fail)
+
+```verify
+id: nuxt-r4
+cmd: 
+expect: always
+```
 
 ### 规律：插件须按顺序注册，禁跨插件依赖未声明 order
 - **适用版本**: Nuxt 3.x / 4.x
@@ -79,12 +103,24 @@ detect 信号命中任一高置信度行即可激活 nuxt 框架规则集。
 - **验证方法**: 人工确认有依赖的插件用数字前缀/dependsOn 声明顺序。
 - **对应门禁**: 人工检查
 
+```verify
+id: nuxt-r5
+cmd: 
+expect: always
+```
+
 ### 规律：中间件须区分全局/命名/路由，禁全局中间件做页面级逻辑
 - **适用版本**: Nuxt 3.x / 4.x
 - **规律**: Nuxt 中间件三类：(1) 全局（`middleware/*.global.ts`，每次导航执行）/ (2) 命名（`middleware/auth.ts`，须在页面 `definePageMeta({ middleware: 'auth' })` 引用）/ (3) 内联（`definePageMeta({ middleware: [() => …] })`）。全局中间件性能开销大，须仅做全局鉴权/重定向，禁做页面级逻辑。命名中间件须被页面引用才生效。
 - **违反后果**: 全局中间件做页面逻辑 → 每次导航开销 / 耦合页面；命名中间件未引用 → 不生效。
 - **验证方法**: 检出 `*.global.ts` 中间件含页面级逻辑（特定路径判断过多）→ warn。
 - **对应门禁**: fw_nuxt_middleware_scope(warn)
+
+```verify
+id: nuxt-r6
+cmd: 
+expect: always
+```
 
 ### 规律：pages/ 自动路由须约定式命名，禁动态路由歧义
 - **适用版本**: Nuxt 3.x / 4.x
@@ -93,12 +129,24 @@ detect 信号命中任一高置信度行即可激活 nuxt 框架规则集。
 - **验证方法**: 人工确认 pages/ 命名遵循约定，无歧义动态路由。
 - **对应门禁**: 人工检查
 
+```verify
+id: nuxt-r7
+cmd: 
+expect: always
+```
+
 ### 规律：components/ 自动导入须避重名，禁多目录同名组件
 - **适用版本**: Nuxt 3.x / 4.x
 - **规律**: `app/components/` 下组件自动导入，按目录路径生成组件名（`components/user/Profile.vue` → `<UserProfile>`）。多个目录同名组件会冲突（后扫描覆盖）。嵌套目录组件名须唯一。`nuxt.config.ts` 的 `components` 选项可配 pathPrefix 关闭前缀。
 - **违反后果**: 同名组件冲突 → 导入不确定 / 渲染错误组件。
 - **验证方法**: 检出 components/ 下不同目录同名 .vue 文件 → warn。
 - **对应门禁**: fw_nuxt_component_naming(warn)
+
+```verify
+id: nuxt-r8
+cmd: 
+expect: always
+```
 
 ### 规律：composables/ 须导出函数（use 开头），禁导出常量/类
 - **适用版本**: Nuxt 3.x / 4.x
@@ -107,12 +155,24 @@ detect 信号命中任一高置信度行即可激活 nuxt 框架规则集。
 - **验证方法**: 检出 `composables/` 下 `export const` / `export class` → warn。
 - **对应门禁**: fw_nuxt_composable_export(warn)
 
+```verify
+id: nuxt-r9
+cmd: 
+expect: always
+```
+
 ### 规律：nitro 服务端路由须在 server/ 下，禁 client 代码调服务端内部
 - **适用版本**: Nuxt 3.x / 4.x（Nitro）
 - **规律**: 服务端 API 须在 `server/api/` 下（文件路由自动生成端点），用 `defineEventHandler`。客户端通过 `$fetch`/`useFetch` 调用端点，禁直接 import server/ 内部模块（会泄露服务端代码到客户端 bundle）。`server/utils/` 仅服务端可用。
 - **违反后果**: Client import server 内部 → 服务端代码泄露到客户端 / 包体增大 / 安全风险。
 - **验证方法**: 检出 `app/` 下文件 import `~/server/` 或 `../../server/` → fail。
 - **对应门禁**: fw_nuxt_server_boundary(fail)
+
+```verify
+id: nuxt-r10
+cmd: 
+expect: always
+```
 
 ### 规律：useSeoMeta/useHead 须用于 SEO，禁手动操作 document.head
 - **适用版本**: Nuxt 3.x / 4.x
@@ -121,6 +181,12 @@ detect 信号命中任一高置信度行即可激活 nuxt 框架规则集。
 - **验证方法**: 检出 `document.head|document.title` 在 .vue 组件中 → warn。
 - **对应门禁**: fw_nuxt_seo_meta(warn)
 
+```verify
+id: nuxt-r11
+cmd: 
+expect: always
+```
+
 ### 规律：错误页面须配 error.vue，禁让默认错误页暴露堆栈
 - **适用版本**: Nuxt 3.x / 4.x
 - **规律**: Nuxt 根目录或 `app/error.vue` 作为错误页面（4xx/5xx/未捕获异常）。须配 error.vue 友好展示错误（生产隐藏堆栈），处理 `clearError` 跳转。无 error.vue 用默认错误页（开发模式暴露堆栈）。
@@ -128,12 +194,24 @@ detect 信号命中任一高置信度行即可激活 nuxt 框架规则集。
 - **验证方法**: 检出 Nuxt 项目无 `error.vue` → warn。
 - **对应门禁**: fw_nuxt_error_page(warn)
 
+```verify
+id: nuxt-r12
+cmd: 
+expect: always
+```
+
 ### 规律：runtimeConfig 敏感值须服务端 only，禁暴露到 client
 - **适用版本**: Nuxt 3.x / 4.x
 - **规律**: `nuxt.config.ts` 的 `runtimeConfig` 分 `runtimeConfig`（服务端 only，如 DB 密钥/API key）与 `runtimeConfig.public`（客户端可访问，如 public key）。敏感值（secret/token/password）须放 `runtimeConfig`（非 public），禁放 `public`（会打包进客户端 bundle 泄露）。
 - **违反后果**: 敏感值放 public → 打包进客户端 bundle 泄露 CWE-312。
 - **验证方法**: 检出 `runtimeConfig.public` 含 `secret|password|apiKey|privateKey` key → fail。
 - **对应门禁**: fw_nuxt_runtime_config_secret(fail)
+
+```verify
+id: nuxt-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥10 门槛）。10 条挂门禁（fw_nuxt_*），3 条标"人工检查"（语义/架构相关规律）。

@@ -39,6 +39,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: state 默认明文存全部资源属性（含 RDS 主密码、IAM access key、TLS 私钥），入库即密钥泄露（CWE-312 明文存储敏感信息；GB/T 22239-2019 8.1.4.6 数据保密性要求）；local backend 在团队环境还意味着无锁并发写损坏。
 - **验证方法**: `find . -name '*.tfstate*'`（应为空）；`grep -rnE 'backend[[:space:]]+"local"' --include='*.tf' .`（应为空）
 - **对应门禁**: fw_terraform_state_in_git（fail 级）
+
+```verify
+id: terraform-r1
+cmd: grep -rnE 'backend[[:space:]]+"local"' --include='*.tf' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: SquareOps《Terraform State Best Practices for Teams 2026》"Scenario 6: Secrets leaked via plaintext state"；Confluent 官方文档"state files can contain sensitive information … rather than in plaintext"；Spacelift"Never commit terraform.tfstate to version control"
 
 ### 规律：.tf/.tfvars 禁止硬编码密钥字面量
@@ -47,6 +54,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: 密钥随代码进入 git 历史与 state 双重明文落地，泄露后须全量轮换（CWE-798 硬编码凭证 + CWE-312；GB/T 22239-2019 8.1.4.1 身份鉴别）。
 - **验证方法**: `grep -rnE '(password|secret_key|access_key|private_key|api_key|client_secret)[[:space:]]*=[[:space:]]*"[^"$]+"' --include='*.tf' --include='*.tfvars' .`（剔除含 `var.`/`${` 行后应为空）；awk 扫 variable 块内 `default = "..."`
 - **对应门禁**: fw_terraform_hardcoded_secret（fail 级）
+
+```verify
+id: terraform-r2
+cmd: grep -rnE '(password|secret_key|access_key|private_key|api_key|client_secret)[[:space:]]*=[[:space:]]*"[^"$]+"' --include='*.tf' --include='*.tfvars' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: Scalr CI/CD 指南"Dangerous: Hard-coded credentials … Never do this!"；Checkov `CKV_SECRET_*` 与 tfsec sensitive-value 检测规则族；Spacelift《Terraform Secrets》"Keep secrets out of code (no plaintext in .tf, .tfvars, or modules)"
 
 ### 规律：安全组管理端口（22/3389）禁止对 0.0.0.0/0 开放
@@ -55,6 +69,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: SSH/RDP 直接暴露公网，全网暴力破解面（CWE-732 关键资源权限分配不当；GB/T 22239-2019 8.1.3.2 访问控制、8.1.4.4 入侵防范；2019 Capital One 事件同类暴露面）。
 - **验证方法**: awk 跟踪 `ingress {` 块：块内同时命中 `from_port = 22|3389|0` 与 `0.0.0.0/0` 即报（块级共现，避免同文件不同 ingress 误报）
 - **对应门禁**: fw_terraform_sg_open_world（fail 级）
+
+```verify
+id: terraform-r3
+cmd: 
+expect: always
+```
+
 - **证据**: tfsec `aws-ec2-no-public-ingress-sgr`（CRITICAL）"Full internet brute-force attack surface"；Checkov `CKV_AWS_24/25`；2024 Wiz 报告"72% 云环境至少一个公开暴露存储桶/资源，多数由 Terraform 创建"
 
 ### 规律：S3 bucket 禁止 public ACL
@@ -63,6 +84,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: 对象存储公网可读，数据泄露高发（CWE-732；GB/T 22239-2019 8.1.4.6 数据保密性；CIS AWS Foundations Benchmark S3 族）。
 - **验证方法**: `grep -rnE 'acl[[:space:]]*=[[:space:]]*"public' --include='*.tf' .`（应为空）
 - **对应门禁**: fw_terraform_s3_public（fail 级）
+
+```verify
+id: terraform-r4
+cmd: grep -rnE 'acl[[:space:]]*=[[:space:]]*"public' --include='*.tf' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: Checkov `CKV_AWS_20/53-56`（S3 public ACL 与 public access block 四开关）；tfsec `aws-s3-no-public-access`；Wiz 2024 云安全报告公开桶统计
 
 ### 规律：RDS/数据库实例禁止公网可达
@@ -71,6 +99,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: 数据库端口直接暴露公网，叠加弱口令即失陷（CWE-732；GB/T 22239-2019 8.1.3.2 边界访问控制）。
 - **验证方法**: `grep -rnE 'publicly_accessible[[:space:]]*=[[:space:]]*true' --include='*.tf' .`（应为空）
 - **对应门禁**: fw_terraform_rds_public（fail 级）
+
+```verify
+id: terraform-r5
+cmd: grep -rnE 'publicly_accessible[[:space:]]*=[[:space:]]*true' --include='*.tf' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: Checkov `CKV_AWS_17`、tfsec `aws-rds-no-public-db-access`；"top exploited configs"清单含"RDS instances … with public accessibility enabled"（Decryption Digest IaC 清单）
 
 ### 规律：必须配置远程 backend（拒绝默认 local）
@@ -79,6 +114,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: state 存开发者本机，无锁、无版本化、无访问控制，丢 state = 全量资源孤儿化或重复创建（GB/T 22239-2019 8.1.4.6 备份恢复要求）。
 - **验证方法**: `grep -rlE 'backend[[:space:]]+"' --include='*.tf' .`（应非空）
 - **对应门禁**: fw_terraform_backend_missing（warn 级）
+
+```verify
+id: terraform-r6
+cmd: grep -rlE 'backend[[:space:]]+"' --include='*.tf' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: SquareOps"Scenario 5: Lost state file (no remote backend)"；"Local state files are unacceptable for team environments"（sharpskill/HashiCorp 口径）
 
 ### 规律：S3 backend 必须 encrypt = true（建议 KMS + 锁）
@@ -87,6 +129,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: state 在存储层明文落盘，存储侧泄露即全量基础设施与密钥泄露（CWE-312；GB/T 22239-2019 8.1.4.6 数据保密性）。
 - **验证方法**: 对含 `backend "s3"` 的文件 `grep -E 'encrypt[[:space:]]*=[[:space:]]*true'`（同文件须命中）
 - **对应门禁**: fw_terraform_backend_unencrypted（warn 级）
+
+```verify
+id: terraform-r7
+cmd: grep -E 'encrypt[[:space:]]*=[[:space:]]*true' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: Confluent 官方"Use encrypted, secure backends for state"；Octopus Deploy 示例 `encrypt = true` + `dynamodb_table`；SquareOps 2026 口径"S3-native locking via use_lockfile = true (DynamoDB locking deprecated as of Terraform 1.11)"
 
 ### 规律：provider 与 core 版本必须锁定
@@ -95,6 +144,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: 未锁版本时 init 拉最新 provider，行为漂移致 plan/apply 不可复现，供应链面扩大（对应 GB/T 25000.51-2016 可重复性/可测试性要求）。
 - **验证方法**: `grep -rlE 'required_providers' --include='*.tf' .`（有 provider 块时应非空且块内含 `version =`）
 - **对应门禁**: fw_terraform_provider_unpinned（warn 级）
+
+```verify
+id: terraform-r8
+cmd: grep -rlE 'required_providers' --include='*.tf' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: hashicorp/terraform#34305 示例工程标准形态 `required_providers { azurerm = { source … version = "3.44.1" } }`；SquareOps 七条 non-negotiables 含版本化
 
 ### 规律：有状态资源必须 lifecycle prevent_destroy
@@ -103,6 +159,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: 一次误 plan 即销毁生产数据库/存储桶，数据不可恢复（GB/T 22239-2019 8.1.4.6 数据备份恢复；可用性破坏）。
 - **验证方法**: `grep -rlE 'aws_db_instance|aws_s3_bucket|azurerm_mssql_database' --include='*.tf' .` 的每个文件须含 `prevent_destroy[[:space:]]*=[[:space:]]*true`（文件级启发式：多资源文件内逐块核对为人工检查补充）
 - **对应门禁**: fw_terraform_no_prevent_destroy（warn 级）
+
+```verify
+id: terraform-r9
+cmd: grep -rlE 'aws_db_instance|aws_s3_bucket|azurerm_mssql_database' --include='*.tf' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: HashiCorp 官方 lifecycle 文档"measure of safety against the accidental replacement of objects that may be costly to reproduce, such as database instances"；OneUptime 2026"Apply prevent_destroy to any resource that holds state or data"
 
 ### 规律：RDS 存储必须加密
@@ -111,6 +174,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: 数据库存储层明文，快照/磁盘泄露即数据泄露（CWE-312；GB/T 22239-2019 8.1.4.6 数据保密性）。
 - **验证方法**: 含 `aws_db_instance` 的文件 `grep -E 'storage_encrypted[[:space:]]*=[[:space:]]*true'`（须命中）
 - **对应门禁**: fw_terraform_rds_unencrypted（warn 级）
+
+```verify
+id: terraform-r10
+cmd: grep -E 'storage_encrypted[[:space:]]*=[[:space:]]*true' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: Checkov `CKV_AWS_16` / tfsec `aws-rds-encrypt-cluster-storage-data`；terraform-security-project 高危清单"RDS storage not encrypted"
 
 ### 规律：敏感 output 必须 sensitive = true
@@ -119,6 +189,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: output 明文进 plan/apply 日志与 CI 制品，二次泄露（CWE-312；GB/T 22239-2019 8.1.4.6）。
 - **验证方法**: `grep -rnE 'output[[:space:]]+"[^"]*(password|secret|token|key)[^"]*"' --include='*.tf' .` 命中的文件须含 `sensitive[[:space:]]*=[[:space:]]*true`
 - **对应门禁**: fw_terraform_sensitive_output（warn 级）
+
+```verify
+id: terraform-r11
+cmd: grep -rnE 'output[[:space:]]+"[^"]*(password|secret|token|key)[^"]*"' --include='*.tf' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: Spacelift《Terraform State》"use secret managers and sensitive outputs instead of exposing credentials or keys directly"；Spacelift《Terraform Secrets》"avoid leaking via outputs or logs"
 
 ### 规律：apply 必须经 plan 审查，禁止裸 -auto-approve
@@ -127,6 +204,13 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 - **违反后果**: 未经审查的变更直达生产，误销毁/误开公网无拦截点（GB/T 22239-2019 8.1.4.7 安全审计；变更管理失控）。
 - **验证方法**: `grep -rnE 'terraform[[:space:]]+(apply|destroy)[[:space:]]+(-[a-z-]+[[:space:]]+)*-auto-approve' --include='*.sh' --include='*.yml' --include='*.yaml' .`（应为空）
 - **对应门禁**: fw_terraform_auto_approve（warn 级）
+
+```verify
+id: terraform-r12
+cmd: grep -rnE 'terraform[[:space:]]+(apply|destroy)[[:space:]]+(-[a-z-]+[[:space:]]+)*-auto-approve' --include='*.sh' --include='*.yml' --include='*.yaml' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: SquareOps"CI/CD as the only path to apply, and OPA/Sentinel policy gates on every plan"；Spacelift"Always review plan output before applying"；技术社区生命周期指南"Skipping plan → Untracked changes. Fix: Always review plan before apply"
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）

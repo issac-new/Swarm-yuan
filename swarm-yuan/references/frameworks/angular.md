@@ -51,12 +51,24 @@ detect 信号命中任一高置信度行即可激活 angular 框架规则集。
 - **验证方法**: 检出 `@NgModule` 文件（`*.module.ts`）且非迁移标注 → warn（新项目应 standalone）。
 - **对应门禁**: fw_angular_standalone(warn)
 
+```verify
+id: angular-r1
+cmd: 
+expect: always
+```
+
 ### 规律：响应式状态须用 signal/computed/effect，禁裸 Subject/BehaviorSubject
 - **适用版本**: Angular 16+（Signals 稳定）
 - **规律**: Signals（`signal()` / `computed()` / `effect()`）提供细粒度响应式，比 RxJS Subject 性能更优（只通知真正依赖的视图）。状态管理优先 signal + computed 派生；RxJS 用于异步流（HTTP/WebSocket）。`toSignal` / `toObservable` 桥接二者。Zoneless 模式下 signal 是变更检测的来源。
 - **违反后果**: 裸 Subject 管理状态 → 变更检测粗粒度、Zoneless 模式下 UI 不更新、性能差。
 - **验证方法**: 检出 `Subject\b|BehaviorSubject\b` 但同文件无 `signal(` / `toSignal(` → warn（状态管理应优先 signal）。
 - **对应门禁**: fw_angular_signals(warn)
+
+```verify
+id: angular-r2
+cmd: 
+expect: always
+```
 
 ### 规律：组件须配 ChangeDetectionStrategy.OnPush，禁默认变更检测
 - **适用版本**: Angular 全版本（zoneless 下可选）
@@ -65,12 +77,24 @@ detect 信号命中任一高置信度行即可激活 angular 框架规则集。
 - **验证方法**: 检出 `@Component` 但无 `ChangeDetectionStrategy.OnPush` 且无 zoneless 配置 → warn。
 - **对应门禁**: fw_angular_onpush(warn)
 
+```verify
+id: angular-r3
+cmd: 
+expect: always
+```
+
 ### 规律：RxJS subscribe 须配 takeUntilDestroyed 或 AsyncPipe，禁裸 subscribe 泄漏
 - **适用版本**: Angular 全版本（takeUntilDestroyed 16+）
 - **规律**: 组件内 `.subscribe()` 订阅 RxJS 流须在组件销毁时取消，否则泄漏。推荐 `takeUntilDestroyed()`（注入 DestroyRef 自动取消）或模板用 `| async` 管道（订阅随视图生命周期管理）。裸 subscribe 无取消 = 内存泄漏 + 销毁后回调报错。
 - **违反后果**: 裸 subscribe 泄漏 → 组件销毁后仍订阅 → 内存泄漏 / 回调访问已销毁视图报错。
 - **验证方法**: 检出 `.subscribe(` 同行或前 2 行无 `takeUntilDestroyed` / `takeUntil(` → fail。
 - **对应门禁**: fw_angular_subscribe_cleanup(fail)
+
+```verify
+id: angular-r4
+cmd: 
+expect: always
+```
 
 ### 规律：HTTP 请求须通过 HttpClient + 拦截器，禁裸 fetch/XHR
 - **适用版本**: Angular 全版本
@@ -79,12 +103,24 @@ detect 信号命中任一高置信度行即可激活 angular 框架规则集。
 - **验证方法**: 检出 `fetch(` / `new XMLHttpRequest` 在组件/服务中且非拦截器内 → warn。
 - **对应门禁**: fw_angular_http_client(warn)
 
+```verify
+id: angular-r5
+cmd: 
+expect: always
+```
+
 ### 规律：依赖注入须用 inject() 或构造函数注入，禁 new 实例化服务
 - **适用版本**: Angular 全版本（inject() 14.2+）
 - **规律**: 服务/组件依赖须通过 DI 注入（`inject(Token)` 或构造函数参数），由 DI 树管理生命周期与单例。直接 `new Service()` 绕过 DI，丢失单例/测试替身/配置注入。`inject()` 比 `constructor(private x: X)` 简洁，推荐。
 - **违反后果**: new 服务 → 多实例/无测试替身/配置不注入。
 - **验证方法**: 检出 `new [A-Z][a-zA-Z]+Service\(` 在组件/其他服务中 → warn（应通过 DI 注入）。
 - **对应门禁**: fw_angular_di_inject(warn)
+
+```verify
+id: angular-r6
+cmd: 
+expect: always
+```
 
 ### 规律：模板表达式须简单，禁复杂逻辑/方法调用链
 - **适用版本**: Angular 全版本
@@ -93,12 +129,24 @@ detect 信号命中任一高置信度行即可激活 angular 框架规则集。
 - **验证方法**: 检出模板内 `{{ … }}` 含 >3 个运算符或方法调用链 → 人工确认。
 - **对应门禁**: 人工检查
 
+```verify
+id: angular-r7
+cmd: 
+expect: always
+```
+
 ### 规律：管道须优先 pure pipe，impure pipe 须谨慎
 - **适用版本**: Angular 全版本
 - **规律**: pure pipe（默认）仅在输入引用变更时求值，性能优。impure pipe（`pure: false`）每次变更检测都求值，性能差，仅在过滤/排序等需对同一引用内部变更响应时用。优先 pure pipe + signal/computed 派生数据。
 - **违反后果**: impure pipe 滥用 → 每次变更检测求值 → 卡顿。
 - **验证方法**: 检出 `pure:[[:space:]]*false` 或 `pure: false` 的 @Pipe → warn。
 - **对应门禁**: fw_angular_impure_pipe(warn)
+
+```verify
+id: angular-r8
+cmd: 
+expect: always
+```
 
 ### 规律：组件交互须用 signal inputs（input()/output()）或 @Input/@Output 装饰器
 - **适用版本**: Angular 17+（signal inputs 稳定）
@@ -107,12 +155,24 @@ detect 信号命中任一高置信度行即可激活 angular 框架规则集。
 - **验证方法**: 检出 `@Input\(\)` / `@Output\(\)` 装饰器 → warn（推荐迁移 signal inputs）。
 - **对应门禁**: fw_angular_signal_inputs(warn)
 
+```verify
+id: angular-r9
+cmd: 
+expect: always
+```
+
 ### 规律：路由须懒加载（loadComponent/loadChildren），禁全量 eager
 - **适用版本**: Angular 14+（lazy standalone）/ 全版本（loadChildren）
 - **规律**: 路由须懒加载：standalone 用 `loadComponent` / `loadChildren`，模块用 `loadChildren: () => import(…).then(m => m.XModule)`。eager 全量加载首屏 chunk 过大。懒加载配合预加载策略（`preloadingStrategy: PreloadAllModules`）平衡。
 - **违反后果**: eager 路由 → 首屏 bundle 过大 → 加载慢。
 - **验证方法**: 检出路由配置 `component:` 直接引用组件（非 `loadComponent`）→ warn。
 - **对应门禁**: fw_angular_lazy_route(warn)
+
+```verify
+id: angular-r10
+cmd: 
+expect: always
+```
 
 ### 规律：路由守卫须用函数式（CanMatch/CanActivate），禁遗留 @Injectable Guard 类
 - **适用版本**: Angular 15+（函数式守卫）
@@ -121,6 +181,12 @@ detect 信号命中任一高置信度行即可激活 angular 框架规则集。
 - **验证方法**: 检出 `implements CanActivate|implements CanMatch|implements CanLoad` 的类 → warn（推荐函数式）。
 - **对应门禁**: fw_angular_functional_guard(warn)
 
+```verify
+id: angular-r11
+cmd: 
+expect: always
+```
+
 ### 规律：表单须用响应式表单（ReactiveForms），禁模板驱动表单（复杂场景）
 - **适用版本**: Angular 全版本
 - **规律**: 复杂表单（动态字段/嵌套/跨字段校验）须用响应式表单（`FormBuilder` / `FormGroup` / `FormControl`），类型安全用 `FormBuilder.nonNullable` / Typed Forms。模板驱动表单（`ngModel` + `#f="ngForm"`）仅适合简单表单，复杂场景难测试/难追踪。
@@ -128,12 +194,24 @@ detect 信号命中任一高置信度行即可激活 angular 框架规则集。
 - **验证方法**: 检出 `[(ngModel)]` 在含 >3 字段的表单 → 人工确认（语义相关）。
 - **对应门禁**: 人工检查
 
+```verify
+id: angular-r12
+cmd: 
+expect: always
+```
+
 ### 规律：zoneless 模式须显式 provideZonelessChangeDetection，禁残留 zone.js
 - **适用版本**: Angular 18+（zoneless 稳定）
 - **规律**: zoneless 模式用 `provideZonelessChangeDetection()` 启用，移除 `polyfills` 中的 `zone.js`。zoneless 下变更检测由 signal/event/async pipe 触发，性能更优。残留 zone.js + zoneless 配置冲突。须确保所有异步用 signal/AsyncPipe/markForCheck 触发检测。
 - **违反后果**: zoneless + 残留 zone.js → 配置冲突；zoneless 下裸 setTimeout 内改状态不触发检测 → UI 不更新。
 - **验证方法**: 检出 `provideZonelessChangeDetection` 但 angular.json polyfills 仍含 zone.js → warn。
 - **对应门禁**: fw_angular_zoneless(warn)
+
+```verify
+id: angular-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥10 门槛）。11 条挂门禁（fw_angular_*），2 条标"人工检查"（语义相关规律，机械 grep 易误报）。

@@ -51,12 +51,24 @@ detect 信号命中任一高置信度行即可激活 django 框架规则集。
 - **验证方法**: `grep -rLE 'select_related|prefetch_related' $(grep -rlE '\.objects\.(all|filter|get)\(' --include='*.py')` 命中文件须人工核对是否循环访问关联 → warn。
 - **对应门禁**: fw_django_nplusone(warn)
 
+```verify
+id: django-r1
+cmd: grep -rLE 'select_related|prefetch_related' $(grep -rlE '\.objects\.(all|filter|get)\(' --include='*.py')
+expect: hits>0
+```
+
 ### 规律：多写操作须包 transaction.atomic，单请求可用 ATOMIC_REQUESTS
 - **适用版本**: 全版本
 - **规律**: 同一业务操作内 ≥2 次写（save/create/update/delete）须包 `with transaction.atomic():`，任一步失败整体回滚。粗粒度方案 `ATOMIC_REQUESTS=True`（每请求一事务），但长请求事务会拉长锁持有时间，推荐显式 atomic 块。atomic 嵌套形成 savepoint，内层回滚不影响外层。
 - **违反后果**: 中途异常留下半提交状态（订单建了、库存没扣）。
 - **验证方法**: 代码文件内写操作 ≥2 处但无 `transaction.atomic` → warn。
 - **对应门禁**: fw_django_atomic(warn)
+
+```verify
+id: django-r2
+cmd: 
+expect: always
+```
 
 ### 规律：CsrfViewMiddleware 不得移除，@csrf_exempt 仅限跨域 API 等已评估场景
 - **适用版本**: 全版本
@@ -65,12 +77,24 @@ detect 信号命中任一高置信度行即可激活 django 框架规则集。
 - **验证方法**: settings 含 MIDDLEWARE 但无 CsrfViewMiddleware，或代码检出 `@csrf_exempt` → warn。
 - **对应门禁**: fw_django_csrf(warn)
 
+```verify
+id: django-r3
+cmd: 
+expect: always
+```
+
 ### 规律：RunPython/RunSQL 数据迁移须提供反向操作，否则迁移不可回滚
 - **适用版本**: 全版本
 - **规律**: `migrations.RunPython(forward)` 无 `reverse_code`、`RunSQL(sql)` 无 `reverse_sql` 时，`migrate <app> <previous>` 回退直接抛 `IrreversibleError`。数据迁移必须成对写正反向函数；确无反向可用 `RunPython.noop` 显式标注。
 - **违反后果**: 生产发布失败需回退 schema 时卡在数据迁移，被迫手工修库。
 - **验证方法**: 迁移文件含 `RunPython(` 但无 `reverse_code`/`RunPython.noop` → warn。
 - **对应门禁**: fw_django_migration_irreversible(warn)
+
+```verify
+id: django-r4
+cmd: 
+expect: always
+```
 
 ### 规律：settings 须按环境拆分（base/dev/prod），禁止单文件 if 分支切换
 - **适用版本**: 全版本
@@ -79,12 +103,24 @@ detect 信号命中任一高置信度行即可激活 django 框架规则集。
 - **验证方法**: 存在 `settings.py` 但无 `settings/base.py` → warn。
 - **对应门禁**: fw_django_settings_split(warn)
 
+```verify
+id: django-r5
+cmd: 
+expect: always
+```
+
 ### 规律：SECRET_KEY 禁止硬编码，必须经环境变量/密钥管理注入
 - **适用版本**: 全版本
 - **规律**: `SECRET_KEY` 用于会话签名、密码重置 token、CSRF 加密签名。硬编码进版本库即等价泄露；须 `os.environ["DJANGO_SECRET_KEY"]` 注入，泄露后须轮换（轮换使现有会话失效）。startproject 生成的 `django-insecure-...` 前缀 key 仅限本地开发。
 - **违反后果**: 攻击者伪造会话/签名 cookie 接管任意账户（CWE-798）。
 - **验证方法**: `SECRET_KEY = "<字面量>"` 且行内无 os.environ/getenv → fail。
 - **对应门禁**: fw_django_secret_key(fail)
+
+```verify
+id: django-r6
+cmd: 
+expect: always
+```
 
 ### 规律：生产设置禁 DEBUG=True 硬编码（dev/local/test 设置文件例外）
 - **适用版本**: 全版本
@@ -93,12 +129,24 @@ detect 信号命中任一高置信度行即可激活 django 框架规则集。
 - **验证方法**: 非 dev/local/test 设置文件检出 `DEBUG = True` 字面量 → fail。
 - **对应门禁**: fw_django_debug(fail)
 
+```verify
+id: django-r7
+cmd: 
+expect: always
+```
+
 ### 规律：ALLOWED_HOSTS 禁止空列表硬编码或 ['*']，须收敛为具体域名
 - **适用版本**: 全版本
 - **规律**: DEBUG=False 时 Django 校验 Host 头是否在 `ALLOWED_HOSTS`。`['*']` 关闭校验，放开 Host 头攻击（缓存投毒、密码重置链接域名伪造）。须列具体域名/子域通配（`.example.com`），或经环境变量注入。
 - **违反后果**: Host 头攻击 → 密码重置邮件指向攻击者域名，窃取重置 token。
 - **验证方法**: `ALLOWED_HOSTS = []` 或 `ALLOWED_HOSTS = ['*']` → warn。
 - **对应门禁**: fw_django_allowed_hosts(warn)
+
+```verify
+id: django-r8
+cmd: 
+expect: always
+```
 
 ### 规律：PASSWORD_HASHERS 禁止 MD5/SHA1 弱哈希，优先 Argon2/PBKDF2
 - **适用版本**: 全版本（5.x 默认 PBKDF2，推荐 Argon2 需装 argon2-cffi）
@@ -107,12 +155,24 @@ detect 信号命中任一高置信度行即可激活 django 框架规则集。
 - **验证方法**: PASSWORD_HASHERS 配置块含 MD5/SHA1/Unsalted 哈希器 → warn。
 - **对应门禁**: fw_django_password_hasher(warn)
 
+```verify
+id: django-r9
+cmd: 
+expect: always
+```
+
 ### 规律：raw()/cursor.execute() 禁止 f-string/%/+ 拼接 SQL，必须参数化
 - **适用版本**: 全版本
 - **规律**: `Model.objects.raw(f"...{x}")` / `cursor.execute("..." % x)` 把用户输入直接拼进 SQL。必须用参数化：`raw("... WHERE id = %s", [x])` / `execute("... WHERE id = %s", [x])`。能用 ORM 表达的查询不走 raw SQL。
 - **违反后果**: SQL 注入（CWE-89），拖库/越权读写。
 - **验证方法**: 检出 `(execute|raw)(f"` / `execute(... % ` / `execute(... + ` → fail。
 - **对应门禁**: fw_django_raw_sql(fail)
+
+```verify
+id: django-r10
+cmd: 
+expect: always
+```
 
 ### 规律：MIDDLEWARE 顺序敏感，SecurityMiddleware 须居首位
 - **适用版本**: 全版本
@@ -121,6 +181,12 @@ detect 信号命中任一高置信度行即可激活 django 框架规则集。
 - **验证方法**: MIDDLEWARE 列表首个中间件非 SecurityMiddleware → warn。
 - **对应门禁**: fw_django_middleware_order(warn)
 
+```verify
+id: django-r11
+cmd: 
+expect: always
+```
+
 ### 规律：生产须配 STATIC_ROOT + collectstatic，由 Web 服务器/whitenoise 供静态文件
 - **适用版本**: 全版本
 - **规律**: DEBUG=False 时 Django 不再提供静态文件。必须 `STATIC_ROOT` 指向收集目录，部署期 `collectstatic` 汇聚，由 nginx/whitenoise/CDN 提供。无 STATIC_ROOT 则 collectstatic 报错、生产静态 404。
@@ -128,12 +194,24 @@ detect 信号命中任一高置信度行即可激活 django 框架规则集。
 - **验证方法**: settings 存在但无 `STATIC_ROOT` 定义 → warn。
 - **对应门禁**: fw_django_static_root(warn)
 
+```verify
+id: django-r12
+cmd: 
+expect: always
+```
+
 ### 规律：HTTPS 站点须设 SESSION_COOKIE_SECURE 与 CSRF_COOKIE_SECURE
 - **适用版本**: 全版本
 - **规律**: `SESSION_COOKIE_SECURE=True` / `CSRF_COOKIE_SECURE=True` 使 Cookie 仅经 HTTPS 传输。生产 HTTPS 站点缺省（False）时 Cookie 可经明文 HTTP 泄露被截获。配合 `SECURE_HSTS_SECONDS`、`SECURE_SSL_REDIRECT` 构成传输安全基线。
 - **违反后果**: 会话 Cookie 经明文链路被中间人截获 → 会话劫持。
 - **验证方法**: settings 存在但无 SESSION_COOKIE_SECURE/CSRF_COOKIE_SECURE → warn。
 - **对应门禁**: fw_django_session_cookie(warn)
+
+```verify
+id: django-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

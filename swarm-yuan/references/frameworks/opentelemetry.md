@@ -58,12 +58,24 @@ cargo 式「file 类型」探测本框架不需要（依赖信号已覆盖四种
 - **验证方法**: `grep -rnE 'service\.name|ServiceName|service_name|serviceResource' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' .`（应非空），或存在 `OTEL_SERVICE_NAME` 环境变量配置文件命中；同时检出 `Resource` / `resourceAttributes` / `NodeSDK` 但无 service.name → warn
 - **对应门禁**: fw_opentelemetry_service_name（warn 级）
 
+```verify
+id: opentelemetry-r1
+cmd: grep -rnE 'service\.name|ServiceName|service_name|serviceResource' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：须配置 exporter endpoint，非默认 localhost:4317
 - **适用版本**: 全版本（OTLP exporter 默认 endpoint `http://localhost:4317`）
 - **规律**: OTLP exporter 须显式配置 `endpoint`（或经 `OTEL_EXPORTER_OTLP_ENDPOINT` 环境变量），指向生产收集器（如 `http://otel-collector.observability:4317`）。默认 `localhost:4317` 仅本机 collector 可达，生产容器内 localhost 不通则数据静默丢失。
 - **违反后果**: 默认 localhost 在容器/K8s 环境下不可达，trace/metrics 静默丢失无告警，线上故障无 trace 可查（可观测性静默失败比无监控更危险——给人"已监控"错觉）。
 - **验证方法**: 检出 OTLP exporter 配置但无 `endpoint` / `OTEL_EXPORTER_OTLP_ENDPOINT` / `url:` / `endpoint:` 显式赋值 → warn
 - **对应门禁**: fw_opentelemetry_exporter_endpoint（warn 级）
+
+```verify
+id: opentelemetry-r2
+cmd: 
+expect: always
+```
 
 ### 规律：采样率须显式配置，非默认 always_on
 - **适用版本**: 全版本（默认 AlwaysOnSampler 全量采样）
@@ -72,12 +84,24 @@ cargo 式「file 类型」探测本框架不需要（依赖信号已覆盖四种
 - **验证方法**: 检出 tracer provider / NodeSDK / SDK 构建但无 `Sampler` / `sampler:` / `TraceIdRatioBased` / `ParentBased` 配置 → warn
 - **对应门禁**: fw_opentelemetry_sampler（warn 级）
 
+```verify
+id: opentelemetry-r3
+cmd: 
+expect: always
+```
+
 ### 规律：资源属性须含 deployment.environment
 - **适用版本**: 全版本（spec 语义约定 deployment.environment 为推荐属性）
 - **规律**: Resource 须含 `deployment.environment`（或 `deployment.environment` / `service.namespace`），用于区分 prod/staging/dev。未配置则后端无法按环境隔离/筛选，生产 trace 与测试 trace 混淆。
 - **违反后果**: prod 与 staging trace 混在一起，排障时误读测试数据为生产问题或反之；环境维度的告警/告警抑制失效（GB/T 22239-2019 8.1.4.7 审计上下文完整性）。
 - **验证方法**: 检出 Resource 配置但无 `deployment.environment` / `deployment\.environment` / `DEPLOYMENT_ENV` → warn
 - **对应门禁**: fw_opentelemetry_deployment_env（warn 级）
+
+```verify
+id: opentelemetry-r4
+cmd: 
+expect: always
+```
 
 ### 规律：须用 OTLP exporter，禁用已废弃的 Jaeger/Zipkin exporter
 - **适用版本**: OTel spec ≥1.0（Jaeger exporter 2023 起废弃，推荐 OTLP；Zipkin exporter 维护停滞）
@@ -86,12 +110,24 @@ cargo 式「file 类型」探测本框架不需要（依赖信号已覆盖四种
 - **验证方法**: `grep -rnE 'JaegerExporter|JaegerHttpTraceExporter|JaegerTraceExporter|ZipkinExporter' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' .` 命中 → fail
 - **对应门禁**: fw_opentelemetry_deprecated_exporter（fail 级）
 
+```verify
+id: opentelemetry-r5
+cmd: grep -rnE 'JaegerExporter|JaegerHttpTraceExporter|JaegerTraceExporter|ZipkinExporter' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：Span 须含 attributes 业务上下文
 - **适用版本**: 全版本
 - **规律**: 业务关键 span（HTTP handler、DB query、RPC 调用）须 `span.setAttribute(key, value)` 写入业务上下文（如 `user.id` / `order.id` / `http.route` / `db.statement`）。空 span 仅有时延无业务关联，排障时无法从 trace 跳转到业务实体。
 - **违反后果**: trace 只有耗时无业务字段，故障定位需二次查日志关联，排障链路断裂；无法按业务维度（订单/用户）聚合分析（GB/T 22239-2019 8.1.4.7 审计事件上下文）。
 - **验证方法**: 检出 `startSpan` / `startActiveSpan` 但同项目无 `setAttribute` / `setAttributes` → warn
 - **对应门禁**: fw_opentelemetry_span_attributes（warn 级）
+
+```verify
+id: opentelemetry-r6
+cmd: 
+expect: always
+```
 
 ### 规律：须配置 baggage propagation
 - **适用版本**: 全版本（Baggage API 是 OTel 跨服务传递业务上下文的规范机制）
@@ -100,12 +136,24 @@ cargo 式「file 类型」探测本框架不需要（依赖信号已覆盖四种
 - **验证方法**: 检出 trace 配置但无 `Baggage` / `W3CBaggagePropagator` / `baggagePropagator` → warn
 - **对应门禁**: fw_opentelemetry_baggage_propagation（warn 级）
 
+```verify
+id: opentelemetry-r7
+cmd: 
+expect: always
+```
+
 ### 规律：须配置 metrics 仪表盘导出
 - **适用版本**: 全版本（metrics 是 OTel 三支柱之一）
 - **规律**: 须配置 metrics exporter（`OTLPMetricExporter` / `PeriodicExportingMetricReader` / `MeterProvider`），不仅 trace。仅 trace 无 metrics 则无法做 RED 指标（Rate/Errors/Duration）长效监控，故障检测只能靠 trace 采样有盲区。
 - **违反后果**: 缺 metrics 则无长效聚合视图，只能靠 trace 采样近似（采样漏掉低频故障）；告警无指标基线可设（CWE-1053 缺少可观测性监控）。
 - **验证方法**: 检出 trace 配置但无 `MeterProvider` / `metricReader` / `OTLPMetricExporter` / `metrics` → warn
 - **对应门禁**: fw_opentelemetry_metrics_export（warn 级）
+
+```verify
+id: opentelemetry-r8
+cmd: 
+expect: always
+```
 
 ### 规律：日志须接入 OTel Logs API，禁用裸 console.log
 - **适用版本**: OTel Logs API（spec ≥1.27 稳定；JS @opentelemetry/api-logs / Python opentelemetry-api logs 模块 / Go otellogrus / Java io.opentelemetry.instrumentation:opentelemetry-logback）
@@ -114,12 +162,24 @@ cargo 式「file 类型」探测本框架不需要（依赖信号已覆盖四种
 - **验证方法**: 检出 trace 配置但无 `LoggerProvider` / `OTLPLogExporter` / `logs.getLogger` / `otelLogger` → warn（口径：仅当项目已用 OTel trace 才检；纯无 OTel 项目不报）
 - **对应门禁**: fw_opentelemetry_logs_api（warn 级）
 
+```verify
+id: opentelemetry-r9
+cmd: 
+expect: always
+```
+
 ### 规律：须配置 graceful shutdown，Exporter 正常 flush
 - **适用版本**: 全版本（Span/Metric/Log exporter 均为批量异步导出）
 - **规律**: 进程退出前须 `provider.shutdown()` / `sdk.shutdown()` / `tracerProvider.forceFlush()`，确保缓冲区内的 span/metric/log flush 到 collector。SIGTERM 直接退出会丢失最后一批数据。标准模式：`signal.Notify(SIGTERM) → ctx, cancel := context.WithTimeout(...) → sdk.shutdown(ctx)`。
 - **违反后果**: 进程退出丢失最后一批 span（含错误现场），故障恰好发生在退出时刻则无 trace（GB/T 22239-2019 8.1.4.6 数据完整性；可观测性数据丢失=审计证据灭失）。
 - **验证方法**: 检出 trace provider / NodeSDK / SDK 配置但无 `\.shutdown\(` / `forceFlush` / `gracefulShutdown` → warn
 - **对应门禁**: fw_opentelemetry_graceful_shutdown（warn 级）
+
+```verify
+id: opentelemetry-r10
+cmd: 
+expect: always
+```
 
 <!--
 共 10 条规律（= 门槛 10）。每条规律均挂门禁 id，无游离规律。

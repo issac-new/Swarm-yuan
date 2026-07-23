@@ -30,12 +30,24 @@ ruleset_id: pytest
 - **验证方法**: grep -rnE '@pytest\.fixture.*session' 检查是否有可变操作（append/修改/写文件）
 - **对应门禁**: fw_pytest_session_scope_mutable(fail)
 
+```verify
+id: pytest-r1
+cmd: 
+expect: always
+```
+
 ### 规律：断言须含具体期望值
 - **适用版本**: 全版本
 - **规律**: assert x == y 不可仅 assert x（truthy 断言无法捕获错误值）
 - **违反后果**: 测试通过但实际值错误
 - **验证方法**: grep -rnE '^\s*assert\s+\w+\s*$' 测试文件
 - **对应门禁**: fw_pytest_assert_truthy_only(fail)
+
+```verify
+id: pytest-r2
+cmd: 
+expect: always
+```
 
 ### 规律：parametrize 须覆盖边界值
 - **适用版本**: 全版本
@@ -44,12 +56,24 @@ ruleset_id: pytest
 - **验证方法**: grep -rnE '@pytest\.mark\.parametrize' 检查参数集是否含边界
 - **对应门禁**: fw_pytest_parametrize_boundary(warn)
 
+```verify
+id: pytest-r3
+cmd: 
+expect: always
+```
+
 ### 规律：conftest.py 须分层级
 - **适用版本**: 全版本
 - **规律**: 根 conftest 放共享 fixture；子目录 conftest 放局部 fixture；不可在测试文件内定义全局 fixture
 - **违反后果**: fixture 散乱难复用
 - **验证方法**: find ... -name 'conftest.py' 检查层级
 - **对应门禁**: fw_pytest_conftest_hierarchy(warn)
+
+```verify
+id: pytest-r4
+cmd: 
+expect: always
+```
 
 ### 规律：xdist 并行须保证隔离
 - **适用版本**: 全版本（pytest-xdist）
@@ -58,12 +82,24 @@ ruleset_id: pytest
 - **验证方法**: grep -rnE 'tmpdir\b' 检查是否用 tmp_path 替代
 - **对应门禁**: fw_pytest_xdist_isolation(warn)
 
+```verify
+id: pytest-r5
+cmd: 
+expect: always
+```
+
 ### 规律：asyncio 须显式配置模式
 - **适用版本**: pytest-asyncio 0.21+
 - **规律**: asyncio_mode 须显式配置（auto/strict），不可用默认值漂移
 - **违反后果**: async 测试行为不一致
 - **验证方法**: grep -rnE 'asyncio_mode' 配置文件
 - **对应门禁**: fw_pytest_asyncio_mode(warn)
+
+```verify
+id: pytest-r6
+cmd: 
+expect: always
+```
 
 ### 规律：mock 须清理
 - **适用版本**: 全版本
@@ -72,12 +108,24 @@ ruleset_id: pytest
 - **验证方法**: grep -rnE 'mocker\.patch|monkeypatch' 检查是否在 fixture 中
 - **对应门禁**: fw_pytest_mock_cleanup(warn)
 
+```verify
+id: pytest-r7
+cmd: 
+expect: always
+```
+
 ### 规律：skip/xfail 须注明原因
 - **适用版本**: 全版本
 - **规律**: @pytest.mark.skip / @pytest.mark.xfail 须有 reason 参数
 - **违反后果**: 跳过的测试无人追查
 - **验证方法**: grep -rnE '@pytest\.mark\.(skip|xfail)\s*\(' 检查是否含 reason=
 - **对应门禁**: fw_pytest_skip_reason(warn)
+
+```verify
+id: pytest-r8
+cmd: 
+expect: always
+```
 
 ### 规律：测试命名须规范
 - **适用版本**: 全版本
@@ -86,6 +134,12 @@ ruleset_id: pytest
 - **验证方法**: grep -rnE '^def [a-z]' 测试文件检查非 test_ 开头
 - **对应门禁**: fw_pytest_naming(warn)
 
+```verify
+id: pytest-r9
+cmd: 
+expect: always
+```
+
 ### 规律：测试不可依赖执行顺序
 - **适用版本**: 全版本
 - **规律**: 测试须独立可乱序执行，不可依赖前一个测试的副作用
@@ -93,12 +147,24 @@ ruleset_id: pytest
 - **验证方法**: 人工检查（grep 全局变量修改/文件写入后后续测试读取）
 - **对应门禁**: 人工检查
 
+```verify
+id: pytest-r10
+cmd: 
+expect: always
+```
+
 ### 规律：覆盖率须设目标
 - **适用版本**: 全版本（pytest-cov）
 - **规律**: 须配置 --cov-fail-under 阈值，无阈值则覆盖率无门禁
 - **违反后果**: 覆盖率逐步下降无人管
 - **验证方法**: grep -rnE 'cov-fail-under|fail_under' 配置文件
 - **对应门禁**: fw_pytest_coverage_threshold(warn)
+
+```verify
+id: pytest-r11
+cmd: 
+expect: always
+```
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量 / 标准映射（CWE/GB））
 | 门禁 id | 级别 | 实现逻辑 | 依赖变量 | 标准映射（CWE/GB） |

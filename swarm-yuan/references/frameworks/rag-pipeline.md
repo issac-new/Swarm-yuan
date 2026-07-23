@@ -56,6 +56,13 @@ langchain/llama-index 依赖 + 检索器调用任一高置信度行即可激活 
 - **违反后果**: 低相关噪声片段进 prompt → 答非所问/幻觉外发（CWE-754 异常条件检查不当）；命中率看似 100% 实则注水。
 - **验证方法**: 检出 similarity_search/as_retriever 但全工程无 score_threshold/similarity_cutoff 配置 → warn。
 - **对应门禁**: fw_rag_similarity_threshold(warn)
+
+```verify
+id: rag-pipeline-r1
+cmd: 
+expect: always
+```
+
 - **证据**: OWASP LLM08:2025 Vector and Embedding Weaknesses（https://owasp.org/www-project-top-10-for-large-language-model-applications/ ）；LangChain RAG 教程检索器配置（https://python.langchain.com/docs/tutorials/rag/ ）。
 
 ### 规律：文档分块必须结构感知/递归策略，禁固定大小盲分
@@ -64,6 +71,13 @@ langchain/llama-index 依赖 + 检索器调用任一高置信度行即可激活 
 - **违反后果**: 语义碎片检索命中率虚高、答案残缺；关键定义被劈成两块后永远检不全。
 - **验证方法**: 检出裸 `CharacterTextSplitter(`（排除 Recursive 前缀）→ warn。
 - **对应门禁**: fw_rag_chunk_strategy(warn)
+
+```verify
+id: rag-pipeline-r2
+cmd: 
+expect: always
+```
+
 - **证据**: LangChain 文本分块文档递归分块推荐（https://python.langchain.com/docs/concepts/text_splitters/ ）；RAG 工程实践"Chunks too large / bad chunking"高频根因（https://github.com/davila7/claude-code-templates agents-langchain/references/rag.md）。
 
 ### 规律：embedding 模型版本必须固定，禁 :latest 漂移标签
@@ -72,6 +86,13 @@ langchain/llama-index 依赖 + 检索器调用任一高置信度行即可激活 
 - **违反后果**: 向量空间漂移，检索静默劣化；线上/索引构建环境模型不一致，问题不可复现。
 - **验证方法**: 检出 `(model|embed)=...":latest"` 漂移标签 → fail。
 - **对应门禁**: fw_rag_embedding_latest(fail)
+
+```verify
+id: rag-pipeline-r3
+cmd: 
+expect: always
+```
+
 - **证据**: OWASP LLM08:2025（embedding 供应链与版本治理）；MLOps 模型版本固定通则（同 dockerfile.md 禁 :latest 镜像标签同型规律）。
 
 ### 规律：检索结果必须重排序（rerank），禁向量粗排直出
@@ -80,6 +101,13 @@ langchain/llama-index 依赖 + 检索器调用任一高置信度行即可激活 
 - **违反后果**: 最相关片段排在上下文末尾被截断或忽略，答案精度天花板低。
 - **验证方法**: 检出检索器使用但全工程无 rerank/CrossEncoder 信号 → warn。
 - **对应门禁**: fw_rag_rerank(warn)
+
+```verify
+id: rag-pipeline-r4
+cmd: 
+expect: always
+```
+
 - **证据**: RAG 两阶段检索工程实践（bge-reranker/Cohere Rerank 官方文档）；OWASP LLM08 检索精度治理建议。
 
 ### 规律：必须配幻觉检测（grounding/citation 引用溯源），禁无溯源裸答
@@ -88,6 +116,13 @@ langchain/llama-index 依赖 + 检索器调用任一高置信度行即可激活 
 - **违反后果**: 幻觉内容以权威口吻外发，业务事故无据可查；合规场景（金融/医疗/政务）直接违规。
 - **验证方法**: 检出检索+生成管线但无 citation/grounding/return_source_documents/source_documents 信号 → warn。
 - **对应门禁**: fw_rag_grounding(warn)
+
+```verify
+id: rag-pipeline-r5
+cmd: 
+expect: always
+```
+
 - **证据**: OWASP LLM09:2025 Misinformation（幻觉与过度信赖）；LangChain RAG 引用返回实践（https://python.langchain.com/docs/tutorials/qa_chat_history/ ）。
 
 ### 规律：LLM 输入必须防注入，用户输入禁直拼 prompt
@@ -96,6 +131,13 @@ langchain/llama-index 依赖 + 检索器调用任一高置信度行即可激活 
 - **违反后果**: prompt 注入（CWE-94/OWASP LLM01）——系统提示泄露、越权指令执行、答案被劫持；知识库投毒后全量用户受害。
 - **验证方法**: 检出 f-string/拼接/模板字符串直插用户问题变量（question/user_input/query）→ fail。
 - **对应门禁**: fw_rag_prompt_injection(fail)
+
+```verify
+id: rag-pipeline-r6
+cmd: 
+expect: always
+```
+
 - **证据**: CWE-94 Improper Control of Generation of Code；OWASP LLM01:2025 Prompt Injection（直接与间接注入）；LangChain 安全策略（https://docs.langchain.com/oss/python/security-policy ）。
 
 ### 规律：必须配上下文窗口管理，防超长截断丢失关键信息
@@ -104,6 +146,13 @@ langchain/llama-index 依赖 + 检索器调用任一高置信度行即可激活 
 - **违反后果**: 长上下文请求 400 报错；静默截断后答案丢关键约束（如"不适用 X 场景"被切掉）。
 - **验证方法**: 检出检索结果 join 拼接但无 max_tokens/max_context/truncate/trim 预算信号 → warn。
 - **对应门禁**: fw_rag_context_window(warn)
+
+```verify
+id: rag-pipeline-r7
+cmd: 
+expect: always
+```
+
 - **证据**: LangChain 0.3 message trimming 与上下文管理（https://www.crawleo.dev/blog/langchain-v03-tutorial-and-migration-guide-for-2026 ）；RAG 工程实践"Chunks too large — Won't fit in context"。
 
 ### 规律：必须配检索命中率监控，无监控的 RAG 不可上线
@@ -112,6 +161,13 @@ langchain/llama-index 依赖 + 检索器调用任一高置信度行即可激活 
 - **违反后果**: 知识库腐化与检索劣化长期不可见，质量事故滞后发现。
 - **验证方法**: 检出检索器使用但无 hit_rate/retrieval_metric/track_retrieval 监控信号 → warn。
 - **对应门禁**: fw_rag_hit_monitor(warn)
+
+```verify
+id: rag-pipeline-r8
+cmd: 
+expect: always
+```
+
 - **证据**: RAG 可观测性实践（LangSmith/Arize Phoenix 检索评估指标）；OWASP LLM09 质量监控建议。
 
 ### 规律：必须配 fallback 降级策略，检索失败/无命中不得硬答
@@ -120,6 +176,13 @@ langchain/llama-index 依赖 + 检索器调用任一高置信度行即可激活 
 - **违反后果**: 依赖故障直接 500；无命中场景幻觉硬答，可信度崩塌。
 - **验证方法**: 检出检索调用但无 try/except/fallback/catch 信号 → warn。
 - **对应门禁**: fw_rag_fallback(warn)
+
+```verify
+id: rag-pipeline-r9
+cmd: 
+expect: always
+```
+
 - **证据**: OWASP LLM09 Misinformation 拒答策略；微服务降级通则（同 resilience 模式）。
 
 ### 规律：向量索引必须定期重建/增量更新，禁一次建库终身使用
@@ -128,6 +191,13 @@ langchain/llama-index 依赖 + 检索器调用任一高置信度行即可激活 
 - **违反后果**: 知识腐化——答案引用过期制度造成业务差错；删除的敏感文档仍可被检索出来（合规事故）。
 - **验证方法**: 检出向量库初始化（FAISS/Chroma/from_documents）但无 add_documents/upsert/refresh/rebuild 更新信号 → warn。
 - **对应门禁**: fw_rag_index_refresh(warn)
+
+```verify
+id: rag-pipeline-r10
+cmd: 
+expect: always
+```
+
 - **证据**: OWASP LLM08 Vector and Embedding Weaknesses（索引生命周期治理）；向量库官方文档增量写入 API（LangChain vectorstore.add_documents）。
 
 <!--

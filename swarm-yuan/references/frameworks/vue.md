@@ -55,12 +55,24 @@ detect 信号命中任一高置信度行即可激活 vue 框架规则集。
 - **验证方法**: 统计含 `<script` 的 SFC 总数与含 `<script setup` 的 SFC 数，二者不等 → fail。
 - **对应门禁**: fw_vue_script_setup(fail)
 
+```verify
+id: vue-r1
+cmd: 
+expect: always
+```
+
 ### 规律：禁止混用 Options API（data/methods/computed 选项式）
 - **适用版本**: Vue 3.x
 - **规律**: 项目约定 Composition API 后，残留 `export default { data() {…}, methods: {…}, computed: {…} }` 选项式写法会破坏范式一致性。Options API 与 `<script setup>` 混用导致响应式来源分散（一部分 ref、一部分 data 返回值），难以追踪。
 - **违反后果**: 范式分裂、响应式来源分散、重构成本高。
 - **验证方法**: `grep -rnE 'export default \{[^}]*data\(|methods:[[:space:]]*\{|computed:[[:space:]]*\{' --include='*.vue'` 命中 → fail。
 - **对应门禁**: fw_vue_no_options_api(fail)
+
+```verify
+id: vue-r2
+cmd: grep -rnE 'export default \{[^}]*data\(|methods:[[:space:]]*\{|computed:[[:space:]]*\{' --include='*.vue' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：v-html 须配套 sanitize，禁止渲染未净化 HTML
 - **适用版本**: Vue 3.x
@@ -69,12 +81,24 @@ detect 信号命中任一高置信度行即可激活 vue 框架规则集。
 - **验证方法**: 检出 `v-html` 的 SFC 文件中未检出 sanitize 模式（DOMPurify / sanitize-html / xss 库）→ fail。
 - **对应门禁**: fw_vue_vhtml_sanitize(fail)
 
+```verify
+id: vue-r3
+cmd: 
+expect: always
+```
+
 ### 规律：v-for 须用稳定唯一 key，禁止用数组 index 作 key
 - **适用版本**: Vue 3.x
 - **规律**: `v-for` 的 `:key` 用于 Vue 的 keyed reconciliation，须是数据项的唯一稳定标识（如 `item.id`）。用数组 `index` 作 key 时，列表增删/排序会导致 key 与数据项错位，Vue 复用错误的 DOM 节点，引发输入框错位、组件状态串台、过渡动画错乱。仅在"列表纯展示且永不增删排序"的稳定数组场景可接受。
 - **违反后果**: 列表变更后 DOM 复用错位 → 表单输入串台 / 组件内部状态错乱 / 过渡动画异常。
 - **验证方法**: `grep -rnE 'v-for.*:key="(index|i)"|v-for.*:key="\$index"' --include='*.vue'` 命中 → warn（稳定数组可接受，须人工确认）。
 - **对应门禁**: fw_vue_vfor_index_key(warn)
+
+```verify
+id: vue-r4
+cmd: grep -rnE 'v-for.*:key="(index|i)"|v-for.*:key="\$index"' --include='*.vue' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：reactive 对象用量须收敛，优先 ref/computed
 - **适用版本**: Vue 3.x
@@ -83,12 +107,24 @@ detect 信号命中任一高置信度行即可激活 vue 框架规则集。
 - **验证方法**: 统计 `reactive` 调用次数，超过阈值（默认配置）→ warn 建议收敛。
 - **对应门禁**: fw_vue_reactivity_threshold(warn)
 
+```verify
+id: vue-r5
+cmd: 
+expect: always
+```
+
 ### 规律：reactive 对象禁止直接解构，须用 toRefs/toRef 保持响应式
 - **适用版本**: Vue 3.x
 - **规律**: `reactive()` 返回的 Proxy 对象，对其属性解构（`const { count } = state`）得到的是原始值快照，丢失响应式。须用 `toRefs(state)` 整体转换或 `toRef(state, 'count')` 单属性转换后再解构。`ref` 不存在此问题（解构得到的是 Ref 对象本身）。
 - **违反后果**: 解构后的变量不响应原始 state 变更 → UI 不更新、状态不同步。
 - **验证方法**: 检出 `const \{ [a-zA-Z_]+ \} = <reactive变量>` 解构模式而无 `toRefs` 包裹 → 人工确认（语义相关，机械 grep 易误报）。
 - **对应门禁**: 人工检查
+
+```verify
+id: vue-r6
+cmd: 
+expect: always
+```
 
 ### 规律：大对象状态须用 shallowRef/shallowReactive 避免深层代理开销
 - **适用版本**: Vue 3.x
@@ -97,12 +133,24 @@ detect 信号命中任一高置信度行即可激活 vue 框架规则集。
 - **验证方法**: 检出 `ref(` / `reactive(` 持有大对象（如 >1000 项数组、树结构）→ 人工确认是否应改 shallowRef。
 - **对应门禁**: 人工检查
 
+```verify
+id: vue-r7
+cmd: 
+expect: always
+```
+
 ### 规律：defineProps/defineEmits 须显式类型声明，禁运行时声明 + 必填校验
 - **适用版本**: Vue 3.x（`<script setup>` 宏）
 - **规律**: `<script setup>` 中 `defineProps` 支持运行时声明（`{ type: String, required: true }`）与基于类型的声明（`defineProps<{ title: string; count?: number }>()`）。TypeScript 项目须用类型声明，结合 `withDefaults` 设默认值。必填 prop 须标 required 或类型中非可选。
 - **违反后果**: prop 类型缺失 → 运行期 NaN/undefined 静默传播、IDE 提示丢失、重构易错。
 - **验证方法**: `defineProps(` 调用未含类型参数（`<…>`）或对象字面量无 `type`/`required` → 人工确认。
 - **对应门禁**: 人工检查
+
+```verify
+id: vue-r8
+cmd: 
+expect: always
+```
 
 ### 规律：生命周期钩子须在 setup 同步注册，禁异步回调中注册
 - **适用版本**: Vue 3.x
@@ -111,12 +159,24 @@ detect 信号命中任一高置信度行即可激活 vue 框架规则集。
 - **验证方法**: 检出 `onMounted|onUnmounted|onBeforeUnmount` 出现在 `.then(` / `setTimeout` / `await` 之后的回调内 → 人工确认。
 - **对应门禁**: 人工检查
 
+```verify
+id: vue-r9
+cmd: 
+expect: always
+```
+
 ### 规律：computed 须为纯函数无副作用，禁在 computed 内 mutate 状态
 - **适用版本**: Vue 3.x
 - **规律**: `computed` 是惰性求值 + 缓存的派生状态，须为纯函数（只读依赖、返回新值）。在 computed 内修改其他 ref/reactive（副作用）会破坏缓存语义、触发循环更新警告。需要副作用的场景用 `watch`/`watchEffect`。
 - **违反后果**: computed 含副作用 → 缓存失效、循环更新警告、依赖追踪错乱。
 - **验证方法**: 检出 `computed(` 回调体内含赋值（`xxx.value =` / `state.xxx =`）→ 人工确认。
 - **对应门禁**: 人工检查
+
+```verify
+id: vue-r10
+cmd: 
+expect: always
+```
 
 ### 规律：watch 依赖须完整声明，禁用懒推断导致的漏依赖
 - **适用版本**: Vue 3.x
@@ -125,12 +185,24 @@ detect 信号命中任一高置信度行即可激活 vue 框架规则集。
 - **验证方法**: 检出 `watch(` 的 source 参数形式（getter / ref / 数组）→ 人工确认覆盖了所有应侦听的依赖。
 - **对应门禁**: 人工检查
 
+```verify
+id: vue-r11
+cmd: 
+expect: always
+```
+
 ### 规律：provide/inject 须带类型与默认值，禁裸 inject 任意值
 - **适用版本**: Vue 3.x
 - **规律**: `provide(key, value)` / `inject(key, default)` 跨组件传值。须用 InjectionKey（带类型）作 key 保证类型安全，`inject` 须提供默认值或显式标注可空，避免消费者在未 provider 时拿到 undefined。全局状态优先用 Pinia。
 - **违反后果**: 裸 inject → 类型丢失、未 provider 时 undefined 运行期错误、key 字符串拼写错误难发现。
 - **验证方法**: 检出 `inject(` 未带第二个参数（默认值）且未配合 InjectionKey → 人工确认。
 - **对应门禁**: 人工检查
+
+```verify
+id: vue-r12
+cmd: 
+expect: always
+```
 
 ### 规律：Teleport 须指定目标且目标须在挂载时存在
 - **适用版本**: Vue 3.x（`<Teleport>`）
@@ -139,12 +211,24 @@ detect 信号命中任一高置信度行即可激活 vue 框架规则集。
 - **验证方法**: 检出 `<Teleport` 的 `to=` 目标 → 人工确认目标元素在挂载时存在。
 - **对应门禁**: 人工检查
 
+```verify
+id: vue-r13
+cmd: 
+expect: always
+```
+
 ### 规律：DOM 更新后操作须包 nextTick，禁同步访问更新后 DOM
 - **适用版本**: Vue 3.x
 - **规律**: Vue 异步更新 DOM（批量刷新），状态变更后立即访问 DOM 拿到的是旧值。须 `await nextTick()` 或 `nextTick(() => …)` 后再读/操作 DOM（如聚焦输入框、测量尺寸、滚动定位）。
 - **违反后果**: 同步访问拿到旧 DOM → 测量错误 / 聚焦失败 / 滚动位置错。
 - **验证方法**: 检出状态变更后紧接 DOM 操作（`querySelector` / `focus()` / `scrollTop`）而无 `nextTick` 包裹 → 人工确认。
 - **对应门禁**: 人工检查
+
+```verify
+id: vue-r14
+cmd: 
+expect: always
+```
 
 ### 规律：组件命名须多词 PascalCase，禁与 HTML 元素冲突
 - **适用版本**: Vue 3.x
@@ -153,6 +237,12 @@ detect 信号命中任一高置信度行即可激活 vue 框架规则集。
 - **验证方法**: 检出 .vue 文件名为单词（如 `Header.vue`、`Button.vue`）→ 人工确认是否与原生元素冲突。
 - **对应门禁**: 人工检查
 
+```verify
+id: vue-r15
+cmd: 
+expect: always
+```
+
 ### 规律：Pinia store 须用 defineStore 定义，禁散落 mutation
 - **适用版本**: Pinia 2.x / 3.x（随 vue 合并管理，原 pinia 规则集已并入）
 - **规律**: Pinia store 须用 `defineStore('id', { state, getters, actions })` 或 setup 风格 `defineStore('id', () => { … })` 集中定义，state 须函数返回对象（避免跨实例共享引用）。散落 mutation（直接改 store.xxx = ...）在 setup store 风格下虽允许，但组合式 API 须用 action 包裹以保持可追踪性与 devtools 支持。
@@ -160,12 +250,24 @@ detect 信号命中任一高置信度行即可激活 vue 框架规则集。
 - **验证方法**: `grep -rlE 'defineStore' "${VUE_PINIA_FILE_GLOBS[@]+"${VUE_PINIA_FILE_GLOBS[@]}"}"` 计数；启用 `VUE_PINIA_DEFINESTORE_REQUIRED=1` 时 defineStore 文件数 = 0 → warn（疑似未用 Pinia 或漏定义）。
 - **对应门禁**: fw_vue_pinia_definestore(warn)
 
+```verify
+id: vue-r16
+cmd: grep -rlE 'defineStore' "${VUE_PINIA_FILE_GLOBS[@]+"${VUE_PINIA_FILE_GLOBS[@]}"}"
+expect: hits>0
+```
+
 ### 规律：聚合层 store 须存在且只读消费，禁跨 store 直接写
 - **适用版本**: Pinia 2.x / 3.x
 - **规律**: 多 store 项目须设聚合层 store（如 `useGlobalStore` / `useRootStore`）统一编排跨域状态，子 store 须通过 action 调用聚合层而非直接写其他 store 的 state。聚合层 store 文件须实际存在（非占位）。
 - **违反后果**: 跨 store 直接写 → 状态来源混乱、循环依赖、SSR 请求间状态泄漏；无聚合层 → 多 store 协调无统一入口。
 - **验证方法**: `VUE_PINIA_AGGREGATE_STORE` 指向聚合层 store 文件路径，`[[ -f "$VUE_PINIA_AGGREGATE_STORE" ]]` 校验存在性；未配置或不存在 → warn。
 - **对应门禁**: fw_vue_pinia_aggregate(warn)
+
+```verify
+id: vue-r17
+cmd: 
+expect: always
+```
 
 <!--
 共 17 条规律（≥15 门槛，pinia 合并后 +2）。前 5 条挂现有 vue.sh 门禁（script_setup/no_options_api/vhtml_sanitize/vfor_index_key/reactivity_threshold），

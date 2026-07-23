@@ -53,12 +53,24 @@ detect 信号命中任一高置信度行即可激活 spring-boot 框架规则集
 - **验证方法**: 在同一 `@Configuration`/`@Service`/`@Component` 类内，`grep -nE '@Transactional\b'` 标注的方法被同类其他方法直接调用（同文件内出现方法名调用且无 `self.`/代理引用）→ warn 人工确认。
 - **对应门禁**: fw_sboot_transactional_selfinvoke(fail)
 
+```verify
+id: spring-boot-r1
+cmd: grep -nE '@Transactional\b' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：@Transactional 默认仅对 RuntimeException 回滚，checked 异常不回滚
 - **适用版本**: Spring Boot 3.4.x–4.0.x
 - **规律**: `@Transactional` 默认 `rollbackFor = RuntimeException.class`（及 Error）。抛 checked 异常（如 `IOException`、自定义业务异常 extends Exception）默认提交而非回滚。业务中 checked 异常需显式 `@Transactional(rollbackFor = Exception.class)` 或 `rollbackForClassName`。
 - **违反后果**: checked 异常场景事务未回滚 → 数据不一致。
 - **验证方法**: `grep -rnE '@Transactional\b' --include='*.java'` 命中行未含 `rollbackFor`/`rollbackForClassName`，且方法签名 throws checked 异常 → warn 提示显式声明回滚异常。
 - **对应门禁**: fw_sboot_transactional_rollback(warn)
+
+```verify
+id: spring-boot-r2
+cmd: grep -rnE '@Transactional\b' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：构造器注入优于字段注入
 - **适用版本**: Spring Boot 3.4.x–4.0.x（Spring Framework 4.3+ 起推荐构造器注入，6.x 文档明确不推荐字段注入）
@@ -67,12 +79,24 @@ detect 信号命中任一高置信度行即可激活 spring-boot 框架规则集
 - **验证方法**: `grep -rnE '^[[:space:]]*@Autowired[[:space:]]+private\b' --include='*.java'`（字段注入）→ warn 建议改构造器注入。
 - **对应门禁**: fw_sboot_constructor_inject(warn)
 
+```verify
+id: spring-boot-r3
+cmd: grep -rnE '^[[:space:]]*@Autowired[[:space:]]+private\b' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：@Configuration proxyBeanMethods=false 优化启动，但 @Bean 间直接调用语义变化
 - **适用版本**: Spring Boot 3.4.x–4.0.x（Spring Framework 5.2+ 起 `@Configuration(proxyBeanMethods = false)` 可用，proxyBeanMethods 默认 true）
 - **规律**: `@Configuration` 默认 `proxyBeanMethods=true`，CGLIB 代理 @Configuration 类使 @Bean 方法间直接调用返回单例 Bean。设 `false` 关闭代理可加速启动、减少内存（Lite 模式），但此时 @Bean 方法间直接调用变为普通 Java 方法调用（每次 new 新实例，非单例语义）。Spring Boot 的 auto-configuration 大量使用 `false`。
 - **违反后果**: 误在 `proxyBeanMethods=false` 的 @Configuration 类中 @Bean 方法间直接调用期望单例 → 每次新建实例，Bean 重复创建。
 - **验证方法**: 对声明 `proxyBeanMethods[[:space:]]*=[[:space:]]*false` 的 @Configuration 类，检查其 @Bean 方法体内是否直接调用了同类另一个 @Bean 方法 → warn 核对单例语义。
 - **对应门禁**: fw_sboot_proxy_bean_methods(warn)
+
+```verify
+id: spring-boot-r4
+cmd: 
+expect: always
+```
 
 ### 规律：@Profile 隔离环境配置，不可在 @ConfigurationProperties 上误用
 - **适用版本**: Spring Boot 3.4.x–4.0.x
@@ -81,12 +105,24 @@ detect 信号命中任一高置信度行即可激活 spring-boot 框架规则集
 - **验证方法**: `grep -rnE '@Profile' --include='*.java'`，命中行同文件含 `@ConfigurationProperties` 且无 `@Configuration`/`@Component` 隔离 → warn。
 - **对应门禁**: fw_sboot_profile_isolation(warn)
 
+```verify
+id: spring-boot-r5
+cmd: grep -rnE '@Profile' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：@ConditionalOnMissingBean 顺序敏感，自定义配置须排在内置 auto-config 之前
 - **适用版本**: Spring Boot 3.4.x–4.0.x
 - **规律**: `@ConditionalOnMissingBean` 让 auto-configuration 在用户未自定义 Bean 时提供默认实现。用户自定义 Bean 覆盖默认项的前提是用户的 @Configuration 先于 auto-config 被处理；Spring Boot 通过 `@AutoConfigureBefore`/`@AutoConfigureAfter`/`@AutoConfigureOrder` 控制 auto-config 顺序，用户 @Configuration 普遍优先于 auto-config。但自定义 auto-configuration 类间须显式声明顺序，否则 `@ConditionalOnMissingBean` 判定时机不确定。
 - **违反后果**: 自定义 Bean 未覆盖默认项 / 顺序不确定导致 Bean 装配不稳定。
 - **验证方法**: `grep -rnE '@ConditionalOnMissingBean' --include='*.java'`，若位于自定义 auto-config 类（`META-INF/...AutoConfiguration.imports` 注册）且无 `@AutoConfigureBefore/After` → warn。
 - **对应门禁**: fw_sboot_conditional_order(warn)
+
+```verify
+id: spring-boot-r6
+cmd: grep -rnE '@ConditionalOnMissingBean' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：Actuator 端点暴露面须收敛，生产禁用 exposure.include=*
 - **适用版本**: Spring Boot 3.4.x–4.0.x（Actuator 端点默认仅暴露 `/health`，web exposure 须显式开启）
@@ -95,12 +131,24 @@ detect 信号命中任一高置信度行即可激活 spring-boot 框架规则集
 - **验证方法**: `grep -rnE 'management\.endpoints\.web\.exposure\.include'` 命中值含 `*`（或 `env,beans,heapdump` 等敏感项）且无独立 management 端口隔离 → fail。
 - **对应门禁**: fw_sboot_actuator_expose(fail)
 
+```verify
+id: spring-boot-r7
+cmd: grep -rnE 'management\.endpoints\.web\.exposure\.include' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：devtools 仅限开发，生产 classpath 禁含 spring-boot-devtools
 - **适用版本**: Spring Boot 3.4.x–4.0.x
 - **规律**: `spring-boot-devtools` 提供热重启、LiveReload、开发期默认配置（如禁用模板缓存），其禁用打包机制依赖打包后的 jar 不含 devtools 类。若生产 classpath 含 devtools，会启用自动重启监控、修改默认行为（如 `server.servlet.session.persistent`）。Maven 须 `<optional>true</optional>` 或 `provided` scope；Gradle 须 `developmentOnly` configuration。
 - **违反后果**: 生产环境意外启用热重启 / LiveReload / 缓存禁用 → 性能与稳定性问题。
 - **验证方法**: `grep -rnE 'spring-boot-devtools' --include='pom.xml' --include='build.gradle'`，pom 中未标 `optional`/`provided`，或 gradle 未用 `developmentOnly` → warn。
 - **对应门禁**: fw_sboot_devtools_in_prod(warn)
+
+```verify
+id: spring-boot-r8
+cmd: grep -rnE 'spring-boot-devtools' --include='pom.xml' --include='build.gradle' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：@SpringBootApplication 扫描范围 = 声明类所在包及子包
 - **适用版本**: Spring Boot 3.4.x–4.0.x
@@ -109,12 +157,24 @@ detect 信号命中任一高置信度行即可激活 spring-boot 框架规则集
 - **验证方法**: 定位 `@SpringBootApplication` 类，其包路径若非项目根包（如其他 @Configuration 在更上层包）且未声明 `scanBasePackages` → warn。
 - **对应门禁**: fw_sboot_scan_scope(warn)
 
+```verify
+id: spring-boot-r9
+cmd: 
+expect: always
+```
+
 ### 规律：@ConfigurationProperties 须注册（@EnableConfigurationProperties 或 @ConfigurationPropertiesScan）
 - **适用版本**: Spring Boot 3.4.x–4.0.x（3.x 起推荐 `@ConfigurationPropertiesScan` 批量扫描）
 - **规律**: 标 `@ConfigurationProperties(prefix="...")` 的 POJO 须被注册为 Bean 才能绑定：或加 `@Component`/`@ConfigurationPropertiesScan`，或用 `@EnableConfigurationProperties(XxxProperties.class)`。仅声明注解不注册则绑定不生效（属性全 null），且不报错。
 - **违反后果**: 配置未绑定，运行期 NPE / 默认值生效与预期不符。
 - **验证方法**: `grep -rlE '@ConfigurationProperties' --include='*.java'` 的类，须在同文件或启动类检出 `@Component`/`@ConfigurationPropertiesScan`/`@EnableConfigurationProperties`，否则 → warn。
 - **对应门禁**: fw_sboot_configprops_binding(warn)
+
+```verify
+id: spring-boot-r10
+cmd: grep -rlE '@ConfigurationProperties' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：jakarta 命名空间迁移，javax.* 须全量替换为 jakarta.*
 - **适用版本**: Spring Boot 3.0+（基于 Spring Framework 6，EE 9+ jakarta 命名空间）；4.0 完全终态
@@ -123,12 +183,24 @@ detect 信号命中任一高置信度行即可激活 spring-boot 框架规则集
 - **验证方法**: `grep -rnE 'import[[:space:]]+javax\.(servlet|persistence|validation|annotation(\.PostConstruct|\.PreDestroy)|transaction|mail|jms|websocket)' --include='*.java'` → fail（须替换为 jakarta）。
 - **对应门禁**: fw_sboot_jakarta_migration(fail)
 
+```verify
+id: spring-boot-r11
+cmd: grep -rnE 'import[[:space:]]+javax\.(servlet|persistence|validation|annotation(\.PostConstruct|\.PreDestroy)|transaction|mail|jms|websocket)' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：循环依赖默认禁止，allow-circular-references=true 为逃逸阀非默认
 - **适用版本**: Spring Boot 2.6+（默认 `spring.main.allow-circular-references=false`）至 4.0
 - **规律**: Spring Boot 2.6 起默认禁止循环依赖，启动期抛 `BeanCurrentlyInCreationException`。开启 `spring.main.allow-circular-references=true` 可绕过但属反模式（设计缺陷逃逸阀）。应重构为构造器注入 + 抽离中间层，或 setter/`@Lazy` 注入。
 - **违反后果**: 循环依赖掩盖设计问题；运行期初始化顺序不确定导致 NPE。
 - **验证方法**: `grep -rnE 'spring\.main\.allow-circular-references[[:space:]]*[:=][[:space:]]*true'` → warn（建议重构消除循环依赖）。
 - **对应门禁**: fw_sboot_circular_refs(warn)
+
+```verify
+id: spring-boot-r12
+cmd: grep -rnE 'spring\.main\.allow-circular-references[[:space:]]*[:=][[:space:]]*true' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：banner 与离线模式在生产应收敛
 - **适用版本**: Spring Boot 3.4.x–4.0.x
@@ -137,6 +209,12 @@ detect 信号命中任一高置信度行即可激活 spring-boot 框架规则集
 - **验证方法**: 缺 `spring.main.banner-mode` 配置（默认 console）且为生产 profile → warn。
 - **对应门禁**: fw_sboot_banner_mode(warn)
 
+```verify
+id: spring-boot-r13
+cmd: 
+expect: always
+```
+
 ### 规律：@Bean 方法间直接调用依赖 proxyBeanMethods，Lite 模式下单例失效
 - **适用版本**: Spring Boot 3.4.x–4.0.x
 - **规律**: 与规律4 互补。`@Configuration`（Full 模式，proxyBeanMethods=true）中 `@Bean` 方法 A 内调用 `@Bean` 方法 B 返回的是容器托管的单例；`@Configuration(proxyBeanMethods=false)`（Lite 模式）或 `@Component` 中的 `@Bean` 方法间调用是普通 Java 调用，B 每次新建实例。误用 Lite 模式做 @Bean 间单例引用是常见坑。
@@ -144,12 +222,24 @@ detect 信号命中任一高置信度行即可激活 spring-boot 框架规则集
 - **验证方法**: 与规律4 同一机制，对 Lite @Configuration 类的 @Bean 间调用 → warn（合并至 fw_sboot_proxy_bean_methods）。
 - **对应门禁**: fw_sboot_proxy_bean_methods(warn)
 
+```verify
+id: spring-boot-r14
+cmd: 
+expect: always
+```
+
 ### 规律：DataSource 配置须显式连接池参数，避免默认值导致连接耗尽
 - **适用版本**: Spring Boot 3.4.x–4.0.x（默认 HikariCP）
 - **规律**: Spring Boot 默认 HikariCP，`maximum-pool-size` 默认 10、`connection-timeout` 默认 30s。高并发场景默认池大小不足导致请求排队超时；须按业务显式配置 `spring.datasource.hikari.maximum-pool-size`、`minimum-idle`、`connection-timeout`、`max-lifetime`。
 - **违反后果**: 连接耗尽 → 请求超时 `SQLTransientConnectionException: HikariPool-1 - Connection is not available`。
 - **验证方法**: 配置含 `spring.datasource.url` 但无 `spring.datasource.hikari.maximum-pool-size` → warn 提示显式配置连接池。
 - **对应门禁**: fw_sboot_datasource_pool(warn)
+
+```verify
+id: spring-boot-r15
+cmd: 
+expect: always
+```
 
 <!--
 共 15 条规律（≥12 门槛）。每条规律均挂门禁 id 或"人工检查"，无游离规律。

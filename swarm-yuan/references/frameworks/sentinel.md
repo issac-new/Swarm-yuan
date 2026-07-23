@@ -52,12 +52,24 @@ detect 信号命中任一高置信度行即可激活 sentinel 框架规则集。
 - **验证方法**: 检出 `@SentinelResource`/`SphU`/`FlowRule` 等 Sentinel 使用痕迹，但无 `spring.cloud.sentinel.datasource`/`ReadableDataSource`/`sentinel-datasource-*` 依赖 → fail。
 - **对应门禁**: fw_sentinel_rule_persist(fail)
 
+```verify
+id: sentinel-r1
+cmd: 
+expect: always
+```
+
 ### 规律：@SentinelResource 须配 blockHandler 或 fallback，分工明确
 - **适用版本**: Sentinel 1.8.x（注解支持 1.6+ 稳定）
 - **规律**: `@SentinelResource` 的 `blockHandler` 处理 BlockException（限流/熔断/系统保护触发，函数签名须同参列表追加 BlockException），`fallback` 处理业务异常（Java 异常降级）。两者职责不同：只配 fallback 时限流降级触发的 BlockException 不会被 fallback 接收（1.6.x 起 fallback 不处理 BlockException），会向上抛 BlockException 变成 500。生产至少配 blockHandler，业务降级另配 fallback。
 - **违反后果**: 限流触发时用户收到 500 异常而非兜底响应；业务异常无降级直达用户。
 - **验证方法**: `grep -rnE '@SentinelResource\b' --include='*.java'` 命中行未含 `blockHandler` 且未含 `fallback` → warn。
 - **对应门禁**: fw_sentinel_resource_fallback(warn)
+
+```verify
+id: sentinel-r2
+cmd: grep -rnE '@SentinelResource\b' --include='*.java' "${PROJECT_DIR}"
+expect: hits>0
+```
 
 ### 规律：只配 fallback 不配 blockHandler 时，BlockException 不上 fallback 通道
 - **适用版本**: Sentinel 1.6.3+ / 1.8.x
@@ -66,12 +78,24 @@ detect 信号命中任一高置信度行即可激活 sentinel 框架规则集。
 - **验证方法**: @SentinelResource 含 `fallback` 但无 `blockHandler` → warn。
 - **对应门禁**: fw_sentinel_blockhandler_split(warn)
 
+```verify
+id: sentinel-r3
+cmd: 
+expect: always
+```
+
 ### 规律：熔断规则 RT 与异常比选型须按场景，minRequestAmount 防小样本误熔断
 - **适用版本**: Sentinel 1.8.x（1.8.0 起慢调用比例引入 slowRatioThreshold）
 - **规律**: 熔断策略三选：慢调用比例（`DEGRADE_GRADE_RT`，maxRt 划定慢调用阈值，slowRatioThreshold 比例阈值）、异常比例（`DEGRADE_GRADE_EXCEPTION_RATIO`）、异常数（`DEGRADE_GRADE_EXCEPTION_COUNT`）。下游不稳定但自身逻辑简单 → 慢调用比例；自身依赖外部接口异常多 → 异常比例。`minRequestAmount` 须 ≥5（统计窗口内请求数不足不熔断），`statIntervalMs` 与 `timeWindow`（熔断时长）须成比例。
 - **违反后果**: minRequestAmount=1 → 首个慢请求即熔断；异常比例用于无外部依赖的纯计算资源 → 永不熔断形同虚设。
 - **验证方法**: 检出 `DegradeRule`/`degrade` 配置但无 `minRequestAmount`/`min-request-amount` → warn。
 - **对应门禁**: fw_sentinel_degrade_strategy(warn)
+
+```verify
+id: sentinel-r4
+cmd: 
+expect: always
+```
 
 ### 规律：热点参数限流须用 ParamFlowRule 且 blockHandler 处理 ParamFlowException
 - **适用版本**: Sentinel 1.8.x（sentinel-parameter-flow-control 模块）
@@ -80,12 +104,24 @@ detect 信号命中任一高置信度行即可激活 sentinel 框架规则集。
 - **验证方法**: 检出 `ParamFlowRule`/`param-flow` 但工程内无 `blockHandler` 关键字 → warn。
 - **对应门禁**: fw_sentinel_param_flow(warn)
 
+```verify
+id: sentinel-r5
+cmd: 
+expect: always
+```
+
 ### 规律：突发流量场景须考虑匀速排队/冷启动流量整形，避免默认快速失败误杀
 - **适用版本**: Sentinel 1.8.x
 - **规律**: FlowRule `controlBehavior`：0 直接拒绝（默认）、1 Warm Up（冷启动，预热期逐步放量，防冷系统被突发压垮）、2 匀速排队（`CONTROL_BEHAVIOR_RATE_LIMITER`，漏桶匀速通过，maxQueueingTimeMs 排队超时）。秒杀/定时任务流量突刺场景默认快速失败会误杀正常请求，须评估匀速排队。
 - **违反后果**: 突发合法流量被批量拒绝 → 用户大面积失败重试 → 流量放大二次冲击。
 - **验证方法**: 检出 `FlowRule`/flow 规则配置但无 `controlBehavior`/`control-behavior` 字段 → warn 人工确认突发场景整形策略。
 - **对应门禁**: fw_sentinel_flow_shape(warn)
+
+```verify
+id: sentinel-r6
+cmd: 
+expect: always
+```
 
 ### 规律：高流量入口须配系统自适应保护 SystemRule 兜底
 - **适用版本**: Sentinel 1.8.x
@@ -94,12 +130,24 @@ detect 信号命中任一高置信度行即可激活 sentinel 框架规则集。
 - **验证方法**: 检出 Sentinel 使用痕迹但无 `SystemRule`/`system-rule` 配置 → warn。
 - **对应门禁**: fw_sentinel_system_rule(warn)
 
+```verify
+id: sentinel-r7
+cmd: 
+expect: always
+```
+
 ### 规律：Spring Cloud Gateway 入口须接 sentinel-gateway 适配器做网关流控
 - **适用版本**: Sentinel 1.8.x + Spring Cloud Gateway（sentinel-spring-cloud-gateway-adapter）
 - **规律**: 网关是流量入口，须用 `sentinel-spring-cloud-gateway-adapter` + `GatewayFlowRule`（按 route 或自定义 API 分组 `ApiDefinition` 限流），配合 `SentinelGatewayFilter`。仅靠下游服务各自限流无法防入口级突发。
 - **违反后果**: 入口无限流 → 突发流量直接冲垮后端服务。
 - **验证方法**: 检出 `spring-cloud-starter-gateway` 依赖 + Sentinel 使用，但无 `sentinel-spring-cloud-gateway-adapter`/`GatewayFlowRule` → warn。
 - **对应门禁**: fw_sentinel_gateway_flow(warn)
+
+```verify
+id: sentinel-r8
+cmd: 
+expect: always
+```
 
 ### 规律：Sentinel Dashboard 鉴权默认口令必须修改
 - **适用版本**: Sentinel 1.8.x（1.7.0+ 支持登录鉴权）
@@ -108,12 +156,24 @@ detect 信号命中任一高置信度行即可激活 sentinel 框架规则集。
 - **验证方法**: 检出 `sentinel.dashboard.auth.password` 值为 `sentinel`（默认口令）→ fail；检出 dashboard 连接配置但无 auth 配置痕迹 → warn。
 - **对应门禁**: fw_sentinel_dashboard_auth(warn)
 
+```verify
+id: sentinel-r9
+cmd: 
+expect: always
+```
+
 ### 规律：Dashboard 改规则默认不回写数据源，生产须改造 push 模式双向同步
 - **适用版本**: Sentinel 1.8.x
 - **规律**: 官方 Dashboard 默认实现把规则推送到客户端内存（`transport` 模块 HTTP API），不回写 Nacos 等数据源；数据源里的规则与 Dashboard 显示可能不一致，重启后 Dashboard 改的规则丢失。生产须按官方"生产环境推送规则"指引改造 Dashboard（实现 DynamicRulePublisher 回写数据源）。
 - **违反后果**: 运维在 Dashboard 调的规则重启后丢失 / Dashboard 与数据源规则漂移。
 - **验证方法**: 检出 `spring.cloud.sentinel.transport.dashboard` + `spring.cloud.sentinel.datasource` 同存 → warn 人工确认 Dashboard 已做 push 模式双向同步改造。
 - **对应门禁**: fw_sentinel_dynamic_refresh(warn)
+
+```verify
+id: sentinel-r10
+cmd: 
+expect: always
+```
 
 ### 规律：fallback/blockHandler 降级逻辑必须轻量，不得再发起远程调用
 - **适用版本**: Sentinel 1.8.x
@@ -122,6 +182,12 @@ detect 信号命中任一高置信度行即可激活 sentinel 框架规则集。
 - **验证方法**: 检出 fallback/blockHandler 方法体内含 `restTemplate.`/`RestTemplate`/`feignClient.` 调用 → warn 人工确认降级轻量。
 - **对应门禁**: fw_sentinel_fallback_light(warn)
 
+```verify
+id: sentinel-r11
+cmd: 
+expect: always
+```
+
 ### 规律：资源命名须统一规范，URL 资源与方法资源不得混用风格
 - **适用版本**: Sentinel 1.8.x
 - **规律**: 资源名是规则绑定的 key，全工程须统一风格（推荐 `模块:动作` 或统一 URL 风格）。@SentinelResource value 与代码 SphU.entry 资源名若一半用 `/api/order` 一半用 `orderQuery`，规则配置与 Dashboard 拓扑将混乱难维护。
@@ -129,12 +195,24 @@ detect 信号命中任一高置信度行即可激活 sentinel 框架规则集。
 - **验证方法**: 检出多个 @SentinelResource 且 value 风格混用（部分含 `/` 路径风格、部分纯标识符）→ warn。
 - **对应门禁**: fw_sentinel_resource_naming(warn)
 
+```verify
+id: sentinel-r12
+cmd: 
+expect: always
+```
+
 ### 规律：异常比例熔断须用 exceptionsToIgnore 排除业务校验异常，避免误统计
 - **适用版本**: Sentinel 1.8.x（@SentinelResource exceptionsToTrace/exceptionsToIgnore 1.8.0 引入）
 - **规律**: 异常比例/异常数熔断统计的是资源抛出的异常；业务校验异常（参数错误、库存不足等预期内异常）不应计入熔断统计，否则正常业务拒绝会把资源熔断。@SentinelResource 用 `exceptionsToIgnore` 排除、`exceptionsToTrace` 限定统计范围；代码方式用 `Tracer.ignore`。
 - **违反后果**: 业务异常比例升高 → 资源被误熔断 → 正常流量被拒。
 - **验证方法**: 检出异常比例/异常数熔断（`DEGRADE_GRADE_EXCEPTION`/`exception-ratio`/`exception-count`）但 @SentinelResource 无 `exceptionsToIgnore`/`exceptionsToTrace` → warn。
 - **对应门禁**: fw_sentinel_biz_exception(warn)
+
+```verify
+id: sentinel-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

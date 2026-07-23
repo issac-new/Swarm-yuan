@@ -52,12 +52,24 @@ detect 信号命中任一高置信度行即可激活 gin 框架规则集。
 - **验证方法**: `grep -rnE 'c\.(Bind|BindJSON|BindQuery|BindURI|BindWith|BindHeader)\(' --include='*.go'` 命中 → warn。
 - **对应门禁**: fw_gin_should_bind_not_bind(warn)
 
+```verify
+id: gin-r1
+cmd: grep -rnE 'c\.(Bind|BindJSON|BindQuery|BindURI|BindWith|BindHeader)\(' --include='*.go' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：goroutine 内禁止直接用 gin.Context，须 c.Copy()
 - **适用版本**: Gin 全版本（Context 对象池复用）
 - **规律**: `gin.Context` 由 sync.Pool 复用，请求结束后会被回收并复用于下一请求。在 handler/middleware 中起 `go func() { ... c ... }()` 直接捕获原 Context 会触发数据竞争 / 串响应（读到下一请求的 URL/Header）。跨 goroutine 须先 `cCp := c.Copy()` 再用只读副本 `cCp`。
 - **违反后果**: 数据竞争导致响应串号、Header 错乱；race detector 报错；高并发下偶发难复现 bug。
 - **验证方法**: 检出 `go func` 或 `go <fn>` 调用，其函数体/参数引用了 `c`（gin.Context）但同作用域未出现 `c.Copy()` → fail。
 - **对应门禁**: fw_gin_context_copy(fail)
+
+```verify
+id: gin-r2
+cmd: 
+expect: always
+```
 
 ### 规律：生产须配 Recovery 中间件并置于链首
 - **适用版本**: Gin 全版本
@@ -66,12 +78,24 @@ detect 信号命中任一高置信度行即可激活 gin 框架规则集。
 - **验证方法**: 检出 `gin.New()` 但同文件无 `gin.Recovery()` 注册 → fail；检出 Recovery 但非首个 Use 调用 → warn。
 - **对应门禁**: fw_gin_recovery_middleware(fail)
 
+```verify
+id: gin-r3
+cmd: 
+expect: always
+```
+
 ### 规律：生产须优雅关闭，禁用 engine.Run 阻塞主协程
 - **适用版本**: Gin 全版本（搭配 net/http）
 - **规律**: `engine.Run(addr)` 内部用 `http.ListenAndServe`，收到 SIGTERM 立即关闭监听 socket，在途请求被强制断开。生产须自建 `&http.Server{Handler: engine}` 并用 `srv.Shutdown(ctx)` 配合 `signal.Notify(SIGTERM, SIGINT)` 优雅关闭，给在途请求 drain 时间。
 - **违反后果**: 滚动发布时在途请求 502 / 连接重置；长连接/上传被截断；K8s preStop hook 无效。
 - **验证方法**: 检出 `engine.Run(` 或 `\.ListenAndServe(` 且同项目无 `\.Shutdown(` → warn。
 - **对应门禁**: fw_gin_graceful_shutdown(warn)
+
+```verify
+id: gin-r4
+cmd: 
+expect: always
+```
 
 ### 规律：中间件须显式 c.Next() 串联后置逻辑，Abort 须配合 return
 - **适用版本**: Gin 全版本
@@ -80,12 +104,24 @@ detect 信号命中任一高置信度行即可激活 gin 框架规则集。
 - **验证方法**: 检出 `c.Abort(` 但同行/紧邻无 `return` → warn（启发式：Abort 后下一非空行非 `}` 非 `return`）。
 - **对应门禁**: fw_gin_abort_return(warn)
 
+```verify
+id: gin-r5
+cmd: 
+expect: always
+```
+
 ### 规律：绑定校验须配 validator 标签并处理校验错误
 - **适用版本**: Gin 全版本（binding 标签 `binding:"required"` 等）
 - **规律**: Gin 的 `ShouldBind` 系列依赖 `go-playground/validator`，须在结构体字段打 `binding:"required,email,max=..."` 标签。仅 `ShouldBind` 不打标签则任何输入都通过；校验失败返回 `validator.ValidationErrors`，须统一翻译为业务错误（避免直接返回结构体内部的字段名/标签给客户端）。
 - **违反后果**: 缺标签 → 非法输入静默通过 → 下游 NPE / 脏数据；未翻译错误 → 内部字段名泄露。
 - **验证方法**: 检出 `ShouldBind` 调用但同项目无 `binding:"` 标签 → warn。
 - **对应门禁**: fw_gin_binding_validator(warn)
+
+```verify
+id: gin-r6
+cmd: 
+expect: always
+```
 
 ### 规律：CORS 须显式配置 AllowOrigins，禁用 AllowAllOrigins + 凭证
 - **适用版本**: Gin + gin-contrib/cors 全版本
@@ -94,12 +130,24 @@ detect 信号命中任一高置信度行即可激活 gin 框架规则集。
 - **验证方法**: 检出 `AllowAllOrigins[[:space:]]*:[[:space:]]*true` 且同作用域 `AllowCredentials[[:space:]]*:[[:space:]]*true` → fail；检出 `AllowAllOrigins: true` 但无 AllowOriginFunc → warn。
 - **对应门禁**: fw_gin_cors(fail)
 
+```verify
+id: gin-r7
+cmd: 
+expect: always
+```
+
 ### 规律：JWT/Session 认证中间件须校验失效态并 Abort 非法请求
 - **适用版本**: Gin + gin-contrib/sessions / golang-jwt 全版本
 - **规律**: 认证中间件解析 token/session 后须校验有效性（签名、过期、吊销），失败须 `c.AbortWithStatusJSON(401, ...); return`，不得仅记日志后继续 `c.Next()`。token 须从 Authorization header（`Bearer <token>`）取，禁用 URL query 传 token（会进 access log / referer 泄露）。
 - **违反后果**: 鉴权绕过 → 越权访问；URL token 泄露到日志/Referer → 会话劫持 CWE-598。
 - **验证方法**: 检出 `c.Next()` 在认证中间件函数体内，但无 `c.Abort` 分支 → warn；检出 `c.Query("token")` 或 `c.Query("access_token")` 用于鉴权 → fail。
 - **对应门禁**: fw_gin_auth_middleware(fail)
+
+```verify
+id: gin-r8
+cmd: 
+expect: always
+```
 
 ### 规律：文件上传须设 MultipartMemory 上限与 maxMultipartMemory
 - **适用版本**: Gin 全版本
@@ -108,12 +156,24 @@ detect 信号命中任一高置信度行即可激活 gin 框架规则集。
 - **验证方法**: 检出 `c.FormFile(` 或 `c.MultipartForm(` 且同项目无 `MaxMultipartMemory` 设置 → warn。
 - **对应门禁**: fw_gin_upload_limit(warn)
 
+```verify
+id: gin-r9
+cmd: 
+expect: always
+```
+
 ### 规律：Gzip 中间件须配压缩级别与排除已压缩内容，避免 CPU 浪费
 - **适用版本**: Gin + gin-contrib/gzip 全版本
 - **规律**: `gzip.Gzip(gzip.DefaultCompression)` 中间件对响应压缩。已压缩内容（jpg/png/视频/已 gzip 的响应）再压缩无收益反耗 CPU；须用 `gzip.WithExcludedPaths` 或 `WithExcludedExtensions` 排除。压缩级别默认 `DefaultCompression`（-1 → zlib 默认 6），高并发场景可降到 `gzip.BestSpeed`（1）。
 - **违反后果**: 已压缩响应二次压缩 → CPU 浪费 + 延迟上升；无排除 → 图片接口 CPU 飙升。
 - **验证方法**: 检出 `gzip.Gzip(` 但同项目无 `WithExcludedExtensions`/`WithExcludedPaths`/`WithExcludedPathRegexps` → warn。
 - **对应门禁**: fw_gin_gzip(warn)
+
+```verify
+id: gin-r10
+cmd: 
+expect: always
+```
 
 ### 规律：错误处理须用 c.Error 累积 + 统一 c.JSON 响应，禁用零散 c.String
 - **适用版本**: Gin 全版本
@@ -122,6 +182,12 @@ detect 信号命中任一高置信度行即可激活 gin 框架规则集。
 - **验证方法**: 检出 `c.String(` 用于错误响应（同行含 4xx/5xx 状态码）且同项目无 `c.Error(` → warn。
 - **对应门禁**: fw_gin_error_handling(warn)
 
+```verify
+id: gin-r11
+cmd: 
+expect: always
+```
+
 ### 规律：限流须在入口中间件层配置，禁用仅业务层无防护
 - **适用版本**: Gin + ulule/limiter / didip/tollbooth 等全版本
 - **规律**: 公开接口（登录、短信、查询）须在 Gin 中间件层限流（按 IP / 用户 / 接口维度），防止刷接口。无限流的公开接口会被脚本刷爆（短信轰炸、撞库）。常用 `github.com/ulule/limiter/v3` 配 Redis 后端。
@@ -129,12 +195,24 @@ detect 信号命中任一高置信度行即可激活 gin 框架规则集。
 - **验证方法**: 检出 `gin.Engine` + 公开 POST 路由（如 `/login` `/sms` `/register`）但同项目无 `limiter`/`tollbooth`/`rate` 限流中间件 → warn。
 - **对应门禁**: fw_gin_rate_limit(warn)
 
+```verify
+id: gin-r12
+cmd: 
+expect: always
+```
+
 ### 规律：健康检查端点须独立路由且不走鉴权与限流
 - **适用版本**: Gin 全版本
 - **规律**: `/healthz` / `/readyz` 须注册在鉴权与限流中间件之前的根路由组，否则 K8s 探针被鉴权拦截（401）或被限流误杀（429）导致 Pod 被反复重启。健康检查须轻量（不查 DB/外部依赖的 liveness；readiness 可查 DB）。
 - **违反后果**: 探针失败 → Pod 被 K8s 反复重启 / 摘流；探针走限流 → 高频探针触发 429。
 - **验证方法**: 检出鉴权/限流中间件 Use 在 Engine 根级（非 Group 内），且同项目存在 `/healthz` 或 `/ready` 路由 → warn。
 - **对应门禁**: fw_gin_health_check(warn)
+
+```verify
+id: gin-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

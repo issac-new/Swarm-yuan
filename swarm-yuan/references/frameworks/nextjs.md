@@ -51,12 +51,24 @@ detect 信号命中任一高置信度行即可激活 nextjs 框架规则集。
 - **验证方法**: 检出含 `useState|useEffect|window\.|document\.|localStorage\.` 的组件文件首行无 `'use client'` → fail。
 - **对应门禁**: fw_nextjs_use_client(fail)
 
+```verify
+id: nextjs-r1
+cmd: 
+expect: always
+```
+
 ### 规律：Server Actions 须显式鉴权，禁信任客户端调用
 - **适用版本**: Next.js 14+（Server Actions 稳定）/ 15+（安全增强）
 - **规律**: Server Actions（`'use server'` 标注的 async 函数）可被客户端直接调用，等价于公开 API 端点。须在函数内显式鉴权（`auth()` / `getServerSession()` / 校验 cookie），禁假设"只有页面按钮会调用"——攻击者可直接 POST 调用。15+ 起 Next.js 对 Server Action 请求体加密，但不替代鉴权。
 - **违反后果**: 未鉴权 Server Action → 越权操作（任意用户调用删数据/改他人资料）CWE-862 缺失授权。
 - **验证方法**: 检出 `'use server'` 文件内的 async 函数未含 `auth|session|getServerSession|requireAuth|currentUser` → fail。
 - **对应门禁**: fw_nextjs_server_action_auth(fail)
+
+```verify
+id: nextjs-r2
+cmd: 
+expect: always
+```
 
 ### 规律：中间件（middleware.ts）须配 matcher，禁默认拦截全站
 - **适用版本**: Next.js 12.2+（middleware 稳定）
@@ -65,12 +77,24 @@ detect 信号命中任一高置信度行即可激活 nextjs 框架规则集。
 - **验证方法**: 检出 `middleware.ts`/`middleware.js` 但无 `matcher` 配置 → fail。
 - **对应门禁**: fw_nextjs_middleware_matcher(fail)
 
+```verify
+id: nextjs-r3
+cmd: 
+expect: always
+```
+
 ### 规律：fetch 缓存语义须显式声明，禁依赖默认（15+ 默认变更）
 - **适用版本**: Next.js 15+（缓存默认变更）/ 16+（'use cache'）
 - **规律**: Next.js 15 起 `fetch` 默认不再缓存（`cache: 'no-store'` 倾向），与 14 默认 `force-cache` 相反。须显式声明 `cache: 'force-cache' | 'no-store'` 或 `next: { revalidate: N }`，避免版本升级行为静默变更。16 引入 `'use cache'` 指令做组件级缓存。
 - **违反后果**: 依赖默认 → 15 升级后缓存行为静默反转（14 缓存 ↔ 15 不缓存）→ 数据不一致/性能突变。
 - **验证方法**: 检出 `fetch(` 无 `cache:` / `next:` 参数（15+ 项目）→ warn。
 - **对应门禁**: fw_nextjs_fetch_cache(warn)
+
+```verify
+id: nextjs-r4
+cmd: 
+expect: always
+```
 
 ### 规律：cookies/headers 须仅在 Server Component/Action 用，禁 Client 调用
 - **适用版本**: Next.js 13+（App Router）
@@ -79,12 +103,24 @@ detect 信号命中任一高置信度行即可激活 nextjs 框架规则集。
 - **验证方法**: 检出含 `from 'next/headers'` 或 `cookies()` / `headers()` 的文件首行标 `'use client'` → fail。
 - **对应门禁**: fw_nextjs_headers_server_only(fail)
 
+```verify
+id: nextjs-r5
+cmd: 
+expect: always
+```
+
 ### 规律：动态路由段须配 generateStaticParams 或 dynamic，禁静态生成与动态混用未声明
 - **适用版本**: Next.js 13+（App Router）
 - **规律**: `app/[id]/page.tsx` 动态路由段，若需 SSG 须导出 `generateStaticParams` 返回预生成参数列表；若全动态须导出 `export const dynamic = 'force-dynamic'`。未声明时 Next.js 启发式判定（含 fetch 动态 → 动态），行为不确定。
 - **违反后果**: 未声明 → 静态/动态判定不确定 → 部分页面该动态却静态（数据陈旧）/ 该静态却动态（性能差）。
 - **验证方法**: 检出 `app/**/[param]/**/page.tsx` 无 `generateStaticParams` 且无 `dynamic` 导出 → warn。
 - **对应门禁**: fw_nextjs_dynamic_params(warn)
+
+```verify
+id: nextjs-r6
+cmd: 
+expect: always
+```
 
 ### 规律：图片须用 next/image 优化，禁裸 <img>
 - **适用版本**: Next.js 全版本
@@ -93,12 +129,24 @@ detect 信号命中任一高置信度行即可激活 nextjs 框架规则集。
 - **验证方法**: 检出 `<img ` 在 .tsx/.jsx（非 next/image 导入）→ warn。
 - **对应门禁**: fw_nextjs_image_optimize(warn)
 
+```verify
+id: nextjs-r7
+cmd: 
+expect: always
+```
+
 ### 规律：metadata API 须用 export const metadata / generateMetadata，禁手动 <head> 操作
 - **适用版本**: Next.js 13+（App Router metadata API）
 - **规律**: App Router 用 `export const metadata`（静态）或 `export async function generateMetadata()`（动态）声明 title/description/openGraph 等，禁在组件内手动操作 `<head>`（document.head / `<Head>` 组件）。Pages Router 用 `next/head`。
 - **违反后果**: 手动 head 操作 → 与 metadata API 冲突 / SSR hydration mismatch / SEO 元数据丢失。
 - **验证方法**: 检出 App Router 项目（app/ 目录）中用 `<Head>` 或 `document.head` → warn。
 - **对应门禁**: fw_nextjs_metadata_api(warn)
+
+```verify
+id: nextjs-r8
+cmd: 
+expect: always
+```
 
 ### 规律：路由组（(group)）须仅用于组织不影响 URL，禁误改路径
 - **适用版本**: Next.js 13+（App Router）
@@ -107,12 +155,24 @@ detect 信号命中任一高置信度行即可激活 nextjs 框架规则集。
 - **验证方法**: 人工确认路由组目录命名符合 `(name)` 模式且不影响 URL。
 - **对应门禁**: 人工检查
 
+```verify
+id: nextjs-r9
+cmd: 
+expect: always
+```
+
 ### 规律：Pages Router 与 App Router 不可混用同一路由
 - **适用版本**: Next.js 13+（迁移期）
 - **规律**: 迁移期 `pages/` 与 `app/` 可共存，但同一路径不可同时定义（如 `pages/about.tsx` 与 `app/about/page.tsx`）→ 冲突报错。迁移须逐路由迁移，App Router 优先。`pages/api` 与 `app/api` 可共存但建议统一。
 - **违反后果**: 同路径双定义 → 路由冲突报错 / 行为不确定。
 - **验证方法**: 检出同路径在 pages/ 与 app/ 双定义 → fail。
 - **对应门禁**: fw_nextjs_router_conflict(fail)
+
+```verify
+id: nextjs-r10
+cmd: 
+expect: always
+```
 
 ### 规律：revalidate 须显式声明单位（秒），禁无单位或过长
 - **适用版本**: Next.js 13+（ISR）
@@ -121,6 +181,12 @@ detect 信号命中任一高置信度行即可激活 nextjs 框架规则集。
 - **验证方法**: 检出 `revalidate` 导出但值为 0 或 >86400（1 天）→ warn。
 - **对应门禁**: fw_nextjs_revalidate(warn)
 
+```verify
+id: nextjs-r11
+cmd: 
+expect: always
+```
+
 ### 规律：缓存四层语义须区分（Request Memoize/Data Cache/Full Route/Router Cache）
 - **适用版本**: Next.js 13+（App Router 四层缓存）
 - **规律**: App Router 有四层缓存：(1) Request Memoization（同请求内 fetch 去重）/ (2) Data Cache（fetch 跨请求缓存）/ (3) Full Route Cache（路由产物缓存）/ (4) Router Cache（客户端导航缓存）。须理解各层失效与清除方式（`revalidateTag`/`revalidatePath` 清 Data+Route Cache；`router.refresh()` 清 Router Cache）。误用导致缓存陈旧或失效过度。
@@ -128,12 +194,24 @@ detect 信号命中任一高置信度行即可激活 nextjs 框架规则集。
 - **验证方法**: 人工确认 revalidateTag/revalidatePath/router.refresh 用法对应正确缓存层。
 - **对应门禁**: 人工检查
 
+```verify
+id: nextjs-r12
+cmd: 
+expect: always
+```
+
 ### 规律：Client Component 不可直接 import Server Component，须作 children 传递
 - **适用版本**: Next.js 13+（App Router）
 - **规律**: Server Component（默认）可 import Client Component（标 'use client'）。反向禁止：Client Component import Server Component 会报错。需在 Client 内嵌 Server Component 时，由 Server Component 父级将 Server Component 作 `children` prop 传入 Client（children 在服务端渲染后传入）。
 - **违反后果**: Client import Server → 编译错误 "Server Components rendered as part of a Client Component"。
 - **验证方法**: 人工确认 Client Component 文件未 import 非 'use client' 且含服务端 API 的组件。
 - **对应门禁**: 人工检查
+
+```verify
+id: nextjs-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥10 门槛）。10 条挂门禁（fw_nextjs_*），3 条标"人工检查"（语义/架构相关规律）。

@@ -55,12 +55,24 @@ detect 信号命中任一高置信度行即可激活 junit5-mockito 框架规则
 - **验证方法**: 逐测试文件统计：`assertNotNull(` 计数 > 0 且其他断言（assertEquals/assertTrue/assertThrows/assertThat/verify 等）计数 == 0 → fail。
 - **对应门禁**: fw_junit_assertnotnull_only(fail)
 
+```verify
+id: junit5-mockito-r1
+cmd: 
+expect: always
+```
+
 ### 规律：@MockBean/@MockitoBean 污染 Spring 上下文缓存
 - **适用版本**: Spring Boot 3.3 及以前 @MockBean / Spring Boot 3.4+（Spring Framework 6.2）@MockitoBean（@MockBean 已废弃）
 - **规律**: `@MockBean`/`@MockitoBean` 会让 Spring TestContext 为每个不同 mock 组合重建 ApplicationContext（缓存 key 含 mock 定义）——多个测试类各自声明不同 @MockBean 组合时上下文爆炸，套件时长指数增长；且 mock 状态跨方法残留须 `@DirtiesContext` 或每次重建。选型：(a) 能不用 Spring 上下文的纯单测用 `@ExtendWith(MockitoExtension.class)` + `@Mock`（无上下文成本）；(b) 必须用 @MockBean 时全项目统一基类收敛组合。
 - **违反后果**: 测试套件上下文重建 N 次（分钟级拖慢 CI）；mock 残留致测试相互污染。
 - **验证方法**: 检出 `@MockBean|@MockitoBean` 的文件无 `@DirtiesContext` 且非统一基类 → warn 提示人工确认上下文缓存策略。
 - **对应门禁**: fw_junit_mockbean_context(warn)
+
+```verify
+id: junit5-mockito-r2
+cmd: 
+expect: always
+```
 
 ### 规律：@Transactional 测试默认回滚，真实提交须显式
 - **适用版本**: Spring Test 5.x–6.x / 7.x（@Transactional 测试语义）
@@ -69,12 +81,24 @@ detect 信号命中任一高置信度行即可激活 junit5-mockito 框架规则
 - **验证方法**: 检出 `@Commit` 或 `@Rollback(false)` → warn 确认真实提交意图与清理策略。
 - **对应门禁**: fw_junit_transactional_rollback(warn)
 
+```verify
+id: junit5-mockito-r3
+cmd: 
+expect: always
+```
+
 ### 规律：Mockito strict stubs——无用 stub 必须删除
 - **适用版本**: Mockito 2.x–5.x（MockitoExtension 默认 STRICT_STUBS）
 - **规律**: `@ExtendWith(MockitoExtension.class)` 默认 `Strictness.STRICT_STUBS`：声明了但从未被调用的 stub（`when(...)`）在测试结束时抛 `UnnecessaryStubbingException`。这是特性——逼你删掉复制粘贴残留的假 stub。禁止用 `Strictness.LENIENT` 或 `Mockito.lenient()` 全局压掉；确有个别 stub 跨方法共享时对单条 stub 用 `lenient().when(...)` 精准豁免。
 - **违反后果**: LENIENT 全局化后 stub 失配（参数写错）静默——mock 返回 null 而测试照绿。
 - **验证方法**: 检出 `Strictness.LENIENT` 或 `lenient()` 使用 → warn 确认是否精准豁免。
 - **对应门禁**: fw_junit_strict_stubs(warn)
+
+```verify
+id: junit5-mockito-r4
+cmd: 
+expect: always
+```
 
 ### 规律：@ParameterizedTest 须覆盖边界值
 - **适用版本**: JUnit 5.x / 6.x 全版本
@@ -83,12 +107,24 @@ detect 信号命中任一高置信度行即可激活 junit5-mockito 框架规则
 - **验证方法**: 检出 `@ValueSource` 行无逗号（单值）→ warn 提示补边界值。
 - **对应门禁**: fw_junit_parameterized_boundary(warn)
 
+```verify
+id: junit5-mockito-r5
+cmd: 
+expect: always
+```
+
 ### 规律：@BeforeAll 必须 static（非 PER_CLASS 生命周期）
 - **适用版本**: JUnit 5.x / 6.x 全版本
 - **规律**: 默认 `TestInstance.Lifecycle.PER_METHOD` 下，每个测试方法新建测试类实例，`@BeforeAll`/`@AfterAll` 必须是 `static`（否则启动报错）；非 static 仅 `@TestInstance(Lifecycle.PER_CLASS)` 下合法。生成代码默认 static；用 PER_CLASS 须明确理由（如 @BeforeAll 建容器）。
 - **违反后果**: `PreconditionViolationException: @BeforeAll method must be static` 启动即失败。
 - **验证方法**: 检出 `@BeforeAll` 但其后 3 行内方法声明无 `static` 且类无 `PER_CLASS` → warn。
 - **对应门禁**: fw_junit_beforeall_static(warn)
+
+```verify
+id: junit5-mockito-r6
+cmd: 
+expect: always
+```
 
 ### 规律：@Disabled 必须注明原因
 - **适用版本**: JUnit 5.x / 6.x 全版本
@@ -97,12 +133,24 @@ detect 信号命中任一高置信度行即可激活 junit5-mockito 框架规则
 - **验证方法**: 检出裸 `@Disabled`（无括号原因串）→ warn。
 - **对应门禁**: fw_junit_disabled_reason(warn)
 
+```verify
+id: junit5-mockito-r7
+cmd: 
+expect: always
+```
+
 ### 规律：测试命名与 @DisplayName 规范
 - **适用版本**: JUnit 5.x / 6.x 全版本
 - **规律**: 测试方法名表达"场景_期望"（如 `find_shouldThrow_whenIdNotExists` 或 shouldXxxWhenYyy），禁止 `test1`/`testFind2` 类无语义名；类或方法级 `@DisplayName` 提供中文/自然语言描述（CI 报告可读）。二者至少居其一，全项目口径统一。
 - **违反后果**: 失败报告无法定位业务语义；测试即文档失效。
 - **验证方法**: 含 `@Test` 的文件零 `@DisplayName` → warn 提示补描述（人工确认命名风格）。
 - **对应门禁**: fw_junit_naming(warn)
+
+```verify
+id: junit5-mockito-r8
+cmd: 
+expect: always
+```
 
 ### 规律：@Testcontainers 容器生命周期 static 共享
 - **适用版本**: Testcontainers 1.17+（junit-jupiter 集成）
@@ -111,12 +159,24 @@ detect 信号命中任一高置信度行即可激活 junit5-mockito 框架规则
 - **验证方法**: 检出 `@Testcontainers` 但无 `static` 容器声明 → warn。
 - **对应门禁**: fw_junit_testcontainers(warn)
 
+```verify
+id: junit5-mockito-r9
+cmd: 
+expect: always
+```
+
 ### 规律：@Mock vs @Spy 选型——默认 @Mock
 - **适用版本**: Mockito 5.x 全版本
 - **规律**: `@Spy` 包装真实对象、未 stub 的方法走真实实现——测试语义暧昧（一半真一半假），且 spy 对 final 方法/构造副作用敏感。默认用 `@Mock`（全替身）；仅遗留代码无法注入依赖时用 `@Spy` 做"接缝"，并在注释说明。`@Spy` 上的 stub 用 `doReturn(...).when(spy)` 语法（避免 `when(spy.x())` 触发真实调用）。
 - **违反后果**: 测试混入真实逻辑，失败定位困难；when(spy.x()) 触发真实方法副作用。
 - **验证方法**: 检出 `@Spy` → warn 人工确认部分 mock 意图。
 - **对应门禁**: fw_junit_mock_vs_spy(warn)
+
+```verify
+id: junit5-mockito-r10
+cmd: 
+expect: always
+```
 
 ### 规律：verify 须显式次数断言
 - **适用版本**: Mockito 5.x 全版本
@@ -125,6 +185,12 @@ detect 信号命中任一高置信度行即可激活 junit5-mockito 框架规则
 - **验证方法**: 检出 `verify(` 行不含 `times|never|atLeast|atMost|only` → warn。
 - **对应门禁**: fw_junit_verify_times(warn)
 
+```verify
+id: junit5-mockito-r11
+cmd: 
+expect: always
+```
+
 ### 规律：测试不可依赖执行顺序
 - **适用版本**: JUnit 5.x / 6.x 全版本
 - **规律**: Jupiter 故意不保证方法执行顺序（跨类/跨方法）。`@TestMethodOrder(OrderAnnotation.class)` + `@Order(n)` 合法化顺序依赖，几乎总是坏味道——顺序依赖意味着共享可变状态，测试不再独立。正确做法：每个测试自带夹具（@BeforeEach 重建）；确有状态的端到端流程用 `@Nested` + `@TestInstance(PER_CLASS)` 显式建模。
@@ -132,12 +198,24 @@ detect 信号命中任一高置信度行即可激活 junit5-mockito 框架规则
 - **验证方法**: 检出 `@TestMethodOrder` 或 `@Order(` → warn。
 - **对应门禁**: fw_junit_test_order(warn)
 
+```verify
+id: junit5-mockito-r12
+cmd: 
+expect: always
+```
+
 ### 规律：慢测试须 @Timeout 兜底，禁止裸 Thread.sleep
 - **适用版本**: JUnit 5.x / 6.x 全版本（@Timeout 内建）
 - **规律**: 异步等待用 `Thread.sleep(3000)` 既慢又脆（CI 慢机器上偶发失败）。正确姿势：(a) 等待条件用 Awaitility `await().atMost(...).until(...)`；(b) 每个可能挂起的测试加 `@Timeout(10)`（秒）防 CI 死等；(c) @Timeout 默认在测试线程内中断，I/O 阻塞不可中断时用 `ThreadMode.SEPARATE_THREAD`。
 - **违反后果**: 测试挂起拖死 CI 流水线；sleep 时长不足偶发失败。
 - **验证方法**: 测试文件检出 `Thread.sleep` → warn 改 Awaitility/@Timeout。
 - **对应门禁**: fw_junit_timeout(warn)
+
+```verify
+id: junit5-mockito-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

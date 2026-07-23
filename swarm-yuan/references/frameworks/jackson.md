@@ -55,12 +55,24 @@ detect 信号命中任一高置信度行即可激活 jackson 框架规则集。
 - **验证方法**: 源码含 `LocalDateTime|LocalDate|Instant` 字段声明，但全项目无 `JavaTimeModule|registerModule|spring-boot-starter-json` 痕迹 → warn（确认是否 3.0 或 Spring 自动注册）。
 - **对应门禁**: fw_jackson_jsr310(warn)
 
+```verify
+id: jackson-r1
+cmd: 
+expect: always
+```
+
 ### 规律：密码/密钥字段须 @JsonIgnore 或 WRITE_ONLY
 - **适用版本**: Jackson 2.x / 3.x 全版本
 - **规律**: 实体/DTO 的 `password`/`secret`/`apiKey`/`token` 等敏感字段默认参与序列化——登录接口用 `@RequestBody` 绑定后若把同一对象回写响应，密文（甚至明文）外泄。接收侧需要、发送侧禁止的字段用 `@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)`；完全不出 JSON 的用 `@JsonIgnore`。
 - **违反后果**: 敏感信息泄露（CWE-200 / CWE-359），等同于 GitHub API token 泄露类事故。
 - **验证方法**: 检出 `private|protected String password|passwd|secret|apiKey|token`（忽略大小写）声明行，同行或前 3 行无 `@JsonIgnore` / `WRITE_ONLY` → fail。
 - **对应门禁**: fw_jackson_password(fail)
+
+```verify
+id: jackson-r2
+cmd: 
+expect: always
+```
 
 ### 规律：@JsonTypeInfo 多态反序列化攻击面（CVE-2017-7525 类）
 - **适用版本**: Jackson 2.x / 3.x 全版本
@@ -69,12 +81,24 @@ detect 信号命中任一高置信度行即可激活 jackson 框架规则集。
 - **验证方法**: 检出 `@JsonTypeInfo` 注解块：含 `Id.CLASS|Id.MINIMAL_CLASS` → fail；块内无 `defaultImpl` → fail（须配 @JsonSubTypes 白名单）。
 - **对应门禁**: fw_jackson_polymorphic(fail)
 
+```verify
+id: jackson-r3
+cmd: 
+expect: always
+```
+
 ### 规律：FAIL_ON_UNKNOWN_PROPERTIES 选型须显式
 - **适用版本**: Jackson 2.x（默认 true）/ 3.x（默认 false，官方 wiki 已确认翻转）
 - **规律**: 2.x 默认遇未知属性抛 `UnrecognizedPropertyException`——向前兼容差（对方加字段我方即 500）；3.0 起默认 false 静默忽略。跨版本迁移时该默认值翻转是隐形 breaking change。项目须显式二选一：API 边界建议 false + `@JsonIgnoreProperties(ignoreUnknown = true)` 兜底；严格契约场景保持 true 并写入测试。
 - **违反后果**: 2.x→3.0 升级后未知字段从"报错"变"静默吞掉"，脏数据穿透；或 2.x 下上游加字段导致全线 500。
 - **验证方法**: 项目含 Jackson 注解 DTO 但无 `FAIL_ON_UNKNOWN_PROPERTIES` 配置且无 `@JsonIgnoreProperties` → warn 提示显式选型。
 - **对应门禁**: fw_jackson_unknown_props(warn)
+
+```verify
+id: jackson-r4
+cmd: 
+expect: always
+```
 
 ### 规律：时间序列化格式须关闭 WRITE_DATES_AS_TIMESTAMPS 或显式格式
 - **适用版本**: Jackson 2.x（默认开启 timestamps）/ 3.x（待验证：官方 wiki 未逐条列出该 Feature 默认值，沿用 2.x 认知）
@@ -83,12 +107,24 @@ detect 信号命中任一高置信度行即可激活 jackson 框架规则集。
 - **验证方法**: 源码含 java.time 字段但无 `write-dates-as-timestamps=false` / `@JsonFormat` / `WRITE_DATES_AS_TIMESTAMPS` 配置 → warn。
 - **对应门禁**: fw_jackson_dates_as_timestamps(warn)
 
+```verify
+id: jackson-r5
+cmd: 
+expect: always
+```
+
 ### 规律：@JsonFormat pattern 须带时区/区域考虑
 - **适用版本**: Jackson 2.x / 3.x 全版本
 - **规律**: `@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")` 解析 `Date`/`ZonedDateTime` 时未声明 `timezone` 按 JVM 默认时区——容器 UTC 与业务东八区差 8 小时。涉及时刻的 pattern 须 `timezone = "GMT+8"` 或全局 `spring.jackson.time-zone`。
 - **违反后果**: 同一时刻不同副本解析结果漂移；定时任务边界错乱。
 - **验证方法**: 检出 `@JsonFormat(pattern` 行不含 `timezone` → warn。
 - **对应门禁**: fw_jackson_jsonformat_tz(warn)
+
+```verify
+id: jackson-r6
+cmd: 
+expect: always
+```
 
 ### 规律：@JsonInclude(NON_NULL) 全局口径统一
 - **适用版本**: Jackson 2.x / 3.x 全版本
@@ -97,12 +133,24 @@ detect 信号命中任一高置信度行即可激活 jackson 框架规则集。
 - **验证方法**: 项目含 Jackson DTO 但全项目无 `@JsonInclude` 且无 `default-property-inclusion` 配置 → warn 提示统一口径。
 - **对应门禁**: fw_jackson_include_nonnull(warn)
 
+```verify
+id: jackson-r7
+cmd: 
+expect: always
+```
+
 ### 规律：@JsonProperty 命名风格同类内一致
 - **适用版本**: Jackson 2.x / 3.x 全版本
 - **规律**: 同一类内 `@JsonProperty("user_name")`（snake_case）与 `@JsonProperty("userName")`（camelCase）混用会让 API 契约分裂。命名风格应全局统一——要么靠 `PropertyNamingStrategies.SNAKE_CASE` 集中生效，要么逐字段 @JsonProperty 但同一类内风格一致。
 - **违反后果**: 同一响应两种命名风格，客户端建模失败。
 - **验证方法**: 同一文件内同时检出 snake_case（含 `_`）与 camelCase（小写后接大写）@JsonProperty 值 → warn。
 - **对应门禁**: fw_jackson_property_naming(warn)
+
+```verify
+id: jackson-r8
+cmd: 
+expect: always
+```
 
 ### 规律：@JsonCreator 构造器参数须 @JsonProperty 或 -parameters 编译
 - **适用版本**: Jackson 2.x / 3.x 全版本（3.0 起 ParameterNames 模块内建，但仍依赖 `-parameters` 编译产物）
@@ -111,12 +159,24 @@ detect 信号命中任一高置信度行即可激活 jackson 框架规则集。
 - **验证方法**: 检出 `@JsonCreator` 后参数列表行（同行或后 3 行内）无 `@JsonProperty` → warn。
 - **对应门禁**: fw_jackson_creator(warn)
 
+```verify
+id: jackson-r9
+cmd: 
+expect: always
+```
+
 ### 规律：金额字段禁止 double/float 序列化
 - **适用版本**: Jackson 2.x / 3.x 全版本
 - **规律**: `double`/`float` 金额字段序列化输出二进制浮点（0.1+0.2 问题），反序列化同理失真。金额/比率/价格字段须 `BigDecimal`（必要时配合 `@JsonFormat(shape = STRING)` 防 JS 侧精度丢失）；Jackson 侧 `DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS` 可全局兜底。
 - **违反后果**: 金额精度失真（CWE-681 数值转换错误），对账差分。
 - **验证方法**: 检出 `(price|amount|money|fee|cost|total)` 命名的 `double|float|Double|Float` 字段 → warn。
 - **对应门禁**: fw_jackson_bigdecimal(warn)
+
+```verify
+id: jackson-r10
+cmd: 
+expect: always
+```
 
 ### 规律：ObjectMapper 线程安全须单例复用
 - **适用版本**: Jackson 2.x（配置完成后线程安全）/ 3.x（Builder 不可变，天然线程安全）
@@ -125,12 +185,24 @@ detect 信号命中任一高置信度行即可激活 jackson 框架规则集。
 - **验证方法**: `new ObjectMapper(` 出现在 ≥2 个不同文件 → warn 确认有单例封装。
 - **对应门禁**: fw_jackson_mapper_singleton(warn)
 
+```verify
+id: jackson-r11
+cmd: 
+expect: always
+```
+
 ### 规律：@JsonView 视图泄漏面须复核
 - **适用版本**: Jackson 2.x / 3.x 全版本
 - **规律**: `@JsonView` 依赖 Controller 返回类型标注视图类驱动序列化；`DEFAULT_VIEW_INCLUSION` 默认 ON（2.x），未标注视图的字段在**任何**视图下都输出——误以为"没标就不出"会泄漏内部字段。视图继承层级（Public extends Internal）方向写反同理泄漏。
 - **违反后果**: 内部字段经公开接口外泄（CWE-200）。
 - **验证方法**: 检出 `@JsonView` 使用 → warn 人工复核 DEFAULT_VIEW_INCLUSION 与视图继承方向。
 - **对应门禁**: fw_jackson_jsonview(warn)
+
+```verify
+id: jackson-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

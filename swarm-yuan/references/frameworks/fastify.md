@@ -51,12 +51,24 @@ detect 信号命中任一高置信度行即可激活 fastify 框架规则集。
 - **验证方法**: `grep -rnE '(app|fastify|server|router)\.(get|post|put|delete|patch|route)\(' --include='*.js' --include='*.ts'` 命中的文件未含 `schema:` → fail。
 - **对应门禁**: fw_fastify_schema_validation(fail)
 
+```verify
+id: fastify-r1
+cmd: grep -rnE '(app|fastify|server|router)\.(get|post|put|delete|patch|route)\(' --include='*.js' --include='*.ts' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：响应 schema 启用 fast-json-stringify 序列化（性能 + 响应字段白名单）
 - **适用版本**: Fastify 5.x / 4.x
 - **规律**: `schema.response` 按状态码声明响应结构后，Fastify 编译为 fast-json-stringify，序列化速度远超 `JSON.stringify`，且响应字段被白名单裁剪（多余字段不泄露）。未声明 response schema 的路由走 `JSON.stringify` 且可能泄露实体内部字段。
 - **违反后果**: 响应泄露内部字段（如 password hash）CWE-200；高 QPS 下序列化成 CPU 瓶颈。
 - **验证方法**: 含路由与 `schema:` 的文件未含 `response:` → warn。
 - **对应门禁**: fw_fastify_response_schema(warn)
+
+```verify
+id: fastify-r2
+cmd: 
+expect: always
+```
 
 ### 规律：封装上下文默认隔离，跨上下文共享装饰器须 fastify-plugin
 - **适用版本**: Fastify 5.x / 4.x
@@ -65,12 +77,24 @@ detect 信号命中任一高置信度行即可激活 fastify 框架规则集。
 - **验证方法**: 检出插件函数（形参含 `fastify`）内有 `.decorate(` 且文件未引入 `fastify-plugin`/`fp(` → warn 确认封装隔离是否有意。
 - **对应门禁**: fw_fastify_encapsulation(warn)
 
+```verify
+id: fastify-r3
+cmd: 
+expect: always
+```
+
 ### 规律：onSend 钩子修改 payload 必须 return（async）或 done(null, payload)（callback）
 - **适用版本**: Fastify 5.x / 4.x
 - **规律**: onSend 钩子是响应发出前最后可改 payload 的时机。官方 Hooks 文档（2026-07 核实）：async onSend 中 `return newPayload` 才替换 payload；callback 风格须 `done(err, newPayload)`。合法类型仅 string/Buffer/stream/ReadableStream/Response/null。只修改局部变量不 return/done 的 onSend 静默丢弃修改（原 payload 照发），属于隐蔽 bug。
 - **违反后果**: payload 包装/脱敏/签名逻辑静默失效（如统一响应壳未生效），问题在响应体层面难以排查。
 - **验证方法**: `addHook('onSend'` 起 15 行窗口内含 payload 改写（`payload.replace`/`payload.toString`/`JSON.stringify`/`newPayload`）但无 `return` 且无 `done(` → fail。
 - **对应门禁**: fw_fastify_onsend_return(fail)
+
+```verify
+id: fastify-r4
+cmd: 
+expect: always
+```
 
 ### 规律：必须 setErrorHandler 统一错误处理，避免默认错误响应泄露堆栈
 - **适用版本**: Fastify 5.x / 4.x
@@ -79,12 +103,24 @@ detect 信号命中任一高置信度行即可激活 fastify 框架规则集。
 - **验证方法**: 存在路由声明但全部源码未含 `setErrorHandler` → fail。
 - **对应门禁**: fw_fastify_error_handler(fail)
 
+```verify
+id: fastify-r5
+cmd: 
+expect: always
+```
+
 ### 规律：路由选项 config/logLevel 按路由粒度收敛（敏感路由降日志）
 - **适用版本**: Fastify 5.x / 4.x
 - **规律**: 路由选项 `logLevel` 可按路由调整日志级别（如健康检查 `logLevel: 'warn'` 降噪，敏感操作 `logLevel: 'debug'` 留痕）；`config` 存放路由级元数据供钩子读取（配合 @fastify/rate-limit 的 `config.rateLimit` 实现路由级限流）。
 - **违反后果**: 健康检查刷爆日志 / 敏感路由无审计痕迹 / 限流无法按路由差异化。
 - **验证方法**: 人工检查（逐路由确认 logLevel/config 是否按敏感性配置）。
 - **对应门禁**: 人工检查
+
+```verify
+id: fastify-r6
+cmd: 
+expect: always
+```
 
 ### 规律：pino 日志集成——logger 选项必须显式启用，生产禁用 pretty transport
 - **适用版本**: Fastify 5.x / 4.x（pino 内建）
@@ -93,12 +129,24 @@ detect 信号命中任一高置信度行即可激活 fastify 框架规则集。
 - **验证方法**: 检出 fastify 初始化文件但无 `logger:` 选项且无 pino 引入 → warn。
 - **对应门禁**: fw_fastify_logger(warn)
 
+```verify
+id: fastify-r7
+cmd: 
+expect: always
+```
+
 ### 规律：插件注册顺序敏感——register 须先于依赖其装饰器/钩子的路由声明
 - **适用版本**: Fastify 5.x / 4.x
 - **规律**: Fastify 按 register/路由声明顺序构建 avvio 启动图；后注册的插件其钩子不影响先声明的路由（封装上下文已建立）。鉴权/装饰器插件必须先 register，再声明依赖它们的路由；或用 `fastify.after()`/`await register` 显式排序。
 - **违反后果**: 鉴权钩子对先声明的路由不生效 → 未授权访问 CWE-862；装饰器 undefined。
 - **验证方法**: 同一文件内首个路由声明行号 < 首个 `.register(` 行号 → warn（路由先于插件注册）。
 - **对应门禁**: fw_fastify_plugin_order(warn)
+
+```verify
+id: fastify-r8
+cmd: 
+expect: always
+```
 
 ### 规律：decorateRequest/decorateReply 禁止对象/数组字面量默认值（跨请求引用共享）
 - **适用版本**: Fastify 5.x / 4.x
@@ -107,12 +155,24 @@ detect 信号命中任一高置信度行即可激活 fastify 框架规则集。
 - **验证方法**: `grep -nE 'decorate(Request|Reply)\([^,]+,[[:space:]]*(\{|\[)'` 命中 → warn。
 - **对应门禁**: fw_fastify_decorate_reference(warn)
 
+```verify
+id: fastify-r9
+cmd: grep -nE 'decorate(Request|Reply)\([^,]+,[[:space:]]*(\{|\[)' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：@fastify/cors origin 须显式白名单，禁止 origin: true / '*'
 - **适用版本**: @fastify/cors 9.x+（Fastify 5.x 对应线，待验证具体配套小版本）
 - **规律**: `@fastify/cors` 默认 `origin: false`（v9 起收紧，待验证默认演变）。`origin: true` 反射任意 Origin、`origin: '*'` 放行任意源，浏览器跨域防线全失。生产须显式域名白名单数组或校验函数；携带 credentials 时绝不可 `*`。
 - **违反后果**: 任意站点可跨域调用 API → 数据被恶意站点读取 CWE-942。
 - **验证方法**: 检出 `@fastify/cors` 注册且同行/邻近行 `origin[[:space:]]*:[[:space:]]*(true|['"]\*['"])` → warn。
 - **对应门禁**: fw_fastify_cors(warn)
+
+```verify
+id: fastify-r10
+cmd: 
+expect: always
+```
 
 ### 规律：公开端点须注册 @fastify/rate-limit 速率限制
 - **适用版本**: @fastify/rate-limit 10.x（Fastify 5.x 对应线，待验证具体配套小版本）
@@ -121,6 +181,12 @@ detect 信号命中任一高置信度行即可激活 fastify 框架规则集。
 - **验证方法**: 全部源码未检出 `@fastify/rate-limit` → warn。
 - **对应门禁**: fw_fastify_rate_limit(warn)
 
+```verify
+id: fastify-r11
+cmd: 
+expect: always
+```
+
 ### 规律：受保护路由须有认证机制（@fastify/auth 或 preHandler/onRequest 钩子）
 - **适用版本**: @fastify/auth 5.x（Fastify 5.x 对应线，待验证具体配套小版本）
 - **规律**: 除显式公开端点外，路由须挂认证：`preHandler: fastify.auth([...])`（@fastify/auth 支持多策略）或 onRequest/preHandler 自定义钩子校验 JWT/session。Fastify 无内建认证，漏挂即未授权。
@@ -128,12 +194,24 @@ detect 信号命中任一高置信度行即可激活 fastify 框架规则集。
 - **验证方法**: 存在路由声明但全部源码未检出 `@fastify/auth`/`preHandler`/`authenticate`/`onRequest` 认证钩子 → warn。
 - **对应门禁**: fw_fastify_auth(warn)
 
+```verify
+id: fastify-r12
+cmd: 
+expect: always
+```
+
 ### 规律：API 文档由 @fastify/swagger 从 schema 生成，禁止手维护漂移文档
 - **适用版本**: @fastify/swagger 9.x（Fastify 5.x 对应线，待验证具体配套小版本）
 - **规律**: `@fastify/swagger` 直接从路由 JSON Schema 生成 OpenAPI 文档（dynamic 模式），文档与校验同源不漂移。手维护的静态文档必然与实现漂移。配套 `@fastify/swagger-ui` 提供调试界面（生产须评估是否暴露）。
 - **违反后果**: 文档与实现漂移 → 前后端联调扯皮、契约失真。
 - **验证方法**: 全部源码未检出 `@fastify/swagger` → warn。
 - **对应门禁**: fw_fastify_swagger(warn)
+
+```verify
+id: fastify-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥10 门槛）。每条规律均挂门禁 id 或"人工检查"，无游离规律。

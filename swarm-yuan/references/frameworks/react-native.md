@@ -39,6 +39,13 @@ ruleset_id: react-native
 - **违反后果**: 任意源页面（含钓鱼/恶意 JS bridge 目标）均可载入 WebView，配合 `injectedJavaScript` 即远程代码执行面（CWE-79 跨站脚本/CWE-749 暴露危险方法；OWASP MASVS-PLATFORM WebView 族）。
 - **验证方法**: 剥注释后同文件同时命中 `<WebView` 与 `https?://` 且无 `originWhitelist` → 违规
 - **对应门禁**: fw_react_native_webview_no_whitelist（fail 级）
+
+```verify
+id: react-native-r1
+cmd: 
+expect: always
+```
+
 - **证据**: react-native-webview 官方文档 `originWhitelist` "List of origin strings to allow being navigated to"；OWASP MASVS "WebViews 须限制可加载的源"；Expo 安全基线同口径
 
 ### 规律：AsyncStorage 禁止存敏感数据（token/密码/密钥）
@@ -47,6 +54,13 @@ ruleset_id: react-native
 - **违反后果**: AsyncStorage 在 iOS 为明文 plist、Android 为明文 SQLite（未加密），越狱/root 或备份导出即凭证泄露（CWE-312 明文存储敏感信息；GB/T 22239-2019 8.1.4.6 数据保密性）。
 - **验证方法**: `grep -inE 'AsyncStorage\.setItem\(.{0,60}(token|password|passwd|secret|credential|api_?key|session)' --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' .`（应为空）
 - **对应门禁**: fw_react_native_asyncstorage_secret（fail 级）
+
+```verify
+id: react-native-r2
+cmd: grep -inE 'AsyncStorage\.setItem\(.{0,60}(token|password|passwd|secret|credential|api_?key|session)' --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: async-storage README "unencrypted, asynchronous, persistent, key-value storage"；react-native-keychain README 定位"secure storage for credentials"；OWASP MASVS-STORAGE-1 敏感数据须系统级安全存储
 
 ### 规律：生产代码禁止 console.log（Hermes 字节码可见）
@@ -55,6 +69,13 @@ ruleset_id: react-native
 - **违反后果**: release 包日志经 logcat/Xcode Devices 任意可读，Hermes 字节码反编译后日志点连同上下文暴露内部状态与敏感变量（CWE-209 错误信息泄露/CWE-532 日志敏感信息）。
 - **验证方法**: `grep -rnE 'console\.(log|info|debug)\(' --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' .`（应为空）
 - **对应门禁**: fw_react_native_console_log（warn 级）
+
+```verify
+id: react-native-r3
+cmd: grep -rnE 'console\.(log|info|debug)\(' --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: React Native 官方性能文档"console statements cause bottleneck in JS thread, remove in release"；babel-plugin-transform-remove-console 为标准剥离手段；Hermes 文档字节码可反编译口径
 
 ### 规律：必须使用 Hermes 引擎（禁止显式回退 JSC）
@@ -63,6 +84,13 @@ ruleset_id: react-native
 - **违反后果**: JSC 无字节码预编译，启动慢且源码 bundle 明文可提取；同时失去 Hermes 字节码混淆层，逆向面扩大（对应 OWASP MASVS-RESILIENCE 逆向防护要求）。
 - **验证方法**: `grep -rinE '(hermesEnabled|enableHermes|hermes_enabled)[[:space:]]*[:=][[:space:]]*false' android/ ios/ package.json`（应为空）
 - **对应门禁**: fw_react_native_hermes_disabled（fail 级）
+
+```verify
+id: react-native-r4
+cmd: grep -rinE '(hermesEnabled|enableHermes|hermes_enabled)[[:space:]]*[:=][[:space:]]*false' --include='package.json' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: React Native 0.70 发布日志"Hermes becomes the default engine"；Hermes 官方文档"bytecode precompilation, optimized for mobile"
 
 ### 规律：Android release 必须启用 ProGuard/R8 混淆
@@ -71,6 +99,13 @@ ruleset_id: react-native
 - **违反后果**: release APK 类名/方法名明文，jadx 一键还原业务逻辑，密钥常量与接口路径直读（CWE-656；OWASP MASVS-RESILIENCE-2 混淆要求）。
 - **验证方法**: 含 `buildTypes|release` 的 .gradle 文件须命中 `minifyEnabled[[:space:]]+true`
 - **对应门禁**: fw_react_native_proguard（warn 级）
+
+```verify
+id: react-native-r5
+cmd: 
+expect: always
+```
+
 - **证据**: RN 官方《Signed APK》文档"Enabling Proguard to reduce the size of the APK"；Android 开发者文档 R8 shrink/obfuscate 口径
 
 ### 规律：权限必须最小化（AndroidManifest / Info.plist）
@@ -79,6 +114,13 @@ ruleset_id: react-native
 - **违反后果**: 过度索权违反应用市场上架规范与个保法最小必要原则，审核驳回或被通报（GB/T 35273-2020 个人信息最小化；OWASP MASVS-PRIVACY）。
 - **验证方法**: `grep -nE 'android\.permission\.(READ_SMS|SEND_SMS|READ_CONTACTS|WRITE_CONTACTS|RECORD_AUDIO|CAMERA|ACCESS_FINE_LOCATION|READ_CALL_LOG|BODY_SENSORS)' AndroidManifest.xml`（命中即进入人工最小化审查清单）
 - **对应门禁**: fw_react_native_permissions（warn 级）
+
+```verify
+id: react-native-r6
+cmd: grep -nE 'android\.permission\.(READ_SMS|SEND_SMS|READ_CONTACTS|WRITE_CONTACTS|RECORD_AUDIO|CAMERA|ACCESS_FINE_LOCATION|READ_CALL_LOG|BODY_SENSORS)' --include='AndroidManifest.xml' "${PROJECT_DIR}"
+expect: hits>0
+```
+
 - **证据**: Google Play 政策"Request the minimum permissions necessary"；工信部 App 侵害用户权益专项整治过度索权通报口径
 
 ### 规律：必须使用 SafeAreaView / SafeAreaProvider 处理刘海屏
@@ -87,6 +129,13 @@ ruleset_id: react-native
 - **违反后果**: 顶部状态栏区/底部 Home 指示区遮挡交互元素，iOS 审核人机界面准则（HIG）驳回风险；Android 15 强制 edge-to-edge 后同病。
 - **验证方法**: 扫描全部组件文件，无任一命中 `SafeAreaView|SafeAreaProvider|useSafeAreaInsets|react-native-safe-area-context` → 违规
 - **对应门禁**: fw_react_native_safe_area（warn 级）
+
+```verify
+id: react-native-r7
+cmd: 
+expect: always
+```
+
 - **证据**: react-native-safe-area-context README "handle safe area insets on Android, iOS, and web"；Apple HIG Layout 安全区要求；Android 15 edge-to-edge 强制公告
 
 ### 规律：长列表必须用 FlatList，禁止 ScrollView 全量渲染
@@ -95,6 +144,13 @@ ruleset_id: react-native
 - **违反后果**: 千行列表一次性渲染致 JS 线程长阻塞、内存暴涨（每行视图常驻），低端机直接 OOM/掉帧（对应 GB/T 25000.51-2016 性能效率要求）。
 - **验证方法**: 文件含 `<ScrollView` 且无 `FlatList|SectionList|VirtualizedList|FlashList` → 嫌疑（短静态布局属例外，人工复核）
 - **对应门禁**: fw_react_native_flatlist（warn 级）
+
+```verify
+id: react-native-r8
+cmd: 
+expect: always
+```
+
 - **证据**: RN 官方《Optimizing Flatlist Configuration》"avoid rendering all items at once"；FlatList 文档"performant interface for rendering basic lists"
 
 ### 规律：组件须 React.memo/useMemo 防无效重渲染
@@ -103,6 +159,13 @@ ruleset_id: react-native
 - **违反后果**: 高频 state 变更（输入框/滚动）触发整树 reconciliation，列表滚动掉帧（对应 RN 性能文档 re-render 口径）。
 - **验证方法**: 文件命中 `export (default )?function [A-Z]` 或 `export const [A-Z]` 组件定义但无 `React.memo|memo(|useMemo|useCallback` → 嫌疑（静态启发式，warn 级人工复核）
 - **对应门禁**: fw_react_native_memo（warn 级）
+
+```verify
+id: react-native-r9
+cmd: 
+expect: always
+```
+
 - **证据**: React 官方文档 memo/useMemo"When to use"；RN 性能文档"Use memo to skip re-rendering"
 
 ### 规律：必须接入 Flipper 调试工具链
@@ -111,6 +174,13 @@ ruleset_id: react-native
 - **违反后果**: 无调试工具链时网络请求/AsyncStorage/布局问题只能盲猜，排障周期倍增；团队无统一调试基线。
 - **验证方法**: 扫描范围内的 package.json 无 `flipper`（大小写不敏感）→ 提醒
 - **对应门禁**: fw_react_native_flipper（warn 级）
+
+```verify
+id: react-native-r10
+cmd: 
+expect: always
+```
+
 - **证据**: Flipper 官方文档"extensible mobile app debugger"；RN 0.74 变更日志"Flipper removed from default template（可手动集成）"
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）
