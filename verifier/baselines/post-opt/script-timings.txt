@@ -1,0 +1,2 @@
+# script-timings（wall-clock 秒，2026-07-23T19:58:00Z）
+detect-frameworks.sh fixture=android 1s
