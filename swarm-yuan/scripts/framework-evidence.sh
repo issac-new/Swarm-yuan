@@ -70,7 +70,7 @@ for fw in "$@"; do
       _evid=""
     else
       _hits=$(printf '%s\n' "$_out" | grep -c . || true)
-      _evid=$(printf '%s\n' "$_out" | sed -E 's|^'"$PROJ"'/||' | sort | head -"$TOP" | tr '\n' ';' | sed 's/;$//')
+      _evid=$(printf '%s\n' "$_out" | LC_ALL=C sed -E 's|^'"$PROJ"'/||' | LC_ALL=C sort | head -"$TOP" | tr '\n' ';' | sed 's/;$//')
     fi
     if [[ "$_hits" -gt 0 ]]; then _sug="applicable"; else _sug="likely-na"; fi
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$fw" "$vid" "$vtitle" "$_hits" "$_evid" "$_sug"
