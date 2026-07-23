@@ -1,5 +1,5 @@
 # ruleset: quartz  requires_conf: QUARTZ_SRC_GLOBS
-# gates: fw_quartz_scheduled_lock(fail) fw_quartz_cluster_jobstore(warn) fw_quartz_misfire(warn) fw_quartz_threadpool(warn) fw_quartz_jobdatamap(warn) fw_quartz_idempotent(warn) fw_quartz_disallow_concurrent(warn) fw_quartz_timezone(warn)
+# gates: fw_quartz_scheduled_lock(fail,CWE-362/366) fw_quartz_cluster_jobstore(warn) fw_quartz_misfire(warn) fw_quartz_threadpool(warn) fw_quartz_jobdatamap(warn) fw_quartz_idempotent(warn) fw_quartz_disallow_concurrent(warn) fw_quartz_timezone(warn)
 # harvested-from: P3（2026-07-17），规律源自 Quartz 2.5.x 官方文档/releases 与 Spring Scheduling 工程实践
 _fw_quartz_check() {
   echo "  [quartz] Quartz 2.5.x / Spring Scheduling 框架规律"
@@ -31,7 +31,7 @@ _fw_quartz_check() {
   local j c ln
 
   # ====================================================================
-  # fw_quartz_scheduled_lock(fail)：多实例 @Scheduled 须分布式锁
+  # fw_quartz_scheduled_lock(fail,CWE-362/366)：多实例 @Scheduled 须分布式锁
   # ====================================================================
   local has_scheduled=0 has_lock=0
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
@@ -50,7 +50,7 @@ _fw_quartz_check() {
   fi
 
   # ====================================================================
-  # fw_quartz_cluster_jobstore(warn)：生产禁止 RAMJobStore，集群须 JDBC JobStore
+  # fw_quartz_cluster_jobstore(warn,CWE-362/366)：生产禁止 RAMJobStore，集群须 JDBC JobStore
   # ====================================================================
   local ram_hit="" qcfg=0 clustered=0
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
@@ -114,7 +114,7 @@ ${ram_hit}"
   fi
 
   # ====================================================================
-  # fw_quartz_jobdatamap(warn)：JobDataMap 仅基本类型，禁存对象
+  # fw_quartz_jobdatamap(warn,CWE-502)：JobDataMap 仅基本类型，禁存对象
   # ====================================================================
   local jdm_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
@@ -139,7 +139,7 @@ ${ram_hit}"
   _fw_report warn fw_quartz_idempotent "$idem_bad" "任务类含写操作但无幂等痕迹（misfire 补跑/故障转移/手动重触发会重复执行）" "任务幂等性痕迹齐备或无写操作任务"
 
   # ====================================================================
-  # fw_quartz_disallow_concurrent(warn)：有状态 Job 须串行
+  # fw_quartz_disallow_concurrent(warn,CWE-362/366)：有状态 Job 须串行
   # ====================================================================
   local dc_bad=""
   for j in "${javaarr[@]+"${javaarr[@]}"}"; do
