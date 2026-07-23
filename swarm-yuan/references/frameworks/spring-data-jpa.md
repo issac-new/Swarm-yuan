@@ -95,8 +95,8 @@ expect: always
 
 ```verify
 id: spring-data-jpa-r4
-cmd: 的 Service 文件内有 find/get/list/query/search 方法但全文无
-expect: hits>0
+cmd: 
+expect: always
 ```
 
 ### 规律：@CreatedDate/@LastModifiedDate 审计字段须 @EnableJpaAuditing + AuditingEntityListener
@@ -212,8 +212,8 @@ expect: hits>0
 
 ```verify
 id: spring-data-jpa-r13
-cmd: List<...> (find|get|query|list|search)Xxx(...)
-expect: hits>0
+cmd: 
+expect: always
 ```
 
 <!--

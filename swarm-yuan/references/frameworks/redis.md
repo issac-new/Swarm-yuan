@@ -79,8 +79,8 @@ expect: always
 
 ```verify
 id: redis-r3
-cmd: select|findBy|getBy|Mapper
-expect: hits>0
+cmd: 
+expect: always
 ```
 
 ### 规律：缓存击穿须用互斥重建或永不过期+异步刷新

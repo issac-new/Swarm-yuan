@@ -89,7 +89,7 @@ expect: always
 
 ```verify
 id: dameng-r3
-cmd: grep -inE 'ENGINE[[:space:]]*=[[:space:]]*[A-Za-z]|UNSIGNED([^A-Za-z_]|$)|ON[[:space:]]+DUPLICATE[[:space:]]+KEY|\ "${PROJECT_DIR}"
+cmd: grep -inE 'ENGINE[[:space:]]*=[[:space:]]*[A-Za-z]|UNSIGNED([^A-Za-z_]|$)|ON[[:space:]]+DUPLICATE[[:space:]]+KEY|`' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
