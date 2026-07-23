@@ -223,6 +223,24 @@ check_state() {
 }
 
 check_cognition() {
+  # WP-P5: 认知扩展包 §14-§18 按 profile 门控——节不存在 → SKIP 披露（不 fail，不静默）
+  # spec-template.md 无 §14 → profile=lite/standard 已裁剪该节（generate-skill.sh 按 profile 分层拷贝）
+  # 路径解析：技能根 = $_CONF_DIR/..（precheck.sh 在 scripts/，assets/ 在技能根）；
+  # precheck 运行时已 cd "$PROJECT_DIR"，故 $PWD 是项目目录而非技能目录——不能依赖 $PWD。
+  # 多路回退：_CONF_DIR/.. → SKILL_DIR → CONF_DIR → $PWD；找不到模板则不 SKIP（放行正常流程）。
+  local _st="" _skill_root=""
+  [[ -n "${_CONF_DIR:-}" ]] && _skill_root="$(cd "${_CONF_DIR}/.." 2>/dev/null && pwd)"
+  for _cand in "$_skill_root" "${SKILL_DIR:-}" "${CONF_DIR:-}" "${PWD:-}"; do
+    [[ -z "$_cand" ]] && continue
+    if [[ -f "${_cand}/assets/spec-template.md" ]]; then _st="${_cand}/assets/spec-template.md"; break; fi
+    if [[ -f "${_cand}/spec-template.md" ]]; then _st="${_cand}/spec-template.md"; break; fi
+  done
+  if [[ -n "$_st" ]] && ! grep -q '^## 14\.' "$_st" 2>/dev/null; then
+    echo "=== 认知检查（check_cognition）==="
+    echo "  ⊘ SKIP: 认知扩展包 §14-§18 未启用（profile=lite/standard，spec-template 已裁剪该节）"
+    pass "认知检查 SKIP（profile 门控，节不存在）"
+    return
+  fi
   echo "=== 认知递进体检（六阶认知链 + 六维动力学）==="
   echo "  理念：先有概念→结构→空间→映射→规律→处理；关系在时空变化中呈现速度/聚散/趋势/强度/能耗/累积量"
   echo "  ℹ 性质：认知体检报告（warn-only，永不 fail，不参与门禁否决；计分供认知基线参考）"
