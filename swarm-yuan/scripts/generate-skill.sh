@@ -763,6 +763,18 @@ copy_universal_templates() {
       *) echo "ERROR: UNIVERSAL_FILES 未知源类别: $entry" >&2; return 1 ;;
     esac
     cp "$src" "$dir/$dest"
+    # WP-P5: spec-template §14-§18 认知扩展包按 profile 门控
+    # lite/standard 裁掉 §14-§18（节不存在 → check_cognition SKIP 披露）；compliance 保留全部。
+    # 裁剪范围：从门控注释 <!-- profile-gate: standard+ ... --> 起，到 ## 19. 止（不含 §19）。
+    # 对 create/upgrade/resume 任意模式均生效（凡拷贝 spec-template 即按 profile 分层）。
+    if [[ "$dest" == "assets/spec-template.md" && "$PROFILE" != "compliance" ]]; then
+      awk '
+        /^<!-- profile-gate: standard\+/{ skip=1; next }
+        /^## 14\. /{ skip=1 }
+        /^## 19\. /{ skip=0 }
+        !skip { print }
+      ' "$dir/$dest" > "$dir/$dest.tmp" && mv "$dir/$dest.tmp" "$dir/$dest"
+    fi
     # 路径重写（三平台兼容：sed -i.bak + rm，与 tests/e2e/run-e2e.sh 同款写法）
     if [[ -n "${SKILLS_PATH_REWRITE:-}" ]]; then
       sed -i.bak -e "$SKILLS_PATH_REWRITE" "$dir/$dest" || { echo "ERROR: SKILLS_PATH_REWRITE 应用失败: $dir/$dest" >&2; return 1; }
