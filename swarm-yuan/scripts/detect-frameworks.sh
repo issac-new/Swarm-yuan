@@ -150,6 +150,10 @@ opentelemetry|io.opentelemetry|pom
 # （Dockerfile 文件存在即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("dockerfile")
 # WP-U：kubernetes（IaC 容器编排）——detect-frameworks.sh 不支持 file 类型探测
 # （K8s 清单 *.yaml/*.yml 含 apiVersion/kind 即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("kubernetes")
+# WP-V：react-native（移动端跨平台 JS/TS）——package.json dependencies 含 react-native 即激活
+react-native|react-native|pkgjson
+# WP-V：flutter（移动端跨平台 Dart）——detect-frameworks.sh 不支持 file 类型探测
+# （pubspec.yaml 文件存在即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("flutter")
 SIGNALS
 
 # WP-R Bug#3: 重构依赖收集——分桶(file_type) + pom 同时提取 groupId+artifactId +

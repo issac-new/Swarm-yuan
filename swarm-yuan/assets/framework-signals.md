@@ -1,5 +1,5 @@
 <!-- 由 scripts/gen-framework-index.sh 生成（WP-P1 数据化外迁），手改会被覆盖 -->
-# 框架信号索引（66 个框架）
+# 框架信号索引（69 个框架）
 
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
@@ -85,6 +85,11 @@
 | flink | 配置 | `execution.checkpointing.*` / `state.backend.*` / `restart-strategy.*` / `pipeline.jars` / `table.*` / `high-availability.*` | 高 |
 | flink | 代码 | `enableCheckpointing` / `assignTimestampsAndWatermarks` / `RestartStrategy` / `KeyedState` / `ValueState` / `CEP.pattern` | 高 |
 | flink | CDC | `flink-cdc.yaml`（YAML pipeline：`source:`/`sink:` + `pipeline:` 节点）/ `MySqlSource` / `FlinkSourceFunction` | 高 |
+| flutter | 文件 | `pubspec.yaml` 存在（含 `flutter:` sdk 段） | 高（file 类型信号；detect-frameworks.sh 不支持 file 探测，须手动 ACTIVE_FRAMEWORKS） |
+| flutter | 依赖 | pubspec.yaml dependencies 含 `flutter` / `flutter_test` | 高 |
+| flutter | 文件 | `lib/main.dart` 入口 + `analysis_options.yaml` | 中（目录结构组合） |
+| flutter | 配置 | `import 'package:flutter/material.dart'` / `package:flutter/cupertino.dart` | 高（框架专属导入） |
+| flutter | 文件 | `android/app/build.gradle` + `ios/Podfile` 双端工程并存 | 低（仅作辅助） |
 | gin | 依赖 | `github.com/gin-gonic/gin` / `github.com/gin-contrib/...`（gzip/cors/sessions/jwt） | 高 |
 | gin | 注解 | 无（Gin 不依赖注解，以 import + API 调用识别） | — |
 | gin | 文件 | `**/go.mod` 含 `gin-gonic/gin` | 高 |
@@ -186,6 +191,11 @@
 | nuxt | 代码 | `useFetch(` / `useAsyncData(` / `useState(` / `defineNuxtPlugin(` / `defineNuxtRouteMiddleware(` / `useSeoMeta(` | 高 |
 | nuxt | 配置 | `nuxt.config.ts` 的 `modules` / `runtimeConfig` / `app.head` / `nitro` | 高 |
 | nuxt | 目录 | `app/`（Nuxt 4 默认 srcDir）/ `server/`（nitro 服务端）/ `public/` | 高 |
+| opengauss | 依赖 | `org.opengauss:opengauss-jdbc`（pom.xml groupId/artifactId） | 高 |
+| opengauss | 依赖 | `psycopg2` / `psycopg2-binary`（requirements.txt；PG 协议兼容驱动，须与配置信号组合） | 中 |
+| opengauss | 配置 | `jdbc:opengauss://` / `org.opengauss.Driver` / 5432 端口数据源 | 高 |
+| opengauss | 文件 | `**/pg_hba.conf` / `**/postgresql.conf` 含 `audit_trail` 等 openGauss 专属参数 | 中（PG 同源，需组合信号） |
+| opengauss | 代码 | `psycopg2.connect(` / `DruidDataSource` + opengauss URL | 中 |
 | opentelemetry | 依赖 | `@opentelemetry/api` / `@opentelemetry/sdk-node` / `@opentelemetry/exporter-*`（package.json） | 高 |
 | opentelemetry | 依赖 | `opentelemetry-api` / `opentelemetry-sdk` / `opentelemetry-exporter-*`（requirements.txt / pyproject.toml） | 高 |
 | opentelemetry | 依赖 | `go.opentelemetry.io/otel` / `go.opentelemetry.io/otel/sdk` / `go.opentelemetry.io/otel/exporters/otlp`（go.mod） | 高 |
@@ -223,6 +233,11 @@
 | rabbitmq | 配置 | `spring.rabbitmq.*` / `spring.rabbitmq.listener.*` / `publisher-confirm-type` / `x-dead-letter-exchange` / `x-queue-type` | 高 |
 | rabbitmq | 代码 | `RabbitTemplate` / `ConnectionFactory` / `QueueBuilder` / `DirectExchange` / `TopicExchange` / `basicPublish` / `basicConsume` | 高 |
 | rabbitmq | 文件 | `**/docker-compose*.yml` 含 `rabbitmq:` | 中（需排除仅部署描述） |
+| react-native | 依赖 | package.json dependencies 含 `react-native` | 高（核心包独立可定） |
+| react-native | 依赖 | `react-native-webview` / `@react-native-async-storage/async-storage` / `react-native-safe-area-context` | 中（生态组合信号） |
+| react-native | 文件 | `metro.config.js` / `react-native.config.js` | 高（RN 专属构建配置） |
+| react-native | 文件 | `android/app/build.gradle` + `ios/Podfile` 双端工程并存 | 中（需排除原生工程） |
+| react-native | 配置 | `app.json` 含 `"expo"` 或 RN 工程名/入口 | 低（仅作辅助） |
 | react | 依赖 | `react` / `react-dom` 包（package.json dependencies）/ `next` / `react-router-dom` / `@reduxjs/toolkit` | 高 |
 | react | 文件 | `**/*.jsx` / `**/*.tsx` 含 JSX / `react.config.*` | 中（须组合代码信号） |
 | react | 代码 | `import .* from 'react'` / `useState(` / `useEffect(` / `useMemo(` / `useCallback(` / `React.createElement` / `function .*Component` | 高 |

@@ -1285,6 +1285,21 @@ check_sast_deep() {
     return
   fi
   local tool="${SAST_DEEP_TOOL:-auto}" sev="${SAST_DEEP_SEVERITY:-error}" found=0
+  # SAST 豁免登记（5 字段：对象|规则|理由|审批人|日期；空理由视为无效豁免 → fail）
+  local _sast_exempt=""
+  if [[ ${#SAST_DEEP_EXEMPTIONS[@]} -gt 0 ]]; then
+    local _sex _sex_id _sex_reason
+    for _sex in "${SAST_DEEP_EXEMPTIONS[@]}"; do
+      _sex_reason=$(printf '%s\n' "$_sex" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$3); print $3}')
+      if [[ -z "$_sex_reason" ]]; then
+        fail "gate_sast_deep_exemption_invalid: SAST 豁免须为 5 字段（对象|规则|理由|审批人|日期）：${_sex}"
+        return
+      fi
+      _sex_id=$(printf '%s\n' "$_sex" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/,"",$1); print $1}')
+      _sast_exempt="${_sast_exempt}${_sex_id} "
+    done
+  fi
+  _sast_exempted() { printf '%s\n' "$_sast_exempt" | grep -qF "$1"; }
   local bin=""
   # 载体解析：builtin=强制内置；可执行路径=直接调用（fixture mock 亦走此分支）；空/auto=降级链探测
   if [[ "$tool" == "builtin" ]]; then
@@ -1321,8 +1336,12 @@ check_sast_deep() {
       _w=$(printf '%s\n' "$json" | grep -cE '"severity"[^,]*WARNING' || true)
       echo "  ⓘ ${bin} 结果：ERROR=${_e} WARNING=${_w}"
       if [[ "$sev" == "warning" && $((_e+_w)) -gt 0 ]] || [[ "$sev" == "error" && "$_e" -gt 0 ]]; then
-        fail "gate_sast_deep_findings: ${bin} 检出达标严重级别（${sev}）以上发现 ERROR=${_e} WARNING=${_w}（GB/T 34943/34944/34946 漏洞类别）——详见 ${bin} JSON 输出"
-        found=1
+        if _sast_exempted gate_sast_deep_findings; then
+          warn "gate_sast_deep_findings: ${bin} 检出达标严重级别发现（已豁免留痕）"
+        else
+          fail "gate_sast_deep_findings: ${bin} 检出达标严重级别（${sev}）以上发现 ERROR=${_e} WARNING=${_w}（GB/T 34943/34944/34946 漏洞类别）——详见 ${bin} JSON 输出"
+          found=1
+        fi
       fi
     fi
   fi
