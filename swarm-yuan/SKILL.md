@@ -115,6 +115,8 @@ swarm-yuan 的 50 个门禁服务于一条认知递进链。核心理念：**呈
 | check | `scripts/precheck.sh` | 50 个门禁子命令（核心 10 + 架构 17 + 合规 17 + advisory-only 4：`--compliance` 标准合规矩阵核验 / `--docs-pack` 文档包清单 / `--sbom` SBOM 生成+许可证块名单 / `--privacy` 个人信息扫描 / `--authz` 授权类弱点 / `--requirements` 需求质量（29148）/ `--crypto` 密码算法合规（GB/T 39786）/ `--rtm` 需求追溯矩阵（29148 RTM）/ `--release-sign` 发布签名+provenance（SLSA L2 / SSDF PS.2）/ `--dengbao` 等保 2.0 控制点（GB/T 22239，fail-closed+豁免留痕）/ `--pia` 隐私影响评估（个保法 55-56，fail-closed）/ `--sast-deep` 深度 SAST（semgrep→opengrep→内置降级链）/ `--oss-eval` 开源代码安全评价（GB/T 43848，复用 --sbom 产物），随 `--all-full` 执行（标准 27：核心 10+架构 17）；合规 17 独立 `--compliance-suite` 按需执行，未配置静默跳过；另含 `--shift-left` 左移：测试设计/变更影响/可观测性） + **框架门禁片段注入区**（`# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，由 `--inject-frameworks` 写入）。**门禁分层（决策 19，横切维度）**：strict 17（真 fail）/ warn 21（混合）/ advisory 10（永不 fail，子shell 内重定义 fail/warn 为纯 echo）；`--list-gates` 列三档分层；`scripts/gen-enforce-level.sh` 按 fail() 数自动归类（幂等）。 |
 | scripts | `scripts/*` | 工具箱（门禁+状态机+**调用追踪 trace-log.sh**+图谱+MCP+self-check） |
 
+**★WP-P3 框架证据台账脚本化**：跑 `bash scripts/framework-evidence.sh <项目根> --frameworks <ACTIVE_FRAMEWORKS>` 产出证据台账 TSV（framework/rule_id/rule_title/hits/evidence/SUGGEST）。模型读台账而非逐条跑 grep——对每条规律做适用/不适用判断并记录理由（判断语义完整保留，红线 template-spec.md:346），证据 file:line 从台账直接引用；SUGGEST 只是启发式（hits=0 → likely-na），不是判决。规律计数 ≥ 深度门槛的校验由 `verify-framework-ruleset.sh` 继续兜底。框架文件 §3 每条规律下的 ```verify 块（id/cmd/expect）是台账数据源，新增/改规律须同步 verify 块。
+
 ## 它整合的方法论（只引用调用，不重新实现）
 
 swarm-yuan 整合 11 个外部运行时，按**接线深度分三层**（每层有自带降级载体，不假装全深接）：
