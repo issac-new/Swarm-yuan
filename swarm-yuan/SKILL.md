@@ -52,7 +52,7 @@ swarm-yuan 的 44 个门禁服务于一条认知递进链。核心理念：**呈
 **执行准则**：价值/目标/问题/结果四导向；质量优先>确保安全>兼顾效率>减少打扰>因地制宜；疑虑必确认（改只读/升级依赖/删稳定单元/多方案/安全冲突→暂停确认）。
 
 **AI 主导 + 用户决策原则**（G1 决策治理，对齐 ISO/IEC 42001 人工监督留痕）：在目标 skill 的完整生命周期中，特征卡提取、门禁配置、spec 填充、代码实现、问题排查等所有环节均**优先以 AI 为主导生成建议项**，但决策按**三级分类**治理——什么能自动做、什么必须停下问、每条决策有审计轨迹落盘。用户的角色是**评估决策或修订后批准执行**，而非手动编写。详见 `references/decision-governance.md`。具体：
-- 特征卡 16 项：AI 探查后**主动生成建议值**（Mechanical 类，直接做），用户评估修订后确认
+- 特征卡 17 项：AI 探查后**主动生成建议值**（Mechanical 类，直接做），用户评估修订后确认
 - 门禁 precheck.conf 151 变量：AI 从特征卡**主动推导建议配置**（Mechanical 类；涉及安全规则如 SENSITIVE_WHITELIST/CRYPTO_PROFILE 升 Taste），用户评估后确认
 - spec 模板填充：AI **主动预填**（Taste 类；§5.6 版本约束/§5.7 安全约束升 UserChallenge；含 §5.5 复用约束从第 11 项检索预填），用户评估修订后确认
 - 门禁 fail：AI **主动诊断原因 + 给出修复建议**（Taste 类；涉及依赖升级/安全冲突/删稳定单元升 UserChallenge），用户评估后批准执行
@@ -133,7 +133,7 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 
 | 用途 | 文件 |
 |------|------|
-| 探查指南（16 项特征卡 + 图谱工具 + **§C+ 详尽组件库清单与调用链路分析**） | `references/exploration-guide.md` |
+| 探查指南（17 项特征卡 + 图谱工具 + **§C+ 详尽组件库清单与调用链路分析**） | `references/exploration-guide.md` |
 | 六段式填充规范（生成后核对清单 + **§4/§5/§6 全量要求 + 编排约束核对**） | `references/template-spec.md` |
 | 五层认知基底总览 | `references/cognition-framework.md` |
 | 逻辑剃刀 + 谬误图谱 | `references/logic-razor.md` |

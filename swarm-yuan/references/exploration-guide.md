@@ -21,7 +21,7 @@
 > | compliance | 合规信号 或 文件数 >500 | 三路并行 + 合规矩阵扫描 | 强制（gitnexus/graphify 至少其一） |
 >
 > **质量优先偏置**：规模边界不确定按更重档处理（如 78 文件但含微服务结构 → 按 standard 三路探查）。
-> 探查阶段分级只影响探查效率（单路 vs 三路 vs 三路+图谱），不影响特征卡 16 项的完整度（所有档位都须全量探查特征卡）。
+> 探查阶段分级只影响探查效率（单路 vs 三路 vs 三路+图谱），不影响特征卡 17 项的完整度（所有档位都须全量探查特征卡）。
 
 ## Step -1: 项目知识读取（先于一切探查，最高优先级）
 
@@ -100,7 +100,7 @@ graphify export callflow-html                    # Mermaid 调用流（用于组
 
 ## 探查清单（通用）
 
-> **工具使用原则**：每项探查优先用运行时工具（gitnexus/graphify/claude-mem/ocr/gsd-tools）+ Claude Code 原生能力（Read/Glob/Grep/LSP/WebSearch/Task），降级到 grep+读文件。以下是 16 项特征卡的工具使用矩阵。
+> **工具使用原则**：每项探查优先用运行时工具（gitnexus/graphify/claude-mem/ocr/gsd-tools）+ Claude Code 原生能力（Read/Glob/Grep/LSP/WebSearch/Task），降级到 grep+读文件。以下是 17 项特征卡的工具使用矩阵。
 
 ### 特征卡工具使用矩阵（每项探查的工具优先级 + 降级策略）
 
@@ -122,6 +122,7 @@ graphify export callflow-html                    # Mermaid 调用流（用于组
 | 14 | 领域知识 | gitnexus `query "domain entities"` + claude-mem `search "domain knowledge"` + WebSearch 行业标准 | Read 领域模型 + Grep 业务关键词 |
 | 15 | 编排调用关系及约束 | **graphify `path "ModuleA" "ModuleB"`**（最短依赖路径）+ **gitnexus `trace <entry> <register>`**（调用链） | Grep "^import.*from" + madge 循环检测 |
 | 16 | 详尽构件库清单（全量） | **gitnexus `analyze` + `gitnexus mcp`**（全量符号索引）+ **graphify `.`**（全量知识图） | `find` + `grep export` 机械枚举 + 计数核验 |
+| 17 | 合规与质量特性基线 | Read 现有合规文档/等保备案/密评报告/PIA + Grep 质量特性声明 | Read spec §22 标准合规段 + Grep 标准关键词 |
 
 > **Dynamic Workflows 场景**：如果项目大型（>100 文件），探查阶段可用 Dynamic Workflow 并行扇出三路子代理（结构/规范/代码组织），每路用不同的运行时工具，最后交叉验证特征卡。降级：传统 Task(subagent) 三路并行。
 

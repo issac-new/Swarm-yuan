@@ -2,10 +2,10 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 >
-> 16 项特征卡让 AI 认识你的项目，44 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
+> 17 项特征卡让 AI 认识你的项目，44 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
 
 [![Release](https://img.shields.io/badge/release-v2026.07.20-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.20)
-[![Feature Card](https://img.shields.io/badge/feature%20card-16-green)]()
+[![Feature Card](https://img.shields.io/badge/feature%20card-17-green)]()
 [![Quality Gates](https://img.shields.io/badge/quality%20gates-44-orange)]()
 [![Runtimes](https://img.shields.io/badge/runtimes-11-yellow)]()
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
@@ -28,15 +28,15 @@
 
 | 理念 | 含义 |
 |------|------|
-| 先认识，再行动 | AI 写代码前必须先认识项目。16 项特征卡完成认知，44 个门禁守护行动 |
+| 先认识，再行动 | AI 写代码前必须先认识项目。17 项特征卡完成认知，44 个门禁守护行动 |
 | 拼装式开发 | 新功能 = 既有稳定单元拼装 + 最小新增胶水代码。禁止重复造轮子/侵入式重构/破坏性改造 |
 | 呈现递进的关系 | 门禁不是"数 import 数"——每个计数背后指向一条关系规律 |
-| 特征卡是立法，门禁是执法 | 16 项特征卡定义「项目应该是什么样的」，44 个门禁验证「代码是否符合」 |
+| 特征卡是立法，门禁是执法 | 17 项特征卡定义「项目应该是什么样的」，44 个门禁验证「代码是否符合」 |
 | 分层整合，诚实降级 | 11 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深接 |
 
 ---
 
-## 16 项特征卡：项目的「认知 DNA」
+## 17 项特征卡：项目的「认知 DNA」
 
 AI 探查项目后提取 16 项特征，每项落到真实路径和版本号，不用占位符。特征卡不是独立文件，而是**分散承接进目标 skill 的各个文件中**，驱动门禁配置和文件填充。
 
@@ -185,7 +185,7 @@ bash install.sh
 AI 自动执行 13 步流程（**不允许中途停在骨架阶段**）：
 
 ```
-自检 → 读取项目知识 → 探查仓库 → 提取 16 项特征卡 → 创建骨架 → 填充全部文件（消除占位符）→ 配置 precheck.conf → 生成 hooks/commands → 运行 44 个门禁 → 写回记忆 → 脚本确认零占位符（`generate-skill.sh --verify-completeness`）
+自检 → 读取项目知识 → 探查仓库 → 提取 17 项特征卡 → 创建骨架 → 填充全部文件（消除占位符）→ 配置 precheck.conf → 生成 hooks/commands → 运行 44 个门禁 → 写回记忆 → 脚本确认零占位符（`generate-skill.sh --verify-completeness`）
 ```
 
 ### 日常使用
@@ -217,7 +217,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 | 层 | 解决什么 | 与特征卡/门禁的关系 |
 |----|---------|-------------------|
-| 认知递进 | 如何认识项目 | 特征卡 16 项 = 认知递进的产物 |
+| 认知递进 | 如何认识项目 | 特征卡 17 项 = 认知递进的产物 |
 | 思维语言 | 如何思考 | spec §14-§18 = 思维语言落地 |
 | 认知辩证 | 如何推演+自证伪 | `--cognition` = 验证工具 |
 | 偏差防范 | 如何纠偏 | spec §16 偏差自检 |
@@ -339,4 +339,4 @@ MIT
 
 ---
 
-> AI 的代码生成能力已经很强，但「项目认知」还停留在零。swarm-yuan 用 16 项特征卡让 AI 先懂你的项目，用 44 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
+> AI 的代码生成能力已经很强，但「项目认知」还停留在零。swarm-yuan 用 17 项特征卡让 AI 先懂你的项目，用 44 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
