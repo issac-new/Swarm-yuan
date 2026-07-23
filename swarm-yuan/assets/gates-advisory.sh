@@ -777,7 +777,7 @@ check_cert_audit() {
   echo "=== 安全认证合规聚合（--cert-audit，advisory）==="
   local profile="${CERT_PROFILE:-}"
   if [[ -z "$profile" ]]; then
-    echo "  (CERT_PROFILE 未配置——可选：dengbao4|bcp5|gb22240|pcidss|iso27001|all)"
+    echo "  (CERT_PROFILE 未配置——可选：dengbao4|bcp5|gb22240|jrt0142|pcidss|iso27001|all)"
     echo "  配置后在 precheck.compliance.conf 设 CERT_PROFILE 或环境变量传入"
     return 0
   fi
@@ -838,6 +838,23 @@ check_cert_audit() {
       _cert_check "定级声明" "--compliance" "warn" "SPEC_FILE 未配置"
     fi
     _cert_check "定级文档存在" "人工核对" "warn" "须有定级报告文档（定级→备案→按级保护）"
+  fi
+
+  # JR/T 0142-2016 银行卡清算业务设施技术要求（jrt0142）
+  if [[ "$profile" == "jrt0142" || "$profile" == "all" ]]; then
+    echo "--- JR/T 0142-2016 银行卡清算业务设施 + 《清算机构管理办法》---"
+    _cert_check "国密SM2/3/4加密" "--crypto" "pass" "须 CRYPTO_PROFILE=gm（GB/T 39786 8.4 联动）"
+    _cert_check "C3信息保护" "--sensitive+--crypto" "pass" "不得明文存储/传输/展示（JR/T 0171 6.1.1 联动）"
+    _cert_check "多因素鉴别" "--dengbao" "pass" "须 DENGBAO_LEVEL=3（等保三级 8.1.4.1 d 联动）"
+    _cert_check "PAN持卡人数据扫描" "--privacy" "pass" "须 --privacy 扩展 PAN 模式（PCI-DSS Req 3 对标）"
+    _cert_check "漏洞管理CVE" "--sbom" "pass" "CVE 阈值门禁（PCI-DSS Req 6 对标）"
+    _cert_check "审计日志≥6个月" "--shift-left" "warn" "spec §21 须声明日志留存≥6个月（网安法§21 联动）"
+    _cert_check "灾备RTO/RPO" "--shift-left" "warn" "spec §20 须声明 RTO≤6h/RPO≤15min/能力≥5级（JR/T 0044 联动）"
+    _cert_check "灾备演练≥1次/年" "--operate" "warn" "spec §23 须声明灾备演练记录（JR/T 0044 第10章）"
+    _cert_check "数据本地化声明" "spec§22" "warn" "境外机构数据须境内存储（《清算机构管理办法》§31）"
+    _cert_check "独立清算+灾备系统" "spec§22" "warn" "须声明独立/安全/高效清算系统+灾备系统（§10 准入条件）"
+    _cert_check "网络分区分域" "人工核对" "warn" "边界防护/入侵检测是网络设施——人工核对"
+    _cert_check "高可用双活/主备" "人工核对" "warn" "可用性架构是运行态——人工核对"
   fi
 
   # PCI-DSS 4.0（pcidss）
