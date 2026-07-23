@@ -723,6 +723,114 @@ print("TOTAL:%d RECENT:%d" % (total, recent))
   fi
 }
 
+# check_state_phase（--state-phase，WP-X）：comet 硬前置——阶段状态机证据核验
+# 理念来源：comet "无证据不流转"（R6 P0）。advisory 级（warn-only），不阻断交付。
+# 检查 .swarm-yuan/state.json 存在且当前阶段有 evidence 记录。
+check_state_phase() {
+  echo "=== 阶段状态机证据核验（--state-phase，advisory；comet 理念：无证据不流转）==="
+  local state_file="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/state.json"
+  if [[ ! -f "$state_file" ]]; then
+    warn "state.json 不存在（comet 风格状态机未初始化；建议用 state-machine.sh init 初始化变更状态跟踪）"
+    return 0
+  fi
+  if [[ ! -s "$state_file" ]]; then
+    echo "  ℹ state.json 存在但为空（draft 期允许）"
+    return 0
+  fi
+  # 解析 JSON：当前阶段 + evidence 字段
+  local issues=0 phase="" has_evidence=0
+  if command -v python3 >/dev/null 2>&1; then
+    local py_out
+    py_out=$(python3 -c '
+import sys, json
+try:
+    with open(sys.argv[1]) as f:
+        data = json.load(f)
+except Exception as e:
+    print("PARSE_ERROR: " + str(e)); sys.exit(0)
+phase = data.get("current_phase") or data.get("phase") or ""
+evidence = data.get("evidence") or data.get("phase_evidence") or {}
+if not phase:
+    print("MISSING_PHASE")
+else:
+    print("PHASE:" + phase)
+    if isinstance(evidence, dict):
+        for ph, ev in evidence.items():
+            if not ev:
+                print("NO_EVIDENCE:" + ph)
+    elif isinstance(evidence, list):
+        if len(evidence) == 0:
+            print("NO_EVIDENCE:" + phase)
+    elif not evidence:
+        print("NO_EVIDENCE:" + phase)
+    else:
+        print("HAS_EVIDENCE")
+' "$state_file" 2>/dev/null || true)
+    while IFS= read -r ln; do
+      [[ -z "$ln" ]] && continue
+      case "$ln" in
+        PARSE_ERROR:*) echo "  ⚠ state.json JSON 解析失败：${ln#PARSE_ERROR: }"; issues=$((issues+1));;
+        MISSING_PHASE*) echo "  ⚠ state.json 缺 current_phase 字段"; issues=$((issues+1));;
+        PHASE:*) phase="${ln#PHASE:}";;
+        NO_EVIDENCE:*) echo "  ⚠ 阶段 ${ln#NO_EVIDENCE:} 无 evidence 记录（comet：无证据不流转）"; issues=$((issues+1));;
+        HAS_EVIDENCE*) has_evidence=1;;
+      esac
+    done <<< "$py_out"
+  else
+    # 无 python3 降级：grep 检查关键字段
+    phase=$(grep -oE '"current_phase"\s*:\s*"[^"]*"' "$state_file" 2>/dev/null | head -1 || true)
+    [[ -z "$phase" ]] && { echo "  ⚠ state.json 缺 current_phase 字段"; issues=$((issues+1)); }
+    grep -qE '"evidence"' "$state_file" 2>/dev/null || { echo "  ⚠ state.json 无 evidence 字段"; issues=$((issues+1)); }
+  fi
+  if [[ $issues -eq 0 ]]; then
+    if [[ -n "$phase" ]]; then
+      pass "阶段状态机证据核验通过（当前阶段：${phase#PHASE:}，evidence 在案）"
+    else
+      pass "阶段状态机证据核验通过"
+    fi
+  fi
+}
+
+# check_upstream_baseline（--upstream-baseline，WP-X）：上游运行时基线 drift 核验
+# 理念来源：R6 §上游基线漂移（comet/graphify/ruflo 版本落后）。
+# 检查 docs/upstream-baseline.md 的 baseline_status 标记，drifted 项 warn。
+check_upstream_baseline() {
+  echo "=== 上游运行时基线 drift 核验（--upstream-baseline，advisory）==="
+  local bl_file="${PROJECT_DIR:-$(pwd)}/docs/upstream-baseline.md"
+  if [[ ! -f "$bl_file" ]]; then
+    # 兜底：SKILL_DIR/../docs/
+    local _sd="${SKILL_DIR:-${_CONF_DIR:-$(pwd)}/..}"
+    bl_file="${_sd}/docs/upstream-baseline.md"
+  fi
+  if [[ ! -f "$bl_file" ]]; then
+    warn "upstream-baseline.md 不存在（上游运行时版本基线未登记）"
+    return 0
+  fi
+  local drifted=0 synced=0 watch=0 license_risk=0
+  # 扫 baseline_status= 标记
+  while IFS= read -r ln; do
+    [[ -z "$ln" ]] && continue
+    case "$ln" in
+      *baseline_status=synced*) synced=$((synced+1));;
+      *baseline_status=drifted*) drifted=$((drifted+1));;
+      *baseline_status=watch*) watch=$((watch+1));;
+      *baseline_status=license-risk*) license_risk=$((license_risk+1));;
+    esac
+  done < "$bl_file" 2>/dev/null
+  echo "  ⓘ 上游基线：synced=${synced} drifted=${drifted} watch=${watch} license-risk=${license_risk}"
+  if [[ $drifted -gt 0 ]]; then
+    warn "上游运行时 ${drifted} 项 drifted（引用基线落后上游最新版）——建议重核并更新基线"
+    grep -nE 'baseline_status=drifted' "$bl_file" 2>/dev/null | head -5 | sed 's/^/    /'
+  fi
+  if [[ $license_risk -gt 0 ]]; then
+    warn "上游运行时 ${license_risk} 项 license-risk（许可证冲突风险）——须法务评估"
+    grep -nE 'baseline_status=license-risk' "$bl_file" 2>/dev/null | head -5 | sed 's/^/    /'
+  fi
+  if [[ $drifted -eq 0 && $license_risk -eq 0 ]]; then
+    pass "上游运行时基线核验通过（${synced} synced / ${watch} watch，无 drift 无 license-risk）"
+  fi
+}
+
 # 记录发布后健康指标（响应时间/错误率）基线到 .swarm-yuan/canary-baseline.jsonl，
 check_canary() {
   echo "=== 发布后基线对比监控（--canary，advisory）==="

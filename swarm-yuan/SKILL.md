@@ -1,6 +1,6 @@
 ---
 name: swarm-yuan
-description: "Meta-skill generator: produces a project-specific dev skill for ANY code repo. Integrates 11 runtimes (OpenSpec/superpowers/comet/GitNexus/graphify/gsd-core/claude-mem/ocr/gstack/Ruflo/ECC), 50 quality gates (standard 27 via --all-full: core 10 + architecture 17; compliance 17 via --compliance-suite on-demand; incl. shift-left: test-design/change-impact/observability in spec/plan stage; rtm requirement-traceability; release-sign SLSA L2 signing), 5-layer cognition framework, 32-domain knowledge. Core capability: exhaustive component inventory (mechanical enumeration + signature extraction + count verification) and call-chain analysis (shape-adaptive by project form: registration assembly / request pipeline / message flow / cross-service chain) → orchestration constraints derivation. Use when user says '为某项目生成开发技能', 'create a dev skill', '六段式 skill'."
+description: "Meta-skill generator: produces a project-specific dev skill for ANY code repo. Integrates 11 runtimes (OpenSpec/superpowers/comet/GitNexus/graphify/gsd-core/claude-mem/ocr/gstack/Ruflo/ECC), 52 quality gates (standard 27 via --all-full: core 10 + architecture 17; compliance 17 via --compliance-suite on-demand; incl. shift-left: test-design/change-impact/observability in spec/plan stage; rtm requirement-traceability; release-sign SLSA L2 signing), 5-layer cognition framework, 32-domain knowledge. Core capability: exhaustive component inventory (mechanical enumeration + signature extraction + count verification) and call-chain analysis (shape-adaptive by project form: registration assembly / request pipeline / message flow / cross-service chain) → orchestration constraints derivation. Use when user says '为某项目生成开发技能', 'create a dev skill', '六段式 skill'."
 ---
 
 # swarm-yuan — 项目需求交付技能生成器
@@ -38,7 +38,7 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 
 ## 五层认知基底 + 执行准则
 
-swarm-yuan 的 50 个门禁服务于一条认知递进链。核心理念：**呈现递进的关系，而非仅关注计算**。
+swarm-yuan 的 52 个门禁服务于一条认知递进链。核心理念：**呈现递进的关系，而非仅关注计算**。
 
 | 层 | 解决什么 | 落点 |
 |----|---------|------|
@@ -112,7 +112,7 @@ swarm-yuan 的 50 个门禁服务于一条认知递进链。核心理念：**呈
 | reference | `references/*.md` | 参考手册（目录/安全/编译/**全量组件库**/**依赖链路+约束（按形态选模型）**/**全量接口端点**/**全量store+类型** + 数据 + 方法论 + 认知 + 领域知识） |
 | reference | `references/framework-knowledge.md` | **按激活框架实例化的规律与门禁依据**（骨架由 AI 在 Step 4.5 框架深化阶段依据 `references/frameworks/<fw>.md` §3+§4 构建，逐条用项目代码验证实例化；`--inject-frameworks` 只注入门禁片段到 precheck.sh，不生成此文件骨架） |
 | assets | `assets/*` | 模板（spec/plan/分支/环境/库表/状态机） |
-| check | `scripts/precheck.sh` | 50 个门禁子命令（核心 10 + 架构 17 + 合规 17 + advisory-only 4：`--compliance` 标准合规矩阵核验 / `--docs-pack` 文档包清单 / `--sbom` SBOM 生成+许可证块名单 / `--privacy` 个人信息扫描 / `--authz` 授权类弱点 / `--requirements` 需求质量（29148）/ `--crypto` 密码算法合规（GB/T 39786）/ `--rtm` 需求追溯矩阵（29148 RTM）/ `--release-sign` 发布签名+provenance（SLSA L2 / SSDF PS.2）/ `--dengbao` 等保 2.0 控制点（GB/T 22239，fail-closed+豁免留痕）/ `--pia` 隐私影响评估（个保法 55-56，fail-closed）/ `--sast-deep` 深度 SAST（semgrep→opengrep→内置降级链）/ `--oss-eval` 开源代码安全评价（GB/T 43848，复用 --sbom 产物），随 `--all-full` 执行（标准 27：核心 10+架构 17）；合规 17 独立 `--compliance-suite` 按需执行，未配置静默跳过；另含 `--shift-left` 左移：测试设计/变更影响/可观测性） + **框架门禁片段注入区**（`# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，由 `--inject-frameworks` 写入）。**门禁分层（决策 19，横切维度）**：strict 17（真 fail）/ warn 21（混合）/ advisory 10（永不 fail，子shell 内重定义 fail/warn 为纯 echo）；`--list-gates` 列三档分层；`scripts/gen-enforce-level.sh` 按 fail() 数自动归类（幂等）。 |
+| check | `scripts/precheck.sh` | 52 个门禁子命令（核心 10 + 架构 17 + 合规 17 + advisory-only 4：`--compliance` 标准合规矩阵核验 / `--docs-pack` 文档包清单 / `--sbom` SBOM 生成+许可证块名单 / `--privacy` 个人信息扫描 / `--authz` 授权类弱点 / `--requirements` 需求质量（29148）/ `--crypto` 密码算法合规（GB/T 39786）/ `--rtm` 需求追溯矩阵（29148 RTM）/ `--release-sign` 发布签名+provenance（SLSA L2 / SSDF PS.2）/ `--dengbao` 等保 2.0 控制点（GB/T 22239，fail-closed+豁免留痕）/ `--pia` 隐私影响评估（个保法 55-56，fail-closed）/ `--sast-deep` 深度 SAST（semgrep→opengrep→内置降级链）/ `--oss-eval` 开源代码安全评价（GB/T 43848，复用 --sbom 产物），随 `--all-full` 执行（标准 27：核心 10+架构 17）；合规 17 独立 `--compliance-suite` 按需执行，未配置静默跳过；另含 `--shift-left` 左移：测试设计/变更影响/可观测性） + **框架门禁片段注入区**（`# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，由 `--inject-frameworks` 写入）。**门禁分层（决策 19，横切维度）**：strict 17（真 fail）/ warn 21（混合）/ advisory 10（永不 fail，子shell 内重定义 fail/warn 为纯 echo）；`--list-gates` 列三档分层；`scripts/gen-enforce-level.sh` 按 fail() 数自动归类（幂等）。 |
 | scripts | `scripts/*` | 工具箱（门禁+状态机+**调用追踪 trace-log.sh**+图谱+MCP+self-check） |
 
 ## 它整合的方法论（只引用调用，不重新实现）
