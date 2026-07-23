@@ -86,7 +86,7 @@
 - C6 ✅：metrics 断言 3/3 OK
 - C8 ✅：gate-fixtures 40/40 组全绿（run-gate-fixture.sh 无参数「共 40 组，失败组 0」）
 - 行业 profile ✅：`tests/run-industry-profile.sh gov` RC=0（覆盖断言通过）
-- 真值核对 ✅：check_*=40、GATE_FLAGS=40（1:1）、ALL_GATES_CORE=10/COMPLIANCE=13/FULL=40（架构=40−10−13=17）、conf 变量=151（core 12 + arch 100 + compliance 39）、references/*.md（不含 frameworks/）=19、enforce strict 14/warn 20/advisory 6（gen-enforce-level 实际输出：dengbao 6 fail/pia 4 fail → strict，sast-deep 1 fail/oss-eval 2 fail → warn）、framework-gates/*.sh=62、gate-fixtures=40 组
+- 真值核对 ✅：check_*=40、GATE_FLAGS=40（1:1）、ALL_GATES_CORE=10/COMPLIANCE=13/FULL=40（架构=40−10−13=17）、conf 变量=151（core 12 + arch 100 + compliance 39）、references/*.md（不含 frameworks/）=19、enforce strict 14/warn 20/advisory 6（WP-S1 时态；WP-S2 终审后 strict 17/warn 21/advisory 10，门禁 48/变量 158）、framework-gates/*.sh=62、gate-fixtures=40 组
 - self-check ✅：--check-only RC=0 全绿（11 运行时全装；文档一致性段 0 违规：40 门禁/151 变量/62 框架/五文档头部数字/enforce 分层一致；上游基线 drifted comet/graphify/ruflo 为 warn-only 忠告不置 FAIL）
 - 本轮修复项（2 处 verifier/自检链路缺陷，非门禁语义变更）：
   1. self-check.sh：MISSING==0（运行时全装）时早期 exit，文档一致性/框架规则集核验/enforce 分层段永不执行——2026-07-21 修复的「--check-only 死代码」同类缺陷另一分支；修复后本地检查段无条件执行。注：此前记录「--check-only 早期 exit 为 HEAD 既有行为」自本轮起不再成立

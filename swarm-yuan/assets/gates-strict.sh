@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# strict (14) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
+# strict (17) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
 # 被 precheck.sh source（开发态）或 install.sh 内联（打包态）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
@@ -1346,6 +1346,109 @@ $(printf '%s\n' "$_tbd" | head -5 | sed 's/^/    /')"
   [[ $found -eq 0 ]] && pass "PIA 检查通过（评估文档+处理活动清单齐备，零待定项）"
 }
 
+check_test_evidence() {
+  echo "=== 测试证据链检查（GB/T 15532-2008 测试规范 / GB/T 9386-2008 测试文档）==="
+  [[ "${TEST_EVIDENCE_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "TEST_EVIDENCE_REQUIRED 未启用，测试证据链检查跳过"; return; }
+  local dir="${TEST_EVIDENCE_DIR:-docs/test}"
+  if [[ ! -d "$dir" ]]; then
+    fail "gate_test_evidence_missing: 测试证据文档目录不存在：${dir}（GB/T 15532-2008 须含测试计划/测试说明/测试报告）"
+    return
+  fi
+  local found=0
+  # ① 三类测试文档存在性（测试计划/测试说明/测试报告）
+  local _plan _spec_doc _report
+  _plan=$(find "$dir" -maxdepth 2 -type f \( -iname '*测试计划*' -o -iname '*test*plan*' -o -iname '*plan*' \) 2>/dev/null | head -1)
+  _spec_doc=$(find "$dir" -maxdepth 2 -type f \( -iname '*测试说明*' -o -iname '*测试用例*' -o -iname '*test*case*' -o -iname '*test*spec*' \) 2>/dev/null | head -1)
+  _report=$(find "$dir" -maxdepth 2 -type f \( -iname '*测试报告*' -o -iname '*test*report*' \) 2>/dev/null | head -1)
+  if [[ -z "$_plan" || -z "$_spec_doc" || -z "$_report" ]]; then
+    local _miss=""
+    [[ -z "$_plan" ]] && _miss="${_miss}测试计划 "
+    [[ -z "$_spec_doc" ]] && _miss="${_miss}测试说明/用例 "
+    [[ -z "$_report" ]] && _miss="${_miss}测试报告 "
+    fail "gate_test_evidence_missing: 测试证据文档缺：${_miss}（GB/T 15532-2008 须含测试计划+测试说明+测试报告三类）"
+    found=1
+  fi
+  # ② 测试报告含准出条件结论段
+  if [[ -n "$_report" ]]; then
+    if ! grep -qE '准出|验收结论|测试结论|pass.*criteria|exit.*criteria' "$_report" 2>/dev/null; then
+      fail "gate_test_evidence_exit_missing: 测试报告缺准出条件结论段（${_report}）——GB/T 15532-2008 要求测试报告含验收准则与结论"
+      found=1
+    fi
+  fi
+  # ③ REQ- 编号勾稽（warn-only：测试文档中 REQ- 引用与 spec 抽样核对）
+  local _spec="${SPEC_FILE:-}"
+  if [[ -n "$_spec" && -f "$_spec" ]]; then
+    local _reqs _req _hit
+    _reqs=$(grep -oE 'REQ-[0-9]+' "$_spec" 2>/dev/null | sort -u || true)
+    if [[ -n "$_reqs" ]]; then
+      while IFS= read -r _req; do
+        [[ -z "$_req" ]] && continue
+        _hit=$(find "$dir" -type f -exec grep -lE "${_req}([^0-9]|\$)" {} \; 2>/dev/null | head -1 || true)
+        [[ -z "$_hit" ]] && warn "测试文档未引用 ${_req}（测试证据链断链，建议补追溯）"
+      done <<< "$_reqs"
+    fi
+  fi
+  # ④ 零 TBD
+  local _tbd
+  _tbd=$(grep -rnE 'TBD|待定|待明确|待补充' "$dir" 2>/dev/null || true)
+  if [[ -n "$_tbd" ]]; then
+    fail "gate_test_evidence_tbd: 测试证据文档含待定项——测试结论必须完整：
+$(printf '%s\n' "$_tbd" | head -5 | sed 's/^/    /')"
+    found=1
+  fi
+  [[ $found -eq 0 ]] && pass "测试证据链检查通过（计划+说明+报告齐备，含准出结论，零待定项）"
+}
+
+check_review_record() {
+  echo "=== 评审记录与 AI 过程信息项检查（GB/T 8566-2022 评审过程 / ISO/IEC 42001 成文信息+可追溯）==="
+  [[ "${REVIEW_RECORD_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "REVIEW_RECORD_REQUIRED 未启用，评审记录检查跳过"; return; }
+  local dir="${REVIEW_RECORD_DIR:-docs/reviews}"
+  if [[ ! -d "$dir" ]]; then
+    fail "gate_review_record_missing: 评审记录目录不存在：${dir}（GB/T 8566-2022 评审过程要求留存评审记录）"
+    return
+  fi
+  local found=0
+  # ① 评审记录存在且含评审人/日期/结论三要素
+  local _recs _rec
+  _recs=$(find "$dir" -maxdepth 2 -type f \( -iname '*review*' -o -iname '*评审*' \) 2>/dev/null || true)
+  if [[ -z "$_recs" ]]; then
+    fail "gate_review_record_missing: 评审记录目录无评审文件（${dir} 下未见 *review*/*评审* 文件）"
+    found=1
+  else
+    while IFS= read -r _rec; do
+      [[ -z "$_rec" ]] && continue
+      local _miss=""
+      grep -qE '评审人|reviewer|审核人' "$_rec" 2>/dev/null || _miss="${_miss}评审人 "
+      grep -qE '日期|date|时间' "$_rec" 2>/dev/null || _miss="${_miss}日期 "
+      grep -qE '结论|conclusion|result|通过|不通过' "$_rec" 2>/dev/null || _miss="${_miss}结论 "
+      if [[ -n "$_miss" ]]; then
+        fail "gate_review_record_incomplete: 评审记录缺要素：${_miss}（${_rec}；GB/T 8566-2022 评审记录须含评审人/日期/结论）"
+        found=1
+      fi
+      # 零 TBD
+      if grep -qE 'TBD|待定|待明确|待补充' "$_rec" 2>/dev/null; then
+        fail "gate_review_record_tbd: 评审记录含待定项（${_rec}）——评审结论必须完整"
+        found=1
+      fi
+    done <<< "$_recs"
+  fi
+  # ② AI 过程信息项（AI_DISCLOSURE_REQUIRED=1 时）
+  if [[ "${AI_DISCLOSURE_REQUIRED:-0}" == "1" ]]; then
+    local _spec="${SPEC_FILE:-}"
+    if [[ -n "$_spec" && -f "$_spec" ]]; then
+      if ! grep -qE 'AI.*(生成|辅助|generated)|人工智能.*生成|AI-assisted' "$_spec" 2>/dev/null; then
+        fail "gate_review_record_ai_undisclosed: spec 未声明 AI 辅助生成（AI_DISCLOSURE_REQUIRED=1）——ISO/IEC 42001 成文信息要求 AI 生成产物声明+人工复核记录"
+        found=1
+      fi
+    fi
+    # 人工复核记录存在性（warn-only）
+    local _hr
+    _hr=$(find "$dir" -type f -exec grep -lE '人工复核|human.*(review|verify)|人工审查' {} \; 2>/dev/null | head -1 || true)
+    [[ -z "$_hr" ]] && warn "未见人工复核记录（AI_DISCLOSURE_REQUIRED=1 建议留存人工复核签字）"
+  fi
+  [[ $found -eq 0 ]] && pass "评审记录检查通过（评审人/日期/结论齐备，零待定项）"
+}
+
 check_release_sign() {
   echo "=== 发布签名与 provenance 检查（SLSA Build L2 / SSDF PS.2 发布完整性）==="
   [[ "${RELEASE_SIGN_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "RELEASE_SIGN_REQUIRED 未启用，发布签名检查跳过"; return; }
@@ -1414,5 +1517,50 @@ check_release_sign() {
   else
     [[ $found -eq 0 ]] && pass "发布签名检查通过（${#artifacts[@]} 个产物签名齐备，存在性检查）"
   fi
+}
+
+# check_quality_model（--quality-model，WP-S2）：质量特性剪裁核验
+# GB/T 25000.10-2016 八特性（功能适合性/性能效率/兼容性/易用性/可靠性/安全性/维护性/可移植性）
+# 逐项适用/剪裁声明；ISO/IEC 25010:2023 新增 Safety（无害性/人身安全），国标暂无，主动对齐。
+# 5 个 fail 点 → strict 档。启用后 fail-closed。
+check_quality_model() {
+  echo "=== 质量特性剪裁核验（GB/T 25000.10-2016 八特性 + ISO/IEC 25010:2023 Safety 主动对齐）==="
+  [[ "${QUALITY_MODEL_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "QUALITY_MODEL_REQUIRED 未启用，质量特性剪裁核验跳过"; return; }
+  local spec="${SPEC_FILE:-}"
+  if [[ -z "$spec" || ! -f "$spec" ]]; then
+    fail "gate_quality_model_missing: SPEC_FILE 未配置或不存在——无法核验质量特性剪裁表（spec §22 须含八特性逐项适用/剪裁声明）"
+    return
+  fi
+  local found=0
+  # ① 质量特性剪裁表存在性（spec 中须含质量特性剪裁表标题或至少一个八特性字段）
+  local _qm_section
+  _qm_section=$(grep -nE '质量特性剪裁表|^#+.*质量特性|质量模型|quality.*model|功能适合性|性能效率' "$spec" 2>/dev/null | head -1 || true)
+  if [[ -z "$_qm_section" ]]; then
+    fail "gate_quality_model_missing: spec 未声明质量特性剪裁表——须含 GB/T 25000.10-2016 八特性（功能适合性/性能效率/兼容性/易用性/可靠性/安全性/维护性/可移植性）逐项适用/剪裁声明"
+    found=1
+  fi
+  # ② 八特性逐项覆盖（缺项 fail，列明缺失特性以利修复）
+  local _ch _miss=""
+  for _ch in 功能适合性 性能效率 兼容性 易用性 可靠性 安全性 维护性 可移植性; do
+    grep -qF "$_ch" "$spec" 2>/dev/null || _miss="${_miss}${_ch} "
+  done
+  if [[ -n "$_miss" ]]; then
+    fail "gate_quality_model_incomplete: 质量特性剪裁表缺特性：${_miss}（GB/T 25000.10-2016 八特性须逐项声明适用/剪裁+理由）"
+    found=1
+  fi
+  # ③ Safety 维度声明（ISO/IEC 25010:2023 新增；国标 25000.10-2016 暂无，主动对齐）
+  if ! grep -qE 'Safety|无害性|人身安全' "$spec" 2>/dev/null; then
+    fail "gate_quality_model_safety: spec 未声明 Safety（无害性）维度——ISO/IEC 25010:2023 新增该特性，国标 GB/T 25000.10-2016 暂无，须主动对齐声明（适用/不适用+理由）"
+    found=1
+  fi
+  # ④ 零 TBD（质量特性剪裁表不得含待定项）
+  local _tbd
+  _tbd=$(grep -nE 'TBD|待定|待明确|待补充' "$spec" 2>/dev/null || true)
+  if [[ -n "$_tbd" ]]; then
+    fail "gate_quality_model_tbd: spec 含待定项（TBD/待定/待明确/待补充）——质量特性剪裁结论必须完整：
+$(printf '%s\n' "$_tbd" | head -5 | sed 's/^/    /')"
+    found=1
+  fi
+  [[ $found -eq 0 ]] && pass "质量特性剪裁核验通过（八特性+Safety 齐备，零待定项）"
 }
 
