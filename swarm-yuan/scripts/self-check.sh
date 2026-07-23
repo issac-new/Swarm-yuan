@@ -620,6 +620,32 @@ check_doc_consistency() {
     bad=$(grep -oE "[0-9]+ ?个参考文档" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$ref_cnt" || true)
     [[ -n "$bad" ]] && dfound="${dfound} references数出现非${ref_cnt}值($(echo $bad | tr '\n' ' '));"
+    # WP-U 正文关键句扫描：enforce 三档分布（strict/warn/advisory 数）+ 特征卡数
+    # 这些是 self-check 头部扫描的已知盲区（WP-S2 终审暴露）——头部只扫"N 个质量门禁"等固定表述，
+    # 正文表格里的"strict 14/warn 20/advisory 10"等分档数字、特征卡"16 项"等不受控。
+    local true_strict true_warn true_advisory true_fc
+    true_strict=$(grep -cE '=strict$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
+    true_warn=$(grep -cE '=warn$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
+    true_advisory=$(grep -cE '=advisory$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
+    true_fc="${FACT_FEATURE_CARDS:-0}"
+    # strict 分档数：匹配"strict N（"或"strict（N"或"strict N /"等正文表述
+    bad=$(grep -oE "strict[[:space:]]*[（(]?[[:space:]]*[0-9]+" "$docpath" 2>/dev/null \
+          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_strict" || true)
+    [[ -n "$bad" ]] && dfound="${dfound} strict分档数出现非${true_strict}值($(echo $bad | tr '\n' ' '));"
+    # warn 分档数
+    bad=$(grep -oE "warn[[:space:]]*[（(]?[[:space:]]*[0-9]+" "$docpath" 2>/dev/null \
+          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_warn" || true)
+    [[ -n "$bad" ]] && dfound="${dfound} warn分档数出现非${true_warn}值($(echo $bad | tr '\n' ' '));"
+    # advisory 分档数
+    bad=$(grep -oE "advisory[[:space:]]*[（(]?[[:space:]]*[0-9]+" "$docpath" 2>/dev/null \
+          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_advisory" || true)
+    [[ -n "$bad" ]] && dfound="${dfound} advisory分档数出现非${true_advisory}值($(echo $bad | tr '\n' ' '));"
+    # 特征卡数："N 项特征卡"或"特征卡 N 项"（避免误伤"第 N 项"等指代）
+    if [[ "$true_fc" -gt 0 ]]; then
+      bad=$(grep -oE "[0-9]+ ?项特征卡|特征卡[[:space:]]*[0-9]+ ?项" "$docpath" 2>/dev/null \
+            | grep -oE "[0-9]+" | sort -u | grep -vx "$true_fc" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} 特征卡数出现非${true_fc}值($(echo $bad | tr '\n' ' '));"
+    fi
     if [[ -n "$dfound" ]]; then
       warn "$docname 头部数字与代码真值不符（真值: 门禁${true_gates}/架构${true_arch}/合规${true_compliance}/conf${true_vars}/refs${ref_cnt}）：${dfound}"
       FAIL=1
