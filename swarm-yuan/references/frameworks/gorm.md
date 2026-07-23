@@ -24,7 +24,7 @@ ruleset_id: gorm
 | 代码 | `gorm.Open(` / `gorm.DB` / `db.AutoMigrate(` / `db.Preload(` / `db.Transaction(` / `db.Model(` / `db.Create(` / `db.First(` / `db.Find(` / `gorm.Model` / `gorm.DeletedAt` / `errors.Is(err, gorm.ErrRecordNotFound)` | 高 |
 
 <!--
-信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
+信号汇总由 gen-framework-index.sh 扫描本表组装入 assets/framework-signals.md（guide §C+.0.5 仅留指针）。
 detect 信号命中任一高置信度行即可激活 gorm 框架规则集。
 -->
 

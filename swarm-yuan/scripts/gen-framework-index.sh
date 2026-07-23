@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # 用法: gen-framework-index.sh —— 扫描 references/frameworks/*.md（跳过 _template.md）
 #       提取每个文件 frontmatter 的 ruleset_id + §1 探查信号表前几列，
-#       组装成 markdown 信号汇总索引，重写 references/exploration-guide.md 中
-#       `# >>> framework-signal-index >>>` / `# <<< framework-signal-index <<<` 标记区块。
+#       组装成 markdown 信号汇总索引（WP-P1 双产物）：
+#       ① 完整信号表写入 assets/framework-signals.md（数据文件，模型按需读）；
+#       ② references/exploration-guide.md 中
+#       `# >>> framework-signal-index >>>` / `# <<< framework-signal-index <<<` 标记区块
+#       重写为 2 行指针（标记行保留，幂等）。
 #       区块不存在则报错退出 1 并提示 T4 须加入标记区块。
 set -u
 BASE="$(cd "$(dirname "${0}")/.." && pwd)"
 FW_DIR="${BASE}/references/frameworks"
 GUIDE="${BASE}/references/exploration-guide.md"
+OUT_SIGNALS="${BASE}/assets/framework-signals.md"
 BEGIN_MARK="# >>> framework-signal-index >>>"
 END_MARK="# <<< framework-signal-index <<<"
 
@@ -81,14 +85,36 @@ EOF
 
 N="$(printf '%s\n' "${FILES}" | grep -c '^/.')"
 
-# 重写标记区块（awk 分段 + getline 注入索引文件 + 临时文件 mv，兼容三平台）
+# WP-P1 双产物：① 完整信号表 → assets/framework-signals.md（数据文件，模型按需读）
+#               ② guide 标记区块 → 2 行指针（模型必读物减重 ~300 行）
+SIG_TMP="$(mktemp /tmp/fwsig.XXXXXX)"
+{
+  printf '<!-- 由 scripts/gen-framework-index.sh 生成（WP-P1 数据化外迁），手改会被覆盖 -->\n'
+  printf '# 框架信号索引（%s 个框架）\n\n' "${N}"
+  cat "${IDX_FILE}"
+} > "${SIG_TMP}"
+if [[ -s "${SIG_TMP}" ]]; then
+  mv "${SIG_TMP}" "${OUT_SIGNALS}"
+else
+  rm -f "${SIG_TMP}" "${IDX_FILE}"
+  echo "✗ 生成信号索引为空，framework-signals.md 未改动" >&2
+  exit 1
+fi
+
+PTR_FILE="$(mktemp /tmp/fwptr.XXXXXX)"
+{
+  printf '> 本表已数据化外迁（WP-P1/M4）：完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。\n'
+  printf '> 运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件，无需常驻上下文。\n'
+} > "${PTR_FILE}"
+
+# 重写标记区块（awk 分段 + getline 注入指针文件 + 临时文件 mv，兼容三平台）
 TMP_BODY="$(mktemp /tmp/fwbody.XXXXXX)"
-if ! awk -v beg="${BEGIN_MARK}" -v end="${END_MARK}" -v idxfile="${IDX_FILE}" '
+if ! awk -v beg="${BEGIN_MARK}" -v end="${END_MARK}" -v idxfile="${PTR_FILE}" '
   $0 == beg { print; while ((getline l < idxfile) > 0) print l; inblk=1; next }
   $0 == end { print end; inblk=0; next }
   !inblk { print }
 ' "${GUIDE}" > "${TMP_BODY}"; then
-  rm -f "${TMP_BODY}" "${IDX_FILE}"
+  rm -f "${TMP_BODY}" "${IDX_FILE}" "${PTR_FILE}"
   echo "✗ awk 重写标记区块失败，exploration-guide.md 未改动" >&2
   exit 1
 fi
@@ -101,6 +127,6 @@ else
   echo "✗ 生成索引为空，exploration-guide.md 未改动" >&2
   exit 1
 fi
-rm -f "${IDX_FILE}"
+rm -f "${IDX_FILE}" "${PTR_FILE}"
 
-echo "已重写索引（${N} 个框架）"
+echo "已重写索引（${N} 个框架）→ assets/framework-signals.md + guide 指针"

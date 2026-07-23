@@ -25,7 +25,7 @@ Spring Boot 集成形态（spring-boot-starter-quartz / @Scheduled）与原生 q
 | 文件 | `**/quartz.properties` / `**/tables_*.sql`（QRTZ 建表脚本） | 中（需排除仅样例文档） |
 
 <!--
-信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
+信号汇总由 gen-framework-index.sh 扫描本表组装入 assets/framework-signals.md（guide §C+.0.5 仅留指针）。
 依赖/注解/配置任一高置信度命中即可激活 quartz 规则集。
 -->
 

@@ -3,14 +3,22 @@
 # 用途：替代 AI 手工探查 §C+.0.5（exploration-guide.md），机器判定框架列表
 #
 # 扫描文件：package.json / pom.xml / go.mod / pyproject.toml / requirements.txt
-# 匹配源：references/frameworks-index.md（由 gen-framework-index.sh 生成的信号表）
-# 输出：ACTIVE_FRAMEWORKS=("spring-boot" "mybatis" ...) 可直接写入 precheck.arch.conf
+# 匹配源：内置 SIGNALS 依赖信号表（framework|pattern|file_type）；
+#         探查信号全集（文件/注解/配置等）见 assets/framework-signals.md（gen-framework-index.sh 生成）
+# 用法: detect-frameworks.sh <项目目录> [--verbose]（--verbose 命中明细走 stderr，不污染 stdout）
 #
 # 兼容 bash 3.2（不用 declare -A）
 set -u
 
 BASE="$(cd "$(dirname "${0}")/.." && pwd)"
-PROJ="${1:-.}"
+PROJ="."; VERBOSE=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --verbose) VERBOSE=1; shift ;;
+    -h|--help) sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) PROJ="$1"; shift ;;
+  esac
+done
 
 if [[ ! -d "$PROJ" ]]; then
   echo "✗ 项目目录不存在: $PROJ" >&2
@@ -191,6 +199,7 @@ done < <(find "$PROJ" -name pyproject.toml -not -path '*/.git/*' -not -path '*/n
 # WP-R Bug#3 ②: 强制使用 file_type 分桶匹配,消除跨语言误匹配
 # WP-R Bug#3 ③: pkgjson 短词加单词边界,消除 next→i18next 子串误报
 _detected=""
+_detail=""
 while IFS='|' read -r fw pattern ftype; do
   [[ "$fw" =~ ^# ]] && continue
   [[ -z "$fw" || -z "$pattern" ]] && continue
@@ -226,10 +235,20 @@ while IFS='|' read -r fw pattern ftype; do
       *" $fw "*) ;;
       *) _detected="${_detected}${_detected:+ }$fw" ;;
     esac
+    if [[ "$VERBOSE" -eq 1 ]]; then
+      _detail="${_detail}${fw}|${pattern}|${ftype}|依赖命中=高
+"
+    fi
   fi
 done < "$_tmpfile"
 
 rm -f "$_tmpfile"
+
+if [[ "$VERBOSE" -eq 1 && -n "$_detail" ]]; then
+  echo "" >&2
+  echo "# --verbose 命中信号明细（framework|pattern|file_type|置信度）" >&2
+  printf '%s' "$_detail" | sort -u >&2
+fi
 
 # 输出 ACTIVE_FRAMEWORKS 格式（可直接写入 precheck.arch.conf）
 if [[ -n "$_detected" ]]; then

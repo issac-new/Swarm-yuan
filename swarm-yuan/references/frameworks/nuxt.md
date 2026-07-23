@@ -25,7 +25,7 @@ useFetch/useAsyncData 须显式/稳定 key 防缓存串；SSR 水合须一致；
 | 目录 | `app/`（Nuxt 4 默认 srcDir）/ `server/`（nitro 服务端）/ `public/` | 高 |
 
 <!--
-信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
+信号汇总由 gen-framework-index.sh 扫描本表组装入 assets/framework-signals.md（guide §C+.0.5 仅留指针）。
 detect 信号命中任一高置信度行即可激活 nuxt 框架规则集。
 -->
 

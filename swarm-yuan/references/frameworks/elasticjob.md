@@ -25,7 +25,7 @@ ElasticJob-Lite（嵌入式，ZK 注册中心）为现行主推形态；ElasticJ
 | 文件 | `**/elasticjob*.yml` / ZK 命名空间 `**/job` 节点 | 低 |
 
 <!--
-信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
+信号汇总由 gen-framework-index.sh 扫描本表组装入 assets/framework-signals.md（guide §C+.0.5 仅留指针）。
 依赖/代码/配置任一高置信度命中即可激活 elasticjob 规则集。
 -->
 

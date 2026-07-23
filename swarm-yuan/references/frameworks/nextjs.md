@@ -25,7 +25,7 @@ App Router（13.4+ 稳定）为推荐路由，Pages Router 仍支持但非首选
 | 配置 | `next.config.*` 的 `experimental.serverActions` / `images.domains` / `redirects` / `rewrites` | 高 |
 
 <!--
-信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
+信号汇总由 gen-framework-index.sh 扫描本表组装入 assets/framework-signals.md（guide §C+.0.5 仅留指针）。
 detect 信号命中任一高置信度行即可激活 nextjs 框架规则集。
 -->
 

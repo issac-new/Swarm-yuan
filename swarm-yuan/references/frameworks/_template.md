@@ -34,7 +34,7 @@ frontmatter 四字段为 verify-framework-ruleset.sh 解析所用，命名不可
 <!--
 信号类型：依赖 / 注解 / 文件 / 配置 / 脚本调用 / 目录结构 任选能识别该框架者
 置信度：高（独立可定框架）/ 中（需组合信号）/ 低（仅作辅助）
-本表由 gen-framework-index.sh 扫描前几列组装成信号汇总索引，写入 exploration-guide.md §C+.0.5 标记区块
+本表由 gen-framework-index.sh 扫描前几列组装成信号汇总索引，写入 assets/framework-signals.md（exploration-guide.md §C+.0.5 仅留指针）
 -->
 
 ## §2 特定构件枚举（命令 + 计数核验方式）

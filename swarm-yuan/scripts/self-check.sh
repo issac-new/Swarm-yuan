@@ -92,7 +92,7 @@ install_from_src_release(){
   echo "  → [$name] 下载源码包: $url"
   if ! (cd "$tmp" && curl -fsSL -o "$zip" "$url"); then
     echo "  ✗ $name 源码包下载失败: $url"
-    echo "    手工下载: 浏览器打开 $url，或确认 Release tag $SRC_RELEASE_TAG 存在"
+    echo "    手工下载: 浏览器打开 ${url}，或确认 Release tag $SRC_RELEASE_TAG 存在"
     rm -rf "$tmp"; return 1
   fi
   if ! (cd "$tmp" && unzip -q "$zip" -d extracted); then
@@ -628,9 +628,17 @@ check_doc_consistency() {
     fi
   done
   # 6. 框架信号索引时效：regen 后比对是否漂移（提示运行 gen-framework-index.sh）
+  # WP-P1：gen-framework-index.sh 双产物（exploration-guide.md 信号块 + assets/framework-signals.md）
   if [[ -x "$base/scripts/gen-framework-index.sh" || -f "$base/scripts/gen-framework-index.sh" ]]; then
-    local guide_tmp; guide_tmp="$(mktemp /tmp/egcheck.XXXXXX)"
+    local guide_tmp sig_tmp=""
+    guide_tmp="$(mktemp /tmp/egcheck.XXXXXX)"
     cp "$base/references/exploration-guide.md" "$guide_tmp"
+    # 双产物之二快照（gen 运行前）；pre-P1 检出无此文件则静默跳过
+    local sig="$base/assets/framework-signals.md"
+    if [[ -f "$sig" ]]; then
+      sig_tmp="$(mktemp /tmp/sigcheck.XXXXXX)"
+      cp "$sig" "$sig_tmp"
+    fi
     if bash "$base/scripts/gen-framework-index.sh" >/dev/null 2>&1; then
       if ! diff -q "$guide_tmp" "$base/references/exploration-guide.md" >/dev/null 2>&1; then
         # regen 已就地修正（幂等），提示但不判 fail——索引已被重写为最新
@@ -638,8 +646,15 @@ check_doc_consistency() {
       else
         echo "  ✓ framework-signal-index 与 ${true_fw} 框架同步"
       fi
+      if [[ -n "$sig_tmp" ]]; then
+        if ! diff -q "$sig_tmp" "$sig" >/dev/null 2>&1; then
+          echo "  ⚠ framework-signals.md 已漂移，本次由 gen-framework-index.sh 自动重写为最新（建议提交）"
+        else
+          echo "  ✓ framework-signals.md 与框架文件同步"
+        fi
+      fi
     fi
-    rm -f "$guide_tmp"
+    rm -f "$guide_tmp" ${sig_tmp:+"$sig_tmp"}
   fi
 
   # WP-P4：task-type-gates.conf 一致性断言（7 类任务齐全）

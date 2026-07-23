@@ -189,10 +189,12 @@ jobs:
           bash -n scripts/self-check.sh
           bash scripts/self-check.sh 2>&1 | grep -q "框架规则库时效检查" || { echo "✗ fw_freshness_check 未执行"; exit 1; }
           echo "✓ self-check 时效检查执行正常"
-      - name: 计量脚本测试（WP-P0）
+      - name: 计量与信号索引测试（WP-P0/P1）
         run: |
           bash tests/test-context-surface.sh
           bash tests/test-cost-report.sh
+          bash tests/test-signal-index.sh
+          bash tests/test-detect-frameworks.sh
 
   # ---------- Job 4：shellcheck 静态检查（核心脚本）----------
   shellcheck:
