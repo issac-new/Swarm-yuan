@@ -1,0 +1,2 @@
+# script-timings（wall-clock 秒，2026-07-23T04:08:27Z）
+detect-frameworks.sh fixture=angular 1s
