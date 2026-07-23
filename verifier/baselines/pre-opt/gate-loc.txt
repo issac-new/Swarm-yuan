@@ -1,0 +1,4 @@
+1406	69865	assets/precheck.sh
+1418	69645	assets/gates-strict.sh
+1416	67117	assets/gates-warn.sh
+878	47572	assets/gates-advisory.sh
