@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# split-gates.sh —— 把 precheck.sh 的 40 个 check_* 门禁 + 专属辅助函数抽到
+# split-gates.sh —— 把 precheck.sh 的 48 个 check_* 门禁 + 专属辅助函数抽到
 # gates-strict.sh / gates-warn.sh / gates-advisory.sh 三文件（按 gate-enforce-level.conf）。
 #
 # 行号范围表手工核对（基于 4143 行版本的 precheck.sh）。若 precheck.sh 行数变化需重核对。
@@ -21,7 +21,7 @@ if [[ -f "${BASE}/assets/gates-strict.sh" ]]; then
   echo "✓ 已拆分（gates-strict.sh 已存在），跳过"; exit 0
 fi
 
-# 行号范围表（45 个函数：40 门禁 + 5 辅助）。格式：函数名 起始行 结束行
+# 行号范围表（49 个函数：48 门禁 + 5 辅助）。格式：函数名 起始行 结束行
 # 注：首 41 行的行号为 precheck.sh 原始行号；末 4 行为拆分后 gates-*.sh 实测行号
 # （check_dengbao/check_pia 在 gates-strict.sh；check_sast_deep/check_oss_eval 在 gates-warn.sh）。
 RANGES_FILE="$(mktemp /tmp/split-ranges.XXXXXX)"
@@ -71,11 +71,15 @@ check_dengbao 1137 1248
 check_pia 1250 1290
 check_sast_deep 1238 1287
 check_oss_eval 1293 1334
+check_quality_model 1499 1538
+check_test_evidence 1324 1374
+check_review_record 1376 1423
+check_metrics 1379 1427
 EOF
 
 # 按 enforce_level 分组（含辅助函数跟随主门禁）
-STRICT_FNS="check_branch check_layer check_reuse _sec_scan _check_security_semgrep check_security check_shift_left check_compliance check_sbom check_privacy check_authz check_requirements check_rtm check_release_sign check_dengbao check_pia"
-WARN_FNS="check_scope check_build check_test _check_sensitive_gitleaks check_sensitive check_review check_stable_diff _extract_deps _norm_ver check_deps check_adr check_contract check_impact check_service check_api check_frontend check_domain check_knowledge check_docs_pack check_crypto check_framework check_sast_deep check_oss_eval"
+STRICT_FNS="check_branch check_layer check_reuse _sec_scan _check_security_semgrep check_security check_shift_left check_compliance check_sbom check_privacy check_authz check_requirements check_rtm check_release_sign check_dengbao check_pia check_quality_model check_test_evidence check_review_record"
+WARN_FNS="check_scope check_build check_test _check_sensitive_gitleaks check_sensitive check_review check_stable_diff _extract_deps _norm_ver check_deps check_adr check_contract check_impact check_service check_api check_frontend check_domain check_knowledge check_docs_pack check_crypto check_framework check_sast_deep check_oss_eval check_metrics"
 ADVISORY_FNS="check_consistency check_link_depth check_consistency_cross check_state check_cognition check_mermaid"
 
 # 抽取一组函数到目标文件
