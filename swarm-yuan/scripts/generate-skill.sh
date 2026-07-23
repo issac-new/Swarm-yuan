@@ -76,9 +76,9 @@ UNIVERSAL_FILES=(
   "references/gsd-patterns.md|ref"
   "references/memory-persistence.md|ref"
   "references/security-spec.md|ref|lite"
-  "references/cognition-framework.md|ref"
-  "references/logic-razor.md|ref"
-  "references/cognitive-bias.md|ref"
+  "references/cognition-framework.md|ref|standard"
+  "references/logic-razor.md|ref|standard"
+  "references/cognitive-bias.md|ref|standard"
   "references/domain-knowledge.md|ref"
   "references/claude-code-capabilities.md|ref"
   "references/standards-compliance.md|ref|compliance"
@@ -763,6 +763,18 @@ copy_universal_templates() {
       *) echo "ERROR: UNIVERSAL_FILES 未知源类别: $entry" >&2; return 1 ;;
     esac
     cp "$src" "$dir/$dest"
+    # WP-P5: spec-template §14-§18 认知扩展包按 profile 门控
+    # lite/standard 裁掉 §14-§18（节不存在 → check_cognition SKIP 披露）；compliance 保留全部。
+    # 裁剪范围：从门控注释 <!-- profile-gate: standard+ ... --> 起，到 ## 19. 止（不含 §19）。
+    # 对 create/upgrade/resume 任意模式均生效（凡拷贝 spec-template 即按 profile 分层）。
+    if [[ "$dest" == "assets/spec-template.md" && "$PROFILE" != "compliance" ]]; then
+      awk '
+        /^<!-- profile-gate: standard\+/{ skip=1; next }
+        /^## 14\. /{ skip=1 }
+        /^## 19\. /{ skip=0 }
+        !skip { print }
+      ' "$dir/$dest" > "$dir/$dest.tmp" && mv "$dir/$dest.tmp" "$dir/$dest"
+    fi
     # 路径重写（三平台兼容：sed -i.bak + rm，与 tests/e2e/run-e2e.sh 同款写法）
     if [[ -n "${SKILLS_PATH_REWRITE:-}" ]]; then
       sed -i.bak -e "$SKILLS_PATH_REWRITE" "$dir/$dest" || { echo "ERROR: SKILLS_PATH_REWRITE 应用失败: $dir/$dest" >&2; return 1; }
@@ -1069,6 +1081,23 @@ cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] check: precheck.sh 门禁（标准 27 随 --all-full；合规 13 随 --compliance-suite 按需）
 - [ ] scripts: precheck + state-machine + trace-log + cost-report
 EOF
+# WP-P5: SKILL.md「按需读取」索引表自动生成（依据实际拷入的 UNIVERSAL_FILES 分级清单）
+# 仅 create 分支执行（resume 分支走 else 跳过，不重复追加）；表按 UNIVERSAL_FILES 数组顺序输出。
+_idx_file="$SKILL_DIR/.universal-files-index.md"
+{
+  echo "## 按需读取引用索引（自动生成，勿手改——由 generate-skill.sh 依据 profile 档生成）"
+  echo ""
+  echo "| 文件 | 用途 | profile 档 |"
+  echo "|------|------|-----------|"
+  for entry in "${UNIVERSAL_FILES[@]}"; do
+    _path=${entry%%|*}; _rest=${entry#*|}; _cat=${_rest%%|*}; _tier=${_rest#*|}
+    [[ "$_tier" == "$_rest" ]] && _tier="standard"
+    # 按 profile 档过滤（档序 lite<standard<compliance，已由拷贝逻辑保证存在性，这里只列已拷入的）
+    [[ -f "$SKILL_DIR/$_path" ]] || continue
+    printf '| %s | %s | %s |\n' "$_path" "$_cat" "$_tier"
+  done
+} > "$_idx_file"
+[[ -f "$SKILL_DIR/SKILL.md" ]] && cat "$_idx_file" >> "$SKILL_DIR/SKILL.md" && rm -f "$_idx_file"
 else
   echo "  续传跳过（已存在）: $SKILL_DIR/SKILL.md"
 fi

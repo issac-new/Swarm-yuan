@@ -189,7 +189,7 @@ jobs:
           bash -n scripts/self-check.sh
           bash scripts/self-check.sh 2>&1 | grep -q "框架规则库时效检查" || { echo "✗ fw_freshness_check 未执行"; exit 1; }
           echo "✓ self-check 时效检查执行正常"
-      - name: 计量/信号/维度/框架证据/conf 渲染测试（WP-P0~P4）
+      - name: 计量/信号/维度/框架证据/conf/上下文裁剪测试（WP-P0~P5）
         run: |
           bash tests/test-context-surface.sh
           bash tests/test-cost-report.sh
@@ -199,6 +199,7 @@ jobs:
           bash tests/test-migrate-verify-blocks.sh
           bash tests/test-framework-evidence.sh
           bash tests/test-conf-render.sh
+          bash tests/test-spec-template-gating.sh
 
   # ---------- Job 4：shellcheck 静态检查（核心脚本）----------
   shellcheck:
