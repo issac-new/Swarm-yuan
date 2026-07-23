@@ -153,6 +153,8 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 金融行业 profile（法规/监管办法/JR/T 标准 ↔ 门禁映射 + finance.conf 配套） | `references/industry-profile-finance.md` |
 | 医疗行业 profile（法规/卫健委办法/GB/T 39725 ↔ 门禁映射 + medical.conf 配套） | `references/industry-profile-medical.md` |
 | 政务行业 profile（网安法 21 条/密评/个保法 55-56/GB/T 22239/39786/43848 ↔ 门禁映射 + gov.conf 配套） | `references/industry-profile-gov.md` |
+| 汽车行业 profile（ISO 26262/UNECE R155-R156/GB/T 40855 ↔ 门禁映射 + automotive.conf 配套） | `references/industry-profile-automotive.md` |
+| 能源行业 profile（GB/T 36572 十六字方针/IEC 62443 SL1-SL4/密评 ↔ 门禁映射 + energy.conf 配套） | `references/industry-profile-energy.md` |
 | 框架规则库（生成时按 ACTIVE_FRAMEWORKS 读取对应 `<fw>.md`） | `references/frameworks/` |
 
 ## 使用说明

@@ -286,6 +286,12 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | antd | 文件 | `**/*.tsx` / `**/*.jsx` 含 `<Button` / `<Table` / `<Form`（ant 组件 PascalCase） | 高 |
 | antd | 代码 | `from 'antd'` / `App.useApp(` / `useForm(` / `ConfigProvider` / `message.success(` | 高 |
 | antd | 配置 | `vite.config.*` / `webpack.config.*` 含 `AntdResolver` / `babel-plugin-import` | 中 |
+| cargo | 文件 | `**/Cargo.toml` | 高（Cargo 工程清单，存在即激活） |
+| cargo | 文件 | `**/Cargo.lock` | 高（依赖锁文件，存在即激活） |
+| cargo | 文件 | `**/src/main.rs` / `**/src/lib.rs` | 中（Rust 入口，需组合 Cargo.toml 判定） |
+| cargo | 文件 | `**/*.rs`（含 src/） | 中（Rust 源码，需组合 Cargo.toml） |
+| cargo | 配置 | `[package]` / `[dependencies]` / `[[bin]]` TOML 节 | 高 |
+| cargo | 代码 | `use std::` / `fn main()` / `pub fn` / `impl` / `mod` | 中（Rust 语法特征） |
 | celery | 依赖 | celery / celery[redis] / celery[sqs] / kombu | 高 |
 | celery | 注解 | @shared_task / @app.task / @task | 高 |
 | celery | 文件 | celery.py / celeryconfig.py / tasks.py | 中 |
@@ -442,6 +448,14 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 | nuxt | 代码 | `useFetch(` / `useAsyncData(` / `useState(` / `defineNuxtPlugin(` / `defineNuxtRouteMiddleware(` / `useSeoMeta(` | 高 |
 | nuxt | 配置 | `nuxt.config.ts` 的 `modules` / `runtimeConfig` / `app.head` / `nitro` | 高 |
 | nuxt | 目录 | `app/`（Nuxt 4 默认 srcDir）/ `server/`（nitro 服务端）/ `public/` | 高 |
+| opentelemetry | 依赖 | `@opentelemetry/api` / `@opentelemetry/sdk-node` / `@opentelemetry/exporter-*`（package.json） | 高 |
+| opentelemetry | 依赖 | `opentelemetry-api` / `opentelemetry-sdk` / `opentelemetry-exporter-*`（requirements.txt / pyproject.toml） | 高 |
+| opentelemetry | 依赖 | `go.opentelemetry.io/otel` / `go.opentelemetry.io/otel/sdk` / `go.opentelemetry.io/otel/exporters/otlp`（go.mod） | 高 |
+| opentelemetry | 依赖 | `io.opentelemetry:opentelemetry-api` / `io.opentelemetry:opentelemetry-sdk` / `opentelemetry-exporter-*`（pom.xml） | 高 |
+| opentelemetry | 文件 | `**/otel{,init}.{js,ts,py,go,java}` / `**/instrumentation.{js,ts,py}` | 中 |
+| opentelemetry | 配置 | `OTEL_SERVICE_NAME=` / `OTEL_EXPORTER_OTLP_ENDPOINT=` 环境变量 | 中 |
+| opentelemetry | 代码 | `NodeSDK` / `resource.ServiceResource` / `Resource.create(` / `trace.getTracer(` / `OTEL_EXPORTER_OTLP_ENDPOINT` | 高 |
+| opentelemetry | 代码 | `tracer.startSpan(` / `span.setAttribute(` / `context.propagation` / `Baggage` / `otel.TracerProvider` | 高 |
 | paimon | 依赖 | `org.apache.paimon:paimon-flink-*` / `paimon-spark-*` / `paimon-bundle` / `paimon-hive-connector` / `paimon-trino` | 高 |
 | paimon | 配置 | `'connector'\s*=\s*'paimon'` / `catalog-type=paimon` / `warehouse` + `paimon` / `PAIMON` catalog 注册 | 高 |
 | paimon | 文件 | `**/catalog/*.sql`（含 paimon DDL）/ `warehouse/` 目录下 `*/db.db/*/manifest/` 结构 | 中（须排除他用） |
