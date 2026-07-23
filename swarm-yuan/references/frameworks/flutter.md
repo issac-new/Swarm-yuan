@@ -58,7 +58,7 @@ expect: always
 
 ```verify
 id: flutter-r2
-cmd: grep -inE '\.set(String|Int|Bool|Double|StringList)\(.{0,60}(token|password|passwd|secret|credential|api_?key|session)' --include='*.dart' .
+cmd: grep -inE '\.set(String|Int|Bool|Double|StringList)\(.{0,60}(token|password|passwd|secret|credential|api_?key|session)' --include='*.dart' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -73,7 +73,7 @@ expect: hits>0
 
 ```verify
 id: flutter-r3
-cmd: grep -rnE '(^|[^a-zA-Z_.])print\(' --include='*.dart' .
+cmd: grep -rnE '(^|[^a-zA-Z_.])print\(' --include='*.dart' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -148,7 +148,7 @@ expect: always
 
 ```verify
 id: flutter-r8
-cmd: grep -cE 'setState\(' <file>
+cmd: grep -cE 'setState\(' <file> "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -163,7 +163,7 @@ expect: hits>0
 
 ```verify
 id: flutter-r9
-cmd: grep -rnE 'shrinkWrap[[:space:]]*:[[:space:]]*true' --include='*.dart' .
+cmd: grep -rnE 'shrinkWrap[[:space:]]*:[[:space:]]*true' --include='*.dart' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

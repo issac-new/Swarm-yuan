@@ -55,7 +55,7 @@ detect 信号命中任一高置信度行即可激活 spring-boot 框架规则集
 
 ```verify
 id: spring-boot-r1
-cmd: grep -nE '@Transactional\b'
+cmd: grep -nE '@Transactional\b' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -68,7 +68,7 @@ expect: hits>0
 
 ```verify
 id: spring-boot-r2
-cmd: grep -rnE '@Transactional\b' --include='*.java'
+cmd: grep -rnE '@Transactional\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -81,7 +81,7 @@ expect: hits>0
 
 ```verify
 id: spring-boot-r3
-cmd: grep -rnE '^[[:space:]]*@Autowired[[:space:]]+private\b' --include='*.java'
+cmd: grep -rnE '^[[:space:]]*@Autowired[[:space:]]+private\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -107,7 +107,7 @@ expect: always
 
 ```verify
 id: spring-boot-r5
-cmd: grep -rnE '@Profile' --include='*.java'
+cmd: grep -rnE '@Profile' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -120,7 +120,7 @@ expect: hits>0
 
 ```verify
 id: spring-boot-r6
-cmd: grep -rnE '@ConditionalOnMissingBean' --include='*.java'
+cmd: grep -rnE '@ConditionalOnMissingBean' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -133,7 +133,7 @@ expect: hits>0
 
 ```verify
 id: spring-boot-r7
-cmd: grep -rnE 'management\.endpoints\.web\.exposure\.include'
+cmd: grep -rnE 'management\.endpoints\.web\.exposure\.include' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -146,7 +146,7 @@ expect: hits>0
 
 ```verify
 id: spring-boot-r8
-cmd: grep -rnE 'spring-boot-devtools' --include='pom.xml' --include='build.gradle'
+cmd: grep -rnE 'spring-boot-devtools' --include='pom.xml' --include='build.gradle' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -172,7 +172,7 @@ expect: always
 
 ```verify
 id: spring-boot-r10
-cmd: grep -rlE '@ConfigurationProperties' --include='*.java'
+cmd: grep -rlE '@ConfigurationProperties' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -185,7 +185,7 @@ expect: hits>0
 
 ```verify
 id: spring-boot-r11
-cmd: grep -rnE 'import[[:space:]]+javax\.(servlet|persistence|validation|annotation(\.PostConstruct|\.PreDestroy)|transaction|mail|jms|websocket)' --include='*.java'
+cmd: grep -rnE 'import[[:space:]]+javax\.(servlet|persistence|validation|annotation(\.PostConstruct|\.PreDestroy)|transaction|mail|jms|websocket)' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -198,7 +198,7 @@ expect: hits>0
 
 ```verify
 id: spring-boot-r12
-cmd: grep -rnE 'spring\.main\.allow-circular-references[[:space:]]*[:=][[:space:]]*true'
+cmd: grep -rnE 'spring\.main\.allow-circular-references[[:space:]]*[:=][[:space:]]*true' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

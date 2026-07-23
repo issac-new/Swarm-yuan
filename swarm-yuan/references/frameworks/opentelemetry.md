@@ -60,7 +60,7 @@ cargo 式「file 类型」探测本框架不需要（依赖信号已覆盖四种
 
 ```verify
 id: opentelemetry-r1
-cmd: grep -rnE 'service\.name|ServiceName|service_name|serviceResource' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' .
+cmd: grep -rnE 'service\.name|ServiceName|service_name|serviceResource' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -112,7 +112,7 @@ expect: always
 
 ```verify
 id: opentelemetry-r5
-cmd: grep -rnE 'JaegerExporter|JaegerHttpTraceExporter|JaegerTraceExporter|ZipkinExporter' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' .
+cmd: grep -rnE 'JaegerExporter|JaegerHttpTraceExporter|JaegerTraceExporter|ZipkinExporter' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

@@ -79,7 +79,7 @@ expect: always
 
 ```verify
 id: react-r3
-cmd: grep -rnE 'key=\{(index|i|key)\}|key="\{?index' --include='*.jsx' --include='*.tsx'
+cmd: grep -rnE 'key=\{(index|i|key)\}|key="\{?index' --include='*.jsx' --include='*.tsx' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

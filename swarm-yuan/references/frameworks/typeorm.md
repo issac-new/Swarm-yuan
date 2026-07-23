@@ -56,7 +56,7 @@ detect 信号命中任一高置信度行即可激活 typeorm 框架规则集。
 
 ```verify
 id: typeorm-r1
-cmd: grep -rnE 'synchronize[[:space:]]*:[[:space:]]*true' --include='*.ts'
+cmd: grep -rnE 'synchronize[[:space:]]*:[[:space:]]*true' --include='*.ts' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -82,7 +82,7 @@ expect: always
 
 ```verify
 id: typeorm-r3
-cmd: grep -rnE 'eager[[:space:]]*:[[:space:]]*true' --include='*.ts'
+cmd: grep -rnE 'eager[[:space:]]*:[[:space:]]*true' --include='*.ts' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -108,7 +108,7 @@ expect: always
 
 ```verify
 id: typeorm-r5
-cmd: grep -rnE '@Transaction\(|@TransactionManager|@TransactionRepository' --include='*.ts'
+cmd: grep -rnE '@Transaction\(|@TransactionManager|@TransactionRepository' --include='*.ts' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -121,7 +121,7 @@ expect: hits>0
 
 ```verify
 id: typeorm-r6
-cmd: grep -rnE '@(ManyToOne|OneToMany|OneToOne|ManyToMany)\(' --include='*.ts' -A3 | grep 'Promise<'
+cmd: grep -rnE '@(ManyToOne|OneToMany|OneToOne|ManyToMany)\(' --include='*.ts' -A3 "${PROJECT_DIR}" | grep 'Promise<'
 expect: hits>0
 ```
 
@@ -199,7 +199,7 @@ expect: always
 
 ```verify
 id: typeorm-r12
-cmd: grep -rnE '\.(where|orWhere|andWhere)\([^)]*\$\{' --include='*.ts'
+cmd: grep -rnE '\.(where|orWhere|andWhere)\([^)]*\$\{' --include='*.ts' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

@@ -134,7 +134,7 @@ expect: always
 
 ```verify
 id: mapstruct-r7
-cmd: grep -rnE 'ignore[[:space:]]*=[[:space:]]*true'
+cmd: grep -rnE 'ignore[[:space:]]*=[[:space:]]*true' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -160,7 +160,7 @@ expect: always
 
 ```verify
 id: mapstruct-r9
-cmd: grep -rnE 'expression[[:space:]]*=' *.java
+cmd: grep -rnE 'expression[[:space:]]*=' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -173,7 +173,7 @@ expect: hits>0
 
 ```verify
 id: mapstruct-r10
-cmd: grep -rnE '@Inherit(Inverse)?Configuration'
+cmd: grep -rnE '@Inherit(Inverse)?Configuration' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -186,7 +186,7 @@ expect: hits>0
 
 ```verify
 id: mapstruct-r11
-cmd: grep -rnE 'target[[:space:]]*=[[:space:]]*"[A-Za-z0-9_]+\.'
+cmd: grep -rnE 'target[[:space:]]*=[[:space:]]*"[A-Za-z0-9_]+\.' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

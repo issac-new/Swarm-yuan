@@ -199,7 +199,7 @@ expect: always
 
 ```verify
 id: koa-r13
-cmd: _fw_grep_count "setup.*[Ss]ocket.*[Nn]amespace|io\.of\("
+cmd: _fw_grep_count "setup.*[Ss]ocket.*[Nn]amespace|io\.of\(" "${PROJECT_DIR}"
 expect: hits>0
 ```
 

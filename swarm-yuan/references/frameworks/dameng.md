@@ -59,7 +59,7 @@ DM7 不支持 AUTO_INCREMENT 语法、无 MySQL 兼容模式增强，差异在 �
 
 ```verify
 id: dameng-r1
-cmd: grep -inE 'CREATE[[:space:]]+TABLE[[:space:]]+(IF[[:space:]]+NOT[[:space:]]+EXISTS[[:space:]]+)?"[a-z]|^[[:space:]]*"[a-z][A-Za-z_0-9]*"[[:space:]]+[A-Za-z]' --include='*.sql'
+cmd: grep -inE 'CREATE[[:space:]]+TABLE[[:space:]]+(IF[[:space:]]+NOT[[:space:]]+EXISTS[[:space:]]+)?"[a-z]|^[[:space:]]*"[a-z][A-Za-z_0-9]*"[[:space:]]+[A-Za-z]' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -89,7 +89,7 @@ expect: always
 
 ```verify
 id: dameng-r3
-cmd: grep -inE 'ENGINE[[:space:]]*=[[:space:]]*[A-Za-z]|UNSIGNED([^A-Za-z_]|$)|ON[[:space:]]+DUPLICATE[[:space:]]+KEY|\
+cmd: grep -inE 'ENGINE[[:space:]]*=[[:space:]]*[A-Za-z]|UNSIGNED([^A-Za-z_]|$)|ON[[:space:]]+DUPLICATE[[:space:]]+KEY|\ "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -104,7 +104,7 @@ expect: hits>0
 
 ```verify
 id: dameng-r4
-cmd: grep -inE 'ROWNUM[[:space:]]*(>=?|BETWEEN[[:space:]])' --include='*.sql'
+cmd: grep -inE 'ROWNUM[[:space:]]*(>=?|BETWEEN[[:space:]])' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -119,7 +119,7 @@ expect: hits>0
 
 ```verify
 id: dameng-r5
-cmd: grep -inE 'GROUP_CONCAT[[:space:]]*\(' --include='*.sql'
+cmd: grep -inE 'GROUP_CONCAT[[:space:]]*\(' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -134,7 +134,7 @@ expect: hits>0
 
 ```verify
 id: dameng-r6
-cmd: grep -inE '[[:space:]]+BOOLEAN([[:space:],)]|$)|[[:space:]]+ENUM[[:space:]]*\(' --include='*.sql'
+cmd: grep -inE '[[:space:]]+BOOLEAN([[:space:],)]|$)|[[:space:]]+ENUM[[:space:]]*\(' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -179,7 +179,7 @@ expect: always
 
 ```verify
 id: dameng-r9
-cmd: grep -inE 'AUTO_INCREMENT' --include='*.sql'
+cmd: grep -inE 'AUTO_INCREMENT' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -209,7 +209,7 @@ expect: always
 
 ```verify
 id: dameng-r11
-cmd: grep -inE 'IFNULL[[:space:]]*\(|NOW[[:space:]]*\(\)|DATE_FORMAT[[:space:]]*\(' --include='*.sql'
+cmd: grep -inE 'IFNULL[[:space:]]*\(|NOW[[:space:]]*\(\)|DATE_FORMAT[[:space:]]*\(' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -224,7 +224,7 @@ expect: hits>0
 
 ```verify
 id: dameng-r12
-cmd: grep -inE "(=|<>|!=)[[:space:]]*''" --include='*.sql'
+cmd: grep -inE "(=|<>|!=)[[:space:]]*''" --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -269,7 +269,7 @@ expect: always
 
 ```verify
 id: dameng-r15
-cmd: grep -inE 'LIMIT[[:space:]]+[0-9]{6,}[[:space:]]*,|OFFSET[[:space:]]+[0-9]{6,}' --include='*.sql'
+cmd: grep -inE 'LIMIT[[:space:]]+[0-9]{6,}[[:space:]]*,|OFFSET[[:space:]]+[0-9]{6,}' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

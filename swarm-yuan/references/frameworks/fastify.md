@@ -53,7 +53,7 @@ detect 信号命中任一高置信度行即可激活 fastify 框架规则集。
 
 ```verify
 id: fastify-r1
-cmd: grep -rnE '(app|fastify|server|router)\.(get|post|put|delete|patch|route)\(' --include='*.js' --include='*.ts'
+cmd: grep -rnE '(app|fastify|server|router)\.(get|post|put|delete|patch|route)\(' --include='*.js' --include='*.ts' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -157,7 +157,7 @@ expect: always
 
 ```verify
 id: fastify-r9
-cmd: grep -nE 'decorate(Request|Reply)\([^,]+,[[:space:]]*(\{|\[)'
+cmd: grep -nE 'decorate(Request|Reply)\([^,]+,[[:space:]]*(\{|\[)' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

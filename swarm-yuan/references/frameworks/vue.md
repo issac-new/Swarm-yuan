@@ -70,7 +70,7 @@ expect: always
 
 ```verify
 id: vue-r2
-cmd: grep -rnE 'export default \{[^}]*data\(|methods:[[:space:]]*\{|computed:[[:space:]]*\{' --include='*.vue'
+cmd: grep -rnE 'export default \{[^}]*data\(|methods:[[:space:]]*\{|computed:[[:space:]]*\{' --include='*.vue' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -96,7 +96,7 @@ expect: always
 
 ```verify
 id: vue-r4
-cmd: grep -rnE 'v-for.*:key="(index|i)"|v-for.*:key="\$index"' --include='*.vue'
+cmd: grep -rnE 'v-for.*:key="(index|i)"|v-for.*:key="\$index"' --include='*.vue' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

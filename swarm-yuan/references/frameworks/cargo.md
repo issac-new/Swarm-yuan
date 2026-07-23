@@ -60,7 +60,7 @@ Cargo 的 Cargo.toml 是 TOML 格式，本规则集用 grep 匹配字段而非 T
 
 ```verify
 id: cargo-r1
-cmd: grep -rnE '\bunsafe[[:space:]]*(\{|\(|fn|impl)' --include='*.rs' .
+cmd: grep -rnE '\bunsafe[[:space:]]*(\{|\(|fn|impl)' --include='*.rs' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -73,7 +73,7 @@ expect: hits>0
 
 ```verify
 id: cargo-r2
-cmd: grep -rnE '\.(unwrap|expect)\(' --include='*.rs' .
+cmd: grep -rnE '\.(unwrap|expect)\(' --include='*.rs' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -86,7 +86,7 @@ expect: hits>0
 
 ```verify
 id: cargo-r3
-cmd: find . -name Cargo.toml -not -path '*/target/*'
+cmd: find "${PROJECT_DIR}" -name Cargo.toml -not -path '*/target/*'
 expect: hits>0
 ```
 
@@ -99,7 +99,7 @@ expect: hits>0
 
 ```verify
 id: cargo-r4
-cmd: grep -rnE 'git[[:space:]]*=[[:space:]]*"' --include='Cargo.toml' .
+cmd: grep -rnE 'git[[:space:]]*=[[:space:]]*"' --include='Cargo.toml' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -138,7 +138,7 @@ expect: always
 
 ```verify
 id: cargo-r7
-cmd: grep -rnE '#!\[allow\(warnings\)\]|#!\[allow\(dead_code\)\]' --include='*.rs' .
+cmd: grep -rnE '#!\[allow\(warnings\)\]|#!\[allow\(dead_code\)\]' --include='*.rs' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -164,7 +164,7 @@ expect: always
 
 ```verify
 id: cargo-r9
-cmd: find . -name 'deny.toml' -not -path '*/target/*'
+cmd: find "${PROJECT_DIR}" -name 'deny.toml' -not -path '*/target/*'
 expect: hits>0
 ```
 

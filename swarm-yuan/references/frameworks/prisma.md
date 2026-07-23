@@ -54,7 +54,7 @@ detect 信号命中任一高置信度行即可激活 prisma 框架规则集。
 
 ```verify
 id: prisma-r1
-cmd: grep -rnE 'prisma migrate dev' Dockerfile* *.sh
+cmd: grep -rnE 'prisma migrate dev' --include='Dockerfile*' --include='*.sh' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -106,7 +106,7 @@ expect: always
 
 ```verify
 id: prisma-r5
-cmd: grep -rnE '\$(queryRawUnsafe|executeRawUnsafe)'
+cmd: grep -rnE '\$(queryRawUnsafe|executeRawUnsafe)' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -171,7 +171,7 @@ expect: always
 
 ```verify
 id: prisma-r10
-cmd: grep -rnE '\.\$use\(' --include='*.ts' --include='*.js'
+cmd: grep -rnE '\.\$use\(' --include='*.ts' --include='*.js' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -210,7 +210,7 @@ expect: always
 
 ```verify
 id: prisma-r13
-cmd: grep -rnE "log[[:space:]]*:[[:space:]]*\[[^]]*'query'" --include='*.ts' --include='*.js'
+cmd: grep -rnE "log[[:space:]]*:[[:space:]]*\[[^]]*'query'" --include='*.ts' --include='*.js' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

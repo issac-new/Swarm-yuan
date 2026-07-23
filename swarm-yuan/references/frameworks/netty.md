@@ -54,7 +54,7 @@ detect 信号命中任一高置信度行即可激活 netty 框架规则集。
 
 ```verify
 id: netty-r1
-cmd: grep -rlE 'channelRead|ChannelInboundHandlerAdapter|SimpleChannelInboundHandler' --include='*.java'
+cmd: grep -rlE 'channelRead|ChannelInboundHandlerAdapter|SimpleChannelInboundHandler' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

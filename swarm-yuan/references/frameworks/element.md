@@ -50,7 +50,7 @@ detect 信号命中任一高置信度行即可激活 element 框架规则集。
 
 ```verify
 id: element-r1
-cmd: grep -rnE "from ['\"]element-plus['\"]|import ElementPlus"
+cmd: grep -rnE "from ['\"]element-plus['\"]|import ElementPlus" "${PROJECT_DIR}"
 expect: hits>0
 ```
 

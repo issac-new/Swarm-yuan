@@ -54,7 +54,7 @@ ruleset_id: elasticsearch
 
 ```verify
 id: elasticsearch-r1
-cmd: grep -rnE '\.from\([0-9]{5,}|"from"[[:space:]]*:[[:space:]]*[0-9]{5,}'
+cmd: grep -rnE '\.from\([0-9]{5,}|"from"[[:space:]]*:[[:space:]]*[0-9]{5,}' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -67,7 +67,7 @@ expect: hits>0
 
 ```verify
 id: elasticsearch-r2
-cmd: grep -rnE 'wildcardQuery\([^)]*"\*|"wildcard"[^}]*"value"[^}]*"\*|queryStringQuery\("[^"]*\*'
+cmd: grep -rnE 'wildcardQuery\([^)]*"\*|"wildcard"[^}]*"value"[^}]*"\*|queryStringQuery\("[^"]*\*' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -119,7 +119,7 @@ expect: always
 
 ```verify
 id: elasticsearch-r6
-cmd: grep -rnE '"dynamic"[[:space:]]*:[[:space:]]*"?true'
+cmd: grep -rnE '"dynamic"[[:space:]]*:[[:space:]]*"?true' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -132,7 +132,7 @@ expect: hits>0
 
 ```verify
 id: elasticsearch-r7
-cmd: grep -rnE '\.must\((QueryBuilders\.)?(termQuery|termsQuery|rangeQuery|existsQuery)'
+cmd: grep -rnE '\.must\((QueryBuilders\.)?(termQuery|termsQuery|rangeQuery|existsQuery)' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -197,7 +197,7 @@ expect: always
 
 ```verify
 id: elasticsearch-r12
-cmd: grep -rnE 'RestHighLevelClient|include_type_name'
+cmd: grep -rnE 'RestHighLevelClient|include_type_name' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

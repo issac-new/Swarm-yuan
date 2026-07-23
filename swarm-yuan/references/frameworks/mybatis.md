@@ -57,7 +57,7 @@ detect 信号命中任一高置信度行即可激活 mybatis 框架规则集。
 
 ```verify
 id: mybatis-r1
-cmd: grep -n '\${' *.xml
+cmd: grep -n '\${' --include='*.xml' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -83,7 +83,7 @@ expect: hits>0
 
 ```verify
 id: mybatis-r3
-cmd: grep -c '<foreach' *.xml
+cmd: grep -c '<foreach' --include='*.xml' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -109,7 +109,7 @@ expect: always
 
 ```verify
 id: mybatis-r5
-cmd: grep -n 'PaginationInnerInterceptor' *.java
+cmd: grep -n 'PaginationInnerInterceptor' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -122,7 +122,7 @@ expect: hits>0
 
 ```verify
 id: mybatis-r6
-cmd: grep -rnE '<(association|collection)[^>]*\bselect=' *.xml
+cmd: grep -rnE '<(association|collection)[^>]*\bselect=' --include='*.xml' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -148,7 +148,7 @@ expect: always
 
 ```verify
 id: mybatis-r8
-cmd: grep -rnE '<if test="[^"]*!= *'"'' *.xml
+cmd: grep -rnE '<if test="[^"]*!= *'"'' --include='*.xml' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -174,7 +174,7 @@ expect: always
 
 ```verify
 id: mybatis-r10
-cmd: grep -rn 'useGeneratedKeys' *.xml
+cmd: grep -rn 'useGeneratedKeys' --include='*.xml' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -187,7 +187,7 @@ expect: hits>0
 
 ```verify
 id: mybatis-r11
-cmd: grep -rnE '<select[^>]*\bresultType=[^>]*\bresultMap=' *.xml
+cmd: grep -rnE '<select[^>]*\bresultType=[^>]*\bresultMap=' --include='*.xml' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -239,7 +239,7 @@ expect: always
 
 ```verify
 id: mybatis-r15
-cmd: grep -rnE '\.(last|having|apply)\([^)]' *.java
+cmd: grep -rnE '\.(last|having|apply)\([^)]' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

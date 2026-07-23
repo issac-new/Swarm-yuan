@@ -53,7 +53,7 @@ Spring Boot 集成形态（spring-boot-starter-quartz / @Scheduled）与原生 q
 
 ```verify
 id: quartz-r1
-cmd: grep -rlE '@Scheduled\b' --include='*.java'
+cmd: grep -rlE '@Scheduled\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

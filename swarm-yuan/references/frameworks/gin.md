@@ -54,7 +54,7 @@ detect 信号命中任一高置信度行即可激活 gin 框架规则集。
 
 ```verify
 id: gin-r1
-cmd: grep -rnE 'c\.(Bind|BindJSON|BindQuery|BindURI|BindWith|BindHeader)\(' --include='*.go'
+cmd: grep -rnE 'c\.(Bind|BindJSON|BindQuery|BindURI|BindWith|BindHeader)\(' --include='*.go' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

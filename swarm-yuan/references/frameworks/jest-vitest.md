@@ -206,7 +206,7 @@ expect: hits>0
 
 ```verify
 id: jest-vitest-r13
-cmd: find . \( -path ./node_modules -o -path "./upstream/*" \) -prune -o -name "*.test.ts" -print | grep -E "$VITEST_FORBIDDEN_UPSTREAM_TEST"
+cmd: find "${PROJECT_DIR}" \( -path ./node_modules -o -path "./upstream/*" \) -prune -o -name "*.test.ts" -print | grep -E "$VITEST_FORBIDDEN_UPSTREAM_TEST"
 expect: hits>0
 ```
 

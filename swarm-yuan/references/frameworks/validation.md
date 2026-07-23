@@ -69,7 +69,7 @@ expect: always
 
 ```verify
 id: validation-r2
-cmd: grep -rn '@GroupSequence'
+cmd: grep -rn '@GroupSequence' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -95,7 +95,7 @@ expect: always
 
 ```verify
 id: validation-r4
-cmd: grep -rn '@Validated('
+cmd: grep -rn '@Validated(' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -134,7 +134,7 @@ expect: always
 
 ```verify
 id: validation-r7
-cmd: grep -rn '@Pattern'
+cmd: grep -rn '@Pattern' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

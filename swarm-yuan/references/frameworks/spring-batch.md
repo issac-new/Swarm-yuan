@@ -73,7 +73,7 @@ expect: hits>0
 
 ```verify
 id: spring-batch-r2
-cmd: grep -rnE 'new StepBuilder\b' *.java
+cmd: grep -rnE 'new StepBuilder\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -86,7 +86,7 @@ expect: hits>0
 
 ```verify
 id: spring-batch-r3
-cmd: grep -rnE 'new StepBuilder\b|\.chunk\(' *.java
+cmd: grep -rnE 'new StepBuilder\b|\.chunk\(' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -112,7 +112,7 @@ expect: always
 
 ```verify
 id: spring-batch-r5
-cmd: grep -rlE 'new JobBuilder\b|JobBuilderFactory' *.java
+cmd: grep -rlE 'new JobBuilder\b|JobBuilderFactory' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -125,7 +125,7 @@ expect: hits>0
 
 ```verify
 id: spring-batch-r6
-cmd: grep -rlE 'new JobBuilder\b' *.java
+cmd: grep -rlE 'new JobBuilder\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -138,7 +138,7 @@ expect: hits>0
 
 ```verify
 id: spring-batch-r7
-cmd: grep -lE 'implements\s+(ItemReader|ItemWriter)<' *.java
+cmd: grep -lE 'implements\s+(ItemReader|ItemWriter)<' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -151,7 +151,7 @@ expect: hits>0
 
 ```verify
 id: spring-batch-r8
-cmd: grep -lE 'implements\s+ItemWriter<' *.java
+cmd: grep -lE 'implements\s+ItemWriter<' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -164,7 +164,7 @@ expect: hits>0
 
 ```verify
 id: spring-batch-r9
-cmd: grep -lE 'implements\s+ItemProcessor<' *.java
+cmd: grep -lE 'implements\s+ItemProcessor<' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -177,7 +177,7 @@ expect: hits>0
 
 ```verify
 id: spring-batch-r10
-cmd: grep -rnE '\.(skipLimit|retryLimit)\(' *.java
+cmd: grep -rnE '\.(skipLimit|retryLimit)\(' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -203,7 +203,7 @@ expect: always
 
 ```verify
 id: spring-batch-r12
-cmd: grep -lE 'implements\s+(StepExecutionListener|ChunkListener|ItemReadListener|ItemProcessListener|ItemWriteListener|JobExecutionListener)' *.java
+cmd: grep -lE 'implements\s+(StepExecutionListener|ChunkListener|ItemReadListener|ItemProcessListener|ItemWriteListener|JobExecutionListener)' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -216,7 +216,7 @@ expect: hits>0
 
 ```verify
 id: spring-batch-r13
-cmd: grep -lE 'new JobBuilder\b' *.java
+cmd: grep -lE 'new JobBuilder\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -229,7 +229,7 @@ expect: hits>0
 
 ```verify
 id: spring-batch-r14
-cmd: grep -rnE 'JobBuilderFactory|StepBuilderFactory' *.java
+cmd: grep -rnE 'JobBuilderFactory|StepBuilderFactory' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

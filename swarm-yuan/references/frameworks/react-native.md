@@ -57,7 +57,7 @@ expect: always
 
 ```verify
 id: react-native-r2
-cmd: grep -inE 'AsyncStorage\.setItem\(.{0,60}(token|password|passwd|secret|credential|api_?key|session)' --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' .
+cmd: grep -inE 'AsyncStorage\.setItem\(.{0,60}(token|password|passwd|secret|credential|api_?key|session)' --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -72,7 +72,7 @@ expect: hits>0
 
 ```verify
 id: react-native-r3
-cmd: grep -rnE 'console\.(log|info|debug)\(' --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' .
+cmd: grep -rnE 'console\.(log|info|debug)\(' --include='*.tsx' --include='*.ts' --include='*.jsx' --include='*.js' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -87,7 +87,7 @@ expect: hits>0
 
 ```verify
 id: react-native-r4
-cmd: grep -rinE '(hermesEnabled|enableHermes|hermes_enabled)[[:space:]]*[:=][[:space:]]*false' android/ ios/ package.json
+cmd: grep -rinE '(hermesEnabled|enableHermes|hermes_enabled)[[:space:]]*[:=][[:space:]]*false' --include='package.json' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -117,7 +117,7 @@ expect: always
 
 ```verify
 id: react-native-r6
-cmd: grep -nE 'android\.permission\.(READ_SMS|SEND_SMS|READ_CONTACTS|WRITE_CONTACTS|RECORD_AUDIO|CAMERA|ACCESS_FINE_LOCATION|READ_CALL_LOG|BODY_SENSORS)' AndroidManifest.xml
+cmd: grep -nE 'android\.permission\.(READ_SMS|SEND_SMS|READ_CONTACTS|WRITE_CONTACTS|RECORD_AUDIO|CAMERA|ACCESS_FINE_LOCATION|READ_CALL_LOG|BODY_SENSORS)' --include='AndroidManifest.xml' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

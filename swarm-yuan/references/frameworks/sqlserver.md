@@ -118,7 +118,7 @@ expect: always
 
 ```verify
 id: sqlserver-r6
-cmd: grep -rnEi 'SELECT[[:space:]]*\*[[:space:]]+FROM' --include='*.sql'
+cmd: grep -rnEi 'SELECT[[:space:]]*\*[[:space:]]+FROM' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

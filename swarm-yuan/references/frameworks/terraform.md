@@ -42,7 +42,7 @@ IaC 基础设施系规则集（P1/P2 批次新增，填补 R4 §4.2「IaC/交付
 
 ```verify
 id: terraform-r1
-cmd: grep -rnE 'backend[[:space:]]+"local"' --include='*.tf' .
+cmd: grep -rnE 'backend[[:space:]]+"local"' --include='*.tf' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -57,7 +57,7 @@ expect: hits>0
 
 ```verify
 id: terraform-r2
-cmd: grep -rnE '(password|secret_key|access_key|private_key|api_key|client_secret)[[:space:]]*=[[:space:]]*"[^"$]+"' --include='*.tf' --include='*.tfvars' .
+cmd: grep -rnE '(password|secret_key|access_key|private_key|api_key|client_secret)[[:space:]]*=[[:space:]]*"[^"$]+"' --include='*.tf' --include='*.tfvars' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -87,7 +87,7 @@ expect: always
 
 ```verify
 id: terraform-r4
-cmd: grep -rnE 'acl[[:space:]]*=[[:space:]]*"public' --include='*.tf' .
+cmd: grep -rnE 'acl[[:space:]]*=[[:space:]]*"public' --include='*.tf' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -102,7 +102,7 @@ expect: hits>0
 
 ```verify
 id: terraform-r5
-cmd: grep -rnE 'publicly_accessible[[:space:]]*=[[:space:]]*true' --include='*.tf' .
+cmd: grep -rnE 'publicly_accessible[[:space:]]*=[[:space:]]*true' --include='*.tf' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -117,7 +117,7 @@ expect: hits>0
 
 ```verify
 id: terraform-r6
-cmd: grep -rlE 'backend[[:space:]]+"' --include='*.tf' .
+cmd: grep -rlE 'backend[[:space:]]+"' --include='*.tf' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -132,7 +132,7 @@ expect: hits>0
 
 ```verify
 id: terraform-r7
-cmd: grep -E 'encrypt[[:space:]]*=[[:space:]]*true'
+cmd: grep -E 'encrypt[[:space:]]*=[[:space:]]*true' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -147,7 +147,7 @@ expect: hits>0
 
 ```verify
 id: terraform-r8
-cmd: grep -rlE 'required_providers' --include='*.tf' .
+cmd: grep -rlE 'required_providers' --include='*.tf' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -162,7 +162,7 @@ expect: hits>0
 
 ```verify
 id: terraform-r9
-cmd: grep -rlE 'aws_db_instance|aws_s3_bucket|azurerm_mssql_database' --include='*.tf' .
+cmd: grep -rlE 'aws_db_instance|aws_s3_bucket|azurerm_mssql_database' --include='*.tf' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -177,7 +177,7 @@ expect: hits>0
 
 ```verify
 id: terraform-r10
-cmd: grep -E 'storage_encrypted[[:space:]]*=[[:space:]]*true'
+cmd: grep -E 'storage_encrypted[[:space:]]*=[[:space:]]*true' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -192,7 +192,7 @@ expect: hits>0
 
 ```verify
 id: terraform-r11
-cmd: grep -rnE 'output[[:space:]]+"[^"]*(password|secret|token|key)[^"]*"' --include='*.tf' .
+cmd: grep -rnE 'output[[:space:]]+"[^"]*(password|secret|token|key)[^"]*"' --include='*.tf' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -207,7 +207,7 @@ expect: hits>0
 
 ```verify
 id: terraform-r12
-cmd: grep -rnE 'terraform[[:space:]]+(apply|destroy)[[:space:]]+(-[a-z-]+[[:space:]]+)*-auto-approve' --include='*.sh' --include='*.yml' --include='*.yaml' .
+cmd: grep -rnE 'terraform[[:space:]]+(apply|destroy)[[:space:]]+(-[a-z-]+[[:space:]]+)*-auto-approve' --include='*.sh' --include='*.yml' --include='*.yaml' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

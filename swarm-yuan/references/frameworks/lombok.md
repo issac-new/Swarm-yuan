@@ -60,7 +60,7 @@ detect 信号命中任一高置信度行即可激活 lombok 框架规则集。
 
 ```verify
 id: lombok-r1
-cmd: grep -lE '@Entity\b' *.java
+cmd: grep -lE '@Entity\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -73,7 +73,7 @@ expect: hits>0
 
 ```verify
 id: lombok-r2
-cmd: grep -lE '@Slf4j\b' *.java
+cmd: grep -lE '@Slf4j\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -86,7 +86,7 @@ expect: hits>0
 
 ```verify
 id: lombok-r3
-cmd: grep -lE '@Builder\b' *.java
+cmd: grep -lE '@Builder\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -112,7 +112,7 @@ expect: always
 
 ```verify
 id: lombok-r5
-cmd: grep -rnE '@EqualsAndHashCode\b' *.java
+cmd: grep -rnE '@EqualsAndHashCode\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -125,7 +125,7 @@ expect: hits>0
 
 ```verify
 id: lombok-r6
-cmd: grep -lE '@EqualsAndHashCode\b' *.java
+cmd: grep -lE '@EqualsAndHashCode\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -138,7 +138,7 @@ expect: hits>0
 
 ```verify
 id: lombok-r7
-cmd: grep -rnE '@SneakyThrows' *.java
+cmd: grep -rnE '@SneakyThrows' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -151,7 +151,7 @@ expect: hits>0
 
 ```verify
 id: lombok-r8
-cmd: grep -rnE '@Cleanup' *.java
+cmd: grep -rnE '@Cleanup' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -164,7 +164,7 @@ expect: hits>0
 
 ```verify
 id: lombok-r9
-cmd: grep -rnE '\bval\s+[a-zA-Z_]|\bvar\s+[a-zA-Z_]' *.java
+cmd: grep -rnE '\bval\s+[a-zA-Z_]|\bvar\s+[a-zA-Z_]' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -177,7 +177,7 @@ expect: hits>0
 
 ```verify
 id: lombok-r10
-cmd: grep -rnE '@Getter\s*\([^)]*lazy\s*=\s*true' *.java
+cmd: grep -rnE '@Getter\s*\([^)]*lazy\s*=\s*true' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

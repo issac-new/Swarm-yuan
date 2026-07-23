@@ -53,7 +53,7 @@ detect 信号命中任一高置信度行即可激活 dubbo 框架规则集。
 
 ```verify
 id: dubbo-r1
-cmd: grep -rnE 'retries[[:space:]]*=[[:space:]]*"?[1-9]' --include='*.java'
+cmd: grep -rnE 'retries[[:space:]]*=[[:space:]]*"?[1-9]' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -79,7 +79,7 @@ expect: always
 
 ```verify
 id: dubbo-r3
-cmd: grep -rnE '@DubboService\b' --include='*.java'
+cmd: grep -rnE '@DubboService\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

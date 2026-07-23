@@ -53,7 +53,7 @@ ruleset_id: xxl-job
 
 ```verify
 id: xxl-job-r1
-cmd: grep -rlE '@XxlJob\b' --include='*.java'
+cmd: grep -rlE '@XxlJob\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -66,7 +66,7 @@ expect: hits>0
 
 ```verify
 id: xxl-job-r2
-cmd: grep -rnE 'xxl\.job\.(executor\.)?accessToken'
+cmd: grep -rnE 'xxl\.job\.(executor\.)?accessToken' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

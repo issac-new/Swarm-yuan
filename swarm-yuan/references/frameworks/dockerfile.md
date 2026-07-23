@@ -58,7 +58,7 @@ Dockerfile 是行指令格式，本规则集用 grep 匹配指令行首关键字
 
 ```verify
 id: dockerfile-r1
-cmd: grep -nE '^[[:space:]]*FROM[[:space:]]+[^[:space:]]+:latest' --include='Dockerfile*' .
+cmd: grep -nE '^[[:space:]]*FROM[[:space:]]+[^[:space:]]+:latest' --include='Dockerfile*' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -71,7 +71,7 @@ expect: hits>0
 
 ```verify
 id: dockerfile-r2
-cmd: grep -nE '^[[:space:]]*USER[[:space:]]'
+cmd: grep -nE '^[[:space:]]*USER[[:space:]]' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -84,7 +84,7 @@ expect: hits>0
 
 ```verify
 id: dockerfile-r3
-cmd: grep -nE '^[[:space:]]*(ENV|ARG)[[:space:]].*(password|passwd|secret|token|api_key|apikey|access_key|private_key)[[:space:]]*=' --include='Dockerfile*' .
+cmd: grep -nE '^[[:space:]]*(ENV|ARG)[[:space:]].*(password|passwd|secret|token|api_key|apikey|access_key|private_key)[[:space:]]*=' --include='Dockerfile*' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -97,7 +97,7 @@ expect: hits>0
 
 ```verify
 id: dockerfile-r4
-cmd: grep -nE '^[[:space:]]*HEALTHCHECK[[:space:]]' --include='Dockerfile*' .
+cmd: grep -nE '^[[:space:]]*HEALTHCHECK[[:space:]]' --include='Dockerfile*' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -110,7 +110,7 @@ expect: hits>0
 
 ```verify
 id: dockerfile-r5
-cmd: grep -cE '^[[:space:]]*FROM[[:space:]]' --include='Dockerfile*' .
+cmd: grep -cE '^[[:space:]]*FROM[[:space:]]' --include='Dockerfile*' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -149,7 +149,7 @@ expect: always
 
 ```verify
 id: dockerfile-r8
-cmd: grep -nE '^[[:space:]]*COPY[[:space:]]' --include='Dockerfile*' .
+cmd: grep -nE '^[[:space:]]*COPY[[:space:]]' --include='Dockerfile*' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -162,7 +162,7 @@ expect: hits>0
 
 ```verify
 id: dockerfile-r9
-cmd: grep -nE '^[[:space:]]*EXPOSE[[:space:]]+[0-9]+' --include='Dockerfile*' .
+cmd: grep -nE '^[[:space:]]*EXPOSE[[:space:]]+[0-9]+' --include='Dockerfile*' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

@@ -67,7 +67,7 @@ expect: always
 
 ```verify
 id: sentinel-r2
-cmd: grep -rnE '@SentinelResource\b' --include='*.java'
+cmd: grep -rnE '@SentinelResource\b' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

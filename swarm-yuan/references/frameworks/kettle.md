@@ -55,7 +55,7 @@ detect 信号命中任一高置信度行即可激活 kettle 框架规则集。
 
 ```verify
 id: kettle-r1
-cmd: grep -rnE '<password>[^<]+</password>' --include='*.ktr' --include='*.kjb'
+cmd: grep -rnE '<password>[^<]+</password>' --include='*.ktr' --include='*.kjb' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

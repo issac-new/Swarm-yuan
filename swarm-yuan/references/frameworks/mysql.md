@@ -54,7 +54,7 @@ detect 信号命中任一高置信度行即可激活 mysql 框架规则集。
 
 ```verify
 id: mysql-r1
-cmd: grep -inE 'CHARSET[[:space:]]*=[[:space:]]*utf8([^m]|$)|CHARACTER SET[[:space:]]+utf8([^m]|$)' --include='*.sql'
+cmd: grep -inE 'CHARSET[[:space:]]*=[[:space:]]*utf8([^m]|$)|CHARACTER SET[[:space:]]+utf8([^m]|$)' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -67,7 +67,7 @@ expect: hits>0
 
 ```verify
 id: mysql-r2
-cmd: grep -rnEi 'LIMIT[[:space:]]+[0-9]{6,}[[:space:]]*,|OFFSET[[:space:]]+[0-9]{6,}' --include='*.sql'
+cmd: grep -rnEi 'LIMIT[[:space:]]+[0-9]{6,}[[:space:]]*,|OFFSET[[:space:]]+[0-9]{6,}' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -119,7 +119,7 @@ expect: always
 
 ```verify
 id: mysql-r6
-cmd: grep -rnEi 'ALGORITHM[[:space:]]*=[[:space:]]*COPY|LOCK[[:space:]]*=[[:space:]]*EXCLUSIVE' --include='*.sql'
+cmd: grep -rnEi 'ALGORITHM[[:space:]]*=[[:space:]]*COPY|LOCK[[:space:]]*=[[:space:]]*EXCLUSIVE' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -145,7 +145,7 @@ expect: always
 
 ```verify
 id: mysql-r8
-cmd: grep -rnEi 'SELECT[[:space:]]*\*[[:space:]]+FROM' --include='*.sql'
+cmd: grep -rnEi 'SELECT[[:space:]]*\*[[:space:]]+FROM' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -158,7 +158,7 @@ expect: hits>0
 
 ```verify
 id: mysql-r9
-cmd: grep -rnEi "LIKE[[:space:]]+'%" --include='*.sql'
+cmd: grep -rnEi "LIKE[[:space:]]+'%" --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -171,7 +171,7 @@ expect: hits>0
 
 ```verify
 id: mysql-r10
-cmd: grep -rnEi 'FROM[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*,[[:space:]]*[a-zA-Z_]' --include='*.sql'
+cmd: grep -rnEi 'FROM[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*,[[:space:]]*[a-zA-Z_]' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -184,7 +184,7 @@ expect: hits>0
 
 ```verify
 id: mysql-r11
-cmd: grep -rnEi 'ORDER[[:space:]]+BY[[:space:]]+RAND[[:space:]]*\(' --include='*.sql'
+cmd: grep -rnEi 'ORDER[[:space:]]+BY[[:space:]]+RAND[[:space:]]*\(' --include='*.sql' "${PROJECT_DIR}"
 expect: hits>0
 ```
 

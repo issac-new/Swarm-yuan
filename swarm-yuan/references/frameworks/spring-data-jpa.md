@@ -69,7 +69,7 @@ expect: always
 
 ```verify
 id: spring-data-jpa-r2
-cmd: grep -rnE '@(OneToMany|ManyToMany)\([^)]*FetchType\.EAGER' *.java
+cmd: grep -rnE '@(OneToMany|ManyToMany)\([^)]*FetchType\.EAGER' --include='*.java' "${PROJECT_DIR}"
 expect: hits>0
 ```
 
@@ -199,7 +199,7 @@ expect: always
 
 ```verify
 id: spring-data-jpa-r12
-cmd: grep -rnE '@Enumerated' *.java | grep -v 'EnumType.STRING'
+cmd: grep -rnE '@Enumerated' --include='*.java' "${PROJECT_DIR}" | grep -v 'EnumType.STRING'
 expect: hits>0
 ```
 
