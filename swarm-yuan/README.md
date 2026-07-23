@@ -297,7 +297,7 @@ Swarm-yuan/
 │   │   ├── spec-template.md      ← 23 主段 spec 模板（§23=发布后运营）
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
-│   ├── references/               ← 26 个参考文档
+│   ├── references/               ← 28 个参考文档
 │   ├── scripts/                  ← 生成器 + 自检
 │   └── tests/                    ← fixture 测试（conf 中 __REPO_ROOT__ 占位符运行时替换为仓库根，任意机器可跑）
 ```
