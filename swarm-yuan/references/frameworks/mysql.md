@@ -52,12 +52,24 @@ detect 信号命中任一高置信度行即可激活 mysql 框架规则集。
 - **验证方法**: `grep -inE 'CHARSET[[:space:]]*=[[:space:]]*utf8([^m]|$)|CHARACTER SET[[:space:]]+utf8([^m]|$)' --include='*.sql'`（utf8mb4 不命中，utf8/utf8mb3 命中）。
 - **对应门禁**: fw_mysql_charset(fail)
 
+```verify
+id: mysql-r1
+cmd: grep -inE 'CHARSET[[:space:]]*=[[:space:]]*utf8([^m]|$)|CHARACTER SET[[:space:]]+utf8([^m]|$)' --include='*.sql'
+expect: hits>0
+```
+
 ### 规律：大表深分页禁用大 OFFSET，改用游标（WHERE id > ?）或延迟关联子查询
 - **适用版本**: 全版本
 - **规律**: `LIMIT 100000, 10` 需扫描并丢弃前 10 万行，offset 越大越慢（O(offset)）。深分页必须改为游标分页 `WHERE id > last_id ORDER BY id LIMIT 20`，或延迟关联 `INNER JOIN (SELECT id FROM t LIMIT 100000,10) tmp USING(id)` 先取主键再回表。经验红线：offset > 10 万禁止上线。
 - **违反后果**: 深翻页接口 RT 随页码线性恶化 → 慢查询打满连接池。
 - **验证方法**: `grep -rnEi 'LIMIT[[:space:]]+[0-9]{6,}[[:space:]]*,|OFFSET[[:space:]]+[0-9]{6,}' --include='*.sql'`（offset ≥ 100000 命中）。
 - **对应门禁**: fw_mysql_deep_paging(fail)
+
+```verify
+id: mysql-r2
+cmd: grep -rnEi 'LIMIT[[:space:]]+[0-9]{6,}[[:space:]]*,|OFFSET[[:space:]]+[0-9]{6,}' --include='*.sql'
+expect: hits>0
+```
 
 ### 规律：事务隔离级别须显式声明（RC/RR 二选一），RR 防幻读依赖 next-key lock
 - **适用版本**: 全版本
@@ -66,12 +78,24 @@ detect 信号命中任一高置信度行即可激活 mysql 框架规则集。
 - **验证方法**: 检出 mysql 数据源配置（`jdbc:mysql` / `[mysqld]`）但全部配置文件无 `transaction-isolation`/`transactionIsolation`/`transaction_isolation` → warn。
 - **对应门禁**: fw_mysql_isolation(warn)
 
+```verify
+id: mysql-r3
+cmd: 
+expect: always
+```
+
 ### 规律：死锁检测必须开启（innodb_deadlock_detect=ON），且全应用加锁顺序一致
 - **适用版本**: 全版本（8.0.18+ 高并发可评估关闭+调低 innodb_lock_wait_timeout，须压测依据）
 - **规律**: `innodb_deadlock_detect` 默认 ON，死锁发生时立即回滚代价小的事务。关闭后死锁只能等 `innodb_lock_wait_timeout`（默认 50s）超时，雪崩风险大。工程上更重要：所有事务按固定顺序访问多张表/多行（如先订单后库存），把死锁概率压到最低；`SELECT ... FOR UPDATE` 排序后加锁。
 - **违反后果**: 关检测 + 默认 50s 超时 → 死锁线程挂起堆积 → 连接池耗尽。
 - **验证方法**: 配置文件检出 `innodb_deadlock_detect[[:space:]]*=[[:space:]]*(OFF|0)` → warn（要求压测依据）；无配置则默认 ON 不告警。
 - **对应门禁**: fw_mysql_deadlock_detect(warn)
+
+```verify
+id: mysql-r4
+cmd: 
+expect: always
+```
 
 ### 规律：慢查询日志必须开启并设 long_query_time 阈值
 - **适用版本**: 全版本
@@ -80,12 +104,24 @@ detect 信号命中任一高置信度行即可激活 mysql 框架规则集。
 - **验证方法**: 检出 `[mysqld]` 配置段但无 `slow_query_log` 或无 `long_query_time` → warn。
 - **对应门禁**: fw_mysql_slow_log(warn)
 
+```verify
+id: mysql-r5
+cmd: 
+expect: always
+```
+
 ### 规律：DDL 必须用 online DDL（ALGORITHM=INSTANT/INPLACE），避免 COPY
 - **适用版本**: 8.0.12+（INSTANT 加列）；8.4/9.x 扩展 INSTANT 适用面（待验证：9.x 是否进一步扩大 INSTANT 场景，规律按 8.0.12+ 基线陈述）
 - **规律**: `ALTER TABLE` 算法三档：`INSTANT`（仅改元数据，秒级）> `INPLACE`（重建表但不锁 DML）> `COPY`（整表拷贝+全程锁写，大表灾难）。DDL 脚本必须显式 `ALGORITHM=INSTANT` 或 `ALGORITHM=INPLACE, LOCK=NONE`，禁止 `ALGORITHM=COPY`；不支持 INSTANT 的操作（改列类型、删主键）用 pt-osc/gh-ost。
 - **违反后果**: COPY 算法对大表 ALTER → 长时间锁写 → 业务停摆。
 - **验证方法**: `grep -rnEi 'ALGORITHM[[:space:]]*=[[:space:]]*COPY|LOCK[[:space:]]*=[[:space:]]*EXCLUSIVE' --include='*.sql'` → warn。
 - **对应门禁**: fw_mysql_online_ddl(warn)
+
+```verify
+id: mysql-r6
+cmd: grep -rnEi 'ALGORITHM[[:space:]]*=[[:space:]]*COPY|LOCK[[:space:]]*=[[:space:]]*EXCLUSIVE' --include='*.sql'
+expect: hits>0
+```
 
 ### 规律：单表二级索引不可过多（写放大），建议 ≤5 个
 - **适用版本**: 全版本
@@ -94,12 +130,24 @@ detect 信号命中任一高置信度行即可激活 mysql 框架规则集。
 - **验证方法**: awk 统计每个 CREATE TABLE 块内非 PRIMARY 的 KEY/INDEX 行数 >5 → warn。
 - **对应门禁**: fw_mysql_too_many_indexes(warn)
 
+```verify
+id: mysql-r7
+cmd: 
+expect: always
+```
+
 ### 规律：高频查询须用覆盖索引减少回表，禁止 SELECT *
 - **适用版本**: 全版本
 - **规律**: 二级索引叶子存主键值，查询列不在索引内须回表（随机 IO）。高频 SQL 应让 SELECT 列 ⊆ 索引列（覆盖索引，Extra=Using index）。`SELECT *` 必然破坏覆盖索引、放大网络与内存，且表加列即隐式变更返回结构。查询必须列名枚举。
 - **违反后果**: 回表随机 IO → QPS 天花板骤降；SELECT * 把新增大字段（如 TEXT）拖进每次查询。
 - **验证方法**: `grep -rnEi 'SELECT[[:space:]]*\*[[:space:]]+FROM' --include='*.sql'` → warn。
 - **对应门禁**: fw_mysql_select_star(warn)
+
+```verify
+id: mysql-r8
+cmd: grep -rnEi 'SELECT[[:space:]]*\*[[:space:]]+FROM' --include='*.sql'
+expect: hits>0
+```
 
 ### 规律：LIKE 前置通配符（'%abc'）使索引失效，须改全文索引或搜索引擎
 - **适用版本**: 全版本
@@ -108,12 +156,24 @@ detect 信号命中任一高置信度行即可激活 mysql 框架规则集。
 - **验证方法**: `grep -rnEi "LIKE[[:space:]]+'%" --include='*.sql'` → warn。
 - **对应门禁**: fw_mysql_like_wildcard(warn)
 
+```verify
+id: mysql-r9
+cmd: grep -rnEi "LIKE[[:space:]]+'%" --include='*.sql'
+expect: hits>0
+```
+
 ### 规律：禁止隐式逗号 JOIN，必须显式 INNER JOIN 并让小表驱动大表
 - **适用版本**: 全版本
 - **规律**: `FROM a, b WHERE ...` 隐式连接可读性差、易漏连接条件变笛卡尔积，且无法表达驱动顺序意图。必须显式 `INNER JOIN ... ON ...`；MySQL 优化器走 nested-loop join，被驱动表（内表）的连接列必须有索引——小表驱动大表时内表扫描次数 = 外表行数。8.0.18+ hash join 仅覆盖无索引等值连接兜底，不是不建索引的理由。
 - **违反后果**: 漏 ON 条件 → 笛卡尔积扫爆；内表无索引 → O(外×内) 全扫。
 - **验证方法**: `grep -rnEi 'FROM[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*,[[:space:]]*[a-zA-Z_]' --include='*.sql'` → warn。
 - **对应门禁**: fw_mysql_implicit_join(warn)
+
+```verify
+id: mysql-r10
+cmd: grep -rnEi 'FROM[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*,[[:space:]]*[a-zA-Z_]' --include='*.sql'
+expect: hits>0
+```
 
 ### 规律：ORDER BY RAND() 禁止上线（EXPLAIN 必现 filesort + 全扫）
 - **适用版本**: 全版本
@@ -122,12 +182,24 @@ detect 信号命中任一高置信度行即可激活 mysql 框架规则集。
 - **验证方法**: `grep -rnEi 'ORDER[[:space:]]+BY[[:space:]]+RAND[[:space:]]*\(' --include='*.sql'` → warn。
 - **对应门禁**: fw_mysql_order_rand(warn)
 
+```verify
+id: mysql-r11
+cmd: grep -rnEi 'ORDER[[:space:]]+BY[[:space:]]+RAND[[:space:]]*\(' --include='*.sql'
+expect: hits>0
+```
+
 ### 规律：事务必须短平快，禁止长事务（锁占用 + MVCC undo 膨胀）
 - **适用版本**: 全版本
 - **规律**: 长事务持有行锁阻塞并发写；RR 下一致性读视图阻止 undo log  purge → 历史版本膨胀（ibdata 暴涨）；`autocommit=0` 让每条 SELECT 都隐式开事务，是长事务最常见来源。禁止事务内：RPC 调用、sleep、人工交互、大循环。批量任务分批提交，单批 ≤1000 行。
 - **违反后果**: 锁等待堆积、undo 表空间膨胀撑爆磁盘、主从延迟（大事务 binlog 串行回放）。
 - **验证方法**: 配置文件检出 `autocommit[[:space:]]*=[[:space:]]*0` 或 SQL 脚本事务体内含 `SLEEP(` → warn。
 - **对应门禁**: fw_mysql_long_tx(warn)
+
+```verify
+id: mysql-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

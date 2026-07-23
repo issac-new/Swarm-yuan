@@ -51,12 +51,24 @@ detect 信号命中任一高置信度行即可激活 fastapi 框架规则集。
 - **验证方法**: 文件含 `async def` 且检出 `time.sleep(` → fail。
 - **对应门禁**: fw_fastapi_blocking_async(fail)
 
+```verify
+id: fastapi-r1
+cmd: 
+expect: always
+```
+
 ### 规律：Pydantic v1 API 必须迁移 v2（@validator→@field_validator，Config→model_config，.dict()→.model_dump()）
 - **适用版本**: FastAPI ≥0.100（Pydantic v2）
 - **规律**: Pydantic v2 移除/弃用 v1 API：`@validator` → `@field_validator`（须 `@classmethod`）；`@root_validator` → `@model_validator`；`class Config` → `model_config = ConfigDict(...)`；`.dict()` → `.model_dump()`；`.parse_obj()` → `.model_validate()`；`.json()` → `.model_dump_json()`。v1 兼容层 `pydantic.v1` 仅为过渡。
 - **违反后果**: 升级即 ImportError/弃用警告；行为差异（v2 默认严格性变化）引入静默 bug。
 - **验证方法**: 检出 `@validator(`/`@root_validator(`/`.parse_obj(`/`.dict()`/`class Config:` → fail。
 - **对应门禁**: fw_fastapi_pydantic_v1(fail)
+
+```verify
+id: fastapi-r2
+cmd: 
+expect: always
+```
 
 ### 规律：路由必须声明 response_model，过滤内部字段
 - **适用版本**: 全版本
@@ -65,12 +77,24 @@ detect 信号命中任一高置信度行即可激活 fastapi 框架规则集。
 - **验证方法**: 文件含路由装饰器但全文无 `response_model` → warn。
 - **对应门禁**: fw_fastapi_response_model(warn)
 
+```verify
+id: fastapi-r3
+cmd: 
+expect: always
+```
+
 ### 规律：yield 依赖必须 try/finally 清理，异常路径也要释放资源
 - **适用版本**: 全版本（0.106+ yield 依赖退出时机改为请求处理后）
 - **规律**: `Depends` 的生成器依赖 `yield` 后代码在响应发送后执行；不写 `try/finally` 时，yield 点抛出异常（如 HTTPException）将跳过资源释放。数据库会话/文件句柄/锁必须 finally 关闭。
 - **违反后果**: 连接/句柄泄漏，池耗尽。
 - **验证方法**: 文件含 `Depends` 与 `yield` 但无 `finally:` → warn。
 - **对应门禁**: fw_fastapi_depends_yield(warn)
+
+```verify
+id: fastapi-r4
+cmd: 
+expect: always
+```
 
 ### 规律：BackgroundTasks 仅承载轻量任务，长任务/需重试任务须 Celery/RQ
 - **适用版本**: 全版本
@@ -79,12 +103,24 @@ detect 信号命中任一高置信度行即可激活 fastapi 框架规则集。
 - **验证方法**: 文件含 `BackgroundTasks` 且含 `time.sleep(`（长任务信号）→ warn。
 - **对应门禁**: fw_fastapi_background(warn)
 
+```verify
+id: fastapi-r5
+cmd: 
+expect: always
+```
+
 ### 规律：路由内禁裸 raise Exception/ValueError，须 HTTPException 带状态码
 - **适用版本**: 全版本
 - **规律**: 路由内 `raise Exception("...")` 未经异常处理器即成 500 + 堆栈日志，客户端无法区分错误类型。业务错误须 `raise HTTPException(status_code=4xx, detail=...)`；非 HTTP 异常注册全局 exception_handler 统一转换。
 - **违反后果**: 错误语义丢失；客户端误把业务错误当服务故障重试。
 - **验证方法**: 路由文件检出 `raise (Exception|ValueError|RuntimeError|KeyError)(` → warn。
 - **对应门禁**: fw_fastapi_http_exception(warn)
+
+```verify
+id: fastapi-r6
+cmd: 
+expect: always
+```
 
 ### 规律：路由须 APIRouter 按域模块化，禁全部堆在 app 上
 - **适用版本**: 全版本
@@ -93,12 +129,24 @@ detect 信号命中任一高置信度行即可激活 fastapi 框架规则集。
 - **验证方法**: 检出路由但全工程无 `APIRouter(` → warn。
 - **对应门禁**: fw_fastapi_router_modular(warn)
 
+```verify
+id: fastapi-r7
+cmd: 
+expect: always
+```
+
 ### 规律：接口须认证依赖保护（OAuth2/Security/HTTPBearer），禁止裸奔
 - **适用版本**: 全版本
 - **规律**: FastAPI 无默认认证。除健康检查等公开端点外，路由须 `Depends(get_current_user)` / `Security(...)` 保护；OAuth2PasswordBearer/JWT 是常规方案，文档 UI 自动集成。
 - **违反后果**: 未授权访问、数据泄露。
 - **验证方法**: 检出路由但全工程无 `OAuth2|Security(|HTTPBearer|APIKeyHeader` → warn。
 - **对应门禁**: fw_fastapi_auth(warn)
+
+```verify
+id: fastapi-r8
+cmd: 
+expect: always
+```
 
 ### 规律：@app.on_event 已弃用，启动/关闭逻辑须 lifespan
 - **适用版本**: FastAPI 0.93+（lifespan 引入）/ 0.139.x
@@ -107,12 +155,24 @@ detect 信号命中任一高置信度行即可激活 fastapi 框架规则集。
 - **验证方法**: 检出 `@app.on_event(` → warn。
 - **对应门禁**: fw_fastapi_lifespan(warn)
 
+```verify
+id: fastapi-r9
+cmd: 
+expect: always
+```
+
 ### 规律：async 路由内同步 IO 库（requests/urllib）须改 httpx.AsyncClient 或线程池
 - **适用版本**: 全版本
 - **规律**: async 路由内调用 `requests.get(...)` 等同步 IO 库与 time.sleep 同害——阻塞事件循环。HTTP 客户端须 `httpx.AsyncClient`；不得不用同步库时改 `def` 路由或 `run_in_threadpool`。
 - **违反后果**: 事件循环阻塞，并发吞吐崩塌。
 - **验证方法**: 文件含 `async def` 且检出 `requests.(get|post|...)`/`urllib` → warn。
 - **对应门禁**: fw_fastapi_sync_io_async(warn)
+
+```verify
+id: fastapi-r10
+cmd: 
+expect: always
+```
 
 ### 规律：WebSocket 路由必须捕获 WebSocketDisconnect
 - **适用版本**: 全版本
@@ -121,12 +181,24 @@ detect 信号命中任一高置信度行即可激活 fastapi 框架规则集。
 - **验证方法**: 检出 `@*.websocket(` 路由但无 `WebSocketDisconnect` → warn。
 - **对应门禁**: fw_fastapi_websocket(warn)
 
+```verify
+id: fastapi-r11
+cmd: 
+expect: always
+```
+
 ### 规律：CORSMiddleware allow_origins 禁 ["*"]，须白名单
 - **适用版本**: 全版本（Starlette 现行）
 - **规律**: `allow_origins=["*"]` 放开全部跨域来源；与 `allow_credentials=True` 同配时 Starlette 虽按规范回显 Origin 但浏览器语义复杂易误判。生产必须白名单具体域名，credentials 场景严禁通配。
 - **违反后果**: 跨域数据窃取面放大。
 - **验证方法**: 检出 CORSMiddleware 且 `allow_origins=["*"]` → warn。
 - **对应门禁**: fw_fastapi_cors(warn)
+
+```verify
+id: fastapi-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

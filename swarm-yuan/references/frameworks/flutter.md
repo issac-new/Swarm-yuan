@@ -40,6 +40,13 @@ ruleset_id: flutter
 - **违反后果**: 任意源页面（含钓鱼/恶意 JS bridge 目标）均可载入，配合 `addJavaScriptHandler` 即远程代码执行面（CWE-79/CWE-749；OWASP MASVS-PLATFORM WebView 族）。
 - **验证方法**: 剥注释后同文件命中 `WebView(|WebViewWidget(|InAppWebView(` 与 `https?://` 且无 `navigationDelegate|shouldOverrideUrlLoading|onNavigationRequest` → 违规
 - **对应门禁**: fw_flutter_webview_unrestricted（fail 级）
+
+```verify
+id: flutter-r1
+cmd: 
+expect: always
+```
+
 - **证据**: webview_flutter 官方文档 NavigationDelegate "control or block navigation requests"；OWASP MASVS WebView 源限制口径；flutter_inappwebview shouldOverrideUrlLoading 文档
 
 ### 规律：shared_preferences 禁止存敏感数据
@@ -48,6 +55,13 @@ ruleset_id: flutter
 - **违反后果**: shared_preferences 在 iOS 为明文 plist、Android 为明文 XML（未加密），root/备份导出即凭证泄露（CWE-312；GB/T 22239-2019 8.1.4.6 数据保密性）。
 - **验证方法**: `grep -inE '\.set(String|Int|Bool|Double|StringList)\(.{0,60}(token|password|passwd|secret|credential|api_?key|session)' --include='*.dart' .`（应为空）
 - **对应门禁**: fw_flutter_sharedprefs_secret（fail 级）
+
+```verify
+id: flutter-r2
+cmd: grep -inE '\.set(String|Int|Bool|Double|StringList)\(.{0,60}(token|password|passwd|secret|credential|api_?key|session)' --include='*.dart' .
+expect: hits>0
+```
+
 - **证据**: shared_preferences README "store simple data… not for critical data"；flutter_secure_storage README 定位"secure storage"；OWASP MASVS-STORAGE-1 敏感数据须系统级安全存储
 
 ### 规律：生产代码禁止 print()
@@ -56,6 +70,13 @@ ruleset_id: flutter
 - **违反后果**: release 包日志经 logcat/Xcode Devices 任意可读，内部状态与敏感变量外泄（CWE-209/CWE-532 日志敏感信息）。
 - **验证方法**: `grep -rnE '(^|[^a-zA-Z_.])print\(' --include='*.dart' .`（应为空；debugPrint 大写 P 天然豁免）
 - **对应门禁**: fw_flutter_print（warn 级）
+
+```verify
+id: flutter-r3
+cmd: grep -rnE '(^|[^a-zA-Z_.])print\(' --include='*.dart' .
+expect: hits>0
+```
+
 - **证据**: Flutter 官方文档 debugPrint "throttles output… avoid print in production"；Dart linter `avoid_print` 规则（flutter_lints 内置）
 
 ### 规律：必须使用 const 构造函数（性能）
@@ -64,6 +85,13 @@ ruleset_id: flutter
 - **违反后果**: 非 const Widget 每次 build 重建实例并失效 Element 比对，无谓的 Widget 树 diff 与 GC 压力，滚动/动画掉帧（对应 Flutter 性能最佳实践）。
 - **验证方法**: 文件命中 `Widget[[:space:]]+build` 但全文件无 `const[[:space:]]` → 嫌疑（启发式，warn 级人工复核）
 - **对应门禁**: fw_flutter_const_ctor（warn 级）
+
+```verify
+id: flutter-r4
+cmd: 
+expect: always
+```
+
 - **证据**: Flutter 官方《Performance best practices》"Use const constructors on widgets"；flutter_lints 含 prefer_const_constructors/declarations
 
 ### 规律：Android release 必须启用 ProGuard/R8 混淆
@@ -72,6 +100,13 @@ ruleset_id: flutter
 - **违反后果**: Java/Kotlin 桥接层与三方插件类名明文，jadx 还原平台通道与密钥常量（OWASP MASVS-RESILIENCE-2 混淆要求）。
 - **验证方法**: 含 `buildTypes|release` 的 .gradle 文件须命中 `minifyEnabled[[:space:]]+true`
 - **对应门禁**: fw_flutter_proguard（warn 级）
+
+```verify
+id: flutter-r5
+cmd: 
+expect: always
+```
+
 - **证据**: Flutter 官方《Build and release an Android app》"enable obfuscation / R8"；Android 开发者文档 R8 口径
 
 ### 规律：必须使用 SafeArea 处理刘海屏
@@ -80,6 +115,13 @@ ruleset_id: flutter
 - **违反后果**: 状态栏/挖孔/Home 指示区遮挡交互元素，iOS HIG 驳回风险；Android 15 强制 edge-to-edge 后同病。
 - **验证方法**: 扫描全部 .dart 文件，无任一命中 `SafeArea` → 违规（工程级启发式）
 - **对应门禁**: fw_flutter_safe_area（warn 级）
+
+```verify
+id: flutter-r6
+cmd: 
+expect: always
+```
+
 - **证据**: Flutter 官方 SafeArea API 文档"avoid operating system intrusions"；Android 15 edge-to-edge 强制公告
 
 ### 规律：长列表必须用 ListView.builder 懒加载
@@ -88,6 +130,13 @@ ruleset_id: flutter
 - **违反后果**: 千行列表一次性实例化全部 Widget+Element，首帧卡顿、内存暴涨（对应 GB/T 25000.51-2016 性能效率要求）。
 - **验证方法**: 文件含 `ListView(` 且无 `ListView.builder|ListView.separated|ListView.custom` → 嫌疑
 - **对应门禁**: fw_flutter_listview_builder（warn 级）
+
+```verify
+id: flutter-r7
+cmd: 
+expect: always
+```
+
 - **证据**: Flutter 官方 ListView.builder 文档"created on demand… for large or infinite lists"； cookbook《Use lists》builder 为长列表标准形态
 
 ### 规律：状态管理禁止裸 setState 全量重建蔓延
@@ -96,6 +145,13 @@ ruleset_id: flutter
 - **违反后果**: setState 触发整个子树重建，状态点散落各处致重建范围失控与状态一致性缺陷（对应 Flutter 状态管理官方指引）。
 - **验证方法**: `grep -cE 'setState\(' <file>` ≥3 → 嫌疑（阈值启发式，warn 级人工复核）
 - **对应门禁**: fw_flutter_setstate_sprawl（warn 级）
+
+```verify
+id: flutter-r8
+cmd: grep -cE 'setState\(' <file>
+expect: hits>0
+```
+
 - **证据**: Flutter 官方《State management》"ephemeral state vs app state"指引；provider/riverpod 官方定位"state management beyond setState"
 
 ### 规律：复杂滚动布局必须用 Sliver（CustomScrollView）
@@ -104,6 +160,13 @@ ruleset_id: flutter
 - **违反后果**: shrinkWrap 强制列表一次性测量+构建全部子项（性能同 ListView(children)），嵌套滚动手势冲突与视口错乱（对应 Flutter 滚动性能口径）。
 - **验证方法**: `grep -rnE 'shrinkWrap[[:space:]]*:[[:space:]]*true' --include='*.dart' .`，或同文件 `SingleChildScrollView` 与 `ListView|GridView` 共现 → 嫌疑
 - **对应门禁**: fw_flutter_sliver（warn 级）
+
+```verify
+id: flutter-r9
+cmd: grep -rnE 'shrinkWrap[[:space:]]*:[[:space:]]*true' --include='*.dart' .
+expect: hits>0
+```
+
 - **证据**: Flutter shrinkWrap 文档注释"expensive… avoid when possible"；官方 Slivers 介绍"custom scroll effects with CustomScrollView"
 
 ### 规律：必须接入 flutter_lints 静态分析
@@ -112,6 +175,13 @@ ruleset_id: flutter
 - **违反后果**: avoid_print/prefer_const_constructors 等本规则集依赖的静态防线缺失，问题只能运行时暴露（对应 Dart 官方 linter 指引）。
 - **验证方法**: 扫描内 pubspec.yaml 或 analysis_options.yaml 无 `flutter_lints` → 提醒
 - **对应门禁**: fw_flutter_lints（warn 级）
+
+```verify
+id: flutter-r10
+cmd: 
+expect: always
+```
+
 - **证据**: Flutter 官方《Customize static analysis》推荐 flutter_lints；flutter create 模板默认生成 flutter_lints 配置
 
 ## §4 门禁清单（id / 级别 / 实现逻辑 / 依赖 conf 变量）

@@ -48,12 +48,24 @@ detect 信号命中任一高置信度行即可激活 webpack 框架规则集。
 - **验证方法**: 无 `cache.type='filesystem'` → warn。
 - **对应门禁**: fw_webpack_persistent_cache(warn)
 
+```verify
+id: webpack-r1
+cmd: 
+expect: always
+```
+
 ### 规律：须配 splitChunks 分包策略
 - **适用版本**: webpack 5.x
 - **规律**: 默认 `splitChunks` 策略单一（仅拆 vendor），须按项目配 `cacheGroups` 拆分 vendor/公共模块/运行时（`runtimeChunk`），利用浏览器缓存。不配则单 chunk 过大。
 - **违反后果**: 单 chunk 过大、缓存命中率低、首屏慢。
 - **验证方法**: 无 `splitChunks` → warn。
 - **对应门禁**: fw_webpack_splitchunks(warn)
+
+```verify
+id: webpack-r2
+cmd: 
+expect: always
+```
 
 ### 规律：动态 import 须配 webpackChunkName 命名
 - **适用版本**: webpack 5.x
@@ -62,12 +74,24 @@ detect 信号命中任一高置信度行即可激活 webpack 框架规则集。
 - **验证方法**: 动态 `import(` 无 `webpackChunkName` → warn。
 - **对应门禁**: fw_webpack_chunk_naming(warn)
 
+```verify
+id: webpack-r3
+cmd: 
+expect: always
+```
+
 ### 规律：环境变量须用 DefinePlugin 注入
 - **适用版本**: webpack 5.x
 - **规律**: 客户端代码引用 `process.env.XXX` 须用 `DefinePlugin` 显式注入（编译期替换），否则运行期 undefined。敏感变量须按环境区分（dev/prod）。
 - **违反后果**: `process.env.XXX` undefined、配置失效。
 - **验证方法**: 无 `DefinePlugin` → warn。
 - **对应门禁**: fw_webpack_defineplugin(warn)
+
+```verify
+id: webpack-r4
+cmd: 
+expect: always
+```
 
 ### 规律：生产 mode 须开启压缩
 - **适用版本**: webpack 5.x
@@ -76,12 +100,24 @@ detect 信号命中任一高置信度行即可激活 webpack 框架规则集。
 - **验证方法**: `mode: 'production'` + `minimize: false` → warn。
 - **对应门禁**: fw_webpack_mode_minimize(warn)
 
+```verify
+id: webpack-r5
+cmd: 
+expect: always
+```
+
 ### 规律：须配 usedExports/sideEffects 优化 tree shaking
 - **适用版本**: webpack 5.x
 - **规律**: 生产 mode 默认 `usedExports: true`（标记未用导出），但须在 `package.json` 声明 `sideEffects: false`（或列副作用文件）让 webpack 安全删除未用模块。未声明则保守保留。
 - **违反后果**: 未用代码打入 bundle、体积膨胀。
 - **验证方法**: 无 `usedExports`/`sideEffects` 配置 → warn。
 - **对应门禁**: fw_webpack_tree_shaking(warn)
+
+```verify
+id: webpack-r6
+cmd: 
+expect: always
+```
 
 ### 规律：resolve.alias 须显式配置
 - **适用版本**: webpack 5.x
@@ -90,12 +126,24 @@ detect 信号命中任一高置信度行即可激活 webpack 框架规则集。
 - **验证方法**: `resolve:` 块无 `alias:` → warn。
 - **对应门禁**: fw_webpack_resolve_alias(warn)
 
+```verify
+id: webpack-r7
+cmd: 
+expect: always
+```
+
 ### 规律：生产 devtool 须关闭或用 source-map，禁 eval
 - **适用版本**: webpack 5.x
 - **规律**: `devtool: 'eval'` 类（eval/inline-source-map/cheap-eval-source-map）生产用会泄露源码 + 包体大。生产须 `false`/`source-map`（source-map 须上传错误监控后删除）。
 - **违反后果**: 源码泄漏 CWE-540、包体膨胀。
 - **验证方法**: 生产 mode + devtool 为 eval 类 → fail。
 - **对应门禁**: fw_webpack_devtool(fail)
+
+```verify
+id: webpack-r8
+cmd: 
+expect: always
+```
 
 ### 规律：CDN 依赖须配 externals 外部化
 - **适用版本**: webpack 5.x
@@ -104,12 +152,24 @@ detect 信号命中任一高置信度行即可激活 webpack 框架规则集。
 - **验证方法**: 无 `externals` → warn。
 - **对应门禁**: fw_webpack_externals(warn)
 
+```verify
+id: webpack-r9
+cmd: 
+expect: always
+```
+
 ### 规律：loader 链顺序须正确（use 数组从右到左执行）
 - **适用版本**: webpack 5.x
 - **规律**: `module.rules` 的 `use: [...]` 数组从右到左执行（如 `['style-loader', 'css-loader', 'sass-loader']`：先 sass→css→style）。顺序错误致编译失败/样式丢失。
 - **违反后果**: 编译失败、样式丢失、postcss 不生效。
 - **验证方法**: 检出 sass-loader 行号 < css-loader 行号（顺序反） → warn。
 - **对应门禁**: fw_webpack_loader_order(warn)
+
+```verify
+id: webpack-r10
+cmd: 
+expect: always
+```
 
 ### 规律：须配 performance 阈值
 - **适用版本**: webpack 5.x
@@ -118,12 +178,24 @@ detect 信号命中任一高置信度行即可激活 webpack 框架规则集。
 - **验证方法**: 无 `performance:` → warn。
 - **对应门禁**: fw_webpack_performance_hints(warn)
 
+```verify
+id: webpack-r11
+cmd: 
+expect: always
+```
+
 ### 规律：静态资源须用 CopyWebpackPlugin 拷贝
 - **适用版本**: webpack 5.x
 - **规律**: `public/` 下静态资源（favicon/robots.txt）不会被打包处理，须用 `CopyWebpackPlugin` 显式拷贝到 output。否则部署缺失。
 - **违反后果**: 静态资源部署缺失、favicon 404。
 - **验证方法**: 无 `CopyWebpackPlugin` → warn。
 - **对应门禁**: fw_webpack_copy_plugin(warn)
+
+```verify
+id: webpack-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

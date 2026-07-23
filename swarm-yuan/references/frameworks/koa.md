@@ -41,12 +41,24 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 - **验证方法**: 无 `app.on('error')` 且无 try+`await next()` 中间件 → fail。
 - **对应门禁**: fw_koa_error_handler(fail)
 
+```verify
+id: koa-r1
+cmd: 
+expect: always
+```
+
 ### 规律：koa-helmet 安全头为生产基线
 - **适用版本**: 全版本
 - **规律**: Koa 核心不含安全头，须 `app.use(helmet())`（koa-helmet）设置 CSP/X-Frame-Options/HSTS 等基线头，注册顺序早于路由。
 - **违反后果**: 点击劫持/MIME 嗅探/降级攻击面 CWE-693。
 - **验证方法**: 无 `koa-helmet`/`helmet()` 引用 → fail。
 - **对应门禁**: fw_koa_helmet(fail)
+
+```verify
+id: koa-r2
+cmd: 
+expect: always
+```
 
 ### 规律：路由须 factory 注入（createRouter(deps) 返回 Router）
 - **适用版本**: 全版本
@@ -55,12 +67,24 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 - **验证方法**: 无 `create.*Router\(` 命中 → warn。
 - **对应门禁**: fw_koa_router_factory(warn)
 
+```verify
+id: koa-r3
+cmd: 
+expect: always
+```
+
 ### 规律：禁裸 app.use(router)，必须 app.use(router.routes())
 - **适用版本**: 全版本（@koa/router / koa-router）
 - **规律**: Koa Router 实例本身不是中间件，必须 `app.use(router.routes())`（常配 `router.allowedMethods()` 自动 405/501）。裸 `app.use(router)` 在 Koa 下路由不生效（与 Express 语义不同，Express router 可直接作中间件）。
 - **违反后果**: 路由全部 404；或迁移 Express 代码时静默失效。
 - **验证方法**: `app.use(<x>Router)` 未跟 `.routes()` → warn。
 - **对应门禁**: fw_koa_no_bare_appuse(warn)
+
+```verify
+id: koa-r4
+cmd: 
+expect: always
+```
 
 ### 规律：路由参数与请求体须输入校验
 - **适用版本**: 全版本
@@ -69,12 +93,24 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 - **验证方法**: 无 `validate|joi|zod|yup|ajv` 命中 → warn。
 - **对应门禁**: fw_koa_input_guard(warn)
 
+```verify
+id: koa-r5
+cmd: 
+expect: always
+```
+
 ### 规律：洋葱模型——await next() 须 try/catch（或 try/finally）包裹
 - **适用版本**: 全版本
 - **规律**: 中间件中 `await next()` 之后的代码在下游全部完成后执行（洋葱回程）。需要错误拦截或资源清理的中间件必须 try/catch/finally 包裹 `await next()`，否则下游抛错直接越过本中间件，日志/事务/计时逻辑断裂。
 - **违反后果**: 错误冒泡越过中间件 → 日志缺失、连接未释放、计时不准。
 - **验证方法**: 文件含 `await next()` 但无 `try{` → warn。
 - **对应门禁**: fw_koa_onion_try_catch(warn)
+
+```verify
+id: koa-r6
+cmd: 
+expect: always
+```
 
 ### 规律：跨中间件共享数据须挂 ctx.state，禁直接扩展 ctx
 - **适用版本**: 全版本
@@ -83,12 +119,24 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 - **验证方法**: `ctx.<自定义名> = ` 赋值（排除 body/status/state 等白名单属性）→ warn。
 - **对应门禁**: fw_koa_ctx_state(warn)
 
+```verify
+id: koa-r7
+cmd: 
+expect: always
+```
+
 ### 规律：koa-bodyparser 须显式 jsonLimit/formLimit
 - **适用版本**: 全版本
 - **规律**: `app.use(bodyParser())` 默认 jsonLimit 1mb，须按业务显式声明 `{ jsonLimit, formLimit, textLimit }` 并开启 `enableTypes` 收敛。显式 limit 使超限返回 413。
 - **违反后果**: 大包请求耗尽内存 CWE-400。
 - **验证方法**: `bodyParser(...)` 调用无 `jsonLimit|formLimit` → warn。
 - **对应门禁**: fw_koa_body_limit(warn)
+
+```verify
+id: koa-r8
+cmd: 
+expect: always
+```
 
 ### 规律：业务错误须 ctx.throw(status)，禁裸 throw new Error
 - **适用版本**: 全版本
@@ -97,12 +145,24 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 - **验证方法**: `throw new Error` 命中 → warn。
 - **对应门禁**: fw_koa_ctx_throw(warn)
 
+```verify
+id: koa-r9
+cmd: 
+expect: always
+```
+
 ### 规律：中间件必须 async/await 风格，generator 中间件已废弃
 - **适用版本**: Koa 2+ / 3.x
 - **规律**: Koa 1.x generator 中间件（`function *(next)`）在 Koa 2 起移除（须 koa-convert 过渡），Koa 3 完全不支持。新代码与迁移代码一律 `async (ctx, next) => { ... }`。
 - **违反后果**: Koa 2/3 下 generator 中间件不执行或抛 TypeError。
 - **验证方法**: `app.use(function*` / `function *` 中间件命中 → warn。
 - **对应门禁**: fw_koa_async_middleware(warn)
+
+```verify
+id: koa-r10
+cmd: 
+expect: always
+```
 
 ### 规律：CORS 须显式 origin 白名单
 - **适用版本**: 全版本（@koa/cors）
@@ -111,12 +171,24 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 - **验证方法**: `cors()` 空参或 `origin: '*'` → warn。
 - **对应门禁**: fw_koa_cors(warn)
 
+```verify
+id: koa-r11
+cmd: 
+expect: always
+```
+
 ### 规律：app.context 扩展用于 API 增强而非请求态
 - **适用版本**: 全版本
 - **规律**: `app.context` 是 ctx 原型，挂载共享方法（如 `ctx.db()`）影响全局所有请求；请求级数据禁止挂 app.context（跨请求共享导致串数据）。请求态一律 ctx.state。
 - **违反后果**: 请求态挂 app.context → 并发请求互相覆盖数据（严重串号事故）。
 - **验证方法**: 检出 `app.context.<name> =` 且赋值为请求相关数据 → 人工检查语义（请求态/共享方法）。
 - **对应门禁**: 人工检查
+
+```verify
+id: koa-r12
+cmd: 
+expect: always
+```
 
 ### 规律：Socket.IO 须用 namespace 隔离，禁裸 socket.on
 - **适用版本**: Socket.IO 4.x（随 koa 合并管理，原 socketio 规则集已并入；Koa 常挂 socket.io server，ncwk-dev 实际用 koa+socket.io）
@@ -125,12 +197,24 @@ conf 变量 KOA_FILE_GLOBS 约定保留（KOA_SRC_GLOBS 未配置时回退）。
 - **验证方法**: `KOA_SOCKETIO_NAMESPACE_REQUIRED=1` 时 `_fw_grep_count "setup.*[Ss]ocket.*[Nn]amespace|io\.of\("` 命中数 = 0 → warn（未检出 namespace setup）；`KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET` 设正则后 `grep -rnE` 检出裸 socket.on → warn。
 - **对应门禁**: fw_koa_socketio_namespace(warn)
 
+```verify
+id: koa-r13
+cmd: _fw_grep_count "setup.*[Ss]ocket.*[Nn]amespace|io\.of\("
+expect: hits>0
+```
+
 ### 规律：Socket.IO 连接须 setup 封装，禁散落 socket.on 监听
 - **适用版本**: Socket.IO 4.x
 - **规律**: Socket.IO 事件监听须集中在 setup 函数（如 `setupSocketServer(io)`）内统一注册，按 namespace 分组管理 connect/disconnect/business 事件。散落在各路由/中间件的 socket.on 会导致监听重复注册（热重载/多实例场景内存泄漏）、事件来源不可追溯。
 - **违反后果**: 散落 socket.on → 重复监听内存泄漏、事件来源混乱、难审计。
 - **验证方法**: `KOA_SOCKETIO_FORBIDDEN_BARE_SOCKET` 设正则（如 `socket\.on\(`）后检出 → warn（建议收敛进 setup 封装）。
 - **对应门禁**: fw_koa_socketio_no_bare_socket(warn)
+
+```verify
+id: koa-r14
+cmd: 
+expect: always
+```
 
 <!--
 共 14 条规律（≥10 门槛，socketio 合并后 +2）。每条均挂门禁 id 或标注人工检查，无游离规律。

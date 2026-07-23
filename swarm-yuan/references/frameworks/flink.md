@@ -56,12 +56,24 @@ detect 信号命中任一高置信度行即可激活 flink 框架规则集。
 - **验证方法**: 检出 `StreamExecutionEnvironment` 作业但全项目无 `enableCheckpointing`/`execution.checkpointing.interval` → fail。
 - **对应门禁**: fw_flink_checkpoint_enabled(fail)
 
+```verify
+id: flink-r1
+cmd: 
+expect: always
+```
+
 ### 规律：checkpoint 间隔须与状态大小权衡，过频拖吞吐过疏恢复慢
 - **适用版本**: 全版本
 - **规律**: checkpoint 间隔过小（<60s）时大状态作业频繁快照，barrier 对齐与快照 IO 拖垮吞吐；过大（>10min）则故障回放量大、恢复慢。经验区间 1–10min，按状态大小与 SLA 调整；间隔须大于快照本身耗时（`state.backend.*.incremental` 增量快照可缩短）。
 - **违反后果**: 过频 → 吞吐腰斩、反压；过疏 → 故障恢复重放数小时数据。
 - **验证方法**: `enableCheckpointing(N)` 中 N<60000 → warn 人工确认；或检出 interval < 1min。
 - **对应门禁**: fw_flink_checkpoint_interval(warn)
+
+```verify
+id: flink-r2
+cmd: 
+expect: always
+```
 
 ### 规律：算子须显式 .uid()，否则 savepoint 升级后无法映射
 - **适用版本**: 全版本
@@ -70,12 +82,24 @@ detect 信号命中任一高置信度行即可激活 flink 框架规则集。
 - **验证方法**: 检出 `.map(`/`.keyBy(`/`.process(` 等转换但全文件无 `.uid(` → warn。
 - **对应门禁**: fw_flink_savepoint_uid(warn)
 
+```verify
+id: flink-r3
+cmd: 
+expect: always
+```
+
 ### 规律：exactly-once 须端到端：CheckpointingMode + 支持事务的两阶段提交 Sink
 - **适用版本**: 全版本（SinkFunction 旧接口在 2.x 已弃用/移除，待验证具体移除版本）
 - **规律**: `EXACTLY_ONCE` 仅保证 Flink 内部状态一致；端到端 exactly-once 要求 Sink 支持两阶段提交 / 幂等写（KafkaSink 事务、TwoPhaseCommitSinkFunction、FLIP-143 Sink 接口）。旧 `SinkFunction`（`addSink(...)`）不支持事务语义，写出即 at-least-once。
 - **违反后果**: 故障恢复后下游重复数据（重复扣减库存 / 重复入账）。
 - **验证方法**: 检出 `EXACTLY_ONCE` 但 sink 侧为 `addSink(`/`implements SinkFunction` → warn 人工确认 Sink 事务能力。
 - **对应门禁**: fw_flink_exactly_once_sink(warn)
+
+```verify
+id: flink-r4
+cmd: 
+expect: always
+```
 
 ### 规律：事件时间窗口必须配 Watermark，否则窗口永不触发/数据错乱
 - **适用版本**: 全版本
@@ -84,12 +108,24 @@ detect 信号命中任一高置信度行即可激活 flink 框架规则集。
 - **验证方法**: 检出 EventTime 窗口类但无 `WatermarkStrategy`/`assignTimestampsAndWatermarks` → warn。
 - **对应门禁**: fw_flink_watermark(warn)
 
+```verify
+id: flink-r5
+cmd: 
+expect: always
+```
+
 ### 规律：乱序/迟到数据须显式处置：forBoundedOutOfOrderness + allowedLateness + sideOutputLateData
 - **适用版本**: 全版本
 - **规律**: 乱序容忍度由 WatermarkStrategy（如 `forBoundedOutOfOrderness(Duration)`）决定；超过 watermark 仍迟到的数据默认直接丢弃。须按业务配 `.allowedLateness(...)` 二次触发或 `.sideOutputLateData(...)` 收集迟到数据，否则统计口径静默漏数。
 - **违反后果**: 迟到数据被静默丢弃 → 报表/计费少算，且无任何告警。
 - **验证方法**: 检出 EventTime 窗口但无 `allowedLateness` 且无 `sideOutputLateData` → warn。
 - **对应门禁**: fw_flink_allowed_lateness(warn)
+
+```verify
+id: flink-r6
+cmd: 
+expect: always
+```
 
 ### 规律：状态后端选型：小状态 HashMap/堆内，大状态 RocksDB + 增量 checkpoint
 - **适用版本**: 1.20.x / 2.x（2.x 引入 ForSt 分离式状态后端，默认行为待验证）
@@ -98,12 +134,24 @@ detect 信号命中任一高置信度行即可激活 flink 框架规则集。
 - **验证方法**: 检出 KeyedState 使用但无 `state.backend` / `EmbeddedRocksDBStateBackend` 配置 → warn 人工确认状态规模。
 - **对应门禁**: fw_flink_state_backend(warn)
 
+```verify
+id: flink-r7
+cmd: 
+expect: always
+```
+
 ### 规律：KeyedState 须配 StateTtlConfig，否则状态无限增长
 - **适用版本**: 全版本
 - **规律**: `ValueState`/`MapState` 等 KeyedState 默认永不过期，key 空间持续增长（如新设备/新用户）时状态无限膨胀，最终拖垮 RocksDB / 堆。须 `StateTtlConfig.newBuilder(...)` 配 TTL + 清理策略（`.cleanupFullSnapshot()` / `.cleanupIncrementally(...)`）。
 - **违反后果**: 状态无界增长 → checkpoint 越来越慢直至超时，作业雪崩。
 - **验证方法**: 检出 `ValueStateDescriptor`/`MapStateDescriptor` 但无 `StateTtlConfig`/`enableTimeToLive` → warn。
 - **对应门禁**: fw_flink_state_ttl(warn)
+
+```verify
+id: flink-r8
+cmd: 
+expect: always
+```
 
 ### 规律：KeyedState 不可跨 key 访问，keyBy 键选型决定状态分布
 - **适用版本**: 全版本
@@ -112,12 +160,24 @@ detect 信号命中任一高置信度行即可激活 flink 框架规则集。
 - **验证方法**: 人工检查 keyBy 键基数与倾斜监控（Web UI subtask 数据量对比）。
 - **对应门禁**: 人工检查
 
+```verify
+id: flink-r9
+cmd: 
+expect: always
+```
+
 ### 规律：DataStream vs Table API/SQL 选型须按场景，不可混用两套语义
 - **适用版本**: 全版本
 - **规律**: 标准 SQL 分析/CDC 入湖/维表 join 用 Table API/SQL（优化器、changelog 语义完善）；复杂事件处理/定制状态机/细粒度 timer 用 DataStream API。同一作业混用须明确转换边界（`toDataStream`/`toChangelogStream`），尤其回撤流（retract）语义转换易错。
 - **违反后果**: retract 流语义错配 → 结果重复或反转；两套 API 各自配置 checkpoint 行为不一致。
 - **验证方法**: 检出同一文件同时 `StreamTableEnvironment` 与大量 `.process(`/`KeyedProcessFunction` → warn 人工确认选型边界。
 - **对应门禁**: fw_flink_api_choice(warn)
+
+```verify
+id: flink-r10
+cmd: 
+expect: always
+```
 
 ### 规律：flink-cdc 断点续传依赖 checkpoint，3.x YAML pipeline 须配 checkpoint 间隔
 - **适用版本**: Flink CDC 3.x（现行稳定 3.6）/ 2.x DataStream 版
@@ -126,12 +186,24 @@ detect 信号命中任一高置信度行即可激活 flink 框架规则集。
 - **验证方法**: 检出 `MySqlSource`/`flink-cdc`/`FlinkSourceFunction` 但无 checkpoint 配置 → warn。
 - **对应门禁**: fw_flink_cdc_checkpoint(warn)
 
+```verify
+id: flink-r11
+cmd: 
+expect: always
+```
+
 ### 规律：生产必须显式配 RestartStrategy，默认行为不足
 - **适用版本**: 1.20.x / 2.x（2.x 默认 restart 策略待验证）
 - **规律**: 生产须显式配 `restart-strategy`（exponential-delay 或 failure-rate，如 `restart-strategy=failure-rate`、`max-failures-per-interval`）。无 checkpoint 时默认 NoRestartStrategy；有 checkpoint 时默认按 delay 无限重启（1.x 行为），频繁故障会陷入重启风暴压垮外部系统。须按故障预算收敛。
 - **违反后果**: 无重启 → 一挂即停；无限重启 → 重启风暴打满 Kafka/DB。
 - **验证方法**: 作业存在但无 `restart-strategy`/`RestartStrategy`/`setRestartStrategy` → warn。
 - **对应门禁**: fw_flink_restart_strategy(warn)
+
+```verify
+id: flink-r12
+cmd: 
+expect: always
+```
 
 ### 规律：并行度与 TaskManager slot 须显式规划，禁止依赖默认
 - **适用版本**: 全版本
@@ -140,12 +212,24 @@ detect 信号命中任一高置信度行即可激活 flink 框架规则集。
 - **验证方法**: 检出 `.setParallelism(` 硬编码数字 → warn 确认与 slot/扩缩容策略匹配。
 - **对应门禁**: fw_flink_parallelism_slots(warn)
 
+```verify
+id: flink-r13
+cmd: 
+expect: always
+```
+
 ### 规律：访问外部系统（HTTP/DB）须用 AsyncDataStream 异步 I/O，禁止算子内同步阻塞
 - **适用版本**: 全版本
 - **规律**: 在 `map`/`flatMap`/`process` 内同步调用 RestTemplate/HttpClient/JDBC 会阻塞 subtask 主线程，拖垮吞吐并传导反压。外部查询须用 `AsyncDataStream.unorderedWait(...)` + `RichAsyncFunction`，配超时与容量；或改维表 join（Table API lookup join）。
 - **违反后果**: 吞吐断崖 / 反压雪崩 / checkpoint 超时。
 - **验证方法**: 检出作业文件含 `RestTemplate`/`HttpClient`/`DriverManager`/`HttpUtil` 但无 `AsyncDataStream` → warn。
 - **对应门禁**: fw_flink_async_io(warn)
+
+```verify
+id: flink-r14
+cmd: 
+expect: always
+```
 
 ### 规律：反压定位须走标准路径（Web UI + Metrics），禁止盲目加资源
 - **适用版本**: 全版本
@@ -154,12 +238,24 @@ detect 信号命中任一高置信度行即可激活 flink 框架规则集。
 - **验证方法**: 人工检查（Web UI BackPressure 页 + busy/backPressured 指标截图存档）。
 - **对应门禁**: 人工检查
 
+```verify
+id: flink-r15
+cmd: 
+expect: always
+```
+
 ### 规律：CEP 模式必须配 within 时间约束，禁止无界模式
 - **适用版本**: 全版本
 - **规律**: `CEP.pattern(...)` 不配 `.within(Time...)` 时模式状态（NFA 缓存的部分匹配）永久驻留，等价于无 TTL 状态，最终 OOM。所有 CEP 模式必须配 within；长周期模式还须评估状态量。
 - **违反后果**: NFA 状态无界增长 → OOM / checkpoint 超时。
 - **验证方法**: 检出 `CEP.pattern` 但同文件无 `.within(` → warn。
 - **对应门禁**: fw_flink_cep_within(warn)
+
+```verify
+id: flink-r16
+cmd: 
+expect: always
+```
 
 ### 规律：JobManager 高可用：standalone 生产集群必须配 high-availability
 - **适用版本**: 1.20.x / 2.x
@@ -168,12 +264,24 @@ detect 信号命中任一高置信度行即可激活 flink 框架规则集。
 - **验证方法**: 检出 `flink-conf.yaml` 但无 `high-availability` 配置 → warn。
 - **对应门禁**: fw_flink_jm_ha(warn)
 
+```verify
+id: flink-r17
+cmd: 
+expect: always
+```
+
 ### 规律：Flink 2.x 升级：DataSet API 移除、SourceFunction/SinkFunction 旧接口弃用
 - **适用版本**: 1.20.x → 2.x
 - **规律**: Flink 2.0（2025-03-24 GA）为近十年首个大版本：DataSet API 移除、旧 `SourceFunction`/`SinkFunction` 接口弃用（迁移 FLIP-27 `Source` / FLIP-143 `Sink`），连接器大版本换轨（Kafka 4.x/JDBC 4.x 面向 2.x）。1.x→2.x 跨大版本升级 savepoint 兼容性须人工核对官方矩阵（upgrading 页兼容表仅覆盖 1.8–1.20，2.x 兼容矩阵待验证）。
 - **违反后果**: 直接升 2.x 编译失败 / savepoint 不兼容冷启动丢状态。
 - **验证方法**: 检出 `org.apache.flink.api.java.DataSet`/`implements SourceFunction`/`implements SinkFunction` → warn 提示 2.x 迁移。
 - **对应门禁**: fw_flink_version_2x(warn)
+
+```verify
+id: flink-r18
+cmd: 
+expect: always
+```
 
 <!--
 共 18 条规律（≥10 门槛）。16 条挂门禁 id，2 条挂人工检查（keyBy 倾斜、反压定位），无游离规律。

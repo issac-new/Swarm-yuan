@@ -48,12 +48,24 @@ detect 信号命中任一高置信度行即可激活 antd 框架规则集。
 - **验证方法**: 检出 `message.success(` 等静态调用（排除 useApp/App. 前缀）→ fail。
 - **对应门禁**: fw_antd_app_useapp(fail)
 
+```verify
+id: antd-r1
+cmd: 
+expect: always
+```
+
 ### 规律：须按需引入，禁全量 import antd
 - **适用版本**: Ant Design 5.x/6.x
 - **规律**: 全量 `import { ... } from 'antd'` 在未配 tree-shaking 时引入全量组件。生产须用 `unplugin-vue-components`/`unplugin-react-resolver` 按需引入，或确认 Vite/webpack tree-shaking 生效。6.x 默认 ESM tree-shaking 友好但仍推荐显式按需。
 - **违反后果**: 首屏 JS 体积膨胀、加载慢。
 - **验证方法**: 检出 `from 'antd'` 全量 import（无具名按需配置）→ warn。
 - **对应门禁**: fw_antd_on_demand_import(warn)
+
+```verify
+id: antd-r2
+cmd: 
+expect: always
+```
 
 ### 规律：Form 须用 useForm Hook，禁废弃 Form.create 高阶组件
 - **适用版本**: Ant Design 4.x+（Form.create 已移除）
@@ -62,12 +74,24 @@ detect 信号命中任一高置信度行即可激活 antd 框架规则集。
 - **验证方法**: 检出 `Form.create(` → warn。
 - **对应门禁**: fw_antd_form_useform(warn)
 
+```verify
+id: antd-r3
+cmd: 
+expect: always
+```
+
 ### 规律：Table 大数据须虚拟滚动
 - **适用版本**: Ant Design 5.x+/6.x
 - **规律**: `<Table>` 默认全量渲染 DOM，>1k 行卡顿。须配 `scroll={{ y }}` 限定高度 + 虚拟滚动（6.x 支持 `virtual` 属性，待验证具体版本），或用 `react-window`/`vxe-table` 替代。
 - **违反后果**: 大数据表格渲染卡顿、内存占用高。
 - **验证方法**: 检出 `<Table` 绑定大数据源但无 virtual/scroll → warn。
 - **对应门禁**: fw_antd_table_virtual(warn)
+
+```verify
+id: antd-r4
+cmd: 
+expect: always
+```
 
 ### 规律：主题须用 ConfigProvider theme token，禁直接覆写 .ant-* 类 CSS
 - **适用版本**: Ant Design 5.x+/6.x
@@ -76,12 +100,24 @@ detect 信号命中任一高置信度行即可激活 antd 框架规则集。
 - **验证方法**: `.css/.less` 检出 `.ant-*` 类覆写 → warn。
 - **对应门禁**: fw_antd_configprovider_theme(warn)
 
+```verify
+id: antd-r5
+cmd: 
+expect: always
+```
+
 ### 规律：Form.Item 须配 name 与 data 字段对应
 - **适用版本**: Ant Design 4.x+/6.x
 - **规律**: `Form.Item` 的 `name` 须与 `Form` 的 `initialValues`/`name path` 对应，否则 `validateFields()`/`setFieldsValue()` 无法定位字段，校验与取值失效。
 - **违反后果**: 校验不触发、取值 undefined、字段联动失效。
 - **验证方法**: 检出 `<Form.Item` 但无 `name=` → warn。
 - **对应门禁**: fw_antd_form_item_name(warn)
+
+```verify
+id: antd-r6
+cmd: 
+expect: always
+```
 
 ### 规律：Modal 须配 destroyOnClose
 - **适用版本**: Ant Design 5.x+/6.x
@@ -90,12 +126,24 @@ detect 信号命中任一高置信度行即可激活 antd 框架规则集。
 - **验证方法**: 检出 `<Modal` 但无 `destroyOnClose` → warn。
 - **对应门禁**: fw_antd_modal_destroyonclose(warn)
 
+```verify
+id: antd-r7
+cmd: 
+expect: always
+```
+
 ### 规律：Select showSearch 大数据须远程搜索
 - **适用版本**: Ant Design 5.x+/6.x
 - **规律**: `Select` 配 `showSearch` 后默认本地过滤，全量渲染选项。选项 >1k 时卡顿。须配 `onSearch` + `filterOption={false}` 远程搜索，按需加载选项。
 - **违反后果**: 大数据选项渲染卡顿、内存占用高。
 - **验证方法**: 检出 `showSearch` 但无 `onSearch`/`filterOption={false}` → warn。
 - **对应门禁**: fw_antd_select_remote(warn)
+
+```verify
+id: antd-r8
+cmd: 
+expect: always
+```
 
 ### 规律：Upload 须配文件大小限制
 - **适用版本**: Ant Design 5.x+/6.x
@@ -104,6 +152,12 @@ detect 信号命中任一高置信度行即可激活 antd 框架规则集。
 - **验证方法**: 检出 `<Upload` 但无 `beforeUpload`/`maxCount` → fail。
 - **对应门禁**: fw_antd_upload_size_limit(fail)
 
+```verify
+id: antd-r9
+cmd: 
+expect: always
+```
+
 ### 规律：长文本须用 Typography.Ellipsis，禁手写 .slice 截断
 - **适用版本**: Ant Design 5.x+/6.x
 - **规律**: 长文本截断须用 `Typography.Paragraph` / `Typography.Text` 的 `ellipsis` 属性，自适应宽度 + tooltip 展示全文。手写 `.slice(0, n) + '...'` 无法自适应、无 tooltip、响应式失效。
@@ -111,12 +165,24 @@ detect 信号命中任一高置信度行即可激活 antd 框架规则集。
 - **验证方法**: 检出 `.slice(0, n)` 截断显示 → warn。
 - **对应门禁**: fw_antd_typography_ellipsis(warn)
 
+```verify
+id: antd-r10
+cmd: 
+expect: always
+```
+
 ### 规律：Row/Col 须配响应式断点
 - **适用版本**: Ant Design 5.x+/6.x
 - **规律**: `Col` 仅用静态 `span` 无响应式断点时，移动端错位。须配 `xs/sm/md/lg/xl/xxl` 断点，按屏幕宽度自适应列数。
 - **违反后果**: 移动端布局错位、响应式失效。
 - **验证方法**: 检出 `<Col` 仅用 `span=` 无断点 → warn。
 - **对应门禁**: fw_antd_grid_responsive(warn)
+
+```verify
+id: antd-r11
+cmd: 
+expect: always
+```
 
 <!--
 共 11 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

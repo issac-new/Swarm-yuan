@@ -52,12 +52,24 @@ detect 信号命中任一高置信度行即可激活 prisma 框架规则集。
 - **验证方法**: `grep -rnE 'prisma migrate dev' Dockerfile* *.sh` 命中 → fail。
 - **对应门禁**: fw_prisma_migrate_deploy(fail)
 
+```verify
+id: prisma-r1
+cmd: grep -rnE 'prisma migrate dev' Dockerfile* *.sh
+expect: hits>0
+```
+
 ### 规律：已应用迁移不可手改，修正必须新增迁移
 - **适用版本**: Prisma 6.x / 7.x
 - **规律**: Prisma 以 `_prisma_migrations` 表记录已应用迁移的 checksum。手改已应用迁移文件导致 checksum 不匹配，`migrate deploy` 报 P3009（failed migration）/漂移告警。schema 修正必须 `migrate dev --name` 新增迁移；已失败迁移按 `migrate resolve` 流程处置。
 - **违反后果**: 部署时 checksum 校验失败阻断发布；环境间 schema 漂移。
 - **验证方法**: 人工检查（`git log prisma/migrations/` 确认已发布迁移无后续修改；`prisma migrate status` 核对）。
 - **对应门禁**: 人工检查
+
+```verify
+id: prisma-r2
+cmd: 
+expect: always
+```
 
 ### 规律：交互式 $transaction 必须显式 timeout/maxWait（默认 5s/2s 易踩）
 - **适用版本**: Prisma 6.x / 7.x
@@ -66,12 +78,24 @@ detect 信号命中任一高置信度行即可激活 prisma 框架规则集。
 - **验证方法**: 含 `$transaction(async` 的文件未含 `timeout:` → warn。
 - **对应门禁**: fw_prisma_transaction_timeout(warn)
 
+```verify
+id: prisma-r3
+cmd: 
+expect: always
+```
+
 ### 规律：循环内 await prisma.* 是 N+1，须 include/select 或批量查询
 - **适用版本**: Prisma 6.x / 7.x
 - **规律**: `for (const x of list) { await prisma.post.findMany({ where: { userId: x.id } }) }` 是经典 N+1。正解：单次 `findMany({ include: { posts: true } })`（JOIN/单查取关联）、`select` 裁剪字段、或 `in: ids` 批量查后内存分组。`Promise.all` 并发查询缓解延迟但仍是 N 次 SQL，数据量大时压垮连接池。
 - **违反后果**: 列表页 1+N 次 SQL，连接池耗尽、延迟雪崩。
 - **验证方法**: 同一文件含 `for (` 且含 `await prisma.` → warn 人工确认循环内查询。
 - **对应门禁**: fw_prisma_n1_loop(warn)
+
+```verify
+id: prisma-r4
+cmd: 
+expect: always
+```
 
 ### 规律：$queryRawUnsafe/字符串拼接原始查询 = SQL 注入面，必须 tagged template 参数化
 - **适用版本**: Prisma 6.x / 7.x
@@ -80,12 +104,24 @@ detect 信号命中任一高置信度行即可激活 prisma 框架规则集。
 - **验证方法**: `grep -rnE '\$(queryRawUnsafe|executeRawUnsafe)'` 命中，或 `\$(queryRaw|executeRaw)\(` 同行含 `+` 拼接 → fail。
 - **对应门禁**: fw_prisma_queryraw_injection(fail)
 
+```verify
+id: prisma-r5
+cmd: grep -rnE '\$(queryRawUnsafe|executeRawUnsafe)'
+expect: hits>0
+```
+
 ### 规律：连接池 connection_limit 须按部署形态配置（serverless 冷启动红线）
 - **适用版本**: Prisma 6.x / 7.x（v7 driver adapters 池行为随驱动，待验证各 adapter 默认）
 - **规律**: 连接池大小经 datasource url 参数 `connection_limit` 控制（v6 默认 num_cpus×2+1）。实例数×connection_limit ≤ 库 max_connections。serverless（Lambda/云函数）每冷启动新建 client → 连接爆炸，须 `connection_limit=1` 或外部连接池（PgBouncer/Accelerate Data Proxy）。v7 driver adapters 池配置下沉到底层驱动（如 pg Pool），默认行为与 v6 不同（待验证各 adapter 默认值）。
 - **违反后果**: 连接数超库上限 → 全量请求拒绝；serverless 并发冷启动瞬间打满连接。
 - **验证方法**: 全部源码未检出 `connection_limit` → warn。
 - **对应门禁**: fw_prisma_connection_limit(warn)
+
+```verify
+id: prisma-r6
+cmd: 
+expect: always
+```
 
 ### 规律：对外暴露的主键避免 autoincrement 可枚举，用 uuid/cuid
 - **适用版本**: Prisma 6.x / 7.x
@@ -94,12 +130,24 @@ detect 信号命中任一高置信度行即可激活 prisma 框架规则集。
 - **验证方法**: schema 检出 `Int[[:space:]]+@id[[:space:]]+@default\(autoincrement\(\)\)` → warn。
 - **对应门禁**: fw_prisma_id_strategy(warn)
 
+```verify
+id: prisma-r7
+cmd: 
+expect: always
+```
+
 ### 规律：@relation 必须显式 onDelete/onUpdate 参照动作，禁止依赖默认
 - **适用版本**: Prisma 6.x / 7.x
 - **规律**: `@relation(fields: [authorId], references: [id])` 不显式声明 `onDelete` 时按数据库默认（通常 NoAction/Restrict）——父记录删除被拒或行为因库而异。须按业务显式：`Cascade`（从属随主删）/`SetNull`（保留孤儿置空，字段须可选）/`Restrict`。
 - **违反后果**: 删除行为跨库不一致；误配 Cascade 级联误删；NoAction 导致删除 500。
 - **验证方法**: schema 中 `@relation(` 行未含 `onDelete` → warn。
 - **对应门禁**: fw_prisma_relation_cascade(warn)
+
+```verify
+id: prisma-r8
+cmd: 
+expect: always
+```
 
 ### 规律：关系标量外键与高频过滤字段须 @@index
 - **适用版本**: Prisma 6.x / 7.x
@@ -108,12 +156,24 @@ detect 信号命中任一高置信度行即可激活 prisma 框架规则集。
 - **验证方法**: schema 含 `@relation(fields:` 但无 `@@index` → warn。
 - **对应门禁**: fw_prisma_relation_index(warn)
 
+```verify
+id: prisma-r9
+cmd: 
+expect: always
+```
+
 ### 规律：中间件 $use 已移除（v7），软删除/审计逻辑改 Client Extensions $extends
 - **适用版本**: Prisma 7.x 移除；6.x 已 deprecated（v7 升级指南已核实）
 - **规律**: Prisma v7 移除 client 中间件 API（`prisma.$use`），官方替代为 Client Extensions（`$extends`）的 query 组件。软删除（delete→update 置 deletedAt）、审计字段自动填充、读写分离路由都应经 `$extends` 实现。新代码禁止 `$use`。
 - **违反后果**: 升级 v7 编译/运行失败；$use 链式中间件性能差且顺序敏感。
 - **验证方法**: `grep -rnE '\.\$use\(' --include='*.ts' --include='*.js'` 命中 → warn。
 - **对应门禁**: fw_prisma_middleware_removed(warn)
+
+```verify
+id: prisma-r10
+cmd: grep -rnE '\.\$use\(' --include='*.ts' --include='*.js'
+expect: hits>0
+```
 
 ### 规律：模型须含 createdAt/updatedAt 审计字段（@default(now())/@updatedAt）
 - **适用版本**: Prisma 6.x / 7.x
@@ -122,6 +182,12 @@ detect 信号命中任一高置信度行即可激活 prisma 框架规则集。
 - **验证方法**: 含 `model ` 块的 schema 未含 `createdAt|updatedAt` → warn。
 - **对应门禁**: fw_prisma_audit_fields(warn)
 
+```verify
+id: prisma-r11
+cmd: 
+expect: always
+```
+
 ### 规律：generator 必须显式 output 输出路径（v7 强制）
 - **适用版本**: Prisma 7.x 强制；6.x 建议（v7 升级指南已核实）
 - **规律**: v7 新 `prisma-client` provider（Rust-free）要求 `output` 必填——client 不再默认生成进 node_modules，须指定如 `output = "../src/generated/prisma"`，import 路径同步指向自定义输出。v6 的 `prisma-client-js` 默认 node_modules 行为在 v7 废止。
@@ -129,12 +195,24 @@ detect 信号命中任一高置信度行即可激活 prisma 框架规则集。
 - **验证方法**: schema `generator` 块未含 `output` → warn。
 - **对应门禁**: fw_prisma_generator_output(warn)
 
+```verify
+id: prisma-r12
+cmd: 
+expect: always
+```
+
 ### 规律：生产禁止 log: ['query'] 全量查询日志
 - **适用版本**: Prisma 6.x / 7.x
 - **规律**: `new PrismaClient({ log: ['query'] })` 打印每条 SQL 及参数——生产日志量爆炸且泄露查询中的敏感值。生产用 `['warn', 'error']`；慢查询排查走 `log: [{ emit: 'event', level: 'query' }]` 事件按需采样。
 - **违反后果**: 敏感查询值入日志 CWE-532；日志成本爆炸。
 - **验证方法**: `grep -rnE "log[[:space:]]*:[[:space:]]*\[[^]]*'query'" --include='*.ts' --include='*.js'` 命中 → warn。
 - **对应门禁**: fw_prisma_query_log(warn)
+
+```verify
+id: prisma-r13
+cmd: grep -rnE "log[[:space:]]*:[[:space:]]*\[[^]]*'query'" --include='*.ts' --include='*.js'
+expect: hits>0
+```
 
 <!--
 共 13 条规律（≥10 门槛）。每条规律均挂门禁 id 或"人工检查"，无游离规律。

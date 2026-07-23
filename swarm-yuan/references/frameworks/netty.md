@@ -52,12 +52,24 @@ detect 信号命中任一高置信度行即可激活 netty 框架规则集。
 - **验证方法**: `grep -rlE 'channelRead|ChannelInboundHandlerAdapter|SimpleChannelInboundHandler' --include='*.java'` 命中的文件内检出 `Thread\.sleep|DriverManager|executeQuery|executeUpdate|\.get\(\)` → fail。
 - **对应门禁**: fw_netty_eventloop_block(fail)
 
+```verify
+id: netty-r1
+cmd: grep -rlE 'channelRead|ChannelInboundHandlerAdapter|SimpleChannelInboundHandler' --include='*.java'
+expect: hits>0
+```
+
 ### 规律：ByteBuf 引用计数须配对释放，防内存泄漏
 - **适用版本**: Netty 4.1.x / 4.2.x
 - **规律**: Netty 默认池化分配（`PooledByteBufAllocator`），`ByteBuf` 实现 `ReferenceCounted`，引用计数归零才归还池。入站消息在 `channelRead` 消费后须在 `finally` 中 `ReferenceCountUtil.release(msg)`（或改用 `SimpleChannelInboundHandler` 自动释放）；出站 `writeAndFlush` 由 Netty 释放。未释放即泄漏，`-Dio.netty.leakDetection.level=PARANOID` 可探测（生产建议 SIMPLE/ADVANCED 抽检，默认 SIMPLE；待验证：4.2 是否调整默认级别）。
 - **违反后果**: 直接内存泄漏直至 `OutOfDirectMemoryError`（Netty leak detector 报 LEAK 日志）。
 - **验证方法**: 含 `channelRead` 且引用 `ByteBuf` 的文件中无 `release(` 且未继承 `SimpleChannelInboundHandler` → fail。
 - **对应门禁**: fw_netty_bytebuf_release(fail)
+
+```verify
+id: netty-r2
+cmd: 
+expect: always
+```
 
 ### 规律：长连接服务须配 IdleStateHandler 心跳与断线判定
 - **适用版本**: Netty 4.1.x / 4.2.x
@@ -66,12 +78,24 @@ detect 信号命中任一高置信度行即可激活 netty 框架规则集。
 - **验证方法**: 检出 `ServerBootstrap` 装配但无 `IdleStateHandler|ReadTimeoutHandler` → warn。
 - **对应门禁**: fw_netty_idle_heartbeat(warn)
 
+```verify
+id: netty-r3
+cmd: 
+expect: always
+```
+
 ### 规律：writeAndFlush 跨线程调用须知线程模型，外部线程写须走 EventLoop 或依赖其线程安全
 - **适用版本**: Netty 4.1.x / 4.2.x
 - **规律**: `channel.writeAndFlush(msg)` 在 EventLoop 线程内调用直接写出；从外部线程调用时 Netty 会将其封装为任务提交到该 Channel 的 EventLoop 执行（线程安全，但入队有开销与顺序保证：按提交序）。禁止在外部线程直接操作 `ChannelHandlerContext` 的非线程安全状态；业务线程池回调写响应时建议 `channel.eventLoop().execute(...)` 显式归位，保证 handler 状态访问单线程化。
 - **违反后果**: 外部线程误改 handler 共享状态 → 数据竞争；误以为 write 是同步完成 → 时序错乱。
 - **验证方法**: 检出 `writeAndFlush` 使用 → warn 人工确认写路径线程归属（EventLoop 内 or 外部线程经 eventLoop().execute）。
 - **对应门禁**: fw_netty_write_thread(warn)
+
+```verify
+id: netty-r4
+cmd: 
+expect: always
+```
 
 ### 规律：ChannelPipeline 装配顺序敏感，编解码器须在业务 handler 之前
 - **适用版本**: Netty 4.1.x / 4.2.x
@@ -80,12 +104,24 @@ detect 信号命中任一高置信度行即可激活 netty 框架规则集。
 - **验证方法**: 装配文件中业务 handler 的 `addLast` 行号先于解码器（`*Decoder`/`SslHandler`）→ warn。
 - **对应门禁**: fw_netty_pipeline_order(warn)
 
+```verify
+id: netty-r5
+cmd: 
+expect: always
+```
+
 ### 规律：TCP 粘包拆包须显式装配帧解码器
 - **适用版本**: Netty 4.1.x / 4.2.x
 - **规律**: TCP 是字节流无消息边界，直连 `ChannelInboundHandlerAdapter` 收到的 ByteBuf 可能是半包/粘包。私有协议须按协议格式装配：`LengthFieldBasedFrameDecoder`（长度字段）、`LineBasedFrameDecoder`/`DelimiterBasedFrameDecoder`（分隔符）、`FixedLengthFrameDecoder`（定长）；HTTP/Protobuf 等有内建解码器（`HttpServerCodec`/`ProtobufVarint32FrameDecoder`）。`LengthFieldBasedFrameDecoder` 的 `maxFrameLength` 必须设上限防 OOM。
 - **违反后果**: 消息切错 → 解析失败 / 协议错乱；无 maxFrameLength 上限 → 恶意长度头撑爆内存。
 - **验证方法**: 检出 `ServerBootstrap` 且装配业务入站 handler，但 pipeline 无任何 `*FrameDecoder`/`HttpServerCodec`/`DelimiterBasedFrameDecoder`/`LineBasedFrameDecoder`/`FixedLengthFrameDecoder` → warn。
 - **对应门禁**: fw_netty_frame_decoder(warn)
+
+```verify
+id: netty-r6
+cmd: 
+expect: always
+```
 
 ### 规律：SSL/TLS 生产禁用自签证书与 InsecureTrustManagerFactory
 - **适用版本**: Netty 4.1.x / 4.2.x
@@ -94,12 +130,24 @@ detect 信号命中任一高置信度行即可激活 netty 框架规则集。
 - **验证方法**: 检出 `SelfSignedCertificate|InsecureTrustManagerFactory` → warn 确认仅限测试代码。
 - **对应门禁**: fw_netty_ssl_config(warn)
 
+```verify
+id: netty-r7
+cmd: 
+expect: always
+```
+
 ### 规律：ChannelOption 须按负载调优（SO_BACKLOG / TCP_NODELAY / ALLOCATOR）
 - **适用版本**: Netty 4.1.x / 4.2.x
 - **规律**: 服务端 `option(ChannelOption.SO_BACKLOG, ...)` 控制 accept 队列长度（Linux 高并发建议 ≥128，且受内核 `somaxconn` 上限约束）；`childOption(ChannelOption.TCP_NODELAY, true)` 关闭 Nagle 降低小包延迟（默认 false 会攒包，实时性场景必须开）；`childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)` 池化分配（4.1 默认即池化）；`SO_KEEPALIVE` 仅 TCP 层保活，不能替代应用层心跳。
 - **违反后果**: 默认 SO_BACKLOG 过小 → 突发连接被拒绝；TCP_NODELAY 未开 → 小消息延迟抖动。
 - **验证方法**: 检出 `ServerBootstrap` 但无 `SO_BACKLOG`/`TCP_NODELAY` 任一 → warn。
 - **对应门禁**: fw_netty_channel_option(warn)
+
+```verify
+id: netty-r8
+cmd: 
+expect: always
+```
 
 ### 规律：EventLoopGroup 线程数按 CPU 核数 2 倍原则，禁止拍脑袋
 - **适用版本**: Netty 4.1.x / 4.2.x
@@ -108,12 +156,24 @@ detect 信号命中任一高置信度行即可激活 netty 框架规则集。
 - **验证方法**: 检出 `new NioEventLoopGroup\(1\)` 或显式线程数 > 64 → warn 人工确认。
 - **对应门禁**: fw_netty_eventloop_threads(warn)
 
+```verify
+id: netty-r9
+cmd: 
+expect: always
+```
+
 ### 规律：handler 必须覆写 exceptionCaught，异常不得裸奔
 - **适用版本**: Netty 4.1.x / 4.2.x
 - **规律**: 入站 handler 未覆写 `exceptionCaught` 时，异常沿 pipeline 传播到 tail（`TailContext`），Netty 仅打印 WARN 日志而不关连接，半死状态连接持续占用资源。每个业务 handler 或 pipeline 末尾的兜底 handler 须覆写 `exceptionCaught`：记录日志 + 按协议返回错误 + `ctx.close()`。
 - **违反后果**: 解码异常/业务异常导致连接悬挂，客户端无响应，问题排查无日志锚点。
 - **验证方法**: 继承 `ChannelInboundHandlerAdapter`/`ChannelDuplexHandler` 的业务 handler 文件无 `exceptionCaught` → warn。
 - **对应门禁**: fw_netty_exception_caught(warn)
+
+```verify
+id: netty-r10
+cmd: 
+expect: always
+```
 
 ### 规律：@Sharable handler 必须无可变实例状态，否则每 Channel 一实例
 - **适用版本**: Netty 4.1.x / 4.2.x
@@ -122,12 +182,24 @@ detect 信号命中任一高置信度行即可激活 netty 框架规则集。
 - **验证方法**: 检出 `@Sharable` 且类内含非 final 成员字段 → warn 人工确认线程安全。
 - **对应门禁**: fw_netty_sharable(warn)
 
+```verify
+id: netty-r11
+cmd: 
+expect: always
+```
+
 ### 规律：EventLoopGroup 必须 shutdownGracefully 优雅关闭
 - **适用版本**: Netty 4.1.x / 4.2.x
 - **规律**: `EventLoopGroup` 持有线程池与直接内存缓存，进程退出前必须 `shutdownGracefully()`（默认 2 秒静默期 + 15 秒超时）释放，否则 JVM 无法退出或连接被硬断。典型模式：`try { channel.closeFuture().sync(); } finally { bossGroup.shutdownGracefully(); workerGroup.shutdownGracefully(); }`。4.1.69+ 起 `shutdownGracefully` 返回的 Future 可 sync 等待（细节待验证：4.2 静默期默认值是否调整）。
 - **违反后果**: 服务关停时连接被硬切 / JVM 挂住不退 / 直接内存未归还。
 - **验证方法**: 创建 `EventLoopGroup` 的启动类无 `shutdownGracefully` → warn。
 - **对应门禁**: fw_netty_shutdown_gracefully(warn)
+
+```verify
+id: netty-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

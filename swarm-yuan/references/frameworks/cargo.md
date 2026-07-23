@@ -58,12 +58,24 @@ Cargo 的 Cargo.toml 是 TOML 格式，本规则集用 grep 匹配字段而非 T
 - **验证方法**: `grep -rnE '\bunsafe[[:space:]]*(\{|\(|fn|impl)' --include='*.rs' .`（.rs 剥 // 注释后命中），且同作用域上方无 `// SAFETY:` / `// safety:` 说明 → fail
 - **对应门禁**: fw_cargo_unsafe（fail 级）
 
+```verify
+id: cargo-r1
+cmd: grep -rnE '\bunsafe[[:space:]]*(\{|\(|fn|impl)' --include='*.rs' .
+expect: hits>0
+```
+
 ### 规律：禁用 unwrap()/expect() 在生产代码
 - **适用版本**: 全版本
 - **规律**: 生产代码禁用 `.unwrap()` / `.expect()`（panic on None/Err）。须用 `?` 操作符或 `match` / `if let` / `unwrap_or` / `unwrap_or_else` 处理 `Option`/`Result`。测试代码（`#[cfg(test)]` / `tests/` 目录）可豁免。
 - **违反后果**: None/Err 时进程 panic，单请求崩溃影响全局（非 Rust 的 panic=abort 模式下还直接杀进程）；生产环境不可恢复（CWE-755 异常处理不当；GB/T 22239-2019 8.1.4.5 可用性）。
 - **验证方法**: `grep -rnE '\.(unwrap|expect)\(' --include='*.rs' .`（.rs 剥注释后命中），剔除 `#[cfg(test)]` 模块与 `tests/` 目录文件 → warn
 - **对应门禁**: fw_cargo_unwrap_expect（warn 级）
+
+```verify
+id: cargo-r2
+cmd: grep -rnE '\.(unwrap|expect)\(' --include='*.rs' .
+expect: hits>0
+```
 
 ### 规律：依赖须锁定版本，Cargo.lock 须提交
 - **适用版本**: 全版本
@@ -72,12 +84,24 @@ Cargo 的 Cargo.toml 是 TOML 格式，本规则集用 grep 匹配字段而非 T
 - **验证方法**: `find . -name Cargo.toml -not -path '*/target/*'` 命中的工程目录内无 `Cargo.lock` → warn（口径：文件级启发式，Cargo.lock 可能在 workspace 根）
 - **对应门禁**: fw_cargo_lockfile（warn 级）
 
+```verify
+id: cargo-r3
+cmd: find . -name Cargo.toml -not -path '*/target/*'
+expect: hits>0
+```
+
 ### 规律：禁用 git 依赖，用 crates.io 版本
 - **适用版本**: 全版本
 - **规律**: `[dependencies]` 内禁用 `xxx = { git = "..." }` 形式，须用 `xxx = "1.2.3"` / `xxx = { version = "1.2.3" }`（crates.io 版本）。git 依赖不可复现（commit 可变）、无法被 crates.io 缓存、构建慢。
 - **违反后果**: git 依赖指向的 commit 可被强制推送篡改，供应链安全风险（CWE-1357）；构建依赖网络可达性，CI 离线失败；版本不可追溯。
 - **验证方法**: `grep -rnE 'git[[:space:]]*=[[:space:]]*"' --include='Cargo.toml' .`（在 [dependencies] 节内命中 → fail；口径：行级匹配，git = 出现在任意依赖行即报）
 - **对应门禁**: fw_cargo_git_deps（fail 级）
+
+```verify
+id: cargo-r4
+cmd: grep -rnE 'git[[:space:]]*=[[:space:]]*"' --include='Cargo.toml' .
+expect: hits>0
+```
 
 ### 规律：须配 [profile.release] opt-level / lto
 - **适用版本**: 全版本
@@ -86,12 +110,24 @@ Cargo 的 Cargo.toml 是 TOML 格式，本规则集用 grep 匹配字段而非 T
 - **验证方法**: 检出 Cargo.toml 但无 `[profile.release]` 节，或节内无 `opt-level` / `lto` → warn
 - **对应门禁**: fw_cargo_release_profile（warn 级）
 
+```verify
+id: cargo-r5
+cmd: 
+expect: always
+```
+
 ### 规律：须配 [lints] 或 clippy 配置
 - **适用版本**: Cargo ≥1.74（[lints] 表稳定）/ 全版本（.clippy.toml / cargo.toml [lints.clippy]）
 - **规律**: 须在 `Cargo.toml` 配 `[lints]` 节（`[lints.rust]` / `[lints.clippy]`）或 `.clippy.toml`，启用 `unsafe_code = "deny"` / `clippy::all = "warn"` 等。仅依赖默认 lint 不够，须显式收紧。
 - **违反后果**: 默认 lint 宽松，unsafe/unwrap/clippy 警告被忽略，代码质量漂移；无强制 lint 则 PR 审查负担大（GB/T 25000.51-2016 可维护性）。
 - **验证方法**: 检出 Cargo.toml 但无 `[lints]` 节且无 `clippy` 字段且无 `.clippy.toml` 文件 → warn
 - **对应门禁**: fw_cargo_lints_config（warn 级）
+
+```verify
+id: cargo-r6
+cmd: 
+expect: always
+```
 
 ### 规律：禁用 #![allow(warnings)]
 - **适用版本**: 全版本
@@ -100,12 +136,24 @@ Cargo 的 Cargo.toml 是 TOML 格式，本规则集用 grep 匹配字段而非 T
 - **验证方法**: `grep -rnE '#!\[allow\(warnings\)\]|#!\[allow\(dead_code\)\]' --include='*.rs' .`（.rs 剥注释后命中 → fail）
 - **对应门禁**: fw_cargo_allow_warnings（fail 级）
 
+```verify
+id: cargo-r7
+cmd: grep -rnE '#!\[allow\(warnings\)\]|#!\[allow\(dead_code\)\]' --include='*.rs' .
+expect: hits>0
+```
+
 ### 规律：须配 panic = "abort"（release）
 - **适用版本**: 全版本
 - **规律**: `[profile.release]` 须设 `panic = "abort"`，使 panic 时直接终止进程而非 unwind 栈。理由：①减小二进制体积（省 unwind 表）；②防 panic 后继续执行（unwind 可能执行析构函数引入二次错误）；③嵌入式/服务端 panic 应直接崩让 supervisor 重启。
 - **违反后果**: 默认 panic=unwind 致二进制体积大（嵌入式超容量）；panic 后析构链执行引入二次错误；进程未崩溃重启卡在异常态（GB/T 22239-2019 8.1.4.5 可用性——异常须快速恢复）。
 - **验证方法**: 检出 `[profile.release]` 节但节内无 `panic[[:space:]]*=[[:space:]]*"abort"` → warn
 - **对应门禁**: fw_cargo_panic_abort（warn 级）
+
+```verify
+id: cargo-r8
+cmd: 
+expect: always
+```
 
 ### 规律：依赖须检查许可证，配 cargo-deny 或 cargo-license
 - **适用版本**: 全版本
@@ -114,12 +162,24 @@ Cargo 的 Cargo.toml 是 TOML 格式，本规则集用 grep 匹配字段而非 T
 - **验证方法**: `find . -name 'deny.toml' -not -path '*/target/*'`（应非空），或 Cargo.toml 内含 `cargo-deny` / `.cargo/config.toml` 含 license 配置；均无 → warn
 - **对应门禁**: fw_cargo_license_check（warn 级）
 
+```verify
+id: cargo-r9
+cmd: find . -name 'deny.toml' -not -path '*/target/*'
+expect: hits>0
+```
+
 ### 规律：须配 cargo audit，安全漏洞扫描
 - **适用版本**: 全版本（cargo-audit 由 RustSec 维护）
 - **规律**: 须配置 `cargo-audit`（`cargo install cargo-audit` + CI 跑 `cargo audit`），扫描 Cargo.lock 中依赖的已知 CVE（RustSec Advisory Database）。CI 须在依赖变更时触发审计。
 - **违反后果**: 依赖含已知 CVE 未被发现，被利用致漏洞（CWE-1104 使用未维护的第三方组件；GB/T 22239-2019 8.1.4.3 恶意代码防范 / 8.1.4.4 入侵防范）。
 - **验证方法**: 检出 Cargo.toml 工程但项目内无 `cargo-audit` / `cargo audit` / `audit.toml` / `.cargo/audit.toml` 引用（CI 配置/README/Cargo.toml dev-dependencies 均算）→ warn
 - **对应门禁**: fw_cargo_audit（warn 级）
+
+```verify
+id: cargo-r10
+cmd: 
+expect: always
+```
 
 <!--
 共 10 条规律（= 门槛 10）。每条规律均挂门禁 id，无游离规律。

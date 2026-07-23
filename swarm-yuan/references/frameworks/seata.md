@@ -51,12 +51,24 @@ detect 信号命中任一高置信度行即可激活 seata 框架规则集。
 - **验证方法**: 同一 .java 文件同时检出 `@GlobalTransactional` 与 `@Transactional` → fail（人工确认是否同方法/同类混用）。
 - **对应门禁**: fw_seata_local_tx_mixed(fail)
 
+```verify
+id: seata-r1
+cmd: 
+expect: always
+```
+
 ### 规律：TCC 须开启 TCC Fence 防空回滚/幂等/悬挂
 - **适用版本**: Seata 2.x（1.4+ 引入 useTCCFence）
 - **规律**: TCC 三大坑：空回滚（try 未执行 cancel 先执行，须判空回滚）、幂等（网络重试导致 cancel/commit 重复）、悬挂（cancel 先于 try 到达，try 随后执行造成资源悬挂）。Seata `useTCCFence=true`（@TwoPhaseBusinessAction）用 tcc_fence_log 表统一解决三问题，生产必须开启；关闭时须自行在业务代码实现三道防线。
 - **违反后果**: 无 fence → 空回滚报错 / 重复扣减 / 资源悬挂。
 - **验证方法**: 检出 `@TwoPhaseBusinessAction` 行未含 `useTCCFence[[:space:]]*=[[:space:]]*true` → fail。
 - **对应门禁**: fw_seata_tcc_fence(fail)
+
+```verify
+id: seata-r2
+cmd: 
+expect: always
+```
 
 ### 规律：TCC commit/cancel 方法名须显式声明并与签名一致
 - **适用版本**: Seata 2.x / 1.x
@@ -65,12 +77,24 @@ detect 信号命中任一高置信度行即可激活 seata 框架规则集。
 - **验证方法**: 检出 `@TwoPhaseBusinessAction` 未含 `commitMethod`/`rollbackMethod` 显式声明 → warn。
 - **对应门禁**: fw_seata_tcc_method_explicit(warn)
 
+```verify
+id: seata-r3
+cmd: 
+expect: always
+```
+
 ### 规律：AT 模式每个分支库必须建 undo_log 表
 - **适用版本**: Seata 2.x / 1.x
 - **规律**: AT 模式回滚依赖 undo_log（before image/after image）。每个接入全局事务的数据库都必须建 undo_log 表（表结构随版本有差异，2.x 字段以官方 script 为准）。漏建则分支提交时插入 undo_log 失败，全局事务直接异常。
 - **违反后果**: 分支提交报错 / 回滚无依据 → 数据不一致。
 - **验证方法**: 检出 @GlobalTransactional 或 seata AT 配置，但工程中无 `undo_log` 建表 SQL → warn。
 - **对应门禁**: fw_seata_undo_log(warn)
+
+```verify
+id: seata-r4
+cmd: 
+expect: always
+```
 
 ### 规律：@GlobalTransactional 须显式 timeoutMills，全局事务超时与锁持有联动
 - **适用版本**: Seata 2.x / 1.x
@@ -79,12 +103,24 @@ detect 信号命中任一高置信度行即可激活 seata 框架规则集。
 - **验证方法**: 检出 `@GlobalTransactional` 未含 `timeoutMills` → warn。
 - **对应门禁**: fw_seata_global_timeout(warn)
 
+```verify
+id: seata-r5
+cmd: 
+expect: always
+```
+
 ### 规律：AT 全局锁防脏写，全局事务外写操作须 @GlobalLock
 - **适用版本**: Seata 2.x / 1.x
 - **规律**: AT 模式全局锁只拦截全局事务内的写。全局事务外的写（无 @GlobalTransactional）可绕过全局锁直接改同一行，造成脏写（全局回滚后覆盖外部新值）。事务外写须 `@GlobalLock` + `SELECT ... FOR UPDATE` 触发全局锁查询。
 - **违反后果**: 事务外写绕过全局锁 → 脏写，回滚数据覆盖新值。
 - **验证方法**: 检出含 `UPDATE|DELETE` SQL（@Update/@Delete 或字符串）的类既无 @GlobalTransactional 也无 @GlobalLock，而工程存在全局事务 → warn。
 - **对应门禁**: fw_seata_dirty_write(warn)
+
+```verify
+id: seata-r6
+cmd: 
+expect: always
+```
 
 ### 规律：@GlobalLock 须配 FOR UPDATE 查询，否则不触发全局锁检查
 - **适用版本**: Seata 2.x / 1.x
@@ -93,12 +129,24 @@ detect 信号命中任一高置信度行即可激活 seata 框架规则集。
 - **验证方法**: 检出 `@GlobalLock` 但同文件无 `for update|FOR UPDATE` → warn。
 - **对应门禁**: fw_seata_global_lock(warn)
 
+```verify
+id: seata-r7
+cmd: 
+expect: always
+```
+
 ### 规律：跨服务调用须确认 XID 透传，分支事务才注册
 - **适用版本**: Seata 2.x / 1.x
 - **规律**: 分支事务注册依赖 XID 经 RPC 上下文透传（Feign/Dubbo 集成模块自动透传；裸 RestTemplate/自研 RPC 须手工 `RootContext.getXID()` 绑定到请求头）。XID 断链时下游操作不注册分支，不受全局锁保护，回滚不覆盖。
 - **违反后果**: 分支不注册 → 全局回滚漏数据。
 - **验证方法**: @GlobalTransactional 方法所在工程检出 `RestTemplate|WebClient|FeignClient|DubboReference` 远程调用且无 seata 对应集成依赖/手工 RootContext 绑定 → warn 人工确认。
 - **对应门禁**: fw_seata_branch_register(warn)
+
+```verify
+id: seata-r8
+cmd: 
+expect: always
+```
 
 ### 规律：Saga 状态机每个正向节点须配补偿节点
 - **适用版本**: Seata 2.x / 1.x（seata-saga）
@@ -107,12 +155,24 @@ detect 信号命中任一高置信度行即可激活 seata 框架规则集。
 - **验证方法**: 检出 Saga 状态机 json 无 `Compensate|compensate` → warn。
 - **对应门禁**: fw_seata_saga_compensation(warn)
 
+```verify
+id: seata-r9
+cmd: 
+expect: always
+```
+
 ### 规律：XA 模式须全部数据源代理，混合代理破坏隔离
 - **适用版本**: Seata 2.x / 1.x
 - **规律**: XA 模式 `seata.data-source-proxy-mode=XA`（或 DataSourceProxyXA 手工代理）依赖数据库 XA 协议持锁至二阶段。同一工程部分数据源走 AT、部分走 XA、部分不代理，未代理的写绕过全局锁。模式选定后须全量数据源统一代理。
 - **违反后果**: 未代理数据源绕过全局锁 → 脏写 / 回滚遗漏。
 - **验证方法**: 检出 `data-source-proxy-mode[[:space:]]*[:=][[:space:]]*XA` 或 `DataSourceProxyXA` → warn 人工确认全量代理。
 - **对应门禁**: fw_seata_xa_proxy(warn)
+
+```verify
+id: seata-r10
+cmd: 
+expect: always
+```
 
 ### 规律：AT 模式须显式开启数据源自动代理
 - **适用版本**: Seata 2.x / 1.x（spring-boot-starter）
@@ -121,12 +181,24 @@ detect 信号命中任一高置信度行即可激活 seata 框架规则集。
 - **验证方法**: 检出 @GlobalTransactional 但配置 `enable-auto-data-source-proxy[[:space:]]*[:=][[:space:]]*false` 或检出 `DataSourceProxy` 手工包装 → warn/fail 提示。
 - **对应门禁**: fw_seata_at_datasource_proxy(warn)
 
+```verify
+id: seata-r11
+cmd: 
+expect: always
+```
+
 ### 规律：tx-service-group 与 vgroup-mapping 须与 TC 集群一致
 - **适用版本**: Seata 2.x / 1.x
 - **规律**: 客户端 `seata.tx-service-group` 经 `seata.service.vgroup-mapping.<group>=<cluster>` 映射到 TC 集群。group 与 mapping 缺失/不一致时 TM/RM 注册失败（常见报错 no available service）。`seata.application-id` 须唯一标识应用。多环境配置须按环境区分。
 - **违反后果**: TM/RM 注册失败 → 全局事务无法开启，启动或首调用报错。
 - **验证方法**: 检出 seata 依赖/@GlobalTransactional 但配置无 `tx-service-group` 或无 `vgroup-mapping` → warn。
 - **对应门禁**: fw_seata_tm_rm_register(warn)
+
+```verify
+id: seata-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

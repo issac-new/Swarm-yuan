@@ -20,6 +20,8 @@ frontmatter 四字段为 verify-framework-ruleset.sh 解析所用，命名不可
   适用版本    — 本规则集规律所基于的版本区间（用于规律版本区间匹配）
   最后调研    — 调研日期 + 来源（用于规则库时效检查，>6 个月 warn）
   深度门槛    — §3 规律数下限；默认 10，成熟框架可上调
+
+§3 每条规律下须有 ```verify 块（id/cmd/expect，由 migrate-verify-blocks.sh 草稿生成 + 人工校对；framework-evidence.sh 消费）
 -->
 
 ## §1 探查信号（→ §C+.0.5 激活依据，含置信度）
@@ -57,12 +59,24 @@ frontmatter 四字段为 verify-framework-ruleset.sh 解析所用，命名不可
 - **验证方法**: <具体 grep / read 命令，即"代码证据"采集方式>
 - **对应门禁**: fw_<id>_<rule>（fail/warn 级）或"人工检查"
 
+```verify
+id: <fw>-r1
+cmd: grep -rnE "pattern" --include="*.ext" "${PROJECT_DIR}"
+expect: hits>0
+```
+
 ### 规律：<标题>
 - **适用版本**: ...
 - **规律**: ...
 - **违反后果**: ...
 - **验证方法**: ...
 - **对应门禁**: ...
+
+```verify
+id: <fw>-r2
+cmd:
+expect: always
+```
 
 <!-- 续至 ≥ 深度门槛 条。每条规律必须含"对应门禁"或"人工检查"——否则 verify 脚本报 NOGATE 不通过 -->
 

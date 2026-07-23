@@ -56,12 +56,24 @@ Dockerfile 是行指令格式，本规则集用 grep 匹配指令行首关键字
 - **验证方法**: `grep -nE '^[[:space:]]*FROM[[:space:]]+[^[:space:]]+:latest' --include='Dockerfile*' .`（剥 # 注释行后命中 → fail）
 - **对应门禁**: fw_dockerfile_latest_base（fail 级）
 
+```verify
+id: dockerfile-r1
+cmd: grep -nE '^[[:space:]]*FROM[[:space:]]+[^[:space:]]+:latest' --include='Dockerfile*' .
+expect: hits>0
+```
+
 ### 规律：禁止以 root 运行，须显式 USER 非 root
 - **适用版本**: 全版本
 - **规律**: Dockerfile 须含 `USER <非root>` 指令（如 `USER app` / `USER 1000`），切换到非特权用户运行。默认 root（uid=0）运行容器等同于宿主权限越界风险。
 - **违反后果**: 容器内进程以 root 运行，逃逸到宿主即获 root 权限，配合 CVE-2019-5736 runc 等逃逸漏洞即失陷整宿主（CWE-250 特权责任不必要的特权；GB/T 22239-2019 8.1.4.1 身份鉴别）。
 - **验证方法**: 剥 # 注释后，Dockerfile 内 `grep -nE '^[[:space:]]*USER[[:space:]]'`（应非空且非 `USER root`/`USER 0`）；缺 USER 指令或显式 `USER root` → fail
 - **对应门禁**: fw_dockerfile_root_user（fail 级）
+
+```verify
+id: dockerfile-r2
+cmd: grep -nE '^[[:space:]]*USER[[:space:]]'
+expect: hits>0
+```
 
 ### 规律：敏感信息禁止硬编码在 ENV/ARG
 - **适用版本**: 全版本
@@ -70,12 +82,24 @@ Dockerfile 是行指令格式，本规则集用 grep 匹配指令行首关键字
 - **验证方法**: `grep -nE '^[[:space:]]*(ENV|ARG)[[:space:]].*(password|passwd|secret|token|api_key|apikey|access_key|private_key)[[:space:]]*=' --include='Dockerfile*' .` 剔除含 `$`/`{` 引用占位行后命中 → fail（口径：行级匹配，变量名或值命中即报）
 - **对应门禁**: fw_dockerfile_hardcoded_secret（fail 级）
 
+```verify
+id: dockerfile-r3
+cmd: grep -nE '^[[:space:]]*(ENV|ARG)[[:space:]].*(password|passwd|secret|token|api_key|apikey|access_key|private_key)[[:space:]]*=' --include='Dockerfile*' .
+expect: hits>0
+```
+
 ### 规律：HEALTHCHECK 须显式配置
 - **适用版本**: 全版本（Docker 1.12+ 原生支持）
 - **规律**: 镜像须含 `HEALTHCHECK` 指令，显式声明健康探测命令（`HEALTHCHECK --interval=... CMD ...`）。无 HEALTHCHECK 时编排器（Swarm/K8s liveness）仅靠进程存活判定，进程假死（死锁/泄漏）不可发现。
 - **违反后果**: 进程假死（内存泄漏/死锁/连接耗尽）不被探测，流量继续打到僵尸实例（CWE-1188 探测缺失；GB/T 22239-2019 8.1.4.5 可用性）。
 - **验证方法**: 剥 # 注释后 `grep -nE '^[[:space:]]*HEALTHCHECK[[:space:]]' --include='Dockerfile*' .`（应非空）；缺 HEALTHCHECK → warn
 - **对应门禁**: fw_dockerfile_no_healthcheck（warn 级）
+
+```verify
+id: dockerfile-r4
+cmd: grep -nE '^[[:space:]]*HEALTHCHECK[[:space:]]' --include='Dockerfile*' .
+expect: hits>0
+```
 
 ### 规律：多阶段构建减小镜像体积
 - **适用版本**: Docker 17.05+（多阶段构建支持）
@@ -84,12 +108,24 @@ Dockerfile 是行指令格式，本规则集用 grep 匹配指令行首关键字
 - **验证方法**: 剥 # 注释后 `grep -cE '^[[:space:]]*FROM[[:space:]]' --include='Dockerfile*' .`（多阶段构建应 ≥2；若仅 1 个 FROM 且镜像含编译型特征 RUN apt-get install gcc|node|maven 则 warn；口径：单 FROM 即 warn 启发式）
 - **对应门禁**: fw_dockerfile_no_multistage（warn 级）
 
+```verify
+id: dockerfile-r5
+cmd: grep -cE '^[[:space:]]*FROM[[:space:]]' --include='Dockerfile*' .
+expect: hits>0
+```
+
 ### 规律：.dockerignore 须存在
 - **适用版本**: 全版本
 - **规律**: 含 Dockerfile 的工程根（或 Dockerfile 同级 build context）须有 `.dockerignore` 文件，排除 `.git/` / `node_modules/` / `target/` / `__pycache__/` / 密钥文件等，防止构建上下文泄露与镜像膨胀。
 - **违反后果**: 构建上下文把全仓库（含 .git 历史/密钥/依赖缓存）打入镜像层，构建慢且密钥泄露（CWE-668 资源暴露；GB/T 22239-2019 8.1.4.6 数据保密性）。
 - **验证方法**: Dockerfile 所在目录（或其父目录至 repo 根逐级查）无 `.dockerignore` 文件 → warn（口径：文件级启发式，父级查找防 build context 设在上级）
 - **对应门禁**: fw_dockerfile_no_dockerignore（warn 级）
+
+```verify
+id: dockerfile-r6
+cmd: 
+expect: always
+```
 
 ### 规律：apt-get 须 --no-install-recommends 并清理缓存
 - **适用版本**: Debian/Ubuntu 系基础镜像
@@ -98,12 +134,24 @@ Dockerfile 是行指令格式，本规则集用 grep 匹配指令行首关键字
 - **验证方法**: 剥 # 注释后命中 `apt-get[[:space:]]+install` 但同文件无 `--no-install-recommends`，或同文件无 `rm -rf /var/lib/apt/lists` → warn（口径：文件级，含 apt-get install 即须同时存在两个清理标记）
 - **对应门禁**: fw_dockerfile_apt_cleanup（warn 级）
 
+```verify
+id: dockerfile-r7
+cmd: 
+expect: always
+```
+
 ### 规律：COPY 须用 --chown 显式属主
 - **适用版本**: Docker 17.09+（COPY --chown 支持）
 - **规律**: `COPY` 指令复制文件进镜像须带 `--chown=<user>:<group>`（或 `--chown=<user>`）显式指定属主，避免文件以 root 属主落入镜像层（即使后续 USER 切换，已复制文件仍 root 属主）。
 - **违反后果**: 复制的二进制/配置以 root 属主存在镜像层，非 root 进程可读但不可改，攻击者拿到 root 后可篡改（配合容器逃逸即植入后门；CWE-250；GB/T 22239-2019 8.1.4.1）。
 - **验证方法**: 剥 # 注释后 `grep -nE '^[[:space:]]*COPY[[:space:]]' --include='Dockerfile*' .` 命中行不含 `--chown` → warn（口径：行级，每个 COPY 须自带 --chown；ADD 指令豁免，ADD 多用于远程 URL/ tar 解包）
 - **对应门禁**: fw_dockerfile_copy_no_chown（warn 级）
+
+```verify
+id: dockerfile-r8
+cmd: grep -nE '^[[:space:]]*COPY[[:space:]]' --include='Dockerfile*' .
+expect: hits>0
+```
 
 ### 规律：EXPOSE 须与实际监听端口一致
 - **适用版本**: 全版本
@@ -112,12 +160,24 @@ Dockerfile 是行指令格式，本规则集用 grep 匹配指令行首关键字
 - **验证方法**: 剥 # 注释后 `grep -nE '^[[:space:]]*EXPOSE[[:space:]]+[0-9]+' --include='Dockerfile*' .`（应有 EXPOSE 声明）；无 EXPOSE → warn（口径：仅检有无 EXPOSE 声明，与实际端口一致性的精确比对需结合应用配置文件，属人工检查补充）
 - **对应门禁**: fw_dockerfile_no_expose（warn 级）
 
+```verify
+id: dockerfile-r9
+cmd: grep -nE '^[[:space:]]*EXPOSE[[:space:]]+[0-9]+' --include='Dockerfile*' .
+expect: hits>0
+```
+
 ### 规律：入口须用 ENTRYPOINT+CMD 分离，可被覆盖
 - **适用版本**: 全版本
 - **规律**: 容器入口须用 `ENTRYPOINT` 指定主进程 + `CMD` 提供默认参数（CMD 可被 `docker run <args>` 覆盖），而非单一 `CMD` 作主进程或 `ENTRYPOINT` 硬钉死无 CMD。分离模式让镜像既可作为可执行文件又允许传参覆盖。
 - **违反后果**: 仅用 CMD 时 `docker run` 易误覆盖主进程（如 nginx 镜像只 CMD nginx 则 `docker run img bash` 即丢失 nginx）；ENTRYPOINT 无 CMD 则无法传参（如 `docker run img --help` 失效）（GB/T 25000.51-2016 使用性/可配置性）。
 - **验证方法**: 剥 # 注释后同文件内同时有 `ENTRYPOINT` 与 `CMD` → 合规；仅有 `CMD` 或仅有 `ENTRYPOINT` → warn（口径：文件级共现判定）
 - **对应门禁**: fw_dockerfile_entrypoint_cmd_split（warn 级）
+
+```verify
+id: dockerfile-r10
+cmd: 
+expect: always
+```
 
 <!--
 共 10 条规律（= 门槛 10）。每条规律均挂门禁 id，无游离规律。

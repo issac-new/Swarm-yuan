@@ -54,12 +54,24 @@ detect 信号命中任一高置信度行即可激活 typeorm 框架规则集。
 - **验证方法**: `grep -rnE 'synchronize[[:space:]]*:[[:space:]]*true' --include='*.ts'` 命中 → fail。
 - **对应门禁**: fw_typeorm_synchronize_prod(fail)
 
+```verify
+id: typeorm-r1
+cmd: grep -rnE 'synchronize[[:space:]]*:[[:space:]]*true' --include='*.ts'
+expect: hits>0
+```
+
 ### 规律：已执行迁移不可手改，schema 修正必须新增迁移
 - **适用版本**: TypeORM 0.3.x / 1.x
 - **规律**: TypeORM 以 `migrations` 表记录已执行迁移（按 timestamp 排序）。手改已执行迁移文件不会重跑（记录已存在），导致不同环境 schema 不一致；改 timestamp 重命名则在新环境重复执行冲突。任何 schema 修正必须 `migration:generate`/手写新迁移。
 - **违反后果**: 环境间 schema 漂移（开发库与生产库结构不一致）；回滚脚本与实际结构错位。
 - **验证方法**: 人工检查（`git log --follow migrations/` 确认已合入主干并发布的迁移文件无后续修改；`typeorm migration:show` 核对执行记录）。
 - **对应门禁**: 人工检查
+
+```verify
+id: typeorm-r2
+cmd: 
+expect: always
+```
 
 ### 规律：relations eager: true 触发隐式 JOIN，N+1 须改用显式 relations/leftJoinAndSelect
 - **适用版本**: TypeORM 0.3.x / 1.x
@@ -68,12 +80,24 @@ detect 信号命中任一高置信度行即可激活 typeorm 框架规则集。
 - **验证方法**: `grep -rnE 'eager[[:space:]]*:[[:space:]]*true' --include='*.ts'` 命中 → warn。
 - **对应门禁**: fw_typeorm_eager_n1(warn)
 
+```verify
+id: typeorm-r3
+cmd: grep -rnE 'eager[[:space:]]*:[[:space:]]*true' --include='*.ts'
+expect: hits>0
+```
+
 ### 规律：事务内必须使用回调注入的 EntityManager / QueryRunner，禁止混用全局 manager/getRepository
 - **适用版本**: TypeORM 0.3.x / 1.x
 - **规律**: `dataSource.transaction(async (manager) => {...})` 内必须用回调参数 `manager` 执行全部 SQL；混用 `dataSource.manager`/`getRepository()`（走全局连接）会绕过事务——这些写入不参与 commit/rollback。手动 QueryRunner 场景同理：必须 `queryRunner.manager`，且 `connect/startTransaction/commitTransaction/release` 配对（finally release）。
 - **违反后果**: 部分写入逃逸事务 → 回滚后数据不一致（无多漏错重之"错"）；QueryRunner 未 release → 连接泄漏池耗尽。
 - **验证方法**: 同一文件同时含 `.transaction(`/`startTransaction` 与 `getRepository(`/`dataSource.manager.` → warn 人工确认事务内未混用全局连接。
 - **对应门禁**: fw_typeorm_transaction_runner(warn)
+
+```verify
+id: typeorm-r4
+cmd: 
+expect: always
+```
 
 ### 规律：@Transaction/@TransactionManager/@TransactionRepository 装饰器已废弃，禁止新代码使用
 - **适用版本**: TypeORM 0.3.x 起废弃；1.x 已移除（待验证：v1 移除时点依 v1.0.0 breaking 说明，未联网核实细节）
@@ -82,12 +106,24 @@ detect 信号命中任一高置信度行即可激活 typeorm 框架规则集。
 - **验证方法**: `grep -rnE '@Transaction\(|@TransactionManager|@TransactionRepository' --include='*.ts'` 命中 → warn。
 - **对应门禁**: fw_typeorm_transaction_decorator(warn)
 
+```verify
+id: typeorm-r5
+cmd: grep -rnE '@Transaction\(|@TransactionManager|@TransactionRepository' --include='*.ts'
+expect: hits>0
+```
+
 ### 规律：懒加载关联（Promise<T> 类型）须防序列化泄露与忘 await
 - **适用版本**: TypeORM 0.3.x / 1.x
 - **规律**: 关联属性声明为 `Promise<User>` 即懒加载——访问须 await，且 JSON.stringify 实体时懒加载字段序列化为 `{}`（Promise 无自有可枚举属性），接口静默丢字段。HTTP 层直接返回实体的项目慎用懒加载关联。
 - **违反后果**: 响应丢关联字段（前端拿不到数据且无报错）；忘 await 把 Promise 当对象用 → undefined 行为。
 - **验证方法**: `grep -rnE '@(ManyToOne|OneToMany|OneToOne|ManyToMany)\(' --include='*.ts' -A3 | grep 'Promise<'` 命中 → warn。
 - **对应门禁**: fw_typeorm_lazy_relation(warn)
+
+```verify
+id: typeorm-r6
+cmd: grep -rnE '@(ManyToOne|OneToMany|OneToOne|ManyToMany)\(' --include='*.ts' -A3 | grep 'Promise<'
+expect: hits>0
+```
 
 ### 规律：外键列须 @Index 显式索引（TypeORM 不自动为关联建索引）
 - **适用版本**: TypeORM 0.3.x / 1.x
@@ -96,12 +132,24 @@ detect 信号命中任一高置信度行即可激活 typeorm 框架规则集。
 - **验证方法**: 含 `@ManyToOne` 的实体文件未含 `@Index` → warn。
 - **对应门禁**: fw_typeorm_fk_index(warn)
 
+```verify
+id: typeorm-r7
+cmd: 
+expect: always
+```
+
 ### 规律：分页禁止 offset/limit 配 JOIN 取实体（行级截断错位），须 take/skip 或 findAndCount
 - **适用版本**: TypeORM 0.3.x / 1.x
 - **规律**: QueryBuilder 的 `.offset()/.limit()` 直接译为 SQL OFFSET/LIMIT，作用于 JOIN 后的行集——一对多 JOIN 时一个实体占多行，按行截断导致实体被切碎/条数错误。实体分页用 `.take()/.skip()`（TypeORM 转为子查询/按实体分页）或 `findAndCount({ take, skip })`。
 - **违反后果**: 分页数据缺漏/重复（无多漏错重之"漏"与"重"）；总数与实际页内容对不上。
 - **验证方法**: 同一文件同时含 `.offset(`/`.limit(` 与 `leftJoin|innerJoin` → warn。
 - **对应门禁**: fw_typeorm_pagination_offset(warn)
+
+```verify
+id: typeorm-r8
+cmd: 
+expect: always
+```
 
 ### 规律：实体声明 @DeleteDateColumn 后禁止物理 .delete()，须 softDelete/recover
 - **适用版本**: TypeORM 0.3.x / 1.x
@@ -110,12 +158,24 @@ detect 信号命中任一高置信度行即可激活 typeorm 框架规则集。
 - **验证方法**: 存在 `@DeleteDateColumn` 实体且源码检出 `.delete(` 调用 → warn。
 - **对应门禁**: fw_typeorm_soft_delete(warn)
 
+```verify
+id: typeorm-r9
+cmd: 
+expect: always
+```
+
 ### 规律：审计字段用 @CreateDateColumn/@UpdateDateColumn 声明，禁止应用层手填
 - **适用版本**: TypeORM 0.3.x / 1.x
 - **规律**: 创建/更新时间应声明 `@CreateDateColumn`/`@UpdateDateColumn` 由 ORM 自动维护（数据库时区统一）。应用层手填 `new Date()` 存在应用服务器时钟漂移与遗漏。含 @Entity 的实体（除纯关联表）应有审计字段。
 - **违反后果**: 审计时间缺失/不准 → 问题追溯无据；多时区部署时间错乱。
 - **验证方法**: 含 `@Entity` 的文件未含 `@CreateDateColumn|@UpdateDateColumn` → warn。
 - **对应门禁**: fw_typeorm_audit_columns(warn)
+
+```verify
+id: typeorm-r10
+cmd: 
+expect: always
+```
 
 ### 规律：连接池须显式配置（poolSize/extra），默认池不适配生产并发
 - **适用版本**: TypeORM 0.3.x / 1.x
@@ -124,12 +184,24 @@ detect 信号命中任一高置信度行即可激活 typeorm 框架规则集。
 - **验证方法**: 检出 `new DataSource(|createConnection(` 但无 `poolSize|extra` → warn。
 - **对应门禁**: fw_typeorm_pool(warn)
 
+```verify
+id: typeorm-r11
+cmd: 
+expect: always
+```
+
 ### 规律：QueryBuilder where 禁止字符串插值/拼接，必须参数绑定
 - **适用版本**: TypeORM 0.3.x / 1.x
 - **规律**: `.where(\`name = '${name}'\`)` 模板插值直接进 SQL → 注入。必须参数绑定：`.where('name = :name', { name })`。原生 `query()` 同理用 `$1/$2` 占位。`orderBy` 字段名不可绑定参数，须白名单枚举。
 - **违反后果**: SQL 注入 CWE-89（拖库/越权/写破坏）。
 - **验证方法**: `grep -rnE '\.(where|orWhere|andWhere)\([^)]*\$\{' --include='*.ts'` 命中（模板插值）→ fail。
 - **对应门禁**: fw_typeorm_qb_injection(fail)
+
+```verify
+id: typeorm-r12
+cmd: grep -rnE '\.(where|orWhere|andWhere)\([^)]*\$\{' --include='*.ts'
+expect: hits>0
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id 或"人工检查"，无游离规律。

@@ -51,12 +51,24 @@ ElasticJob-Lite（嵌入式，ZK 注册中心）为现行主推形态；ElasticJ
 - **验证方法**: 检出作业（`implements SimpleJob|DataflowJob` 或 `elasticjob.jobs.` 配置）但全仓库无 `failover: true`/`failover(true)` → fail。
 - **对应门禁**: fw_elasticjob_failover(fail)
 
+```verify
+id: elasticjob-r1
+cmd: 
+expect: always
+```
+
 ### 规律：作业执行必须幂等，重分片/failover/手动触发重复执行无副作用
 - **适用版本**: 3.x
 - **规律**: ElasticJob 在重分片（实例上下线）、failover 接管、misfire 补跑、控制台手动触发场景下同一数据可能被重复处理。含写操作（insert/update/save/扣减/推送）的作业必须幂等：业务唯一键去重、状态机 CAS（`where status = '待处理'`）、执行记录表。非幂等作业禁止开 failover 与 misfire 补跑。
 - **违反后果**: 重复执行 → 重复扣款 / 重复推送 / 数据翻倍。
 - **验证方法**: 作业类含 `.(insert|update|save|delete)(` 写操作但无 `幂等|idempot|dedup|去重|状态机|onDuplicateKey` 痕迹 → warn。
 - **对应门禁**: fw_elasticjob_idempotent(warn)
+
+```verify
+id: elasticjob-r2
+cmd: 
+expect: always
+```
 
 ### 规律：分片逻辑必须确定性分发（item % totalCount），禁止分片参数与分发脱节
 - **适用版本**: 3.x
@@ -65,12 +77,24 @@ ElasticJob-Lite（嵌入式，ZK 注册中心）为现行主推形态；ElasticJ
 - **验证方法**: 检出 `getShardingItem` 但同文件无 `%` 取模或 `getShardingTotalCount` → warn。
 - **对应门禁**: fw_elasticjob_sharding(warn)
 
+```verify
+id: elasticjob-r3
+cmd: 
+expect: always
+```
+
 ### 规律：分片总数须与实例规模匹配，禁止分片数 < 实例数长期空转
 - **适用版本**: 3.x
 - **规律**: `sharding-total-count` 决定并行度上限：分片数 > 实例数时单实例顺序领多片；分片数 < 实例数时空闲实例空转（资源浪费但无害）；分片数 = 1 时退化为单实例调度（丧失水平扩展）。经验值：分片数 = 实例数 × 2~3，兼顾 failover 接管粒度。扩容实例数后须重估分片数（分片数不随实例自动增长）。
 - **违反后果**: 分片数过小 → 数据量增长后单周期处理超时；分片数 = 1 → 无扩展能力。
 - **验证方法**: 实例规模与数据量规划不可机械核验 → 人工检查（核对 sharding-total-count 与实例数比例）。
 - **对应门禁**: 人工检查
+
+```verify
+id: elasticjob-r4
+cmd: 
+expect: always
+```
 
 ### 规律：ZK 注册中心必须集群多地址，禁止单点
 - **适用版本**: 3.x（Curator/ZK 依赖）
@@ -79,12 +103,24 @@ ElasticJob-Lite（嵌入式，ZK 注册中心）为现行主推形态；ElasticJ
 - **验证方法**: 检出 elasticjob 使用但无 `server-lists` → warn；`server-lists` 值不含逗号（单地址）→ warn。
 - **对应门禁**: fw_elasticjob_registry(warn)
 
+```verify
+id: elasticjob-r5
+cmd: 
+expect: always
+```
+
 ### 规律：misfire 补跑策略须按业务显式配置
 - **适用版本**: 3.x
 - **规律**: `misfire`（默认 true，待验证 starter 各版本默认值）控制错过触发时刻后是否立即补跑。对账/汇总类任务错过周期须跳过时配 `misfire: false`（等下个周期）；补偿/同步类任务须补跑配 true。停机维护窗口长的业务须评估补跑风暴（多实例恢复同时补跑压 DB）。
 - **违反后果**: 恢复后任务风暴补跑 → DB 洪峰；或错过周期数据缺口。
 - **验证方法**: 检出 `elasticjob.jobs.` 配置但无 `misfire` 键 → warn。
 - **对应门禁**: fw_elasticjob_misfire(warn)
+
+```verify
+id: elasticjob-r6
+cmd: 
+expect: always
+```
 
 ### 规律：cron 须显式声明时区，禁止依赖服务器默认时区
 - **适用版本**: 3.x（`time-zone` 属性）
@@ -93,12 +129,24 @@ ElasticJob-Lite（嵌入式，ZK 注册中心）为现行主推形态；ElasticJ
 - **验证方法**: 检出 `elasticjob.jobs.` 配置但无 `time-zone|timeZone` → warn。
 - **对应门禁**: fw_elasticjob_timezone(warn)
 
+```verify
+id: elasticjob-r7
+cmd: 
+expect: always
+```
+
 ### 规律：作业异常必须显式处理，禁止 catch 吞异常
 - **适用版本**: 3.x（JobErrorHandler SPI）
 - **规律**: 作业 `execute` 抛异常会记入 ZK 并触发告警链（若配置）。catch 吞异常（空 catch / 仅打印日志）使调度层误判成功，重试与监控失效。生产须接入 `JobErrorHandler`（elasticjob-error-handler-dingtalk/wechat/email 模块或自定义 SPI，`job-error-handler.type` 配置），作业内 catch 后须 rethrow 或交 error handler。
 - **违反后果**: 失败静默，业务数据缺口无人发现。
 - **验证方法**: 作业类含 `catch` 但无 `throw|JobErrorHandler|error-handler` 痕迹 → warn。
 - **对应门禁**: fw_elasticjob_error_handler(warn)
+
+```verify
+id: elasticjob-r8
+cmd: 
+expect: always
+```
 
 ### 规律：作业事件追踪须接 RDB，执行历史须可审计
 - **适用版本**: 3.x（elasticjob-tracing-rdb）
@@ -107,12 +155,24 @@ ElasticJob-Lite（嵌入式，ZK 注册中心）为现行主推形态；ElasticJ
 - **验证方法**: 检出作业配置但无 `elasticjob.tracing|TracingConfiguration` → warn。
 - **对应门禁**: fw_elasticjob_tracing(warn)
 
+```verify
+id: elasticjob-r9
+cmd: 
+expect: always
+```
+
 ### 规律：ElasticJob-Lite vs Cloud 选型须按部署形态，新项目用 Lite
 - **适用版本**: 3.x
 - **规律**: ElasticJob-Lite 为无中心嵌入式（jar 依赖 + ZK 协调），接入成本低、社区主线；ElasticJob-Cloud 为 Mesos 常驻调度形态，资源治理强但运维重，活跃度待验证（3.x 主线发版集中在 Lite，2026-02 3.0.5 为 Lite 线）。新项目默认 Lite；仅超大规模混部资源治理场景评估 Cloud。
 - **违反后果**: 选型 Cloud 后维护断档，升级无路径。
 - **验证方法**: 选型决策 → 人工检查（核对形态与维护计划）。
 - **对应门禁**: 人工检查
+
+```verify
+id: elasticjob-r10
+cmd: 
+expect: always
+```
 
 ### 规律：分片策略须按数据分布选型（平均/哈希/轮转）
 - **适用版本**: 3.x（`sharding-strategy.type`）
@@ -121,12 +181,24 @@ ElasticJob-Lite（嵌入式，ZK 注册中心）为现行主推形态；ElasticJ
 - **验证方法**: 策略配置与数据分布 → 人工检查（核对 sharding-strategy.type 与分片键分布）。
 - **对应门禁**: 人工检查
 
+```verify
+id: elasticjob-r11
+cmd: 
+expect: always
+```
+
 ### 规律：运维须接 Console（elasticjob-ui）管控生命周期，禁止直接改 ZK
 - **适用版本**: 3.x（ElasticJob-UI 3.0.2，2022-10 后未发版，按停滞项目陈述）
 - **规律**: 作业的触发/暂停/失效/分片调整须走 Console（elasticjob-ui）或 Lite 的 `JobOperateAPI`，禁止直接 `set/delete` ZK 节点（绕过协调协议会造成分片状态不一致）。`overwrite: true` 时本地配置覆盖 ZK 已调度配置，生产须统一配置源（建议 false + Console 为准），防止本地与 ZK 双写漂移。UI 项目停滞，安全补丁须自评（待验证是否有 fork 维护线）。
 - **违反后果**: 直改 ZK → 分片状态错乱作业重复/丢失；双写漂移 → 配置不生效。
 - **验证方法**: 运维流程 → 人工检查（核对 Console 接入与 overwrite 配置）。
 - **对应门禁**: 人工检查
+
+```verify
+id: elasticjob-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。8 条挂门禁 id，4 条（分片数规模/Lite vs Cloud/分片策略/Console 运维）为人工检查。

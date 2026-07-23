@@ -58,12 +58,24 @@ detect 信号命中任一高置信度行即可激活 lombok 框架规则集。
 - **验证方法**: 在 `LOMBOK_SRC_GLOBS` 范围内 `grep -lE '@Entity\b' *.java` 取出实体文件，再对每个实体文件 `grep -E '@Data\b'` 命中即 fail。
 - **对应门禁**: fw_lombok_data_jpa(fail)
 
+```verify
+id: lombok-r1
+cmd: grep -lE '@Entity\b' *.java
+expect: hits>0
+```
+
 ### 规律：@Slf4j 与手写 LoggerFactory.getLogger 不可同文件共存
 - **适用版本**: lombok 1.18.x 全版本（`@Slf4j` 默认生成 `private static final Logger log = LoggerFactory.getLogger(当前类.class)`；`lombok.log.fieldName` 默认 `log`）
 - **规律**: `@Slf4j` 已经生成名为 `log` 的静态 Logger 字段；若同文件再手写 `private static final Logger log = LoggerFactory.getLogger(...)` 或 `LoggerFactory.getLogger` 赋值给其他字段，会导致 (a) 字段重复声明编译错，或 (b) 第二个 Logger 实例绕过统一日志口径，日志名/级别不一致。二选一：要么 `@Slf4j` + 直接用 `log`，要么全手写不挂 `@Slf4j`。如需自定义 topic，用 `@Slf4j(topic="...")`。
 - **违反后果**: 编译错 `variable log is already defined` 或双 Logger 实例导致日志口径分裂。
 - **验证方法**: `grep -lE '@Slf4j\b' *.java` 取文件，对这些文件再 `grep -E 'LoggerFactory\.getLogger'` 命中即 fail。
 - **对应门禁**: fw_lombok_slf4j_dup(fail)
+
+```verify
+id: lombok-r2
+cmd: grep -lE '@Slf4j\b' *.java
+expect: hits>0
+```
 
 ### 规律：@Builder 用于 Jackson 反序列化须配 @Jacksonized 或 @NoArgsConstructor + @AllArgsConstructor
 - **适用版本**: lombok 1.18.x 全版本（`@Jacksonized` 自 1.18.14 起；1.18.40 起联动 `@Accessors(fluent=true)`；1.18.44 起双支持 Jackson2/3，未配置 `lombok.jacksonized.jacksonVersion` 时 emit warning）
@@ -72,12 +84,24 @@ detect 信号命中任一高置信度行即可激活 lombok 框架规则集。
 - **验证方法**: `grep -lE '@Builder\b' *.java` 取文件，对这些文件检查是否同时满足"`@Jacksonized` 出现" 或 "`@NoArgsConstructor` 且 `@AllArgsConstructor`" 或 "`@JsonDeserialize(builder="`"；都不满足 → warn（建议补 `@Jacksonized`）。
 - **对应门禁**: fw_lombok_builder_jackson(warn)
 
+```verify
+id: lombok-r3
+cmd: grep -lE '@Builder\b' *.java
+expect: hits>0
+```
+
 ### 规律：@RequiredArgsConstructor 用于构造注入时须显式标 final 依赖并避免循环依赖
 - **适用版本**: lombok 1.18.x 全版本；Spring 4.3+ 单构造器默认 autowire
 - **规律**: `@RequiredArgsConstructor` 只为**未初始化的 final 字段**和 `@NonNull` 字段生成构造参数——这是 Spring 构造注入的惯用写法。但 Spring 6 默认禁用循环依赖（`spring.main.allow-circular-references=false`），若两个 Bean 互相 `final` 引用对方，启动期 `BeanCurrentlyInCreationException`。`@Autowired` 字段注入虽能绕过循环依赖，但 Spring 官方与 IDE 一致推荐构造注入（不可变、易测、显式契约）。规律：所有协作者均声明为 `private final` + `@RequiredArgsConstructor`；循环依赖须重构（抽公共逻辑/接口/`@Lazy`），不得回退字段注入。
 - **违反后果**: 启动期 `BeanCurrentlyInCreationException`；或回退字段注入后失去不可变性与可测性。
 - **验证方法**: 检测两个类互为 final 字段类型 + 双方均带 `@RequiredArgsConstructor`/`@AllArgsConstructor` → warn（提示重构或加 `@Lazy`）。机械静态扫描难断循环，本门禁仅对"单类 final 字段类型引用了同样带 @RequiredArgsConstructor 的另一个本模块类且对方也声明了对本类 final 字段"的明显互引场景 warn，其余提示人工核实。
 - **对应门禁**: fw_lombok_requiredargs_circular(warn)
+
+```verify
+id: lombok-r4
+cmd: 
+expect: always
+```
 
 ### 规律：@EqualsAndHashCode 继承体系须显式声明 callSuper
 - **适用版本**: lombok 1.18.x 全版本
@@ -86,12 +110,24 @@ detect 信号命中任一高置信度行即可激活 lombok 框架规则集。
 - **验证方法**: `grep -rnE '@EqualsAndHashCode\b' *.java`，对每条命中检查是否带 `callSuper=` 参数；缺省且所在类 `extends` 非 Object 类 → warn。
 - **对应门禁**: fw_lombok_equals_callsuper(warn)
 
+```verify
+id: lombok-r5
+cmd: grep -rnE '@EqualsAndHashCode\b' *.java
+expect: hits>0
+```
+
 ### 规律：@EqualsAndHashCode/@ToString 须排除 JPA 懒加载关联字段
 - **适用版本**: lombok 1.18.x 全版本（`exclude`/`of` 参数自 1.16.22 起标 deprecated，推荐 `@EqualsAndHashCode.Exclude`/`@ToString.Exclude` 字段级注解；`cacheStrategy` 自 1.18.16 起）
 - **规律**: 与规律1同源问题——若坚持在 `@Entity` 上用 `@EqualsAndHashCode`，必须用 `exclude={...}` 或字段级 `@EqualsAndHashCode.Exclude` 排除 `@OneToMany`/`@ManyToOne`/`@ManyToMany`/`@OneToOne(fetch=LAZY)` 字段；否则 equals/hashCode 触发懒加载。`@ToString` 同理须 `exclude` 或 `@ToString.Exclude`。`cacheStrategy` 仅对**不可变**对象使用，实体类（JPA 可变）禁用 `cacheStrategy`。
 - **违反后果**: `LazyInitializationException`；hashCode 在懒加载前后变化导致 HashSet 桶丢失对象。
 - **验证方法**: `grep -lE '@EqualsAndHashCode\b' *.java` 取文件，对这些文件同时检出 `@OneToMany|@ManyToOne|@ManyToMany|@OneToOne` 且 `@EqualsAndHashCode` 行无 `exclude=`/`of=`/`@EqualsAndHashCode.Exclude` 字段级标记 → warn。
 - **对应门禁**: fw_lombok_equals_lazy(warn)
+
+```verify
+id: lombok-r6
+cmd: grep -lE '@EqualsAndHashCode\b' *.java
+expect: hits>0
+```
 
 ### 规律：@SneakyThrows 须限定 IO/反序列化等狭窄场景，不得滥用隐藏受检异常
 - **适用版本**: lombok 1.18.x 全版本
@@ -100,12 +136,24 @@ detect 信号命中任一高置信度行即可激活 lombok 框架规则集。
 - **验证方法**: `grep -rnE '@SneakyThrows' *.java`，命中行所在方法若属于 `Service|Controller|Facade|Api` 命名类 → warn；其余（util/lambda/stream）pass。
 - **对应门禁**: fw_lombok_sneaky_throws(warn)
 
+```verify
+id: lombok-r7
+cmd: grep -rnE '@SneakyThrows' *.java
+expect: hits>0
+```
+
 ### 规律：@Cleanup 与 try-with-resources 选型，新代码优先 try-with-resources
 - **适用版本**: lombok 1.18.x 全版本；Java 7+ 起 try-with-resources 为语言特性
 - **规律**: `@Cleanup` 生成 `try/finally` 调 `close()`，但官方承认两个缺陷：(a) 清理方法抛异常会**掩盖原异常**（"the original exception is hidden by the cleanup call"），(b) 多资源嵌套 `try/finally` 深、关闭顺序敏感。Java 7+ 的 try-with-resources 用 suppressed exception 保留主异常、自动逆序关闭、可声明多个资源。规律：JDK 7+ 项目新代码**禁用 `@Cleanup`** 改 try-with-resources；老代码改造时一并迁移。仅 legacy/JDK 6 项目可用 `@Cleanup`。
 - **违反后果**: 异常被 close() 异常掩盖，排错困难；多资源关闭顺序错乱。
 - **验证方法**: `grep -rnE '@Cleanup' *.java` 命中即 warn（提示改 try-with-resources），不 fail（legacy 项目可能合理）。
 - **对应门禁**: fw_lombok_cleanup(warn)
+
+```verify
+id: lombok-r8
+cmd: grep -rnE '@Cleanup' *.java
+expect: hits>0
+```
 
 ### 规律：lombok val/var 与 Java 10+ var 选型，新代码优先 Java 原生 var
 - **适用版本**: lombok `val` 自 0.10 起；`var` 自 1.18.22 起（`val` 等价于 `final var`）；Java 10+ 原生 `var`
@@ -114,12 +162,24 @@ detect 信号命中任一高置信度行即可激活 lombok 框架规则集。
 - **验证方法**: `grep -rnE '\bval\s+[a-zA-Z_]|\bvar\s+[a-zA-Z_]' *.java` 且 `import lombok.var`/`import lombok.val` 存在 → warn（提示改 Java 原生 var 或复核）。
 - **对应门禁**: fw_lombok_val_usage(warn)
 
+```verify
+id: lombok-r9
+cmd: grep -rnE '\bval\s+[a-zA-Z_]|\bvar\s+[a-zA-Z_]' *.java
+expect: hits>0
+```
+
 ### 规律：@Getter(lazy=true) 须评估双重检查锁开销与字段 mangling 副作用
 - **适用版本**: lombok 1.18.x 全版本（1.18.32 修复表达式含 `value` 变量的 bug）
 - **规律**: `@Getter(lazy=true)` 生成 `AtomicReference` + `synchronized` 双重检查锁，字段**类型被改写为 `AtomicReference`**（"mangled into an AtomicReference"），官方明确"should never refer to the field directly"。适用场景：值**昂贵且不总会被访问**；不适用：① 值几乎总被访问（直接初始化更省）；② 字段需被反射直接读（被 mangling 后行为异常）；③ 实体可变对象（cacheStrategy 同理禁用）。规律：用 `@Getter(lazy=true)` 必须只通过 getter 访问，且配 review 该字段是否真值得懒加载。
 - **违反后果**: `AtomicReference` 内存/锁开销；反射直接读字段得到 `AtomicReference` 而非原值；并发场景过度同步。
 - **验证方法**: `grep -rnE '@Getter\s*\([^)]*lazy\s*=\s*true' *.java` 命中即 warn（提示核对访问方式与必要性）。
 - **对应门禁**: fw_lombok_getter_lazy(warn)
+
+```verify
+id: lombok-r10
+cmd: grep -rnE '@Getter\s*\([^)]*lazy\s*=\s*true' *.java
+expect: hits>0
+```
 
 ### 规律：@NonNull 与 jakarta.validation @NotNull 分工，不可互相替代
 - **适用版本**: lombok 1.18.x 全版本（lombok `@NonNull` 自早版本；jakarta.annotation.Nonnull 自 1.18.28 支持；Bean Validation 与 lombok 独立）
@@ -128,6 +188,12 @@ detect 信号命中任一高置信度行即可激活 lombok 框架规则集。
 - **验证方法**: 对 `@Valid` 标注的 DTO 类，检查其字段若标 `@NonNull`（lombok）但缺 `@NotNull`（jakarta.validation.constraints）→ warn。
 - **对应门禁**: fw_lombok_nonnull_validation(warn)
 
+```verify
+id: lombok-r11
+cmd: 
+expect: always
+```
+
 ### 规律：lombok.config 须项目根目录集中管控并 stopBubbling
 - **适用版本**: lombok 1.18.x 全版本
 - **规律**: `lombok.config` 是分层配置，子目录配置覆盖父目录。多模块项目若无根 `lombok.config` + `config.stopBubbling=true`，各模块各自默认值漂移会导致 `lombok.copyJacksonAnnotationsToAccessors`（1.18.40 破坏性变更后默认 false）、`lombok.equalsAndHashCode.callSuper`、`lombok.log.fieldName`、`lombok.anyConstructor.addConstructorProperties`（MapStruct 集成必需）等 key 行为不一致。规律：① 项目根放 `lombok.config` 且首行 `config.stopBubbling = true`；② 显式声明与默认值不同的所有 key；③ CI 校验 `lombok.config` 存在且 key 集合稳定。
@@ -135,12 +201,24 @@ detect 信号命中任一高置信度行即可激活 lombok 框架规则集。
 - **验证方法**: 项目根（PROJECT_DIR 顶层）无 `lombok.config` 文件，或存在但无 `config.stopBubbling` → warn。
 - **对应门禁**: fw_lombok_config(warn)
 
+```verify
+id: lombok-r12
+cmd: 
+expect: always
+```
+
 ### 规律：lombok 与 MapStruct 同 module 共存须配置 addConstructorProperties 与 processor 顺序
 - **适用版本**: lombok 1.18.x + MapStruct 1.5.x+（MapStruct 官方文档 §14.2 明确要求 lombok 与 MapStruct 协同配置）
 - **规律**: MapStruct 是另一 annotation processor，需在 lombok 生成代码后看到构造器/getter/setter。MapStruct 官方要求：(a) `lombok.anyConstructor.addConstructorProperties = true`（让 lombok 给构造器生成 `@ConstructorProperties`，MapStruct 据此选构造器）；(b) lombok annotation processor 须**先于** MapStruct processor 运行（Maven 用 `annotationProcessorPaths` 顺序控制，Gradle 同理）；(c) lombok 与 MapStruct 版本组合须兼容（issue #1538 修复后 lombok 1.16.16+ 与 MapStruct 1.5.x+ 协同稳定）。规律：项目同时引入 `org.projectlombok:lombok` 与 `org.mapstruct:mapstruct-processor` 时，必须 (a)(b)(c) 三项齐备。
 - **违反后果**: MapStruct 找不到构造器，生成空 mapper 或编译错 `unknown property`；增量编译时序错乱。
 - **验证方法**: pom.xml/build.gradle 同时检出 `lombok` 与 `mapstruct` 依赖，但 `lombok.config` 缺 `lombok.anyConstructor.addConstructorProperties=true` → warn。
 - **对应门禁**: fw_lombok_mapstruct(warn)
+
+```verify
+id: lombok-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥12 门槛）。每条规律均挂门禁 id，无游离规律。

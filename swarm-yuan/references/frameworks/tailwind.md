@@ -48,12 +48,24 @@ detect 信号命中任一高置信度行即可激活 tailwind 框架规则集。
 - **验证方法**: 无 `content`/`@source` → fail；content 无 `**` 通配 → fail。
 - **对应门禁**: fw_tailwind_content_scan(fail)
 
+```verify
+id: tailwind-r1
+cmd: 
+expect: always
+```
+
 ### 规律：4.x 须用 @theme CSS-first 配置
 - **适用版本**: Tailwind 4.x
 - **规律**: 4.x 推荐 `@theme { --color-brand: #...; }` CSS-first 配置替代 `tailwind.config.js`。混用（@import tailwindcss + 旧 config.js 无 @theme）会导致配置碎片化。
 - **违反后果**: 配置碎片化、4.x 特性未利用。
 - **验证方法**: 4.x @import 但仍用 config.js 无 @theme → warn。
 - **对应门禁**: fw_tailwind_css_first_config(warn)
+
+```verify
+id: tailwind-r2
+cmd: 
+expect: always
+```
 
 ### 规律：任意值不可过度滥用
 - **适用版本**: Tailwind 3.x/4.x
@@ -62,12 +74,24 @@ detect 信号命中任一高置信度行即可激活 tailwind 框架规则集。
 - **验证方法**: 单文件任意值 ≥5 处 → warn。
 - **对应门禁**: fw_tailwind_arbitrary_abuse(warn)
 
+```verify
+id: tailwind-r3
+cmd: 
+expect: always
+```
+
 ### 规律：与组件库混用须配 prefix 隔离
 - **适用版本**: Tailwind 3.x/4.x
 - **规律**: 与 element/antd/naiveui 混用时，tailwind Preflight 会重置组件库默认样式（如 button 背景被清空）。须配 `prefix: 'tw-'` 或 `@layer` 隔离，或关闭 Preflight。
 - **违反后果**: 组件库样式被重置、button/input 背景丢失。
 - **验证方法**: 与组件库混用但无 prefix → warn。
 - **对应门禁**: fw_tailwind_prefix_isolate(warn)
+
+```verify
+id: tailwind-r4
+cmd: 
+expect: always
+```
 
 ### 规律：暗色模式须显式配置 darkMode 策略
 - **适用版本**: Tailwind 3.x/4.x
@@ -76,12 +100,24 @@ detect 信号命中任一高置信度行即可激活 tailwind 框架规则集。
 - **验证方法**: 无 `darkMode:`/`@custom-variant dark` → warn。
 - **对应门禁**: fw_tailwind_dark_mode(warn)
 
+```verify
+id: tailwind-r5
+cmd: 
+expect: always
+```
+
 ### 规律：group-hover 须配父级 group 类
 - **适用版本**: Tailwind 3.x/4.x
 - **规律**: `group-hover:` 须父级元素标 `group` 类才生效。漏标 group 则 group-hover 失效。
 - **违反后果**: group-hover 不生效、交互缺失。
 - **验证方法**: 检出 `group-hover:` → warn 提示须父级 group。
 - **对应门禁**: fw_tailwind_group_hover(warn)
+
+```verify
+id: tailwind-r6
+cmd: 
+expect: always
+```
 
 ### 规律：重复类组合须用 @apply 抽组件类
 - **适用版本**: Tailwind 3.x/4.x
@@ -90,12 +126,24 @@ detect 信号命中任一高置信度行即可激活 tailwind 框架规则集。
 - **验证方法**: 无 `@apply` → warn。
 - **对应门禁**: fw_tailwind_apply_reuse(warn)
 
+```verify
+id: tailwind-r7
+cmd: 
+expect: always
+```
+
 ### 规律：PostCSS 插件顺序须 tailwindcss 在前
 - **适用版本**: Tailwind 3.x（PostCSS 方案）
 - **规律**: `postcss.config` 插件按数组顺序执行，`tailwindcss` 须在 `autoprefixer` 之前（tailwind 生成 utility 后 autoprefixer 加前缀）。顺序反致前缀丢失。
 - **违反后果**: 浏览器前缀丢失、兼容性回退。
 - **验证方法**: autoprefixer 行号 < tailwindcss 行号 → warn。
 - **对应门禁**: fw_tailwind_postcss_order(warn)
+
+```verify
+id: tailwind-r8
+cmd: 
+expect: always
+```
 
 ### 规律：Preflight 与组件库冲突须按需关闭
 - **适用版本**: Tailwind 3.x/4.x
@@ -104,12 +152,24 @@ detect 信号命中任一高置信度行即可激活 tailwind 框架规则集。
 - **验证方法**: 与组件库混用但未关 preflight → warn。
 - **对应门禁**: fw_tailwind_preflight_conflict(warn)
 
+```verify
+id: tailwind-r9
+cmd: 
+expect: always
+```
+
 ### 规律：自定义颜色须用 theme 配置，禁任意值硬编码
 - **适用版本**: Tailwind 3.x/4.x
 - **规律**: 品牌色等自定义颜色须在 `theme.colors`（3.x）或 `@theme { --color-* }`（4.x）声明，生成 `bg-brand` 等 utility。硬编码任意值 `bg-[#1890ff]` 无法统一调整。
 - **违反后果**: 颜色硬编码、无法统一换肤。
 - **验证方法**: 无 `colors:`/`@theme ... color` → warn。
 - **对应门禁**: fw_tailwind_custom_color(warn)
+
+```verify
+id: tailwind-r10
+cmd: 
+expect: always
+```
 
 ### 规律：响应式须用断点前缀，禁手写 @media
 - **适用版本**: Tailwind 3.x/4.x
@@ -118,12 +178,24 @@ detect 信号命中任一高置信度行即可激活 tailwind 框架规则集。
 - **验证方法**: 手写 `@media`（非 prefers-color）→ warn。
 - **对应门禁**: fw_tailwind_responsive_prefix(warn)
 
+```verify
+id: tailwind-r11
+cmd: 
+expect: always
+```
+
 ### 规律：生产构建须 minify
 - **适用版本**: Tailwind 3.x/4.x
 - **规律**: Tailwind 生产默认 minify CSS，显式 `minify: false` 致 CSS 体积过大。生产必须开启。
 - **违反后果**: CSS 未压缩、体积膨胀。
 - **验证方法**: `minify: false` → warn。
 - **对应门禁**: fw_tailwind_prod_minify(warn)
+
+```verify
+id: tailwind-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

@@ -53,12 +53,24 @@ detect 信号命中任一高置信度行即可激活 kettle 框架规则集。
 - **验证方法**: `grep -rnE '<password>[^<]+</password>' --include='*.ktr' --include='*.kjb'` 值非 `Encrypted` 前缀且非 `${...}` 变量 → fail。
 - **对应门禁**: fw_kettle_password_encr(fail)
 
+```verify
+id: kettle-r1
+cmd: grep -rnE '<password>[^<]+</password>' --include='*.ktr' --include='*.kjb'
+expect: hits>0
+```
+
 ### 规律：Carte 远程执行必须改默认口令，cluster/cluster 禁止上线
 - **适用版本**: PDI CE 9.x / PDI 11
 - **规律**: Carte 子服务器默认鉴权文件 `pwd/kettle.pwd` 内置 `cluster: cluster` 弱口令，carte-config.xml / slave-server-config.xml 中 `<username>cluster</username><password>cluster</password>` 为出厂默认。Carte 暴露 HTTP 远程执行接口（可下发任意转换/作业执行 = 远程命令执行），默认口令上线等价于 RCE 后门。必须改强口令 + 网络层限制（防火墙/反向代理鉴权）。
 - **违反后果**: 未授权远程执行 ETL 作业 → 数据窃取 / 主机命令执行（CWE-1391 弱默认凭据）。
 - **验证方法**: Carte 配置文件检出 `<username>cluster</username>` 与 `<password>cluster</password>` 同现，或 kettle.pwd 含 `cluster: cluster` → fail。
 - **对应门禁**: fw_kettle_carte_default_auth(fail)
+
+```verify
+id: kettle-r2
+cmd: 
+expect: always
+```
 
 ### 规律：kjb/ktr 必须纳入 git 版本管控，XML 可读性支持 diff review
 - **适用版本**: 全版本
@@ -67,12 +79,24 @@ detect 信号命中任一高置信度行即可激活 kettle 框架规则集。
 - **验证方法**: `git -C "${PROJECT_DIR}" ls-files '*.kjb' '*.ktr'` 计数为 0 而工作区存在 kjb/ktr → warn。
 - **对应门禁**: fw_kettle_git_versioned(warn)
 
+```verify
+id: kettle-r3
+cmd: 
+expect: always
+```
+
 ### 规律：阻塞型步骤（Blocking Step / Sort rows）须评估内存与行分发
 - **适用版本**: PDI CE 9.x / PDI 11
 - **规律**: `BlockingStep` 缓存全部输入行直至流干才放行，大表直接 OOM；`SortRows` 默认排序目录在临时盘、缓存行数（sort size，默认 100 万行在内存，待验证：9.x 默认值）超限写盘。行分发（copy/distribute）与步骤并行度（change number of copies）不当会造成下游饥饿或内存翻倍。大流转须改用数据库排序（ORDER BY）、流式步骤或调高 JVM 堆。
 - **违反后果**: 转换中途 OOM 或磁盘爆量，ETL 窗口超时。
 - **验证方法**: .ktr 检出 `<type>BlockingStep</type>` 或 `<type>SortRows</type>` → warn 人工确认数据量与内存配置。
 - **对应门禁**: fw_kettle_blocking_step(warn)
+
+```verify
+id: kettle-r4
+cmd: 
+expect: always
+```
 
 ### 规律：作业须配失败邮件/告警 entry，失败不得静默
 - **适用版本**: PDI CE 9.x / PDI 11
@@ -81,12 +105,24 @@ detect 信号命中任一高置信度行即可激活 kettle 框架规则集。
 - **验证方法**: .kjb 含 `<entries>` 但无 `<type>MAIL</type>` → warn。
 - **对应门禁**: fw_kettle_failure_mail(warn)
 
+```verify
+id: kettle-r5
+cmd: 
+expect: always
+```
+
 ### 规律：环境特有值（主机/路径/账号）禁止硬编码，须变量化并明确作用域
 - **适用版本**: PDI CE 9.x / PDI 11 / Apache Hop 2.x
 - **规律**: Kettle 变量作用域三层：`kettle.properties`（用户级）、命名参数（job/trans 级）、环境变量（JVM 级）。环境特有值（IP、绝对路径 `/home/etl/...`、`C:\...`、数据库账号）必须变量化 `${VAR}`，否则跨环境（dev/test/prod）部署即失效或误连生产。硬编码 IP 更是直接绑定单机房。
 - **违反后果**: 测试作业误连生产库；换部署环境全部作业失效。
 - **验证方法**: .ktr/.kjb 检出 `<server>` 值为 IP 字面量，或 `/home/|/opt/|C:\\` 绝对路径字面量 → warn。
 - **对应门禁**: fw_kettle_variable_scope(warn)
+
+```verify
+id: kettle-r6
+cmd: 
+expect: always
+```
 
 ### 规律：生产日志级别收敛 Basic，Rowlevel/Debug 仅限排障
 - **适用版本**: PDI CE 9.x / PDI 11
@@ -95,12 +131,24 @@ detect 信号命中任一高置信度行即可激活 kettle 框架规则集。
 - **验证方法**: 检出 `<loglevel>Detailed</loglevel>|<loglevel>Debug</loglevel>|<loglevel>Rowlevel</loglevel>` → warn。
 - **对应门禁**: fw_kettle_log_level(warn)
 
+```verify
+id: kettle-r7
+cmd: 
+expect: always
+```
+
 ### 规律：数据库连接须用连接池或 JNDI，禁用每行一连接
 - **适用版本**: PDI CE 9.x / PDI 11
 - **规律**: Kettle 连接默认无池化；高频转换每步一连接会打满数据库 max_connections。`<connection>` 应启用连接池（Spoon 连接配置 Connection Pooling 页签，落盘为 `<pooling>` 属性）或改 JNDI（`<access>JNDI</access>`）由容器托管。步骤"使用唯一连接"（unique connections）开多份物理连接时更须池化兜底。
 - **违反后果**: 数据库连接数打满 → 全库雪崩；短连接风暴增加 RT。
 - **验证方法**: .ktr 含 `<connection>` 但无 `<pooling>` 且 `<access>` 非 JNDI → warn。
 - **对应门禁**: fw_kettle_connection_pool(warn)
+
+```verify
+id: kettle-r8
+cmd: 
+expect: always
+```
 
 ### 规律：多表写入转换须明确事务边界（转换级 vs 作业级）
 - **适用版本**: PDI CE 9.x / PDI 11
@@ -109,12 +157,24 @@ detect 信号命中任一高置信度行即可激活 kettle 框架规则集。
 - **验证方法**: .ktr 检出 ≥2 个 `<type>TableOutput</type>` 且 `<unique_connections>Y</unique_connections>` → warn。
 - **对应门禁**: fw_kettle_transaction(warn)
 
+```verify
+id: kettle-r9
+cmd: 
+expect: always
+```
+
 ### 规律：PDI CE 9.x 已至终态，新项目须评估 Apache Hop 或 PDI 11
 - **适用版本**: PDI CE 9.x
 - **规律**: Pentaho 官方主推 PDI 11（2026-07 时点官网主推 11.0.0.1-259），CE 9.x（9.3.0.0-428）仍提供下载但为旧线（官方 EOL 公告未检索到，EOL 状态待验证）；Kettle 原班人马分叉 Apache Hop（2026-06 最新 2.18.1，活跃维护，元数据模型重构、支持 Beam/Spark/Flink 运行时）。存量 9.x 工程须评估：锁 9.x 维稳 / 升 PDI 11 / 迁 Hop（Hop 提供 kettle 导入工具，但插件与脚本步骤需人工复核，差异待验证）。
 - **违反后果**: 停留在无维护版本 → 安全补丁断供 / 新驱动不兼容。
 - **验证方法**: .ktr/.kjb 检出 `<transversion>9.` 或 `<transversion>8.` → warn 记录迁移评估结论。
 - **对应门禁**: fw_kettle_hop_migration(warn)
+
+```verify
+id: kettle-r10
+cmd: 
+expect: always
+```
 
 ### 规律：写入步骤须定义错误处理策略（跳过错误行 vs 中止）
 - **适用版本**: PDI CE 9.x / PDI 11
@@ -123,12 +183,24 @@ detect 信号命中任一高置信度行即可激活 kettle 框架规则集。
 - **验证方法**: .ktr 检出 `<type>TableOutput</type>` 但无 `<error_handling>` → warn。
 - **对应门禁**: fw_kettle_error_handling(warn)
 
+```verify
+id: kettle-r11
+cmd: 
+expect: always
+```
+
 ### 规律：Carte 集群/远程执行配置须外置且最小权限
 - **适用版本**: PDI CE 9.x / PDI 11
 - **规律**: carte-config.xml / slave-server-config.xml 属于部署环境配置，口令必须变量化（`${CARTE_PASSWORD}` 或 Encr 密文），`<masters>`/`<slaveserver>` 主机名不得硬编码 IP；Carte 服务账号最小权限（仅 ETL 所需库表），OS 层以低权限用户运行 carte.sh。配置文件与 kjb/ktr 同入 git 时，密文与明文口令的检查同 fw_kettle_password_encr。
 - **违反后果**: Carte 配置随仓库泄露 → 集群拓扑与凭据全暴露；root 跑 carte → RCE 影响扩大。
 - **验证方法**: Carte 配置文件检出明文 `<password>` 值非 `Encrypted`/`${` 前缀 → fail（并入 fw_kettle_carte_default_auth 的 fail 语义，默认口令优先按默认口令报）。
 - **对应门禁**: fw_kettle_carte_default_auth(fail)
+
+```verify
+id: kettle-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

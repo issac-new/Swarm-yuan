@@ -48,12 +48,24 @@ detect 信号命中任一高置信度行即可激活 vite 框架规则集。
 - **验证方法**: `alias:` 非数组形式 → fail；`@/custom` 行号 ≥ `@` 行号 → fail。
 - **对应门禁**: fw_vite_alias_array_form(fail) / fw_vite_alias_order(fail)
 
+```verify
+id: vite-r1
+cmd: 
+expect: always
+```
+
 ### 规律：inject 脚本须支持 --clean 回滚
 - **适用版本**: Vite 全版本（ncwk 定制 inject.mjs）
 - **规律**: ncwk 用 inject.mjs 向产物注入定制代码，须支持 `--clean` 回滚分支，避免重复注入导致产物污染。
 - **违反后果**: 重复注入致产物污染、回滚失败。
 - **验证方法**: inject.mjs 无 `--clean` 分支 → fail。
 - **对应门禁**: fw_vite_inject_clean(warn)
+
+```verify
+id: vite-r2
+cmd: 
+expect: always
+```
 
 ### 规律：环境变量须 VITE_ 前缀，防敏感配置泄漏客户端
 - **适用版本**: Vite 5.x+/8.x
@@ -62,12 +74,24 @@ detect 信号命中任一高置信度行即可激活 vite 框架规则集。
 - **验证方法**: 检出 `process.env.XXX`/`import.meta.env.XXX`（非 VITE_/内置）或 .env 含敏感 key → warn。
 - **对应门禁**: fw_vite_env_prefix(warn)
 
+```verify
+id: vite-r3
+cmd: 
+expect: always
+```
+
 ### 规律：构建须配 manualChunks 分包
 - **适用版本**: Vite 5.x+/8.x
 - **规律**: 默认 Rollup 按依赖关系分 chunk，单 chunk 可能过大（vendor 全打一起）。须配 `build.rollupOptions.output.manualChunks` 按路由/依赖维度拆分（如 vendor、router、ui-lib），利用浏览器缓存。
 - **违反后果**: 单 chunk 过大、首屏加载慢、缓存命中率低。
 - **验证方法**: 无 `manualChunks`/`rollupOptions` → warn。
 - **对应门禁**: fw_vite_manual_chunks(warn)
+
+```verify
+id: vite-r4
+cmd: 
+expect: always
+```
 
 ### 规律：build.target 须显式配置浏览器兼容
 - **适用版本**: Vite 5.x+/8.x
@@ -76,12 +100,24 @@ detect 信号命中任一高置信度行即可激活 vite 框架规则集。
 - **验证方法**: 无 `target:` 配置 → warn。
 - **对应门禁**: fw_vite_build_target(warn)
 
+```verify
+id: vite-r5
+cmd: 
+expect: always
+```
+
 ### 规律：生产构建须关闭 sourcemap
 - **适用版本**: Vite 5.x+/8.x
 - **规律**: 生产 `sourcemap: true` 会把源码 map 上传，泄露业务源码。须 `sourcemap: false` 或按环境判断（`sourcemap: isProd ? false : true`）。确需 sourcemap 须用 hidden + 上传到错误监控后删除。
 - **违反后果**: 源码泄漏 CWE-540、业务逻辑暴露。
 - **验证方法**: `sourcemap: true` 且无环境判断 → warn。
 - **对应门禁**: fw_vite_sourcemap_prod(warn)
+
+```verify
+id: vite-r6
+cmd: 
+expect: always
+```
 
 ### 规律：base 路径须显式配置（部署子路径）
 - **适用版本**: Vite 5.x+/8.x
@@ -90,12 +126,24 @@ detect 信号命中任一高置信度行即可激活 vite 框架规则集。
 - **验证方法**: 无 `base:` 配置 → warn。
 - **对应门禁**: fw_vite_base_path(warn)
 
+```verify
+id: vite-r7
+cmd: 
+expect: always
+```
+
 ### 规律：预构建缓存须显式管理 optimizeDeps
 - **适用版本**: Vite 5.x+/8.x
 - **规律**: CommonJS 依赖（如 lodash）须在 `optimizeDeps.include` 显式声明预构建，否则 dev 启动时 Vite 重复全量预构建、页面刷新卡顿。大型依赖预构建可加速 dev。
 - **违反后果**: dev 启动慢、页面刷新卡顿、CJS 依赖运行期报错。
 - **验证方法**: 无 `optimizeDeps` → warn。
 - **对应门禁**: fw_vite_optimize_deps(warn)
+
+```verify
+id: vite-r8
+cmd: 
+expect: always
+```
 
 ### 规律：server.proxy 须配 target，禁裸 rewrite
 - **适用版本**: Vite 5.x+/8.x
@@ -104,12 +152,24 @@ detect 信号命中任一高置信度行即可激活 vite 框架规则集。
 - **验证方法**: 检出 `proxy:` 但无 `target:` → warn。
 - **对应门禁**: fw_vite_proxy_target(warn)
 
+```verify
+id: vite-r9
+cmd: 
+expect: always
+```
+
 ### 规律：生产压缩须 esbuild/minify，禁关闭
 - **适用版本**: Vite 5.x+/8.x
 - **规律**: Vite 默认 `minify: 'esbuild'`，关闭 minify（`minify: false`）致产物未压缩、包体过大。确需调试可临时关闭，生产必须开启。
 - **违反后果**: 产物未压缩、包体膨胀、加载慢。
 - **验证方法**: `minify: false`/`'none'` → warn。
 - **对应门禁**: fw_vite_esbuild_minify(warn)
+
+```verify
+id: vite-r10
+cmd: 
+expect: always
+```
 
 <!--
 共 11 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

@@ -51,12 +51,24 @@ detect 信号命中任一高置信度行即可激活 flask 框架规则集。
 - **验证方法**: `app.secret_key = "<字面量>"` / `SECRET_KEY = "<字面量>"` 且行内无 os.environ/getenv → fail。
 - **对应门禁**: fw_flask_secret_key(fail)
 
+```verify
+id: flask-r1
+cmd: 
+expect: always
+```
+
 ### 规律：禁 app.run(debug=True) 上生产，Werkzeug 调试器可致 RCE
 - **适用版本**: 全版本
 - **规律**: `debug=True` 开启 Werkzeug 交互调试器，浏览器内可执行任意 Python（PIN 保护可被读文件/社工绕过）。生产用 gunicorn/uwsgi 起服务，`app.run()` 仅限本地且 debug=False。
 - **违反后果**: 远程代码执行（CWE-94）、堆栈泄露（CWE-489）。
 - **验证方法**: 检出 `app.run(debug=True)` / `app.debug = True` → fail。
 - **对应门禁**: fw_flask_debug(fail)
+
+```verify
+id: flask-r2
+cmd: 
+expect: always
+```
 
 ### 规律：须注册统一错误处理器，异常不得直出默认 500 页
 - **适用版本**: 全版本
@@ -65,12 +77,24 @@ detect 信号命中任一高置信度行即可激活 flask 框架规则集。
 - **验证方法**: 检出路由但全工程无 `errorhandler|register_error_handler` → warn。
 - **对应门禁**: fw_flask_errorhandler(warn)
 
+```verify
+id: flask-r3
+cmd: 
+expect: always
+```
+
 ### 规律：蓝图模块禁止反向 import 应用模块，避免循环导入
 - **适用版本**: 全版本
 - **规律**: 蓝图文件 `from app import app` 而 app.py 又 import 蓝图注册 → 循环 ImportError。正解：应用工厂 `create_app()` 内注册蓝图，蓝图内用 `current_app` / `flask.g` 延迟引用应用对象。
 - **违反后果**: 启动期 ImportError / 属性半初始化。
 - **验证方法**: 含 `Blueprint(` 的文件检出 `from app import` / `from main import` → warn。
 - **对应门禁**: fw_flask_blueprint_circular(warn)
+
+```verify
+id: flask-r4
+cmd: 
+expect: always
+```
 
 ### 规律：SQLAlchemy 会话须绑定请求生命周期，teardown 时 remove
 - **适用版本**: 全版本（Flask-SQLAlchemy 3.x 或裸 SQLAlchemy）
@@ -79,12 +103,24 @@ detect 信号命中任一高置信度行即可激活 flask 框架规则集。
 - **验证方法**: 检出 `scoped_session/sessionmaker` 但无 `teardown_appcontext` / `.remove()` → warn。
 - **对应门禁**: fw_flask_session_teardown(warn)
 
+```verify
+id: flask-r5
+cmd: 
+expect: always
+```
+
 ### 规律：应用须用 create_app 工厂模式，禁顶层全局 app 直建
 - **适用版本**: 全版本
 - **规律**: 顶层 `app = Flask(__name__)` 全局单例使测试无法隔离配置、扩展初始化时机失控、import 即副作用。工厂模式 `def create_app(config=None)` 内实例化 + 初始化扩展 + 注册蓝图，`flask --app 'module:create_app()' run` 启动。
 - **违反后果**: 测试配置污染生产实例；扩展初始化顺序错乱。
 - **验证方法**: 检出 `Flask(__name__)` 但无 `def create_app` → warn。
 - **对应门禁**: fw_flask_app_factory(warn)
+
+```verify
+id: flask-r6
+cmd: 
+expect: always
+```
 
 ### 规律：连接 URI 禁止明文凭据，须环境变量/密钥管理注入
 - **适用版本**: 全版本
@@ -93,12 +129,24 @@ detect 信号命中任一高置信度行即可激活 flask 框架规则集。
 - **验证方法**: 检出 `scheme://user:pass@` 字面量 URI → fail。
 - **对应门禁**: fw_flask_db_credentials(fail)
 
+```verify
+id: flask-r7
+cmd: 
+expect: always
+```
+
 ### 规律：请求数据须 Schema 校验（pydantic/marshmallow），禁止裸用 request 数据
 - **适用版本**: 全版本
 - **规律**: `request.get_json()` / `request.form[...]` 返回未校验数据，类型/边界/注入面全裸奔。须 pydantic BaseModel 或 marshmallow Schema 校验后再用，校验失败返回 400。
 - **违反后果**: 类型混乱 500、注入攻击面扩大。
 - **验证方法**: 文件含 `request.get_json()/request.form[` 但无 `validate|Schema|pydantic|marshmallow` → warn。
 - **对应门禁**: fw_flask_request_validation(warn)
+
+```verify
+id: flask-r8
+cmd: 
+expect: always
+```
 
 ### 规律：JSON 响应须 jsonify（或返回 dict），禁 return json.dumps
 - **适用版本**: Flask 1.1+（dict 直返自动 jsonify）/ 3.1.x
@@ -107,12 +155,24 @@ detect 信号命中任一高置信度行即可激活 flask 框架规则集。
 - **验证方法**: 检出 `return json.dumps(` → warn。
 - **对应门禁**: fw_flask_json_response(warn)
 
+```verify
+id: flask-r9
+cmd: 
+expect: always
+```
+
 ### 规律：Markup/render_template_string 拼接用户输入绕过自动转义
 - **适用版本**: 全版本
 - **规律**: Jinja2 默认自动转义；`Markup(user_input)` / `render_template_string(f"...{input}")` / 模板 `|safe` 显式关闭转义。用户输入进入这些路径即存储/反射 XSS。
 - **违反后果**: XSS（CWE-79），会话窃取/页面篡改。
 - **验证方法**: 检出 `Markup(` / render_template_string 拼接 → warn。
 - **对应门禁**: fw_flask_xss(warn)
+
+```verify
+id: flask-r10
+cmd: 
+expect: always
+```
 
 ### 规律：CORS 禁 origins=* 全开放，须白名单收敛
 - **适用版本**: flask-cors 全版本
@@ -121,12 +181,24 @@ detect 信号命中任一高置信度行即可激活 flask 框架规则集。
 - **验证方法**: `CORS(` 且 origins 为 `*` 或裸 `CORS(app)` → warn。
 - **对应门禁**: fw_flask_cors(warn)
 
+```verify
+id: flask-r11
+cmd: 
+expect: always
+```
+
 ### 规律：登录/认证路由必须限流，防暴破撞库
 - **适用版本**: 全版本（flask-limiter 3.x）
 - **规律**: `/login`、`/auth/token` 等凭证校验端点无限流即可无限暴破。须 flask-limiter 按 IP/账户维度限流（如 5 次/分钟），并配合延迟递增与锁定策略。
 - **违反后果**: 口令暴破、撞库攻击。
 - **验证方法**: 检出登录路由但无 `Limiter|flask_limiter` → warn。
 - **对应门禁**: fw_flask_ratelimit(warn)
+
+```verify
+id: flask-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

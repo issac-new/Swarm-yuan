@@ -51,12 +51,24 @@ Spring Boot 集成形态（spring-boot-starter-quartz / @Scheduled）与原生 q
 - **验证方法**: `grep -rlE '@Scheduled\b' --include='*.java'` 存在但全仓库无 `@SchedulerLock|ShedLock|RedissonClient|shedlock` → fail。
 - **对应门禁**: fw_quartz_scheduled_lock(fail)
 
+```verify
+id: quartz-r1
+cmd: grep -rlE '@Scheduled\b' --include='*.java'
+expect: hits>0
+```
+
 ### 规律：多实例 Quartz 必须用 JDBC JobStore 集群模式，禁止 RAMJobStore 上生产
 - **适用版本**: 全版本
 - **规律**: RAMJobStore 存内存，多实例各自调度互不知晓，任务重复执行且宕机丢失全部调度状态。多实例须 `org.quartz.jobStore.class=org.springframework.scheduling.quartz.LocalDataSourceJobStore`（Spring）或 `JDBCJobStoreTX` + `org.quartz.jobStore.isClustered=true` + 建 QRTZ_* 表（数据库行锁保证同一时刻仅一个实例触发任务）。`instanceId=AUTO`、所有实例共用同一数据源与同 `instanceName`。Spring Boot 对应 `spring.quartz.job-store-type=jdbc` + `spring.quartz.properties.org.quartz.jobStore.isClustered=true`。
 - **违反后果**: 多实例任务重复触发；实例重启调度状态全丢（CWE-362 竞态条件 / CWE-366 互斥竞争不充分）。
 - **验证方法**: 检出 `RAMJobStore` → warn；检出 `spring.quartz|org.quartz` 配置但无 `job-store-type.*jdbc|jobStore.class|isClustered` → warn。
 - **对应门禁**: fw_quartz_cluster_jobstore(warn)
+
+```verify
+id: quartz-r2
+cmd: 
+expect: always
+```
 
 ### 规律：CronTrigger 必须显式选型 misfire 策略
 - **适用版本**: 全版本
@@ -65,12 +77,24 @@ Spring Boot 集成形态（spring-boot-starter-quartz / @Scheduled）与原生 q
 - **验证方法**: 检出 `CronScheduleBuilder` 但无 `withMisfireHandlingInstruction|MISFIRE_INSTRUCTION` → warn；配置侧有 cron 作业但无 misfire 相关属性 → warn。
 - **对应门禁**: fw_quartz_misfire(warn)
 
+```verify
+id: quartz-r3
+cmd: 
+expect: always
+```
+
 ### 规律：线程池上限 org.quartz.threadPool.threadCount 必须显式配置
 - **适用版本**: 全版本
 - **规律**: 默认 `threadCount` 未配时 Quartz 须显式给出（quartz.properties 缺省会启动失败；Spring Boot 默认 10，待验证各 Boot 版本默认值）。threadCount 决定并发任务上限：过小导致任务排队 misfire，过大导致 DB 连接/内存争抢。经验值：并发任务峰值 + 2 冗余，且 < 数据源连接池上限。`org.quartz.threadPool.class` 默认 SimpleThreadPool 生产可用。
 - **违反后果**: 线程不足 → 任务延迟/misfire 堆积；线程过多 → 资源争抢拖垮应用。
 - **验证方法**: 检出 `org.quartz|spring.quartz` 配置但无 `threadCount` → warn。
 - **对应门禁**: fw_quartz_threadpool(warn)
+
+```verify
+id: quartz-r4
+cmd: 
+expect: always
+```
 
 ### 规律：JobDataMap 只能存 String/基本类型，禁止存业务对象
 - **适用版本**: 全版本（JDBC JobStore 序列化约束）
@@ -79,12 +103,24 @@ Spring Boot 集成形态（spring-boot-starter-quartz / @Scheduled）与原生 q
 - **验证方法**: 检出 `usingJobData\(|JobDataMap.*put\(|getJobDataMap\(\)\.put\(` 行参数含 `new [A-Z]` 对象构造 → warn。
 - **对应门禁**: fw_quartz_jobdatamap(warn)
 
+```verify
+id: quartz-r5
+cmd: 
+expect: always
+```
+
 ### 规律：任务执行必须幂等，重复触发无副作用
 - **适用版本**: 全版本
 - **规律**: Quartz misfire 补跑、集群故障转移、手动重触发、@Scheduled 多实例（锁失效边界）都会导致同一任务重复执行。含写操作（insert/update/save/扣减/推送）的任务必须幂等：业务唯一键、状态机校验、执行记录表去重。非幂等任务禁止配 misfire 补跑策略。
 - **违反后果**: 重复执行 → 重复扣款 / 重复推送 / 数据翻倍。
 - **验证方法**: Job 实现类/@Scheduled 方法所在类含 `.(insert|update|save|delete)(` 写操作但无 `幂等|idempot|dedup|去重|唯一键|onDuplicateKey` 痕迹 → warn。
 - **对应门禁**: fw_quartz_idempotent(warn)
+
+```verify
+id: quartz-r6
+cmd: 
+expect: always
+```
 
 ### 规律：有状态 Job 必须加 @DisallowConcurrentExecution，必要时叠加 @PersistJobDataAfterExecution
 - **适用版本**: 全版本
@@ -93,12 +129,24 @@ Spring Boot 集成形态（spring-boot-starter-quartz / @Scheduled）与原生 q
 - **验证方法**: 检出 `implements Job|extends QuartzJobBean` 类但无 `@DisallowConcurrentExecution` → warn。
 - **对应门禁**: fw_quartz_disallow_concurrent(warn)
 
+```verify
+id: quartz-r7
+cmd: 
+expect: always
+```
+
 ### 规律：cron 表达式必须显式声明时区，禁止依赖服务器默认时区
 - **适用版本**: 全版本
 - **规律**: cron 触发按 `CronTrigger` 时区解释，默认取服务器 JVM 时区。容器/云环境默认 UTC，与中国时区（Asia/Shanghai）差 8 小时，"每天凌晨 2 点"会变成下午 6 点触发。Quartz 原生须 `CronScheduleBuilder.inTimeZone(TimeZone.getTimeZone("Asia/Shanghai"))`；Spring `@Scheduled(cron=..., zone="Asia/Shanghai")`。夏令时时区还须注意 cron 语义漂移（Quartz cron 秒级 6/7 段，与 Unix crontab 5 段不同，混用直接错位）。
 - **违反后果**: 任务在错误时刻触发，日切/结算错位。
 - **验证方法**: `@Scheduled` 行含 `cron` 但无 `zone` → warn；`CronScheduleBuilder` 无 `inTimeZone` → warn。
 - **对应门禁**: fw_quartz_timezone(warn)
+
+```verify
+id: quartz-r8
+cmd: 
+expect: always
+```
 
 ### 规律：cron 语义须核对段数与符号（Quartz 6/7 段 vs Unix 5 段）
 - **适用版本**: 全版本
@@ -107,12 +155,24 @@ Spring Boot 集成形态（spring-boot-starter-quartz / @Scheduled）与原生 q
 - **验证方法**: 表达式存于配置/数据库，静态不可机械核验 → 人工检查（核对表达式段数与启动校验日志）。
 - **对应门禁**: 人工检查
 
+```verify
+id: quartz-r9
+cmd: 
+expect: always
+```
+
 ### 规律：触发器优先级与线程池须协同规划，核心任务 priority 须高于批量任务
 - **适用版本**: 全版本
 - **规律**: 线程池占满时 Quartz 按 `Trigger.priority`（默认 5）决定先触发谁。核心链路任务（支付对账）与批量任务（报表导出）混部时，核心任务 priority 须调高（如 9），批量任务调低（如 1），防止批量占满线程池饿死核心任务。
 - **违反后果**: 线程池挤占 → 核心任务延迟触发。
 - **验证方法**: priority 在 TriggerBuilder.withPriority 配置，须结合任务分级清单 → 人工检查。
 - **对应门禁**: 人工检查
+
+```verify
+id: quartz-r10
+cmd: 
+expect: always
+```
 
 ### 规律：JobListener/TriggerListener 须接告警，任务失败禁止静默
 - **适用版本**: 全版本
@@ -121,12 +181,24 @@ Spring Boot 集成形态（spring-boot-starter-quartz / @Scheduled）与原生 q
 - **验证方法**: 监听器注册与告警通道配置不可机械核验 → 人工检查（核对 Listener 注册与告警演练）。
 - **对应门禁**: 人工检查
 
+```verify
+id: quartz-r11
+cmd: 
+expect: always
+```
+
 ### 规律：调度中心高可用须整体评估（DB 锁 + 实例数 + 恢复策略）
 - **适用版本**: 全版本
 - **规律**: Quartz 集群高可用三要素：JDBC JobStore 数据库锁（单点 DB 成为瓶颈，DB 挂全集群停调）、实例数 ≥2（`instanceId=AUTO`）、`misfireThreshold`（默认 60s，待验证各版本默认值）与恢复补跑策略匹配业务容忍度。`clusterCheckinInterval`（默认 15s）决定故障发现时延。调度 DB 须与业务库隔离或评估连接争抢。
 - **违反后果**: 调度 DB 单点故障 → 全量任务停调；故障转移延迟 → 任务窗口错过。
 - **验证方法**: 部署拓扑与 DB 容量规划 → 人工检查（故障演练记录核对）。
 - **对应门禁**: 人工检查
+
+```verify
+id: quartz-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。8 条挂门禁 id，4 条（cron 段数/优先级/监听器告警/高可用）为人工检查。

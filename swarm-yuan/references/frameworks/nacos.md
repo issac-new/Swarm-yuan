@@ -52,12 +52,24 @@ detect 信号命中任一高置信度行即可激活 nacos 框架规则集。
 - **验证方法**: 检出 `spring.cloud.nacos.*` 配置但无 `namespace` 配置 → warn。
 - **对应门禁**: fw_nacos_namespace_isolation(warn)
 
+```verify
+id: nacos-r1
+cmd: 
+expect: always
+```
+
 ### 规律：敏感配置禁止明文入 Nacos，须加密或外部化注入
 - **适用版本**: Nacos 2.x / 3.x（2.2+ 提供配置加密插件 SPI，3.x 沿用；具体插件生态待验证）
 - **规律**: 数据库口令、AK/SK、API token 等敏感值不得明文写入 Nacos 配置或随 application.yml 入库。处置方式（任选）：1）环境变量/启动参数外部化注入（`${DB_PASSWORD}` 占位）；2）Nacos 配置加密插件（加密存储、客户端解密）；3）对接 KMS/Vault。明文入 Nacos 意味着控制台可读、导出泄露、快照泄露。
 - **违反后果**: 配置中心被未授权访问或快照外泄 → 全量敏感配置泄露 CWE-312。
 - **验证方法**: 检出含 nacos 引用的配置文件中敏感 key（password/secret/token/api-key/access-key）值为明文（非 `${...}` 占位 / 非 `{cipher}`）→ fail。
 - **对应门禁**: fw_nacos_config_encrypt(fail)
+
+```verify
+id: nacos-r2
+cmd: 
+expect: always
+```
 
 ### 规律：持久化实例 vs 临时实例选型须明确，ephemeral=false 须人工确认
 - **适用版本**: Nacos 2.x / 3.x
@@ -66,12 +78,24 @@ detect 信号命中任一高置信度行即可激活 nacos 框架规则集。
 - **验证方法**: 检出 `ephemeral: false` / `ephemeral=false` → warn 人工确认选型必要性。
 - **对应门禁**: fw_nacos_instance_ephemeral(warn)
 
+```verify
+id: nacos-r3
+cmd: 
+expect: always
+```
+
 ### 规律：生产配置变更须走灰度发布，禁止直接全量推送
 - **适用版本**: Nacos 2.x（Beta 发布按 IP 灰度）/ 3.x（正式灰度发布能力，3.0+；灰度规则细节待验证）
 - **规律**: 高风险配置（限流阈值、开关、数据源参数）生产变更必须先灰度：Nacos 2.x 用 Beta 发布（按 IP 列表灰度）；3.x 提供正式灰度发布（按灰度规则/标签，待验证具体规则模型）。验证灰度节点无异常后再全量。
 - **违反后果**: 错误配置全量瞬时生效 → 全集群同时故障，无缓冲窗口。
 - **验证方法**: 检出 prod 环境配置（`profiles.active: prod` / dataId 含 prod）但无 gray/beta 灰度痕迹 → warn 人工确认发布流程含灰度环节。
 - **对应门禁**: fw_nacos_gray_release(warn)
+
+```verify
+id: nacos-r4
+cmd: 
+expect: always
+```
 
 ### 规律：@NacosValue 须显式 autoRefreshed=true，否则配置变更不生效
 - **适用版本**: nacos-spring-context 1.x / 2.x
@@ -80,12 +104,24 @@ detect 信号命中任一高置信度行即可激活 nacos 框架规则集。
 - **验证方法**: 检出 `@NacosValue` 但文件无 `autoRefreshed[[:space:]]*=[[:space:]]*true` → warn。
 - **对应门禁**: fw_nacos_value_refresh(warn)
 
+```verify
+id: nacos-r5
+cmd: 
+expect: always
+```
+
 ### 规律：Nacos Server 生产须集群部署（≥3 节点）+ 外置存储，禁止 standalone
 - **适用版本**: Nacos 2.x / 3.x
 - **规律**: 生产 Nacos Server 至少 3 节点集群（cluster.conf 列出全部节点），配置存储用外置 MySQL（嵌入式 Derby 仅限单机试用）；3.x server/console 需 Java 17。客户端 `server-addr` 建议配多节点或用 VIP/域名。standalone 模式单点故障 → 全集群配置/注册中心不可用。
 - **违反后果**: Nacos 单点宕机 → 配置无法下发、新实例无法注册、控制台不可用。
 - **验证方法**: 检出 `server-addr` 单地址（无逗号分隔多节点）或 standalone 模式痕迹 → warn。
 - **对应门禁**: fw_nacos_server_cluster(warn)
+
+```verify
+id: nacos-r6
+cmd: 
+expect: always
+```
 
 ### 规律：客户端心跳间隔不得擅自调小，默认 5s 为合理基线
 - **适用版本**: Nacos 2.x / 3.x
@@ -94,12 +130,24 @@ detect 信号命中任一高置信度行即可激活 nacos 框架规则集。
 - **验证方法**: 检出 `heart-beat-interval`/`beatInterval` 显式配置且值 < 5000 → warn。
 - **对应门禁**: fw_nacos_client_heartbeat(warn)
 
+```verify
+id: nacos-r7
+cmd: 
+expect: always
+```
+
 ### 规律：配置回滚预案须依赖历史版本能力，发布前确认可一键回退
 - **适用版本**: Nacos 2.x / 3.x
 - **规律**: Nacos 控制台保存配置历史版本（默认保留 30 天），支持按历史版本回滚。高风险变更发布前须确认：1）历史版本保留策略满足回滚窗口；2）回滚操作有负责人与流程；3）回滚同样走灰度。回滚本质是"再发布一次旧版本"，灰度纪律同样适用。
 - **违反后果**: 错误配置发布后无回滚路径 → 故障持续时间拉长。
 - **验证方法**: 人工检查（确认团队发布/回滚 runbook 覆盖 Nacos 配置场景）。
 - **对应门禁**: 人工检查
+
+```verify
+id: nacos-r8
+cmd: 
+expect: always
+```
 
 ### 规律：@Value 注入 Nacos 配置须配 @RefreshScope，否则变更不刷新
 - **适用版本**: Spring Cloud Alibaba 2021.x+ / Nacos 2.x / 3.x
@@ -108,12 +156,24 @@ detect 信号命中任一高置信度行即可激活 nacos 框架规则集。
 - **验证方法**: 检出 Nacos config 使用 + java 含 `@Value` 但无 `@RefreshScope`/`@NacosValue` → warn。
 - **对应门禁**: fw_nacos_config_listener(warn)
 
+```verify
+id: nacos-r9
+cmd: 
+expect: always
+```
+
 ### 规律：共享配置、扩展配置、应用配置的优先级须明确，避免覆盖意外
 - **适用版本**: Spring Cloud Alibaba 2021.x+
 - **规律**: 优先级从低到高：`shared-configs`（共享配置）< `extension-configs`（扩展配置）< `${spring.application.name}.properties`（应用主配置）< `${spring.application.name}-${profile}.properties`（profile 配置，最高）。同 key 时高优先级覆盖低优先级。排障"配置不生效"先查是否被更高优先级 dataId 覆盖。
 - **违反后果**: 共享配置与主配置同 key → 值被意外覆盖，表现为配置"改了没用"。
 - **验证方法**: 检出同时配置 `shared-configs` 与 `extension-configs` → warn 人工核对 key 覆盖关系。
 - **对应门禁**: fw_nacos_config_priority(warn)
+
+```verify
+id: nacos-r10
+cmd: 
+expect: always
+```
 
 ### 规律：多环境 profile 不得硬编码，须由部署环境注入
 - **适用版本**: Nacos 2.x / 3.x + Spring Boot 2.4+
@@ -122,12 +182,24 @@ detect 信号命中任一高置信度行即可激活 nacos 框架规则集。
 - **验证方法**: 检出 `profiles.active` 值为固定字面值（非 `${...}` 占位）→ warn。
 - **对应门禁**: fw_nacos_profile_isolation(warn)
 
+```verify
+id: nacos-r11
+cmd: 
+expect: always
+```
+
 ### 规律：服务元数据（metadata）须用于版本/权重路由，不得留空裸注册
 - **适用版本**: Nacos 2.x / 3.x
 - **规律**: `spring.cloud.nacos.discovery.metadata.*` 注册的元数据（version、region、weight-hint）是灰度路由、同可用区优先、版本隔离的基础数据。配合负载均衡策略（如 NacosRule 同集群优先）消费。全空 metadata 的服务无法参与精细化流量治理。
 - **违反后果**: 无版本元数据 → 灰度/蓝绿路由无法实现；跨可用区随机调用 → 延迟与流量成本上升。
 - **验证方法**: 检出 `spring.cloud.nacos.discovery` 配置但无 `metadata` → warn。
 - **对应门禁**: fw_nacos_metadata(warn)
+
+```verify
+id: nacos-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id 或"人工检查"，无游离规律。

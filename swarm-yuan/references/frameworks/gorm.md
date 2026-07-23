@@ -51,12 +51,24 @@ detect 信号命中任一高置信度行即可激活 gorm 框架规则集。
 - **验证方法**: 检出 `for ... range` 循环体内含 `db.First(`/`db.Find(`/`db.Where(` 查询调用，且同文件无 `Preload(`/`Joins(` → fail。
 - **对应门禁**: fw_gorm_n_plus_one(fail)
 
+```verify
+id: gorm-r1
+cmd: 
+expect: always
+```
+
 ### 规律：嵌套事务依赖 SavePoint，禁用手动 Begin 嵌套
 - **适用版本**: GORM v1.25+ 全版本
 - **规律**: GORM `db.Transaction(func(tx *gorm.DB) error { ... })` 嵌套调用时自动用 SavePoint（内层失败 RollbackTo SavePoint，外层仍可继续/回滚）。手动 `db.Begin()` 嵌套不支持 SavePoint，内层 Rollback 会回滚整个外层事务。生产须统一用 `Transaction` 闭包，禁用手动 `Begin/Commit/Rollback` 嵌套。
 - **违反后果**: 手动 Begin 嵌套 → 内层回滚污染外层事务，部分提交/全回滚语义错乱。
 - **验证方法**: 检出 `\.Begin\(` 且同文件存在嵌套 `Transaction(` 调用，或 `Begin(` 后无配对 `Commit(`/`Rollback(` → warn。
 - **对应门禁**: fw_gorm_nested_transaction(warn)
+
+```verify
+id: gorm-r2
+cmd: 
+expect: always
+```
 
 ### 规律：软删除须用 gorm.DeletedAt，查询自动过滤已删除记录
 - **适用版本**: GORM v1.25+ 全版本
@@ -65,12 +77,24 @@ detect 信号命中任一高置信度行即可激活 gorm 框架规则集。
 - **验证方法**: 检出模型含 `DeletedAt` 字段但类型非 `gorm.DeletedAt`（如 `time.Time`/`*time.Time` 且无 `gorm.DeletedAt` 嵌入）且无 `WHERE deleted_at` 显式过滤 → warn。
 - **对应门禁**: fw_gorm_soft_delete(warn)
 
+```verify
+id: gorm-r3
+cmd: 
+expect: always
+```
+
 ### 规律：生产须配连接池 SetMaxOpenConns/SetMaxIdleConns/SetConnMaxLifetime
 - **适用版本**: GORM v1.25+ 全版本（搭配 database/sql）
 - **规律**: `gorm.Open` 返回的 `*gorm.DB` 须 `sqlDB, _ := db.DB(); sqlDB.SetMaxOpenConns(N); sqlDB.SetMaxIdleConns(M); sqlDB.SetConnMaxLifetime(d)`。不配则用 database/sql 默认（MaxOpenConns=0=无限制、MaxIdleConns=2），高并发下要么打爆 DB 连接数要么 idle 连接过少反复建连。
 - **违反后果**: 连接数失控 → DB 连接被打爆（Too many connections）；或 idle 过少 → 反复 TCP/TLS 握手延迟。
 - **验证方法**: 检出 `gorm.Open(` 但同项目无 `SetMaxOpenConns` → fail。
 - **对应门禁**: fw_gorm_conn_pool(fail)
+
+```verify
+id: gorm-r4
+cmd: 
+expect: always
+```
 
 ### 规律：SQL 审计须用 DryRun Session 预生成 SQL，禁用直接打印
 - **适用版本**: GORM v1.25+ 全版本
@@ -79,12 +103,24 @@ detect 信号命中任一高置信度行即可激活 gorm 框架规则集。
 - **验证方法**: 检出 `LogMode[[:space:]]*\([[:space:]]*logger\.Info` 或 `LogMode[[:space:]]*\([[:space:]]*logger\.Silent` → warn（Silent 会吞错误）。
 - **对应门禁**: fw_gorm_dryrun_audit(warn)
 
+```verify
+id: gorm-r5
+cmd: 
+expect: always
+```
+
 ### 规律：模型约定嵌入 gorm.Model（ID/CreatedAt/UpdatedAt/DeletedAt）
 - **适用版本**: GORM v1.25+ 全版本
 - **规律**: GORM 约定主键 `ID`、创建时间 `CreatedAt`、更新时间 `UpdatedAt`（自动维护）、软删除 `DeletedAt`。嵌入 `gorm.Model` 一次性获得四字段。自定义主键须 `gorm:"primaryKey"` 显式声明，否则 GORM 按 `ID` 约定找不到主键。`UpdatedAt` 自动更新，手动 set 会被覆盖。
 - **违反后果**: 无主键 → `First` 查询用 `ORDER BY id LIMIT 1` 找不到主键报错；无 CreatedAt/UpdatedAt → 缺审计时间。
 - **验证方法**: 检出 GORM 模型结构体（含 `gorm:"` 标签）但既无 `gorm.Model` 嵌入、无 `ID` 字段、也无 `gorm:"primaryKey"` 标签 → warn。
 - **对应门禁**: fw_gorm_model_convention(warn)
+
+```verify
+id: gorm-r6
+cmd: 
+expect: always
+```
 
 ### 规律：生产禁用 AutoMigrate 做表结构变更，须用 migration 工具
 - **适用版本**: GORM v1.25+ 全版本
@@ -93,12 +129,24 @@ detect 信号命中任一高置信度行即可激活 gorm 框架规则集。
 - **验证方法**: 检出 `AutoMigrate(` 调用且文件路径含 `main.go`/`cmd/`/`server/`（生产入口）→ warn；或同项目无 migration 目录且 AutoMigrate 在非 _test.go → warn。
 - **对应门禁**: fw_gorm_automigrate_prod(warn)
 
+```verify
+id: gorm-r7
+cmd: 
+expect: always
+```
+
 ### 规律：批量插入须用 CreateInBatches，禁用循环单条 Create
 - **适用版本**: GORM v1.25+ 全版本
 - **规律**: 循环 `for _, m := range items { db.Create(&m) }` 产生 N 次 INSERT，往返延迟线性累加。须 `db.CreateInBatches(items, 1000)` 分批插入（每批一条 INSERT 多 VALUES）。单批过大（>数千行）会触发 `max_allowed_packet` 或参数绑定上限，须控制 batch size（1000 量级）。
 - **违反后果**: 循环单条 Create → N 次 RTT，批量导入耗时从秒级到分钟级。
 - **验证方法**: 检出 `for ... range` 循环体内含 `\.Create\(` 单条插入，且同项目无 `CreateInBatches(` → warn。
 - **对应门禁**: fw_gorm_batch_insert(warn)
+
+```verify
+id: gorm-r8
+cmd: 
+expect: always
+```
 
 ### 规律：查询单条须用 First，空结果须用 errors.Is(err, gorm.ErrRecordNotFound)
 - **适用版本**: GORM v1.25+ 全版本
@@ -107,12 +155,24 @@ detect 信号命中任一高置信度行即可激活 gorm 框架规则集。
 - **验证方法**: 检出 `\.First\(` 但同项目无 `ErrRecordNotFound` → warn。
 - **对应门禁**: fw_gorm_record_not_found(warn)
 
+```verify
+id: gorm-r9
+cmd: 
+expect: always
+```
+
 ### 规律：索引须显式 gorm:"index" 标签，禁用依赖 AutoMigrate 自动建索引
 - **适用版本**: GORM v1.25+ 全版本
 - **规律**: 高频查询字段（外键、状态、时间范围）须显式 `gorm:"index"` 或 `gorm:"index:idx_name"` 标签声明索引。仅靠 AutoMigrate 自动建索引（只对外键建索引）会漏掉业务查询字段，导致全表扫描。复合索引须 `gorm:"index:idx_name,priority:1"` 指定列顺序。
 - **违反后果**: 漏索引 → 查询全表扫描，表大了之后慢查询。
 - **验证方法**: 检出 `db.Where(` 查询字段，但对应模型字段无 `gorm:"index` 标签 → warn（启发式，仅提示高频字段）。
 - **对应门禁**: fw_gorm_index(warn)
+
+```verify
+id: gorm-r10
+cmd: 
+expect: always
+```
 
 ### 规律：错误处理须区分 ErrRecordNotFound 与真实 DB 错误
 - **适用版本**: GORM v1.25+ 全版本
@@ -121,6 +181,12 @@ detect 信号命中任一高置信度行即可激活 gorm 框架规则集。
 - **验证方法**: 检出 `db.Error` 或 `if err != nil` 紧邻 GORM 查询，但同项目无 `ErrRecordNotFound`/`ErrDuplicatedKey` 判断 → warn。
 - **对应门禁**: fw_gorm_error_handling(warn)
 
+```verify
+id: gorm-r11
+cmd: 
+expect: always
+```
+
 ### 规律：关联模式须显式声明外键与引用，禁用依赖 GORM 约定推断歧义
 - **适用版本**: GORM v1.25+ 全版本
 - **规律**: `belongs_to`/`has_many`/`has_one`/`many2many` 关联须显式 `gorm:"foreignKey:XXX;references:YYY"` 声明外键与引用字段。依赖 GORM 约定（如 `UserID` 推断 `User.ID`）在多外键或非标准命名时产生歧义，Preload 加载错关联。
@@ -128,12 +194,24 @@ detect 信号命中任一高置信度行即可激活 gorm 框架规则集。
 - **验证方法**: 检出模型结构体含多个以 `ID` 结尾的字段（潜在多外键）但关联字段无 `foreignKey:` 标签 → warn。
 - **对应门禁**: fw_gorm_association(warn)
 
+```verify
+id: gorm-r12
+cmd: 
+expect: always
+```
+
 ### 规律：命名约定表名蛇形复数，自定义须 TableName() 全局一致
 - **适用版本**: GORM v1.25+ 全版本
 - **规律**: GORM 默认表名蛇形复数（`User` → `users`）。自定义表名须实现 `TableName() string` 接口或 `gorm.Config{NamingStrategy: schema.NamingStrategy{TablePrefix: "t_"}}`。混用（部分模型 TableName 部分 prefix）会导致表名不一致、查询错表。
 - **违反后果**: 表名不一致 → 查询错表 / 表不存在。
 - **验证方法**: 检出 `TableName()` 方法但同项目无 `NamingStrategy` 配置，或检出 `NamingStrategy` 配置但部分模型仍手写 `TableName()` → warn。
 - **对应门禁**: fw_gorm_naming(warn)
+
+```verify
+id: gorm-r13
+cmd: 
+expect: always
+```
 
 <!--
 共 13 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

@@ -55,12 +55,24 @@ detect 信号命中任一高置信度行即可激活 mybatis 框架规则集。
 - **验证方法**: 在 `MYBATIS_MAPPER_DIRS` 范围内 `grep -n '\${' *.xml`，命中行须在 `SQL_INJECTION_WHITELIST` 内（如 `ORDER BY ${orderBy}` 的 `orderBy` 在白名单），否则即违规。
 - **对应门禁**: fw_mybatis_dollar(fail)
 
+```verify
+id: mybatis-r1
+cmd: grep -n '\${' *.xml
+expect: hits>0
+```
+
 ### 规律：Mapper 接口 ↔ XML namespace 必须一一绑定
 - **适用版本**: mybatis 3.5.x 全版本
 - **规律**: 每个 `@Mapper` / `@MapperScan` / `extends BaseMapper<>` 接口（含完全限定名）必须有同名 `<mapper namespace="完全限定名">` 的 XML 对应；反之每个 mapper XML 的 namespace 必须能在源码中找到对应接口，避免"接口声明了但 XML 缺失"或"XML 孤儿"导致 `BindingException: Invalid bound statement`。
 - **违反后果**: 启动期/运行期 `org.apache.ibatis.binding.BindingException: Invalid bound statement (not found)`，MyBatis-Plus 项目还会出现 BaseMapper 默认方法缺失。
 - **验证方法**: `mcnt = grep -lE '@Mapper|extends BaseMapper' $(MYBATIS_SRC_GLOBS)` 的文件数；`xcnt = grep -l '<mapper namespace=' $(MYBATIS_MAPPER_DIRS)/*.xml` 的文件数；当 `MYBATIS_SRC_GLOBS` 非空时要求 `mcnt == xcnt`。
 - **对应门禁**: fw_mybatis_binding(fail)
+
+```verify
+id: mybatis-r2
+cmd: mcnt = grep -lE '@Mapper|extends BaseMapper' $(MYBATIS_SRC_GLOBS)
+expect: hits>0
+```
 
 ### 规律：`<foreach>` IN 列表须人工确认 size 上限
 - **适用版本**: mybatis 3.5.x 全版本
@@ -69,12 +81,24 @@ detect 信号命中任一高置信度行即可激活 mybatis 框架规则集。
 - **验证方法**: `grep -c '<foreach' *.xml` 命中即 warn（提示人工确认分批策略），不 fail（阈值因库而异）。
 - **对应门禁**: fw_mybatis_foreach(warn)
 
+```verify
+id: mybatis-r3
+cmd: grep -c '<foreach' *.xml
+expect: hits>0
+```
+
 ### 规律：MyBatis-Plus 分页必须用 Page 对象 + PaginationInnerInterceptor
 - **适用版本**: mybatis-plus 3.5.x 全版本
 - **规律**: MP 分页是物理分页，须 (a) 注册 `MybatisPlusInterceptor` 并 `addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL))`，(b) 调用方传入 `IPage/Page` 对象作为 Mapper 方法首参；否则 `selectList` 不会自动加 LIMIT，全表加载。
 - **违反后果**: 内存溢出 / DB 端大结果集；分页失效返回全量数据。
 - **验证方法**: 在源码中检测 `extends BaseMapper` 项目里 `selectList(` 行附近未出现 `Page` 参数 → warn（人工核实是否有意为之）。
 - **对应门禁**: fw_mybatis_plus_page(warn)
+
+```verify
+id: mybatis-r4
+cmd: 
+expect: always
+```
 
 ### 规律：MP 3.5.x 单数据库应显式声明 DbType
 - **适用版本**: mybatis-plus 3.5.5+（推荐项，官方文档措辞"建议单一数据库类型的均设置 dbType"）
@@ -83,12 +107,24 @@ detect 信号命中任一高置信度行即可激活 mybatis 框架规则集。
 - **验证方法**: 源码 `grep -n 'PaginationInnerInterceptor' *.java`，若仅 `new PaginationInnerInterceptor()` 无参且非多数据源项目 → warn（提示加 DbType）。
 - **对应门禁**: fw_mybatis_plus_dbtype(warn)
 
+```verify
+id: mybatis-r5
+cmd: grep -n 'PaginationInnerInterceptor' *.java
+expect: hits>0
+```
+
 ### 规律：resultMap 嵌套 select 须防 N+1
 - **适用版本**: mybatis 3.5.x 全版本
 - **规律**: `<association select="…">` / `<collection select="…">` 触发嵌套查询，列表场景下会产生 N+1 查询。官方文档明确警告："will not perform well for large data sets or lists" 和 "could result in hundreds or thousands of SQL statements"。须改用 nested result（JOIN 一次性取回）或显式 `fetchType="lazy"` + 业务侧避免立即遍历。
 - **违反后果**: N+1 查询风暴，列表场景慢百倍以上。
 - **验证方法**: `grep -rnE '<(association|collection)[^>]*\bselect=' *.xml`，命中即 warn（提示核对是否列表场景）。
 - **对应门禁**: fw_mybatis_nplus1(warn)
+
+```verify
+id: mybatis-r6
+cmd: grep -rnE '<(association|collection)[^>]*\bselect=' *.xml
+expect: hits>0
+```
 
 ### 规律：resultMap id 标签不可省略
 - **适用版本**: mybatis 3.5.x 全版本
@@ -97,12 +133,24 @@ detect 信号命中任一高置信度行即可激活 mybatis 框架规则集。
 - **验证方法**: 对含 `<resultMap>` 的 XML，每个 `<resultMap>` 体须含 `<id ` 或显式注释说明无主键。
 - **对应门禁**: fw_mybatis_resultmap_id(warn)
 
+```verify
+id: mybatis-r7
+cmd: 
+expect: always
+```
+
 ### 规律：`<if test="">` OGNL 空串/0 陷阱
 - **适用版本**: mybatis 3.5.x 全版本
 - **规律**: OGNL 中 `<if test="status != null and status != ''">` 对数值类型永远不进 `''` 分支（数值与空串比较被 OGNL 当作 0）；字符串为空才该判空，数值应仅判 `!= null`。
 - **违反后果**: 数值字段为 0 时被误判为"空"而漏拼条件，SQL 缺 WHERE 导致全表更新/查询。
 - **验证方法**: `grep -rnE '<if test="[^"]*!= *'"'' *.xml`，命中即 warn 提示复核参数类型。
 - **对应门禁**: fw_mybatis_ognl_empty(warn)
+
+```verify
+id: mybatis-r8
+cmd: grep -rnE '<if test="[^"]*!= *'"'' *.xml
+expect: hits>0
+```
 
 ### 规律：动态表名/列名只能用 ${} 且必须枚举校验
 - **适用版本**: mybatis 3.5.x 全版本
@@ -111,12 +159,24 @@ detect 信号命中任一高置信度行即可激活 mybatis 框架规则集。
 - **验证方法**: 与规律1同一机制——所有 `${}` 必须命中 `SQL_INJECTION_WHITELIST`。
 - **对应门禁**: fw_mybatis_dollar(fail)
 
+```verify
+id: mybatis-r9
+cmd: 
+expect: always
+```
+
 ### 规律：useGeneratedKeys 批量插入受限
 - **适用版本**: mybatis 3.5.x 全版本
 - **规律**: `useGeneratedKeys="true" keyProperty="id"` 仅对单条 INSERT 或 MySQL 多值 `INSERT … VALUES (...),(...)` 生效回填主键；对 Oracle 等使用 `<foreach>` 拼多条独立 INSERT 时回填行为不保证。批量插入推荐 MyBatis-Plus `BaseMapper.insertBatch` 或 `SqlSession` 批处理 + `rewriteBatchedStatements=true`。
 - **违反后果**: 批量插入后实体无主键 / 部分驱动报 `Generated keys not requested`。
 - **验证方法**: `grep -rn 'useGeneratedKeys' *.xml` 命中行附近若同时有 `<foreach>` 且驱动非 MySQL → warn。
 - **对应门禁**: fw_mybatis_generatedkeys(warn)
+
+```verify
+id: mybatis-r10
+cmd: grep -rn 'useGeneratedKeys' *.xml
+expect: hits>0
+```
 
 ### 规律：`<select>` 不可同时声明 resultType 与 resultMap
 - **适用版本**: mybatis 3.5.x 全版本
@@ -125,12 +185,24 @@ detect 信号命中任一高置信度行即可激活 mybatis 框架规则集。
 - **验证方法**: `grep -rnE '<select[^>]*\bresultType=[^>]*\bresultMap=' *.xml` 命中即 fail。
 - **对应门禁**: fw_mybatis_select_dup_result(fail)
 
+```verify
+id: mybatis-r11
+cmd: grep -rnE '<select[^>]*\bresultType=[^>]*\bresultMap=' *.xml
+expect: hits>0
+```
+
 ### 规律：`#{param}` NULL 值须显式 jdbcType 防 TypeHandler 失配
 - **适用版本**: mybatis 3.5.x 全版本
 - **规律**: 当参数可能为 NULL 时，`#{name}` 在某些 jdbcType 下会以默认 TypeHandler 处理 NULL，导致 `SQLException: Invalid column type`（Oracle 尤为敏感）。推荐 `#{name, jdbcType=VARCHAR}` 等显式 jdbcType。官方配置文档："MyBatis therefore uses the combination javaType=…, jdbcType=null to choose a TypeHandler."
 - **违反后果**: Oracle 等库对 NULL 参数报 `Invalid column type`。
 - **验证方法**: 检查参数是否可能为 NULL（业务层 nullable）且 `#{name}` 未带 `jdbcType` → warn。
 - **对应门禁**: fw_mybatis_jdbc_type(warn)
+
+```verify
+id: mybatis-r12
+cmd: 
+expect: always
+```
 
 ### 规律：二级缓存跨 namespace 关联须 cache-ref 或禁用
 - **适用版本**: mybatis 3.5.x 全版本
@@ -139,12 +211,24 @@ detect 信号命中任一高置信度行即可激活 mybatis 框架规则集。
 - **验证方法**: 含 `<cache/>` 的 namespace 同时出现 `association`/`collection select=` 引用其他 namespace → warn。
 - **对应门禁**: fw_mybatis_cache_dirty(warn)
 
+```verify
+id: mybatis-r13
+cmd: 
+expect: always
+```
+
 ### 规律：MP 逻辑删除须全局配置 + SQL 不得手写 deleted 条件
 - **适用版本**: mybatis-plus 3.5.x 全版本
 - **规律**: 逻辑删除由 MP 拦截器在所有 select/update/delete 自动追加 `deleted=0` 条件。手写 SQL 中再写 `deleted` 条件会与拦截器叠加造成 `deleted=0 and deleted=0`，或反之绕过拦截。须 (a) `mybatis-plus.global-config.db-config.logic-delete-field=deleted`，(b) 实体字段 `@TableLogic`，(c) 业务 SQL 不重复出现 deleted 条件。
 - **违反后果**: 逻辑删除条件叠加或绕过；查询到已删数据。
 - **验证方法**: 配置项缺失或 XML/Wrapper 中手写 `deleted=` 条件 → warn。
 - **对应门禁**: fw_mybatis_logic_delete(warn)
+
+```verify
+id: mybatis-r14
+cmd: 
+expect: always
+```
 
 ### 规律：MP Wrapper last()/having()/apply() 字符串列名注入面
 - **适用版本**: mybatis-plus 3.5.x 全版本（3.5.7 起 `UpdateWrapper` 新增 `checkSqlInjection` 可选）
@@ -153,12 +237,24 @@ detect 信号命中任一高置信度行即可激活 mybatis 框架规则集。
 - **验证方法**: `grep -rnE '\.(last|having|apply)\([^)]' *.java` 命中即 warn 提示核对参数来源。
 - **对应门禁**: fw_mybatis_wrapper_injection(warn)
 
+```verify
+id: mybatis-r15
+cmd: grep -rnE '\.(last|having|apply)\([^)]' *.java
+expect: hits>0
+```
+
 ### 规律：mybatis-spring-boot-starter mapperLocations 须显式配置
 - **适用版本**: mybatis-spring-boot-starter 3.0.x
 - **规律**: 官方 `MybatisProperties.mapperLocations` 字段无默认值（源码 `private String[] mapperLocations;` 无 `@Value` 默认），若不配置 `mybatis.mapper-locations` 则不扫描任何 XML，Mapper 接口与 XML 绑定失效。典型配置：`mybatis.mapper-locations=classpath*:mapper/**/*.xml`。
 - **违反后果**: 启动期不报错，但运行期 `BindingException: Invalid bound statement (not found)`。
 - **验证方法**: `application*.yml` 缺 `mybatis.mapper-locations` 且 `*Mapper.xml` 存在 → warn。
 - **对应门禁**: fw_mybatis_mapper_locations(warn)
+
+```verify
+id: mybatis-r16
+cmd: 
+expect: always
+```
 
 ### 规律：多数据源下 SqlSessionFactory 须物理隔离
 - **适用版本**: mybatis-spring / mybatis-plus 3.5.x 全版本
@@ -167,12 +263,24 @@ detect 信号命中任一高置信度行即可激活 mybatis 框架规则集。
 - **验证方法**: 多个 `DataSource` Bean 共用同一 `SqlSessionFactory` Bean → warn。
 - **对应门禁**: fw_mybatis_multi_ds_isolation(warn)
 
+```verify
+id: mybatis-r17
+cmd: 
+expect: always
+```
+
 ### 规律：TypeHandler 注册须 XML 或 @MappedTypes 全覆盖
 - **适用版本**: mybatis 3.5.x 全版本（3.4.0+ 起单一 TypeHandler 可作为某 Java 类型默认）
 - **规律**: 自定义 `TypeHandler` 须在 `<typeHandlers>` 显式 `<typeHandler handler="…"/>` 或 `<package name="…"/>` 自动扫描（自动扫描时 jdbcType 只能用注解声明）。漏注册时 MyBatis 退回内置 TypeHandler，枚举/JSON 等自定义类型映射错乱。mybatis-spring-boot-starter 下也支持 `mybatis.type-handlers-package` 扫描。
 - **违反后果**: 自定义类型未走自定义 TypeHandler，序列化/反序列化错乱（如 JSON 字段退回字符串）。
 - **验证方法**: 自定义 TypeHandler 类存在但 mybatis-config.xml / 配置中未注册 → warn。
 - **对应门禁**: fw_mybatis_typehandler(warn)
+
+```verify
+id: mybatis-r18
+cmd: 
+expect: always
+```
 
 <!--
 共 18 条规律（≥15 门槛）。每条规律均挂门禁 id 或人工检查，无游离规律。

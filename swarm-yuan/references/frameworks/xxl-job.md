@@ -51,12 +51,24 @@ ruleset_id: xxl-job
 - **验证方法**: `grep -rlE '@XxlJob\b' --include='*.java'` 命中文件含 `insert|update|save|delete` 写操作但无 `幂等|idempot|dedup|去重|XxlJobHelper.getShardIndex` 任一幂等痕迹 → warn。
 - **对应门禁**: fw_xxljob_idempotent(warn)
 
+```verify
+id: xxl-job-r1
+cmd: grep -rlE '@XxlJob\b' --include='*.java'
+expect: hits>0
+```
+
 ### 规律：执行器 accessToken 须显式配置为强随机值，禁止空/默认值
 - **适用版本**: 2.1+（accessToken 引入）/ 3.x
 - **规律**: 执行器与调度中心通讯鉴权依赖 `xxl.job.executor.accessToken`（执行器侧）与 `xxl.job.accessToken`（调度中心侧）。官方默认值为 `default_token`，空值表示不校验。生产必须双侧配置一致的强随机 token；空/默认 token 下任何可访问执行器端口者都可触发任务执行、下发 GLUE 代码。
 - **违反后果**: 未授权触发任务 / GLUE 远程代码执行（CWE-306 缺失认证、CWE-798 硬编码凭据）。
 - **验证方法**: `grep -rnE 'xxl\.job\.(executor\.)?accessToken'` 值为空、`default_token`、`xxl-job` 等弱值 → fail；含 xxl-job-core 依赖但完全无 accessToken 配置 → warn。
 - **对应门禁**: fw_xxljob_access_token(fail)
+
+```verify
+id: xxl-job-r2
+cmd: grep -rnE 'xxl\.job\.(executor\.)?accessToken'
+expect: hits>0
+```
 
 ### 规律：路由策略须按场景选型，大数据量任务用分片广播
 - **适用版本**: 全版本
@@ -65,12 +77,24 @@ ruleset_id: xxl-job
 - **验证方法**: 任务方法含批量处理特征（`for|while|page|batch|List<`）但无 `XxlJobHelper.getShardIndex` 分片痕迹 → warn 提示评估分片广播。
 - **对应门禁**: fw_xxljob_route_strategy(warn)
 
+```verify
+id: xxl-job-r3
+cmd: 
+expect: always
+```
+
 ### 规律：分片广播须用 shardIndex % shardTotal 取模分发数据
 - **适用版本**: 全版本
 - **规律**: 分片广播下每个执行器通过 `XxlJobHelper.getShardIndex()`（从 0 开始）与 `getShardTotal()` 获取分片参数，数据分发须按 `id % shardTotal == shardIndex`（或等价的 hash 取模）过滤。仅取 shardIndex 而不取模会导致全部执行器处理全量数据。
 - **违反后果**: N 个执行器重复处理全量数据 → 副作用放大 N 倍。
 - **验证方法**: 检出 `getShardIndex` 但同方法内无 `%` 取模或 `getShardTotal` → warn。
 - **对应门禁**: fw_xxljob_shard_consistency(warn)
+
+```verify
+id: xxl-job-r4
+cmd: 
+expect: always
+```
 
 ### 规律：任务失败须显式上报，禁止吞异常
 - **适用版本**: 全版本
@@ -79,12 +103,24 @@ ruleset_id: xxl-job
 - **验证方法**: @XxlJob 类内 `catch` 块体无 `throw|handleFail|FAILED` → warn。
 - **对应门禁**: fw_xxljob_fail_retry(warn)
 
+```verify
+id: xxl-job-r5
+cmd: 
+expect: always
+```
+
 ### 规律：GLUE 代码注入面须收敛，禁止执行外部输入拼装代码
 - **适用版本**: 全版本（3.4.2 起 PowerShell GLUE 升级为 PowerShell 7）
 - **规律**: GLUE 模式允许在调度中心在线编辑并下发代码到执行器动态编译执行，本身是设计功能，但工程侧若自建动态执行（`GroovyClassLoader.parseClass`、`ScriptEngine.eval`、`Runtime.exec` 拼接任务参数）把外部输入当代码执行，等价于开放 RCE 面。任务参数（XxlJobHelper.getJobParam）必须当数据校验，禁止拼入命令/脚本执行。
 - **违反后果**: 远程代码执行 CWE-94 / 命令注入 CWE-78。
 - **验证方法**: 检出 `GroovyClassLoader|ScriptEngine.*eval|Runtime\.getRuntime\(\)\.exec` 且附近存在 `getJobParam` → fail；仅存在动态执行 API → warn 人工确认输入可信。
 - **对应门禁**: fw_xxljob_glue_injection(fail)
+
+```verify
+id: xxl-job-r6
+cmd: 
+expect: always
+```
 
 ### 规律：任务超时与阻塞处理策略须按业务显式配置
 - **适用版本**: 全版本
@@ -93,12 +129,24 @@ ruleset_id: xxl-job
 - **验证方法**: 控制台配置不可机械核验 → 人工检查（核对长耗时任务已设超时、短周期任务阻塞策略为丢弃后续或单机串行）。
 - **对应门禁**: 人工检查
 
+```verify
+id: xxl-job-r7
+cmd: 
+expect: always
+```
+
 ### 规律：调度中心须集群部署，执行器 admin.addresses 配多地址
 - **适用版本**: 全版本
 - **规律**: 调度中心（xxl-job-admin）无状态可集群部署（共用同一 MySQL 库，通过数据库锁保证调度唯一性）。执行器 `xxl.job.admin.addresses` 支持逗号分隔多地址轮询注册/心跳，单地址在调度中心重启/漂移时执行器失联。
 - **违反后果**: 调度中心单点故障 → 全量任务停调；执行器注册失败静默无任务。
 - **验证方法**: `xxl.job.admin.addresses` 值不含逗号（单地址）→ warn 提示生产须多地址。
 - **对应门禁**: fw_xxljob_schedule_ha(warn)
+
+```verify
+id: xxl-job-r8
+cmd: 
+expect: always
+```
 
 ### 规律：执行器注册须 appname 唯一且显式配置
 - **适用版本**: 全版本
@@ -107,12 +155,24 @@ ruleset_id: xxl-job
 - **验证方法**: 含 xxl-job-core 依赖但配置无 `xxl.job.executor.appname` → warn。
 - **对应门禁**: fw_xxljob_executor_registry(warn)
 
+```verify
+id: xxl-job-r9
+cmd: 
+expect: always
+```
+
 ### 规律：任务日志须走 XxlJobHelper.log，禁止 System.out
 - **适用版本**: 全版本
 - **规律**: 调度中心"查看执行日志"读取执行器日志文件（`xxl.job.executor.logpath` 目录下按调度日志 id 存储），只有 `XxlJobHelper.log(...)` 输出的内容会进入该文件并被调度中心拉取。`System.out.println` 只进 stdout，调度中心看不到，排障断链。3.4.2 修复了 RollingLog 越权查看问题，日志文件权限仍须最小化。
 - **违反后果**: 调度中心日志为空，线上任务排障只能靠登机器翻 stdout。
 - **验证方法**: @XxlJob 类内检出 `System\.out\.print` → warn；logpath 未配 → warn（默认路径随容器易失）。
 - **对应门禁**: fw_xxljob_log_collection(warn)
+
+```verify
+id: xxl-job-r10
+cmd: 
+expect: always
+```
 
 ### 规律：任务依赖（父子任务）设计须防级联雪崩
 - **适用版本**: 2.x / 3.x（子任务触发机制）
@@ -121,12 +181,24 @@ ruleset_id: xxl-job
 - **验证方法**: 依赖关系存于调度中心数据库，不可机械核验 → 人工检查（梳理依赖图确认无环、深度 ≤3）。
 - **对应门禁**: 人工检查
 
+```verify
+id: xxl-job-r11
+cmd: 
+expect: always
+```
+
 ### 规律：xxl-job-core 版本须与调度中心主版本对齐
 - **适用版本**: 全版本
 - **规律**: 执行器 `xxl-job-core` 客户端与调度中心（xxl-job-admin）存在通讯协议约束，跨大版本（执行器 2.x 连调度中心 3.x）不保证兼容。生产须保持同一大版本，升级先升调度中心再滚动升执行器。
 - **违反后果**: 心跳/回调协议不兼容 → 执行器注册失败或执行结果丢失。
 - **验证方法**: 检出 `xxl-job-core` 版本号 < 3.x → warn 人工核对调度中心版本。
 - **对应门禁**: fw_xxljob_version_align(warn)
+
+```verify
+id: xxl-job-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。10 条挂门禁 id，2 条（超时阻塞策略、任务依赖）为人工检查。

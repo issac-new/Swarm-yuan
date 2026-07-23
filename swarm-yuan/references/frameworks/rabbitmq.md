@@ -53,12 +53,24 @@ detect 信号命中任一高置信度行即可激活 rabbitmq 框架规则集。
 - **验证方法**: 检出 `AcknowledgeMode.NONE` / `acknowledge-mode: none` / `basicConsume(..., true, ...)`（autoAck=true）→ fail。
 - **对应门禁**: fw_rabbitmq_manual_ack(fail)
 
+```verify
+id: rabbitmq-r1
+cmd: 
+expect: always
+```
+
 ### 规律：消费端必须幂等——at-least-once 下重投/requeue 必然重复
 - **适用版本**: RabbitMQ 全版本 / spring-amqp 全版本
 - **规律**: RabbitMQ 仅保证 at-least-once：ack 丢失重投、basicNack requeue、broker 故障转移都会重复投递。消费端须以 message-id（生产者必须设置 `MessageProperties.messageId`）做去重：Redis SETNX 或 DB 唯一键。`redelivered` 标志只能提示不可依赖（首次重复可能标志未置位，待验证边界行为）。
 - **违反后果**: 重复消费 → 重复扣款 / 重复通知 / 统计翻倍。
 - **验证方法**: 检出 `@RabbitListener` 文件内无幂等痕迹（`幂等|idempot|dedup|去重|setIfAbsent|setnx|ON DUPLICATE|insertIgnore|uk_`）→ warn。
 - **对应门禁**: fw_rabbitmq_idempotent_consumer(warn)
+
+```verify
+id: rabbitmq-r2
+cmd: 
+expect: always
+```
 
 ### 规律：队列必须配死信交换机（DLX）——毒丸消息禁止无限 requeue 阻塞
 - **适用版本**: RabbitMQ 全版本 / spring-amqp 全版本
@@ -67,12 +79,24 @@ detect 信号命中任一高置信度行即可激活 rabbitmq 框架规则集。
 - **验证方法**: 检出 RabbitMQ 使用但无 `x-dead-letter|deadLetter|dlx|dlq` 痕迹 → warn。
 - **对应门禁**: fw_rabbitmq_dlq(warn)
 
+```verify
+id: rabbitmq-r3
+cmd: 
+expect: always
+```
+
 ### 规律：队列须 durable=true 且消息须 persistent——缺一重启即丢
 - **适用版本**: RabbitMQ 全版本 / spring-amqp 全版本
 - **规律**: 持久化是三件套缺一不可：交换机 durable + 队列 durable + 消息 `deliveryMode=2`（PERSISTENT）。`new Queue(name, false)` / `QueueBuilder.nonDurable()` / 原生 `queueDeclare(name, false, ...)` → broker 重启队列消失；非 persistent 消息即使在 durable 队列中重启也丢。注意 quorum queue 强制 durable（见 quorum 规律）；lazy queue 已并入 quorum 语义（3.12+，待验证细节）。
 - **违反后果**: broker 重启/升级 → 队列与消息全失。
 - **验证方法**: 检出 `new Queue("x", false)` / `QueueBuilder.nonDurable` / `queueDeclare(..., false, ...)` / `MessageDeliveryMode.NON_PERSISTENT` → warn。
 - **对应门禁**: fw_rabbitmq_durable_persistent(warn)
+
+```verify
+id: rabbitmq-r4
+cmd: 
+expect: always
+```
 
 ### 规律：Connection/Channel 必须复用——每次新建是教科书级反模式
 - **适用版本**: RabbitMQ 全版本 / spring-amqp 全版本
@@ -81,12 +105,24 @@ detect 信号命中任一高置信度行即可激活 rabbitmq 框架规则集。
 - **验证方法**: 业务代码检出 `.newConnection(` / `.newChannel(`（原生客户端直接建连/建道）→ warn 人工确认复用策略。
 - **对应门禁**: fw_rabbitmq_connection_reuse(warn)
 
+```verify
+id: rabbitmq-r5
+cmd: 
+expect: always
+```
+
 ### 规律：消费端必须配 prefetch 限流——默认 250 须按业务收敛
 - **适用版本**: RabbitMQ 全版本 / spring-amqp 全版本
 - **规律**: prefetch（basicQos）控制 broker 推送给单个消费者的未确认消息上限。spring-amqp 默认 prefetch=250：慢消费场景 250 条堆在单个消费者内存里，其余消费者空转（负载不均），消费者宕机 250 条全部重投。须按单条处理耗时收敛（如 10-50）；原生客户端 `channel.basicQos(n)`。prefetch=0 表示不限，生产禁止。
 - **违反后果**: 慢消费者积压 + 宕机批量重投；快消费者饿死。
 - **验证方法**: 检出消费者（@RabbitListener / basicConsume）但无 `prefetch|basicQos|PrefetchCount` 配置 → warn。
 - **对应门禁**: fw_rabbitmq_prefetch(warn)
+
+```verify
+id: rabbitmq-r6
+cmd: 
+expect: always
+```
 
 ### 规律：生产者必须开发布确认（publisher confirm）+ returns——否则发送即盲发
 - **适用版本**: RabbitMQ 全版本 / spring-amqp 全版本
@@ -95,12 +131,24 @@ detect 信号命中任一高置信度行即可激活 rabbitmq 框架规则集。
 - **验证方法**: 检出生产者（RabbitTemplate/basicPublish/convertAndSend）但无 `ConfirmCallback|ReturnsCallback|publisher-confirm|publisher-returns|confirmSelect|waitForConfirms` → warn。
 - **对应门禁**: fw_rabbitmq_publisher_confirm(warn)
 
+```verify
+id: rabbitmq-r7
+cmd: 
+expect: always
+```
+
 ### 规律：延迟消息选型——TTL+DLX 模拟 vs rabbitmq-delayed-message-exchange 插件
 - **适用版本**: RabbitMQ 3.x/4.x（插件 4.x 继续支持，待验证最新兼容矩阵）
 - **规律**: TTL+DLX 延迟模式（消息先投进带 `x-message-ttl` 的暂存队列，过期后死信转发真实队列）缺陷：队列级 TTL 时消息按入队顺序过期，头部阻塞（队头消息 TTL 长会挡住后面 TTL 短的）；per-message TTL 缓解但仍有队头效应；且过期消息可能延迟投递（broker 惰性过期，待验证 4.x 行为）。生产推荐 `rabbitmq-delayed-message-exchange` 插件（`x-delayed-message` 交换机 + `x-delay` 头）或改 RocketMQ/Kafka 定时能力。
 - **违反后果**: 延迟消息不按预期时点投递；队头阻塞导致批量延迟。
 - **验证方法**: 检出 `x-message-ttl`/`setExpiration` 与 `x-dead-letter` 共存（TTL+DLX 延迟特征）→ warn 人工确认或迁插件。
 - **对应门禁**: fw_rabbitmq_delay(warn)
+
+```verify
+id: rabbitmq-r8
+cmd: 
+expect: always
+```
 
 ### 规律：新建队列须显式 quorum——classic queue 4.x 已废弃
 - **适用版本**: RabbitMQ 4.x（classic mirrored queues 4.0 移除；non-mirrored classic queue 4.1 宣布废弃，移除时点待验证）
@@ -109,12 +157,24 @@ detect 信号命中任一高置信度行即可激活 rabbitmq 框架规则集。
 - **验证方法**: 显式检出 `x-queue-type=classic` / `"type": "classic"` → warn；检出队列声明（`new Queue(|queueDeclare|QueueBuilder`）但无 quorum 痕迹 → warn 人工确认。
 - **对应门禁**: fw_rabbitmq_quorum(warn)
 
+```verify
+id: rabbitmq-r9
+cmd: 
+expect: always
+```
+
 ### 规律：交换机类型选型须匹配路由语义——headers 交换机性能差慎用
 - **适用版本**: RabbitMQ 全版本 / spring-amqp 全版本
 - **规律**: direct（精确 routing key）/ topic（模式匹配 `*.order.#`）/ fanout（广播全绑定队列，无视 key）/ headers（按 header 键值匹配）。headers 交换机匹配开销大、通配能力弱、运维可见性差，生产几乎总可用 topic 替代；fanout 广播须确认每个绑定队列都真需要全量消息（否则放大流量）。选型错配会导致路由复杂度指数上升。
 - **违反后果**: headers 交换机高流量下 CPU 飙升；fanout 滥用流量放大。
 - **验证方法**: 检出 `HeadersExchange` / `ExchangeTypes.HEADERS` / `type: headers` → warn。
 - **对应门禁**: fw_rabbitmq_exchange_type(warn)
+
+```verify
+id: rabbitmq-r10
+cmd: 
+expect: always
+```
 
 ### 规律：消费者并发须显式配置——单消费者线程是隐形瓶颈
 - **适用版本**: spring-amqp 全版本
@@ -123,12 +183,24 @@ detect 信号命中任一高置信度行即可激活 rabbitmq 框架规则集。
 - **验证方法**: 检出 @RabbitListener 但无 `concurrency` 显式配置 → warn。
 - **对应门禁**: fw_rabbitmq_consumer_concurrency(warn)
 
+```verify
+id: rabbitmq-r11
+cmd: 
+expect: always
+```
+
 ### 规律：autoDelete/exclusive 队列禁止承载业务消息——断连即删
 - **适用版本**: RabbitMQ 全版本 / spring-amqp 全版本
 - **规律**: `autoDelete=true`（最后消费者取消订阅即删队列）与 `exclusive=true`（声明连接关闭即删）只适用于临时回复队列（RPC reply-to）等场景。业务队列误用 → 消费者滚动重启/网络抖动期间队列连同未消费消息一起消失，且无告警。quorum queue 干脆不支持二者（4.x 强制约束）。server-named 临时队列（`queueDeclare("", ...)`）同理。
 - **违反后果**: 消费者断连 → 队列 + 存量消息静默蒸发。
 - **验证方法**: 检出 `.autoDelete(` / `auto-delete: true` / `.exclusive(` / `exclusive: true` / `queueDeclare` 第 3/4 参 true → warn。
 - **对应门禁**: fw_rabbitmq_auto_delete(warn)
+
+```verify
+id: rabbitmq-r12
+cmd: 
+expect: always
+```
 
 <!--
 共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。

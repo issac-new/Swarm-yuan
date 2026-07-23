@@ -56,12 +56,24 @@ detect 信号命中任一高置信度行即可激活 paimon 框架规则集。
 - **验证方法**: 检出含 `PRIMARY KEY` 的 paimon DDL 但同文件无 `'bucket'`/`bucket-key` → fail。
 - **对应门禁**: fw_paimon_pk_bucket(fail)
 
+```verify
+id: paimon-r1
+cmd: 
+expect: always
+```
+
 ### 规律：主键表 Changelog 语义：+I/-U/+U/-D 四类，下游须按 changelog 消费
 - **适用版本**: Paimon 1.x
 - **规律**: 主键表写入产生 changelog：+I（插入）/-U（更新前像）/+U（更新后像）/-D（删除）。流读主键表默认消费 changelog；下游（如 Flink SQL 聚合、二级表）必须支持 retract 语义，否则更新被当追加处理 → 结果翻倍。append-only 表仅 +I，无更新语义。
 - **违反后果**: 下游按 append 消费主键表 changelog → 聚合结果重复 / 口径翻倍。
 - **验证方法**: 人工检查下游消费链路是否支持 retract（Flink SQL 原生支持；DataStream 自定义 sink 须人工确认）。
 - **对应门禁**: 人工检查
+
+```verify
+id: paimon-r2
+cmd: 
+expect: always
+```
 
 ### 规律：主键表必须配 compaction 参数，禁止依赖默认阈值
 - **适用版本**: Paimon 1.x
@@ -70,12 +82,24 @@ detect 信号命中任一高置信度行即可激活 paimon 框架规则集。
 - **验证方法**: 检出主键表 DDL 但无 `num-sorted-run`/`compaction.` 配置 → warn。
 - **对应门禁**: fw_paimon_compaction(warn)
 
+```verify
+id: paimon-r3
+cmd: 
+expect: always
+```
+
 ### 规律：merge-engine 选型须匹配业务：deduplicate/partial-update/aggregation/first-row
 - **适用版本**: Paimon 1.x
 - **规律**: 主键表 `merge-engine` 决定同 key 多行合并语义：`deduplicate`（默认，保留最新行）/`partial-update`（多流各更新部分列，按 sequence-group 合并）/`aggregation`（按列聚合函数合并）/`first-row`（保留首行，适合去重入）。选型错配业务即数据错：如多流拼宽表误用 deduplicate 会整行覆盖丢列。
 - **违反后果**: 多流 partial-update 场景误用 deduplicate → 列被 null 覆盖，数据静默损坏。
 - **验证方法**: 检出 `'merge-engine'='(partial-update|aggregation|first-row)'` → warn 人工确认语义匹配；deduplicate 为默认安全项不告警。
 - **对应门禁**: fw_paimon_merge_engine(warn)
+
+```verify
+id: paimon-r4
+cmd: 
+expect: always
+```
 
 ### 规律：流读主键表 changelog 须配 changelog-producer（input/lookup/full-compaction）
 - **适用版本**: Paimon 1.x
@@ -84,12 +108,24 @@ detect 信号命中任一高置信度行即可激活 paimon 框架规则集。
 - **验证方法**: 检出流读（`scan.mode`）但表 DDL 无 `changelog-producer` → warn。
 - **对应门禁**: fw_paimon_changelog_producer(warn)
 
+```verify
+id: paimon-r5
+cmd: 
+expect: always
+```
+
 ### 规律：流读 scan.mode 选型：latest/compacted/full，禁止不明语义裸用
 - **适用版本**: Paimon 1.x
 - **规律**: `scan.mode` 决定流读起点与快照粒度：`latest`（默认，只读增量新数据，启动时不扫存量）/`full`（先全量快照后增量）/`compacted`（读 compacted 快照，低延迟场景慎用）。批读另有时空回溯模式（snapshot-id/timestamp）。用 latest 上线补数场景会丢全部存量数据。
 - **违反后果**: 补数/回刷场景用 latest → 存量数据静默丢失。
 - **验证方法**: 检出 `scan.mode` 配置 → warn 人工确认选型语义；未检出 → pass（默认 latest 已知风险自担）。
 - **对应门禁**: fw_paimon_stream_scan_mode(warn)
+
+```verify
+id: paimon-r6
+cmd: 
+expect: always
+```
 
 ### 规律：快照必须配过期保留策略，否则 storage 无限膨胀
 - **适用版本**: Paimon 1.x
@@ -98,12 +134,24 @@ detect 信号命中任一高置信度行即可激活 paimon 框架规则集。
 - **验证方法**: 检出 paimon 表 DDL 但无 `snapshot.time-retained`/`snapshot.num-retained` → warn。
 - **对应门禁**: fw_paimon_snapshot_retention(warn)
 
+```verify
+id: paimon-r7
+cmd: 
+expect: always
+```
+
 ### 规律：time travel 回溯必须在快照保留窗口内
 - **适用版本**: Paimon 1.x
 - **规律**: `scan.snapshot-id`/`scan.timestamp-millis` 回溯读依赖目标快照未过期；快照被 `snapshot.time-retained` 过期清理后回溯直接报错。配回溯任务前须确认保留窗口覆盖回溯跨度；长跨度回溯须另配 tag/branch 固化快照。
 - **违反后果**: 回溯任务偶发失败（目标快照恰好被清理）→ 数据修复链路不可靠。
 - **验证方法**: 检出 `scan.snapshot-id`/`scan.timestamp-millis` → warn 人工确认保留窗口。
 - **对应门禁**: fw_paimon_time_travel(warn)
+
+```verify
+id: paimon-r8
+cmd: 
+expect: always
+```
 
 ### 规律：分区字段须低基数、贴合查询裁剪；主键大表须评估分区
 - **适用版本**: Paimon 1.x
@@ -112,12 +160,24 @@ detect 信号命中任一高置信度行即可激活 paimon 框架规则集。
 - **验证方法**: 检出主键表 DDL 无 `PARTITIONED BY` → warn 人工确认数据量级。
 - **对应门禁**: fw_paimon_partition(warn)
 
+```verify
+id: paimon-r9
+cmd: 
+expect: always
+```
+
 ### 规律：bucket-key 须为 primary key 子集，跨 bucket upsert 语义特殊
 - **适用版本**: Paimon 1.x
 - **规律**: 主键表默认按 primary key 整体分桶；`bucket-key` 可指定按主键子集分桶（同 bucket-key 的记录进同桶），但 bucket-key 必须是 primary key 的子集，否则同 primary key 落多桶、去重语义失效。dynamic bucket（`bucket=-1`）下 cross-partition upsert 须额外评估（待验证语义边界）。
 - **违反后果**: bucket-key 非主键子集 → 同 key 记录分散多桶，merge 去重失效产生重复行。
 - **验证方法**: 检出 `bucket-key` 配置 → warn 人工核对为主键子集。
 - **对应门禁**: fw_paimon_bucket_key(warn)
+
+```verify
+id: paimon-r10
+cmd: 
+expect: always
+```
 
 ### 规律：维表 lookup join 须配 lookup 缓存与刷新策略
 - **适用版本**: Paimon 1.x（flink 引擎）
@@ -126,12 +186,24 @@ detect 信号命中任一高置信度行即可激活 paimon 框架规则集。
 - **验证方法**: 检出 `FOR SYSTEM_TIME AS OF`（temporal join）但无 `lookup.cache` → warn。
 - **对应门禁**: fw_paimon_lookup_join(warn)
 
+```verify
+id: paimon-r11
+cmd: 
+expect: always
+```
+
 ### 规律：写性能须评估 write-buffer 与 spill；大写入量禁止默认裸跑
 - **适用版本**: Paimon 1.x
 - **规律**: 每个 writer 内存 write-buffer 写满后排序落盘（spill），`write-buffer-size`（默认值待验证）与 `write-buffer-spillable` 影响写入吞吐与内存占用；TM 内多 bucket writer 共享 buffer。大写入量作业须按 TM 内存显式调 write-buffer 并确认 spill 开启，否则 OOM 或频繁小文件。
 - **违反后果**: buffer 过小 → 频繁 spill 小文件爆炸；过大 → TM OOM。
 - **验证方法**: 检出 paimon sink 作业源但无 `write-buffer` 配置 → warn 人工评估。
 - **对应门禁**: fw_paimon_write_buffer(warn)
+
+```verify
+id: paimon-r12
+cmd: 
+expect: always
+```
 
 ### 规律：schema 演进走 ALTER TABLE 增列；列类型变更受限禁止 narrowing
 - **适用版本**: Paimon 1.x
@@ -140,6 +212,12 @@ detect 信号命中任一高置信度行即可激活 paimon 框架规则集。
 - **验证方法**: 检出 `ALTER TABLE` + `MODIFY`/`CHANGE` COLUMN → warn 人工确认 widening 方向。
 - **对应门禁**: fw_paimon_schema_evolution(warn)
 
+```verify
+id: paimon-r13
+cmd: 
+expect: always
+```
+
 ### 规律：file.format 选型（orc/parquet/avro）须显式确认，勿盲用默认
 - **适用版本**: Paimon 1.x
 - **规律**: 底层文件格式 `file.format` 可选 orc/parquet/avro（默认 orc，待验证）：分析查询列裁剪 orc/parquet 优；CDC 高频写入 avro 行存写入开销低。跨引擎互操作（Spark/Trino/Hive 读同一表）时格式须全引擎支持。选型后变更须确认存量文件兼容（新旧文件可混存，查询双格式开销）。
@@ -147,12 +225,24 @@ detect 信号命中任一高置信度行即可激活 paimon 框架规则集。
 - **验证方法**: 检出 `file.format` 配置 → warn 人工确认选型与跨引擎兼容。
 - **对应门禁**: fw_paimon_file_format(warn)
 
+```verify
+id: paimon-r14
+cmd: 
+expect: always
+```
+
 ### 规律：跨引擎互操作（Flink 写 / Spark、Trino、Hive 读）须统一 warehouse 与 catalog
 - **适用版本**: Paimon 1.x
 - **规律**: 多引擎共享同一 paimon 表必须指向同一 warehouse 路径且 catalog 类型一致（filesystem/Hive metastore）；Hive catalog 下各引擎经 metastore 互见分区元数据。引擎版本兼容矩阵须人工核对（如 Paimon 1.4 引擎 jar 覆盖 Flink 1.16–1.20，Flink 2.0 jar 未发布——待验证 GA 时点）。
 - **违反后果**: catalog 不一致 → 引擎间互相看不见表/分区；版本错配 → 读写失败。
 - **验证方法**: 人工检查各引擎 catalog 配置指向同一 warehouse + metastore。
 - **对应门禁**: 人工检查
+
+```verify
+id: paimon-r15
+cmd: 
+expect: always
+```
 
 <!--
 共 15 条规律（≥10 门槛）。13 条挂门禁 id，2 条挂人工检查（changelog 消费语义、跨引擎互操作），无游离规律。

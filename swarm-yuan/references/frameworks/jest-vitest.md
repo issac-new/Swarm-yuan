@@ -48,12 +48,24 @@ detect 信号命中任一高置信度行即可激活 jest-vitest 框架规则集
 - **验证方法**: 测试文件路径不含 test/spec/__tests__ → warn；config 无 include 约定 → warn。
 - **对应门禁**: fw_jest_test_location(warn)
 
+```verify
+id: jest-vitest-r1
+cmd: 
+expect: always
+```
+
 ### 规律：跨变量引用 mock 须用 vi.hoisted 提升
 - **适用版本**: Vitest 3.x/4.x
 - **规律**: `vi.mock('mod', () => factory)` 会被提升到文件顶部（类似 Jest hoisting），factory 内引用外部变量会因变量未初始化抛 ReferenceError。须用 `vi.hoisted(() => ({ ... }))` 提升变量，再在 factory 内引用。
 - **违反后果**: mock factory ReferenceError、测试启动即崩溃。
 - **验证方法**: 检出 `vi.mock(` 含 factory 箭头函数但无 `vi.hoisted(` → warn。
 - **对应门禁**: fw_jest_mock_hoisted(warn)
+
+```verify
+id: jest-vitest-r2
+cmd: 
+expect: always
+```
 
 ### 规律：快照须治理，禁无脑 --update
 - **适用版本**: Vitest 3.x/4.x / Jest
@@ -62,12 +74,24 @@ detect 信号命中任一高置信度行即可激活 jest-vitest 框架规则集
 - **验证方法**: 检出 `toMatchSnapshot(`/`toMatchInlineSnapshot(` → warn 提示治理。
 - **对应门禁**: fw_jest_snapshot_governance(warn)
 
+```verify
+id: jest-vitest-r3
+cmd: 
+expect: always
+```
+
 ### 规律：须配覆盖率阈值门禁
 - **适用版本**: Vitest 3.x/4.x（`@vitest/coverage-v8`）
 - **规律**: `coverage.thresholds` 须配 lines/functions/branches/statements 阈值（如 80%），低于阈值 CI 失败。无阈值则覆盖率无门禁，回归无感知。
 - **违反后果**: 覆盖率下滑无感知、测试债累积。
 - **验证方法**: config 无 `thresholds`/`coverage.thresholds` → fail。
 - **对应门禁**: fw_jest_coverage_threshold(fail)
+
+```verify
+id: jest-vitest-r4
+cmd: 
+expect: always
+```
 
 ### 规律：Vitest 须用 vi.* API，禁残留 Jest API
 - **适用版本**: Vitest 3.x/4.x
@@ -76,12 +100,24 @@ detect 信号命中任一高置信度行即可激活 jest-vitest 框架规则集
 - **验证方法**: 检出 `jest.fn(`/`jest.mock(` 等 → warn。
 - **对应门禁**: fw_jest_jest_fn_to_vi(warn)
 
+```verify
+id: jest-vitest-r5
+cmd: 
+expect: always
+```
+
 ### 规律：须显式配置 environment（jsdom/happy-dom/node）
 - **适用版本**: Vitest 3.x/4.x
 - **规律**: `environment` 默认 `node`，DOM 测试（document/window）须显式 `jsdom` 或 `happy-dom`（更快）。未配置则 DOM API undefined。
 - **违反后果**: DOM 测试 document undefined、运行期报错。
 - **验证方法**: config 无 `environment:` → warn。
 - **对应门禁**: fw_jest_environment(warn)
+
+```verify
+id: jest-vitest-r6
+cmd: 
+expect: always
+```
 
 ### 规律：DOM 环境须配 setupFiles 引入 jest-dom
 - **适用版本**: Vitest 3.x/4.x + @testing-library
@@ -90,12 +126,24 @@ detect 信号命中任一高置信度行即可激活 jest-vitest 框架规则集
 - **验证方法**: DOM 环境（jsdom/happy-dom）无 setupFiles → warn。
 - **对应门禁**: fw_jest_setup_files(warn)
 
+```verify
+id: jest-vitest-r7
+cmd: 
+expect: always
+```
+
 ### 规律：禁开 globals: true，推荐显式 import
 - **适用版本**: Vitest 3.x/4.x
 - **规律**: `globals: true` 把 describe/it/expect 注入全局作用域，污染全局、ESLint 需额外配置。推荐显式 `import { describe, it, expect } from 'vitest'`，类型与静态分析更准。
 - **违反后果**: 全局污染、ESLint 报未定义、IDE 类型提示弱。
 - **验证方法**: 检出 `globals: true` → warn。
 - **对应门禁**: fw_jest_globals(warn)
+
+```verify
+id: jest-vitest-r8
+cmd: 
+expect: always
+```
 
 ### 规律：in-source testing 须用 if(import.meta.vitest) 隔离
 - **适用版本**: Vitest 3.x/4.x
@@ -104,12 +152,24 @@ detect 信号命中任一高置信度行即可激活 jest-vitest 框架规则集
 - **验证方法**: config `include` 含 `src/`（in-source）→ warn 提示隔离。
 - **对应门禁**: fw_jest_in_source(warn)
 
+```verify
+id: jest-vitest-r9
+cmd: 
+expect: always
+```
+
 ### 规律：性能敏感模块须配 benchmark 基准
 - **适用版本**: Vitest 3.x/4.x（`bench` API）
 - **规律**: 性能敏感模块（解析/序列化/算法）须配 `.bench.ts` 基准测试，防性能回归。Vitest 内置 `bench` API，与测试同配置。
 - **违反后果**: 性能回归无感知、线上慢查询。
 - **验证方法**: config 无 `bench` 配置 → warn。
 - **对应门禁**: fw_jest_bench(warn)
+
+```verify
+id: jest-vitest-r10
+cmd: 
+expect: always
+```
 
 ### 规律：类型测试须启用 typecheck
 - **适用版本**: Vitest 3.x/4.x
@@ -118,6 +178,12 @@ detect 信号命中任一高置信度行即可激活 jest-vitest 框架规则集
 - **验证方法**: config 无 `typecheck` → warn。
 - **对应门禁**: fw_jest_typecheck(warn)
 
+```verify
+id: jest-vitest-r11
+cmd: 
+expect: always
+```
+
 ### 规律：vitest.config include 须明确 custom 测试入口
 - **适用版本**: Vitest 3.x/4.x（vitest 随 jest-vitest 合并管理，原 vitest 规则集已并入）
 - **规律**: 项目若有 custom 测试入口（非默认 `**/*.test.ts` 约定，如自定义脚本、集成测试目录），须在 `vitest.config` 的 `include` 显式列出，避免遗漏收集。本规律与 `fw_jest_test_location` 语义重叠（test_location 已检 include test/spec 一致性），不单独新增门禁，统一由 `fw_jest_test_location` 覆盖；config 含 `custom` 字样作为额外置信信号。
@@ -125,12 +191,24 @@ detect 信号命中任一高置信度行即可激活 jest-vitest 框架规则集
 - **验证方法**: `VITEST_CONFIG_FILE` 指向配置文件，`grep -qE "custom" "$VITEST_CONFIG_FILE"` 校验是否声明 custom 入口；未声明 → warn（见 fw_jest_test_location）。
 - **对应门禁**: 见 fw_jest_test_location（语义合并，不新增门禁）
 
+```verify
+id: jest-vitest-r12
+cmd: grep -qE "custom" "$VITEST_CONFIG_FILE"
+expect: hits>0
+```
+
 ### 规律：禁在只读 upstream 目录新增测试文件
 - **适用版本**: Vitest 3.x/4.x（ncwk 仓库契约）
 - **规律**: ncwk 仓库 `upstream/` 子目录全为只读第三方快照（element-web/hermes-agent/hermes-studio/research 等），其自带测试非 ncwk 违规。prune 掉 `upstream/<子包>/` 内容，仅保留对 `upstream/` 直属文件的检测，以捕获 ncwk 未来直接在 upstream 顶层新增测试的真实违规。此为 ncwk 仓库特有契约（非通用 Vitest 规律），迁移到其他仓库时须按该仓库的只读目录约定调整 prune 路径。
 - **违反后果**: 在只读 upstream 新增测试 → 污染只读快照、与上游同步时冲突丢失。
 - **验证方法**: `VITEST_FORBIDDEN_UPSTREAM_TEST` 设正则后，`find . \( -path ./node_modules -o -path "./upstream/*" \) -prune -o -name "*.test.ts" -print | grep -E "$VITEST_FORBIDDEN_UPSTREAM_TEST"` 检出 upstream 直属测试文件 → fail。
 - **对应门禁**: fw_jest_no_upstream_test(fail)
+
+```verify
+id: jest-vitest-r13
+cmd: find . \( -path ./node_modules -o -path "./upstream/*" \) -prune -o -name "*.test.ts" -print | grep -E "$VITEST_FORBIDDEN_UPSTREAM_TEST"
+expect: hits>0
+```
 
 <!--
 共 13 条规律（≥10 门槛，vitest 合并后 +2）。11 条挂 jest-vitest 门禁，1 条折叠进 fw_jest_test_location（不新增门禁），1 条新增 fw_jest_no_upstream_test(fail)。

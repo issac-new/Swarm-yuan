@@ -48,12 +48,24 @@ detect 信号命中任一高置信度行即可激活 naiveui 框架规则集。
 - **验证方法**: 检出 `app.use(n` / `app.component('n-` 全局注册 → fail；无 `from 'naive-ui'` 具名导入 → warn。
 - **对应门禁**: fw_naiveui_named_import(warn) / fw_naiveui_no_global_register(fail)
 
+```verify
+id: naiveui-r1
+cmd: 
+expect: always
+```
+
 ### 规律：禁与第二套 UI 库混用
 - **适用版本**: NaiveUI 2.x
 - **规律**: 项目应只用一套 UI 库。混用 element-plus / ant-design-vue / vant 会导致主题不一致、包体叠加、样式冲突。
 - **违反后果**: 主题不一致、包体翻倍、样式优先级冲突。
 - **验证方法**: 检出 `from 'element-plus'|'ant-design-vue'|'vant'` → fail。
 - **对应门禁**: fw_naiveui_no_dual_ui(fail)
+
+```verify
+id: naiveui-r2
+cmd: 
+expect: always
+```
 
 ### 规律：主题覆盖须用 n-config-provider，禁直接改 .n-* 类 CSS
 - **适用版本**: NaiveUI 2.x
@@ -62,12 +74,24 @@ detect 信号命中任一高置信度行即可激活 naiveui 框架规则集。
 - **验证方法**: `.css/.scss` 检出 `.n-*` 类覆写 → warn。
 - **对应门禁**: fw_naiveui_config_provider_theme(warn)
 
+```verify
+id: naiveui-r3
+cmd: 
+expect: always
+```
+
 ### 规律：useMessage/useDialog 须注入式，禁裸 createDiscreteApi
 - **适用版本**: NaiveUI 2.x
 - **规律**: `useMessage()`/`useDialog()` 须在 `n-config-provider` / `n-message-provider` 子树内调用（注入式，消费 context 主题/locale）。`createDiscreteApi` 脱离组件树，无法消费 config-provider context，仅用于脱离场景（如路由守卫），业务组件禁用。
 - **违反后果**: createDiscreteApi 调用不应用主题/locale、与 config-provider 脱节。
 - **验证方法**: 检出 `createDiscreteApi(` → warn。
 - **对应门禁**: fw_naiveui_usemessage_inject(warn)
+
+```verify
+id: naiveui-r4
+cmd: 
+expect: always
+```
 
 ### 规律：n-data-table 大数据须虚拟滚动
 - **适用版本**: NaiveUI 2.x
@@ -76,12 +100,24 @@ detect 信号命中任一高置信度行即可激活 naiveui 框架规则集。
 - **验证方法**: 检出 `<n-data-table` 绑定大数据源但无 virtual-scroll/max-height → warn。
 - **对应门禁**: fw_naiveui_datatable_virtual(warn)
 
+```verify
+id: naiveui-r5
+cmd: 
+expect: always
+```
+
 ### 规律：暗色模式须用 darkTheme，禁手写 dark CSS
 - **适用版本**: NaiveUI 2.x
 - **规律**: 暗色模式须用 `n-config-provider :theme="darkTheme"`，组件内置暗色变量。手写 `.dark .xxx` CSS 与组件库主题脱节，仅覆盖部分组件。
 - **违反后果**: 暗色模式下部分组件未适配、主题脱节。
 - **验证方法**: 检出 `.dark`/`prefers-color-scheme` 手写暗色 CSS 且无 darkTheme → warn。
 - **对应门禁**: fw_naiveui_darktheme(warn)
+
+```verify
+id: naiveui-r6
+cmd: 
+expect: always
+```
 
 ### 规律：n-form 须用 rules 校验，禁手动 if 校验
 - **适用版本**: NaiveUI 2.x
@@ -90,12 +126,24 @@ detect 信号命中任一高置信度行即可激活 naiveui 框架规则集。
 - **验证方法**: 检出 `<n-form` 但无 `:rules` + 手动 if 校验 → warn。
 - **对应门禁**: fw_naiveui_form_rules(warn)
 
+```verify
+id: naiveui-r7
+cmd: 
+expect: always
+```
+
 ### 规律：n-select filterable 大数据须远程搜索
 - **适用版本**: NaiveUI 2.x
 - **规律**: `n-select` 配 `filterable` 后默认本地过滤，选项 >1k 时卡顿。须配 `@search` + `:loading` 远程搜索。
 - **违反后果**: 大数据选项渲染卡顿。
 - **验证方法**: 检出 `filterable` 但无 `@search`/`:loading` → warn。
 - **对应门禁**: fw_naiveui_select_remote(warn)
+
+```verify
+id: naiveui-r8
+cmd: 
+expect: always
+```
 
 ### 规律：n-upload 须配文件大小限制
 - **适用版本**: NaiveUI 2.x
@@ -104,12 +152,24 @@ detect 信号命中任一高置信度行即可激活 naiveui 框架规则集。
 - **验证方法**: 检出 `<n-upload` 但无 `before-upload`/`:max` → fail。
 - **对应门禁**: fw_naiveui_upload_size_limit(fail)
 
+```verify
+id: naiveui-r9
+cmd: 
+expect: always
+```
+
 ### 规律：n-modal 优先 preset="card" 统一布局
 - **适用版本**: NaiveUI 2.x
 - **规律**: `n-modal` 用 `preset="card"` 自动生成标题/关闭按钮/边框，统一布局。裸 n-modal 须手写标题/关闭，易不一致。
 - **违反后果**: 弹窗布局不一致、手写标题/关闭按钮样式分散。
 - **验证方法**: 检出 `<n-modal` 但无 preset/title/bordered → warn。
 - **对应门禁**: fw_naiveui_modal_preset_card(warn)
+
+```verify
+id: naiveui-r10
+cmd: 
+expect: always
+```
 
 <!--
 共 11 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。
