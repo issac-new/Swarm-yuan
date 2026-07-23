@@ -1,5 +1,5 @@
 <!-- 由 scripts/gen-framework-index.sh 生成（WP-P1 数据化外迁），手改会被覆盖 -->
-# 框架信号索引（69 个框架）
+# 框架信号索引（70 个框架）
 
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
@@ -233,6 +233,11 @@
 | rabbitmq | 配置 | `spring.rabbitmq.*` / `spring.rabbitmq.listener.*` / `publisher-confirm-type` / `x-dead-letter-exchange` / `x-queue-type` | 高 |
 | rabbitmq | 代码 | `RabbitTemplate` / `ConnectionFactory` / `QueueBuilder` / `DirectExchange` / `TopicExchange` / `basicPublish` / `basicConsume` | 高 |
 | rabbitmq | 文件 | `**/docker-compose*.yml` 含 `rabbitmq:` | 中（需排除仅部署描述） |
+| rag-pipeline | 依赖 | `langchain` / `llama-index` / `chromadb` / `faiss-cpu` / `pgvector`（requirements.txt / pyproject.toml） | 高 |
+| rag-pipeline | 依赖 | `@langchain/core` / `langchainjs` / `llamaindex`（package.json） | 高 |
+| rag-pipeline | 代码 | `as_retriever(` / `similarity_search(` / `RetrievalQA` / `VectorStoreIndex` / `VectorStoreRetriever` | 高 |
+| rag-pipeline | 代码 | `TextSplitter` / `Embeddings(` / `FAISS` / `Chroma` / `Pinecone` / `Milvus` / `Qdrant` | 中（需与依赖信号组合） |
+| rag-pipeline | 配置 | `VECTOR_STORE` / `EMBEDDING_MODEL` / `RAG_` 前缀环境变量 | 中 |
 | react-native | 依赖 | package.json dependencies 含 `react-native` | 高（核心包独立可定） |
 | react-native | 依赖 | `react-native-webview` / `@react-native-async-storage/async-storage` / `react-native-safe-area-context` | 中（生态组合信号） |
 | react-native | 文件 | `metro.config.js` / `react-native.config.js` | 高（RN 专属构建配置） |
