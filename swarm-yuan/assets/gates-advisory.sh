@@ -849,6 +849,127 @@ check_upstream_baseline() {
   fi
 }
 
+# check_pr_quality（--pr-quality，WP-Y）：PR 质量评分 + fingerprint 去重
+# 理念来源：gstack PR Quality Score + fingerprint 去重 +1 boost / Red Team（R5 §七.4）。
+# advisory 级（warn-only）。轻量实现：从 git diff 计算变更规模 + 重复模式检测。
+check_pr_quality() {
+  echo "=== PR 质量评分（--pr-quality，advisory；gstack 理念：变更规模 + 重复模式检测）==="
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    warn "非 git 仓库，PR 质量评分跳过"
+    return 0
+  fi
+  local found=0
+  # ① 变更规模评分（行数/文件数）
+  local diff_stat; diff_stat=$(git diff --cached --stat 2>/dev/null || git diff --stat 2>/dev/null || true)
+  if [[ -z "$diff_stat" ]]; then
+    # 无 staged 变更，检查 working tree
+    diff_stat=$(git diff --stat 2>/dev/null || true)
+  fi
+  if [[ -z "$diff_stat" ]]; then
+    echo "  ℹ 无变更（clean working tree），PR 质量评分跳过"
+    return 0
+  fi
+  local files_changed; files_changed=$(echo "$diff_stat" | grep -cE '^\s' || true)
+  local lines_added=0 lines_deleted=0
+  local diff_numstat; diff_numstat=$(git diff --cached --numstat 2>/dev/null || git diff --numstat 2>/dev/null || true)
+  while IFS=$'\t' read -r add del _f; do
+    [[ "$add" =~ ^[0-9]+$ ]] && lines_added=$((lines_added + add))
+    [[ "$del" =~ ^[0-9]+$ ]] && lines_deleted=$((lines_deleted + del))
+  done <<< "$diff_numstat"
+  local total_lines=$((lines_added + lines_deleted))
+  echo "  ⓘ 变更规模：${files_changed} 文件，+${lines_added}/-${lines_deleted}（合计 ${total_lines} 行）"
+  # 规模评分：>500 行 warn（大型变更须拆分）
+  if [[ $total_lines -gt 500 ]]; then
+    warn "PR 变更规模 ${total_lines} 行（>500）——大型变更建议拆分为多个小 PR（gstack：小 PR 质量更高）"
+    found=1
+  fi
+  # ② fingerprint 去重：检测重复代码模式（相同函数签名跨文件）
+  if [[ $files_changed -gt 1 ]]; then
+    local changed_files; changed_files=$(git diff --cached --name-only 2>/dev/null || git diff --name-only 2>/dev/null || true)
+    local dup_funcs=""
+    while IFS= read -r cf; do
+      [[ -z "$cf" ]] && continue
+      [[ -f "$cf" ]] || continue
+      case "$cf" in
+        *.ts|*.js|*.py|*.java|*.go|*.kt|*.cs|*.c|*.cpp)
+          local funcs; funcs=$(grep -oE '\b(function|def|func|public|private|protected)\s+[a-zA-Z_][a-zA-Z0-9_]*' "$cf" 2>/dev/null || true)
+          [[ -n "$funcs" ]] && dup_funcs="${dup_funcs}${funcs}\n"
+          ;;
+      esac
+    done <<< "$changed_files"
+    # 检测重复函数名
+    if [[ -n "$dup_funcs" ]]; then
+      local dups; dups=$(printf '%b\n' "$dup_funcs" | sort | uniq -d | head -5 || true)
+      if [[ -n "$dups" ]]; then
+        warn "检出重复函数签名跨文件（fingerprint 去重）：
+$(printf '%s\n' "$dups" | head -3 | sed 's/^/    /')"
+        found=1
+      fi
+    fi
+  fi
+  # ③ Red Team 检查：spec 是否含"替代方案"段（gstack Red Team：考虑替代方案）
+  local spec_file="${SPEC_FILE:-}"
+  if [[ -n "$spec_file" && -f "$spec_file" ]]; then
+    if ! grep -qE '替代方案|alternative|备选|trade.off|权衡' "$spec_file" 2>/dev/null; then
+      warn "spec 未含'替代方案/权衡'段（gstack Red Team：每个设计决策须考虑替代方案）"
+      found=1
+    fi
+  fi
+  [[ $found -eq 0 ]] && pass "PR 质量评分通过（规模合理，无重复模式，含替代方案）"
+}
+
+# check_skill_supply_chain（--skill-supply-chain，WP-Y）：Skill 供应链安全审计
+# 理念来源：cso Phase 8 Skill Supply Chain（R5 §七.4）。advisory 级。
+# 扫描 .claude/skills/ 下第三方 skill 的已知恶意模式。
+check_skill_supply_chain() {
+  echo "=== Skill 供应链安全审计（--skill-supply-chain，advisory；cso P8 理念）==="
+  local skills_dir="${PROJECT_DIR:-$(pwd)}/.claude/skills"
+  if [[ ! -d "$skills_dir" ]]; then
+    # 兜底：~/.claude/skills
+    skills_dir="${HOME}/.claude/skills"
+  fi
+  if [[ ! -d "$skills_dir" ]]; then
+    echo "  ℹ 无 .claude/skills 目录，Skill 供应链审计跳过"
+    return 0
+  fi
+  local found=0
+  # ① 恶意模式扫描：eval/exec/反引号 + 网络请求（curl/wget/fetch）的组合
+  local suspicious_files=""
+  local skill_sh
+  while IFS= read -r skill_sh; do
+    [[ -z "$skill_sh" ]] && continue
+    # 检测 eval/exec + 网络请求组合
+    if grep -qE '\beval\s*\(' "$skill_sh" 2>/dev/null && grep -qE 'curl\s|wget\s|fetch\(' "$skill_sh" 2>/dev/null; then
+      suspicious_files="${suspicious_files}${skill_sh}: eval+网络请求\n"
+      found=1
+    fi
+    # 检测混淆代码（base64 解码后执行）
+    if grep -qE 'base64.*decode.*\|.*bash|base64.*-d.*\|.*sh' "$skill_sh" 2>/dev/null; then
+      suspicious_files="${suspicious_files}${skill_sh}: base64 混淆执行\n"
+      found=1
+    fi
+    # 检测硬编码外部 URL + 下载执行
+    if grep -qE 'curl.*\|.*bash|wget.*\|.*sh' "$skill_sh" 2>/dev/null; then
+      suspicious_files="${suspicious_files}${skill_sh}: 远程脚本下载执行\n"
+      found=1
+    fi
+  done < <(find "$skills_dir" -name '*.sh' -type f 2>/dev/null || true)
+  if [[ -n "$suspicious_files" ]]; then
+    warn "检出 Skill 供应链可疑模式（cso P8：恶意 skill 可能利用 eval/网络请求/混淆执行）：
+$(printf '%b\n' "$suspicious_files" | head -5 | sed 's/^/    /')"
+  fi
+  # ② UPSTREAM.md / 许可证登记检查（warn-only）
+  local upstream_count
+  upstream_count=$(find "$skills_dir" -name 'UPSTREAM.md' -o -name 'LICENSE' 2>/dev/null | wc -l | xargs || true)
+  local total_skills
+  total_skills=$(find "$skills_dir" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | xargs || true)
+  if [[ $total_skills -gt 0 && $upstream_count -lt $total_skills ]]; then
+    warn "Skills 目录有 ${total_skills} 个 skill 但仅 ${upstream_count} 个有 UPSTREAM.md/LICENSE——供应链溯源不完整"
+    found=1
+  fi
+  [[ $found -eq 0 ]] && pass "Skill 供应链安全审计通过（无恶意模式，溯源登记完整）"
+}
+
 # 记录发布后健康指标（响应时间/错误率）基线到 .swarm-yuan/canary-baseline.jsonl，
 check_canary() {
   echo "=== 发布后基线对比监控（--canary，advisory）==="
@@ -871,14 +992,15 @@ check_canary() {
   fi
   # 追加当前基线
   printf '{"ts":"%s","latency_ms":%s,"error_rate":%s}\n' "$ts" "${lat:-0}" "${err:-0}" >> "$baseline"
-  # 对比上次基线（变化 >50% 记异常）
+  # 对比上次基线（变化 >CANARY_THRESHOLD% 记异常，默认 50%）
+  local threshold="${CANARY_THRESHOLD:-50}"
   local anomaly=0
   if [[ -n "$prev_lat" && "$prev_lat" -gt 0 && -n "$lat" ]]; then
     local delta=$(( (lat - prev_lat) * 100 / prev_lat ))
     [[ "$delta" -lt 0 ]] && delta=$(( -delta ))
-    if [[ "$delta" -gt 50 ]]; then
+    if [[ "$delta" -gt "$threshold" ]]; then
       anomaly=1
-      echo "  ⚠ 响应时间变化 ${delta}%（${prev_lat}ms → ${lat}ms，阈值 50%）"
+      echo "  ⚠ 响应时间变化 ${delta}%（${prev_lat}ms → ${lat}ms，阈值 ${threshold}%）"
     fi
   fi
   # don't cry wolf：连续 2 次异常才告警（读最近 2 次基线趋势）
@@ -890,7 +1012,7 @@ check_canary() {
   elif [[ -z "$prev_lat" ]]; then
     pass "canary 基线已建立（首次记录 latency=${lat:-0}ms error_rate=${err:-0}）"
   else
-    pass "canary 基线对比正常（latency ${prev_lat}ms → ${lat:-0}ms，变化 <50%）"
+    pass "canary 基线对比正常（latency ${prev_lat}ms → ${lat:-0}ms，变化 <${threshold}%）"
   fi
 }
 

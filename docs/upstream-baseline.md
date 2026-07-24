@@ -57,3 +57,15 @@
 3. **能力清单形态已过时但语义未失效**：`references/subagent-orchestration.md:116-118` 登记的 7 个 `.sh` 脚本（comet-guard.sh 等）在 0.4 变为 `.mjs` launcher + 稳定 CLI；升级引用基线时需同步重写该清单，与正式版升级一并进行更经济。
 
 **复审触发条件**：npm dist-tag latest 出现 0.4.0 正式版（非 beta）→ 升级引用基线为 v0.4.x、状态改 synced、重写能力清单（脚本形态 + run-state.json/state-events.jsonl + 稳定 CLI + isolation 绑定语义）。
+
+## WP-Y：自动化 drift 检测
+
+上述 `baseline_status=drifted` 的 3 项（comet/graphify/ruflo）现在由 `--upstream-baseline` 门禁自动检测。
+门禁扫描本文件的 `baseline_status=` 标记，drifted 项 warn 提示（advisory 级，不阻断交付）。
+
+**处置策略**：
+- **comet**：0.4.0 正式版发布后升级引用基线（swarm-yuan 对 comet 是方法论级引用，state-machine.sh 是自实现的 comet 风格状态机，升级不阻塞）
+- **graphify**：0.10.0 待评估（MIT 许可证，深度接线层，升级须验证 query/explain API 兼容性）
+- **ruflo**：落后 ~11 个小版本（方法论引用层，无运行时调用，升级不阻塞）
+
+升级基线时：更新本表"引用基线"列版本号 → 将 `baseline_status=drifted` 改为 `baseline_status=synced` → 跑 `bash scripts/self-check.sh --check-only` 确认无 drift warn。

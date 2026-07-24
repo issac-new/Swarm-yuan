@@ -28,6 +28,8 @@
 #   bash precheck.sh --review-record  # 评审记录与AI过程信息项（GB/T 8566/ISO 42001，REVIEW_RECORD_DIR）
 #   bash precheck.sh --metrics        # 度量趋势告警（GB/T 25000.30，GATE_RUNS_DIR+METRICS_TREND_WINDOW）
 #   bash precheck.sh --release-sign   # 发布签名与 provenance（SLSA Build L2 / SSDF PS.2 发布完整性）
+#   bash precheck.sh --pr-quality     # PR 质量评分（gstack：变更规模+fingerprint去重+替代方案，advisory）
+#   bash precheck.sh --skill-supply-chain  # Skill 供应链安全审计（cso P8：恶意模式扫描，advisory）
 #   bash precheck.sh --state-phase    # 阶段状态机证据核验（comet：无证据不流转，advisory）
 #   bash precheck.sh --upstream-baseline  # 上游运行时基线 drift 核验（advisory）
 #   bash precheck.sh --learnings      # 学习闭环（R5 learn：learnings.jsonl 根因记录覆盖率，advisory）
@@ -468,7 +470,7 @@ ALL_GATES_STANDARD=(check_branch check_scope check_build check_sensitive check_c
 ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_test)
 # 单门禁 flag 清单（Usage 顺序）。flag → 函数映射规则：check_ + flag 去 -- 前缀并将 - 转为 _
 #（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
-GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --dengbao --pia --sast-deep --oss-eval --quality-model --test-evidence --review-record --metrics --release-sign --operate --decision-audit --canary --cwe-audit --cert-audit --state-phase --upstream-baseline --learnings)
+GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --dengbao --pia --sast-deep --oss-eval --quality-model --test-evidence --review-record --metrics --release-sign --operate --decision-audit --canary --cwe-audit --cert-audit --pr-quality --skill-supply-chain --state-phase --upstream-baseline --learnings)
 
 # ===== 门禁分层 enforce_level（决策 19：strict/warn/advisory 三档）=====
 # 自动按 fail() 调用数归类（gen-enforce-level.sh 生成 gate-enforce-level.conf）：
