@@ -152,9 +152,11 @@ check_sensitive() {
 check_review() {
   echo "=== 代码审查（check gstack/OCR 5 维度）==="
   local found=0
+  local _review_executed=0  # WP-Alignment: 追踪是否真跑了审查（ocr 未装时 fallback 不假装完成）
 
   if has_ocr; then
     pass "ocr 已安装"
+    _review_executed=1
     # 优先用 ocr review（diff 审查），有 git diff 时用 --from + --to
     if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       local base; base=$(_git_base)
@@ -238,7 +240,12 @@ check_review() {
     fi
   fi
 
-  [[ $found -eq 0 ]] && pass "代码审查检查完成"
+  # WP-Alignment: ocr 未装时走 AI fallback（found=0 但未真审查），不假装完成，诚实 warn。
+  if [[ $_review_executed -eq 1 ]]; then
+    [[ $found -eq 0 ]] && pass "代码审查检查完成（ocr 已执行，无 High/Critical 级问题）"
+  else
+    warn "代码审查未执行（ocr 未装；AI 须自行按 5 维度审查：正确性/安全/性能/可维护/测试覆盖，本门禁未验证）"
+  fi
 }
 
 check_stable_diff() {

@@ -413,7 +413,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | **特征卡** | **17 项（驱动全部文件 + 170 个门禁变量 + 开发流程）** |
 | **质量门禁** | **54 个（核心 10 + 架构 17 + 合规 17 + advisory-only 10，特征卡立法 + 门禁执法）** |
 | 运行时工具 | 11 |
-| spec 模板 | 22 主段（§22=标准合规） |
+| spec 模板 | 23 主段（§23=标准合规） |
 | 领域知识 | 32 个领域 |
 | 认知基底 | 5 层 |
 | 兼容 AI 工具 | 7 个 |
@@ -422,7 +422,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ## 框架规则引擎
 
-swarm-yuan 内置 62 个框架规则集（references/frameworks/*.md + assets/framework-gates/*.sh），覆盖 Java/Node/Python/Go/前端全栈。
+swarm-yuan 内置 74 个框架规则集（references/frameworks/*.md + assets/framework-gates/*.sh），覆盖 Java/Node/Python/Go/前端全栈。
 
 ### 生成时激活
 

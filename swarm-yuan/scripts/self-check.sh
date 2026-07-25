@@ -654,7 +654,11 @@ check_doc_consistency() {
   # WP-Z15: 扫描范围扩展——.claude/commands/*.md 全量纳入（G6 文档漂移盲区）
   # 历史 .claude/commands/swarm-yuan.md 已在列表，但 commands/ 下其他 .md（spec/precheck/explore）
   # 骨架模板内嵌数字（门禁数/conf 变量数等）也可能漂移，全量扫描兜底
-  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude"
+  # WP-Alignment: 扫描范围扩展——新增 2 份活跃设计文档（docs/paradigm-positioning.md +
+  # design-philosophy-consistency.md），它们含 catchphrase 数字但原在扫描盲区（docs/ 不在 $base 下）。
+  # 不新增 docs/paradigm-decisions.md（决策日志多历史快照，加扫会误报）/docs/research//docs/plans/（归档）。
+  local _root_docs="$base/.."
+  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md"
   local _cmd_dir="$base/.claude/commands"
   if [[ -d "$_cmd_dir" ]]; then
     local _cf
@@ -709,6 +713,27 @@ check_doc_consistency() {
     bad=$(grep -oE "[0-9]+ ?个参考文档" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$ref_cnt" || true)
     [[ -n "$bad" ]] && dfound="${dfound} references数出现非${ref_cnt}值($(echo $bad | tr '\n' ' '));"
+    # WP-Alignment: 框架规则集数扩展正则——「N 个框架规则集」/「N 框架」/「N ruleset」/「N framework-fixture」
+    # （旧正则只匹配"N 个参考文档"，漏 USAGE.md:425「62 个框架规则集」与 design-philosophy 多处）
+    if [[ -n "${FACT_FRAMEWORKS:-}" && "${FACT_FRAMEWORKS}" != "0" ]]; then
+      bad=$(grep -oE "[0-9]+ ?个框架规则集|[0-9]+ ?框架(?!.*特征)|[0-9]+ ?ruleset|[0-9]+ ?framework-fixture" "$docpath" 2>/dev/null \
+            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_FRAMEWORKS}" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} 框架数出现非${FACT_FRAMEWORKS}值($(echo $bad | tr '\n' ' '));"
+    fi
+    # WP-Alignment: spec 段数「N 主段」（真值 FACT_SPEC_SECTIONS=23）
+    if [[ -n "${FACT_SPEC_SECTIONS:-}" && "${FACT_SPEC_SECTIONS}" != "0" ]]; then
+      bad=$(grep -oE "[0-9]+ ?主段" "$docpath" 2>/dev/null \
+            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_SPEC_SECTIONS}" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} spec段数出现非${FACT_SPEC_SECTIONS}值($(echo $bad | tr '\n' ' '));"
+    fi
+    # WP-Alignment: gate-fixture 数「N gate-fixture」/「N 门禁组」（真值=tests/gate-fixtures/ 目录数）
+    local true_gate_fx
+    true_gate_fx=$(find "$base/tests/gate-fixtures" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | xargs)
+    if [[ -n "$true_gate_fx" && "$true_gate_fx" != "0" ]]; then
+      bad=$(grep -oE "[0-9]+ ?gate-fixture|[0-9]+ ?门禁组" "$docpath" 2>/dev/null \
+            | grep -oE "[0-9]+" | sort -u | grep -vx "$true_gate_fx" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} gate-fixture数出现非${true_gate_fx}值($(echo $bad | tr '\n' ' '));"
+    fi
     # WP-U 正文关键句扫描：enforce 三档分布（strict/warn/advisory 数）+ 特征卡数
     # 这些是 self-check 头部扫描的已知盲区（WP-S2 终审暴露）——头部只扫"N 个质量门禁"等固定表述，
     # 正文表格里的"strict 14/warn 20/advisory 10"等分档数字、特征卡"16 项"等不受控。
@@ -729,9 +754,10 @@ check_doc_consistency() {
     bad=$(grep -oE "advisory[[:space:]]*[（(]?[[:space:]]*[0-9]+" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_advisory" || true)
     [[ -n "$bad" ]] && dfound="${dfound} advisory分档数出现非${true_advisory}值($(echo $bad | tr '\n' ' '));"
-    # 特征卡数："N 项特征卡"或"特征卡 N 项"（避免误伤"第 N 项"等指代）
+    # 特征卡数："N 项特征卡"或"特征卡 N 项"或"特征卡摘要（N 项）"等变体（避免误伤"第 N 项"指代）
+    # WP-Alignment: 放宽正则覆盖"特征卡摘要（16 项）"等 evade 旧正则的写法
     if [[ "$true_fc" -gt 0 ]]; then
-      bad=$(grep -oE "[0-9]+ ?项特征卡|特征卡[[:space:]]*[0-9]+ ?项" "$docpath" 2>/dev/null \
+      bad=$(grep -oE "[0-9]+ ?项特征卡|特征卡[[:space:]]*[0-9]+ ?项|特征卡[^0-9]{0,6}[（(][[:space:]]*[0-9]+ ?项" "$docpath" 2>/dev/null \
             | grep -oE "[0-9]+" | sort -u | grep -vx "$true_fc" || true)
       [[ -n "$bad" ]] && dfound="${dfound} 特征卡数出现非${true_fc}值($(echo $bad | tr '\n' ' '));"
     fi

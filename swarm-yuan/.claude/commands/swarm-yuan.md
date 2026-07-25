@@ -79,7 +79,7 @@ bash <skill路径>/scripts/precheck.sh --compliance-suite  # 合规 17 门禁（
 向用户展示：
 - 生成的 skill 路径
 - 门禁验证结果（pass/fail/warn 汇总）
-- 项目特征卡摘要（16 项）
+- 项目特征卡摘要（17 项）
 - 下一步使用指引
 
 ## 全链路追踪（每步必做，无需用户确认）
