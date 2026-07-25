@@ -41,3 +41,9 @@
 - `swarm-yuan/tests/gate-fixtures/` 全量 40 组（WP3.3 从原 6 组扩到全量）全部双态通过：violating* 退出非 0、compliant* 退出 0。
 - id 级断言全绿：violating 侧 `expected-ids` 逐行命中（fail id 契约：gate_*/fw_*），compliant 侧 `forbidden-ids` 零命中；`expect-output` 字面串全部包含。
 - 度量：`bash verifier/v1/run-verifier.sh gate-fixtures` 输出 `GATE_FIXTURES_FAILS 0` 且退出码为 0。
+
+## C9 自举闭环（WP-Z13，G4）
+- 生成器对自身仓库跑 `precheck --all`，RC=0 才算通过——自举从 slogan 变证据。
+- 度量：`bash verifier/v1/run-verifier.sh bootstrap` 输出 `BOOTSTRAP_SELF_GATE OK` 且退出码为 0。
+- 已纳入 `all` 投票（fail-closed）：`bash verifier/v1/run-verifier.sh all` 含 bootstrap_self_gate 一票。
+- 跳过条件：`ci/self-precheck.conf` 不存在（安装态 `~/.claude/skills` 无 ci/ 目录，输出 `BOOTSTRAP_SELF_GATE ABSENT`，RC=0）。
