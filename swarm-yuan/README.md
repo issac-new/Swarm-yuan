@@ -96,9 +96,9 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 **特征卡是立法，门禁是执法。** 特征卡定义规则，门禁验证合规。
 
 > **门禁分层（决策 19）——执法强度横切维度：** 54 门禁按 `fail()` 能力分三档，与 core/standard/compliance 执行序列正交：
-> - **strict（17 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model）
-> - **warn（21 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄
-> - **advisory（16 个）**：0 个 fail，永不阻断，只 warn/pass（cognition/consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/canary/cwe-audit/cert-audit）
+> - **strict（20 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model）
+> - **warn（19 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄
+> - **advisory（15 个）**：0 个 fail，永不阻断，只 warn/pass（cognition/consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/canary/cwe-audit/cert-audit）
 >
 > 查看分层：`bash scripts/precheck.sh --list-gates`。分层由 `scripts/gen-enforce-level.sh` 自动按 fail() 数归类（幂等），手动覆盖见 precheck.sh `_ENFORCE_OVERRIDE`。
 
@@ -342,7 +342,7 @@ Swarm-yuan/
 │   ├── assets/                   ← 模板 + 门禁 + 状态机 + 调用追踪
 │   │   ├── precheck.sh           ← 门禁调度器（1420 行）
 │   │   ├── gates-strict.sh       ← 17 strict 门禁（1597 行）
-│   │   ├── gates-warn.sh         ← 21 warn 门禁（1496 行）
+│   │   ├── gates-warn.sh         ← 19 warn 门禁（1496 行）
 │   │   ├── gates-advisory.sh     ← 16 advisory 门禁（1209 行）
 │   │   ├── precheck.conf         ← 核心配置变量（12 个）
 │   │   ├── precheck.arch.conf    ← 架构配置变量（110 个，懒生成）
@@ -372,7 +372,7 @@ Swarm-yuan/
 | 维度 | 数值 | 口径源 |
 |------|------|--------|
 | **特征卡** | **17 项**（P0 六项 1/4/5/11/15/16 + P1 十一项） | FACT_FEATURE_CARDS=17 |
-| **质量门禁** | **54 个** = strict 17 + warn 21 + advisory 16；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 5 不在任何执行序列 | FACT_GATES_TOTAL=54 |
+| **质量门禁** | **54 个** = strict 20 + warn 19 + advisory 15；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 5 不在任何执行序列 | FACT_GATES_TOTAL=54 |
 | **配置变量** | **170 个**（precheck.conf 12 + precheck.arch.conf 110 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=170 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh） | FACT_FRAMEWORKS=74 |
 | **参考文档** | 28 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=28 |
