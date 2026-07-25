@@ -116,6 +116,38 @@ metrics_assert() {
   bash "$(dirname "$0")/metrics-assert.sh" "$ROOT"
 }
 
+# WP-Z13: 自举闭环断言（G4）——生成器对自身仓库跑 --all，RC=0 才算通过。
+# self-check.sh 已有 check_bootstrap_gate 对账 ci/self-precheck.conf + CI 三档 step，
+# 本函数在 verifier 层实跑一次 --all，补齐"自举从 slogan 变证据"的最后一环。
+# 跳过条件：ci/self-precheck.conf 不存在（安装态 ~/.claude/skills 无 ci/ 目录）。
+bootstrap_self_gate() {
+  local conf="$SY/ci/self-precheck.conf"
+  [ -f "$conf" ] || { echo "BOOTSTRAP_SELF_GATE ABSENT（ci/self-precheck.conf 不存在，安装态跳过）"; return 0; }
+  echo "=== C9 自举闭环（生成器对自身跑 precheck --all）==="
+  local tmpdir; tmpdir="$(mktemp -d)"
+  # 拷贝四件套（precheck.sh + gates-*.sh，与 CI generator-self-gate Job 同款）
+  cp "$SY/assets/precheck.sh" "$SY/assets/gates-strict.sh" "$SY/assets/gates-warn.sh" "$SY/assets/gates-advisory.sh" "$tmpdir/" 2>/dev/null || true
+  # 占位符替换：__REPO_ROOT__ → 仓库根
+  sed "s|__REPO_ROOT__|$ROOT|g" "$conf" > "$tmpdir/precheck.conf"
+  # detached HEAD 兜底：建临时 feat 分支让分支门禁真实执行
+  ( cd "$ROOT" && git checkout -b feat/verifier-bootstrap-self-gate 2>/dev/null ) || true
+  local out rc
+  out=$( cd "$ROOT" && bash "$tmpdir/precheck.sh" --all 2>&1 ) || true
+  rc=$?
+  # 清理临时分支（不破坏原 HEAD）
+  ( cd "$ROOT" && git checkout - 2>/dev/null && git branch -D feat/verifier-bootstrap-self-gate 2>/dev/null ) || true
+  rm -rf "$tmpdir"
+  if [ "$rc" -eq 0 ]; then
+    echo "BOOTSTRAP_SELF_GATE OK (precheck --all RC=0)"
+    echo "$out" | tail -3 | sed 's/^/    /'
+    return 0
+  else
+    echo "BOOTSTRAP_SELF_GATE FAIL (precheck --all RC=$rc)"
+    echo "$out" | tail -10 | sed 's/^/    /'
+    return 1
+  fi
+}
+
 case "$MODE" in
   fixtures) fixtures ;;
   gate-fixtures) gate_fixtures ;;
@@ -123,8 +155,9 @@ case "$MODE" in
   shellcheck) shellcheck_scan ;;
   metrics) metrics; metrics_assert ;;
   cli-ab) cli_ab ;;
+  bootstrap) bootstrap_self_gate ;;
   # all：既有各模式输出与投票语义不变（shellcheck 不投票、gate_fixtures 投票），
-  # 新增 metrics_assert 与 cli_ab 两票（fail-closed），任一票失败则 all 非零。
+  # 新增 metrics_assert、cli_ab、bootstrap_self_gate 三票（fail-closed），任一票失败则 all 非零。
   all)
     all_fail=0
     metrics; metrics_assert || all_fail=1
@@ -133,6 +166,7 @@ case "$MODE" in
     fixtures
     gate_fixtures || all_fail=1
     cli_ab || all_fail=1
+    bootstrap_self_gate || all_fail=1
     [ "$all_fail" -eq 0 ]
     ;;
 esac
