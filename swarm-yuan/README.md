@@ -291,7 +291,21 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ---
 
-## Claude Code 深度集成
+## AI 工具兼容三档（G7 分级声明）
+
+swarm-yuan 宣称"兼容 7 个 AI 工具"，实际是**三层同心圆**（R1 §四 实证），按深度分三档：
+
+| 档 | 工具 | 能力 | 实现方式 |
+|----|------|------|---------|
+| **可运行（runnable）** | Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini / Kimi（全 7） | skill 目录复制 + bash 脚本执行 | `install.sh`/`generate-skill.sh` 检测 home 目录首个命中，复制同一套 markdown+bash |
+| **可集成（cli）** | Cursor / Windsurf / Codex / OpenCode / Gemini / Kimi（6） | 原生命令格式派生（GEMINI.md/AGENTS.md 标记区块段） | `generate-skill.sh --render-tools` 按工具派生规则文件 |
+| **深度集成（deep）** | Claude Code（1） | Hooks + Slash Commands + MCP + Dynamic Workflows + LSP + Subagent | `hooks/hooks.json` + `commands/*.md` + `.mcp.json` + `settings.local.json` |
+
+> **诚实声明**：对非 Claude Code 的 6 个工具，"兼容"= 可运行 + 可集成（目录复制 + 规则派生），hooks/commands/MCP 等深度能力**不随 skill 迁移**。README 的"Claude Code 深度集成"表不适用于其余 6 者。长期可为各工具生成对应原生命令格式。
+
+---
+
+## Claude Code 深度集成（仅 deep 档）
 
 | 能力 | 用法 |
 |------|------|
