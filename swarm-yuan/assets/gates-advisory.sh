@@ -243,8 +243,20 @@ check_cognition() {
   fi
   echo "=== 认知递进体检（六阶认知链 + 六维动力学）==="
   echo "  理念：先有概念→结构→空间→映射→规律→处理；关系在时空变化中呈现速度/聚散/趋势/强度/能耗/累积量"
-  echo "  ℹ 性质：认知体检报告（warn-only，永不 fail，不参与门禁否决；计分供认知基线参考）"
+  echo "  ℹ 性质：认知体检报告（metric，warn-only，永不 fail，不参与门禁否决；计分供认知基线参考）"
+  echo "  ℹ WP-Z12 明确声明：本检查为度量报告（metric）而非门禁（gate）——G3 决策：cognition 无 fail 路径，"
+  echo "     降级为 metric 是设计选择而非缺陷（理念 4 的哲学层落地用度量而非否决）"
   echo ""
+
+  # WP-Z12：认知度量 JSONL 落盘（metric 证据，供 gate-trends/adaptive-gating 消费）
+  local _cog_metric_file="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/cognition-metrics.jsonl"
+  _cog_metric_emit() {
+    # $1=metric_name $2=value $3=unit $4=max
+    local _ts; _ts=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)
+    mkdir -p "$(dirname "$_cog_metric_file")" 2>/dev/null || true
+    printf '{"ts":"%s","metric":"%s","value":%s,"unit":"%s","max":%s}\n' \
+      "$_ts" "$1" "$2" "$3" "$4" >> "$_cog_metric_file" 2>/dev/null || true
+  }
 
   # ---- ①概念定义：项目核心概念是否被定义 ----
   echo "  ①概念定义（是什么）"
@@ -510,6 +522,10 @@ check_cognition() {
   local five_layer_total=$((total_score + layer2_score + layer3_score + layer4_score + layer5_score))
   local five_layer_max=22  # 14 + 3 + 2 + 2 + 1
   echo "    五层认知基底总分：${five_layer_total}/${five_layer_max}"
+  # WP-Z12：认知度量落盘（metric 证据，供 gate-trends/adaptive-gating 消费）
+  _cog_metric_emit "cognition_layer1_score" "$total_score" "count" 14
+  _cog_metric_emit "cognition_layer1_rules" "$rule_count" "count" 7
+  _cog_metric_emit "cognition_five_layer_total" "$five_layer_total" "count" "$five_layer_max"
   if [[ $five_layer_total -ge 15 ]]; then
     pass "五层认知基底完整（${five_layer_total}/${five_layer_max}）——本质(①-④)+实践认识(思维语言)+现象分析(逻辑剃刀)+真理边界(偏差防范)+辩证统一(7对范畴)"
   elif [[ $five_layer_total -ge 10 ]]; then
