@@ -4,11 +4,12 @@
 >
 > 17 项特征卡让 AI 认识你的项目，54 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
 >
-> **口径权威源**：`assets/facts.conf`（所有 catchphrase 数字的单一事实源，self-check 机器执法）。
+> **口径权威源**：`assets/facts.conf`（所有 catchphrase 数字的单一事实源，`scripts/self-check.sh` 机器执法做漂移检测）。
 
-[![Release](https://img.shields.io/badge/release-v2026.07.24-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.24)
+[![Release](https://img.shields.io/badge/release-v2026.07.25-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.25)
 [![Feature Card](https://img.shields.io/badge/feature%20card-17-green)]()
-[![Quality Gates](https://img.shields.io/badge/quality%20gates-49-orange)]()
+[![Quality Gates](https://img.shields.io/badge/quality%20gates-54-orange)]()
+[![Frameworks](https://img.shields.io/badge/frameworks-74-blueviolet)]()
 [![Runtimes](https://img.shields.io/badge/runtimes-11-yellow)]()
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
@@ -43,37 +44,39 @@
 | 先认识，再行动 | AI 写代码前必须先认识项目。17 项特征卡完成认知，54 个门禁守护行动 |
 | 拼装式开发 | 新功能 = 既有稳定单元拼装 + 最小新增胶水代码。禁止重复造轮子/侵入式重构/破坏性改造 |
 | 呈现递进的关系 | 门禁不是"数 import 数"——每个计数背后指向一条关系规律 |
-| 特征卡是立法，门禁是执法 | 17 项特征卡定义「项目应该是什么样的」，54 个门禁验证「代码是否符合」 |
+| 特征卡是立法，门禁是执法，验证器是司法 | 17 项特征卡定义「项目应该是什么样的」，54 个门禁验证「代码是否符合」，`verifier/v1` 用 fixture 双态 + cli A/B 字节级等价做独立司法 |
 | 分层整合，诚实降级 | 11 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深接 |
+| 重量是设计选择，不是缺陷 | 重量级范式通过 `--profile auto\|lite\|standard\|compliance` 四档自适应让重量显式可选（决策 18/25，WP-P10 范式定位） |
 
 ---
 
 ## 17 项特征卡：项目的「认知 DNA」
 
-AI 探查项目后提取 17 项特征，每项落到真实路径和版本号，不用占位符。特征卡不是独立文件，而是**分散承接进目标 skill 的各个文件中**，驱动门禁配置和文件填充。
+AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项），每项落到真实路径和版本号，不用占位符。特征卡不是独立文件，而是**分散承接进目标 skill 的各个文件中**，驱动门禁配置和文件填充。
 
 | # | 特征项 | AI 提取什么 | 驱动什么 |
 |---|--------|-----------|---------|
 | 1 | 项目类型 | 单体/monorepo/overlay-fork/微服务 | SKILL.md 定位 + `--cognition` |
 | 2 | **可改范围** | 可改目录 + 只读目录 + 只读区修改机制 | 安全铁律 + `--scope` |
 | 3 | **改造分类** | A类(纯新增)/B类(骨架修改) | dev-guide + `--layer` |
-| 4 | 技术栈 | 语言+框架+构建+测试（含版本基线） | codebase.md + `--deps` |
+| 4 | 技术栈 | 语言+框架+构建+测试（含版本基线） | codebase.md + `--deps` + `--framework` |
 | 5 | **构建命令** | dev/build/test/release 真实命令 | `--build` `--test` |
 | 6 | 分支规范 | 命名/合入/保护分支/推送 | `--branch` |
 | 7 | 安全规则 | 脱敏/密钥/白名单 | `--sensitive` `--security` |
 | 8 | 文档约定 | spec/plan 位置和命名 | workflow + spec-template |
 | 9 | 测试体系 | 框架/目录/命令 | `--test` |
 | 10 | 环境资源 | 运行时/DB/缓存/MQ/MCP | `--service` |
-| 11 | **可复用稳定单元** | 全部稳定 API/组件/类/函数/store/类型（签名+路径+用途+复用方式+稳定性标注） | **`--reuse` + `--stable-diff` + `--state` + `--frontend`** |
+| 11 | **可复用稳定单元** | 全部稳定 API/组件/类/函数/store/类型（签名+路径+用途+复用方式+稳定性标注五维字段） | **`--reuse` + `--stable-diff` + `--state` + `--frontend`** |
 | 12 | 数据规范 | schema/样例/业务规则/勾稽 | `--consistency` |
 | 13 | 认知基底 | 认知映射表 + 六维动力学基线 | `--cognition` |
 | 14 | **领域知识** | 技术+业务领域 → 推导客观规律 | `--domain` |
 | 15 | **编排调用关系及约束** | 导入方向/注册顺序/路由挂载/状态所有权/测试边界 | `--layer` `--frontend` |
 | 16 | **详尽构件库清单（全量）** | 全量构件表 + 接口端点表 + store/类型表（清单计数核验） | reference-manual §4/§6/§9 |
+| 17 | 合规与质量基线 | 强监管关键词/合规门禁开关/质量门禁开关 | `--compliance-suite` profile 升档 |
 
-**第 11 项是核心中的核心**——AI 用 graphify `query` / gitnexus `context` 系统性盘点全部稳定单元（GitNexus（PolyForm Noncommercial 禁商用）降级为非默认，graphify（MIT）提为默认代码图谱工具），每个记录签名、路径、用途、复用方式、稳定性标注。
+**第 11 项是核心中的核心**——AI 用 graphify `query` / gitnexus `context` 系统性盘点全部稳定单元（GitNexus（PolyForm Noncommercial 禁商用）降级为非默认，graphify（MIT）提为默认代码图谱工具），每个记录签名、路径、用途、复用方式、稳定性标注（五维字段详见 `docs/FIVE_DIMENSIONS.md`）。
 
-**特征卡驱动一切：** → 文件填充（SKILL.md 铁律 ← 第 2/6 项、codebase.md ← 第 4 项、reference-manual.md 组件库 ← 第 11 项）→ 门禁配置（precheck.conf 170 个变量从特征卡推导）→ 开发流程（开始新需求时从第 11 项检索可复用单元）。
+**特征卡驱动一切：** → 文件填充（SKILL.md 铁律 ← 第 2/6 项、codebase.md ← 第 4 项、reference-manual.md 组件库 ← 第 11 项）→ 门禁配置（precheck.conf 三件套 170 个变量从特征卡推导，懒生成机制按 ACTIVE_FRAMEWORKS 自动补占位）→ 开发流程（开始新需求时从第 11 项检索可复用单元）。
 
 ### 落地示例（SwarmStudio overlay）
 
@@ -91,6 +94,13 @@ AI 探查项目后提取 17 项特征，每项落到真实路径和版本号，�
 ## 54 个质量门禁：特征卡的守卫者
 
 **特征卡是立法，门禁是执法。** 特征卡定义规则，门禁验证合规。
+
+> **门禁分层（决策 19）——执法强度横切维度：** 54 门禁按 `fail()` 能力分三档，与 core/standard/compliance 执行序列正交：
+> - **strict（17 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model）
+> - **warn（21 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄
+> - **advisory（16 个）**：0 个 fail，永不阻断，只 warn/pass（cognition/consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/canary/cwe-audit/cert-audit）
+>
+> 查看分层：`bash scripts/precheck.sh --list-gates`。分层由 `scripts/gen-enforce-level.sh` 自动按 fail() 数归类（幂等），手动覆盖见 precheck.sh `_ENFORCE_OVERRIDE`。
 
 | 特征卡项（立法） | 门禁（执法） |
 |----------------|-------------|
@@ -127,7 +137,7 @@ AI 探查项目后提取 17 项特征，每项落到真实路径和版本号，�
 | `--adr` | 架构决策记录（ADR + 技术债登记） | 第 8 项 |
 | `--contract` | 接口契约（version + ACL 防腐层） | 第 10 项 |
 | `--consistency-cross` | BDAT 一致性（术语表 vs 代码 + 数据所有权） | 第 12 项 |
-| `--impact` | 变更影响分析（消费方反查） | — |
+| `--impact` | 变更影响分析（消费方反查 + graphify God Nodes 检测） | — |
 | `--service` | 微服务架构（共享 DB/同步链/网关/trace） | 第 10 项 |
 | `--api` | API 契约与幂等（version/幂等键/分布式事务） | 第 10 项 |
 | `--state` | 前端状态管理（巨型 store/prop drilling/派生 useState） | 第 11 项 |
@@ -137,14 +147,14 @@ AI 探查项目后提取 17 项特征，每项落到真实路径和版本号，�
 | `--knowledge` | 项目知识复用（AGENTS.md/CLAUDE.md/记忆 → skill 引用） | — |
 | `--mermaid` | Mermaid 可视化（架构图/流程图/调用链） | — |
 | `--shift-left` | 左移检查（测试设计/变更影响/可观测性，防缺陷流入后段） | — |
-| `--framework` | 框架适配门禁（按 ACTIVE_FRAMEWORKS 逐框架执行规则集） | 第 4 项 |
+| `--framework` | 框架适配门禁（按 ACTIVE_FRAMEWORKS 逐框架执行规则集，74 框架 × 六段式） | 第 4 项 |
 
 ### 合规门禁（17 个，独立 `--compliance-suite` 按需执行，未配置则静默跳过）
 
 | 门禁 | 检查什么 | 依据 |
 |------|---------|------|
-| `--compliance` | 标准合规矩阵核验（六锚点完整 + 零占位符 + spec §22 标准合规段） | `references/standards-compliance.md`（GB/T 25000.51/8566 映射矩阵） |
-| `--docs-pack` | 文档包清单（rusp/gbt9386/gbt8567 profile 必备文档存在性 + TBD 扫描） | GB/T 8567/9386 文档包 |
+| `--compliance` | 标准合规矩阵核验（六锚点完整 + 零占位符 + spec §22 标准合规段） | GB/T 25000.51/8566 |
+| `--docs-pack` | 文档包清单（rusp/gbt9386/gbt8567 profile 必备文档存在性 + TBD 扫描） | GB/T 8567/9386 |
 | `--sbom` | SBOM 生成 + 许可证块名单扫描（syft→cdxgen→lockfile 降级链，启用后 fail-closed） | 供应链 SBOM/SLSA |
 | `--privacy` | 个人信息扫描（身份证/手机号/银行卡内置模式 + 豁免留痕，启用后 fail-closed） | 个保法/GB/T 35273 |
 | `--authz` | 授权类弱点扫描（缺鉴权注解/IDOR/CORS 放行带凭据，CWE-862/863/639/284） | OWASP ASVS / CWE-862 |
@@ -152,10 +162,14 @@ AI 探查项目后提取 17 项特征，每项落到真实路径和版本号，�
 | `--crypto` | 密码算法合规（profile=gm 密评：弱算法 MD5/SHA1/DES → fail，国密白名单 SM2/SM3/SM4） | GB/T 39786-2021 |
 | `--rtm` | 需求追溯矩阵（spec REQ- 编号须在测试目录或追溯矩阵可追溯；RTM_MATRIX_REQUIRED=1 时矩阵缺失 fail-closed） | ISO/IEC/IEEE 29148 RTM |
 | `--release-sign` | 发布签名与 provenance（产物须带 .sig/.asc/.att/.bundle 伴随签名；cosign verify-blob 验签 + SLSA provenance fail-closed） | SLSA Build L2 / SSDF PS.2 |
-| `--dengbao` | 等保 2.0 控制点（DENGBAO_LEVEL 二/三级分级：双因子/审计日志/审计字段/个人信息保护缺口，启用后 fail-closed + 豁免留痕） | GB/T 22239-2019 |
+| `--dengbao` | 等保 2.0 控制点（DENGBAO_LEVEL 二/三级分级，启用后 fail-closed + 豁免留痕） | GB/T 22239-2019 |
 | `--pia` | 隐私影响评估（PIA 文档缺失 → fail，启用后 fail-closed） | 个保法 55-56 条 / GB/T 35273 |
 | `--sast-deep` | 深度 SAST（semgrep→opengrep→内置降级链，启用后 fail-closed） | GB/T 34943/34944/34946 |
 | `--oss-eval` | 开源代码安全评价（复用 --sbom 产物，成分清单/许可证纳入评价，启用后 fail-closed） | GB/T 43848-2024 |
+| `--quality-model` | 质量模型核验（GB/T 25000.51 八特性 + 质量门禁基线，WP-S2） | GB/T 25000.51 |
+| `--test-evidence` | 测试证据链（TEST_EVIDENCE_REQUIRED 开关，未配置=SKIP 明示，WP-S2） | GB/T 9386 |
+| `--review-record` | 评审记录（REVIEW_RECORD_REQUIRED 开关，WP-S2） | GB/T 8567 |
+| `--metrics` | 质量度量趋势（gate-trends.sh 衰退检测，WP-S2） | GB/T 15532 |
 
 ### 降级策略
 
@@ -165,7 +179,31 @@ AI 探查项目后提取 17 项特征，每项落到真实路径和版本号，�
 graphify path/explain → gitnexus trace（仅非商用场景）→ madge → 纯转发统计
 ocr review → ocr scan → AI 5 维度审查
 claude-mem search → 文件检测
+semgrep → opengrep → 内置 CWE 模式（--sast-deep）
+syft → cdxgen → lockfile 解析（--sbom）
 ```
+
+### SARIF 2.1.0 输出
+
+`bash scripts/precheck.sh --format json | bash scripts/to-sarif.sh > results.sarif` —— 符合 OASIS SARIF 2.1.0（2020-03-27），规则元数据（CWE 标签 / GB-T 条款）从 `assets/standards-map.conf`（75 条目：21 门禁级 + 50 框架级 + 4 advisory）注入，可被 GitHub Code Scanning / SonarQube / Azure DevOps 直接消费。
+
+---
+
+## 7 行业 profile：强监管交付的行业基线
+
+7 个行业各一份 `.md`（`references/industry-profile-*.md`，法规依据）+ `.conf`（`assets/industry-profiles/<行业>.conf`，门禁映射）对，按需 `cat assets/industry-profiles/<行业>.conf >> <目标skill>/scripts/precheck.conf` 后 `precheck.sh --doctor` 自检为 0 fail 即接入：
+
+| 行业 | 法规覆盖 | 基础标准 |
+|------|---------|---------|
+| 金融 | 网安法/数安法/个保法 + 人民银行/金监总局/证监会办法 + JR/T 系列 | JR/T 0171-2020 / 金规〔2024〕24号 |
+| 医疗 | 个保法/数安法 + 卫健委办法/互联网诊疗细则 | GB/T 39725 / YY/T 0664-2020 |
+| 政务 | 网安法 21 条/密评/个保法 55-56 | GB/T 22239 / 39786 / 43848 |
+| 汽车 | 车载软件安全 + 软件升级 | ISO 26262 / UNECE R155 / R156 / ASIL A-D |
+| 能源 | 等保 + 密评 + 工控安全 | IEC 62443 / GB/T 36572-2018 |
+| 工业 | DCS/SCADA/PLC | IEC 62443 SL1-SL4 / GB/T 33009-2016 |
+| 通信 | 5GC/EPC/BOSS | YD/T 1729-2008 / 3GPP TS 33.501 |
+
+> 行业 profile 与 `--profile auto\|lite\|standard\|compliance` 四档（FACT_PROFILES=4）是不同维度：前者是行业法规基线，后者是重量自适应档位。
 
 ---
 
@@ -179,7 +217,7 @@ cd Swarm-yuan/swarm-yuan
 bash install.sh
 ```
 
-自动检测 7 个 AI 工具：Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi
+自动检测 7 个 AI 工具：Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi（按兼容深度分三档，见「AI 工具兼容三档」）。Windows 用 `install.bat`。
 
 ### 生成项目技能
 
@@ -187,10 +225,12 @@ bash install.sh
 
 或用 slash 命令：`/swarm-yuan /path/to/my-project`
 
-AI 自动执行 13 步流程（**不允许中途停在骨架阶段**）：
+AI 自动执行 13 节点流程（**不允许中途停在骨架阶段**）：
 
 ```
-自检 → 读取项目知识 → 探查仓库 → 提取 17 项特征卡 → 创建骨架 → 填充全部文件（消除占位符）→ 配置 precheck.conf → 生成 hooks/commands → 运行 54 个门禁 → 写回记忆 → 脚本确认零占位符（`generate-skill.sh --verify-completeness`）
+自检 → 读取项目知识 → 探查仓库 → 提取 17 项特征卡 → 创建骨架 → 填充全部文件（消除占位符）
+→ 配置 precheck.conf → 生成 hooks/commands → 运行 54 个门禁 → 写回记忆
+→ 脚本确认零占位符（`generate-skill.sh --verify-completeness`）→ 维度计数核验（`inventory-verify.sh`）
 ```
 
 ### 日常使用
@@ -204,6 +244,9 @@ bash .claude/skills/my-project-dev/scripts/precheck.sh --compliance-suite  # 合
 # 单独跑某个门禁
 bash .claude/skills/my-project-dev/scripts/precheck.sh --security
 bash .claude/skills/my-project-dev/scripts/precheck.sh --reuse
+
+# SARIF 输出（接入 GitHub Code Scanning）
+bash .claude/skills/my-project-dev/scripts/precheck.sh --all --format json | bash scripts/to-sarif.sh > results.sarif
 ```
 
 或对 AI 说："跑门禁" / "开始新需求：xxx"
@@ -222,17 +265,19 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 | 层 | 解决什么 | 与特征卡/门禁的关系 |
 |----|---------|-------------------|
-| 认知递进 | 如何认识项目 | 特征卡 17 项 = 认知递进的产物 |
-| 思维语言 | 如何思考 | spec §14-§18 = 思维语言落地 |
-| 认知辩证 | 如何推演+自证伪 | `--cognition` = 验证工具 |
-| 偏差防范 | 如何纠偏 | spec §16 偏差自检 |
-| 辩证认知 | 如何统一前四层 | `--domain` = 违规检测 |
+| 认知递进 | 如何认识项目（六阶：概念→结构→空间→映射→规律→处理 + 六维动力学） | 特征卡 17 项 = 认知递进的产物 |
+| 思维语言 | 如何思考（三元+三导向+七推理+7×7 双循环） | spec §14-§18 = 思维语言落地 |
+| 认知辩证 | 如何推演+自证伪（logic-razor 六步） | `--cognition` = 验证工具 |
+| 偏差防范 | 如何纠偏（5 维偏差 + 8 心智模型） | spec §16 偏差自检 |
+| 辩证认知 | 如何统一前四层（7 对辩证对 + ECC 四声部议事会） | `--domain` = 违规检测 |
+
+> 详见 `references/cognition-framework.md`。`--cognition` 门禁得分 ≥15/19 = 认知完整。
 
 ---
 
 ## 11 个运行时 + 32 个领域
 
-**运行时**（只引用调用不重新实现，按接线深度分三层）：
+**运行时**（只引用调用不重新实现，按接线深度分三层；`docs/upstream-baseline.md` 登记 11 个运行时的仓库/许可证/基线版本/drift 状态）：
 
 | 层 | 运行时 | 接线方式 |
 |----|--------|---------|
@@ -240,9 +285,9 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | CLI 接线（3） | OpenSpec / comet / gsd-core | 门禁/状态机按需调用 CLI（`openspec validate`/`comet guard`/`gsd-tools validate health`）+ 降级到自带载体 |
 | 方法论引用（4） | superpowers / gstack / Ruflo / ECC | AI 按 workflow 节点引用其模式，swarm-yuan 自带等价降级载体 |
 
-每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深接。
+每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深接。`--upstream-baseline` 门禁（advisory）自动检测 upstream drift，CI 可见但不阻断构建。
 
-**领域知识**：数据库 ACID / 网络 CORS / 安全密码哈希 / IM 消息保序 / 电商库存原子扣减 / 金融金额 Decimal……32 个领域客观规律。
+**领域知识**：数据库 ACID / 网络 CORS / 安全密码哈希 / IM 消息保序 / 电商库存原子扣减 / 金融金额 Decimal……32 个领域客观规律（详见 `references/domain-knowledge.md`）。
 
 ---
 
@@ -261,9 +306,9 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ## 零占位符 + 自举
 
-**零占位符：** AI 执行完整 13 步后由脚本机器执法（`bash scripts/generate-skill.sh --verify-completeness <skill_dir>`）——零残留才算完成。
+**零占位符：** AI 执行完整 13 节点后由脚本机器执法（`bash scripts/generate-skill.sh --verify-completeness <skill_dir>`）——零残留才算完成。命中"待填充"/"填充指引"/"<占位符>"即列 file:line 并 exit 1。
 
-**自举：** swarm-yuan 能用自身的 54 个门禁检查自身。一个连自己都检查不了的工具，凭什么检查你的项目？
+**自举：** swarm-yuan 能用自身的 54 个门禁检查自身（CI `generator-self-gate` job 三档 `--all`/`--all-full`/`--compliance-suite` RC=0）。一个连自己都检查不了的工具，凭什么检查你的项目？
 
 ---
 
@@ -283,23 +328,39 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ```
 Swarm-yuan/
-├── README.md                     ← 本文件
+├── README.md                     ← 仓库门面（本文件的父级）
 ├── .gitignore                    ← 忽略 swarm-yuan 本地状态
-├── docs/                         ← 设计文档 + 计划（USAGE/PROMO/FIVE_DIMENSIONS 唯一来源在 swarm-yuan/docs/）
-│   ├── 2026-07-17-framework-rules-engine-design.md
-│   └── plans/
+├── docs/                         ← 设计文档 + 计划 + 研究交付物（USAGE/PROMO/FIVE_DIMENSIONS 唯一来源在 swarm-yuan/docs/）
+│   ├── paradigm-decisions.md     ← 决策 1-25（口径权威源 facts.conf）
+│   ├── paradigm-positioning.md   ← WP-P10 范式定位
+│   ├── upstream-baseline.md      ← 11 运行时登记 + drift 处置
+│   ├── plans/                    ← 4 份 dated 计划
+│   └── research/                 ← R1-R9 九份研究交付物
 ├── swarm-yuan/                   ← 生成器 skill
-│   ├── SKILL.md                  ← AI 入口（150 行）
-│   ├── install.sh                ← 一键安装（7 环境检测）
+│   ├── SKILL.md                  ← AI 入口（11 运行时/54 门禁/五层认知/Step 0-12）
+│   ├── install.sh / install.bat  ← 一键安装（7 环境检测 + Windows）
 │   ├── assets/                   ← 模板 + 门禁 + 状态机 + 调用追踪
-│   │   ├── precheck.sh           ← 54 个门禁（3800+ 行，随门禁扩展演进）
-│   │   ├── precheck.conf         ← 170 个配置变量模板
+│   │   ├── precheck.sh           ← 门禁调度器（1420 行）
+│   │   ├── gates-strict.sh       ← 17 strict 门禁（1597 行）
+│   │   ├── gates-warn.sh         ← 21 warn 门禁（1496 行）
+│   │   ├── gates-advisory.sh     ← 16 advisory 门禁（1209 行）
+│   │   ├── precheck.conf         ← 核心配置变量（12 个）
+│   │   ├── precheck.arch.conf    ← 架构配置变量（110 个，懒生成）
+│   │   ├── precheck.compliance.conf ← 合规配置变量（48 个）
+│   │   ├── facts.conf            ← 口径单一事实源（self-check 机器执法）
+│   │   ├── gate-enforce-level.conf ← 自动生成的分层映射
+│   │   ├── standards-map.conf    ← 75 条目（SARIF 元数据源）
+│   │   ├── framework-signals.md  ← 74 框架信号索引
+│   │   ├── framework-gates/      ← 74 个 .sh（与 frameworks/*.md 1:1）
+│   │   ├── industry-profiles/    ← 7 行业 .conf
 │   │   ├── spec-template.md      ← 23 主段 spec 模板（§23=发布后运营）
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
-│   ├── references/               ← 28 个参考文档
-│   ├── scripts/                  ← 生成器 + 自检
-│   └── tests/                    ← fixture 测试（conf 中 __REPO_ROOT__ 占位符运行时替换为仓库根，任意机器可跑）
+│   ├── references/               ← 28 个参考文档 + frameworks/（74 框架 + _template）
+│   ├── scripts/                  ← 23 个脚本（生成器+自检+SARIF+drift+baseline+cost）
+│   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 45 gate-fixture + sarif-fixture）
+│   ├── ci/                       ← 自举 self-precheck.conf
+│   └── offline-cache/            ← Windows 离线包
 ```
 
 > **生成的目标 skill 含**：SKILL.md / references/*.md / assets/* / scripts/(precheck.sh+precheck.conf+state-machine.sh+trace-log.sh+self-check.sh+generate-skill.sh+snippets.md+mcp-tools.md) / hooks/hooks.json / commands/(spec+precheck+explore) / settings.local.json / .mcp.json / .swarm-yuan-version
@@ -308,18 +369,29 @@ Swarm-yuan/
 
 ## 数字一览
 
-| 维度 | 数值 |
-|------|------|
-| **特征卡** | **17 项（驱动全部文件 + 170 个门禁变量 + 开发流程）** |
-| **质量门禁** | **49 个（核心 10 + 架构 17 + 合规 17 + advisory-only 5，特征卡立法 + 门禁执法）** |
-| 运行时工具 | 11 |
-| spec 模板 | 23 主段（§23=发布后运营） |
-| 领域知识 | 32 个领域 |
-| 认知基底 | 5 层 |
-| 兼容 AI 工具 | 7 个 |
-| 三平台 | macOS / Linux / Windows（CI 全覆盖：ubuntu-latest + macos-latest + windows-latest） |
-| 零占位符 | ✅ |
-| 自举 | ✅ |
+| 维度 | 数值 | 口径源 |
+|------|------|--------|
+| **特征卡** | **17 项**（P0 六项 1/4/5/11/15/16 + P1 十一项） | FACT_FEATURE_CARDS=17 |
+| **质量门禁** | **54 个** = strict 17 + warn 21 + advisory 16；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 5 不在任何执行序列 | FACT_GATES_TOTAL=54 |
+| **配置变量** | **170 个**（precheck.conf 12 + precheck.arch.conf 110 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=170 |
+| **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh） | FACT_FRAMEWORKS=74 |
+| **参考文档** | 28 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=28 |
+| **standards-map** | 75 条目（21 门禁级 + 50 框架级 + 4 advisory） | FACT_STANDARDS_MAP_ENTRIES=75 |
+| 运行时工具 | 11（深度 4 + CLI 3 + 方法论 4） | FACT_RUNTIMES=11 |
+| spec 模板 | 23 主段（§23=发布后运营） | FACT_SPEC_SECTIONS=23 |
+| 领域知识 | 32 个领域 | FACT_DOMAINS=32 |
+| 认知基底 | 5 层 | — |
+| 行业 profile | 7（金融/医疗/政务/汽车/能源/工业/通信） | — |
+| profile 档位 | 4（auto/lite/standard/compliance） | FACT_PROFILES=4 |
+| 兼容 AI 工具 | 7（三档：runnable 7 / cli 6 / deep 1） | FACT_COMPAT_*=7/6/1 |
+| CWE 条目 | 60 | FACT_CWE_ENTRIES=60 |
+| 安全认证 profile | 6 | FACT_CERT_PROFILES=6 |
+| 生成流程 | 13 节点 / 10 工作流节点 | FACT_FLOW_STEPS=13 |
+| 决策治理类型 | 3（Mechanical / Taste / UserChallenge，对齐 ISO/IEC 42001） | FACT_DECISION_TYPES=3 |
+| 三平台 | macOS / Linux / Windows（CI 10 job 全覆盖） | — |
+| 零占位符 | ✅（`generate-skill.sh --verify-completeness` 机器执法） | — |
+| 自举 | ✅（CI generator-self-gate 三档 RC=0） | FACT_BOOTSTRAP_GATES=3 |
+| 上下文表面瘦身 | 193226B/2144L → 156992B/1856L（−18.8% / −13.4%，WP-P0~P6） | FACT_CONTEXT_SURFACE_PRE_OPT=193226 |
 
 ---
 
@@ -329,4 +401,4 @@ MIT
 
 ---
 
-> AI 的代码生成能力已经很强，但「项目认知」还停留在零。swarm-yuan 用 17 项特征卡让 AI 先懂你的项目，用 54 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
+> AI 的代码生成能力已经很强，但「项目认知」还停留在零。swarm-yuan 用 17 项特征卡让 AI 先懂你的项目，用 54 个质量门禁守护代码合规——特征卡是立法，门禁是执法，验证器是司法。
