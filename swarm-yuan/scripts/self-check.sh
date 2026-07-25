@@ -466,6 +466,39 @@ _count_gate_array() {
   ' "$2" 2>/dev/null || echo 0
 }
 
+# WP-Bootstrap：单文件 conf 变量计数（scripts/ + assets/ 双路径兜底，与 true_vars 同口径）。
+# 用法：_count_conf_vars <base> <conf_basename>  例：_count_conf_vars "$base" "precheck.arch.conf"
+_count_conf_vars() {
+  local base="$1" bn="$2" n=0
+  for p in "$base/scripts/$bn" "$base/assets/$bn"; do
+    [[ -f "$p" ]] || continue
+    n=$(( n + $(grep -cE '^[A-Z_][A-Z0-9_]*=' "$p" 2>/dev/null | xargs) ))
+  done
+  echo "$n"
+}
+
+# WP-Bootstrap：advisory-only 门禁数 = 总门禁数 - 出现在任一执行数组（CORE/STANDARD/FULL/COMPLIANCE）的去重门禁数。
+# 这些门禁不在三档执行序列（--all/--all-full/--compliance-suite）里，只能单独触发（如 --canary/--learnings）。
+# 用法：_count_advisory_only <precheck_sh> <true_gates_total>
+_count_advisory_only() {
+  local psh="$1" total="$2"
+  local in_arr
+  # 提取四数组里的 check_* 名（去重）
+  in_arr=$(awk '
+    /^(ALL_GATES_CORE|ALL_GATES_STANDARD|ALL_GATES_FULL|ALL_GATES_COMPLIANCE)=\(/ { inarr=1 }
+    inarr {
+      line=$0; sub(/^[^(]*\(/, "", line)
+      if (index(line, ")") > 0) { sub(/\).*/, "", line); inarr=0 }
+      n=split(line, a, /[ \t]+/)
+      for (i=1; i<=n; i++) if (a[i] ~ /^check_/) print a[i]
+    }
+  ' "$psh" 2>/dev/null | sort -u)
+  local arr_cnt
+  arr_cnt=$(printf '%s\n' "$in_arr" | grep -c '^check_' 2>/dev/null | xargs)
+  [[ -z "$arr_cnt" ]] && arr_cnt=0
+  echo $(( total - arr_cnt ))
+}
+
 # WP-Q1.3：拆分后 check_* 函数在 gates-strict/warn/advisory.sh 三文件，不在 precheck.sh 主文件。
 # 所有"数 check_* 函数"的 grep 须扫四文件（precheck.sh + gates-*.sh）。
 # 打包态（install.sh bundle）下三文件已内联回 precheck.sh，gates-*.sh 不存在，此时只扫 precheck.sh。
@@ -552,12 +585,30 @@ check_doc_consistency() {
   true_vars=$(cat "$base/scripts/precheck.conf" "$base/scripts/precheck.arch.conf" "$base/scripts/precheck.compliance.conf" "$base/assets/precheck.conf" "$base/assets/precheck.arch.conf" "$base/assets/precheck.compliance.conf" 2>/dev/null | grep -cE '^[A-Z_][A-Z0-9_]*=' | xargs)  # WP-I：三文件合计（scripts/ + assets/ 双路径兜底）
   true_fw=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
 
+  # WP-Bootstrap: 单文件 conf 变量数 + advisory-only 门禁数 + enforce 三档真值。
+  # 旧版只对账聚合数（170/54），不校验单文件子数与 advisory-only/enforce 子数，导致
+  # FACT_CONF_VARS_ARCH=106（真值 110）/FACT_CONF_VARS_COMPLIANCE=46（真值 48）/FACT_GATES_ADVISORY_ONLY=5（真值 10）
+  # 等漂移长期未被机器发现。此处补齐机械执法，未来再漂移会被自动拦截。
+  local true_vars_core true_vars_arch true_vars_compliance
+  true_vars_core=$(_count_conf_vars "$base" "precheck.conf")
+  true_vars_arch=$(_count_conf_vars "$base" "precheck.arch.conf")
+  true_vars_compliance=$(_count_conf_vars "$base" "precheck.compliance.conf")
+  # advisory-only 真值：总门禁数 - 出现在任一执行数组（CORE/STANDARD/FULL/COMPLIANCE）的去重门禁数。
+  # 这些门禁不在三档执行序列里，只能单独触发（如 --canary/--learnings/--upstream-baseline）。
+  local true_advisory_only
+  true_advisory_only=$(_count_advisory_only "$precheck_sh" "$true_gates")
+  # enforce 三档真值（与 L641-643 文档扫描块同源，gate-enforce-level.conf 是 gen-enforce-level.sh 生成）
+  local true_enforce_strict true_enforce_warn true_enforce_advisory
+  true_enforce_strict=$(grep -cE '=strict$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
+  true_enforce_warn=$(grep -cE '=warn$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
+  true_enforce_advisory=$(grep -cE '=advisory$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
+
   # WP-P1：facts.conf 自身一致性对账（代码真值 vs 声明真值）。
-  # 如果 facts.conf 自身漂移，文档扫描结果不可信——先 fail-soft 报告 facts.conf 漂移，
+  # 如果 facts.conf 自身漂移，文档扫描结果不可信--先 fail-soft 报告 facts.conf 漂移，
   # 然后仍用代码真值做文档扫描（不阻塞）。
   # 边界：目标 skill（swarm-yuan 生成的 .claude/skills/<proj>-dev/）拷贝了 facts.conf
   # 但其 precheck.sh/conf 已按项目定制（ACTIVE_FRAMEWORKS/conf 文件被改），GATES_TOTAL
-  # 等口径与 facts.conf 声明不同——此时跳过对账（仅 swarm-yuan 自身对账）。
+  # 等口径与 facts.conf 声明不同--此时跳过对账（仅 swarm-yuan 自身对账）。
   # 启发式：真值 ≥ 声明 × 0.5 且 ≠ 0 才对账（目标 skill 的真值常为 0 或远小于声明）。
   if [[ -n "${FACT_GATES_TOTAL:-}" && "$true_gates" -ge $((FACT_GATES_TOTAL / 2)) && "$true_gates" -gt 0 ]]; then
     local facts_drift=""
@@ -565,7 +616,14 @@ check_doc_consistency() {
     [[ "${FACT_GATES_CORE:-0}" != "$true_core" ]] && facts_drift="${facts_drift} GATES_CORE(声明=${FACT_GATES_CORE}/真值=${true_core});"
     [[ "${FACT_GATES_COMPLIANCE:-0}" != "$true_compliance" ]] && facts_drift="${facts_drift} GATES_COMPLIANCE(声明=${FACT_GATES_COMPLIANCE}/真值=${true_compliance});"
     [[ "${FACT_GATES_ARCH:-0}" != "$true_arch" ]] && facts_drift="${facts_drift} GATES_ARCH(声明=${FACT_GATES_ARCH}/真值=${true_arch});"
+    [[ "${FACT_GATES_ADVISORY_ONLY:-0}" != "$true_advisory_only" ]] && facts_drift="${facts_drift} GATES_ADVISORY_ONLY(声明=${FACT_GATES_ADVISORY_ONLY}/真值=${true_advisory_only});"
     [[ "${FACT_CONF_VARS:-0}" != "$true_vars" ]] && facts_drift="${facts_drift} CONF_VARS(声明=${FACT_CONF_VARS}/真值=${true_vars});"
+    [[ "${FACT_CONF_VARS_CORE:-0}" != "$true_vars_core" ]] && facts_drift="${facts_drift} CONF_VARS_CORE(声明=${FACT_CONF_VARS_CORE}/真值=${true_vars_core});"
+    [[ "${FACT_CONF_VARS_ARCH:-0}" != "$true_vars_arch" ]] && facts_drift="${facts_drift} CONF_VARS_ARCH(声明=${FACT_CONF_VARS_ARCH}/真值=${true_vars_arch});"
+    [[ "${FACT_CONF_VARS_COMPLIANCE:-0}" != "$true_vars_compliance" ]] && facts_drift="${facts_drift} CONF_VARS_COMPLIANCE(声明=${FACT_CONF_VARS_COMPLIANCE}/真值=${true_vars_compliance});"
+    [[ "${FACT_ENFORCE_STRICT:-0}" != "$true_enforce_strict" ]] && facts_drift="${facts_drift} ENFORCE_STRICT(声明=${FACT_ENFORCE_STRICT}/真值=${true_enforce_strict});"
+    [[ "${FACT_ENFORCE_WARN:-0}" != "$true_enforce_warn" ]] && facts_drift="${facts_drift} ENFORCE_WARN(声明=${FACT_ENFORCE_WARN}/真值=${true_enforce_warn});"
+    [[ "${FACT_ENFORCE_ADVISORY:-0}" != "$true_enforce_advisory" ]] && facts_drift="${facts_drift} ENFORCE_ADVISORY(声明=${FACT_ENFORCE_ADVISORY}/真值=${true_enforce_advisory});"
     [[ "${FACT_FRAMEWORKS:-0}" != "$true_fw" ]] && facts_drift="${facts_drift} FRAMEWORKS(声明=${FACT_FRAMEWORKS}/真值=${true_fw});"
     [[ "${FACT_REFERENCES:-0}" != "$ref_cnt" ]] && facts_drift="${facts_drift} REFERENCES(声明=${FACT_REFERENCES}/真值=${ref_cnt});"
     if [[ -n "$facts_drift" ]]; then
@@ -616,6 +674,19 @@ check_doc_consistency() {
     bad=$(grep -oE "[0-9]+ ?个质量门禁" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_gates" || true)
     [[ -n "$bad" ]] && dfound="${dfound} 门禁数出现非${true_gates}值($(echo $bad | tr '\n' ' '));"
+    # WP-Bootstrap：裸门禁总数「N 门禁按/分/个门禁」--USAGE.md:137 的"49 门禁按 fail()"旧口径
+    # 不带「质量」前缀，上面正则抓不到；此处补扫，仅匹配"N 门禁"+紧邻的动词/标点（按/分/为/，/。）
+    # 以免误伤"标准 27 门禁"等子计数指代。
+    bad=$(grep -oE "[0-9]+ 门禁(按|分|为|，|。|、)" "$docpath" 2>/dev/null \
+          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_gates" || true)
+    [[ -n "$bad" ]] && dfound="${dfound} 裸门禁总数出现非${true_gates}值($(echo $bad | tr '\n' ' '));"
+    # advisory-only 门禁数：「advisory-only N」或「advisory-only：N」（执行序列轴；区别于 enforce 横切轴的 advisory N）
+    # SKILL.md:116 旧写"advisory-only 4"是真值 10 的漂移，上面 enforce 三档扫描抓的是 advisory（非 advisory-only），补此条。
+    if [[ -n "${FACT_GATES_ADVISORY_ONLY:-}" && "${FACT_GATES_ADVISORY_ONLY}" != "0" ]]; then
+      bad=$(grep -oE "advisory-only[[:space:]]*[：:]?[[:space:]]*[0-9]+" "$docpath" 2>/dev/null \
+            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_GATES_ADVISORY_ONLY}" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} advisory-only数出现非${FACT_GATES_ADVISORY_ONLY}值($(echo $bad | tr '\n' ' '));"
+    fi
     # 架构门禁数：「架构 17」「架构门禁额外 17 个」「（核心 10 + 架构 17）」等。
     bad=$(grep -oE "架构门禁[^0-9]{0,8}[0-9]+ ?个|架构 [0-9]+" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_arch" || true)
@@ -868,14 +939,18 @@ upstream_baseline_check() {
   local bl="$base/../docs/upstream-baseline.md"
   [[ -f "$bl" ]] || return 0
   local drifted
-  drifted=$(grep -c 'baseline_status=drifted' "$bl" 2>/dev/null)
+  # WP-Bootstrap: 锚定表格行（以 `|` 起始、`baseline_status=drifted |` 结尾）。
+  # 旧版裸 grep 'baseline_status=drifted' 会误匹配 docs/upstream-baseline.md 里的散文行
+  # （如"上述 `baseline_status=drifted` 的 3 项..."、"将 `baseline_status=drifted` 改为..."），
+  # 散文行经 IFS='|' 切分后第 2 列为空 -> 输出"（未命名行）"，且计数从 3 虚高到 5。
+  drifted=$(grep -cE '^\| .*baseline_status=drifted \|$' "$bl" 2>/dev/null)
   [[ "${drifted:-0}" -eq 0 ]] && return 0
   echo "▶ 上游基线漂移忠告"
-  # 契约：drifted 条目所在行必含字面 baseline_status=drifted（表格行，第二列为名称）；
-  # 仅 warn 不置 FAIL——版本漂移是提醒而非门禁失败
-  grep 'baseline_status=drifted' "$bl" | while IFS='|' read -r _ name _rest; do
+  # 契约：drifted 条目所在行必为表格行（| <name> | ... | baseline_status=drifted |），第二列为名称；
+  # 仅 warn 不置 FAIL--版本漂移是提醒而非门禁失败
+  grep -E '^\| .*baseline_status=drifted \|$' "$bl" | while IFS='|' read -r _ name _rest; do
     name=$(echo "$name" | sed 's/^ *//;s/ *$//')
-    warn "上游基线 drifted：${name:-（未命名行）}——引用基线落后上游最新版，详见 docs/upstream-baseline.md（重核列入 P1-7）"
+    warn "上游基线 drifted：${name:-（未命名行）}--引用基线落后上游最新版，详见 docs/upstream-baseline.md（重核列入 P1-7）"
   done
 }
 upstream_baseline_check

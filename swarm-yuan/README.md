@@ -386,7 +386,7 @@ Swarm-yuan/
 | 维度 | 数值 | 口径源 |
 |------|------|--------|
 | **特征卡** | **17 项**（P0 六项 1/4/5/11/15/16 + P1 十一项） | FACT_FEATURE_CARDS=17 |
-| **质量门禁** | **54 个** = strict 20 + warn 19 + advisory 15；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 5 不在任何执行序列 | FACT_GATES_TOTAL=54 |
+| **质量门禁** | **54 个** = strict 20 + warn 19 + advisory 15；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
 | **配置变量** | **170 个**（precheck.conf 12 + precheck.arch.conf 110 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=170 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh） | FACT_FRAMEWORKS=74 |
 | **参考文档** | 28 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=28 |

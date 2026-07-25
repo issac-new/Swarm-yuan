@@ -45,7 +45,7 @@ _fw_sqlserver_check() {
       fi
     fi
   done
-  _fw_report warn fw_mssql_nolock "${nl_bad}" "WITH (NOLOCK) 未声明脏读风险（= READ UNCOMMITTED，脏读/行漂移；一致性场景禁用，替代 READ_COMMITTED_SNAPSHOT）——同文件注释须写"脏读风险已评估"" "NOLOCK 均已声明脏读风险或未使用"
+  _fw_report warn fw_mssql_nolock "${nl_bad}" "WITH (NOLOCK) 未声明脏读风险（= READ UNCOMMITTED，脏读/行漂移；一致性场景禁用，替代 READ_COMMITTED_SNAPSHOT）——同文件注释须写「脏读风险已评估」" "NOLOCK 均已声明脏读风险或未使用"
 
   # ====================================================================
   # fw_mssql_sql_injection(fail)：字符串拼接动态 SQL
