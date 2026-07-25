@@ -438,8 +438,7 @@ Swarm-yuan/
 │   ├── references/               ← 28 个参考文档 + frameworks/（74 框架 + _template）
 │   ├── scripts/                  ← 23 个脚本（生成器+自检+SARIF+drift+baseline+cost）
 │   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 45 gate-fixture + sarif-fixture）
-│   ├── ci/                       ← 自举 self-precheck.conf
-│   └── offline-cache/            ← Windows 离线包
+│   └── ci/                       ← 自举 self-precheck.conf
 ├── verifier/                     ← 独立验收（C1-C8）
 │   ├── v1/                       ← run-verifier.sh + cli-ab-test.sh + golden-vector.txt + metrics-baseline.txt
 │   ├── baselines/                ← pre-opt / post-opt 上下文表面基线 + comparison-report.md
