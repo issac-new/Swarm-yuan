@@ -1109,6 +1109,33 @@ check_requirements() {
       warn "EARS 句式覆盖率约 ${pct}%（${ears}/${total}，<50%）——建议按 EARS（Ubiquitous/Event/State/Optional/Complex）改写需求句"
     fi
   fi
+  # —— 4. 需求集合一致性（ISO/IEC/IEEE 29148 §5.2.7.2：同一概念同一术语，无矛盾）→ warn-only
+  #    启发式：提取需求句中的名词性关键词（中文 2-4 字词/英文大写缩写），检查同一概念是否用了不同词
+  #    实现局限：bash 无 NLP，仅做粗粒度术语漂移提示（同义词对配置在 REQUIREMENTS_SYNONYM_PAIRS）
+  if [[ ${#REQUIREMENTS_SYNONYM_PAIRS[@]} -gt 0 ]]; then
+    local _pair _term_a _term_b _term_hits
+    for _pair in "${REQUIREMENTS_SYNONYM_PAIRS[@]}"; do
+      IFS='|' read -r _term_a _term_b <<< "$_pair"
+      [[ -z "$_term_a" || -z "$_term_b" ]] && continue
+      _term_hits=$(grep -cE "$_term_a" "$spec" 2>/dev/null || true)
+      local _term_b_hits; _term_b_hits=$(grep -cE "$_term_b" "$spec" 2>/dev/null || true)
+      if [[ "$_term_hits" -gt 0 && "$_term_b_hits" -gt 0 ]]; then
+        warn "需求术语不一致：'${_term_a}'（${_term_hits} 处）与 '${_term_b}'（${_term_b_hits} 处）混用——29148 要求同一概念同一术语"
+      fi
+    done
+  fi
+  # —— 5. 需求集合完备性（ISO/IEC/IEEE 29148 §5.2.7.1：无 TBD/TBC/TBP）→ 已在上文 REQUIREMENTS_STRICT 覆盖
+  #    补充：TBC（待确认）/TBP（待提供）也纳入零容容忍（REQUIREMENTS_STRICT=1 时）
+  if [[ "${REQUIREMENTS_STRICT:-0}" == "1" ]]; then
+    local _tbc_hits
+    _tbc_hits=$(grep -nE 'TBC|TBP|待确认|待提供' "$spec" 2>/dev/null || true)
+    if [[ -n "$_tbc_hits" ]]; then
+      while IFS= read -r l; do
+        [[ -n "$l" ]] && fail "gate_requirements_tbc:${l%%:*}: spec 含 TBC/TBP/待确认/待提供（29148 要求需求集完备，不允许待定项）"
+      done <<< "$_tbc_hits"
+      found=1
+    fi
+  fi
 
   if [[ $found -eq 0 ]]; then
     pass "需求质量检查通过（执法项未命中；EARS 覆盖率为 warn-only 提示）"
