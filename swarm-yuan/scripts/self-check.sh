@@ -589,7 +589,21 @@ check_doc_consistency() {
   # 安装到 ~/.claude/skills/<skill>/ 后该文件不存在，[[ -f ]] 守卫自动跳过。
   # 注意：$doc 可能是相对路径（拼 $base/）或绝对路径（$root_claude），用 case 区分。
   local root_claude="$base/../CLAUDE.md"
-  for doc in README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md "$root_claude"; do
+  # WP-Z15: 扫描范围扩展——.claude/commands/*.md 全量纳入（G6 文档漂移盲区）
+  # 历史 .claude/commands/swarm-yuan.md 已在列表，但 commands/ 下其他 .md（spec/precheck/explore）
+  # 骨架模板内嵌数字（门禁数/conf 变量数等）也可能漂移，全量扫描兜底
+  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude"
+  local _cmd_dir="$base/.claude/commands"
+  if [[ -d "$_cmd_dir" ]]; then
+    local _cf
+    for _cf in "$_cmd_dir"/*.md; do
+      [[ -f "$_cf" ]] || continue
+      # 去重：swarm-yuan.md 已在显式列表，跳过
+      [[ "$(basename "$_cf")" == "swarm-yuan.md" ]] && continue
+      _scan_docs="$_scan_docs ${_cf#"$base/"}"
+    done
+  fi
+  for doc in $_scan_docs; do
     case "$doc" in
       /*) docpath="$doc" ;;
       *)  docpath="$base/$doc" ;;
