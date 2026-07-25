@@ -9,7 +9,7 @@ MODE="${1:-all}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 [ $# -ge 2 ] && ROOT="$(cd "$2" && pwd)"
 SY="$ROOT/swarm-yuan"
-# shellcheck 解析顺序：$SHELLCHECK 环境变量 → PATH 中的 shellcheck → /tmp/shellcheck（历史 /mnt/agents/tools 拷贝）。
+# 查找 shellcheck 的顺序：$SHELLCHECK 环境变量 → PATH 中的 shellcheck → /tmp/shellcheck（历史 /mnt/agents/tools 拷贝）。
 # 失败关闭（fail-closed）：若以上均无，shellcheck_scan 报告 SHELLCHECK_UNAVAILABLE 并返回非零，
 # 而不是在每台缺 shellcheck 的机器上谎报 SHELLCHECK_ERRORS 0（历史缺陷：cp /mnt/agents/tools 失败被静默吞掉）。
 SC=""

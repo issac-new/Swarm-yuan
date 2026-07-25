@@ -96,6 +96,7 @@ _notice_rm_missing() {
 }
 
 rows=""; mismatches=""
+# shellcheck disable=SC2154  # title/ref/dfs/cmd 经 eval 间接赋值，shellcheck 静态分析识别不到
 for d in $_dims; do
   eval "title=\${DIM_${d}_TITLE:-}"
   eval "dfs=\${DIM_${d}_FORMS:-all}"

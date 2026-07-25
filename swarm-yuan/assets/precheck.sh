@@ -601,9 +601,9 @@ _dr_glob_check() { # $1=数组变量名
   for (( i=0; i<n; i++ )); do
     eval "g=\"\${${vn}[$i]}\""
     if _dr_glob_resolves "$g"; then
-      _dr_ok "$vn[$i] '$g' 可解出"
+      _dr_ok "${vn}[$i] '$g' 可解出"
     else
-      _dr_warn "$vn[$i] '$g' 不可解出任何路径（相对 PROJECT_DIR）"
+      _dr_warn "${vn}[$i] '$g' 不可解出任何路径（相对 PROJECT_DIR）"
     fi
   done
   return 0

@@ -61,6 +61,7 @@ check_layer() {
   tmp_file2layer=$(mktemp); tmp_layer2idx=$(mktemp); tmp_layer_files=$(mktemp)
   # RETURN trap 会随外层函数（如 _gate_exec）返回二次触发——双引号定义期烘焙路径使其自包含，
   # 避免 set -u 下单引号延迟求值引用已销毁的局部变量；二次触发对已删文件 rm -f 为无害 no-op。
+  # shellcheck disable=SC2064  # 有意用双引号在定义期烘焙 $tmp_* 路径（见上行注释），非延迟求值
   trap "rm -f '$tmp_file2layer' '$tmp_layer2idx' '$tmp_layer_files'" RETURN
 
   # ---- 1. 构建层→文件映射 + 文件→层映射 ----

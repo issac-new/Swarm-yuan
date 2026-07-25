@@ -24,7 +24,7 @@ _fw_terraform_check() {
       *.tf) tfarr+=("$f") ;;
       *.tfvars) tfvarsarr+=("$f") ;;
       *.sh|*.yml|*.yaml) ciarr+=("$f") ;;
-      *.tfstate|*.tfstate.*|*.tfstate.backup) statearr+=("$f") ;;
+      *.tfstate|*.tfstate.*) statearr+=("$f") ;;
     esac
   done
 

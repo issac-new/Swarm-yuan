@@ -134,13 +134,13 @@ bash install.sh
 
 ### 门禁分层（决策 19，横切维度）
 
-49 门禁按 `fail()` 调用能力分三档（strict 20 / warn 19 / advisory 15），与 core/standard/compliance 三档正交（一个门禁同时属于 core + strict，或 standard + advisory）：
+54 门禁按 `fail()` 调用能力分三档（strict 20 / warn 19 / advisory 15），与 core/standard/compliance 三档正交（一个门禁同时属于 core + strict，或 standard + advisory）：
 
 | 分层 | 数量 | fail() 能力 | 行为 | 门禁清单 |
 |------|------|------------|------|----------|
-| **strict** | 17 | ≥3 fail | 真 fail 阻断交付 | branch / layer / reuse / security / shift-left / compliance / sbom / privacy / authz / requirements / rtm / release-sign / dengbao / pia / quality-model / test-evidence / review-record |
-| **warn** | 21 | 1-2 fail | 能 fail 但触发窄，混合 warn | scope / build / test / sensitive / review / stable-diff / deps / adr / contract / impact / service / api / frontend / domain / knowledge / docs-pack / crypto / framework / sast-deep / oss-eval / metrics |
-| **advisory** | 11 | 0 fail | 永不 fail，只 warn/pass（认知/观测类） | consistency / link-depth / consistency-cross / state / cognition / mermaid / operate / decision-audit / canary / cwe-audit / cert-audit |
+| **strict** | 20 | ≥3 fail | 真 fail 阻断交付 | branch / layer / reuse / security / shift-left / compliance / sbom / privacy / authz / requirements / rtm / release-sign / dengbao / pia / quality-model / test-evidence / review-record / crypto / sast-deep / oss-eval |
+| **warn** | 19 | 1-2 fail | 能 fail 但触发窄，混合 warn | scope / build / test / sensitive / review / stable-diff / deps / adr / contract / impact / service / api / frontend / domain / knowledge / docs-pack / framework / metrics / cognition |
+| **advisory** | 15 | 0 fail | 永不 fail，只 warn/pass（认知/观测类） | consistency / link-depth / consistency-cross / state / mermaid / operate / decision-audit / canary / cwe-audit / cert-audit / learnings / pr-quality / skill-supply-chain / state-phase / upstream-baseline |
 
 - **advisory 机器化**：子 shell 内重定义 `fail()`/`warn()` 为纯 echo，永不进 FAIL_COUNT/WARN_COUNT——"advisory 是观测类，不阻断交付"语义机器化
 - **查看分层**：`bash scripts/precheck.sh --list-gates`（输出 flag / gate_fn / enforce / tier 四列）
@@ -411,7 +411,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | 维度 | 数值 |
 |------|------|
 | **特征卡** | **17 项（驱动全部文件 + 170 个门禁变量 + 开发流程）** |
-| **质量门禁** | **49 个（核心 10 + 架构 17 + 合规 17 + advisory-only 5，特征卡立法 + 门禁执法）** |
+| **质量门禁** | **54 个（核心 10 + 架构 17 + 合规 17 + advisory-only 10，特征卡立法 + 门禁执法）** |
 | 运行时工具 | 11 |
 | spec 模板 | 22 主段（§22=标准合规） |
 | 领域知识 | 32 个领域 |
