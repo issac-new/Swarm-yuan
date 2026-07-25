@@ -1219,7 +1219,11 @@ check_crypto() {
   echo "=== 密码算法合规检查（GB/T 39786-2021 密评，国密白名单 SM2/SM3/SM4）==="
   local profile="${CRYPTO_PROFILE:-}"
   if [[ -z "$profile" ]]; then
-    skip_if_unconfigured "CRYPTO_PROFILE 未配置（密评场景设为 gm）"
+    if [[ -n "${CRYPTO_EXEMPT_REASON:-}" ]]; then
+      warn "密码算法检查已豁免（${CRYPTO_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+    else
+      fail "gate_crypto_unconfigured: CRYPTO_PROFILE 未配置且无豁免理由——安全门禁须显式配置（CRYPTO_PROFILE=gm）或填写 CRYPTO_EXEMPT_REASON 豁免理由（GB/T 39786-2021 密评）"
+    fi
     return
   fi
   if [[ "$profile" != "gm" ]]; then
@@ -1292,7 +1296,11 @@ _sast_deep_lexical_scan() {
 check_sast_deep() {
   echo "=== 深度 SAST 检查（AST/数据流层；GB/T 34943/34944/34946-2017 源代码漏洞测试规范）==="
   if [[ ${#SECURITY_SCAN_DIRS[@]} -eq 0 ]]; then
-    skip_if_unconfigured "SECURITY_SCAN_DIRS 未配置，深度 SAST 跳过"
+    if [[ -n "${SAST_DEEP_EXEMPT_REASON:-}" ]]; then
+      warn "深度 SAST 检查已豁免（${SAST_DEEP_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+    else
+      fail "gate_sast_deep_unconfigured: SECURITY_SCAN_DIRS 未配置且无豁免理由——安全门禁须显式配置或填写 SAST_DEEP_EXEMPT_REASON 豁免理由（GB/T 34943/34944/34946-2017 源代码漏洞测试规范）"
+    fi
     return
   fi
   local tool="${SAST_DEEP_TOOL:-auto}" sev="${SAST_DEEP_SEVERITY:-error}" found=0
@@ -1365,7 +1373,14 @@ check_sast_deep() {
 # 措辞纪律：本标准将成分清单与许可证合规纳入评价体系，不宣称"强制提交 SBOM"。
 check_oss_eval() {
   echo "=== 开源代码安全评价（GB/T 43848-2024：来源/安全质量/知识产权/管理四维）==="
-  [[ "${OSS_EVAL_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "OSS_EVAL_REQUIRED 未启用，开源代码安全评价跳过"; return; }
+  if [[ "${OSS_EVAL_REQUIRED:-0}" != "1" ]]; then
+    if [[ -n "${OSS_EVAL_EXEMPT_REASON:-}" ]]; then
+      warn "开源代码安全评价已豁免（${OSS_EVAL_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+    else
+      fail "gate_oss_eval_unconfigured: OSS_EVAL_REQUIRED 未启用且无豁免理由——安全门禁须显式配置（OSS_EVAL_REQUIRED=1）或填写 OSS_EVAL_EXEMPT_REASON 豁免理由（GB/T 43848-2024 开源代码安全评价）"
+    fi
+    return
+  fi
   local found=0
   # ① 成分清单存在（复用 --sbom 产物；sbom 未跑时本门禁独立核验目录）
   local dir="${SBOM_OUTPUT_DIR:-.sbom}"
