@@ -658,7 +658,7 @@ check_doc_consistency() {
   # design-philosophy-consistency.md），它们含 catchphrase 数字但原在扫描盲区（docs/ 不在 $base 下）。
   # 不新增 docs/paradigm-decisions.md（决策日志多历史快照，加扫会误报）/docs/research//docs/plans/（归档）。
   local _root_docs="$base/.."
-  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md"
+  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md"
   local _cmd_dir="$base/.claude/commands"
   if [[ -d "$_cmd_dir" ]]; then
     local _cf
