@@ -149,6 +149,8 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 代码审查方法论（5 维度） | `references/review-methodology.md` |
 | 代码图谱工具引用 | `references/code-graph-tools.md` |
 | 标准合规矩阵（GB/T 25000.51/8566/8567/9386 + 安全标准 × 49 门禁映射 + 豁免登记） | `references/standards-compliance.md` |
+| 密码学应用规范（GB/T 39786 国密选型/密钥生命周期，check_crypto 判定依据） | `references/crypto-spec.md` |
+| 质量与过程成熟度标准映射（ISO 9001/CMMI/15504 概念映射，过程资产证据） | `references/quality-management-standards.md` |
 | gsd-core phase-loop/goal-backward | `references/gsd-patterns.md` |
 | 跨会话记忆持久化 | `references/memory-persistence.md` |
 | MCP 治理（默认最小化政策 + connector 书面理由） | `references/mcp-governance.md` |
