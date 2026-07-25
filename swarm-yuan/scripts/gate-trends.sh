@@ -77,10 +77,23 @@ if [[ -z "$rows" ]]; then
 fi
 
 # ---- 文本模式（默认）：输出与原实现逐行一致（既有断言/人工判读契约不变）----
+# WP-Z10 增强：追加整体通过率/弱点密度/门禁活跃度汇总行（Q-20 度量反馈）
 if [[ -z "$HTML_OUT" ]]; then
   echo "gate-runs 趋势（数据源: ${JSONL}；窗口: 近 $N 次/门禁）"
   printf "%-28s %6s %6s %6s %6s %6s %8s  %s\n" "gate" "样本" "pass" "fail" "warn" "skip" "通过率" "趋势(旧→新)"
   printf '%s\n' "$rows" | sort
+  # WP-Z10：整体汇总行（Q-20 度量反馈）
+  _total_records=$(wc -l < "$JSONL" | xargs)
+  _total_pass=$(grep -c '"status":"pass"' "$JSONL" 2>/dev/null || true)
+  _total_fail=$(grep -c '"status":"fail"' "$JSONL" 2>/dev/null || true)
+  _overall_rate=$((_total_pass * 100 / (_total_records > 0 ? _total_records : 1)))
+  echo ""
+  echo "=== 汇总（Q-20 度量反馈）==="
+  printf "整体通过率: %d%%（pass %d / fail %d / 总记录 %d）\n" "$_overall_rate" "$_total_pass" "$_total_fail" "$_total_records"
+  # 弱点密度：fail 记录数 / 门禁种类数（每门禁平均 fail 次数）
+  _gate_kinds=$(awk -v RS='\n' '{ if (match($0,/"gate":"[^"]+"/)) print substr($0,RSTART+8,RLENGTH-9) }' "$JSONL" | sort -u | wc -l | xargs)
+  _density=$((_total_fail * 100 / (_gate_kinds > 0 ? _gate_kinds : 1)))
+  printf "弱点密度: %d%%（fail %d 次 / 门禁 %d 种）\n" "$_density" "$_total_fail" "$_gate_kinds"
   exit 0
 fi
 
