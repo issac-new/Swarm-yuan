@@ -784,7 +784,14 @@ check_compliance() {
 
 check_sbom() {
   echo "=== SBOM 物料清单与许可证扫描 ==="
-  [[ "${SBOM_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "SBOM_REQUIRED 未启用"; return; }
+  if [[ "${SBOM_REQUIRED:-0}" != "1" ]]; then
+    if [[ -n "${SBOM_EXEMPT_REASON:-}" ]]; then
+      warn "SBOM 检查已豁免（${SBOM_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+    else
+      fail "gate_sbom_unconfigured: SBOM_REQUIRED 未启用且无豁免理由——安全门禁须显式配置（SBOM_REQUIRED=1）或填写 SBOM_EXEMPT_REASON 豁免理由（数安法第27条/SLSA供应链要求）"
+    fi
+    return
+  fi
   local out_dir="${SBOM_OUTPUT_DIR:-.sbom}"
   local ts sbom_file lic_file
   ts=$(date '+%Y%m%d-%H%M%S')
@@ -1170,7 +1177,11 @@ check_dengbao() {
   echo "=== 等级保护 2.0 控制点映射检查（GB/T 22239-2019 安全计算环境/安全建设管理）==="
   local level="${DENGBAO_LEVEL:-}"
   if [[ -z "$level" ]]; then
-    skip_if_unconfigured "DENGBAO_LEVEL 未配置（等保测评场景设 2 或 3）"
+    if [[ -n "${DENGBAO_EXEMPT_REASON:-}" ]]; then
+      warn "等保检查已豁免（${DENGBAO_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+    else
+      fail "gate_dengbao_unconfigured: DENGBAO_LEVEL 未配置且无豁免理由——安全门禁须显式配置（DENGBAO_LEVEL=2/3）或填写 DENGBAO_EXEMPT_REASON 豁免理由（GB/T 22239-2019 等保 2.0 / 数安法第27条）"
+    fi
     return
   fi
   if [[ "$level" != "2" && "$level" != "3" && "$level" != "4" ]]; then
@@ -1306,7 +1317,14 @@ check_dengbao() {
 
 check_pia() {
   echo "=== 隐私影响评估（PIA）检查（个人信息保护法第55-56条 / GB/T 35273-2020）==="
-  [[ "${PIA_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "PIA_REQUIRED 未启用，PIA 检查跳过"; return; }
+  [[ "${PIA_REQUIRED:-0}" == "1" ]] || {
+    if [[ -n "${PIA_EXEMPT_REASON:-}" ]]; then
+      warn "PIA 检查已豁免（${PIA_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+    else
+      fail "gate_pia_unconfigured: PIA_REQUIRED 未启用且无豁免理由——安全门禁须显式配置（PIA_REQUIRED=1）或填写 PIA_EXEMPT_REASON 豁免理由（个保法第55条：处理敏感个人信息须事前进行个人信息保护影响评估）"
+    fi
+    return
+  }
   local dir="${PIA_DOCS_DIR:-docs/privacy}"
   local found=0
   # PIA 豁免登记（5 字段：对象|规则|理由|审批人|日期；空理由视为无效豁免 → fail）
@@ -1482,7 +1500,14 @@ check_review_record() {
 
 check_release_sign() {
   echo "=== 发布签名与 provenance 检查（SLSA Build L2 / SSDF PS.2 发布完整性）==="
-  [[ "${RELEASE_SIGN_REQUIRED:-0}" == "1" ]] || { skip_if_unconfigured "RELEASE_SIGN_REQUIRED 未启用，发布签名检查跳过"; return; }
+  if [[ "${RELEASE_SIGN_REQUIRED:-0}" != "1" ]]; then
+    if [[ -n "${RELEASE_SIGN_EXEMPT_REASON:-}" ]]; then
+      warn "发布签名检查已豁免（${RELEASE_SIGN_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+    else
+      fail "gate_release_sign_unconfigured: RELEASE_SIGN_REQUIRED 未启用且无豁免理由——安全门禁须显式配置（RELEASE_SIGN_REQUIRED=1）或填写 RELEASE_SIGN_EXEMPT_REASON 豁免理由（SLSA Build L2 / SSDF PS.2 发布完整性）"
+    fi
+    return
+  fi
   local found=0
   # 工具降级：RELEASE_SIGN_TOOL（空=auto：有 cosign 用 cosign；"none"=强制存在性检查，无工具链环境依赖）
   local tool="${RELEASE_SIGN_TOOL:-}"
