@@ -461,7 +461,7 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 | ★API 契约 | **硬门禁**：API_SPEC_DIR 内定义文件缺 version → fail；warn：写 handler 无幂等键；warn：检测到分布式事务/2PC | `--api` |
 | ★前端状态 | warn：store 文件行数 >MAX_STORE_LINES；props 透传(...props)>5；useState 内派生计算(.map/.filter) | `--state` |
 | ★前端组件 | warn：组件嵌套深度 >MAX_COMPONENT_DEPTH；容器+展示混合；props >MAX_PROPS_COUNT；非 scoped CSS；**硬门禁**：循环依赖(madge) | `--frontend` |
-| ★认知递进体检 | **不判违规**（不 fail），呈现"认知体检报告"：(1) 第一层六阶认知链逐阶评分（①概念②结构③空间④映射⑤规律⑥处理，满分 11 + ≥4 条规律编码）(2) 五层认知基底总分（第一层 11 + 第二层 3 + 第三层 2 + 第四层 2 + 第五层 1 = 满分 19）。第一层 ≥8+≥4 规律=完整；五层总分 ≥15/19=完整，10-14=部分建立，<10=不足 | `--cognition` |
+| ★认知递进体检 | **不判违规**（不 fail），呈现"认知体检报告"：(1) 第一层六阶认知链逐阶评分（①概念②结构③空间④映射⑤规律⑥处理，满分 14 + ≥4 条规律编码）(2) 五层认知基底总分（第一层 14 + 第二层 3 + 第三层 2 + 第四层 2 + 第五层 1 = 满分 22）。第一层 ≥8+≥4 规律=完整；五层总分 ≥15/22=完整，10-14=部分建立，<10=不足 | `--cognition` |
 | ★测试左移 | **硬门禁**：spec 含"测试设计"段（§19）+ git diff 中 test 文件先于或同时于 impl 文件提交（禁"先实现后补测试"）+ 新增 impl 对应 test 存在（覆盖率 gap warn） | `--shift-left` |
 | ★变更左移 | **硬门禁**：plan 含"变更影响范围"段（§20）+ spec 含回滚预案声明 + 数据库迁移须向前兼容（无破坏性 DDL） | `--shift-left` |
 | ★运维监控左移 | warn+硬门禁：spec 含"可观测性约束"段（§21：日志结构/metrics 埋点/trace 透传/告警阈值/健康检查端点）+ 代码中 metrics/日志/trace 埋点存在 + 健康检查端点可访问（HTTP 200） | `--shift-left` |
@@ -485,7 +485,7 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 - `--api` 配置 API_SPEC_DIR/WRITE_HANDLER_DIRS。**硬门禁**：API 定义文件缺 version → fail。warn：写 handler（POST/PUT/DELETE）无 idempotency-key/request-id → 重复扣款风险；检测到分布式事务/2PC（seata/@GlobalTransactional/XAResource）→ 应改 Saga/Outbox；无 Outbox → 库消息不一致风险。防范"契约无版本/无幂等/跨服务事务"
 - `--state` 配置 STORE_DIR/MAX_STORE_LINES/COMPONENT_DIR。warn：store 文件行数 >MAX_STORE_LINES（巨型 store）；...props 透传 >5 处（prop drilling）；useState 内 .map/.filter/.reduce（派生状态应 useMemo）。防范"状态散落/prop drilling/派生不同步"
 - `--frontend` 配置 COMPONENT_DIR/MAX_COMPONENT_DEPTH/MAX_PROPS_COUNT/STYLE_DIR/BUNDLE_REPORT。**硬门禁**：循环依赖（madge）→ fail。warn：组件嵌套深度（python 扫描 JSX 标签峰值）>阈值；容器+展示混合（同时含数据获取+大量渲染）；props 数量 >阈值；非 .module.css 全局样式；bundle 重复依赖。防范"组件树失控/CSS污染/循环依赖"
-- `--cognition` 配置 COGNITION_BASELINE/COG_SPEED_FILES/COG_CUMULATIVE_TODO/COG_STRENGTH_FANIN。**不判违规**，输出认知体检报告：(1) 第一层六阶认知链逐阶评分——①概念（glossary+稳定单元清单）②结构（LAYER_DEFS+AGGREGATE_DIR+CONTEXT_DIRS）③空间（SERVICE_DIRS+COMPONENT_DIR+STORE_DIR）④映射（术语↔代码一致性+分层↔目录+SoR↔服务）⑤规律（每条门禁对应一条规律）⑥处理（spec/ADR/技术债），满分 11 + ≥4 条规律编码；(2) 五层认知基底总分——第一层 11 + 第二层 3 + 第三层 2 + 第四层 2 + 第五层 1 = 满分 19。第一层 ≥8+≥4 规律=完整；五层总分 ≥15/19=完整，10-14=部分，<10=不足。**理念：呈现递进的关系而非仅计数**，每个计数背后指向一条关系规律
+- `--cognition` 配置 COGNITION_BASELINE/COG_SPEED_FILES/COG_CUMULATIVE_TODO/COG_STRENGTH_FANIN。**不判违规**，输出认知体检报告：(1) 第一层六阶认知链逐阶评分——①概念（glossary+稳定单元清单）②结构（LAYER_DEFS+AGGREGATE_DIR+CONTEXT_DIRS）③空间（SERVICE_DIRS+COMPONENT_DIR+STORE_DIR）④映射（术语↔代码一致性+分层↔目录+SoR↔服务）⑤规律（每条门禁对应一条规律）⑥处理（spec/ADR/技术债），满分 14 + ≥4 条规律编码；(2) 五层认知基底总分——第一层 14 + 第二层 3 + 第三层 2 + 第四层 2 + 第五层 1 = 满分 22。第一层 ≥8+≥4 规律=完整；五层总分 ≥15/22=完整，10-14=部分，<10=不足。**理念：呈现递进的关系而非仅计数**，每个计数背后指向一条关系规律
 - `--shift-left` 配置 TEST_DESIGN_FILE/CHANGE_IMPACT_FILE/OBSERVABILITY_FILE/METRIC_ENDPOINTS/HEALTH_CHECK_URLS/LOG_FORMAT_REGEX/TRACE_HEADER。**硬门禁+warn**：(1) **测试左移**——spec（TEST_DESIGN_FILE）含"测试设计"段（测试策略/用例骨架/边界值/回归范围）→ 缺则 fail；git diff 中 test 文件先于或同时于 impl 文件提交 → warn（无 test 提交）→ impl 无对应 test → warn（覆盖率 gap）；(2) **变更左移**——plan（CHANGE_IMPACT_FILE）含"变更影响范围"段（消费方反查/回滚预案/灰度策略/迁移兼容窗口）→ 缺则 fail；spec 含回滚预案声明 → 缺则 fail；数据库迁移脚本（若有）无破坏性 DDL（DROP TABLE/DROP COLUMN）→ 有则 warn； (3) **运维监控左移**——spec（OBSERVABILITY_FILE）含"可观测性约束"段（日志结构/metrics 埋点清单/trace 透传/告警阈值/健康检查端点）→ 缺则 warn；代码中 grep metrics/日志/trace 埋点存在（METRIC_ENDPOINTS 指定的埋点）→ 缺则 warn；健康检查端点（HEALTH_CHECK_URLS）可访问（HTTP 200）→ 不可访问 warn。防范"缺陷流入后段/变更爆炸半径失控/线上故障不可观测"
 - 测试检查调用项目真实的测试命令
 - **★swarm-yuan 自身的 .sh 脚本须兼容三平台**（macOS BSD bash 3.2 + Linux GNU bash 4+）：不用 declare -A / sed -i.bak+rm / grep -E（非 -P）/ date -u（非 -d）/ $(cd+pwd) 替代 readlink -f / wc|xargs / ${var} 防 C-locale。详见 `references/security-spec.md` §六
@@ -534,7 +534,7 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 - [ ] 10.环境与外部资源 → env-setup.sh + codebase.md + mcp-tools.md
 - [ ] 11.**可复用稳定单元** → reference-manual.md §4/5/6/9（签名/路径/用途/复用方式/稳定性标注）+ dev-guide.md §7（拼装式开发原则）+ spec-template.md（复用约束段）+ precheck.sh --reuse
 - [ ] 12.数据规范 → reference-manual.md §8 + data-sample-template.md + precheck.sh --consistency
-- [ ] 13.**五层认知基底** → reference-manual.md（认知映射表+六维动力学基线+逻辑谬误图谱+辩证映射表）+ spec-template.md（§14交付衰减/§15蓝图/§16偏差自检/§17辩证映射）+ precheck.sh --cognition（五层总分≥15/19）
+- [ ] 13.**五层认知基底** → reference-manual.md（认知映射表+六维动力学基线+逻辑谬误图谱+辩证映射表）+ spec-template.md（§14交付衰减/§15蓝图/§16偏差自检/§17辩证映射）+ precheck.sh --cognition（五层总分≥15/22）
 - [ ] 14.**领域知识** → reference-manual.md（领域知识段：技术领域+业务领域+客观规律）+ spec-template.md（§18领域知识约束：领域识别+客观规律表+声明）+ precheck.sh --domain（spec §18存在性+reference-manual领域知识段+客观规律违规检测）
 - [ ] 15.**编排调用关系及约束** → dev-guide.md §8（编排约束：导入方向/注册顺序/路由挂载/改造分类/状态所有权/测试边界，每条含代码证据）+ reference-manual.md §5.1（链路图约束注释）+ precheck.sh --layer/--frontend
 - [ ] 16.**详尽组件库清单（全量）** → reference-manual.md §4（全量组件表，清单计数 ≥ find 计数 × 0.95）+ §6（全量端点表，每路由文件一张）+ §9（全量 store/类型表）
@@ -636,7 +636,7 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 - [ ] **第三层 认知辩证**：workflow 含 4-Phase 多轮交互 SOP（概念澄清→破局重构→七步推演→行动落地，每 Phase 暂停）；check 段含逻辑剃刀 6 步对抗审查（观点镜像/核心定调/病理诊断/降维反驳/建设性重构/灵魂拷问）；reference-manual.md 含"逻辑谬误图谱"段（四类谬误）；引用 references/logic-razor.md
 - [ ] **第四层 偏差防范**：spec-template.md 含 §16 认知偏差自检段（五维偏差扫描表 + 思维模型对照表 + 自检声明 3 checkbox）；workflow 6 节点含偏差检查锚点；引用 references/cognitive-bias.md
 - [ ] **第五层 辩证认知**：SKILL.md 含辩证认知框架段（本质与现象+7对辩证关系+矛盾分析法落点）；spec-template.md 含 §17 辩证映射分析段（主要矛盾+7对≥2对+辩证声明）；reference-manual.md 含"辩证映射表"段（7对辩证关系落点）；workflow 节点含矛盾识别（主要矛盾+矛盾主要方面）；引用 references/cognition-framework.md 第五层
-- [ ] **`--cognition` 五层总分**：`bash precheck.sh --cognition` 输出五层认知基底总分 ≥15/19（第一层 11 + 第二层 3 + 第三层 2 + 第四层 2 + 第五层 1）
+- [ ] **`--cognition` 五层总分**：`bash precheck.sh --cognition` 输出五层认知基底总分 ≥15/22（第一层 14 + 第二层 3 + 第三层 2 + 第四层 2 + 第五层 1）
 - [ ] **最小意识三条件**：M(门禁可运行) + H(state-machine+记忆) + A(认知体检+对抗验证) 三条件标注在 dev-guide.md
 
 **质量：**

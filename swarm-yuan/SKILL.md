@@ -50,7 +50,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 | 第五层 辩证认知 | 如何统一前四层（7 对辩证范畴） | spec §17 |
 | 领域知识（贯穿五层） | 识别技术+业务领域，推导客观规律（防达克效应） | spec §18 + `--domain` |
 
-**执行准则**：价值/目标/问题/结果四导向；质量优先>确保安全>兼顾效率>减少打扰>因地制宜；疑虑必确认（改只读/升级依赖/删稳定单元/多方案/安全冲突→暂停确认）。
+**执行准则**：价值/目标/问题/结果四导向；质量优先>确保安全>兼顾效率>减少打扰>因地制宜；疑虑必确认（改只读/升级依赖/删稳定单元/多方案/安全冲突/架构变更/不确定意图→暂停确认）。
 
 **AI 主导 + 用户决策原则**（G1 决策治理，对齐 ISO/IEC 42001 人工监督留痕）：在目标 skill 的完整生命周期中，特征卡提取、门禁配置、spec 填充、代码实现、问题排查等所有环节均**优先以 AI 为主导生成建议项**，但决策按**三级分类**治理——什么能自动做、什么必须停下问、每条决策有审计轨迹落盘。用户的角色是**评估决策或修订后批准执行**，而非手动编写。详见 `references/decision-governance.md`。具体：
 - 特征卡 17 项：AI 探查后**主动生成建议值**（Mechanical 类，直接做），用户评估修订后确认
@@ -61,13 +61,13 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 - 多方案选择：AI **主动提出 2+ 方案权衡 + 推荐**（**UserChallenge 类，永不自动决定**，须输出五要素等用户裁定），用户决策
 - 问题排查：AI **主动分析 + 给出解决方案**（Taste 类；涉及架构变更/安全冲突升 UserChallenge），用户评估后批准
 
-> **决策留痕**：每条决策通过 `scripts/trace-log.sh --decision` 追加到 `.swarm-yuan/decisions.jsonl`（永不 fail 阻塞主流程）；UserChallenge 类须含五要素（alternatives/missing_context/cost_if_wrong）。阶段流转由 `scripts/state-machine.sh` transition 自动记录。`--mark-active` 前须有至少 1 条决策记录（`--verify-completeness --strict` 校验）。
+> **决策留痕**：每条决策通过 `scripts/trace-log.sh --decision` 追加到 `.swarm-yuan/decisions.jsonl`（永不 fail 阻塞主流程）；UserChallenge 类须含五要素（alternatives/missing_context/cost_if_wrong）。阶段流转由 `scripts/state-machine.sh` transition 自动记录。`--mark-active` 前须有至少 1 条决策记录（`--mark-active` 经 `--verify-completeness --strict` 校验≥1 条）。
 
 > 完整框架详见 `references/cognition-framework.md`；逻辑剃刀+谬误图谱见 `references/logic-razor.md`；认知偏差+思维模型见 `references/cognitive-bias.md`；领域知识速查见 `references/domain-knowledge.md`；决策治理（三级分类+五要素）见 `references/decision-governance.md`。
 
 ## 生成流程（AI 自动执行，用户只需提供项目路径）
 
-**铁律：AI 必须执行完整流程（Step 0-10）后才算生成完成。不允许以 draft 骨架交付——骨架中的占位符必须全部被真实内容替换。生成完成时检查：目标 skill 中不得残留任何"待填充"/"填充指引"/占位符。**
+**铁律：AI 必须执行完整流程（Step 0-8，含 5 个 .5 子步共 13 节点）后才算生成完成。不允许以 draft 骨架交付——骨架中的占位符必须全部被真实内容替换。生成完成时检查：目标 skill 中不得残留任何"待填充"/"填充指引"/占位符。**
 
 **中断安全（状态门，决策 13）：流程可中断，但 draft ≠ 交付。** 骨架 frontmatter `status: draft` 期间，目标 skill 的 `--all-full`/`--compliance-suite` 被 precheck 机器禁用（exit 2）；中断后重跑 `generate-skill.sh` 同命令自动**断点续传**（幂等补齐缺失文件，不覆盖已有内容）；填充完成后 `bash scripts/generate-skill.sh --mark-active <skill_dir>`（零占位符核验通过才翻 `status: active`）才算生成完成。P1 特征卡项可「（P1 待补）」占位（WP-G），P0 六项必须填实。
 
@@ -95,7 +95,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 6. **创建骨架**：`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ + precheck.conf）。`--profile auto|lite|standard|compliance` 四档，**默认 auto 项目级自适应**（合规关键词 → compliance；文件数 <80 → lite；其余 standard；**WP-Q2 偏置修正：信号明确才升档，模糊走默认 standard**，auto 会打印判定依据供用户评估）：**lite**（认知档）= 特征卡 + reference-manual + 核心门禁脚本最小集（无 hooks/commands/settings/.mcp.json）；**standard** = 全量骨架；**compliance** = standard + 标准合规矩阵参考（references/standards-compliance.md）。**零占位符铁律适用范围 = 当前 profile 的文件集**（profile 是显式声明不启用，与"未配置静默跳过"本质不同）。默认生成到 `<project-dir>/.claude/skills/`（"为目标项目生成"名副其实）；可用第 3 参数 `target-dir` 显式指定其他目录，如 `--upgrade <name> <project-dir> <target-dir>`。全局安装到 `~/.claude/skills/` 等运行时目录走 `install.sh`。
 7. **AI 填充全部文件**：SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`。**reference-manual.md §4 构件表/§6 接口表/§9 store+类型表按形态动态填充（维度错配=未完成），§5 链路按形态选模型 + §5.1 约束注释，dev-guide.md §8 按形态选约束类别**
 8. **AI 配置 precheck.conf**：**★WP-P4 脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/SERVICE_DIRS/STORE_DIR/WRITABLE_DIRS 等语义型变量，须从特征卡推导）+ 审 diff 是否符合特征卡意图——从「写 170 行」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
-9. **AI 集成 Claude Code**：生成 hooks/hooks.json + commands/ + settings.local.json + .mcp.json + workflow.md 节点标注。详见 `references/claude-code-capabilities.md`
+9. **AI 集成 Claude Code**：定制 generate-skill.sh 已生成的 hooks/hooks.json + commands/ + settings.local.json + .mcp.json 模板（脚本骨架已建，AI 补项目特定配置）+ workflow.md 节点标注。详见 `references/claude-code-capabilities.md`
 10. **AI 运行门禁**：`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--mark-active` 翻 active 后 `--all-full`（标准 27：核心 10+架构 17）；强监管交付按需追加 `--compliance-suite`（合规 17）
 11. **AI 写回记忆**：claude-mem/.zcode/memories/.project-knowledge.md 三路写回，形成"记忆→生成→开发→记忆"闭环
 12. **AI 最终检查**：运行 `bash scripts/generate-skill.sh --verify-completeness <skill_dir>` 做零占位符 + workflow 调用追踪要素机器执法（命中即列 file:line 并 exit 1，零命中打印「✓ 零占位符确认」），确认零"待填充"/零"填充指引"/零"<占位符>"残留；**维度计数核验（WP-P2 脚本化）：跑 `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <§C+.0形态>`，全 PASS → 直接引用报告结论；FAIL（清单计数 < 枚举计数 × 0.95）→ 只针对失败维度回 Step 4 补漏；DIM_MISMATCH（声明形态与枚举结果矛盾）→ 回 §C+.0 重判形态**。维度注册表见 `assets/inventory-dimensions.conf`（数据驱动，新增维度改注册表不改脚本）；**框架适配四要素核验：对 ACTIVE_FRAMEWORKS 每个框架——① 构件枚举计数 ≥ 实际 × 0.95（依 `references/frameworks/<fw>.md` §2 的计数基准）② `framework-knowledge.md` 规律数 ≥ 规则文件声明的深度门槛且 100% 含"证据:"字段 ③ `precheck.sh` 含 `_fw_<id>_check` 动态分发器且 `--framework <id>` 实跑 exit 0（门禁片段位于 `assets/framework-gates/<fw>.sh`，已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块）④ `dev-guide.md` §10 含该框架约束段 ≥ 3 条。任一不过 → 回 Step 4.5**。**如有残留，回到 Step 7 继续填充，直到零残留。**
@@ -109,12 +109,14 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 | 段 | 文件 | 作用 |
 |----|------|------|
 | meta | `SKILL.md` | 元信息、铁律、流程总览、命令速查 |
-| workflow | `references/workflow.md` | 节点化流程（10 要素/节点，含★调用追踪 + 4-Phase SOP）——生成时填充 |
+| workflow | `references/workflow.md` | 节点化流程（8 节点 × 每节点 10 要素，含★调用追踪 + 4-Phase SOP）——生成时填充 |
 | reference | `references/*.md` | 参考手册（目录/安全/编译/**全量组件库**/**依赖链路+约束（按形态选模型）**/**全量接口端点**/**全量store+类型** + 数据 + 方法论 + 认知 + 领域知识） |
 | reference | `references/framework-knowledge.md` | **按激活框架实例化的规律与门禁依据**（骨架由 AI 在 Step 4.5 框架深化阶段依据 `references/frameworks/<fw>.md` §3+§4 构建，逐条用项目代码验证实例化；`--inject-frameworks` 只注入门禁片段到 precheck.sh，不生成此文件骨架） |
 | assets | `assets/*` | 模板（spec/plan/分支/环境/库表/状态机） |
 | check | `scripts/precheck.sh` | 54 个门禁子命令（核心 10 + 架构 17 + 合规 17 + advisory-only 10：`--compliance` 标准合规矩阵核验 / `--docs-pack` 文档包清单 / `--sbom` SBOM 生成+许可证块名单 / `--privacy` 个人信息扫描 / `--authz` 授权类弱点 / `--requirements` 需求质量（29148）/ `--crypto` 密码算法合规（GB/T 39786）/ `--rtm` 需求追溯矩阵（29148 RTM）/ `--release-sign` 发布签名+provenance（SLSA L2 / SSDF PS.2）/ `--dengbao` 等保 2.0 控制点（GB/T 22239，fail-closed+豁免留痕）/ `--pia` 隐私影响评估（个保法 55-56，fail-closed）/ `--sast-deep` 深度 SAST（semgrep→opengrep→内置降级链）/ `--oss-eval` 开源代码安全评价（GB/T 43848，复用 --sbom 产物），随 `--all-full` 执行（标准 27：核心 10+架构 17）；合规 17 独立 `--compliance-suite` 按需执行，未配置静默跳过；另含 `--shift-left` 左移：测试设计/变更影响/可观测性） + **框架门禁片段注入区**（`# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，由 `--inject-frameworks` 写入）。**门禁分层（决策 19，横切维度）**：strict 20（真 fail）/ warn 19（混合）/ advisory 15（永不 fail，子shell 内重定义 fail/warn 为纯 echo）；`--list-gates` 列三档分层；`scripts/gen-enforce-level.sh` 按 fail() 数自动归类（幂等）。**注**：advisory-only 10（执行序列轴，不在 --all/--all-full/--compliance-suite 任一数组）与 advisory 15（enforce 横切轴，0 fail）是两个不同维度--advisory-only 10 全部属于 advisory 15，另 5 个 advisory-15 门禁（consistency/consistency-cross/link-depth/mermaid/state）在执行序列内但永不 fail。 |
 | scripts | `scripts/*` | 工具箱（门禁+状态机+**调用追踪 trace-log.sh**+图谱+MCP+self-check） |
+
+> **verifier 定位（诚实声明）**：仓库内 `verifier/` 是验收驱动器（acceptance harness），复用 `precheck.sh` 作引擎 + 独立 fixture 数据（violating/compliant 双态）+ 独立 assertion（fail-id 级断言）双层独立性，**非独立重实现**的司法预言机。强行独立重实现 54 门禁会引入双源漂移；本设计以 fixture 数据独立性 + assertion 严格性保证验收可信。
 
 **★WP-P3 框架证据台账脚本化**：跑 `bash scripts/framework-evidence.sh <项目根> --frameworks <ACTIVE_FRAMEWORKS>` 产出证据台账 TSV（framework/rule_id/rule_title/hits/evidence/SUGGEST）。模型读台账而非逐条跑 grep——对每条规律做适用/不适用判断并记录理由（判断语义完整保留，红线 template-spec.md:346），证据 file:line 从台账直接引用；SUGGEST 只是启发式（hits=0 → likely-na），不是判决。规律计数 ≥ 深度门槛的校验由 `verify-framework-ruleset.sh` 继续兜底。框架文件 §3 每条规律下的 ```verify 块（id/cmd/expect）是台账数据源，新增/改规律须同步 verify 块。
 
@@ -164,10 +166,12 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 工控/物联网行业 profile（等保三级/密评/IEC 62443 SL1-SL4/GB/T 33009 ↔ 门禁映射 + industrial.conf 配套） | `references/industry-profile-industrial.md` |
 | 框架规则库（生成时按 ACTIVE_FRAMEWORKS 读取对应 `<fw>.md`） | `references/frameworks/` |
 
+> **注**：另 2 份 references（`cwe-database.md` / `security-certification-profiles.md`）为门禁内部数据文件，由 `--cwe-audit`/`--cert-audit` 机械读取，不列入本 AI 阅读表（references/ 实际 28 文件 = 本表 26 + 门禁内部 2）。
+
 ## 使用说明
 
 1. 确认目标项目路径与 skill 名称
 2. `bash scripts/self-check.sh` 自检 11 项目运行时
 3. 按需读 reference（探查→exploration-guide；填充→template-spec；方法论→各 reference 文件）
 4. `scripts/generate-skill.sh <name> <project-dir>` 创建骨架（或 `--upgrade` 升级已有）
-5. 按上方「生成流程」Step 0-12 全量执行（铁律：不可中途停在骨架；每步先公告调用 + trace-log 落盘），每段落盘后用 `template-spec.md` 末尾核对表验证
+5. 按上方「生成流程」Step 0-8（13 节点）全量执行（铁律：不可中途停在骨架；每步先公告调用 + trace-log 落盘），每段落盘后用 `template-spec.md` 末尾核对表验证

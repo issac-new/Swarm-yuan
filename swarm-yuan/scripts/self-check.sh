@@ -626,6 +626,10 @@ check_doc_consistency() {
     [[ "${FACT_ENFORCE_ADVISORY:-0}" != "$true_enforce_advisory" ]] && facts_drift="${facts_drift} ENFORCE_ADVISORY(声明=${FACT_ENFORCE_ADVISORY}/真值=${true_enforce_advisory});"
     [[ "${FACT_FRAMEWORKS:-0}" != "$true_fw" ]] && facts_drift="${facts_drift} FRAMEWORKS(声明=${FACT_FRAMEWORKS}/真值=${true_fw});"
     [[ "${FACT_REFERENCES:-0}" != "$ref_cnt" ]] && facts_drift="${facts_drift} REFERENCES(声明=${FACT_REFERENCES}/真值=${ref_cnt});"
+    # WP-Bootstrap: FACT_FLOW_NODES 真值从 generate-skill.sh 骨架 checklist「八节点」字面提取
+    local true_flow_nodes
+    true_flow_nodes=$(grep -oE '八节点' "$base/scripts/generate-skill.sh" 2>/dev/null | head -1 | grep -q . && echo 8 || echo 0)
+    [[ "${FACT_FLOW_NODES:-0}" != "$true_flow_nodes" ]] && facts_drift="${facts_drift} FLOW_NODES(声明=${FACT_FLOW_NODES}/真值=${true_flow_nodes});"
     if [[ -n "$facts_drift" ]]; then
       warn "facts.conf 与代码真值漂移（请先同步 facts.conf）：${facts_drift}"
       FAIL=1
