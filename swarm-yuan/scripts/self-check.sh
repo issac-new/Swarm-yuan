@@ -818,6 +818,35 @@ check_compat_tier() {
 }
 check_compat_tier
 
+# ===== WP-Z11：测度元素元数据覆盖率断言（Q-06，GB/T 25000.21-2019）=====
+# conf 变量须含 # MEASURE: 注释（characteristic/function/threshold 三元组）
+# 渐进式：FACT_MEASURE_METADATA_REQUIRED=0 时 warn-only 报告覆盖率；1 时 fail
+check_measure_metadata() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local precheck_conf="$base/scripts/precheck.conf"
+  [[ -f "$precheck_conf" ]] || precheck_conf="$base/assets/precheck.conf"
+  [[ -f "$precheck_conf" ]] || return 0
+  if [[ -z "${FACT_MEASURE_METADATA_REQUIRED:-}" && -f "$base/assets/facts.conf" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$base/assets/facts.conf"; set -u
+  fi
+  echo "▶ 测度元素元数据覆盖率（Q-06，GB/T 25000.21-2019）"
+  local total covered pct
+  total=$(grep -cE '^[A-Z_][A-Z0-9_]*=' "$precheck_conf" 2>/dev/null || echo 0)
+  covered=$(grep -cE '^[A-Z_][A-Z0-9_]*=.*# MEASURE:' "$precheck_conf" 2>/dev/null || echo 0)
+  pct=$((total > 0 ? covered * 100 / total : 0))
+  echo "  ℹ precheck.conf MEASURE 注释覆盖：${covered}/${total}（${pct}%）"
+  if [[ "${FACT_MEASURE_METADATA_REQUIRED:-0}" == "1" && "$covered" -lt "$total" ]]; then
+    warn "MEASURE 元数据覆盖率 ${pct}% < 100%（FACT_MEASURE_METADATA_REQUIRED=1，须全量覆盖）"
+    FAIL=1
+  elif [[ "$pct" -lt 50 ]]; then
+    warn "MEASURE 元数据覆盖率 ${pct}% < 50%——建议为核心门禁变量补 # MEASURE: 注释（GB/T 25000.21 测度元素）"
+  else
+    echo "  ✓ MEASURE 元数据覆盖率 ${pct}%（≥50%，GB/T 25000.21 测度元素格式）"
+  fi
+}
+check_measure_metadata
+
 # ===== 上游基线漂移忠告（不联网，仅读登记表机器标记行）=====
 upstream_baseline_check() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
