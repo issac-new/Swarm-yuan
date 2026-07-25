@@ -79,6 +79,20 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 | 11 | CockpitWorkspace / CockpitKanban / GatewayNoticeBanner 等 15+ 组件 |
 | 14 | IM 通讯（Matrix 协议）+ DevOps 监控 |
 
+### 落地示例（强监管交付 · 关节编排汇报）
+
+> 真实汇报场景：《AI 赋能研发工作的系统方案》——以「关节编排（Articulated Orchestration）」为核心方法论，面向公司技术总裁，清算核心系统交付（资金 0 容错 · 强监管 · 变更可追溯）。swarm-yuan 的抽象能力在此场景中被映射为一套可对外讲述的工程叙事，每个论点都有机器执法机制兜底「凭什么可信」。
+
+核心映射（完整版见 [`swarm-yuan/references/case-studies/articulation-orchestration.md`](swarm-yuan/references/case-studies/articulation-orchestration.md)）：
+
+- **关节** ≈ 特征卡第 11 项「可复用稳定单元」五维字段 + `inventory-verify.sh` 计数核验
+- **编排约束** ≈ 调用链路分析 §C+.2 形态自适应 + §C+.3 每条约束附代码证据
+- **安检** ≈ 54 门禁三档 enforce（strict 20 / warn 19 / advisory 15）+ verifier 司法独立验证
+- **左移** ≈ spec §19 测试设计 + §20 变更影响 + §21 可观测性 + `--shift-left` 门禁
+- **审计可追溯** ≈ `trace-log.sh` → `trace.jsonl` + `decisions.jsonl`（ISO/IEC 42001 人工监督留痕）
+
+> **关键纠偏**：汇报中的「10⁻¹⁰ 失效概率」是使用方基于分层防御的推演模型，**非 swarm-yuan 仓库直接输出**；「103 组件」是目标项目枚举产物非 skill 硬数字。详见案例文档的「关键纠偏」段。
+
 ---
 
 ## 54 个质量门禁：特征卡的守卫者
@@ -86,9 +100,9 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 **特征卡是立法，门禁是执法。** 特征卡定义规则，门禁验证合规。
 
 > **门禁分层（决策 19）——执法强度横切维度：** 54 门禁按 `fail()` 能力分三档，与 core/standard/compliance 执行序列正交：
-> - **strict（17 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model）
-> - **warn（21 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄
-> - **advisory（16 个）**：0 个 fail，永不阻断，只 warn/pass（cognition/consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/canary/cwe-audit/cert-audit）
+> - **strict（20 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model/crypto/sast-deep/oss-eval；Z3 fail-closed 化后 +crypto/sast-deep/oss-eval 升 strict）
+> - **warn（19 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄（Z3 后 cognition 降 warn）
+> - **advisory（15 个）**：0 个 fail，永不阻断，只 warn/pass（cognition/consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/canary/cwe-audit/cert-audit）
 >
 > 查看分层：`bash scripts/precheck.sh --list-gates`。advisory 门禁在子 shell 内重定义 fail/warn 为纯 echo，永不进计数——"advisory 是观测类，不阻断交付"语义机器化。分层由 `scripts/gen-enforce-level.sh` 自动按 fail() 数归类（幂等），手动覆盖见 precheck.sh `_ENFORCE_OVERRIDE`。
 

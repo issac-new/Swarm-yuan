@@ -19,6 +19,7 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 - 用户说"为某项目生成开发技能"、"create a dev skill for this repo"、"按模板生成 skill"
 - 用户提到"六段式 skill"、"需求交付全流程 skill"、"spec-driven skill"
 - 用户给了一个代码仓库，要求产出研发用 skill
+- 用户要为「关节编排 / Articulated Orchestration」类汇报（如 AI 赋能研发、金融级清算核心交付）准备论据：swarm-yuan 的特征卡/门禁/verifier 可作为"凭什么可信"的机器执法兜底，落地案例映射见 `references/case-studies/articulation-orchestration.md`
 
 **安装**：`bash install.sh`（自动检测运行环境 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi，安装到对应 skill 目录。详见 `install.sh --list`）
 
