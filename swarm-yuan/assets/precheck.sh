@@ -270,6 +270,9 @@ _default_conf() {
   AUTHZ_EXTRA_PATTERNS=()
   REQUIREMENTS_STRICT=0
   REQUIREMENTS_ID_REQUIRED=0
+  # WP-Z7: 需求术语同义词对（ISO/IEC/IEEE 29148 §5.2.7.2 术语一致性检查）
+  # 格式: ("术语A|术语B" "同义词A|同义词B")，如 ("用户|客户" "系统|平台")
+  REQUIREMENTS_SYNONYM_PAIRS=()
   CRYPTO_PROFILE=""
   CRYPTO_SCAN_DIRS=()
   # 长期清单收口（P3）：需求追溯矩阵（--rtm）+ 发布签名（--release-sign，SLSA Build L2）
