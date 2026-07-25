@@ -933,29 +933,44 @@ check_skill_supply_chain() {
     return 0
   fi
   local found=0
-  # ① 恶意模式扫描：eval/exec/反引号 + 网络请求（curl/wget/fetch）的组合
+  # ① 恶意模式扫描（cso P8：SKILL.md 是可执行提示代码，不豁免文档文件）
   local suspicious_files=""
-  local skill_sh
-  while IFS= read -r skill_sh; do
-    [[ -z "$skill_sh" ]] && continue
-    # 检测 eval/exec + 网络请求组合
-    if grep -qE '\beval\s*\(' "$skill_sh" 2>/dev/null && grep -qE 'curl\s|wget\s|fetch\(' "$skill_sh" 2>/dev/null; then
-      suspicious_files="${suspicious_files}${skill_sh}: eval+网络请求\n"
+  local skill_f
+  while IFS= read -r skill_f; do
+    [[ -z "$skill_f" ]] && continue
+    # 检测 eval/exec + 网络请求组合（.sh）
+    if grep -qE '\beval\s*\(' "$skill_f" 2>/dev/null && grep -qE 'curl\s|wget\s|fetch\(' "$skill_f" 2>/dev/null; then
+      suspicious_files="${suspicious_files}${skill_f}: eval+网络请求\n"
       found=1
     fi
     # 检测混淆代码（base64 解码后执行）
-    if grep -qE 'base64.*decode.*\|.*bash|base64.*-d.*\|.*sh' "$skill_sh" 2>/dev/null; then
-      suspicious_files="${suspicious_files}${skill_sh}: base64 混淆执行\n"
+    if grep -qE 'base64.*decode.*\|.*bash|base64.*-d.*\|.*sh' "$skill_f" 2>/dev/null; then
+      suspicious_files="${suspicious_files}${skill_f}: base64 混淆执行\n"
       found=1
     fi
     # 检测硬编码外部 URL + 下载执行
-    if grep -qE 'curl.*\|.*bash|wget.*\|.*sh' "$skill_sh" 2>/dev/null; then
-      suspicious_files="${suspicious_files}${skill_sh}: 远程脚本下载执行\n"
+    if grep -qE 'curl.*\|.*bash|wget.*\|.*sh' "$skill_f" 2>/dev/null; then
+      suspicious_files="${suspicious_files}${skill_f}: 远程脚本下载执行\n"
       found=1
     fi
-  done < <(find "$skills_dir" -name '*.sh' -type f 2>/dev/null || true)
+    # cso P8 补充：凭证访问模式（读 ~/.ssh ~/.aws ~/.config 敏感目录）
+    if grep -qE 'cat\s+~/\.ssh|cat\s+~/.aws|cat\s+~/.config|source\s+~/.ssh|cat\s+~/.env' "$skill_f" 2>/dev/null; then
+      suspicious_files="${suspicious_files}${skill_f}: 凭证访问（读敏感目录）\n"
+      found=1
+    fi
+    # cso P8 补充：提示注入覆写（尝试修改系统提示/覆写 skill 文件）
+    if grep -qE 'override.*system.*prompt|ignore.*previous.*instructions|覆写.*提示|覆盖.*system' "$skill_f" 2>/dev/null; then
+      suspicious_files="${suspicious_files}${skill_f}: 提示注入覆写尝试\n"
+      found=1
+    fi
+    # cso P8 补充：网络外联（非项目域名硬编码）
+    if grep -qE 'https?://[a-zA-Z0-9.-]+\.(ru|tk|ml|ga|cf)' "$skill_f" 2>/dev/null; then
+      suspicious_files="${suspicious_files}${skill_f}: 可疑 TLD 网络外联\n"
+      found=1
+    fi
+  done < <(find "$skills_dir" -type f \( -name '*.sh' -o -name '*.md' \) 2>/dev/null || true)
   if [[ -n "$suspicious_files" ]]; then
-    warn "检出 Skill 供应链可疑模式（cso P8：恶意 skill 可能利用 eval/网络请求/混淆执行）：
+    warn "检出 Skill 供应链可疑模式（cso P8：恶意 skill 可能利用 eval/网络请求/混淆执行/凭证访问/提示注入覆写）：
 $(printf '%b\n' "$suspicious_files" | head -5 | sed 's/^/    /')"
   fi
   # ② UPSTREAM.md / 许可证登记检查（warn-only）
