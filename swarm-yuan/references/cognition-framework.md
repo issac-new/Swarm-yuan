@@ -127,4 +127,4 @@ reference-manual.md 须含以下段（从本文件框架裁剪）：
 5. 领域知识（见 `references/domain-knowledge.md`）
 6. ECC 认知扩展（可选：council 四声音 / recursive decision ledger / intent-driven development）
 
-precheck `--cognition` 检查以上段的存在性与内容质量，输出五层认知基底总分（≥15/19 = 完整）。
+precheck `--cognition` 检查以上段的存在性与内容质量，输出五层认知基底总分（≥15/22 = 完整）。

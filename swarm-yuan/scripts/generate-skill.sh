@@ -470,6 +470,17 @@ for i, line in enumerate(sys.stdin, 1):
       done < "$dec_file"
     fi
   fi
+  # C2: --strict 模式下强制 decisions.jsonl 至少 1 条记录（SKILL.md:64 契约：--mark-active 前须≥1 决策）
+  # draft 期（非 strict）允许空；strict 时文件缺失或零记录均记为 hit
+  if [[ "$strict" == "--strict" ]]; then
+    local _dec_cnt=0
+    if [[ -f "$dec_file" ]]; then
+      _dec_cnt=$(grep -c '.' "$dec_file" 2>/dev/null | xargs)
+    fi
+    if [[ "$_dec_cnt" -eq 0 ]]; then
+      decisions_miss="${decisions_miss}${decisions_miss:+$'\n'}$dec_file: 缺少决策记录（--mark-active 须≥1 条，SKILL.md:64 契约）"
+    fi
+  fi
   hits=$(printf '%s\n%s\n' "$hits" "$decisions_miss" | grep -v '^$' || true)
   if [[ -n "$hits" ]]; then
     echo "✗ 占位符/未勾项/缺失要素未清零（$(printf '%s\n' "$hits" | wc -l | tr -d ' ') 处）:"
