@@ -147,6 +147,32 @@ claude-mem 支持的查询维度：
 
 **推荐组合**：state-machine.sh 管阶段状态 + progress ledger 管任务进度 + claude-mem（若装）管跨会话知识。三者不冲突，各管一层。
 
+## 知识溯源三级标记（Honest-edge Provenance）
+
+> 理念来源：graphify v0.9.x（`research/graphify/ARCHITECTURE.md:43-56`）。graphify 对每条图边标 `EXTRACTED`/`INFERRED`/`AMBIGUOUS`，让用户始终知道什么是读出来的、什么是猜的。swarm-yuan 已在 `references/code-graph-tools.md:185` 引用 graphify 的 `GRAPH_REPORT.md` 三标输出，本节把它吸收进自身决策/记忆层。统一语义同时兼容 ECC instinct 的 0.0-1.0 置信度（见下文 §Memory Distillation 的 instinct 置信度）。
+
+**核心问题**：AI 写回的记忆/断言/决策若不分"读出来的"和"推断的"，后续会话会把推断当事实用，累积成幻觉。溯源三级标记让每条知识的**来源确定性**显式可见。
+
+**三级标记**（作为 `decisions.jsonl` 每行的 `confidence` 字段，缺省 `inferred`）：
+
+| 标记 | 语义 | 何时用 | 对应 ECC instinct 置信度 |
+|------|------|--------|--------------------------|
+| `extracted` | 源码/配置/特征卡显式声明，机械可验证 | 读到字面证据（如 `package.json` 的版本号、特征卡第 4 项技术栈） | ≥ 0.8 |
+| `inferred` | 合理推断，无直接字面证据但逻辑链成立 | 从结构/约定推导（如从 import 方向推断分层） | 0.4 - 0.7 |
+| `ambiguous` | 不确定，待人工确认 | 多解/证据冲突/推测（如未确认的 API 意图） | < 0.4 |
+
+**落盘**：
+- `assets/trace-log.sh --decision` 已支持 `--confidence <extracted|inferred|ambiguous>` 标志，缺省 `inferred`（对齐"未标注即推断"的保守姿态）。
+- 字段写入 `decisions.jsonl` 每行的 `confidence` 字段。
+- `check_decision_audit`（gates-advisory.sh）的 python 校验器用 `.get("confidence","inferred")` 容错，不强制 presence（缺省不 fail），仅作为写回记忆时的诚实化指引。
+
+**使用纪律**：
+1. **写回记忆时标**：AI 把观察/决策写入 `decisions.jsonl` 或 claude-mem 时，须给出 `confidence`；不确定的标 `ambiguous` 而非编造 `extracted`。
+2. **读记忆时辨**：AI 在新会话读历史决策/记忆时，优先采信 `extracted`，`inferred` 需复核，`ambiguous` 需人工确认后才用。
+3. **与 graphify 输出对齐**：若项目装了 graphify，其 `GRAPH_REPORT.md` 的边标与本字段同源--`extracted`/`inferred`/`ambiguous` 语义一致，可交叉引用。
+
+**与 ECC instinct 置信度的关系**：ECC 的 atomic-instinct 带 0.0-1.0 置信度（见下文 §Memory Distillation）；本三级标记是其离散化映射（`extracted` ≈ ≥0.8 / `inferred` ≈ 0.4-0.7 / `ambiguous` ≈ <0.4）。两套共存：连续值用于 instinct 内部排序，离散标记用于跨工具互操作（graphify/decisions.jsonl/claude-mem）。
+
 ## WAL 安全备份（ruflo v3.23.0）
 
 > 引自 ruflo v3.23.0。SQLite WAL 模式下的安全备份模式——naive 拷贝会损坏 DB。

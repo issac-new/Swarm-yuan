@@ -3,8 +3,10 @@
 # 用法:
 #   bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]
 #   --node/--actor 可缺省；--tool 必填。
-#   bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--rationale <理由>] [--phase <阶段>] [--alternatives <备选>] [--missing-context <缺失上下文>] [--cost-if-wrong <代价>]
+#   bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--rationale <理由>] [--phase <阶段>] [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [--alternatives <备选>] [--missing-context <缺失上下文>] [--cost-if-wrong <代价>]
 #   --decision 模式（G1 决策治理）：落盘 .swarm-yuan/decisions.jsonl，对齐 ISO/IEC 42001 人工监督留痕。
+#   --reversibility（§2.4，gsd-core v1.8.0 吸收）：决策可逆性评级，缺省 reversible；one-way 应由 AI 在调用前升级 type=UserChallenge。
+#   --confidence（知识溯源三标，graphify v0.9.27 吸收）：决策依据的溯源置信度，缺省 inferred。
 # 行为（双通道，均无需用户确认）:
 #   1) stdout 打印一行结构化提示：→ [<节点>] 调用 <actor> · <tool>（<status>）— <note>
 #   2) 追加 JSON 行到 ${PROJECT_DIR:-$(pwd)}/.swarm-yuan/trace.jsonl（与 gate-runs.jsonl 同目录同构）
@@ -20,6 +22,7 @@ NODE=""; ACTOR=""; TOOL=""; STATUS="started"; NOTE=""
 # --decision 模式变量（G1 决策治理）
 DECISION_MODE=0; D_TYPE=""; D_SUGGESTION=""; D_USER_ACTION=""; D_RATIONALE=""
 D_ALTERNATIVES=""; D_MISSING_CONTEXT=""; D_COST_IF_WRONG=""; D_PHASE=""
+D_REVERSIBILITY=""; D_CONFIDENCE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --node)   NODE="${2:-}";   shift 2 ;;
@@ -36,15 +39,17 @@ while [[ $# -gt 0 ]]; do
     --missing-context) D_MISSING_CONTEXT="${2:-}"; shift 2 ;;
     --cost-if-wrong) D_COST_IF_WRONG="${2:-}"; shift 2 ;;
     --phase)     D_PHASE="${2:-}"; shift 2 ;;
+    --reversibility) D_REVERSIBILITY="${2:-}"; shift 2 ;;
+    --confidence)    D_CONFIDENCE="${2:-}";    shift 2 ;;
     *) echo "未知参数: $1" >&2
        echo "Usage: bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]" >&2
-       echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--rationale <理由>] [--phase <阶段>] [--alternatives <备选>] [--missing-context <缺失上下文>] [--cost-if-wrong <代价>]" >&2
+       echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--rationale <理由>] [--phase <阶段>] [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [--alternatives <备选>] [--missing-context <缺失上下文>] [--cost-if-wrong <代价>]" >&2
        exit 1 ;;
   esac
 done
 if [[ "$DECISION_MODE" -eq 0 && -z "$TOOL" ]]; then
   echo "Usage: bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]" >&2
-  echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [...]" >&2
+  echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [...]" >&2
   exit 1
 fi
 # --decision 模式必填校验（缺则降级记录，永不 fail 阻塞主流程）
@@ -62,6 +67,9 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
       D_TYPE="UserChallenge:incomplete"
     fi
   fi
+  # 可逆性/置信度缺省（§2.4 + 知识溯源三标）
+  [[ -z "$D_REVERSIBILITY" ]] && D_REVERSIBILITY="reversible"
+  [[ -z "$D_CONFIDENCE" ]] && D_CONFIDENCE="inferred"
 fi
 
 # JSON 最小转义：反斜杠 / 双引号；剔除换行与回车（单行 jsonl 铁律）
@@ -83,10 +91,11 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
   STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
   if mkdir -p "$STATE_DIR" 2>/dev/null; then
     ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    _dec_line=$(printf '{"ts":"%s","phase":"%s","type":"%s","ai_suggestion":"%s","user_action":"%s","rationale":"%s","actor":"%s","alternatives":"%s","missing_context":"%s","cost_if_wrong":"%s"}' \
+    _dec_line=$(printf '{"ts":"%s","phase":"%s","type":"%s","ai_suggestion":"%s","user_action":"%s","rationale":"%s","actor":"%s","alternatives":"%s","missing_context":"%s","cost_if_wrong":"%s","reversibility":"%s","confidence":"%s"}' \
       "$ts" "$(_json_esc "$D_PHASE")" "$(_json_esc "$D_TYPE")" "$(_json_esc "$D_SUGGESTION")" \
       "$(_json_esc "$D_USER_ACTION")" "$(_json_esc "$D_RATIONALE")" "$(_json_esc "${ACTOR:-swarm-yuan/ai}")" \
-      "$(_json_esc "$D_ALTERNATIVES")" "$(_json_esc "$D_MISSING_CONTEXT")" "$(_json_esc "$D_COST_IF_WRONG")")
+      "$(_json_esc "$D_ALTERNATIVES")" "$(_json_esc "$D_MISSING_CONTEXT")" "$(_json_esc "$D_COST_IF_WRONG")" \
+      "$(_json_esc "$D_REVERSIBILITY")" "$(_json_esc "$D_CONFIDENCE")")
     if ! printf '%s\n' "$_dec_line" >> "$STATE_DIR/decisions.jsonl" 2>/dev/null; then
       echo "⚠ trace-log: decisions.jsonl 落盘失败（$STATE_DIR/decisions.jsonl 不可写），决策未留痕（不阻塞）" >&2
     else

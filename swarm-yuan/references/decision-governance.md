@@ -37,6 +37,28 @@ R3 调研（`docs/research/R3-methodology.md` §2.2-e）发现 logic-razor 的"�
 - 证据不足时按 gsd honest verifier 原则输出 `insufficient_spec` 弃权，**不强制 User Challenge 产出五要素**——五要素须基于充分证据，证据不足先补探查。
 - logic-razor 的"至少 10% 瑕疵"铁律限定为 **Taste 类审查发现**，不适用于 UserChallenge 决策（UserChallenge 是方向性决策，不是审查找茬）。
 
+### 2.4 决策可逆性评级（横切属性）
+
+> 理念来源：gsd-core v1.8.0 `feat(#1951): reversibility tagging - gate one-way-door decisions`（commit c5e03717）。gsd-core 在 plan 的 `<task>` 上记录 `<reversibility rating="reversible|costly|one-way">`，`one-way` 自动插 `checkpoint:decision`。本节把该理念吸收为 swarm-yuan 决策治理的**横切属性**（对 §2 三级分类的修饰，不是新分类）。
+
+**三级可逆性**（作为每条决策的属性，非独立分类维度）：
+
+| 评级 | 语义 | 对 §2 分类的修饰 |
+|------|------|----------------|
+| `reversible` | 可低成本撤销（改回即可，无持久副作用） | 不改变原分类 |
+| `costly` | 可撤销但代价高（需迁移/回滚数据/影响下游） | 标记但不阻断；UserChallenge 类的 `cost_if_wrong` 字段须反映该代价 |
+| `one-way` | 不可逆或极难逆（删稳定单元/破坏性 DDL/公开发布/格式锁定） | **自动升级到 UserChallenge**（横切 §2.2 升级规则），即便原分类是 Mechanical/Taste |
+
+**规则**：
+1. **不确定时按 `reversible`**（避免 checkpoint 疲劳，对齐 gsd-core 默认值）。
+2. `one-way` 决策**横切升级**：原 Mechanical/Taste 若评 `one-way`，自动按 UserChallenge 处理（必须停下输出五要素）。这与 §2.2 的"遇触发条件升 UserChallenge"同源--可逆性是触发条件之一。
+3. `costly` **不阻断**：仅作为 `cost_if_wrong` 字段的输入提示，不强制升级。
+4. 评级由 AI 在记录决策时给出（基于特征卡/探查/领域知识），用户可在 `user_action=revised` 时修正评级。
+
+**与 §2.2 升级规则的关系**：§2.2 列出的触发条件（依赖升级/安全冲突/删稳定单元/改只读/架构变更/不确定意图）大多天然是 `one-way` 或 `costly`；本节给这些触发条件一个统一的"撤销成本"语义框架，使升级判定可机器辅助（如 `删稳定单元` -> `one-way` -> 自动 UserChallenge）。
+
+**落盘**：`decisions.jsonl` 每行可带 `reversibility` 字段（缺省 `reversible`，对齐规则 1）；见 §5 schema。
+
 ## 3. User Challenge 五要素
 
 autoplan 的 User Challenge 五要素（`docs/research/R5-upstream-local.md` §三.3.1 引述 autoplan/SKILL.md:933-966）：
@@ -73,6 +95,7 @@ autoplan 的 User Challenge 五要素（`docs/research/R5-upstream-local.md` §�
 
 - `type`：`Mechanical` / `Taste` / `UserChallenge`（缺五要素降级为 `UserChallenge:incomplete`）
 - `user_action`：`approved` / `rejected` / `revised`
+- `reversibility`：`reversible`（缺省）/ `costly` / `one-way`（§2.4 横切属性；`one-way` 自动升级到 UserChallenge）
 - UserChallenge 类必填 `alternatives`/`missing_context`/`cost_if_wrong`；Mechanical/Taste 可缺省
 - 落盘永不阻塞主流程（trace-log.sh `--decision` 模式继承其永不 fail 设计：落盘失败仅 warn 到 stderr，exit 0）
 
@@ -84,8 +107,11 @@ bash scripts/trace-log.sh --decision \
   --suggestion '<AI 建议>' \
   --user-action <approved|rejected|revised> \
   [--rationale '<理由>'] [--phase '<阶段>'] \
+  [--reversibility <reversible|costly|one-way>] \
   [--alternatives '<备选>'] [--missing-context '<缺失上下文>'] [--cost-if-wrong '<代价>']
 ```
+
+> `--reversibility` 缺省 `reversible`（§2.4 规则 1）。传 `one-way` 时，trace-log.sh 不自动改写 `type`--升级判定由 AI 在调用前完成（AI 须把 `one-way` 决策的 `--type` 设为 `UserChallenge` 并填五要素）；脚本仅忠实落盘传入值。
 
 阶段流转由 `state-machine.sh transition` 自动记录 Taste 类决策；门禁 fail 诊断（`_fix_suggest`）提示须按本文件 §User Challenge 记录；spec §2 决策记录表关联 decisions.jsonl 行号。
 

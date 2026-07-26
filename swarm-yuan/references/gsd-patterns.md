@@ -158,6 +158,40 @@ Discuss → Plan → Execute → Verify → Ship
 - workflow 每节点的"质量门禁"要素标注门禁类型（pre-flight/revision/escalation/abort）
 - state-machine.sh 的 `guard` 命令实现 pre-flight 门禁；revision 用迭代上限+停滞检测
 
+## 破窗台账（Broken Windows Ledger）
+
+> 理念来源：gsd-core v1.8.0 `feat(#1950): broken-windows ledger - cross-phase defect register gating ship`（commit d16a6647）。gsd-core 的 `WINDOWS.md` 工件跨阶段累积 stubs/TODOs/skipped tests/unrun verifies/unmet truths，`/gsd-ship` 在有 open 条目时阻断（`ship:pre` 门禁，`artifact-frontmatter-equals` 谓词 on `open_count == 0`），配 `gsd-tools windows status|append|waive|fixed` 子命令 + waive 机制。
+
+**核心问题**：跨阶段累积的技术债（stub 函数、`// TODO`、跳过的测试、未跑的 verify、未满足的 truth）若不在 ship 前清账，会随版本沉淀为"看似交付实有暗坑"。破窗台账让这些债**显式可见、可追踪、可清账**。
+
+**台账格式**（`.swarm-yuan/WINDOWS.md`）：
+
+```markdown
+---
+open_count: 2
+---
+# 破窗台账
+
+- [ ] stub: payment-service（design 阶段遗留，verify 前须补实现）
+- [ ] skipped-test: auth-edge-case（build 阶段跳过，ship 前须补跑）
+- [x] done: logging-fix（已清账）
+```
+
+- frontmatter `open_count` = 未清账条目数（机器可读）
+- 正文每条 `- [ ]` = open，`- [x]` = 已清账
+- 每条注明：类型（stub/skipped-test/TODO/unrun-verify/unmet-truth）+ 来源阶段 + 清账条件
+
+**swarm-yuan 落地（warn 不 fail，守决策 26 预算）**：
+- `assets/state-machine.sh` 的 `archive` 阶段 guard 已实装：若 `.swarm-yuan/WINDOWS.md` 存在且 `open_count > 0`（或正文含 `- [ ]`），输出 warn 提示"建议 ship 前清账或 waive"。
+- **不阻断 archive**（gsd-core 的 `/gsd-ship` 是 fail；swarm-yuan 降为 warn，避免在 archive guard 新增 fail 调用触发 enforce_level 重算，守决策 26 的 `FACT_GATES_BUDGET=54` 上限）。
+- 优先读 frontmatter `open_count`；缺 frontmatter 时降级数正文 `- [ ]` 未决项。
+
+**清账机制**：
+- `fixed`：条目完成后改为 `- [x] done: <说明>`，并更新 frontmatter `open_count`。
+- `waive`：经决策（记 `decisions.jsonl`，type=UserChallenge，因 waive 是方向性决策）后豁免，改为 `- [x] waived: <理由>`（对齐 gsd-core `windows.enforce` 分离 tracking 与 enforcement 的设计）。
+
+**与 Goal-Backward 的关系**：Goal-Backward（§Goal-Backward 对抗验证）要求"先定义完成标准再动手"；破窗台账是完成标准的**跨阶段持久化**--每个阶段产生的"未完成项"都进台账，ship 前的完成标准 = 台账 open_count==0。两者互补：Goal-Backward 防目标漂移，破窗台账防债沉淀。
+
 ## Wave 并行执行 + Worktree 隔离
 
 引自 `gsd-core/workflows/execute-phase.md`：
