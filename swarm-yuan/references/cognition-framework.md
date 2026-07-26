@@ -119,7 +119,7 @@ ECC 的 `intent-driven-development` 将模糊/高影响变更转化为**可验�
 
 ## 目标技能落地要求
 
-reference-manual.md 须含以下段（从本文件框架裁剪）：
+目标技能的 reference-manual.md 须含以下段（从本文件框架裁剪）：
 1. 认知映射表（六阶落点 + 门禁）
 2. 六维动力学基线
 3. 辩证映射表（7 对辩证关系落点）

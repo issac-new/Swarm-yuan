@@ -195,7 +195,23 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 （全流程完成前的 checkbox 清单，汇总所有节点的门禁）
 ```
 
-**标准节点（可按项目裁剪）：**
+**标准节点（权威 8 节点命名表，对齐 facts.conf FACT_FLOW_NODES=8；可按项目裁剪）：**
+
+| 节点 | 名称 | 左移要求 |
+|------|------|----------|
+| ① | 需求理解 | — |
+| ② | 设计 spec | ★测试左移（§19）+ ★运维左移（§21） |
+| ③ | 实施 plan | ★变更左移（§20） |
+| ④ | 分支准备 | — |
+| ⑤ | 编码实现 | ★测试左移（TDD/BDD，test 与 impl 同分支提交） |
+| ⑥ | 测试验证 | ★运维左移（metrics/日志/trace 埋点验证） |
+| ⑦ | 合入 main | ★变更左移（回滚预案 + 迁移兼容） |
+| ⑧ | 构建发布 | ★运维左移（灰度 + 告警 + runbook） |
+
+> 第 9 项"发布后运营"是可选 D 方向运行态验证（`--operate`，advisory），非 8 节点之一。
+> generate-skill.sh 的 workflow.md emit 按 8 节点骨架生成（S10 实装）。
+
+**详细节点说明：**
 1. 需求理解
 2. 设计 spec（采用 OpenSpec proposal 模式：proposal.md + delta spec + design.md + tasks.md）—— **★测试左移**：spec 须含"测试设计"段（测试策略/用例骨架/边界值/回归范围）；**★运维左移**：spec 须含"可观测性约束"段（日志结构/metrics 埋点/trace 透传/告警阈值/健康检查）
 3. 实施 plan（采用 OpenSpec tasks checkbox 格式 + superpowers writing-plans bite-sized 步骤）—— **★变更左移**：plan 须含"变更影响范围"段（消费方反查/回滚预案/灰度策略/数据库迁移兼容窗口）
@@ -599,7 +615,7 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 - [ ] exploration-guide §C+.0.5 框架探查层存在（从依赖清单+注解+配置文件识别框架）
 - [ ] exploration-guide §C+.1-FW 框架特定构件枚举段存在（按激活框架动态枚举）
 - [ ] `references/frameworks/<fw>.md` 含探查到框架的领域规则集（六段式，探查到才激活；domain-knowledge.md 仅留通用领域速查——框架规则已迁移，见其"框架特定领域规则集（已迁移）"声明）
-- [ ] precheck.conf 含框架适配配置段（ACTIVE_FRAMEWORKS/MYBATIS_MAPPER_DIRS/SQL_INJECTION_WHITELIST/LOMBOK_ANNOTATIONS/SHARDING_KEY_COLUMNS/SHARDED_TABLES/SPRING_BATCH_JOB_DIRS/JAVA_BUILD_FILES）
+- [ ] precheck.conf 含框架适配配置段（ACTIVE_FRAMEWORKS/MYBATIS_MAPPER_DIRS/SQL_INJECTION_WHITELIST/LOMBOK_SRC_GLOBS/SHARDING_KEY_COLUMNS/SHARDED_TABLES/SPRING_BATCH_JOB_DIRS/JAVA_BUILD_FILES）
 - [ ] precheck.sh `--security` 区分 MyBatis #{} vs ${}（#{} 安全跳过，${} 须白名单）
 - [ ] precheck.sh `_sec_scan` 当 MYBATIS_MAPPER_DIRS 非空时追加 .xml include
 - [ ] precheck.sh `_extract_deps` 支持 pom.xml/build.gradle（JVM 项目 --deps 门禁可用）

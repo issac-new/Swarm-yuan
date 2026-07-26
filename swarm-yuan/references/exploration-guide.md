@@ -121,7 +121,7 @@ graphify export callflow-html                    # Mermaid 调用流（用于组
 | 13 | 五层认知基底 | graphify `explain "god nodes"` + claude-mem `search "cognition baseline"` | 手动盘点（Read + Grep） |
 | 14 | 领域知识 | gitnexus `query "domain entities"` + claude-mem `search "domain knowledge"` + WebSearch 行业标准 | Read 领域模型 + Grep 业务关键词 |
 | 15 | 编排调用关系及约束 | **graphify `path "ModuleA" "ModuleB"`**（最短依赖路径）+ **gitnexus `trace <entry> <register>`**（调用链） | Grep "^import.*from" + madge 循环检测 |
-| 16 | 详尽构件库清单（全量） | **gitnexus `analyze` + `gitnexus mcp`**（全量符号索引）+ **graphify `.`**（全量知识图） | `find` + `grep export` 机械枚举 + 计数核验 |
+| 16 | 详尽组件库清单（全量） | **gitnexus `analyze` + `gitnexus mcp`**（全量符号索引）+ **graphify `.`**（全量知识图） | `find` + `grep export` 机械枚举 + 计数核验 |
 | 17 | 合规与质量特性基线 | Read 现有合规文档/等保备案/密评报告/PIA + Grep 质量特性声明 | Read spec §22 标准合规段 + Grep 标准关键词 |
 
 > **Dynamic Workflows 场景**：如果项目大型（>100 文件），探查阶段可用 Dynamic Workflow 并行扇出三路子代理（结构/规范/代码组织），每路用不同的运行时工具，最后交叉验证特征卡。降级：传统 Task(subagent) 三路并行。
@@ -746,7 +746,7 @@ git --version; gh --version; docker --version
 
 ## 提取项目特征卡
 
-**P0/P1 分级规则（WP-G 减重）**：P0 六项 = {1 项目类型, 4 技术栈摘要, 5 构建发布命令, 11 可复用稳定单元, 15 编排调用关系及约束, 16 详尽构件库清单}——生成完成的强制门槛，计数核验（清单计数 ≥ 枚举计数 × 0.95）仅对 P0 维度强制；P1 十项 = {2,3,6,7,8,9,10,12,13,14}——draft 期可以「（P1 待补）」占位（不触发 --verify-completeness 的占位符命中），`--mark-active` 前必须填实。
+**P0/P1 分级规则（WP-G 减重）**：P0 六项 = {1 项目类型, 4 技术栈摘要, 5 构建发布命令, 11 可复用稳定单元, 15 编排调用关系及约束, 16 详尽组件库清单}——生成完成的强制门槛，计数核验（清单计数 ≥ 枚举计数 × 0.95）仅对 P0 维度强制；P1 十项 = {2,3,6,7,8,9,10,12,13,14}——draft 期可以「（P1 待补）」占位（不触发 --verify-completeness 的占位符命中），`--mark-active` 前必须填实。
 
 探查完成后，整理成结构化特征卡（供 Step 3 填充模板用）：
 
@@ -1007,7 +1007,7 @@ Step 3: 推导客观规律
 
 > 每条约束须标注代码证据（文件:行 或 grep 命令）。precheck `--layer` 门禁可校验导入方向；`--frontend` 门禁校验循环依赖。
 
-### 16. 详尽构件库清单（P0 必填）（全量，从 §C+.1 全量穷举得出）
+### 16. 详尽组件库清单（P0 必填）（全量，从 §C+.1 全量穷举得出）
 
 > **★铁律：本项是特征卡第 11 项的"全量保障"。** 第 11 项列稳定单元清单，本项记录全量枚举的计数核验结果，确保不漏。
 > 按 §C+.0 项目形态判定 → §C+.1 按维度全量穷举 → 每维度计数核验（清单计数 ≥ 枚举计数 × 0.95）。

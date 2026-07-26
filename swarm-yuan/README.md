@@ -44,7 +44,7 @@
 | 先认识，再行动 | AI 写代码前必须先认识项目。17 项特征卡完成认知，54 个门禁守护行动 |
 | 拼装式开发 | 新功能 = 既有稳定单元拼装 + 最小新增胶水代码。禁止重复造轮子/侵入式重构/破坏性改造 |
 | 呈现递进的关系 | 门禁不是"数 import 数"——每个计数背后指向一条关系规律 |
-| 特征卡是立法，门禁是执法，验证器是司法 | 17 项特征卡定义「项目应该是什么样的」，54 个门禁验证「代码是否符合」，`verifier/v1` 用 fixture 双态 + cli A/B 字节级等价做独立司法 |
+| 特征卡是立法，门禁是执法，验证器是司法 | 17 项特征卡定义「项目应该是什么样的」，54 个门禁验证「代码是否符合」，`verifier/v1`（golden-vector/金向量 = 74 框架 fixture 的预期门禁 exit-code 向量，回归基线）用 fixture 双态 + cli A/B 字节级等价做独立司法 |
 | 分层整合，诚实降级 | 11 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深接 |
 | 重量是设计选择，不是缺陷 | 重量级范式通过 `--profile auto\|lite\|standard\|compliance` 四档自适应让重量显式可选（决策 18/25，WP-P10 范式定位） |
 
@@ -52,7 +52,7 @@
 
 ## 17 项特征卡：项目的「认知 DNA」
 
-AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项），每项落到真实路径和版本号，不用占位符。特征卡不是独立文件，而是**分散承接进目标 skill 的各个文件中**，驱动门禁配置和文件填充。
+AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项），每项落到真实路径和版本号，不用占位符。特征卡不是独立文件，而是**分散承接进目标技能 的各个文件中**，驱动门禁配置和文件填充。
 
 | # | 特征项 | AI 提取什么 | 驱动什么 |
 |---|--------|-----------|---------|
@@ -68,15 +68,15 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 | 10 | 环境资源 | 运行时/DB/缓存/MQ/MCP | `--service` |
 | 11 | **可复用稳定单元** | 全部稳定 API/组件/类/函数/store/类型（签名+路径+用途+复用方式+稳定性标注五维字段） | **`--reuse` + `--stable-diff` + `--state` + `--frontend`** |
 | 12 | 数据规范 | schema/样例/业务规则/勾稽 | `--consistency` |
-| 13 | 认知基底 | 认知映射表 + 六维动力学基线 | `--cognition` |
+| 13 | 认知框架 | 认知映射表 + 六维动力学基线 | `--cognition` |
 | 14 | **领域知识** | 技术+业务领域 → 推导客观规律 | `--domain` |
 | 15 | **编排调用关系及约束** | 导入方向/注册顺序/路由挂载/状态所有权/测试边界 | `--layer` `--frontend` |
-| 16 | **详尽构件库清单（全量）** | 全量构件表 + 接口端点表 + store/类型表（清单计数核验） | reference-manual §4/§6/§9 |
+| 16 | **详尽组件库清单（全量）** | 全量构件表 + 接口端点表 + store/类型表（清单计数核验） | reference-manual §4/§6/§9 |
 | 17 | 合规与质量基线 | 强监管关键词/合规门禁开关/质量门禁开关 | `--compliance-suite` profile 升档 |
 
 **第 11 项是核心中的核心**——AI 用 graphify `query` / gitnexus `context` 系统性盘点全部稳定单元（GitNexus（PolyForm Noncommercial 禁商用）降级为非默认，graphify（MIT）提为默认代码图谱工具），每个记录签名、路径、用途、复用方式、稳定性标注（五维字段详见 `docs/FIVE_DIMENSIONS.md`）。
 
-**特征卡驱动一切：** → 文件填充（SKILL.md 铁律 ← 第 2/6 项、codebase.md ← 第 4 项、reference-manual.md 组件库 ← 第 11 项）→ 门禁配置（precheck.conf 三件套 170 个变量从特征卡推导，懒生成机制按 ACTIVE_FRAMEWORKS 自动补占位）→ 开发流程（开始新需求时从第 11 项检索可复用单元）。
+**特征卡驱动一切：** → 文件填充（SKILL.md 铁律 ← 第 2/6 项、codebase.md ← 第 4 项、reference-manual.md 组件库 ← 第 11 项）→ 门禁配置（precheck.conf 三件套 169 个变量从特征卡推导，懒生成机制按 ACTIVE_FRAMEWORKS 自动补占位）→ 开发流程（开始新需求时从第 11 项检索可复用单元）。
 
 ### 落地示例（SwarmStudio overlay）
 
@@ -96,9 +96,11 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 **特征卡是立法，门禁是执法。** 特征卡定义规则，门禁验证合规。
 
 > **门禁分层（决策 19）——执法强度横切维度：** 54 门禁按 `fail()` 能力分三档，与 core/standard/compliance 执行序列正交：
-> - **strict（20 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model）
-> - **warn（19 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄
-> - **advisory（15 个）**：0 个 fail，永不阻断，只 warn/pass（cognition/consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/canary/cwe-audit/cert-audit）
+> - **strict（20 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model/crypto/sast-deep/oss-eval）
+> - **warn（19 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄（cognition/contract/impact/service/api/state/frontend/domain/knowledge 等）
+> - **advisory（15 个）**：0 个 fail，永不阻断，只 warn/pass（consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/canary/cwe-audit/cert-audit）
+>
+> **advisory 三轴命名（T12 澄清）**：① advisory-file=16（gates-advisory.sh 物理位置，含 cognition 因历史）；② advisory-level=15（0-fail enforce，gate-enforce-level.conf）；③ advisory-only=10（不在 ALL_GATES_CORE/STANDARD/COMPLIANCE 执行序列：operate/decision-audit/canary/cwe-audit/cert-audit/learnings/pr-quality/skill-supply-chain/state-phase/upstream-baseline）。三者正交，本文档统一用 enforce-level 口径（15）。
 >
 > 查看分层：`bash scripts/precheck.sh --list-gates`。分层由 `scripts/gen-enforce-level.sh` 自动按 fail() 数归类（幂等），手动覆盖见 precheck.sh `_ENFORCE_OVERRIDE`。
 
@@ -261,18 +263,18 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ---
 
-## 五层认知基底
+## 五层认知框架
 
 | 层 | 解决什么 | 与特征卡/门禁的关系 |
 |----|---------|-------------------|
 | 认知递进 | 如何认识项目（六阶：概念→结构→空间→映射→规律→处理 + 六维动力学） | 特征卡 17 项 = 认知递进的产物 |
-| 思维语言 | 如何思考（三元+三导向+七推理+7×7 双循环） | spec §14-§18 = 思维语言落地 |
+| 思维语言 | 如何思考（三元+三导向+七推理+7×7 双循环） | spec §14/§15 = 思维语言落地（§16 第四层 / §17 第五层 / §18 领域知识贯穿） |
 | 认知辩证 | 如何推演+自证伪（logic-razor 六步） | `--cognition` = 验证工具 |
 | 偏差防范 | 如何纠偏（5 维偏差 + 8 心智模型） | spec §16 偏差自检 |
 | 辩证认知 | 如何统一前四层（7 对辩证对 + ECC 四声部议事会） | `--domain` = 违规检测 |
 
 > 详见 `references/cognition-framework.md`。
-> ⚠️ "`--cognition` 门禁得分 ≥15/19 = 认知完整"是**工程启发式评分**，非心理测量学构念--未经信度/效度检验，分数仅用于自检"是否覆盖五层话题"，不构成对 AI 认知能力的测量。详见根 `README.md` 五层认知基底段与 `docs/research/R3-methodology.md` §2.1。
+> ⚠️ "`--cognition` 门禁得分 ≥15/22 = 认知完整"是**工程启发式评分**，非心理测量学构念--未经信度/效度检验，分数仅用于自检"是否覆盖五层话题"，不构成对 AI 认知能力的测量。详见根 `README.md` 五层认知框架段与 `docs/research/R3-methodology.md` §2.1。
 
 ---
 
@@ -355,10 +357,10 @@ Swarm-yuan/
 │   ├── SKILL.md                  ← AI 入口（11 运行时/54 门禁/五层认知/Step 0-12）
 │   ├── install.sh / install.bat  ← 一键安装（7 环境检测 + Windows）
 │   ├── assets/                   ← 模板 + 门禁 + 状态机 + 调用追踪
-│   │   ├── precheck.sh           ← 门禁调度器（1420 行）
-│   │   ├── gates-strict.sh       ← 17 strict 门禁（1597 行）
-│   │   ├── gates-warn.sh         ← 19 warn 门禁（1496 行）
-│   │   ├── gates-advisory.sh     ← 16 advisory 门禁（1209 行）
+│   │   ├── precheck.sh           ← 门禁调度器（1450 行）
+│   │   ├── gates-strict.sh       ← 17 strict 门禁（1654 行）
+│   │   ├── gates-warn.sh         ← 19 warn 门禁（1545 行）
+│   │   ├── gates-advisory.sh     ← 16 advisory 门禁（1242 行）
 │   │   ├── precheck.conf         ← 核心配置变量（12 个）
 │   │   ├── precheck.arch.conf    ← 架构配置变量（110 个，懒生成）
 │   │   ├── precheck.compliance.conf ← 合规配置变量（48 个）
@@ -372,12 +374,12 @@ Swarm-yuan/
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
 │   ├── references/               ← 28 个参考文档 + frameworks/（74 框架 + _template）
-│   ├── scripts/                  ← 23 个脚本（生成器+自检+SARIF+drift+baseline+cost）
-│   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 45 gate-fixture + sarif-fixture）
+│   ├── scripts/                  ← 28 个脚本（生成器+自检+SARIF+drift+baseline+cost）
+│   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 48 gate-fixture + sarif-fixture）
 │   └── ci/                       ← 自举 self-precheck.conf
 ```
 
-> **生成的目标 skill 含**：SKILL.md / references/*.md / assets/* / scripts/(precheck.sh+precheck.conf+state-machine.sh+trace-log.sh+self-check.sh+generate-skill.sh+snippets.md+mcp-tools.md) / hooks/hooks.json / commands/(spec+precheck+explore) / settings.local.json / .mcp.json / .swarm-yuan-version
+> **生成的目标技能 含**：SKILL.md / references/*.md / assets/* / scripts/(precheck.sh+precheck.conf+state-machine.sh+trace-log.sh+self-check.sh+generate-skill.sh+snippets.md+mcp-tools.md) / hooks/hooks.json / commands/(spec+precheck+explore) / settings.local.json / .mcp.json / .swarm-yuan-version
 
 ---
 
@@ -387,20 +389,20 @@ Swarm-yuan/
 |------|------|--------|
 | **特征卡** | **17 项**（P0 六项 1/4/5/11/15/16 + P1 十一项） | FACT_FEATURE_CARDS=17 |
 | **质量门禁** | **54 个** = strict 20 + warn 19 + advisory 15；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
-| **配置变量** | **170 个**（precheck.conf 12 + precheck.arch.conf 110 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=170 |
+| **配置变量** | **169 个**（precheck.conf 12 + precheck.arch.conf 109 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=169 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh） | FACT_FRAMEWORKS=74 |
 | **参考文档** | 28 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=28 |
 | **standards-map** | 75 条目（21 门禁级 + 50 框架级 + 4 advisory） | FACT_STANDARDS_MAP_ENTRIES=75 |
 | 运行时工具 | 11（深度 4 + CLI 3 + 方法论 4） | FACT_RUNTIMES=11 |
 | spec 模板 | 23 主段（§23=发布后运营） | FACT_SPEC_SECTIONS=23 |
 | 领域知识 | 32 个领域 | FACT_DOMAINS=32 |
-| 认知基底 | 5 层 | — |
+| 认知框架 | 5 层 | — |
 | 行业 profile | 7（金融/医疗/政务/汽车/能源/工业/通信） | — |
 | profile 档位 | 4（auto/lite/standard/compliance） | FACT_PROFILES=4 |
 | 兼容 AI 工具 | 7（三档：runnable 7 / cli 6 / deep 1） | FACT_COMPAT_*=7/6/1 |
 | CWE 条目 | 60 | FACT_CWE_ENTRIES=60 |
 | 安全认证 profile | 6 | FACT_CERT_PROFILES=6 |
-| 生成流程 | 13 节点 / 10 工作流节点 | FACT_FLOW_STEPS=13 |
+| 生成流程 | 13 节点 / 8 工作流节点 | FACT_FLOW_STEPS=13 |
 | 决策治理类型 | 3（Mechanical / Taste / UserChallenge，对齐 ISO/IEC 42001） | FACT_DECISION_TYPES=3 |
 | 三平台 | macOS / Linux / Windows（CI 10 job 全覆盖） | — |
 | 零占位符 | ✅（`generate-skill.sh --verify-completeness` 机器执法） | — |

@@ -672,8 +672,9 @@ check_impact() {
     fi
   elif has_graphify && graphify_built; then
     # WP-X: graphify God Nodes 变更影响检测（R6 P1：God Nodes 是变更风险放大器）
-    trace_tool "graphify" "explain god-nodes"
-    local gf_report; gf_report=$(graphify explain 2>/dev/null | head -50 || true)
+    # C4 修复：graphify v0.9.22+ 的 god-nodes 是顶层子命令（graphify god-nodes），非 graphify explain god-nodes。
+    trace_tool "graphify" "god-nodes"
+    local gf_report; gf_report=$(graphify god-nodes 2>/dev/null | head -50 || true)
     if echo "$gf_report" | grep -qiE 'god.node|hub|surprising'; then
       local god_count; god_count=$(echo "$gf_report" | grep -icE 'god.node|hub' || true)
       if [[ "$god_count" -gt 0 ]]; then
@@ -1113,14 +1114,18 @@ check_knowledge() {
   echo "=== 项目知识复用检查（AGENTS.md/CLAUDE.md/记忆 → 生成 skill 是否复用）==="
   local found=0
 
-  # ---- 0. 优先用 claude-mem search 查项目记忆 ----
+  # ---- 0. 优先用 claude-mem search 查项目记忆（has_claude_mem 守 CLI 存在，C2 收紧）----
   if has_claude_mem; then
     trace_tool "claude-mem" "search project rules conventions"
-    local mem_results; mem_results=$(claude-mem search "project rules conventions" 2>/dev/null | head -10 || true)
+    local mem_results mem_err
+    mem_results=$(claude-mem search "project rules conventions" 2>/tmp/cm_err.$$ | head -10 || true)
+    mem_err=$(cat /tmp/cm_err.$$ 2>/dev/null; rm -f /tmp/cm_err.$$ 2>/dev/null)
     if [[ -n "$mem_results" ]]; then
       pass "claude-mem 记忆库有历史记录（项目知识已积累）"
+    elif [[ -n "$mem_err" ]]; then
+      warn "claude-mem CLI 已装但 search 报错（${mem_err:0:80}）——首次生成或 worker 未运行，探查后写入项目特征摘要"
     else
-      warn "claude-mem 已安装但无项目记忆——首次生成 skill，探查后写入项目特征摘要"
+      warn "claude-mem CLI 已装但无项目记忆——首次生成 skill，探查后写入项目特征摘要"
     fi
   fi
 

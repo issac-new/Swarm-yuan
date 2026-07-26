@@ -1,12 +1,14 @@
 ---
 name: swarm-yuan
-description: "Meta-skill generator: produces a project-specific dev skill for ANY code repo. Integrates 11 runtimes (OpenSpec/superpowers/comet/GitNexus/graphify/gsd-core/claude-mem/ocr/gstack/Ruflo/ECC), 54 quality gates (standard 27 via --all-full: core 10 + architecture 17; compliance 17 via --compliance-suite on-demand; incl. shift-left: test-design/change-impact/observability in spec/plan stage; rtm requirement-traceability; release-sign SLSA L2 signing), 5-layer cognition framework, 32-domain knowledge. Core capability: exhaustive component inventory (mechanical enumeration + signature extraction + count verification) and call-chain analysis (shape-adaptive by project form: registration assembly / request pipeline / message flow / cross-service chain) → orchestration constraints derivation. Use when user says '为某项目生成开发技能', 'create a dev skill', '六段式 skill'."
+description: "Meta-skill generator: produces a project-specific dev skill for ANY code repo. Integrates 11 runtimes (OpenSpec/superpowers/comet/GitNexus/graphify/gsd-core/claude-mem/ocr/gstack/ECC / Ruflo), 54 quality gates (standard 27 via --all-full: core 10 + architecture 17; compliance 17 via --compliance-suite on-demand; incl. shift-left: test-design/change-impact/observability in spec/plan stage; rtm requirement-traceability; release-sign SLSA L2 signing), 5-layer cognition framework, 32-domain knowledge. Core capability: exhaustive component inventory (mechanical enumeration + signature extraction + count verification) and call-chain analysis (shape-adaptive by project form: registration assembly / request pipeline / message flow / cross-service chain) → orchestration constraints derivation. Use when user says '为某项目生成开发技能', 'create a dev skill', '六段式 skill'."
 ---
 
 # swarm-yuan — 项目需求交付技能生成器
 
 元技能（生成器）：针对任意代码仓库，按六段式模板生成项目专属开发技能（下称"目标技能"）。跨项目复用，不依赖任何具体项目内容。
 
+> **docs/ 路径注**：本文引用的 `docs/paradigm-decisions.md`、`docs/paradigm-positioning.md`、`docs/upstream-baseline.md`、`docs/runtime-update-2026-07.md` 位于仓库根 `docs/`（swarm-yuan 父级），非 `swarm-yuan/docs/`；standalone 安装时不携带，核心内容已内联到 references/ 或 SKILL.md。
+>
 > **口径权威源**：`assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 **★核心能力（v2 增强）**：基于代码结构与调用链路分析，产出**详尽的组件库清单**（全量穷举，非代表性样本）与**编排调用关系及约束**（导入方向/注册顺序/路由挂载/状态所有权/测试边界，每条含代码证据），完善目标技能的研发 skill。方法论见 `references/exploration-guide.md` §C+。
@@ -37,7 +39,7 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 2. **安全规范**：目标技能须遵守 OWASP Top 10 / STRIDE / CWE。`--security` 检测。详见 `references/security-spec.md`。
 3. **三平台兼容（swarm-yuan 自身）**：swarm-yuan 生成器自身的脚本必须兼容 Windows/macOS/Linux（CI 全覆盖：ubuntu-latest + macos-latest + windows-latest）。Windows 上提供 `.bat` 包装器（`install.bat` / `generate-skill.bat` / `self-check.bat`）自动查找 Git Bash/WSL/MSYS2 运行对应 `.sh` 脚本（WSL 路径用 `/mnt/c/`，Git Bash 用 `/c/`）。bash 脚本兼容：不用 `declare -A`；`sed -i.bak+rm`；`grep -E`；`date -u`；`$(cd+pwd)` 替代 `readlink -f`；`wc|xargs`；`${var}` 防 C-locale。详见 `references/security-spec.md` §六。
 
-## 五层认知基底 + 执行准则
+## 五层认知框架 + 执行准则
 
 swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈现递进的关系，而非仅关注计算**。
 
@@ -52,7 +54,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 
 **执行准则**：价值/目标/问题/结果四导向；质量优先>确保安全>兼顾效率>减少打扰>因地制宜；疑虑必确认（改只读/升级依赖/删稳定单元/多方案/安全冲突/架构变更/不确定意图→暂停确认）。
 
-**AI 主导 + 用户决策原则**（G1 决策治理，对齐 ISO/IEC 42001 人工监督留痕）：在目标 skill 的完整生命周期中，特征卡提取、门禁配置、spec 填充、代码实现、问题排查等所有环节均**优先以 AI 为主导生成建议项**，但决策按**三级分类**治理——什么能自动做、什么必须停下问、每条决策有审计轨迹落盘。用户的角色是**评估决策或修订后批准执行**，而非手动编写。详见 `references/decision-governance.md`。具体：
+**AI 主导 + 用户决策原则**（G1 决策治理，对齐 ISO/IEC 42001 人工监督留痕）：在目标技能 的完整生命周期中，特征卡提取、门禁配置、spec 填充、代码实现、问题排查等所有环节均**优先以 AI 为主导生成建议项**，但决策按**三级分类**治理——什么能自动做、什么必须停下问、每条决策有审计轨迹落盘。用户的角色是**评估决策或修订后批准执行**，而非手动编写。详见 `references/decision-governance.md`。具体：
 - 特征卡 17 项：AI 探查后**主动生成建议值**（Mechanical 类，直接做），用户评估修订后确认
 - 门禁 precheck.conf 170 变量：AI 从特征卡**主动推导建议配置**（Mechanical 类；涉及安全规则如 SENSITIVE_WHITELIST/CRYPTO_PROFILE 升 Taste），用户评估后确认
 - spec 模板填充：AI **主动预填**（Taste 类；§5.6 版本约束/§5.7 安全约束升 UserChallenge；含 §5.5 复用约束从第 11 项检索预填），用户评估修订后确认
@@ -67,37 +69,37 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 
 ## 生成流程（AI 自动执行，用户只需提供项目路径）
 
-**铁律：AI 必须执行完整流程（Step 0-8，含 5 个 .5 子步共 13 节点）后才算生成完成。不允许以 draft 骨架交付——骨架中的占位符必须全部被真实内容替换。生成完成时检查：目标 skill 中不得残留任何"待填充"/"填充指引"/占位符。**
+**铁律：AI 必须执行完整流程（Step 0-8，含 5 个 .5 子步（⓪.5/①.5/④.5/⑤.5/⑦.5）共 13 节点（⑦.5 是 ⑥→⑦ 间的门禁注入子步，非独立节点；圆圈符号 14 个但 FACT_FLOW_STEPS=13 按独立节点计））后才算生成完成。不允许以 draft 骨架交付——骨架中的占位符必须全部被真实内容替换。生成完成时检查：目标技能 中不得残留任何"待填充"/"填充指引"/占位符。**
 
-**中断安全（状态门，决策 13）：流程可中断，但 draft ≠ 交付。** 骨架 frontmatter `status: draft` 期间，目标 skill 的 `--all-full`/`--compliance-suite` 被 precheck 机器禁用（exit 2）；中断后重跑 `generate-skill.sh` 同命令自动**断点续传**（幂等补齐缺失文件，不覆盖已有内容）；填充完成后 `bash scripts/generate-skill.sh --mark-active <skill_dir>`（零占位符核验通过才翻 `status: active`）才算生成完成。P1 特征卡项可「（P1 待补）」占位（WP-G），P0 六项必须填实。
+**中断安全（状态门，决策 13）：流程可中断，但 draft ≠ 交付。** 骨架 frontmatter `status: draft` 期间，目标技能 的 `--all-full`/`--compliance-suite` 被 precheck 机器禁用（exit 2）；中断后重跑 `generate-skill.sh` 同命令自动**断点续传**（幂等补齐缺失文件，不覆盖已有内容）；填充完成后 `bash scripts/generate-skill.sh --mark-active <skill_dir>`（零占位符核验通过才翻 `status: active`）才算生成完成。P1 特征卡项可「（P1 待补）」占位（WP-G），P0 六项必须填实。
 
-**★调用追踪铁律（设计理念 2：全链路追踪）：生成流程与目标 skill 的使用流程中，每一步具体调用都必须有信息提示（无需用户确认），显示调用了何种工具及技能。** 双通道：① stdout 结构化公告——每 Step/节点开始时输出 `→ [Step N/节点X] 调用 <技能/子代理/工具> · <目的>`；② 落盘——**节点级默认**：每 Step/节点开始/结束时执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令>`，追加到 `<项目>/.swarm-yuan/trace.jsonl`；**调用级细节**（每个 CLI 工具/第三方调用的逐次落盘）仅在 `SWARM_YUAN_TRACE=verbose` 时启用（聚合分析见 `scripts/cost-report.sh`）。机器执法：`--verify-completeness` 校验目标 skill 的 workflow.md 每节点含「调用追踪」要素（template-spec §2 第 ⑨ 要素），缺则 exit 1。
+**★调用追踪铁律（设计理念 2：全链路追踪）：生成流程与目标技能 的使用流程中，每一步具体调用都必须有信息提示（无需用户确认），显示调用了何种工具及技能。** 双通道：① stdout 结构化公告——每 Step/节点开始时输出 `→ [Step N/节点X] 调用 <技能/子代理/工具> · <目的>`；② 落盘——**节点级默认**：每 Step/节点开始/结束时执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令>`，追加到 `<项目>/.swarm-yuan/trace.jsonl`；**调用级细节**（每个 CLI 工具/第三方调用的逐次落盘）仅在 `SWARM_YUAN_TRACE=verbose` 时启用（聚合分析见 `scripts/cost-report.sh`）。机器执法：`--verify-completeness` 校验目标技能 的 workflow.md 每节点含「调用追踪」要素（template-spec §2 第 ⑨ 要素），缺则 exit 1。
 
-**★核心铁律（详尽构件库清单 + 编排约束，按项目形态动态适配）：swarm-yuan 不预设项目是前端/后端/全栈/移动/桌面/库。** 必须先做 §C+.0 项目形态判定（探查文件类型/框架特征 → 判定含哪些维度），再按判定结果选择的维度做全量穷举 + 签名提取 + 计数核验（清单计数 ≥ 枚举计数 × 0.95）。特征卡第 15 项（编排调用关系及约束）必须从 §C+.2 按形态选择的链路模型（前端注册装配/后端请求管道/异步消息流/微服务跨服务链）推导得出，每条约束须有代码证据。两者配套：只列构件不推约束 = 未完成；维度错配（纯后端项目填 UI 组件表）= 未完成。
+**★核心铁律（详尽组件库清单 + 编排约束，按项目形态动态适配）：swarm-yuan 不预设项目是前端/后端/全栈/移动/桌面/库。** 必须先做 §C+.0 项目形态判定（探查文件类型/框架特征 → 判定含哪些维度），再按判定结果选择的维度做全量穷举 + 签名提取 + 计数核验（清单计数 ≥ 枚举计数 × 0.95）。特征卡第 15 项（编排调用关系及约束）必须从 §C+.2 按形态选择的链路模型（前端注册装配/后端请求管道/异步消息流/微服务跨服务链）推导得出，每条约束须有代码证据。两者配套：只列构件不推约束 = 未完成；维度错配（纯后端项目填 UI 组件表）= 未完成。
 
 ```
 用户："为 /path/to/project 生成 skill"
   ↓ AI 自动执行（零手动配置，不可中途停止）
-⓪自检(11运行时) → ⓪.5读取项目知识(AGENTS.md/CLAUDE.md/记忆/agent运行时) → ①探查仓库(三路并行+图谱工具) → ①.5项目形态判定(§C+.0)+详尽构件库清单+调用链路分析(§C+.1-C+.5按维度动态适配) → ②提取17项特征卡 → ③create骨架 → ④AI填充全部文件(消除全部占位符) → ④.5框架深化(逐激活框架:按 references/frameworks/<fw>.md §1-§6 枚举+规律实例化+门禁清单对齐) → ⑤AI配置precheck.conf(消除全部占位符) → ⑤.5 AI生成hooks/commands/MCP集成 → ⑥AI运行门禁验证 → ⑦.5门禁注入(`scripts/generate-skill.sh --inject-frameworks` 将 assets/framework-gates/<fw>.sh 写入 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块；`--upgrade` 触发自动重注入) → ⑦AI写回项目记忆(闭环) → ⑧AI最终检查(零占位符+按维度计数核验+框架适配四要素核验)
+⓪自检(11运行时) → ⓪.5读取项目知识(AGENTS.md/CLAUDE.md/记忆/agent运行时) → ①探查仓库(三路并行+图谱工具) → ①.5项目形态判定(§C+.0)+详尽组件库清单+调用链路分析(§C+.1-C+.5按维度动态适配) → ②提取17项特征卡 → ③create骨架 → ④AI填充全部文件(消除全部占位符) → ④.5框架深化(逐激活框架:按 references/frameworks/<fw>.md §1-§6 枚举+规律实例化+门禁清单对齐) → ⑤AI配置precheck.conf(消除全部占位符) → ⑤.5 AI生成hooks/commands/MCP集成 → ⑥AI运行门禁验证 → ⑦.5门禁注入(`scripts/generate-skill.sh --inject-frameworks` 将 assets/framework-gates/<fw>.sh 写入 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块；`--upgrade` 触发自动重注入) → ⑦AI写回项目记忆(闭环) → ⑧AI最终检查(零占位符+按维度计数核验+框架适配四要素核验)
 ```
 
 1. **自检**：`bash scripts/self-check.sh`（11 个运行时检测+自动安装）
 2. **读取项目知识**：AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特征卡（不读=重复造轮子）
 3. **探查仓库**：三路并行子代理（结构/规范/代码组织），优先用 gitnexus/graphify/claude-mem/LSP，大型项目用 Dynamic Workflow 并行扇出。工具矩阵+降级策略见 `references/exploration-guide.md`。**★WP-P8 per-phase profile 探查分级**：按 `auto_detect_profile` 的规模信号分级——lite（<80 文件）单路探查不用图谱；standard（80-400）三路并行图谱可选；compliance（合规信号或 >400）三路并行 + 强制图谱工具。规模边界不确定按更重档处理（质量优先）。**★全链路追踪（设计理念 2）**：每路子代理启动前 AI 调 `bash scripts/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`（规范/代码组织子代理同理），完成后 `--status done`——用户可见每步调用何种工具，无需确认（trace 输出 stderr + 落盘 trace.jsonl，不阻塞主流程）
-4. **★项目形态判定 + 详尽构件库清单 + 调用链路分析**（探查的深化，不可跳过）：
+4. **★项目形态判定 + 详尽组件库清单 + 调用链路分析**（探查的深化，不可跳过）：
    - **项目形态判定（§C+.0）**：探查文件类型/框架特征 → 判定含哪些维度（前端UI/后端API/异步消费/桌面IPC/移动端/库导出）→ 后续只枚举存在的维度
    - **全量穷举（§C+.1 按维度动态）**：按判定结果选择的维度（C+.1-F前端/C+.1-B后端/C+.1-A异步/C+.1-D桌面移动/C+.1-L库/C+.1-T通用）做 `find`+`grep` 机械枚举 → 提取导出签名 → 每维度独立计数核验
    - **调用链路分析（§C+.2 按形态选模型）**：前端(注册装配+模块矩阵+挂载树+store依赖) / 后端(请求处理管道+分层矩阵+数据流+外部依赖) / 异步(消息流转) / 微服务(跨服务调用链) / 桌面(IPC链路) / 库(导出依赖图)
    - **编排约束推导（§C+.3 按形态选约束类别）**：前端约束 / 后端约束 / 异步约束 / 微服务约束 / 通用约束，每条标注代码证据
    - **接口全量枚举（§C+.4 按接口形态适配）**：REST(逐端点) / GraphQL(逐resolver) / gRPC(逐method) / MQ(逐queue+handler) / 库(逐导出)，无通配符占位
    - 优先用 `gitnexus context/trace` 或 `graphify path/explain` 系统性提取签名与依赖链，而非随机 grep
-5. **特征卡**：16 项（项目类型→…→可复用稳定单元→…→编排约束→详尽构件库清单），P0 六项（1/4/5/11/15/16）每项落到具体值不用占位符；P1 十项 draft 期可「（P1 待补）」，`--mark-active` 前清零。映射表见 `references/template-spec.md` §3
+5. **特征卡**：17 项（项目类型→…→可复用稳定单元→…→编排约束→详尽组件库清单），P0 六项（1/4/5/11/15/16）每项落到具体值不用占位符；P1 十一项 draft 期可「（P1 待补）」，`--mark-active` 前清零。映射表见 `references/template-spec.md` §3
 6. **创建骨架**：`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ + precheck.conf）。`--profile auto|lite|standard|compliance` 四档，**默认 auto 项目级自适应**（合规关键词 → compliance；文件数 <80 → lite；其余 standard；**WP-Q2 偏置修正：信号明确才升档，模糊走默认 standard**，auto 会打印判定依据供用户评估）：**lite**（认知档）= 特征卡 + reference-manual + 核心门禁脚本最小集（无 hooks/commands/settings/.mcp.json）；**standard** = 全量骨架；**compliance** = standard + 标准合规矩阵参考（references/standards-compliance.md）。**零占位符铁律适用范围 = 当前 profile 的文件集**（profile 是显式声明不启用，与"未配置静默跳过"本质不同）。默认生成到 `<project-dir>/.claude/skills/`（"为目标项目生成"名副其实）；可用第 3 参数 `target-dir` 显式指定其他目录，如 `--upgrade <name> <project-dir> <target-dir>`。全局安装到 `~/.claude/skills/` 等运行时目录走 `install.sh`。
 7. **AI 填充全部文件**：SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`。**reference-manual.md §4 构件表/§6 接口表/§9 store+类型表按形态动态填充（维度错配=未完成），§5 链路按形态选模型 + §5.1 约束注释，dev-guide.md §8 按形态选约束类别**
 8. **AI 配置 precheck.conf**：**★WP-P4 脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/SERVICE_DIRS/STORE_DIR/WRITABLE_DIRS 等语义型变量，须从特征卡推导）+ 审 diff 是否符合特征卡意图——从「写 170 行」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
 9. **AI 集成 Claude Code**：定制 generate-skill.sh 已生成的 hooks/hooks.json + commands/ + settings.local.json + .mcp.json 模板（脚本骨架已建，AI 补项目特定配置）+ workflow.md 节点标注。详见 `references/claude-code-capabilities.md`
 10. **AI 运行门禁**：`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--mark-active` 翻 active 后 `--all-full`（标准 27：核心 10+架构 17）；强监管交付按需追加 `--compliance-suite`（合规 17）
-11. **AI 写回记忆**：claude-mem/.zcode/memories/.project-knowledge.md 三路写回，形成"记忆→生成→开发→记忆"闭环
+11. **AI 写回记忆**：`bash scripts/memory-writeback.sh`（S9 实装，脚本兜底）三路写回 .swarm-yuan/project-knowledge.md / .zcode/memories/ / claude-mem，形成"记忆→生成→开发→记忆"闭环（best-effort，不阻塞主流程）
 12. **AI 最终检查**：运行 `bash scripts/generate-skill.sh --verify-completeness <skill_dir>` 做零占位符 + workflow 调用追踪要素机器执法（命中即列 file:line 并 exit 1，零命中打印「✓ 零占位符确认」），确认零"待填充"/零"填充指引"/零"<占位符>"残留；**维度计数核验（WP-P2 脚本化）：跑 `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <§C+.0形态>`，全 PASS → 直接引用报告结论；FAIL（清单计数 < 枚举计数 × 0.95）→ 只针对失败维度回 Step 4 补漏；DIM_MISMATCH（声明形态与枚举结果矛盾）→ 回 §C+.0 重判形态**。维度注册表见 `assets/inventory-dimensions.conf`（数据驱动，新增维度改注册表不改脚本）；**框架适配四要素核验：对 ACTIVE_FRAMEWORKS 每个框架——① 构件枚举计数 ≥ 实际 × 0.95（依 `references/frameworks/<fw>.md` §2 的计数基准）② `framework-knowledge.md` 规律数 ≥ 规则文件声明的深度门槛且 100% 含"证据:"字段 ③ `precheck.sh` 含 `_fw_<id>_check` 动态分发器且 `--framework <id>` 实跑 exit 0（门禁片段位于 `assets/framework-gates/<fw>.sh`，已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块）④ `dev-guide.md` §10 含该框架约束段 ≥ 3 条。任一不过 → 回 Step 4.5**。**如有残留，回到 Step 7 继续填充，直到零残留。**
 
 > **铁律**：用户不编辑任何配置文件，不手动复制模板。开始新需求时对 AI 说"开始新需求 xxx"，AI 自动创建 spec 文件 + 引导填写 + 运行门禁。门禁误报 AI 自动调 conf 后重跑。每节点须有降级策略（联网/云端不可用→降级本地工具）。节点工具表+降级表见 `references/claude-code-capabilities.md` §十五。**全链路追踪：AI 每进入一节点先公告（`→ [节点X] 调用 …`）并用 `scripts/trace-log.sh` 节点级落盘 `.swarm-yuan/trace.jsonl`（`SWARM_YUAN_TRACE=verbose` 时含每次具体调用）——用户全程可见调用了何种工具及技能，无需任何确认。**
@@ -116,7 +118,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 | check | `scripts/precheck.sh` | 54 个门禁子命令（核心 10 + 架构 17 + 合规 17 + advisory-only 10：`--compliance` 标准合规矩阵核验 / `--docs-pack` 文档包清单 / `--sbom` SBOM 生成+许可证块名单 / `--privacy` 个人信息扫描 / `--authz` 授权类弱点 / `--requirements` 需求质量（29148）/ `--crypto` 密码算法合规（GB/T 39786）/ `--rtm` 需求追溯矩阵（29148 RTM）/ `--release-sign` 发布签名+provenance（SLSA L2 / SSDF PS.2）/ `--dengbao` 等保 2.0 控制点（GB/T 22239，fail-closed+豁免留痕）/ `--pia` 隐私影响评估（个保法 55-56，fail-closed）/ `--sast-deep` 深度 SAST（semgrep→opengrep→内置降级链）/ `--oss-eval` 开源代码安全评价（GB/T 43848，复用 --sbom 产物），随 `--all-full` 执行（标准 27：核心 10+架构 17）；合规 17 独立 `--compliance-suite` 按需执行，未配置静默跳过；另含 `--shift-left` 左移：测试设计/变更影响/可观测性） + **框架门禁片段注入区**（`# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，由 `--inject-frameworks` 写入）。**门禁分层（决策 19，横切维度）**：strict 20（真 fail）/ warn 19（混合）/ advisory 15（永不 fail，子shell 内重定义 fail/warn 为纯 echo）；`--list-gates` 列三档分层；`scripts/gen-enforce-level.sh` 按 fail() 数自动归类（幂等）。**注**：advisory-only 10（执行序列轴，不在 --all/--all-full/--compliance-suite 任一数组）与 advisory 15（enforce 横切轴，0 fail）是两个不同维度--advisory-only 10 全部属于 advisory 15，另 5 个 advisory-15 门禁（consistency/consistency-cross/link-depth/mermaid/state）在执行序列内但永不 fail。 |
 | scripts | `scripts/*` | 工具箱（门禁+状态机+**调用追踪 trace-log.sh**+图谱+MCP+self-check） |
 
-> **verifier 定位（诚实声明）**：仓库内 `verifier/` 是验收驱动器（acceptance harness），复用 `precheck.sh` 作引擎 + 独立 fixture 数据（violating/compliant 双态）+ 独立 assertion（fail-id 级断言）双层独立性，**非独立重实现**的司法预言机。强行独立重实现 54 门禁会引入双源漂移；本设计以 fixture 数据独立性 + assertion 严格性保证验收可信。
+> **verifier 定位（诚实声明）**：仓库根 `verifier/v1/`（swarm-yuan 父级目录，非 swarm-yuan/ 内）是验收驱动器（acceptance harness），复用 `precheck.sh` 作引擎 + 独立 fixture 数据（violating/compliant 双态）+ 独立 assertion（fail-id 级断言）双层独立性，**非独立重实现**的司法预言机。强行独立重实现 54 门禁会引入双源漂移；本设计以 fixture 数据独立性 + assertion 严格性保证验收可信。
 
 **★WP-P3 框架证据台账脚本化**：跑 `bash scripts/framework-evidence.sh <项目根> --frameworks <ACTIVE_FRAMEWORKS>` 产出证据台账 TSV（framework/rule_id/rule_title/hits/evidence/SUGGEST）。模型读台账而非逐条跑 grep——对每条规律做适用/不适用判断并记录理由（判断语义完整保留，红线 template-spec.md:346），证据 file:line 从台账直接引用；SUGGEST 只是启发式（hits=0 → likely-na），不是判决。规律计数 ≥ 深度门槛的校验由 `verify-framework-ruleset.sh` 继续兜底。框架文件 §3 每条规律下的 ```verify 块（id/cmd/expect）是台账数据源，新增/改规律须同步 verify 块。
 
@@ -146,7 +148,7 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 |------|------|
 | 探查指南（17 项特征卡 + 图谱工具 + **§C+ 详尽组件库清单与调用链路分析**） | `references/exploration-guide.md` |
 | 六段式填充规范（生成后核对清单 + **§4/§5/§6 全量要求 + 编排约束核对**） | `references/template-spec.md` |
-| 五层认知基底总览 | `references/cognition-framework.md` |
+| 五层认知框架总览 | `references/cognition-framework.md` |
 | 逻辑剃刀 + 谬误图谱 | `references/logic-razor.md` |
 | 认知偏差 + 思维模型 | `references/cognitive-bias.md` |
 | 领域知识速查（32 领域） | `references/domain-knowledge.md` |
@@ -156,7 +158,7 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | subagent 编排模式 | `references/subagent-orchestration.md` |
 | 代码审查方法论（5 维度） | `references/review-methodology.md` |
 | 代码图谱工具引用 | `references/code-graph-tools.md` |
-| 标准合规矩阵（GB/T 25000.51/8566/8567/9386 + 安全标准 × 49 门禁映射 + 豁免登记） | `references/standards-compliance.md` |
+| 标准合规矩阵（GB/T 25000.51/8566/8567/9386 + 安全标准 门禁映射 + 豁免登记） | `references/standards-compliance.md` |
 | 密码学应用规范（GB/T 39786 国密选型/密钥生命周期，check_crypto 判定依据） | `references/crypto-spec.md` |
 | 质量与过程成熟度标准映射（ISO 9001/CMMI/15504 概念映射，过程资产证据） | `references/quality-management-standards.md` |
 | gsd-core phase-loop/goal-backward | `references/gsd-patterns.md` |
