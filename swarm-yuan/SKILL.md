@@ -132,6 +132,12 @@ swarm-yuan 整合 11 个外部运行时，按**接线深度分三层**（每层�
 
 OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machine）/ gstack+OCR（review）/ graphify+GitNexus（code-graph）/ gsd-core（phase-loop+goal-backward）/ claude-mem（memory persistence）/ Ruflo（multi-agent swarm 编排）/ ECC（council 多声音认知扩展）。
 
+> **运行时升级整合吸收（决策 27，2026-07-26 本轮）**：6 个运行时对齐最新稳定版后，以下概念以**方法论吸收**落地（不新增 `check_*` 门禁，守决策 26 预算；详见 `docs/runtime-update-2026-07.md`）：
+> - gsd-core v1.8.0：reversibility 评级（`references/decision-governance.md` §2.4）+ broken-windows 台账（`references/gsd-patterns.md` + `state-machine.sh` archive guard warn）
+> - superpowers v6.2.0：resume-based 5 轮熔断修复环 + scoped re-review（`references/subagent-orchestration.md`）+ 测试可证伪性纪律（`references/review-methodology.md`）
+> - graphify v0.9.27：honest-edge provenance 三标（`references/memory-persistence.md` + `trace-log.sh --confidence`）
+> - claude-mem v13.12.x：version oracle 单源真值（`self-check.sh` G10 断言 + `facts.conf` `FACT_VERSION_ORACLE_RULE`）
+
 > 工具引用铁律：深度+CLI 接线层（7 个）允许真实命令调用（`graphify`/`gitnexus`/`ocr`/`claude-mem`/`gsd-tools`/`openspec`/`comet`），不重新实现、不复制源码；方法论引用层（4 个）只引用模式不调 CLI。**代码图谱工具按技术能力选型（GitNexus 深度调用图 / graphify 广谱知识图，平权可按项目并用），不做授权驱动的降级**（决策 18，详见 `references/code-graph-tools.md` §选型）。
 
 **reference 文件清单（按需读取）**：

@@ -71,6 +71,46 @@ implementer 回报**仅**短状态 + 提交 + 一行测试摘要 + concerns + re
 
 **final whole-branch review** — 全部任务完成后，对整个分支做一次广审。
 
+## 修复环 + 五轮熔断（Resume-based Fix Loop）
+
+> 理念来源：superpowers v6.2.0 SDD（subagent-driven-development）。v6.2.0 把修复环从"每轮 fresh dispatch"改为"resume 原实现者"，加五轮熔断 + controller 逐条 adjudicate。本节吸收该模式作为 swarm-yuan workflow 节点⑤（编码实现）的修复环指引。
+
+**核心问题**：每轮修复都 fresh dispatch 新 implementer 会丢失前序上下文（已试过什么、为什么不行），导致重复踩坑；但无限重试又会烧预算。需要一个"先 resume、超轮次再 fresh+更强模型、到顶则 controller 接管"的分级策略。
+
+**五轮熔断模式**（引自 superpowers v6.2.0 SDD）：
+
+| 轮次 | 策略 | 理由 |
+|------|------|------|
+| **R1-R3** | **resume 原实现者**（带 open findings） | 原实现者有任务上下文，resume 比重新 onboard 快且省 token；多数修复在 R1-R3 解决 |
+| **R4-R5** | **fresh dispatch + 更强模型**（如升 sonnet->opus） | R3 未解决说明原实现者能力或视角不足；换更强模型 + fresh 视角破局 |
+| **R=5（熔断）** | **controller 逐条 adjudicate** | 熔断后不再派发；controller 对每个 open finding 自行裁决（接受/拒绝/转人工），**每条 adjudication 入 ledger，禁止静默丢弃** |
+
+**关键纪律**：
+1. **R1-R3 用 resume，不 fresh**--"resume-the-implementer semantics instead of fresh dispatches"（引自 superpowers v6.2.0）。fresh dispatch 在 R1-R3 是浪费上下文。
+2. **R4-R5 才 fresh + 升模型**--R3 未解决是能力信号，换更强模型 + fresh 视角。
+3. **熔断后 controller adjudicate，不静默丢弃**--"silent discards are forbidden"（引自 superpowers v6.2.0）。每个 open finding 须有显式裁决入 ledger（`decisions.jsonl`，type=Taste，附 rationale）。
+4. **不在 R5 前提前熔断**--"Adjudicating earlier to end a loop is pre-judging with a different name"（引自 superpowers v6.2.0）。提前 adjudicate 等于用 controller 的主观判断替代修复努力。
+
+### Scoped Re-review（只验修复 diff）
+
+> 理念来源：superpowers v6.2.0 新模板 `re-review-prompt.md`。re-reviewer 只验修复，不重读全任务。
+
+**核心问题**：修复后重新跑完整两阶段审查（重读全任务 spec + 全部代码）成本高且信噪比低--修复通常只动一小块，全量复审会把无关的旧问题重新报一遍。
+
+**scoped re-review 模式**：
+- re-reviewer **只看 fix diff**（修复改了什么），不看全任务。
+- 对每个 open finding 产出**逐条判决**：`ADDRESSED`（已修复）/ `NOT ADDRESSED`（未修复）/ `PARTIALLY_ADDRESSED`（部分修复，附说明）。
+- **检查 fix diff 是否引入新破坏**（new breakage）--修复 A 时不能弄坏 B。
+- **out-of-scope 观察入 ledger，不入修复环**--re-reviewer 若发现与本次 findings 无关的新问题，记入 progress ledger 留待 final review，不中断当前修复环。
+
+**与两阶段审查的关系**：两阶段审查（§两阶段审查）是任务完成后的**首次**审查；scoped re-review 是修复后的**后续**审查。首次全量，后续 scoped，降低成本同时保持覆盖。
+
+### 在目标技能中的落地
+
+- workflow 节点⑤（编码实现）的"质量门禁"要素标注修复环策略（R1-3 resume / R4-5 fresh+更强模型 / R=5 adjudicate）。
+- 修复环的每轮 adjudication 记入 `decisions.jsonl`（type=Taste，附 rationale；熔断裁决 type=UserChallenge 因涉及方向性决策）。
+- scoped re-review 的逐条判决（ADDRESSED/NOT_ADDRESSED）记入 progress ledger，与 findings 一一对应。
+
 ## 持久化进度（Progress Ledger）
 
 **铁律：对话记忆不抗 context compaction。** 用 ledger 文件持久化进度：

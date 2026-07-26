@@ -176,6 +176,27 @@ guard_phase() {
       local vr
       vr=$(get_field verify_result)
       [[ "$vr" != "pass" ]] && { fail "verify_result=${vr}，须先 pass"; ok=0; }
+      # 破窗台账（broken-windows ledger，gsd-core v1.8.0 #1950 吸收）：
+      # 若 .swarm-yuan/WINDOWS.md 存在且含 open 条目，warn 不 fail（仅提示 ship 前清账）。
+      # gsd-core 的 /gsd-ship 在有 open 条目时阻断；swarm-yuan 降为 warn 以避免新增 fail 调用（守决策 26 预算）。
+      # 台账格式：frontmatter 含 open_count 字段，或正文含 "- [ ]" 未决项。
+      local win_file="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/WINDOWS.md"
+      if [[ -f "$win_file" ]]; then
+        local open_cnt=0
+        # 优先读 frontmatter 的 open_count；否则降级数正文 "- [ ]" 未决项
+        local fm_cnt
+        fm_cnt=$(sed -n '/^---$/,/^---$/{/^open_count:/s/^open_count:[[:space:]]*//p;}' "$win_file" 2>/dev/null | tr -d '[:space:]')
+        if [[ -n "$fm_cnt" ]]; then
+          open_cnt="$fm_cnt"
+        else
+          open_cnt=$(grep -c '^\- \[ \]' "$win_file" 2>/dev/null || echo 0)
+        fi
+        if [[ "${open_cnt:-0}" -gt 0 ]]; then
+          echo "  ⠿ archive 准入: 破窗台账 ${win_file} 有 ${open_cnt} 项 open（stubs/TODOs/skipped-tests/unrun-verifies；建议 ship 前清账或 waive，warn 不阻塞）"
+        else
+          pass "archive 准入: 破窗台账 open_count=0（干净）"
+        fi
+      fi
       [[ $ok -eq 1 ]] && pass "archive 准入: verify_result=${vr}"
       ;;
     operate)
@@ -356,7 +377,10 @@ restore_phase() {
   local cp_dir="$STATE_DIR/checkpoints"
   # 未指定则用最新 checkpoint
   if [[ -z "$target_ckpt" ]]; then
-    target_ckpt=$(ls -t "$cp_dir"/*.ckpt 2>/dev/null | head -1)
+    # 用文件名（嵌入时间戳 ts-phase.ckpt）词序取最新，而非 ls -t（mtime）--
+    # 对齐 G10 版本 oracle 单源真值（claude-mem v13.12.1 教训：mtime 排序在文件系统操作后可能失真）。
+    # checkpoint 文件名格式 <YYYYmmddTHHMMSSZ>-<phase>.ckpt，ts 字典序 = 时间序。
+    target_ckpt=$(ls -1 "$cp_dir"/*.ckpt 2>/dev/null | sort -r | head -1)
     [[ -z "$target_ckpt" ]] && { echo "ERROR: 无 checkpoint 可恢复（先 'checkpoint' 创建）"; exit 1; }
   fi
   [[ -f "$target_ckpt" ]] || target_ckpt="$cp_dir/$target_ckpt"

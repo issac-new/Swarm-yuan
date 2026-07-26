@@ -1181,6 +1181,63 @@ check_claim_intensity() {
 }
 check_claim_intensity
 
+# ===== runtime-update-2026-07：版本 oracle 单源真值断言（G10，claude-mem v13.12.1 吸收）=====
+# claude-mem v13.12.1 修复：4 个 worker-script resolver 共享一个确定性 version oracle，
+# 永不按 mtime 排序选版本（此前 mtime 排序导致重启风暴，一天 2,424 次回收）。
+# 本断言守"选版本/选候选"路径的纪律：version > capability > lexical 全序，禁用 mtime。
+# warn-only（对齐 G8 advisory 风格）：发现疑似 mtime 选版本路径则 warn，不阻断。
+check_version_oracle_single_source() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local facts="$base/assets/facts.conf"
+  [[ -f "$facts" ]] || return 0
+  if [[ -z "${FACT_VERSION_ORACLE_RULE:-}" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$facts"; set -u
+  fi
+  # 规则未启用则跳过（FACT_VERSION_ORACLE_RULE=0 时关闭）
+  [[ "${FACT_VERSION_ORACLE_RULE:-1}" -eq 1 ]] || return 0
+  echo "▶ 版本 oracle 单源真值断言（G10，claude-mem v13.12.1 吸收）"
+  # 扫描 swarm-yuan 自身脚本里"按 mtime 选候选"的可疑模式：
+  #   - ls -t（按 mtime 降序列目录，常用于"取最新"）
+  #   - stat ... -c %Y / -f %m（读 mtime 比较选最新）
+  #   - sort ... -k..M / --sort=time（按时间排序选版本）
+  # 收窄到"选版本/选候选"语境：排除明显非选版本的用法（如纯日志时间戳）。
+  local _scan_scripts=(
+    "$base/assets/precheck.sh"
+    "$base/assets/state-machine.sh"
+    "$base/assets/trace-log.sh"
+    "$base/scripts/generate-skill.sh"
+    "$base/scripts/conf-render.sh"
+    "$base/scripts/inventory-verify.sh"
+  )
+  local _suspect=0 _scanned=0 _script
+  # 可疑模式（ERE）：ls -t / stat 读 mtime / sort 按时间
+  local _mtime_patterns='ls[[:space:]]+-[^[:space:]]*t|stat[[:space:]].*%[Ym]|--sort=time|sort[[:space:]].*-k[^[:space:]]*[Mm]'
+  for _script in "${_scan_scripts[@]}"; do
+    [[ -f "$_script" ]] || continue
+    _scanned=$((_scanned+1))
+    # 逐行匹配，跳过注释行（#开头）和含"非选版本"豁免词的行
+    while IFS= read -r _ln; do
+      [[ "$_ln" =~ ^[[:space:]]*# ]] && continue
+      # 豁免：日志时间戳/调试输出/非选版本语境
+      if echo "$_ln" | grep -qE 'log|debug|echo|printf|trace'; then
+        continue
+      fi
+      if echo "$_ln" | grep -qE "$_mtime_patterns"; then
+        local _sname; _sname="$(basename "$_script")"
+        warn "$_sname: 疑似按 mtime 选候选（行: $(echo "$_ln" | head -c 80)...）--选版本/候选须用 version > capability > lexical 全序，禁用 mtime（claude-mem v13.12.1 教训）"
+        _suspect=$((_suspect+1))
+      fi
+    done < "$_script"
+  done
+  if [[ $_suspect -eq 0 ]]; then
+    echo "  ✓ 版本 oracle 单源真值扫描通过（扫描 ${_scanned} 个脚本，无按 mtime 选候选的可疑路径）"
+  else
+    echo "  ℹ 版本 oracle 扫描发现 $_suspect 处疑似 mtime 选候选（warn-only，不阻断；误报可加豁免词或注释说明）"
+  fi
+}
+check_version_oracle_single_source
+
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
 exit $FAIL
