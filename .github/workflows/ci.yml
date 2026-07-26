@@ -14,9 +14,9 @@ permissions:
   contents: read
 
 jobs:
-  # ---------- Job 1：61 框架规则集四要素核验 ----------
+  # ---------- Job 1：74 框架规则集四要素核验 ----------
   verify-framework-rulesets:
-    name: Verify 61 framework rulesets
+    name: Verify 74 framework rulesets
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -34,11 +34,11 @@ jobs:
               fail=$((fail+1))
             fi
           done
-          [[ "$fail" -eq 0 ]] && echo "✓ All 61 rulesets verified" || { echo "✗ $fail rulesets failed"; exit 1; }
+          [[ "$fail" -eq 0 ]] && echo "✓ All 74 rulesets verified" || { echo "✗ $fail rulesets failed"; exit 1; }
 
-  # ---------- Job 2：61 框架 fixture 双态测试 ----------
+  # ---------- Job 2：74 框架 fixture 双态测试 ----------
   fixture-double-state:
-    name: Run 61 fixture double-state tests
+    name: Run 74 fixture double-state tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -56,7 +56,7 @@ jobs:
               fail=$((fail+1))
             fi
           done
-          [[ "$fail" -eq 0 ]] && echo "✓ All 61 fixtures passed" || { echo "✗ $fail fixtures failed"; exit 1; }
+          [[ "$fail" -eq 0 ]] && echo "✓ All 74 fixtures passed" || { echo "✗ $fail fixtures failed"; exit 1; }
       - name: Gate fixtures (全量 36 组双态 + id 级断言，WP3.3)
         run: |
           fail=0
@@ -81,7 +81,7 @@ jobs:
         working-directory: swarm-yuan
     steps:
       - uses: actions/checkout@v4
-      - name: bash -n（bash 3.2 语法面）核心脚本 + 61 门禁片段
+      - name: bash -n（bash 3.2 语法面）核心脚本 + 74 门禁片段
         run: |
           bash --version | head -1
           fail=0
@@ -89,7 +89,7 @@ jobs:
             bash -n "$f" || { echo "BASH-N FAIL: $f"; fail=$((fail+1)); }
           done
           [[ "$fail" -eq 0 ]] && echo "✓ bash -n all passed" || exit 1
-      - name: Verify 61 rulesets on BSD（NOBSD awk 状态机同步在 BSD awk 下实跑）
+      - name: Verify 74 rulesets on BSD（NOBSD awk 状态机同步在 BSD awk 下实跑）
         run: |
           fail=0
           for md in references/frameworks/*.md; do
@@ -100,7 +100,7 @@ jobs:
               fail=$((fail+1))
             fi
           done
-          [[ "$fail" -eq 0 ]] && echo "✓ All 61 rulesets verified on macOS/BSD" || { echo "✗ $fail rulesets failed"; exit 1; }
+          [[ "$fail" -eq 0 ]] && echo "✓ All 74 rulesets verified on macOS/BSD" || { echo "✗ $fail rulesets failed"; exit 1; }
       - name: Fixture double-state on BSD（平台相关沉睡门禁在此现形）
         run: |
           fail=0
@@ -112,7 +112,7 @@ jobs:
               fail=$((fail+1))
             fi
           done
-          [[ "$fail" -eq 0 ]] && echo "✓ All 61 fixtures passed on macOS/BSD" || { echo "✗ $fail fixtures failed"; exit 1; }
+          [[ "$fail" -eq 0 ]] && echo "✓ All 74 fixtures passed on macOS/BSD" || { echo "✗ $fail fixtures failed"; exit 1; }
       - name: Gate fixtures on BSD（全量 36 组，信息性：BSD grep/awk 兼容问题逐个修）
         # WP3.3 全量暴露 cognition/consistency-cross 等 BSD grep/awk 兼容问题（原 6 组未覆盖）。
         # 设 continue-on-error 信息性——BSD 兼容逐个修是长期工程，不阻塞 Job。
@@ -279,7 +279,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install shellcheck (verifier 内 shellcheck_scan 用)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
-      - name: verifier all (61 fixture id 级 + 36 gate-fixture + e2e + cli-ab + metrics-assert)
+      - name: verifier all (74 fixture id 级 + 45 gate-fixture + e2e + cli-ab + metrics-assert)
         # verifier all 较慢（cli-ab 155 次调用 ~3-5min），设 timeout 15min
         timeout-minutes: 15
         run: |
@@ -343,7 +343,7 @@ jobs:
         working-directory: swarm-yuan
     steps:
       - uses: actions/checkout@v4
-      - name: bash -n 核心脚本 + 61 门禁片段（Git Bash 语法面）
+      - name: bash -n 核心脚本 + 74 门禁片段（Git Bash 语法面）
         shell: bash
         run: |
           fail=0
@@ -373,7 +373,7 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
-      - name: bash -n 核心脚本 + 61 门禁片段（Git Bash 语法面）
+      - name: bash -n 核心脚本 + 74 门禁片段（Git Bash 语法面）
         shell: bash
         run: |
           bash --version | head -1
@@ -382,7 +382,7 @@ jobs:
             bash -n "$f" || { echo "BASH-N FAIL: $f"; fail=$((fail+1)); }
           done
           [[ "$fail" -eq 0 ]] && echo "✓ bash -n all passed on Windows" || exit 1
-      - name: Fixture double-state on Windows（61 框架双态，信息性：Windows Git Bash 兼容问题逐个修）
+      - name: Fixture double-state on Windows（74 框架双态，信息性：Windows Git Bash 兼容问题逐个修）
         # WP2.1 风险缓解：Windows Git Bash 暴露既有兼容问题（mktemp/sed/awk 路径差异），
         # fixture 双态设为 continue-on-error 信息性——记录失败供后续逐个修，不阻塞 Job。
         # 阻塞断言由 bash -n（语法面）+ .bat 烟雾（路径转换）保证。
@@ -398,7 +398,7 @@ jobs:
               fail=$((fail+1))
             fi
           done
-          [[ "$fail" -eq 0 ]] && echo "✓ All 61 fixtures passed on Windows" || echo "⚠ $fail fixtures failed on Windows（信息性，Git Bash 兼容问题逐个修中）"
+          [[ "$fail" -eq 0 ]] && echo "✓ All 74 fixtures passed on Windows" || echo "⚠ $fail fixtures failed on Windows（信息性，Git Bash 兼容问题逐个修中）"
       - name: Gate fixtures on Windows（全量 36 组，信息性）
         shell: bash
         continue-on-error: true

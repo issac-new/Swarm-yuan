@@ -41,7 +41,7 @@ _tmpfile="$(mktemp /tmp/dfw.XXXXXX)"
 # 按依赖文件类型组织
 cat > "$_tmpfile" <<'SIGNALS'
 # format: framework_id|pattern|file_type
-# file_type: pkgjson(pacakge.json deps) / pom(pom.xml artifactId) / gomod(go.mod require) / pyreq(requirements.txt) / pyproject(pyproject.toml)
+# file_type: pkgjson(package.json deps) / pom(pom.xml artifactId) / gomod(go.mod require) / pyreq(requirements.txt) / pyproject(pyproject.toml)
 spring-boot|org.springframework.boot|pom
 spring-cloud|org.springframework.cloud|pom
 spring-data-jpa|org.springframework.data|pom
@@ -154,6 +154,13 @@ opentelemetry|io.opentelemetry|pom
 react-native|react-native|pkgjson
 # WP-V：flutter（移动端跨平台 Dart）——detect-frameworks.sh 不支持 file 类型探测
 # （pubspec.yaml 文件存在即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("flutter")
+# WP-CogAudit：以下 3 框架无 SIGNALS 信号行（detect 不自动探测），须手动配置 ACTIVE_FRAMEWORKS：
+# android（移动端原生）--build.gradle/AndroidManifest.xml 文件存在即激活，非依赖字符串匹配。
+#   须手动配置 ACTIVE_FRAMEWORKS=("android")
+# opengauss（关系型数据库）--SQL/配置文件存在型，与 dockerfile 同属文件存在型探测。
+#   须手动配置 ACTIVE_FRAMEWORKS=("opengauss")
+# rag-pipeline（LLM 检索增强生成管线）--langchain/llamaindex 在 pyreq/pyproject 有信号但
+#   作为独立 ruleset 未列入 SIGNALS。须手动配置 ACTIVE_FRAMEWORKS=("rag-pipeline")
 SIGNALS
 
 # WP-R Bug#3: 重构依赖收集——分桶(file_type) + pom 同时提取 groupId+artifactId +

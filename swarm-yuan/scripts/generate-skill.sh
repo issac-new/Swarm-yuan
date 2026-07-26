@@ -652,8 +652,8 @@ auto_detect_profile() {
   # 前端形态
   # WP-R Bug#1: find -print -quit 替代 find|head -1（避免 set -euo pipefail 下 SIGPIPE 崩溃）
   find "$proj" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
-  # 后端形态（.py/.java/.go/.rb/.php/.kt + .rs/.scala/.cs/.swift；WP-CogAudit 补 .rs/.scala/.cs/.swift 漏检）
-  find "$proj" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.scala" -o -name "*.cs" -o -name "*.swift" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
+  # 后端形态（.py/.java/.go/.rb/.php/.kt + .rs/.cs/.swift；WP-CogAudit 补 .rs/.cs/.swift 漏检；.scala 暂无 framework-gates 门禁，不纳入形态判定）
+  find "$proj" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.cs" -o -name "*.swift" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
   # 异步/MQ 形态（含 consumer/handler/listener/subscriber 文件名；WP-CogAudit 补 handler 漏检）
   find "$proj" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" -o -name "*handler*" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
   # 微服务形态（services/ 或 apps/ 多服务目录）
@@ -738,7 +738,7 @@ if [[ "$PROFILE" == "auto" ]]; then
   # 改用 find -print -quit：find 原生首匹配即停，无管道无 SIGPIPE。
   _forms=0
   find "$PROJECT_DIR" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
-  find "$PROJECT_DIR" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.scala" -o -name "*.cs" -o -name "*.swift" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
+  find "$PROJECT_DIR" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.cs" -o -name "*.swift" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
   find "$PROJECT_DIR" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" -o -name "*handler*" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
   { [[ -d "$PROJECT_DIR/electron" || -d "$PROJECT_DIR/src-tauri" || -d "$PROJECT_DIR/android" || -d "$PROJECT_DIR/ios" ]]; } && _forms=$((_forms+1))
   _msig=""

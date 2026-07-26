@@ -28,7 +28,7 @@
 | 功能适合性 | `--build`（check_build） | 构建命令执行退出码 | 退出码=0；未配置 BUILD_CMD 跳过（fail-open 已知，P1 conf lint 收口） | 终端 pass/fail 行 + 构建输出尾部 10 行 |
 | 功能适合性 | `--test`（check_test） | 测试命令执行退出码 | 退出码=0；未配置 TEST_CMD 跳过（同上） | 终端 pass/fail 行 + 测试输出尾部 20 行 |
 | 功能适合性 | `--consistency`（check_consistency） | 可改目录内重复写入点计数（INSERT/create 粗筛） | >5 处 → warn 要求确认幂等性 | pass/warn 行 + 「无多漏错重」核对提示（人工核对清单） |
-| 功能适合性 | `--framework`（check_framework） | 62 规则集 `_fw_<id>_<rule>` 逐条判定计数 | 任一规则 fail 即 fail；`ACTIVE_FRAMEWORKS` 空 → 静默跳过 | 各框架规则 fail 行（稳定 id）+ 62/62 fixture 绿 |
+| 功能适合性 | `--framework`（check_framework） | 74 规则集 `_fw_<id>_<rule>` 逐条判定计数 | 任一规则 fail 即 fail；`ACTIVE_FRAMEWORKS` 空 → 静默跳过 | 各框架规则 fail 行（稳定 id）+ 74/74 fixture 绿 |
 
 差距登记：需求↔测试追溯（RTM）—— 已覆盖（P3 `--rtm` 门禁挂接：spec REQ- 编号须在测试目录或追溯矩阵可追溯，`RTM_MATRIX_REQUIRED=1` 时矩阵缺失 fail-closed；原 P2 缺口，R7 Q-11 / 差距矩阵 §1.1 功能适合性行）。
 
@@ -245,7 +245,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 
 | 标准要求 | 门禁映射 | 状态 |
 |---|---|---|
-| 可靠性/安全性/性能/可维护性四特性弱点静态计数 | `--security` 10 模式族 + framework 62 规则集（词法层 grep） | ✅ 仓库实际涉及的 60 个唯一 CWE 全量元数据已建（`references/cwe-database.md`，6 维分级：CWE 编号/名称/OWASP/严重度/ISO 5055 四特性/检查点；`--cwe-audit` 门禁对账）；security-spec §5.1 参考表（15 项高频弱点）；ISO 5055 全集 138 条的完整覆盖需机构 SAST 工具 |
+| 可靠性/安全性/性能/可维护性四特性弱点静态计数 | `--security` 10 模式族 + framework 74 规则集（词法层 grep） | ✅ 仓库实际涉及的 60 个唯一 CWE 全量元数据已建（`references/cwe-database.md`，6 维分级：CWE 编号/名称/OWASP/严重度/ISO 5055 四特性/检查点；`--cwe-audit` 门禁对账）；security-spec §5.1 参考表（15 项高频弱点）；ISO 5055 全集 138 条的完整覆盖需机构 SAST 工具 |
 | 弱点密度/合规率双指标 | 无度量入库 | ❌ 缺口（P2 密度度量/趋势，R7 Q-08/Q-20） |
 
 ### E.2 NIST SSDF v1.1（SP 800-218，PO/PS/PW/RV 四组 19 项）

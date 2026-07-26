@@ -541,12 +541,16 @@ check_shift_left() {
   # ---- 定位 spec 文件 ----
   local spec_file="${SPEC_FILE:-}"
   [[ -z "$spec_file" ]] && spec_file=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
+  # WP-CogAudit：排除 *template* 模板文件--模板的 §19/§20/§21 标题本就该存在，把模板当具体 spec 检会自证 pass（乞题谬误）
+  [[ -n "$spec_file" && "$(basename "$spec_file")" == *template* ]] && spec_file=""
   local test_design_file="${TEST_DESIGN_FILE:-$spec_file}"
   local obs_file="${OBSERVABILITY_FILE:-$spec_file}"
 
   # ---- 定位 plan 文件 ----
   local plan_file="${CHANGE_IMPACT_FILE:-}"
   [[ -z "$plan_file" ]] && plan_file=$(_first_existing_file "plan-template.md" "plans/plan-template.md" "docs/plan-template.md")
+  # WP-CogAudit：plan 模板同样排除（模板含 §20 标题会自证 pass）
+  [[ -n "$plan_file" && "$(basename "$plan_file")" == *template* ]] && plan_file=""
 
   echo "  ── 测试左移（spec §19 + test 先于 impl）──"
 

@@ -71,9 +71,9 @@ bash swarm-yuan/scripts/verify-framework-ruleset.sh <id> && \
 bash swarm-yuan/tests/run-framework-fixture.sh <id>
 ```
 
-## The 61-framework system (most edits touch this)
+## The 74-framework system (most edits touch this)
 
-Each of 61 supported frameworks (vue, koa, mybatis, django, gin, kafka, …) has **three coupled artifacts** that must stay consistent:
+Each of 74 supported frameworks (vue, koa, mybatis, django, gin, kafka, …) has **three coupled artifacts** that must stay consistent:
 
 1. `swarm-yuan/references/frameworks/<fw>.md` — the rules/规律 (frontmatter declares a `深度门槛:` = min number of rules).
 2. `swarm-yuan/assets/framework-gates/<fw>.sh` — the executable gate fragment defining a `_fw_<id>_check` function.
@@ -96,5 +96,5 @@ Many gates "sleep" (match nothing) on purpose; `docs/paradigm-decisions.md` docu
 - **No unit-test framework.** Correctness = fixture double-state tests + e2e + shellcheck + the `verifier/` golden-vector comparison.
 - **Single test** = `run-framework-fixture.sh <id>` (one framework) or `run-verifier.sh fixtures` (all).
 - **Fixture `precheck.conf` uses a `__REPO_ROOT__` placeholder** that the runner substitutes at runtime, so fixtures are machine-independent.
-- `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 62-fixture exit-code vector.
-- CI (`.github/workflows/ci.yml`) runs all four jobs on push/PR to `main`: 62 ruleset verifies, 62 fixture double-states, self-check freshness, and shellcheck on core scripts.
+- `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 74-fixture exit-code vector.
+- CI (`.github/workflows/ci.yml`) runs all four jobs on push/PR to `main`: 74 ruleset verifies, 74 fixture double-states, self-check freshness, and shellcheck on core scripts.
