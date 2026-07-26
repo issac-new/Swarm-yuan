@@ -409,3 +409,30 @@ ocr 新增 LLM provider 支持：
 **FP_EXCLUSIONS 配置（轻量固化）**：`precheck.conf` 可配 `FP_EXCLUSIONS`（`|` 分隔的 ERE 模式），check_review 的 ocr 输出对命中已知误报类的 finding 降级提示。内置默认排除：`README|\.md:|\.txt:|// |# |\* `（文档/注释行）。置信度标定为 **AI 审查的结构化输出要求**（finding 带 high/medium/low，低置信压附录），非硬门禁——完整标定学习闭环（标定历史反哺）留后续（需真实项目数据校准，硬门禁化风险高）。
 
 **标定学习闭环（已固化）**：`precheck.sh --review-calibrate record --confidence <high|medium|low> --verdict <true|false>` 落盘 finding 置信度+用户确认到 `.swarm-yuan/review-calibration.jsonl`；`--review-calibrate stats` 统计各置信度真发现率，某级别真发现率 <30%（≥5 样本）时建议压附录或提 pre-emit 引用门阈值——这是 gstack 标定学习（用户确认低置信 finding 为真→反哺后续审查）的最小闭环。
+
+
+## 测试可证伪性纪律（Falsifiability + Mutation Check）
+
+> 理念来源：superpowers v6.2.0 `writing-good-tests.md`（替换 `testing-anti-patterns.md`）。六规则正向目录，每条先给 GOOD 示例 + 吸收可证伪性纪律 + 闭合 Mutation Check；硬止两类陷阱。本节作为 review 方法论的测试质量指引，对齐现有 `--review` 门禁的 pre-emit 引用门语境。
+
+**核心问题**：测试若不可证伪（没有能让它失败的生产改动），就只是"看起来在测"的装饰--CI 绿但不保护任何东西。这类测试给出虚假安全感，是 review 中最常被放过的暗坑。
+
+**可证伪性纪律**（引自 superpowers v6.2.0 `writing-good-tests.md`）：
+
+1. **说出会让该测试失败的生产改动**--写测试前先回答："改了什么会让这个测试失败？" 答不出则测试无效。例：测 `add(2,3)==5`，能让它失败的改动是 `add` 实现改错返回值；若答不出（如测试只断言常量），是 change-detector 陷阱。
+2. **期望独立于被测代码推导**--测试的期望值不能从被测代码的实现推导出来（否则只是 tautology）。期望应来自 spec/不变量/独立计算。例：测排序后，期望 `[1,2,3]` 应来自"输入 `[3,1,2]` 的升序定义"，不能来自"跑一遍 `sort` 看输出"。
+3. **闭合 Mutation Check**--测试写完后，做一次变异检查：手动改坏被测代码（如把 `+` 改 `-`、把 `>` 改 `>=`），确认测试**确实失败**。改坏了测试还绿 = 测试没保护这个改动 = 测试无效。
+
+**两类陷阱硬止**（引自 superpowers v6.2.0，硬止 = 发现即判测试无效）：
+
+| 陷阱 | 表现 | 为什么坏 |
+|------|------|----------|
+| **string-presence trap**（字符串存在陷阱）| grep 式测试--检查代码/输出里"含有某字符串"而非检查行为 | 可观察的是行为，不是文本；重构改写法（如把 `if x` 改 `if true == x`）会让字符串消失但行为不变，测试误报失败；反之行为坏了但字符串还在，测试误报通过。**对脚本/技能/prompt 的 grep 式测试是此陷阱的重灾区** |
+| **change-detector trap**（变化检测器陷阱）| 测试断言常量或断言"输出==自身跑一遍的输出" | 常量断言能失败（改常量）却保护不了什么；`assert output == run()` 是 tautology，任何改动都"通过" |
+
+**与 review 的整合**：
+- `--review` 审查代码质量维度时，对新增/修改的测试用本纪律审查：答不出"什么改动会让它失败"的测试，判 Important（建议补 mutation check 或重写）。
+- pre-emit 引用门（§pre-emit 引用门）的"未验证 finding 不进主报告"原则同样适用于测试审查--未做 mutation check 的测试质量断言降级 warn。
+- **不新增 check_* 门禁**（守决策 26 预算）；本纪律是 AI 审查的结构化指引，由 `--review` 的代码质量维度承载。
+
+**对脚本/技能/prompt 测试的特殊提醒**：swarm-yuan 自身的脚本（precheck.sh/state-machine.sh/trace-log.sh）和生成的技能 prompt 不宜用 grep 式测试（string-presence trap）。可观察的是行为（exit code / 输出结构 / 副作用），不是文本存在性。fixture 双态测试（violating/compliant）是行为测试的正解--它断言门禁在违规项目 fail、在合规项目 pass，而非断言脚本"含有某段代码"。
