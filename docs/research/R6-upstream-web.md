@@ -188,7 +188,7 @@
 | **主要短板** | 沉睡门禁/fail-open/文档漂移（已知审计问题）；版本基线漂移；GitNexus 许可证风险 | 刚性、重文档、brownfield 弱、无验证闭环 | 重流程、token 开销大、门禁靠自觉 | 纯 prompt 层、无验证无状态 |
 
 矩阵证据：spec-kit/BMAD/SuperClaude 行数据来源见 §2 各节 URL（均访问 2026-07-20）；swarm-yuan 行数据来源：`swarm-yuan/SKILL.md:3,71-108`、`README.md:100,134-136,203,215`、`docs/2026-07-20-audit-optimization-decisions.md`。
-补充三方共识证据：2026-02 的四 harness 交叉分析（Superpowers/ECC/Agent-Orchestrator/Maestro）指出——worktree 是通用隔离原语；**"质量门禁的规模化强制全行业未解"（"instructed to verify" vs "proven to have verified" 的鸿沟普遍存在）**；成本治理普遍欠发达。来源：https://gist.github.com/jeffscottward/de77a769d9e25a8ccdc92b65291b1c34 （访问 2026-07-20）。swarm-yuan 的脚本门禁恰好落在行业空白带上，这是其标准化故事的最强支点。
+补充三方共识证据：2026-02 的四 harness 交叉分析（Superpowers/ECC/Agent-Orchestrator/Maestro）指出——worktree 是通用隔离原语；**"质量门禁的规模化强制在该四 harness 样本中未见强制闭环"（"instructed to verify" vs "proven to have verified" 的鸿沟在该样本中普遍存在）**；成本治理普遍欠发达。来源：https://gist.github.com/jeffscottward/de77a769d9e25a8ccdc92b65291b1c34 （访问 2026-07-20）。"全行业未解"是修辞化表述，严谨说法是"本轮调研样本（4 同行 + 4 harness）中未见"——样本规模有限，不排除存在未调研的同类实现。swarm-yuan 的脚本门禁恰好落在该样本空白带上，这是其标准化故事的可讲述支点之一，但非"行业唯一解"。
 
 ---
 
@@ -223,7 +223,7 @@
 ### 4.3 范式层面的判断
 
 1. **SDD 正在"溶解进默认循环"**：Cursor/Devin/Kiro/Antigravity 都内置 plan-before-code；spec 的价值正从"生成代码"扩展到"运行时诊断与多 agent 合同"（https://productbuilder.net/learn/spec-driven-development ，访问 2026-07-20）。swarm-yuan 的差异化不在"也有 spec"，而在**spec→特征卡→脚本门禁→验收**的强制闭环。
-2. **"约定 vs 强制"是分水岭**：spec-kit 与 OpenSpec 都停留在 convention（官方与第三方均确认无验证强制，https://codemyspec.com/blog/openspec-vs-spec-kit ，访问 2026-07-20）；行业共识是门禁强制未解（§3 gist 证据）。swarm-yuan 的 27 门禁 + 状态机 + verifier/v1 组合是目前调研范围内唯一"立法-执法-司法"闭环的范式——对标行业/国家质量标准时（如 ISO/IEC 25010:2023 产品质量模型、ISO/IEC 42001:2023 AI 管理体系、GB/T 25000.51-2016 就绪软件质量要求，标准号+年号供立项参考，条款级映射需另行专项），这一闭环是最可讲述的资产，但前提是先治好自身的 fail-open 与沉睡门禁。
+2. **"约定 vs 强制"是分水岭**：spec-kit 与 OpenSpec 都停留在 convention（官方与第三方均确认无验证强制，https://codemyspec.com/blog/openspec-vs-spec-kit ，访问 2026-07-20）；在本轮调研样本（4 同行 + 4 harness）中未见门禁强制闭环（§3 gist 证据）。swarm-yuan 的 27 门禁 + 状态机 + verifier/v1 组合在本轮调研样本中，是唯一以"立法-执法-司法"隐喻自述且提供独立验证器的范式——对标行业/国家质量标准时（如 ISO/IEC 25010:2023 产品质量模型、ISO/IEC 42001:2023 AI 管理体系、GB/T 25000.51-2016 就绪软件质量要求，标准号+年号供立项参考，条款级映射需另行专项），这一闭环是最可讲述的资产，但"唯一"限于本轮样本与该隐喻定义，不排除存在未调研的同类实现。前提是先治好自身的 fail-open 与沉睡门禁。
 3. **生态位互补而非替代**：OpenSpec（轻 SDD）/ comet（流程强制）/ gsd-core（执行验证）/ superpowers（行为习惯）可叠加（spec-kit×superpowers 叠加已被社区验证不冲突，https://vibecoding.app/blog/spec-kit-review ，访问 2026-07-20）。swarm-yuan 的"引用调用不重实现"铁律（`swarm-yuan/SKILL.md:108`）与该趋势同向，应保持；代价是必须制度化版本基线跟踪与许可证审查。
 
 ---

@@ -23,7 +23,7 @@
 
 **痛点 3：检查靠人工。** 没有自动化检查就没有信任，只能逐行 review。
 
-**核心论断：AI 的代码生成能力已经很强，但「项目认知」还停留在零。** 同行产品（spec-kit 12 万星、BMAD-METHOD 5 万星、SuperClaude 2.3 万星）解决了 spec 生成或 prompt 工程，但「质量门禁的规模化强制」全行业未解——swarm-yuan 用 54 门禁 + 状态机 + 验证器闭环补上了这一段。
+**核心论断：AI 的代码生成能力已经很强，但「项目认知」仍是被多数工具忽视的环节。** 同行产品（spec-kit 12 万星、BMAD-METHOD 5 万星、SuperClaude 2.3 万星）解决了 spec 生成或 prompt 工程，但「质量门禁的规模化强制」在我们调研的上述 4 个同行中未见脚本化门禁 + 独立验证器的强制闭环——swarm-yuan 用 54 门禁 + 状态机 + 验证器试图补上这一段。本判断受样本规模限制（4 个同行 + 1 份 gist 交叉分析，2026-07-20 实测），非全行业普查结论。
 
 ---
 
@@ -97,7 +97,9 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 
 ## 54 个质量门禁：特征卡的守卫者
 
-**特征卡是立法，门禁是执法。** 特征卡定义规则，门禁验证合规。
+**特征卡是立法，门禁是执法。**[^separation] 特征卡定义规则，门禁验证合规。
+
+[^separation]: **三权分立隐喻的教学性边界**：本隐喻为教学类比，非政治学严格对应。门禁不具备法律的普遍约束力（仅作用于本项目，非社会规范）；verifier/v1 与被验证者同处一个 git 仓库与 CI，不具备司法的独立裁量权与终局性（其"独立"指验收脚本是独立子目录、不与门禁共享逻辑，而非机构独立）。隐喻用于帮助理解"定义规则-执行检查-独立验收"三组件分工，不构成对组件性质的经验断言。
 
 > **门禁分层（决策 19）——执法强度横切维度：** 54 门禁按 `fail()` 能力分三档，与 core/standard/compliance 执行序列正交：
 > - **strict（20 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model/crypto/sast-deep/oss-eval；Z3 fail-closed 化后 +crypto/sast-deep/oss-eval 升 strict）
@@ -275,7 +277,8 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | 偏差防范 | 如何纠偏（5 维偏差 + 8 心智模型） | spec §16 偏差自检 |
 | 辩证认知 | 如何统一前四层（7 对辩证对 + ECC 四声部议事会） | `--domain` = 违规检测 |
 
-> 详见 `swarm-yuan/references/cognition-framework.md`。`--cognition` 门禁得分 ≥15/19 = 认知完整。
+> 详见 `swarm-yuan/references/cognition-framework.md`。
+> ⚠️ "五层认知基底"与"`--cognition` 门禁得分 ≥15/19 = 认知完整"是**工程启发式评分**，非心理测量学构念--未经信度/效度检验，分数仅用于自检"是否覆盖五层话题"，不构成对 AI 认知能力的测量。五层认知文档全文无学术引用（见 `docs/research/R3-methodology.md` §2.1 自承），R3:178 建议两条出路：补学术出处页（图尔敏 1958 / Minto 1987 / Kruger-Dunning 1999 / Tversky-Kahneman 1974 / 《实践论》《矛盾论》），或维持"工程启发式框架"显式降级声明。本仓库当前采用后者。
 
 ---
 
@@ -327,7 +330,9 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 **零占位符：** AI 执行完整 13 节点后由脚本机器执法（`bash scripts/generate-skill.sh --verify-completeness <skill_dir>`）——零残留才算完成。命中"待填充"/"填充指引"/"<占位符>"即列 file:line 并 exit 1。
 
-**自举：** swarm-yuan 能用自身的 54 个门禁检查自身（CI `generator-self-gate` job 三档 `--all`/`--all-full`/`--compliance-suite` RC=0）。一个连自己都检查不了的工具，凭什么检查你的项目？
+**自举：** swarm-yuan 能用自身的 54 个门禁检查自身（CI `generator-self-gate` job 三档 `--all`/`--all-full`/`--compliance-suite` RC=0）。
+
+**自举证明的边界**：自举只证明"门禁规则与自身代码一致"（内部自洽），**不证明**"门禁能拦截真实缺陷"（外部有效）。后者由 `verifier/v1` 的 C1 行为等价与 `docs/research/R9-paradigm-realworld-test.md` 的真实项目测试覆盖--R9 已诚实披露 5 个真实项目中 fixture 套件漏掉 3 个 P0/P1 bug（fixture 用构造的最小样例，与真实项目有差距）。外部有效性的进一步证据见 `verifier/v2/external-validity.md`（立项稿）。
 
 ---
 
@@ -345,7 +350,7 @@ swarm-yuan 不是一次性写出来的，是 21 天、14 个 release tag、9 份
 | 2026-07-20 | 决策 13：废止"断点续传违背零占位符铁律"否决 → 以 draft/active 状态门替代（WP-H） | 决策 13 |
 | 2026-07-21 | 决策 18/25：`--profile auto` 默认 + "重量是设计选择不是缺陷"（WP-P10 范式定位） | `docs/paradigm-positioning.md` |
 | 2026-07-22 | R9 真实项目测试（5 个 GitHub 项目）暴露 fixture 测试不可替代的 3 个 P0/P1 bug → fixture + 真实项目双轨制 | `docs/research/R9-paradigm-realworld-test.md` |
-| 2026-07-23 | WP-P0~P6 生成管线工具化：上下文表面 193226B → 156992B（−18.8%） | `verifier/baselines/post-opt/comparison-report.md` |
+| 2026-07-23 | WP-P0~P6 生成管线工具化：上下文表面字节 193226B → 156992B（−18.8%，字节级代理；模型 token 削减未测量） | `verifier/baselines/post-opt/comparison-report.md` |
 | 2026-07-24 | WP-X/WP-Y 方法论门禁化完结：+graphify God Nodes / +state-phase / +upstream-baseline drift / +pr-quality / +skill-supply-chain / canary 可配阈值 → 54 门禁 | `verifier/runs/README.md` |
 
 ### 9 份研究交付物（R1-R9，2026-07-20~22）
@@ -357,7 +362,7 @@ swarm-yuan 不是一次性写出来的，是 21 天、14 个 release tag、9 份
 | R3 | 方法论体系 | 14 参考文档分析；五层认知 0 学术引用；spec↔特征卡缺显式 RTM |
 | R4 | 框架规则库 | 58 triplets / 676 子门禁（fail 124/warn 552）；fail-fixture 覆盖 71%；spring-boot 3 沉睡门禁实证 |
 | R5 | 上游组件(本地) | gstack + superpowers marketplace 分析；offline-cache/superpowers 是 marketplace 目录非核心插件 |
-| R6 | 上游组件(网络) | 9 运行时 + 同行产品（spec-kit/BMAD/SuperClaude/Kiro）；"质量门禁规模化强制全行业未解" |
+| R6 | 上游组件(网络) | 9 运行时 + 同行产品（spec-kit/BMAD/SuperClaude/Kiro）；"质量门禁规模化强制在 4 个同行中未见强制闭环"（非全行业普查） |
 | R7 | 质量标准 | 12 标准族 / Q-01~Q-22 映射；"文档集+测试证据链+可追溯矩阵三位一体" |
 | R8 | 安全标准 | 6 层 / 12 族 / 35 行映射；推荐 6 新安全门禁族；fail-closed 强制（衡山医院 5 万元罚款执法案例） |
 | R9 | 真实项目测试 | 5 项目暴露 3 个 fixture 测不出的 P0/P1 bug；druid 框架新增；62/62 fixture 回归绿 |
@@ -474,7 +479,7 @@ Swarm-yuan/
 | 三平台 | macOS / Linux / Windows（CI 10 job 全覆盖：ubuntu-latest + macos-latest + windows-latest） | — |
 | 零占位符 | ✅（`generate-skill.sh --verify-completeness` 机器执法） | — |
 | 自举 | ✅（CI generator-self-gate 三档 RC=0） | FACT_BOOTSTRAP_GATES=3 |
-| 上下文表面瘦身 | 193226B/2144L → 156992B/1856L（−18.8% / −13.4%，WP-P0~P6） | FACT_CONTEXT_SURFACE_PRE_OPT=193226 |
+| 上下文表面瘦身（字节代理，非 token） | 193226B/2144L → 156992B/1856L（−18.8% / −13.4%，WP-P0~P6；模型 token 削减未测量） | FACT_CONTEXT_SURFACE_PRE_OPT=193226 |
 
 ---
 

@@ -271,7 +271,8 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | 偏差防范 | 如何纠偏（5 维偏差 + 8 心智模型） | spec §16 偏差自检 |
 | 辩证认知 | 如何统一前四层（7 对辩证对 + ECC 四声部议事会） | `--domain` = 违规检测 |
 
-> 详见 `references/cognition-framework.md`。`--cognition` 门禁得分 ≥15/19 = 认知完整。
+> 详见 `references/cognition-framework.md`。
+> ⚠️ "`--cognition` 门禁得分 ≥15/19 = 认知完整"是**工程启发式评分**，非心理测量学构念--未经信度/效度检验，分数仅用于自检"是否覆盖五层话题"，不构成对 AI 认知能力的测量。详见根 `README.md` 五层认知基底段与 `docs/research/R3-methodology.md` §2.1。
 
 ---
 
@@ -322,7 +323,7 @@ swarm-yuan 宣称"兼容 7 个 AI 工具"，实际是**三层同心圆**（R1 §
 
 **零占位符：** AI 执行完整 13 节点后由脚本机器执法（`bash scripts/generate-skill.sh --verify-completeness <skill_dir>`）——零残留才算完成。命中"待填充"/"填充指引"/"<占位符>"即列 file:line 并 exit 1。
 
-**自举：** swarm-yuan 能用自身的 54 个门禁检查自身（CI `generator-self-gate` job 三档 `--all`/`--all-full`/`--compliance-suite` RC=0）。一个连自己都检查不了的工具，凭什么检查你的项目？
+**自举：** swarm-yuan 能用自身的 54 个门禁检查自身（CI `generator-self-gate` job 三档 `--all`/`--all-full`/`--compliance-suite` RC=0）。**自举只证明内部自洽（门禁规则与自身代码一致），不证明外部有效（门禁能拦截真实缺陷）**--后者由 verifier/v1 C1 行为等价与 R9 真实项目测试覆盖，R9 已披露 fixture 漏掉 3 个 P0/P1。
 
 ---
 
@@ -404,7 +405,7 @@ Swarm-yuan/
 | 三平台 | macOS / Linux / Windows（CI 10 job 全覆盖） | — |
 | 零占位符 | ✅（`generate-skill.sh --verify-completeness` 机器执法） | — |
 | 自举 | ✅（CI generator-self-gate 三档 RC=0） | FACT_BOOTSTRAP_GATES=3 |
-| 上下文表面瘦身 | 193226B/2144L → 156992B/1856L（−18.8% / −13.4%，WP-P0~P6） | FACT_CONTEXT_SURFACE_PRE_OPT=193226 |
+| 上下文表面瘦身（字节代理，非 token） | 193226B/2144L → 156992B/1856L（−18.8% / −13.4%，WP-P0~P6；模型 token 削减未测量） | FACT_CONTEXT_SURFACE_PRE_OPT=193226 |
 
 ---
 
