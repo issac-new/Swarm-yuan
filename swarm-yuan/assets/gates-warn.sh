@@ -635,10 +635,12 @@ check_impact() {
   if [[ -z "$spec_file" ]]; then
     spec_file=$(_first_existing_file "specs/spec-template.md" "spec-template.md" "docs/spec-template.md")
   fi
+  # WP-CogAudit：排除 *template* 模板文件--模板含"影响范围"标题会自证 pass（乞题谬误）
+  [[ -n "$spec_file" && "$(basename "$spec_file")" == *template* ]] && spec_file=""
   if [[ -z "$spec_file" ]]; then
     for dir in "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" "${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}"; do
       if [[ -d "$dir" ]]; then
-        local hit; hit=$(grep -rliE '影响范围|impact|消费方|stakeholder' "$dir" --include='*.md' 2>/dev/null | head -1 || true)
+        local hit; hit=$(grep -rliE '影响范围|impact|消费方|stakeholder' "$dir" --include='*.md' 2>/dev/null | grep -vE 'template' | head -1 || true)
         if [[ -n "$hit" ]]; then spec_file="$hit"; break; fi
       fi
     done
@@ -1022,6 +1024,8 @@ check_domain() {
   # ---- 1. spec §18 领域知识段存在性 + 动态分析质量 ----
   local spec_file="${SPEC_FILE:-}"
   [[ -z "$spec_file" ]] && spec_file=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
+  # WP-CogAudit：排除 *template* 模板文件--模板含 §18 标题会自证 pass（乞题谬误）
+  [[ -n "$spec_file" && "$(basename "$spec_file")" == *template* ]] && spec_file=""
   if [[ -n "$spec_file" && -f "$spec_file" ]]; then
     if grep -qE '^## 18\..*领域知识' "$spec_file" 2>/dev/null; then
       pass "spec §18 领域知识段存在"

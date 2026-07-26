@@ -1,12 +1,12 @@
 # 验收标准 v1 — Swarm-yuan 重构
 
-> 状态：2026-07-21 全量更新（数字口径与当前实现对齐：62 fixture / 40 flag / 40 gate-fixture 组）。
+> 状态：2026-07-21 全量更新（数字口径与当前实现对齐：74 fixture / 实际 flag 数（见 precheck.sh GATE_FLAGS） / 45 gate-fixture 组）。
 > 重构 = 结构优化，**不改变门禁判定语义**。以下全部通过才算完成。
 
 ## C1 行为等价（最高优先级）
 - 62 个 framework fixture 的判定结果（violating→FAIL / compliant→PASS）重构前后逐一相同。
 - 度量：`run-verifier.sh fixtures` 输出每个 fixture 的原始退出码向量 (v,c,ids)，重构前后 diff 必须为空（比 OK/BAD 更强：退出码逐值相等 + id 级断言命中数相等）。
-- 前置修复 R0：fixture conf 硬编码 `/Volumes/...` 路径 → `__REPO_ROOT__` 占位符 + runner 替换，使套件在任意机器真实可跑。修复后基线应为 62/62 OK。
+- 前置修复 R0：fixture conf 硬编码 `/Volumes/...` 路径 → `__REPO_ROOT__` 占位符 + runner 替换，使套件在任意机器真实可跑。修复后基线应为 74/74 OK。
 
 ## C2 E2E 通过
 - `swarm-yuan/tests/e2e/run-e2e.sh` 重构后退出码为 0。

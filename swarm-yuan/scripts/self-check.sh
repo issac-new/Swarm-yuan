@@ -538,7 +538,7 @@ check_doc_consistency() {
     source "$facts_conf"; set -u
   fi
 
-  # 1. 框架规则文件数 == 门禁片段数（真值机械计数，当前 62 == 62）
+  # 1. 框架规则文件数 == 门禁片段数（真值机械计数，当前 74 == 74（机械计数，随框架增删自动变化））
   local rule_cnt gate_cnt
   rule_cnt=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
   gate_cnt=$(ls "$base/assets/framework-gates/"*.sh 2>/dev/null | wc -l | xargs)
@@ -665,7 +665,7 @@ check_doc_consistency() {
   # design-philosophy-consistency.md），它们含 catchphrase 数字但原在扫描盲区（docs/ 不在 $base 下）。
   # 不新增 docs/paradigm-decisions.md（决策日志多历史快照，加扫会误报）/docs/research//docs/plans/（归档）。
   local _root_docs="$base/.."
-  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md"
+  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
   local _cmd_dir="$base/.claude/commands"
   if [[ -d "$_cmd_dir" ]]; then
     local _cf
@@ -721,7 +721,7 @@ check_doc_consistency() {
           | grep -oE "[0-9]+" | sort -u | grep -vx "$ref_cnt" || true)
     [[ -n "$bad" ]] && dfound="${dfound} references数出现非${ref_cnt}值($(echo $bad | tr '\n' ' '));"
     # WP-Alignment: 框架规则集数扩展正则——「N 个框架规则集」/「N 框架」/「N ruleset」/「N framework-fixture」
-    # （旧正则只匹配"N 个参考文档"，漏 USAGE.md:425「62 个框架规则集」与 design-philosophy 多处）
+    # （旧正则只匹配"N 个参考文档"，漏 USAGE.md:425「74 个框架规则集」（已对齐）与 design-philosophy 多处）
     if [[ -n "${FACT_FRAMEWORKS:-}" && "${FACT_FRAMEWORKS}" != "0" ]]; then
       bad=$(grep -oE "[0-9]+ ?个框架规则集|[0-9]+ ?框架(?!.*特征)|[0-9]+ ?ruleset|[0-9]+ ?framework-fixture" "$docpath" 2>/dev/null \
             | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_FRAMEWORKS}" || true)
@@ -1005,6 +1005,32 @@ check_runtime_tier() {
 }
 check_runtime_tier
 
+# ===== WP-CogAudit：golden-vector.txt 行数断言（金向量漂移防治）=====
+# golden-vector.txt 行数须 == FACT_FRAMEWORKS（+1 行 FIXTURES_TOTAL 尾行）
+# 防止新增框架后 golden 未重建导致 C1 golden diff 对新 fixture 失效
+check_golden_vector() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local golden="$base/../verifier/v1/golden-vector.txt"
+  [[ -f "$golden" ]] || return 0
+  # facts.conf 若已被前序函数 source 则直接用
+  if [[ -z "${FACT_FRAMEWORKS:-}" && -f "$base/assets/facts.conf" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$base/assets/facts.conf"; set -u
+  fi
+  echo "▶ golden-vector 行数对账（WP-CogAudit）"
+  # golden-vector.txt 行数 = FACT_FRAMEWORKS 行 FIXTURE + 1 行 FIXTURES_TOTAL
+  local golden_lines exp_lines
+  golden_lines=$(wc -l < "$golden" | tr -d ' ')
+  exp_lines=$(( ${FACT_FRAMEWORKS:-74} + 1 ))
+  if [[ "$golden_lines" == "$exp_lines" ]]; then
+    echo "  ✓ golden-vector.txt ${golden_lines} 行（${FACT_FRAMEWORKS:-74} fixture + 1 尾行）与 facts.conf 一致"
+  else
+    warn "golden-vector.txt ${golden_lines} 行 ≠ 期望 ${exp_lines} 行（FACT_FRAMEWORKS=${FACT_FRAMEWORKS:-74} + 1）--新增框架后需重跑 run-verifier.sh fixtures 重建"
+    FAIL=1
+  fi
+}
+check_golden_vector
+
 # ===== WP-Z11：测度元素元数据覆盖率断言（Q-06，GB/T 25000.21-2019）=====
 # conf 变量须含 # MEASURE: 注释（characteristic/function/threshold 三元组）
 # 渐进式：FACT_MEASURE_METADATA_REQUIRED=0 时 warn-only 报告覆盖率；1 时 fail
@@ -1104,7 +1130,7 @@ check_claim_intensity() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local _root_docs="$base/.."
   # 与 check_doc_consistency 的 _scan_docs 保持一致（G6/G8 同源盲区）
-  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $base/../CLAUDE.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md"
+  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $base/../CLAUDE.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
   local _cmd_dir="$base/.claude/commands"
   if [[ -d "$_cmd_dir" ]]; then
     local _cf
