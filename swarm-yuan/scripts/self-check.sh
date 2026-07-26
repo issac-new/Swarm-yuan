@@ -296,11 +296,18 @@ if [[ ${#MISSING[@]} -eq 0 ]]; then
   echo "✓ 全部 11 个项目运行时已安装"
 fi
 # 运行时接线分层标注（WP1.4）：让用户清楚每个运行时的真实接线程度，不假装全深接
+# WP-CogAudit：计数从 facts.conf 动态读取（原硬编码 4/3/4，林迪效应失效--不随实现演变）
+_runtime_base="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -z "${FACT_RUNTIMES_DEEP:-}" && -f "$_runtime_base/assets/facts.conf" ]]; then
+  set +u; # shellcheck disable=SC1090
+  source "$_runtime_base/assets/facts.conf"; set -u
+fi
 echo "  接线分层："
-echo "    深度接线(4,precheck.sh 真实命令调用)：gitnexus / graphify / claude-mem / ocr"
-echo "    CLI 接线(3,门禁/状态机按需调用 CLI)：openspec / comet / gsd-core"
-echo "    方法论引用(4,AI 按节点引用模式)：superpowers / gstack / ruflo / ECC"
-echo "  （每层有自带降级载体，未装不阻塞——详见 SKILL.md「它整合的方法论」分层表）"
+echo "    深度接线(${FACT_RUNTIMES_DEEP:-4},precheck.sh 真实命令调用)：gitnexus / graphify / claude-mem / ocr"
+echo "    CLI 接线(${FACT_RUNTIMES_CLI:-3},门禁/状态机按需调用 CLI)：openspec / comet / gsd-core"
+echo "    方法论引用(${FACT_RUNTIMES_METHOD:-4},AI 按节点引用模式)：superpowers / gstack / ruflo / ECC"
+echo "  （每层有自带降级载体，未装不阻塞--详见 SKILL.md「它整合的方法论」分层表）"
+unset _runtime_base
 
 # 即便全部已装，若启用 --latest 则升级到最新版
 if [[ $FORCE_LATEST -eq 1 && $CHECK_ONLY -eq 0 ]]; then
@@ -932,6 +939,71 @@ check_compat_tier() {
   fi
 }
 check_compat_tier
+
+# ===== WP-CogAudit：NEVER_GATE 单源一致性断言 =====
+# precheck.sh _never_gate 与 adaptive-gating.sh NEVER_GATE 须为同一清单（防三源漂移）
+check_never_gate_consistency() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local precheck="$base/assets/precheck.sh"
+  local adaptive="$base/scripts/adaptive-gating.sh"
+  [[ -f "$precheck" && -f "$adaptive" ]] || return 0
+  echo "▶ NEVER_GATE 单源一致性（WP-CogAudit）"
+  # 提取 _never_gate=" a b c " 的引号内清单（precheck.sh）
+  local ng_precheck
+  ng_precheck=$(grep -E '^[[:space:]]*_never_gate="' "$precheck" 2>/dev/null | head -1 | sed 's/.*_never_gate="//; s/"[[:space:]]*$//' | tr -s ' ' | sed 's/^ //; s/ $//')
+  # 提取 NEVER_GATE="a b c" 的引号内清单（adaptive-gating.sh）
+  local ng_adaptive
+  ng_adaptive=$(grep -E '^NEVER_GATE="' "$adaptive" 2>/dev/null | head -1 | sed 's/^NEVER_GATE="//; s/"[[:space:]]*$//' | tr -s ' ' | sed 's/^ //; s/ $//')
+  # 排序后比较（忽略顺序差异，只校验成员集合一致）
+  local sorted_p sorted_a
+  sorted_p=$(echo "$ng_precheck" | tr ' ' '\n' | sort | tr '\n' ' ' | sed 's/ $//')
+  sorted_a=$(echo "$ng_adaptive" | tr ' ' '\n' | sort | tr '\n' ' ' | sed 's/ $//')
+  if [[ -z "$ng_precheck" || -z "$ng_adaptive" ]]; then
+    warn "NEVER_GATE 提取失败（precheck='${ng_precheck:-空}' adaptive='${ng_adaptive:-空}'）--检查两文件定义存在"
+    FAIL=1
+  elif [[ "$sorted_p" == "$sorted_a" ]]; then
+    local cnt; cnt=$(echo "$ng_precheck" | wc -w | tr -d ' ')
+    echo "  ✓ NEVER_GATE 两源一致（${cnt} 项：${ng_precheck}）"
+  else
+    warn "NEVER_GATE 两源漂移：precheck.sh [${ng_precheck}] ≠ adaptive-gating.sh [${ng_adaptive}]"
+    FAIL=1
+  fi
+}
+check_never_gate_consistency
+
+# ===== WP-CogAudit：运行时接线分层对账断言（林迪效应防治--标注须随实现演变）=====
+# 从 precheck.sh 的 has_* 守卫函数存在性派生 tier，对账 facts.conf 的 FACT_RUNTIMES_* 权威计数
+check_runtime_tier() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local precheck="$base/assets/precheck.sh"
+  [[ -f "$precheck" ]] || return 0
+  # facts.conf 若已被前序函数 source 则直接用；否则兜底 source
+  if [[ -z "${FACT_RUNTIMES_DEEP:-}" && -f "$base/assets/facts.conf" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$base/assets/facts.conf"; set -u
+  fi
+  echo "▶ 运行时接线分层对账（WP-CogAudit）"
+  # 派生 deep 集合：precheck.sh 中 has_gitnexus/has_graphify/has_ocr/has_claude_mem 函数定义存在
+  local deep_cnt=0 cli_cnt=0
+  for fn in has_gitnexus has_graphify has_ocr has_claude_mem; do
+    grep -qE "^${fn}\(\)" "$precheck" 2>/dev/null && deep_cnt=$((deep_cnt+1))
+  done
+  # 派生 cli 集合：has_openspec/has_comet/has_gsd_tools
+  for fn in has_openspec has_comet has_gsd_tools; do
+    grep -qE "^${fn}\(\)" "$precheck" 2>/dev/null && cli_cnt=$((cli_cnt+1))
+  done
+  # method 集合 = 11 - deep - cli（PROJECTS 表 11 项，方法论层无 has_ 守卫）
+  local method_cnt=$(( ${FACT_RUNTIMES:-11} - deep_cnt - cli_cnt ))
+  local exp_deep="${FACT_RUNTIMES_DEEP:-4}" exp_cli="${FACT_RUNTIMES_CLI:-3}" exp_method="${FACT_RUNTIMES_METHOD:-4}"
+  if [[ "$deep_cnt" == "$exp_deep" && "$cli_cnt" == "$exp_cli" && "$method_cnt" == "$exp_method" ]]; then
+    echo "  ✓ 接线分层与 facts.conf 一致（deep=${deep_cnt} cli=${cli_cnt} method=${method_cnt}）"
+  else
+    [[ "$deep_cnt" == "$exp_deep" ]] || { warn "deep 接线 has_* 函数数=${deep_cnt} ≠ facts.conf FACT_RUNTIMES_DEEP=${exp_deep}"; FAIL=1; }
+    [[ "$cli_cnt" == "$exp_cli" ]] || { warn "cli 接线 has_* 函数数=${cli_cnt} ≠ facts.conf FACT_RUNTIMES_CLI=${exp_cli}"; FAIL=1; }
+    [[ "$method_cnt" == "$exp_method" ]] || { warn "method 接线派生数=${method_cnt} ≠ facts.conf FACT_RUNTIMES_METHOD=${exp_method}"; FAIL=1; }
+  fi
+}
+check_runtime_tier
 
 # ===== WP-Z11：测度元素元数据覆盖率断言（Q-06，GB/T 25000.21-2019）=====
 # conf 变量须含 # MEASURE: 注释（characteristic/function/threshold 三元组）

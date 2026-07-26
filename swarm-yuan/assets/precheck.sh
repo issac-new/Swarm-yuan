@@ -376,6 +376,12 @@ while [[ $# -gt 0 ]]; do
       MODE="--list-gates"
       shift
       ;;
+    --strict-skip)
+      # WP-CogAudit：opt-in 严格跳过模式--SKIP_COUNT>0 时返回 rc=2（区分"全通过"与"部分跳过"）
+      # 默认不启用（rc=0，保 CI/自举不破坏）；用户显式 --strict-skip 时才警示
+      STRICT_SKIP=1
+      shift
+      ;;
     --review-calibrate)
       # A 方向：置信度标定——保留后续参数（record --confidence/--verdict/--finding 或 stats）
       MODE="--review-calibrate"
@@ -398,6 +404,9 @@ FAIL=0
 # SILENT=1 时，未配置的门禁静默跳过（不打印 warn），减少 --all-full/--compliance-suite 噪音
 SILENT=0
 [[ "$MODE" == "--all-full" || "$MODE" == "--compliance-suite" ]] && SILENT=1
+# WP-CogAudit：--strict-skip 模式下，SKIP_COUNT>0 且 FAIL=0 时返回 rc=2（默认 0，opt-in）
+# 用 ${STRICT_SKIP:-0} 避免覆盖参数解析已设的值（--strict-skip 在 while 循环中先设 1）
+STRICT_SKIP=${STRICT_SKIP:-0}
 # ===== WP-H 状态门：所属 skill 为 draft（骨架填充未完成）时禁用全量门禁集 =====
 # draft = 生成器产出的未填充骨架（SKILL.md frontmatter `status: draft`）。
 # 半填充产物跑全量门禁会给"接近可用"的错觉——禁用 --all-full/--compliance-suite；
@@ -779,7 +788,8 @@ if [[ "$MODE" == "--gate-stats" ]]; then
     echo "⚠ 无 gate-runs.jsonl（${_stats_file}）——需配置 GATE_RUNS_DIR 并跑过门禁"
     exit 0
   fi
-  _never_gate=" sensitive security authz privacy crypto sbom release-sign "
+  # WP-CogAudit：NEVER_GATE 与 adaptive-gating.sh 收敛为单源 12 项（原 7 项，补 dengbao/pia/sast-deep/oss-eval/shift-left）
+  _never_gate=" dengbao pia crypto sast-deep sbom release-sign oss-eval shift-left security sensitive authz privacy "
   echo "=== adaptive gating 降级提示（连续 10 次零发现的 advisory 门）==="
   # 提取所有出现过的门禁名（去重）
   _gs_gates=$(grep -oE '"gate":"[^"]*"' "$_stats_file" 2>/dev/null | sed 's/"gate":"//;s/"$//' | sort -u)
@@ -795,7 +805,7 @@ if [[ "$MODE" == "--gate-stats" ]]; then
     [[ "${_streak:-0}" -ge 10 ]] && \
       echo "  ⚠ ${_g} 连续 ${_streak} 次零发现，建议评估降级（adaptive gating；安全类 NEVER_GATE 已豁免）"
   done
-  echo "  （仅提示不自动降级——用户决策；安全类门 sensitive/security/authz/privacy/crypto/sbom/release-sign 永不降级）"
+  echo "  （仅提示不自动降级--用户决策；安全类门 dengbao/pia/crypto/sast-deep/sbom/release-sign/oss-eval/shift-left/security/sensitive/authz/privacy 永不降级；与 adaptive-gating.sh NEVER_GATE 单源对齐）"
   exit 0
 fi
 
@@ -1410,8 +1420,16 @@ if [[ $SKIP_COUNT -gt 0 ]]; then
 fi
 
 if [[ $FAIL -eq 0 ]]; then
-  echo "✓ 门禁检查通过"
-  _final_rc=0
+  # WP-CogAudit：--strict-skip 模式下，SKIP>0 时在"✓ 通过"行加前缀 + 返回 rc=2（确认偏误防治）
+  # 默认 STRICT_SKIP=0：输出 "✓ 门禁检查通过" + rc=0（保 cli-ab 逐字节等价与 CI/自举不破坏）
+  # opt-in STRICT_SKIP=1：输出 "✓ 门禁检查通过 [部分跳过 N 个未配置]" + rc=2（区分"全通过"与"部分跳过"）
+  if [[ $STRICT_SKIP -eq 1 && $SKIP_COUNT -gt 0 ]]; then
+    echo "✓ 门禁检查通过 [部分跳过 ${SKIP_COUNT} 个未配置]"
+    _final_rc=2
+  else
+    echo "✓ 门禁检查通过"
+    _final_rc=0
+  fi
 else
   echo "✗ 门禁检查未通过，请修复上述问题"
   # WP-B1：fail 修复建议（设计理念 1：连贯动作——fail 后自动给修复建议，非让用户猜）
