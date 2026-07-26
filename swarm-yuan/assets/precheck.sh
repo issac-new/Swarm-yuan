@@ -978,6 +978,7 @@ _gate_exec() {
       return 0
     fi
     # 证据模式：子 shell 内捕获输出（advisory 门禁状态恒为 advisory，不进 fail/warn/skip 计数）
+    # C6 注：date +%s 取 epoch 秒用于耗时计算，macOS/BSD/Linux 均支持（与 security-spec.md:237 的 date -u 格式化时间戳约定不冲突，后者用于 ISO 8601 字符串）
     _t0=$(date +%s)
     (
       fail() { echo "  ⚠ advisory: $1"; }
@@ -1044,7 +1045,7 @@ _gate_exec() {
 has_gitnexus() { command -v gitnexus >/dev/null 2>&1; }
 has_graphify() { command -v graphify >/dev/null 2>&1; }
 has_ocr() { command -v ocr >/dev/null 2>&1; }
-has_claude_mem() { command -v claude-mem >/dev/null 2>&1 || [[ -d "$HOME/.claude-mem" ]]; }
+has_claude_mem() { command -v claude-mem >/dev/null 2>&1; }
 # CLI 接线层运行时守卫（WP1：OpenSpec/comet/gsd-core 半接线→真接线）
 has_openspec() { command -v openspec >/dev/null 2>&1; }
 has_comet() { command -v comet >/dev/null 2>&1; }

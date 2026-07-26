@@ -64,6 +64,7 @@ UNIVERSAL_FILES=(
   "scripts/mcp-tools.md|assets"
   "scripts/state-machine.sh|assets|lite"
   "scripts/trace-log.sh|assets|lite"
+  "scripts/memory-writeback.sh|assets|lite"
   "scripts/self-check.sh|gen|lite"
   "scripts/detect-frameworks.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
@@ -995,10 +996,188 @@ fill_guide() {
 _placeholder_refs="workflow.md codebase.md dev-guide.md release.md reference-manual.md"
 [[ "$PROFILE" == "lite" ]] && _placeholder_refs="reference-manual.md"
 for f in $_placeholder_refs; do
-  _write_if_absent "$SKILL_DIR/references/$f" <<EOF
+  if [[ "$f" == "workflow.md" ]]; then
+    # S10/S4 实装：workflow.md 不再 2 行占位，emit 8 节点骨架（10 要素/节点），
+    # 节点②探查的 ⑨ 调用追踪预填 trace-log 模板（具体化 SKILL.md:86 的 AI 自由动作）。
+    # 节点名对齐 template-spec.md:198-207 标准 8 节点（第 9 项"发布后运营"是可选 D 方向，非 8 节点之一）。
+    _write_if_absent "$SKILL_DIR/references/$f" <<'WFEOF'
+# workflow.md — 八节点全流程（10 要素/节点，含★调用追踪）
+
+> 填充指引：八节点全流程，每节点 10 要素（含★调用追踪），4-Phase SOP，节点①含读取项目知识子步骤。
+> 节点名对齐 references/template-spec.md §2 标准 8 节点；按项目实际裁剪。
+
+## 流程总览
+
+（流程图，标注：①→②→③ 串行节点；并行节点用 └──┘ 标注）
+
+---
+
+## 节点①：需求理解
+
+**① 流程入口（顺序/并行）：** （本节点在流程中的位置：前序节点、后续节点、可并行项）
+
+**② 参与方：** （谁参与，谁是决策方，谁执行）
+
+**③ 前序依赖检查（准入）：**
+- （进入本节点前必须满足的条件）
+- 信息不足时的处理（提问澄清，不臆测）
+
+**④ 质量门禁：**
+- （离开本节点前必须满足的条件，可被 precheck.sh 验证）
+
+**⑤ 分支处理：**
+- 成功：（对分支的处理）
+- 失败/错误：（如何回退、重试）
+- 信息不足：（暂停澄清还是降级处理）
+
+**⑥ 产出物归档：**
+- 持久化：（落盘到哪个路径）
+- 临时上下文：（仅对话/草稿的产物）
+
+**⑦ 流程控制：** （可否暂停/恢复/重启；恢复方式）
+
+**⑧ 状态控制：** （状态保存在哪，如何恢复）
+
+**⑨ 调用追踪（全链路提示，无需用户确认）：**
+- 公告：进入本节点时 AI 输出一行结构化提示，格式 `→ [节点① 需求理解] 调用 <技能/子代理/工具> · <目的>`
+- 落盘：节点级默认——进入/完成本节点时执行 `bash scripts/trace-log.sh --node "需求理解" --actor "<技能/子代理>" --tool "<工具/命令>"`，追加到 `.swarm-yuan/trace.jsonl`
+
+---
+
+## 节点②：探查（设计 spec 前的仓库探查）
+
+**① 流程入口（顺序/并行）：** 前序=节点①；可三路并行（结构/规范/代码组织子代理）
+
+**② 参与方：** controller + 三路子代理（结构/规范/代码组织）
+
+**③ 前序依赖检查（准入）：**
+- 节点①需求理解已完成
+- 项目路径可访问
+
+**④ 质量门禁：**
+- 探查覆盖度（组件库清单全量穷举，非代表性样本）
+
+**⑤ 分支处理：**
+- 成功：产出特征卡 + 组件库清单 + 调用链
+- 失败/错误：降级到 grep+madge（无图谱工具时）
+- 信息不足：暂停提问
+
+**⑥ 产出物归档：**
+- 持久化：特征卡写入 SKILL.md；组件库清单写入 codebase.md
+- 临时上下文：探查中间产物
+
+**⑦ 流程控制：** 三路子代理可并行，controller 收集结果
+
+**⑧ 状态控制：** progress ledger 记录三路完成状态
+
+**⑨ 调用追踪（全链路提示，无需用户确认）：**
+- 公告：每路子代理启动/完成时输出 `→ [节点② 探查] 调用 结构子代理 · gitnexus context（started/done）`
+- 落盘：每路子代理启动前执行 `bash scripts/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`，完成后 `--status done`（规范/代码组织子代理同理）
+
+---
+
+## 节点③：设计 spec
+
+**① 流程入口（顺序/并行）：** 前序=节点②
+
+**② 参与方：** AI + 用户（spec 评审）
+
+**③ 前序依赖检查（准入）：** 节点②探查完成（特征卡+组件库清单就绪）
+
+**④ 质量门禁：** ★测试左移（spec §19 测试设计）+ ★运维左移（spec §21 可观测性约束）
+
+**⑤ 分支处理：** spec 评审失败→回节点②补探查或节点③修订
+
+**⑥ 产出物归档：** 持久化：references/spec.md
+
+**⑦ 流程控制：** spec 可多轮修订
+
+**⑧ 状态控制：** state-machine.sh design 阶段
+
+**⑨ 调用追踪：** `bash scripts/trace-log.sh --node "设计 spec" --actor "<技能>" --tool "<工具>"`
+
+---
+
+## 节点④：实施 plan
+
+**① 流程入口（顺序/并行）：** 前序=节点③
+
+**③ 前序依赖检查（准入）：** spec 通过评审
+
+**④ 质量门禁：** ★变更左移（plan §20 变更影响范围：消费方反查/回滚预案/灰度策略/迁移兼容窗口）
+
+**⑥ 产出物归档：** 持久化：references/plan.md（OpenSpec tasks checkbox 格式）
+
+**⑨ 调用追踪：** `bash scripts/trace-log.sh --node "实施 plan" --actor "<技能>" --tool "<工具>"`
+
+---
+
+## 节点⑤：编码实现
+
+**① 流程入口（顺序/并行）：** 前序=节点④；复杂变更（>3 文件/跨模块）用 Dynamic Workflows 并行扇出
+
+**④ 质量门禁：** ★测试左移（每个 task 先写/更新测试再实现，TDD/BDD；precheck `--shift-left` 校验 test 与 impl 同分支提交）
+
+**⑥ 产出物归档：** 代码提交 + 测试提交
+
+**⑨ 调用追踪：** 子代理派发时 `bash scripts/trace-log.sh --node "编码实现" --actor "implementer" --tool "<task>" --status started`
+
+---
+
+## 节点⑥：测试验证
+
+**① 流程入口（顺序/并行）：** 前序=节点⑤
+
+**④ 质量门禁：** gstack/OCR 5 审查维度 + AUTO-FIX/ASK；★运维左移（验证 metrics/日志/trace 已埋点）
+
+**⑥ 产出物归档：** 测试报告 + 审查记录
+
+**⑨ 调用追踪：** `bash scripts/trace-log.sh --node "测试验证" --actor "reviewer" --tool "ocr review"`
+
+---
+
+## 节点⑦：合入 main
+
+**① 流程入口（顺序/并行）：** 前序=节点⑥
+
+**④ 质量门禁：** ★变更左移（回滚预案存在 + 数据库变更兼容：向前兼容/双写期）
+
+**⑥ 产出物归档：** merge commit
+
+**⑨ 调用追踪：** `bash scripts/trace-log.sh --node "合入 main" --actor "<技能>" --tool "git merge"`
+
+---
+
+## 节点⑧：构建发布
+
+**① 流程入口（顺序/并行）：** 前序=节点⑦
+
+**④ 质量门禁：** ★运维左移（灰度/金丝雀策略 + 监控告警阈值 + 运维 runbook）
+
+**⑥ 产出物归档：** 发布产物 + release notes
+
+**⑨ 调用追踪：** `bash scripts/trace-log.sh --node "构建发布" --actor "<技能>" --tool "<构建命令>"`
+
+---
+
+## ⑩ 流程完成检查表
+
+（全流程完成前的 checkbox 清单，汇总所有节点的门禁）
+- [ ] 节点①需求理解：特征卡 17 项齐备
+- [ ] 节点②探查：组件库清单全量 + 调用链
+- [ ] 节点③设计 spec：§19 测试设计 + §21 可观测性
+- [ ] 节点④实施 plan：§20 变更影响范围
+- [ ] 节点⑤编码实现：测试与实现同分支提交
+- [ ] 节点⑥测试验证：5 维度审查通过
+- [ ] 节点⑦合入 main：回滚预案 + 迁移兼容
+- [ ] 节点⑧构建发布：灰度 + 告警 + runbook
+WFEOF
+  else
+    _write_if_absent "$SKILL_DIR/references/$f" <<EOF
 # （待填充）$f
 > 填充指引：$(fill_guide "$f")
 EOF
+  fi
 done
 
 # WP-E：lite 档跳过 hooks/settings/.mcp.json/commands（无 hooks 生命周期与 slash 命令负担）

@@ -47,7 +47,7 @@ check_gsd_core(){
 }
 check_claude_mem(){
   if command -v claude-mem &>/dev/null; then pass "claude-mem: $(claude-mem --version 2>&1|head -1)"
-  elif [[ -d ~/.claude-mem ]]; then pass "claude-mem: 已安装（~/.claude-mem 存在）"
+  elif [[ -d ~/.claude-mem ]]; then warn "claude-mem: 数据目录存在但 CLI 未装（~/.claude-mem 存在，command -v claude-mem 失败）--深度接线需 CLI，建议 npm i -g claude-mem"
   else miss "claude-mem"; fi
 }
 check_ocr(){
@@ -102,7 +102,12 @@ install_from_src_release(){
   local inner; inner="$(find "$tmp/extracted" -mindepth 1 -maxdepth 1 -type d | head -1)"
   local src="${inner:-$tmp/extracted}"
   mkdir -p "$dest"
-  cp -R "$src"/. "$dest/" 2>/dev/null || cp -R "$src"/* "$dest/" 2>/dev/null
+  # C8 修复：cp 链失败时 fail-loud，不再静默继续到 "✓ 安装完成"
+  if ! { cp -R "$src"/. "$dest/" 2>/dev/null || cp -R "$src"/* "$dest/" 2>/dev/null; }; then
+    echo "  ✗ $name 文件复制失败（src=$src 可能为空或损坏）" >&2
+    rm -rf "$tmp" 2>/dev/null
+    return 1
+  fi
   rm -rf "$dest/.git" 2>/dev/null || true
   rm -rf "$tmp"
   if [[ -n "$setup" ]]; then
@@ -113,38 +118,39 @@ install_from_src_release(){
 }
 
 # ---------- 安装函数（三类：npm / python / 源码包）----------
+# C9 修复：所有 install 命令加 || return 1，失败不再静默（pipe 到 tail 会丢退出码）
 install_openspec(){
-  echo "  → npm i -g @fission-ai/openspec@latest"; npm i -g @fission-ai/openspec@latest 2>&1|tail -2
+  echo "  → npm i -g @fission-ai/openspec@latest"; npm i -g @fission-ai/openspec@latest 2>&1|tail -2 || return 1
 }
 install_comet(){
-  echo "  → npm i -g @rpamis/comet@latest"; npm i -g @rpamis/comet@latest 2>&1|tail -2
+  echo "  → npm i -g @rpamis/comet@latest"; npm i -g @rpamis/comet@latest 2>&1|tail -2 || return 1
 }
 install_gitnexus(){
-  echo "  → npm i -g gitnexus@latest"; npm i -g gitnexus@latest 2>&1|tail -2
+  echo "  → npm i -g gitnexus@latest"; npm i -g gitnexus@latest 2>&1|tail -2 || return 1
 }
 install_gsd_core(){
   # gsd-core 是运行时 artifact 安装器：npx 调用写入 ~/.claude 运行时 artifacts
   echo "  → npx -y @opengsd/gsd-core@latest --claude --global（写入运行时 artifacts）"
-  npx -y @opengsd/gsd-core@latest --claude --global 2>&1 | tail -4
+  npx -y @opengsd/gsd-core@latest --claude --global 2>&1 | tail -4 || return 1
 }
 install_claude_mem(){
-  echo "  → npx -y claude-mem@latest install"; npx -y claude-mem@latest install 2>&1|tail -4
+  echo "  → npx -y claude-mem@latest install"; npx -y claude-mem@latest install 2>&1|tail -4 || return 1
 }
 install_ocr(){
   # ocr 的 postinstall 下载平台二进制，npm i -g @latest 最稳
-  echo "  → npm i -g @alibaba-group/open-code-review@latest"; npm i -g @alibaba-group/open-code-review@latest 2>&1|tail -2
+  echo "  → npm i -g @alibaba-group/open-code-review@latest"; npm i -g @alibaba-group/open-code-review@latest 2>&1|tail -2 || return 1
 }
 install_graphify(){
   # graphify 是 python 项目：uv → pipx → pip 降级
   echo "  → 安装 graphify (uv → pipx → pip)"
   if command -v uv &>/dev/null; then
-    uv tool install graphifyy 2>&1|tail -3
+    uv tool install graphifyy 2>&1|tail -3 || return 1
     uv tool update-shell 2>/dev/null || true
   elif command -v pipx &>/dev/null; then
-    pipx install graphifyy 2>&1|tail -3
+    pipx install graphifyy 2>&1|tail -3 || return 1
   elif command -v pip3 &>/dev/null || command -v pip &>/dev/null; then
     local pipcmd; command -v pip3 &>/dev/null && pipcmd=pip3 || pipcmd=pip
-    $pipcmd install --user graphifyy 2>&1|tail -3
+    $pipcmd install --user graphifyy 2>&1|tail -3 || return 1
     echo "  ℹ pip 安装的用户级 bin 须在 PATH（通常 ~/.local/bin 或 ~/Library/Python/*/bin）"
   else
     echo "  ✗ 需先安装 uv (curl -LsSf https://astral.sh/uv/install.sh | sh) 或 pipx 或 pip"
@@ -152,7 +158,7 @@ install_graphify(){
   fi
 }
 install_ruflo(){
-  echo "  → npm i -g ruflo@latest"; npm i -g ruflo@latest 2>&1|tail -2
+  echo "  → npm i -g ruflo@latest"; npm i -g ruflo@latest 2>&1|tail -2 || return 1
 }
 install_gstack(){
   install_from_src_release "gstack" "gstack-src.zip" "$HOME/.claude/skills/gstack" "./setup" || return 1
@@ -287,7 +293,7 @@ for p in "${PROJECTS[@]}"; do
   if "$chk" 2>/dev/null; then
     :
   else
-    MISSING+=("$name|$chk|$inst|$auto")
+    MISSING+=("$name|$chk|$inst|$auto|$npmpkg")  # C10 修复：补第 5 字段 npmpkg，供 --latest 升级路径用
   fi
 done
 
@@ -734,6 +740,10 @@ check_doc_consistency() {
       [[ -n "$bad" ]] && dfound="${dfound} spec段数出现非${FACT_SPEC_SECTIONS}值($(echo $bad | tr '\n' ' '));"
     fi
     # WP-Alignment: gate-fixture 数「N gate-fixture」/「N 门禁组」（真值=tests/gate-fixtures/ 目录数）
+    # S11 豁免说明：advisory-only 门禁（10 个）不强制全有 fixture——它们的 pass/warn/skip 逻辑
+    # 不产生 fail，violating fixture 无意义（advisory 永不 fail）。已补 3 个代表性 fixture
+    # （canary/state-phase/upstream-baseline），其余 6 个（cert-audit/cwe-audit/learnings/
+    # operate/pr-quality/skill-supply-chain）的覆盖留后续，不阻断 self-check。
     local true_gate_fx
     true_gate_fx=$(find "$base/tests/gate-fixtures" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | xargs)
     if [[ -n "$true_gate_fx" && "$true_gate_fx" != "0" ]]; then
@@ -1120,6 +1130,31 @@ check_complexity_budget() {
   fi
 }
 check_complexity_budget
+
+# ===== C1 修复：UNIVERSAL_FILES 计数断言（G11）=====
+# facts.conf FACT_UNIVERSAL_FILES 声明值须与 generate-skill.sh UNIVERSAL_FILES 数组条目数一致。
+# 此前该 FACT 无断言守，曾长期漂移（声明 29，实际 39）。本断言机械计数对齐。
+check_universal_files_count() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local facts="$base/assets/facts.conf"
+  local gen="$base/scripts/generate-skill.sh"
+  [[ -f "$facts" && -f "$gen" ]] || return 0
+  if [[ -z "${FACT_UNIVERSAL_FILES:-}" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$facts"; set -u
+  fi
+  echo "▶ UNIVERSAL_FILES 计数断言（G11，C1 修复）"
+  local _declared="${FACT_UNIVERSAL_FILES:-39}"
+  local _true
+  _true=$(sed -n '/^UNIVERSAL_FILES=(/,/^)/p' "$gen" | grep -cE '"[^"]+\|' || echo 0)
+  if [[ "$_true" -ne "$_declared" ]]; then
+    warn "UNIVERSAL_FILES 声明 ${_declared} 与真值 ${_true} 不符（C1）--改 facts.conf FACT_UNIVERSAL_FILES 或核实 generate-skill.sh 数组"
+    FAIL=1
+  else
+    echo "  ✓ UNIVERSAL_FILES ${_true} 条 = FACT_UNIVERSAL_FILES ${_declared}（C1 对齐）"
+  fi
+}
+check_universal_files_count
 
 # ===== WP-rhetoric-honesty：修辞强度扫描（G8）=====
 # 数字漂移由 check_doc_consistency 守；本断言守"修辞漂移"--

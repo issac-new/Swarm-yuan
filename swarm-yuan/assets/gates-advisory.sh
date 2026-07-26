@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# advisory (6) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
+# advisory (16) 门禁（原由 scripts/split-gates.sh 抽取，现手工维护；决策 19）
+# S6 注：check_cognition 物理在此文件但 enforce-level=warn（gate-enforce-level.conf:73），
+#   因 _enforce_of 读 conf 而非文件位置，功能正确；保留此文件因历史 + split-gates.sh 已不活跃。
 # 被 precheck.sh source（开发态）或 install.sh 内联（打包态）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
@@ -651,7 +653,7 @@ for i, line in enumerate(sys.stdin, 1):
         print("%d: 非法JSON (%s)" % (i, e)); continue
     if obj.get("phase"): phases.add(obj["phase"])
     if obj.get("type")=="UserChallenge":
-        for k in ("alternatives","missing_context","cost_if_wrong"):
+        for k in ("ai_suggestion","rationale","alternatives","missing_context","cost_if_wrong"):
             if not obj.get(k): print("%d: UserChallenge 缺 %s" % (i, k))
 print("PHASES:"+",".join(sorted(phases)) if phases else "PHASES:none")
 ' < "$dec_file" 2>/dev/null || true)
@@ -672,7 +674,7 @@ print("PHASES:"+",".join(sorted(phases)) if phases else "PHASES:none")
       ln=$((ln + 1))
       echo "$dline" | grep -q '"type"' || { warn "decisions.jsonl:$ln: 非法JSON（缺 type）"; issues=$((issues+1)); continue; }
       echo "$dline" | grep -q '"type":"UserChallenge"' || continue
-      for k in alternatives missing_context cost_if_wrong; do
+      for k in ai_suggestion rationale alternatives missing_context cost_if_wrong; do
         echo "$dline" | grep -q "\"$k\"" || { warn "decisions.jsonl:$ln: UserChallenge 缺 $k"; issues=$((issues+1)); }
       done
     done < "$dec_file"

@@ -70,14 +70,14 @@ bash install.sh
 | 10 | 环境与外部资源 | 运行时版本/DB/缓存/MQ/MCP 工具 | `--service` 门禁的微服务配置 |
 | 11 | **可复用稳定单元** | 全部稳定 API/组件/类/函数/store/类型（每个含签名/路径/用途/复用方式/稳定性标注） | **拼装式开发的核心依据**——`--reuse` 门禁的重名检测源 |
 | 12 | 数据规范 | schema 位置/样例数据/业务规则/勾稽关系 | `--consistency` 门禁的勾稽核对项 |
-| 13 | 认知基底 | 认知映射表 + 六维动力学基线（速度/聚散/趋势/强度/能耗/累积量） | `--cognition` 门禁的对比基线 |
+| 13 | 认知框架 | 认知映射表 + 六维动力学基线（速度/聚散/趋势/强度/能耗/累积量） | `--cognition` 门禁的对比基线 |
 | 14 | **领域知识** | 技术+业务领域识别 → 推导客观规律 | **防达克效应**——`--domain` 门禁的违规检测依据 |
 
 ### 特征卡如何驱动一切
 
 **特征卡 → 文件填充（Step 4）：** SKILL.md 的铁律来自第 2/6 项 → codebase.md 的技术栈来自第 4 项 → dev-guide.md 的改造分类来自第 3 项 → reference-manual.md 的组件库来自第 11 项 → release.md 的命令来自第 5 项……17 项特征卡是目标 skill 所有文件的「数据源」。
 
-**特征卡 → 门禁配置（Step 5）：** precheck.conf 的 170 个变量从特征卡推导：
+**特征卡 → 门禁配置（Step 5）：** precheck.conf 的 169 个变量从特征卡推导：
 
 | 配置变量 | 来自特征卡第几项 |
 |---------|----------------|
@@ -89,7 +89,7 @@ bash install.sh
 | STORE_DIR / COMPONENT_DIR | 第 11 项（可复用单元） |
 | ADR_DIR / GLOSSARY_FILE | 第 7/8 项（安全/文档） |
 | SCAN_DIRS / CONSISTENCY_DIRS | 第 7/12 项（安全/数据） |
-| COG_SPEED_FILES / COG_CUMULATIVE_TODO | 第 13 项（认知基底） |
+| COG_SPEED_FILES / COG_CUMULATIVE_TODO | 第 13 项（认知框架） |
 
 **特征卡 → 开发流程（日常使用）：** 开始新需求时，AI 从特征卡第 11 项检索可复用单元，预填 spec §5.5 复用约束。编码时 AI 查特征卡第 11 项的组件库清单，拼装优先。提交前 54 个门禁按特征卡配置的规则检查。
 
@@ -244,7 +244,7 @@ bash install.sh
 | 3 | 创建骨架（含 hooks / commands / precheck.conf） |
 | 4 | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
 | 4.5 | **框架深化**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + 门禁清单对齐 |
-| 5 | AI 配置 precheck.conf——**170 个变量从特征卡推导** |
+| 5 | AI 配置 precheck.conf——**169 个变量从特征卡推导** |
 | 5.5 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
 | 6 | AI 运行门禁（--all 核心 10 → --all-full 标准 27；合规 17 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
 | 7.5 | **门禁注入**——`generate-skill.sh --inject-frameworks` 把激活框架门禁片段写入 precheck.sh 标记区块 |
@@ -410,12 +410,12 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 | 维度 | 数值 |
 |------|------|
-| **特征卡** | **17 项（驱动全部文件 + 170 个门禁变量 + 开发流程）** |
+| **特征卡** | **17 项（驱动全部文件 + 169 个门禁变量 + 开发流程）** |
 | **质量门禁** | **54 个（核心 10 + 架构 17 + 合规 17 + advisory-only 10，特征卡立法 + 门禁执法）** |
 | 运行时工具 | 11 |
 | spec 模板 | 23 主段（§23=标准合规） |
 | 领域知识 | 32 个领域 |
-| 认知基底 | 5 层 |
+| 认知框架 | 5 层 |
 | 兼容 AI 工具 | 7 个 |
 | 三平台 | macOS / Linux / Windows |
 | 零占位符 | ✅ |

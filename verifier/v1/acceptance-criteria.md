@@ -1,6 +1,6 @@
 # 验收标准 v1 — Swarm-yuan 重构
 
-> 状态：2026-07-21 全量更新（数字口径与当前实现对齐：74 fixture / 实际 flag 数（见 precheck.sh GATE_FLAGS） / 45 gate-fixture 组）。
+> 状态：2026-07-21 全量更新（数字口径与当前实现对齐：74 fixture / 实际 flag 数（见 precheck.sh GATE_FLAGS） / 48 gate-fixture 组）。
 > 重构 = 结构优化，**不改变门禁判定语义**。以下全部通过才算完成。
 
 ## C1 行为等价（最高优先级）
