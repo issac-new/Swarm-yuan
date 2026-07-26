@@ -39,7 +39,7 @@ swarm-yuan 自我定位为"研发范式元技能生成器"（meta-skill generato
 
 ### 6. 自举（bootstrap）
 
-- **内涵**："swarm-yuan 能用自身的 27 个门禁检查自身。一个连自己都检查不了的工具，凭什么检查你的项目？"（swarm-yuan/README.md:226）。
+- **内涵**："swarm-yuan 能用自身的门禁检查自身（CI `generator-self-gate` job 三档 RC=0）。自举只证明内部自洽，不证明外部有效。"（原修辞版"一个连自己都检查不了的工具，凭什么检查你的项目？"已于 WP-rhetoric-honesty 去修辞化，详见根 README.md 自举段边界声明）。
 - **实现落点**：部分物化——`check_doc_consistency` 用代码真值反向校验散文文档数字（scripts/self-check.sh:471-554），verifier/v1 有 golden-vector 验收（verifier/v1/golden-vector.txt）；CI 4 个 Job（CLAUDE.md:93）。但"27 门禁检查自身"未完整落地（见第五节差距 G4）。
 
 ### 7. AI 主导 + 用户决策

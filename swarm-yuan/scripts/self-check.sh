@@ -1057,6 +1057,104 @@ upstream_baseline_check() {
 }
 upstream_baseline_check
 
+# ===== WP-rhetoric-honesty：复杂度负向预算断言（G9，决策 26）=====
+# 门禁/变量数超 facts.conf 的 BUDGET 上限则 fail（非 warn）--防范式自身复杂度无约束膨胀。
+# 与 check_doc_consistency 互补：前者守"声明 vs 真值"漂移，本断言守"真值 vs 预算"膨胀。
+check_complexity_budget() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local facts="$base/assets/facts.conf"
+  [[ -f "$facts" ]] || return 0
+  if [[ -z "${FACT_GATES_BUDGET:-}" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$facts"; set -u
+  fi
+  echo "▶ 复杂度负向预算断言（G9，决策 26）"
+  # 复用 check_doc_consistency 的真值派生逻辑（机械计数，不写死）
+  local _gates_true _vars_true _v_core _v_arch _v_comp
+  _gates_true=$(_count_check_fns "$base")
+  _v_core=$(_count_conf_vars "$base" "precheck.conf")
+  _v_arch=$(_count_conf_vars "$base" "precheck.arch.conf")
+  _v_comp=$(_count_conf_vars "$base" "precheck.compliance.conf")
+  _vars_true=$((_v_core + _v_arch + _v_comp))
+  # 门禁数预算
+  local _gates_budget="${FACT_GATES_BUDGET:-54}"
+  if [[ "$_gates_true" -gt "$_gates_budget" ]]; then
+    warn "门禁数 ${_gates_true} > 预算 ${_gates_budget}（决策 26）--超预算须等额删除旧门禁，或申请预算上调（docs/paradigm-decisions.md 决策 26 修订）"
+    FAIL=1
+  else
+    echo "  ✓ 门禁数 ${_gates_true} ≤ 预算 ${_gates_budget}（决策 26，预留 $((_gates_budget - _gates_true)) 增长空间）"
+  fi
+  # 变量数预算
+  local _vars_budget="${FACT_CONF_VARS_BUDGET:-200}"
+  if [[ "$_vars_true" -gt "$_vars_budget" ]]; then
+    warn "conf 变量数 ${_vars_true} > 预算 ${_vars_budget}（决策 26）--超预算须清理低价值变量，或申请预算上调"
+    FAIL=1
+  else
+    echo "  ✓ 变量数 ${_vars_true} ≤ 预算 ${_vars_budget}（决策 26，预留 $((_vars_budget - _vars_true)) 增长空间）"
+  fi
+}
+check_complexity_budget
+
+# ===== WP-rhetoric-honesty：修辞强度扫描（G8）=====
+# 数字漂移由 check_doc_consistency 守；本断言守"修辞漂移"--
+# 绝对化断言（全行业未解/凭什么检查/停留零/唯一闭环）若未带限定语则 warn。
+# 限定语白名单：样本/本轮/调研/限于/非全行业/边界/教学类比/隐喻/代理/未测量。
+# warn-only 不置 FAIL：修辞强度是诚实提醒，非数字硬契约（与 P0/P1 修复配套）。
+check_claim_intensity() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local _root_docs="$base/.."
+  # 与 check_doc_consistency 的 _scan_docs 保持一致（G6/G8 同源盲区）
+  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $base/../CLAUDE.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md"
+  local _cmd_dir="$base/.claude/commands"
+  if [[ -d "$_cmd_dir" ]]; then
+    local _cf
+    for _cf in "$_cmd_dir"/*.md; do
+      [[ -f "$_cf" ]] || continue
+      [[ "$(basename "$_cf")" == "swarm-yuan.md" ]] && continue
+      _scan_docs="$_scan_docs ${_cf#"$base/"}"
+    done
+  fi
+  echo "▶ 修辞强度扫描（G8，WP-rhetoric-honesty）"
+  # 绝对化词 -> 限定语白名单（命中即放行）
+  # declare -A 在 bash 3.2 不可用，用平行数组 + 索引对齐
+  local _abs_words=("全行业未解" "凭什么检查" "停留零" "唯一闭环" "全行业")
+  local _qualifiers="样本|本轮|调研|限于|非全行业|边界|教学类比|隐喻|代理|未测量|修辞化|非.*普查|不排除"
+  local _hit=0 _total=0 doc docpath
+  for doc in $_scan_docs; do
+    case "$doc" in
+      /*) docpath="$doc" ;;
+      *)  docpath="$base/$doc" ;;
+    esac
+    [[ -f "$docpath" ]] || continue
+    local _w
+    for _w in "${_abs_words[@]}"; do
+      # 取命中行，逐行检查前后 40 字符是否含限定语
+      while IFS= read -r _line; do
+        [[ -z "$_line" ]] && continue
+        _total=$((_total+1))
+        # 命中点前后 40 字符窗口
+        local _idx; _idx="${_line%%"$_w"*}"
+        local _before; _before="${_idx: -40}"
+        local _after; _after="${_line#*"$_w"}"
+        _after="${_after:0:40}"
+        if echo "$_before$_after" | grep -qE "$_qualifiers"; then
+          : # 带限定语，放行
+        else
+          local _docname; _docname="$(basename "$docpath")"
+          warn "$_docname: 命中绝对化修辞 '$_w' 未带限定语--建议加「本轮调研样本/非全行业普查/教学类比」等限定（见 P0-1/P1-3 修复）"
+          _hit=$((_hit+1))
+        fi
+      done < <(grep -nE "$_w" "$docpath" 2>/dev/null | sed 's/^[0-9]*://')
+    done
+  done
+  if [[ $_hit -eq 0 ]]; then
+    echo "  ✓ 修辞强度扫描通过（${_total} 处绝对词均带限定语，或无绝对词）"
+  else
+    echo "  ℹ 修辞强度扫描发现 $_hit 处未限定绝对词（warn-only，不阻断；详见 P0/P1 修复方案）"
+  fi
+}
+check_claim_intensity
+
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
 exit $FAIL

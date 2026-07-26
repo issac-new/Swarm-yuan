@@ -5,6 +5,8 @@
 - 调研方法：5 个 GitHub 代表性项目 clone 本地实测 + `bash -x` 逐行追踪根因 + 修复后回归验证 + 端到端流程验证
 - 测试项目：RuoYi-Vue3（Vue3+element-plus 权限管理）、mall-admin-web（Vue3+element-plus 电商后台）、slash-admin（React19+antd5+Vite+TS）、whatsmars（Spring 多模块示例集）、yudao-cloud（Spring 微服务电商，5564 java 文件）
 
+> ⚠️ **样本偏倚声明**：本轮 5 个样本均为 Java/JS Web 后台管理系统，品类单一。结论的适用域仅限该品类；对嵌入式 C、科学计算 notebook、单体内核、Rust 系统编程等品类的适用性未验证，列为 R10 待测项（见文末"R10 待测品类"）。从单一品类外推到"范式成立"在统计上不成立--R9 的"5 项目回归全通过"应读作"在 Java/JS Web 品类上回归全通过"，而非"范式普适"。
+
 ---
 
 ## 0. 总览
@@ -289,3 +291,22 @@ slash-admin（React19+antd5+Vite6）完整端到端通过：
 | P2 vite alias | 对象形式 fail | 降 warn | 62/62 绿 |
 
 self-check 全绿（62 框架 / 142 变量 / 五文档头部一致 / framework-signal-index 同步）。
+
+---
+
+## R10 待测品类（样本偏倚缓解计划）
+
+R9 的 5 个样本清一色 Java/JS Web 后台，品类单一。为缓解幸存者偏差，立 R10 待测项，目标是在 ≥3 个非 Java/JS 品类上复现"detect-frameworks 准确 + auto 档不崩溃 + 至少 1 个真实 bug 被门禁拦截"。
+
+| 品类 | 候选样本 | 验收点 | 状态 |
+|------|---------|--------|------|
+| 嵌入式 C | zephyr-rtos 子模块 / NuttX 子树 | detect-frameworks 识别 RTOS/驱动框架；C 门禁（如有）拦截真实缺陷 | 未测 |
+| 科学计算 notebook | jupyter 教学仓 / kaggle 竞品仓 | notebook 形态判定；数据流门禁（如有）可用 | 未测 |
+| 单体内核 | Linux driver 子树 / Redox 子模块 | 大文件量下 auto 档不崩溃；C 门禁可用 | 未测 |
+| Rust 系统编程 | tokio 子 crate / axum 子模块 | cargo/detect 准确；Rust 门禁可用 | 未测 |
+
+**验收阈值**：每个品类至少 1 个样本通过"detect-frameworks 准确 + auto 档不崩溃"；其中 ≥1 个品类须复现"门禁拦截真实历史 bug"（与 verifier/v2 外部有效性立项对齐，见 `verifier/v2/external-validity.md`）。
+
+**未达此阈值前**：README/PROMO 中"守护代码合规""54 门禁守护分支质量"等断言应限定为"在 Java/JS Web 品类上验证"，不得外推为普适断言。
+
+**欢迎社区补充样本**：提 issue 标注 `R10-品类测试` 并附候选仓库，附已知历史 bug commit 更佳。
