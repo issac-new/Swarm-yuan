@@ -222,7 +222,7 @@ claude-mem search（记忆库）→ 文件检测
 
 **零占位符：** AI 执行完整 13 步流程后由脚本机器执法（`bash scripts/generate-skill.sh --verify-completeness <skill_dir>`）——零残留才算完成。
 
-**自举：** swarm-yuan 能用自身的 54 个门禁检查自身（CI 三档 RC=0）。**自举只证明内部自洽，不证明外部有效**--后者由 verifier/v1 与 R9 真实项目测试覆盖（R9 已披露 fixture 漏 3 个 P0/P1）。
+**自举：** swarm-yuan 能用自身的 54 个门禁检查自身（CI 三档 RC=0）。**自举只证明内部自洽，不证明外部有效**--详见 README.md §自举（S17 去重：此处不再重复完整论证，PROMO 仅声明要点，完整诚实声明在 README）。
 
 ---
 

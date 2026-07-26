@@ -104,18 +104,16 @@ if [[ -f "$GATE" ]]; then
   [[ "$NOBSD_BAD" -eq 0 ]] && ok "NOBSD 可移植性静态检查通过（五类禁则零新增命中）"
 fi
 
-# 要素4: fixture 双态（WP-K 分级：核心 10 强制，其余建议）
-# 核心集（按生态活跃度与真实使用面选定）：缺 fixture = fail；非核心集缺 fixture = warn 建议补
+# 要素4: fixture 双态（S12 修复：全 74 框架强制，不再仅核心 10）
+# 现状：74 框架已全有 fixture（2026-07 核实），故从 warn 升 fail。
+# CORE_RULESETS 保留作历史标记，但 fixture 缺失一律 fail（不再 warn 放过）。
 CORE_RULESETS="spring-boot mybatis react vue gin kafka mysql django fastapi nextjs"
 FX="$BASE/tests/fixtures/$ID"
 if [[ -d "${FX}/violating" && -d "${FX}/compliant" ]]; then
   bash "$BASE/tests/run-framework-fixture.sh" "$ID" >/dev/null 2>&1 \
     && ok "fixture 双态通过" || err "fixture 双态失败（运行 tests/run-framework-fixture.sh $ID 查看）"
 else
-  case " $CORE_RULESETS " in
-    *" $ID "*) err "核心规则集 $ID 缺 fixture 双态（${FX}）——核心集强制双态覆盖" ;;
-    *) echo "⚠ 无 fixture（${FX}），跳过双态核验（非核心集，建议补 fixture）" ;;
-  esac
+  err "缺 fixture 双态（${FX}）——S12 后全 74 框架强制双态覆盖（核心集 $ID 尤甚）"
 fi
 
 # 要素5: freshness——frontmatter「最后调研」日期时效（WP-K；self-check.sh 有同构全量检查）
