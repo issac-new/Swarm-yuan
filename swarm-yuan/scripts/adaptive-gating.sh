@@ -20,7 +20,8 @@ if [[ ! -s "$JSONL" ]]; then
 fi
 
 # 安全门禁豁免清单（永不降级，保险策略）
-NEVER_GATE="dengbao pia crypto sast-deep sbom release-sign oss-eval shift-left security sensitive"
+# WP-CogAudit：与 precheck.sh _never_gate 收敛为单源 12 项（原 10 项，补 authz/privacy）
+NEVER_GATE="dengbao pia crypto sast-deep sbom release-sign oss-eval shift-left security sensitive authz privacy"
 
 echo "=== 门禁活跃度治理报告（adaptive gating）==="
 echo "  数据源: $JSONL  阈值: 连续 ${THRESHOLD} 次零发现"

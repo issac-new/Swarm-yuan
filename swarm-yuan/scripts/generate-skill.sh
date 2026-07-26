@@ -621,18 +621,29 @@ _profile_rank() { case "$1" in lite) echo 1;; compliance) echo 3;; *) echo 2;; e
 #   微服务信号（services/ 目录存在）→ 升 standard。优先级：合规 > 技术栈复杂度 > 规模。
 auto_detect_profile() {
   local proj="$1" n sig forms fws msig result reason
+  # WP-CogAudit：source profile-thresholds.conf（消除死配置--conf 声称被用但从未 source）
+  # 变量用 ${VAR:-default} 兜底，conf 缺失或变量未设仍走默认值（保兼容）
+  local _pthr="${BASE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/assets/profile-thresholds.conf"
+  if [[ -f "$_pthr" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$_pthr"; set -u
+  fi
+  local _lite_max=${PROFILE_LITE_MAX_FILES:-80}
+  local _forms_thr=${PROFILE_FORMS_THRESHOLD:-3}
+  local _fws_thr=${PROFILE_FRAMEWORKS_THRESHOLD:-20}
   # 合规信号（最强，命中即 compliance）：docs/ 与根 README 的关键词扫描（限量提速）
   sig=$(grep -rliE '等保|密评|GB/T[[:space:]]*39786|GB/T[[:space:]]*22239|个人信息保护|个保法|金融行业|医疗行业' \
         "$proj/docs" "$proj"/README* 2>/dev/null | head -1 || true)
   if [[ -n "$sig" ]]; then
     echo "compliance"; return
   fi
-  # 规模信号：文件数（head 截断加速，≥80 即 standard；统计失败按 standard——默认不降）
+  # 规模信号：文件数（head 截断加速，≥阈值即 standard；统计失败按 standard--默认不降）
+  # _lite_max+1 截断：文件数 < _lite_max 才 lite，截断到 _lite_max+1 足够判定
   n=$(find "$proj" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' \
-      2>/dev/null | head -81 | wc -l | tr -d ' ')
-  n="${n:-81}"
-  [[ "$n" =~ ^[0-9]+$ ]] || n=81
-  if [[ "$n" -lt 80 ]]; then result="lite"; else result="standard"; fi
+      2>/dev/null | head -$((_lite_max + 1)) | wc -l | tr -d ' ')
+  n="${n:-$((_lite_max + 1))}"
+  [[ "$n" =~ ^[0-9]+$ ]] || n=$((_lite_max + 1))
+  if [[ "$n" -lt $_lite_max ]]; then result="lite"; else result="standard"; fi
   reason="规模信号：文件数 ${n}"
 
   # WP-P9 技术栈复杂度信号（明确升档，不模糊）
@@ -641,10 +652,10 @@ auto_detect_profile() {
   # 前端形态
   # WP-R Bug#1: find -print -quit 替代 find|head -1（避免 set -euo pipefail 下 SIGPIPE 崩溃）
   find "$proj" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
-  # 后端形态（非前端的 .py/.java/.go/.rb/.php/.kt/.scala）
-  find "$proj" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
-  # 异步/MQ 形态（含 consumer/handler/listener/subscriber 文件名）
-  find "$proj" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
+  # 后端形态（.py/.java/.go/.rb/.php/.kt + .rs/.scala/.cs/.swift；WP-CogAudit 补 .rs/.scala/.cs/.swift 漏检）
+  find "$proj" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.scala" -o -name "*.cs" -o -name "*.swift" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
+  # 异步/MQ 形态（含 consumer/handler/listener/subscriber 文件名；WP-CogAudit 补 handler 漏检）
+  find "$proj" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" -o -name "*handler*" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
   # 微服务形态（services/ 或 apps/ 多服务目录）
   # WP-R Bug#1: find -maxdepth 1 -mindepth 1 -type d 列目录后 wc -l，find 目录数有限不会触发 SIGPIPE；
   # 但原 head -2 截断在 pipefail 下有风险。改用 find ... -print -quit 两次判定 ≥2：先确认 services/ 有子目录，
@@ -670,11 +681,11 @@ auto_detect_profile() {
   fi
   # WP-Q2：技术栈复杂度升档（明确信号才升，不模糊）
   # 形态/框架/微服务任一明确 → 升 standard（覆盖 lite 判定）
-  if [[ $forms -ge 3 ]]; then
-    result="standard"; reason="${reason}；形态信号：${forms} 种形态（≥3 → 升 standard）"
+  if [[ $forms -ge $_forms_thr ]]; then
+    result="standard"; reason="${reason}；形态信号：${forms} 种形态（≥${_forms_thr} -> 升 standard）"
   fi
-  if [[ $fws -ge 20 ]]; then
-    result="standard"; reason="${reason}；框架信号：${fws} 依赖（≥20 → 升 standard）"
+  if [[ $fws -ge $_fws_thr ]]; then
+    result="standard"; reason="${reason}；框架信号：${fws} 依赖（≥${_fws_thr} -> 升 standard）"
   fi
   if [[ $msig -eq 1 ]]; then
     result="standard"; reason="${reason}；微服务信号：services/ 含多服务（→ 升 standard）"
@@ -702,6 +713,12 @@ mkdir -p "$TARGET_DIR"
 
 # WP-N1：auto 档解析为具体档（在 PROJECT_DIR 校验后、骨架创建前；输出判定依据供用户评估）
 if [[ "$PROFILE" == "auto" ]]; then
+  # WP-CogAudit：source profile-thresholds.conf 让 reason 文案的阈值与 auto_detect_profile 一致（消除死配置）
+  if [[ -z "${PROFILE_LITE_MAX_FILES:-}" ]]; then
+    _pthr2="${BASE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/assets/profile-thresholds.conf"
+    [[ -f "$_pthr2" ]] && { set +u; # shellcheck disable=SC1090
+      source "$_pthr2"; set -u; }
+  fi
   _auto_reason=""
   # 注：先捕获再判空——pipefail 下 grep|head 的 SIGPIPE(141) 会让 if 管道直接误判（全库已知坑）
   _sig=$(grep -rliE '等保|密评|GB/T[[:space:]]*39786|GB/T[[:space:]]*22239|个人信息保护|个保法|金融行业|医疗行业' \
@@ -713,7 +730,7 @@ if [[ "$PROFILE" == "auto" ]]; then
     # 会使赋值非零（虽 head -81 有意截断计数）。改用 find -printf '' 计数或 awk 统计避免截断管道。
     # 这里只需"是否 ≥80 文件"判定，用 find ... | wc -l 全量计数（不截断）更准且无 SIGPIPE。
     _fc=$(find "$PROJECT_DIR" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' 2>/dev/null | wc -l | tr -d ' ')
-    _auto_reason="规模信号：文件数 ${_fc:-?}（<80 → lite，否则 standard）"
+    _auto_reason="规模信号：文件数 ${_fc:-?}（<${PROFILE_LITE_MAX_FILES:-80} → lite，否则 standard）"
   fi
   # WP-P9：技术栈复杂度信号（只升不降，质量优先）
   # WP-R Bug#1: 原 find|head -1|grep -q . 在 set -euo pipefail 下，find 输出被 head 截断收 SIGPIPE(141)，
@@ -721,15 +738,15 @@ if [[ "$PROFILE" == "auto" ]]; then
   # 改用 find -print -quit：find 原生首匹配即停，无管道无 SIGPIPE。
   _forms=0
   find "$PROJECT_DIR" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
-  find "$PROJECT_DIR" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
-  find "$PROJECT_DIR" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
+  find "$PROJECT_DIR" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.scala" -o -name "*.cs" -o -name "*.swift" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
+  find "$PROJECT_DIR" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" -o -name "*handler*" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
   { [[ -d "$PROJECT_DIR/electron" || -d "$PROJECT_DIR/src-tauri" || -d "$PROJECT_DIR/android" || -d "$PROJECT_DIR/ios" ]]; } && _forms=$((_forms+1))
   _msig=""
   if [[ -d "$PROJECT_DIR/services" ]]; then
     _svc_cnt=$(find "$PROJECT_DIR/services" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
     [[ "$_svc_cnt" =~ ^[0-9]+$ && "$_svc_cnt" -ge 2 ]] && { _forms=$((_forms+1)); _msig="services/ 含 ${_svc_cnt} 服务"; }
   fi
-  [[ $_forms -ge 3 ]] && _auto_reason="${_auto_reason}；技术栈复杂度：${_forms} 种形态${_msig:+（${_msig}）}（≥3 → 升 standard）"
+  [[ $_forms -ge ${PROFILE_FORMS_THRESHOLD:-3} ]] && _auto_reason="${_auto_reason}；技术栈复杂度：${_forms} 种形态${_msig:+（${_msig}）}（≥${PROFILE_FORMS_THRESHOLD:-3} → 升 standard）"
   PROFILE=$(auto_detect_profile "$PROJECT_DIR")
   echo "profile auto 判定: ${PROFILE}（${_auto_reason}；WP-Q2 偏置修正——信号明确才升档，模糊走默认 standard。显式 --profile 可覆盖）"
 fi

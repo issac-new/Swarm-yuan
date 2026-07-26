@@ -25,7 +25,7 @@ if [[ ! -d "$PROJ" ]]; then
   exit 1
 fi
 
-# 61 个已知框架 ID（来自 assets/framework-gates/*.sh 文件名）
+# 74 个已知框架 ID（来自 assets/framework-gates/*.sh 文件名；与 facts.conf FACT_FRAMEWORKS=74 对齐）
 KNOWN_FWS=""
 for f in "$BASE"/assets/framework-gates/*.sh; do
   [[ -f "$f" ]] || continue
@@ -37,7 +37,7 @@ done
 # 用 framework-gates 头部的 # ruleset: 行 + 文件名匹配
 _tmpfile="$(mktemp /tmp/dfw.XXXXXX)"
 
-# 简化的框架→依赖信号映射（覆盖 61 框架的主要识别模式）
+# 简化的框架→依赖信号映射（覆盖 74 框架的主要识别模式；cargo/dockerfile/kubernetes/flutter 须手配，见下方注释）
 # 按依赖文件类型组织
 cat > "$_tmpfile" <<'SIGNALS'
 # format: framework_id|pattern|file_type
