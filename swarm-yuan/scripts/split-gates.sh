@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
-# split-gates.sh —— 把 precheck.sh 的 48 个 check_* 门禁 + 专属辅助函数抽到
+# split-gates.sh —— 把 precheck.sh 的 check_* 门禁 + 专属辅助函数抽到
 # gates-strict.sh / gates-warn.sh / gates-advisory.sh 三文件（按 gate-enforce-level.conf）。
+#
+# S7 状态：此脚本已不活跃（守卫 :20-22 在 gates-strict.sh 已存在时直接跳过，非幂等）。
+#   gates-*.sh 现手工维护，FN 列表/计数可能滞后——以 assets/gates-*.sh 实际 check_* 函数为准。
+#   真值（2026-07-27 核实）：gates-strict.sh=17 / gates-warn.sh=21 / gates-advisory.sh=16（含 check_cognition 因历史）。
+#   enforce-level 真值（gate-enforce-level.conf）：strict=20 / warn=19 / advisory=15。
+#   若需重新拆分：先删 gates-*.sh 三文件再跑本脚本（会重写 precheck.sh 行号表，需手工核对）。
 #
 # 行号范围表手工核对（基于 4143 行版本的 precheck.sh）。若 precheck.sh 行数变化需重核对。
 # 安全算法：用"行首 ^} 作为函数结束"规则（bash 函数体用缩进，} 在行首），
@@ -103,9 +109,9 @@ extract_to() {
   echo "✓ 生成 ${out}（$(wc -l < "${out}" | tr -d ' ') 行，$(grep -cE '^(check_|_)[a-z_]+\(\)' "${out}") 个函数）"
 }
 
-extract_to "${BASE}/assets/gates-strict.sh"   "strict (14)"   "$STRICT_FNS"
-extract_to "${BASE}/assets/gates-warn.sh"     "warn (20)"     "$WARN_FNS"
-extract_to "${BASE}/assets/gates-advisory.sh" "advisory (6)"  "$ADVISORY_FNS"
+extract_to "${BASE}/assets/gates-strict.sh"   "strict (17)"   "$STRICT_FNS"
+extract_to "${BASE}/assets/gates-warn.sh"     "warn (21)"     "$WARN_FNS"
+extract_to "${BASE}/assets/gates-advisory.sh" "advisory (16)"  "$ADVISORY_FNS"
 
 # 删除已抽出的行（41 个函数的行号区间）
 awk -v rf="$RANGES_FILE" '

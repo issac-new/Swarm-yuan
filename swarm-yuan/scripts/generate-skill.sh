@@ -48,8 +48,8 @@ UNIVERSAL_FILES=(
   "assets/branch-setup.sh|assets"
   "assets/env-setup.sh|assets"
   "assets/data-sample-template.md|assets"
-  "assets/state-machine.sh|assets|lite"
-  "assets/trace-log.sh|assets|lite"
+  # S14 修复：删 assets/state-machine.sh + assets/trace-log.sh 重复条目——
+  # 所有引用指向 scripts/（SKILL.md:64/74/86），assets/ 副本无人加载。
   "assets/task-type-gates.conf|assets|lite"
   "assets/profile-thresholds.conf|assets|lite"
   "scripts/precheck.sh|assets|lite"
@@ -818,12 +818,13 @@ copy_universal_templates() {
   # Windows .bat 包装器（让 Windows 用户也能直接运行，三平台兼容；缺失则跳过）
   # 设 SKIP_BAT=1 可跳过 .bat 复制（macOS/Linux 用户无需 .bat，让 skill 目录更干净）
   if [[ "${SKIP_BAT:-0}" != "1" ]]; then
-    # scripts/ 下的 .bat（install/generate-skill/self-check/precheck/state-machine/trace-log）
+    # scripts/ 下的 .bat（install/generate-skill/self-check/precheck/state-machine/trace-log/cost-report/detect-frameworks）
+    # S15 修复：补 cost-report + detect-frameworks（原缺，违反 SKILL.md:38 三平台兼容铁律）
     local b
-    for b in install generate-skill self-check precheck state-machine trace-log; do
+    for b in install generate-skill self-check precheck state-machine trace-log cost-report detect-frameworks memory-writeback; do
       src="$SRC_SCRIPTS/$b.bat"
       [[ "$b" == "install" ]] && src="$SRC_SCRIPTS/../install.bat"
-      [[ "$b" == "trace-log" ]] && src="$ASSETS_DIR/trace-log.bat"
+      [[ "$b" == "trace-log" || "$b" == "memory-writeback" ]] && src="$ASSETS_DIR/$b.bat"
       if [[ -f "$src" ]]; then cp "$src" "$dir/scripts/$b.bat" 2>/dev/null || true; fi
     done
     # assets/ 下的 .bat（branch-setup/env-setup）

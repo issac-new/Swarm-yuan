@@ -773,8 +773,10 @@ check_doc_consistency() {
     [[ -n "$bad" ]] && dfound="${dfound} advisory分档数出现非${true_advisory}值($(echo $bad | tr '\n' ' '));"
     # 特征卡数："N 项特征卡"或"特征卡 N 项"或"特征卡摘要（N 项）"等变体（避免误伤"第 N 项"指代）
     # WP-Alignment: 放宽正则覆盖"特征卡摘要（16 项）"等 evade 旧正则的写法
+    # S13 修复：覆盖"特征卡**：17 项"（markdown bold + 全角冒号）——
+    #   特征卡后仅允许标点/空格/全角符号（** ：( ) 空格，不含汉字），避免误匹配"特征卡...第 11 项"。
     if [[ "$true_fc" -gt 0 ]]; then
-      bad=$(grep -oE "[0-9]+ ?项特征卡|特征卡[[:space:]]*[0-9]+ ?项|特征卡[^0-9]{0,6}[（(][[:space:]]*[0-9]+ ?项" "$docpath" 2>/dev/null \
+      bad=$(grep -oE "[0-9]+ ?项特征卡|特征卡[*：:()（ ）\t ]{0,8}[0-9]+ ?项" "$docpath" 2>/dev/null \
             | grep -oE "[0-9]+" | sort -u | grep -vx "$true_fc" || true)
       [[ -n "$bad" ]] && dfound="${dfound} 特征卡数出现非${true_fc}值($(echo $bad | tr '\n' ' '));"
     fi
@@ -1040,6 +1042,41 @@ check_golden_vector() {
   fi
 }
 check_golden_vector
+
+# ===== S12 修复：框架规则集 vs fixture 配对断言（G12）=====
+# 守"4-element coupling"的第 3 元素（fixture 双态）：references/frameworks/*.md 数须 == tests/fixtures/ 目录数。
+# 此前 self-check 只断言 rules.md vs gate.sh 配对（要素 2），fixture 配对（要素 3）无守。
+# S12 已把 verify-framework-ruleset.sh 的 fixture 缺失从 warn 升 fail；本断言在 self-check 层补全覆盖。
+check_framework_fixture_pairing() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local rules_dir="$base/references/frameworks"
+  local fx_dir="$base/tests/fixtures"
+  [[ -d "$rules_dir" && -d "$fx_dir" ]] || return 0
+  echo "▶ 框架规则集 vs fixture 配对断言（G12，S12 修复）"
+  local _rules _fx _missing=""
+  _rules=$(find "$rules_dir" -maxdepth 1 -name "*.md" ! -name "_template*" 2>/dev/null | wc -l | xargs)
+  _fx=$(find "$fx_dir" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | xargs)
+  # 逐个核对：每个 rules.md 须有对应 fixture 目录
+  local r
+  for r in "$rules_dir"/*.md; do
+    [[ -f "$r" ]] || continue
+    local bn; bn="$(basename "$r" .md)"
+    [[ "$bn" == _template* ]] && continue
+    if [[ ! -d "$fx_dir/$bn" ]]; then
+      _missing="${_missing} ${bn}"
+    fi
+  done
+  if [[ -n "$_missing" ]]; then
+    warn "框架缺 fixture 配对：${_missing}（S12 后全 74 框架强制双态覆盖）"
+    FAIL=1
+  elif [[ "$_rules" -ne "$_fx" ]]; then
+    warn "框架规则集数 ${_rules} ≠ fixture 目录数 ${_fx}（S12 配对断言）"
+    FAIL=1
+  else
+    echo "  ✓ 框架规则集 ${_rules} = fixture ${_fx}（S12 全配对，4-element coupling 要素 3 守住）"
+  fi
+}
+check_framework_fixture_pairing
 
 # ===== WP-Z11：测度元素元数据覆盖率断言（Q-06，GB/T 25000.21-2019）=====
 # conf 变量须含 # MEASURE: 注释（characteristic/function/threshold 三元组）
