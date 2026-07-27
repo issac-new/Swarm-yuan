@@ -1,11 +1,11 @@
 # 上游运行时版本与许可证基线登记表
 
-> 用途：登记 swarm-yuan 引用/吸收的 **11 个上游运行时**的许可证与版本基线，支撑供应链可审计性（ISO/IEC 5230 OpenChain 方向）与文档漂移治理。
-> 数据来源：GitHub REST API + npm/PyPI registry **2026-07-20 实测**（见 `docs/research/R6-upstream-web.md` §0；gstack/superpowers 见 `docs/research/R5-upstream-local.md`）。
+> 用途：登记 swarm-yuan 引用/吸收的 **12 个上游运行时**的许可证与版本基线，支撑供应链可审计性（ISO/IEC 5230 OpenChain 方向）与文档漂移治理。
+> 数据来源：GitHub REST API + npm/PyPI registry **2026-07-20 实测**（见 `docs/research/R6-upstream-web.md` §0；gstack/superpowers 见 `docs/research/R5-upstream-local.md`）；impeccable 行为 2026-07-28 实测补入。
 > 机器可读契约：每个 drifted 条目所在行必须含字面漂移标记（行尾「机器标记」列，格式 baseline_status=状态值）；self-check 的轻量基线忠告仅 grep 漂移标记所在行并 warn（不联网）。
 > 状态取值：`synced`（基线≈最新）｜`drifted`（基线落后，需重核）｜`watch`（迭代极快，持续观察）｜`license-risk`（许可证合规风险）。
 
-## 一、11 运行时登记表
+## 一、12 运行时登记表
 
 | 名称 | 仓库 | 许可证 | 引用基线 | 2026-07-20 最新版 | 状态 | 机器标记 |
 |------|------|--------|----------|--------------------|------|----------|
@@ -20,6 +20,7 @@
 | gstack | garrytan/gstack | MIT | v1.60.1.0（offline-cache vendor，`offline-cache/gstack/VERSION:1`） | v1.60.1.0（vendor 版本；上游最新未实测） | synced | baseline_status=synced |
 | ruflo | ruvnet/ruflo（原 Claude Flow） | MIT | v3.32.9（2026-07-26 升级；`references/subagent-orchestration.md:277`、`references/review-methodology.md:208-209`） | npm 3.32.9 | synced（2026-07-26 升级 research 仓库；方法论引用层，无运行时调用） | baseline_status=synced |
 | ECC | affaan-m/ECC | MIT | v2.0.0（`references/subagent-orchestration.md:149`） | v2.0.0（2026-06 稳定版） | synced | baseline_status=synced |
+| impeccable | pbakaus/impeccable | Apache-2.0 | v4.0.2（2026-07-28 吸收；`references/frontend-design-methodology.md`，方法论引用层第 5 对象；Modes/三层权威/craft-floor/59 反模式字典/finish_reviewer 完工审查模式；G13 断言守引用存在性） | v4.0.2（2026-07-28 GitHub 实测） | synced（2026-07-28 clone research 仓库 + 方法论吸收，无 CLI 调用） | baseline_status=synced |
 
 ## 二、关键结论
 
@@ -27,7 +28,7 @@
 2. **版本漂移（1 项 drifted，2026-07-26 升级后）**：comet 0.3.9->0.4.0-beta.6（P1-7 已重核，结论=观望，见 §三）。2026-07-26 升级轮把 graphify（v0.9.27）、ruflo（v3.32.9）的 research 仓库对齐到上游最新稳定版并吸收方法论，引用基线同步更新为 synced（详见 `docs/runtime-update-2026-07.md`）。
 3. **watch（1 项）**：claude-mem 迭代极快（13.4->13.12.4），持续观察；2026-07-26 升级 research 仓库到 v13.12.4 并吸收 version oracle 单源真值（G10）。
 4. **org 迁移**：graphify 仓库已迁至 Graphify-Labs/graphify，引用一律用新 URL。
-5. **存续风险**：11 个运行时中个人/小团队项目占比高（comet/GitNexus/claude-mem/gsd-core），上游存续监测纳入审计例程；GSD v1 上游（gsd-build/get-shit-done）已于 2026-06-26 归档，引用 open-gsd/gsd-core 为既定应对。
+5. **存续风险**：12 个运行时中个人/小团队项目占比高（comet/GitNexus/claude-mem/gsd-core），上游存续监测纳入审计例程；GSD v1 上游（gsd-build/get-shit-done）已于 2026-06-26 归档，引用 open-gsd/gsd-core 为既定应对。
 
 ## 三、comet 0.4 能力重核结论（P1-7，2026-07-20 实测）
 

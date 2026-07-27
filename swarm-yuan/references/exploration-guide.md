@@ -242,6 +242,11 @@ graphify export callflow-html                    # Mermaid 调用流（用于组
 
 > **判定产出**：记录"本项目含以下维度：[前端UI / 后端API / 异步消费 / 桌面IPC / 移动端 / 库导出 ...]"，后续 C+.1-C+.4 **只枚举列出的维度**。
 
+> **★视觉成熟度探查（impeccable v4.0.2 吸收，仅含前端时执行；详见 `references/frontend-design-methodology.md` §十一）**：含前端维度时，追加探查前端视觉成熟度，决定是否引用前端设计质量方法论：
+> - **探查信号**：CSS custom properties（`--*:`）数量 ≥3 / className tokens（独特类名）数量 ≥12 / styled-components / CSS Modules / Tailwind config 文件 ≥3 / DESIGN.md 存在性
+> - **判定产出**：① 「有现存视觉实现但无 DESIGN.md」→ 引用 `references/frontend-design-methodology.md` 的 `document` 命令模式（从代码反推 DESIGN.md）；② 「有 DESIGN.md」→ 引用 `extract` 命令模式（提取 token 进设计系统）+ craft-floor 审查（Verify 8 项 + Refuse 反 slop 清单）；③ 「空白」→ 引用 `init` + `shape` + `new-work` 命令模式（从 PRODUCT.md 起建视觉世界）
+> - **降级**：探查信号不全时按更重档处理（质量优先），全量引用前端设计质量方法论；本探查不改 17 特征卡数字（§C+.0 是探查方法论，非特征卡项）
+
 #### C+.0.5 框架探查（从依赖清单+注解+配置文件识别具体框架，激活规则集）
 
 > **★铁律：§C+.0 只判前端/后端/异步等大类，§C+.0.5 进一步识别具体框架。** 探查到什么框架，就激活 `references/frameworks/<fw>.md` 中对应的框架规则集（唯一来源，T4 起自 domain-knowledge.md 迁出）+ §C+.1-B 框架特定构件枚举 + precheck.conf 框架配置变量。**不预设——按探查到的信号动态激活。**

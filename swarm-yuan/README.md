@@ -45,7 +45,7 @@
 | 拼装式开发 | 新功能 = 既有稳定单元拼装 + 最小新增胶水代码。禁止重复造轮子/侵入式重构/破坏性改造 |
 | 呈现递进的关系 | 门禁不是"数 import 数"——每个计数背后指向一条关系规律 |
 | 特征卡是立法，门禁是执法，验证器是司法 | 17 项特征卡定义「项目应该是什么样的」，54 个门禁验证「代码是否符合」，`verifier/v1`（golden-vector/金向量 = 74 框架 fixture 的预期门禁 exit-code 向量，回归基线）用 fixture 双态 + cli A/B 字节级等价做独立司法 |
-| 分层整合，诚实降级 | 11 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深度接线 |
+| 分层整合，诚实降级 | 12 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深度接线 |
 | 重量是设计选择，不是缺陷 | 重量级范式通过 `--profile auto\|lite\|standard\|compliance` 四档自适应让重量显式可选（决策 18/25，WP-P10 范式定位） |
 
 ---
@@ -278,15 +278,15 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ---
 
-## 11 个运行时 + 32 个领域
+## 12 个运行时 + 32 个领域
 
-**运行时**（只引用调用不重新实现，按接线深度分三层；`docs/upstream-baseline.md` 登记 11 个运行时的仓库/许可证/基线版本/drift 状态）：
+**运行时**（只引用调用不重新实现，按接线深度分三层；`docs/upstream-baseline.md` 登记 12 个运行时的仓库/许可证/基线版本/drift 状态）：
 
 | 层 | 运行时 | 接线方式 |
 |----|--------|---------|
 | 深度接线（4） | GitNexus / graphify / claude-mem / ocr | precheck.sh 门禁内真实子进程调用 + 多级降级链 |
 | CLI 接线（3） | OpenSpec / comet / gsd-core | 门禁/状态机按需调用 CLI（`openspec validate`/`comet guard`/`gsd-tools validate health`）+ 降级到自带载体 |
-| 方法论引用（4） | superpowers / gstack / Ruflo / ECC | AI 按 workflow 节点引用其模式，swarm-yuan 自带等价降级载体 |
+| 方法论引用（5） | superpowers / gstack / Ruflo / ECC / impeccable | AI 按 workflow 节点引用其模式，swarm-yuan 自带等价降级载体 |
 
 每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深度接线。`--upstream-baseline` 门禁（advisory）自动检测 upstream drift，CI 可见但不阻断构建。
 
@@ -350,11 +350,11 @@ Swarm-yuan/
 ├── docs/                         ← 设计文档 + 计划 + 研究交付物（USAGE/PROMO/FIVE_DIMENSIONS 唯一来源在 swarm-yuan/docs/）
 │   ├── paradigm-decisions.md     ← 决策 1-25（口径权威源 facts.conf）
 │   ├── paradigm-positioning.md   ← WP-P10 范式定位
-│   ├── upstream-baseline.md      ← 11 运行时登记 + drift 处置
+│   ├── upstream-baseline.md      ← 12 运行时登记 + drift 处置
 │   ├── plans/                    ← 4 份 dated 计划
 │   └── research/                 ← R1-R9 九份研究交付物
 ├── swarm-yuan/                   ← 生成器 skill
-│   ├── SKILL.md                  ← AI 入口（11 运行时/54 门禁/五层认知/Step 0-8 共 13 节点）
+│   ├── SKILL.md                  ← AI 入口（12 运行时/54 门禁/五层认知/Step 0-8 共 13 节点）
 │   ├── install.sh / install.bat  ← 一键安装（7 环境检测 + Windows）
 │   ├── assets/                   ← 模板 + 门禁 + 状态机 + 调用追踪
 │   │   ├── precheck.sh           ← 门禁调度器（1450 行）
@@ -373,7 +373,7 @@ Swarm-yuan/
 │   │   ├── spec-template.md      ← 23 主段 spec 模板（§23=发布后运营）
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
-│   ├── references/               ← 31 个参考文档 + frameworks/（74 框架 + _template）
+│   ├── references/               ← 32 个参考文档 + frameworks/（74 框架 + _template）
 │   ├── scripts/                  ← 28 个脚本（生成器+自检+SARIF+drift+baseline+cost）
 │   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 48 gate-fixture + sarif-fixture）
 │   └── ci/                       ← 自举 self-precheck.conf
@@ -391,9 +391,9 @@ Swarm-yuan/
 | **质量门禁** | **54 个** = strict 21 + warn 19 + advisory 14；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
 | **配置变量** | **169 个**（precheck.conf 12 + precheck.arch.conf 109 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=169 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh） | FACT_FRAMEWORKS=74 |
-| **参考文档** | 31 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=31 |
+| **参考文档** | 32 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=32 |
 | **standards-map** | 75 条目（21 门禁级 + 50 框架级 + 4 advisory） | FACT_STANDARDS_MAP_ENTRIES=75 |
-| 运行时工具 | 11（深度 4 + CLI 3 + 方法论 4） | FACT_RUNTIMES=11 |
+| 运行时工具 | 12（深度 4 + CLI 3 + 方法论 5） | FACT_RUNTIMES=12 |
 | spec 模板 | 23 主段（§23=发布后运营） | FACT_SPEC_SECTIONS=23 |
 | 领域知识 | 32 个领域 | FACT_DOMAINS=32 |
 | 认知框架 | 5 层 | — |
