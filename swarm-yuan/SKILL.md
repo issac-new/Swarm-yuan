@@ -9,6 +9,8 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 
 > **docs/ 路径注**：本文引用的 `docs/paradigm-decisions.md`、`docs/paradigm-positioning.md`、`docs/upstream-baseline.md`、`docs/runtime-update-2026-07.md` 位于仓库根 `docs/`（swarm-yuan 父级），非 `swarm-yuan/docs/`；standalone 安装时不携带，核心内容已内联到 references/ 或 SKILL.md。
 >
+> **工具脚本路径注**：`trace-log.sh`/`state-machine.sh`/`memory-writeback.sh` 在**生成器侧**（本仓库/安装态 swarm-yuan 目录）物理位于 `assets/`；在**生成的目标技能侧**经 UNIVERSAL_FILES 映射为 `scripts/`。本文按目标技能路径书写为 `scripts/xxx.sh`；执行**生成流程**（Step 0-8）时应以 `assets/xxx.sh` 路径调用（`cost-report.sh`/`generate-skill.sh`/`self-check.sh` 等生成器工具本就位于 `scripts/`，不受影响）。
+>
 > **口径权威源**：`assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 **★核心能力（v2 增强）**：基于代码结构与调用链路分析，产出**详尽的组件库清单**（全量穷举，非代表性样本）与**编排调用关系及约束**（导入方向/注册顺序/路由挂载/状态所有权/测试边界，每条含代码证据），完善目标技能的研发 skill。方法论见 `references/exploration-guide.md` §C+。
@@ -54,26 +56,26 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 
 **执行准则**：价值/目标/问题/结果四导向；质量优先>确保安全>兼顾效率>减少打扰>因地制宜；疑虑必确认（改只读/升级依赖/删稳定单元/多方案/安全冲突/架构变更/不确定意图→暂停确认）。
 
-**AI 主导 + 用户决策原则**（G1 决策治理，对齐 ISO/IEC 42001 人工监督留痕）：在目标技能 的完整生命周期中，特征卡提取、门禁配置、spec 填充、代码实现、问题排查等所有环节均**优先以 AI 为主导生成建议项**，但决策按**三级分类**治理——什么能自动做、什么必须停下问、每条决策有审计轨迹落盘。用户的角色是**评估决策或修订后批准执行**，而非手动编写。详见 `references/decision-governance.md`。具体：
+**AI 主导 + 用户决策原则**（G1 决策治理，对齐 ISO/IEC 42001 人工监督留痕）：在目标技能的完整生命周期中，特征卡提取、门禁配置、spec 填充、代码实现、问题排查等所有环节均**优先以 AI 为主导生成建议项**，但决策按**三级分类**治理——什么能自动做、什么必须停下问、每条决策有审计轨迹落盘。用户的角色是**评估决策或修订后批准执行**，而非手动编写。详见 `references/decision-governance.md`。具体：
 - 特征卡 17 项：AI 探查后**主动生成建议值**（Mechanical 类，直接做），用户评估修订后确认
-- 门禁 precheck.conf 169 变量：AI 从特征卡**主动推导建议配置**（Mechanical 类；涉及安全规则如 SENSITIVE_WHITELIST/CRYPTO_PROFILE 升 Taste），用户评估后确认
+- 门禁 precheck.conf 三件套 169 变量：AI 从特征卡**主动推导建议配置**（Mechanical 类；涉及安全规则如 SENSITIVE_WHITELIST/CRYPTO_PROFILE 升 Taste），用户评估后确认
 - spec 模板填充：AI **主动预填**（Taste 类；§5.6 版本约束/§5.7 安全约束升 UserChallenge；含 §5.5 复用约束从第 11 项检索预填），用户评估修订后确认
 - 门禁 fail：AI **主动诊断原因 + 给出修复建议**（Taste 类；涉及依赖升级/安全冲突/删稳定单元升 UserChallenge），用户评估后批准执行
 - 编码实现：AI **主动给出代码方案**（Taste 类；含复用了哪些稳定单元；多方案/改只读/删稳定单元升 UserChallenge），用户评估后确认
 - 多方案选择：AI **主动提出 2+ 方案权衡 + 推荐**（**UserChallenge 类，永不自动决定**，须输出五要素等用户裁定），用户决策
 - 问题排查：AI **主动分析 + 给出解决方案**（Taste 类；涉及架构变更/安全冲突升 UserChallenge），用户评估后批准
 
-> **决策留痕**：每条决策通过 `scripts/trace-log.sh --decision` 追加到 `.swarm-yuan/decisions.jsonl`（永不 fail 阻塞主流程）；UserChallenge 类须含五要素（alternatives/missing_context/cost_if_wrong）。阶段流转由 `scripts/state-machine.sh` transition 自动记录。`--mark-active` 前须有至少 1 条决策记录（`--mark-active` 经 `--verify-completeness --strict` 校验≥1 条）。
+> **决策留痕**：每条决策通过 `scripts/trace-log.sh --decision` 追加到 `.swarm-yuan/decisions.jsonl`（永不 fail 阻塞主流程）；UserChallenge 类须含五要素（ai_suggestion/rationale/alternatives/missing_context/cost_if_wrong）。阶段流转由 `scripts/state-machine.sh` transition 自动记录。`--mark-active` 前须有至少 1 条决策记录（`--mark-active` 经 `--verify-completeness --strict` 校验≥1 条）。
 
 > 完整框架详见 `references/cognition-framework.md`；逻辑剃刀+谬误图谱见 `references/logic-razor.md`；认知偏差+思维模型见 `references/cognitive-bias.md`；领域知识速查见 `references/domain-knowledge.md`；决策治理（三级分类+五要素）见 `references/decision-governance.md`。
 
 ## 生成流程（AI 自动执行，用户只需提供项目路径）
 
-**铁律：AI 必须执行完整流程（Step 0-8，含 5 个 .5 子步（⓪.5/①.5/④.5/⑤.5/⑦.5）共 13 节点（⑦.5 是 ⑥→⑦ 间的门禁注入子步，非独立节点；圆圈符号 14 个但 FACT_FLOW_STEPS=13 按独立节点计））后才算生成完成。不允许以 draft 骨架交付——骨架中的占位符必须全部被真实内容替换。生成完成时检查：目标技能 中不得残留任何"待填充"/"填充指引"/占位符。**
+**铁律：AI 必须执行完整流程（Step 0-8，含 5 个 .5 子步（⓪.5/①.5/④.5/⑤.5/⑦.5）共 13 节点（⑦.5 是 ⑥→⑦ 间的门禁注入子步，非独立节点；圆圈符号 14 个但 FACT_FLOW_STEPS=13 按独立节点计））后才算生成完成。不允许以 draft 骨架交付——骨架中的占位符必须全部被真实内容替换。生成完成时检查：目标技能中不得残留任何"待填充"/"填充指引"/占位符。**
 
-**中断安全（状态门，决策 13）：流程可中断，但 draft ≠ 交付。** 骨架 frontmatter `status: draft` 期间，目标技能 的 `--all-full`/`--compliance-suite` 被 precheck 机器禁用（exit 2）；中断后重跑 `generate-skill.sh` 同命令自动**断点续传**（幂等补齐缺失文件，不覆盖已有内容）；填充完成后 `bash scripts/generate-skill.sh --mark-active <skill_dir>`（零占位符核验通过才翻 `status: active`）才算生成完成。P1 特征卡项可「（P1 待补）」占位（WP-G），P0 六项必须填实。
+**中断安全（状态门，决策 13）：流程可中断，但 draft ≠ 交付。** 骨架 frontmatter `status: draft` 期间，目标技能的 `--all-full`/`--compliance-suite` 被 precheck 机器禁用（exit 2）；中断后重跑 `generate-skill.sh` 同命令自动**断点续传**（幂等补齐缺失文件，不覆盖已有内容）；填充完成后 `bash scripts/generate-skill.sh --mark-active <skill_dir>`（零占位符核验通过才翻 `status: active`）才算生成完成。P1 特征卡项可「（P1 待补）」占位（WP-G），P0 六项必须填实。
 
-**★调用追踪铁律（设计理念 2：全链路追踪）：生成流程与目标技能 的使用流程中，每一步具体调用都必须有信息提示（无需用户确认），显示调用了何种工具及技能。** 双通道：① stdout 结构化公告——每 Step/节点开始时输出 `→ [Step N/节点X] 调用 <技能/子代理/工具> · <目的>`；② 落盘——**节点级默认**：每 Step/节点开始/结束时执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令>`，追加到 `<项目>/.swarm-yuan/trace.jsonl`；**调用级细节**（每个 CLI 工具/第三方调用的逐次落盘）仅在 `SWARM_YUAN_TRACE=verbose` 时启用（聚合分析见 `scripts/cost-report.sh`）。机器执法：`--verify-completeness` 校验目标技能 的 workflow.md 每节点含「调用追踪」要素（template-spec §2 第 ⑨ 要素），缺则 exit 1。
+**★调用追踪铁律（设计理念 2：全链路追踪）：生成流程与目标技能的使用流程中，每一步具体调用都必须有信息提示（无需用户确认），显示调用了何种工具及技能。** 双通道：① stdout 结构化公告——每 Step/节点开始时输出 `→ [Step N/节点X] 调用 <技能/子代理/工具> · <目的>`；② 落盘——**节点级默认**：每 Step/节点开始/结束时执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令>`，追加到 `<项目>/.swarm-yuan/trace.jsonl`；**调用级细节**（每个 CLI 工具/第三方调用的逐次落盘）仅在 `SWARM_YUAN_TRACE=verbose` 时启用（聚合分析见 `scripts/cost-report.sh`）。机器执法：`--verify-completeness` 校验目标技能的 workflow.md 每节点含「调用追踪」要素（template-spec §2 第 ⑨ 要素），缺则 exit 1。
 
 **★核心铁律（详尽组件库清单 + 编排约束，按项目形态动态适配）：swarm-yuan 不预设项目是前端/后端/全栈/移动/桌面/库。** 必须先做 §C+.0 项目形态判定（探查文件类型/框架特征 → 判定含哪些维度），再按判定结果选择的维度做全量穷举 + 签名提取 + 计数核验（清单计数 ≥ 枚举计数 × 0.95）。特征卡第 15 项（编排调用关系及约束）必须从 §C+.2 按形态选择的链路模型（前端注册装配/后端请求管道/异步消息流/微服务跨服务链）推导得出，每条约束须有代码证据。两者配套：只列构件不推约束 = 未完成；维度错配（纯后端项目填 UI 组件表）= 未完成。
 
@@ -85,7 +87,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 
 1. **自检**：`bash scripts/self-check.sh`（11 个运行时检测+自动安装）
 2. **读取项目知识**：AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特征卡（不读=重复造轮子）
-3. **探查仓库**：三路并行子代理（结构/规范/代码组织），优先用 gitnexus/graphify/claude-mem/LSP，大型项目用 Dynamic Workflow 并行扇出。工具矩阵+降级策略见 `references/exploration-guide.md`。**★WP-P8 per-phase profile 探查分级**：按 `auto_detect_profile` 的规模信号分级——lite（<80 文件）单路探查不用图谱；standard（80-400）三路并行图谱可选；compliance（合规信号或 >400）三路并行 + 强制图谱工具。规模边界不确定按更重档处理（质量优先）。**★全链路追踪（设计理念 2）**：每路子代理启动前 AI 调 `bash scripts/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`（规范/代码组织子代理同理），完成后 `--status done`——用户可见每步调用何种工具，无需确认（trace 输出 stderr + 落盘 trace.jsonl，不阻塞主流程）
+3. **探查仓库**：三路并行子代理（结构/规范/代码组织），优先用 gitnexus/graphify/claude-mem/LSP，大型项目用 Dynamic Workflow 并行扇出。工具矩阵+降级策略见 `references/exploration-guide.md`。**★WP-P8 per-phase profile 探查分级**：按 `auto_detect_profile` 的判定结果分级——lite（文件数 <80 且无合规信号）单路探查不用图谱；standard（其余默认档）三路并行图谱可选；compliance（合规关键词命中）三路并行 + 强制图谱工具。规模边界不确定按更重档处理（质量优先）。**★全链路追踪（设计理念 2）**：每路子代理启动前 AI 调 `bash scripts/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`（规范/代码组织子代理同理），完成后 `--status done`——用户可见每步调用何种工具，无需确认（trace 输出 stderr + 落盘 trace.jsonl，不阻塞主流程）
 4. **★项目形态判定 + 详尽组件库清单 + 调用链路分析**（探查的深化，不可跳过）：
    - **项目形态判定（§C+.0）**：探查文件类型/框架特征 → 判定含哪些维度（前端UI/后端API/异步消费/桌面IPC/移动端/库导出）→ 后续只枚举存在的维度
    - **全量穷举（§C+.1 按维度动态）**：按判定结果选择的维度（C+.1-F前端/C+.1-B后端/C+.1-A异步/C+.1-D桌面移动/C+.1-L库/C+.1-T通用）做 `find`+`grep` 机械枚举 → 提取导出签名 → 每维度独立计数核验
@@ -124,7 +126,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 
 ## 它整合的方法论（只引用调用，不重新实现）
 
-swarm-yuan 整合 11 个外部运行时，按**接线深度分三层**（每层有自带降级载体，不假装全深接）：
+swarm-yuan 整合 11 个外部运行时，按**接线深度分三层**（每层有自带降级载体，不假装全深度接线）：
 
 | 层 | 运行时 | 真实接线方式 | 降级载体 |
 |----|--------|-------------|---------|
@@ -168,7 +170,7 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 金融行业 profile（法规/监管办法/JR/T 标准 ↔ 门禁映射 + finance.conf 配套） | `references/industry-profile-finance.md` |
 | 医疗行业 profile（法规/卫健委办法/GB/T 39725 ↔ 门禁映射 + medical.conf 配套） | `references/industry-profile-medical.md` |
 | 政务行业 profile（网安法 21 条/密评/个保法 55-56/GB/T 22239/39786/43848 ↔ 门禁映射 + gov.conf 配套） | `references/industry-profile-gov.md` |
-| 汽车行业 profile（ISO 26262/UNECE R155-R156/GB/T 40855 ↔ 门禁映射 + automotive.conf 配套） | `references/industry-profile-automotive.md` |
+| 汽车行业 profile（ISO 26262/UNECE R155-R156/GB 44495-GB 44496 ↔ 门禁映射 + automotive.conf 配套） | `references/industry-profile-automotive.md` |
 | 能源行业 profile（GB/T 36572 十六字方针/IEC 62443 SL1-SL4/密评 ↔ 门禁映射 + energy.conf 配套） | `references/industry-profile-energy.md` |
 | 电信行业 profile（等保三级/密评/工信部令 24 号 PIA/3GPP TS 33.501 ↔ 门禁映射 + telecom.conf 配套） | `references/industry-profile-telecom.md` |
 | 工控/物联网行业 profile（等保三级/密评/IEC 62443 SL1-SL4/GB/T 33009 ↔ 门禁映射 + industrial.conf 配套） | `references/industry-profile-industrial.md` |

@@ -21,7 +21,8 @@ if [[ ! -f "${PRECHECK}" ]]; then
 fi
 
 # WP-Q1.3：拆分后 check_* 函数在 gates-strict/warn/advisory.sh 三文件。
-# 打包态（install.sh bundle）下三文件已内联回 precheck.sh，gates-*.sh 不存在。
+# install.sh 整目录拷贝（含三文件），故安装态 gates-*.sh 仍存在；"单文件打包"形态（内联
+# 回 precheck.sh、SWARM_YUAN_BUNDLED=1）为预留扩展点，当前无生产者。
 # 扫描文件清单：precheck.sh + 存在的 gates-*.sh。
 GATE_FILES="${PRECHECK}"
 for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do

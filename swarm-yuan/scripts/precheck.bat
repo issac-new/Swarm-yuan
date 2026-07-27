@@ -5,7 +5,7 @@ REM   precheck.bat                  # 全部门禁
 REM   precheck.bat --branch         # 分支规范
 REM   precheck.bat --scope          # 改动范围
 REM   precheck.bat --all            # 核心 10 门禁
-REM   precheck.bat --all-full       # 全部 36 门禁
+REM   precheck.bat --all-full       # 标准 27 门禁（合规 17 走 --compliance-suite）
 REM   precheck.bat <gate>           # 单个门禁（--reuse/--security/--deps ...）
 REM 注：本 .bat 供已生成的目标 skill 使用（其 scripts/precheck.sh 存在）；
 REM     swarm-yuan 源仓库内 precheck.sh 位于 assets/ 而非 scripts/，源仓库开发请直接 bash assets/precheck.sh。

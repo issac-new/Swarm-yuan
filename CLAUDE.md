@@ -13,16 +13,16 @@ There is no compiled artifact and no conventional build — the product is a set
 
 ## 范式定位（WP-P10）
 
-swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 54 门禁 + 170 变量 + 74 框架规则。重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。
+swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 54 门禁 + 169 变量 + 74 框架规则。重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。
 
 **适用**：团队协作/中大型项目/强监管交付/长期维护/多技术栈混合。**不适用**：个人脚本/一次性原型/极小改动/无 AI 辅助。详见 `docs/paradigm-positioning.md`。
 
 ## Repository layout (three top-level roles)
 
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
-  - `SKILL.md` — the AI entry point / operating manual (the generation pipeline Step 0–10).
+  - `SKILL.md` — the AI entry point / operating manual (the generation pipeline Step 0–8, 13 nodes incl. five .5 sub-steps).
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
-  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~4000 lines, 54 gates = standard 27 via `--all-full` + compliance 17 via `--compliance-suite` + advisory-only 10), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (170 config vars across the three, WP-I split), `spec-template.md` (23-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (74 per-framework gate fragments).
+  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~4000 lines, 54 gates = standard 27 via `--all-full` + compliance 17 via `--compliance-suite` + advisory-only 10), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (169 config vars across the three, WP-I split), `spec-template.md` (23-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (74 per-framework gate fragments).
   - `references/` — 28 methodology docs + `references/frameworks/<fw>.md` (74 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).
@@ -97,4 +97,4 @@ Many gates "sleep" (match nothing) on purpose; `docs/paradigm-decisions.md` docu
 - **Single test** = `run-framework-fixture.sh <id>` (one framework) or `run-verifier.sh fixtures` (all).
 - **Fixture `precheck.conf` uses a `__REPO_ROOT__` placeholder** that the runner substitutes at runtime, so fixtures are machine-independent.
 - `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 74-fixture exit-code vector.
-- CI (`.github/workflows/ci.yml`) runs all four jobs on push/PR to `main`: 74 ruleset verifies, 74 fixture double-states, self-check freshness, and shellcheck on core scripts.
+- CI (`.github/workflows/ci.yml`) runs on push/PR to `main`. Core four: 74 ruleset verifies, 74 fixture double-states, self-check freshness, and shellcheck on core scripts. Extended: generator self-gate (bootstrap `--all`/`--all-full`/`--compliance-suite` on this repo), e2e, verifier-all, macOS BSD compat, real-project smoke, Windows syntax smoke (Windows full compat runs weekly/manual).

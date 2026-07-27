@@ -143,7 +143,7 @@ cat > "$GUARD_FILE" <<'GUARDEOF'
 
 # ===== WP-Q1.3 门禁函数 source 守卫（决策 19：三档拆分）=====
 # 开发态：source gates-strict/warn/advisory.sh 三文件（与 precheck.sh 同目录）
-# 打包态：install.sh 已内联三文件内容，SWARM_YUAN_BUNDLED=1 跳过 source
+# install.sh 整目录拷贝（含三文件）；SWARM_YUAN_BUNDLED=1 为预留扩展点（当前无生产者）
 if [[ -z "${SWARM_YUAN_BUNDLED:-}" ]]; then
   for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
     _gp="$(dirname "$0")/$_gf"

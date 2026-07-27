@@ -1,6 +1,6 @@
 # MCP 治理：默认最小化政策
 
-> 适用范围：swarm-yuan 生成目标 skill 时的 MCP connector 注册、MCP 配置中的 secret 处理、MCP 与门禁的联动。
+> 适用范围：swarm-yuan 生成目标技能 时的 MCP connector 注册、MCP 配置中的 secret 处理、MCP 与门禁的联动。
 > 上游依据：ECC v2.0（2026-06 稳定版）single-connector MCP 默认政策 + ecc.mcp.v1 inventory/secret redaction（`docs/research/R6-upstream-web.md` §1.7；https://github.com/affaan-m/ECC ，访问 2026-07-20）。
 > 落地位置：spec 模板 §10 环境与外部资源（`references/template-spec.md` → 生成物 mcp-tools.md）、`references/security-spec.md` §4.5、`assets/precheck.sh` check_knowledge/check_security、`scripts/self-check.sh` MCP 重复注册检测。
 
@@ -8,7 +8,7 @@
 
 ### 1.1 默认最小集
 
-目标 skill 生成时，MCP connector 注册默认最小集为三个：
+目标技能 生成时，MCP connector 注册默认最小集为三个：
 
 | connector | 用途 | 许可证约束 |
 |---|---|---|

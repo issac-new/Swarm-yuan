@@ -671,7 +671,12 @@ check_doc_consistency() {
   # design-philosophy-consistency.md），它们含 catchphrase 数字但原在扫描盲区（docs/ 不在 $base 下）。
   # 不新增 docs/paradigm-decisions.md（决策日志多历史快照，加扫会误报）/docs/research//docs/plans/（归档）。
   local _root_docs="$base/.."
-  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
+  # WP-Audit2026-07-27: 扫描范围扩展——新增根 README.md（此前只扫 $base/README.md=swarm-yuan/README.md，
+  # 根 README 的数字漂移全失管，曾长期与 swarm-yuan/README 分叉：169✓/170✗、8✓/10✗、48✓/45✗）。
+  # 历史 .claude/commands/swarm-yuan.md 已在列表，commands/ 下其他 .md 全量扫描兜底。
+  # docs/ 仅新增 2 份活跃设计文档（paradigm-positioning / design-philosophy-consistency），
+  # paradigm-decisions（决策日志多历史快照）/research//plans/（归档）不扫，加扫会误报。
+  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/README.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
   local _cmd_dir="$base/.claude/commands"
   if [[ -d "$_cmd_dir" ]]; then
     local _cf
@@ -716,6 +721,23 @@ check_doc_consistency() {
     bad=$(grep -oE "[0-9]+ ?个(配置|门禁)?变量" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_vars" || true)
     [[ -n "$bad" ]] && dfound="${dfound} conf变量数出现非${true_vars}值($(echo $bad | tr '\n' ' '));"
+    # WP-Audit2026-07-27: 裸「N 变量」（无"个"，如"170 变量"）补扫——此前正则要求「个」，
+    # CLAUDE.md/paradigm-positioning 的"170 变量"逃逸。仅匹配"N 变量"+紧邻标点/空格，避免误伤"变量数"等。
+    bad=$(grep -oE "[0-9]+ 变量([ ，。、+])" "$docpath" 2>/dev/null \
+          | grep -oE "^[0-9]+" | sort -u | grep -vx "$true_vars" || true)
+    [[ -n "$bad" ]] && dfound="${dfound} 裸变量数出现非${true_vars}值($(echo $bad | tr '\n' ' '));"
+    # WP-Audit2026-07-27: 流程节点数——「Step 0-N」「N 节点」「N 工作流节点」对齐 FACT_FLOW_STEPS=13 / FACT_FLOW_NODES=8
+    if [[ -n "${FACT_FLOW_STEPS:-}" ]]; then
+      bad=$(grep -oE "Step 0-[0-9]+" "$docpath" 2>/dev/null \
+            | grep -oE "[0-9]+$" | sort -u | grep -vx "8" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} 流程Step上限出现非8值($(echo $bad | tr '\n' ' '));"
+      bad=$(grep -oE "[0-9]+ 节点" "$docpath" 2>/dev/null \
+            | grep -oE "^[0-9]+" | sort -u | grep -vx "${FACT_FLOW_STEPS}" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} 流程节点数出现非${FACT_FLOW_STEPS}值($(echo $bad | tr '\n' ' '));"
+      bad=$(grep -oE "[0-9]+ 工作流节点" "$docpath" 2>/dev/null \
+            | grep -oE "^[0-9]+" | sort -u | grep -vx "${FACT_FLOW_NODES}" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} 工作流节点数出现非${FACT_FLOW_NODES}值($(echo $bad | tr '\n' ' '));"
+    fi
     # 合规门禁数：「合规 4」「合规门禁额外 4 个」等（真值为 0 即合规族未合入，跳过该口径）
     if [[ "$true_compliance" -gt 0 ]]; then
       bad=$(grep -oE "合规门禁[^0-9]{0,8}[0-9]+ ?个|合规 [0-9]+" "$docpath" 2>/dev/null \
@@ -1189,6 +1211,17 @@ check_universal_files_count() {
     FAIL=1
   else
     echo "  ✓ UNIVERSAL_FILES ${_true} 条 = FACT_UNIVERSAL_FILES ${_declared}（C1 对齐）"
+  fi
+  # WP-Audit2026-07-27: lite 档条目数断言（FACT_UNIVERSAL_FILES_CORE）——此前该 FACT 无断言守，
+  # 曾长期漂移（声明 21，真值 20）。机械计数 UNIVERSAL_FILES 中第三段为 lite 的条目。
+  local _core_declared="${FACT_UNIVERSAL_FILES_CORE:-20}"
+  local _core_true
+  _core_true=$(sed -n '/^UNIVERSAL_FILES=(/,/^)/p' "$gen" | grep -cE '\|lite"$' || echo 0)
+  if [[ "$_core_true" -ne "$_core_declared" ]]; then
+    warn "UNIVERSAL_FILES lite 档声明 ${_core_declared} 与真值 ${_core_true} 不符——改 facts.conf FACT_UNIVERSAL_FILES_CORE 或核实 generate-skill.sh 数组"
+    FAIL=1
+  else
+    echo "  ✓ UNIVERSAL_FILES lite 档 ${_core_true} 条 = FACT_UNIVERSAL_FILES_CORE ${_core_declared}（对齐）"
   fi
 }
 check_universal_files_count

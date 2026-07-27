@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# advisory (16) 门禁（原由 scripts/split-gates.sh 抽取，现手工维护；决策 19）
+# advisory 物理文件（16 个 check_* 函数；原由 split-gates.sh 抽取，现手工维护；决策 19）
+# 被 precheck.sh source（开发态/安装态同路径；install.sh 整目录拷贝含本文件）。
 # S6 注：check_cognition 物理在此文件但 enforce-level=warn（gate-enforce-level.conf:73），
 #   因 _enforce_of 读 conf 而非文件位置，功能正确；保留此文件因历史 + split-gates.sh 已不活跃。
-# 被 precheck.sh source（开发态）或 install.sh 内联（打包态）。
+# 注：物理函数数 16 ≠ enforce-level advisory 15——check_cognition 分层为 warn（上述 S6 注）。
+# _enforce_of 读 conf 而非文件位置，功能正确。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
 check_consistency() {

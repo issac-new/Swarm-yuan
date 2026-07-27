@@ -15,7 +15,7 @@
 - offline-cache 内的 `superpowers/` 是 **superpowers-marketplace v1.0.13**（全目录仅 4 文件：`LICENSE`、`README.md`、`.claude-plugin/marketplace.json`、`.claude/settings.local.json`），核心插件 v6.1.1 本体不在包内；marketplace.json 以 URL source 指向 `https://github.com/obra/superpowers.git`（`docs/research/R5-upstream-local.md` §四，2026-07-20 本地实证）。
 - 核心插件仓库 https://github.com/obra/superpowers ：**MIT** 许可证，最新 release **v6.1.1**（2026-07-02 发布；v6.0.0→v6.1.1 约六周内 5 个 tag）——GitHub REST API 实测，访问 2026-07-20。
 - swarm-yuan 对 superpowers 的吸收是**文档级方法论引用**（14 个 skills 能力清单登记于 `swarm-yuan/references/subagent-orchestration.md:118-137`），不是运行时命令调用——`swarm-yuan/SKILL.md:108` 工具引用铁律的允许 CLI 清单（graphify/gitnexus/ocr/claude-mem/gsd-tools）不含 superpowers。
-- P0 已完成诚实检测与文案：`scripts/self-check.sh` check_superpowers 实质检测（须含 `skills/` 子目录或 `.claude-plugin/plugin.json` 才判已安装；仅 marketplace 元数据判空壳 miss，fail-closed）；`scripts/install-offline-win.sh:105` 文案改为「目录已复制，需在 Claude Code 中 /plugin enable」；`offline-cache/UPSTREAM.md` §二空壳明示。
+- P0 已完成诚实检测与文案：`scripts/self-check.sh` check_superpowers 实质检测（须含 `skills/` 子目录或 `.claude-plugin/plugin.json` 才判已安装；仅 marketplace 元数据判空壳 miss，fail-closed）；`scripts/install-offline-win.sh（已废弃，WP 瘦身后改用 Release 附件 + self-check install_from_src_release）:105` 文案改为「目录已复制，需在 Claude Code 中 /plugin enable」；`offline-cache/UPSTREAM.md` §二空壳明示。
 
 ## 二、决策理由
 

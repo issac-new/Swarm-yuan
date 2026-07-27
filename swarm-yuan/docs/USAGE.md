@@ -50,7 +50,7 @@ bash install.sh
 
 ### 什么是特征卡
 
-特征卡是 AI 探查项目后提取的 **17 项项目特征**，每项落到真实路径和版本号，不用占位符。它不是独立文件，而是**分散承接进目标 skill 的各个文件中**，是门禁配置和文件填充的「数据源」。
+特征卡是 AI 探查项目后提取的 **17 项项目特征**，每项落到真实路径和版本号，不用占位符。它不是独立文件，而是**分散承接进目标技能的各个文件中**，是门禁配置和文件填充的「数据源」。
 
 **没有特征卡，门禁就是无源之水——不知道项目边界在哪、哪些单元稳定、什么领域规律不能违反。**
 
@@ -75,9 +75,9 @@ bash install.sh
 
 ### 特征卡如何驱动一切
 
-**特征卡 → 文件填充（Step 4）：** SKILL.md 的铁律来自第 2/6 项 → codebase.md 的技术栈来自第 4 项 → dev-guide.md 的改造分类来自第 3 项 → reference-manual.md 的组件库来自第 11 项 → release.md 的命令来自第 5 项……17 项特征卡是目标 skill 所有文件的「数据源」。
+**特征卡 → 文件填充（Step 4）：** SKILL.md 的铁律来自第 2/6 项 → codebase.md 的技术栈来自第 4 项 → dev-guide.md 的改造分类来自第 3 项 → reference-manual.md 的组件库来自第 11 项 → release.md 的命令来自第 5 项……17 项特征卡是目标技能所有文件的「数据源」。
 
-**特征卡 → 门禁配置（Step 5）：** precheck.conf 的 169 个变量从特征卡推导：
+**特征卡 → 门禁配置（Step 5）：** precheck.conf 三件套 169 个变量（core 12 + arch 109 + compliance 48）从特征卡推导：
 
 | 配置变量 | 来自特征卡第几项 |
 |---------|----------------|
@@ -195,7 +195,7 @@ bash install.sh
 | `--knowledge` | 项目知识复用（AGENTS.md/CLAUDE.md/记忆 → skill 引用） | — |
 | `--mermaid` | Mermaid 可视化 | — |
 
-### 合规门禁（17 个，独立 `--compliance-suite` 按需执行，未配置则静默跳过）
+### 合规门禁（17 个，独立 `--compliance-suite` 按需执行；未配置静默跳过或 WP-Z3 豁免留痕）
 
 | 门禁 | 检查什么 | 特征卡依据 |
 |------|---------|-----------|
@@ -212,6 +212,10 @@ bash install.sh
 | `--pia` | 隐私影响评估（PIA 文档缺失 → fail，启用后 fail-closed） | 第 7 项 |
 | `--sast-deep` | 深度 SAST（semgrep→opengrep→内置降级链，启用后 fail-closed） | 第 7 项 |
 | `--oss-eval` | 开源代码安全评价（复用 --sbom 产物，成分清单/许可证纳入评价，启用后 fail-closed） | 第 4 项 |
+| `--quality-model` | 质量特性剪裁核验（GB/T 25000.10 八特性：功能性/性能效率/兼容性/易用性/可靠性/安全性/维护性/可移植性，启用后 fail-closed） | 第 8 项 |
+| `--test-evidence` | 测试证据留存（TEST_EVIDENCE_REQUIRED=1：每测试用例须有执行证据记录，启用后 fail-closed） | 第 5 项 |
+| `--review-record` | 评审记录留存（REVIEW_RECORD_REQUIRED=1：spec/code 合入须留评审记录，启用后 fail-closed） | 第 8 项 |
+| `--metrics` | 度量趋势（cognition-metrics.jsonl：认知层得分/门禁执行计数趋势，warn 为主，enforce=warn） | 第 13 项 |
 
 ### 门禁工具优先级 + 降级策略
 
@@ -333,7 +337,7 @@ SWARM_YUAN_TRACE=verbose <生成/使用流程>      # 先收集调用级细节�
 
 ### 多平台规则渲染（--render-tools）
 
-从目标 skill 的 SKILL.md + precheck.conf 派生各 AI 工具原生规则文件（幂等，重渲染为 no-op）：
+从目标技能的 SKILL.md + precheck.conf 派生各 AI 工具原生规则文件（幂等，重渲染为 no-op）：
 
 ```bash
 bash scripts/generate-skill.sh --render-tools <skill-dir> [project-root] [tool]
@@ -352,7 +356,7 @@ bash scripts/generate-skill.sh --render-tools <skill-dir> [project-root] [tool]
 | 医疗 | `references/industry-profile-medical.md`（个保法/数安法 + 卫健委办法/互联网诊疗细则 + GB/T 39725 ↔ 门禁映射） | `assets/industry-profiles/medical.conf` |
 | 政务 | `references/industry-profile-gov.md`（网安法 21 条/密评/个保法 55-56 + GB/T 22239/39786/43848 ↔ 门禁映射） | `assets/industry-profiles/gov.conf` |
 
-用法：`cat assets/industry-profiles/finance.conf >> <目标skill>/scripts/precheck.conf`，再按项目裁剪（逐行注释含条款依据）；追加后 `bash scripts/precheck.sh --doctor` 自检应为 0 fail。医疗器械注册申报（SaMD/SiMD）场景不适用，见 standards-compliance.md §E.5 功能安全域占位。
+用法：`cat assets/industry-profiles/finance.conf >> <目标技能>/scripts/precheck.conf`，再按项目裁剪（逐行注释含条款依据）；追加后 `bash scripts/precheck.sh --doctor` 自检应为 0 fail。医疗器械注册申报（SaMD/SiMD）场景不适用，见 standards-compliance.md §E.5 功能安全域占位。
 
 ---
 
@@ -413,7 +417,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | **特征卡** | **17 项（驱动全部文件 + 169 个门禁变量 + 开发流程）** |
 | **质量门禁** | **54 个（核心 10 + 架构 17 + 合规 17 + advisory-only 10，特征卡立法 + 门禁执法）** |
 | 运行时工具 | 11 |
-| spec 模板 | 23 主段（§23=标准合规） |
+| spec 模板 | 23 整数节（§1-§23，不含 §5.5/5.6/5.7 三个子节） |
 | 领域知识 | 32 个领域 |
 | 认知框架 | 5 层 |
 | 兼容 AI 工具 | 7 个 |
@@ -427,7 +431,7 @@ swarm-yuan 内置 74 个框架规则集（references/frameworks/*.md + assets/fr
 ### 生成时激活
 
 1. **框架探查**（§C+.0.5）：从 pom.xml/package.json/go.mod/pyproject.toml 提取依赖，识别 ACTIVE_FRAMEWORKS
-2. **门禁注入**（--inject-frameworks）：按 ACTIVE_FRAMEWORKS 把对应门禁片段注入目标 skill 的 precheck.sh 标记区块
+2. **门禁注入**（--inject-frameworks）：按 ACTIVE_FRAMEWORKS 把对应门禁片段注入目标技能的 precheck.sh 标记区块
 3. **四要素核验**（verify-framework-ruleset.sh）：每框架须通过 枚举+领域知识+门禁+约束 四要素
 4. **fixture 双态**（run-framework-fixture.sh）：每框架含 violating→FAIL / compliant→PASS 测试
 

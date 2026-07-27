@@ -37,7 +37,9 @@ detect_runtimes() {
   if [[ -d "$HOME/.codex/skills" ]]; then printf 'Codex\t%s\t\n' "$HOME/.codex/skills"; fi
   # Cursor
   if [[ -d "$HOME/.cursor/skills" ]]; then printf 'Cursor\t%s\t\n' "$HOME/.cursor/skills"; fi
-  # Windsurf
+  # Windsurf（注：Windsurf 官方原生规则机制为 Memories/Rules/Workflows/MCP，
+  #   未官方支持 SKILL.md 开放标准——本目录复制走"runnable 兼容"姿态：bash 脚本可被
+  #   AI 调用，markdown 供 AI 读取。深度规则派生建议走 generate-skill.sh --render-tools）
   if [[ -d "$HOME/.codeium/windsurf/skills" ]]; then printf 'Windsurf\t%s\t\n' "$HOME/.codeium/windsurf/skills"; fi
   # OpenCode
   if [[ -d "$HOME/.config/opencode/skills" ]]; then printf 'OpenCode\t%s\t\n' "$HOME/.config/opencode/skills"; fi
