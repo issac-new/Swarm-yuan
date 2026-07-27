@@ -96,11 +96,11 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 **特征卡是立法，门禁是执法。** 特征卡定义规则，门禁验证合规。
 
 > **门禁分层（决策 19）——执法强度横切维度：** 54 门禁按 `fail()` 能力分三档，与 core/standard/compliance 执行序列正交：
-> - **strict（20 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model/crypto/sast-deep/oss-eval）
+> - **strict（21 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model/crypto/sast-deep/oss-eval）
 > - **warn（19 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄（cognition/contract/impact/service/api/review/frontend/domain/knowledge 等）
-> - **advisory（15 个）**：0 个 fail，永不阻断，只 warn/pass（consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/canary/cwe-audit/cert-audit）
+> - **advisory（14 个）**：0 个 fail，永不阻断，只 warn/pass（consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/cwe-audit/cert-audit）
 >
-> **advisory 三轴命名（T12 澄清）**：① advisory-file=16（gates-advisory.sh 物理位置，含 cognition 因历史）；② advisory-level=15（0-fail enforce，gate-enforce-level.conf）；③ advisory-only=10（不在 ALL_GATES_CORE/STANDARD/COMPLIANCE 执行序列：operate/decision-audit/canary/cwe-audit/cert-audit/learnings/pr-quality/skill-supply-chain/state-phase/upstream-baseline）。三者正交，本文档统一用 enforce-level 口径（15）。
+> **advisory 三轴命名（T12 澄清）**：① advisory-file=15（gates-advisory.sh 物理位置，含 cognition 因历史）；② advisory-level=14（0-fail enforce，gate-enforce-level.conf）；③ advisory-only=10（不在 ALL_GATES_CORE/STANDARD/COMPLIANCE 执行序列：operate/decision-audit/cwe-audit/cert-audit/learnings/pr-quality/skill-supply-chain/state-phase/upstream-baseline）。三者正交，本文档统一用 enforce-level 口径（14）。
 >
 > 查看分层：`bash scripts/precheck.sh --list-gates`。分层由 `scripts/gen-enforce-level.sh` 自动按 fail() 数归类（幂等），手动覆盖见 precheck.sh `_ENFORCE_OVERRIDE`。
 
@@ -373,7 +373,7 @@ Swarm-yuan/
 │   │   ├── spec-template.md      ← 23 主段 spec 模板（§23=发布后运营）
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
-│   ├── references/               ← 30 个参考文档 + frameworks/（74 框架 + _template）
+│   ├── references/               ← 31 个参考文档 + frameworks/（74 框架 + _template）
 │   ├── scripts/                  ← 28 个脚本（生成器+自检+SARIF+drift+baseline+cost）
 │   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 48 gate-fixture + sarif-fixture）
 │   └── ci/                       ← 自举 self-precheck.conf
@@ -388,10 +388,10 @@ Swarm-yuan/
 | 维度 | 数值 | 口径源 |
 |------|------|--------|
 | **特征卡** | **17 项**（P0 六项 1/4/5/11/15/16 + P1 十一项） | FACT_FEATURE_CARDS=17 |
-| **质量门禁** | **54 个** = strict 20 + warn 19 + advisory 15；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
+| **质量门禁** | **54 个** = strict 21 + warn 19 + advisory 14；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
 | **配置变量** | **169 个**（precheck.conf 12 + precheck.arch.conf 109 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=169 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh） | FACT_FRAMEWORKS=74 |
-| **参考文档** | 30 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=30 |
+| **参考文档** | 31 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=31 |
 | **standards-map** | 75 条目（21 门禁级 + 50 框架级 + 4 advisory） | FACT_STANDARDS_MAP_ENTRIES=75 |
 | 运行时工具 | 11（深度 4 + CLI 3 + 方法论 4） | FACT_RUNTIMES=11 |
 | spec 模板 | 23 主段（§23=发布后运营） | FACT_SPEC_SECTIONS=23 |
