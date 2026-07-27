@@ -73,6 +73,7 @@ UNIVERSAL_FILES=(
   "scripts/detect-spec-scale.sh|gen|lite"
   "scripts/task-scale.sh|gen|lite"
   "references/subagent-orchestration.md|ref"
+  "references/governance-agents.md|ref|compliance"
   "references/review-methodology.md|ref"
   "references/code-graph-tools.md|ref"
   "references/gsd-patterns.md|ref"
