@@ -79,6 +79,8 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 
 **★核心铁律（详尽组件库清单 + 编排约束，按项目形态动态适配）：swarm-yuan 不预设项目是前端/后端/全栈/移动/桌面/库。** 必须先做 §C+.0 项目形态判定（探查文件类型/框架特征 → 判定含哪些维度），再按判定结果选择的维度做全量穷举 + 签名提取 + 计数核验（清单计数 ≥ 枚举计数 × 0.95）。特征卡第 15 项（编排调用关系及约束）必须从 §C+.2 按形态选择的链路模型（前端注册装配/后端请求管道/异步消息流/微服务跨服务链）推导得出，每条约束须有代码证据。两者配套：只列构件不推约束 = 未完成；维度错配（纯后端项目填 UI 组件表）= 未完成。
 
+**★任务类型×方法论路由（借鉴 tanweai/pua methodology-router 改写，详见 `references/task-methodology-router.md`）：Step 0（开工）时按任务类型（新项目生成/框架规则注入/升级已有技能/合规审计/占位符修复/门禁fail修复/数字漂移修复/Oracle Gate循环）选择关键节点序列 + 门禁聚焦，避免所有任务都跑全量 13 节点。路由结果在 trace-log 公告：`→ [Step 0] 任务类型路由：X → 节点序列 Y → 门禁聚焦 Z`。**
+
 ```
 用户："为 /path/to/project 生成 skill"
   ↓ AI 自动执行（零手动配置，不可中途停止）
@@ -159,6 +161,7 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 决策治理（三级分类+五要素+decisions.jsonl，对齐 ISO/IEC 42001） | `references/decision-governance.md` |
 | subagent 编排模式 | `references/subagent-orchestration.md` |
 | 四权分离治理 agent 拓扑（policy/action/self-review/verifier，compliance 档强制） | `references/governance-agents.md` |
+| 任务类型×方法论路由（新项目/注入/升级/合规审计/修复 → 节点序列+门禁聚焦） | `references/task-methodology-router.md` |
 | 代码审查方法论（5 维度） | `references/review-methodology.md` |
 | 代码图谱工具引用 | `references/code-graph-tools.md` |
 | 标准合规矩阵（GB/T 25000.51/8566/8567/9386 + 安全标准 门禁映射 + 豁免登记） | `references/standards-compliance.md` |
