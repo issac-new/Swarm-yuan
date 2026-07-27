@@ -440,7 +440,7 @@ Swarm-yuan/
 │   │   ├── spec-template.md      ← 23 主段 spec 模板（§23=发布后运营）
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
-│   ├── references/               ← 28 个参考文档 + frameworks/（74 框架 + _template）
+│   ├── references/               ← 29 个参考文档 + frameworks/（74 框架 + _template）
 │   ├── scripts/                  ← 23 个脚本（生成器+自检+SARIF+drift+baseline+cost）
 │   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 48 gate-fixture + sarif-fixture）
 │   └── ci/                       ← 自举 self-precheck.conf
@@ -463,7 +463,7 @@ Swarm-yuan/
 | **质量门禁** | **54 个** = strict 20 + warn 19 + advisory 15（执法强度横切）；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
 | **配置变量** | **169 个**（precheck.conf 12 + precheck.arch.conf 109 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=169 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh，六段式 + 四要素量化验收） | FACT_FRAMEWORKS=74 |
-| **参考文档** | 28 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=28 |
+| **参考文档** | 29 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=29 |
 | **standards-map** | 75 条目（21 门禁级 + 50 框架级 + 4 advisory） | FACT_STANDARDS_MAP_ENTRIES=75 |
 | 运行时工具 | 11（深度 4 + CLI 3 + 方法论 4） | FACT_RUNTIMES=11 |
 | spec 模板 | 23 主段（§23=发布后运营） | FACT_SPEC_SECTIONS=23 |
