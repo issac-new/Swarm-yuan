@@ -67,6 +67,8 @@ UNIVERSAL_FILES=(
   "scripts/memory-writeback.sh|assets|lite"
   "assets/hooks/failure-detector.sh|assets|lite"
   "assets/hooks/integrity-guard.sh|assets|lite"
+  "assets/hooks/setup-loop.sh|assets|standard"
+  "assets/hooks/loop-hook.sh|assets|standard"
   "scripts/self-check.sh|gen|lite"
   "scripts/detect-frameworks.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
@@ -1193,7 +1195,8 @@ _write_if_absent "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
   "hooks": {
     "SessionStart": [{"matcher": "startup|clear|compact", "command": "echo \"→ [hook:SessionStart] 调用 state-machine.sh status（阶段状态追踪）\"; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true"}],
     "PreToolUse": [{"matcher": "Write|Edit", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --scope >/dev/null 2>&1 && echo \"→ [hook:PreToolUse] 调用 precheck --scope：✓ pass\" || echo \"→ [hook:PreToolUse] 调用 precheck --scope：✗ FAIL——运行 bash scripts/precheck.sh --scope 查看详情\""}, {"matcher": "Write|Edit|MultiEdit|Bash|WebSearch|WebFetch", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/integrity-guard.sh\" 2>/dev/null || true", "timeout": 5}],
-    "PostToolUse": [{"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/failure-detector.sh\" 2>/dev/null || true", "timeout": 5}]
+    "PostToolUse": [{"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/failure-detector.sh\" 2>/dev/null || true", "timeout": 5}],
+    "Stop": [{"matcher": "*", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/loop-hook.sh\" 2>/dev/null || true", "timeout": 310}]
   }
 }
 HEOF
