@@ -323,6 +323,81 @@ show_status() {
   cat "$STATE_FILE"
 }
 
+# ===== WP-loop: compaction 状态续传（借鉴 tanweai/pua builder-journal + session-restore）=====
+# 与决策 13 断点续传（文件级幂等补缺）正交——compaction-journal 是运行时状态快照，
+# 在 context compaction 前把 current_phase/failure_count/stuck_since dump 到 builder-journal.md，
+# 新会话 SessionStart 检测 builder-journal.md 存在且 <2h → 恢复状态 + 注入「你在 X 卡了 N 次失败」。
+# 压力不因 compaction 重置（pua 核心洞察）。
+
+# dump 运行时状态到 builder-journal.md（PreCompact hook 调用，或 AI 主动调）
+dump_journal() {
+  local current=""; current=$(get_field phase 2>/dev/null || echo "unknown")
+  local change=""; change=$(get_field change 2>/dev/null || echo "unknown")
+  local fcount=""
+  # 读 failure_count（E2 failure-detector 的计数器，若存在）
+  local fc_file="${STATE_DIR}/.failure_count"
+  [[ -f "$fc_file" ]] && fcount=$(cat "$fc_file" 2>/dev/null || echo "0") || fcount="0"
+  # 读 peak pressure level
+  local peak_file="${STATE_DIR}/.peak_pressure_level"
+  local peak="0"
+  [[ -f "$peak_file" ]] && peak=$(cat "$peak_file" 2>/dev/null || echo "0")
+  ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  {
+    echo "---"
+    echo "ts: ${ts}"
+    echo "phase: ${current}"
+    echo "change: ${change}"
+    echo "failure_count: ${fcount}"
+    echo "peak_pressure_level: ${peak}"
+    echo "---"
+    echo ""
+    echo "## Active Task"
+    echo "（AI 填：当前在做什么，1-2 句）"
+    echo ""
+    echo "## Tried Approaches"
+    echo "（AI 填：试了什么，结果如何）"
+    echo ""
+    echo "## Next Candidate Action"
+    echo "（AI 填：下一步试什么）"
+    echo ""
+    echo "## Key Context"
+    echo "（AI 填：路径/命令/错误/决策）"
+    echo ""
+  } >> "${STATE_DIR}/builder-journal.md" 2>/dev/null || { echo "⚠ builder-journal.md 落盘失败（不阻塞）" >&2; return 0; }
+  echo "→ [compaction 续传] 运行时状态已 dump 到 ${STATE_DIR}/builder-journal.md"
+  echo "  phase=${current} failure_count=${fcount} peak=L${peak}"
+}
+
+# 检测 builder-journal.md 存在且 <2h → 恢复状态（SessionStart 调用）
+restore_journal() {
+  local journal="${STATE_DIR}/builder-journal.md"
+  [[ -f "$journal" ]] || { echo "（无 builder-journal.md，首次会话）"; return 0; }
+  # 检查时效（<2h = 7200s）
+  local mtime now age
+  mtime=$(stat -f %m "$journal" 2>/dev/null || stat -c %Y "$journal" 2>/dev/null || echo 0)
+  now=$(date +%s)
+  age=$(( now - mtime ))
+  if [[ "$age" -gt 7200 ]]; then
+    echo "（builder-journal.md 已过期（${age}s > 7200s），不恢复——视为新会话）"
+    return 0
+  fi
+  # 读最近的 journal 段（最后一个 --- 块）
+  local last_block
+  last_block=$(awk '/^---$/{n++} n%2==1{print}' "$journal" | tail -20)
+  local j_phase j_fcount j_peak
+  j_phase=$(echo "$last_block" | grep '^phase:' | sed 's/phase: *//')
+  j_fcount=$(echo "$last_block" | grep '^failure_count:' | sed 's/failure_count: *//')
+  j_peak=$(echo "$last_block" | grep '^peak_pressure_level:' | sed 's/peak_pressure_level: *//')
+  echo "→ [compaction 续传] 检测到近期 builder-journal.md（${age}s 前）"
+  echo "  恢复状态: phase=${j_phase:-unknown} failure_count=${j_fcount:-0} peak=L${j_peak:-0}"
+  echo "  ⚠ 压力不因 compaction 重置——若 failure_count≥2，仍按对应 L 等级行动"
+  if [[ "${j_fcount:-0}" -ge 2 ]]; then
+    echo "  → 你在上个会话连续失败 ${j_fcount} 次（压力 L${j_peak:-0}）"
+    echo "  → 先读 .swarm-yuan/error-history.jsonl 了解之前试了什么，避免重复失败方案"
+    echo "  → 读 builder-journal.md 的「Next Candidate Action」段，从那里继续"
+  fi
+}
+
 # ===== G1 C 档：checkpoint/restore 阶段级可回滚 =====
 # 与决策 13 断点续传（文件级幂等补缺）正交——checkpoint 是显式的阶段级一致性快照，
 # restore 回滚到指定快照（恢复 phase + 截断 decisions.jsonl 到快照行数 + 报告关键文件哈希变化）。
@@ -420,6 +495,8 @@ case "${1:-}" in
   next) next_phase ;;
   auto) auto_phase ;;
   status) show_status ;;
+  dump-journal) dump_journal ;;
+  restore-journal) restore_journal ;;
   checkpoint) checkpoint_phase ;;
   checkpoints|list-checkpoints) list_checkpoints ;;
   restore) restore_phase "${2:-}" ;;
@@ -436,5 +513,5 @@ case "${1:-}" in
     echo "  → 若装了 openspec: openspec update $(get_field change)"
     echo "  → 修订后须重跑 guard $current 确认门禁仍通过"
     ;;
-  *) echo "Usage: state-machine.sh {init|get|set|transition|guard|next|status|update} [args]"; exit 1 ;;
+  *) echo "Usage: state-machine.sh {init|get|set|transition|guard|next|status|update|dump-journal|restore-journal|checkpoint|restore} [args]"; exit 1 ;;
 esac
