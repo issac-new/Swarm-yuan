@@ -717,6 +717,8 @@ import sys, json, time
 now = time.time()
 total = 0
 recent = 0
+low_confidence = 0
+gates_with_learning = set()
 for i, line in enumerate(sys.stdin, 1):
     line = line.strip()
     if not line: continue
@@ -734,7 +736,17 @@ for i, line in enumerate(sys.stdin, 1):
     for k in ("gate", "root_cause", "fix_pattern"):
         if not obj.get(k):
             print("%d: 缺 %s 字段" % (i, k)); break
-print("TOTAL:%d RECENT:%d" % (total, recent))
+    # WP-Z19: 置信度字段检查（gstack learn 移植）
+    conf = obj.get("confidence", "")
+    if conf and conf not in ("high", "medium", "low"):
+        print("%d: confidence 非法值（%s，须 high/medium/low）" % (i, conf))
+    elif conf == "low":
+        low_confidence += 1
+    # 收集有学习记录的门禁（反哺门禁覆盖度）
+    g = obj.get("gate", "")
+    if g: gates_with_learning.add(g)
+print("TOTAL:%d RECENT:%d LOW_CONF:%d GATES:%d" % (total, recent, low_confidence, len(gates_with_learning)))
+print("GATES_WITH_LEARNING:" + ",".join(sorted(gates_with_learning)))
 ' < "$learn_file" 2>/dev/null || true)
     while IFS= read -r ln; do
       [[ -z "$ln" ]] && continue
@@ -742,6 +754,15 @@ print("TOTAL:%d RECENT:%d" % (total, recent))
         TOTAL:*)
           total=$(echo "$ln" | sed 's/.*TOTAL:\([0-9]*\).*/\1/')
           recent=$(echo "$ln" | sed 's/.*RECENT:\([0-9]*\)/\1/')
+          local _low_conf _gates_covered
+          _low_conf=$(echo "$ln" | sed 's/.*LOW_CONF:\([0-9]*\).*/\1/')
+          _gates_covered=$(echo "$ln" | sed 's/.*GATES:\([0-9]*\).*/\1/')
+          ;;
+        GATES_WITH_LEARNING:*)
+          local _gates_list; _gates_list="${ln#GATES_WITH_LEARNING:}"
+          if [[ -n "$_gates_list" ]]; then
+            echo "  ℹ 有学习记录的门禁：$(echo "$_gates_list" | tr ',' ' ')"
+          fi
           ;;
         *) echo "  ⚠ $ln"; issues=$((issues+1));;
       esac
