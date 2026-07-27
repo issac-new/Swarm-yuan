@@ -77,6 +77,7 @@ UNIVERSAL_FILES=(
   "scripts/task-scale.sh|gen|lite"
   "references/subagent-orchestration.md|ref"
   "references/governance-agents.md|ref|compliance"
+  "references/task-methodology-router.md|ref"
   "references/review-methodology.md|ref"
   "references/code-graph-tools.md|ref"
   "references/gsd-patterns.md|ref"
