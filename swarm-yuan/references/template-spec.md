@@ -286,7 +286,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | §构件库清单（全量） | §4 | **按探查维度全量**：前端(UI组件/store/composable) + 后端(controller/service/repository/middleware/model) + 异步(生产者/消费者/队列) + 桌面(主/preload/IPC) + 库(公共API)。清单计数 ≥ find 计数 × 0.95 | 按形态动态 |
 | §调用链路说明 | §5 | **按形态选链路模型**：前端(注册装配+模块矩阵+挂载树+store依赖) / 后端(请求处理管道+分层矩阵+数据流+外部依赖) / 异步(消息流转) / 微服务(跨服务调用链) + §5.1 编排约束注释 | 按形态动态 |
 | §应用接口清单（全量） | §6 | **按接口形态全量**：REST(每路由文件端点表) / GraphQL(Query/Mutation) / gRPC(service.method) / MQ(queue+handler) / 库(导出函数)。无通配符占位 | 按形态动态 |
-| §UI/UX设计资源清单 | §7 | 设计文档、主题、样式、品牌资源、i18n | 仅含前端 |
+| §UI/UX设计资源清单 | §7 | 设计文档、主题、样式、品牌资源、i18n；含前端时按 `references/frontend-design-methodology.md` 三层权威分层（PRODUCT.md 产品真相 > DESIGN.md 视觉决策 > surface brief 单面策略）组织设计决策，含 design token（colors/typography/rounded/spacing/components）+ 品牌资源 + i18n | 仅含前端 |
 | §数据字典及数据规范 | §8 | schema 位置、数据流、业务规则、勾稽关系 | 通用（有数据层时） |
 | §store/类型/模型全量清单 | §9 | 前端(store+类型) / 后端(ORM model+entity+DTO) / 通用(类型定义) | 按形态动态 |
 | §测试案例（check §1） | check §1 | 单测/接口/集成/回归/安全测试案例及数据 | 通用 |

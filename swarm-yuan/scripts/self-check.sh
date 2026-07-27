@@ -311,7 +311,7 @@ fi
 echo "  接线分层："
 echo "    深度接线(${FACT_RUNTIMES_DEEP:-4},precheck.sh 真实命令调用)：gitnexus / graphify / claude-mem / ocr"
 echo "    CLI 接线(${FACT_RUNTIMES_CLI:-3},门禁/状态机按需调用 CLI)：openspec / comet / gsd-core"
-echo "    方法论引用(${FACT_RUNTIMES_METHOD:-4},AI 按节点引用模式)：superpowers / gstack / ruflo / ECC"
+echo "    方法论引用(${FACT_RUNTIMES_METHOD:-5},AI 按节点引用模式)：superpowers / gstack / ruflo / ECC / impeccable"
 echo "  （每层有自带降级载体，未装不阻塞--详见 SKILL.md「它整合的方法论」分层表）"
 unset _runtime_base
 
@@ -1026,9 +1026,9 @@ check_runtime_tier() {
   for fn in has_openspec has_comet has_gsd_tools; do
     grep -qE "^${fn}\(\)" "$precheck" 2>/dev/null && cli_cnt=$((cli_cnt+1))
   done
-  # method 集合 = 11 - deep - cli（PROJECTS 表 11 项，方法论层无 has_ 守卫）
-  local method_cnt=$(( ${FACT_RUNTIMES:-11} - deep_cnt - cli_cnt ))
-  local exp_deep="${FACT_RUNTIMES_DEEP:-4}" exp_cli="${FACT_RUNTIMES_CLI:-3}" exp_method="${FACT_RUNTIMES_METHOD:-4}"
+  # method 集合 = 12 - deep - cli（PROJECTS 表 12 项，方法论层无 has_ 守卫）
+  local method_cnt=$(( ${FACT_RUNTIMES:-12} - deep_cnt - cli_cnt ))
+  local exp_deep="${FACT_RUNTIMES_DEEP:-4}" exp_cli="${FACT_RUNTIMES_CLI:-3}" exp_method="${FACT_RUNTIMES_METHOD:-5}"
   if [[ "$deep_cnt" == "$exp_deep" && "$cli_cnt" == "$exp_cli" && "$method_cnt" == "$exp_method" ]]; then
     echo "  ✓ 接线分层与 facts.conf 一致（deep=${deep_cnt} cli=${cli_cnt} method=${method_cnt}）"
   else
@@ -1342,6 +1342,69 @@ check_version_oracle_single_source() {
   fi
 }
 check_version_oracle_single_source
+
+# ===== frontend-design-methodology 引用存在性断言（G13，impeccable v4.0.2 吸收）=====
+# impeccable v4.0.2 作为方法论引用层第 5 对象（决策 27 吸收）：
+#   - references/frontend-design-methodology.md 必须存在且非空（absorb 载体 ① references 文档）
+#   - SKILL.md 方法论引用表须含 impeccable（absorb 载体 ② SKILL.md 叙事）
+#   - facts.conf FACT_RUNTIMES_METHOD=5 / FACT_RUNTIMES=12（口径同步硬约束）
+# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=54（决策 27 第 4 条：G<N> 是合规扩展点）。
+# 风格：对齐 G10 warn-only——文件缺失才 fail，叙事/口径漂移只 warn。
+check_frontend_design_methodology() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local facts="$base/assets/facts.conf"
+  [[ -f "$facts" ]] || return 0
+  if [[ -z "${FACT_RUNTIMES_METHOD:-}" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$facts"; set -u
+  fi
+  echo "▶ 前端设计方法论引用存在性断言（G13，impeccable v4.0.2 吸收）"
+  local _missing=0 _warn=0
+
+  # ① references/frontend-design-methodology.md 存在且非空
+  local _ref="$base/references/frontend-design-methodology.md"
+  if [[ ! -f "$_ref" ]]; then
+    warn "references/frontend-design-methodology.md 缺失（impeccable 吸收载体 ①，应新增该文件）"
+    _missing=$((_missing+1)); FAIL=1
+  elif [[ ! -s "$_ref" ]]; then
+    warn "references/frontend-design-methodology.md 为空（impeccable 吸收载体 ①，应填充内容）"
+    _missing=$((_missing+1)); FAIL=1
+  else
+    echo "  ✓ references/frontend-design-methodology.md 存在且非空"
+  fi
+
+  # ② SKILL.md 方法论引用表含 impeccable
+  local _skill="$base/SKILL.md"
+  if [[ -f "$_skill" ]] && grep -q "impeccable" "$_skill"; then
+    echo "  ✓ SKILL.md 含 impeccable 引用（方法论引用层第 5 对象）"
+  else
+    warn "SKILL.md 未含 impeccable 引用（impeccable 吸收载体 ②，应在方法论引用表加第 5 行）"
+    _warn=$((_warn+1))
+  fi
+
+  # ③ facts.conf 口径同步（warn-only，对齐 G10 风格）
+  if [[ "${FACT_RUNTIMES_METHOD:-0}" -ne 5 ]]; then
+    warn "facts.conf FACT_RUNTIMES_METHOD=${FACT_RUNTIMES_METHOD:-（未设）} ≠ 5（impeccable 加入方法论引用层应同步为 5）"
+    _warn=$((_warn+1))
+  else
+    echo "  ✓ facts.conf FACT_RUNTIMES_METHOD=5（方法论引用层 5 对象）"
+  fi
+  if [[ "${FACT_RUNTIMES:-0}" -ne 12 ]]; then
+    warn "facts.conf FACT_RUNTIMES=${FACT_RUNTIMES:-（未设）} ≠ 12（impeccable 加入应同步运行时总数为 12）"
+    _warn=$((_warn+1))
+  else
+    echo "  ✓ facts.conf FACT_RUNTIMES=12（12 个外部运行时）"
+  fi
+
+  if [[ $_missing -gt 0 ]]; then
+    echo "  ⚠ 前端设计方法论 absorb 载体缺失 ${_missing} 项（fail）"
+  elif [[ $_warn -gt 0 ]]; then
+    echo "  ℹ 前端设计方法论 absorb 叙事/口径漂移 ${_warn} 项（warn-only，不阻断）"
+  else
+    echo "  ✓ 前端设计方法论 absorb 三载体一致（references + SKILL.md + facts.conf）"
+  fi
+}
+check_frontend_design_methodology
 
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
