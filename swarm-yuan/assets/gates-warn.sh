@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# warn (21) 门禁（由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
-# 被 precheck.sh source（开发态）或 install.sh 内联（打包态）。
+# warn 物理文件（21 个 check_* 函数；由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
+# 被 precheck.sh source（开发态/安装态同路径；install.sh 整目录拷贝含本文件）。
+# 注：物理函数数 21 ≠ enforce-level warn 19——含 check_crypto/sast-deep/oss_eval（Z3 升
+# strict 后物理未迁移）；check_cognition 分层为 warn 但物理在 gates-advisory.sh。
+# _enforce_of 读 conf 而非文件位置，功能正确。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
 check_scope() {

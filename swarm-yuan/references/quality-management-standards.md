@@ -12,21 +12,21 @@
 
 | ISO 9001 原则 | swarm-yuan 对应机制 |
 |---|---|
-| 以顾客为关注焦点 | 16 特征卡第 14 项（领域知识探查）+ spec §1.2 价值声明（交付物以用户价值为锚） |
+| 以顾客为关注焦点 | 17 特征卡第 14 项（领域知识探查）+ spec §1.2 价值声明（交付物以用户价值为锚） |
 | 领导作用 | SKILL.md 铁律（红线前置声明）+ 决策分级 G1（重大事项须用户决策） |
 | 全员参与 | AI 主导 + 用户决策的协同模式（决策审计轨迹 decisions.jsonl 留痕） |
 | 过程方法（PDCA） | 生成流程 13 步 + workflow 10 节点 + state-machine 阶段管理（活动相互关联作为过程管理） |
 | 改进 | verifier/v1 验收回路 + self-check 文档一致性对账 + profile 动态升档（lite→standard→compliance） |
-| 循证决策 | 16 特征卡探查（先探查后生成）+ 门禁计数与指向关系的规律化治理（facts.conf 权威口径） |
+| 循证决策 | 17 特征卡探查（先探查后生成）+ 门禁计数与指向关系的规律化治理（facts.conf 权威口径） |
 | 关系管理 | 11 运行时整合（分层接线 + 诚实降级，外部供方能力显式登记） |
 
 ### 1.2 过程方法（PDCA）× 生成流程映射
 
 | PDCA | swarm-yuan 环节 |
 |---|---|
-| Plan（策划） | Step 0/0.5 探查（16 特征卡）→ Step 1 spec（六段式模板 §1-§22）→ Step 2 plan |
+| Plan（策划） | Step 0/0.5 探查（17 特征卡）→ Step 1 spec（六段式模板 §1-§23）→ Step 2 plan |
 | Do（实施） | Step 3-5 生成（SKILL.md/assets/references/scripts）+ Step 5.5 复用约束 |
-| Check（检查） | Step 6/7.5 门禁（36 门禁三档 enforce_level）+ verifier/v1 验收 + self-check |
+| Check（检查） | Step 6/7.5 门禁（54 门禁三档 enforce_level）+ verifier/v1 验收 + self-check |
 | Act（处置） | gate-fixture 双态回归 + profile 动态升档 + memory-persistence 经验沉淀 |
 
 ---
@@ -35,7 +35,7 @@
 
 ### 2.1 成熟度定位：≈ L3 已定义级
 
-swarm-yuan 具备 L3 的两个核心特征：**组织级过程资产**（六段式模板 + 62 框架规则集 + 32 领域知识）与**验证规程**（36 门禁 + verifier/v1 + gate-fixture 双态）。L4（量化管理）/L5（优化）**不具备**——R3 §6.2 已确认"缺真值度量则量化管理无从谈起"，此处显式声明而非假装覆盖。
+swarm-yuan 具备 L3 的两个核心特征：**组织级过程资产**（六段式模板 + 74 框架规则集 + 32 领域知识）与**验证规程**（54 门禁 + verifier/v1 + gate-fixture 双态）。L4（量化管理）/L5（优化）**不具备**——R3 §6.2 已确认"缺真值度量则量化管理无从谈起"，此处显式声明而非假装覆盖。
 
 ### 2.2 过程域 × 机制映射（含缺口声明）
 
@@ -45,7 +45,7 @@ swarm-yuan 具备 L3 的两个核心特征：**组织级过程资产**（六段�
 | PMC 项目监控 | state-machine 阶段管理 + gate-runs.jsonl 执行留痕 | 无量化阈值告警 |
 | REQM 需求管理 | `--requirements` + `--rtm`（ISO/IEC/IEEE 29148，REQ- 唯一编号 + 追溯矩阵） | — |
 | CM 配置管理 | `--deps` 版本锁定 + git worktree 隔离 | 版本基线单一 |
-| PPQA 过程与产品质量保证 | 36 门禁 + enforce_level 三档 + 豁免 5 字段留痕 | — |
+| PPQA 过程与产品质量保证 | 54 门禁 + enforce_level 三档 + 豁免 5 字段留痕 | — |
 | VER 验证 | verifier/v1 + gate-fixture 双态回归 | — |
 | VAL 确认 | spec §1.2 价值声明 + 验收回路 | 确认判据靠人工 |
 | MA 度量分析 | gate-runs.jsonl + adaptive gating 信号 | **缺真值度量**（认知分数是关键词启发式，非校准真值） |

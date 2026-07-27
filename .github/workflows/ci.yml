@@ -151,7 +151,7 @@ jobs:
           rc=$?
           rm -rf "$tmpdir"
           [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --all RC=0)" || { echo "✗ Generator self-gate failed RC=$rc"; exit 1; }
-      # G4 自举闭环：--all-full（标准 27 门）+ --compliance-suite（合规 9 门），三档全 RC=0
+      # G4 自举闭环：--all-full（标准 27 门）+ --compliance-suite（合规 17 门），三档全 RC=0
       - name: Self-gate --all-full (27 gates)
         run: |
           tmpdir="$(mktemp -d)"
@@ -162,7 +162,7 @@ jobs:
           rc=$?
           rm -rf "$tmpdir"
           [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --all-full RC=0)" || { echo "✗ Generator self-gate --all-full failed RC=$rc"; exit 1; }
-      - name: Self-gate --compliance-suite (9 gates)
+      - name: Self-gate --compliance-suite (17 gates)
         run: |
           tmpdir="$(mktemp -d)"
           cp swarm-yuan/assets/precheck.sh swarm-yuan/assets/gates-strict.sh swarm-yuan/assets/gates-warn.sh swarm-yuan/assets/gates-advisory.sh "$tmpdir/"
@@ -279,7 +279,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install shellcheck (verifier 内 shellcheck_scan 用)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
-      - name: verifier all (74 fixture id 级 + 45 gate-fixture + e2e + cli-ab + metrics-assert)
+      - name: verifier all (74 fixture id 级 + 48 gate-fixture + e2e + cli-ab + metrics-assert)
         # verifier all 较慢（cli-ab 155 次调用 ~3-5min），设 timeout 15min
         timeout-minutes: 15
         run: |

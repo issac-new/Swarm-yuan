@@ -49,7 +49,7 @@
 **做了**：
 1. 打包 `swarm-yuan-offline-cache.zip`（44MB，含 graphify-wheels + npm + gstack + superpowers）
 2. 上传到 GitHub Release `v2026.07.20-offline`（https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.20-offline）
-3. `install-offline-win.sh` 开头加降级链：本地 cache 不存在 → curl 从 Release 下载 → 降级在线安装
+3. `install-offline-win.sh（已废弃）` 开头加降级链：本地 cache 不存在 → curl 从 Release 下载 → 降级在线安装
 4. `.gitignore` 忽略 `*.whl/*.tgz/gstack/superpowers/`；`git rm --cached` 停止跟踪 37 文件（本地保留）
 
 **未做**：`git filter-repo` 历史瘦身（改写历史 + force push 风险高，留独立决策）。历史 blob 32MB 保留在 .git，但今后不再增长。
@@ -87,7 +87,7 @@
 
 | # | 建议 | 决策 | 理由 |
 |---|------|------|------|
-| 1 | precheck.sh 拆分为模块化（precheck/lib/gates/） | ❌ 不做 | 范式核心约束：单文件可移植（目标 skill 只需 cp 一个 precheck.sh）。拆分会破坏 install.sh 的"复制即用"设计 |
+| 1 | precheck.sh 拆分为模块化（precheck/lib/gates/） | ❌ 不做 | 范式核心约束：单文件可移植（目标技能 只需 cp 一个 precheck.sh）。拆分会破坏 install.sh 的"复制即用"设计 |
 | 2 | 分层配置 schema + local | ❌ 不做 | 已用 `_default_conf()` + `${VAR+x}` 兜底解决 set -u 崩溃；schema 文件增加复杂度但收益有限 |
 | 3 | Shell 可移植性（install.sh 加严格模式） | ✅ 部分做 | install.sh 已有 `set -euo pipefail`（报告不属实）；已加 `--version` + bash 版本校验 |
 | 4 | 框架片段 META 头标准化 | 🟡 标注 | 需改 57 片段，工作量大。当前注释约定 + verify-framework-ruleset.sh 已兜底四要素核验 |
@@ -107,16 +107,16 @@
 
 ## 2026-07-21 设计理念落地一致性整改决策
 
-> 触发：用户要求"整理项目设计理念，确保落地实现与设计一致，目标 skill 要能在实际项目中使用，运行时要真实使用不能是花架子，三平台自测回归集成测试"。
+> 触发：用户要求"整理项目设计理念，确保落地实现与设计一致，目标技能 要能在实际项目中使用，运行时要真实使用不能是花架子，三平台自测回归集成测试"。
 > 三路并行探查（运行时接线 / 全流程覆盖 / 跨平台兼容）后，3 项决策。
 
 ### 决策 9：11 运行时半接线→真接线（OpenSpec/comet/gsd-core）—— ✅ 做
 
 **问题**：探查发现 11 运行时里 4 个深度接线（GitNexus/graphify/claude-mem/ocr，precheck.sh 真实命令调用）、3 个半接线（OpenSpec/comet/gsd-core，self-check 能装但 precheck/hooks 不调用，靠 AI 自主用 slash）、4 个纯文档引用（superpowers/gstack/ECC/Ruflo）。与"整合 11 运行时"宣称有落差。
 
-**决策**：把 3 个半接线提升为 CLI 真接线——OpenSpec 接进 check_requirements（`openspec validate --all --strict`）、comet 接进 state-machine guard_phase（`comet guard`）、gsd-core 接进 check_review（`gsd-tools validate health`，warn 级）。全部带 `has_*` 守卫 + 降级到自带载体，未装不阻塞。4 个纯文档引用保持方法论引用层，诚实标注不假装深接。
+**决策**：把 3 个半接线提升为 CLI 真接线——OpenSpec 接进 check_requirements（`openspec validate --all --strict`）、comet 接进 state-machine guard_phase（`comet guard`）、gsd-core 接进 check_review（`gsd-tools validate health`，warn 级）。全部带 `has_*` 守卫 + 降级到自带载体，未装不阻塞。4 个纯文档引用保持方法论引用层，诚实标注不假装深度接线。
 
-**理由**：用户明确选"提升半接线为真接线"。3 个运行时都有真实 CLI（本机实测 comet/openspec/gsd-tools 子命令），接线后目标 skill 在装了这些运行时的项目里能真实调用其能力，不再是花架子。降级设计保护未装场景。
+**理由**：用户明确选"提升半接线为真接线"。3 个运行时都有真实 CLI（本机实测 comet/openspec/gsd-tools 子命令），接线后目标技能 在装了这些运行时的项目里能真实调用其能力，不再是花架子。降级设计保护未装场景。
 
 **fixture**：requirements-openspec（mock bin/openspec）、review-gsd（mock bin/gsd-tools）、state-machine comet guard 实测（mock bin/comet）。36 gate-fixture 全量验证无回归。
 
@@ -127,7 +127,7 @@
 **决策**：
 1. CI 加 windows-latest Job（bash -n + 61 fixture + 36 gate-fixture + .bat 烟雾测试）
 2. 修 8 个 .bat 的 WSL 路径转换（`echo !BASH_CMD! | findstr /i "wsl"` 判断，WSL 用 `/mnt/c/`，Git Bash 用 `/c/`）
-3. build-offline-win.sh 加多平台 wheel 下载（`pip3 download --platform macosx_11_0_arm64/manylinux2014_x86_64/win_amd64 --only-binary=:all:`）
+3. build-offline-win.sh（已废弃） 加多平台 wheel 下载（`pip3 download --platform macosx_11_0_arm64/manylinux2014_x86_64/win_amd64 --only-binary=:all:`）
 4. UPSTREAM.md 补离线包平台覆盖说明
 
 **理由**：用户明确选"补 Windows CI + 修离线包"。这是最实的虚假声称，必须让"三平台"名副其实。.bat WSL 路径 bug 是 bash 3.2 全角字符 bug 同类（平台相关沉睡），CI 实跑才能现形。
@@ -218,7 +218,7 @@
 **决策**：
 1. acceptance-criteria.md 全量更新：57→61、31→36、六组→全量 36 组、C3 补 Swarm-studio ABSENT、C4 补严格层/信息层分离、C8 补全量 36 组
 2. USAGE.md 步骤表 5.5 补 settings.local.json/.mcp.json 生成；hermes-agent→agent 运行时
-3. README（根 + swarm-yuan/）11 步→13 步；目录树后补"生成的目标 skill 含"清单（含 settings.local.json/.mcp.json）
+3. README（根 + swarm-yuan/）11 步→13 步；目录树后补"生成的目标技能含"清单（含 settings.local.json/.mcp.json）
 4. 本决策 15/16/17 记录入 paradigm-decisions.md
 
 **理由**：用户要求"全局排查并彻底完成"。文档口径与实现脱节会让外部观察者误以为"全是空壳"。本次把所有过时数字/术语/清单与当前实现对齐。

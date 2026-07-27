@@ -199,5 +199,5 @@
 - 升级后各运行时 `git describe --tags --abbrev=0` 已对齐目标版本（见 §1 表）。
 - graphify `git merge-base v0.9.19 v0.9.27 = v0.9.19`，确认线性路径（非异源 v1.0.0）。
 - 整合落地不新增 `check_*` 函数，`FACT_GATES_TOTAL` 保持 54 ≤ `FACT_GATES_BUDGET` 54（G9 守住）。
-- 新增 `FACT_VERSION_ORACLE_RULE` 是 `facts.conf` 变量（非 `precheck.conf` 变量），不计入 `FACT_CONF_VARS=170`。
+- 新增 `FACT_VERSION_ORACLE_RULE` 是 `facts.conf` 变量（非 `precheck.conf` 变量），不计入 `FACT_CONF_VARS=169`。
 - 落地验证见 self-check.sh G10 + shellcheck + bash -n + fixture 抽跑。

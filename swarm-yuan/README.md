@@ -45,14 +45,14 @@
 | 拼装式开发 | 新功能 = 既有稳定单元拼装 + 最小新增胶水代码。禁止重复造轮子/侵入式重构/破坏性改造 |
 | 呈现递进的关系 | 门禁不是"数 import 数"——每个计数背后指向一条关系规律 |
 | 特征卡是立法，门禁是执法，验证器是司法 | 17 项特征卡定义「项目应该是什么样的」，54 个门禁验证「代码是否符合」，`verifier/v1`（golden-vector/金向量 = 74 框架 fixture 的预期门禁 exit-code 向量，回归基线）用 fixture 双态 + cli A/B 字节级等价做独立司法 |
-| 分层整合，诚实降级 | 11 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深接 |
+| 分层整合，诚实降级 | 11 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深度接线 |
 | 重量是设计选择，不是缺陷 | 重量级范式通过 `--profile auto\|lite\|standard\|compliance` 四档自适应让重量显式可选（决策 18/25，WP-P10 范式定位） |
 
 ---
 
 ## 17 项特征卡：项目的「认知 DNA」
 
-AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项），每项落到真实路径和版本号，不用占位符。特征卡不是独立文件，而是**分散承接进目标技能 的各个文件中**，驱动门禁配置和文件填充。
+AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项），每项落到真实路径和版本号，不用占位符。特征卡不是独立文件，而是**分散承接进目标技能的各个文件中**，驱动门禁配置和文件填充。
 
 | # | 特征项 | AI 提取什么 | 驱动什么 |
 |---|--------|-----------|---------|
@@ -97,7 +97,7 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 
 > **门禁分层（决策 19）——执法强度横切维度：** 54 门禁按 `fail()` 能力分三档，与 core/standard/compliance 执行序列正交：
 > - **strict（20 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model/crypto/sast-deep/oss-eval）
-> - **warn（19 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄（cognition/contract/impact/service/api/state/frontend/domain/knowledge 等）
+> - **warn（19 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄（cognition/contract/impact/service/api/review/frontend/domain/knowledge 等）
 > - **advisory（15 个）**：0 个 fail，永不阻断，只 warn/pass（consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/canary/cwe-audit/cert-audit）
 >
 > **advisory 三轴命名（T12 澄清）**：① advisory-file=16（gates-advisory.sh 物理位置，含 cognition 因历史）；② advisory-level=15（0-fail enforce，gate-enforce-level.conf）；③ advisory-only=10（不在 ALL_GATES_CORE/STANDARD/COMPLIANCE 执行序列：operate/decision-audit/canary/cwe-audit/cert-audit/learnings/pr-quality/skill-supply-chain/state-phase/upstream-baseline）。三者正交，本文档统一用 enforce-level 口径（15）。
@@ -193,7 +193,7 @@ syft → cdxgen → lockfile 解析（--sbom）
 
 ## 7 行业 profile：强监管交付的行业基线
 
-7 个行业各一份 `.md`（`references/industry-profile-*.md`，法规依据）+ `.conf`（`assets/industry-profiles/<行业>.conf`，门禁映射）对，按需 `cat assets/industry-profiles/<行业>.conf >> <目标skill>/scripts/precheck.conf` 后 `precheck.sh --doctor` 自检为 0 fail 即接入：
+7 个行业各一份 `.md`（`references/industry-profile-*.md`，法规依据）+ `.conf`（`assets/industry-profiles/<行业>.conf`，门禁映射）对，按需 `cat assets/industry-profiles/<行业>.conf >> <目标技能>/scripts/precheck.conf` 后 `precheck.sh --doctor` 自检为 0 fail 即接入：
 
 | 行业 | 法规覆盖 | 基础标准 |
 |------|---------|---------|
@@ -288,7 +288,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | CLI 接线（3） | OpenSpec / comet / gsd-core | 门禁/状态机按需调用 CLI（`openspec validate`/`comet guard`/`gsd-tools validate health`）+ 降级到自带载体 |
 | 方法论引用（4） | superpowers / gstack / Ruflo / ECC | AI 按 workflow 节点引用其模式，swarm-yuan 自带等价降级载体 |
 
-每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深接。`--upstream-baseline` 门禁（advisory）自动检测 upstream drift，CI 可见但不阻断构建。
+每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深度接线。`--upstream-baseline` 门禁（advisory）自动检测 upstream drift，CI 可见但不阻断构建。
 
 **领域知识**：数据库 ACID / 网络 CORS / 安全密码哈希 / IM 消息保序 / 电商库存原子扣减 / 金融金额 Decimal……32 个领域客观规律（详见 `references/domain-knowledge.md`）。
 
@@ -354,7 +354,7 @@ Swarm-yuan/
 │   ├── plans/                    ← 4 份 dated 计划
 │   └── research/                 ← R1-R9 九份研究交付物
 ├── swarm-yuan/                   ← 生成器 skill
-│   ├── SKILL.md                  ← AI 入口（11 运行时/54 门禁/五层认知/Step 0-12）
+│   ├── SKILL.md                  ← AI 入口（11 运行时/54 门禁/五层认知/Step 0-8 共 13 节点）
 │   ├── install.sh / install.bat  ← 一键安装（7 环境检测 + Windows）
 │   ├── assets/                   ← 模板 + 门禁 + 状态机 + 调用追踪
 │   │   ├── precheck.sh           ← 门禁调度器（1450 行）
@@ -379,7 +379,7 @@ Swarm-yuan/
 │   └── ci/                       ← 自举 self-precheck.conf
 ```
 
-> **生成的目标技能 含**：SKILL.md / references/*.md / assets/* / scripts/(precheck.sh+precheck.conf+state-machine.sh+trace-log.sh+self-check.sh+generate-skill.sh+snippets.md+mcp-tools.md) / hooks/hooks.json / commands/(spec+precheck+explore) / settings.local.json / .mcp.json / .swarm-yuan-version
+> **生成的目标技能含**：SKILL.md / references/*.md / assets/* / scripts/(precheck.sh+gates-strict/warn/advisory.sh+gate-enforce-level.conf+precheck.conf 三件套+state-machine.sh+trace-log.sh+memory-writeback.sh+self-check.sh+detect-frameworks.sh+detect-profile-drift.sh+detect-spec-scale.sh+task-scale.sh+cost-report.sh+snippets.md+mcp-tools.md) / hooks/hooks.json / commands/(spec+precheck+explore) / settings.local.json / .mcp.json / .swarm-yuan-version（以 generate-skill.sh UNIVERSAL_FILES 38 条为真值；generate-skill.sh 本身不拷入目标技能）
 
 ---
 
@@ -404,7 +404,7 @@ Swarm-yuan/
 | 安全认证 profile | 6 | FACT_CERT_PROFILES=6 |
 | 生成流程 | 13 节点 / 8 工作流节点 | FACT_FLOW_STEPS=13 |
 | 决策治理类型 | 3（Mechanical / Taste / UserChallenge，对齐 ISO/IEC 42001） | FACT_DECISION_TYPES=3 |
-| 三平台 | macOS / Linux / Windows（CI 10 job 全覆盖） | — |
+| 三平台 | macOS / Linux / Windows（CI 11 job 全覆盖） | — |
 | 零占位符 | ✅（`generate-skill.sh --verify-completeness` 机器执法） | — |
 | 自举 | ✅（CI generator-self-gate 三档 RC=0） | FACT_BOOTSTRAP_GATES=3 |
 | 上下文表面瘦身（字节代理，非 token） | 193226B/2144L → 156992B/1856L（−18.8% / −13.4%，WP-P0~P6；模型 token 削减未测量） | FACT_CONTEXT_SURFACE_PRE_OPT=193226 |

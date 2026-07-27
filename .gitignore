@@ -23,3 +23,9 @@ node_modules/
 .claude/worktrees/
 .zcode/
 .swarm-yuan/
+
+# ---- 外部运行时上游仓库缓存（self-check/upstream-baseline 引用，1.6GB+，不入 git）----
+# research/<runtime>/  是各外部运行时的本地 git clone（供 self-check 版本核对），
+# offline-cache/  是 vendored 工具缓存；两者均为本地依赖，非项目交付物。
+swarm-yuan/research/
+swarm-yuan/offline-cache/

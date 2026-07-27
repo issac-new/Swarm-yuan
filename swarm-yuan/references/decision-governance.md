@@ -77,7 +77,7 @@ autoplan 的 User Challenge 五要素（`docs/research/R5-upstream-local.md` §�
 
 | # | SKILL.md 现有条目 | 默认分类 | User Challenge 触发条件 |
 |---|------------------|---------|----------------------|
-| 1 | 特征卡 16 项：AI 主动生成建议值 | Mechanical | 第 2 项可改范围争议 |
+| 1 | 特征卡 17 项：AI 主动生成建议值 | Mechanical | 第 2 项可改范围争议 |
 | 2 | 门禁 conf 142 变量：AI 主动推导 | Mechanical | 涉及安全规则（SENSITIVE_WHITELIST/CRYPTO_PROFILE） |
 | 3 | spec 模板填充：AI 主动预填 | Taste | §5.6 版本约束声明/§5.7 安全约束 |
 | 4 | 门禁 fail：AI 主动诊断+修复建议 | Taste | 修复涉及依赖升级/安全冲突/删稳定单元 |

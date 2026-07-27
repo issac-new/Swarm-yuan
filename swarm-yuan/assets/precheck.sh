@@ -551,8 +551,10 @@ _load_enforce_levels() {
 _load_enforce_levels
 
 # ===== WP-Q1.3 门禁函数 source 守卫（决策 19：三档拆分）=====
-# 开发态：source gates-strict/warn/advisory.sh 三文件（与 precheck.sh 同目录）
-# 打包态：install.sh 已内联三文件内容，SWARM_YUAN_BUNDLED=1 跳过 source
+# 开发态/安装态：source gates-strict/warn/advisory.sh 三文件（与 precheck.sh 同目录）。
+# install.sh 整目录拷贝（含三文件），故安装态与开发态同路径 source。
+# SWARM_YUAN_BUNDLED=1 预留给未来"单文件打包"形态（内联三文件到 precheck.sh）——
+# 当前无生产者置此变量（install.sh 仅 cp -R，未内联），留作扩展点；split-gates.sh:146 同此口径。
 if [[ -z "${SWARM_YUAN_BUNDLED:-}" ]]; then
   for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
     _gp="$(dirname "$0")/$_gf"

@@ -62,7 +62,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh <skill名称> <项目
 - `scripts/mcp-tools.md` — MCP 工具接入说明
 
 ### 8. AI 自动配置 precheck.conf
-从特征卡推导 169 个配置变量，自动填写 `scripts/precheck.conf`。
+从特征卡推导 169 个配置变量（precheck.conf 三件套：core 12 + arch 109 + compliance 48），自动填写 `scripts/precheck.conf`+`precheck.arch.conf`+`precheck.compliance.conf`。
 
 ### 9. AI 运行门禁验证
 ```bash
@@ -86,7 +86,7 @@ bash <skill路径>/scripts/precheck.sh --compliance-suite  # 合规 17 门禁（
 
 执行上述每一步时：
 1. **公告**：进入每步先输出一行结构化提示，格式 `→ [Step N] 调用 <技能/子代理/工具> · <目的>`（如 `→ [Step 4] 调用 graphify · 索引代码图谱`）。
-2. **落盘**：节点级默认——每步开始/结束时执行 `bash scripts/trace-log.sh --node "Step N" --actor <技能/子代理> --tool <工具/命令>`（生成器目录下的 `assets/trace-log.sh`，或目标 skill 的 `scripts/trace-log.sh`），追加到 `<项目>/.swarm-yuan/trace.jsonl`；调用级细节（每次具体调用）设 `SWARM_YUAN_TRACE=verbose` 时落盘。
+2. **落盘**：节点级默认——每步开始/结束时执行 `bash scripts/trace-log.sh --node "Step N" --actor <技能/子代理> --tool <工具/命令>`（生成器目录下的 `assets/trace-log.sh`，或目标技能的 `scripts/trace-log.sh`），追加到 `<项目>/.swarm-yuan/trace.jsonl`；调用级细节（每次具体调用）设 `SWARM_YUAN_TRACE=verbose` 时落盘。
 
 ## 安装方式
 

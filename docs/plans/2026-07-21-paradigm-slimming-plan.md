@@ -338,7 +338,7 @@ _conf_self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 **Files:**
 - Modify: `.gitignore`（L30-31 矛盾注释重写）
-- Create: `swarm-yuan/scripts/fetch-offline-cache.sh`
+- Create: `swarm-yuan/scripts/fetch-offline-cache.sh（WP 收口时未产出，实际改用 git clone + git lfs pull 的 research/ 本地缓存模式）`
 - Docs: `swarm-yuan/README.md`（L270 附近）、`docs/paradigm-decisions.md`（增补说明）
 
 **Interfaces:**
