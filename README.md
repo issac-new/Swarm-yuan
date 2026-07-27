@@ -87,7 +87,7 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 
 - **关节** ≈ 特征卡第 11 项「可复用稳定单元」五维字段 + `inventory-verify.sh` 计数核验
 - **编排约束** ≈ 调用链路分析 §C+.2 形态自适应 + §C+.3 每条约束附代码证据
-- **安检** ≈ 54 门禁三档 enforce（strict 20 / warn 19 / advisory 15）+ verifier 司法独立验证
+- **安检** ≈ 54 门禁三档 enforce（strict 21 / warn 19 / advisory 14）+ verifier 司法独立验证
 - **左移** ≈ spec §19 测试设计 + §20 变更影响 + §21 可观测性 + `--shift-left` 门禁
 - **审计可追溯** ≈ `trace-log.sh` → `trace.jsonl` + `decisions.jsonl`（ISO/IEC 42001 人工监督留痕）
 
@@ -102,9 +102,9 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 [^separation]: **三权分立隐喻的教学性边界**：本隐喻为教学类比，非政治学严格对应。门禁不具备法律的普遍约束力（仅作用于本项目，非社会规范）；verifier/v1 与被验证者同处一个 git 仓库与 CI，不具备司法的独立裁量权与终局性（其"独立"指验收脚本是独立子目录、不与门禁共享逻辑，而非机构独立）。隐喻用于帮助理解"定义规则-执行检查-独立验收"三组件分工，不构成对组件性质的经验断言。
 
 > **门禁分层（决策 19）——执法强度横切维度：** 54 门禁按 `fail()` 能力分三档，与 core/standard/compliance 执行序列正交：
-> - **strict（20 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model/crypto/sast-deep/oss-eval；Z3 fail-closed 化后 +crypto/sast-deep/oss-eval 升 strict）
+> - **strict（21 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model/crypto/sast-deep/oss-eval；Z3 fail-closed 化后 +crypto/sast-deep/oss-eval 升 strict）
 > - **warn（19 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄（Z3 后 cognition 降 warn）
-> - **advisory（15 个）**：0 个 fail，永不阻断，只 warn/pass（consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/canary/cwe-audit/cert-audit）
+> - **advisory（14 个）**：0 个 fail，永不阻断，只 warn/pass（consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/cwe-audit/cert-audit）
 >
 > 查看分层：`bash scripts/precheck.sh --list-gates`。advisory 门禁在子 shell 内重定义 fail/warn 为纯 echo，永不进计数——"advisory 是观测类，不阻断交付"语义机器化。分层由 `scripts/gen-enforce-level.sh` 自动按 fail() 数归类（幂等），手动覆盖见 precheck.sh `_ENFORCE_OVERRIDE`。
 
@@ -396,7 +396,7 @@ swarm-yuan 不是一次性写出来的，是 21 天、14 个 release tag、9 份
 | C7 | 交付物 | 《全面分析与重构报告》 |
 | C8 | 合规门禁 fixture | 全量 48 gate-fixture 组双态 + id-level assert；`GATE_FIXTURES_FAILS 0` |
 
-验收记录见 `verifier/runs/`（逐轮时间戳日志）；当前口径：**fixtures 74/74 | gate-fixtures 48/48 | cli-ab DIFFS 0 | 54 门禁 / advisory 15**（wp-y-final 日志的 45 组/advisory=16（旧）为该轮时点真值，Z3 后 advisory=15）。
+验收记录见 `verifier/runs/`（逐轮时间戳日志）；当前口径：**fixtures 74/74 | gate-fixtures 48/48 | cli-ab DIFFS 0 | 54 门禁 / advisory 14**（wp-y-final 日志的 45 组/advisory=16（旧）为该轮时点真值，Z3 后 advisory=15）。
 
 ```bash
 bash verifier/v1/run-verifier.sh all     # 全量验收（fixtures + gate-fixtures + e2e + shellcheck + metrics + cli-ab）
@@ -440,7 +440,7 @@ Swarm-yuan/
 │   │   ├── spec-template.md      ← 23 主段 spec 模板（§23=发布后运营）
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
-│   ├── references/               ← 30 个参考文档 + frameworks/（74 框架 + _template）
+│   ├── references/               ← 31 个参考文档 + frameworks/（74 框架 + _template）
 │   ├── scripts/                  ← 23 个脚本（生成器+自检+SARIF+drift+baseline+cost）
 │   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 48 gate-fixture + sarif-fixture）
 │   └── ci/                       ← 自举 self-precheck.conf
@@ -460,10 +460,10 @@ Swarm-yuan/
 | 维度 | 数值 | 口径源 |
 |------|------|--------|
 | **特征卡** | **17 项**（P0 六项 1/4/5/11/15/16 + P1 十一项） | FACT_FEATURE_CARDS=17 |
-| **质量门禁** | **54 个** = strict 20 + warn 19 + advisory 15（执法强度横切）；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
+| **质量门禁** | **54 个** = strict 21 + warn 19 + advisory 14（执法强度横切）；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
 | **配置变量** | **169 个**（precheck.conf 12 + precheck.arch.conf 109 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=169 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh，六段式 + 四要素量化验收） | FACT_FRAMEWORKS=74 |
-| **参考文档** | 30 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=30 |
+| **参考文档** | 31 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=31 |
 | **standards-map** | 75 条目（21 门禁级 + 50 框架级 + 4 advisory） | FACT_STANDARDS_MAP_ENTRIES=75 |
 | 运行时工具 | 11（深度 4 + CLI 3 + 方法论 4） | FACT_RUNTIMES=11 |
 | spec 模板 | 23 主段（§23=发布后运营） | FACT_SPEC_SECTIONS=23 |

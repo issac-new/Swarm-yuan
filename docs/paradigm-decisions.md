@@ -454,6 +454,28 @@ enforce_level 随 profile 调整是"门禁内部分级随项目档变化"的维�
 
 **与 self-check 现有断言的关系**：现有 `check_doc_consistency` 守"数字漂移"（声明 vs 真值）；本决策的预算断言守"数字膨胀"（真值 vs 预算）。前者防"说错"，后者防"长太多"，两者互补。
 
+#### 决策 26.1：等价替换 check_canary → check_loop_oracle（2026-07-27 WP-loop）
+
+**问题**：E1（Oracle Gate 循环）提供了脚本层 `setup-loop.sh` + `loop-hook.sh`，但无门禁化兜底——AI 不主动跑 loop 时，无机械门检查「是否有未完成的 loop」。`check_canary`（advisory 档，0 fail）在生成器自身仓库无实际 canary 环境（无发布产物/无线上指标），形同虚设：未配 `CANARY_LATENCY_MS/CANARY_ERROR_RATE` 时直接 `return 0`，从未 fail。
+
+**决策**：等价替换 `check_canary`（advisory）→ `check_loop_oracle`（strict）——
+1. 删除 `gates-advisory.sh` 的 `check_canary()` 函数体（保留占位注释供计数核验）
+2. 新增 `gates-strict.sh` 的 `check_loop_oracle()`：3 fail 调用（required/no_history/incomplete）→ strict 档
+3. `precheck.sh` `GATE_FLAGS` 替换 `--canary` → `--loop-oracle`
+4. `gate-enforce-level.conf` 重生成（gen-enforce-level.sh 幂等）：strict 21→21，advisory 14→14，总数维持 54
+5. canary 监控能力保留为 `references/canary-monitoring.md` 文档 + Oracle Gate 循环形式（`setup-loop.sh --verify '<canary 验证命令>'`）
+6. `FACT_GATES_ADVISORY_ONLY` 10→9（canary 是 advisory-only 10 之一）
+
+**理由**：
+1. **门禁预算守恒**——决策 26 要求新增须等额删除；canary（advisory，从未 fail）→ loop_oracle（strict，3 fail）是"低价值换高价值"的等价替换，总门禁数 54 不变
+2. **强制力升级**——canary 是 advisory（0 fail，永不阻塞），loop_oracle 是 strict（3 fail，可阻塞 RC）；从"观测不阻断"升级为"机器执法阻断"
+3. **能力保留**——canary 监控未消失，改为 Oracle Gate 循环形式落地（`setup-loop.sh --verify`），比原 advisory 门禁的 warn 强制力更强（promise 被拒则 loop 继续）
+4. **填补缺口**——E1 的脚本层 Oracle 只有 AI 主动启动 loop 才生效；`check_loop_oracle` 是门禁级 backstop，`LOOP_ORACLE_REQUIRED=1` 时强制要求走 Oracle 验证
+
+**与 E1（Oracle Gate 循环）的关系**：E1 是脚本层（`setup-loop.sh` + `loop-hook.sh`），本决策是门禁层（`check_loop_oracle`）。两层互补：脚本层管"loop 怎么跑"，门禁层管"loop 是否跑完"。
+
+**Z3 fail-closed**：`LOOP_ORACLE_REQUIRED=1` 时，无 loop 状态文件且无 `LOOP_ORACLE_EXEMPT_REASON` → fail（与 sbom/crypto/dengbao 等 7 项 strict 合规门禁同 fail-closed 语义）。
+
 
 ### 决策 27：运行时升级整合纪律--吸收优先于新增门禁（2026-07-26 runtime-update-2026-07）
 

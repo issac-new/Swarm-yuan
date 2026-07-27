@@ -78,6 +78,7 @@ UNIVERSAL_FILES=(
   "references/subagent-orchestration.md|ref"
   "references/governance-agents.md|ref|compliance"
   "references/task-methodology-router.md|ref"
+  "references/canary-monitoring.md|ref"
   "references/review-methodology.md|ref"
   "references/code-graph-tools.md|ref"
   "references/gsd-patterns.md|ref"

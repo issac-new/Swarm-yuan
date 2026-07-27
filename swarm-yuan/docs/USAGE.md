@@ -134,7 +134,7 @@ bash install.sh
 
 ### 门禁分层（决策 19，横切维度）
 
-54 门禁按 `fail()` 调用能力分三档（strict 20 / warn 19 / advisory 15），与 core/standard/compliance 三档正交（一个门禁同时属于 core + strict，或 standard + advisory）：
+54 门禁按 `fail()` 调用能力分三档（strict 21 / warn 19 / advisory 14），与 core/standard/compliance 三档正交（一个门禁同时属于 core + strict，或 standard + advisory）：
 
 | 分层 | 数量 | fail() 能力 | 行为 | 门禁清单 |
 |------|------|------------|------|----------|

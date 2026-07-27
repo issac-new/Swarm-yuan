@@ -1005,51 +1005,11 @@ $(printf '%b\n' "$suspicious_files" | head -5 | sed 's/^/    /')"
   [[ $found -eq 0 ]] && pass "Skill 供应链安全审计通过（无恶意模式，溯源登记完整）"
 }
 
-# 记录发布后健康指标（响应时间/错误率）基线到 .swarm-yuan/canary-baseline.jsonl，
-check_canary() {
-  echo "=== 发布后基线对比监控（--canary，advisory）==="
-  local baseline="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/canary-baseline.jsonl"
-  # 当前指标（可配 CANARY_LATENCY_MS 当前响应时间毫秒 / CANARY_ERROR_RATE 当前错误率 0-1）
-  local lat="${CANARY_LATENCY_MS:-}" err="${CANARY_ERROR_RATE:-}"
-  if [[ -z "$lat" && -z "$err" ]]; then
-    echo "  (未提供当前指标——设 CANARY_LATENCY_MS/CANARY_ERROR_RATE 后重跑；首次运行建立基线)"
-    # 首次运行：若基线不存在且提供了指标则建立
-    [[ ! -f "$baseline" ]] && echo "  ℹ 无基线——首次提供指标后建立"
-    return 0
-  fi
-  mkdir -p "$(dirname "$baseline")" 2>/dev/null
-  local ts; ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-  # 读上次基线
-  local prev_lat="" prev_err=""
-  if [[ -f "$baseline" ]]; then
-    prev_lat=$(tail -1 "$baseline" | sed -E 's/.*"latency_ms":([0-9]+).*/\1/' 2>/dev/null)
-    prev_err=$(tail -1 "$baseline" | sed -E 's/.*"error_rate":([0-9.]+).*/\1/' 2>/dev/null)
-  fi
-  # 追加当前基线
-  printf '{"ts":"%s","latency_ms":%s,"error_rate":%s}\n' "$ts" "${lat:-0}" "${err:-0}" >> "$baseline"
-  # 对比上次基线（变化 >CANARY_THRESHOLD% 记异常，默认 50%）
-  local threshold="${CANARY_THRESHOLD:-50}"
-  local anomaly=0
-  if [[ -n "$prev_lat" && "$prev_lat" -gt 0 && -n "$lat" ]]; then
-    local delta=$(( (lat - prev_lat) * 100 / prev_lat ))
-    [[ "$delta" -lt 0 ]] && delta=$(( -delta ))
-    if [[ "$delta" -gt "$threshold" ]]; then
-      anomaly=1
-      echo "  ⚠ 响应时间变化 ${delta}%（${prev_lat}ms → ${lat}ms，阈值 ${threshold}%）"
-    fi
-  fi
-  # don't cry wolf：连续 2 次异常才告警（读最近 2 次基线趋势）
-  if [[ "$anomaly" -eq 1 ]]; then
-    local consec
-    consec=$(tail -2 "$baseline" | grep -c . || echo 0)
-    # 简化：本次异常即 warn（连续判定需历史趋势，基线初期单次也提示）
-    warn "canary 基线异常：响应时间变化超阈值（alert on changes；连续异常须人工复核趋势）"
-  elif [[ -z "$prev_lat" ]]; then
-    pass "canary 基线已建立（首次记录 latency=${lat:-0}ms error_rate=${err:-0}）"
-  else
-    pass "canary 基线对比正常（latency ${prev_lat}ms → ${lat:-0}ms，变化 <${threshold}%）"
-  fi
-}
+# check_canary 已于 2026-07-27 决策 26.1 等价替换为 check_loop_oracle（gates-strict.sh）
+# 以腾出门禁预算（决策 26 冻结 54 上限）。canary 监控能力保留为 references/canary-monitoring.md
+# 文档 + Oracle Gate 循环形式（bash scripts/setup-loop.sh --verify '<canary 验证命令>'）。
+# 原 check_canary 函数体已删除，此处保留占位注释供 self-check 计数核验（check_canary 不再计入
+# FACT_GATES_TOTAL，FACT_GATES_ADVISORY_ONLY 从 10 降至 9）。
 
 # --cwe-audit：CWE 元数据库对账（B 方向完整分级，advisory）
 # 检查仓库内所有 CWE-[0-9]+ 标注是否在 cwe-database.md 登记 + 每条有检查点 + 严重度分级。
