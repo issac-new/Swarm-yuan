@@ -65,6 +65,7 @@ UNIVERSAL_FILES=(
   "scripts/state-machine.sh|assets|lite"
   "scripts/trace-log.sh|assets|lite"
   "scripts/memory-writeback.sh|assets|lite"
+  "assets/hooks/failure-detector.sh|assets|lite"
   "scripts/self-check.sh|gen|lite"
   "scripts/detect-frameworks.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
@@ -880,7 +881,8 @@ if [[ "$MODE" == "upgrade" ]]; then
       "Bash(bash scripts/state-machine.sh:*)",
       "Bash(bash scripts/self-check.sh:*)",
       "Bash(bash scripts/trace-log.sh:*)",
-      "Bash(bash scripts/generate-skill.sh:*)"
+      "Bash(bash scripts/generate-skill.sh:*)",
+      "Bash(bash scripts/failure-detector.sh:*)"
     ],
     "deny": [
       "Bash(rm -rf /:*)",
@@ -1187,7 +1189,8 @@ _write_if_absent "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
 {
   "hooks": {
     "SessionStart": [{"matcher": "startup|clear|compact", "command": "echo \"→ [hook:SessionStart] 调用 state-machine.sh status（阶段状态追踪）\"; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true"}],
-    "PreToolUse": [{"matcher": "Write|Edit", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --scope >/dev/null 2>&1 && echo \"→ [hook:PreToolUse] 调用 precheck --scope：✓ pass\" || echo \"→ [hook:PreToolUse] 调用 precheck --scope：✗ FAIL——运行 bash scripts/precheck.sh --scope 查看详情\""}]
+    "PreToolUse": [{"matcher": "Write|Edit", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --scope >/dev/null 2>&1 && echo \"→ [hook:PreToolUse] 调用 precheck --scope：✓ pass\" || echo \"→ [hook:PreToolUse] 调用 precheck --scope：✗ FAIL——运行 bash scripts/precheck.sh --scope 查看详情\""}],
+    "PostToolUse": [{"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/failure-detector.sh\" 2>/dev/null || true", "timeout": 5}]
   }
 }
 HEOF
@@ -1202,7 +1205,8 @@ _write_if_absent "$SKILL_DIR/settings.local.json" <<'SEOF'
       "Bash(bash scripts/state-machine.sh:*)",
       "Bash(bash scripts/self-check.sh:*)",
       "Bash(bash scripts/trace-log.sh:*)",
-      "Bash(bash scripts/generate-skill.sh:*)"
+      "Bash(bash scripts/generate-skill.sh:*)",
+      "Bash(bash scripts/failure-detector.sh:*)"
     ],
     "deny": [
       "Bash(rm -rf /:*)",
