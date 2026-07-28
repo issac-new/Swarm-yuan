@@ -1406,6 +1406,65 @@ check_frontend_design_methodology() {
 }
 check_frontend_design_methodology
 
+# ===== context-engineering-layering 引用存在性断言（G14，2026-07-27 Vibe编码文章吸收）=====
+# 上下文工程分层方法论（Prompt U 型曲线 / minimal≠short / 六层上下文模型 / Prompt=model adapter）：
+#   - references/context-engineering-layering.md 必须存在且非空（absorb 载体 ① references 文档）
+#   - SKILL.md 须含 context-engineering-layering 引用（absorb 载体 ② SKILL.md 叙事）
+#   - facts.conf FACT_REFERENCES 同步（口径同步硬约束，当前=33）
+# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=54（决策 27 第 4 条：G<N> 是合规扩展点）。
+# 风格：对齐 G13 warn-only——文件缺失才 fail，叙事/口径漂移只 warn。
+# 注：本文为"非运行时纯方法论"吸收（不进 FACT_RUNTIMES=12 / FACT_RUNTIMES_METHOD=5），
+#    只 +1 FACT_REFERENCES——与 impeccable（运行时+方法论双栖，进 12/5）区分。
+check_context_engineering_layering() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local facts="$base/assets/facts.conf"
+  [[ -f "$facts" ]] || return 0
+  if [[ -z "${FACT_REFERENCES:-}" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$facts"; set -u
+  fi
+  echo "▶ 上下文工程分层方法论引用存在性断言（G14，2026-07-27 Vibe编码文章吸收）"
+  local _missing=0 _warn=0
+
+  # ① references/context-engineering-layering.md 存在且非空
+  local _ref="$base/references/context-engineering-layering.md"
+  if [[ ! -f "$_ref" ]]; then
+    warn "references/context-engineering-layering.md 缺失（context-engineering 吸收载体 ①，应新增该文件）"
+    _missing=$((_missing+1)); FAIL=1
+  elif [[ ! -s "$_ref" ]]; then
+    warn "references/context-engineering-layering.md 为空（context-engineering 吸收载体 ①，应填充内容）"
+    _missing=$((_missing+1)); FAIL=1
+  else
+    echo "  ✓ references/context-engineering-layering.md 存在且非空"
+  fi
+
+  # ② SKILL.md references 清单含 context-engineering-layering
+  local _skill="$base/SKILL.md"
+  if [[ -f "$_skill" ]] && grep -q "context-engineering-layering" "$_skill"; then
+    echo "  ✓ SKILL.md 含 context-engineering-layering 引用（references 清单 + 吸收引文块）"
+  else
+    warn "SKILL.md 未含 context-engineering-layering 引用（context-engineering 吸收载体 ②，应在 references 清单与吸收引文块加行）"
+    _warn=$((_warn+1))
+  fi
+
+  # ③ facts.conf 口径同步（warn-only，对齐 G13 风格）
+  if [[ "${FACT_REFERENCES:-0}" -ne 33 ]]; then
+    warn "facts.conf FACT_REFERENCES=${FACT_REFERENCES:-（未设）} ≠ 33（context-engineering-layering 加入应同步 references 计数为 33）"
+    _warn=$((_warn+1))
+  else
+    echo "  ✓ facts.conf FACT_REFERENCES=33（references 文档数同步）"
+  fi
+
+  if [[ $_missing -gt 0 ]]; then
+    echo "  ⚠ 上下文工程分层 absorb 载体缺失 ${_missing} 项（fail）"
+  elif [[ $_warn -gt 0 ]]; then
+    echo "  ℹ 上下文工程分层 absorb 叙事/口径漂移 ${_warn} 项（warn-only，不阻断）"
+  else
+    echo "  ✓ 上下文工程分层 absorb 三载体一致（references + SKILL.md + facts.conf）"
+  fi
+}
+check_context_engineering_layering
+
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
 exit $FAIL
