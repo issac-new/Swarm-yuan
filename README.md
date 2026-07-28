@@ -4,7 +4,7 @@
 >
 > 17 项特征卡让 AI 认识你的项目，54 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
 
-[![Release](https://img.shields.io/badge/release-v2026.07.28-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.28)
+[![Release](https://img.shields.io/badge/release-v2026.07.29-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.29)
 [![Feature Card](https://img.shields.io/badge/feature%20card-17-green)]()
 [![Quality Gates](https://img.shields.io/badge/quality%20gates-54-orange)]()
 [![Frameworks](https://img.shields.io/badge/frameworks-74-blueviolet)]()
@@ -336,7 +336,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ---
 
-## 设计与决策弧线（v2026.07.04 → v2026.07.28）
+## 设计与决策弧线（v2026.07.04 → v2026.07.29）
 
 swarm-yuan 不是一次性写出来的，是 21 天、14 个 release tag、9 份研究交付物、20+ 个 WP 工作包迭代出来的。完整决策见 `docs/paradigm-decisions.md`（决策 1-25）+ `docs/` 下 dated 设计文档。
 
@@ -354,6 +354,7 @@ swarm-yuan 不是一次性写出来的，是 21 天、14 个 release tag、9 份
 | 2026-07-24 | WP-X/WP-Y 方法论门禁化完结：+graphify God Nodes / +state-phase / +upstream-baseline drift / +pr-quality / +skill-supply-chain / canary 可配阈值 → 54 门禁 | `verifier/runs/README.md` |
 | 2026-07-27 | 全面审计修复三连：术语统一 + 结构逻辑补全 + CI 红修复 + 数字漂移 + 标准失实 + 自检盲区（wp-full-audit / wp-audit-residual / wp-conf-syntax-guard / wp-audit-2026-07-27） | `docs/` dated 修复记录 |
 | 2026-07-28 | 治理与回路 WP 批次：+governance-agents 四权分离拓扑 / +failure-detector PostToolUse(Bash) 失败模式检测 / +integrity-guard PreToolUse 防作弊门 / +loop-oracle Oracle Gate 循环 hook / +compaction-state compaction 状态续传 / +task-router 任务类型×方法论路由表 / +z19-learnings check_learnings 置信度反哺 / +g55-loop-oracle 门禁化兜底（决策 26.1：check_canary → check_loop_oracle 等价替换）/ 吸收 impeccable v4.0.2 作为方法论引用层第 5 对象 | `verifier/runs/README.md` |
+| 2026-07-29 | 吸收上下文工程分层方法论（Vibe编码《Opus 4.8 删掉了73%的提示词，Opus 5 为何又新增了 82%》）：六层上下文模型（模型/System/Tools/CLAUDE.md/Skills/Memory/Hooks）↔ swarm-yuan 既有载体接线 + minimal≠short + Prompt=model adapter + Delivering work/Corrections 治理内核；G14 warn-only 断言；非运行时纯方法论吸收（FACT_REFERENCES 32→33，不进 12/5） | `swarm-yuan/references/context-engineering-layering.md` |
 
 ### 9 份研究交付物（R1-R9，2026-07-20~22）
 
