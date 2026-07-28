@@ -144,6 +144,7 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 > - graphify v0.9.27：honest-edge provenance 三标（`references/memory-persistence.md` + `trace-log.sh --confidence`）
 > - claude-mem v13.12.x：version oracle 单源真值（`self-check.sh` G10 断言 + `facts.conf` `FACT_VERSION_ORACLE_RULE`）
 > - impeccable v4.0.2：前端设计质量方法论（`references/frontend-design-methodology.md`，方法论引用层第 5 对象；Modes 四分类 + 三层权威分层 PRODUCT.md/DESIGN.md/surface brief + craft-floor Verify/Refuse 矩阵 + 59 反模式 ID 字典 + finish_reviewer 完工审查模式；填补 17 特征卡/54 门禁/74 框架规则集的视觉设计空白；G13 断言守引用存在性）
+> - 上下文工程分层（2026-07-27 Vibe编码文章吸收，非运行时——纯方法论）：Prompt U 型曲线证据（4.7 长规则书→4.8 薄 Harness→5 薄底座+治理协议）+ minimal≠short 原则 + 六层上下文模型（模型/System/Tools/CLAUDE.md/Skills/Memory/Hooks）+ Prompt=model adapter 视角 + Delivering work/Corrections 治理内核（`references/context-engineering-layering.md`；填补「规则该放哪一层」的元决策空白；G14 断言守引用存在性）
 
 > 工具引用铁律：深度+CLI 接线层（7 个）允许真实命令调用（`graphify`/`gitnexus`/`ocr`/`claude-mem`/`gsd-tools`/`openspec`/`comet`），不重新实现、不复制源码；方法论引用层（5 个）只引用模式不调 CLI。**代码图谱工具按技术能力选型（GitNexus 深度调用图 / graphify 广谱知识图，平权可按项目并用），不做授权驱动的降级**（决策 18，详见 `references/code-graph-tools.md` §选型）。
 
@@ -180,10 +181,11 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 电信行业 profile（等保三级/密评/工信部令 24 号 PIA/3GPP TS 33.501 ↔ 门禁映射 + telecom.conf 配套） | `references/industry-profile-telecom.md` |
 | 工控/物联网行业 profile（等保三级/密评/IEC 62443 SL1-SL4/GB/T 33009 ↔ 门禁映射 + industrial.conf 配套） | `references/industry-profile-industrial.md` |
 | 前端设计质量方法论（impeccable v4.0.2 吸收，方法论引用层第 5 对象；Modes/三层权威/craft-floor/59 反模式字典/finish_reviewer 完工审查） | `references/frontend-design-methodology.md` |
+| 上下文工程分层（Prompt U 型曲线 / minimal≠short / 六层上下文模型 / Prompt=model adapter / Delivering work+Corrections 治理内核；2026-07-27 文章吸收） | `references/context-engineering-layering.md` |
 | 框架规则库（生成时按 ACTIVE_FRAMEWORKS 读取对应 `<fw>.md`） | `references/frameworks/` |
 | 落地案例（关节编排/Articulated Orchestration 类汇报论据，S18 补入索引） | `references/case-studies/articulation-orchestration.md` |
 
-> **注**：另 2 份 references（`cwe-database.md` / `security-certification-profiles.md`）为门禁内部数据文件，由 `--cwe-audit`/`--cert-audit` 机械读取，不列入本 AI 阅读表（references/ 实际 30 文件 = 本表 28 + 门禁内部 2；`case-studies/` 子目录单独计，不在 30 内）。
+> **注**：另 2 份 references（`cwe-database.md` / `security-certification-profiles.md`）为门禁内部数据文件，由 `--cwe-audit`/`--cert-audit` 机械读取，不列入本 AI 阅读表（references/ 实际 33 文件 = 本表 31 + 门禁内部 2；`case-studies/` 子目录单独计，不在 33 内）。
 
 ## 使用说明
 
