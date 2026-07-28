@@ -797,7 +797,9 @@ copy_universal_templates() {
     # precheck.conf 三件套：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
     [[ "$mode" == "upgrade" && ( "$dest" == "scripts/precheck.conf" || "$dest" == "scripts/precheck.arch.conf" || "$dest" == "scripts/precheck.compliance.conf" ) ]] && continue
     case "$kind" in
-      assets) src="$ASSETS_DIR/${dest##*/}" ;;
+      # WP-loop-followup: dest 形如 "assets/hooks/failure-detector.sh"，源须保留 hooks/ 子目录
+      # （原 ${dest##*/} 只取 basename，丢了 hooks/ 子目录，致 cp 找不到 assets/failure-detector.sh）
+      assets) src="$ASSETS_DIR/${dest#assets/}" ;;
       ref)    src="$SRC_REF/${dest##*/}" ;;
       gen)    src="$SRC_SCRIPTS/${dest##*/}" ;;
       *) echo "ERROR: UNIVERSAL_FILES 未知源类别: $entry" >&2; return 1 ;;
