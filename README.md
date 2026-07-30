@@ -8,7 +8,7 @@
 [![Feature Card](https://img.shields.io/badge/feature%20card-17-green)]()
 [![Quality Gates](https://img.shields.io/badge/quality%20gates-54-orange)]()
 [![Frameworks](https://img.shields.io/badge/frameworks-74-blueviolet)]()
-[![Runtimes](https://img.shields.io/badge/runtimes-12-yellow)]()
+[![Runtimes](https://img.shields.io/badge/runtimes-13-yellow)]()
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 > **口径权威源**：`swarm-yuan/assets/facts.conf`——所有 catchphrase 数字的单一事实源，`scripts/self-check.sh` 机器执法做漂移检测。本 README 每一个数字都可被 `facts.conf` + 机械计数复现。
@@ -282,9 +282,9 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ---
 
-## 12 个运行时 + 32 个领域
+## 13 个运行时 + 32 个领域
 
-**运行时**（只引用调用不重新实现，按接线深度分三层；`docs/upstream-baseline.md` 登记 12 个运行时的仓库/许可证/基线版本/drift 状态）：
+**运行时**（只引用调用不重新实现，按接线深度分三层；`docs/upstream-baseline.md` 登记 13 个运行时的仓库/许可证/基线版本/drift 状态）：
 
 | 层 | 运行时 | 接线方式 |
 |----|--------|---------|
@@ -300,7 +300,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ## AI 工具兼容三档（诚实分层，不假装全深度接线）
 
-与 12 个运行时的三层接线范式平行——7 个 AI 工具的兼容深度同样分档声明：
+与 13 个运行时的三层接线范式平行——7 个 AI 工具的兼容深度同样分档声明：
 
 | 档 | 名称 | 能力 | 工具 |
 |---|------|------|------|
@@ -443,7 +443,7 @@ Swarm-yuan/
 │   │   ├── spec-template.md      ← 23 主段 spec 模板（§23=发布后运营）
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
-│   ├── references/               ← 33 个参考文档 + frameworks/（74 框架 + _template）
+│   ├── references/               ← 34 个参考文档 + frameworks/（74 框架 + _template）
 │   ├── scripts/                  ← 23 个脚本（生成器+自检+SARIF+drift+baseline+cost）
 │   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 48 gate-fixture + sarif-fixture）
 │   └── ci/                       ← 自举 self-precheck.conf
@@ -466,9 +466,9 @@ Swarm-yuan/
 | **质量门禁** | **54 个** = strict 21 + warn 19 + advisory 14（执法强度横切）；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
 | **配置变量** | **169 个**（precheck.conf 12 + precheck.arch.conf 109 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=169 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh，六段式 + 四要素量化验收） | FACT_FRAMEWORKS=74 |
-| **参考文档** | 33 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=33 |
+| **参考文档** | 34 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=34 |
 | **standards-map** | 75 条目（21 门禁级 + 50 框架级 + 4 advisory） | FACT_STANDARDS_MAP_ENTRIES=75 |
-| 运行时工具 | 12（深度 4 + CLI 3 + 方法论 5） | FACT_RUNTIMES=12 |
+| 运行时工具 | 13（深度 4 + CLI 4 + 方法论 5） | FACT_RUNTIMES=13 |
 | spec 模板 | 23 主段（§23=发布后运营） | FACT_SPEC_SECTIONS=23 |
 | 领域知识 | 32 个领域 | FACT_DOMAINS=32 |
 | 认知基底 | 5 层 | — |

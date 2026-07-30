@@ -1357,9 +1357,19 @@ check_sast_deep() {
   fi
   _sast_exempted() { printf '%s\n' "$_sast_exempt" | grep -qF "$1"; }
   local bin=""
-  # 载体解析：builtin=强制内置；可执行路径=直接调用（fixture mock 亦走此分支）；空/auto=降级链探测
+  # 载体解析：builtin=强制内置；codex-security=语义层 CLI（需 Node22+/Python3.10+/OPENAI_API_KEY）；
+  #   可执行路径=直接调用（fixture mock 亦走此分支）；空/auto=降级链探测
   if [[ "$tool" == "builtin" ]]; then
     bin="builtin"
+  elif [[ "$tool" == "codex-security" ]]; then
+    # codex-security 语义层（source→sink 数据流 + 攻击路径推演，超越 AST/词法层）
+    # 需求：Node.js 22.13+ / 24.x / 26.x + Python 3.10+ + OPENAI_API_KEY 或 CODEX_API_KEY
+    # 详见 references/codex-security-methodology.md §二 CLI 接线方式
+    if command -v npx >/dev/null 2>&1 && [[ -n "${OPENAI_API_KEY:-${CODEX_API_KEY:-}}" ]]; then
+      bin="codex-security"
+    else
+      warn "SAST_DEEP_TOOL=codex-security 但 npx 不可用或未设 OPENAI_API_KEY/CODEX_API_KEY——降级自动探测（semgrep→opengrep→builtin）"
+    fi
   elif [[ "$tool" != "auto" && -n "$tool" ]]; then
     if [[ -x "$tool" ]]; then bin="$tool"; else warn "SAST_DEEP_TOOL=${tool} 不可执行，降级自动探测"; fi
   fi
@@ -1370,11 +1380,71 @@ check_sast_deep() {
   fi
   if [[ "$bin" == "builtin" ]]; then
     # 自带降级载体（词法模式族，明示降级；AST/数据流层未执行）
-    echo "  ⓘ 降级为内置词法模式族（semgrep/opengrep 不可用；AST/数据流层未执行）"
+    echo "  ⓘ 降级为内置词法模式族（semgrep/opengrep/codex-security 不可用；AST/数据流/语义层未执行）"
     trace_tool "sast-deep" "builtin-lexical"
     if _sast_deep_lexical_scan "gate_sast_deep_builtin: 内置模式族检出高危代码执行 sink（eval/exec/Runtime.exec/child_process.exec；GB/T 34943/34944/34946 漏洞类别，降级词法检出）："; then
       found=1
     fi
+  elif [[ "$bin" == "codex-security" ]]; then
+    # codex-security 语义层（source→sink 数据流 + 攻击路径推演 + 威胁模型 + scan contract 三件套）
+    # 详见 references/codex-security-methodology.md §二 CLI 接线方式
+    echo "  ⓘ SAST 载体：codex-security（语义层：source→sink 数据流 + 攻击路径推演）"
+    trace_tool "sast-deep" "codex-security"
+    local _cs_scan_root; _cs_scan_root="$(mktemp -d "${TMPDIR:-/tmp}/codex-security.XXXXXX")"
+    local _cs_sev="high"
+    [[ "$sev" == "warning" ]] && _cs_sev="medium"
+    local _cs_rc=0
+    npx @openai/codex-security scan "${SECURITY_SCAN_DIRS[@]}" \
+      --output-dir "$_cs_scan_root/results" \
+      --json \
+      --fail-on-severity "$_cs_sev" \
+      >/tmp/codex-security-sast-deep.log 2>&1 || _cs_rc=$?
+    if [[ $_cs_rc -eq 1 ]]; then
+      # rc=1 = 策略违规（检出达标严重级别 finding）
+      if _sast_exempted gate_sast_deep_findings; then
+        warn "gate_sast_deep_findings: codex-security 检出达标严重级别（${_cs_sev}）发现（已豁免留痕）——详见 /tmp/codex-security-sast-deep.log + $_cs_scan_root/results/findings.json"
+      else
+        fail "gate_sast_deep_findings: codex-security 检出达标严重级别（${_cs_sev}）以上发现（语义层 source→sink 数据流 + 攻击路径推演；GB/T 34943/34944/34946 漏洞类别）——详见 /tmp/codex-security-sast-deep.log + $_cs_scan_root/results/findings.json"
+        found=1
+      fi
+    elif [[ $_cs_rc -eq 2 ]]; then
+      # rc=2 = 输入无效/覆盖不全/运行时错误 → 降级 semgrep→builtin
+      warn "codex-security 执行失败或覆盖不全（rc=2）——降级自动探测（semgrep→opengrep→builtin）"
+      if command -v semgrep >/dev/null 2>&1; then
+        bin="semgrep"
+      elif command -v opengrep >/dev/null 2>&1; then
+        bin="opengrep"
+      else
+        bin="builtin"
+      fi
+      # 重新走 semgrep/opengrep/builtin 分支（下方统一处理）
+      if [[ "$bin" == "builtin" ]]; then
+        trace_tool "sast-deep" "builtin-lexical"
+        if _sast_deep_lexical_scan "gate_sast_deep_builtin: 内置模式族检出高危代码执行 sink（codex-security 失败后降级检出；GB/T 34943/34944/34946 漏洞类别）："; then
+          found=1
+        fi
+      else
+        trace_tool "sast-deep" "$bin"
+        json=$("$bin" scan --config p/default --json --quiet "${SECURITY_SCAN_DIRS[@]}" 2>/dev/null) || _rc=$?
+        _e=$(printf '%s\n' "$json" | grep -cE '"severity"[^,]*ERROR' || true)
+        _w=$(printf '%s\n' "$json" | grep -cE '"severity"[^,]*WARNING' || true)
+        echo "  ⓘ ${bin} 结果：ERROR=${_e} WARNING=${_w}"
+        if [[ "$sev" == "warning" && $((_e+_w)) -gt 0 ]] || [[ "$sev" == "error" && "$_e" -gt 0 ]]; then
+          if _sast_exempted gate_sast_deep_findings; then
+            warn "gate_sast_deep_findings: ${bin} 检出达标严重级别发现（已豁免留痕）"
+          else
+            fail "gate_sast_deep_findings: ${bin} 检出达标严重级别（${sev}）以上发现 ERROR=${_e} WARNING=${_w}（GB/T 34943/34944/34946 漏洞类别）——详见 ${bin} JSON 输出"
+            found=1
+          fi
+        fi
+      fi
+    else
+      # rc=0 = 完成报告扫描，无策略违规
+      echo "  ⓘ codex-security 结果：无达标严重级别（${_cs_sev}）以上发现（语义层扫描通过）"
+      # 可选 SARIF 导出（不阻塞）
+      npx @openai/codex-security export "$_cs_scan_root/results" --export-format sarif --output "$_cs_scan_root/results.sarif" 2>/dev/null || true
+    fi
+    rm -rf "$_cs_scan_root"
   else
     echo "  ⓘ SAST 载体：${bin}（AST/规则层）"
     trace_tool "sast-deep" "$bin"
