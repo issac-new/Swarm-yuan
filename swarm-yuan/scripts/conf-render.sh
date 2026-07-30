@@ -109,9 +109,9 @@ _src_test()  { [[ "$_test_confirmed" -eq 1 ]] && echo detected || echo default; 
 _render_var() { # $1=变量名 $2=模板行
   local vn="$1" line="$2"
   case "$vn" in
-    PROJECT_DIR)      printf "PROJECT_DIR=%s  # AUTO:detected" "$PROJ" ;;
-    BUILD_CMD)        printf "BUILD_CMD=%s  # AUTO:%s" "$_build" "$(_src_build)" ;;
-    TEST_CMD)         printf "TEST_CMD=%s  # AUTO:%s" "$_test" "$(_src_test)" ;;
+    PROJECT_DIR)      printf 'PROJECT_DIR=%s  # AUTO:detected' "$PROJ" ;;
+    BUILD_CMD)        printf "BUILD_CMD='%s'  # AUTO:%s" "$_build" "$(_src_build)" ;;
+    TEST_CMD)         printf "TEST_CMD='%s'  # AUTO:%s" "$_test" "$(_src_test)" ;;
     ACTIVE_FRAMEWORKS)
       local fw_arr=""
       local f

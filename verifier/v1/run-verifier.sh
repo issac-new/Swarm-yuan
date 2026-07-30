@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # run-verifier.sh — Swarm-yuan 重构验收器 v1
 # 用法: bash verifier/v1/run-verifier.sh <mode> [repo_root]
-#   mode = fixtures | gate-fixtures | e2e | shellcheck | metrics | cli-ab | all
+#   mode = fixtures | gate-fixtures | e2e | gen-e2e | shellcheck | metrics | cli-ab | all
 #   metrics = 既有测量行 + C6 阈值断言（v1/metrics-assert.sh）；cli-ab = C5 A/B 逐字节等价断言（v1/cli-ab-test.sh）
 # 输出: 机器可读结果到 stdout，供 verifier/runs/ 记录
 set -u
@@ -48,6 +48,13 @@ fixtures() {
 e2e() {
   bash "$SY/tests/e2e/run-e2e.sh" >/tmp/verifier-e2e.log 2>&1
   echo "E2E_RC $?"
+}
+
+# WP-B：生成产物 e2e 回归——断言 generate-skill.sh create 产物质量（骨架/JSON/workflow/conf 嗅探）。
+# 与 e2e()（测 --inject-frameworks 注入链路）互补：e2e 测生成器行为，gen_e2e 测生成产物。
+gen_e2e() {
+  bash "$SY/tests/e2e/run-gen-e2e.sh" >/tmp/verifier-gen-e2e.log 2>&1
+  echo "GEN_E2E_RC $?"
 }
 
 # 合规门禁 fixture（C8）：遍历全部 gate fixture 组（WP3.3：从硬编码 6 组改为全量遍历），双态 + id 级断言
@@ -152,17 +159,20 @@ case "$MODE" in
   fixtures) fixtures ;;
   gate-fixtures) gate_fixtures ;;
   e2e) e2e ;;
+  gen-e2e) gen_e2e ;;
   shellcheck) shellcheck_scan ;;
   metrics) metrics; metrics_assert ;;
   cli-ab) cli_ab ;;
   bootstrap) bootstrap_self_gate ;;
   # all：既有各模式输出与投票语义不变（shellcheck 不投票、gate_fixtures 投票），
   # 新增 metrics_assert、cli_ab、bootstrap_self_gate 三票（fail-closed），任一票失败则 all 非零。
+  # WP-B：gen_e2e 加入 all 投票（fail-closed，守生成产物质量回归）。
   all)
     all_fail=0
     metrics; metrics_assert || all_fail=1
     shellcheck_scan
     e2e
+    gen_e2e || all_fail=1
     fixtures
     gate_fixtures || all_fail=1
     cli_ab || all_fail=1

@@ -35,7 +35,7 @@
 | 拼装式开发 | 新功能 = 既有稳定单元拼装 + 最小新增胶水代码。禁止重复造轮子/侵入式重构/破坏性改造 |
 | 呈现递进的关系 | 门禁不是"数 import 数"——每个计数背后指向一条关系规律 |
 | 特征卡是立法，门禁是执法，验证器是司法 | 17 项特征卡定义「项目应该是什么样的」，54 个门禁验证「代码是否符合」，`verifier/v1` 用 fixture 双态 + cli A/B 字节级等价做独立司法 |
-| 分层整合，诚实降级 | 12 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深度接线 |
+| 分层整合，诚实降级 | 13 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深度接线 |
 | 重量是设计选择，不是缺陷 | 重量级范式通过 `--profile auto\|lite\|standard\|compliance` 四档自适应让重量显式可选（决策 18/25，WP-P10 范式定位） |
 
 ---
@@ -418,14 +418,14 @@ Swarm-yuan/
 ├── docs/                         ← 设计文档 + 计划 + 研究交付物
 │   ├── paradigm-decisions.md     ← 决策 1-25（口径权威源 facts.conf）
 │   ├── paradigm-positioning.md   ← WP-P10 范式定位
-│   ├── upstream-baseline.md      ← 12 运行时登记 + drift 处置
+│   ├── upstream-baseline.md      ← 13 运行时登记 + drift 处置
 │   ├── 2026-07-17-framework-rules-engine-design.md
 │   ├── 2026-07-20-audit-optimization-decisions.md
 │   ├── 2026-07-20-upstream-vendor-decision.md
 │   ├── plans/                    ← 4 份 dated 计划
 │   └── research/                 ← R1-R9 九份研究交付物
 ├── swarm-yuan/                   ← 生成器 skill
-│   ├── SKILL.md                  ← AI 入口（12 运行时/54 门禁/五层认知/Step 0-8 共 13 节点）
+│   ├── SKILL.md                  ← AI 入口（13 运行时/54 门禁/五层认知/Step 0-8 共 13 节点）
 │   ├── install.sh / install.bat  ← 一键安装（7 环境检测 + Windows）
 │   ├── assets/                   ← 模板 + 门禁 + 状态机 + 调用追踪
 │   │   ├── precheck.sh           ← 门禁调度器（1420 行）
