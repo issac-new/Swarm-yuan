@@ -21,7 +21,7 @@
 | ruflo | ruvnet/ruflo（原 Claude Flow） | MIT | v3.32.9（2026-07-26 升级；`references/subagent-orchestration.md:277`、`references/review-methodology.md:208-209`） | npm 3.32.9 | synced（2026-07-26 升级 research 仓库；方法论引用层，无运行时调用） | baseline_status=synced |
 | ECC | affaan-m/ECC | MIT | v2.0.0（`references/subagent-orchestration.md:149`） | v2.0.0（2026-06 稳定版） | synced | baseline_status=synced |
 | impeccable | pbakaus/impeccable | Apache-2.0 | v4.0.2（2026-07-28 吸收；`references/frontend-design-methodology.md`，方法论引用层第 5 对象；Modes/三层权威/craft-floor/59 反模式字典/finish_reviewer 完工审查模式；G13 断言守引用存在性） | v4.0.2（2026-07-28 GitHub 实测） | synced（2026-07-28 clone research 仓库 + 方法论吸收，无 CLI 调用） | baseline_status=synced |
-| codex-security | openai/codex-security | Apache-2.0 | v0.1.4（2026-07-30 吸收；`references/codex-security-methodology.md`，CLI 接线层第 4 对象；语义级安全扫描 source→sink 数据流 + 静态评估七元组 + 威胁模型五要素 + 攻击路径分析 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；`--sast-deep` 门禁 `SAST_DEEP_TOOL=codex-security` 时前置调用；G15 断言守 CLI 接线存在性） | v0.1.4（2026-07-30 GitHub 实测） | synced（2026-07-30 clone research 仓库 + CLI 接线 + 方法论吸收） | baseline_status=synced |
+| codex-security | openai/codex-security | Apache-2.0（完全开源） | v0.1.4（2026-07-30 吸收；`references/codex-security-methodology.md`，CLI 接线层第 4 对象；**AI 约束推理扫描（非传统 SAST——OpenAI 官方明确「不包含 SAST 报告」）** + source→sink 数据流 + 静态评估七元组 + 威胁模型五要素 + 攻击路径分析 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；`--sast-deep` 门禁 `SAST_DEEP_TOOL=codex-security` 时显式调用，**非降级链一环（非 SAST，auto 降级链不变，两者正交可并行）**；开源 Apache-2.0，Trusted Access 非付费门槛（推荐的身份审核），API 按 token 计费；G15 断言守 CLI 接线存在性） | v0.1.4（2026-07-30 GitHub 实测） | synced（2026-07-30 clone research 仓库 + CLI 接线 + 方法论吸收） | baseline_status=synced |
 
 ## 二、关键结论
 
