@@ -87,7 +87,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 ⓪自检(12运行时) → ⓪.5读取项目知识(AGENTS.md/CLAUDE.md/记忆/agent运行时) → ①探查仓库(三路并行+图谱工具) → ①.5项目形态判定(§C+.0)+详尽组件库清单+调用链路分析(§C+.1-C+.5按维度动态适配) → ②提取17项特征卡 → ③create骨架 → ④AI填充全部文件(消除全部占位符) → ④.5框架深化(逐激活框架:按 references/frameworks/<fw>.md §1-§6 枚举+规律实例化+门禁清单对齐) → ⑤AI配置precheck.conf(消除全部占位符) → ⑤.5 AI生成hooks/commands/MCP集成 → ⑥AI运行门禁验证 → ⑦.5门禁注入(`scripts/generate-skill.sh --inject-frameworks` 将 assets/framework-gates/<fw>.sh 写入 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块；`--upgrade` 触发自动重注入) → ⑦AI写回项目记忆(闭环) → ⑧AI最终检查(零占位符+按维度计数核验+框架适配四要素核验)
 ```
 
-1. **自检**：`bash scripts/self-check.sh`（12 个运行时检测+自动安装）
+1. **自检**：`bash scripts/self-check.sh`（13 个运行时检测+自动安装）
 2. **读取项目知识**：AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特征卡（不读=重复造轮子）
 3. **探查仓库**：三路并行子代理（结构/规范/代码组织），优先用 gitnexus/graphify/claude-mem/LSP，大型项目用 Dynamic Workflow 并行扇出。工具矩阵+降级策略见 `references/exploration-guide.md`。**★WP-P8 per-phase profile 探查分级**：按 `auto_detect_profile` 的判定结果分级——lite（文件数 <80 且无合规信号）单路探查不用图谱；standard（其余默认档）三路并行图谱可选；compliance（合规关键词命中）三路并行 + 强制图谱工具。规模边界不确定按更重档处理（质量优先）。**★全链路追踪（设计理念 2）**：每路子代理启动前 AI 调 `bash scripts/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`（规范/代码组织子代理同理），完成后 `--status done`——用户可见每步调用何种工具，无需确认（trace 输出 stderr + 落盘 trace.jsonl，不阻塞主流程）
 4. **★项目形态判定 + 详尽组件库清单 + 调用链路分析**（探查的深化，不可跳过）：
@@ -128,15 +128,15 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 
 ## 它整合的方法论（只引用调用，不重新实现）
 
-swarm-yuan 整合 12 个外部运行时，按**接线深度分三层**（每层有自带降级载体，不假装全深度接线）：
+swarm-yuan 整合 13 个外部运行时，按**接线深度分三层**（每层有自带降级载体，不假装全深度接线）：
 
 | 层 | 运行时 | 真实接线方式 | 降级载体 |
 |----|--------|-------------|---------|
 | **深度接线（4）** | GitNexus / graphify / claude-mem / ocr | precheck.sh 门禁内真实子进程调用（`gitnexus query`/`graphify explain`/`claude-mem search`/`ocr review`），带 `has_*` 守卫 + 多级降级链 | grep+madge / progress ledger / 5 维度手动清单 |
-| **CLI 接线（3）** | OpenSpec / comet / gsd-core | 门禁/状态机按需调用 CLI（`openspec validate`/`comet guard`/`gsd-tools validate health`），带 `has_*` 守卫，未装或项目未用时降级 | 自带文档检查 / 自带 state-machine.sh / ocr+手动清单 |
+| **CLI 接线（4）** | OpenSpec / comet / gsd-core / codex-security | 门禁/状态机按需调用 CLI（`openspec validate`/`comet guard`/`gsd-tools validate health`/`npx @openai/codex-security scan`），带 `has_*` 守卫，未装或项目未用时降级 | 自带文档检查 / 自带 state-machine.sh / ocr+手动清单 / semgrep+opengrep+内置词法 |
 | **方法论引用（5）** | superpowers / gstack / ECC / Ruflo / impeccable | 作为方法论参考，AI 按 workflow 节点引用其模式（slash command 或文档指引）；swarm-yuan 自带等价降级载体 | 自带 subagent-orchestration.md / review-methodology.md / state-machine.sh / frontend-design-methodology.md |
 
-OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machine）/ gstack+OCR（review）/ graphify+GitNexus（code-graph）/ gsd-core（phase-loop+goal-backward）/ claude-mem（memory persistence）/ Ruflo（multi-agent swarm 编排）/ ECC（council 多声音认知扩展）/ impeccable（前端设计质量方法论）。
+OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machine）/ gstack+OCR（review）/ graphify+GitNexus（code-graph）/ gsd-core（phase-loop+goal-backward）/ claude-mem（memory persistence）/ Ruflo（multi-agent swarm 编排）/ ECC（council 多声音认知扩展）/ impeccable（前端设计质量方法论）/ codex-security（语义级安全扫描 + 威胁模型 + 攻击路径分析）。
 
 > **运行时升级整合吸收（决策 27，2026-07-26 本轮 + 2026-07-28 impeccable 吸收）**：6 个运行时对齐最新稳定版后，以下概念以**方法论吸收**落地（不新增 `check_*` 门禁，守决策 26 预算；详见 `docs/runtime-update-2026-07.md`）：
 > - gsd-core v1.8.0：reversibility 评级（`references/decision-governance.md` §2.4）+ broken-windows 台账（`references/gsd-patterns.md` + `state-machine.sh` archive guard warn）
@@ -145,8 +145,9 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 > - claude-mem v13.12.x：version oracle 单源真值（`self-check.sh` G10 断言 + `facts.conf` `FACT_VERSION_ORACLE_RULE`）
 > - impeccable v4.0.2：前端设计质量方法论（`references/frontend-design-methodology.md`，方法论引用层第 5 对象；Modes 四分类 + 三层权威分层 PRODUCT.md/DESIGN.md/surface brief + craft-floor Verify/Refuse 矩阵 + 59 反模式 ID 字典 + finish_reviewer 完工审查模式；填补 17 特征卡/54 门禁/74 框架规则集的视觉设计空白；G13 断言守引用存在性）
 > - 上下文工程分层（2026-07-27 Vibe编码文章吸收，非运行时——纯方法论）：Prompt U 型曲线证据（4.7 长规则书→4.8 薄 Harness→5 薄底座+治理协议）+ minimal≠short 原则 + 六层上下文模型（模型/System/Tools/CLAUDE.md/Skills/Memory/Hooks）+ Prompt=model adapter 视角 + Delivering work/Corrections 治理内核（`references/context-engineering-layering.md`；填补「规则该放哪一层」的元决策空白；G14 断言守引用存在性）
+> - codex-security v0.1.4（2026-07-30 吸收，CLI 接线层第 4 对象）：语义级安全扫描（超越 semgrep/opengrep 的 AST/词法层，做 source→sink 数据流 + 攻击路径推演）+ 静态评估七元组（source/control/sink/reachable path/boundary/counterevidence/proof gaps）+ 威胁模型五要素（assets/trust boundaries/attacker inputs/invariants/failure modes）+ 攻击路径分析（counterevidence 必查铁律）+ SECURITY.md 策略合并（root→leaf 优先级）+ scan contract 三件套（manifest+findings+coverage）+ 14 bundled skills 模式 + Docker 沙箱范式（`references/codex-security-methodology.md`；`--sast-deep` 门禁 `SAST_DEEP_TOOL=codex-security` 时前置调用，降级链 codex-security→semgrep→opengrep→builtin；G15 断言守 CLI 接线存在性）
 
-> 工具引用铁律：深度+CLI 接线层（7 个）允许真实命令调用（`graphify`/`gitnexus`/`ocr`/`claude-mem`/`gsd-tools`/`openspec`/`comet`），不重新实现、不复制源码；方法论引用层（5 个）只引用模式不调 CLI。**代码图谱工具按技术能力选型（GitNexus 深度调用图 / graphify 广谱知识图，平权可按项目并用），不做授权驱动的降级**（决策 18，详见 `references/code-graph-tools.md` §选型）。
+> 工具引用铁律：深度+CLI 接线层（8 个）允许真实命令调用（`graphify`/`gitnexus`/`ocr`/`claude-mem`/`gsd-tools`/`openspec`/`comet`/`npx @openai/codex-security`），不重新实现、不复制源码；方法论引用层（5 个）只引用模式不调 CLI。**代码图谱工具按技术能力选型（GitNexus 深度调用图 / graphify 广谱知识图，平权可按项目并用），不做授权驱动的降级**（决策 18，详见 `references/code-graph-tools.md` §选型）。
 
 **reference 文件清单（按需读取）**：
 
@@ -182,10 +183,11 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 工控/物联网行业 profile（等保三级/密评/IEC 62443 SL1-SL4/GB/T 33009 ↔ 门禁映射 + industrial.conf 配套） | `references/industry-profile-industrial.md` |
 | 前端设计质量方法论（impeccable v4.0.2 吸收，方法论引用层第 5 对象；Modes/三层权威/craft-floor/59 反模式字典/finish_reviewer 完工审查） | `references/frontend-design-methodology.md` |
 | 上下文工程分层（Prompt U 型曲线 / minimal≠short / 六层上下文模型 / Prompt=model adapter / Delivering work+Corrections 治理内核；2026-07-27 文章吸收） | `references/context-engineering-layering.md` |
+| codex-security 安全扫描方法论（OpenAI codex-security CLI 接线；静态评估七元组 + 威胁模型五要素 + 攻击路径分析 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；2026-07-30 吸收） | `references/codex-security-methodology.md` |
 | 框架规则库（生成时按 ACTIVE_FRAMEWORKS 读取对应 `<fw>.md`） | `references/frameworks/` |
 | 落地案例（关节编排/Articulated Orchestration 类汇报论据，S18 补入索引） | `references/case-studies/articulation-orchestration.md` |
 
-> **注**：另 2 份 references（`cwe-database.md` / `security-certification-profiles.md`）为门禁内部数据文件，由 `--cwe-audit`/`--cert-audit` 机械读取，不列入本 AI 阅读表（references/ 实际 33 文件 = 本表 31 + 门禁内部 2；`case-studies/` 子目录单独计，不在 33 内）。
+> **注**：另 2 份 references（`cwe-database.md` / `security-certification-profiles.md`）为门禁内部数据文件，由 `--cwe-audit`/`--cert-audit` 机械读取，不列入本 AI 阅读表（references/ 实际 34 文件 = 本表 32 + 门禁内部 2；`case-studies/` 子目录单独计，不在 34 内）。
 
 ## 使用说明
 
