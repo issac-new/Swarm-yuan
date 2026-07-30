@@ -283,6 +283,40 @@ check_reuse() {
     fi
   fi
 
+  # ---- 1.5 WP-C：--task-type 校验 spec 节必填/豁免落实（可选，向后兼容）----
+  # 任务类型（feature/fix/refactor/chore/docs/test/exp）→ 必填节/可豁免节映射，
+  # 数据来自 assets/task-type-gates.conf 的 TASK_EXEMPT_<type>（spec-template.md 头部表层化同源）。
+  # 未传 --task-type 则跳过本段（维持现状：只校验 §5.5，向后兼容）。
+  if [[ -n "${TASK_TYPE:-}" && -n "$spec_file" ]]; then
+    # 任务类型 → 必填节清单（与 spec-template.md 头部矩阵 + task-type-gates.conf 对齐）
+    case "$TASK_TYPE" in
+      feature)        _required_sec="§1 §2 §3 §4 §5.5 §5.6 §5.7 §6 §7 §8 §9 §10 §11 §12 §13" ;;
+      fix)            _required_sec="§1 §2 §3 §4 §5.5 §12" ;;
+      refactor)       _required_sec="§1 §2 §3 §4 §5.5 §6 §7 §8 §9 §10 §11 §12 §13" ;;
+      chore)          _required_sec="" ;;   # spec 全段可免
+      docs)           _required_sec="" ;;   # 其他门禁全免
+      test)           _required_sec="§19" ;;
+      exp)            _required_sec="§1" ;;
+      *) fail "未知任务类型 '$TASK_TYPE'（合法值：feature|fix|refactor|chore|docs|test|exp）"; found=1; _required_sec="" ;;
+    esac
+    # 校验必填节非空（§N 段在 spec 里存在且非「不适用」占位）
+    local sec
+    for sec in $_required_sec; do
+      local sec_num="${sec#§}"
+      local sec_body
+      sec_body=$(awk -v sn="$sec_num" '
+        $0 ~ "^## " sn "[. ]" {in_sec=1; next}
+        /^## [0-9]/ && in_sec {in_sec=0}
+        in_sec {print}
+      ' "$spec_file" 2>/dev/null)
+      # 段不存在 or 仅含「不适用」→ fail
+      if [[ -z "$sec_body" ]] || echo "$sec_body" | grep -qE '^\s*(不适用|N/A)\s*$'; then
+        fail "$spec_file §${sec_num} 为 $TASK_TYPE 任务必填节，但缺失或标「不适用」"
+        found=1
+      fi
+    done
+  fi
+
   # ---- 2. 硬门禁：新增胶水代码单元名 vs reference-manual.md §4/5/6 稳定单元名重名检测 ----
   # 兜底候选含 glob：.claude/skills/<*>/references/reference-manual.md
   local ref_file

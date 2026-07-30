@@ -356,6 +356,7 @@ unset _conf_var
 FORMAT="text"
 MODE=""
 FRAMEWORK_ID=""
+TASK_TYPE=""   # WP-C：--task-type <type> 可选参数（配合 --reuse 校验必填/豁免节）
 _CAL_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -388,6 +389,12 @@ while [[ $# -gt 0 ]]; do
       shift
       _CAL_ARGS=("$@")
       break
+      ;;
+    --task-type)
+      # WP-C：可选任务类型（feature/fix/refactor/chore/docs/test/exp），配合 --reuse 校验
+      # spec 节的必填/豁免落实。未传则维持现状（只校验 §5.5，向后兼容）。
+      [[ $# -ge 2 ]] || { echo "✗ --task-type 缺少取值（feature|fix|refactor|chore|docs|test|exp）" >&2; exit 1; }
+      TASK_TYPE="$2"; shift 2
       ;;
     *)
       [[ -z "$MODE" ]] && MODE="$1"
