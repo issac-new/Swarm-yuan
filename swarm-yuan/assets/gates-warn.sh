@@ -1357,18 +1357,21 @@ check_sast_deep() {
   fi
   _sast_exempted() { printf '%s\n' "$_sast_exempt" | grep -qF "$1"; }
   local bin=""
-  # 载体解析：builtin=强制内置；codex-security=语义层 CLI（需 Node22+/Python3.10+/OPENAI_API_KEY）；
-  #   可执行路径=直接调用（fixture mock 亦走此分支）；空/auto=降级链探测
+  # 载体解析：builtin=强制内置；codex-security=AI 约束推理扫描（非 SAST，需 Node22+/Python3.10+/OPENAI_API_KEY）；
+  #   可执行路径=直接调用（fixture mock 亦走此分支）；空/auto=SAST 降级链探测（semgrep→opengrep→builtin）
+  # 注：codex-security 非 SAST，不进 auto 降级链——OpenAI 官方明确「不包含 SAST 报告」，
+  #   采用约束推理 + 攻击路径验证而非模式匹配。显式配置时启用，与 SAST 正交可并行。
   if [[ "$tool" == "builtin" ]]; then
     bin="builtin"
   elif [[ "$tool" == "codex-security" ]]; then
-    # codex-security 语义层（source→sink 数据流 + 攻击路径推演，超越 AST/词法层）
+    # codex-security AI 约束推理（source→sink 数据流 + 攻击路径推演，非 SAST 模式匹配）
     # 需求：Node.js 22.13+ / 24.x / 26.x + Python 3.10+ + OPENAI_API_KEY 或 CODEX_API_KEY
+    # 开源 Apache-2.0，API 按 token 计费（--max-cost 可设上限），Trusted Access 非付费门槛
     # 详见 references/codex-security-methodology.md §二 CLI 接线方式
     if command -v npx >/dev/null 2>&1 && [[ -n "${OPENAI_API_KEY:-${CODEX_API_KEY:-}}" ]]; then
       bin="codex-security"
     else
-      warn "SAST_DEEP_TOOL=codex-security 但 npx 不可用或未设 OPENAI_API_KEY/CODEX_API_KEY——降级自动探测（semgrep→opengrep→builtin）"
+      warn "SAST_DEEP_TOOL=codex-security 但 npx 不可用或未设 OPENAI_API_KEY/CODEX_API_KEY——降级回 SAST 链（semgrep→opengrep→builtin）"
     fi
   elif [[ "$tool" != "auto" && -n "$tool" ]]; then
     if [[ -x "$tool" ]]; then bin="$tool"; else warn "SAST_DEEP_TOOL=${tool} 不可执行，降级自动探测"; fi
@@ -1379,7 +1382,7 @@ check_sast_deep() {
     else bin="builtin"; fi
   fi
   if [[ "$bin" == "builtin" ]]; then
-    # 自带降级载体（词法模式族，明示降级；AST/数据流层未执行）
+    # 自带降级载体（词法模式族，明示降级；AST/数据流/AI 约束推理层未执行）
     echo "  ⓘ 降级为内置词法模式族（semgrep/opengrep/codex-security 不可用；AST/数据流/语义层未执行）"
     trace_tool "sast-deep" "builtin-lexical"
     if _sast_deep_lexical_scan "gate_sast_deep_builtin: 内置模式族检出高危代码执行 sink（eval/exec/Runtime.exec/child_process.exec；GB/T 34943/34944/34946 漏洞类别，降级词法检出）："; then

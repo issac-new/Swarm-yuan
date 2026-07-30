@@ -1,21 +1,22 @@
 # codex-security 安全扫描方法论（OpenAI Codex Security CLI 接线）
 
-> 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.4（Apache-2.0），CLI 接线层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。
+> 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.4（Apache-2.0，**完全开源免费**），CLI 接线层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。
 > 纪律：CLI 接线层允许真实命令调用（`npx @openai/codex-security scan`），不重新实现、不复制源码（上游 clone 在 `swarm-yuan/research/codex-security/`，仅供 AI 阅读引用，gitignored）。
 > 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 54；守决策 26：复杂度预算不增。
-> 适用场景：目标项目需要**深度语义级安全扫描**（超越 semgrep/opengrep 的 AST/词法层）时，`--sast-deep` 门禁的 `SAST_DEEP_TOOL=codex-security` 前置调用 codex-security CLI，产出 SARIF + findings.json + coverage.json 三件套。也用于 AI 在 spec/审查节点引用本文的静态评估七元组 + 威胁模型五要素 + 攻击路径分析方法论。
+> 适用场景：目标项目需要**AI 驱动的语义级安全扫描**（非传统 SAST 的模式匹配）时，`--sast-deep` 门禁的 `SAST_DEEP_TOOL=codex-security` 显式调用 codex-security CLI，产出 SARIF + findings.json + coverage.json 三件套。也用于 AI 在 spec/审查节点引用本文的静态评估七元组 + 威胁模型五要素 + 攻击路径分析方法论。
 
 ---
 
-## 一、定位：补 swarm-yuan SAST 的语义层缺口
+## 一、定位：非 SAST 的 AI 约束推理扫描（与 semgrep/opengrep 正交，非降级链一环）
 
-swarm-yuan 当前 `--sast-deep` 门禁的降级链是 `semgrep → opengrep → 内置词法模式族`。三者都在**AST/词法层**——规则匹配 + 抽象语法树模式，不做**语义级数据流分析**（source→sink 可达性 + 攻击路径推演）。
+**关键纠偏**：codex-security **不是传统 SAST**，OpenAI 官方明确说明它不产出 SAST 报告、不依赖模式匹配 + 降级链那一套。它采用的是 **AI 驱动的约束推理 + 验证路径**——用大模型做 source→sink 数据流分析 + 攻击路径推演 + 威胁模型，而非规则引擎扫描。因此它**不进** swarm-yuan `--sast-deep` 的 `semgrep → opengrep → 内置词法` 降级链（降级链是 SAST 工具的降级，codex-security 非 SAST）。
 
-codex-security 补的正是这条缺口：
+codex-security 与 swarm-yuan 既有安全能力是**正交互补**关系：
 
-| 维度 | swarm-yuan 既有（semgrep/opengrep/内置） | codex-security 增量 |
+| 维度 | swarm-yuan 既有（semgrep/opengrep/内置 = 传统 SAST） | codex-security（AI 约束推理，非 SAST） |
 |------|------------------------------------------|---------------------|
-| 扫描层 | AST/词法层（规则匹配） | **语义层**（source→sink 数据流 + 攻击路径推演） |
+| 设计哲学 | 规则匹配 + AST 模式 + 降级链 | AI 约束推理 + 攻击路径验证（官方明确「不包含 SAST 报告」） |
+| 扫描层 | AST/词法层（规则匹配） | **语义层**（source→sink 数据流 + 攻击路径推演 + 威胁模型） |
 | 输出 | JSON（severity + 规则 ID） | **三件套**：scan-manifest.json + findings.json + coverage.json + SARIF |
 | 威胁模型 | 无（门禁不建威胁模型） | **repository-scoped 威胁模型**（assets/trust boundaries/attacker inputs/invariants） |
 | 误报控制 | 豁免登记（5 字段） | **validate 阶段 + attack-path-analysis 阶段双重去误报**（counterevidence 必查） |
@@ -23,17 +24,23 @@ codex-security 补的正是这条缺口：
 | 扫描模式 | 全量/目录 | **standard/deep/diff/working-tree 四模式** + bulk-scan 多仓库 |
 | 知识库 | 无 | `--knowledge-base` 注入架构文档/威胁模型/安全策略 |
 
-**关键区分**：codex-security 不是替代 semgrep/opengrep，是**语义层补充**——`SAST_DEEP_TOOL=auto` 时降级链不变（semgrep→opengrep→builtin），只有显式配置 `SAST_DEEP_TOOL=codex-security` 才走 codex-security 语义扫描。
+**接线形态**：codex-security 是 `--sast-deep` 门禁的**可选独立载体**（`SAST_DEEP_TOOL=codex-security` 显式调用），**不参与** `auto` 降级链——`auto` 时降级链不变（semgrep→opengrep→builtin），codex-security 只在用户显式选择时启用。两者可并行使用（SAST 找模式命中 + codex-security 找语义漏洞）。
+
+### 开源与许可（纠偏：非付费门槛）
+
+- **完全开源**：Apache-2.0 许可证，代码公开，任何人可 clone/阅读/修改/分发。
+- **Trusted Access 非付费门槛**：README 原文是 `recommend`（推荐）非 `require`（必须）。Trusted Access 是 OpenAI 面向安全研究人员的**身份审核计划**（vetting），不是付费订阅层。有用户反馈完成验证后「API/Codex 模型中似乎什么也没解锁」。
+- **真正的成本**：底层 OpenAI API 调用按 token 计费（`--max-cost USD` 可设上限），与任何调用 OpenAI API 的工具一样，非 codex-security 独有限制。
 
 ---
 
-## 二、CLI 接线方式（门禁内真实调用）
+## 二、CLI 接线方式（门禁内显式调用，非降级链一环）
 
-`check_sast_deep` 门禁在 `SAST_DEEP_TOOL=codex-security` 时的调用方式：
+`check_sast_deep` 门禁在 `SAST_DEEP_TOOL=codex-security` 时的调用方式（显式选择，不参与 `auto` 降级链）：
 
 ```bash
 # 前置：npm install @openai/codex-security + npx @openai/codex-security login（或设 OPENAI_API_KEY）
-# 扫描：
+# 扫描（AI 约束推理，非 SAST 模式匹配）：
 npx @openai/codex-security scan "${SECURITY_SCAN_DIRS[@]}" \
   --output-dir "$SCAN_ROOT/results" \
   --json \
@@ -43,16 +50,17 @@ npx @openai/codex-security scan "${SECURITY_SCAN_DIRS[@]}" \
 npx @openai/codex-security export "$SCAN_ROOT/results" --export-format sarif --output "$SCAN_ROOT/results.sarif"
 ```
 
-**降级链更新**（`SAST_DEEP_TOOL=auto` 时）：
+**接线形态（非降级链）**：
 ```
-codex-security（语义层，有 OPENAI_API_KEY 且已装时优先）
-→ semgrep（AST/规则层）
-→ opengrep（AST/规则层）
-→ 内置词法模式族（降级载体）
+SAST_DEEP_TOOL=auto（默认）→ SAST 降级链：semgrep → opengrep → 内置词法
+SAST_DEEP_TOOL=codex-security → 显式选 codex-security（AI 约束推理，非 SAST；失败时降级回 SAST 链）
 ```
 
+codex-security 不进 `auto` 降级链——它不是 SAST 工具，没有"装了就用"的降级关系。用户需显式选择 `SAST_DEEP_TOOL=codex-security` 才启用。两者可并行（SAST 找模式命中 + codex-security 找语义漏洞）。
+
 **关键约束**：
-- codex-security 需 **Node.js 22.13+ / 24.x / 26.x** + **Python 3.10+** + **OpenAI API Key 或 ChatGPT 登录**——比 semgrep 重得多，不作为默认降级链首项，只在显式配置时启用。
+- codex-security 需 **Node.js 22.13+ / 24.x / 26.x** + **Python 3.10+** + **OpenAI API Key 或 ChatGPT 登录**——比 semgrep 重得多，且按 API token 计费（`--max-cost USD` 可设上限），故不作为默认载体，只在显式配置时启用。
+- **开源免费 + API 计费**：工具本身 Apache-2.0 完全开源免费；Trusted Access 是推荐的身份审核非付费门槛；真正成本是 OpenAI API 调用按量计费。
 - `--fail-on-severity` 映射：`SAST_DEEP_SEVERITY=error` → `--fail-on-severity high`；`warning` → `--fail-on-severity medium`。
 - 扫描结果存 `SCAN_ROOT/results`（仓库外，`mktemp -d` 创建），**不污染工作区**。
 - SARIF 输出可被 swarm-yuan 既有 `to-sarif.sh` 管线消费，或直接上传 GitHub Code Scanning。
@@ -153,7 +161,7 @@ codex-security 的 `_bundled_plugin/skills/` 含 14 个 skill，swarm-yuan AI �
 |-------|---------|----------------|
 | `threat-model` | spec §19 测试设计 | 威胁模型五要素（本文 §四） |
 | `security-scan` | `--sast-deep` 全量扫描 | CLI 接线（本文 §二） |
-| `deep-security-scan` | `--sast-deep --mode deep` 多轮发现 | 语义层补充 |
+| `deep-security-scan` | `--sast-deep --mode deep` 多轮发现 | AI 约束推理深度模式（非 SAST 补充，正交） |
 | `security-diff-scan` | `--scope` + `--sast-deep` diff 扫描 | `--scope` 门禁的 git diff 触碰只读 |
 | `finding-discovery` | `--sast-deep` 候选发现 | 静态评估七元组（本文 §三） |
 | `validation` | `--sast-deep` 误报去伪 | counterevidence 必查（本文 §五） |
@@ -188,7 +196,7 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 
 | codex-security 概念 | swarm-yuan 既有触点 | 接线方式 |
 |---------------------|---------------------|---------|
-| CLI scan 命令 | `check_sast_deep` 门禁（gates-warn.sh） | `SAST_DEEP_TOOL=codex-security` 时前置调用，降级链 codex-security→semgrep→opengrep→builtin |
+| CLI scan 命令 | `check_sast_deep` 门禁（gates-warn.sh） | `SAST_DEEP_TOOL=codex-security` 时显式调用（非降级链一环，codex-security 非 SAST；失败时降级回 SAST 链 semgrep→opengrep→builtin） |
 | 静态评估七元组 | `--security` / `--sast-deep` / `--authz` 门禁的误报复核 | AI 引用本文 §三 做七元组核对 |
 | 威胁模型五要素 | spec §19 测试设计 + `--shift-left` | AI 引用本文 §四 建仓库级威胁模型 |
 | 攻击路径分析 | `--reuse` 门禁的既有稳定单元盘点 | 复用 `--reuse` 结果做反证据检查 |
