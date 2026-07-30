@@ -759,9 +759,12 @@ if [[ "$MODE" == "--doctor" ]]; then
 fi
 
 # --list-gates 在 cd 前拦截：不需要 PROJECT_DIR，只读门禁注册表与 enforce_level
+# WP-D：用户视角只列「执行序列三档」（core/standard/compliance）+ 每门禁的 enforce 属性列；
+# 不对用户暴露"advisory-only vs advisory-15"这类计数辨析（那是实现细节）。
+# (none) = 不在任何执行序列数组的门禁（advisory-only），需单 flag 显式调用。
 if [[ "$MODE" == "--list-gates" ]]; then
-  printf '%-18s %-26s %-10s %s\n' "FLAG" "GATE_FN" "ENFORCE" "TIER"
-  _i=""; _flag=""; _fn=""; _enf=""; _tier=""; _g=""; _s=0; _w=0; _a=0
+  printf '%-18s %-26s %-10s %s\n' "FLAG" "GATE_FN" "ENFORCE" "EXEC_TIER"
+  _i=""; _flag=""; _fn=""; _enf=""; _tier=""; _g=""
   for _i in "${!GATE_FLAGS[@]}"; do
     _flag="${GATE_FLAGS[$_i]}"
     _fn="check_$(printf '%s' "${_flag#--}" | tr '-' '_')"
@@ -770,9 +773,12 @@ if [[ "$MODE" == "--list-gates" ]]; then
     for _g in "${ALL_GATES_CORE[@]}"; do [[ "$_g" == "$_fn" ]] && _tier="${_tier}${_tier:+ }core"; done
     for _g in "${ALL_GATES_STANDARD[@]}"; do [[ "$_g" == "$_fn" ]] && _tier="${_tier}${_tier:+ }standard"; done
     for _g in "${ALL_GATES_COMPLIANCE[@]}"; do [[ "$_g" == "$_fn" ]] && _tier="${_tier}${_tier:+ }compliance"; done
-    [[ -z "$_tier" ]] && _tier="(none)"
+    [[ -z "$_tier" ]] && _tier="(explicit-flag-only)"
     printf '%-18s %-26s %-10s %s\n' "$_flag" "$_fn" "$_enf" "$_tier"
   done
+  echo ""
+  echo "执行序列：--all=core / --all-full=standard(=core+arch) / --compliance-suite=compliance"
+  echo "(explicit-flag-only) = 不在默认执行序列，需单 flag 显式调用"
   echo ""
   _s=0; _w=0; _a=0
   for _i in "${!GATE_FLAGS[@]}"; do
@@ -783,7 +789,7 @@ if [[ "$MODE" == "--list-gates" ]]; then
       advisory) _a=$((_a+1)) ;;
     esac
   done
-  echo "汇总：strict ${_s} / warn ${_w} / advisory ${_a} = ${#GATE_FLAGS[@]}"
+  echo "enforce 分布（实现细节，gen-enforce-level.sh 自动生成）：strict ${_s} / warn ${_w} / advisory ${_a} = ${#GATE_FLAGS[@]}"
   exit 0
 fi
 
