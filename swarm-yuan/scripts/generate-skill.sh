@@ -797,13 +797,29 @@ copy_universal_templates() {
     # precheck.conf 三件套：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
     [[ "$mode" == "upgrade" && ( "$dest" == "scripts/precheck.conf" || "$dest" == "scripts/precheck.arch.conf" || "$dest" == "scripts/precheck.compliance.conf" ) ]] && continue
     case "$kind" in
-      # WP-loop-followup: dest 形如 "assets/hooks/failure-detector.sh"，源须保留 hooks/ 子目录
-      # （原 ${dest##*/} 只取 basename，丢了 hooks/ 子目录，致 cp 找不到 assets/failure-detector.sh）
-      assets) src="$ASSETS_DIR/${dest#assets/}" ;;
+      # WP-B: assets 类源文件统一平铺在 $ASSETS_DIR/（assets/precheck.sh 等）。
+      # dest 有两种形态：
+      #   1) scripts/precheck.sh → 源 = assets/precheck.sh（取 basename，文件平铺在 assets/）
+      #   2) assets/hooks/failure-detector.sh → 源 = assets/hooks/failure-detector.sh（保留 hooks/ 子目录）
+      # 历史 bug：assets) src=$ASSETS_DIR/${dest#assets/} —— dest=scripts/precheck.sh 时
+      # ${dest#assets/} 不剥前缀（不以 assets/ 开头），得 $ASSETS_DIR/scripts/precheck.sh（不存在），
+      # cp 失败致 scripts/ 目录整批漏拷（precheck.sh/gates-*.sh/state-machine.sh 等）。
+      # 验证器从未跑 generate-skill create（run-e2e.sh 手拼骨架绕过此路径），故长期未暴露。
+      assets)
+        if [[ "$dest" == assets/* ]]; then
+          src="$ASSETS_DIR/${dest#assets/}"
+        else
+          src="$ASSETS_DIR/${dest##*/}"
+        fi
+        ;;
       ref)    src="$SRC_REF/${dest##*/}" ;;
       gen)    src="$SRC_SCRIPTS/${dest##*/}" ;;
       *) echo "ERROR: UNIVERSAL_FILES 未知源类别: $entry" >&2; return 1 ;;
     esac
+    # WP-B: dest 可能含子目录（assets/hooks/failure-detector.sh），mkdir -p 父目录再 cp，
+    # 否则 cp 报"No such file or directory"（顶层 mkdir 只建了 references/assets/scripts/hooks/commands，
+    # assets/hooks/ 子目录不在内）。此前的 cp 失败因 src 路径错，修 src 后暴露 dest 父目录缺失。
+    mkdir -p "$dir/$(dirname "$dest")"
     cp "$src" "$dir/$dest"
     # WP-P5: spec-template §14-§18 认知扩展包按 profile 门控
     # lite/standard 裁掉 §14-§18（节不存在 → check_cognition SKIP 披露）；compliance 保留全部。
