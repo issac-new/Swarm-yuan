@@ -195,9 +195,9 @@ claude-mem search（记忆库）→ 文件检测
 
 ---
 
-## 六、12 个运行时 + 32 个领域
+## 六、13 个运行时 + 32 个领域
 
-**运行时工具**（只引用调用不重新实现）：OpenSpec / superpowers / comet / GitNexus / graphify / gsd-core / claude-mem / open-code-review / gstack / Ruflo / ECC / impeccable
+**运行时工具**（只引用调用不重新实现）：OpenSpec / superpowers / comet / GitNexus / graphify / gsd-core / claude-mem / open-code-review / gstack / Ruflo / ECC / impeccable / codex-security
 
 **领域知识速查**：数据库 ACID / 网络 CORS / 安全密码哈希 / IM 消息保序 / 电商库存原子扣减 / 金融金额 Decimal……32 个领域的客观规律。
 
@@ -244,7 +244,7 @@ Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi——自�
 |------|------|
 | **特征卡** | **17 项（驱动全部文件 + 169 个门禁变量 + 开发流程）** |
 | **质量门禁** | **54 个（核心 10 + 架构 17 + 合规 17 + advisory-only 10，特征卡立法 + 门禁执法）** |
-| 运行时工具 | 11 |
+| 运行时工具 | 13 |
 | 领域知识 | 32 个领域 |
 | 认知框架 | 5 层 |
 | 兼容 AI 工具 | 7 个 |

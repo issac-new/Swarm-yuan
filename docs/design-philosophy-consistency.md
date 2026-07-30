@@ -1,9 +1,11 @@
 # swarm-yuan 设计理念与实现一致性核对表
 
 > 日期：2026-07-21 ｜ 单一事实源：本文表与 `swarm-yuan/scripts/self-check.sh` 的 `check_doc_consistency` 机械解析互证。
-> 目的：让"目标技能 在实际项目中可用、研发全流程 7 阶段真实可执行、11 运行时非花架子、三平台 CI 全覆盖"从宣称变成可核对的事实。
+> 目的：让"目标技能 在实际项目中可用、研发全流程 7 阶段真实可执行、13 运行时非花架子、三平台 CI 全覆盖"从宣称变成可核对的事实。
 
-## 一、11 运行时接线分层（WP1）
+## 一、13 运行时接线分层（WP1）
+
+> 注：本表为 WP1 时点快照（11 运行时：4 深 + 3 CLI + 4 方法论）。后续吸收 impeccable（方法论第 5）+ codex-security（CLI 第 4）后扩为 13（4 深 + 4 CLI + 5 方法论），权威数见 `swarm-yuan/assets/facts.conf`（FACT_RUNTIMES=13）。本表保留历史接线明细，计数以 facts.conf 为准。
 
 | 层 | 运行时 | 真实接线方式（脚本里会执行的） | 降级载体 | self-check 可安装 | 验证 fixture |
 |----|--------|------------------------------|---------|------------------|-------------|
@@ -19,7 +21,7 @@
 | **方法论引用（4）** | Ruflo | 无脚本调用；文档明说"不要求安装" | superpowers+claude-mem+gsd-core | ✅ npm i -g（但装上无脚本调用） | 无 |
 | **方法论引用（4）** | ECC | 无 CLI；AI 按 review-methodology.md 引用其 hook profile 模式 | 自带 precheck + state-machine | ❌ 需 `/plugin install` | 无 |
 
-**核对结论**：11 运行时按 4 深 + 3 CLI + 4 方法论分层，每层有自带降级载体，未装不阻塞（fail-open）。深度+CLI 层（7 个）在 precheck.sh/state-machine.sh 有真实命令调用 + fixture 验证；方法论层（4 个）诚实标注为模式引用，不假装深度接线。
+**核对结论**：13 运行时按 4 深 + 4 CLI + 5 方法论分层（WP1 时点 11：4 深 + 3 CLI + 4 方法论；后吸收 impeccable + codex-security），每层有自带降级载体，未装不阻塞（fail-open）。深度+CLI 层在 precheck.sh/state-machine.sh 有真实命令调用 + fixture 验证；方法论层诚实标注为模式引用，不假装深度接线。
 
 ## 二、研发全流程 7 阶段 × 门禁映射
 

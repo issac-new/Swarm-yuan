@@ -677,6 +677,17 @@ check_doc_consistency() {
   # docs/ 仅新增 2 份活跃设计文档（paradigm-positioning / design-philosophy-consistency），
   # paradigm-decisions（决策日志多历史快照）/research//plans/（归档）不扫，加扫会误报。
   local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/README.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
+  # WP-A: 扫描范围扩展——SKILL.md（技能入口，最高优先级，曾漏抓 frontmatter "12 runtimes" vs FACT_RUNTIMES=13）
+  _scan_docs="$_scan_docs SKILL.md"
+  # WP-A: 扫描范围扩展——references/*.md 全量（catchphrase 散落重灾区：
+  # context-engineering-layering/frontend-design-methodology/quality-management-standards 等）
+  # 排除 frameworks/ 子目录（74 份框架规则，数字由 gen-framework-index 管，不进 catchphrase 扫描）
+  # 排除 cwe-database.md/security-certification-profiles.md（门禁内部数据文件，由 --cwe-audit/--cert-audit 机械读取）
+  local _ref_md
+  for _ref_md in "$base"/references/*.md; do
+    [[ -f "$_ref_md" ]] || continue
+    _scan_docs="$_scan_docs references/$(basename "$_ref_md")"
+  done
   local _cmd_dir="$base/.claude/commands"
   if [[ -d "$_cmd_dir" ]]; then
     local _cf
@@ -726,14 +737,16 @@ check_doc_consistency() {
     bad=$(grep -oE "[0-9]+ 变量([ ，。、+])" "$docpath" 2>/dev/null \
           | grep -oE "^[0-9]+" | sort -u | grep -vx "$true_vars" || true)
     [[ -n "$bad" ]] && dfound="${dfound} 裸变量数出现非${true_vars}值($(echo $bad | tr '\n' ' '));"
-    # WP-Audit2026-07-27: 流程节点数——「Step 0-N」「N 节点」「N 工作流节点」对齐 FACT_FLOW_STEPS=13 / FACT_FLOW_NODES=8
-    if [[ -n "${FACT_FLOW_STEPS:-}" ]]; then
+    # WP-Audit2026-07-27: 流程节点数——「Step 0-N」「N 工作流节点」对齐 FACT_FLOW_NODES=8
+    # 注：生成流程"13 节点"用 FACT_FLOW_STEPS=13 守，但"N 节点"裸词歧义大（code-graph-tools "50000 节点"
+    # 是 AST 节点、gsd-patterns "8 节点"是 workflow 节点、template-spec "6 节点"是流程图节点）。
+    # WP-A 收窄：只守"Step 0-N"上限=8 + "N 工作流节点"=8（工作流专用，无歧义）；删去"N 节点"裸词扫描，
+    # 因其无法可靠区分"流程13节点/工作流8节点/AST节点/图谱节点"，误报率高于命中率。
+    # "13 节点"的口径由 facts.conf FACT_FLOW_STEPS + SKILL.md 头部显式表述守，不靠裸词 grep。
+    if [[ -n "${FACT_FLOW_NODES:-}" ]]; then
       bad=$(grep -oE "Step 0-[0-9]+" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+$" | sort -u | grep -vx "8" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} 流程Step上限出现非8值($(echo $bad | tr '\n' ' '));"
-      bad=$(grep -oE "[0-9]+ 节点" "$docpath" 2>/dev/null \
-            | grep -oE "^[0-9]+" | sort -u | grep -vx "${FACT_FLOW_STEPS}" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} 流程节点数出现非${FACT_FLOW_STEPS}值($(echo $bad | tr '\n' ' '));"
+            | grep -oE "[0-9]+$" | sort -u | grep -vx "${FACT_FLOW_NODES}" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} 流程Step上限出现非${FACT_FLOW_NODES}值($(echo $bad | tr '\n' ' '));"
       bad=$(grep -oE "[0-9]+ 工作流节点" "$docpath" 2>/dev/null \
             | grep -oE "^[0-9]+" | sort -u | grep -vx "${FACT_FLOW_NODES}" || true)
       [[ -n "$bad" ]] && dfound="${dfound} 工作流节点数出现非${FACT_FLOW_NODES}值($(echo $bad | tr '\n' ' '));"
@@ -793,14 +806,38 @@ check_doc_consistency() {
     bad=$(grep -oE "advisory[[:space:]]*[（(]?[[:space:]]*[0-9]+" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_advisory" || true)
     [[ -n "$bad" ]] && dfound="${dfound} advisory分档数出现非${true_advisory}值($(echo $bad | tr '\n' ' '));"
-    # 特征卡数："N 项特征卡"或"特征卡 N 项"或"特征卡摘要（N 项）"等变体（避免误伤"第 N 项"指代）
-    # WP-Alignment: 放宽正则覆盖"特征卡摘要（16 项）"等 evade 旧正则的写法
-    # S13 修复：覆盖"特征卡**：17 项"（markdown bold + 全角冒号）——
-    #   特征卡后仅允许标点/空格/全角符号（** ：( ) 空格，不含汉字），避免误匹配"特征卡...第 11 项"。
+    # 特征卡数："N 项特征卡"（N 紧邻项紧邻特征卡，是 catchphrase 总数表述）
+    # WP-A 收窄：要求 N 前是空格或行首（排除"第 2/6 项特征卡"里的 6——那是序号非总数）；
+    # 不匹配"P0 六项特征卡"（中文数字）/"特征卡第 11 项"（序号）等子集/单数指代。
     if [[ "$true_fc" -gt 0 ]]; then
-      bad=$(grep -oE "[0-9]+ ?项特征卡|特征卡[*：:()（ ）\t ]{0,8}[0-9]+ ?项" "$docpath" 2>/dev/null \
+      bad=$(grep -oE "(^| )[0-9]+ 项特征卡" "$docpath" 2>/dev/null \
             | grep -oE "[0-9]+" | sort -u | grep -vx "$true_fc" || true)
       [[ -n "$bad" ]] && dfound="${dfound} 特征卡数出现非${true_fc}值($(echo $bad | tr '\n' ' '));"
+    fi
+    # WP-A: 运行时数对齐 FACT_RUNTIMES——"N 运行时/N 个运行时/N runtimes"
+    # 覆盖 SKILL.md frontmatter "12 runtimes" vs FACT_RUNTIMES=13 这类漂移
+    # 子集表述（"6 个运行时对齐最新稳定版"/"深度+CLI 层 7 个"/R6 "9 运行时"）用层标注或研究快照措辞，
+    # 正则要求"N 运行时/N 个运行时"紧邻单位，"N 个运行时对齐""9 运行时 + 同行"等带后缀的不命中。
+    if [[ -n "${FACT_RUNTIMES:-}" && "${FACT_RUNTIMES}" != "0" ]]; then
+      bad=$(grep -oE "[0-9]+ ?个?运行时(?!.*对齐)(?!.*[+＋])|[0-9]+ ?runtimes" "$docpath" 2>/dev/null \
+            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_RUNTIMES}" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} 运行时数出现非${FACT_RUNTIMES}值($(echo $bad | tr '\n' ' '));"
+    fi
+    # WP-A: 领域知识数对齐 FACT_DOMAINS——"N 领域/N 个领域/N-domain"
+    # 子集表述（"领域规律≥10""§3 领域规律""技术+业务领域"等非计数用法）不被 [0-9]+ 前缀命中。
+    # "N 个领域知识段"是段落计数非领域总数，要求"N 领域"后紧跟标点/空格/的/客观。
+    if [[ -n "${FACT_DOMAINS:-}" && "${FACT_DOMAINS}" != "0" ]]; then
+      bad=$(grep -oE "[0-9]+ ?个?领域([ 的客。、，]|$)|[0-9]+-domain" "$docpath" 2>/dev/null \
+            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_DOMAINS}" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} 领域数出现非${FACT_DOMAINS}值($(echo $bad | tr '\n' ' '));"
+    fi
+    # WP-A: 认知框架层数对齐 FACT_COGNITION_LAYERS——"N-layer/N 层认知/N 层框架"
+    # 仅匹配"N-layer"（连字符，frontmatter 英文表述）与"N 层认知/N 层框架"（中文认知框架专用），
+    # 不匹配裸"N 层"（避免误伤"三层权威""六层上下文模型"等非认知框架用法）。
+    if [[ -n "${FACT_COGNITION_LAYERS:-}" && "${FACT_COGNITION_LAYERS}" != "0" ]]; then
+      bad=$(grep -oE "[0-9]+-[lL]ayer|[0-9]+ ?层认知|[0-9]+ ?层框架" "$docpath" 2>/dev/null \
+            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_COGNITION_LAYERS}" || true)
+      [[ -n "$bad" ]] && dfound="${dfound} 认知层数出现非${FACT_COGNITION_LAYERS}值($(echo $bad | tr '\n' ' '));"
     fi
     if [[ -n "$dfound" ]]; then
       warn "$docname 头部数字与代码真值不符（真值: 门禁${true_gates}/架构${true_arch}/合规${true_compliance}/conf${true_vars}/refs${ref_cnt}）：${dfound}"

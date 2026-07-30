@@ -1,6 +1,6 @@
 ---
 name: swarm-yuan
-description: "Meta-skill generator: produces a project-specific dev skill for ANY code repo. Integrates 12 runtimes (OpenSpec/superpowers/comet/GitNexus/graphify/gsd-core/claude-mem/ocr/gstack/ECC/Ruflo/impeccable), 54 quality gates (standard 27 via --all-full: core 10 + architecture 17; compliance 17 via --compliance-suite on-demand; incl. shift-left: test-design/change-impact/observability in spec/plan stage; rtm requirement-traceability; release-sign SLSA L2 signing), 5-layer cognition framework, 32-domain knowledge. Core capability: exhaustive component inventory (mechanical enumeration + signature extraction + count verification) and call-chain analysis (shape-adaptive by project form: registration assembly / request pipeline / message flow / cross-service chain) → orchestration constraints derivation. Use when user says '为某项目生成开发技能', 'create a dev skill', '六段式 skill'."
+description: "Meta-skill generator: produces a project-specific dev skill for ANY code repo. Integrates 13 runtimes (OpenSpec/superpowers/comet/GitNexus/graphify/gsd-core/claude-mem/ocr/gstack/ECC/Ruflo/impeccable/codex-security), 54 quality gates (standard 27 via --all-full: core 10 + architecture 17; compliance 17 via --compliance-suite on-demand; incl. shift-left: test-design/change-impact/observability in spec/plan stage; rtm requirement-traceability; release-sign SLSA L2 signing), 5-layer cognition framework, 32-domain knowledge. Core capability: exhaustive component inventory (mechanical enumeration + signature extraction + count verification) and call-chain analysis (shape-adaptive by project form: registration assembly / request pipeline / message flow / cross-service chain) → orchestration constraints derivation. Use when user says '为某项目生成开发技能', 'create a dev skill', '六段式 skill'."
 ---
 
 # swarm-yuan — 项目需求交付技能生成器
@@ -84,7 +84,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 ```
 用户："为 /path/to/project 生成 skill"
   ↓ AI 自动执行（零手动配置，不可中途停止）
-⓪自检(12运行时) → ⓪.5读取项目知识(AGENTS.md/CLAUDE.md/记忆/agent运行时) → ①探查仓库(三路并行+图谱工具) → ①.5项目形态判定(§C+.0)+详尽组件库清单+调用链路分析(§C+.1-C+.5按维度动态适配) → ②提取17项特征卡 → ③create骨架 → ④AI填充全部文件(消除全部占位符) → ④.5框架深化(逐激活框架:按 references/frameworks/<fw>.md §1-§6 枚举+规律实例化+门禁清单对齐) → ⑤AI配置precheck.conf(消除全部占位符) → ⑤.5 AI生成hooks/commands/MCP集成 → ⑥AI运行门禁验证 → ⑦.5门禁注入(`scripts/generate-skill.sh --inject-frameworks` 将 assets/framework-gates/<fw>.sh 写入 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块；`--upgrade` 触发自动重注入) → ⑦AI写回项目记忆(闭环) → ⑧AI最终检查(零占位符+按维度计数核验+框架适配四要素核验)
+⓪自检(13运行时) → ⓪.5读取项目知识(AGENTS.md/CLAUDE.md/记忆/agent运行时) → ①探查仓库(三路并行+图谱工具) → ①.5项目形态判定(§C+.0)+详尽组件库清单+调用链路分析(§C+.1-C+.5按维度动态适配) → ②提取17项特征卡 → ③create骨架 → ④AI填充全部文件(消除全部占位符) → ④.5框架深化(逐激活框架:按 references/frameworks/<fw>.md §1-§6 枚举+规律实例化+门禁清单对齐) → ⑤AI配置precheck.conf(消除全部占位符) → ⑤.5 AI生成hooks/commands/MCP集成 → ⑥AI运行门禁验证 → ⑦.5门禁注入(`scripts/generate-skill.sh --inject-frameworks` 将 assets/framework-gates/<fw>.sh 写入 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块；`--upgrade` 触发自动重注入) → ⑦AI写回项目记忆(闭环) → ⑧AI最终检查(零占位符+按维度计数核验+框架适配四要素核验)
 ```
 
 1. **自检**：`bash scripts/self-check.sh`（13 个运行时检测+自动安装）
@@ -192,7 +192,7 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 ## 使用说明
 
 1. 确认目标项目路径与 skill 名称
-2. `bash scripts/self-check.sh` 自检 12 项目运行时
+2. `bash scripts/self-check.sh` 自检 13 项目运行时
 3. 按需读 reference（探查→exploration-guide；填充→template-spec；方法论→各 reference 文件）
 4. `scripts/generate-skill.sh <name> <project-dir>` 创建骨架（或 `--upgrade` 升级已有）
 5. 按上方「生成流程」Step 0-8（13 节点）全量执行（铁律：不可中途停在骨架；每步先公告调用 + trace-log 落盘），每段落盘后用 `template-spec.md` 末尾核对表验证

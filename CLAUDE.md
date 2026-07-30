@@ -39,7 +39,7 @@ bash swarm-yuan/install.sh                 # auto-detect + install
 bash swarm-yuan/install.sh --list          # just list detected runtimes
 bash swarm-yuan/install.sh --version       # version + bash version
 
-# --- Self-check (verifies the 11 runtimes; not a unit test) ---
+# --- Self-check (verifies the 13 runtimes; not a unit test) ---
 bash swarm-yuan/scripts/self-check.sh --check-only   # detect only, don't install
 
 # --- Generate a skill for some project ---
