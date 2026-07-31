@@ -202,9 +202,9 @@ graphify export callflow-html                    # Mermaid 调用流（用于组
 - 可复用类/函数/方法：列出全部稳定类/函数/方法/composable（签名/路径/用途/复用方式）
 - 可复用 Store：列出全部状态管理 store（路径/暴露的状态和方法/复用方式）
 - 可复用类型定义：列出全部 TS interface/type（路径/定义/复用方式）
-- 稳定性标注：区分稳定层（推荐复用）/不稳定层（慎用）/禁止改层
+- 稳定性标注：见 §11f（唯一定义点：稳定层/不稳定层/禁止改层）
   → 用 gitnexus mcp 或 graphify path 系统性盘点调用链/依赖链，而非随机 grep
-  → 每个稳定单元记录：签名、路径、用途、复用方式（供 dev-guide.md 引用）
+  → 每个稳定单元记录：签名、路径、用途、复用方式（五维字段见 `docs/FIVE_DIMENSIONS.md`，供 dev-guide.md 引用）
 - 测试体系：框架、目录、运行命令、测试案例数据
 
 必查（环境与外部资源——材料 assets 段要求）：
@@ -851,10 +851,12 @@ git --version; gh --version; docker --version
 | `TraceNode` | adapters/... | `{ id, name, kind }` | import type |
 （列出项目全部 TS interface/type，供新功能直接引用）
 
-#### 11f. 稳定性标注
+#### 11f. 稳定性标注（唯一定义点）
 - **稳定层**（推荐复用）：公共 API、公共组件、工具函数、类型定义、store 接口
 - **不稳定层**（慎用）：内部实现细节、私有方法、实验性代码、标注 @deprecated 的
 - **禁止改层**：upstream 骨架、第三方依赖、框架核心
+
+> **本节是"稳定单元"概念的唯一权威定义点**——全仓其余文件引用此概念时一律指回"见 references/exploration-guide.md §11f"，不重复定义。每个稳定单元记录五维字段（签名/路径/用途/复用方式/稳定性标注），五维字段详解见 `docs/FIVE_DIMENSIONS.md`。
 
 > 探查时用 `gitnexus analyze` + `gitnexus mcp` 或 `graphify .` 构建图谱，用图谱查询调用链/依赖链，**系统性盘点**而非随机 grep。对每个稳定单元记录：签名、路径、用途、复用方式。
 

@@ -66,7 +66,7 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 | 8 | 文档约定 | spec/plan 位置和命名 | workflow + spec-template |
 | 9 | 测试体系 | 框架/目录/命令 | `--test` |
 | 10 | 环境资源 | 运行时/DB/缓存/MQ/MCP | `--service` |
-| 11 | **可复用稳定单元** | 全部稳定 API/组件/类/函数/store/类型（签名+路径+用途+复用方式+稳定性标注五维字段） | **`--reuse` + `--stable-diff` + `--state` + `--frontend`** |
+| 11 | **可复用稳定单元** | 全部稳定 API/组件/类/函数/store/类型（五维字段定义见 `references/exploration-guide.md` §11f） | **`--reuse` + `--stable-diff` + `--state` + `--frontend`** |
 | 12 | 数据规范 | schema/样例/业务规则/勾稽 | `--consistency` |
 | 13 | 认知框架 | 认知映射表 + 六维动力学基线 | `--cognition` |
 | 14 | **领域知识** | 技术+业务领域 → 推导客观规律 | `--domain` |
@@ -74,7 +74,7 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 | 16 | **详尽组件库清单（全量）** | 全量构件表 + 接口端点表 + store/类型表（清单计数核验） | reference-manual §4/§6/§9 |
 | 17 | 合规与质量基线 | 强监管关键词/合规门禁开关/质量门禁开关 | `--compliance-suite` profile 升档 |
 
-**第 11 项是核心中的核心**——AI 用 graphify `query` / gitnexus `context` 系统性盘点全部稳定单元（GitNexus（PolyForm Noncommercial 禁商用）降级为非默认，graphify（MIT）提为默认代码图谱工具），每个记录签名、路径、用途、复用方式、稳定性标注（五维字段详见 `docs/FIVE_DIMENSIONS.md`）。
+**第 11 项是核心中的核心**——AI 用 graphify `query` / gitnexus `context` 系统性盘点全部稳定单元（GitNexus（PolyForm Noncommercial 禁商用）降级为非默认，graphify（MIT）提为默认代码图谱工具），每个记录五维字段（定义见 `references/exploration-guide.md` §11f，详解见 `docs/FIVE_DIMENSIONS.md`）。
 
 **特征卡驱动一切：** → 文件填充（SKILL.md 铁律 ← 第 2/6 项、codebase.md ← 第 4 项、reference-manual.md 组件库 ← 第 11 项）→ 门禁配置（precheck.conf 三件套 171 个变量从特征卡推导，懒生成机制按 ACTIVE_FRAMEWORKS 自动补占位）→ 开发流程（开始新需求时从第 11 项检索可复用单元）。
 
@@ -348,7 +348,7 @@ Swarm-yuan/
 ├── README.md                     ← 仓库门面（本文件的父级）
 ├── .gitignore                    ← 忽略 swarm-yuan 本地状态
 ├── docs/                         ← 设计文档 + 计划 + 研究交付物（USAGE/PROMO/FIVE_DIMENSIONS 唯一来源在 swarm-yuan/docs/）
-│   ├── paradigm-decisions.md     ← 决策 1-25（口径权威源 facts.conf）
+│   ├── paradigm-decisions.md     ← 决策 18-31（1-17 见 paradigm-decisions-archive.md，口径权威源 facts.conf）
 │   ├── paradigm-positioning.md   ← WP-P10 范式定位
 │   ├── upstream-baseline.md      ← 13 运行时登记 + drift 处置
 │   ├── plans/                    ← 4 份 dated 计划
@@ -373,7 +373,7 @@ Swarm-yuan/
 │   │   ├── spec-template.md      ← 23 主段 spec 模板（§23=发布后运营）
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
-│   ├── references/               ← 35 个参考文档 + frameworks/（74 框架 + _template）
+│   ├── references/               ← 34 个参考文档 + frameworks/（74 框架 + _template）
 │   ├── scripts/                  ← 28 个脚本（生成器+自检+SARIF+drift+baseline+cost）
 │   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 48 gate-fixture + sarif-fixture）
 │   └── ci/                       ← 自举 self-precheck.conf
@@ -391,7 +391,7 @@ Swarm-yuan/
 | **质量门禁** | **54 个** = strict 21 + warn 19 + advisory 14；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
 | **配置变量** | **171 个**（precheck.conf 12 + precheck.arch.conf 111 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=171 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh） | FACT_FRAMEWORKS=74 |
-| **参考文档** | 35 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=35 |
+| **参考文档** | 34 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=34 |
 | **standards-map** | 75 条目（21 门禁级 + 50 框架级 + 4 advisory） | FACT_STANDARDS_MAP_ENTRIES=75 |
 | 运行时工具 | 13（深度 4 + CLI 4 + 方法论 5） | FACT_RUNTIMES=13 |
 | spec 模板 | 23 主段（§23=发布后运营） | FACT_SPEC_SECTIONS=23 |

@@ -676,7 +676,7 @@ check_doc_consistency() {
   # 历史 .claude/commands/swarm-yuan.md 已在列表，commands/ 下其他 .md 全量扫描兜底。
   # docs/ 仅新增 2 份活跃设计文档（paradigm-positioning / design-philosophy-consistency），
   # paradigm-decisions（决策日志多历史快照）/research//plans/（归档）不扫，加扫会误报。
-  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/README.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
+  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md docs/FIVE_DIMENSIONS.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/README.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
   # WP-A: 扫描范围扩展——SKILL.md（技能入口，最高优先级，曾漏抓 frontmatter "12 runtimes" vs FACT_RUNTIMES=13）
   _scan_docs="$_scan_docs SKILL.md"
   # WP-A: 扫描范围扩展——references/*.md 全量（catchphrase 散落重灾区：
@@ -1279,7 +1279,7 @@ check_claim_intensity() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local _root_docs="$base/.."
   # 与 check_doc_consistency 的 _scan_docs 保持一致（G6/G8 同源盲区）
-  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md .claude/commands/swarm-yuan.md $base/../CLAUDE.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
+  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md docs/FIVE_DIMENSIONS.md .claude/commands/swarm-yuan.md $base/../CLAUDE.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
   local _cmd_dir="$base/.claude/commands"
   if [[ -d "$_cmd_dir" ]]; then
     local _cf
@@ -1492,13 +1492,13 @@ check_context_engineering_layering() {
   fi
 
   # ③ facts.conf 口径同步（warn-only，对齐 G13 风格）
-  # references 数随方法论吸收递增：context-engineering-layering + codex-security-methodology + fde-backprop
+  # references 数随方法论吸收递增：context-engineering-layering + codex-security-methodology
   # 真值由 check_doc_consistency 的 ref_cnt 机械计数，FACT_REFERENCES 跟随同步。
-  if [[ "${FACT_REFERENCES:-0}" -ne 35 ]]; then
-    warn "facts.conf FACT_REFERENCES=${FACT_REFERENCES:-（未设）} ≠ 35（context-engineering-layering + codex-security-methodology + fde-backprop 加入应同步 references 计数为 35）"
+  if [[ "${FACT_REFERENCES:-0}" -ne 34 ]]; then
+    warn "facts.conf FACT_REFERENCES=${FACT_REFERENCES:-（未设）} ≠ 34（context-engineering-layering + codex-security-methodology 加入应同步 references 计数为 34）"
     _warn=$((_warn+1))
   else
-    echo "  ✓ facts.conf FACT_REFERENCES=35（references 文档数同步）"
+    echo "  ✓ facts.conf FACT_REFERENCES=34（references 文档数同步）"
   fi
 
   if [[ $_missing -gt 0 ]]; then

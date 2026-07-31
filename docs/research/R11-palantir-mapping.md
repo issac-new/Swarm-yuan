@@ -219,7 +219,7 @@ src/controllers/UserController.java    ← 调用 UserService，无标注
       → "禁止改"标记没有沿调用链传播到 UserService
 ```
 
-**对范式可信度的影响**：高。`--stable-diff` 宣称"防范顺手改稳定单元签名/破坏聚合根/改 Repository 接口"（`template-spec.md:494`），但只能防"直接改 Repository"，防不了"改 Service 间接破坏 Repository 契约"。这是"标记是执法"宣称与实际行为的系统性落差——与决策 24（门禁分层）发现"36 门禁仅 2 fail"同性质的诚实化缺口。
+**对范式可信度的影响**：高。`--stable-diff` 宣称"防范顺手改稳定单元签名/破坏聚合根/改 Repository 接口"（`template-spec.md:494`），但只能防"直接改 Repository"，防不了"改 Service 间接破坏 Repository 契约"。这是"标记是执法"宣称与实际行为的系统性落差——与决策 31（门禁分层）发现"36 门禁仅 2 fail"同性质的诚实化缺口。
 
 **预算影响**：✅ 可方法论吸收，0 新门禁。方案见 §4.1.1。
 
@@ -378,9 +378,9 @@ Palantir Organizations + markings 是为情报社区多密级数据隔离设计�
 
 本调研是决策 27 纪律的**外部参照系应用**——Palantir 概念挖出的 6 缺口，全部以方法论吸收（文档/叙事/现有门禁扩展/G<N> 断言）落地，**0 新 `check_*` 门禁**。这验证了决策 27 的可操作性：外部理念催生的改进需求，可以被"吸收通道"消化而不破预算。
 
-### 7.3 与决策 24（门禁分层 enforce_level）的关系
+### 7.3 与决策 31（门禁分层 enforce_level）的关系
 
-§4.1 的"标记沿调用链传播"扩展 `--stable-diff` 时，下游改动只 **warn** 不 fail——保持 `--stable-diff` 的 strict 档（≥3 fail）判定不变（warn 不增 fail 计数）。这与决策 24"advisory/warn/strict 横切分层"一致：传播违规是"风险提示"（warn 级），直接改稳定单元才是"硬执法"（strict 级）。
+§4.1 的"标记沿调用链传播"扩展 `--stable-diff` 时，下游改动只 **warn** 不 fail——保持 `--stable-diff` 的 strict 档（≥3 fail）判定不变（warn 不增 fail 计数）。这与决策 31"advisory/warn/strict 横切分层"一致：传播违规是"风险提示"（warn 级），直接改稳定单元才是"硬执法"（strict 级）。
 
 ### 7.4 与决策 25（范式定位）的关系
 
