@@ -13,7 +13,7 @@ There is no compiled artifact and no conventional build — the product is a set
 
 ## 范式定位（WP-P10）
 
-swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 54 门禁 + 169 变量 + 74 框架规则。重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。
+swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 54 门禁 + 171 变量 + 74 框架规则。重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。
 
 **适用**：团队协作/中大型项目/强监管交付/长期维护/多技术栈混合。**不适用**：个人脚本/一次性原型/极小改动/无 AI 辅助。详见 `docs/paradigm-positioning.md`。
 
@@ -22,7 +22,7 @@ swarm-yuan 是**重量级范式**——20k 行文档 + 22k 行脚本 + 54 门禁
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
   - `SKILL.md` — the AI entry point / operating manual (the generation pipeline Step 0–8, 13 nodes incl. five .5 sub-steps).
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
-  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~4000 lines, 54 gates = standard 27 via `--all-full` + compliance 17 via `--compliance-suite` + advisory-only 10), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (169 config vars across the three, WP-I split), `spec-template.md` (23-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (74 per-framework gate fragments).
+  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` (~4000 lines, 54 gates = standard 27 via `--all-full` + compliance 17 via `--compliance-suite` + advisory-only 10), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (171 config vars across the three, WP-I split), `spec-template.md` (23-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (74 per-framework gate fragments).
   - `references/` — 28 methodology docs + `references/frameworks/<fw>.md` (74 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).

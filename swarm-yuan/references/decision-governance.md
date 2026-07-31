@@ -30,6 +30,19 @@ swarm-yuan 的「AI 主导 + 用户决策」原则（SKILL.md）列了 7 条"AI 
 - Taste 遇触发条件 → 升 UserChallenge
 - UserChallenge **永不降级**（最严）
 
+#### 2.2.1 组件标记驱动升级（决策 29，Palantir AIP 动作授权映射）
+
+> 理念来源：R11 调研（`docs/research/R11-palantir-mapping.md` §4.3）发现 Palantir AIP 的动作授权是"对象标记驱动"——改一个 `load-bearing` 对象的授权，继承自该对象的标记；swarm-yuan 的动作授权是"资产路径驱动"（改 precheck.conf/facts.conf 要 policy-guardian，改普通源码不要），**不取决于组件的稳定性标注或上游依赖**——存在治理盲区。
+
+**规则**：AI 记录决策时，若拟改文件在某个"禁止改"稳定单元的**下游影响域**（决策 28 的 1 跳邻域，即特征卡第 11 项 §11g 记录的直接调用者），自动评 `costly` 可逆性（§2.4 已有 costly 评级，此处补"何时判 costly"的规则）：
+- `cost_if_wrong` 字段须反映"可能破坏上游稳定单元契约"（如"改 UserService 可能破坏 UserRepo 的调用契约，需迁移 UserService 的所有调用方"）
+- `reversibility` 字段标 `costly`（不阻断，仅作为 `cost_if_wrong` 的输入提示，对齐 §2.4 规则 3）
+- 这**不改变三级分类**（Mechanical/Taste/UserChallenge）——只在 `reversibility` 横切属性上体现；若该下游改动还命中 §2.2 其他触发条件（如架构变更/删稳定单元），则按原升级规则升 UserChallenge
+
+**与 §2.4 的关系**：§2.4 定义了 `reversible`/`costly`/`one-way` 三级可逆性；本规则补"何时判 costly"的判定准则——"拟改文件在禁止改稳定单元的下游影响域"是判 costly 的充分条件之一。`one-way` 的判定（§2.4 规则 2）仍由"删稳定单元/破坏性 DDL/公开发布/格式锁定"等触发，不冲突。
+
+**与决策 28 的关系**：决策 28 补"标记沿调用链传播"的**门禁层**缺口（`--stable-diff` 传播 warn）；本规则补"动作授权锚定组件标记"的**决策层**缺口（`costly` 评级）。双通道：门禁 warn 提示风险 + 决策 `costly` 反映撤销成本。两者共用同一个"下游影响域"数据源（特征卡第 11 项 §11g）。
+
 ### 2.3 豁免条款（裁决 logic-razor vs abstain 冲突）
 
 R3 调研（`docs/research/R3-methodology.md` §2.2-e）发现 logic-razor 的"至少 10% 瑕疵"铁律与 gsd honest verifier 的"证据不足弃权（abstain: insufficient_spec）"直接冲突。裁决如下：

@@ -172,6 +172,8 @@ _default_conf() {
   DOMAIN_LAYER=""
   DOMAIN_FORBIDDEN_IMPORTS=("react" "express" "@nestjs" "sequelize" "typeorm" "prisma" "mongoose" "koa" "fastify" "axios" "node:fs" "node:http" "node:net")
   STABLE_GLOBS=()
+  STABLE_PROPAGATE=1
+  STABLE_PROPAGATE_HOPS=1
   AGGREGATE_DIR=""
   MAX_LINK_DEPTH=0
   # 依赖版本

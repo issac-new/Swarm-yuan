@@ -66,7 +66,7 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 
 **第 11 项是核心中的核心**——AI 用 graphify `query` / gitnexus `context` 系统性盘点全部稳定单元（GitNexus（PolyForm Noncommercial 禁商用）降级为非默认，graphify（MIT）提为默认代码图谱工具，决策见 `docs/upstream-baseline.md`），每个记录签名、路径、用途、复用方式、稳定性标注（五维字段详见 `swarm-yuan/docs/FIVE_DIMENSIONS.md`）。
 
-**特征卡驱动一切：** → 文件填充（SKILL.md 铁律 ← 第 2/6 项、codebase.md ← 第 4 项、reference-manual.md 组件库 ← 第 11 项）→ 门禁配置（precheck.conf 三件套 169 个变量从特征卡推导，懒生成机制按 ACTIVE_FRAMEWORKS 自动补占位）→ 开发流程（开始新需求时从第 11 项检索可复用单元）。
+**特征卡驱动一切：** → 文件填充（SKILL.md 铁律 ← 第 2/6 项、codebase.md ← 第 4 项、reference-manual.md 组件库 ← 第 11 项）→ 门禁配置（precheck.conf 三件套 171 个变量从特征卡推导，懒生成机制按 ACTIVE_FRAMEWORKS 自动补占位）→ 开发流程（开始新需求时从第 11 项检索可复用单元）。
 
 ### 落地示例（SwarmStudio overlay）
 
@@ -355,7 +355,7 @@ swarm-yuan 不是一次性写出来的，是 21 天、14 个 release tag、9 份
 | 2026-07-27 | 全面审计修复三连：术语统一 + 结构逻辑补全 + CI 红修复 + 数字漂移 + 标准失实 + 自检盲区（wp-full-audit / wp-audit-residual / wp-conf-syntax-guard / wp-audit-2026-07-27） | `docs/` dated 修复记录 |
 | 2026-07-28 | 治理与回路 WP 批次：+governance-agents 四权分离拓扑 / +failure-detector PostToolUse(Bash) 失败模式检测 / +integrity-guard PreToolUse 防作弊门 / +loop-oracle Oracle Gate 循环 hook / +compaction-state compaction 状态续传 / +task-router 任务类型×方法论路由表 / +z19-learnings check_learnings 置信度反哺 / +g55-loop-oracle 门禁化兜底（决策 26.1：check_canary → check_loop_oracle 等价替换）/ 吸收 impeccable v4.0.2 作为方法论引用层第 5 对象 | `verifier/runs/README.md` |
 | 2026-07-29 | 吸收上下文工程分层方法论（Vibe编码《Opus 4.8 删掉了73%的提示词，Opus 5 为何又新增了 82%》）：六层上下文模型（模型/System/Tools/CLAUDE.md/Skills/Memory/Hooks）↔ swarm-yuan 既有载体接线 + minimal≠short + Prompt=model adapter + Delivering work/Corrections 治理内核；G14 warn-only 断言；非运行时纯方法论吸收（FACT_REFERENCES 32→33，不进 12/5） | `swarm-yuan/references/context-engineering-layering.md` |
-| 2026-07-30 | 吸收 openai/codex-security CLI 接线层第 4 对象：**AI 约束推理扫描（非传统 SAST——OpenAI 官方明确「不包含 SAST 报告」，采用约束推理 + 攻击路径验证而非模式匹配 + 降级链）** + source→sink 数据流 + 静态评估七元组 + 威胁模型五要素 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；`--sast-deep` 门禁 `SAST_DEEP_TOOL=codex-security` 时显式调用，**非降级链一环（非 SAST，auto 降级链不变，两者正交可并行）**；开源 Apache-2.0，Trusted Access 非付费门槛，API 按 token 计费；G15 warn-only 断言；CLI 接线层 3→4 / 运行时 12→13 / 参考文档 33→34 | `swarm-yuan/references/codex-security-methodology.md` |
+| 2026-07-30 | 吸收 openai/codex-security CLI 接线层第 4 对象：**AI 约束推理扫描（非传统 SAST——OpenAI 官方明确「不包含 SAST 报告」，采用约束推理 + 攻击路径验证而非模式匹配 + 降级链）** + source→sink 数据流 + 静态评估七元组 + 威胁模型五要素 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；`--sast-deep` 门禁 `SAST_DEEP_TOOL=codex-security` 时显式调用，**非降级链一环（非 SAST，auto 降级链不变，两者正交可并行）**；开源 Apache-2.0，Trusted Access 非付费门槛，API 按 token 计费；G15 warn-only 断言；CLI 接线层 3→4 / 运行时 12→13 / 参考文档 34→35 | `swarm-yuan/references/codex-security-methodology.md` |
 | 2026-07-31 | 反思修复批次（WP-reflection-fixup，对照 10 个上下文工程问题审计生成器自身）：WP-A 口径数字单源——self-check 扫描扩 SKILL.md+references 全量 + 补 runtimes/domains/cognition 三类 catchphrase 扫描 + 修 12→13 运行时漂移（facts.conf FACT_COGNITION_LAYERS=5）；WP-B 生成产物 e2e 回归——run-gen-e2e.sh 断言骨架/workflow/conf 嗅探 + 挂进 verifier，附带修 create 路径解析 + BUILD_CMD 未引号两个潜伏 bug；WP-C spec 节按任务类型机械校验——模板头部表层化矩阵 + --reuse --task-type 验证豁免落实；WP-D advisory 轴混淆修正——SKILL.md 删长注释辨析 + --list-gates 归并轴（explicit-flag-only） | `verifier/runs/README.md` |
 
 ### 9 份研究交付物（R1-R9，2026-07-20~22）
@@ -445,7 +445,7 @@ Swarm-yuan/
 │   │   ├── spec-template.md      ← 23 主段 spec 模板（§23=发布后运营）
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
-│   ├── references/               ← 34 个参考文档 + frameworks/（74 框架 + _template）
+│   ├── references/               ← 35 个参考文档 + frameworks/（74 框架 + _template）
 │   ├── scripts/                  ← 23 个脚本（生成器+自检+SARIF+drift+baseline+cost）
 │   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 48 gate-fixture + sarif-fixture）
 │   └── ci/                       ← 自举 self-precheck.conf
@@ -466,9 +466,9 @@ Swarm-yuan/
 |------|------|--------|
 | **特征卡** | **17 项**（P0 六项 1/4/5/11/15/16 + P1 十一项） | FACT_FEATURE_CARDS=17 |
 | **质量门禁** | **54 个** = strict 21 + warn 19 + advisory 14（执法强度横切）；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
-| **配置变量** | **169 个**（precheck.conf 12 + precheck.arch.conf 109 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=169 |
+| **配置变量** | **171 个**（precheck.conf 12 + precheck.arch.conf 111 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=171 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh，六段式 + 四要素量化验收） | FACT_FRAMEWORKS=74 |
-| **参考文档** | 34 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=34 |
+| **参考文档** | 35 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=35 |
 | **standards-map** | 75 条目（21 门禁级 + 50 框架级 + 4 advisory） | FACT_STANDARDS_MAP_ENTRIES=75 |
 | 运行时工具 | 13（深度 4 + CLI 4 + 方法论 5） | FACT_RUNTIMES=13 |
 | spec 模板 | 23 主段（§23=发布后运营） | FACT_SPEC_SECTIONS=23 |

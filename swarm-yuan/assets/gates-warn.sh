@@ -330,6 +330,67 @@ check_stable_diff() {
     fi
   done
 
+  # ---- 3. ★标记沿调用链谱系传播（决策 28，Palantir markings-propagate 映射）----
+  # 直接改稳定单元已由上面 §2 的 fail() 执法；本节补"下游传播 warn"：
+  # 若本次变更触及"调用 STABLE_GLOBS 文件的下游文件"（1 跳邻域），不阻断，只 warn
+  # "该文件依赖禁止改单元 X，改动可能破坏其契约，须在 spec §MODIFIED 声明"。
+  # 下游影响域来源：reference-manual.md §5 调用链路图的"下游影响域"标注（特征卡
+  # 第 11 项 §11g 的 STABLE_PROPAGATE 记录）；未记录则降级 grep import 反查（best-effort）。
+  # 设计：warn 不增 fail() 计数 → 不改变 --stable-diff 的 enforce_level 归类（保持原档）。
+  # 关闭：STABLE_PROPAGATE_HOPS=0 时跳过（默认 1）。
+  local hops="${STABLE_PROPAGATE_HOPS:-1}"
+  if [[ "${STABLE_PROPAGATE:-1}" == "1" && "$hops" -ge 1 && ${#stable_changed[@]} -gt 0 ]]; then
+    local downstream_set=""
+    # 3a. 优先从 reference-manual §5 提取已记录的下游影响域（机器可读标记：
+    #     `<!-- stable-propagate: <stable_file> → <downstream_file> -->`）
+    local refmanual
+    refmanual=$(_first_existing_file "references/reference-manual.md" "docs/reference-manual.md")
+    if [[ -n "$refmanual" && -f "$refmanual" ]]; then
+      # 提取所有 stable-propagate 标记的下游文件（去重）
+      downstream_set=$(grep -oE '<!-- stable-propagate: [^→]*→[^-]*-->' "$refmanual" 2>/dev/null \
+        | sed -E 's/<!-- stable-propagate:[^→]*→//; s/ *-->.*//' \
+        | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | sort -u || true)
+    fi
+    # 3b. 降级：未记录时用 grep import 反查（best-effort，仅支持常见语言）
+    if [[ -z "$downstream_set" ]]; then
+      local sc2
+      for sc2 in "${stable_changed[@]}"; do
+        # 提取稳定文件 basename（去扩展名）作为 import 关键词
+        local bname; bname=$(basename "$sc2" 2>/dev/null | sed -E 's/\.(ts|tsx|js|jsx|py|java|go|rs|kt|rb|php)$//')
+        [[ -z "$bname" ]] && continue
+        # 在可改源码目录 grep import/from/use 该 basename 的文件（排除稳定文件自身）
+        local hits=""
+        for dir in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
+          [[ -d "$dir" ]] || continue
+          hits=$(grep -rlE "(import|from|use|require)[[:space:]].*${bname}" "$dir" \
+            --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
+            --include='*.py' --include='*.java' --include='*.go' --include='*.rs' \
+            --include='*.kt' --include='*.rb' --include='*.php' 2>/dev/null || true)
+          [[ -n "$hits" ]] && { downstream_set="${downstream_set}${downstream_set:+$'\n'}${hits}"; }
+        done
+      done
+      downstream_set=$(printf '%s\n' "$downstream_set" | sort -u | grep -v '^$' || true)
+    fi
+    # 3c. 对每个下游文件，若本次变更触及它且未在 spec 声明 → warn（不阻断，不调 fail()）
+    local ds
+    while IFS= read -r ds; do
+      [[ -z "$ds" ]] && continue
+      # 排除稳定文件自身（已在 §2 处理）
+      local is_stable=0
+      for sg in "${STABLE_GLOBS[@]}"; do
+        local prefix="${sg%/\**}"
+        if [[ "$ds" == "$prefix"* ]]; then is_stable=1; break; fi
+      done
+      [[ $is_stable -eq 1 ]] && continue
+      # 本次变更是否触及该下游文件
+      if echo "$changed" | grep -qF -- "$ds"; then
+        if ! echo "$declared_modified" | grep -qF -- "$ds"; then
+          warn "下游文件依赖禁止改稳定单元但未在 spec 声明：${ds}（依赖稳定层，改动可能破坏其契约，须在 spec §MODIFIED 声明+理由）"
+        fi
+      fi
+    done <<< "$downstream_set"
+  fi
+
   if [[ $found -eq 0 ]]; then
     pass "稳定单元篡改检查通过（${#stable_changed[@]} 个稳定文件改动均已在 spec 声明）"
   fi

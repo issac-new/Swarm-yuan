@@ -498,3 +498,82 @@ enforce_level 随 profile 调整是"门禁内部分级随项目档变化"的维�
 **与决策 26 的关系**：决策 26 确立"门禁数有预算上限"；本决策确立"运行时升级时如何守预算"--吸收优先、新增最后。本决策是决策 26 在升级场景的操作化。
 
 **首次应用（2026-07-26）**：本轮升级 6 个运行时（claude-mem/graphify/gsd-core/open-code-review/ruflo/superpowers），挖出 6 项整合吸收（reversibility 评级 / broken-windows ledger / honest-edge provenance / resume-based 修复环 / 可证伪性纪律 / version oracle 单源），全部以方法论吸收 + G10 断言落地，**门禁数保持 54**（G9 通过）。详见 `docs/runtime-update-2026-07.md`。
+
+---
+
+## 决策 28：标记沿调用链传播（Palantir markings-propagate 映射，R11 调研吸收，2026-07-31）
+
+**问题**：R11 调研（`docs/research/R11-palantir-mapping.md` §4.1）把 Palantir 工程哲学作为外部参照系审视 swarm-yuan 设计盲区，发现首要缺口——稳定单元标注（稳定/不稳定/禁止改，`exploration-guide.md` §11f）是 **file-glob 级静态属性**（`STABLE_GLOBS`），不沿调用链向下传播。`--stable-diff` 门禁只检测"是否直接改了 STABLE_GLOBS 内文件"（`gates-warn.sh` `check_stable_diff` §1-§2），**检测不到"是否改了依赖禁止改单元的下游文件"**。例：
+
+```
+UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserController (无标注)
+现状：改 UserService 不触发 --stable-diff → 但可能破坏 UserRepo 调用契约
+```
+
+这与决策 24（门禁分层）发现"36 门禁仅 2 fail"同性质——"标记是执法"宣称与实际行为有系统性落差。Palantir 的对应机制是 `/docs/foundry/security/overview/` 的 "Mandatory controls propagate along lineage"：标记是数据本身的属性，沿计算传播；新建看板不会"忘记"加安全，因为看板读的对象自带标记。
+
+**决策**：扩展 `--stable-diff` 语义加传播段（下游改动只 **warn** 不 **fail**，保持 enforce_level 归类不变），**不新增 `check_*` 门禁**（守决策 26：门禁预算 54 不变）——
+
+1. **`assets/precheck.arch.conf`** +`STABLE_PROPAGATE=1`/`STABLE_PROPAGATE_HOPS=1`（开关+跳数，默认开启 1 跳）
+2. **`assets/precheck.sh` `_default_conf`** 兜底补同名变量（防 set -u 崩 + 目标技能 conf 缺时降级）
+3. **`assets/gates-warn.sh` `check_stable_diff` §3 传播段**：本次变更触及"调用 STABLE_GLOBS 文件的下游文件"时 warn "依赖禁止改单元 X，改动可能破坏其契约，须在 spec §MODIFIED 声明"。下游影响域来源优先从 `reference-manual.md §5` 的机器可读标记 `<!-- stable-propagate: <stable> → <downstream> -->` 提取，降级为 grep import 反查（best-effort）
+4. **`references/exploration-guide.md` §11g** 新增"下游影响域"段（特征卡第 11 项 P0 子项）：每个"禁止改层"稳定单元须记录 1 跳下游影响域（用 graphify path / gitnexus trace 提取），作为传播 warn 的数据源
+5. **`scripts/self-check.sh` G16 断言**（不计入 FACT_GATES_TOTAL=54，守决策 27 第 4 条）：守 absorb 四载体一致性（arch.conf 开关 + exploration-guide 填充指引 + facts.conf 口径 + gates-warn.sh 传播段），缺失才 fail，叙事漂移只 warn
+6. **`assets/facts.conf`** +`FACT_STABLE_PROPAGATE=1`/`FACT_STABLE_PROPAGATE_HOPS=1`（口径同步）+ `FACT_CONF_VARS` 169→171 / `FACT_CONF_VARS_ARCH` 109→111（机械计数真值）
+
+**预算核算**：
+
+| 项 | 变更前 | 变更后 | 预算 | 余量 |
+|----|--------|--------|------|------|
+| FACT_GATES_TOTAL | 54 | 54（扩展现有 `check_stable_diff` 语义，不加 `check_*`） | 54 | 0 |
+| FACT_CONF_VARS | 169 | 171（+STABLE_PROPAGATE/STABLE_PROPAGATE_HOPS） | 200 | 29 |
+| G<N> 断言 | G15 | G16（不计入 54） | — | — |
+
+✅ 全部合规决策 26（门禁预算）+ 决策 27（吸收优先于新增门禁）。
+
+**理由**：
+1. **诚实化**——`--stable-diff` 宣称"防范破坏 Repository 接口"，现状只防"直接改 Repository"，防不了"改 Service 间接破坏 Repository 契约"；传播段把后者纳入 warn，消除"宣称 vs 实际行为"的落差（与决策 24 同性质诚实化）
+2. **warn 不 fail**——下游改动是"风险提示"（warn 级），直接改稳定单元才是"硬执法"（strict 级，§2 的 fail 不变）；warn 不增 fail 计数 → 不改变 `--stable-diff` 的 enforce_level 归类（保持原档），与决策 24"advisory/warn/strict 横切分层"一致
+3. **方法论吸收**——Palantir "markings propagate along lineage" 不硬搬为 `check_marking_propagation` 新门禁，而是扩展现有 `--stable-diff` 的语义 + 特征卡填充指引 + G16 断言三载体吸收，守决策 26/27
+4. **1 跳邻域防爆炸**——默认 `STABLE_PROPAGATE_HOPS=1`（仅 1 跳下游），避免大型项目（如 yudao-cloud 5564 java 文件，R9 样本）图遍历爆炸；2+ 跳列为 R12 待测项（R11 §8）
+
+**与决策 24（门禁分层）的关系**：决策 24 把 54 门禁按 fail 能力分 strict/warn/advisory 三档；本决策扩展 `--stable-diff`（warn 档）的语义，不改变其 enforce_level 归类（下游 warn 不增 fail 计数）。两者正交：决策 24 是"按 fail 数分层"，本决策是"按传播深度分层 warn"。
+
+**与决策 27（吸收优先于新增门禁）的关系**：本决策是 R11 调研（外部参照系）催生的改进，Palantir "markings propagate" 概念以方法论吸收（门禁语义扩展 + 填充指引 + G16 断言三载体）落地，**0 新 `check_*` 门禁**——验证决策 27 纪律不仅适用于"上游运行时升级"，也适用于"外部理念调研"场景。
+
+**可信度声明**：Palantir "markings propagate along lineage" 一手来源 `/docs/foundry/security/overview/`（高可信，R11 §0.3）。swarm-yuan 的"file-glob 级不传播"现状是 2026-07-31 工作树实测（`gates-warn.sh:254-336` + `precheck.arch.conf:9`）。
+
+---
+
+## 决策 29：语义/动能二分显式命名 + 动作授权锚定组件标记 + FDE 反向传播形式化（Palantir ontology/FDE 映射，R11 调研吸收，2026-07-31）
+
+**问题**：R11 调研（§4.2/§4.3/§4.4）发现三个次要缺口：
+- **§4.2 语义/动能二分未显式命名**：swarm-yuan 的"特征卡（语义）+ 门禁（动能）"二分与 Palantir "semantic/kinetic primitives"二分**结构性同构**，但只用"立法/执法/司法"三权隐喻命名，未显式命名语义/动能分层——导致"组件清单（语义）"与"门禁规则（动能）"的耦合关系（门禁依据来自特征卡，`README.md:107` 立法→执法映射表）不清晰。
+- **§4.3 动作授权未锚定组件标记**：动作授权（决策三级分类 + 四权分离）是"资产路径驱动"（改 precheck.conf/facts.conf 要 policy-guardian，改普通源码不要），**不取决于组件的稳定性标注或上游依赖**——存在治理盲区（改依赖禁止改单元的下游文件既不触发 `--stable-diff`，也不触发 UserChallenge）。
+- **§4.4 FDE 反向传播通道未形式化**：forward deploy 强（每项目生成专属技能 + memory-writeback 三路写回），backprop 弱/手工（R1-R9 调研 + WP-* 批次都是人工捕获）；R9 已暴露"5 项目清一色 Java/JS Web"样本偏倚，反向传播弱会加剧偏倚。
+
+**决策**（纯文档变更，0 新门禁，0 新变量）：
+
+1. **`references/cognition-framework.md` 新增 §7** "语义层/动能层二分（Palantir 本体论映射）"：
+   - 语义层 = 特征卡 17 项 + 详尽组件库清单（§C+.1）+ 调用链路（§C+.2）+ 编排约束（§C+.3）
+   - 动能层 = 54 门禁（check_*）+ 决策治理三级分类 + 四权分离 agent 拓扑 + 状态机
+   - 继承关系：动能层规则继承自语义层（门禁依据来自特征卡，`README.md:107` 立法→执法映射表）
+   - 与立法/执法/司法三权隐喻的关系：正交（三权描述权力分立，语义/动能描述结构分层）
+2. **`references/decision-governance.md` §2.2 升级规则补一条**"组件标记驱动升级"：
+   - AI 记录决策时，若拟改文件在某个"禁止改"稳定单元的下游影响域（决策 28 的 1 跳邻域），自动评 `costly` 可逆性（§2.4 已有 costly 评级，此处补"何时判 costly"的规则）
+   - `cost_if_wrong` 字段须反映"可能破坏上游稳定单元契约"
+   - 这不改变三级分类（Mechanical/Taste/UserChallenge），只在 `reversibility` 横切属性上体现
+3. **`references/fde-backprop.md` 新建**（方法论引用层，非门禁）：定义"反向传播纪律"——每 N 个 forward deploy 后（N 可配，建议 5），跑 `scripts/cost-report.sh` 聚合 N 个项目的 `decisions.jsonl`/`trace.jsonl`，提取高频 UserChallenge 模式与高频门禁 fail 模式，作为 WP-* 批次的输入（人工审阅后落地，非自动改核心模板——守"AI 主导+用户决策"原则）。借鉴 Palantir FDE = "human equivalent of backpropagation"。
+4. **`swarm-yuan/SKILL.md`** "它整合的方法论"表方法论引用层补一行：FDE-backprop（本仓库自创，借鉴 Palantir FDE=human backpropagation）
+
+**预算核算**：0 新门禁，0 新变量，1 新 references 文件（`fde-backprop.md`，FACT_REFERENCES 34→35，references 不受决策 26 门禁预算管）。
+
+**理由**：
+1. **设计清晰度**——语义/动能二分是结构性切分（描述"是什么"vs"能做什么"），与三权隐喻（权力分立）正交；显式命名两层让"组件清单→门禁规则"的继承关系可见，非"立法/执法"单一隐喻所能表达
+2. **治理盲区**——决策 28 的传播 warn（§4.1）+ 本决策的动作授权锚定组件标记（§4.3）双通道补"改下游依赖禁止改单元"的治理缺口：门禁层 warn + 决策层 `costly` 评级
+3. **FDE 反向传播形式化**——swarm-yuan 的 forward deploy 强（每项目生成专属技能 + memory-writeback 三路写回），backprop 弱/手工（R1-R9 调研 + WP-* 批次都是人工捕获）；R9 已暴露"5 项目清一色 Java/JS Web"样本偏倚，反向传播弱会加剧"核心模板只反映 Java/JS Web 品类"偏倚
+4. **纯方法论吸收**——0 新门禁 0 新变量，守决策 26/27；Palantir 本体论/AIP/FDE 概念以 references 文档吸收，不硬搬为机器门禁
+
+**与决策 28 的关系**：决策 28 补"标记沿调用链传播"的门禁层缺口（`--stable-diff` 传播 warn）；本决策补"动作授权锚定组件标记"的决策层缺口（`costly` 评级规则）+ 语义/动能显式命名的设计清晰度缺口 + FDE 反向传播的形式化缺口。两者共同落地 R11 调研的 P1-P3 建议。
+
+**可信度声明**：Palantir 本体论（semantic/kinetic 二分）/ AIP（AI 经本体论行动）/ FDE = human backpropagation 均一手来源（`/docs/foundry/ontology/overview/` + `/docs/foundry/aip/overview/` + Architecture Center，高可信，R11 §0.3/§1.1/§1.5/§1.7）。
