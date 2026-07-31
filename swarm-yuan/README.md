@@ -6,7 +6,7 @@
 >
 > **口径权威源**：`assets/facts.conf`（所有 catchphrase 数字的单一事实源，`scripts/self-check.sh` 机器执法做漂移检测）。
 
-[![Release](https://img.shields.io/badge/release-v2026.07.30-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.30)
+[![Release](https://img.shields.io/badge/release-v2026.07.31-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.07.31)
 [![Feature Card](https://img.shields.io/badge/feature%20card-17-green)]()
 [![Quality Gates](https://img.shields.io/badge/quality%20gates-54-orange)]()
 [![Frameworks](https://img.shields.io/badge/frameworks-74-blueviolet)]()
