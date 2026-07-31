@@ -58,7 +58,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 
 **AI 主导 + 用户决策原则**（G1 决策治理，对齐 ISO/IEC 42001 人工监督留痕）：在目标技能的完整生命周期中，特征卡提取、门禁配置、spec 填充、代码实现、问题排查等所有环节均**优先以 AI 为主导生成建议项**，但决策按**三级分类**治理——什么能自动做、什么必须停下问、每条决策有审计轨迹落盘。用户的角色是**评估决策或修订后批准执行**，而非手动编写。详见 `references/decision-governance.md`。具体：
 - 特征卡 17 项：AI 探查后**主动生成建议值**（Mechanical 类，直接做），用户评估修订后确认
-- 门禁 precheck.conf 三件套 169 变量：AI 从特征卡**主动推导建议配置**（Mechanical 类；涉及安全规则如 SENSITIVE_WHITELIST/CRYPTO_PROFILE 升 Taste），用户评估后确认
+- 门禁 precheck.conf 三件套 171 变量：AI 从特征卡**主动推导建议配置**（Mechanical 类；涉及安全规则如 SENSITIVE_WHITELIST/CRYPTO_PROFILE 升 Taste），用户评估后确认
 - spec 模板填充：AI **主动预填**（Taste 类；§5.6 版本约束/§5.7 安全约束升 UserChallenge；含 §5.5 复用约束从第 11 项检索预填），用户评估修订后确认
 - 门禁 fail：AI **主动诊断原因 + 给出修复建议**（Taste 类；涉及依赖升级/安全冲突/删稳定单元升 UserChallenge），用户评估后批准执行
 - 编码实现：AI **主动给出代码方案**（Taste 类；含复用了哪些稳定单元；多方案/改只读/删稳定单元升 UserChallenge），用户评估后确认
@@ -100,7 +100,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 5. **特征卡**：17 项（项目类型→…→可复用稳定单元→…→编排约束→详尽组件库清单），P0 六项（1/4/5/11/15/16）每项落到具体值不用占位符；P1 十一项 draft 期可「（P1 待补）」，`--mark-active` 前清零。映射表见 `references/template-spec.md` §3
 6. **创建骨架**：`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ + precheck.conf）。`--profile auto|lite|standard|compliance` 四档，**默认 auto 项目级自适应**（合规关键词 → compliance；文件数 <80 → lite；其余 standard；**WP-Q2 偏置修正：信号明确才升档，模糊走默认 standard**，auto 会打印判定依据供用户评估）：**lite**（认知档）= 特征卡 + reference-manual + 核心门禁脚本最小集（无 hooks/commands/settings/.mcp.json）；**standard** = 全量骨架；**compliance** = standard + 标准合规矩阵参考（references/standards-compliance.md）。**零占位符铁律适用范围 = 当前 profile 的文件集**（profile 是显式声明不启用，与"未配置静默跳过"本质不同）。默认生成到 `<project-dir>/.claude/skills/`（"为目标项目生成"名副其实）；可用第 3 参数 `target-dir` 显式指定其他目录，如 `--upgrade <name> <project-dir> <target-dir>`。全局安装到 `~/.claude/skills/` 等运行时目录走 `install.sh`。
 7. **AI 填充全部文件**：SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`。**reference-manual.md §4 构件表/§6 接口表/§9 store+类型表按形态动态填充（维度错配=未完成），§5 链路按形态选模型 + §5.1 约束注释，dev-guide.md §8 按形态选约束类别**
-8. **AI 配置 precheck.conf**：**★WP-P4 脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/SERVICE_DIRS/STORE_DIR/WRITABLE_DIRS 等语义型变量，须从特征卡推导）+ 审 diff 是否符合特征卡意图——从「写 169 行」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
+8. **AI 配置 precheck.conf**：**★WP-P4 脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/SERVICE_DIRS/STORE_DIR/WRITABLE_DIRS 等语义型变量，须从特征卡推导）+ 审 diff 是否符合特征卡意图——从「写 171 行」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
 9. **AI 集成 Claude Code**：定制 generate-skill.sh 已生成的 hooks/hooks.json + commands/ + settings.local.json + .mcp.json 模板（脚本骨架已建，AI 补项目特定配置）+ workflow.md 节点标注。hooks 含 PostToolUse(Bash) failure-detector（失败模式机械检测：SPINNING/EXPLORING/MIXED 三态 + L1-L4 压力升级，借鉴 tanweai/pua 改写）+ PreToolUse 防作弊门（integrity-guard：受保护治理资产 deny/advisory 两档，借鉴 tanweai/pua 改写为 swarm-yuan 资产清单）。详见 `references/claude-code-capabilities.md`
 10. **AI 运行门禁**：`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--mark-active` 翻 active 后 `--all-full`（标准 27：核心 10+架构 17）；强监管交付按需追加 `--compliance-suite`（合规 17）。**★compliance 档 / 改治理资产 / 发布链路：强制走四权分离 agent 拓扑（policy-guardian → action-executor → self-reviewer → verifier，借鉴 tanweai/pua 改写为立法/执法/司法三权隐喻，详见 `references/governance-agents.md`）——action-executor 只给 candidate_pass，最终 verifier_status 由 external harness/hook/human 定，防「自己改自己验收」**。**★compaction 状态续传（借鉴 tanweai/pua builder-journal）：PreCompact hook 自动 `bash scripts/state-machine.sh dump-journal` 把 phase/failure_count/peak_level dump 到 `.swarm-yuan/builder-journal.md`；SessionStart 自动 `restore-journal` 检测 <2h 的 journal 并恢复压力状态——压力不因 compaction 重置**
 11. **AI 写回记忆**：`bash scripts/memory-writeback.sh`（S9 实装，脚本兜底）三路写回 .swarm-yuan/project-knowledge.md / .zcode/memories/ / claude-mem，形成"记忆→生成→开发→记忆"闭环（best-effort，不阻塞主流程）
@@ -137,6 +137,12 @@ swarm-yuan 整合 13 个外部运行时，按**接线深度分三层**（每层�
 | **方法论引用（5）** | superpowers / gstack / ECC / Ruflo / impeccable | 作为方法论参考，AI 按 workflow 节点引用其模式（slash command 或文档指引）；swarm-yuan 自带等价降级载体 | 自带 subagent-orchestration.md / review-methodology.md / state-machine.sh / frontend-design-methodology.md |
 
 OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machine）/ gstack+OCR（review）/ graphify+GitNexus（code-graph）/ gsd-core（phase-loop+goal-backward）/ claude-mem（memory persistence）/ Ruflo（multi-agent swarm 编排）/ ECC（council 多声音认知扩展）/ impeccable（前端设计质量方法论）/ codex-security（语义级安全扫描 + 威胁模型 + 攻击路径分析）。
+
+> **Palantir 理念映射吸收（决策 28/29，2026-07-31 R11 调研吸收）**：把 Palantir 工程哲学作为外部参照系审视 swarm-yuan 设计盲区（详见 `docs/research/R11-palantir-mapping.md`），以下概念以**方法论吸收**落地（不新增 `check_*` 门禁，守决策 26 预算）：
+> - 标记沿调用链传播（`--stable-diff` 传播 warn + 特征卡第 11 项 §11g 下游影响域 + G16 断言；Palantir `/docs/foundry/security/overview/` "Mandatory controls propagate along lineage" 映射）
+> - 语义/动能二分显式命名（`references/cognition-framework.md` §7；Palantir `/docs/foundry/ontology/overview/` semantic/kinetic primitives 映射）
+> - 动作授权锚定组件标记（`references/decision-governance.md` §2.2.1 组件标记驱动升级；Palantir AIP `/docs/foundry/aip/overview/` AI 经本体论行动映射）
+> - FDE 反向传播形式化（`references/fde-backprop.md`；Palantir Architecture Center "FDE = human equivalent of backpropagation" 映射）
 
 > **运行时升级整合吸收（决策 27，2026-07-26 本轮 + 2026-07-28 impeccable 吸收）**：6 个运行时对齐最新稳定版后，以下概念以**方法论吸收**落地（不新增 `check_*` 门禁，守决策 26 预算；详见 `docs/runtime-update-2026-07.md`）：
 > - gsd-core v1.8.0：reversibility 评级（`references/decision-governance.md` §2.4）+ broken-windows 台账（`references/gsd-patterns.md` + `state-machine.sh` archive guard warn）
@@ -184,10 +190,11 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 前端设计质量方法论（impeccable v4.0.2 吸收，方法论引用层第 5 对象；Modes/三层权威/craft-floor/59 反模式字典/finish_reviewer 完工审查） | `references/frontend-design-methodology.md` |
 | 上下文工程分层（Prompt U 型曲线 / minimal≠short / 六层上下文模型 / Prompt=model adapter / Delivering work+Corrections 治理内核；2026-07-27 文章吸收） | `references/context-engineering-layering.md` |
 | codex-security 安全扫描方法论（OpenAI codex-security CLI 接线；静态评估七元组 + 威胁模型五要素 + 攻击路径分析 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；2026-07-30 吸收） | `references/codex-security-methodology.md` |
+| FDE 反向传播纪律（Palantir Architecture Center "FDE = human backpropagation" 映射；forward deploy→项目信号→backprop→核心模板 的跨项目闭环；决策 29 吸收，2026-07-31） | `references/fde-backprop.md` |
 | 框架规则库（生成时按 ACTIVE_FRAMEWORKS 读取对应 `<fw>.md`） | `references/frameworks/` |
 | 落地案例（关节编排/Articulated Orchestration 类汇报论据，S18 补入索引） | `references/case-studies/articulation-orchestration.md` |
 
-> **注**：另 2 份 references（`cwe-database.md` / `security-certification-profiles.md`）为门禁内部数据文件，由 `--cwe-audit`/`--cert-audit` 机械读取，不列入本 AI 阅读表（references/ 实际 34 文件 = 本表 32 + 门禁内部 2；`case-studies/` 子目录单独计，不在 34 内）。
+> **注**：另 2 份 references（`cwe-database.md` / `security-certification-profiles.md`）为门禁内部数据文件，由 `--cwe-audit`/`--cert-audit` 机械读取，不列入本 AI 阅读表（references/ 实际 35 文件 = 本表 33 + 门禁内部 2；`case-studies/` 子目录单独计，不在 35 内）。
 
 ## 使用说明
 

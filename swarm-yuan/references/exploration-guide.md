@@ -858,6 +858,13 @@ git --version; gh --version; docker --version
 
 > 探查时用 `gitnexus analyze` + `gitnexus mcp` 或 `graphify .` 构建图谱，用图谱查询调用链/依赖链，**系统性盘点**而非随机 grep。对每个稳定单元记录：签名、路径、用途、复用方式。
 
+#### 11g. 下游影响域（P0 必填，决策 28：标记沿调用链传播）
+> **★铁律（决策 28，Palantir markings-propagate 映射）：禁止改层的稳定单元，其"下游影响域"（1 跳：直接调用该稳定单元的下游文件）必须记录。** `--stable-diff` 门禁的传播段据此反查——本次变更触及下游影响域文件时 warn "依赖禁止改单元 X，改动可能破坏其契约"。只列"禁止改层"的下游；稳定层/不稳定层不强制（它们可改，传播意义弱）。记录在 `reference-manual.md §5` 调用链路图，用机器可读标记 `<!-- stable-propagate: <stable_file> → <downstream1>,<downstream2> -->`，G16 断言扫此标记。
+| 稳定单元（禁止改层） | 下游影响域（1 跳直接调用者） | 证据 |
+|---------------------|--------------------------|------|
+| `src/repositories/UserRepo` | `src/services/UserService`, `src/services/AuthService` | graphify path / gitnexus trace |
+| `src/domain/Order` | `src/services/OrderService`, `src/controllers/OrderController` | import 反查 |
+
 ### 12. 数据规范（P1·可增量）
 - schema 位置：<路径>
 - 样例数据：<位置/格式>

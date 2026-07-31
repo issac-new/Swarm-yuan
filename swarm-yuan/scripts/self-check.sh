@@ -1492,11 +1492,13 @@ check_context_engineering_layering() {
   fi
 
   # ③ facts.conf 口径同步（warn-only，对齐 G13 风格）
-  if [[ "${FACT_REFERENCES:-0}" -ne 34 ]]; then
-    warn "facts.conf FACT_REFERENCES=${FACT_REFERENCES:-（未设）} ≠ 34（context-engineering-layering + codex-security-methodology 加入应同步 references 计数为 34）"
+  # references 数随方法论吸收递增：context-engineering-layering + codex-security-methodology + fde-backprop
+  # 真值由 check_doc_consistency 的 ref_cnt 机械计数，FACT_REFERENCES 跟随同步。
+  if [[ "${FACT_REFERENCES:-0}" -ne 35 ]]; then
+    warn "facts.conf FACT_REFERENCES=${FACT_REFERENCES:-（未设）} ≠ 35（context-engineering-layering + codex-security-methodology + fde-backprop 加入应同步 references 计数为 35）"
     _warn=$((_warn+1))
   else
-    echo "  ✓ facts.conf FACT_REFERENCES=34（references 文档数同步）"
+    echo "  ✓ facts.conf FACT_REFERENCES=35（references 文档数同步）"
   fi
 
   if [[ $_missing -gt 0 ]]; then
@@ -1571,6 +1573,87 @@ check_codex_security_cli_wiring() {
   fi
 }
 check_codex_security_cli_wiring
+# ===== 标记沿调用链传播断言（G16，决策 28，Palantir markings-propagate 映射）=====
+# 决策 28（R11-Palantir-mapping §4.1）：稳定单元标注是 file-glob 级静态属性，
+# 不沿调用链传播——`--stable-diff` 防直接改稳定单元，防不了"改下游依赖间接破坏契约"。
+# G16 断言守"下游影响域"标注的覆盖率：
+#   - references/exploration-guide.md §11g 含"下游影响域"段（填充指引载体，warn-only）
+#   - assets/precheck.arch.conf 含 STABLE_PROPAGATE / STABLE_PROPAGATE_HOPS（开关载体）
+#   - facts.conf 含 FACT_STABLE_PROPAGATE / FACT_STABLE_PROPAGATE_HOPS（口径同步）
+# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=54（决策 27 第 4 条：G<N> 是合规扩展点）。
+# 风格：对齐 G13/G14/G15 warn-only——开关缺失才 fail，叙事/口径漂移只 warn。
+# 目标技能（生成产物）不强制此断言——下游影响域是 swarm-yuan 自身的探查方法论吸收，
+# 目标技能的 reference-manual.md §5 是否含 stable-propagate 标记由 AI 探查时按需填（不 fail）。
+check_stable_propagate_wiring() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local facts="$base/assets/facts.conf"
+  [[ -f "$facts" ]] || return 0
+  if [[ -z "${FACT_STABLE_PROPAGATE:-}" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$facts"; set -u
+  fi
+  echo "▶ 标记沿调用链传播断言（G16，决策 28，Palantir markings-propagate 映射）"
+  local _missing=0 _warn=0
+
+  # ① assets/precheck.arch.conf 含 STABLE_PROPAGATE / STABLE_PROPAGATE_HOPS（开关载体）
+  local _arch="$base/assets/precheck.arch.conf"
+  if [[ -f "$_arch" ]] && grep -qE '^STABLE_PROPAGATE=' "$_arch" && grep -qE '^STABLE_PROPAGATE_HOPS=' "$_arch"; then
+    echo "  ✓ precheck.arch.conf 含 STABLE_PROPAGATE + STABLE_PROPAGATE_HOPS（开关载体）"
+  else
+    warn "precheck.arch.conf 缺 STABLE_PROPAGATE/STABLE_PROPAGATE_HOPS（决策 28 开关载体，应补）"
+    _missing=$((_missing+1)); FAIL=1
+  fi
+  # _default_conf 兜底也须含（防 set -u 崩 + 目标技能 conf 缺时降级）
+  local _pc="$base/assets/precheck.sh"
+  if [[ -f "$_pc" ]] && grep -qE '^\s*STABLE_PROPAGATE=1\b' "$_pc" && grep -qE '^\s*STABLE_PROPAGATE_HOPS=1\b' "$_pc"; then
+    echo "  ✓ precheck.sh _default_conf 含 STABLE_PROPAGATE 兜底"
+  else
+    warn "precheck.sh _default_conf 缺 STABLE_PROPAGATE/STABLE_PROPAGATE_HOPS 兜底（set -u 保护）"
+    _warn=$((_warn+1))
+  fi
+
+  # ② references/exploration-guide.md 含"下游影响域"段（填充指引载体，warn-only——
+  #    这是给 AI 探查时填特征卡第 11 项 §11g 的指引，swarm-yuan 自身有即可，目标技能不强求）
+  local _exp="$base/references/exploration-guide.md"
+  if [[ -f "$_exp" ]] && grep -qE '下游影响域' "$_exp"; then
+    echo "  ✓ references/exploration-guide.md 含'下游影响域'段（填充指引载体）"
+  else
+    warn "references/exploration-guide.md 缺'下游影响域'段（决策 28 填充指引载体，应补 §11g）"
+    _warn=$((_warn+1))
+  fi
+
+  # ③ facts.conf 口径同步（warn-only）
+  if [[ "${FACT_STABLE_PROPAGATE:-0}" -ne 1 ]]; then
+    warn "facts.conf FACT_STABLE_PROPAGATE=${FACT_STABLE_PROPAGATE:-（未设）} ≠ 1（决策 28 启用标志）"
+    _warn=$((_warn+1))
+  else
+    echo "  ✓ facts.conf FACT_STABLE_PROPAGATE=1"
+  fi
+  if [[ -z "${FACT_STABLE_PROPAGATE_HOPS:-}" ]]; then
+    warn "facts.conf 缺 FACT_STABLE_PROPAGATE_HOPS（决策 28 默认跳数，应补=1）"
+    _warn=$((_warn+1))
+  else
+    echo "  ✓ facts.conf FACT_STABLE_PROPAGATE_HOPS=${FACT_STABLE_PROPAGATE_HOPS}"
+  fi
+
+  # ④ check_stable_diff 传播段存在（gates-warn.sh 含 stable-propagate / 下游 文字）
+  local _gw="$base/assets/gates-warn.sh"
+  if [[ -f "$_gw" ]] && grep -qE 'STABLE_PROPAGATE' "$_gw"; then
+    echo "  ✓ gates-warn.sh check_stable_diff 含传播段"
+  else
+    warn "gates-warn.sh check_stable_diff 缺传播段（决策 28 实现，应补 §3 段）"
+    _missing=$((_missing+1)); FAIL=1
+  fi
+
+  if [[ $_missing -gt 0 ]]; then
+    echo "  ⚠ 标记传播 absorb 载体缺失 ${_missing} 项（fail）"
+  elif [[ $_warn -gt 0 ]]; then
+    echo "  ℹ 标记传播 absorb 叙事/口径漂移 ${_warn} 项（warn-only，不阻断）"
+  else
+    echo "  ✓ 标记传播 absorb 四载体一致（arch.conf + exploration-guide + facts.conf + gates-warn.sh）"
+  fi
+}
+check_stable_propagate_wiring
 
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
