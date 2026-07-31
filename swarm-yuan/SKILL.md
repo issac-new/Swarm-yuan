@@ -48,7 +48,7 @@ swarm-yuan 的 54 个门禁服务于一条认知递进链。核心理念：**呈
 | 层 | 解决什么 | 落点 |
 |----|---------|------|
 | 第一层 认知递进 | 如何认识项目（概念→结构→空间→映射→规律→处理） | 探查 + `--cognition` |
-| 第二层 思维语言 | 如何思考（三元演化+三导向+七推理+7×7） | workflow + spec §14/§15 |
+| 第二层 思维语言 | 如何思考（三元演化+三导向[=四导向的 spec 落点子集，见执行准则]+七推理+7×7） | workflow + spec §14/§15 |
 | 第三层 认知辩证 | 如何推演+自证伪（4-Phase SOP + 逻辑剃刀） | workflow + check |
 | 第四层 偏差防范 | 如何纠偏（五维偏差+思维模型 8 类） | spec §16 |
 | 第五层 辩证认知 | 如何统一前四层（7 对辩证范畴） | spec §17 |
@@ -138,11 +138,7 @@ swarm-yuan 整合 13 个外部运行时，按**接线深度分三层**（每层�
 
 OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machine）/ gstack+OCR（review）/ graphify+GitNexus（code-graph）/ gsd-core（phase-loop+goal-backward）/ claude-mem（memory persistence）/ Ruflo（multi-agent swarm 编排）/ ECC（council 多声音认知扩展）/ impeccable（前端设计质量方法论）/ codex-security（语义级安全扫描 + 威胁模型 + 攻击路径分析）。
 
-> **Palantir 理念映射吸收（决策 28/29，2026-07-31 R11 调研吸收）**：把 Palantir 工程哲学作为外部参照系审视 swarm-yuan 设计盲区（详见 `docs/research/R11-palantir-mapping.md`），以下概念以**方法论吸收**落地（不新增 `check_*` 门禁，守决策 26 预算）：
-> - 标记沿调用链传播（`--stable-diff` 传播 warn + 特征卡第 11 项 §11g 下游影响域 + G16 断言；Palantir `/docs/foundry/security/overview/` "Mandatory controls propagate along lineage" 映射）
-> - 语义/动能二分显式命名（`references/cognition-framework.md` §7；Palantir `/docs/foundry/ontology/overview/` semantic/kinetic primitives 映射）
-> - 动作授权锚定组件标记（`references/decision-governance.md` §2.2.1 组件标记驱动升级；Palantir AIP `/docs/foundry/aip/overview/` AI 经本体论行动映射）
-> - FDE 反向传播形式化（`references/fde-backprop.md`；Palantir Architecture Center "FDE = human equivalent of backpropagation" 映射）
+> **Palantir 理念映射吸收（决策 28/29，2026-07-31 R11 调研吸收）**：把 Palantir 工程哲学作为外部参照系审视 swarm-yuan 设计盲区（详见 `docs/research/R11-palantir-mapping.md`）。**决策 28** 标记沿调用链传播以方法论吸收（`--stable-diff` 传播 warn + 特征卡第 11 项 §11g 下游影响域 + G16 断言；Palantir "Mandatory controls propagate along lineage" 映射）。决策 29 三产物（语义/动能命名/组件标记驱动/FDE 反向传播）降为决策记录，见 `docs/paradigm-decisions.md`。
 
 > **运行时升级整合吸收（决策 27，2026-07-26 本轮 + 2026-07-28 impeccable 吸收）**：6 个运行时对齐最新稳定版后，以下概念以**方法论吸收**落地（不新增 `check_*` 门禁，守决策 26 预算；详见 `docs/runtime-update-2026-07.md`）：
 > - gsd-core v1.8.0：reversibility 评级（`references/decision-governance.md` §2.4）+ broken-windows 台账（`references/gsd-patterns.md` + `state-machine.sh` archive guard warn）
@@ -190,11 +186,10 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 前端设计质量方法论（impeccable v4.0.2 吸收，方法论引用层第 5 对象；Modes/三层权威/craft-floor/59 反模式字典/finish_reviewer 完工审查） | `references/frontend-design-methodology.md` |
 | 上下文工程分层（Prompt U 型曲线 / minimal≠short / 六层上下文模型 / Prompt=model adapter / Delivering work+Corrections 治理内核；2026-07-27 文章吸收） | `references/context-engineering-layering.md` |
 | codex-security 安全扫描方法论（OpenAI codex-security CLI 接线；静态评估七元组 + 威胁模型五要素 + 攻击路径分析 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；2026-07-30 吸收） | `references/codex-security-methodology.md` |
-| FDE 反向传播纪律（Palantir Architecture Center "FDE = human backpropagation" 映射；forward deploy→项目信号→backprop→核心模板 的跨项目闭环；决策 29 吸收，2026-07-31） | `references/fde-backprop.md` |
 | 框架规则库（生成时按 ACTIVE_FRAMEWORKS 读取对应 `<fw>.md`） | `references/frameworks/` |
 | 落地案例（关节编排/Articulated Orchestration 类汇报论据，S18 补入索引） | `references/case-studies/articulation-orchestration.md` |
 
-> **注**：另 2 份 references（`cwe-database.md` / `security-certification-profiles.md`）为门禁内部数据文件，由 `--cwe-audit`/`--cert-audit` 机械读取，不列入本 AI 阅读表（references/ 实际 35 文件 = 本表 33 + 门禁内部 2；`case-studies/` 子目录单独计，不在 35 内）。
+> **注**：另 2 份 references（`cwe-database.md` / `security-certification-profiles.md`）为门禁内部数据文件，由 `--cwe-audit`/`--cert-audit` 机械读取，不列入本 AI 阅读表（references/ 实际 34 文件 = 本表 32 + 门禁内部 2；`case-studies/` 子目录单独计，不在 34 内）。
 
 ## 使用说明
 

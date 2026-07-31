@@ -70,12 +70,12 @@ AI 写代码前必须先认识项目。swarm-yuan 用 **17 项特征卡** 完成
 | 8 | 文档约定 | spec/plan 位置和命名 | spec 文件路径 |
 | 9 | 测试体系 | 框架/目录/命令 | `--test` 执行命令 |
 | 10 | 环境资源 | 运行时/DB/缓存/MQ/MCP | `--service` 配置 |
-| 11 | **可复用稳定单元** | 全部稳定 API/组件/类/函数/store/类型（签名+路径+用途+复用方式+稳定性标注） | **拼装式开发核心依据**——`--reuse` 重名检测源 |
+| 11 | **可复用稳定单元** | 全部稳定 API/组件/类/函数/store/类型（五维字段定义见 `references/exploration-guide.md` §11f） | **拼装式开发核心依据**——`--reuse` 重名检测源 |
 | 12 | 数据规范 | schema/样例/业务规则/勾稽 | `--consistency` 核对项 |
 | 13 | 认知框架 | 认知映射表 + 六维动力学基线 | `--cognition` 对比基线 |
 | 14 | **领域知识** | 技术+业务领域 → 推导客观规律 | **防达克效应**——`--domain` 违规检测 |
 
-**第 11 项是核心中的核心。** AI 用 graphify `query` / gitnexus `context` 系统性盘点全部稳定单元（GitNexus 因 PolyForm Noncommercial 禁商用降级为非默认，graphify（MIT）提为默认代码图谱工具）——不是随机 grep，而是基于代码图谱的 360 度上下文查询。每个单元记录签名、路径、用途、复用方式、稳定性标注。
+**第 11 项是核心中的核心。** AI 用 graphify `query` / gitnexus `context` 系统性盘点全部稳定单元（GitNexus 因 PolyForm Noncommercial 禁商用降级为非默认，graphify（MIT）提为默认代码图谱工具）——不是随机 grep，而是基于代码图谱的 360 度上下文查询。每个单元记录五维字段（定义见 `references/exploration-guide.md` §11f）。
 
 ### 特征卡如何驱动一切
 
