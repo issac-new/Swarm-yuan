@@ -359,3 +359,46 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 **与决策 28 的关系**：决策 28 补"标记沿调用链传播"的门禁层缺口（`--stable-diff` 传播 warn）；本决策补"动作授权锚定组件标记"的决策层缺口（`costly` 评级规则）+ 语义/动能显式命名的设计清晰度缺口 + FDE 反向传播的形式化缺口。两者共同落地 R11 调研的 P1-P3 建议。
 
 **可信度声明**：Palantir 本体论（semantic/kinetic 二分）/ AIP（AI 经本体论行动）/ FDE = human backpropagation 均一手来源（`/docs/foundry/ontology/overview/` + `/docs/foundry/aip/overview/` + Architecture Center，高可信，R11 §0.3/§1.1/§1.5/§1.7）。
+
+---
+
+## 决策 32：上下文窗口自适应压缩——SKILL.md 分层折叠 + frontmatter 精简 + 预算门禁（2026-08-01）
+
+**问题**：`context-surface.sh --gen`（生成期必读三件套：SKILL.md + exploration-guide.md + template-spec.md）当前 170,709 字节，已从 post-opt 基线 156,992 膨胀回涨（+13,717 字节，+8.7%），逼近 pre-opt 基线 193,226。SKILL.md 200 行/37KB 是常驻硬成本，其中约 90 行是"按需展开"段（Step 详解 :90-107、方法论吸收记录 :141-150、reference 清单表 :154-192），但它们常驻 SKILL.md 正文，每次 skill 加载都进上下文。`FACT_CONTEXT_SURFACE_PRE_OPT=193226` 是孤儿事实（self-check 不校验）。
+
+**决策**：三层压缩 + 预算门禁，0 新门禁 0 新 G<N> 断言（预算检查并入现有 G9 `check_complexity_budget()`）——
+
+1. **第一层 SKILL.md 正文分层折叠**（主战场）：
+   - Step 1-12 详解（:90-107，~8KB）移到新建 `references/generation-flow.md`，正文只留 ASCII 节点总览流程图 + 4 条铁律摘要 + 指针
+   - 方法论吸收记录（Palantir + 运行时升级 6 条，:141-150，~3KB）折叠为 1 句话指针指向 `docs/runtime-update-2026-07.md`
+   - reference 清单表 33 行（:154-192，~3KB）压缩为 6 行分类索引（探查/填充/认知/方法论/合规/安全）
+   - AI 主导 7 条决策分类（:59-66，~2KB）折叠为 1 句话指针指向 `references/decision-governance.md`
+   - verifier 定位 + WP-P3 框架台账（:101-103，~1KB）折叠为 1 句话指针
+2. **第二层 frontmatter description 精简**：删门禁子分类细节（27 via --all-full: core 10 + architecture 17; compliance 17...）+ shift-left/rtm/release-sign 细节，保留触发词 + 核心能力 + 13/54/5/32 四个主 catchphrase。931B → ~350B（-62%）
+3. **第三层 上下文预算门禁**：
+   - `facts.conf` +`FACT_CONTEXT_SURFACE_BUDGET=180000`（当前压缩后 ~120000，预留余量）
+   - `self-check.sh` `check_complexity_budget()`（G9）追加上下文表面预算 **warn** 断言（跑 `context-surface.sh --gen` 取 TOTAL，超预算只 warn 不 fail，渐进式对齐 MEASURE 模式）
+   - CI 已跑 `--check-only`，预算 warn 进 CI 输出防回涨
+   - `FACT_CONTEXT_SURFACE_PRE_OPT` 保留为历史基线（不动），新预算是独立键
+
+**预算核算**：
+
+| 项 | 变更前 | 变更后 | 预算 |
+|----|--------|--------|------|
+| FACT_GATES_TOTAL | 54 | 54（不改门禁） | 54 |
+| FACT_CONF_VARS | 171 | 171（FACT_CONTEXT_SURFACE_BUDGET 在 facts.conf 非三件套，不计入） | 200 |
+| FACT_REFERENCES | 34 | 35（+generation-flow.md） | — |
+| context-surface --gen | 170,709B | ~120,000B（-30%） | 180,000（warn） |
+| G<N> 断言 | G16 | G16（并入 G9，不加新） | — |
+
+✅ 合规决策 26/27。
+
+**理由**：
+1. **按需展开段常驻是上下文浪费**——Step 详解只在执行到对应 Step 时需要，不该常驻 SKILL.md；references 设计意图本就是按需读取（SKILL.md:154"按需读取"），Step 详解同理
+2. **frontmatter 是不可压缩硬成本**——skill 被 skill-finder 匹配时强制进上下文，931B 含门禁子分类细节属过度信息，精简到"被匹配"的最小集
+3. **预算门禁防回涨**——post-opt→当前的 +8.7% 回涨无人守；warn 断言让回涨可见，CI 输出形成软约束
+4. **0 新门禁 0 新断言**——预算检查复用 G9 `check_complexity_budget()`，不加新 `check_*`/G<N>（守决策 26/27）
+
+**与决策 26（复杂度负向预算）的关系**：决策 26 守"门禁数/conf 变量数"预算；本决策补"上下文表面字节"预算——三者同源（负向预算防膨胀），但维度不同（数量 vs 字节）。字节预算 warn-only（渐进式），数量预算 fail（已达标）。
+
+**与 generate-skill.sh 目标技能 SKILL.md 的关系**：目标技能侧已实现按 profile 档过滤 SKILL.md 索引表（`generate-skill.sh:1328` WP-P5），本决策给 swarm-yuan 自身 SKILL.md 加同层级的"按需折叠"——生成器自身先做到精简，生成的目标技能才能继承精简模式。
