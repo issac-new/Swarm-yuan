@@ -1231,6 +1231,21 @@ check_complexity_budget() {
   else
     echo "  ✓ 变量数 ${_vars_true} ≤ 预算 ${_vars_budget}（决策 26，预留 $((_vars_budget - _vars_true)) 增长空间）"
   fi
+  # 上下文表面预算（决策 32，warn-only 渐进式，对齐 MEASURE 模式）
+  # context-surface.sh --gen 计量生成期必读三件套（SKILL.md + exploration-guide + template-spec）字节。
+  # 超预算只 warn 不 fail——避免压缩工作被回涨悄悄侵蚀，但给减重留过渡期（warn-only → 达标后可翻 fail）。
+  local _ctx_budget="${FACT_CONTEXT_SURFACE_BUDGET:-180000}"
+  local _ctx_script="$base/scripts/context-surface.sh"
+  if [[ -f "$_ctx_script" ]]; then
+    local _ctx_total
+    _ctx_total=$(bash "$_ctx_script" --gen 2>/dev/null | awk -F'\t' '$3=="TOTAL" {print $1}' | head -1)
+    _ctx_total="${_ctx_total:-0}"
+    if [[ "$_ctx_total" -gt "$_ctx_budget" ]]; then
+      warn "上下文表面 ${_ctx_total}B > 预算 ${_ctx_budget}B（决策 32）--生成期必读三件套超预算，须压缩 SKILL.md/exploration-guide/template-spec 或申请预算上调"
+    else
+      echo "  ✓ 上下文表面 ${_ctx_total}B ≤ 预算 ${_ctx_budget}B（决策 32，预留 $((_ctx_budget - _ctx_total)) 增长空间）"
+    fi
+  fi
 }
 check_complexity_budget
 
@@ -1492,13 +1507,13 @@ check_context_engineering_layering() {
   fi
 
   # ③ facts.conf 口径同步（warn-only，对齐 G13 风格）
-  # references 数随方法论吸收递增：context-engineering-layering + codex-security-methodology
+  # references 数随方法论吸收递增：context-engineering-layering + codex-security-methodology + generation-flow
   # 真值由 check_doc_consistency 的 ref_cnt 机械计数，FACT_REFERENCES 跟随同步。
-  if [[ "${FACT_REFERENCES:-0}" -ne 34 ]]; then
-    warn "facts.conf FACT_REFERENCES=${FACT_REFERENCES:-（未设）} ≠ 34（context-engineering-layering + codex-security-methodology 加入应同步 references 计数为 34）"
+  if [[ "${FACT_REFERENCES:-0}" -ne 35 ]]; then
+    warn "facts.conf FACT_REFERENCES=${FACT_REFERENCES:-（未设）} ≠ 35（context-engineering-layering + codex-security-methodology + generation-flow 加入应同步 references 计数为 35）"
     _warn=$((_warn+1))
   else
-    echo "  ✓ facts.conf FACT_REFERENCES=34（references 文档数同步）"
+    echo "  ✓ facts.conf FACT_REFERENCES=35（references 文档数同步）"
   fi
 
   if [[ $_missing -gt 0 ]]; then
