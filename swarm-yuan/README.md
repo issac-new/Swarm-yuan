@@ -96,9 +96,9 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 **特征卡是立法，门禁是执法。** 特征卡定义规则，门禁验证合规。
 
 > **门禁分层（决策 19）——执法强度横切维度：** 54 门禁按 `fail()` 能力分三档，与 core/standard/compliance 执行序列正交：
-> - **strict（21 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/privacy/authz/requirements/rtm/dengbao/pia/test-evidence/review-record/release-sign/quality-model/crypto/sast-deep/oss-eval）
-> - **warn（19 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄（cognition/contract/impact/service/api/review/frontend/domain/knowledge 等）
-> - **advisory（14 个）**：0 个 fail，永不阻断，只 warn/pass（consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/cwe-audit/cert-audit）
+> - **strict（16 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/dengbao/pia/test-evidence/review-record/release-sign/quality-model/sast-deep/oss-eval）
+> - **warn（23 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄（privacy/authz/requirements/rtm/crypto/contract/impact/service/api/review/frontend/domain/knowledge 等）
+> - **advisory（15 个）**：0 个 fail，永不阻断，只 warn/pass（cognition/consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/cwe-audit/cert-audit）
 >
 > **advisory 三轴命名（T12 澄清）**：① advisory-file=15（gates-advisory.sh 物理位置，含 cognition 因历史）；② advisory-level=14（0-fail enforce，gate-enforce-level.conf）；③ advisory-only=10（不在 ALL_GATES_CORE/STANDARD/COMPLIANCE 执行序列：operate/decision-audit/cwe-audit/cert-audit/learnings/pr-quality/skill-supply-chain/state-phase/upstream-baseline）。三者正交，本文档统一用 enforce-level 口径（14）。
 >
@@ -388,7 +388,7 @@ Swarm-yuan/
 | 维度 | 数值 | 口径源 |
 |------|------|--------|
 | **特征卡** | **17 项**（P0 六项 1/4/5/11/15/16 + P1 十一项） | FACT_FEATURE_CARDS=17 |
-| **质量门禁** | **54 个** = strict 21 + warn 19 + advisory 14；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
+| **质量门禁** | **54 个** = strict 16 + warn 23 + advisory 15；执行序列 --all 核心 10 / --all-full 标准 27 / --compliance-suite 合规 17 / advisory-only 10 不在任何执行序列 | FACT_GATES_TOTAL=54 |
 | **配置变量** | **171 个**（precheck.conf 12 + precheck.arch.conf 111 + precheck.compliance.conf 48，懒生成按 ACTIVE_FRAMEWORKS 补占位） | FACT_CONF_VARS=171 |
 | **框架规则集** | **74 个**（references/frameworks/*.md 1:1 配 assets/framework-gates/*.sh） | FACT_FRAMEWORKS=74 |
 | **参考文档** | 35 个（references/*.md 不含 frameworks/ 子目录） | FACT_REFERENCES=35 |
