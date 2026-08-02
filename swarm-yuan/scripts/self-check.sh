@@ -932,11 +932,12 @@ check_doc_consistency() {
     local _gate_files; _gate_files=$(_all_gate_files "$base")
     while IFS='=' read -r _fn _lv; do
       [[ "$_fn" =~ ^check_[a-z_]+$ ]] || continue
-      # 用 gen-enforce-level.sh 同款 awk 统计该函数 fail() 数（扫四文件）
+      # 用 gen-enforce-level.sh 同款逻辑统计该函数 fail() 数（扫四文件）
+      # 2026-08-03 修复：原 awk 误计 echo 字符串里的 "fail" 字样，改为 ^[ \t]*fail[ \t]+ 只计行首 fail 调用
       _fc=$(awk -v target="$_fn" '
         /^check_[a-z_]+\(\)/ { in_fn = ($0 ~ "^"target"\\(\\)"); cnt=0; next }
         in_fn && /^\}/ { in_fn=0; print cnt; exit }
-        in_fn { s=$0; while (match(s, /(^|[^a-zA-Z0-9_])fail[ \t]+/)) { cnt++; s=substr(s, RSTART+RLENGTH) } }
+        in_fn { if ($0 ~ /^[ \t]*fail[ \t]+/) cnt++ }
       ' $_gate_files 2>/dev/null || echo 0)
       case "$_lv" in
         strict) [[ "$_fc" -lt 1 ]] && _bad="${_bad} ${_fn}(strict 但 ${_fc} fail);" ;;

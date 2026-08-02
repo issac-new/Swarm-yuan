@@ -30,8 +30,12 @@ for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
 done
 
 # 用 awk 按行边界提取函数体（从 ^check_xxx() 到下一行 ^}）。
-# 不跟大括号深度——python -c / heredoc / case 里的 { } 会污染 depth 跟踪。
-# 匹配 fail 调用：词边界 fail 后跟空白（非字母数字下划线前缀），覆盖 `fail "msg"` / `fail "$var"`。
+# 不跟大括号深度--python -c / heredoc / case 里的 { } 会污染 depth 跟踪。
+# 匹配真实 fail() 调用：行首（可缩进）fail 后跟空白，排除注释行 + echo 字符串里的 "fail" 字样。
+# 修复（2026-08-03）：原正则 /(^|[^a-zA-Z0-9_])fail[ \t]+/ 误计 echo "永不 fail" 里的 fail 字样，
+#   导致 9 个门禁的 enforce_level 归类错误（check_cognition 0->1, check_crypto 1->3 等）。
+#   改为 ^[ \t]*fail[ \t]+ 只匹配行首 fail 调用（真实 fail() 调用都是行首起，echo 字符串内的 fail
+#   前面有引号/文字，不匹配行首锚定）。
 # bash 3.2 兼容：awk + sort，不依赖 GNU 扩展。
 awk '
 /^check_[a-z_]+\(\)/ {
@@ -43,11 +47,8 @@ awk '
 }
 in_fn && /^\}/ { in_fn = 0 }
 in_fn {
-  s = $0
-  while (match(s, /(^|[^a-zA-Z0-9_])fail[ \t]+/)) {
-    cnt++
-    s = substr(s, RSTART + RLENGTH)
-  }
+  # 只计行首 fail 调用（可缩进），排除注释行 + echo 字符串里的 fail 字样
+  if ($0 ~ /^[ \t]*fail[ \t]+/) cnt++
 }
 END { if (cur != "") print cnt "\t" cur }
 ' $GATE_FILES | sort -t$'\t' -k2 > "${OUT}.tmp"
