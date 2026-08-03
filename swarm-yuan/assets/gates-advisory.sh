@@ -539,40 +539,46 @@ check_cognition() {
   fi
 }
 
-check_mermaid() {
-  echo "=== Mermaid 可视化检查（架构图/流程图/调用链是否用 Mermaid）==="
+check_diagram() {
+  echo "=== 可视化检查（架构图/流程图/调用链 + 统计/分布/趋势）==="
   local found=0
 
-  # 检查 reference-manual.md 是否含 mermaid 图
+  # 检查 reference-manual.md 是否含可视化图（mermaid 结构图 或 echarts/antv 数据图）
   local rm_file
   rm_file=$(_first_existing_file "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md")
-  local has_mermaid=0
+  local has_mermaid=0 has_echarts=0 has_any=0
   if [[ -n "$rm_file" ]]; then
-    grep -qiE '```mermaid|<mermaid' "$rm_file" 2>/dev/null && has_mermaid=1
+    # mermaid：结构关系图（依赖图/调用链/分层矩阵/流程图/状态图/C4 架构图）
+    grep -qiE '```mermaid|<mermaid' "$rm_file" 2>/dev/null && { has_mermaid=1; has_any=1; }
+    # echarts/antv：数据图表（统计分布/趋势/指标对比/饼图柱图）
+    grep -qiE '```echarts|```antv|<echarts|<antv|echarts\.init|antv\.' "$rm_file" 2>/dev/null && { has_echarts=1; has_any=1; }
   fi
 
-  # 检查 spec-template.md 是否含 mermaid 引导
+  # 检查 spec-template.md 是否含可视化引导
   local spec_file
   spec_file=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
-  local spec_mermaid=0
+  local spec_diagram=0
   if [[ -n "$spec_file" ]]; then
-    grep -qiE 'mermaid|架构图.*可视化|流程图.*Mermaid' "$spec_file" 2>/dev/null && spec_mermaid=1
+    grep -qiE 'mermaid|echarts|antv|架构图.*可视化|流程图.*Mermaid' "$spec_file" 2>/dev/null && spec_diagram=1
   fi
 
   if [[ $has_mermaid -eq 1 ]]; then
-    pass "reference-manual.md 含 Mermaid 可视化"
-  else
-    warn "reference-manual.md 未检测到 Mermaid 图——涉及架构/流程/调用链时须用 Mermaid 可视化（mermaid 代码块）"
+    pass "reference-manual.md 含 mermaid 结构图（架构/流程/调用链）"
   fi
-  if [[ $spec_mermaid -eq 1 ]]; then
-    pass "spec-template 含 Mermaid 引导"
+  if [[ $has_echarts -eq 1 ]]; then
+    pass "reference-manual.md 含 echarts/antv 数据图（统计/分布/趋势）"
+  fi
+  if [[ $has_any -eq 0 ]]; then
+    warn "reference-manual.md 未检测到可视化图——按内容选恰当图表：架构/流程/调用链/分层矩阵用 mermaid（GitHub 原生渲染）；统计/分布/趋势/指标对比用 echarts/antv（option JSON 代码块）"
+  fi
+  if [[ $spec_diagram -eq 1 ]]; then
+    pass "spec-template 含可视化引导"
   fi
 
   if [[ $found -eq 0 ]]; then
-    pass "Mermaid 可视化检查通过"
+    pass "可视化检查通过（mermaid 结构图 + echarts/antv 数据图双引擎）"
   fi
 }
-
 
 # --operate：发布后运营验证（D 方向，warn 级 advisory——环境依赖型检查硬 fail 风险高）
 # 检查：spec §23 灰度观察声明 / 健康检查端点可访问 / 告警阈值已配置 / runbook 已更新。

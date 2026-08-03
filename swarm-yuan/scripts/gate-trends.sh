@@ -108,7 +108,7 @@ awk -v n="$N" -v topfile="$TMP_TOP" -v jsonl="$JSONL" -v gen_ts="$(date -u '+%Y-
   function scolor(c){ if(c=="p")return "#7d9c7a"; if(c=="f")return "#bf7a5e"; if(c=="w")return "#cfa96f"; return "#b9b0a4" }
   function slabel(c){ if(c=="p")return "pass"; if(c=="f")return "fail"; if(c=="w")return "warn"; return "skip" }
   BEGIN{
-    ng=split("check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_test", order, " ")
+    ng=split("check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_test", order, " ")
     for(i=1;i<=ng;i++) ord[order[i]]=i
   }
   {

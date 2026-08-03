@@ -91,7 +91,7 @@ gitnexus mcp                                    # 启动 MCP server 供 agent �
 ```bash
 uv tool install graphifyy && graphify .         # 构建 → graphify-out/GRAPH_REPORT.md + graph.json
 graphify path "ComponentA" "ComponentB"          # 查依赖链/最短路径
-graphify export callflow-html                    # Mermaid 调用流（用于组件依赖链路段）
+graphify export callflow-html                    # 调用流导出（组件依赖链路段可视化，结构关系图用 mermaid）
 ```
 
 探查时读 `graphify-out/GRAPH_REPORT.md` 获取架构概览（god nodes、surprising connections），用 `graphify path/explain` 查具体依赖链。详见 `references/code-graph-tools.md`。**只引用调用，不复制实现。**
@@ -483,7 +483,7 @@ Layer 2 模块间依赖图：
 grep -rn "^import.*from" <可改源码目录> | grep -oE "from ['\"][^'\"]+['\"]" | sort -u
 # 或：graphify path "ModuleA" "ModuleB" / gitnexus trace
 ```
-产出模块依赖矩阵（Mermaid，节点用项目实际模块名）。**关键：识别跨模块边界**——ModuleA 能否直接 import ModuleB 的组件？还是只能经 store/adapter？
+产出模块依赖矩阵（结构关系图用 mermaid，GitHub 原生渲染；若需表达模块间调用量/频次等统计数据，用 echarts option JSON 代码块。节点用项目实际模块名）。**关键：识别跨模块边界**——ModuleA 能否直接 import ModuleB 的组件？还是只能经 store/adapter？
 
 Layer 3 组件挂载树（每个容器视图递归追 import）：
 ```
@@ -528,7 +528,7 @@ Layer 2 分层依赖矩阵：
 # 按分层目录聚合 import（service→repository / controller→service）
 grep -rn "^import\|^from\|^use " <可改源码目录> | grep -E "service|repository|controller|domain" | sort -u
 ```
-产出分层依赖矩阵（Mermaid）。**关键：识别分层边界**——controller 能否直接访问 repository？domain 层能否 import ORM/框架？
+产出分层依赖矩阵（结构关系图用 mermaid，GitHub 原生渲染）。**关键：识别分层边界**——controller 能否直接访问 repository？domain 层能否 import ORM/框架？
 
 Layer 3 数据流图（每条核心业务的数据流）：
 ```
@@ -663,7 +663,7 @@ grep -nH "^export " <库入口文件>
 - [ ] **Controller/Route 穷举**：§6 每路由文件一张端点表，逐端点列出
 - [ ] **Service/Repository 穷举**：§4 含全部 service/repository + 签名
 - [ ] **请求处理管道**：§5 含中间件链顺序 + 认证层 + 事务边界
-- [ ] **分层依赖矩阵**：§5 含 Mermaid 分层图 + 允许/禁止方向
+- [ ] **分层依赖矩阵**：§5 含分层图（mermaid）+ 允许/禁止方向；统计类数据（如层间调用量）用 echarts
 - [ ] **数据流图**：§5 含核心业务的数据流（controller→service→repo→DB/外部）
 
 **异步维度（仅含异步时）：**

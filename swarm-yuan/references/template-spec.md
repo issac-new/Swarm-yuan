@@ -446,7 +446,7 @@ bash precheck.sh --frontend       # ★前端组件架构：层级深/容器展�
 bash precheck.sh --cognition      # ★认知递进体检：六阶认知链完整性 + 六维动力学（速度/聚散/趋势/强度/能耗/累积量）
 bash precheck.sh --domain         # ★领域知识：技术+业务领域识别 + 客观规律违规检测（密码明文/SQL拼接/XSS/并发竞态）
 bash precheck.sh --knowledge      # ★项目知识复用：AGENTS.md/CLAUDE.md/记忆 → 生成 skill 是否复用
-bash precheck.sh --mermaid        # ★Mermaid 可视化：架构图/流程图/调用链是否用 Mermaid
+bash precheck.sh --diagram        # ★可视化：架构/流程/调用链用 mermaid + 统计/分布/趋势用 echarts/antv（--mermaid 为别名）
 bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影响段+可观测性段+测试先于impl+回滚预案+健康检查端点
 ```
 
