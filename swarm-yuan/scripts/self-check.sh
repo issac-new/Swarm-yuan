@@ -814,12 +814,13 @@ check_doc_consistency() {
             | grep -oE "[0-9]+" | sort -u | grep -vx "$true_fc" || true)
       [[ -n "$bad" ]] && dfound="${dfound} 特征卡数出现非${true_fc}值($(echo $bad | tr '\n' ' '));"
     fi
-    # WP-A: 运行时数对齐 FACT_RUNTIMES——"N 运行时/N 个运行时/N runtimes"
-    # 覆盖 SKILL.md frontmatter "12 runtimes" vs FACT_RUNTIMES=13 这类漂移
+    # WP-A: 运行时数对齐 FACT_RUNTIMES——"N 运行时/N 个运行时/N runtimes/N external runtimes"
+    # 覆盖 SKILL.md frontmatter "12 runtimes" vs FACT_RUNTIMES=13 这类漂移；
+    # 也覆盖 CLAUDE.md "11 external runtimes"（英文 external 修饰）——曾因正则只匹配紧邻 runtimes 而漏检。
     # 子集表述（"6 个运行时对齐最新稳定版"/"深度+CLI 层 7 个"/R6 "9 运行时"）用层标注或研究快照措辞，
     # 正则要求"N 运行时/N 个运行时"紧邻单位，"N 个运行时对齐""9 运行时 + 同行"等带后缀的不命中。
     if [[ -n "${FACT_RUNTIMES:-}" && "${FACT_RUNTIMES}" != "0" ]]; then
-      bad=$(grep -oE "[0-9]+ ?个?运行时(?!.*对齐)(?!.*[+＋])|[0-9]+ ?runtimes" "$docpath" 2>/dev/null \
+      bad=$(grep -oE "[0-9]+ ?个?运行时(?!.*对齐)(?!.*[+＋])|[0-9]+ ?(external )?runtimes" "$docpath" 2>/dev/null \
             | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_RUNTIMES}" || true)
       [[ -n "$bad" ]] && dfound="${dfound} 运行时数出现非${FACT_RUNTIMES}值($(echo $bad | tr '\n' ' '));"
     fi
@@ -1231,6 +1232,20 @@ check_complexity_budget() {
     FAIL=1
   else
     echo "  ✓ 变量数 ${_vars_true} ≤ 预算 ${_vars_budget}（决策 26，预留 $((_vars_budget - _vars_true)) 增长空间）"
+  fi
+  # 脚本行数（LOC）监控——warn-only 渐进式，根除"写死行数"漂移源
+  # 四脚本（precheck.sh + gates-strict/warn/advisory.sh）wc -l 合计，与 FACT_SCRIPT_LOC 对账。
+  # LOC 非硬约束（脚本增删正常），仅监控膨胀趋势 + 让文档行数口径以 facts.conf 为准（不写死）。
+  local _loc_claim="${FACT_SCRIPT_LOC:-0}"
+  if [[ "$_loc_claim" -gt 0 ]]; then
+    local _loc_true
+    _loc_true=$(_all_gate_files "$base" | xargs wc -l 2>/dev/null | awk '$2=="total"{print $1}')
+    _loc_true="${_loc_true:-0}"
+    if [[ "$_loc_true" -ne "$_loc_claim" ]]; then
+      warn "脚本行数 ${_loc_true} ≠ facts.conf FACT_SCRIPT_LOC ${_loc_claim}--改脚本后须同步 facts.conf（文档行数口径以本 key 为准，不写死）"
+    else
+      echo "  ✓ 脚本行数 ${_loc_true} = FACT_SCRIPT_LOC（四文件合计，文档不写死行数）"
+    fi
   fi
   # 上下文表面预算（决策 32，warn-only 渐进式，对齐 MEASURE 模式）
   # context-surface.sh --gen 计量生成期必读三件套（SKILL.md + exploration-guide + template-spec）字节。

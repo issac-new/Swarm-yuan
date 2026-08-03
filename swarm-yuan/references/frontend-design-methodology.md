@@ -1,7 +1,7 @@
 # 前端设计质量方法论（impeccable v4.0.2 吸收）
 
 > 来源：[pbakaus/impeccable](https://github.com/pbakaus/impeccable) v4.0.2（Apache-2.0），方法论引用层第 5 对象（与 superpowers/gstack/ECC/Ruflo 同档）。
-> 纪律：只引用模式，不调 impeccable CLI / detector 引擎 / live 浏览器模式 / 子代理 TOML；不复制 `scripts/` 源码（上游 clone 在 `swarm-yuan/research/impeccable/`，仅供 AI 阅读引用）。
+> 纪律：只引用模式，不调 impeccable CLI / detector 引擎 / live 浏览器模式 / 子代理 TOML；不复制 `scripts/` 源码（上游仓库 [pbakaus/impeccable](https://github.com/pbakaus/impeccable) 可按需 `git clone` 到 `swarm-yuan/research/impeccable/` 供 AI 阅读引用，本地 gitignored，不入 git）。
 > 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 54；守决策 26：复杂度预算不增。
 > 适用场景：目标项目含前端 UI 维度（§C+.0 判定）时，AI 在探查/填充/spec/审查节点引用本文方法论做前端设计质量决策。
 
@@ -142,7 +142,7 @@ impeccable 的 23 个命令分 6 类。AI 引用时按 swarm-yuan workflow 节�
 
 impeccable detector 引擎含 59 条反模式规则，分 slop/layout/type 三 category。**swarm-yuan 不复制 detector 引擎实现**，只把规则 ID + 描述作为 AI 引用字典——AI 在审查前端代码时按此清单识别反模式并给出修复建议，**不机器执法**（不新增 `check_*` 门禁，守决策 26/27）。
 
-**代表性反模式**（完整清单见 `swarm-yuan/research/impeccable/.agents/skills/impeccable/scripts/detector/registry/antipatterns.mjs`）：
+**代表性反模式**（完整清单见上游仓库 `impeccable/.agents/skills/impeccable/scripts/detector/registry/antipatterns.mjs`，可 `git clone` 到 `research/impeccable/` 本地参考）：
 
 - **slop 类**（AI slop tells）：`side-tab` / `gradient-text` / `ai-color-palette` / `cream-palette` / `nested-cards` / `bounce-easing` / `pulsing-dot` / `overused-font` / `gray-on-color` / `tiny-text` / `glow-shadows` 等
 - **layout 类**：`text-overflow` / `clipped-overflow-container` / `body-text-viewport-edge` / `broken-image` 等
@@ -249,7 +249,7 @@ impeccable shipped 的 `finish_reviewer` 子代理做完工审查，三段式：
 
 - 来源：[pbakaus/impeccable](https://github.com/pbakaus/impeccable) v4.0.2
 - 许可证：Apache License 2.0
-- 上游 clone 位置：`swarm-yuan/research/impeccable/`（本地参考，gitignored，不入 git）
+- 上游仓库：[pbakaus/impeccable](https://github.com/pbakaus/impeccable) v4.0.2（可按需 `git clone` 到 `swarm-yuan/research/impeccable/` 供 AI 阅读源码，本地 gitignored，不入 git）
 - 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 54）
 - 自检断言：G13 `check_frontend_design_methodology`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 接线 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_RUNTIMES=12` / `FACT_RUNTIMES_METHOD=5` / `FACT_REFERENCES=30`

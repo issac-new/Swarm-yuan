@@ -1,7 +1,7 @@
 # 上下文工程分层方法论（Context Engineering Layering）
 
 > 来源：[Vibe编码 公众号《Opus 4.8 删掉了73%的提示词，Opus 5 为何又新增了 82%》](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（2026-07-27，作者 VibeCoder）+ Anthropic Context Engineering 文档。
-> 纪律：只引用方法论模式与证据视角，不调任何上游 CLI / 引擎 / 截获工具；不复制文章原文（文章全文存 `swarm-yuan/research/context-engineering/` 本地参考，gitignored）。
+> 纪律：只引用方法论模式与证据视角，不调任何上游 CLI / 引擎 / 截获工具；不复制文章原文（上游文章可按需存档到 `swarm-yuan/research/context-engineering/` 供 AI 阅读，本地 gitignored，不入 git）。
 > 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 54；守决策 26：复杂度预算不增。
 > 适用场景：目标 skill 在**生成自身骨架**（SKILL.md / hooks / commands / MCP / precheck.conf / CLAUDE.md）时，AI 引用本文方法论决定**规则应该放在哪一层**——是常驻 System、还是 CLAUDE.md、还是按需 Skill、还是 typed schema、还是运行时门禁。也用于 swarm-yuan 仓库自身的配置分层（本仓库是一套分层 Agent 运行时的元范例）。
 
@@ -170,7 +170,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 - 来源：[Vibe编码 公众号《Opus 4.8 删掉了73%的提示词，Opus 5 为何又新增了 82%》](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（2026-07-27，作者 VibeCoder）+ Anthropic Context Engineering 文档
 - 许可证：文章内容版权归原作者，swarm-yuan 只引用方法论模式与证据视角，不复制原文
-- 上游文章存档：`swarm-yuan/research/context-engineering/`（本地参考，gitignored，不入 git）
+- 上游文章：[Vibe编码 公众号原文](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（可按需存档到 `swarm-yuan/research/context-engineering/` 供 AI 阅读，本地 gitignored，不入 git）
 - 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 54）
 - 自检断言：G14 `check_context_engineering_layering`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 接线 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_REFERENCES=33`（本文档 +1）

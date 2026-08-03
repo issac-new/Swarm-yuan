@@ -197,7 +197,7 @@ claude-mem search（记忆库）→ 文件检测
 
 ## 六、13 个运行时 + 32 个领域
 
-**运行时工具**（只引用调用不重新实现）：OpenSpec / superpowers / comet / GitNexus / graphify / gsd-core / claude-mem / open-code-review / gstack / Ruflo / ECC / impeccable / codex-security
+**运行时工具**（只引用调用不重新实现）：OpenSpec / superpowers / comet / GitNexus / graphify / gsd-core / claude-mem / ocr / gstack / Ruflo / ECC / impeccable / codex-security
 
 **领域知识速查**：数据库 ACID / 网络 CORS / 安全密码哈希 / IM 消息保序 / 电商库存原子扣减 / 金融金额 Decimal……32 个领域的客观规律。
 

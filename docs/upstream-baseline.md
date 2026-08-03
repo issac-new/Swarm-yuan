@@ -4,6 +4,8 @@
 > 数据来源：GitHub REST API + npm/PyPI registry **2026-07-20 实测**（见 `docs/research/R6-upstream-web.md` §0；gstack/superpowers 见 `docs/research/R5-upstream-local.md`）；impeccable 行为 2026-07-28 实测补入。
 > 机器可读契约：每个 drifted 条目所在行必须含字面漂移标记（行尾「机器标记」列，格式 baseline_status=状态值）；self-check 的轻量基线忠告仅 grep 漂移标记所在行并 warn（不联网）。
 > 状态取值：`synced`（基线≈最新）｜`drifted`（基线落后，需重核）｜`watch`（迭代极快，持续观察）｜`license-risk`（许可证合规风险）。
+>
+> **本地缓存建议**：`swarm-yuan/research/` 下的上游 clone 仅供 AI 阅读源码（已 gitignored，不入 git），无需 commit 历史。建议用 `git clone --depth 1` 浅克隆——12 个 clone 的 `.git` 历史合计约 1.1GB，浅克隆可省 ~1GB 本地磁盘（ruflo/claude-mem/gsd-core/open-code-review 四个 `.git` 占比最高）。
 
 ## 一、13 运行时登记表
 
