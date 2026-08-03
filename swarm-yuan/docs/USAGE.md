@@ -138,9 +138,9 @@ bash install.sh
 
 | 分层 | 数量 | fail() 能力 | 行为 | 门禁清单 |
 |------|------|------------|------|----------|
-| **strict** | 20 | ≥3 fail | 真 fail 阻断交付 | branch / layer / reuse / security / shift-left / compliance / sbom / privacy / authz / requirements / rtm / release-sign / dengbao / pia / quality-model / test-evidence / review-record / crypto / sast-deep / oss-eval |
-| **warn** | 19 | 1-2 fail | 能 fail 但触发窄，混合 warn | scope / build / test / sensitive / review / stable-diff / deps / adr / contract / impact / service / api / frontend / domain / knowledge / docs-pack / framework / metrics / cognition |
-| **advisory** | 15 | 0 fail | 永不 fail，只 warn/pass（认知/观测类） | consistency / link-depth / consistency-cross / state / mermaid / operate / decision-audit / canary / cwe-audit / cert-audit / learnings / pr-quality / skill-supply-chain / state-phase / upstream-baseline |
+| **strict** | 16 | ≥3 fail | 真 fail 阻断交付 | branch / layer / reuse / security / shift-left / compliance / sbom / release-sign / dengbao / pia / quality-model / test-evidence / review-record / sast-deep / oss-eval / loop-oracle |
+| **warn** | 23 | 1-2 fail | 能 fail 但触发窄，混合 warn | scope / build / test / sensitive / review / stable-diff / deps / adr / contract / impact / service / api / frontend / domain / knowledge / docs-pack / framework / metrics / privacy / authz / requirements / rtm / crypto |
+| **advisory** | 15 | 0 fail | 永不 fail，只 warn/pass（认知/观测类） | consistency / link-depth / consistency-cross / state / mermaid / operate / decision-audit / cognition / cwe-audit / cert-audit / learnings / pr-quality / skill-supply-chain / state-phase / upstream-baseline |
 
 - **advisory 机器化**：子 shell 内重定义 `fail()`/`warn()` 为纯 echo，永不进 FAIL_COUNT/WARN_COUNT——"advisory 是观测类，不阻断交付"语义机器化
 - **查看分层**：`bash scripts/precheck.sh --list-gates`（输出 flag / gate_fn / enforce / tier 四列）

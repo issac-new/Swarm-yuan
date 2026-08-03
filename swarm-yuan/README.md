@@ -285,7 +285,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | 层 | 运行时 | 接线方式 |
 |----|--------|---------|
 | 深度接线（4） | GitNexus / graphify / claude-mem / ocr | precheck.sh 门禁内真实子进程调用 + 多级降级链 |
-| CLI 接线（3） | OpenSpec / comet / gsd-core | 门禁/状态机按需调用 CLI（`openspec validate`/`comet guard`/`gsd-tools validate health`）+ 降级到自带载体 |
+| CLI 接线（4） | OpenSpec / comet / gsd-core / codex-security | 门禁/状态机按需调用 CLI（`openspec validate`/`comet guard`/`gsd-tools validate health`/`npx @openai/codex-security scan`）+ 降级到自带载体 |
 | 方法论引用（5） | superpowers / gstack / Ruflo / ECC / impeccable | AI 按 workflow 节点引用其模式，swarm-yuan 自带等价降级载体 |
 
 每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深度接线。`--upstream-baseline` 门禁（advisory）自动检测 upstream drift，CI 可见但不阻断构建。
@@ -357,10 +357,10 @@ Swarm-yuan/
 │   ├── SKILL.md                  ← AI 入口（13 运行时/54 门禁/五层认知/Step 0-8 共 13 节点）
 │   ├── install.sh / install.bat  ← 一键安装（7 环境检测 + Windows）
 │   ├── assets/                   ← 模板 + 门禁 + 状态机 + 调用追踪
-│   │   ├── precheck.sh           ← 门禁调度器（1450 行）
-│   │   ├── gates-strict.sh       ← 17 strict 门禁（1654 行）
-│   │   ├── gates-warn.sh         ← 19 warn 门禁（1545 行）
-│   │   ├── gates-advisory.sh     ← 16 advisory 门禁（1242 行）
+│   │   ├── precheck.sh           ← 门禁调度器
+│   │   ├── gates-strict.sh       ← strict 门禁（enforce 分档，行数见 facts.conf FACT_SCRIPT_LOC）
+│   │   ├── gates-warn.sh         ← warn 门禁
+│   │   ├── gates-advisory.sh     ← advisory 门禁
 │   │   ├── precheck.conf         ← 核心配置变量（12 个）
 │   │   ├── precheck.arch.conf    ← 架构配置变量（110 个，懒生成）
 │   │   ├── precheck.compliance.conf ← 合规配置变量（48 个）

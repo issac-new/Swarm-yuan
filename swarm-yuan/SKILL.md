@@ -129,12 +129,7 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 | 合规 | `standards-compliance.md`、`quality-management-standards.md`、`crypto-spec.md`、`industry-profile-{finance,medical,gov,automotive,energy,telecom,industrial}.md`（7 份）、`security-certification-profiles.md` |
 | 安全 | `security-spec.md`、`cwe-database.md`（门禁内部数据）、`frameworks/`（74 框架规则库，按 ACTIVE_FRAMEWORKS 选读）、`case-studies/articulation-orchestration.md` |
 
-> **注**：references/ 实际 35 文件（含 generation-flow.md）= 上表 33 + 门禁内部 2（`cwe-database.md`/`security-certification-profiles.md`）；`case-studies/` 子目录单独计。
-
-## 使用说明
-| 落地案例（关节编排/Articulated Orchestration 类汇报论据，S18 补入索引） | `references/case-studies/articulation-orchestration.md` |
-
-> **注**：另 2 份 references（`cwe-database.md` / `security-certification-profiles.md`）为门禁内部数据文件，由 `--cwe-audit`/`--cert-audit` 机械读取，不列入本 AI 阅读表（references/ 实际 35 文件 = 上表 33 + 门禁内部 2；`case-studies/` 子目录单独计，不在 35 内）。
+> **注**：references/ 实际 35 文件（含 generation-flow.md）= 上表 33 + 门禁内部 2（`cwe-database.md`/`security-certification-profiles.md`）；`case-studies/` 子目录单独计，不在 35 内。落地案例（关节编排/Articulated Orchestration 类汇报论据，S18 补入索引）见 `references/case-studies/articulation-orchestration.md`。
 
 ## 使用说明
 
