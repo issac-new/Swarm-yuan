@@ -147,7 +147,7 @@ AI 写代码前必须先认识项目。swarm-yuan 用 **17 项特征卡** 完成
 | `--cognition` | 认知递进体检（六阶+六维+五层总分） | 第 13 项 |
 | `--domain` | 领域知识违规检测（密码明文/SQL 拼接/XSS/并发竞态） | 第 14 项 |
 | `--knowledge` | 项目知识复用（AGENTS.md/CLAUDE.md/记忆 → skill 引用） | — |
-| `--mermaid` | Mermaid 可视化（架构图/流程图/调用链） | — |
+| `--diagram` | 可视化（mermaid 结构图：架构/流程/调用链 + echarts/antv 数据图：统计/分布/趋势） | — |
 
 ### 合规门禁（17 个，独立 `--compliance-suite` 按需执行，未配置则静默跳过）
 

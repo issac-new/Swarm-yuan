@@ -494,12 +494,13 @@ ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consi
 # 合规门禁（标准合规族 + P1 安全门禁族深化 + P3 长期清单 rtm/release-sign，仅 --compliance-suite/单门禁执行；未配置的静默跳过）
 ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign)
 # 标准门禁（核心 10 + 架构 17 = 27）：--all-full 执行序列（合规 17 已拆出为 --compliance-suite 按需执行）
-ALL_GATES_STANDARD=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_test)
+ALL_GATES_STANDARD=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_test)
 # 全部门禁（含架构/认知/合规门禁，未配置的静默跳过；--fix-suggest 用）
-ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_mermaid check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_test)
+ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_test)
 # 单门禁 flag 清单（Usage 顺序）。flag → 函数映射规则：check_ + flag 去 -- 前缀并将 - 转为 _
 #（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
-GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --mermaid --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --dengbao --pia --sast-deep --oss-eval --quality-model --test-evidence --review-record --metrics --release-sign --operate --decision-audit --loop-oracle --cwe-audit --cert-audit --pr-quality --skill-supply-chain --state-phase --upstream-baseline --learnings)
+# --diagram（原 --mermaid，升级为多图表引擎）：mermaid 结构图 + echarts/antv 数据图；--mermaid 保留为别名
+GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --diagram --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --dengbao --pia --sast-deep --oss-eval --quality-model --test-evidence --review-record --metrics --release-sign --operate --decision-audit --loop-oracle --cwe-audit --cert-audit --pr-quality --skill-supply-chain --state-phase --upstream-baseline --learnings)
 
 # ===== 门禁分层 enforce_level（决策 19：strict/warn/advisory 三档）=====
 # 自动按 fail() 调用数归类（gen-enforce-level.sh 生成 gate-enforce-level.conf）：
@@ -1321,7 +1322,7 @@ if [[ -z "${_gate_fn:-x}" ]]; then
   check_review; check_reuse; check_deps; check_security; check_layer; check_stable_diff
   check_link_depth; check_adr; check_contract; check_consistency_cross; check_impact
   check_service; check_api; check_state; check_frontend; check_cognition; check_domain
-  check_knowledge; check_mermaid; check_shift_left; check_framework
+  check_knowledge; check_diagram; check_shift_left; check_framework
   check_compliance; check_docs_pack; check_sbom; check_privacy
   check_authz; check_requirements; check_crypto; check_rtm; check_dengbao; check_pia; check_sast_deep; check_oss_eval; check_quality_model; check_test_evidence; check_review_record; check_metrics; check_release_sign
 fi
@@ -1358,6 +1359,8 @@ case "$MODE" in
     ;;
   --*)
     # 单门禁分发：精确匹配 GATE_FLAGS 后按映射规则得函数名（如 --stable-diff → check_stable_diff）
+    # 别名：--mermaid → --diagram（向后兼容，check_mermaid 已升级为 check_diagram 多图表引擎）
+    [[ "$MODE" == "--mermaid" ]] && MODE="--diagram"
     _gate_fn=""
     for _gate_flag in "${GATE_FLAGS[@]}"; do
       if [[ "$MODE" == "$_gate_flag" ]]; then

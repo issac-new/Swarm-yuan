@@ -299,7 +299,7 @@
 | Component | 组件图须含每个容器的主要组件 | 看 component 图 |
 | Code | 代码级图（可选，仅关键组件） | 看是否有 UML/class 图 |
 | 层级一致 | 上下文→容器→组件→代码，逐层细化无跳跃 | 对照各层图一致性 |
-| Mermaid | 架构图须用 Mermaid 可视化 | grep mermaid 架构图 |
+| 图表引擎选择 | 按内容选恰当图表：结构关系（架构/流程/调用链/分层矩阵）用 mermaid（GitHub 原生渲染）；数据统计（分布/趋势/指标对比）用 echarts/antv option JSON | grep mermaid/echarts/antv 可视化 |
 
 ### 常用架构模式
 

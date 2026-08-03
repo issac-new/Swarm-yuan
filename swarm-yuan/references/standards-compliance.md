@@ -53,7 +53,7 @@
 | 特性 | 门禁 | 测量函数 | 阈值 | 证据 |
 |---|---|---|---|---|
 | 易用性 | `--docs-pack`（check_docs_pack，P0 新增） | profile 必备文档存在性计数 + 文档内占位标记扫描 | DOCS_PACK_PROFILE 空 → 静默跳过；缺必备文档 → fail（`gate_docs_pack_missing:<file>`）；含占位标记 → fail（ALLOW_TBD=1 降级 warn） | fail/warn 行 + 必备清单逐项结果；对应 GB/T 25000.51 §5.2 用户文档集 + §6 测试文档集（计划/说明/结果） |
-| 易用性 | `--mermaid`（check_mermaid） | reference-manual.md / spec 中 Mermaid 图存在性 | 无图 → warn（不 fail） | warn 提示行 |
+| 易用性 | `--diagram`（check_diagram，原 --mermaid 升级） | reference-manual.md / spec 中可视化图存在性（mermaid 结构图 + echarts/antv 数据图） | 无图 → warn（不 fail） | warn 提示行 |
 
 差距登记：文档包此前零覆盖（R7 Q-03/Q-15，差距矩阵 ❌ 行）—— 由 `--docs-pack`（P0）补齐；文档结构合规（必备章节比对）—— 缺口（P1/P2）。
 
@@ -330,7 +330,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | 22 | `--cognition` / check_cognition | warn-only | 不判违规，输出认知体检报告（/14 + /22） |
 | 23 | `--domain` / check_domain | fail-closed | 密码明文/SQL 拼接 fail；文档段与消毒/并发项 warn；无 spec → skip-if-unconfigured |
 | 24 | `--knowledge` / check_knowledge | fail-closed | 有知识文件但 0 引用 fail；部分引用 warn；无知识文件/无 SKILL.md → skip-if-unconfigured |
-| 25 | `--mermaid` / check_mermaid | warn-only | 无 Mermaid 图 warn |
+| 25 | `--diagram` / check_diagram（原 --mermaid） | warn-only | 无可视化图 warn（mermaid 结构图 + echarts/antv 数据图） |
 | 26 | `--shift-left` / check_shift_left | fail-closed | 测试设计段/变更影响段/回滚预案缺失 fail；可观测性段与埋点 warn |
 | 27 | `--framework` / check_framework | fail-closed | ACTIVE_FRAMEWORKS 空 → 静默跳过；`_fw_<id>_<rule>` 缺失或规则命中 → fail |
 | 28 | `--compliance` / check_compliance（P0） | skip-if-unconfigured → 存在即执法 | 矩阵不存在且未设 COMPLIANCE_MATRIX_FILE → 静默跳过；存在后锚点缺失/占位标记/spec 缺 §22 → fail |

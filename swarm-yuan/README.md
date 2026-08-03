@@ -98,7 +98,7 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 > **门禁分层（决策 19）——执法强度横切维度：** 54 门禁按 `fail()` 能力分三档，与 core/standard/compliance 执行序列正交：
 > - **strict（16 个）**：≥3 个 fail 调用，真正阻断交付的硬门禁（branch/layer/reuse/security/shift-left/compliance/sbom/dengbao/pia/test-evidence/review-record/release-sign/quality-model/sast-deep/oss-eval）
 > - **warn（23 个）**：1-2 个 fail，混合 warn，能 fail 但触发条件窄（privacy/authz/requirements/rtm/crypto/contract/impact/service/api/review/frontend/domain/knowledge 等）
-> - **advisory（15 个）**：0 个 fail，永不阻断，只 warn/pass（cognition/consistency/consistency-cross/link-depth/state/mermaid/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/cwe-audit/cert-audit）
+> - **advisory（15 个）**：0 个 fail，永不阻断，只 warn/pass（cognition/consistency/consistency-cross/link-depth/state/diagram/operate/decision-audit/learnings/state-phase/upstream-baseline/pr-quality/skill-supply-chain/cwe-audit/cert-audit）
 >
 > **advisory 三轴命名（T12 澄清）**：① advisory-file=15（gates-advisory.sh 物理位置，含 cognition 因历史）；② advisory-level=14（0-fail enforce，gate-enforce-level.conf）；③ advisory-only=10（不在 ALL_GATES_CORE/STANDARD/COMPLIANCE 执行序列：operate/decision-audit/cwe-audit/cert-audit/learnings/pr-quality/skill-supply-chain/state-phase/upstream-baseline）。三者正交，本文档统一用 enforce-level 口径（14）。
 >
@@ -147,7 +147,7 @@ AI 探查项目后提取 17 项特征（P0 六项 1/4/5/11/15/16 + P1 十一项�
 | `--cognition` | 认知递进体检（六阶+六维+五层总分） | 第 13 项 |
 | `--domain` | 领域知识违规检测（密码明文/SQL 拼接/XSS/并发竞态） | 第 14 项 |
 | `--knowledge` | 项目知识复用（AGENTS.md/CLAUDE.md/记忆 → skill 引用） | — |
-| `--mermaid` | Mermaid 可视化（架构图/流程图/调用链） | — |
+| `--diagram` | 可视化（mermaid 结构图：架构/流程/调用链 + echarts/antv 数据图：统计/分布/趋势；`--mermaid` 为别名） | — |
 | `--shift-left` | 左移检查（测试设计/变更影响/可观测性，防缺陷流入后段） | — |
 | `--framework` | 框架适配门禁（按 ACTIVE_FRAMEWORKS 逐框架执行规则集，74 框架 × 六段式） | 第 4 项 |
 

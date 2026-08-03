@@ -61,7 +61,7 @@ check_frontend 2517 2631
 check_cognition 2639 2916
 check_domain 2918 3006
 check_knowledge 3008 3075
-check_mermaid 3077 3109
+check_diagram 3077 3109
 check_shift_left 3112 3271
 check_compliance 3277 3333
 check_docs_pack 3336 3382
@@ -86,7 +86,7 @@ EOF
 # 按 enforce_level 分组（含辅助函数跟随主门禁）
 STRICT_FNS="check_branch check_layer check_reuse _sec_scan _check_security_semgrep check_security check_shift_left check_compliance check_sbom check_privacy check_authz check_requirements check_rtm check_release_sign check_dengbao check_pia check_quality_model check_test_evidence check_review_record"
 WARN_FNS="check_scope check_build check_test _check_sensitive_gitleaks check_sensitive check_review check_stable_diff _extract_deps _norm_ver check_deps check_adr check_contract check_impact check_service check_api check_frontend check_domain check_knowledge check_docs_pack check_crypto check_framework check_sast_deep check_oss_eval check_metrics"
-ADVISORY_FNS="check_consistency check_link_depth check_consistency_cross check_state check_cognition check_mermaid"
+ADVISORY_FNS="check_consistency check_link_depth check_consistency_cross check_state check_cognition check_diagram"
 
 # 抽取一组函数到目标文件
 extract_to() {
