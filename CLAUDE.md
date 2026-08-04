@@ -84,7 +84,7 @@ Gate fragments are **injected** into a generated skill's `precheck.sh` between t
 ## Key architecture rules
 
 ### Cross-platform bash constraint (swarm-yuan's own scripts)
-The generator's own scripts must run on **Windows/macOS/Linux**. Windows gets `.bat` wrappers that locate Git Bash/WSL/MSYS2. In bash: **no `declare -A`** (use parallel arrays / strings), use `sed -i.bak` then `rm`, `grep -E`, `date -u`, `$(cd ... && pwd)` instead of `readlink -f`, and `${var}` quoting for C-locale safety. See `swarm-yuan/references/security-spec.md` §六.
+The generator's own scripts must run on **Windows/macOS/Linux**. **Bash is a hard prerequisite** (the 54 gates and generator are all bash scripts; native Windows cmd/PowerShell are not supported). On Windows, install Git for Windows (bundles Git Bash) or WSL first, then `.bat` wrappers locate Git Bash/WSL/MSYS2 to run the `.sh` scripts. In bash: **no `declare -A`** (use parallel arrays / strings), use `sed -i.bak` then `rm`, `grep -E`, `date -u`, `$(cd ... && pwd)` instead of `readlink -f`, and `${var}` quoting for C-locale safety. See `swarm-yuan/references/security-spec.md` §六.
 
 ### Gates are intentionally conservative
 Many gates "sleep" (match nothing) on purpose; `docs/paradigm-decisions.md` documents cases where a naive fix would **wake a sleeping gate and flood real projects with false positives**. Before changing gate matching logic, check that doc and validate against a real project sample, not just the fixture.
