@@ -430,10 +430,10 @@ Swarm-yuan/
 │   ├── SKILL.md                  ← AI 入口（13 运行时/54 门禁/五层认知/Step 0-8 共 13 节点）
 │   ├── install.sh / install.bat  ← 一键安装（7 环境检测 + Windows）
 │   ├── assets/                   ← 模板 + 门禁 + 状态机 + 调用追踪
-│   │   ├── precheck.sh           ← 门禁调度器（1420 行）
-│   │   ├── gates-strict.sh       ← 17 strict 门禁（1597 行）
-│   │   ├── gates-warn.sh         ← 21 warn 门禁（1496 行）
-│   │   ├── gates-advisory.sh     ← 16 advisory 门禁（1209 行）
+│   │   ├── precheck.sh           ← 门禁调度器
+│   │   ├── gates-strict.sh       ← strict 门禁（enforce 分档，行数见 facts.conf FACT_SCRIPT_LOC）
+│   │   ├── gates-warn.sh         ← warn 门禁
+│   │   ├── gates-advisory.sh     ← advisory 门禁
 │   │   ├── precheck.conf         ← 核心配置变量（12 个）
 │   │   ├── precheck.arch.conf    ← 架构配置变量（110 个，懒生成）
 │   │   ├── precheck.compliance.conf ← 合规配置变量（48 个）

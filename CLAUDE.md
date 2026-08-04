@@ -24,7 +24,7 @@ swarm-yuan 是**重量级范式**——重量是设计选择不是缺陷：通�
   - `references/` — methodology docs + `references/frameworks/<fw>.md` (74 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).
-- **`verifier/`** — a self-contained acceptance harness that re-runs the whole suite and compares against a golden vector.
+- **`verifier/`** — a self-contained acceptance harness that re-runs the whole suite (fixture double-state + id-level assertions) with golden-vector line-count reconciliation (`run-verifier.sh golden` does content comparison; `rebuild-golden` rebuilds the baseline after intentional gate changes).
 - **`docs/`** — design docs & decision records (`paradigm-decisions.md` explains *why* gates are the way they are — read before "fixing" a gate).
 
 ## Common commands

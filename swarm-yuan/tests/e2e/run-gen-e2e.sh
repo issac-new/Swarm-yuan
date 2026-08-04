@@ -87,8 +87,14 @@ grep -q '^status: draft' "${SKILL_DIR}/SKILL.md" && ok "产物 SKILL.md status: 
 
 # --- 8. 产物 precheck.sh 自身可跑 --all（draft 骨架空 conf 不应崩）---
 # 注：产物 precheck.sh 的 conf 是嗅探初稿，部分语义型变量=()，--all 应 fail-open 不崩
-( cd "${SKILL_DIR}" && bash scripts/precheck.sh --all >/tmp/gene2e-precheck.log 2>&1 ) || true
-ok "产物 precheck.sh --all 可执行（不崩）"
+# fail-open 语义：rc=0（pass）或 rc=1（有门禁 fail 属正常）；rc>1（如 126/127/段错误）= 真崩
+rc_all=0
+( cd "${SKILL_DIR}" && bash scripts/precheck.sh --all >/tmp/gene2e-precheck.log 2>&1 ) || rc_all=$?
+if [[ $rc_all -le 1 ]]; then
+  ok "产物 precheck.sh --all 可执行（rc=${rc_all}，fail-open 语义正常）"
+else
+  bad "产物 precheck.sh --all 真崩（rc=${rc_all} > 1，见 /tmp/gene2e-precheck.log）"
+fi
 
 # --- 9. 产物可被 --inject-frameworks 注入（与现有 e2e inject 链路一致，验证产物可后续注入）---
 bash "${PARADIGM}/scripts/generate-skill.sh" --inject-frameworks "${SKILL_DIR}" >/tmp/gene2e-inject.log 2>&1

@@ -705,8 +705,25 @@ auto_detect_profile() {
   echo "$result"
 }
 
+# Windows 路径转换（.bat 包装器 %* 原样透传，C:\proj 在 Git Bash 反斜杠被吞、WSL 下非法路径）。
+# 匹配 ^[A-Za-z]:[\\/] 的参数，Git Bash/MSYS2 用 cygpath -u，WSL 用 wslpath -u 转 POSIX。
+# 不匹配的参数原样保留（POSIX 路径不受影响，零行为变化）；两工具都不可用时 warn 提示。
+_win_path_to_posix() {
+  local p="$1"
+  [[ "$p" =~ ^[A-Za-z]:[\\/] ]] || { printf '%s' "$p"; return 0; }
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -u "$p"
+  elif command -v wslpath >/dev/null 2>&1; then
+    wslpath -u "$p"
+  else
+    echo "  ⚠ 检测到 Windows 路径 $p 但无 cygpath/wslpath 可转换，请改用 POSIX 路径（如 /c/proj 或 /mnt/c/proj）" >&2
+    printf '%s' "$p"
+  fi
+}
+
 SKILL_NAME="${1:?Usage: generate-skill.sh [--upgrade] [--profile lite|standard|compliance] <skill-name> <project-dir> [target-dir]}"
 PROJECT_DIR="${2:?Usage: generate-skill.sh [--upgrade] [--profile lite|standard|compliance] <skill-name> <project-dir> [target-dir]}"
+PROJECT_DIR="$(_win_path_to_posix "$PROJECT_DIR")"
 if [[ -z "${3:-}" ]]; then
   TARGET_DIR=$(detect_skill_dir "$PROJECT_DIR")
   RUNTIME_NAME=$(detect_runtime_name "$PROJECT_DIR")
@@ -714,6 +731,7 @@ if [[ -z "${3:-}" ]]; then
   echo "目标 skill 目录: ${TARGET_DIR}"
 else
   TARGET_DIR="$3"
+  TARGET_DIR="$(_win_path_to_posix "$TARGET_DIR")"
 fi
 
 [[ ! -d "$PROJECT_DIR" ]] && { echo "ERROR: 项目目录不存在: $PROJECT_DIR"; exit 1; }
