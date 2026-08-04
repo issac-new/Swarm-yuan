@@ -64,6 +64,8 @@ check_test() {
 
 _check_sensitive_gitleaks() {
   # 空 SCAN_DIRS 交回内置路径（与基线同一 warn 披露文案，避免双份漂移）
+  # 返回码语义（六轮复盘扩展）：0=gitleaks 通过（调用方须继续叠加内置正则族）
+  #   1=执行错误（降级内置）｜2=SCAN_DIRS 空｜3=gitleaks 已 fail（调用方跳过内置，避免重复报）
   [[ ${#SCAN_DIRS[@]} -eq 0 ]] && return 2
   local found=0 dir report hits files f rc
   for dir in ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
@@ -92,8 +94,10 @@ _check_sensitive_gitleaks() {
   done
   if [[ $found -eq 0 ]]; then
     pass "未发现明显敏感信息（gitleaks）"
+    return 0
   fi
-  return 0
+  # 六轮复盘：gitleaks 已 fail → 返回 3，调用方跳过内置正则（避免重复报同一文件）
+  return 3
 }
 
 check_sensitive() {
@@ -109,15 +113,22 @@ check_sensitive() {
   fi
   if [[ "$_sensitive_tool" == "gitleaks" ]]; then
     local _gitleaks_rc=0
-    if _check_sensitive_gitleaks; then
-      return
-    else
-      _gitleaks_rc=$?
-    fi
-    if [[ "$_gitleaks_rc" -eq 1 ]]; then
-      warn "gitleaks 执行失败，降级内置正则扫描"
-    fi
-    # rc=2：SCAN_DIRS 空，落入内置路径的同文案披露
+    _check_sensitive_gitleaks || _gitleaks_rc=$?
+    case "$_gitleaks_rc" in
+      3)
+        # gitleaks 已 fail → 跳过内置正则，避免重复报同一文件
+        return ;;
+      1)
+        warn "gitleaks 执行失败，降级内置正则扫描" ;;
+      2)
+        : ;;  # SCAN_DIRS 空，落入内置路径的同文案披露
+      0)
+        # 六轮复盘修复（安全）：gitleaks 通过**不再 return**，继续叠加内置正则族。
+        # 两者互补：gitleaks 强在熵检测/已知密钥格式（sk-/AKIA/JWT 等），
+        # 内置正则强在自定义模式（yml 的 password: 键、mongodb:// 内联凭证等）。
+        # 与 check_security 同款修复（原"工具通过就 return"把互补做成互斥二选一）。
+        echo "  ⓘ gitleaks 通过，继续内置正则族扫描（熵检测 + 自定义模式叠加，非二选一）" ;;
+    esac
   fi
   local patterns=(
     'sk-[a-zA-Z0-9]{20,}'
@@ -1539,7 +1550,18 @@ check_sast_deep() {
       fi
     fi
   fi
-  [[ $found -eq 0 ]] && pass "深度 SAST 检查通过（载体：${bin}）"
+  if [[ $found -eq 0 ]]; then
+    pass "深度 SAST 检查通过（载体：${bin}）"
+    # 六轮复盘诚实化：本门禁是 if/elif 互斥载体选择（工具 **或** builtin，不叠加）——
+    # 与 check_security/check_sensitive 已改为叠加不同。此处显式披露"未叠加"，
+    # 避免"通过"被误读为"语义层+词法层都查过了"。
+    # 不改控制流的理由：sast-deep 是 advisory-only + 重型路径（需 API key / 大扫描量），
+    # 叠加收益低于 security/sensitive，且改动风险高（多重降级分支）。
+    case "$bin" in
+      builtin) : ;;  # 已在上游打印"降级为内置词法模式族"披露，不重复
+      *) echo "  ⓘ 载体 ${bin} 单层执行（内置词法模式族未叠加；如需词法层兜底：SAST_DEEP_TOOL=builtin 单独跑一次）" ;;
+    esac
+  fi
 }
 
 # check_oss_eval（--oss-eval，WP-S1）：开源代码安全评价，GB/T 43848-2024 四维
