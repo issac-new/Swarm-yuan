@@ -22,7 +22,7 @@ jobs:
       run:
         working-directory: swarm-yuan
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Verify all framework rulesets (四要素 + 片段语法 + 函数存在)
         run: |
           fail=0
@@ -44,7 +44,7 @@ jobs:
       run:
         working-directory: swarm-yuan
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Fixture double-state (violating → FAIL / compliant → PASS)
         run: |
           fail=0
@@ -80,7 +80,7 @@ jobs:
       run:
         working-directory: swarm-yuan
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: bash -n（bash 3.2 语法面）核心脚本 + 74 门禁片段
         run: |
           bash --version | head -1
@@ -137,7 +137,7 @@ jobs:
     name: Generator self-gate (precheck --all on this repo)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Bootstrap precheck with minimal conf (ci/self-precheck.conf)
         run: |
           tmpdir="$(mktemp -d)"
@@ -180,7 +180,7 @@ jobs:
       run:
         working-directory: swarm-yuan
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: self-check.sh (framework freshness + runtime detection)
         # self-check 检测 11 个运行时工具（openspec/comet/graphify 等），
         # CI 环境未装这些工具会 miss 但不 fail（设计如此：手动安装的需按提示操作）。
@@ -210,7 +210,7 @@ jobs:
       run:
         working-directory: swarm-yuan
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install shellcheck
         run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
       - name: Shellcheck core scripts (严格) + 扩展脚本 (信息性, WP3.4)
@@ -262,7 +262,7 @@ jobs:
       run:
         working-directory: swarm-yuan
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: E2E run (Java demo 四框架注入全链路)
         run: |
           bash tests/e2e/run-e2e.sh
@@ -276,7 +276,7 @@ jobs:
       run:
         working-directory: swarm-yuan
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install shellcheck (verifier 内 shellcheck_scan 用)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
       - name: verifier all (74 fixture id 级 + 48 gate-fixture + e2e + cli-ab + metrics-assert)
@@ -299,7 +299,7 @@ jobs:
     name: Real-project smoke (R9 fixture ≠ 真实项目)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Clone real projects (gitee 优先 GitHub 兜底；SHA 落 artifact 供复现)
         run: |
           mkdir -p /tmp/real && cd /tmp/real
@@ -327,7 +327,7 @@ jobs:
           done
       - name: Upload smoke report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: real-project-smoke
           path: /tmp/real/SHAS.txt
@@ -342,7 +342,7 @@ jobs:
       run:
         working-directory: swarm-yuan
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: bash -n 核心脚本 + 74 门禁片段（Git Bash 语法面）
         shell: bash
         run: |
@@ -372,7 +372,7 @@ jobs:
         working-directory: swarm-yuan
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: bash -n 核心脚本 + 74 门禁片段（Git Bash 语法面）
         shell: bash
         run: |

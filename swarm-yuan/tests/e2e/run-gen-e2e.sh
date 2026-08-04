@@ -126,6 +126,60 @@ for _prof in lite compliance; do
   done
 done
 
+# --- 11. --upgrade 路径回归（五轮复盘补盲区）---
+# 背景：--upgrade 是用户长期使用的升级路径（覆盖通用模板/保留项目特定文件），
+# 但两个 e2e 都不覆盖它——二轮复盘即指出该盲区。本段固化「升级不吃掉用户改动」这一核心契约：
+# create → 加 3 类用户改动（填充内容/自定义 conf 变量/自定义文件）→ upgrade → 断言三者都还在。
+# 另测跨档升级（lite→standard 应补齐文件，文档承诺的升档路径）。
+_updir="${TMP}/upgrade-test"
+mkdir -p "${_updir}"
+if bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard u-dev "${DEMO}" "${_updir}" \
+     >/tmp/gene2e-up-create.log 2>&1; then
+  _uskill="${_updir}/u-dev"
+  # 模拟用户改动三类
+  echo "# USER-CONTENT-MARKER" >> "${_uskill}/SKILL.md"
+  echo 'USER_CUSTOM_VAR="keep-me"' >> "${_uskill}/scripts/precheck.conf"
+  echo "user note" > "${_uskill}/references/user-custom.md"
+  if bash "${PARADIGM}/scripts/generate-skill.sh" --upgrade u-dev "${DEMO}" "${_updir}" \
+       >/tmp/gene2e-up.log 2>&1; then
+    ok "--upgrade rc=0"
+    grep -q 'USER-CONTENT-MARKER' "${_uskill}/SKILL.md" 2>/dev/null \
+      && ok "--upgrade 保留 SKILL.md 用户填充内容" \
+      || bad "--upgrade 吃掉了 SKILL.md 用户内容（升级不应覆盖已填充产物）"
+    grep -q 'USER_CUSTOM_VAR' "${_uskill}/scripts/precheck.conf" 2>/dev/null \
+      && ok "--upgrade 保留 precheck.conf 用户变量" \
+      || bad "--upgrade 吃掉了 precheck.conf 用户变量（conf 是项目特定文件，应保留）"
+    [[ -f "${_uskill}/references/user-custom.md" ]] \
+      && ok "--upgrade 保留用户自定义文件" \
+      || bad "--upgrade 删除了用户自定义文件"
+  else
+    bad "--upgrade 失败（见 /tmp/gene2e-up.log）"
+  fi
+else
+  bad "upgrade 前置 create 失败（见 /tmp/gene2e-up-create.log）"
+fi
+
+# 跨档升级：lite → standard 应补齐文件（文档承诺的升档路径）
+_xdir="${TMP}/cross-test"
+mkdir -p "${_xdir}"
+if bash "${PARADIGM}/scripts/generate-skill.sh" --profile lite x-dev "${DEMO}" "${_xdir}" \
+     >/tmp/gene2e-x-lite.log 2>&1; then
+  _n_lite=$(find "${_xdir}/x-dev" -type f | wc -l | tr -d ' ')
+  if bash "${PARADIGM}/scripts/generate-skill.sh" --upgrade --profile standard x-dev "${DEMO}" "${_xdir}" \
+       >/tmp/gene2e-x-std.log 2>&1; then
+    _n_std=$(find "${_xdir}/x-dev" -type f | wc -l | tr -d ' ')
+    if [[ "${_n_std}" -gt "${_n_lite}" ]]; then
+      ok "跨档升级 lite→standard 补齐文件（${_n_lite}→${_n_std}）"
+    else
+      bad "跨档升级未补齐文件（lite ${_n_lite} → standard ${_n_std}，应增加）"
+    fi
+  else
+    bad "跨档升级 lite→standard 失败（见 /tmp/gene2e-x-std.log）"
+  fi
+else
+  bad "跨档升级前置 lite create 失败"
+fi
+
 # --- 结果 ---
 if [[ $FAIL -eq 0 ]]; then
   echo "GEN_E2E_RC 0"

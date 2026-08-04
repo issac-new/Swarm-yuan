@@ -682,7 +682,12 @@ _run_doctor() {
   fi
 
   # ③ 死变量：conf 定义但「precheck.sh 正文（剔除 _default_conf 与数组兜底循环）
-  #    + framework-gates/*.sh」均零引用 → warn 汇总列出
+  #    + gates-{strict,warn,advisory}.sh + state-machine.sh + framework-gates/*.sh」均零引用
+  #    → warn 汇总列出
+  # 五轮复盘修复（漏报 bug）：原语料库只含 precheck.sh + framework-gates/*.sh，漏扫
+  #   gates-*.sh 三文件——而 arch/compliance conf 变量的主要消费方正是这三个文件（决策 19
+  #   拆分后 check_* 函数都在那里）。导致对真实项目误报 118 个死变量，实际 ≤3（虚高 39 倍）。
+  #   虚高的诊断数字会训练用户忽略该告警，比不报更糟。
   if [[ -f "$conf" && -f "$sh" ]]; then
     local _refs _v _dead="" _f
     _refs=$(awk '
@@ -694,6 +699,11 @@ _run_doctor() {
       inloop==1 {next}
       {print}
     ' "$sh")
+    # 门禁三档物理文件 + 状态机（conf 变量真实消费方；缺失则跳过，打包态已内联回 precheck.sh）
+    for _f in gates-strict.sh gates-warn.sh gates-advisory.sh state-machine.sh; do
+      [[ -f "$sh_dir/$_f" ]] && _refs="${_refs}
+$(cat "$sh_dir/$_f")"
+    done
     for _f in "$sh_dir"/framework-gates/*.sh; do
       [[ -f "$_f" ]] && _refs="${_refs}
 $(cat "$_f")"
@@ -705,6 +715,9 @@ $(cat "$_f")"
 $(cat "$_f")"
     done
     for _v in $(printf '%s\n' "$_conf_all" | sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' | sort -u); do
+      # `_` 前缀 = conf 自身机制用的内部变量（如 _conf_self_dir 在 conf 内 source 兄弟 conf），
+      # 消费方是 conf 文件本身而非脚本，不计入死变量（五轮复盘：原逻辑误报 _conf_self_dir）。
+      case "$_v" in _*) continue ;; esac
       # 注：不能用 grep -q——pipefail 下 grep -q 提前退出会使 printf 收 SIGPIPE(141)，
       # 管道整体非零而把全部变量误判为死变量。grep -c 读全量输入，无此问题。
       if [[ $(printf '%s\n' "$_refs" | grep -c -w "$_v" || true) -eq 0 ]]; then
@@ -1450,6 +1463,18 @@ if [[ $FAIL -eq 0 ]]; then
   else
     echo "✓ 门禁检查通过"
     _final_rc=0
+  fi
+  # 五轮复盘：draft 期"✓ 通过"语义诚实化。
+  # draft = 骨架未填充，SCAN_DIRS/WRITABLE_DIRS 等语义型变量仍是 # TODO:model 空值，
+  # 依赖它们的门禁（--sensitive 敏感信息扫描 / --scope 范围检查 / --stable-diff）实际在空转。
+  # 此时输出无保留的"✓ 门禁检查通过"会让用户以为门禁背书了代码质量——技术上没说错但会被误读。
+  # 追加披露行撤回背书（不改既有"✓"行，保 cli-ab 逐字节等价；不改 rc，保 Step ⑥ 生成流程不阻断），
+  # 与上方 "⊘ 跳过 N 个门禁" 披露同模式（绿≠合规的既有诚实化传统）。
+  if [[ -f "$_skill_md" ]] && grep -q '^status: draft' "$_skill_md" 2>/dev/null; then
+    echo "⚠ 注意：所属 skill 仍为 draft（骨架填充未完成）——语义型 conf 变量（SCAN_DIRS/WRITABLE_DIRS/READONLY_DIRS 等）"
+    echo "  可能仍是 # TODO:model 空值，依赖它们的门禁（敏感信息扫描/范围检查/稳定层保护）未实际执行。"
+    echo "  上方「通过」仅代表已配置门禁通过，不等于代码质量已被完整校验。"
+    echo "  填充完成后运行: bash generate-skill.sh --mark-active <skill_dir>（零占位符核验后解锁全量门禁）"
   fi
 else
   echo "✗ 门禁检查未通过，请修复上述问题"
