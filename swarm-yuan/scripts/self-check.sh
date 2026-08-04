@@ -82,18 +82,44 @@ check_ecc(){
 }
 
 # ---------- 通用：从 GitHub Release 源码包安装 ----------
+# 源码包 tag 降级：当天 tag 不存在时，git ls-remote 查最近 -src tag 降级。
+# 设计疏漏修复：SRC_RELEASE_TAG 默认按当天日期生成，但 -src 包只在发版时手动打
+# （release-src-packages.sh），当天没打时新用户首装必 FAIL=1。降级到最近可用 tag，
+# warn 提示"源码包非当天"，把"当天必须有 -src 包"从硬约束降为软提醒。
+_latest_src_tag(){
+  # 返回最近的 v<YYYYMMDD>-src tag（字典序可排序）；无则返回空
+  git ls-remote --tags "https://github.com/${SRC_RELEASE_REPO}.git" 'v*-src' 2>/dev/null \
+    | awk -F/ '{print $NF}' | grep -E '^v[0-9]{8}-src$' | sort | tail -1
+}
+
 # 参数: <项目名> <zip名> <目标目录> [可选 setup 命令]
 # 流程: curl 下载 Release <tag>/<zip> → 解压 → cp 到 <目标目录> → 跑 setup
 # 失败: 下载/解压失败 return 1（调用方计入 FAIL）；setup 失败 warn 不 return 1（文件已就位）
 install_from_src_release(){
   local name="$1" zip="$2" dest="$3" setup="${4:-}"
-  local url="https://github.com/${SRC_RELEASE_REPO}/releases/download/${SRC_RELEASE_TAG}/${zip}"
+  local tag="${SRC_RELEASE_TAG}"
+  local url="https://github.com/${SRC_RELEASE_REPO}/releases/download/${tag}/${zip}"
   local tmp; tmp="$(mktemp -d)"
   echo "  → [$name] 下载源码包: $url"
   if ! (cd "$tmp" && curl -fsSL -o "$zip" "$url"); then
-    echo "  ✗ $name 源码包下载失败: $url"
-    echo "    手工下载: 浏览器打开 ${url}，或确认 Release tag $SRC_RELEASE_TAG 存在"
-    rm -rf "$tmp"; return 1
+    # 当天 tag 不存在（404）→ 降级到最近可用 -src tag 重试
+    local fallback; fallback="$(_latest_src_tag)"
+    if [[ -n "$fallback" && "$fallback" != "$tag" ]]; then
+      url="https://github.com/${SRC_RELEASE_REPO}/releases/download/${fallback}/${zip}"
+      echo "  → [$name] 当天 tag ${tag} 不存在，降级到最近可用 tag ${fallback}: $url"
+      if (cd "$tmp" && curl -fsSL -o "$zip" "$url"); then
+        warn "$name 源码包非当天（降级到 ${fallback}）；发版者跑 bash scripts/release-src-packages.sh 可更新到当天"
+        tag="$fallback"
+      else
+        echo "  ✗ $name 源码包下载失败（当天 ${tag} + 降级 ${fallback} 均失败）: $url"
+        echo "    手工下载: 浏览器打开 ${url}，或确认 Release tag 存在"
+        rm -rf "$tmp"; return 1
+      fi
+    else
+      echo "  ✗ $name 源码包下载失败: $url"
+      echo "    手工下载: 浏览器打开 ${url}，或确认 Release tag $tag 存在"
+      rm -rf "$tmp"; return 1
+    fi
   fi
   if ! (cd "$tmp" && unzip -q "$zip" -d extracted); then
     echo "  ✗ $name 源码包解压失败"; rm -rf "$tmp"; return 1
@@ -795,15 +821,17 @@ check_doc_consistency() {
     true_advisory=$(grep -cE '=advisory$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
     true_fc="${FACT_FEATURE_CARDS:-0}"
     # strict 分档数：匹配"strict N（"或"strict（N"或"strict N /"等正文表述
-    bad=$(grep -oE "strict[[:space:]]*[（(]?[[:space:]]*[0-9]+" "$docpath" 2>/dev/null \
+    # 尾随约束 ([^0-9→]|$)：数字后不能紧跟数字或 →（防误伤历史叙事"strict 20→16"，
+    # 20 是被修掉的旧值；正常表述"strict 16"后紧跟空格/标点/行尾，不受影响）
+    bad=$(grep -oE "strict[[:space:]]*[（(]?[[:space:]]*[0-9]+([^0-9→]|$)" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_strict" || true)
     [[ -n "$bad" ]] && dfound="${dfound} strict分档数出现非${true_strict}值($(echo $bad | tr '\n' ' '));"
-    # warn 分档数
-    bad=$(grep -oE "warn[[:space:]]*[（(]?[[:space:]]*[0-9]+" "$docpath" 2>/dev/null \
+    # warn 分档数（尾随约束同 strict）
+    bad=$(grep -oE "warn[[:space:]]*[（(]?[[:space:]]*[0-9]+([^0-9→]|$)" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_warn" || true)
     [[ -n "$bad" ]] && dfound="${dfound} warn分档数出现非${true_warn}值($(echo $bad | tr '\n' ' '));"
-    # advisory 分档数
-    bad=$(grep -oE "advisory[[:space:]]*[（(]?[[:space:]]*[0-9]+" "$docpath" 2>/dev/null \
+    # advisory 分档数（尾随约束同 strict，防御性）
+    bad=$(grep -oE "advisory[[:space:]]*[（(]?[[:space:]]*[0-9]+([^0-9→]|$)" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_advisory" || true)
     [[ -n "$bad" ]] && dfound="${dfound} advisory分档数出现非${true_advisory}值($(echo $bad | tr '\n' ' '));"
     # 特征卡数："N 项特征卡"（N 紧邻项紧邻特征卡，是 catchphrase 总数表述）
