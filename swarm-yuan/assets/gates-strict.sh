@@ -526,8 +526,31 @@ check_security() {
     | grep -viE '\.exec\(|RegExp|regex|pattern\.exec|match\.' || true)
 
   # §3 不安全动态代码执行：eval / new Function
+  # 七轮复盘修复（误报）：原裸匹配 'eval\(|new Function\(' 无任何白名单，
+  # 同文件 §1/§2/§4 都有排除（MyBatis #{}/命令注入 .exec(|RegExp/XSS 须含拼接），唯 §3 没有。
+  # 实测误报：flask 的 ast.literal_eval()——Python 官方推荐的 eval 安全替代（只解析字面量、
+  # 不执行代码），恰恰是正确解法，误报会训练用户改回不安全写法或加豁免（反向激励）。
+  # 内置排除安全求值函数（词法层无法判定类型，按命名约定排除已知安全变体）：
+  #   ast.literal_eval / literal_eval / .safe_eval（Python）｜json.loads（反序列化非代码执行）。
+  # 另加 EVAL_WHITELIST 可配豁免（对齐 §1 SQL_INJECTION_WHITELIST 设计）。
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
+    # 排除已知安全的求值替代（literal_eval / safe_eval / json.loads）
+    if echo "$line" | grep -qiE 'ast\.literal_eval|literal_eval|\.safe_eval|safe_eval|json\.loads'; then
+      continue
+    fi
+    # 可配白名单（EVAL_WHITELIST，与 SQL_INJECTION_WHITELIST 同构）
+    local in_whitelist=0
+    if [[ ${#EVAL_WHITELIST[@]} -gt 0 ]]; then
+      local wl
+      for wl in "${EVAL_WHITELIST[@]}"; do
+        if echo "$line" | grep -qF "$wl"; then
+          warn "eval 白名单命中（须人工确认安全）：$line"
+          in_whitelist=1; break
+        fi
+      done
+    fi
+    [[ "$in_whitelist" -eq 1 ]] && continue
     fail "不安全动态代码执行（eval / new Function）：$line"; found=1
   done < <(_sec_scan 'eval\(|new Function\(' "${targets[@]}" || true)
 

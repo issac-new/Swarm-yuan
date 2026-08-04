@@ -85,6 +85,18 @@ _check_sensitive_gitleaks() {
       # 逐文件聚合去重（v8+ 字段 File；旧版小写 file 兜底）
       files=$(grep -oE '"File": ?"[^"]+"' "$report" 2>/dev/null | sed 's/"File": *"//; s/"$//' | sort -u || true)
       [[ -z "$files" ]] && files=$(grep -oE '"file": ?"[^"]+"' "$report" 2>/dev/null | sed 's/"file": *"//; s/"$//' | sort -u || true)
+      # 七轮复盘修复（误报）：gitleaks 路径原零排除，而内置正则路径（L157）有
+      # 'example|placeholder|test|mock|dummy' 排除——同一门禁两条路径判定标准不一致。
+      # 实测误报：gin 的 context_test.go（测试假密钥）/ testdata/certificate/key.pem（测试证书）。
+      # 六轮把两条路径改叠加后，装了 gitleaks 反而多收测试固件误报。此处对齐内置排除 +
+      # SENSITIVE_EXCLUDE_GLOBS 可配豁免（测试路径/示例文件不应报为密钥泄露）。
+      files=$(printf '%s\n' "$files" | grep -viE '(^|/)(test|tests|testdata|__tests__|__mocks__|fixtures?|mocks?|examples?)(/|$)|_test\.[a-z]+$|\.test\.|\.spec\.|example|placeholder|dummy' || true)
+      if [[ ${#SENSITIVE_EXCLUDE_GLOBS[@]} -gt 0 ]]; then
+        local _xgl
+        for _xgl in "${SENSITIVE_EXCLUDE_GLOBS[@]}"; do
+          files=$(printf '%s\n' "$files" | grep -vF "$_xgl" || true)
+        done
+      fi
       while IFS= read -r f; do
         [[ -n "$f" ]] && fail "gate_sensitive_gitleaks:${f}: gitleaks 检出疑似硬编码密钥（GB/T 34944-2017 6.2.6.3）"
       done <<< "$files"
