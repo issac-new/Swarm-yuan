@@ -101,6 +101,31 @@ bash "${PARADIGM}/scripts/generate-skill.sh" --inject-frameworks "${SKILL_DIR}" 
 rc_inject=$?
 [[ $rc_inject -eq 0 ]] && ok "产物可被 --inject-frameworks 注入（幂等）" || bad "产物 --inject-frameworks 失败 rc=${rc_inject}（见 /tmp/gene2e-inject.log）"
 
+# --- 10. lite / compliance 两档 create 冒烟（四轮复盘补盲区）---
+# 背景：上面 1-9 段用 --profile standard（java-demo <80 文件会被 auto 判 lite），
+# 导致 lite/compliance 两档的 create 路径长期零覆盖——四轮复盘在该盲区发现真 bug：
+# chmod +x "$dir/assets/"*.sh 在 lite 档 glob 无匹配 → set -e 中断 → 产物残缺不可用。
+# 本段对两档各跑一次 create，断言 rc=0 + 骨架关键文件存在（lite 无 workflow/commands 属设计，不断言）。
+for _prof in lite compliance; do
+  _pdir="${TMP}/prof-${_prof}"
+  mkdir -p "${_pdir}"
+  if bash "${PARADIGM}/scripts/generate-skill.sh" --profile "${_prof}" "p-${_prof}" "${DEMO}" "${_pdir}" \
+       >"/tmp/gene2e-prof-${_prof}.log" 2>&1; then
+    ok "${_prof} 档 create rc=0"
+  else
+    bad "${_prof} 档 create 失败（见 /tmp/gene2e-prof-${_prof}.log）"
+    continue
+  fi
+  # 三档共有的骨架核心：SKILL.md + scripts/precheck.sh（lite 也必须有，否则门禁不可用）
+  for _pf in SKILL.md scripts/precheck.sh; do
+    if [[ -f "${_pdir}/p-${_prof}/${_pf}" ]]; then
+      ok "${_prof} 档产物含 ${_pf}"
+    else
+      bad "${_prof} 档产物缺 ${_pf}（骨架残缺）"
+    fi
+  done
+done
+
 # --- 结果 ---
 if [[ $FAIL -eq 0 ]]; then
   echo "GEN_E2E_RC 0"
