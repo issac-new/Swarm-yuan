@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# advisory 物理文件（16 个 check_* 函数；原由 split-gates.sh 抽取，现手工维护；决策 19）
+# advisory 物理文件（15 个 check_* 函数；原由 split-gates.sh 抽取，现手工维护；决策 19）
 # 被 precheck.sh source（开发态/安装态同路径；install.sh 整目录拷贝含本文件）。
-# S6 注：check_cognition 物理在此文件但 enforce-level=warn（gate-enforce-level.conf:73），
-#   因 _enforce_of 读 conf 而非文件位置，功能正确；保留此文件因历史 + split-gates.sh 已不活跃。
-# 注：物理函数数 16 ≠ enforce-level advisory 15——check_cognition 分层为 warn（上述 S6 注）。
-# _enforce_of 读 conf 而非文件位置，功能正确。
+# 注：物理函数数 15 = enforce-level advisory 15——本文件物理位置与 enforce 分档恰好一致
+#   （check_cognition 在 Z3 fail-closed 化后由 warn 降为 advisory，物理与分档归位）。
+# _enforce_of 读 gate-enforce-level.conf 而非文件位置（跨档情况见 gates-strict/warn.sh 头部）。
+# 头部数字由 self-check.sh check_gates_header_comment 机器执法（防注释漂移）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
 check_consistency() {
