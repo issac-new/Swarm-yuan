@@ -584,9 +584,11 @@ check_doc_consistency() {
   fi
 
   # 1. 框架规则文件数 == 门禁片段数（真值机械计数，当前 74 == 74（机械计数，随框架增删自动变化））
-  local rule_cnt gate_cnt
-  rule_cnt=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
-  gate_cnt=$(ls "$base/assets/framework-gates/"*.sh 2>/dev/null | wc -l | xargs)
+  local rule_cnt gate_cnt _f _n
+  _n=0; for _f in "$base/references/frameworks/"*.md; do [[ -f "$_f" ]] || continue; [[ "$(basename "$_f")" == _template.md ]] && continue; _n=$((_n+1)); done
+  rule_cnt=$_n
+  _n=0; for _f in "$base/assets/framework-gates/"*.sh; do [[ -f "$_f" ]] || continue; _n=$((_n+1)); done
+  gate_cnt=$_n
   if [[ "$rule_cnt" == "$gate_cnt" ]]; then
     echo "  ✓ 框架规则文件数($rule_cnt) == 门禁片段数($gate_cnt)"
   else
@@ -624,7 +626,7 @@ check_doc_consistency() {
   #    门禁 27→31、conf 146→162、references 13→14，均机械解析，不写死）。
   #    口径注意：门禁总数按「N 个质量门禁 / N 个门禁」匹配，避免误伤「核心 10」等子计数；
   #    conf 变量按「N 个(配置|门禁)?变量」匹配，避免把「146 个门禁」误判为变量数。
-  local true_gates true_vars true_fw
+  local true_gates true_vars true_fw _f _n
   # 门禁函数含下划线（stable_diff/shift_left/...），须用 [a-z_]+ 计数，否则漏数（23≠27）
   true_gates=$(_count_check_fns "$base")
   # 架构/合规门禁数真值：从 precheck.sh 注册表数组机械解析——架构=FULL−CORE−COMPLIANCE。
@@ -635,7 +637,8 @@ check_doc_consistency() {
   true_full=$(_count_gate_array ALL_GATES_FULL "$precheck_sh")
   local true_arch=$((true_full - true_core - true_compliance))
   true_vars=$(cat "$base/scripts/precheck.conf" "$base/scripts/precheck.arch.conf" "$base/scripts/precheck.compliance.conf" "$base/assets/precheck.conf" "$base/assets/precheck.arch.conf" "$base/assets/precheck.compliance.conf" 2>/dev/null | grep -cE '^[A-Z_][A-Z0-9_]*=' | xargs)  # WP-I：三文件合计（scripts/ + assets/ 双路径兜底）
-  true_fw=$(ls "$base/references/frameworks/"*.md 2>/dev/null | grep -v _template | wc -l | xargs)
+  _n=0; for _f in "$base/references/frameworks/"*.md; do [[ -f "$_f" ]] || continue; [[ "$(basename "$_f")" == _template.md ]] && continue; _n=$((_n+1)); done
+  true_fw=$_n
 
   # WP-Bootstrap: 单文件 conf 变量数 + advisory-only 门禁数 + enforce 三档真值。
   # 旧版只对账聚合数（170/54），不校验单文件子数与 advisory-only/enforce 子数，导致
