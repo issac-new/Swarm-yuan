@@ -4,7 +4,7 @@
 >
 > 17 项特征卡让 AI 认识你的项目，54 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
 
-[![Release](https://img.shields.io/badge/release-v2026.08.03-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.08.03)
+[![Release](https://img.shields.io/badge/release-v2026.08.04-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.08.04)
 [![Feature Card](https://img.shields.io/badge/feature%20card-17-green)]()
 [![Quality Gates](https://img.shields.io/badge/quality%20gates-54-orange)]()
 [![Frameworks](https://img.shields.io/badge/frameworks-74-blueviolet)]()
@@ -336,7 +336,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ---
 
-## 设计与决策弧线（v2026.07.04 → v2026.08.03）
+## 设计与决策弧线（v2026.07.04 → v2026.08.04）
 
 swarm-yuan 不是一次性写出来的，是 21 天、14 个 release tag、9 份研究交付物、20+ 个 WP 工作包迭代出来的。完整决策见 `docs/paradigm-decisions.md`（决策 18-31，1-17 见 paradigm-decisions-archive.md）+ `docs/` 下 dated 设计文档。
 
@@ -358,6 +358,7 @@ swarm-yuan 不是一次性写出来的，是 21 天、14 个 release tag、9 份
 | 2026-07-30 | 吸收 openai/codex-security CLI 接线层第 4 对象：**AI 约束推理扫描（非传统 SAST——OpenAI 官方明确「不包含 SAST 报告」，采用约束推理 + 攻击路径验证而非模式匹配 + 降级链）** + source→sink 数据流 + 静态评估七元组 + 威胁模型五要素 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；`--sast-deep` 门禁 `SAST_DEEP_TOOL=codex-security` 时显式调用，**非降级链一环（非 SAST，auto 降级链不变，两者正交可并行）**；开源 Apache-2.0，Trusted Access 非付费门槛，API 按 token 计费；G15 warn-only 断言；CLI 接线层 3→4 / 运行时 12→13 / 参考文档 33→34（fde-backprop 删除后 35→34） | `swarm-yuan/references/codex-security-methodology.md` |
 | 2026-07-31 | 反思修复批次（WP-reflection-fixup，对照 10 个上下文工程问题审计生成器自身）：WP-A 口径数字单源——self-check 扫描扩 SKILL.md+references 全量 + 补 runtimes/domains/cognition 三类 catchphrase 扫描 + 修 12→13 运行时漂移（facts.conf FACT_COGNITION_LAYERS=5）；WP-B 生成产物 e2e 回归——run-gen-e2e.sh 断言骨架/workflow/conf 嗅探 + 挂进 verifier，附带修 create 路径解析 + BUILD_CMD 未引号两个潜伏 bug；WP-C spec 节按任务类型机械校验——模板头部表层化矩阵 + --reuse --task-type 验证豁免落实；WP-D advisory 轴混淆修正——SKILL.md 删长注释辨析 + --list-gates 归并轴（explicit-flag-only） | `verifier/runs/README.md` |
 | 2026-08-03 | 文档口径漂移修复 + LOC 守护（fix/doc-drift-and-loc-governance，12 项）：SKILL.md 结构塌陷修复（孤儿表格行+重复标题）/ README CLI 层（3）→（4）补 codex-security / USAGE enforce 表 strict 20→16·warn 19→23·canary→loop-oracle / PROMO 运行时名 ocr / CLAUDE.md 瘦身去重（删 11 runtimes·~4000 lines·28 docs·20k+22k，消除与同文件内部矛盾）/ self-check 运行时正则补 `(external )?runtimes` 容错（根因修复）/ facts.conf +FACT_SCRIPT_LOC + self-check LOC warn-only 守护 + README 删 4 处写死行数（根除漂移源）/ research 幽灵路径措辞修正 + 浅克隆建议 | `verifier/runs/README.md` |
+| 2026-08-04 | **四轮复盘：从「内部一致性」到「外部可用性」**（v2026.08.04 发版含 5 批次）。① 可视化门禁双引擎（feat/diagram）：check_mermaid→check_diagram，结构关系图用 mermaid（GitHub 原生渲染）+ 数据统计图用 echarts/antv option JSON，按内容选恰当图表；`--mermaid` 保留别名。② verifier 名实修复（fix/verifier-honesty）：golden-vector **内容比对首次自动化**（此前只对账行数，CLAUDE.md 描述的比对行为并不存在）+ rebuild-golden 模式 / gen-e2e Step 8 假断言（`\|\| true` 吞退出码后无条件 ok）/ fixtures/e2e 进 all 投票 + gen_e2e 死票修复（函数末尾 echo 恒返回 0）/ generate-skill.sh 加 Windows 路径转换。③ self-check 既有项清理（fix/self-check）：strict/warn 正则加尾随约束 `([^0-9→]\|$)` 止误伤历史叙事 / 源码包 tag 降级（当天 -src 未打时 ls-remote 取最近可用，不再让终端用户吃 FAIL）。④ 脚本注释漂移守（fix/script-comment）：**catchphrase 执法边界从 .md 扩到 .sh 头部注释**（新增 check_gates_header_comment，反向验证通过）+ 删死配置 FACT_MEASURE_METADATA_COVERED + 三个 warn-only 开关注明推进条件防僵尸化。⑤ **lite 档生成失败 P0 bug**（fix/lite-profile）：`chmod +x assets/*.sh` 在 lite 档 glob 无匹配 → set -e 中断 → 小项目（auto→lite）按默认命令生成必残缺；改 find -exec 容错 + 补 lite/compliance 档 e2e 回归（反向验证能捕获原 bug）+ 7 处性能声称按实测修正（--all 声称 ~5s 实测 12-16s）| `verifier/runs/README.md` |
 
 ### 9 份研究交付物（R1-R9，2026-07-20~22）
 
