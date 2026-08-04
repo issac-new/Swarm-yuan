@@ -266,8 +266,11 @@ _default_conf() {
   PRIVACY_SENSITIVE_KEYWORDS=()
   PRIVACY_EXEMPTIONS=()
   # 安全门禁族深化（P1-3/P1-9）：工具链降级 + 授权/需求/密码门禁
-  SENSITIVE_TOOL="auto"
-  SECURITY_TOOL="auto"
+  # 六轮复盘：三个 *_TOOL 用 ${VAR:-默认} 保留环境变量（_default_conf 在 source conf 前执行，
+  # 写死赋值会先覆盖环境变量，使 conf 里的 ${VAR:-auto} 也读到被重置的值 →
+  # `SECURITY_TOOL=builtin bash precheck.sh --security` 失效）。便于排障临时切工具链。
+  SENSITIVE_TOOL="${SENSITIVE_TOOL:-auto}"
+  SECURITY_TOOL="${SECURITY_TOOL:-auto}"
   AUTHZ_SCAN_DIRS=()
   AUTHZ_EXTRA_PATTERNS=()
   REQUIREMENTS_STRICT=0

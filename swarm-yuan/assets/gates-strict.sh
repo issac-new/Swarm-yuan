@@ -402,6 +402,8 @@ _sec_scan() {
 
 _check_security_semgrep() {
   # 与内置路径同一目标集：WRITABLE_DIRS + SCAN_DIRS 去重（语义同下方原逻辑）
+  # 返回码语义（六轮复盘扩展）：0=semgrep 通过（ERROR 级 0 命中，调用方须继续叠加内置扫描）
+  #   1=执行错误（≥2，降级内置）｜2=无可扫目录｜3=semgrep 已 fail（调用方跳过内置，避免重复报同一问题）
   local targets=() seen="" d
   for d in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
     [[ -z "$d" || ! -d "$d" ]] && continue
@@ -428,9 +430,10 @@ _check_security_semgrep() {
       /"path":/     { p=$0;   sub(/^.*"path":[[:space:]]*"/,"",p);   sub(/".*$/,"",p) }
       /"severity":[[:space:]]*"ERROR"/ { if (p != "") { print cid" @ "p; p="" } }
     ' "$out" 2>/dev/null | head -10 | sed 's/^/    /'
-  else
-    pass "semgrep 扫描通过（ERROR 级 0 命中）"
+    rm -f "$out"
+    return 3
   fi
+  pass "semgrep 扫描通过（ERROR 级 0 命中）"
   rm -f "$out"
   return 0
 }
@@ -448,15 +451,25 @@ check_security() {
   fi
   if [[ "$_security_tool" == "semgrep" ]]; then
     local _semgrep_rc=0
-    if _check_security_semgrep; then
-      return
-    else
-      _semgrep_rc=$?
-    fi
-    if [[ "$_semgrep_rc" -eq 1 ]]; then
-      warn "semgrep 执行失败（rc≥2），降级内置规则扫描"
-    fi
-    # rc=2：无可扫目录，落入内置路径的同文案披露
+    _check_security_semgrep || _semgrep_rc=$?
+    case "$_semgrep_rc" in
+      3)
+        # semgrep 已 fail（ERROR 级命中）→ 跳过内置，避免重复报同一问题
+        return ;;
+      1)
+        warn "semgrep 执行失败（rc≥2），降级内置规则扫描" ;;
+      2)
+        : ;;  # 无可扫目录，落入内置路径的同文案披露
+      0)
+        # 六轮复盘修复（安全）：semgrep 通过**不再 return**，继续叠加内置模式族。
+        # 缺陷：原逻辑"semgrep 通过就 return"把互补的两种范式做成互斥二选一——
+        #   semgrep 强在语义/框架感知（依赖已知类型签名），内置强在模式化鲁棒性
+        #   （SQL 关键字 + 字符串拼接特征 / eval 词法）。实测自定义对象方法
+        #   （db.exec / engine.eval）semgrep --config auto 与 p/java 均 0 命中，
+        #   而内置能精准抓到 → 装了 semgrep 的用户反而比不装更弱（违反"工具增强"直觉）。
+        # 叠加成本仅几秒 grep，对齐"质量优先 > 兼顾效率"执行准则。
+        echo "  ⓘ semgrep 通过，继续内置模式族扫描（语义层 + 词法层叠加，非二选一）" ;;
+    esac
   fi
   local found=0
   # 合并 WRITABLE_DIRS + SCAN_DIRS 并去重（避免同一目录扫两遍产生重复告警）
