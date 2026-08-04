@@ -303,7 +303,7 @@ _CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 # set -e 下 source 返回 1 会退出。--list-gates / --doctor 不依赖 conf，提前拦截。
 # 用 $1 直接判断（MODE 在 321 行才赋值，此处尚未解析）。
 case "${1:-}" in
-  --list-gates|--doctor|--gate-stats|--review-calibrate|--cwe-audit) _skip_conf=1 ;;
+  --list-gates|--doctor|--gate-stats|--review-calibrate|--cwe-audit|--version|--help) _skip_conf=1 ;;
   *) _skip_conf=0 ;;
 esac
 if [[ "$_skip_conf" -eq 1 ]]; then
@@ -382,6 +382,22 @@ while [[ $# -gt 0 ]]; do
     --list-gates)
       # WP-Q1.5：列出所有门禁的 flag / 函数名 / enforce_level 三列表
       MODE="--list-gates"
+      shift
+      ;;
+    --version)
+      # 版本号（与 install.sh --version 对齐）：生成器自身 git describe。
+      # 不带 --dirty（跨平台：Windows autocrlf=true 致干净 checkout 误报 dirty）。
+      _pc_ver="unknown"
+      _pc_src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+      command -v git >/dev/null 2>&1 && git -C "$_pc_src_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+        && _pc_ver=$(git -C "$_pc_src_dir" describe --tags --always 2>/dev/null || echo "unknown")
+      echo "swarm-yuan precheck $_pc_ver"
+      echo "bash ${BASH_VERSION:-unknown}"
+      exit 0
+      ;;
+    --help|-h)
+      # 用法（_usage 在下方定义，此处提前调用）
+      MODE="--help"
       shift
       ;;
     --strict-skip)
@@ -814,6 +830,16 @@ if [[ "$MODE" == "--list-gates" ]]; then
   exit 0
 fi
 
+# --help：打印用法并退出（_usage 在上方定义，依赖 GATE_FLAGS 数组）
+if [[ "$MODE" == "--help" ]]; then
+  _usage
+  echo "       bash precheck.sh --version              # 版本号"
+  echo "       bash precheck.sh --list-gates           # 列出全部门禁 flag/函数/enforce"
+  echo "       bash precheck.sh --doctor               # conf 诊断"
+  echo "       bash precheck.sh --gate-stats           # 门禁连续零发现统计"
+  exit 0
+fi
+
 # --gate-stats（A 方向：adaptive gating 降级提示，gstack 吸收，治沉睡门禁）
 # 读 gate-runs.jsonl 统计每门禁连续零发现（status=pass 且 ids 空）次数；
 # advisory 门连续 N 次（默认 10）零发现 → warn 提示降级；安全类 NEVER_GATE 豁免。
@@ -902,7 +928,32 @@ if [[ "$MODE" == "--review-calibrate" ]]; then
   exit 0
 fi
 
-cd "$PROJECT_DIR"
+# 未知 MODE 拦截（须在 cd 前）：meta 命令已 exit，能到此处的是门禁模式。
+# 聚合模式 + GATE_FLAGS 覆盖所有合法 MODE；其余报「未知操作」+ 用法，不走到 cd 误导。
+case "$MODE" in
+  --all|--all-full|--compliance-suite|--fix-suggest|--framework) ;;
+  *)
+    _is_gate=0
+    for _gf in "${GATE_FLAGS[@]}"; do [[ "$MODE" == "$_gf" ]] && { _is_gate=1; break; }; done
+    if [[ "$_is_gate" -eq 0 ]]; then
+      echo "✗ 未知操作: $MODE" >&2
+      _usage >&2
+      exit 1
+    fi
+    ;;
+esac
+
+cd "$PROJECT_DIR" 2>/dev/null || {
+  # cd 失败：PROJECT_DIR 未配置 / 占位符（生成器自身 assets/precheck.conf 模板含
+  # <项目根绝对路径>）/ 路径不存在。meta 命令（--list-gates/--doctor 等）已在上方
+  # exit，能到此处的都是门禁模式——给明确错误，不报原始 cd 语义错误（误导排障）。
+  case "$PROJECT_DIR" in
+    \<*\>|'') echo "✗ PROJECT_DIR 未配置或为占位符（当前: '${PROJECT_DIR}'）" >&2 ;;
+    *) echo "✗ PROJECT_DIR 不存在: $PROJECT_DIR" >&2 ;;
+  esac
+  echo "  请在 precheck.conf 填写真实项目根绝对路径，或运行 bash generate-skill.sh 生成项目技能" >&2
+  exit 2
+}
 
 # ===== 门禁工具化运行时（P1-4/P1-5）：--format json + gate-runs 证据落盘 =====
 # 铁律约束：FORMAT=text 且 GATE_RUNS_DIR 为空时 _gate_exec 走原始分发路径
