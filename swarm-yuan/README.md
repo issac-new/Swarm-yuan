@@ -404,7 +404,7 @@ Swarm-yuan/
 | 安全认证 profile | 6 | FACT_CERT_PROFILES=6 |
 | 生成流程 | 13 节点 / 8 工作流节点 | FACT_FLOW_STEPS=13 |
 | 决策治理类型 | 3（Mechanical / Taste / UserChallenge，对齐 ISO/IEC 42001） | FACT_DECISION_TYPES=3 |
-| 三平台 | macOS / Linux / Windows（CI 11 job 全覆盖） | — |
+| 三平台 | macOS / Linux / Windows（CI 11 job 全覆盖；**bash 硬前置**，Windows 需 Git Bash/WSL，原生 cmd/PowerShell 不支持） | — |
 | 零占位符 | ✅（`generate-skill.sh --verify-completeness` 机器执法） | — |
 | 自举 | ✅（CI generator-self-gate 三档 RC=0） | FACT_BOOTSTRAP_GATES=3 |
 | 上下文表面瘦身（字节代理，非 token） | 193226B/2144L → 156992B/1856L（−18.8% / −13.4%，WP-P0~P6；模型 token 削减未测量） | FACT_CONTEXT_SURFACE_PRE_OPT=193226 |

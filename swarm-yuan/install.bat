@@ -28,7 +28,9 @@ where wsl >nul 2>&1 && ( set "BASH_CMD=wsl bash" & set "BASH_KIND=wsl" & goto :f
 REM 4. MSYS2
 if exist "C:\msys64\usr\bin\bash.exe" ( set "BASH_CMD=C:\msys64\usr\bin\bash.exe" & set "BASH_KIND=msys2" & goto :found )
 
-echo ERROR: 未找到 bash。请安装 Git for Windows（https://git-scm.com/download/win）或 WSL。
+echo ERROR: 未找到 bash。
+echo swarm-yuan 是 bash 工具，需要 bash 才能运行（Windows 原生 cmd/PowerShell 不支持）。
+echo 请安装 Git for Windows（https://git-scm.com/download/win，自带 Git Bash）或 WSL（wsl --install）。
 exit /b 1
 
 :found
