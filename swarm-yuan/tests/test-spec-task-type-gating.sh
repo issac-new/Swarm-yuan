@@ -8,7 +8,7 @@
 # 注：断言消息避免 §（U+00A7）字符——bash 3.2 + set -u 下该 2 字节 UTF-8 字符会损坏
 # [[ ]] && ok "..." || { bad "..." } 复合语句的解析（rc 变量被误判 unbound）。
 set -uo pipefail
-cd "$(dirname "${0}")/.."
+cd "$(dirname "${0}")/.." || exit 1
 TMP="$(mktemp -d /tmp/spttg.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT
 FAIL=0

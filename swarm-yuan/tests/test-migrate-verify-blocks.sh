@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-migrate-verify-blocks.sh — migrate-verify-blocks.sh 草稿生成测试（WP-P3a）
 set -uo pipefail
-cd "$(dirname "${0}")/.."
+cd "$(dirname "${0}")/.." || exit 1
 SH="scripts/migrate-verify-blocks.sh"
 TMP="$(mktemp -d /tmp/mvbtest.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-detect-frameworks.sh — detect-frameworks.sh --verbose 双态测试（WP-P1）
 set -uo pipefail
-cd "$(dirname "${0}")/.."
+cd "$(dirname "${0}")/.." || exit 1
 SH="scripts/detect-frameworks.sh"
 TMP="$(mktemp -d /tmp/dfwtest.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT

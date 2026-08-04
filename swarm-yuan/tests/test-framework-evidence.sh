@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-framework-evidence.sh — framework-evidence.sh 台账双态测试（WP-P3b/M2）
 set -uo pipefail
-cd "$(dirname "${0}")/.."
+cd "$(dirname "${0}")/.." || exit 1
 SH="scripts/framework-evidence.sh"
 TMP="$(mktemp -d /tmp/fetest.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT

@@ -5,7 +5,7 @@
 # 态3: lite 产物无 profile-gate 门控注释残留
 # 附带: standard 与 lite 同裁剪（§14 缺、§19 留）
 set -uo pipefail
-cd "$(dirname "${0}")/.."
+cd "$(dirname "${0}")/.." || exit 1
 TMP="$(mktemp -d /tmp/stgtest.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT
 FAIL=0

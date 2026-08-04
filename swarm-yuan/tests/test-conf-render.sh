@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-conf-render.sh — conf-render.sh 初稿渲染双态测试（WP-P4/M3）
 set -uo pipefail
-cd "$(dirname "${0}")/.."
+cd "$(dirname "${0}")/.." || exit 1
 SH="scripts/conf-render.sh"
 TMP="$(mktemp -d /tmp/crtest.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT
