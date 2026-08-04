@@ -805,6 +805,10 @@ ASSETS_DIR="$(cd "$(dirname "$0")/.." && pwd)/assets"
 SRC_REF="$(cd "$(dirname "$0")/.." && pwd)/references"
 SRC_SCRIPTS="$(cd "$(dirname "$0")" && pwd)"
 SWARM_YUAN_STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)"
+# 版本溯源（八轮复盘 install.sh source_version 对齐）：生成器自身 git describe，
+# 与 install.sh L123-124 同哲学；非 git 场景（zip 下载）降级 "unknown"，不阻塞生成。
+SWARM_YUAN_SRC_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SWARM_YUAN_SRC_VERSION="$(git -C "$SWARM_YUAN_SRC_DIR" describe --tags --always --dirty 2>/dev/null || echo "unknown")"
 
 # 按 UNIVERSAL_FILES 清单复制通用文件（create 全量；upgrade 跳过 precheck.conf 保留用户配置）
 # 可选环境变量 SKILLS_PATH_REWRITE：sed 表达式，复制后逐文件就地应用（缺省空=不重写）。
@@ -975,6 +979,9 @@ MEOF
   cat > "$SKILL_DIR/.swarm-yuan-version" <<EOF
 upgraded_at=$SWARM_YUAN_STAMP
 generator=swarm-yuan
+generator_version=$SWARM_YUAN_SRC_VERSION
+source_repo=$SWARM_YUAN_SRC_DIR
+source_version=$SWARM_YUAN_SRC_VERSION
 mode=upgrade
 EOF
   echo "  ✓ .swarm-yuan-version（已重置 framework_gates_sha，由重注入写入新值）"
@@ -1385,6 +1392,9 @@ fi
 _write_if_absent "$SKILL_DIR/.swarm-yuan-version" <<EOF
 created_at=$SWARM_YUAN_STAMP
 generator=swarm-yuan
+generator_version=$SWARM_YUAN_SRC_VERSION
+source_repo=$SWARM_YUAN_SRC_DIR
+source_version=$SWARM_YUAN_SRC_VERSION
 mode=create
 EOF
 
