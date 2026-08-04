@@ -180,6 +180,48 @@ else
   bad "跨档升级前置 lite create 失败"
 fi
 
+# --- 12. --mark-active 闭环（九轮复盘：E2E 主路径 Step ⑧ 死锁回归锁）---
+# 背景：verify_completeness 的 - [ ] 扫描原未排除 ``` 代码块——gsd-patterns.md /
+# cognitive-bias.md 这两个 UNIVERSAL_FILES 模板里的 ```markdown 示例被误判为待清零占位符，
+# 导致 --mark-active 永远拒绝，所有 standard/compliance 档产物卡在 draft（E2E 主路径断裂）。
+# 本段锁的是"填充完整 → --mark-active 必须成功"这一 E2E 闭环。
+# 反向验证：修复前本段必然失败（死锁），修复后通过。
+_mdir="${TMP}/mark-active-test"
+mkdir -p "${_mdir}"
+if bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard m-dev "${DEMO}" "${_mdir}" \
+     >/tmp/gene2e-ma-create.log 2>&1; then
+  _mskill="${_mdir}/m-dev"
+  # 模拟 AI Step ④：填充占位符（reference/SKILL.md/workflow.md/decisions.jsonl）
+  # 4 个待填充 reference 用最小真实内容覆盖
+  for rf in codebase dev-guide release reference-manual; do
+    printf '# %s.md\n真实内容（E2E 填充样本）\n' "$rf" > "${_mskill}/references/${rf}.md"
+  done
+  # SKILL.md 的 description/标题占位符替换 + 删填充指引段
+  sed -i.bak -e 's|（填充指引：触发条件 + 项目关键词）|m-dev 开发技能（E2E 样本）|' \
+             -e 's|（填充指引：项目名 + 需求交付全流程技能）|m-dev 需求交付技能|' \
+             "${_mskill}/SKILL.md" && rm -f "${_mskill}/SKILL.md.bak"
+  # 删 SKILL.md 的"## 填充指引"整段（到下一个 ## 或 EOF）
+  awk '/^## 填充指引/{skip=1; next} /^## /{skip=0} !skip' "${_mskill}/SKILL.md" > "${_mskill}/SKILL.md.tmp" \
+    && mv "${_mskill}/SKILL.md.tmp" "${_mskill}/SKILL.md"
+  # workflow.md 删填充指引注释（> 开头的两行）
+  grep -v '^> 填充指引\|^> 节点名对齐\|（流程图，标注' "${_mskill}/references/workflow.md" > "${_mskill}/references/workflow.md.tmp" \
+    && mv "${_mskill}/references/workflow.md.tmp" "${_mskill}/references/workflow.md"
+  # decisions.jsonl 填 1 条（--mark-active 须 ≥1 条，SKILL.md 契约）
+  mkdir -p "${_mskill}/.swarm-yuan"
+  printf '{"type":"Taste","decision":"E2E 样本决策","ts":"2026-08-04T00:00:00Z"}\n' > "${_mskill}/.swarm-yuan/decisions.jsonl"
+  # Step ⑧：--mark-active 必须成功（死锁修复后 gsd/cognitive-bias 的代码块示例不再误伤）
+  if bash "${PARADIGM}/scripts/generate-skill.sh" --mark-active "${_mskill}" >/tmp/gene2e-ma.log 2>&1; then
+    ok "--mark-active 成功（E2E Step ⑧ 闭环，代码块示例未误伤）"
+    grep -q '^status: active' "${_mskill}/SKILL.md" 2>/dev/null \
+      && ok "status 已翻 active" \
+      || bad "--mark-active 声称成功但 status 未翻 active"
+  else
+    bad "--mark-active 失败（E2E 死锁回归；见 /tmp/gene2e-ma.log）"
+  fi
+else
+  bad "mark-active 前置 create 失败（见 /tmp/gene2e-ma-create.log）"
+fi
+
 # --- 结果 ---
 if [[ $FAIL -eq 0 ]]; then
   echo "GEN_E2E_RC 0"

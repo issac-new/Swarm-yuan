@@ -412,7 +412,16 @@ verify_completeness() {
     out=$(awk '
       /^#+ .*(检查表|检查清单|自检|审查清单|裁决条款|清单（)/ { intable=1; next }
       /^#+ / { intable=0 }
-      /- \[ \]/ && !intable { print FILENAME":"FNR":"$0 }
+      # 九轮复盘：排除 ``` 代码块——gsd-patterns.md/cognitive-bias.md 等 UNIVERSAL_FILES
+      # 模板里的 ```markdown 示例（破窗台账格式演示）含 - [ ]，是正确的方法论示例，
+      # 非待清零占位符。原未排除代码块，导致 --mark-active 永远拒绝（E2E Step ⑧ 死锁）。
+      # /^```/ 行首匹配 fence 边界，toggle 翻转；完整配对 fence 正确，
+      # 未闭合 fence 把块内全判为 incode（保守不误报，可接受）。
+      /^```/ { incode=!incode; next }
+      # 真 checkbox 判定：行首（可有缩进）的 "- [ ]"。
+      # 反引号引用（`- [ ]`）是方法论说明文字（如 gsd-patterns.md L181/185/187 讲解语法），
+      # 非行首 checkbox，不匹配；与上方代码块排除同批修复 E2E Step ⑧ 死锁。
+      /^[[:space:]]*- \[ \]/ && !intable && !incode { print FILENAME":"FNR":"$0 }
     ' "$tf" 2>/dev/null || true)
     [[ -n "$out" ]] && cb_hits="${cb_hits}${cb_hits:+
 }${out}"
