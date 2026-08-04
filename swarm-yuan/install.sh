@@ -98,9 +98,12 @@ install_to() {
     return 0
   fi
 
-  # 备份旧版本
+  # 备份旧版本 + 源已演进提示（八轮复盘：安装产物版本完全断联——旧版无版本记录，
+  # 用户装旧版毫无感知。此处读旧版的 .swarm-yuan-version，与源版本对比提示）
   if [[ -d "$dest" ]]; then
-    echo "  ⚠ 已存在，备份旧版本..."
+    local _old_ver="（无版本记录）"
+    [[ -f "$dest/.swarm-yuan-version" ]] && _old_ver="$(grep -E '^source_version=' "$dest/.swarm-yuan-version" 2>/dev/null | cut -d= -f2-)"
+    echo "  ⚠ 已存在，备份旧版本（${_old_ver}）..."
     mv "$dest" "${dest}.bak.$(date +%s)"
   fi
 
@@ -115,7 +118,18 @@ install_to() {
   find "$dest" -name '.DS_Store' -delete 2>/dev/null || true
   chmod +x "$dest/scripts/"*.sh "$dest/assets/"*.sh "$dest/assets/tool-adapters/"*.sh 2>/dev/null || true
 
-  echo "  ✓ 已安装: ${dest}"
+  # 八轮复盘：安装产物版本溯源（原零记录——用户无法知道装的是哪版/该重装升级没有。
+  # 与 generate-skill.sh 对目标技能写 .swarm-yuan-version 同哲学，补齐生成器自己的安装侧）。
+  local _src_ver
+  _src_ver=$(git -C "$SRC_DIR" describe --tags --always --dirty 2>/dev/null || echo "unknown")
+  cat > "$dest/.swarm-yuan-version" <<EOF
+installed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+source_repo=$SRC_DIR
+source_version=$_src_ver
+mode=generator-install
+EOF
+
+  echo "  ✓ 已安装: ${dest}（${_src_ver}）"
 
   # 注册 slash command
   if [[ -n "$cmd_dir" && -f "$dest/.claude/commands/swarm-yuan.md" ]]; then
@@ -169,6 +183,9 @@ case "$MODE" in
         echo "  ✅ ${name} (${dir})"
       done
     fi
+    # 八轮复盘：补 exit 0——原缺，case 走完后会落到脚本末尾的「=== 安装完成 ===」误导性输出，
+    # 实测 --list 没真装（文件 mtime 未变）但用户会误以为发生了安装（对比 --version 分支有 exit 0）。
+    exit 0
     ;;
   --claude)
     install_to "Claude Code" "$HOME/.claude/skills" "$HOME/.claude/commands"
