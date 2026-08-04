@@ -57,7 +57,7 @@ jobs:
             fi
           done
           [[ "$fail" -eq 0 ]] && echo "✓ All 74 fixtures passed" || { echo "✗ $fail fixtures failed"; exit 1; }
-      - name: Gate fixtures (全量 36 组双态 + id 级断言，WP3.3)
+      - name: Gate fixtures (全量 gate-fixtures/ 组双态 + id 级断言，WP3.3)
         run: |
           fail=0
           for g in $(ls tests/gate-fixtures/); do
@@ -113,7 +113,7 @@ jobs:
             fi
           done
           [[ "$fail" -eq 0 ]] && echo "✓ All 74 fixtures passed on macOS/BSD" || { echo "✗ $fail fixtures failed"; exit 1; }
-      - name: Gate fixtures on BSD（全量 36 组，信息性：BSD grep/awk 兼容问题逐个修）
+      - name: Gate fixtures on BSD（全量 gate-fixtures/ 组，信息性：BSD grep/awk 兼容问题逐个修）
         # WP3.3 全量暴露 cognition/consistency-cross 等 BSD grep/awk 兼容问题（原 6 组未覆盖）。
         # 设 continue-on-error 信息性——BSD 兼容逐个修是长期工程，不阻塞 Job。
         # Linux Job 的 gate-fixture 全量保持严格（Linux 已全绿）。
@@ -399,7 +399,7 @@ jobs:
             fi
           done
           [[ "$fail" -eq 0 ]] && echo "✓ All 74 fixtures passed on Windows" || echo "⚠ $fail fixtures failed on Windows（信息性，Git Bash 兼容问题逐个修中）"
-      - name: Gate fixtures on Windows（全量 36 组，信息性）
+      - name: Gate fixtures on Windows（全量 gate-fixtures/ 组，信息性）
         shell: bash
         continue-on-error: true
         run: |
