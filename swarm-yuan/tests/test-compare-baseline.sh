@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-compare-baseline.sh — compare-baseline.sh 对比报告测试（WP-P6/M6）
 set -uo pipefail
-cd "$(dirname "${0}")/.."
+cd "$(dirname "${0}")/.." || exit 1
 SH="scripts/compare-baseline.sh"
 TMP="$(mktemp -d /tmp/cbtest.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT

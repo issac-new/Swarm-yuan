@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-signal-index.sh — gen-framework-index.sh 双产物 + 幂等测试（WP-P1）
 set -uo pipefail
-cd "$(dirname "${0}")/.."
+cd "$(dirname "${0}")/.." || exit 1
 SH="scripts/gen-framework-index.sh"
 SIG="assets/framework-signals.md"
 GUIDE="references/exploration-guide.md"
@@ -14,7 +14,7 @@ bash "$SH" >/dev/null 2>&1; rc=$?
 
 # 态 1：signals 覆盖全部框架（不含 _template.md；表头 1 行 '^| ' 须减）
 # 注：每框架 §1 可有多行信号（完整信号表外迁），故断言 数据行 ≥ 框架数 且逐框架 rid 出现
-fwn=$(ls references/frameworks/*.md | grep -cv '_template')
+fwn=0; for _f in references/frameworks/*.md; do [[ -f "$_f" ]] || continue; [[ "$(basename "$_f")" == _template.md ]] && continue; fwn=$((fwn+1)); done
 rows=$(grep -c '^| ' "$SIG")
 [[ $((rows - 1)) -ge $fwn ]] && ok "signals 数据行 $((rows-1)) ≥ 框架数 $fwn" || bad "signals 行数 $((rows-1)) < $fwn"
 miss=0

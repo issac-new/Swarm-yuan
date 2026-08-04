@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-context-surface.sh — context-surface.sh 双态测试（WP-P0）
 set -uo pipefail
-cd "$(dirname "${0}")/.."   # swarm-yuan 根
+cd "$(dirname "${0}")/.." || exit 1   # swarm-yuan 根
 SH="scripts/context-surface.sh"
 TMP=$(mktemp -d /tmp/cstest.XXXXXX)
 trap 'rm -rf "$TMP"' EXIT

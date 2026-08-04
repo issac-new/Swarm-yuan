@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-inventory-verify.sh — inventory-verify.sh 双态测试（WP-P2/M1）
 set -uo pipefail
-cd "$(dirname "${0}")/.."
+cd "$(dirname "${0}")/.." || exit 1
 SH="scripts/inventory-verify.sh"
 TMP="$(mktemp -d /tmp/ivtest.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT

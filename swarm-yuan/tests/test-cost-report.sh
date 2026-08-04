@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-cost-report.sh — cost-report.sh 节点耗时段双态测试（WP-P0）
 set -uo pipefail
-cd "$(dirname "${0}")/.."
+cd "$(dirname "${0}")/.." || exit 1
 SH="scripts/cost-report.sh"
 TMP=$(mktemp -d /tmp/crtest.XXXXXX)
 trap 'rm -rf "$TMP"' EXIT
