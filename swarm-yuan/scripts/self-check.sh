@@ -1105,7 +1105,7 @@ check_golden_vector() {
   if [[ "$golden_lines" == "$exp_lines" ]]; then
     echo "  ✓ golden-vector.txt ${golden_lines} 行（${FACT_FRAMEWORKS:-74} fixture + 1 尾行）与 facts.conf 一致"
   else
-    warn "golden-vector.txt ${golden_lines} 行 ≠ 期望 ${exp_lines} 行（FACT_FRAMEWORKS=${FACT_FRAMEWORKS:-74} + 1）--新增框架后需重跑 run-verifier.sh fixtures 重建"
+    warn "golden-vector.txt ${golden_lines} 行 ≠ 期望 ${exp_lines} 行（FACT_FRAMEWORKS=${FACT_FRAMEWORKS:-74} + 1）--新增框架后需重跑 run-verifier.sh rebuild-golden 重建基线"
     FAIL=1
   fi
 }

@@ -43,18 +43,25 @@ fixtures() {
     fi
   done
   echo "FIXTURES_TOTAL $total FAILS $fails"
+  [ "$fails" -eq 0 ]
 }
 
 e2e() {
+  local rc
   bash "$SY/tests/e2e/run-e2e.sh" >/tmp/verifier-e2e.log 2>&1
-  echo "E2E_RC $?"
+  rc=$?
+  echo "E2E_RC $rc"
+  return "$rc"
 }
 
 # WP-B：生成产物 e2e 回归——断言 generate-skill.sh create 产物质量（骨架/JSON/workflow/conf 嗅探）。
 # 与 e2e()（测 --inject-frameworks 注入链路）互补：e2e 测生成器行为，gen_e2e 测生成产物。
 gen_e2e() {
+  local rc
   bash "$SY/tests/e2e/run-gen-e2e.sh" >/tmp/verifier-gen-e2e.log 2>&1
-  echo "GEN_E2E_RC $?"
+  rc=$?
+  echo "GEN_E2E_RC $rc"
+  return "$rc"
 }
 
 # 合规门禁 fixture（C8）：遍历全部 gate fixture 组（WP3.3：从硬编码 6 组改为全量遍历），双态 + id 级断言
@@ -72,6 +79,46 @@ gate_fixtures() {
   echo "GATE_FIXTURES_TOTAL $total FAILS $fails"
   echo "GATE_FIXTURES_FAILS $fails"
   [ "$fails" -eq 0 ]
+}
+
+# golden-vector 内容比对（C1 行为等价 fail-closed）：
+# 跑 fixtures 生成当前向量，与 golden-vector.txt 逐行 diff。漂移=门禁行为变了（可能是 bug 或故意调整）。
+# 故意调整时用 rebuild-golden 重建基线；漂移则 fail + 提示重建。
+golden_check() {
+  local golden="$(dirname "$0")/golden-vector.txt"
+  local tmp; tmp="$(mktemp /tmp/golden-check.XXXXXX)"
+  fixtures > "$tmp"
+  if diff -u "$golden" "$tmp" >/dev/null 2>&1; then
+    echo "GOLDEN_VECTOR OK（$(wc -l < "$golden" | tr -d ' ') 行向量与 golden 逐行一致）"
+    rm -f "$tmp"
+    return 0
+  fi
+  echo "GOLDEN_VECTOR DRIFT（门禁行为已变，diff 如下）"
+  diff -u "$golden" "$tmp" | head -40
+  echo "  若属故意门禁调整：bash verifier/v1/run-verifier.sh rebuild-golden 重建基线并审 git diff"
+  rm -f "$tmp"
+  return 1
+}
+
+# rebuild-golden：故意调整门禁后重建 golden-vector.txt 基线。
+# fail-closed：存在 BAD fixture 时拒绝把坏向量写成 golden（防"坏门禁被固化进基线"）。
+rebuild_golden() {
+  local golden="$(dirname "$0")/golden-vector.txt"
+  local tmp; tmp="$(mktemp /tmp/golden-rebuild.XXXXXX)"
+  fixtures > "$tmp"
+  # fail-closed：存在 BAD fixture 时拒绝重建
+  if ! tail -1 "$tmp" | grep -q "FAILS 0"; then
+    echo "REBUILD_GOLDEN REFUSED（存在 BAD fixture，先修门禁再重建）"
+    tail -1 "$tmp"
+    rm -f "$tmp"
+    return 1
+  fi
+  # 先展示将应用的变更（供审阅），再覆盖
+  echo "REBUILD_GOLDEN DIFF（将应用以下变更到 golden-vector.txt）"
+  diff -u "$golden" "$tmp" || true
+  cp "$tmp" "$golden"
+  echo "REBUILD_GOLDEN OK（已覆盖 golden-vector.txt，请 git diff 审阅后随代码同 commit）"
+  rm -f "$tmp"
 }
 
 shellcheck_scan() {
@@ -164,16 +211,21 @@ case "$MODE" in
   metrics) metrics; metrics_assert ;;
   cli-ab) cli_ab ;;
   bootstrap) bootstrap_self_gate ;;
+  golden) golden_check ;;
+  rebuild-golden) rebuild_golden ;;
   # all：既有各模式输出与投票语义不变（shellcheck 不投票、gate_fixtures 投票），
   # 新增 metrics_assert、cli_ab、bootstrap_self_gate 三票（fail-closed），任一票失败则 all 非零。
   # WP-B：gen_e2e 加入 all 投票（fail-closed，守生成产物质量回归）。
+  # fix(verifier-honesty)：fixtures/e2e 从"只输出不投票"改为进 all 投票（fail-closed，
+  # 本地 run-verifier.sh all 与 CI 同级）；gen_e2e 死票修复（函数末尾 echo 恒返回 0，
+  # 已改为 return 真实 rc）；golden_check 替代裸 fixtures（fail-closed 比对 golden-vector 内容）。
   all)
     all_fail=0
     metrics; metrics_assert || all_fail=1
     shellcheck_scan
-    e2e
+    e2e || all_fail=1
     gen_e2e || all_fail=1
-    fixtures
+    golden_check || all_fail=1
     gate_fixtures || all_fail=1
     cli_ab || all_fail=1
     bootstrap_self_gate || all_fail=1
