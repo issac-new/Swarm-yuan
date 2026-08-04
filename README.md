@@ -4,7 +4,7 @@
 >
 > 17 项特征卡让 AI 认识你的项目，54 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
 
-[![Release](https://img.shields.io/badge/release-v2026.08.06-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2026.08.06)
+[![Release](https://img.shields.io/badge/release-v1.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v1.0)
 [![Feature Card](https://img.shields.io/badge/feature%20card-17-green)]()
 [![Quality Gates](https://img.shields.io/badge/quality%20gates-54-orange)]()
 [![Frameworks](https://img.shields.io/badge/frameworks-74-blueviolet)]()
@@ -12,6 +12,28 @@
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 > **口径权威源**：`swarm-yuan/assets/facts.conf`——所有 catchphrase 数字的单一事实源，`scripts/self-check.sh` 机器执法做漂移检测。本 README 每一个数字都可被 `facts.conf` + 机械计数复现。
+
+---
+
+## v1.0 Release（首个正式版）
+
+**一句话**：让 AI 在写代码前先认识你的项目——指向任意代码仓库，生成一个项目专属的开发技能（特征卡 + 门禁 + 工作流），让 AI 动手前先建立项目认知，写完后用机器门禁守护合规。
+
+**它解决什么**：① AI 不知道你的项目规则（改了不该改的文件、升级了不该升级的依赖、重复造轮子）；② AI 不懂你的领域（密码必须哈希、SQL 必须参数化——违反就是硬伤）；③ 检查靠人工（没有自动化检查就没有信任，只能逐行 review）。
+
+**设计思路**：特征卡 = 立法（17 项，定义「项目应该是什么样的」）+ 54 门禁 = 执法（strict 16 / warn 23 / advisory 15，验证「代码是否符合」）+ verifier = 司法（74 框架双态 fixture 独立回归）。重量是显式选择——`--profile auto|lite|standard|compliance` 四档让重量可选。
+
+**3 步上手**：
+```bash
+bash install.sh                                              # ① 安装（自动检测 7 个 AI 运行时）
+bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh <name> <你的项目>   # ② 生成项目专属技能
+bash <skill>/scripts/precheck.sh --all                       # ③ 开发完跑门禁验收
+```
+
+> **Windows**：需 Git for Windows（自带 Git Bash）或 WSL；纯 cmd/PowerShell 不支持（bash 是硬前置）。
+> **不适用**：个人脚本/一次性原型/改 typo/无 AI 辅助的纯人工开发——直接用 AI 裸写，套范式 ROI 为负。
+
+📖 完整发版说明（设计取舍 / 门禁示例 / 质量基线）：见 [v1.0 Release Notes](https://github.com/issac-new/Swarm-yuan/releases/tag/v1.0)
 
 ---
 
@@ -336,9 +358,9 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ---
 
-## 设计与决策弧线（v2026.07.04 → v2026.08.06）
+## 设计与决策弧线（v2026.07.04 → v1.0）
 
-swarm-yuan 不是一次性写出来的，是 21 天、14 个 release tag、9 份研究交付物、20+ 个 WP 工作包迭代出来的。完整决策见 `docs/paradigm-decisions.md`（决策 18-31，1-17 见 paradigm-decisions-archive.md）+ `docs/` 下 dated 设计文档。
+swarm-yuan 不是一次性写出来的，是 21 天、28 个 release tag、9 份研究交付物、20+ 个 WP 工作包迭代出来的。完整决策见 `docs/paradigm-decisions.md`（决策 18-32，1-17 见 paradigm-decisions-archive.md）+ `docs/` 下 dated 设计文档。
 
 ### 范式转折点
 
@@ -361,6 +383,7 @@ swarm-yuan 不是一次性写出来的，是 21 天、14 个 release tag、9 份
 | 2026-08-04 | **四轮复盘：从「内部一致性」到「外部可用性」**（v2026.08.04 发版含 5 批次）。① 可视化门禁双引擎（feat/diagram）：check_mermaid→check_diagram，结构关系图用 mermaid（GitHub 原生渲染）+ 数据统计图用 echarts/antv option JSON，按内容选恰当图表；`--mermaid` 保留别名。② verifier 名实修复（fix/verifier-honesty）：golden-vector **内容比对首次自动化**（此前只对账行数，CLAUDE.md 描述的比对行为并不存在）+ rebuild-golden 模式 / gen-e2e Step 8 假断言（`\|\| true` 吞退出码后无条件 ok）/ fixtures/e2e 进 all 投票 + gen_e2e 死票修复（函数末尾 echo 恒返回 0）/ generate-skill.sh 加 Windows 路径转换。③ self-check 既有项清理（fix/self-check）：strict/warn 正则加尾随约束 `([^0-9→]\|$)` 止误伤历史叙事 / 源码包 tag 降级（当天 -src 未打时 ls-remote 取最近可用，不再让终端用户吃 FAIL）。④ 脚本注释漂移守（fix/script-comment）：**catchphrase 执法边界从 .md 扩到 .sh 头部注释**（新增 check_gates_header_comment，反向验证通过）+ 删死配置 FACT_MEASURE_METADATA_COVERED + 三个 warn-only 开关注明推进条件防僵尸化。⑤ **lite 档生成失败 P0 bug**（fix/lite-profile）：`chmod +x assets/*.sh` 在 lite 档 glob 无匹配 → set -e 中断 → 小项目（auto→lite）按默认命令生成必残缺；改 find -exec 容错 + 补 lite/compliance 档 e2e 回归（反向验证能捕获原 bug）+ 7 处性能声称按实测修正（--all 声称 ~5s 实测 12-16s）| `verifier/runs/README.md` |
 | 2026-08-05 | **五~九轮复盘：从「可用性」到「可信性」**（v2026.08.05 发版含 5 批次）。⑤ draft 通过语义诚实化（fix/draft-honesty）：draft 期 `--all` 的"✓ 门禁检查通过"改为撤回背书（SCAN_DIRS 等空值导致敏感扫描空转，技术上没说错但会被误读）+ `--doctor` 死变量漏报 bug（语料库漏扫 gates-*.sh 三文件，误报 118→实际 3，虚高 39 倍）+ `--upgrade` 补 e2e 回归。⑥ **工具链降级"互斥→叠加"**（fix/security）：check_security/check_sensitive 原"工具通过就 return"把互补做成二选一——实测装了 semgrep 的用户 SQL 拼接 + eval 全漏抓（semgrep --config auto 对自定义对象方法 0 命中），改为工具通过后叠加内置模式族；三个 *_TOOL 支持环境变量覆盖（根因：_default_conf 在 source conf 前写死赋值）。⑦ 误报治理（fix/false-positive）：对 3 个成熟开源项目实测误报率 67%——§3 eval 裸匹配把 Python 官方安全替代 ast.literal_eval 当违规抓（加白名单 + EVAL_WHITELIST）；gitleaks 路径零排除 vs 内置路径有 test 排除（对齐排除测试固件）；补"合法必 pass"误报回归锁。⑧ install 产物版本溯源（fix/install）：install.sh 装完零溯源记录（用户装旧版毫无感知），补写 .swarm-yuan-version + 源已演进提示 + --list 补 exit 0 止误导输出。⑨ **E2E Step ⑧ 死锁**（fix/mark-active）：verify_completeness 的 - [ ] 扫描未排除 ``` 代码块，gsd-patterns/cognitive-bias 模板里的 ```markdown 示例被误判为占位符，导致 --mark-active 永远拒绝——所有 standard/compliance 档产物永久卡 draft（E2E 主路径断裂）；加 incode 排除 fence 边界 + 行首 checkbox 限定，补 E2E 闭环回归（反向验证能捕获死锁）| `verifier/runs/README.md` |
 | 2026-08-06 | **十~十四轮复盘：口径机器执法 + 僵尸开关激活 + shellcheck 净零**（v2026.08.06 发版含 5 批次）。⑩ **facts.conf conf 变量数漂移**（fix/facts-drift）：七轮加 EVAL_WHITELIST（ARCH 111→112）+ e45d253 修 CORE 12→13，两处增量漏同步 facts.conf，合计 171→173 致 self-check FAIL + 6 份文档头部连锁漂移；同步 8 份活跃文档 + 补 compliant-testdata-excluded fixture 缺失的 teardown.sh（bin/gitleaks 测试产物泄露）。⑪ MEASURE 元数据覆盖率 69%→100%（fix/measure-metadata）：4 个核心变量（SENSITIVE_TOOL/SENSITIVE_EXCLUDE_GLOBS/SECURITY_TOOL/GATE_RUNS_DIR）补 `# MEASURE:` 三元组，FACT_MEASURE_METADATA_REQUIRED 0→1（僵尸开关激活，fail-closed）。⑫ self-check 权威计数 `ls\|grep`→glob（refactor/self-check-glob）：执法文件自身 SC2010 warning 2→0。⑬ CI workflow gate-fixture step name "36 组"→描述化（fix/ci-gate-fixture-count）：实测 48 组，写死数字必漂移。⑭ 测试脚本 SC2164（裸 cd）+ SC2010 净化（fix/test-shellcheck-warnings）：11 个 test-*.sh 加 `\|\| exit 1`，全仓 shellcheck warning 级 →0 | `verifier/runs/README.md` |
+| 2026-08-05 | **v1.0 首个正式版**（十~十六轮 + 跨平台收口）。⑮ 完成性审计全绿（系统排查跨平台 bash/.bat 一致性/74 框架四要素耦合/文档断链/enforce-level/metrics-baseline）。⑯ 生成目标 skill 回归测试（fix/generate-version）：create/upgrade 产物补 source_version 溯源（与八轮 install.sh 对齐）。**跨平台 autocrlf 修复**（fix/version-dirty）：Windows Git Bash 默认 core.autocrlf=true 致 git describe --dirty 误报，generate-skill + install 共 3 处去掉 --dirty。**bash 硬前置诚实化**（docs/windows-bash-prereq-honest）：7 个 .bat + SKILL.md/CLAUDE.md/security-spec §6.0/README 明确声明「纯 cmd/PowerShell 不支持」。发版：54 门禁/173 变量/MEASURE 100%/shellcheck warning 全仓 0 | `verifier/runs/README.md` |
 
 ### 9 份研究交付物（R1-R9，2026-07-20~22）
 
