@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # warn 物理文件（21 个 check_* 函数；由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
 # 被 precheck.sh source（开发态/安装态同路径；install.sh 整目录拷贝含本文件）。
-# 注：物理函数数 21 ≠ enforce-level warn 19——含 check_crypto/sast-deep/oss_eval（Z3 升
-# strict 后物理未迁移）；check_cognition 分层为 warn 但物理在 gates-advisory.sh。
-# _enforce_of 读 conf 而非文件位置，功能正确。
+# 注：物理函数数 21 ≠ enforce-level warn 23——物理位置与 enforce 分档正交，两者各自准确：
+#   本文件内 check_sast_deep/oss_eval 的 enforce=strict（Z3 fail-closed 化后升档，物理未迁移）；
+#   反之 check_authz/privacy/requirements/rtm 物理在 gates-strict.sh 但 enforce=warn。
+# _enforce_of 读 gate-enforce-level.conf 而非文件位置，功能正确。
+# 头部数字由 self-check.sh check_gates_header_comment 机器执法（防注释漂移）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
 check_scope() {
@@ -1458,17 +1460,19 @@ check_sast_deep() {
     local _cs_sev="high"
     [[ "$sev" == "warning" ]] && _cs_sev="medium"
     local _cs_rc=0
+    # 扫描日志落在 _cs_scan_root 内（原写死 /tmp/codex-security-sast-deep.log，多实例并行会互相覆盖）
+    local _cs_log="$_cs_scan_root/sast-deep.log"
     npx @openai/codex-security scan "${SECURITY_SCAN_DIRS[@]}" \
       --output-dir "$_cs_scan_root/results" \
       --json \
       --fail-on-severity "$_cs_sev" \
-      >/tmp/codex-security-sast-deep.log 2>&1 || _cs_rc=$?
+      >"$_cs_log" 2>&1 || _cs_rc=$?
     if [[ $_cs_rc -eq 1 ]]; then
       # rc=1 = 策略违规（检出达标严重级别 finding）
       if _sast_exempted gate_sast_deep_findings; then
-        warn "gate_sast_deep_findings: codex-security 检出达标严重级别（${_cs_sev}）发现（已豁免留痕）——详见 /tmp/codex-security-sast-deep.log + $_cs_scan_root/results/findings.json"
+        warn "gate_sast_deep_findings: codex-security 检出达标严重级别（${_cs_sev}）发现（已豁免留痕）——详见 ${_cs_log} + $_cs_scan_root/results/findings.json"
       else
-        fail "gate_sast_deep_findings: codex-security 检出达标严重级别（${_cs_sev}）以上发现（语义层 source→sink 数据流 + 攻击路径推演；GB/T 34943/34944/34946 漏洞类别）——详见 /tmp/codex-security-sast-deep.log + $_cs_scan_root/results/findings.json"
+        fail "gate_sast_deep_findings: codex-security 检出达标严重级别（${_cs_sev}）以上发现（语义层 source→sink 数据流 + 攻击路径推演；GB/T 34943/34944/34946 漏洞类别）——详见 ${_cs_log} + $_cs_scan_root/results/findings.json"
         found=1
       fi
     elif [[ $_cs_rc -eq 2 ]]; then

@@ -129,8 +129,21 @@ install_from_src_release(){
   local src="${inner:-$tmp/extracted}"
   mkdir -p "$dest"
   # C8 修复：cp 链失败时 fail-loud，不再静默继续到 "✓ 安装完成"
+  # 三轮复盘：cp 失败最常见原因不是"src 空/损坏"，而是 dest 有与 src 冲突的项
+  # （典型：dest 里是符号链接、src 里是同名目录 → cp 报 "Not a directory"）。
+  # 错误提示改为可操作：列出 dest 的符号链接 + 给排查/修复命令，不自动删用户目录。
   if ! { cp -R "$src"/. "$dest/" 2>/dev/null || cp -R "$src"/* "$dest/" 2>/dev/null; }; then
-    echo "  ✗ $name 文件复制失败（src=$src 可能为空或损坏）" >&2
+    echo "  ✗ $name 文件复制失败" >&2
+    # 复现一次 cp 拿到真实错误（不吞 stderr），只取前 3 行
+    local _cp_err; _cp_err="$(cp -R "$src"/. "$dest/" 2>&1 >/dev/null | head -3)"
+    [[ -n "$_cp_err" ]] && echo "    原因: $_cp_err" >&2
+    local _links; _links="$(find "$dest" -maxdepth 1 -type l 2>/dev/null | head -5)"
+    if [[ -n "$_links" ]]; then
+      echo "    dest 内符号链接（常见冲突源，src 同名为目录时 cp 失败）:" >&2
+      printf '      %s\n' $_links >&2
+    fi
+    echo "    排查: ls -la \"$dest\" | grep -E '^l'" >&2
+    echo "    修复: 移除冲突项后重跑；或 rm -rf \"$dest\" 全新安装（会删 dest 内自定义内容，请先确认）" >&2
     rm -rf "$tmp" 2>/dev/null
     return 1
   fi
@@ -1292,6 +1305,46 @@ check_complexity_budget() {
   fi
 }
 check_complexity_budget
+
+# ===== gates-*.sh 头部注释一致性断言（脚本注释漂移守）=====
+# 三轮复盘发现：catchphrase 扫描（check_doc_consistency）只覆盖 .md 文档，
+# assets/gates-{strict,warn,advisory}.sh 的头部注释成了无人看守的漂移区——
+# 曾长期漂移（strict 声称 17 函数/enforce 20，实际 18/16；advisory 声称 16，实际 15）。
+# 本断言只扫头部注释块（第 2-8 行），不全文扫描（门禁逻辑含大量 CWE 编号/阈值，会误伤）。
+# 校对两类数字：① "N 个 check_* 函数" vs 该文件实际 ^check_*() 计数；
+#              ② "enforce-level <档> N" vs gate-enforce-level.conf 的 =<档>$ 计数。
+check_gates_header_comment() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local elc="$base/assets/gate-enforce-level.conf"
+  [[ -f "$elc" ]] || return 0
+  echo "▶ gates-*.sh 头部注释一致性（脚本注释漂移守）"
+  local lv f hdr fn_true fn_claim enf_true enf_claim found=0
+  for lv in strict warn advisory; do
+    f="$base/assets/gates-${lv}.sh"
+    [[ -f "$f" ]] || continue
+    hdr="$(sed -n '2,8p' "$f" 2>/dev/null)"
+    # ① 物理函数数
+    fn_true=$(grep -cE '^check_[a-z_0-9]+\(\)' "$f" 2>/dev/null || echo 0)
+    fn_claim=$(printf '%s' "$hdr" | grep -oE '[0-9]+ 个 check_\*' | grep -oE '^[0-9]+' | head -1)
+    if [[ -n "$fn_claim" && "$fn_claim" != "$fn_true" ]]; then
+      warn "gates-${lv}.sh 头部注释声称 ${fn_claim} 个 check_* 函数，实际 ${fn_true}--改门禁增删后须同步头部注释"
+      found=1
+    fi
+    # ② enforce 分档数（注释里形如 "enforce-level strict 16"）
+    enf_true=$(grep -cE "=${lv}\$" "$elc" 2>/dev/null || echo 0)
+    enf_claim=$(printf '%s' "$hdr" | grep -oE "enforce-level ${lv} [0-9]+" | grep -oE '[0-9]+$' | head -1)
+    if [[ -n "$enf_claim" && "$enf_claim" != "$enf_true" ]]; then
+      warn "gates-${lv}.sh 头部注释声称 enforce-level ${lv} ${enf_claim}，实际 ${enf_true}（gate-enforce-level.conf）"
+      found=1
+    fi
+  done
+  if [[ "$found" -eq 1 ]]; then
+    FAIL=1
+  else
+    echo "  ✓ gates-*.sh 头部注释与真值一致（物理函数数 + enforce 分档数）"
+  fi
+}
+check_gates_header_comment
 
 # ===== C1 修复：UNIVERSAL_FILES 计数断言（G11）=====
 # facts.conf FACT_UNIVERSAL_FILES 声明值须与 generate-skill.sh UNIVERSAL_FILES 数组条目数一致。
