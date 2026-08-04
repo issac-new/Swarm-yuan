@@ -857,7 +857,16 @@ copy_universal_templates() {
       rm -f "$dir/$dest.bak"
     fi
   done
-  chmod +x "$dir/assets/"*.sh "$dir/scripts/"*.sh
+  # chmod +x 所有 .sh（四轮复盘 P0 修复）：原写法 `chmod +x "$dir/assets/"*.sh "$dir/scripts/"*.sh`
+  # 在 lite 档下必然失败——lite 档 UNIVERSAL_FILES 只拷 assets/ 下的 .md/.conf（无任何 .sh），
+  # glob 无匹配时 chmod 报 "No such file or directory"，set -euo pipefail 直接中断生成，
+  # 导致 lite 档（auto 对 <80 文件小项目的默认判定）产物残缺不可用。
+  # 用 find -exec 替代 glob：目录不存在或无 .sh 时静默跳过，不中断。
+  local _cd
+  for _cd in assets scripts; do
+    [[ -d "$dir/$_cd" ]] || continue
+    find "$dir/$_cd" -maxdepth 1 -name '*.sh' -exec chmod +x {} + 2>/dev/null || true
+  done
   # Windows .bat 包装器（让 Windows 用户也能直接运行，三平台兼容；缺失则跳过）
   # 设 SKIP_BAT=1 可跳过 .bat 复制（macOS/Linux 用户无需 .bat，让 skill 目录更干净）
   if [[ "${SKIP_BAT:-0}" != "1" ]]; then
