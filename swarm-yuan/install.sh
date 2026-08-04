@@ -121,7 +121,10 @@ install_to() {
   # 八轮复盘：安装产物版本溯源（原零记录——用户无法知道装的是哪版/该重装升级没有。
   # 与 generate-skill.sh 对目标技能写 .swarm-yuan-version 同哲学，补齐生成器自己的安装侧）。
   local _src_ver
-  _src_ver=$(git -C "$SRC_DIR" describe --tags --always --dirty 2>/dev/null || echo "unknown")
+  # 跨平台注意：不带 --dirty——Windows Git Bash 默认 core.autocrlf=true 会让干净 checkout
+  # 也报 -dirty（LF→CRLF 转换被 git status 判为 modified），污染版本溯源字符串。
+  # 版本演进比对只看 tag（vYYYY.MM.DD），不依赖 dirty 标记。
+  _src_ver=$(git -C "$SRC_DIR" describe --tags --always 2>/dev/null || echo "unknown")
   cat > "$dest/.swarm-yuan-version" <<EOF
 installed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 source_repo=$SRC_DIR
@@ -161,9 +164,10 @@ MODE="${1:-auto}"
 case "$MODE" in
   --version)
     # 范式版本（与 .swarm-yuan-version 的 upgraded_at 对齐，由 git describe 自动派生）
+    # 不带 --dirty（跨平台：Windows autocrlf=true 致干净 checkout 误报 dirty）
     ver="unknown"
     if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-      ver=$(git describe --tags --always --dirty 2>/dev/null || echo "unknown")
+      ver=$(git describe --tags --always 2>/dev/null || echo "unknown")
     fi
     echo "swarm-yuan installer $ver"
     echo "bash ${BASH_VERSION:-unknown}"

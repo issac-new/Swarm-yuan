@@ -807,8 +807,10 @@ SRC_SCRIPTS="$(cd "$(dirname "$0")" && pwd)"
 SWARM_YUAN_STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)"
 # 版本溯源（八轮复盘 install.sh source_version 对齐）：生成器自身 git describe，
 # 与 install.sh L123-124 同哲学；非 git 场景（zip 下载）降级 "unknown"，不阻塞生成。
+# 不带 --dirty（跨平台：Windows Git Bash 默认 autocrlf=true 致干净 checkout 误报
+# -dirty，污染版本字符串；版本演进比对只看 tag，不依赖 dirty 标记）。
 SWARM_YUAN_SRC_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-SWARM_YUAN_SRC_VERSION="$(git -C "$SWARM_YUAN_SRC_DIR" describe --tags --always --dirty 2>/dev/null || echo "unknown")"
+SWARM_YUAN_SRC_VERSION="$(git -C "$SWARM_YUAN_SRC_DIR" describe --tags --always 2>/dev/null || echo "unknown")"
 
 # 按 UNIVERSAL_FILES 清单复制通用文件（create 全量；upgrade 跳过 precheck.conf 保留用户配置）
 # 可选环境变量 SKILLS_PATH_REWRITE：sed 表达式，复制后逐文件就地应用（缺省空=不重写）。
