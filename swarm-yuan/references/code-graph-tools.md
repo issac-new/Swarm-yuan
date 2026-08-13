@@ -77,6 +77,7 @@ pipx install graphifyy
 > ⚠️ PyPI 包名是 `graphifyy`（双 y）。其他 `graphify*` 包不相关。
 > ⚠️ `uvx graphify` 会失败——必须 `uvx --from graphifyy graphify install`。
 > ⚠️ 若 `graphify: command not found`，运行 `uv tool update-shell`（或 `pipx ensurepath`）后重开终端。
+> 📌 **v0.9.42 Windows 可移植性加固**：`source_file` 与模型面向的路径规范为 POSIX；原子写/install 对 Windows 加固（含只读打包 bundle）；`GRAPH_REPORT.md` 用可移植 basename 而非宿主绝对路径。这意味着 graphify 在 Windows 上不再泄漏 `\` 路径到 graph.json 的 node id（v0.9.40 修了跨平台 source_file 绝对路径泄漏）。graph provenance（`built_at_commit`）从被分析仓库盖戳，而非 shell cwd——与 swarm-yuan `trace-log.sh` 的 honest-edge provenance（EXTRACTED/INFERRED/AMBIGUOUS）同向：溯源锚到真实仓库，不锚到运行环境。
 
 ### 核心命令
 ```bash
