@@ -16,7 +16,7 @@
 | **可维护性 Maintainability** | 代码是否清晰易懂？命名是否准确表达意图？是否遵循项目既有风格与架构？ |
 | **测试覆盖 Test Coverage** | 关键逻辑路径是否有测试？测试是否覆盖边界条件？ |
 
-> 目标技能生成时，可按项目语言追加 open-code-review 的语言专项规则（java/ts/rust/c 等），通过 `ocr review --rule <file>` 引用。
+> 目标技能生成时，可按项目语言追加 open-code-review 的语言专项规则（java/ts/rust/c 等），通过 `ocr review --rule <file>` 引用。ocr v1.9.x allowlist 已支持 Bicep（.bicep）、HCL/Terraform（.hcl/.tfvars）、Nim 等——IaC 与新兴语言项目可直接审查无需自写解析器。大文件可用 per-file token limit（v1.9.0 可配，`ocr review --per-file-token-limit <n>`）控制单文件 LLM 消耗。
 
 ## 两遍清单结构（gstack 模式）
 

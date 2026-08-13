@@ -15,9 +15,9 @@
 | comet | rpamis/comet | MIT | v0.3.9（`references/subagent-orchestration.md:118`） | npm 0.4.0-beta.6（2026-07-20 重核；初测 0.4.0-beta.5） | drifted（P1-7 已重核，结论=观望，见 §三；0.4 正式版发布后升级引用基线） | baseline_status=drifted |
 | GitNexus | abhigyanpatwari/GitNexus | **PolyForm Noncommercial 1.0.0**（禁商用，API 返回 NOASSERTION，LICENSE 原文实测） | npm 1.6.9（引用 `context/trace`） | npm 1.6.9 | license-risk（降级为非默认，仅非商用可选） | baseline_status=license-risk |
 | gsd-core | open-gsd/gsd-core | MIT | v1.8.0（2026-07-26 升级；`references/gsd-patterns.md` + `references/decision-governance.md` §2.4 + `references/review-methodology.md:311`） | npm 1.8.0（2026-07-22 release） | synced（2026-07-26 升级 research 仓库 + 吸收 reversibility/broken-windows） | baseline_status=synced |
-| claude-mem | thedotmack/claude-mem | Apache-2.0 | v13.12.4（2026-07-26 升级；`swarm-yuan/SKILL.md:85` + G10 版本 oracle 吸收） | npm 13.12.4 | watch（迭代极快；2026-07-26 升级 research 仓库 + 吸收 version oracle 单源真值） | baseline_status=watch |
-| ocr | alibaba/open-code-review | Apache-2.0 | v1.7.17（2026-07-26 升级；`references/review-methodology.md:178,313`） | v1.7.17（Go） | synced（2026-07-26 升级 research 仓库） | baseline_status=synced |
-| graphify | Graphify-Labs/graphify（原 safishamsi/graphify，已迁移） | Apache-2.0（2026-07-18 MIT->Apache 2.0，v0.9.25） | v0.9.27（2026-07-26 升级，origin/v8 线；`references/code-graph-tools.md` + `references/memory-persistence.md` 知识溯源三标吸收） | npm graphifyy 0.10.0 / PyPI 0.9.27 | synced（2026-07-26 升级 research 仓库到 v0.9.27；0.10.0 是 npm 异源包待评估） | baseline_status=synced |
+| claude-mem | thedotmack/claude-mem | Apache-2.0 | v13.15.0（2026-08-14 升级；`references/memory-persistence.md` sensitive 观察类型吸收 + G10 版本 oracle 吸收） | npm 13.15.0 | watch（迭代极快；2026-08-14 升级 + 吸收 v13.13.0 `sensitive` 观察类型 + version oracle 单源真值） | baseline_status=watch |
+| ocr | alibaba/open-code-review | Apache-2.0 | v1.9.2（2026-08-14 升级；`references/review-methodology.md`） | v1.9.2（Go） | synced（2026-08-14 升级；吸收 v1.8-1.9 allowlist Bicep/HCL/Terraform/Nim + per-file token limit） | baseline_status=synced |
+| graphify | Graphify-Labs/graphify（原 safishamsi/graphify，已迁移） | Apache-2.0（2026-07-18 MIT->Apache 2.0，v0.9.25） | v0.9.42（2026-08-14 升级，origin/v8 线；`references/code-graph-tools.md` Windows 可移植性吸收 + `references/memory-persistence.md` 知识溯源三标吸收） | npm graphifyy 0.10.0 / PyPI 0.9.42 | synced（2026-08-14 升级 research 仓库到 v0.9.42；**v1.0.0 是异源旧分支不取**——2026-04-05 发布，与 v0.9.42 diverged 落后 1273 commit；吸收 v0.9.42 source_file POSIX 规范化/provenance 仓库盖戳） | baseline_status=synced |
 | superpowers | obra/superpowers | MIT | v6.2.0（2026-07-26 升级；`references/subagent-orchestration.md` 修复环+5轮熔断 + `references/review-methodology.md` 可证伪性纪律吸收；**核心插件未 vendor**，离线包仅 marketplace 元数据；不 vendor 决策见 `docs/2026-07-20-upstream-vendor-decision.md`） | v6.2.0（2026-07-22 release） | synced（2026-07-26 升级 research 仓库 + 吸收 resume-fix-loop/scoped-re-review/falsifiability） | baseline_status=synced |
 | gstack | garrytan/gstack | MIT | v1.60.1.0（offline-cache vendor，`offline-cache/gstack/VERSION:1`） | v1.60.1.0（vendor 版本；上游最新未实测） | synced | baseline_status=synced |
 | ruflo | ruvnet/ruflo（原 Claude Flow） | MIT | v3.32.9（2026-07-26 升级；`references/subagent-orchestration.md:277`、`references/review-methodology.md:208-209`） | npm 3.32.9 | synced（2026-07-26 升级 research 仓库；方法论引用层，无运行时调用） | baseline_status=synced |
@@ -29,7 +29,7 @@
 
 1. **许可证风险（最高优先）**：GitNexus = PolyForm Noncommercial 1.0.0，禁止商业使用。冻结措辞（全仓库统一引用）：**GitNexus（PolyForm Noncommercial 禁商用）降级为非默认；graphify（Apache-2.0，2026-07-18 MIT->Apache 2.0）提为默认代码图谱工具。**
 2. **版本漂移（1 项 drifted，2026-07-26 升级后）**：comet 0.3.9->0.4.0-beta.6（P1-7 已重核，结论=观望，见 §三）。2026-07-26 升级轮把 graphify（v0.9.27）、ruflo（v3.32.9）的 research 仓库对齐到上游最新稳定版并吸收方法论，引用基线同步更新为 synced（详见 `docs/runtime-update-2026-07.md`）。
-3. **watch（1 项）**：claude-mem 迭代极快（13.4->13.12.4），持续观察；2026-07-26 升级 research 仓库到 v13.12.4 并吸收 version oracle 单源真值（G10）。
+3. **watch（1 项）**：claude-mem 迭代极快（13.4->13.15.0），持续观察；2026-08-14 升级 research 仓库到 v13.15.0 并吸收 v13.13.0 `sensitive` 观察类型 + version oracle 单源真值（G10）。
 4. **org 迁移**：graphify 仓库已迁至 Graphify-Labs/graphify，引用一律用新 URL。
 5. **存续风险**：12 个运行时中个人/小团队项目占比高（comet/GitNexus/claude-mem/gsd-core），上游存续监测纳入审计例程；GSD v1 上游（gsd-build/get-shit-done）已于 2026-06-26 归档，引用 open-gsd/gsd-core 为既定应对。
 
@@ -69,7 +69,7 @@
 
 **处置策略**：
 - **comet**：0.4.0 正式版发布后升级引用基线（swarm-yuan 对 comet 是方法论级引用，state-machine.sh 是自实现的 comet 风格状态机，升级不阻塞）
-- **graphify**：2026-07-26 已升级 research 仓库到 v0.9.27（Apache 2.0，origin/v8 线）并吸收 honest-edge provenance 三标；npm 0.10.0 是异源包待评估（不取 v1.0.0 异源旧分支）
+- **graphify**：2026-08-14 已升级 research 仓库到 v0.9.42（Apache 2.0，origin/v8 线）并吸收 Windows 可移植性加固（source_file POSIX 规范化/provenance 仓库盖戳）+ honest-edge provenance 三标；npm 0.10.0 是异源包待评估（**不取 v1.0.0 异源旧分支**——2026-04-05 发布，与 v0.9.42 diverged，落后 1273 commit，取它丢 v8 线 40 语言/10 平台能力）
 - **ruflo**：2026-07-26 已升级 research 仓库到 v3.32.9（方法论引用层，无运行时调用）
 
 升级基线时：更新本表"引用基线"列版本号 → 将 `baseline_status=drifted` 改为 `baseline_status=synced` → 跑 `bash scripts/self-check.sh --check-only` 确认无 drift warn。
