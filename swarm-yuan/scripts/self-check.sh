@@ -1607,13 +1607,15 @@ check_context_engineering_layering() {
   fi
 
   # ③ facts.conf 口径同步（warn-only，对齐 G13 风格）
-  # references 数随方法论吸收递增：context-engineering-layering + codex-security-methodology + generation-flow
-  # 真值由 check_doc_consistency 的 ref_cnt 机械计数，FACT_REFERENCES 跟随同步。
-  if [[ "${FACT_REFERENCES:-0}" -ne 35 ]]; then
-    warn "facts.conf FACT_REFERENCES=${FACT_REFERENCES:-（未设）} ≠ 35（context-engineering-layering + codex-security-methodology + generation-flow 加入应同步 references 计数为 35）"
+  # references 数随方法论吸收递增（context-engineering-layering/codex-security-methodology/
+  # generation-flow/cordis-composability-methodology 等）。真值由机械计数得出，FACT_REFERENCES 跟随同步。
+  # 六轮复盘改进：不再硬编码期望值（原写死 35），改为与实际 ls 计数对比——加 reference 时无需改此处。
+  local _ref_true; _ref_true=$(ls "$base"/references/*.md 2>/dev/null | grep -v '/frameworks/' | wc -l | tr -d ' ')
+  if [[ "${FACT_REFERENCES:-0}" -ne "$_ref_true" ]]; then
+    warn "facts.conf FACT_REFERENCES=${FACT_REFERENCES:-（未设）} ≠ 实际 ${_ref_true}（references 文档数须同步口径）"
     _warn=$((_warn+1))
   else
-    echo "  ✓ facts.conf FACT_REFERENCES=35（references 文档数同步）"
+    echo "  ✓ facts.conf FACT_REFERENCES=${FACT_REFERENCES}（references 文档数同步）"
   fi
 
   if [[ $_missing -gt 0 ]]; then
@@ -1769,6 +1771,58 @@ check_stable_propagate_wiring() {
   fi
 }
 check_stable_propagate_wiring
+
+# ===== Cordis 时空可组合性方法论引用存在性断言（G17，DeepSeek Harness/Cordis 吸收）=====
+# 决策 27（吸收优先于新增门禁）：Cordis 论文（A Programming Paradigm for Spatiotemporal
+# Composability）提出"时间可组合性（移除时撤销副作用）+ 空间可组合性（响应式依赖管理）"，
+# 与 swarm-yuan 的框架门禁标记区块（轻量可逆效应）、conf 变量（声明式协效应的缺失）、
+# profile 分层（档位过滤 vs 增量 patch）有清晰对照。作为方法论引用层吸收（非运行时，
+# 与 context-engineering-layering/frontend-design-methodology 同档）。
+# G17 断言守 absorb 三载体一致性（warn-only，对齐 G13-G16），不计入 FACT_GATES_TOTAL=54。
+check_cordis_composability_wiring() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local facts="$base/assets/facts.conf"
+  [[ -f "$facts" ]] || return 0
+  if [[ -z "${FACT_REFERENCES:-}" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$facts"; set -u
+  fi
+  echo "▶ Cordis 时空可组合性方法论引用断言（G17，DeepSeek Harness 吸收）"
+  local _warn=0
+
+  # ① references/cordis-composability-methodology.md 存在且非空
+  local _ref="$base/references/cordis-composability-methodology.md"
+  if [[ -f "$_ref" ]] && [[ -s "$_ref" ]]; then
+    echo "  ✓ references/cordis-composability-methodology.md 存在且非空"
+  else
+    warn "references/cordis-composability-methodology.md 缺失或为空（G17 方法论载体）"
+    _warn=$((_warn+1))
+  fi
+
+  # ② SKILL.md 含 cordis 引用（方法论引用层接线）
+  if grep -q 'cordis' "$base/SKILL.md" 2>/dev/null; then
+    echo "  ✓ SKILL.md 含 cordis 引用（方法论引用层）"
+  else
+    warn "SKILL.md 缺 cordis 引用（G17 接线，应补 references 清单）"
+    _warn=$((_warn+1))
+  fi
+
+  # ③ facts.conf FACT_REFERENCES 口径同步（35→36）
+  local _ref_true; _ref_true=$(ls "$base"/references/*.md 2>/dev/null | grep -v '/frameworks/' | wc -l | tr -d ' ')
+  if [[ "${FACT_REFERENCES:-0}" == "$_ref_true" ]]; then
+    echo "  ✓ facts.conf FACT_REFERENCES=${FACT_REFERENCES}（与实际 references 计数一致）"
+  else
+    warn "facts.conf FACT_REFERENCES=${FACT_REFERENCES:-（未设）} ≠ 实际 ${_ref_true}（G17 新增 reference 后须同步口径）"
+    _warn=$((_warn+1))
+  fi
+
+  if [[ $_warn -gt 0 ]]; then
+    echo "  ℹ Cordis absorb 叙事/口径漂移 ${_warn} 项（warn-only，不阻断）"
+  else
+    echo "  ✓ Cordis absorb 三载体一致（references + SKILL.md + facts.conf）"
+  fi
+}
+check_cordis_composability_wiring
 
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"

@@ -118,18 +118,18 @@ OpenSpec（spec-driven）/ superpowers（subagent-driven）/ comet（state machi
 
 > 工具引用铁律：深度+CLI 接线层（8 个）允许真实命令调用（`graphify`/`gitnexus`/`ocr`/`claude-mem`/`gsd-tools`/`openspec`/`comet`/`npx @openai/codex-security`），不重新实现、不复制源码；方法论引用层（5 个）只引用模式不调 CLI。**代码图谱工具按技术能力选型（GitNexus 深度调用图 / graphify 广谱知识图，平权可按项目并用），不做授权驱动的降级**（决策 18，详见 `references/code-graph-tools.md` §选型）。
 
-**reference 文件清单（按需读取，35 文件 = 探查/填充/认知/方法论/合规/安全 6 类）**：
+**reference 文件清单（按需读取，36 文件 = 探查/填充/认知/方法论/合规/安全 6 类）**：
 
 | 类别 | 文件（按需读） |
 |------|--------------|
 | 探查 | `exploration-guide.md`（17 项特征卡 + §C+ 组件库+调用链）、`code-graph-tools.md` |
 | 填充 | `template-spec.md`（六段式填充规范+核对清单）、`claude-code-capabilities.md` |
 | 认知 | `cognition-framework.md`、`logic-razor.md`、`cognitive-bias.md`、`domain-knowledge.md`（32 领域） |
-| 方法论 | `decision-governance.md`、`governance-agents.md`、`subagent-orchestration.md`、`review-methodology.md`、`memory-persistence.md`、`gsd-patterns.md`、`task-methodology-router.md`、`frontend-design-methodology.md`、`context-engineering-layering.md`、`codex-security-methodology.md`、`mcp-governance.md`、`ai-process-records.md`、`canary-monitoring.md`、`generation-flow.md`（生成流程 Step 详解，决策 32 折叠） |
+| 方法论 | `decision-governance.md`、`governance-agents.md`、`subagent-orchestration.md`、`review-methodology.md`、`memory-persistence.md`、`gsd-patterns.md`、`task-methodology-router.md`、`frontend-design-methodology.md`、`context-engineering-layering.md`、`codex-security-methodology.md`、`cordis-composability-methodology.md`（DeepSeek Harness 时空可组合性吸收，扩展机制设计方法论）、`mcp-governance.md`、`ai-process-records.md`、`canary-monitoring.md`、`generation-flow.md`（生成流程 Step 详解，决策 32 折叠） |
 | 合规 | `standards-compliance.md`、`quality-management-standards.md`、`crypto-spec.md`、`industry-profile-{finance,medical,gov,automotive,energy,telecom,industrial}.md`（7 份）、`security-certification-profiles.md` |
 | 安全 | `security-spec.md`、`cwe-database.md`（门禁内部数据）、`frameworks/`（74 框架规则库，按 ACTIVE_FRAMEWORKS 选读）、`case-studies/articulation-orchestration.md` |
 
-> **注**：references/ 实际 35 文件（含 generation-flow.md）= 上表 33 + 门禁内部 2（`cwe-database.md`/`security-certification-profiles.md`）；`case-studies/` 子目录单独计，不在 35 内。落地案例（关节编排/Articulated Orchestration 类汇报论据，S18 补入索引）见 `references/case-studies/articulation-orchestration.md`。
+> **注**：references/ 实际 36 文件（含 generation-flow.md + cordis-composability-methodology.md）= 上表 34 + 门禁内部 2（`cwe-database.md`/`security-certification-profiles.md`）；`case-studies/` 子目录单独计，不在 36 内。落地案例（关节编排/Articulated Orchestration 类汇报论据，S18 补入索引）见 `references/case-studies/articulation-orchestration.md`。
 
 ## 使用说明
 
