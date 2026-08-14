@@ -127,9 +127,9 @@ ocr rules check <file>
 
 对照 tasks.md 的每个 checkbox，按类型验证完成度。
 
-## Plan 原地修订（openspec `/opsx:update`，v1.6.0+）
+## Plan 原地修订（openspec `/opsx:update`，v1.9.0）
 
-> 引自 openspec v1.6.0。swarm-yuan 生成的目标技能可引用此能力，在 design→build 边界处修订计划而不回退到 open 阶段。
+> 引自 openspec v1.9.0。swarm-yuan 生成的目标技能可引用此能力，在 design→build 边界处修订计划而不回退到 open 阶段。
 
 **命令：**
 ```bash
@@ -138,6 +138,12 @@ openspec update <change-id>
 # 或通过 slash command（Claude Code 集成）
 /opsx:update <change-id>
 ```
+
+> 📌 **openspec v1.7-1.9 新增能力（2026-08-14 升级吸收）**：
+> - **原生支持 ZCode**（v1.7.0）：`openspec init --tools` 现覆盖 ZCode（与 swarm-yuan 多 AI 运行时定位一致）+ vendor-neutral `agents`（`.agents/skills/`，AGENTS.md-aware）。
+> - **`skip_specs: true`**（v1.7.0）：纯重构/文档 change 可声明跳过 spec，直接走 validate/archive——与 swarm-yuan 任务类型门控（refactor/docs/exp）呼应。
+> - **`openspec validate --archived`**（v1.9.0）：opt-in 检查归档 changes 的 tasks.md 是否全勾选，未完成则非零退出——适合 pre-commit/CI，与 swarm-yuan `--mark-active` 零占位符核验同向（关门前查遗留）。
+> - **honest root resolution**（v1.9.0）：非 OpenSpec 根目录下 `list`/`validate --all` 明确报错（非静默空），与 swarm-yuan 诚实化哲学一致。
 
 **行为：**
 - 读取已有 change 的 `plan.md` + `tasks.md`，允许原地修改 plan 与关联 spec delta
