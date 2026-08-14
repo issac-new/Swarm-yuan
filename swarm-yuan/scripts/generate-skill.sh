@@ -227,8 +227,10 @@ sync_framework_vars() {
     referenced=0
     for script in "$sh" "$skill_dir/scripts/gates-strict.sh" "$skill_dir/scripts/gates-warn.sh" "$skill_dir/scripts/gates-advisory.sh"; do
       [[ -f "$script" ]] || continue
-      # 花括号形式（${VAR}，仓库铁律形式）或裸 $VAR 后跟非标识符字符
-      if grep -qF "\${${v}}" "$script" 2>/dev/null || grep -qE "\\$${v}([^A-Za-z0-9_]|$)" "$script" 2>/dev/null; then
+      # 词边界匹配（保守）：${VAR} / ${#VAR[@]} / ${VAR[@]} / 裸 $VAR / 注释提及全算被引用。
+      # 回归测试教训：精确匹配 "${VAR}" 会漏 ${VAR[@]}/$ {#VAR[@]} 形式，误把
+      # SQL_INJECTION_WHITELIST 等通用白名单判死（注释提及也是"被需要"证据，宁保勿杀）。
+      if grep -qE "(^|[^A-Za-z0-9_])${v}([^A-Za-z0-9_]|$)" "$script" 2>/dev/null; then
         referenced=1; break
       fi
     done
@@ -1172,7 +1174,10 @@ EOF
   # --upgrade 自动重注入门禁片段（precheck.sh 已被覆盖，区块为空，须重注入）
   # upgrade 场景下 .swarm-yuan-version 的 framework_gates_sha 已在第 4 步重置（cat 覆盖），
   # inject_frameworks 的 sha 冲突检测走"无 old_sha"分支，直接注入不中止。
-  if [[ -f "$SKILL_DIR/scripts/precheck.conf" ]] && grep -q '^ACTIVE_FRAMEWORKS=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null; then
+  # WP-I 物理三分：ACTIVE_FRAMEWORKS 定义在 precheck.arch.conf（standard/compliance 产物），
+  # 主 conf 仅 lite 可能直书。触发判定须两处任一命中——此前只查主 conf，导致
+  # standard/compliance 档 upgrade 从不触发门禁重注入（区块/ sha/ 快照全空，回归测试发现）。
+  if [[ -f "$SKILL_DIR/scripts/precheck.conf" ]] && { grep -q '^ACTIVE_FRAMEWORKS=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null || grep -q '^ACTIVE_FRAMEWORKS=' "$SKILL_DIR/scripts/precheck.arch.conf" 2>/dev/null; }; then
     # conf 可能含字面 ${}（如 SQL_INJECTION_WHITELIST），set -u 下 source 会 unbound 崩溃、
     # 导致计数为 0、门禁重注入被静默跳过。照搬 inject_frameworks 的 set +u / source / set -u 模式。
     local_af_count=$(
