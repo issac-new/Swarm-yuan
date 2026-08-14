@@ -1,7 +1,8 @@
 # 前端设计质量方法论（impeccable v4.0.2 吸收）
 
-> 来源：[pbakaus/impeccable](https://github.com/pbakaus/impeccable) v4.0.2（Apache-2.0），方法论引用层第 5 对象（与 superpowers/gstack/ECC/Ruflo 同档）。
+> 来源：[pbakaus/impeccable](https://github.com/pbakaus/impeccable) v4.0.4（Apache-2.0），方法论引用层第 5 对象（与 superpowers/gstack/ECC/Ruflo 同档）。
 > 纪律：只引用模式，不调 impeccable CLI / detector 引擎 / live 浏览器模式 / 子代理 TOML；不复制 `scripts/` 源码（上游仓库 [pbakaus/impeccable](https://github.com/pbakaus/impeccable) 可按需 `git clone` 到 `swarm-yuan/research/impeccable/` 供 AI 阅读引用，本地 gitignored，不入 git）。
+> 📌 **v4.0.4 升级吸收（2026-08-14）**：① **自动判别设计任务类型**——impeccable 现自行识别 5 类（blank-slate 空白/new-page 新页/addition 增段/redesign 重设计/refinement 局部精修），每类给不同自由度。这与 swarm-yuan 的改造分类（拼装式/侵入式/破坏式）+ 任务类型路由（feature/fix/refactor…）同向：redesign 把旧貌当证据替换（非打磨），addition 继承周围页面世界只决定引入部分。② 方向由骰子决定（dice-seeded）而非品味——外部种子命名方向 + 6 个挑战者世界，防同一 brief 总落在同三字体。这两项强化了 §二 Modes 四分类（按访客成功形态）之外的「按任务自由度」维度。
 > 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 54；守决策 26：复杂度预算不增。
 > 适用场景：目标项目含前端 UI 维度（§C+.0 判定）时，AI 在探查/填充/spec/审查节点引用本文方法论做前端设计质量决策。
 

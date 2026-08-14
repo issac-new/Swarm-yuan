@@ -3,6 +3,7 @@
 > 整合自 [superpowers](https://github.com/obra/superpowers) 的 `subagent-driven-development` 方法论。
 > 本文件指导目标技能的 workflow 节点⑤（编码实现）如何采用 subagent 编排模式。
 > **仅引用方法论模式，不复制 superpowers 源码。**
+> 📌 **v6.3.0 升级吸收（2026-08-14）**：① brainstorming 仪式按任务规模缩放——请求分类为 spike/bounded/architectural，小任务跳过双文档仪式（与 swarm-yuan `task-scale.sh` 任务规模判定同向：轻任务轻流程）；② controller 不再因 plan 冲突卡住——非灾难性冲突记录裁决后继续，仅破坏性/不可逆操作才停人（与 swarm-yuan 失败模式检测呼应：避免可控冲突拖死会话）；③ ECC v2.1 Plan Canvas——plan review 从终端 markdown 墙变浏览器可视化（点击批注/侧栏对话/Approve 按钮），降低 plan 审查的认知负担。
 
 ## 核心理念
 
