@@ -286,6 +286,24 @@ inject_frameworks() {
     fi
   fi
 
+  # F4（dsh 吸收·注入前快照，配对逆的根基）：任何落盘修改之前备份 $sh + conf 三件套到
+  # .swarm-yuan/effects/<UTC时间戳>/，保留最近 1 份（更旧的清理）——--rollback-frameworks
+  # 据此整体撤销本次注入效果（对齐 cordis "注册即效果、卸载可 unwind"；此前此路径无备份
+  # 注释自认不可恢复）。
+  local _fx_ts _fx_dir _fx_old
+  _fx_ts="$(date -u +%Y%m%dT%H%M%SZ 2>/dev/null || date +%Y%m%dT%H%M%SZ)"
+  _fx_dir="$skill_dir/.swarm-yuan/effects/$_fx_ts"
+  mkdir -p "$_fx_dir"
+  cp "$sh" "$_fx_dir/precheck.sh"
+  cp "$conf" "$_fx_dir/precheck.conf"
+  [[ -f "$skill_dir/scripts/precheck.arch.conf" ]] && cp "$skill_dir/scripts/precheck.arch.conf" "$_fx_dir/"
+  [[ -f "$skill_dir/scripts/precheck.compliance.conf" ]] && cp "$skill_dir/scripts/precheck.compliance.conf" "$_fx_dir/"
+  for _fx_old in "$skill_dir"/.swarm-yuan/effects/*/; do
+    [[ -d "$_fx_old" ]] || continue
+    [[ "$_fx_old" == "$_fx_dir/" ]] && continue
+    rm -rf "$_fx_old"
+  done
+
   # 读取 ACTIVE_FRAMEWORKS（conf 可能含字面 ${} 如 SQL_INJECTION_WHITELIST，set -u 下会 unbound；
   # 在函数内临时关闭 set -u 做 source，读完立即恢复）
   ACTIVE_FRAMEWORKS=()
@@ -397,25 +415,108 @@ inject_frameworks() {
     echo "⚠ 框架 '${fw}' 无对应门禁片段（references/frameworks/${fw}.md 缺失）——列入未覆盖清单"
   done
 
-  # 5) 记录区块哈希（更新而非追加；首次注入则新建 ver）
-  local sha
+  # 5) 记录区块哈希 + 效果 ledger（更新而非追加；首次注入则新建 ver）
+  #    F4（dsh 吸收·效果记账）：framework_gates_effects 显式记录本次注入动了什么
+  #    （conf_add=追加的占位变量清单）——--rollback-frameworks 据此+快照整体撤销。
+  local sha _fx_ledger=""
   sha=$(sed -n '/^# >>> swarm-yuan:framework-gates >>>/,/^# <<< swarm-yuan:framework-gates <<</p' "$sh" | cksum | awk '{print $1}')
+  if [[ ${#missing_conf[@]} -gt 0 ]]; then
+    local _fx_u="" _fx_v
+    for _fx_v in ${missing_conf[@]+"${missing_conf[@]}"}; do
+      case " $_fx_u " in *" $_fx_v "*) continue;; esac
+      _fx_u="$_fx_u $_fx_v"
+    done
+    _fx_ledger="conf_add:${_fx_u# }"
+  fi
   touch "$ver"
   # 移除旧字段，再追加新值（幂等更新；分组确保 .tmp 始终被清理）
-  grep -Ev '^framework_gates_(injected_at|sha)=' "$ver" > "${ver}.tmp" 2>/dev/null || true
+  grep -Ev '^framework_gates_(injected_at|sha|effects)=' "$ver" > "${ver}.tmp" 2>/dev/null || true
   { mv "${ver}.tmp" "$ver" 2>/dev/null || cp "${ver}.tmp" "$ver"; }
   rm -f "${ver}.tmp"
   {
     echo "framework_gates_injected_at=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)"
     echo "framework_gates_sha=${sha}"
+    [[ -n "$_fx_ledger" ]] && echo "framework_gates_effects=${_fx_ledger}"
   } >> "$ver"
   # F1（dsh 吸收）：注入重建后同步 conf——回收移出 ACTIVE_FRAMEWORKS 的死变量
   sync_framework_vars "$skill_dir"
   echo "✓ 门禁片段注入完成（${#ACTIVE_FRAMEWORKS[@]} 个框架，区块 sha=${sha}）"
 }
 
+# F4（dsh 吸收·可逆效应补全）：整体撤销最近一次 --inject-frameworks 的效果。
+# 依据：.swarm-yuan/effects/<ts>/ 快照（注入前原态）恢复 precheck.sh + conf 三件套，
+# 并清 .swarm-yuan-version 的 framework_gates_* 记账。对齐 cordis "卸载即 unwind"
+# （论文 Def 23：set 之逆 unset）——此前注入路径无备份、不可恢复。
+rollback_frameworks() {
+  local skill_dir="$1"
+  local fx_root="$skill_dir/.swarm-yuan/effects"
+  local ver="$skill_dir/.swarm-yuan-version"
+  # 取最新一份快照（目录名=UTC 时间戳，字典序即时间序）
+  local latest="" d
+  for d in "$fx_root"/*/; do
+    [[ -d "$d" ]] || continue
+    latest="$d"
+  done
+  if [[ -z "$latest" || ! -f "$latest/precheck.sh" ]]; then
+    echo "✗ 未找到注入前快照（$fx_root/*/precheck.sh）——无法回滚" >&2
+    echo "  快照由 --inject-frameworks 自动创建（保留最近 1 份）" >&2
+    return 1
+  fi
+  echo "=== 回滚注入效果（快照: ${latest} ）==="
+  local f name
+  for f in precheck.sh precheck.conf precheck.arch.conf precheck.compliance.conf; do
+    [[ -f "$latest/$f" ]] || continue
+    cp "$latest/$f" "$skill_dir/scripts/$f"
+    echo "  ✓ 已恢复 scripts/$f"
+  done
+  # 清记账（framework_gates_* 全部字段）
+  if [[ -f "$ver" ]]; then
+    grep -Ev '^framework_gates_' "$ver" > "${ver}.tmp" 2>/dev/null || true
+    { mv "${ver}.tmp" "$ver" 2>/dev/null || cp "${ver}.tmp" "$ver"; }
+    rm -f "${ver}.tmp"
+    echo "  ✓ 已清除 .swarm-yuan-version 的 framework_gates_* 记账"
+  fi
+  rm -rf "$latest"
+  echo "=== 回滚完成（快照已消费；重注入请跑 --inject-frameworks）==="
+}
+
+if [[ "${1:-}" == "--rollback-frameworks" ]]; then
+  [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --rollback-frameworks <skill-dir>"; exit 1; }
+  rollback_frameworks "$2"
+  exit $?
+fi
+
 if [[ "${1:-}" == "--inject-frameworks" ]]; then
-  [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --inject-frameworks <skill-dir>"; exit 1; }
+  [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --inject-frameworks <skill-dir> [--remove <fw>]"; exit 1; }
+  # F4（dsh 吸收·定向移除）：--remove <fw> 先从 conf 的 ACTIVE_FRAMEWORKS 移除该框架，
+  # 再走常规注入（区块重建 + F1 sync 自动回收其死变量）——此前移除框架无路径，只能手改。
+  if [[ "${3:-}" == "--remove" && -n "${4:-}" ]]; then
+    sd="$2"; rfw="$4"; acf="$sd/scripts/precheck.arch.conf"
+    [[ -f "$acf" ]] || acf="$sd/scripts/precheck.conf"
+    if grep -q '^ACTIVE_FRAMEWORKS=' "$acf" 2>/dev/null; then
+      # 词级重建（兼容带引号/裸词两种风格，输出统一带引号）：剥引号后逐词比较，
+      # 命中 fw 的词跳过；空列表/单元素/多元素均正确重组。
+      awk -v fw="$rfw" '
+        /^ACTIVE_FRAMEWORKS=/ {
+          head=$0; sub(/\(.*/, "", head)
+          body=$0; sub(/^[^(]*\(/, "", body); sub(/\)[[:space:]]*$/, "", body)
+          n=split(body, w, /[[:space:]]+/); out=""
+          for (i=1; i<=n; i++) {
+            if (w[i] == "") continue
+            t=w[i]; gsub(/"/, "", t)
+            if (t == fw) continue
+            out = out " \"" t "\""
+          }
+          print head "(" out ")"; next
+        }
+        { print }
+      ' "$acf" > "$acf.tmp"
+      cat "$acf.tmp" > "$acf" && rm -f "$acf.tmp"
+      echo "✓ 已从 ACTIVE_FRAMEWORKS 移除 '$rfw'（若原本不在列表则为空操作）"
+    else
+      echo "⚠ 未找到 ACTIVE_FRAMEWORKS= 行（$acf），跳过移除"
+    fi
+  fi
   inject_frameworks "$2"
   exit $?
 fi
@@ -998,6 +1099,17 @@ if [[ "$MODE" == "upgrade" ]]; then
   echo "  ✓ 已更新（precheck.conf 保留，precheck.sh 已覆盖）"
   echo "=== 2.5 增量合并 precheck.conf（补缺失的 requires_conf 变量占位）==="
   merge_precheck_conf "$SKILL_DIR"
+  # F3：用户覆盖层骨架——upgrade 不覆盖用户 patch（_write_if_absent），仅旧版 skill 无此文件时补建
+  if [[ ! -f "$SKILL_DIR/scripts/precheck.patch.conf" ]]; then
+    cat > "$SKILL_DIR/scripts/precheck.patch.conf" <<'PEOF'
+# precheck.patch.conf —— 用户覆盖层（F3 分层 patch）
+# 用法：在此覆盖任意生成变量（后 source 即胜出），例：
+#   SENSITIVE_TOOL=builtin          # 覆盖 core 层的 auto
+#   ACTIVE_FRAMEWORKS=("vue" "koa") # 覆盖 arch 层框架清单
+# 请只写覆盖行，不要复制整份生成 conf——升级时本文件原样保留。
+PEOF
+    echo "  ✓ 已补建 precheck.patch.conf（用户覆盖层骨架）"
+  fi
   echo "=== 3. 保留项目特定文件 ==="
   for f in "${PROJECT_SPECIFIC_FILES[@]}"; do [[ -f "$SKILL_DIR/$f" ]] && echo "  ✓ $f"; done
   # WP-A3：settings.local.json / .mcp.json 不存在则生成（存在则保留用户定制，不覆盖）

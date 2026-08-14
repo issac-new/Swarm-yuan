@@ -303,7 +303,7 @@ _CONF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 # set -e 下 source 返回 1 会退出。--list-gates / --doctor 不依赖 conf，提前拦截。
 # 用 $1 直接判断（MODE 在 321 行才赋值，此处尚未解析）。
 case "${1:-}" in
-  --list-gates|--doctor|--gate-stats|--review-calibrate|--cwe-audit|--version|--help) _skip_conf=1 ;;
+  --list-gates|--doctor|--gate-stats|--review-calibrate|--cwe-audit|--version|--help|--dump-conf) _skip_conf=1 ;;
   *) _skip_conf=0 ;;
 esac
 if [[ "$_skip_conf" -eq 1 ]]; then
@@ -398,6 +398,11 @@ while [[ $# -gt 0 ]]; do
     --help|-h)
       # 用法（_usage 在下方定义，此处提前调用）
       MODE="--help"
+      shift
+      ;;
+    --dump-conf)
+      # F3（dsh 吸收）：conf 合成视图——离线 dump 与运行时同一条加载路径（core→arch→compliance→patch）
+      MODE="--dump-conf"
       shift
       ;;
     --strict-skip)
@@ -834,9 +839,46 @@ fi
 if [[ "$MODE" == "--help" ]]; then
   _usage
   echo "       bash precheck.sh --version              # 版本号"
+  echo "       bash precheck.sh --dump-conf            # conf 合成视图（含来源层）"
   echo "       bash precheck.sh --list-gates           # 列出全部门禁 flag/函数/enforce"
   echo "       bash precheck.sh --doctor               # conf 诊断"
   echo "       bash precheck.sh --gate-stats           # 门禁连续零发现统计"
+  exit 0
+fi
+
+# --dump-conf（F3，dsh 吸收·分层 patch）：按运行时同一加载顺序合成 conf 视图并标注每变量来源层。
+# 离线视图与运行时同一条合成路径（对齐 dsh --dump-config 关键设计）——所见即门禁所读。
+if [[ "$MODE" == "--dump-conf" ]]; then
+  echo "=== conf 合成视图（加载顺序: core → arch → compliance → patch）==="
+  _dc_layer=""; _dc_var=""; _dc_line=""; _dc_map=""; _dc_val=""
+  _dc_map="$(mktemp)"
+  # 1) 逐层扫描 ^VAR= 定义，记录每变量最后定义层（后见胜出 = 覆盖语义）
+  for _dc_layer in precheck.conf precheck.arch.conf precheck.compliance.conf precheck.patch.conf; do
+    [[ -f "${_CONF_DIR}/$_dc_layer" ]] || continue
+    while IFS= read -r _dc_line; do
+      printf '%s\t%s\n' "${_dc_line%%=*}" "$_dc_layer"
+    done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "${_CONF_DIR}/$_dc_layer" 2>/dev/null)
+  done | awk -F'\t' '{ src[$1] = $2 } END { for (v in src) print v "\t" src[v] }' > "$_dc_map"
+  # 2) 按同一顺序 source（与运行时一致），再输出合成值 + 来源
+  for _dc_layer in precheck.conf precheck.arch.conf precheck.compliance.conf precheck.patch.conf; do
+    [[ -f "${_CONF_DIR}/$_dc_layer" ]] || continue
+    set +u
+    # shellcheck disable=SC1090
+    . "${_CONF_DIR}/$_dc_layer" || true
+    set -u
+  done
+  # 3) 按层序稳定输出（同层内按扫描序）
+  for _dc_layer in precheck.conf precheck.arch.conf precheck.compliance.conf precheck.patch.conf; do
+    while IFS=$'\t' read -r _dc_var _dc_line; do
+      [[ "$_dc_line" == "$_dc_layer" ]] || continue
+      _dc_val=""
+      eval "_dc_val=\$(printf '%s' \"\${${_dc_var}[@]:-}\")" 2>/dev/null || true
+      [[ -z "$_dc_val" ]] && _dc_val="（空）"
+      printf '  %-36s = %s  # 来源: %s\n' "$_dc_var" "${_dc_val}" "${_dc_layer}"
+    done < "$_dc_map"
+  done
+  rm -f "$_dc_map"
+  echo "提示：覆盖生成值请改 precheck.patch.conf（用户覆盖层，升级不被动）"
   exit 0
 fi
 
