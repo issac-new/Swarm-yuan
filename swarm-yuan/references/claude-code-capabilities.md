@@ -1,4 +1,4 @@
-# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.201 全 159 版 + `claude --help` CLI 调研）
+# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.232 全 190 版 + `claude --help` CLI 调研）
 
 > 本文件基于 https://github.com/anthropics/claude-code/releases **全量 159 个版本**发布说明 + `claude --help` / `claude mcp --help` / `claude agents --help` / `claude plugin --help` / `claude project --help` / `claude ultrareview --help` / `claude install --help` / `claude gateway --help` CLI 调研整理。
 > 生成目标技能时，AI 须把以下能力编织进 SKILL.md / workflow.md / reference-manual.md / hooks / commands / settings。
@@ -93,6 +93,7 @@
 | `PreCompact` | 压缩前 | 压缩前注入 | 早期 |
 | `WorktreeCreate` | worktree 创建 | 自定义 VCS 设置 | v2.1.50 |
 | `WorktreeRemove` | worktree 移除 | 自定义 VCS 清理 | v2.1.50 |
+| `DirectoryAdded` | `/add-dir` 或 SDK `register_repo_root` 注册新工作目录 | 会话中途新增工作目录时触发 | v2.1.219 |
 | `Setup` | 安装时 | 版本检查 | 早期 |
 | `ConfigChange` | 配置变更 | v2.1.140 修复符号链接误触 | v2.1.140 |
 
@@ -168,6 +169,10 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | **agent teams** | 多代理协作（`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`） | v2.1.50 |
 | **idle subagent 折叠** | v2.1.199 空闲 subagent 折叠为可展开摘要行 | v2.1.199 |
 | **SendMessage 修复** | v2.1.199 修复重用名称时消息误路由 | v2.1.199 |
+| **subagent forking** | `subagent_type: "fork"` 继承完整对话 + prompt cache（非空上下文启动）；交互会话中非 teammate agent 默认后台运行 | v2.1.232 |
+| **--forward-subagent-text** | flag/env 把 subagent 文本 + thinking 纳入 stream-json 输出（headless 编排用） | v2.1.211 |
+| **subagent model 受限警告** | workflow agents/forked skills/slash commands 请求的 subagent model 被限制时警告（父模型顶替） | v2.1.223 |
+| **worktree isolation 加固** | `isolation: worktree` subagent 不能对主 checkout 跑破坏性 git 命令；隔离扩展到所有会话类型的文件编辑 + Bash | v2.1.210/222 |
 
 ## 六、Settings（`settings.json` / `settings.local.json`）
 
@@ -182,6 +187,10 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | `enforceAvailableModels` | 模型白名单强制约束 Default | v2.1.175 |
 | `requiredMinimumVersion` / `requiredMaximumVersion` | 版本范围限制 | v2.1.163 |
 | `sandbox.allowAppleEvents` | macOS sandbox 内允许 Apple Events | v2.1.181 |
+| `sandbox.filesystem.disabled` | 跳过文件系统隔离但保留网络出口控制 | v2.1.216 |
+| `sandbox.network.strictAllowlist` | 对 sandboxed 命令拒绝非白名单主机（不弹权限提示） | v2.1.219 |
+| `mode: "mask"`（凭证文件） | Linux/WSL sandbox 命令读哨兵副本，proxy 出口替换真值（macOS 降级 deny） | v2.1.221 |
+| `crossSessionInbound` / `dialogExpiry` | 跨会话消息：bypass 权限会话收到的消息 held 待批；dialog 过期控制 | v2.1.224/232 |
 | `disabledMcpServers` / `enabledMcpServers` | MCP server 禁用/启用 | v2.1.200 |
 | `disableAllHooks` / `allowManagedHooksOnly` | 禁用全部 hook / 仅允许托管 hook | v2.1.140 |
 | `extraKnownMarketplaces` | 额外插件市场 | v2.1.140 |
@@ -229,6 +238,8 @@ enterprise → `~/.claude/settings.json` → project `.claude/settings.json` →
 | worktree 插件 | v2.1.198 修复 worktree 中项目插件不加载 | v2.1.198 |
 | `${CLAUDE_PLUGIN_ROOT}` | 插件根目录环境变量 | 早期 |
 | 默认组件目录 | `commands/`/`skills/`/`hooks/` 等（v2.1.140 起 `plugin.json` 覆盖时警告） | v2.1.140 |
+| `archive` plugin source | zip over HTTPS 安装插件（不需 git/npm）+ 可选 SHA-256 pinning | v2.1.224 |
+| `command` plugin source | 本地命令（如 IDE）打印插件目录，每会话重解析，`mode: link` 原地用 | v2.1.229 |
 
 ## 九、Worktree Isolation
 
