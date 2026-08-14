@@ -64,6 +64,11 @@ swarm-yuan 的 `--inject-frameworks` 已经实现了一种"轻量可逆效应"�
 
 **与 Cordis 的差距**：swarm-yuan 的"可逆"需要**用户主动触发重跑**，而 Cordis 是**卸载时自动 unwind**。在静态 bash 世界里无法做到运行时自动卸载，但可以在 `--upgrade` 时**自动检测失活框架残留**（ACTIVE_FRAMEWORKS 减少了某框架但标记区块里仍有其 `_fw_*_check`）。
 
+> **✅ 已落地（2026-08-14 深度调研轮，源码+论文级）**：基于 cordis 源码实证（`fiber.ts` DisposableList LIFO unwind / `reflect.ts` notify 定向失效 / 论文 Def 23 set之逆=unset、Def 25 满足判定 σ ⊧ d）落地两项配套机制：
+> ① **F2 满足判定显式化**（`gates-warn.sh check_framework`）：requires_conf 变量全空 → warn + 可执行修复指令（`--inject-frameworks` 重同步），不再静默空转——对应论文 PENDING 态显式化；
+> ② **F1 协效应定向失效**（`generate-skill.sh sync_framework_vars`，inject 尾部自动调用）：框架移出 ACTIVE_FRAMEWORKS 后，只被未注入框架需要且不被门禁正文引用的 conf 死变量**原位注释回收**（保守判定：须同时满足"不在活跃集 + 在未注入框架声明集 + 正文零引用"三条件，通用白名单如 EVAL_WHITELIST 因正文引用永不被回收）——补齐 merge_precheck_conf 只有"缺失补占位"没有"多余回收"的半边。
+> 完整 undo（注入前快照 + ledger + `--rollback-frameworks`）与分层 patch（precheck.patch.conf 用户覆盖层）为后续候选（F4/F3），见本节下方。
+
 ### 4.2 conf 变量——"声明式协效应"的缺失
 
 swarm-yuan 的 171 个 conf 变量是**静态平铺**的：

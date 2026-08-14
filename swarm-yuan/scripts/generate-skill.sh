@@ -185,6 +185,71 @@ merge_precheck_conf() {
   fi
 }
 
+# F1（dsh/cordis 吸收·协效应定向失效）：框架移出 ACTIVE_FRAMEWORKS 后的 conf 死变量注释。
+# 补齐 merge_precheck_conf 只有"缺失补占位"没有"多余回收"的半边——对齐 cordis 的
+# 服务表收缩（论文 Def 23：set 之逆即 unset）：依赖集合变化 → conf 定向失效。
+# 死变量判定（机械、保守，三者同时满足）：
+#   ① v 不在已注入区块 requires_conf 并集（活跃框架都不需要）
+#   ② v 出现在某个【未注入】框架源文件的 requires_conf 中（证明它是框架专属变量）
+#   ③ v 不被 skill 四脚本正文直接引用（排通用白名单如 SQL_INJECTION_WHITELIST/
+#     EVAL_WHITELIST——它们在 gates 正文有引用，永不被判定死）
+# 处置：不删除——原位注释（# deprecated VAR=原值），用户可整体恢复。
+sync_framework_vars() {
+  local skill_dir="$1"
+  local sh="$skill_dir/scripts/precheck.sh"
+  local conf="$skill_dir/scripts/precheck.conf"
+  local arch_conf="$skill_dir/scripts/precheck.arch.conf"
+  [[ -f "$sh" && -f "$conf" ]] || return 0
+  [[ -f "$arch_conf" ]] || arch_conf="$conf"
+  local paradigm_dir; paradigm_dir="$(cd "$(dirname "$0")/.." && pwd)"
+  # 1. 活跃集：注入区块内 ruleset 行的 requires_conf 并集 + 已注入框架 id 集
+  local active="" ln fw_id injected_ids=""
+  while IFS= read -r ln; do
+    fw_id="${ln#\# ruleset: }"; fw_id="${fw_id%%  *}"
+    injected_ids="$injected_ids $fw_id "
+    active="$active ${ln##*requires_conf: }"
+  done < <(sed -n '/^# >>> swarm-yuan:framework-gates >>>/,/^# <<< swarm-yuan:framework-gates <<</p' "$sh" 2>/dev/null | grep '^# ruleset:')
+  # 2. 未注入框架源文件的 requires_conf 并集（死变量声明证据）
+  local dead_decl="" frag
+  for frag in "$paradigm_dir"/assets/framework-gates/*.sh; do
+    [[ -f "$frag" ]] || continue
+    fw_id="$(basename "$frag" .sh)"
+    case "$injected_ids" in *" $fw_id "*) continue;; esac
+    dead_decl="$dead_decl $(sed -n 's/^# ruleset:.*requires_conf: *//p' "$frag" | tr -s ' ')"
+  done
+  [[ -z "$dead_decl" ]] && return 0
+  # 3. 逐 conf 变量判定死变量（①②③）
+  local v dead_vars="" referenced script
+  while IFS= read -r v; do
+    [[ -z "$v" ]] && continue
+    case " $active " in *" $v "*) continue;; esac
+    case " $dead_decl " in *" $v "*) ;; *) continue;; esac
+    referenced=0
+    for script in "$sh" "$skill_dir/scripts/gates-strict.sh" "$skill_dir/scripts/gates-warn.sh" "$skill_dir/scripts/gates-advisory.sh"; do
+      [[ -f "$script" ]] || continue
+      # 花括号形式（${VAR}，仓库铁律形式）或裸 $VAR 后跟非标识符字符
+      if grep -qF "\${${v}}" "$script" 2>/dev/null || grep -qE "\\$${v}([^A-Za-z0-9_]|$)" "$script" 2>/dev/null; then
+        referenced=1; break
+      fi
+    done
+    [[ "$referenced" -eq 1 ]] && continue
+    dead_vars="$dead_vars $v"
+  done < <(grep -hoE '^[A-Z_][A-Z0-9_]+=' "$conf" "$arch_conf" 2>/dev/null | tr -d '=' | sort -u)
+  [[ -z "${dead_vars// /}" ]] && return 0
+  # 4. 原位注释（awk 幂等编辑，mktemp+cat 仓库既有范式）
+  local target cf_tmp
+  for target in "$arch_conf" "$conf"; do
+    [[ -f "$target" ]] || continue
+    cf_tmp="$(mktemp)"
+    awk -v vars="$dead_vars" '
+      BEGIN { n = split(vars, arr, " "); for (i = 1; i <= n; i++) if (arr[i] != "") dead[arr[i]] = 1 }
+      { name = $0; sub(/=.*/, "", name); if (dead[name] == 1 && /^[A-Z_][A-Z0-9_]*=/) print "# deprecated（框架已移出 ACTIVE_FRAMEWORKS，可恢复）" $0; else print }
+    ' "$target" > "$cf_tmp"
+    cat "$cf_tmp" > "$target" && rm -f "$cf_tmp"
+  done
+  echo "⚠ sync_framework_vars：注释死变量（${dead_vars} ）——只被未注入框架需要；恢复请解开对应行的 # deprecated 注释"
+}
+
 # WP-D3：trace_tool 辅助函数（全链路追踪——设计理念 2，generate-skill 侧）
 # 定义在 inject_frameworks 之前，确保 --inject-frameworks 独立拦截分支也能调用。
 # trace-log.sh 路径：脚本所在目录的 ../assets/trace-log.sh
@@ -344,6 +409,8 @@ inject_frameworks() {
     echo "framework_gates_injected_at=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)"
     echo "framework_gates_sha=${sha}"
   } >> "$ver"
+  # F1（dsh 吸收）：注入重建后同步 conf——回收移出 ACTIVE_FRAMEWORKS 的死变量
+  sync_framework_vars "$skill_dir"
   echo "✓ 门禁片段注入完成（${#ACTIVE_FRAMEWORKS[@]} 个框架，区块 sha=${sha}）"
 }
 
