@@ -172,6 +172,17 @@ if [[ "$PROFILE" == "compliance" ]]; then
   _emit_section "precheck.compliance.conf" "$comp"
 fi
 
+# F3（dsh 吸收·分层 patch 最小步）：用户覆盖层骨架——纯注释零变量（不进 conf 计数）。
+# 加载顺序 core→arch→compliance→patch（precheck.conf 尾部 source，后写胜出）：
+# 用户在这里覆盖生成值，不直接改生成的 conf 文件 → upgrade 保留用户配置不再依赖
+# "文件被手改"启发式，根治升级漂移。--dump-conf 按同一顺序输出合成视图+来源层。
+patch_skel='# precheck.patch.conf —— 用户覆盖层（F3 分层 patch）
+# 用法：在此覆盖任意生成变量（后 source 即胜出），例：
+#   SENSITIVE_TOOL=builtin          # 覆盖 core 层的 auto
+#   ACTIVE_FRAMEWORKS=("vue" "koa") # 覆盖 arch 层框架清单
+# 请只写覆盖行，不要复制整份生成 conf——升级时本文件原样保留。'
+_emit_section "precheck.patch.conf" "$patch_skel"
+
 # TODO:model 清单汇总
 todo="# ===== # TODO:model 清单（须模型补实值）=====
 # LAYER_DEFS / SERVICE_DIRS / STORE_DIR / WRITABLE_DIRS / READONLY_DIRS / SCAN_DIRS / CONSISTENCY_DIRS / COMPONENT_DIR"
