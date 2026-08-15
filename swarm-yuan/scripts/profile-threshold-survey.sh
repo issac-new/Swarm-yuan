@@ -111,5 +111,5 @@ echo "P67 (standard 上限): $_p67 文件"
 } > "$OUT_CONF"
 
 echo ""
-echo "✓ 生成 $OUT_CSV（$_total 个样本）"
-echo "✓ 生成 $OUT_CONF（P33=$_p33 / P67=$_p67）"
+echo "✓ 生成 ${OUT_CSV}（${_total} 个样本）"
+echo "✓ 生成 ${OUT_CONF}（P33=${_p33} / P67=${_p67}）"

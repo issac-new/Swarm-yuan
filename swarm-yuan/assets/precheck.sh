@@ -965,7 +965,7 @@ if [[ "$MODE" == "--review-calibrate" ]]; then
         fi
       done
       ;;
-    *) echo "未知操作: $_cal_act（record|stats）" >&2; exit 1 ;;
+    *) echo "未知操作: ${_cal_act}（record|stats）" >&2; exit 1 ;;
   esac
   exit 0
 fi
