@@ -3,6 +3,7 @@
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 >
 > 17 项特征卡让 AI 认识你的项目，54 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
+> （边界声明：门禁外部有效性目前在 Java/JS Web 品类上验证（R9），跨品类见 `verifier/v2/external-validity.md` 立项稿。）
 
 [![Release](https://img.shields.io/badge/release-v1.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v1.0)
 [![Feature Card](https://img.shields.io/badge/feature%20card-17-green)]()
