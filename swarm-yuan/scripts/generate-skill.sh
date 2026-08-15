@@ -516,7 +516,7 @@ if [[ "${1:-}" == "--inject-frameworks" ]]; then
       cat "$acf.tmp" > "$acf" && rm -f "$acf.tmp"
       echo "✓ 已从 ACTIVE_FRAMEWORKS 移除 '$rfw'（若原本不在列表则为空操作）"
     else
-      echo "⚠ 未找到 ACTIVE_FRAMEWORKS= 行（$acf），跳过移除"
+      echo "⚠ 未找到 ACTIVE_FRAMEWORKS= 行（${acf}），跳过移除"
     fi
   fi
   inject_frameworks "$2"

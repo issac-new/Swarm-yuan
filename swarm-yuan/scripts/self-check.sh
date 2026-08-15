@@ -1025,7 +1025,7 @@ check_bootstrap_gate() {
       FAIL=1
     fi
   else
-    warn "CI workflow 不存在: $ci（无法对账三档 step）"
+    warn "CI workflow 不存在: ${ci}（无法对账三档 step）"
     FAIL=1
   fi
 }
@@ -1770,7 +1770,39 @@ check_stable_propagate_wiring() {
     echo "  ✓ 标记传播 absorb 四载体一致（arch.conf + exploration-guide + facts.conf + gates-warn.sh）"
   fi
 }
+
+# ===== G18：多字节相邻变量铁律机械检查（security-spec §6.1，第 20 轮复盘固化）=====
+# 铁律：`$var中文` 须 `${var}`——bash 3.2 C-locale 下 $var 紧跟多字节字符会把其字节吞进
+# 变量名，报 "<var><乱码>: unbound variable"。本会话三次真实踩中（F2 warn 行 / v2 run 脚本
+# CORPUS 行 / F4 --remove echo 行——后者是潜伏雷，正常 locale 不炸、C-locale 必炸）。
+# 扫描范围：本仓全部 .sh 的【非注释行】（注释不执行，存量注释表述保留不扰动）。
+# 违规即 fail（存量已于本轮清零，fail 严格成立）。
+check_multibyte_var_adjacency() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  echo "▶ 多字节相邻变量铁律（G18，security-spec §6.1：\$var 紧跟全角标点须 \${var}）"
+  local hits=0 f line
+  for f in "$base"/scripts/*.sh "$base"/assets/*.sh "$base"/assets/hooks/*.sh \
+           "$base"/tests/*.sh "$base"/tests/e2e/*.sh \
+           "$base"/../verifier/v1/*.sh "$base"/../verifier/v2/*.sh; do
+    [[ -f "$f" ]] || continue
+    while IFS= read -r line; do
+      local trimmed; trimmed="$(printf '%s' "$line" | sed 's/^[[:space:]]*//')"
+      [[ "$trimmed" == \#* ]] && continue
+      if printf '%s' "$line" | grep -qE '\$[A-Za-z_][A-Za-z0-9_]*[）。，：；（！？·]'; then
+        echo "  ✗ $(basename "$f"): $line" >&2
+        hits=$((hits+1))
+      fi
+    done < "$f"
+  done
+  if [[ "$hits" -gt 0 ]]; then
+    warn "多字节相邻变量违规 ${hits} 处——\$var 后紧跟全角标点须改 \${var} 形式（C-locale 下 unbound 崩溃）"
+    FAIL=1
+  else
+    echo "  ✓ 无 \$var 紧跟多字节标点违规（全部 \${var} 形式）"
+  fi
+}
 check_stable_propagate_wiring
+check_multibyte_var_adjacency
 
 # ===== Cordis 时空可组合性方法论引用存在性断言（G17，DeepSeek Harness/Cordis 吸收）=====
 # 决策 27（吸收优先于新增门禁）：Cordis 论文（A Programming Paradigm for Spatiotemporal
