@@ -29,3 +29,4 @@ node_modules/
 # offline-cache/  是 vendored 工具缓存；两者均为本地依赖，非项目交付物。
 swarm-yuan/research/
 swarm-yuan/offline-cache/
+verifier/v2/report.md
