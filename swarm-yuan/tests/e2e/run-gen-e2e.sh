@@ -159,6 +159,29 @@ else
   bad "upgrade 前置 create 失败（见 /tmp/gene2e-up-create.log）"
 fi
 
+# --- 11b. upgrade 门禁注入触发回归（第 17 轮复盘补盲区）---
+# 背景（BUG-1，2026-08-15 回归发现）：upgrade 的注入触发曾只 grep 主 precheck.conf，
+# 而 ACTIVE_FRAMEWORKS 物理上定义在 precheck.arch.conf（WP-I 三分）——standard/compliance
+# 档 upgrade 从不触发门禁注入（区块空/sha 无/快照无），且"已重置 sha 由重注入写入"
+# 的提示照打印（误导）。本段固化核心契约：arch.conf 配了 ACTIVE_FRAMEWORKS 的 skill，
+# upgrade 后门禁区块必须真的重建 + 记账 + 快照（三件套齐全才算注入发生）。
+# 反向验证构造：create 后模拟 AI Step 5 在 arch.conf 写 ACTIVE_FRAMEWORKS（非主 conf）。
+echo 'ACTIVE_FRAMEWORKS=("spring-boot")' >> "${_uskill}/scripts/precheck.arch.conf"
+if bash "${PARADIGM}/scripts/generate-skill.sh" --upgrade u-dev "${DEMO}" "${_updir}" \
+     >/tmp/gene2e-up-inject.log 2>&1; then
+  grep -q '_fw_spring_boot_check()' "${_uskill}/scripts/precheck.sh" 2>/dev/null \
+    && ok "upgrade 触发门禁注入（arch.conf 的 ACTIVE_FRAMEWORKS 被识别）" \
+    || bad "upgrade 未注入门禁区块（BUG-1 回归：arch.conf 触发判定失效）"
+  grep -q '^framework_gates_sha=' "${_uskill}/.swarm-yuan-version" 2>/dev/null \
+    && ok "upgrade 注入后写入 framework_gates_sha 记账" \
+    || bad "upgrade 注入后无 sha 记账"
+  ls "${_uskill}/.swarm-yuan/effects/"*/precheck.sh >/dev/null 2>&1 \
+    && ok "upgrade 注入前产生快照（.swarm-yuan/effects/）" \
+    || bad "upgrade 注入无快照（F4 契约：注入必可回滚）"
+else
+  bad "upgrade（注入段）失败（见 /tmp/gene2e-up-inject.log）"
+fi
+
 # 跨档升级：lite → standard 应补齐文件（文档承诺的升档路径）
 _xdir="${TMP}/cross-test"
 mkdir -p "${_xdir}"
