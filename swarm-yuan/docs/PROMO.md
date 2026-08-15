@@ -3,6 +3,7 @@
 **从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施**
 
 一句话摘要：swarm-yuan 用 17 项特征卡让 AI 认识你的项目，用 54 个质量门禁守护代码合规——特征卡是立法，门禁是执法，两者构成从认知到交付的完整闭环。
+（边界声明：门禁外部有效性目前在 Java/JS Web 品类上验证（R9），跨品类见 `verifier/v2/external-validity.md` 立项稿。）
 
 > **口径权威源**：`assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 

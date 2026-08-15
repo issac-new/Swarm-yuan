@@ -3,6 +3,7 @@
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 >
 > 17 项特征卡让 AI 认识你的项目，54 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
+> （边界声明：门禁外部有效性目前在 Java/JS Web 品类上验证（R9），跨品类见 `verifier/v2/external-validity.md` 立项稿。）
 >
 > **口径权威源**：`assets/facts.conf`（所有 catchphrase 数字的单一事实源，`scripts/self-check.sh` 机器执法做漂移检测）。
 
