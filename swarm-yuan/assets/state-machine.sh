@@ -68,6 +68,9 @@ build_mode: subagent-driven-development
 isolation: branch
 verify_result: pending
 branch_status: pending
+# MEA 铁律（LHH 吸收，2026-08-16）：verify_result=pass 须挂证据引用（gate-run#N / 验证报告路径）；
+# AI 自我声明不改变持久状态——guard archive 检查此字段，空则 warn（详见 references/mea-loop-methodology.md §3.2）
+verify_evidence:
 created_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
   echo "✓ 状态已初始化: $STATE_FILE"
@@ -176,6 +179,16 @@ guard_phase() {
       local vr
       vr=$(get_field verify_result)
       [[ "$vr" != "pass" ]] && { fail "verify_result=${vr}，须先 pass"; ok=0; }
+      # MEA 铁律（LHH 吸收，2026-08-16）：自我声明不改变持久状态——
+      # verify_result=pass 之外还须有证据引用（gate-run#N / 验证报告路径 / verifier 报告）。
+      # warn 不 fail：存量状态文件无此字段，硬 fail 破坏向后兼容（守决策 26 预算：不新增 fail 调用）。
+      local ev
+      ev=$(get_field verify_evidence)
+      if [[ -n "$ev" ]]; then
+        pass "archive 准入: verify_evidence=${ev}（收口有据）"
+      else
+        echo "  ⠿ archive 准入: verify_evidence 为空——自我声明不改变持久状态（MEA 铁律），建议 set verify_evidence \"<gate-run#N 或验证报告路径>\"（warn 不阻塞）"
+      fi
       # 破窗台账（broken-windows ledger，gsd-core v1.8.0 #1950 吸收）：
       # 若 .swarm-yuan/WINDOWS.md 存在且含 open 条目，warn 不 fail（仅提示 ship 前清账）。
       # gsd-core 的 /gsd-ship 在有 open 条目时阻断；swarm-yuan 降为 warn 以避免新增 fail 调用（守决策 26 预算）。
