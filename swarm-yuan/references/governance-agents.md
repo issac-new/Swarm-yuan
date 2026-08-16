@@ -230,6 +230,8 @@ verifier_focus:
 [SWARM-YUAN-VERIFIER-REPORT]
 power: SCORING_RIGHT_RECOMMENDATION
 verifier_recommendation: pass|fail|inconclusive
+integrity: clean|suspect|violation
+contract_audit: aligned|unknown|needs_revision|invalid
 commands:
   - command: <cmd>
     exit_code: <code>
@@ -241,6 +243,16 @@ forbidden_result:
 final_status_owner: external_harness_or_human
 ```
 
+**integrity / contract_audit 两轴与守卫降级链**（LHH auditor 协议吸收，2026-08-16；
+详见 `references/mea-loop-methodology.md` §3.4）：
+
+- `integrity`：验证过程本身干净吗——证据是新鲜跑出来的，还是贴的旧输出 / 被测物在验证期间被顺手改过？`clean`（干净）/ `suspect`（存疑）/ `violation`（检测到篡改或坏捷径）
+- `contract_audit`：与任务契约对齐吗——验收标准逐条反查了吗？`aligned` / `unknown`（未逐条反查）/ `needs_revision`（契约本身要修）/ `invalid`（验证对象错位）
+- **给 `pass` 前自查三条守卫**（机器可校验的降级链，不信任自报）：
+  1. `acceptance_result` 存在 fail 或 inconclusive（即 blocking 项）时，不得给 `pass`
+  2. `integrity != clean` 或 `contract_audit != aligned` 时，`pass` 无效——降为 `fail`（violation）或 `inconclusive`（suspect/unknown）
+  3. 只有 `pass + integrity:clean + contract_audit:aligned` 三轴齐绿才构成可收口结论；收口时把本报告落为 state-machine 的 `verify_evidence`（引用 gate-run#N 或报告路径）
+
 ## Task Contract（任务契约）
 
 四权分离拓扑启动前，主 agent 先把目标拆成任务契约：
@@ -251,10 +263,16 @@ acceptance: <可验收的完成标准列表>
 forbidden: <禁止行为列表：不改 tests/scoring/verifier/CI/memory/secrets...>
 verify_commands: <公开验证命令列表>
 file_domain: <允许编辑的文件/目录范围>
+# 以下三维可选（LHH 任务级契约规则吸收，2026-08-16）——长任务/多产物任务建议补齐
+state_carrier: <最终完成态落在哪个文件/服务/数据上——载体错了等于白做>
+persistence_boundary: <什么才算"已提交"：内存通过不算，落盘/入库/合入到哪个节点才算>
+contamination_watch: <旧产物/相似路径/缓存可能污染本次产出的位置清单>
 ```
 
 只允许 action-executor 写 `agent_proposed_status`，最终 `verifier_status` 由
-verifier/hook/human 确认。
+verifier/hook/human 确认。**自我声明不改变持久状态**（MEA 铁律）：`verifier_status`
+落 pass 时须同时落 `verify_evidence`（state-machine 字段，引用 gate-run#N / 验证报告路径 /
+verifier 报告），无证据引用的完成结论标 untrusted，不得作为下游依赖。
 
 ## 风险分层审批
 
@@ -279,6 +297,13 @@ verifier/hook/human 确认。
   司法预言机。verifier agent 可调 verifier/v1 跑独立验收，但不写最终 status。
 - **与 state-machine.sh 的关系**：四权分离拓扑在 verify 阶段（state-machine 的 verify phase）
   启用——guard_phase 校验 tasks 全勾后，进 verifier agent 独立验收。
+- **与 LHH MEA 循环的关系**（2026-08-16 吸收）：阿里 LongHorizon-Harness 的 Manager/
+  Executor/Auditor 三角色与本拓扑后三权同构（Manager↔主 agent 编排、Executor↔action-executor、
+  Auditor↔self-reviewer+verifier）；本拓扑多出的 policy-guardian 是 LHH 没有的立法侧维度。
+  从 LHH 吸收的增量不在拓扑，在四个实现细节：审计证据引用（gate-runs.jsonl `run` 序号）、
+  verify_evidence 字段（自我声明 ≠ 持久状态）、任务契约三维（state_carrier/
+  persistence_boundary/contamination_watch）、verifier 报告三轴守卫降级链。
+  详见 `references/mea-loop-methodology.md`。
 
 ## 文化叙事绑定（不混搭）
 

@@ -1049,14 +1049,19 @@ _json_add_result() { # $1=gate $2=status $3=ids(空格分隔)
 }
 
 # gate-runs.jsonl 追加一行（ts 为 UTC；对齐 GB/T 15532 过程文档与 standards-compliance.md §F 证据列）
+# MEA 吸收（LHH related_report_refs，2026-08-16）：run 序号使每行证据可被引用——
+# 决策记录/verifier 报告/state-machine 的 verify_evidence 字段引用 "gate-run#N"。
+# 单进程串行写无并发竞争；文件不存在时首行序号 1。
 _gate_evidence() { # $1=gate $2=status $3=ids(空格分隔) $4=duration_s
   local _ids_json="" _sep="" _id
   for _id in $3; do
     _ids_json="${_ids_json}${_sep}\"${_id}\""
     _sep=","
   done
-  printf '{"ts":"%s","gate":"%s","status":"%s","ids":[%s],"duration_s":%s}\n' \
-    "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$1" "$2" "$_ids_json" "$4" \
+  local _run_no=1
+  [[ -f "$GATE_RUNS_DIR/gate-runs.jsonl" ]] && _run_no=$(( $(wc -l < "$GATE_RUNS_DIR/gate-runs.jsonl") + 1 ))
+  printf '{"ts":"%s","run":%s,"gate":"%s","status":"%s","ids":[%s],"duration_s":%s}\n' \
+    "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$_run_no" "$1" "$2" "$_ids_json" "$4" \
     >> "$GATE_RUNS_DIR/gate-runs.jsonl"
 }
 

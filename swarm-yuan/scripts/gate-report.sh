@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # gate-report.sh — 一次性「门禁运行报告」Markdown 生成器（P3 度量深化）
 # 数据源：precheck.sh 在 conf GATE_RUNS_DIR 非空时落盘的 gate-runs.jsonl
-#         （行格式契约 {"ts","gate","status","ids","duration_s"}，由 precheck.sh _gate_evidence 产出）
+#         （行格式契约 {"ts","run","gate","status","ids","duration_s"}，由 precheck.sh _gate_evidence 产出；run 序号供证据引用——MEA 吸收 2026-08-16）
 # 报告结构对齐 GB/T 15532-2008《计算机软件测试规范》测试文档要素（标识/概述/环境/执行结果/结论；
 #   2008-04-11 发布、2008-09-01 实施、现行——国家标准全文公开系统
 #   https://openstd.samr.gov.cn/bzgk/gb/ 检索 GB/T 15532-2008，2026-07-20 访问）
@@ -70,7 +70,7 @@ awk -v jsonl="$JSONL" -v gen_ts="$GEN_TS" -v report_id="$REPORT_ID" \
     ngates=0; for(g in cnt) ngates++
     printf "# 门禁运行报告（swarm-yuan precheck gate-runs）\n\n"
     printf "## 1. 报告标识\n\n"
-    printf "- 报告编号：`%s`\n- 生成时间(UTC)：%s\n- 数据源：`%s`（gate-runs JSONL 契约 `{\"ts\",\"gate\",\"status\",\"ids\",\"duration_s\"}`）\n\n", report_id, gen_ts, jsonl
+    printf "- 报告编号：`%s`\n- 生成时间(UTC)：%s\n- 数据源：`%s`（gate-runs JSONL 契约 `{\"ts\",\"run\",\"gate\",\"status\",\"ids\",\"duration_s\"}`）\n\n", report_id, gen_ts, jsonl
     printf "## 2. 概述\n\n"
     printf "- 目的：汇总门禁族近次运行结果，使失效可见、趋势可查，支撑准入/准出评审。\n"
     printf "- 范围：34 门禁（precheck.sh ALL_GATES_FULL）；记录时间范围(UTC) %s ～ %s；总记录 %d 条，覆盖门禁 %d 个。\n", tmin, tmax, tot, ngates

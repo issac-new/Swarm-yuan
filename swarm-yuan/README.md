@@ -374,7 +374,7 @@ Swarm-yuan/
 │   │   ├── spec-template.md      ← 23 主段 spec 模板（§23=发布后运营）
 │   │   └── trace-log.sh          ← 全链路调用追踪（stdout 公告 + trace.jsonl 落盘）
 │   ├── docs/                     ← USAGE/PROMO/FIVE_DIMENSIONS 唯一来源
-│   ├── references/               ← 37 个参考文档 + frameworks/（74 框架 + _template）
+│   ├── references/               ← 38 个参考文档 + frameworks/（74 框架 + _template）
 │   ├── scripts/                  ← 28 个脚本（生成器+自检+SARIF+drift+baseline+cost）
 │   ├── tests/                    ← fixture 测试（e2e + 74 framework fixture + 48 gate-fixture + sarif-fixture）
 │   └── ci/                       ← 自举 self-precheck.conf
