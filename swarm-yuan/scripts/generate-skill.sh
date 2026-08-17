@@ -1536,7 +1536,7 @@ status: draft
 > 由 swarm-yuan 生成器创建（${SWARM_YUAN_STAMP}，profile=${PROFILE}），需 AI agent 探查后填充。
 > 填充规范见 swarm-yuan/references/template-spec.md
 ## 填充指引
-- [ ] meta: 核心理念+改造分类+流程总览+命令速查+门禁
+- [ ] meta: 核心理念+改造分类+流程总览+命令速查+门禁+反借口表（借口/反驳两列表，从门禁步骤逐条反推，见 template-spec §1.5）+假设清单（需求/架构/范围三维度+"现在纠正我"，见 template-spec §1.5）
 EOF
 # WP-E：checklist 按档裁剪（lite 无 workflow/commands/hooks 条目）
 if [[ "$PROFILE" != "lite" ]]; then
