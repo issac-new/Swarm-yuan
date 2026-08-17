@@ -135,6 +135,15 @@ mechanical_gate_owner: integrity-guard / external harness / human
 
 **被 integrity-guard 阻拦时**：停下来报治理原因，不绕过。
 
+**自治模式暂停协议（三类硬停，Addy Osmani agent-skills /build auto 吸收，2026-08-16）**：
+自治执行（用户批准一次计划后逐任务推进）遇到以下三类情况**必须停下交还控制权，不得硬闯**：
+
+1. **技术硬停**：测试无法转绿或构建破坏且无显见修复 → 转调试流程（先复现后修复，Prove-It 五步见 `references/agent-skills-methodology.md` §四）
+2. **歧义硬停**：任务契约歧义，或任务需要契约未覆盖的决策 → 出假设清单（需求/架构/范围三维度），等用户纠正
+3. **风险硬停**：高风险/不可逆操作——auth/权限变更、破坏性数据迁移、支付、删除、部署、涉密、**任何 `git revert` 撤销不了的事** → 显式 sign-off
+
+配套纪律：**hedged response 不算批准**（"看起来行" / "我猜可以" ≠ approved，视为未批准重问）；每任务一 commit 只 stage 该任务触碰的文件（防无关改动破坏回滚保证）。阻塞解除后从下一个 pending 任务续跑。
+
 **工作流**：
 1. 解析任务契约：`intent` / `acceptance` / `forbidden` / `verify_commands` / 文件域
 2. 检查拟议编辑是否触碰受保护治理资产——是则 `[SWARM-YUAN-ACTION-BLOCKED]` 停下
@@ -252,6 +261,19 @@ final_status_owner: external_harness_or_human
   1. `acceptance_result` 存在 fail 或 inconclusive（即 blocking 项）时，不得给 `pass`
   2. `integrity != clean` 或 `contract_audit != aligned` 时，`pass` 无效——降为 `fail`（violation）或 `inconclusive`（suspect/unknown）
   3. 只有 `pass + integrity:clean + contract_audit:aligned` 三轴齐绿才构成可收口结论；收口时把本报告落为 state-machine 的 `verify_evidence`（引用 gate-run#N 或报告路径）
+
+## Composition 协议（角色互调禁止，agent-skills 吸收 2026-08-16）
+
+四权角色是「视角」，不是「编排器」。每个角色在报告末尾自声明组合关系，三件套：
+
+```text
+- Invoke directly when: <用户直接要求的场景>
+- Invoke via: <哪些命令/流程会调起本角色>
+- Do not invoke from another persona: <若想委派其他角色，作为建议写进报告——编排权归主 agent/命令层>
+```
+
+- **铁律：角色不调用角色**（personas do not call other personas）。verifier 想让 security 专项复查 → 写进 `verifier_focus` 建议，由主 agent 决定是否调起，不是自己 spawn。
+- **meta-orchestrator 纯路由层是反模式**：无领域价值的纯转发层 = 两次转述损耗（信息丢失 + 双倍 token）。swarm-yuan 的任务路由（task-methodology-router）保持单层直达，不加编排套娃。
 
 ## Task Contract（任务契约）
 

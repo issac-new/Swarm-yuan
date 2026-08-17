@@ -55,6 +55,12 @@ description: <项目名> 的需求交付全流程技能。当用户...都应使�
 ## 质量门禁
 （核心门禁清单，对应 check 段）
 
+## 常见借口与纠正
+（Rationalizations 两列表：第一人称借口 + 量化反驳，5-8 条，从门禁步骤逐条反推——见 §1.5）
+
+## 假设清单（开工前）
+（写 spec 前显式列假设：需求/架构/范围三维度 + "现在纠正我，否则我按这些假设继续"——见 §1.5）
+
 ## 状态保存与恢复
 （流程状态载体说明）
 
@@ -141,6 +147,33 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 **在目标技能中的落地：**
 - 若目标技能需要导出为便携格式（如 `agent.yaml`），须明确标注"导出 surface，非 authoritative source"
 - 修改导出文件不会修改源文件
+
+### 1.5 反借口表与假设前置（Addy Osmani agent-skills 吸收，2026-08-16）
+
+> 来源与一手素材：`references/agent-skills-methodology.md`（22/24 技能携带反借口表、153 条条目实测）。
+
+**在目标技能中的落地（SKILL.md meta 段新增两个标准节）：**
+
+**① 常见借口与纠正（Rationalizations）**——两列表格，第一人称借口引语 + 量化反驳，置于「质量门禁」与「完成检查表」之间。**生成配方：逐条配对**——对该技能每个门禁/precheck 步骤问"agent 会想什么借口跳过它"，每个值得跳过的步骤配一条反驳（不是自由发挥）。选 5-8 条，从下表按类型选用后项目特化：
+
+| 类型 | 条目示例（完整素材见 agent-skills-methodology §2.2） |
+|------|-----------------------------------------------------|
+| 跳过验证 | "I tested it manually" → Manual testing doesn't persist. Tomorrow's change might break it with no way to know. |
+| 推迟工作 | "I'll write the spec after I code it" → That's documentation, not specification. |
+| 表演性勤奋 | "Let me run the tests again just to be extra sure" → Repeating the same command adds nothing unless the code has changed since.（反证据注水，与 verify_evidence 铁律共振） |
+| LLM 特有 | "It's just LLM output, it's only text" → Treat it like any untrusted input. |
+
+**② 假设清单（开工前）**——写 spec 前显式列出全部假设（**假设是最危险的需求误解形式，因为它无声**），三维度固定 + 结尾箭头句是固定交互协议：
+
+```text
+我正在做的假设：
+1. （需求假设，如：这是 Web 应用而非原生移动端）
+2. （架构假设，如：认证用 session 而非 JWT）
+3. （范围假设，如：只支持现代浏览器）
+→ 现在纠正我，否则我按这些假设继续。
+```
+
+**description 补充纪律**：第三人称动词开头 + 2-4 个"Use when"触发短句；**description 禁含流程步骤**（agent 会照摘要跳过正文——上游一手踩坑教训）；完成检查表每项须可举证（能挂 gate-run#N / 测试输出 / 截图）。
 
 ---
 
