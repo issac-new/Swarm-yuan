@@ -12,6 +12,8 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 > **工具脚本路径注**：`trace-log.sh`/`state-machine.sh`/`memory-writeback.sh` 在**生成器侧**（本仓库/安装态 swarm-yuan 目录）物理位于 `assets/`；在**生成的目标技能侧**经 UNIVERSAL_FILES 映射为 `scripts/`。本文按目标技能路径书写为 `scripts/xxx.sh`；执行**生成流程**（Step 0-8）时应以 `assets/xxx.sh` 路径调用（`cost-report.sh`/`generate-skill.sh`/`self-check.sh` 等生成器工具本就位于 `scripts/`，不受影响）。
 >
 > **口径权威源**：`assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
+>
+> **Q2-heavy 边界注**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）+ warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）已转 AI 自觉判断 / advisory——机械脚本不再假装能判断质量。`GATE_AI_JUDGMENT=1` 时 advisory 档 5 个门禁输出 _ai_hint 提示（不跑机械检查）。边界详见 `docs/q2-heavy-review.md` + `references/generation-flow.md` §WP-Q2H-C。
 
 **★核心能力（v2 增强）**：基于代码结构与调用链路分析，产出**详尽的组件库清单**（全量穷举，非代表性样本）与**编排调用关系及约束**（导入方向/注册顺序/路由挂载/状态所有权/测试边界，每条含代码证据），完善目标技能的研发 skill。方法论见 `references/exploration-guide.md` §C+。
 
