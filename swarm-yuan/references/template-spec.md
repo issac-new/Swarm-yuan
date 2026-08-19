@@ -693,3 +693,30 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 - [ ] 所有 .sh 通过 `bash -n`
 - [ ] frontmatter description 含项目关键词
 - [ ] **工具引用合规**：只引用 GitNexus/graphify/ocr/claude-mem/gsd-core 命令，无重新实现
+
+---
+
+## §X Q2-heavy：机械门禁 vs AI 灵活性的边界（WP-Q2H-A/B/C 落地）
+
+**背景**：Q2 报告（"机械门禁/脚本扫描破坏 AI 灵活性"）的深水区单独评审——54 门禁按"机械信号 vs AI 判断"二分。
+
+**分层结论（54 门禁）：**
+
+| 档 | 数量 | 处置 | 理由 |
+|----|------|------|------|
+| strict | 16 | **不动** | 信号可信误报少（branch/layer/security/sensitive/requirements/rtm/test_evidence/review_record/release_sign 等） |
+| warn | 18 | **5 个降级 advisory**（WP-Q2H-B） | 误报高启发式强（stable_diff/framework/knowledge/metrics/crypto） |
+| advisory | 20 | **5 个转 AI 自觉判断**（WP-Q2H-A） | "质量判断"本质是 AI 看语义不是 grep（cognition/diagram/pr_quality/consistency/link_depth） |
+
+**生成流程边界（WP-Q2H-C）：**
+
+机械脚本只做"出初稿"（模板/嗅探/枚举），AI 做"审 + 判断"。详见 references/generation-flow.md §WP-Q2H-C 表格。
+
+**开关**：
+- `GATE_AI_JUDGMENT=1`——5 个 advisory 门禁转 AI 自觉判断（advisory 不机械跑，输出 _ai_hint）
+- 默认 0 保留机械，向后兼容
+
+**关联文档**：
+- 评审报告：`docs/q2-heavy-review.md`（2026-08-19）
+- 生成流程边界：`references/generation-flow.md` §WP-Q2H-C
+- 门禁分层实现：`assets/precheck.sh` `_ENFORCE_OVERRIDE_K/V` + `assets/gates-advisory.sh` `_ai_hint`

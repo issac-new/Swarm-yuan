@@ -339,3 +339,19 @@ swarm-yuan 用「立法 / 执法 / 司法」三权分立隐喻，不用 pua 的�
 | 评分建议权 | 司法侧独立验收（数据驱动） | 字节数据驱动 + 京东结果导向 |
 
 叙事是压力和视角，不是越权理由。四个 agent 互相独立、不可代位、不可自批自评。
+
+---
+
+## §Y Q2-heavy 边界：机械门禁不破坏 AI 灵活性
+
+**背景**：Q2 报告指出机械门禁/脚本扫描破坏 AI 灵活性。Q2-heavy 评审（D1/D2/D4）单独评审后落地 WP-Q2H-A/B/C：
+
+- **WP-Q2H-A**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）转 AI 自觉判断——`GATE_AI_JUDGMENT=1` 时机械脚本不跑，输出 _ai_hint 提示 AI 自查要点。
+- **WP-Q2H-B**：warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）降级 advisory——误报高启发式强，不再 fail 打断主流程。
+- **WP-Q2H-C**：生成流程边界明确——机械脚本只做"出初稿"（骨架/conf-render/verify_completeness/mark-active/enforce_level），AI 做"审 + 判断"（特征卡填值/框架规律实例化/hooks 适用性/门禁警告采纳）。
+
+**与三权分立的关系**：本边界不是放宽"执法侧/司法侧"的职责分工，而是让"司法侧"（自检/独立验收）聚焦在"信号可信"的门禁上（strict 档 16 个），不再让"假装可机器"的门禁（启发式/误报高）打断 AI 工作流。
+
+**verifier 侧调整**：verifier 跑独立验收时，严格档 16 个门禁 fail → block；warn/advisory 档只报不 block；advisory 档 5 个 AI 自觉判断由 verifier 人读判断（不跑机械脚本）。
+
+**关联**：评审报告 `docs/q2-heavy-review.md`；分层实现 `assets/precheck.sh` `_ENFORCE_OVERRIDE_K/V` + `assets/gates-advisory.sh` `_ai_hint`。

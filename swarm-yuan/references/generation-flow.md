@@ -7,6 +7,37 @@
 > ⓪自检(13运行时) → ⓪.5读取项目知识 → ①探查仓库 → ①.5项目形态判定+组件库+调用链 → ②提取17项特征卡 → ③create骨架 → ④AI填充全部文件 → ④.5框架深化 → ⑤AI配置precheck.conf → ⑤.5 AI生成hooks/commands/MCP → ⑥AI运行门禁 → ⑦.5门禁注入 → ⑦AI写回记忆 → ⑧AI最终检查
 > ```
 
+---
+
+## WP-Q2H-C：机械 vs AI 审 边界（Q2-heavy D4 落地）
+
+**核心原则**：脚本只做"机械出初稿"（模板/嗅探/枚举），AI 做"审 + 判断"。机械脚本不要假装能判断质量，AI 不要重复跑机械流程。
+
+**各环节分工（生成流程 Step 0-8）：**
+
+| Step | 机械（脚本做） | AI 审（AI 做） |
+|------|----------------|-----------------|
+| ⓪ 自检 | self-check.sh 13 运行时检测 | — |
+| ⓪.5 读项目知识 | trace-log 调用记录 | AI 读 AGENTS.md/CLAUDE.md/记忆，**自行提取规则**（extract-feature-cards.sh 只输出模板） |
+| ① 探查仓库 | 三路并行扇出 + 图谱工具调用 | AI 读探查结果，**自行判断结构/规范/代码组织** |
+| ①.5 形态判定+组件库+调用链 | inventory-verify 计数核验 | AI 判断维度适用性（§C+.0 形态判定是 AI 判断，不是脚本） |
+| ② 特征卡 | extract-feature-cards.sh 输出 17 项骨架 | AI **逐特征填具体值**，不靠脚本猜 |
+| ③ create 骨架 | generate-skill.sh 拷 UNIVERSAL_FILES | — |
+| ④ AI 填充全部文件 | — | AI **用真实探查内容替换占位符** |
+| ④.5 框架深化 | framework-evidence.sh 机械 grep 证据 | AI 判断"该框架规律是否适用于本项目"，证据由 AI 写 |
+| ⑤ AI 配置 precheck.conf | conf-render.sh 嗅探+渲染初稿 | AI 审 + 补 `# TODO:model` 清单（语义型变量） |
+| ⑤.5 hooks/commands/MCP | generate-skill.sh 生成 hooks.json/commands/ 模板 | AI **审 hooks 是否适用**（不适用就删对应 hook） |
+| ⑥ AI 运行门禁 | precheck.sh 机械跑门禁 | AI 看 fail/warn 输出，**判断是否要修**（不是所有 warn 都要修） |
+| ⑦.5 门禁注入 | generate-skill.sh --inject-frameworks | — |
+| ⑦ 写回项目记忆 | memory-writeback.sh 落盘 | AI 判断哪些经验值得沉淀 |
+| ⑧ AI 最终检查 | verify_completeness / inventory-verify | AI 终审：清单是否覆盖项目真实形态 |
+
+**红线**：机械脚本只在"信号可信误报少"的领域跑（骨架创建 / conf-render / verify_completeness / mark-active / enforce_level 加载）；其余环节（特征卡填值 / 框架规律实例化 / hooks 适用性 / 门禁警告采纳）必须 AI 判断。
+
+**对应 WP-Q2H-A/B**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）+ warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）已转 AI 自觉判断 / advisory——机械脚本不再跑这些，AI 自行判断是否参考。
+
+---
+
 ## Step 1. 自检
 
 `bash scripts/self-check.sh`（13 个运行时检测+自动安装）
