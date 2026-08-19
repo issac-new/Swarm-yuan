@@ -70,6 +70,7 @@ UNIVERSAL_FILES=(
   "assets/hooks/fail-gate-hook.sh|assets|lite"
   "assets/hooks/setup-loop.sh|assets|standard"
   "assets/hooks/loop-hook.sh|assets|standard"
+  "scripts/project-fingerprint.sh|gen|lite"
   "scripts/self-check.sh|gen|lite"
   "scripts/detect-frameworks.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
@@ -773,6 +774,51 @@ if [[ "${1:-}" == "--render-tools" ]]; then
   exit $?
 fi
 
+# ============================================================
+# --refresh 子命令（WP-Q3-1 自成长机制最小切片：dry-run 报告 + 不实际修改）
+# 用法: bash generate-skill.sh --refresh <skill-dir>
+# 走 project-fingerprint.sh --diff 拿变化报告，加上：
+#   ① 当前 skill 状态（draft/active）+ 上一次 refresh 时间
+#   ② 建议行动（无变化 → 无需刷新；有变化 → --upgrade 详情）
+#   ③ 把当前指纹落盘到 project（新基线）——可选 --commit-fp
+# 红线：仅报告，不改任何文件；不写 reference-manual.md（那是 --upgrade 的活）。
+# ============================================================
+if [[ "${1:-}" == "--refresh" ]]; then
+  [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --refresh <skill-dir> [--commit-fp]"; exit 1; }
+  _rf_dir="$2"; shift 2
+  [[ -d "$_rf_dir" ]] || { echo "✗ skill 目录不存在: $_rf_dir" >&2; exit 1; }
+  [[ -f "$_rf_dir/SKILL.md" ]] || { echo "✗ SKILL.md 不存在: $_rf_dir" >&2; exit 1; }
+  # 项目根：从 precheck.conf 拿
+  _rf_conf="$_rf_dir/scripts/precheck.conf"
+  [[ -f "$_rf_conf" ]] || { echo "✗ scripts/precheck.conf 不存在，无法定位项目根" >&2; exit 1; }
+  _rf_proj=$( (set +u; . "$_rf_conf" 2>/dev/null; printf '%s' "${PROJECT_DIR:-}") )
+  [[ -n "$_rf_proj" && -d "$_rf_proj" ]] || { echo "✗ precheck.conf 中 PROJECT_DIR 无效: ${PROJECT_DIR:-（空）}" >&2; exit 1; }
+  _rf_proj=$(cd "$_rf_proj" && pwd)
+  # fingerprint 脚本路径
+  _rf_fp="$(cd "$(dirname "$0")" && pwd)/project-fingerprint.sh"
+  [[ -x "$_rf_fp" || -f "$_rf_fp" ]] || { echo "✗ project-fingerprint.sh 缺失: $_rf_fp" >&2; exit 1; }
+  # 跑 diff
+  _rf_out=$(bash "$_rf_fp" "$_rf_proj" --diff 2>&1) || true
+  # 输出报告
+  echo "## --refresh dry-run（skill=$(basename "$_rf_dir")，project=${_rf_proj}）"
+  _rf_status=$(grep -m1 '^status:' "$_rf_dir/SKILL.md" 2>/dev/null | sed 's/^status: *//')
+  echo "  当前 skill 状态: ${_rf_status:-无 status 字段}"
+  if printf '%s\n' "$_rf_out" | LC_ALL=C grep -q '⚠ 项目源码已变化'; then
+    echo "  → 检测到变化（建议跑 --upgrade）："
+    printf '%s\n' "$_rf_out" | LC_ALL=C grep -v '^⚠' | LC_ALL=C grep -v '^  →' | LC_ALL=C grep -v '^$' | LC_ALL=C sed 's/^/    /'
+    # --commit-fp：把当前指纹落盘为新基线
+    if [[ "${1:-}" == "--commit-fp" ]]; then
+      bash "$_rf_fp" "$_rf_proj" --write >/dev/null
+      echo "  ✓ --commit-fp：已把当前指纹落盘为新基线（$_rf_proj/.swarm-yuan/project-fingerprint）"
+    fi
+    exit 0
+  else
+    echo "  ✓ 无变化（文件骨架指纹未变）"
+    printf '%s\n' "$_rf_out" | LC_ALL=C grep -E '^\s*✓' | head -1 || true
+    exit 0
+  fi
+fi
+
 # ---- 检测运行环境 ----
 # 默认目标：项目内 .claude/skills/（"为目标项目生成 skill"名副其实）。
 # 历史行为（2026-07-21 前）：项目内无 .claude/skills 时 fallback 到 $HOME/.claude/skills 全局目录，
@@ -1473,7 +1519,7 @@ if [[ "$PROFILE" != "lite" ]]; then
 _write_if_absent "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
 {
   "hooks": {
-    "SessionStart": [{"matcher": "startup|clear|compact", "command": "echo \"→ [hook:SessionStart] 调用 state-machine.sh status（阶段状态追踪）\"; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" restore-journal 2>/dev/null || true"}],
+    "SessionStart": [{"matcher": "startup|clear|compact", "command": "echo \"→ [hook:SessionStart] 调用 state-machine.sh status（阶段状态追踪）\"; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" restore-journal 2>/dev/null || true; _fp=\"${CLAUDE_PLUGIN_ROOT:-.}/scripts/project-fingerprint.sh\"; if [[ -f \"$_fp\" ]]; then _proj=$( (set +u; . \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.conf\" 2>/dev/null; printf '%s' \"${PROJECT_DIR:-}\") ); if [[ -n \"$_proj\" && -d \"$_proj\" ]]; then _fp_out=$(bash \"$_fp\" \"$_proj\" --diff --quiet 2>/dev/null || true); if printf '%s\\n' \"$_fp_out\" | LC_ALL=C grep -q '⚠'; then echo \"⚠ [hook:SessionStart] 项目源码指纹已变化（建议 bash scripts/generate-skill.sh --refresh 查看）\"; fi; fi; fi"}],
     "PreCompact": [{"matcher": "*", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" dump-journal 2>/dev/null || true", "timeout": 5}],
     "PreToolUse": [{"matcher": "Write|Edit", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --scope >/dev/null 2>&1 && echo \"→ [hook:PreToolUse] 调用 precheck --scope：✓ pass\" || echo \"→ [hook:PreToolUse] 调用 precheck --scope：✗ FAIL——运行 bash scripts/precheck.sh --scope 查看详情\""}, {"matcher": "Write|Edit|MultiEdit|Bash|WebSearch|WebFetch", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/integrity-guard.sh\" 2>/dev/null || true", "timeout": 5}, {"matcher": "Write|Edit|MultiEdit|Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/fail-gate-hook.sh\" 2>/dev/null || true", "timeout": 5}],
     "PostToolUse": [{"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/failure-detector.sh\" 2>/dev/null || true", "timeout": 5}, {"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/fail-gate-hook.sh\" 2>/dev/null || true", "timeout": 5}],
