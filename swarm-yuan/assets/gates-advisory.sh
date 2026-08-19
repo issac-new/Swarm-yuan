@@ -127,7 +127,7 @@ check_consistency_cross() {
   else
     # 解析术语表：每行 "业务名 <TAB> 代码标识符" 或 "| 业务名 | 代码标识符 |"
     # 跳过表头行（恰好是"业务名"）与分隔行（---）
-    local entries; entries=$(awk '
+    local entries; entries=$(LC_ALL=C awk '
       /^\|/ {
         gsub(/^\||\|$/,""); n=split($0,a,"|");
         if (n>=2) {
@@ -160,7 +160,7 @@ check_consistency_cross() {
     warn "数据所有权文件不存在：${SOR_FILE}（TOGAF 要求明确每个数据实体的 System of Record，避免双写不一致）"
   else
     # 解析 SoR 表：| 实体 | 权威源 | 允许读 | 允许写 |
-    local sor_entries; sor_entries=$(awk '
+    local sor_entries; sor_entries=$(LC_ALL=C awk '
       /^\|/ && !/^\|[-: ]+\|/ && !/实体|实体名/ {
         gsub(/^\||\|$/,""); n=split($0,a,"|");
         if (n>=2) { gsub(/^ +| +$/,"",a[1]); gsub(/^ +| +$/,"",a[2]); if(a[1]!="") print a[1]"\t"a[2] }
@@ -266,7 +266,7 @@ check_cognition() {
   echo "  ①概念定义（是什么）"
   local concept_score=0
   if [[ -n "$GLOSSARY_FILE" && -f "$GLOSSARY_FILE" ]]; then
-    local term_count; term_count=$(awk '/^\|/ && !/^\|[-: ]+\|/ && !/业务名|代码/ {c++} END{print c+0}' "$GLOSSARY_FILE" 2>/dev/null || echo 0)
+    local term_count; term_count=$(LC_ALL=C awk '/^\|/ && !/^\|[-: ]+\|/ && !/业务名|代码/ {c++} END{print c+0}' "$GLOSSARY_FILE" 2>/dev/null || echo 0)
     echo "    业务术语表：${GLOSSARY_FILE}（${term_count} 个概念定义）"
     [[ "$term_count" -gt 0 ]] && concept_score=$((concept_score+1))
   else
@@ -276,7 +276,7 @@ check_cognition() {
   local rm_file
   rm_file=$(_first_existing_file "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md")
   if [[ -n "$rm_file" ]]; then
-    local unit_count; unit_count=$(awk '/^#+ .*[§4-6].*(组件|依赖链路|接口)/{in_sec=1} /^#+ /&&!/[§4-6]/{in_sec=0} in_sec&&/^\|/&&!/^\|[-: ]+\|/{c++} END{print c+0}' "$rm_file" 2>/dev/null || echo 0)
+    local unit_count; unit_count=$(LC_ALL=C awk '/^#+ .*[§4-6].*(组件|依赖链路|接口)/{in_sec=1} /^#+ /&&!/[§4-6]/{in_sec=0} in_sec&&/^\|/&&!/^\|[-: ]+\|/{c++} END{print c+0}' "$rm_file" 2>/dev/null || echo 0)
     echo "    稳定单元清单：${rm_file}（${unit_count} 个单元登记）"
     [[ "$unit_count" -gt 0 ]] && concept_score=$((concept_score+1))
   else
@@ -335,7 +335,7 @@ check_cognition() {
   # 术语表标识符 vs 代码存在性（概念↔空间映射）
   if [[ -n "$GLOSSARY_FILE" && -f "$GLOSSARY_FILE" && ${#WRITABLE_DIRS[@]} -gt 0 ]]; then
     local drift_count=0
-    local entries; entries=$(awk '
+    local entries; entries=$(LC_ALL=C awk '
       /^\|/ {
         gsub(/^\||\|$/,""); n=split($0,a,"|");
         if (n>=2) { gsub(/^ +| +$/,"",a[1]); gsub(/^ +| +$/,"",a[2]);
