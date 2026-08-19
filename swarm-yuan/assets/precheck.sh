@@ -538,9 +538,15 @@ GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review -
 # 手动覆盖：在下方 _ENFORCE_OVERRIDE 数组登记（优先级高于自动生成的 conf）。
 _ENFORCE_OVERRIDE_K=()   # 手动覆盖的 check_<fn> 名（与 _ENFORCE_OVERRIDE_V 同下标对齐）
 _ENFORCE_OVERRIDE_V=()   # 对应的 enforce_level（strict|warn|advisory）
-# 示例（需用时取消注释）：
-# _ENFORCE_OVERRIDE_K+=(check_review)
-# _ENFORCE_OVERRIDE_V+=(strict)
+# WP-Q2H-B（Q2-heavy D2 实施）：warn 档 5 个误报高的门禁降级 advisory（Q2 报告）
+#   理由：这些门禁机械信号启发式强、误报高，机械跑会打断主流程；
+#   转 advisory 不阻断 fail，AI 自行判断是否参考。
+#   未降级：consistency_cross（已 advisory）；sast_deep 函数内未装时 warn 行为已合理。
+_ENFORCE_OVERRIDE_K+=(check_stable_diff);   _ENFORCE_OVERRIDE_V+=(advisory)
+_ENFORCE_OVERRIDE_K+=(check_framework);     _ENFORCE_OVERRIDE_V+=(advisory)
+_ENFORCE_OVERRIDE_K+=(check_knowledge);     _ENFORCE_OVERRIDE_V+=(advisory)
+_ENFORCE_OVERRIDE_K+=(check_metrics);       _ENFORCE_OVERRIDE_V+=(advisory)
+_ENFORCE_OVERRIDE_K+=(check_crypto);        _ENFORCE_OVERRIDE_V+=(advisory)
 
 # _enforce_of：查门禁的 enforce_level。$1=check_<fn>，stdout 输出 strict|warn|advisory。
 # 优先级：_ENFORCE_OVERRIDE > gate-enforce-level.conf > 默认 warn（未登记走 warn，保守）。
