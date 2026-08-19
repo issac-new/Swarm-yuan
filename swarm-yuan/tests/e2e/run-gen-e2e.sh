@@ -38,10 +38,18 @@ for f in \
   "scripts/precheck.sh" "scripts/gates-strict.sh" "scripts/gates-warn.sh" "scripts/gates-advisory.sh" \
   "scripts/precheck.conf" "scripts/precheck.arch.conf" \
   "assets/spec-template.md" "assets/task-type-gates.conf" \
-  "assets/hooks/failure-detector.sh" "assets/hooks/integrity-guard.sh"
+  "assets/hooks/failure-detector.sh" "assets/hooks/integrity-guard.sh" \
+  "assets/hooks/fail-gate-hook.sh"
 do
   [[ -f "${SKILL_DIR}/${f}" ]] && ok "骨架文件存在: ${f}" || bad "骨架文件缺失: ${f}"
 done
+
+# WP-Enforce1：fail-gate-hook 挂接双事件 + conf 白名单默认空（捕获门随产物附带）
+grep -q 'fail-gate-hook' "${SKILL_DIR}/hooks/hooks.json" 2>/dev/null \
+  && ok "hooks.json 挂接 fail-gate-hook.sh" || bad "hooks.json 未挂接 fail-gate-hook.sh"
+grep -q '^GATE_ENFORCE_DENY=""' "${SKILL_DIR}/scripts/precheck.conf" 2>/dev/null \
+  && ok "precheck.conf 含 GATE_ENFORCE_DENY 默认空（捕获门默认关闭，向后兼容）" \
+  || bad "precheck.conf 缺 GATE_ENFORCE_DENY 默认空行"
 
 # --- 3. hooks.json / settings.local.json / .mcp.json 是合法 JSON ---
 for jf in "hooks/hooks.json" "settings.local.json" ".mcp.json"; do

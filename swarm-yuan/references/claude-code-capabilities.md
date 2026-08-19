@@ -141,6 +141,16 @@ ECC 的 hook 系统有 4 层治理——生成的目标技能的 hooks.json 可�
 }
 ```
 
+### 门禁失败捕获门 fail-gate-hook.sh（WP-Enforce1，2026-08-18）
+
+生成的目标技能附带 `scripts/fail-gate-hook.sh`（PreToolUse + PostToolUse 双挂）——把 precheck fail 从「输出红字」升级为「真拦截」：
+
+- **默认关闭**：`precheck.conf` 的 `GATE_ENFORCE_DENY=""`（空）时完全静默，行为与既有逐字节一致
+- **白名单驱动**：配置 `GATE_ENFORCE_DENY="security,sensitive"`（或 `all`）后，白名单门禁 fail 会被 PostToolUse 捕获（记 `.swarm-yuan/.gate-fail-flag`），此后 Write/Edit/MultiEdit 被 deny JSON 硬拦截，直到 precheck 重跑通过自动解锁
+- **两道保险防误伤**：draft 期（骨架期门禁红是常态）自动关闭；改 `.swarm-yuan/` conf 与 precheck.sh 本身豁免（修门禁配置的通道）
+- **与 integrity-guard 的分工**：integrity-guard 管「别作弊」（受保护治理资产 deny 清单），fail-gate 管「别绕过」（门禁 fail 未修复禁继续改文件）——两层 hook 正交
+- 开启是 UserChallenge 类决策（须决策落痕）
+
 ### MCP Health Check（ECC v2.0.0）
 
 ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：

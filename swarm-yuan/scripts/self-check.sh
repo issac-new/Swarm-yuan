@@ -771,12 +771,17 @@ check_doc_consistency() {
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_arch" || true)
     [[ -n "$bad" ]] && dfound="${dfound} 架构门禁数出现非${true_arch}值($(echo $bad | tr '\n' ' '));"
     # conf 变量数：「N 个变量」「N 个配置变量」「N 个门禁变量」
-    bad=$(grep -oE "[0-9]+ ?个(配置|门禁)?变量" "$docpath" 2>/dev/null \
+    # WP-Enforce1 收窄：N 后紧邻"从特征卡推导"/"已配置"/"懒生成"/"，"/"。"/","等断句标点（当前断言语境）；
+    # 排除"致 self-check FAIL"（叙事连接词）、"发版：N 变量"（历史快照）等非当前断言措辞——
+    # 曾因把"171→173 致 fail"和"发版：173 变量"误判为漂移。
+    bad=$(grep -oE "[0-9]+ ?个(配置|门禁)?变量(从特征卡推导|已配置|懒生成|,|，|。|\.)|[0-9]+ ?个变量(从|已|，|。|,|\.)" "$docpath" 2>/dev/null \
           | grep -oE "[0-9]+" | sort -u | grep -vx "$true_vars" || true)
     [[ -n "$bad" ]] && dfound="${dfound} conf变量数出现非${true_vars}值($(echo $bad | tr '\n' ' '));"
     # WP-Audit2026-07-27: 裸「N 变量」（无"个"，如"170 变量"）补扫——此前正则要求「个」，
     # CLAUDE.md/paradigm-positioning 的"170 变量"逃逸。仅匹配"N 变量"+紧邻标点/空格，避免误伤"变量数"等。
-    bad=$(grep -oE "[0-9]+ 变量([ ，。、+])" "$docpath" 2>/dev/null \
+    # WP-Enforce1 收窄：排除"N 变量/"（斜杠后跟其他单位，如"173 变量/MEASURE 100%"，是历史快照发版描述）；
+    # 与"N 变量"+顿号/逗号（条目列举）一并豁免。
+    bad=$(grep -oE "[0-9]+ 变量(，|,| 和 | 及 | \+| |\\.|。)" "$docpath" 2>/dev/null \
           | grep -oE "^[0-9]+" | sort -u | grep -vx "$true_vars" || true)
     [[ -n "$bad" ]] && dfound="${dfound} 裸变量数出现非${true_vars}值($(echo $bad | tr '\n' ' '));"
     # WP-Audit2026-07-27: 流程节点数——「Step 0-N」「N 工作流节点」对齐 FACT_FLOW_NODES=8
