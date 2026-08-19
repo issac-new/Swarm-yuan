@@ -118,6 +118,9 @@ if [[ "$IS_ERROR" == "false" ]]; then
       "$ts" "$PEAK_LEVEL" "$COUNT" >> "$ERROR_HISTORY_FILE" 2>/dev/null || true
     echo "0" > "$COUNTER_FILE"
     echo "0" > "$PEAK_LEVEL_FILE"
+    # WP-Q2-lite：突破时清 same_sig_count，避免下次同签名误判
+    echo "0" > "${STATE_DIR}/.same_sig_count" 2>/dev/null || true
+    rm -f "${STATE_DIR}/.last_sig_hash" 2>/dev/null || true
     cat << EOF
 [swarm-yuan 突破 ✨ — 降压 from L${PEAK_LEVEL}]
 
@@ -133,9 +136,11 @@ if [[ "$IS_ERROR" == "false" ]]; then
 EOF
     exit 0
   fi
-  # 普通成功：重置计数器，不重置峰值
+  # 普通成功：重置计数器，不重置峰值；同时清 same_sig_count（WP-Q2-lite 修复）
   if [[ "$COUNT" -gt 0 ]]; then
     echo "0" > "$COUNTER_FILE"
+    echo "0" > "${STATE_DIR}/.same_sig_count" 2>/dev/null || true
+    rm -f "${STATE_DIR}/.last_sig_hash" 2>/dev/null || true
   fi
   exit 0
 fi
@@ -148,6 +153,41 @@ echo "$COUNT" > "$COUNTER_FILE" 2>/dev/null || exit 0
 ERROR_SIG=$(echo "$TOOL_RESULT" | grep -iE 'error|fatal|Traceback|Exception|FAILED|panic|refused|denied|not found|cannot|unable|timeout' 2>/dev/null | head -1 | cut -c1-200)
 [[ -z "$ERROR_SIG" ]] && ERROR_SIG=$(echo "$TOOL_RESULT" | head -1 | cut -c1-200)
 [[ -z "$ERROR_SIG" ]] && ERROR_SIG="exit_code_${EXIT_CODE}"
+
+# WP-Q2-lite：提前定义 _sig_hash（同签名去重与 SPINNING 共用）
+_sig_hash() {
+  local s="$1"
+  if command -v md5sum >/dev/null 2>&1; then
+    printf '%s' "$s" | md5sum | cut -c1-8
+  elif command -v md5 >/dev/null 2>&1; then
+    printf '%s' "$s" | md5 | cut -c1-8
+  elif command -v cksum >/dev/null 2>&1; then
+    printf '%s' "$s" | cksum | awk '{printf "%08x", $1}'
+  else
+    printf '%s' "$s" | cut -c1-8
+  fi
+}
+
+# WP-Q2-lite：同签名累加（在 225 行 exit 0 之前，保证 run 1 也累加）
+_cur_hash=$(_sig_hash "$ERROR_SIG") 2>/dev/null || _cur_hash="$ERROR_SIG"
+if [[ ! -f "${STATE_DIR}/.last_sig_hash" ]]; then
+  echo "$_cur_hash" > "${STATE_DIR}/.last_sig_hash"
+  echo "1" > "${STATE_DIR}/.same_sig_count"
+  SAME_SIG_COUNT=1
+else
+  _prev_hash=$(cat "${STATE_DIR}/.last_sig_hash" 2>/dev/null || echo "")
+  if [[ "$_prev_hash" == "$_cur_hash" ]]; then
+    SAME_SIG_COUNT_FILE="${STATE_DIR}/.same_sig_count"
+    _prev_count=$(cat "$SAME_SIG_COUNT_FILE" 2>/dev/null || echo "1")
+    [[ -z "$_prev_count" ]] && _prev_count=1
+    SAME_SIG_COUNT=$(( _prev_count + 1 ))
+    echo "$SAME_SIG_COUNT" > "$SAME_SIG_COUNT_FILE"
+  else
+    echo "$_cur_hash" > "${STATE_DIR}/.last_sig_hash"
+    echo "1" > "${STATE_DIR}/.same_sig_count"
+    SAME_SIG_COUNT=1
+  fi
+fi
 
 # 追加错误历史（保留最近 10 条）
 ts_epoch="$(date +%s 2>/dev/null || printf '0')"
@@ -162,19 +202,7 @@ PATTERN_ANALYSIS=""
 if [[ "$COUNT" -ge 3 ]]; then
   # 纯 bash 模式分析（无 python3 依赖的降级路径）
   # 取最近 3 条签名，算 MD5（md5sum 优先，降级 md5，再降级 cksum，再降级首 40 字符）
-  _sig_hash() {
-    local s="$1"
-    if command -v md5sum >/dev/null 2>&1; then
-      printf '%s' "$s" | md5sum | cut -c1-8
-    elif command -v md5 >/dev/null 2>&1; then
-      printf '%s' "$s" | md5 | cut -c1-8
-    elif command -v cksum >/dev/null 2>&1; then
-      printf '%s' "$s" | cksum | awk '{printf "%08x", $1}'
-    else
-      # 兜底：取首 8 字符
-      printf '%s' "$s" | cut -c1-8
-    fi
-  }
+  # _sig_hash 已在 ERROR_SIG 提取后定义（WP-Q2-lite 上移）
   # 读最近 3 条签名
   recent_sigs=()
   while IFS= read -r line; do
@@ -252,6 +280,23 @@ $(echo "$PATTERN_DETAIL" | tr '|' '\n' | sed 's/^/> · /')
 fi
 
 # ===== 按压力等级注入（swarm-yuan 叙事，不用 PUA 话术）=====
+# WP-Q2-lite 修复 tone + 去重：
+#   ① 同签名连续 3+ 次 → 仅第 3 次起发 SPINNING brief（不再发完整 L2/L3/L4 块；完整诊断已在 L2 给出）
+#   ② tone 软化：L3 改"361 考核"为"换路线审问"（删 3.25/毕业话术），L4 改"毕业警告"为"交接报告"
+
+# 同签名 3+ 次 → 仅一行 brief（不再发完整 L2/L3/L4 块；WP-Q2-lite 修复）
+# 设计：同签名第 1 次 → 无干预；第 2 次 → L1 完整块；第 3 次起 → SPINNING brief（完整诊断已在 L2 给出，不再重复）
+if [[ "${SAME_SIG_COUNT:-1}" -ge 3 ]]; then
+  cat << EOF
+[swarm-yuan SPINNING brief — 同一错误第 ${SAME_SIG_COUNT} 次]
+
+错误签名重复 ${SAME_SIG_COUNT} 次（hash=${_cur_hash}），完整诊断已在第 2 次给出，不再重复。
+强制：换一个本质不同的策略再执行下一个 Bash 调用。
+swarm-yuan 铁律：改同一个 conf 变量/同一个门禁 ≠ 换策略，你需要本质不同的方案。
+EOF
+  exit 0
+fi
+
 if [[ "$COUNT" -eq 2 ]]; then
   cat << EOF
 [swarm-yuan L1 — 连续失败检测]
@@ -267,12 +312,12 @@ swarm-yuan 纪律：
 EOF
 elif [[ "$COUNT" -eq 3 ]]; then
   cat << EOF
-[swarm-yuan L2 — 灵魂拷问]
+[swarm-yuan L2 — 根因七问]
 
 连续 3 次失败。你的底层逻辑是什么？
 ${PATTERN_BLOCK}
 
-强制动作（7 项检查清单，借鉴 pua L3 纪律）：
+强制动作（7 项检查清单）：
 - [ ] 逐字读完失败信号了吗？
 - [ ] 用工具搜索过核心问题了吗？
 - [ ] 读过失败位置的原始上下文了吗（源码 50 行，不是摘要）？
@@ -286,29 +331,28 @@ swarm-yuan 门禁纪律：conf 变量改不动 → 跑 conf-render.sh 初稿；
 EOF
 elif [[ "$COUNT" -eq 4 ]]; then
   cat << EOF
-[swarm-yuan L3 — 361 考核]
+[swarm-yuan L3 — 换路线审问]
 
-连续 4 次失败。慎重考虑决定给你 3.25。这个 3.25 是对你的激励。
+连续 4 次失败。你在改同一个变量/同一个门禁吗？退回需求本身质疑。
 ${PATTERN_BLOCK}
 
 强制：完成上方 7 项检查清单后才能继续。
-如果仍在改同一个 conf 变量/同一个门禁片段——停下来，退回需求本身质疑。
 git log + git diff 检查：你是否在重复上一轮的改动？
 EOF
 else
   # COUNT >= 5
   cat << EOF
-[swarm-yuan L4 — 毕业警告]
+[swarm-yuan L4 — 交接报告]
 
-连续 ${COUNT} 次失败。别的模型都能解决。你可能就要毕业了。
+连续 ${COUNT} 次失败。可能确实卡在边界条件上（需外部权限/根本性需求变更）。
 ${PATTERN_BLOCK}
 
-拼命模式：
-1. 退回需求本身——你确定在解决正确的问题吗？
-2. 列出已排除的可能性 + 已验证的事实 + 缩小范围
-3. 如果真的不可能（需外部权限/根本性需求变更），输出结构化失败报告：
-   已验证事实 + 已排除可能 + 缩小范围 + 推荐下一步 + 交接信息
-   （这不是「我不行」，这是「问题的边界在这里」——有尊严的 3.25）
+输出结构化失败报告：
+- 已验证事实（你确认成立的事）
+- 已排除可能性（已试过不工作的方案）
+- 缩小范围（问题最可能的位置）
+- 推荐下一步（需要谁/什么权限/什么变更）
+- 交接信息（下个接手者最需要知道的 3 件事）
 EOF
 fi
 
