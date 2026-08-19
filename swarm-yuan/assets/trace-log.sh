@@ -23,6 +23,8 @@ NODE=""; ACTOR=""; TOOL=""; STATUS="started"; NOTE=""
 DECISION_MODE=0; D_TYPE=""; D_SUGGESTION=""; D_USER_ACTION=""; D_RATIONALE=""
 D_ALTERNATIVES=""; D_MISSING_CONTEXT=""; D_COST_IF_WRONG=""; D_PHASE=""
 D_REVERSIBILITY=""; D_CONFIDENCE=""
+# --key-node 模式变量（WP-Q2-lite 关键节点化）
+KEY_NODE_MODE=0; KEY_NODE_NAME=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --node)   NODE="${2:-}";   shift 2 ;;
@@ -30,6 +32,7 @@ while [[ $# -gt 0 ]]; do
     --tool)   TOOL="${2:-}";   shift 2 ;;
     --status) STATUS="${2:-}"; shift 2 ;;
     --note)   NOTE="${2:-}";   shift 2 ;;
+    --key-node) KEY_NODE_MODE=1; KEY_NODE_NAME="${2:-}"; shift 2 ;;
     --decision)  DECISION_MODE=1; shift ;;
     --type)      D_TYPE="${2:-}"; shift 2 ;;
     --suggestion) D_SUGGESTION="${2:-}"; shift 2 ;;
@@ -44,13 +47,43 @@ while [[ $# -gt 0 ]]; do
     *) echo "未知参数: $1" >&2
        echo "Usage: bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]" >&2
        echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--rationale <理由>] [--phase <阶段>] [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [--alternatives <备选>] [--missing-context <缺失上下文>] [--cost-if-wrong <代价>]" >&2
+       echo "       bash trace-log.sh --key-node <节点名> [--actor <谁>] [--status started|done|fail] [--note <说明>]  # WP-Q2-lite 关键节点化（八节点关键调用看板）" >&2
        exit 1 ;;
   esac
 done
-if [[ "$DECISION_MODE" -eq 0 && -z "$TOOL" ]]; then
+if [[ "$DECISION_MODE" -eq 0 && -z "$TOOL" && "$KEY_NODE_MODE" -eq 0 ]]; then
   echo "Usage: bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]" >&2
   echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [...]" >&2
+  echo "       bash trace-log.sh --key-node <节点名> [--actor <谁>] [--status started|done|fail] [--note <说明>]" >&2
   exit 1
+fi
+
+# --key-node 模式（WP-Q2-lite 关键节点化）：落盘 .swarm-yuan/key-nodes.jsonl
+# 八节点视角的"关键调用看板"——trace.jsonl 是全链路流水，key-nodes.jsonl 是节点级关键调用记录。
+# 用法：bash trace-log.sh --key-node "①探查仓库" --actor "swarm-yuan/ai" --status started --note "三路并行+图谱工具"
+#       bash trace-log.sh --key-node "⑦写回项目记忆" --status done --note "memory-writeback.sh"
+if [[ "$KEY_NODE_MODE" -eq 1 ]]; then
+  if [[ -z "$KEY_NODE_NAME" ]]; then
+    echo "⚠ --key-node 缺节点名，降级记录（exit 0 不阻塞）" >&2
+    exit 0
+  fi
+  STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
+  if mkdir -p "$STATE_DIR" 2>/dev/null; then
+    ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    # JSON 最小转义
+    _esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n'; }
+    _kn_line=$(printf '{"ts":"%s","key_node":"%s","actor":"%s","status":"%s","note":"%s"}' \
+      "$ts" "$(_esc "$KEY_NODE_NAME")" "$(_esc "${ACTOR:-swarm-yuan/ai}")" \
+      "$(_esc "$STATUS")" "$(_esc "$NOTE")")
+    if ! printf '%s\n' "$_kn_line" >> "$STATE_DIR/key-nodes.jsonl" 2>/dev/null; then
+      echo "⚠ trace-log: key-nodes.jsonl 落盘失败（不阻塞）" >&2
+    else
+      echo "→ [关键节点] ${KEY_NODE_NAME} · ${ACTOR:-swarm-yuan/ai} · ${STATUS}${NOTE:+ — ${NOTE}}"
+    fi
+  else
+    echo "⚠ trace-log: 无法创建 ${STATE_DIR}（不阻塞）" >&2
+  fi
+  exit 0
 fi
 # --decision 模式必填校验（缺则降级记录，永不 fail 阻塞主流程）
 if [[ "$DECISION_MODE" -eq 1 ]]; then
