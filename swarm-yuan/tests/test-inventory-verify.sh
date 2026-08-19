@@ -64,4 +64,83 @@ o1="$(bash "$SH" "$TMP/proj" --skill-dir "$TMP/skill" --form backend --tsv 2>/de
 o2="$(bash "$SH" "$TMP/proj" --skill-dir "$TMP/skill" --form backend --tsv 2>/dev/null)"
 [[ "$o1" == "$o2" ]] && ok "确定性 byte-identical" || bad "两次输出不一致"
 
+# --- 态 6：WP-Q1A --path-check：§4 表格登记路径在仓库中不存在 → HALLUCINATION ---
+mkdir -p "$TMP/proj6/src" "$TMP/skill6/references" "$TMP/skill6/scripts"
+printf 'router.get("/a", h)\n' > "$TMP/proj6/src/c.ts"
+printf 'class OrderService:\n    pass\n' > "$TMP/proj6/src/order_svc.py"
+cat > "$TMP/skill6/references/reference-manual.md" <<'EOF'
+## §4 组件清单
+
+| 业务名 | 路径 | 端点 | 说明 |
+|--------|------|------|------|
+| 订单服务 | `src/order_svc.py` | /api/orders | 真实存在 |
+| 幽灵模块 | `src/ghost_module.py` | /api/ghost | 不存在（应被检出） |
+EOF
+echo "PROJECT_FORM=backend" > "$TMP/skill6/scripts/precheck.conf"
+out="$(bash "$SH" "$TMP/proj6" --skill-dir "$TMP/skill6" --form backend --tsv --path-check 2>/dev/null)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态6 exit 0（path-check 是 fail-open 输出，不阻断 exit）" || bad "态6 exit=$rc"
+echo "$out" | grep -qF 'HALLUCINATION	清单登记路径不存在: src/ghost_module.py' && ok "态6 HALLUCINATION 行命中" || bad "态6 未检出 ghost_module.py"
+# 真实存在路径不应出 HALLUCINATION
+echo "$out" | grep -qF 'HALLUCINATION' && echo "$out" | grep -vF 'ghost_module.py' | grep -qF 'HALLUCINATION' && bad "态6 误伤真实路径" || ok "态6 仅幽灵路径被命中"
+
+# --- 态 7：WP-Q1A --stability-audit：标注「禁止改」但近 90 天有 churn → STABILITY_WARN ---
+mkdir -p "$TMP/proj7/src" "$TMP/skill7/references" "$TMP/skill7/scripts"
+cd "$TMP/proj7" && git init -q 2>/dev/null && git add -A && git -c user.email=t@t -c user.name=t commit -qm "init" >/dev/null 2>&1 || true
+printf 'def a(): pass\n' > "$TMP/proj7/src/payment.py"
+cd "$TMP/proj7" && git add -A && git -c user.email=t@t -c user.name=t commit -qm "touch payment.py" 2>/dev/null
+cd "$TMP/proj7" 2>/dev/null && touch 'def a(): pass\ndef b(): pass\n' > src/payment.py && git add -A && git -c user.email=t@t -c user.name=t commit -qm "touch payment.py again" 2>/dev/null
+cd "$(dirname "${0}")/.." || exit 1
+cat > "$TMP/skill7/references/reference-manual.md" <<'EOF'
+## §4 组件清单
+
+| 业务名 | 路径 | 说明 |
+|--------|------|------|
+| 支付服务 | `src/payment.py` | 支付（禁止改） |
+EOF
+echo "PROJECT_FORM=backend" > "$TMP/skill7/scripts/precheck.conf"
+out="$(bash "$SH" "$TMP/proj7" --skill-dir "$TMP/skill7" --form backend --tsv --stability-audit 2>/dev/null)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态7 exit 0（stability-audit 是 advisory，永不 fail）" || bad "态7 exit=$rc"
+echo "$out" | grep -qE 'STABILITY_WARN.*src/payment.py.*禁止改但近 90 天变更' && ok "态7 STABILITY_WARN 命中（禁止改 vs churn）" || bad "态7 未检出 STABILITY_WARN"
+
+# --- 态 8：WP-Q1A --stability-audit：标注「稳定」但 fan-in=0 → STABILITY_WARN ---
+mkdir -p "$TMP/proj8/src" "$TMP/skill8/references" "$TMP/skill8/scripts"
+printf 'def x(): pass\n' > "$TMP/proj8/src/standalone.py"
+cd "$TMP/proj8" && git init -q 2>/dev/null && git add -A && git -c user.email=t@t -c user.name=t commit -qm "init" >/dev/null 2>&1
+cd "$(dirname "${0}")/.." || exit 1
+cat > "$TMP/skill8/references/reference-manual.md" <<'EOF'
+## §4 组件清单
+
+| 业务名 | 路径 | 说明 |
+|--------|------|------|
+| 单例组件 | `src/standalone.py` | 独立模块【稳定】 |
+EOF
+echo "PROJECT_FORM=backend" > "$TMP/skill8/scripts/precheck.conf"
+out="$(bash "$SH" "$TMP/proj8" --skill-dir "$TMP/skill8" --form backend --tsv --stability-audit 2>/dev/null)"; rc=$?
+echo "$out" | grep -qE 'STABILITY_WARN.*src/standalone.py.*fan-in=0' && ok "态8 STABILITY_WARN 命中（稳定 vs fan-in=0）" || bad "态8 未检出 STABILITY_WARN: $out"
+
+# --- 态 9：WP-Q1A §10/§11 等非 §4/§6/§9 段不应被抽到（避免错纳）---
+mkdir -p "$TMP/proj9/src" "$TMP/skill9/references" "$TMP/skill9/scripts"
+printf 'def y(): pass\n' > "$TMP/proj9/src/in_ten.py"
+cd "$TMP/proj9" && git init -q 2>/dev/null && git add -A && git -c user.email=t@t -c user.name=t commit -qm "init" >/dev/null 2>&1
+cd "$(dirname "${0}")/.." || exit 1
+cat > "$TMP/skill9/references/reference-manual.md" <<'EOF'
+## §4 组件清单
+
+| 业务名 | 路径 | 说明 |
+|--------|------|------|
+| A | `src/in_ten.py` | 应被抽 |
+
+## §10 多余节
+
+| 业务名 | 路径 | 说明 |
+|--------|------|------|
+| Z | `src/in_ten.py` | §10 应忽略 |
+EOF
+echo "PROJECT_FORM=backend" > "$TMP/skill9/scripts/precheck.conf"
+out="$(bash "$SH" "$TMP/proj9" --skill-dir "$TMP/skill9" --form backend --tsv --path-check --stability-audit 2>/dev/null)"
+# §10 行不应产生 STABILITY_WARN（因为根本不应被抽出）
+echo "$out" | grep -qE 'STABILITY_WARN.*src/in_ten.py.*fan-in' && bad "态9 §10 被错误纳入" || ok "态9 §10 排除正确"
+# §4 行存在 + 真实路径 → 无 HALLUCINATION
+echo "$out" | grep -qF 'HALLUCINATION' && bad "态9 真实路径误报 HALLUCINATION" || ok "态9 真实路径通过"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-inventory-verify"; exit 0; } || { echo "FAIL test-inventory-verify" >&2; exit 1; }
