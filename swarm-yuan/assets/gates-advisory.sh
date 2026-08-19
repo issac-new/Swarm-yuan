@@ -7,7 +7,23 @@
 # 头部数字由 self-check.sh check_gates_header_comment 机器执法（防注释漂移）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
+# ===== WP-Q2H-A：GATE_AI_JUDGMENT=1 时 5 个 advisory 门禁转 AI 自觉判断 =====
+# 背景：Q2 报告（机械门禁破坏 AI 灵活性）+ Q2-heavy 评审（D1 探索式）。
+# 5 个候选：cognition / diagram / pr_quality / consistency / link_depth——
+# 这些门禁的"质量判断"本质是 AI 看语义，不是 grep 能搞定的。
+# 默认 GATE_AI_JUDGMENT=0（保留机械，向后兼容）；=1 时仅输出"AI 自查提示"，不跑机械检查。
+_AI_JUDGMENT="${GATE_AI_JUDGMENT:-0}"
+_ai_hint() { # $1=门禁名 $2=AI 自查要点
+  echo "=== $1（AI 自觉判断模式，GATE_AI_JUDGMENT=1）==="
+  echo "  → AI 自查（不机械跑）：$2"
+  echo "  → 提示：完成后可 echo 简单结论到 .swarm-yuan/notes/$(echo "$1" | tr '[:upper:]' '[:lower:]' | tr ' ' '-').md"
+  pass "$1 已转 AI 自觉判断（advisory，不计 fail）"
+}
 check_consistency() {
+  if [[ "$_AI_JUDGMENT" == "1" ]]; then
+    _ai_hint "check_consistency" "逐文件读业务规则，对照数据勾稽核对（订单金额=Σ明细 / 库存=Σ在库+在途）；在 CONSISTENCY_DIRS 内人读 3-5 个核心文件；不要靠 grep"
+    return 0
+  fi
   echo "=== 业务规则 + 数据勾稽核对（check §2/§3 无多漏错重）==="
   for dir in ${CONSISTENCY_DIRS[@]+"${CONSISTENCY_DIRS[@]}"}; do
     [[ -d "$dir" ]] || continue
@@ -33,6 +49,10 @@ check_consistency() {
 }
 
 check_link_depth() {
+  if [[ "$_AI_JUDGMENT" == "1" ]]; then
+    _ai_hint "check_link_depth" "挑 3 个核心用例，沿调用链逐层读代码（controller→service→repo），数层数；若 >6 层，AI 判断是否为适配层堆叠而非真实复杂度"
+    return 0
+  fi
   echo "=== 调用链深度检查（DDD：链路膨胀/跨聚合事务/Repository 查询泄漏）==="
   local found=0
 
@@ -227,6 +247,10 @@ check_state() {
 }
 
 check_cognition() {
+  if [[ "$_AI_JUDGMENT" == "1" ]]; then
+    _ai_hint "check_cognition" "AI 自查 5 维度：①目标（项目解决什么问题）②约束（技术栈/合规）③证据（每条规律的 grep 证据）④边界（什么不做）⑤价值（用户视角收益）；逐条读 reference-manual.md §1-§5，给一句判断"
+    return 0
+  fi
   # WP-P5: 认知扩展包 §14-§18 按 profile 门控——节不存在 → SKIP 披露（不 fail，不静默）
   # spec-template.md 无 §14 → profile=lite/standard 已裁剪该节（generate-skill.sh 按 profile 分层拷贝）
   # 路径解析：技能根 = $_CONF_DIR/..（precheck.sh 在 scripts/，assets/ 在技能根）；
@@ -540,6 +564,10 @@ check_cognition() {
 }
 
 check_diagram() {
+  if [[ "$_AI_JUDGMENT" == "1" ]]; then
+    _ai_hint "check_diagram" "AI 看 reference-manual.md 是否有架构图/调用链图（mermaid/echarts 任选）；没有则在 §9 加一段简短 ASCII 调用链（10 行内）"
+    return 0
+  fi
   echo "=== 可视化检查（架构图/流程图/调用链 + 统计/分布/趋势）==="
   local found=0
 
@@ -900,6 +928,10 @@ check_upstream_baseline() {
 # 理念来源：gstack PR Quality Score + fingerprint 去重 +1 boost / Red Team（R5 §七.4）。
 # advisory 级（warn-only）。轻量实现：从 git diff 计算变更规模 + 重复模式检测。
 check_pr_quality() {
+  if [[ "$_AI_JUDGMENT" == "1" ]]; then
+    _ai_hint "check_pr_quality" "AI 看 git diff 三指标：①是否超过 500 行（建议拆 PR）②是否含 >3 个无关改动 ③重复模式（同一文件改 3+ 处相似逻辑）；给一句判断"
+    return 0
+  fi
   echo "=== PR 质量评分（--pr-quality，advisory；gstack 理念：变更规模 + 重复模式检测）==="
   if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     warn "非 git 仓库，PR 质量评分跳过"
