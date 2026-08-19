@@ -696,9 +696,13 @@ if [[ "${1:-}" == "--verify-completeness" ]]; then
 fi
 
 # ============================================================
-# --mark-active 子命令（WP-H 状态门：draft → active）
+# --mark-active 子命令（WP-H 状态门：draft → active；WP-Q1A 串联 inventory-verify --path-check）
 # 用法: bash generate-skill.sh --mark-active <skill-dir>
-# 严格零占位符核验（--strict）通过才把 SKILL.md frontmatter 的 status: draft 翻为 active；
+# 三道关：
+#   ① verify_completeness --strict（占位符零残留，P0/P1 分级）
+#   ② inventory-verify.sh --path-check（§4/§6/§9 表格登记的路径必须在仓库真实存在）
+#   ③ inventory-verify.sh 基线 FAIL 维度阻断（HALLUCINATION 列表非空阻断）
+# 三关全过才把 SKILL.md frontmatter 的 status: draft 翻为 active；
 # active 后目标 skill 的 precheck.sh --all-full/--compliance-suite 才解除禁用（precheck 侧状态门）。
 # ============================================================
 if [[ "${1:-}" == "--mark-active" ]]; then
@@ -709,14 +713,40 @@ if [[ "${1:-}" == "--mark-active" ]]; then
     echo "ℹ 非 draft 状态（已是 active 或无 status 字段），无需标记"
     exit 0
   fi
-  if verify_completeness "$_ma_dir" --strict; then
-    sed -i.bak 's/^status: draft/status: active/' "$_ma_dir/SKILL.md" && rm -f "$_ma_dir/SKILL.md.bak"
-    echo "✓ 已标记 status: active（--all-full/--compliance-suite 已解锁）"
-    exit 0
-  else
-    echo "✗ 占位符未清零，保持 draft（--all-full/--compliance-suite 仍禁用）" >&2
+  # ① 零占位符核验
+  if ! verify_completeness "$_ma_dir" --strict; then
+    echo "✗ ①占位符未清零，保持 draft（--all-full/--compliance-suite 仍禁用）" >&2
     exit 1
   fi
+  # ②③ inventory-verify 路径校验（HALLUCINATION 阻断；FAIL 维度作为告警不阻断——fail-open）
+  _ma_iv="$(cd "$(dirname "$0")" && pwd)/inventory-verify.sh"
+  if [[ -x "$_ma_iv" || -f "$_ma_iv" ]]; then
+    _ma_proj=$( (set +u; . "$_ma_dir/scripts/precheck.conf" 2>/dev/null; printf '%s' "${PROJECT_DIR:-}") )
+    _ma_proj=$(cd "$_ma_proj" 2>/dev/null && pwd)
+    if [[ -n "$_ma_proj" && -d "$_ma_proj" && -f "$_ma_dir/references/reference-manual.md" ]]; then
+      _iv_out=$(bash "$_ma_iv" "$_ma_proj" --skill-dir "$_ma_dir" --tsv --path-check 2>&1) || true
+      _iv_hallus=$(printf '%s\n' "$_iv_out" | grep -c '^HALLUCINATION' || true)
+      if [[ "${_iv_hallus:-0}" -gt 0 ]]; then
+        echo "✗ ②③ inventory-verify 检测到 ${_iv_hallus} 个 HALLUCINATION 路径（清单登记 vs 仓库实存不符）" >&2
+        printf '%s\n' "$_iv_out" | grep '^HALLUCINATION' >&2
+        echo "  → 回 Step 4 补齐组件/重写登记行；保持 draft（--all-full/--compliance-suite 仍禁用）" >&2
+        exit 1
+      fi
+      # FAIL 维度作为告警（不阻断——fail-open；与 -path-check 的硬阻断区分）
+      _iv_fail=$(printf '%s\n' "$_iv_out" | grep -cE '\bFAIL\b' || true)
+      if [[ "${_iv_fail:-0}" -gt 0 ]]; then
+        echo "⚠ inventory-verify FAIL 维度 ${_iv_fail} 个（advisory：清单覆盖度 < 0.95；不阻断 mark-active，但建议补漏）" >&2
+        printf '%s\n' "$_iv_out" | grep -E '\bFAIL\b' >&2 || true
+      fi
+    else
+      echo "⚠ inventory-verify 跳过（PROJECT_DIR 或 reference-manual.md 缺失：mark-active 不强求）" >&2
+    fi
+  else
+    echo "⚠ inventory-verify.sh 不存在（$BASE/scripts/），跳过 ②③" >&2
+  fi
+  sed -i.bak 's/^status: draft/status: active/' "$_ma_dir/SKILL.md" && rm -f "$_ma_dir/SKILL.md.bak"
+  echo "✓ 已标记 status: active（--all-full/--compliance-suite 已解锁）"
+  exit 0
 fi
 
 # ============================================================

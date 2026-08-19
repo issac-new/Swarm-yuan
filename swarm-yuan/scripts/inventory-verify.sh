@@ -3,24 +3,34 @@
 # 把 Step 12 / exploration-guide §C+ 的手工枚举计数核验脚本化：
 #   对目标仓库按维度注册表跑 find/grep 枚举 → 数 reference-manual.md 对应表行数 → 去重 → 算比率（≥0.95 PASS）
 #   顺带维度错配 lint：声明纯后端却有 UI 组件文件 / 纯前端却有 controller → DIM_MISMATCH
+# WP-Q1A（2026-08-19，三能力实操性复盘）新增两模式，堵"计数核验防漏不防伪"的洞：
+#   --path-check       抽 §4/§6/§9 表格数据行内反引号路径，逐行 test -f——不存在即 HALLUCINATION 行
+#                      （杀死"AI 幻觉组件凑数过 0.95"的最大漏洞；路径本就是五维必填字段）
+#   --stability-audit  对 §4/§6/§9 标注"稳定|禁止改"的行算三机械信号：近 90 天 git churn /
+#                      fan-in 被引用数 / 同名测试文件存在性；与标注冲突 → STABILITY_WARN（advisory 不 fail）
 # 用法:
-#   bash inventory-verify.sh <PROJECT_DIR> [--skill-dir <dir>] [--form <形态>] [--tsv]
+#   bash inventory-verify.sh <PROJECT_DIR> [--skill-dir <dir>] [--form <形态>] [--tsv] [--path-check] [--stability-audit]
 #     --skill-dir  目标 skill 根（含 references/reference-manual.md）；不给则只做枚举不核验清单
 #     --form       项目形态（backend/frontend/async/desktop/mobile/lib/common）；不给读 skill conf PROJECT_FORM，再不给退化为全维度
 #     --tsv        只输出 TSV 明细（默认人读摘要 + TSV）
+#     --path-check 幻觉路径校验（mark-active 状态门调用时开启）
+#     --stability-audit 稳定性标注机械信号审计（advisory，可与 --tsv 同用）
 # 输出: stdout TSV「维度	枚举计数	清单计数	比率	状态」按维度排序 + 末行 DIM_MISMATCH（如有）
+#       + HALLUCINATION / STABILITY_WARN 行（对应模式开启时）
 # 退出码: 0 正常（含 FAIL 维度，fail-open 核验）；1 arg 错误 / PROJECT_DIR 不存在。
-# 红线：本脚本只做计数 + 错配 lint，不替模型判断维度是否适用（适用判断由 §C+.0 形态判定驱动）。
+# 红线：本脚本只做计数 + 错配 lint + 路径存在性 + 机械信号，不替模型判断维度是否适用（适用判断由 §C+.0 形态判定驱动）。
 set -uo pipefail
 BASE=$(cd "$(dirname "${0}")/.." && pwd)
 
-PROJ=""; SKILL_DIR=""; FORM=""; TSV=0
+PROJ=""; SKILL_DIR=""; FORM=""; TSV=0; PATH_CHECK=0; STAB_AUDIT=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --skill-dir) SKILL_DIR="${2:?--skill-dir 需要路径}"; shift 2 ;;
     --form)      FORM="${2:?--form 需要形态}"; shift 2 ;;
     --tsv)       TSV=1; shift ;;
-    -h|--help)   sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --path-check) PATH_CHECK=1; shift ;;
+    --stability-audit) STAB_AUDIT=1; shift ;;
+    -h|--help)   sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) [[ -z "$PROJ" ]] && PROJ="$1" || { echo "未知参数: $1" >&2; exit 1; }; shift ;;
   esac
 done
@@ -147,6 +157,95 @@ elif [[ "$FORM" == "frontend" ]]; then
   fi
 fi
 
+# ===== WP-Q1A：§4/§6/§9 表格行的 路径+稳定性标注 抽取（两模式共用）=====
+# 输出每行 "<stab>\t<path>"：stab ∈ forbidden（行含"禁止改"）/ stable（含"稳定"且非"不稳定"）/ -（无标注）。
+# 路径 = 行内反引号 token，含 "/" 且以已知源码扩展名结尾（五维字段的路径列惯用反引号包裹）。
+_extract_rows_paths() { # $1=RM文件
+  local rm="$1"
+  [[ -f "$rm" ]] || return 0
+  awk '
+    BEGIN{ insec=0 }
+    {
+      # 仅匹配 §4/§6/§9（§是 UTF-8 三字节 §-multi-byte）。§10/§11 不进——避免错纳
+      if ($0 ~ "^## §[469][ \\.]") { insec=1; next }
+      if (insec==1 && $0 ~ "^## ") { insec=0; next }
+      if (insec==1 && /^\|/) {
+        line=$0; squashed=line; gsub(/[ \t]/,"",squashed)
+        if (squashed ~ /^\|[-:|]+\|$/ || squashed ~ /^\|[-]+/) next
+        if (line ~ /^\|[^|]*(维度|端点|构件|方法|说明|业务名)[^|]*\|/) next
+        stab="-"
+        if (index(line,"禁止改")>0) stab="forbidden"
+        else if (index(line,"不稳定")>0) stab="-"
+        else if (index(line,"稳定")>0) stab="stable"
+        rest=line
+        while (match(rest, /`[^`]+`/)) {
+          tok=substr(rest, RSTART+1, RLENGTH-2)
+          rest=substr(rest, RSTART+RLENGTH)
+          if (tok ~ /\// && tok ~ /\.(vue|tsx?|jsx?|py|go|java|rs|sql|xml|ya?ml|json|kt|swift|cpp|cc|c|h|php|rb|sh|md)$/)
+            print stab "\t" tok
+        }
+      }
+    }
+  ' "$rm" 2>/dev/null | LC_ALL=C sort -u
+}
+
+# --path-check：幻觉路径校验——表格登记的路径在仓库中必须真实存在
+hallus=""
+if [[ "$PATH_CHECK" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/reference-manual.md" ]]; then
+  _paths=""
+  while IFS=$'\t' read -r _stab _p; do
+    [[ -n "${_p:-}" ]] || continue
+    _paths="${_paths}${_p}
+"
+  done <<< "$(_extract_rows_paths "$SKILL_DIR/references/reference-manual.md")"
+  while IFS= read -r _p; do
+    [[ -n "$_p" ]] || continue
+    if [[ ! -f "$PROJ/$_p" ]]; then
+      hallus="${hallus}HALLUCINATION	清单登记路径不存在: ${_p}（reference-manual §4/§6/§9；疑似 AI 幻觉组件，回 Step 4 核实）
+"
+    fi
+  done <<< "$_paths"
+fi
+
+# --stability-audit：稳定性标注机械信号审计（advisory，永不 fail）
+# 三信号：近 90 天 git churn / fan-in 被引用数 / 同名测试文件存在性
+stabwarns=""
+if [[ "$STAB_AUDIT" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/reference-manual.md" ]]; then
+  _in_git=0
+  git -C "$PROJ" rev-parse --is-inside-work-tree >/dev/null 2>&1 && _in_git=1
+  _aud_n=0
+  while IFS=$'\t' read -r _stab _p; do
+    [[ -n "$_p" && "$_stab" != "-" ]] || continue
+    [[ -f "$PROJ/$_p" ]] || continue   # 路径不存在的由 --path-check 管，这里只审存在且被标注的
+    _aud_n=$((_aud_n+1))
+    [[ "$_aud_n" -gt 40 ]] && break    # 上限 40 条，advisory 模式防大仓库超时
+    _base="${_p##*/}"; _base="${_base%.*}"
+    _churn="-"
+    if [[ "$_in_git" -eq 1 ]]; then
+      _churn=$(git -C "$PROJ" log --since="90 days ago" --format=%H -- "$_p" 2>/dev/null | LC_ALL=C grep -c . || true)
+      _churn="${_churn:-0}"
+    fi
+    _fanin=$(grep -rlF --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.py' --include='*.go' --include='*.java' --include='*.vue' "$_base" "$PROJ" 2>/dev/null | grep -vF "$_p" | LC_ALL=C grep -c . || true)
+    _fanin="${_fanin:-0}"
+    _has_test=0
+    [[ -n "$(find "$PROJ" -path '*/node_modules' -prune -o -path '*/.git' -prune -o -type f -iname "*${_base}*" \( -iname "*test*" -o -iname "*spec*" \) -print -quit 2>/dev/null)" ]] && _has_test=1
+    if [[ "$_stab" == "forbidden" && "$_churn" != "-" && "${_churn:-0}" -gt 0 ]]; then
+      stabwarns="${stabwarns}STABILITY_WARN	$_p 标注禁止改但近 90 天变更 ${_churn} 次（fan-in ${_fanin}，test $([[ $_has_test -eq 1 ]] && echo 有 || echo 无)）
+"
+    elif [[ "$_stab" == "stable" ]]; then
+      [[ "$_churn" != "-" && "${_churn:-0}" -gt 5 ]] && \
+        stabwarns="${stabwarns}STABILITY_WARN	$_p 标注稳定但近 90 天变更 ${_churn} 次（>5；fan-in ${_fanin}，test $([[ $_has_test -eq 1 ]] && echo 有 || echo 无)）
+"
+      [[ "${_fanin:-0}" -eq 0 ]] && \
+        stabwarns="${stabwarns}STABILITY_WARN	$_p 标注稳定但 fan-in=0（无被引用；churn ${_churn}，test $([[ $_has_test -eq 1 ]] && echo 有 || echo 无)）
+"
+      [[ "$_has_test" -eq 0 ]] && \
+        stabwarns="${stabwarns}STABILITY_WARN	$_p 标注稳定但无同名测试文件（churn ${_churn}，fan-in ${_fanin}）
+"
+    fi
+  done <<< "$(_extract_rows_paths "$SKILL_DIR/references/reference-manual.md")"
+fi
+
 if [[ "$TSV" -eq 1 ]]; then
   printf '%s' "$rows" | LC_ALL=C sort
 else
@@ -156,5 +255,11 @@ else
 fi
 if [[ -n "$mismatches" ]]; then
   printf '%s' "$mismatches" | LC_ALL=C sort
+fi
+if [[ -n "$hallus" ]]; then
+  printf '%s' "$hallus" | LC_ALL=C sort
+fi
+if [[ -n "$stabwarns" ]]; then
+  printf '%s' "$stabwarns" | LC_ALL=C sort
 fi
 exit 0
