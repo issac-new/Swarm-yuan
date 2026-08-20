@@ -1646,6 +1646,26 @@ cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] scripts: precheck + state-machine + trace-log + cost-report
 EOF
 # WP-R2-2：自成长指引段（固定操作指引，非填充项——目标技能的 AI 按此链保持技能与项目同步）
+# WP-R3-1：profile 分档——lite 档 WP-E 不装 hooks/hooks.json，SessionStart 自动感知链不存在；
+# 须明示"lite 档须 AI 在会话开始时手动跑 --diff"，别让文档撒谎说"hook 已自动感知"。
+if [[ "$PROFILE" == "lite" ]]; then
+cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
+
+## 自成长（项目变了，本技能跟着变）
+
+本技能的组件库清单/编排约束是生成时刻的快照。项目代码演进后按此链更新：
+
+1. **感知**（会话开始时手动跑，秒级——lite 档按 WP-E 裁剪未装 SessionStart hook，AI 须在每个开发会话开始时主动跑一次）：`bash scripts/project-fingerprint.sh <项目根> --diff`；提示无基线时先 `--write` 落基线。若升级到 standard/compliance 档会自动装 SessionStart hook 实现自动感知。
+2. **判断**：输出「⚠ 项目源码已变化」→ 走更新链；「无变化」→ 继续正常开发。
+3. **更新链**（检测到变化后）：
+   - 工具链刷新：用生成器（路径见本目录 `.swarm-yuan-version` 的 `source_repo`）跑 `generate-skill.sh --refresh <本技能目录>` 看 dry-run 报告 → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留不动）
+   - 内容刷新（局部重探查，dsh R12 吸收）：`--diff` 报告的「变化目录（scope）」就是重探查范围——**只针对变化 scope** 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查（新增/消失/改名组件），更新 `references/reference-manual.md` 对应清单条目；未变 scope 的条目原样保留（SHA 未变即不重写）
+   - 核验：生成器侧 `inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉）
+4. **落新基线**：更新完成后 `bash scripts/project-fingerprint.sh <项目根> --write`。
+
+红线：① 指纹只感知结构变化（文件数/扩展名/骨架 cksum/目录 cksum）；语义变化（约束失效/接口语义变更）靠 AI 在编码流程中发现即更新清单，不等 refresh。② **清单更新先完整生成再原子替换，探查中途失败绝不覆盖上一份好清单**（last-good 保留：探查输出条目数骤降 >50% 视为失败，保留旧清单并告警）。
+EOF
+else
 cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 
 ## 自成长（项目变了，本技能跟着变）
@@ -1662,6 +1682,7 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 
 红线：① 指纹只感知结构变化（文件数/扩展名/骨架 cksum/目录 cksum）；语义变化（约束失效/接口语义变更）靠 AI 在编码流程中发现即更新清单，不等 refresh。② **清单更新先完整生成再原子替换，探查中途失败绝不覆盖上一份好清单**（last-good 保留：探查输出条目数骤降 >50% 视为失败，保留旧清单并告警）。
 EOF
+fi
 # WP-P5: SKILL.md「按需读取」索引表自动生成（依据实际拷入的 UNIVERSAL_FILES 分级清单）
 # 仅 create 分支执行（resume 分支走 else 跳过，不重复追加）；表按 UNIVERSAL_FILES 数组顺序输出。
 _idx_file="$SKILL_DIR/.universal-files-index.md"
