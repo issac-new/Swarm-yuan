@@ -22,7 +22,7 @@ NODE=""; ACTOR=""; TOOL=""; STATUS="started"; NOTE=""
 # --decision 模式变量（G1 决策治理）
 DECISION_MODE=0; D_TYPE=""; D_SUGGESTION=""; D_USER_ACTION=""; D_RATIONALE=""
 D_ALTERNATIVES=""; D_MISSING_CONTEXT=""; D_COST_IF_WRONG=""; D_PHASE=""
-D_REVERSIBILITY=""; D_CONFIDENCE=""
+D_REVERSIBILITY=""; D_CONFIDENCE=""; D_OUTCOME=""
 # --key-node 模式变量（WP-Q2-lite 关键节点化）
 KEY_NODE_MODE=0; KEY_NODE_NAME=""
 while [[ $# -gt 0 ]]; do
@@ -44,9 +44,10 @@ while [[ $# -gt 0 ]]; do
     --phase)     D_PHASE="${2:-}"; shift 2 ;;
     --reversibility) D_REVERSIBILITY="${2:-}"; shift 2 ;;
     --confidence)    D_CONFIDENCE="${2:-}";    shift 2 ;;
+    --outcome)       D_OUTCOME="${2:-}";       shift 2 ;;
     *) echo "未知参数: $1" >&2
        echo "Usage: bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]" >&2
-       echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--rationale <理由>] [--phase <阶段>] [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [--alternatives <备选>] [--missing-context <缺失上下文>] [--cost-if-wrong <代价>]" >&2
+       echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--rationale <理由>] [--phase <阶段>] [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [--outcome <implemented|rejected|superseded|proposed>] [--alternatives <备选>] [--missing-context <缺失上下文>] [--cost-if-wrong <代价>]" >&2
        echo "       bash trace-log.sh --key-node <节点名> [--actor <谁>] [--status started|done|fail] [--note <说明>]  # WP-Q2-lite 关键节点化（八节点关键调用看板）" >&2
        exit 1 ;;
   esac
@@ -103,6 +104,14 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
   # 可逆性/置信度缺省（§2.4 + 知识溯源三标）
   [[ -z "$D_REVERSIBILITY" ]] && D_REVERSIBILITY="reversible"
   [[ -z "$D_CONFIDENCE" ]] && D_CONFIDENCE="inferred"
+  # WP-R12-D：决策生命周期 outcome 缺省推导（dsh Agent Notes 四态吸收——未采纳决策也是治理证据）：
+  # user_action=rejected → outcome=rejected；其余缺省 implemented；显式 --outcome 优先（superseded/proposed）
+  if [[ -z "$D_OUTCOME" ]]; then
+    case "$D_USER_ACTION" in
+      rejected) D_OUTCOME="rejected" ;;
+      *)        D_OUTCOME="implemented" ;;
+    esac
+  fi
 fi
 
 # JSON 最小转义：反斜杠 / 双引号；剔除换行与回车（单行 jsonl 铁律）
@@ -124,9 +133,9 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
   STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
   if mkdir -p "$STATE_DIR" 2>/dev/null; then
     ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    _dec_line=$(printf '{"ts":"%s","phase":"%s","type":"%s","ai_suggestion":"%s","user_action":"%s","rationale":"%s","actor":"%s","alternatives":"%s","missing_context":"%s","cost_if_wrong":"%s","reversibility":"%s","confidence":"%s"}' \
+    _dec_line=$(printf '{"ts":"%s","phase":"%s","type":"%s","ai_suggestion":"%s","user_action":"%s","outcome":"%s","rationale":"%s","actor":"%s","alternatives":"%s","missing_context":"%s","cost_if_wrong":"%s","reversibility":"%s","confidence":"%s"}' \
       "$ts" "$(_json_esc "$D_PHASE")" "$(_json_esc "$D_TYPE")" "$(_json_esc "$D_SUGGESTION")" \
-      "$(_json_esc "$D_USER_ACTION")" "$(_json_esc "$D_RATIONALE")" "$(_json_esc "${ACTOR:-swarm-yuan/ai}")" \
+      "$(_json_esc "$D_USER_ACTION")" "$(_json_esc "$D_OUTCOME")" "$(_json_esc "$D_RATIONALE")" "$(_json_esc "${ACTOR:-swarm-yuan/ai}")" \
       "$(_json_esc "$D_ALTERNATIVES")" "$(_json_esc "$D_MISSING_CONTEXT")" "$(_json_esc "$D_COST_IF_WRONG")" \
       "$(_json_esc "$D_REVERSIBILITY")" "$(_json_esc "$D_CONFIDENCE")")
     if ! printf '%s\n' "$_dec_line" >> "$STATE_DIR/decisions.jsonl" 2>/dev/null; then

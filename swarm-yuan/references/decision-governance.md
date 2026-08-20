@@ -95,6 +95,7 @@ autoplan 的 User Challenge 五要素（`docs/research/R5-upstream-local.md` §�
 
 - `type`：`Mechanical` / `Taste` / `UserChallenge`（缺五要素降级为 `UserChallenge:incomplete`）
 - `user_action`：`approved` / `rejected` / `revised`
+- `outcome`（WP-R12-D，dsh Agent Notes 四态生命周期吸收）：决策的生命周期终态——`implemented`（默认，已落地）/ `rejected`（未采纳，`user_action=rejected` 时自动推导）/ `superseded`（被后续决策取代，手动标注）/ `proposed`（已提出未决）。**未采纳决策同样是治理证据**（ISO/IEC 42001 审计视角：被拒绝的方案及其理由证明权衡发生过）——Taste/UserChallenge 类决策被否时必须照常落盘（含 rationale），不得"没采纳就不记"；AI 内部否决掉的方案不强制落盘，但 `alternatives` 字段须列出考虑过的备选。回放兼容：旧格式行无 `outcome` 字段视为 `implemented`（回放规则不可变，见 dsh-engineering-methodology.md §2.4）。
 - `reversibility`：`reversible`（缺省）/ `costly` / `one-way`（§2.4 横切属性；`one-way` 自动升级到 UserChallenge）
 - UserChallenge 类必填 `alternatives`/`missing_context`/`cost_if_wrong`；Mechanical/Taste 可缺省
 - 落盘永不阻塞主流程（trace-log.sh `--decision` 模式继承其永不 fail 设计：落盘失败仅 warn 到 stderr，exit 0）

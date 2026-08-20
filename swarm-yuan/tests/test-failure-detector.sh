@@ -69,4 +69,14 @@ out=$(PROJECT_DIR="$TMP/proj8" bash "$TL" --node "test" --actor "ai" --tool "ls"
 [[ $rc -eq 0 ]] && ok "态10 --node 普通调用兼容" || bad "态10 --node exit=$rc"
 echo "$out" | grep -q '→ \[test\] 调用 ai · ls' && ok "态10 --node stdout 提示" || bad "态10 缺提示: $out"
 
+# --- 态 11：WP-R12-D --decision outcome 缺省推导（rejected→rejected；approved→implemented） ---
+mkdir -p "$TMP/proj11"
+PROJECT_DIR="$TMP/proj11" bash "$TL" --decision --type Taste --suggestion "用方案A" --user-action rejected --rationale "太贵" >/dev/null 2>&1
+grep -q '"outcome":"rejected"' "$TMP/proj11/.swarm-yuan/decisions.jsonl" && ok "态11 rejected→outcome=rejected" || bad "态11 缺 outcome=rejected: $(cat "$TMP/proj11/.swarm-yuan/decisions.jsonl")"
+PROJECT_DIR="$TMP/proj11" bash "$TL" --decision --type Mechanical --suggestion "格式化" --user-action approved >/dev/null 2>&1
+grep -q '"outcome":"implemented"' "$TMP/proj11/.swarm-yuan/decisions.jsonl" && ok "态11 approved→outcome=implemented" || bad "态11 缺 outcome=implemented"
+# 显式 --outcome 覆盖缺省推导
+PROJECT_DIR="$TMP/proj11" bash "$TL" --decision --type Taste --suggestion "旧方案" --user-action approved --outcome superseded >/dev/null 2>&1
+grep -q '"outcome":"superseded"' "$TMP/proj11/.swarm-yuan/decisions.jsonl" && ok "态11 显式 --outcome superseded 覆盖" || bad "态11 显式 outcome 未生效"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-failure-detector"; exit 0; } || { echo "FAIL test-failure-detector" >&2; exit 1; }
