@@ -2,6 +2,7 @@
 # test-inventory-verify.sh — inventory-verify.sh 双态测试（WP-P2/M1）
 set -uo pipefail
 cd "$(dirname "${0}")/.." || exit 1
+ROOT="$(pwd)"
 SH="scripts/inventory-verify.sh"
 TMP="$(mktemp -d /tmp/ivtest.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT
@@ -88,8 +89,8 @@ mkdir -p "$TMP/proj7/src" "$TMP/skill7/references" "$TMP/skill7/scripts"
 cd "$TMP/proj7" && git init -q 2>/dev/null && git add -A && git -c user.email=t@t -c user.name=t commit -qm "init" >/dev/null 2>&1 || true
 printf 'def a(): pass\n' > "$TMP/proj7/src/payment.py"
 cd "$TMP/proj7" && git add -A && git -c user.email=t@t -c user.name=t commit -qm "touch payment.py" 2>/dev/null
-cd "$TMP/proj7" 2>/dev/null && touch 'def a(): pass\ndef b(): pass\n' > src/payment.py && git add -A && git -c user.email=t@t -c user.name=t commit -qm "touch payment.py again" 2>/dev/null
-cd "$(dirname "${0}")/.." || exit 1
+cd "$TMP/proj7" 2>/dev/null && printf 'def b(): pass\n' >> src/payment.py && git add -A && git -c user.email=t@t -c user.name=t commit -qm "touch payment.py again" 2>/dev/null
+cd "$ROOT" || exit 1
 cat > "$TMP/skill7/references/reference-manual.md" <<'EOF'
 ## §4 组件清单
 
@@ -106,7 +107,7 @@ echo "$out" | grep -qE 'STABILITY_WARN.*src/payment.py.*禁止改但近 90 天�
 mkdir -p "$TMP/proj8/src" "$TMP/skill8/references" "$TMP/skill8/scripts"
 printf 'def x(): pass\n' > "$TMP/proj8/src/standalone.py"
 cd "$TMP/proj8" && git init -q 2>/dev/null && git add -A && git -c user.email=t@t -c user.name=t commit -qm "init" >/dev/null 2>&1
-cd "$(dirname "${0}")/.." || exit 1
+cd "$ROOT" || exit 1
 cat > "$TMP/skill8/references/reference-manual.md" <<'EOF'
 ## §4 组件清单
 
@@ -122,7 +123,7 @@ echo "$out" | grep -qE 'STABILITY_WARN.*src/standalone.py.*fan-in=0' && ok "态8
 mkdir -p "$TMP/proj9/src" "$TMP/skill9/references" "$TMP/skill9/scripts"
 printf 'def y(): pass\n' > "$TMP/proj9/src/in_ten.py"
 cd "$TMP/proj9" && git init -q 2>/dev/null && git add -A && git -c user.email=t@t -c user.name=t commit -qm "init" >/dev/null 2>&1
-cd "$(dirname "${0}")/.." || exit 1
+cd "$ROOT" || exit 1
 cat > "$TMP/skill9/references/reference-manual.md" <<'EOF'
 ## §4 组件清单
 

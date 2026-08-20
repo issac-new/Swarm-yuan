@@ -812,6 +812,15 @@ if [[ "${1:-}" == "--refresh" ]]; then
       echo "  ✓ --commit-fp：已把当前指纹落盘为新基线（$_rf_proj/.swarm-yuan/project-fingerprint）"
     fi
     exit 0
+  elif printf '%s\n' "$_rf_out" | LC_ALL=C grep -q '无既有指纹'; then
+    # WP-R2-1：无基线 ≠ 无变化——此前落入 else 报"✓ 无变化"，首次感知场景假阴性。
+    echo "  → 无指纹基线（尚未做过首次感知），无法判断变化——建议落基线："
+    echo "      bash scripts/generate-skill.sh --refresh <skill-dir> --commit-fp"
+    if [[ "${1:-}" == "--commit-fp" ]]; then
+      bash "$_rf_fp" "$_rf_proj" --write >/dev/null
+      echo "  ✓ --commit-fp：已把当前指纹落盘为基线（$_rf_proj/.swarm-yuan/project-fingerprint）"
+    fi
+    exit 0
   else
     echo "  ✓ 无变化（文件骨架指纹未变）"
     printf '%s\n' "$_rf_out" | LC_ALL=C grep -E '^\s*✓' | head -1 || true
