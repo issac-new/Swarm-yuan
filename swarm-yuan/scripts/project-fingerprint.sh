@@ -73,7 +73,7 @@ _compute_fp "$PROJ" > "$_curr"
 
 if [[ ! -f "$FP_FILE" ]]; then
   if [[ "$DIFF" -eq 1 ]]; then
-    echo "无既有指纹: $FP_FILE（建议先跑 --write 落基线）"
+    echo "无既有指纹: ${FP_FILE}（建议先跑 --write 落基线）"
     exit 0
   fi
   echo "✓ 当前指纹（未落盘）:"
@@ -110,7 +110,7 @@ _sk_a="${_kv_a_skel_cksum:-0}"; _sk_b="${_kv_b_skel_cksum:-0}"
 _ext_a="${_kv_a_ext_dist:-none}"; _ext_b="${_kv_b_ext_dist:-none}"
 
 if [[ "$_tot_a" == "$_tot_b" && "$_sk_a" == "$_sk_b" && "$_ext_a" == "$_ext_b" ]]; then
-  [[ "$QUIET" -ne 1 ]] && echo "✓ 无变化（文件数=$_tot_b，skel_cksum=$_sk_b）"
+  [[ "$QUIET" -ne 1 ]] && echo "✓ 无变化（文件数=${_tot_b}，skel_cksum=${_sk_b}）"
   exit 0
 fi
 

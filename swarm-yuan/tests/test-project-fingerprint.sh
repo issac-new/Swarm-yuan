@@ -100,4 +100,36 @@ bash "$SH" "$TMP/proj" --write >/dev/null
 out=$(bash "$SH" "$TMP/proj" --diff --quiet 2>&1); rc=$?
 [[ -z "$out" ]] && ok "态10 node_modules/.git 忽略" || bad "态10 未忽略: $out"
 
+# --- 态 11：--diff 无变化非 quiet（WP-R2-1：113 行 $var+多字节 UTF-8 locale 崩溃回归）---
+# 态2 只测了 --quiet（[[ 短路不展开 echo），这条例行走"✓ 无变化（文件数=${_tot_b}..."输出路径。
+# bash 3.2 + UTF-8 locale 下 $var 紧跟多字节字符会把其首字节吞进变量名 → set -u unbound 崩溃。
+out=$(bash "$SH" "$TMP/proj" --diff 2>&1); rc=$?
+[[ $rc -eq 0 ]] && ok "态11 无变化非quiet exit 0" || bad "态11 exit=$rc: $out"
+echo "$out" | grep -q '✓ 无变化' && ok "态11 无变化行命中" || bad "态11 缺无变化行: $out"
+
+# --- 态 12：无基线 --diff（WP-R2-1：76 行 $FP_FILE+多字节崩溃回归 + --refresh 假阴性回归）---
+mkdir -p "$TMP/proj12/src"
+printf 'def a(): pass\n' > "$TMP/proj12/src/a.py"
+out=$(bash "$SH" "$TMP/proj12" --diff 2>&1); rc=$?
+[[ $rc -eq 0 ]] && ok "态12 无基线 exit 0" || bad "态12 exit=$rc: $out"
+echo "$out" | grep -q '无既有指纹' && ok "态12 无基线提示命中" || bad "态12 缺无基线提示: $out"
+# --refresh 在无基线时不得报"无变化"（假阴性）——应透出"无既有指纹"
+mkdir -p "$TMP/skill12/scripts"
+printf -- "---\nname: t\nstatus: active\n---\n" > "$TMP/skill12/SKILL.md"
+echo "PROJECT_DIR=\"$TMP/proj12\"" > "$TMP/skill12/scripts/precheck.conf"
+out=$(bash "$GEN" --refresh "$TMP/skill12" 2>&1); rc=$?
+[[ $rc -eq 0 ]] && ok "态12 --refresh 无基线 exit 0" || bad "态12 --refresh exit=$rc: $out"
+if echo "$out" | grep -q '✓ 无变化'; then
+  bad "态12 --refresh 无基线假阴性（报无变化）: $out"
+else
+  ok "态12 --refresh 无基线不假阴性"
+fi
+echo "$out" | grep -q '无指纹基线' && ok "态12 --refresh 无基线提示命中" || bad "态12 --refresh 缺无基线提示: $out"
+# --commit-fp 在无基线场景落基线 → 再 --refresh 走正常无变化路径
+out=$(bash "$GEN" --refresh "$TMP/skill12" --commit-fp 2>&1); rc=$?
+echo "$out" | grep -q -- '--commit-fp' && ok "态12 无基线 commit-fp 落盘" || bad "态12 无基线 commit-fp 未落盘: $out"
+[[ -f "$TMP/proj12/.swarm-yuan/project-fingerprint" ]] && ok "态12 基线文件已建" || bad "态12 基线文件未建"
+out2=$(bash "$GEN" --refresh "$TMP/skill12" 2>&1)
+echo "$out2" | grep -q '✓ 无变化' && ok "态12 落基线后无变化命中" || bad "态12 落基线后仍异常: $out2"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-project-fingerprint"; exit 0; } || { echo "FAIL test-project-fingerprint" >&2; exit 1; }
