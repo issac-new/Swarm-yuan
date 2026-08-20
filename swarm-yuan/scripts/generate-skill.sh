@@ -71,6 +71,9 @@ UNIVERSAL_FILES=(
   "assets/hooks/setup-loop.sh|assets|standard"
   "assets/hooks/loop-hook.sh|assets|standard"
   "scripts/project-fingerprint.sh|gen|lite"
+  # WP-R3-5：inventory-update.sh 给目标 skill 的 AI 用（编码中发现语义变化 → 局部更新清单单条目），
+  # 与 inventory-verify.sh 的"生成器侧核验"角色区分——本脚本必须拷到目标 skill 的 scripts/ 下。
+  "scripts/inventory-update.sh|gen|lite"
   "scripts/self-check.sh|gen|lite"
   "scripts/detect-frameworks.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
