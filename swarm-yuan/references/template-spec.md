@@ -53,7 +53,9 @@ description: <项目名> 的需求交付全流程技能。当用户...都应使�
 （真实命令 + 端口约定）
 
 ## 质量门禁
-（核心门禁清单，对应 check 段）
+（核心门禁清单，对应 check 段；含机械/AI 审边界一句：strict 档信号可信机械执行，
+warn/advisory 输出由 AI 判断采纳不必全修；GATE_AI_JUDGMENT=1 时 advisory 档 5 个质量门禁
+转 AI 自觉判断，见 scripts/precheck.conf——WP-R2-3）
 
 ## 常见借口与纠正
 （Rationalizations 两列表：第一人称借口 + 量化反驳，5-8 条，从门禁步骤逐条反推——见 §1.5）

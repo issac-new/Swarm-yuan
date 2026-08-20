@@ -50,6 +50,10 @@ grep -q 'fail-gate-hook' "${SKILL_DIR}/hooks/hooks.json" 2>/dev/null \
 grep -q '^GATE_ENFORCE_DENY=""' "${SKILL_DIR}/scripts/precheck.conf" 2>/dev/null \
   && ok "precheck.conf 含 GATE_ENFORCE_DENY 默认空（捕获门默认关闭，向后兼容）" \
   || bad "precheck.conf 缺 GATE_ENFORCE_DENY 默认空行"
+# WP-R2-3：GATE_AI_JUDGMENT 入 conf 模板（Q2H-A 开关可发现性——此前只在 gates-advisory.sh 内部，用户无从发现）
+grep -q '^GATE_AI_JUDGMENT=' "${SKILL_DIR}/scripts/precheck.conf" 2>/dev/null \
+  && ok "precheck.conf 含 GATE_AI_JUDGMENT（AI 自觉判断开关可发现）" \
+  || bad "precheck.conf 缺 GATE_AI_JUDGMENT 行"
 
 # --- 3. hooks.json / settings.local.json / .mcp.json 是合法 JSON ---
 for jf in "hooks/hooks.json" "settings.local.json" ".mcp.json"; do
