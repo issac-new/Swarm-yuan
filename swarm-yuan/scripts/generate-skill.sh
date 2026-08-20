@@ -1529,10 +1529,46 @@ for f in $_placeholder_refs; do
 - [ ] 节点⑧构建发布：灰度 + 告警 + runbook
 WFEOF
   else
-    _write_if_absent "$SKILL_DIR/references/$f" <<EOF
+    if [[ "$f" == "reference-manual.md" ]]; then
+      # WP-R3-4：reference-manual.md 从一行占位升级为结构化骨架（§4/§6/§9 五维表头 + 示例行）
+      # 原因：inventory-verify --path-check / --stability-audit 期望 §4/§6/§9 表格行内含反引号路径
+      # + 稳定性标注（稳定/禁止改），骨架连表头都没有时 AI 只能从 0 造，常缺五维必填字段（维度/路径/稳定性/来源/接口）。
+      # 骨架仅给表头 + 一行示例（P1 待补标记——mark-active 前必须替换为真实条目）。
+      _write_if_absent "$SKILL_DIR/references/$f" <<'RMEOF'
+# reference-manual.md — 项目参考手册（组件库清单 / 接口约束 / 数据勾稽）
+
+> 填充指引：按 exploration-guide §C+ 探查后填充。所有 §4/§6/§9 表格行必须含**五维字段**：
+> `| 维度 | 路径 | 稳定性 | 来源 | 接口/约束 |`；路径用反引号包裹（inventory-verify --path-check 校验存在性）；
+> 稳定性标注词：`稳定`/`禁止改`/`不稳定`（--stability-audit 校验与 git churn/fan-in/测试存在性信号一致性）。
+
+## §4 组件库清单
+
+| 维度 | 路径 | 稳定性 | 来源 | 接口/约束 |
+|------|------|--------|------|-----------|
+| （P1 待补）示例组件 | `src/components/Example.tsx` | 稳定 | 探查 | 导出 `Example` 函数；入参 `props: Props` |
+
+## §6 接口清单
+
+| 维度 | 路径 | 稳定性 | 来源 | 接口/约束 |
+|------|------|--------|------|-----------|
+| （P1 待补）示例接口 | `src/api/example.ts` | 稳定 | 探查 | `GET /api/example`；返回 `ExampleVO` |
+
+## §9 数据勾稽
+
+| 维度 | 路径 | 稳定性 | 来源 | 接口/约束 |
+|------|------|--------|------|-----------|
+| （P1 待补）示例勾稽 | `src/service/order.ts` | 稳定 | 探查 | 订单金额 = Σ 明细金额；库存 = 在库 + 在途 |
+
+---
+
+（其余 §1/§2/§3/§5/§7/§8/§10/§11 节按 references/template-spec.md 维度注册表补齐—— lite 档精简到 §4/§6/§9 三节，standard/compliance 档补全）
+RMEOF
+    else
+      _write_if_absent "$SKILL_DIR/references/$f" <<EOF
 # （待填充）$f
 > 填充指引：$(fill_guide "$f")
 EOF
+    fi
   fi
 done
 
