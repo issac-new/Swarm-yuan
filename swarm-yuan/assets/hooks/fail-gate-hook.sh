@@ -103,7 +103,28 @@ if [[ "$EVENT" == "PostToolUse" && "$TOOL" == "Bash" ]]; then
   exit 0
 fi
 
-# ===== PreToolUse Write/Edit/MultiEdit：flag 存在 → deny =====
+# ===== PreToolUse Write/Edit/MultiEdit/Bash：flag 存在 → deny =====
+# WP-Enforce2 扩展：
+#   ① 拦截范围加 Bash（仅拦"推进态"命令白名单：git push/commit/merge/release/deploy/install 等；
+#      不拦只读命令 git status/log/diff/ls/cat/grep，也不拦测试命令 npm test/build/lint——fail 后
+#      需要重跑这些诊断，拦了反而死锁）。
+#   ② deny 事件落盘 .swarm-yuan/gate-deny.jsonl（时间/工具/目标/白名单门禁），供 verifier 审计
+#      和用户复盘——这是 deny 动作的"留痕"（G1 决策治理对齐 ISO/IEC 42001）。
+#   ③ Bash 拦截需独立开关 GATE_ENFORCE_DENY_BASH（默认空=不拦 Bash，避免误伤）。
+_deny_log() { # $1=tool $2=target $3=gates
+  local _dl_dir="$ROOT/.swarm-yuan"
+  local _dl_file="${_dl_dir}/gate-deny.jsonl"
+  mkdir -p "$_dl_dir" 2>/dev/null || return 0
+  local _dl_ts
+  _dl_ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  # JSON 最小转义（bash 3.2 + UTF-8 中文安全：先剥离换行/回车/反斜杠/双引号）
+  local _e1 _e2 _e3
+  _e1=$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n')
+  _e2=$(printf '%s' "$2" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n')
+  _e3=$(printf '%s' "$3" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n')
+  printf '{"ts":"%s","tool":"%s","target":"%s","gates":"%s"}\n' "$_dl_ts" "$_e1" "$_e2" "$_e3" >> "$_dl_file" 2>/dev/null || true
+}
+
 if [[ "$EVENT" == "PreToolUse" ]]; then
   case "$TOOL" in
     Write|Edit|MultiEdit)
@@ -118,8 +139,40 @@ if [[ "$EVENT" == "PreToolUse" ]]; then
       esac
       _gates=$(cat "$FLAG" 2>/dev/null || printf 'configured')
       [[ -z "$_gates" ]] && _gates="configured"
+      _deny_log "$TOOL" "$FILE_PATH" "$_gates"
       cat << EOF
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan fail-gate: 门禁 ${_gates} 上次运行 fail 且未修复——GATE_ENFORCE_DENY 白名单生效，先跑 bash scripts/precheck.sh 修复后再改文件。","additionalContext":"swarm-yuan fail-gate: DENY — precheck 捕获的 fail 未修复（白名单：${_gates}）。解除方式：1) 跑 bash scripts/precheck.sh --all（或对应门禁）修复至通过（flag 自动清除）；2) 若需放宽白名单，改 scripts/precheck.conf 的 GATE_ENFORCE_DENY（UserChallenge 类决策，须决策落痕）；3) 本门默认关闭，是你在 conf 里显式开启的。"}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan fail-gate: 门禁 ${_gates} 上次运行 fail 且未修复——GATE_ENFORCE_DENY 白名单生效，先跑 bash scripts/precheck.sh 修复后再改文件。","additionalContext":"swarm-yuan fail-gate: DENY — precheck 捕获的 fail 未修复（白名单：${_gates}）。解除方式：1) 跑 bash scripts/precheck.sh --all（或对应门禁）修复至通过（flag 自动清除）；2) 若需放宽白名单，改 scripts/precheck.conf 的 GATE_ENFORCE_DENY（UserChallenge 类决策，须决策落痕）；3) 本门默认关闭，是你在 conf 里显式开启的。deny 事件已落盘 .swarm-yuan/gate-deny.jsonl（审计留痕）。"}}
+EOF
+      ;;
+    Bash)
+      # WP-Enforce2：Bash 拦截需独立开关 GATE_ENFORCE_DENY_BASH（默认空=不拦，避免误伤）
+      # 白名单：git push/commit/merge/release/deploy/install/publish；不拦只读（status/log/diff/ls/cat/grep）与测试命令（npm test/build/lint）——fail 后需要重跑诊断。
+      _bash_deny=""
+      [[ -f "$CONF" ]] && _bash_deny=$(grep -m1 '^GATE_ENFORCE_DENY_BASH=' "$CONF" 2>/dev/null | sed 's/^GATE_ENFORCE_DENY_BASH=//;s/^"//;s/"$//' | tr -d '[:space:]' || printf '')
+      [[ -z "$_bash_deny" ]] && exit 0
+      [[ ! -f "$FLAG" ]] && exit 0
+      # 提取命令首个 token（git/npm/bash/sh 等）
+      _cmd_first=$(printf '%s' "$CMD" | awk '{print $1}' | tr '[:upper:]' '[:lower:]')
+      _cmd_second=$(printf '%s' "$CMD" | awk '{print $2}' | tr '[:upper:]' '[:lower:]')
+      # 拼成 cmd_first:cmd_second 形式做白名单匹配（git:push / npm:publish / bash:deploy.sh 等）
+      _cmd_key="${_cmd_first}:${_cmd_second}"
+      # 白名单匹配（逗号分隔，支持三种形式：cmd_first 兜底 / cmd_first:cmd_second 精确 / cmd_second 单独）
+      # 例：白名单 "push" 命中 "git push ..."（cmd_second）；白名单 "git" 命中所有 git 子命令（cmd_first 兜底）；
+      #     白名单 "git:push" 精确命中。
+      _match=0
+      IFS=',' read -ra _deny_arr <<< "$_bash_deny"
+      for _d in "${_deny_arr[@]+"${_deny_arr[@]}"}"; do
+        [[ -z "$_d" ]] && continue
+        if [[ "$_cmd_key" == "$_d" || "$_cmd_first" == "$_d" || "$_cmd_second" == "$_d" ]]; then
+          _match=1; break
+        fi
+      done
+      [[ "$_match" -eq 0 ]] && exit 0
+      _gates=$(cat "$FLAG" 2>/dev/null || printf 'configured')
+      [[ -z "$_gates" ]] && _gates="configured"
+      _deny_log "Bash" "$CMD" "$_gates"
+      cat << EOF
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan fail-gate: 门禁 ${_gates} 上次运行 fail 且未修复——GATE_ENFORCE_DENY_BASH 拦截推进态命令（${_cmd_key}）。","additionalContext":"swarm-yuan fail-gate: DENY Bash — precheck 捕获的 fail 未修复（白名单：${_gates}），推进态命令 ${_cmd_key} 被 GATE_ENFORCE_DENY_BASH 拦截。解除方式：1) 跑 bash scripts/precheck.sh --all（或对应门禁）修复至通过；2) 若为误伤（如临时调研命令），改 scripts/precheck.conf 的 GATE_ENFORCE_DENY_BASH 白名单（UserChallenge 类决策）。deny 事件已落盘 .swarm-yuan/gate-deny.jsonl。"}}
 EOF
       ;;
   esac
