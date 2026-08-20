@@ -7,18 +7,21 @@
 #     --write  写入指纹到 <project>/.swarm-yuan/project-fingerprint（默认只算不写）
 #     --diff   与已存指纹对比，输出变化摘要（新增/删除/修改计数 + 前 10 条样例）
 #     --quiet  --diff 模式下，无变化时不输出（适合 SessionStart hook）
-# 退出码: 0 正常；1 arg 错误 / PROJECT_DIR 不存在。
+#     --force  WP-R3-2：--write 时若 total 较既有基线骤降 >50%（last-good 红线），
+#              默认拒绝写入并提示；--force 显式覆盖（用于项目大幅重构的真实场景）。
+# 退出码: 0 正常；1 arg 错误 / PROJECT_DIR 不存在 / --write 触发 last-good 红线且未 --force。
 # 红线：本脚本只做指纹（轻量、可秒级完成），不做内容分析；内容比对是 --upgrade 干的事。
 set -uo pipefail
 
-PROJ=""; WRITE=0; DIFF=0; QUIET=0
+PROJ=""; WRITE=0; DIFF=0; QUIET=0; FORCE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --write) WRITE=1; shift ;;
     --diff)  DIFF=1; shift ;;
     --quiet) QUIET=1; shift ;;
+    --force) FORCE=1; shift ;;
     -h|--help)
-      sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
     *) [[ -z "$PROJ" ]] && PROJ="$1" || { echo "未知参数: $1" >&2; exit 1; }; shift ;;
   esac
@@ -82,6 +85,24 @@ _compute_fp() {
 }
 
 if [[ "$WRITE" -eq 1 ]]; then
+  # WP-R3-2 last-good 红线：若既有基线存在且新指纹 total 骤降 >50%，默认拒绝写入
+  # （防 AI 在项目异常状态/扫盘 bug 下把"条目数骤降"的指纹误落为新基线，覆盖 last-good）。
+  # 真实的项目重构场景由 --force 显式覆盖（UserChallenge 类决策，须决策落痕）。
+  if [[ -f "$FP_FILE" && "$FORCE" -ne 1 ]]; then
+    _old_total=$(LC_ALL=C sed -n 's/^total=\([0-9]*\).*/\1/p' "$FP_FILE" | head -1)
+    _new_total=$( _compute_fp "$PROJ" | LC_ALL=C sed -n 's/^total=\([0-9]*\).*/\1/p' | head -1 )
+    _old_total="${_old_total:-0}"; _new_total="${_new_total:-0}"
+    if [[ "$_old_total" -gt 0 && "$_new_total" -gt 0 ]]; then
+      # 用 awk 判 (_new_total * 2 < _old_total)（即骤降 >50%），bash 整数比较避开浮点
+      if awk -v n="$_new_total" -v o="$_old_total" 'BEGIN{ exit !(n*2 < o) }'; then
+        _pct=$(awk -v n="$_new_total" -v o="$_old_total" 'BEGIN{ printf "%.1f", (o-n)*100/o }')
+        echo "✗ last-good 红线：文件数从 ${_old_total} 骤降到 ${_new_total}（-${_pct}% > 50%）——可能项目处于异常状态（清理中段/git 切换/扫描路径错误）" >&2
+        echo "  保留旧基线: $FP_FILE" >&2
+        echo "  若这是真实的大规模重构，请确认后显式覆盖：bash $0 $PROJ --write --force" >&2
+        exit 1
+      fi
+    fi
+  fi
   mkdir -p "$PROJ/.swarm-yuan"
   _compute_fp "$PROJ" > "$FP_FILE"
   echo "✓ 已写入指纹: $FP_FILE"
@@ -143,6 +164,15 @@ fi
 echo "⚠ 项目源码已变化——按目标技能 SKILL.md「自成长」段走更新链："
 echo "  ① 生成器 generate-skill.sh --upgrade 刷工具链 ② AI 重探查变化维度更新 reference-manual.md 清单"
 echo "  ③ inventory-verify.sh 计数核验 ④ 本脚本 --write 落新基线"
+# WP-R3-2 last-good 红线预警（--diff 视角）：total 骤降 >50% 时显著提示，避免 AI 顺势 --write
+if [[ "${_tot_a:-0}" -gt 0 && "${_tot_b:-0}" -gt 0 ]]; then
+  if awk -v n="$_tot_b" -v o="$_tot_a" 'BEGIN{ exit !(n*2 < o) }'; then
+    _pct=$(awk -v n="$_tot_b" -v o="$_tot_a" 'BEGIN{ printf "%.1f", (o-n)*100/o }')
+    echo "  🚨 last-good 红线预警：文件数从 ${_tot_a} 骤降到 ${_tot_b}（-${_pct}% > 50%）"
+    echo "     可能项目处于异常状态（清理中段/git 切换/扫描路径错误）——落新基线前请先人工核查"
+    echo "     若确认是真实重构，--write 须加 --force 显式覆盖（决策须落痕 trace-log.sh --decision）"
+  fi
+fi
 echo "  文件数:    ${_tot_a} → ${_tot_b}（Δ $((${_tot_b} - ${_tot_a}))）"
 echo "  骨架 cksum: ${_sk_a} → ${_sk_b}"
 if [[ "${_ext_a}" != "${_ext_b}" ]]; then
