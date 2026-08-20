@@ -720,12 +720,14 @@ if [[ "${1:-}" == "--mark-active" ]]; then
     exit 1
   fi
   # ②③ inventory-verify 路径校验（HALLUCINATION 阻断；FAIL 维度作为告警不阻断——fail-open）
+  # WP-R3-3：补串 --stability-audit（WP-Q1A 时漏串，仅文档化）——稳定性标注与三机械信号
+  # （近 90 天 git churn / fan-in / 同名测试）冲突时 STABILITY_WARN（advisory，不阻断）。
   _ma_iv="$(cd "$(dirname "$0")" && pwd)/inventory-verify.sh"
   if [[ -x "$_ma_iv" || -f "$_ma_iv" ]]; then
     _ma_proj=$( (set +u; . "$_ma_dir/scripts/precheck.conf" 2>/dev/null; printf '%s' "${PROJECT_DIR:-}") )
     _ma_proj=$(cd "$_ma_proj" 2>/dev/null && pwd)
     if [[ -n "$_ma_proj" && -d "$_ma_proj" && -f "$_ma_dir/references/reference-manual.md" ]]; then
-      _iv_out=$(bash "$_ma_iv" "$_ma_proj" --skill-dir "$_ma_dir" --tsv --path-check 2>&1) || true
+      _iv_out=$(bash "$_ma_iv" "$_ma_proj" --skill-dir "$_ma_dir" --tsv --path-check --stability-audit 2>&1) || true
       _iv_hallus=$(printf '%s\n' "$_iv_out" | grep -c '^HALLUCINATION' || true)
       if [[ "${_iv_hallus:-0}" -gt 0 ]]; then
         echo "✗ ②③ inventory-verify 检测到 ${_iv_hallus} 个 HALLUCINATION 路径（清单登记 vs 仓库实存不符）" >&2
@@ -738,6 +740,12 @@ if [[ "${1:-}" == "--mark-active" ]]; then
       if [[ "${_iv_fail:-0}" -gt 0 ]]; then
         echo "⚠ inventory-verify FAIL 维度 ${_iv_fail} 个（advisory：清单覆盖度 < 0.95；不阻断 mark-active，但建议补漏）" >&2
         printf '%s\n' "$_iv_out" | grep -E '\bFAIL\b' >&2 || true
+      fi
+      # WP-R3-3：STABILITY_WARN 也作为告警（不阻断——advisory 级；标注与机械信号冲突须人工复核）
+      _iv_stab=$(printf '%s\n' "$_iv_out" | grep -c '^STABILITY_WARN' || true)
+      if [[ "${_iv_stab:-0}" -gt 0 ]]; then
+        echo "⚠ inventory-verify STABILITY_WARN ${_iv_stab} 条（advisory：稳定性标注与 git churn/fan-in/测试存在性信号冲突；不阻断 mark-active，但建议复核标注）" >&2
+        printf '%s\n' "$_iv_out" | grep '^STABILITY_WARN' >&2 || true
       fi
     else
       echo "⚠ inventory-verify 跳过（PROJECT_DIR 或 reference-manual.md 缺失：mark-active 不强求）" >&2
