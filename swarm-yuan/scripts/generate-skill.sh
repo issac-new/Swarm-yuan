@@ -804,7 +804,12 @@ if [[ "${1:-}" == "--refresh" ]]; then
   _rf_status=$(grep -m1 '^status:' "$_rf_dir/SKILL.md" 2>/dev/null | sed 's/^status: *//')
   echo "  当前 skill 状态: ${_rf_status:-无 status 字段}"
   if printf '%s\n' "$_rf_out" | LC_ALL=C grep -q '⚠ 项目源码已变化'; then
-    echo "  → 检测到变化（建议跑 --upgrade）："
+    # WP-R2-2：建议从"只 --upgrade"升级为完整更新链——--upgrade 只刷工具链，
+    # reference-manual.md 组件库清单需 AI 重探查更新 + inventory-verify 核验。
+    echo "  → 检测到变化，更新链（详见目标技能 SKILL.md「自成长」段）："
+    echo "      ① --upgrade 刷工具链（保留 reference-manual.md 内容文件）"
+    echo "      ② AI 按 exploration-guide §C+ 重探查变化维度 → 更新 reference-manual.md 清单"
+    echo "      ③ inventory-verify.sh 计数核验（≥0.95 + 路径存在性）→ ④ --commit-fp 落新基线"
     printf '%s\n' "$_rf_out" | LC_ALL=C grep -v '^⚠' | LC_ALL=C grep -v '^  →' | LC_ALL=C grep -v '^$' | LC_ALL=C sed 's/^/    /'
     # --commit-fp：把当前指纹落盘为新基线
     if [[ "${1:-}" == "--commit-fp" ]]; then
@@ -1528,7 +1533,7 @@ if [[ "$PROFILE" != "lite" ]]; then
 _write_if_absent "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
 {
   "hooks": {
-    "SessionStart": [{"matcher": "startup|clear|compact", "command": "echo \"→ [hook:SessionStart] 调用 state-machine.sh status（阶段状态追踪）\"; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" restore-journal 2>/dev/null || true; _fp=\"${CLAUDE_PLUGIN_ROOT:-.}/scripts/project-fingerprint.sh\"; if [[ -f \"$_fp\" ]]; then _proj=$( (set +u; . \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.conf\" 2>/dev/null; printf '%s' \"${PROJECT_DIR:-}\") ); if [[ -n \"$_proj\" && -d \"$_proj\" ]]; then _fp_out=$(bash \"$_fp\" \"$_proj\" --diff --quiet 2>/dev/null || true); if printf '%s\\n' \"$_fp_out\" | LC_ALL=C grep -q '⚠'; then echo \"⚠ [hook:SessionStart] 项目源码指纹已变化（建议 bash scripts/generate-skill.sh --refresh 查看）\"; fi; fi; fi"}],
+    "SessionStart": [{"matcher": "startup|clear|compact", "command": "echo \"→ [hook:SessionStart] 调用 state-machine.sh status（阶段状态追踪）\"; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" restore-journal 2>/dev/null || true; _fp=\"${CLAUDE_PLUGIN_ROOT:-.}/scripts/project-fingerprint.sh\"; if [[ -f \"$_fp\" ]]; then _proj=$( (set +u; . \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.conf\" 2>/dev/null; printf '%s' \"${PROJECT_DIR:-}\") ); if [[ -n \"$_proj\" && -d \"$_proj\" ]]; then _fp_out=$(bash \"$_fp\" \"$_proj\" --diff --quiet 2>/dev/null || true); if printf '%s\\n' \"$_fp_out\" | LC_ALL=C grep -q '⚠'; then echo \"⚠ [hook:SessionStart] 项目源码指纹已变化——按 SKILL.md「自成长」段走更新链（感知: bash scripts/project-fingerprint.sh <项目根> --diff）\"; fi; fi; fi"}],
     "PreCompact": [{"matcher": "*", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" dump-journal 2>/dev/null || true", "timeout": 5}],
     "PreToolUse": [{"matcher": "Write|Edit", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --scope >/dev/null 2>&1 && echo \"→ [hook:PreToolUse] 调用 precheck --scope：✓ pass\" || echo \"→ [hook:PreToolUse] 调用 precheck --scope：✗ FAIL——运行 bash scripts/precheck.sh --scope 查看详情\""}, {"matcher": "Write|Edit|MultiEdit|Bash|WebSearch|WebFetch", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/integrity-guard.sh\" 2>/dev/null || true", "timeout": 5}, {"matcher": "Write|Edit|MultiEdit|Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/fail-gate-hook.sh\" 2>/dev/null || true", "timeout": 5}],
     "PostToolUse": [{"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/failure-detector.sh\" 2>/dev/null || true", "timeout": 5}, {"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/fail-gate-hook.sh\" 2>/dev/null || true", "timeout": 5}],
@@ -1639,6 +1644,23 @@ cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] assets: spec-template(§5.5-§18) + plan + branch + env + data + state-machine
 - [ ] check: precheck.sh 门禁（标准 27 随 --all-full；合规 13 随 --compliance-suite 按需）
 - [ ] scripts: precheck + state-machine + trace-log + cost-report
+EOF
+# WP-R2-2：自成长指引段（固定操作指引，非填充项——目标技能的 AI 按此链保持技能与项目同步）
+cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
+
+## 自成长（项目变了，本技能跟着变）
+
+本技能的组件库清单/编排约束是生成时刻的快照。项目代码演进后按此链更新：
+
+1. **感知**（会话开始时可跑，秒级）：`bash scripts/project-fingerprint.sh <项目根> --diff`；提示无基线时先 `--write` 落基线。Claude Code 的 SessionStart hook 已自动感知；其他运行时由 AI 在会话开始时主动跑本命令。
+2. **判断**：输出「⚠ 项目源码已变化」→ 走更新链；「无变化」→ 继续正常开发。
+3. **更新链**（检测到变化后）：
+   - 工具链刷新：用生成器（路径见本目录 `.swarm-yuan-version` 的 `source_repo`）跑 `generate-skill.sh --refresh <本技能目录>` 看 dry-run 报告 → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留不动）
+   - 内容刷新：AI 按 swarm-yuan `references/exploration-guide.md` §C+ **只针对变化维度重探查**（新增/消失的组件/接口/约束），更新 `references/reference-manual.md` 对应清单
+   - 核验：生成器侧 `inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉）
+4. **落新基线**：更新完成后 `bash scripts/project-fingerprint.sh <项目根> --write`。
+
+红线：指纹只感知结构变化（文件数/扩展名/骨架 cksum）；语义变化（约束失效/接口语义变更）靠 AI 在编码流程中发现即更新清单，不等 refresh。
 EOF
 # WP-P5: SKILL.md「按需读取」索引表自动生成（依据实际拷入的 UNIVERSAL_FILES 分级清单）
 # 仅 create 分支执行（resume 分支走 else 跳过，不重复追加）；表按 UNIVERSAL_FILES 数组顺序输出。

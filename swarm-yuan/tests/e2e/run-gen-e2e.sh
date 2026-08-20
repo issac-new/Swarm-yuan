@@ -93,6 +93,18 @@ done
 # --- 7. 产物 SKILL.md frontmatter status: draft ---
 grep -q '^status: draft' "${SKILL_DIR}/SKILL.md" && ok "产物 SKILL.md status: draft" || bad "产物 SKILL.md 非 draft 状态"
 
+# --- 7.5 WP-R2-2：产物 SKILL.md 含「自成长」固定指引段 + hooks.json 指引指向目标侧真实脚本 ---
+grep -q '## 自成长（项目变了，本技能跟着变）' "${SKILL_DIR}/SKILL.md" \
+  && ok "产物 SKILL.md 含自成长段" || bad "产物 SKILL.md 缺自成长段"
+grep -q 'project-fingerprint.sh' "${SKILL_DIR}/SKILL.md" \
+  && ok "自成长段含感知命令（project-fingerprint.sh）" || bad "自成长段缺感知命令"
+# SessionStart hook 的指引必须指向目标技能侧存在的脚本（generate-skill.sh 是生成器侧，不在产物里）
+if grep -q 'scripts/generate-skill.sh' "${SKILL_DIR}/hooks/hooks.json" 2>/dev/null; then
+  bad "hooks.json SessionStart 仍指向目标侧不存在的 scripts/generate-skill.sh"
+else
+  ok "hooks.json SessionStart 指引不引用生成器侧脚本"
+fi
+
 # --- 8. 产物 precheck.sh 自身可跑 --all（draft 骨架空 conf 不应崩）---
 # 注：产物 precheck.sh 的 conf 是嗅探初稿，部分语义型变量=()，--all 应 fail-open 不崩
 # fail-open 语义：rc=0（pass）或 rc=1（有门禁 fail 属正常）；rc>1（如 126/127/段错误）= 真崩
