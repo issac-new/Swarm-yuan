@@ -20,10 +20,26 @@
 #
 # WP-Enforce3：--report 子命令（deny 事件审计报告，独立于 hook stdin 流程）
 #   用法：bash fail-gate-hook.sh --report [N] [--project <项目根>]
-#     N = 输出最近 N 条 deny 事件（默认 20）
+#     N = 输出最近 N 条事件（默认 20）
 #     --project = 项目根（缺省 = 当前目录）
-#   输出：① 最近 N 条 deny 事件 TSV（ts/tool/target/gates）② 按门禁聚合 ③ 按工具聚合
 #   退出码：0 正常（含空文件）；1 arg 错误。
+#
+# WP-R12-A（dsh R12 调研吸收，hook-protocol/src/events.ts 的配对审计模式 bash 化）：
+#   deny-only 日志升级为"每个决策点一行"的全量审计 .swarm-yuan/gate-audit.jsonl：
+#     ① invoked/result 配对语义折叠为单行（本 hook 是同步单次进程，无异步生命周期，
+#        dsh 的配对事件是为跨异步边界 join；单行自包含 = 同语义的 bash 适配）；
+#     ② handler 是稳定确定性 id（fail-gate-hook:edit / fail-gate-hook:bash，按匹配域派生，
+#        非随机 UUID）——重跑可对齐；
+#     ③ 派生决策规则：decision ∈ {deny, pass}，pass 也落行（豁免路径/命令不在白名单），
+#        拦截率 = deny/总数 可算——不只数 deny；
+#     ④ 目标字段截断 500 字符（dsh stderrSummary 同款有界摘要）；
+#     ⑤ fail-open 变体（A4 原则的 bash 取舍）：审计写失败不阻塞主流程（|| true），
+#        不学习 dsh "审计失败即拒绝决策"——我们的 deny 是安全侧动作，宁可留痕缺失也不可放行失效。
+#   gate-deny.jsonl 保留双写（向后兼容旧 --report 与既有消费者）。
+#   休眠不记：flag 不存在（门禁未红）或工具不在拦截域时不写审计行——审计总体是
+#   "门禁红期间的决策点"，不是全量工具调用日志（体积纪律）。
+#   --report 输出（audit 文件存在时）：① 最近 N 条决策事件 ② 拦截率（按 handler）
+#   ③ 按门禁聚合（deny 行）④ 按工具决策分布；仅有旧 gate-deny.jsonl 时退回旧三段。
 
 set -uo pipefail
 
@@ -39,12 +55,35 @@ if [[ "${1:-}" == "--report" ]]; then
     esac
   done
   _rp_file="${_rp_proj}/.swarm-yuan/gate-deny.jsonl"
+  _rp_audit="${_rp_proj}/.swarm-yuan/gate-audit.jsonl"
+  # WP-R12-A：audit 文件存在 → 新四段（含拦截率）；否则退回旧三段（向后兼容）
+  if [[ -f "$_rp_audit" ]]; then
+    echo "## fail-gate 审计报告（project=${_rp_proj}，最近 ${_rp_n} 条，源=gate-audit.jsonl）"
+    echo
+    echo "### ① 最近决策事件（按时间倒序）"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "时间" "handler" "工具" "决策" "原因" "目标"
+    tail -"$_rp_n" "$_rp_audit" | LC_ALL=C sed -n 's/.*"ts":"\([^"]*\)".*"handler":"\([^"]*\)".*"tool":"\([^"]*\)".*"decision":"\([^"]*\)".*"reason":"\([^"]*\)".*"target":"\([^"]*\)".*/\1\t\2\t\3\t\4\t\5\t\6/p' | LC_ALL=C sort -r
+    echo
+    echo "### ② 拦截率（按 handler：决策点总数 / deny 数 / 拦截率）"
+    printf '%s\t%s\t%s\t%s\n' "handler" "决策点" "deny" "拦截率"
+    LC_ALL=C sed -n 's/.*"handler":"\([^"]*\)".*"decision":"\([^"]*\)".*/\1\t\2/p' "$_rp_audit" \
+      | LC_ALL=C awk -F'\t' '{t[$1]++; if ($2=="deny") d[$1]++} END {for (h in t) printf "%s\t%d\t%d\t%.1f%%\n", h, t[h], d[h]+0, (d[h]+0)*100/t[h]}' \
+      | LC_ALL=C sort
+    echo
+    echo "### ③ 按门禁聚合（deny 行，哪些门禁拦截最多）"
+    LC_ALL=C grep '"decision":"deny"' "$_rp_audit" | LC_ALL=C sed -n 's/.*"gates":"\([^"]*\)".*/\1/p' | LC_ALL=C sort | LC_ALL=C uniq -c | LC_ALL=C sort -rn | LC_ALL=C awk '{printf "%d\t%s\n", $1, $2}'
+    echo
+    echo "### ④ 按工具决策分布"
+    printf '%s\t%s\t%s\n' "工具" "决策" "次数"
+    LC_ALL=C sed -n 's/.*"tool":"\([^"]*\)".*"decision":"\([^"]*\)".*/\1\t\2/p' "$_rp_audit" | LC_ALL=C sort | LC_ALL=C uniq -c | LC_ALL=C sort -rn | LC_ALL=C awk '{printf "%d\t%s\t%s\n", $1, $2, $3}'
+    exit 0
+  fi
   if [[ ! -f "$_rp_file" ]]; then
     echo "## fail-gate deny 报告（project=${_rp_proj}）"
     echo "无 deny 事件（.swarm-yuan/gate-deny.jsonl 不存在）"
     exit 0
   fi
-  echo "## fail-gate deny 报告（project=${_rp_proj}，最近 ${_rp_n} 条）"
+  echo "## fail-gate deny 报告（project=${_rp_proj}，最近 ${_rp_n} 条，源=gate-deny.jsonl 旧格式）"
   echo
   echo "### ① 最近 deny 事件（按时间倒序）"
   printf '%s\t%s\t%s\t%s\n' "时间" "工具" "目标" "门禁"
@@ -164,20 +203,39 @@ _deny_log() { # $1=tool $2=target $3=gates
   printf '{"ts":"%s","tool":"%s","target":"%s","gates":"%s"}\n' "$_dl_ts" "$_e1" "$_e2" "$_e3" >> "$_dl_file" 2>/dev/null || true
 }
 
+# WP-R12-A：全量决策审计（invoked/result 配对语义的 bash 单行适配）
+# $1=handler $2=tool $3=target $4=decision(deny|pass) $5=reason $6=gates
+_audit_log() {
+  local _al_dir="$ROOT/.swarm-yuan"
+  local _al_file="${_al_dir}/gate-audit.jsonl"
+  mkdir -p "$_al_dir" 2>/dev/null || return 0
+  local _al_ts
+  _al_ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  # 目标有界截断 500 字符（dsh stderrSummary 同款）+ JSON 最小转义
+  local _a2 _a3 _a6
+  _a2=$(printf '%s' "$2" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n')
+  _a3=$(printf '%s' "$3" | cut -c1-500 | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n')
+  _a6=$(printf '%s' "$6" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n')
+  printf '{"ts":"%s","handler":"%s","tool":"%s","decision":"%s","reason":"%s","target":"%s","gates":"%s"}\n' \
+    "$_al_ts" "$1" "$_a2" "$4" "$5" "$_a3" "$_a6" >> "$_al_file" 2>/dev/null || true
+}
+
 if [[ "$EVENT" == "PreToolUse" ]]; then
   case "$TOOL" in
     Write|Edit|MultiEdit)
-      # flag 不存在 → 放行
+      # flag 不存在 → 放行（休眠态不写审计：总体=门禁红期间的决策点）
       [[ ! -f "$FLAG" ]] && exit 0
       # 文件目标豁免：修 .swarm-yuan/ conf 或 precheck.sh 本身不拦（修配置通道）
       _norm=$(printf '%s' "$FILE_PATH" | tr '\\' '/')
       case "$_norm" in
         *.swarm-yuan/*|*precheck.sh|*precheck.conf|*precheck.arch.conf|*precheck.compliance.conf|*precheck.patch.conf)
+          _audit_log "fail-gate-hook:edit" "$TOOL" "$FILE_PATH" "pass" "exempt-path" "$(cat "$FLAG" 2>/dev/null || printf 'configured')"
           exit 0
           ;;
       esac
       _gates=$(cat "$FLAG" 2>/dev/null || printf 'configured')
       [[ -z "$_gates" ]] && _gates="configured"
+      _audit_log "fail-gate-hook:edit" "$TOOL" "$FILE_PATH" "deny" "gates-unresolved" "$_gates"
       _deny_log "$TOOL" "$FILE_PATH" "$_gates"
       cat << EOF
 {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan fail-gate: 门禁 ${_gates} 上次运行 fail 且未修复——GATE_ENFORCE_DENY 白名单生效，先跑 bash scripts/precheck.sh 修复后再改文件。","additionalContext":"swarm-yuan fail-gate: DENY — precheck 捕获的 fail 未修复（白名单：${_gates}）。解除方式：1) 跑 bash scripts/precheck.sh --all（或对应门禁）修复至通过（flag 自动清除）；2) 若需放宽白名单，改 scripts/precheck.conf 的 GATE_ENFORCE_DENY（UserChallenge 类决策，须决策落痕）；3) 本门默认关闭，是你在 conf 里显式开启的。deny 事件已落盘 .swarm-yuan/gate-deny.jsonl（审计留痕）。"}}
@@ -206,9 +264,10 @@ EOF
           _match=1; break
         fi
       done
-      [[ "$_match" -eq 0 ]] && exit 0
+      [[ "$_match" -eq 0 ]] && { _audit_log "fail-gate-hook:bash" "Bash" "$CMD" "pass" "bash-not-whitelisted" "$(cat "$FLAG" 2>/dev/null || printf 'configured')"; exit 0; }
       _gates=$(cat "$FLAG" 2>/dev/null || printf 'configured')
       [[ -z "$_gates" ]] && _gates="configured"
+      _audit_log "fail-gate-hook:bash" "Bash" "$CMD" "deny" "gates-unresolved" "$_gates"
       _deny_log "Bash" "$CMD" "$_gates"
       cat << EOF
 {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan fail-gate: 门禁 ${_gates} 上次运行 fail 且未修复——GATE_ENFORCE_DENY_BASH 拦截推进态命令（${_cmd_key}）。","additionalContext":"swarm-yuan fail-gate: DENY Bash — precheck 捕获的 fail 未修复（白名单：${_gates}），推进态命令 ${_cmd_key} 被 GATE_ENFORCE_DENY_BASH 拦截。解除方式：1) 跑 bash scripts/precheck.sh --all（或对应门禁）修复至通过；2) 若为误伤（如临时调研命令），改 scripts/precheck.conf 的 GATE_ENFORCE_DENY_BASH 白名单（UserChallenge 类决策）。deny 事件已落盘 .swarm-yuan/gate-deny.jsonl。"}}

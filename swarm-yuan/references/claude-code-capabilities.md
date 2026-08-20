@@ -150,6 +150,7 @@ ECC 的 hook 系统有 4 层治理——生成的目标技能的 hooks.json 可�
 - **两道保险防误伤**：draft 期（骨架期门禁红是常态）自动关闭；改 `.swarm-yuan/` conf 与 precheck.sh 本身豁免（修门禁配置的通道）
 - **与 integrity-guard 的分工**：integrity-guard 管「别作弊」（受保护治理资产 deny 清单），fail-gate 管「别绕过」（门禁 fail 未修复禁继续改文件）——两层 hook 正交
 - 开启是 UserChallenge 类决策（须决策落痕）
+- **审计双层（WP-R12-A，dsh R12 吸收）**：deny 行双写 `gate-deny.jsonl`（旧格式保留），同时每个决策点（门禁红期间的拦截域调用）落 `gate-audit.jsonl` 全量审计行 `{ts,handler,tool,decision,reason,target≤500字符,gates}`——pass 也落行（exempt-path / bash-not-whitelisted），`--report` 据此输出拦截率（deny/决策点）与工具决策分布；休眠态（flag 不存在/工具不在域）不写。fail-open：审计写失败不阻塞主流程
 
 ### MCP Health Check（ECC v2.0.0）
 
