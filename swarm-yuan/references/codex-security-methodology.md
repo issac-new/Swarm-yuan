@@ -228,3 +228,22 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 - 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 54）
 - 自检断言：G15 `check_codex_security_cli_wiring`（`self-check.sh`，warn-only，守 CLI 接线 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_RUNTIMES=13` / `FACT_RUNTIMES_CLI=4` / `FACT_REFERENCES=34`
+
+---
+
+## R4 吸收（2026-08-21）：codex-security v0.1.16 闭环管线 + 成本上限
+
+### 发现 → 外部 tracker 发布 → 关联持久化 → verify-fix 闭环（v0.1.13-16）
+
+codex-security v0.1.13-16 落地完整闭环管线：
+- **Linear 深度集成**：扫描结果可发布为 Linear issue/project，直连 Linear API 带 assignee，**持久化 finding-publication 关联**（finding ID ↔ Linear issue ID 双映射），批量并发发布，交互式发布确认
+- **交互式修复闭环**：CLI 交互式 finding review + 打补丁 + 可选开 PR；patch task 在 Codex desktop 展示
+- **只读 `verify-fix` 命令**：修复后独立验证（不重新扫描，只验证该 finding 是否已修复）
+
+本仓对齐：`decisions.jsonl` outcome 生命周期（WP-R12-D：proposed/implemented/rejected/superseded）+ trace-log.sh --decision 已对齐"发现-决策-落痕"段；"verify-fix 只读验证"理念可借鉴到 `--verify-completeness` 的定位（只读校验骨架填充完成度，不改任何文件）。
+- 审查口径：finding 的生命周期须显式（发现 → 决策 → 实施 → 验证），不允许"发现后无下文"；verify 步骤必须只读（验证不该有副作用）
+
+### bulk 操作按仓库设成本上限（v0.1.12）
+
+bulk-scan 每仓库**强制 cost limit**（maximum reasoning effort），防止单仓库失控消耗 API 配额。
+本仓对齐登记候选：未来若有批量操作（如批量重探查多 scope），应设 per-scope 成本上限（时间/调用次数）。本轮不落地（无 bulk 场景），登记候选。

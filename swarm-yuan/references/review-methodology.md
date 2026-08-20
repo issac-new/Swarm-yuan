@@ -442,3 +442,32 @@ ocr 新增 LLM provider 支持：
 - **不新增 check_* 门禁**（守决策 26 预算）；本纪律是 AI 审查的结构化指引，由 `--review` 的代码质量维度承载。
 
 **对脚本/技能/prompt 测试的特殊提醒**：swarm-yuan 自身的脚本（precheck.sh/state-machine.sh/trace-log.sh）和生成的技能 prompt 不宜用 grep 式测试（string-presence trap）。可观察的是行为（exit code / 输出结构 / 副作用），不是文本存在性。fixture 双态测试（violating/compliant）是行为测试的正解--它断言门禁在违规项目 fail、在合规项目 pass，而非断言脚本"含有某段代码"。
+
+---
+
+## R4 吸收（2026-08-21）：openspec v1.10 + gstack v1.68.2 + ocr v1.9.8
+
+### task plan 强制"完成判据"（openspec v1.10）
+
+openspec v1.10 起生成的 task plan 强制要求写明**完成判据**（test / 命令 / 可观察结果 / 交付物），"Implement the thing"不再算计划。
+本仓对齐：`assets/plan-template.md` 的每个任务条目应含**完成判据字段**（可测试断言 / 可执行命令 / 可观察输出 / 可交付物路径）。
+- 审查口径：plan 里出现"实现 X"类无判据条目 → 判 Important（要求补完成判据，否则无法验证）
+- 机器执法登记候选：`--verify-completeness` 扩展检测 plan 章节是否含"完成判据"字段（本轮不落地，语义判断归 AI）
+
+### 每个 guard 必须可证明会触发，否则删除（gstack v1.68.2，v1.64.1 净删 24,943 行）
+
+gstack v1.64.1 做了一次大规模"guard 可证伪触发"清理：所有 pipeline guard 都必须能证明会被真实输入触发，不可证明触发的 guard 直接删除——净删 24,943 行。
+本仓对齐：self-check.sh 各 check_* 函数与 facts.conf 数字机器执法已满足"每个检查都有真实触发路径"（facts 漂移即 fail）。
+- 审查口径：新增门禁/检查时问一句"什么输入会让它 fail？"——答不出就不加（守决策 26 门禁预算 54）
+- 反例：grep 式存在性检查（"文件里有没有这行字"）不可证伪（永远 true 或永远 false），禁用；行为测试（exit code / 输出结构 / 副作用）才是正解
+
+### issue/PR 关闭附 receipt 证据（gstack v1.68.0）
+
+gstack v1.68.0 关闭 90 个过期 PR 和 21 个 issue 时**每条都附证据 receipt**（为什么关、依据是什么、如何验证）。
+本仓对齐：decisions.jsonl outcome=rejected 时 rationale 必填（WP-R12-D 落地）；review 的 wontfix 结论须附"为什么这不是问题"的判断依据。
+
+### JSON/SARIF 输出时进度信息一律走 stderr、非 TTY 关颜色（ocr v1.9.8）
+
+ocr v1.9.8 落地管道纪律：机器可读输出（JSON/SARIF）时，review 进度改走 stderr；非 TTY 时抑制 ANSI 颜色；token 预算耗尽写入 JSON `summary.budget_exceeded` 字段。
+本仓对齐：`precheck.sh --format json` 已实现（SARIF 子集结果打印 stdout 末尾，进度走 stderr）；`gate-report.sh` / `gate-trends.sh` 同样遵守。
+- 审查口径：任何脚本的 stdout 若被管道消费（`$(...)` 或 `|`），进度/诊断/警告必须走 stderr；非 TTY 时禁用颜色码（`[[ -t 1 ]]` 检测）
