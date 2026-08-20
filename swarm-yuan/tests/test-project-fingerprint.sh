@@ -60,11 +60,12 @@ out=$(bash "$GEN" --refresh "$TMP/skill5" 2>&1); rc=$?
 [[ $rc -eq 0 ]] && ok "态5 --refresh 无变化 exit 0" || bad "态5 exit=$rc: $out"
 echo "$out" | grep -q '✓ 无变化' && ok "态5 无变化行命中" || bad "态5 缺无变化行: $out"
 
-# --- 态 6：generate-skill.sh --refresh 有变化 → 提示 --upgrade ---
+# --- 态 6：generate-skill.sh --refresh 有变化 → 提示完整更新链（WP-R2-2 升级） ---
 printf 'fn z() {}\n' > "$TMP/proj/src/f.rs"
 out=$(bash "$GEN" --refresh "$TMP/skill5" 2>&1); rc=$?
 [[ $rc -eq 0 ]] && ok "态6 --refresh 有变化 exit 0" || bad "态6 exit=$rc"
-echo "$out" | grep -q '→ 检测到变化（建议跑 --upgrade）' && ok "态6 升级提示命中" || bad "态6 缺升级提示: $out"
+echo "$out" | grep -q '→ 检测到变化，更新链' && ok "态6 更新链提示命中" || bad "态6 缺更新链提示: $out"
+echo "$out" | grep -q '重探查变化维度' && ok "态6 含重探查指引" || bad "态6 缺重探查指引: $out"
 
 # --- 态 7：--refresh --commit-fp 落新基线 → 再 --refresh 无变化 ---
 out=$(bash "$GEN" --refresh "$TMP/skill5" --commit-fp 2>&1); rc=$?

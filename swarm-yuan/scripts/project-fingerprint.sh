@@ -115,7 +115,10 @@ if [[ "$_tot_a" == "$_tot_b" && "$_sk_a" == "$_sk_b" && "$_ext_a" == "$_ext_b" ]
 fi
 
 # 有变化 → 输出差异摘要
-echo "⚠ 项目源码已变化（建议跑 bash scripts/generate-skill.sh --upgrade <skill> <proj> 刷新）"
+# WP-R2-2：指引从"只 --upgrade"升级为完整更新链（--upgrade 只刷工具链，清单需重探查+核验）
+echo "⚠ 项目源码已变化——按目标技能 SKILL.md「自成长」段走更新链："
+echo "  ① 生成器 generate-skill.sh --upgrade 刷工具链 ② AI 重探查变化维度更新 reference-manual.md 清单"
+echo "  ③ inventory-verify.sh 计数核验 ④ 本脚本 --write 落新基线"
 echo "  文件数:    ${_tot_a} → ${_tot_b}（Δ $((${_tot_b} - ${_tot_a}))）"
 echo "  骨架 cksum: ${_sk_a} → ${_sk_b}"
 if [[ "${_ext_a}" != "${_ext_b}" ]]; then
