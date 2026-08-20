@@ -68,8 +68,9 @@ warn/advisory 输出由 AI 判断采纳不必全修；GATE_AI_JUDGMENT=1 时 adv
 
 ## 自成长（项目变了，本技能跟着变）
 （骨架已内置固定指引段，填充时保留并按项目实际调整命令路径：①感知 `project-fingerprint.sh --diff`
-②变化判断 ③更新链=生成器 --upgrade 刷工具链 + AI 按 §C+ 重探查变化维度更新 reference-manual.md
-清单 + inventory-verify 核验 ④落新基线。红线：语义变化发现即更新，不等 refresh）
+②变化判断 ③更新链=生成器 --upgrade 刷工具链 + AI 按「变化目录 scope」局部重探查更新
+reference-manual.md 清单（未变 scope 条目不重写）+ inventory-verify 核验 ④落新基线。
+红线：语义变化发现即更新不等 refresh；清单先完整生成再原子替换，探查失败保留 last-good）
 
 ## 完成检查表
 （任务完成前的 checkbox 清单）

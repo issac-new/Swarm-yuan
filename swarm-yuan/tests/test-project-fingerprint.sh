@@ -133,4 +133,32 @@ echo "$out" | grep -q -- '--commit-fp' && ok "态12 无基线 commit-fp 落盘" 
 out2=$(bash "$GEN" --refresh "$TMP/skill12" 2>&1)
 echo "$out2" | grep -q '✓ 无变化' && ok "态12 落基线后无变化命中" || bad "态12 落基线后仍异常: $out2"
 
+# --- 态 13：WP-R12-C 目录级 scope 报告（~ 内容变化 / + 新增目录 / - 消失目录） ---
+mkdir -p "$TMP/proj13/src" "$TMP/proj13/legacy"
+printf 'def a(): pass\n' > "$TMP/proj13/src/a.py"
+printf 'def old(): pass\n' > "$TMP/proj13/legacy/old.py"
+bash "$SH" "$TMP/proj13" --write >/dev/null
+# ① src 内容变化（加文件）② 新增 lib 目录 ③ legacy 目录消失
+printf 'def b(): pass\n' > "$TMP/proj13/src/b.py"
+mkdir -p "$TMP/proj13/lib" && printf 'def c(): pass\n' > "$TMP/proj13/lib/c.py"
+rm -rf "$TMP/proj13/legacy"
+out=$(bash "$SH" "$TMP/proj13" --diff 2>&1); rc=$?
+[[ $rc -eq 0 ]] && ok "态13 有变化 exit 0" || bad "态13 exit=$rc: $out"
+echo "$out" | grep -q '变化目录（scope' && ok "态13 变化目录段命中" || bad "态13 缺变化目录段: $out"
+echo "$out" | grep -q '~ src' && ok "态13 ~ src 内容变化命中" || bad "态13 缺 ~ src: $out"
+echo "$out" | grep -q '+ lib' && ok "态13 + lib 新增目录命中" || bad "态13 缺 + lib: $out"
+echo "$out" | grep -q -- '- legacy' && ok "态13 - legacy 消失目录命中" || bad "态13 缺 - legacy: $out"
+
+# --- 态 14：dir_cksums 入指纹文件 + 无变化时不报目录段 ---
+grep -q '^dir_cksums=' "$TMP/proj13/.swarm-yuan/project-fingerprint" && ok "态14 基线含 dir_cksums" || bad "态14 基线缺 dir_cksums"
+bash "$SH" "$TMP/proj13" --write >/dev/null
+out=$(bash "$SH" "$TMP/proj13" --diff 2>&1)
+echo "$out" | grep -q '变化目录' && bad "态14 无变化误报目录段: $out" || ok "态14 无变化不报目录段"
+# 顶层散文件归 _root 组
+mkdir -p "$TMP/proj14/src"
+printf 'def a(): pass\n' > "$TMP/proj14/src/a.py"
+printf 'readme\n' > "$TMP/proj14/README.md"
+bash "$SH" "$TMP/proj14" --write >/dev/null
+grep -q 'dir_cksum\[_root\]' "$TMP/proj14/.swarm-yuan/project-fingerprint" && ok "态14 顶层散文件归 _root 组" || bad "态14 缺 _root 组"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-project-fingerprint"; exit 0; } || { echo "FAIL test-project-fingerprint" >&2; exit 1; }
