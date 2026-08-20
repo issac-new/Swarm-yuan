@@ -161,4 +161,29 @@ printf 'readme\n' > "$TMP/proj14/README.md"
 bash "$SH" "$TMP/proj14" --write >/dev/null
 grep -q 'dir_cksum\[_root\]' "$TMP/proj14/.swarm-yuan/project-fingerprint" && ok "态14 顶层散文件归 _root 组" || bad "态14 缺 _root 组"
 
+# --- 态 15：WP-R3-2 last-good 红线（--diff 预警 + --write 拒绝 + --force 放行 + <50% 不拦）---
+mkdir -p "$TMP/proj15"/{src,lib,test,docs,conf}
+for d in src lib test docs conf; do
+  for i in 1 2 3 4 5; do printf '// x\n' > "$TMP/proj15/$d/f$i.ts"; done
+done
+bash "$SH" "$TMP/proj15" --write >/dev/null   # 基线 25 文件
+rm "$TMP/proj15/src"/f*.ts "$TMP/proj15/lib"/f*.ts "$TMP/proj15/test"/f*.ts   # 删 15 个（-60%）
+out=$(bash "$SH" "$TMP/proj15" --diff 2>&1); rc=$?
+echo "$out" | grep -q 'last-good 红线预警' && ok "态15 --diff 触发 last-good 预警" || bad "态15 --diff 缺预警: $out"
+echo "$out" | grep -q -- '-60.0%' && ok "态15 预警含百分比" || bad "态15 预警缺百分比: $out"
+# --write 无 --force 应拒绝
+out=$(bash "$SH" "$TMP/proj15" --write 2>&1); rc=$?
+[[ $rc -eq 1 ]] && ok "态15 --write 无 --force exit 1" || bad "态15 --write exit=$rc: $out"
+echo "$out" | grep -q 'last-good 红线' && ok "态15 --write 拒绝含红线提示" || bad "态15 --write 缺红线提示: $out"
+# 基线应未被覆盖（last-good 保留）
+grep -q '^total=25' "$TMP/proj15/.swarm-yuan/project-fingerprint" && ok "态15 旧基线保留（total=25）" || bad "态15 基线被覆盖"
+# --write --force 应放行
+out=$(bash "$SH" "$TMP/proj15" --write --force 2>&1); rc=$?
+[[ $rc -eq 0 ]] && ok "态15 --write --force exit 0" || bad "态15 --force exit=$rc: $out"
+grep -q '^total=10' "$TMP/proj15/.swarm-yuan/project-fingerprint" && ok "态15 --force 落新基线 total=10" || bad "态15 基线未更新"
+# 继续删 3 个（10→7，-30% < 50%）→ 不拦截
+rm "$TMP/proj15/docs"/f1.ts "$TMP/proj15/docs"/f2.ts "$TMP/proj15/docs"/f3.ts
+out=$(bash "$SH" "$TMP/proj15" --write 2>&1); rc=$?
+[[ $rc -eq 0 ]] && ok "态15 -30% 不触发红线（--write 直通）" || bad "态15 -30% 误拦: $out"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-project-fingerprint"; exit 0; } || { echo "FAIL test-project-fingerprint" >&2; exit 1; }
