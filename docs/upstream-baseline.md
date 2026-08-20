@@ -1,37 +1,39 @@
 # 上游运行时版本与许可证基线登记表
 
-> 用途：登记 swarm-yuan 引用/吸收的 **12 个上游运行时**的许可证与版本基线，支撑供应链可审计性（ISO/IEC 5230 OpenChain 方向）与文档漂移治理。
-> 数据来源：GitHub REST API + npm/PyPI registry **2026-07-20 实测**（见 `docs/research/R6-upstream-web.md` §0；gstack/superpowers 见 `docs/research/R5-upstream-local.md`）；impeccable 行为 2026-07-28 实测补入。
+> 用途：登记 swarm-yuan 引用/吸收的 **14 个上游运行时**的许可证与版本基线，支撑供应链可审计性（ISO/IEC 5230 OpenChain 方向）与文档漂移治理。
+> 数据来源：GitHub REST API + npm/PyPI registry **2026-08-21 实测**（本轮 R4 全量重核）；历史实测轮次见 `docs/research/R6-upstream-web.md` §0（2026-07-20）/ `docs/runtime-update-2026-07.md`（2026-07-26）/ 2026-08-14 轮。
 > 机器可读契约：每个 drifted 条目所在行必须含字面漂移标记（行尾「机器标记」列，格式 baseline_status=状态值）；self-check 的轻量基线忠告仅 grep 漂移标记所在行并 warn（不联网）。
 > 状态取值：`synced`（基线≈最新）｜`drifted`（基线落后，需重核）｜`watch`（迭代极快，持续观察）｜`license-risk`（许可证合规风险）。
 >
 > **本地缓存建议**：`swarm-yuan/research/` 下的上游 clone 仅供 AI 阅读源码（已 gitignored，不入 git），无需 commit 历史。建议用 `git clone --depth 1` 浅克隆——12 个 clone 的 `.git` 历史合计约 1.1GB，浅克隆可省 ~1GB 本地磁盘（ruflo/claude-mem/gsd-core/open-code-review 四个 `.git` 占比最高）。
 
-## 一、13 运行时登记表
+## 一、14 运行时登记表
 
-| 名称 | 仓库 | 许可证 | 引用基线 | 2026-07-20 最新版 | 状态 | 机器标记 |
+| 名称 | 仓库 | 许可证 | 引用基线 | 2026-08-21 最新版 | 状态 | 机器标记 |
 |------|------|--------|----------|--------------------|------|----------|
-| openspec | Fission-AI/OpenSpec | MIT | v1.9.0（2026-08-14 升级；`references/review-methodology.md:130`） | npm 1.9.0 | synced（2026-08-14 升级；吸收 v1.7 ZCode 支持 + skip_specs + v1.9 validate --archived/honest root resolution） | baseline_status=synced |
-| comet | rpamis/comet | MIT | v0.3.9（`references/subagent-orchestration.md:118`） | npm 0.4.0-beta.6（2026-07-20 重核；初测 0.4.0-beta.5） | drifted（P1-7 已重核，结论=观望，见 §三；0.4 正式版发布后升级引用基线） | baseline_status=drifted |
-| GitNexus | abhigyanpatwari/GitNexus | **PolyForm Noncommercial 1.0.0**（禁商用，API 返回 NOASSERTION，LICENSE 原文实测） | npm 1.6.9（引用 `context/trace`） | npm 1.6.9 | license-risk（降级为非默认，仅非商用可选） | baseline_status=license-risk |
-| gsd-core | open-gsd/gsd-core | MIT | v1.10.0（2026-08-14 升级；`references/gsd-patterns.md` + `references/decision-governance.md` §2.4 + `references/review-methodology.md:311`） | npm 1.10.0 | synced（2026-08-14 升级；吸收 v1.9 effort surface axis + v1.10 deferred-items.md 里程碑暴露 + reversibility/broken-windows） | baseline_status=synced |
-| claude-mem | thedotmack/claude-mem | Apache-2.0 | v13.15.0（2026-08-14 升级；`references/memory-persistence.md` sensitive 观察类型吸收 + G10 版本 oracle 吸收） | npm 13.15.0 | watch（迭代极快；2026-08-14 升级 + 吸收 v13.13.0 `sensitive` 观察类型 + version oracle 单源真值） | baseline_status=watch |
-| ocr | alibaba/open-code-review | Apache-2.0 | v1.9.2（2026-08-14 升级；`references/review-methodology.md`） | v1.9.2（Go） | synced（2026-08-14 升级；吸收 v1.8-1.9 allowlist Bicep/HCL/Terraform/Nim + per-file token limit） | baseline_status=synced |
-| graphify | Graphify-Labs/graphify（原 safishamsi/graphify，已迁移） | Apache-2.0（2026-07-18 MIT->Apache 2.0，v0.9.25） | v0.9.42（2026-08-14 升级，origin/v8 线；`references/code-graph-tools.md` Windows 可移植性吸收 + `references/memory-persistence.md` 知识溯源三标吸收） | npm graphifyy 0.10.0 / PyPI 0.9.42 | synced（2026-08-14 升级 research 仓库到 v0.9.42；**v1.0.0 是异源旧分支不取**——2026-04-05 发布，与 v0.9.42 diverged 落后 1273 commit；吸收 v0.9.42 source_file POSIX 规范化/provenance 仓库盖戳） | baseline_status=synced |
-| superpowers | obra/superpowers | MIT | v6.3.0（2026-08-14 升级；`references/subagent-orchestration.md` 修复环+5轮熔断 + brainstorming 仪式按任务规模缩放吸收 + `references/review-methodology.md` 可证伪性纪律吸收；**核心插件未 vendor**，离线包仅 marketplace 元数据；不 vendor 决策见 `docs/2026-07-20-upstream-vendor-decision.md`） | v6.3.0 | synced（2026-08-14 升级；吸收 v6.3 brainstorming 仪式按任务规模缩放 + controller 冲突不卡住 + resume-fix-loop/scoped-re-review/falsifiability） | baseline_status=synced |
-| gstack | garrytan/gstack | MIT | v1.60.1.0（offline-cache vendor，`offline-cache/gstack/VERSION:1`） | v1.60.1.0（vendor 版本；上游最新未实测） | synced | baseline_status=synced |
-| ruflo | ruvnet/ruflo（原 Claude Flow） | MIT | v3.38.9（2026-08-14 升级；`references/subagent-orchestration.md:277`、`references/review-methodology.md:208-209`） | npm 3.38.9 | synced（2026-08-14 升级；吸收 macOS symlink PathValidator 修复；方法论引用层，无运行时调用） | baseline_status=synced |
-| ECC | affaan-m/ECC | MIT | v2.1.0（2026-08-14 升级；`references/subagent-orchestration.md:149`；Plan Canvas 可视化 plan review + Kimi Code harness） | v2.1.0（2026-08 稳定版） | synced（2026-08-14 升级；吸收 Plan Canvas 可视化审查） | baseline_status=synced |
-| impeccable | pbakaus/impeccable | Apache-2.0 | v4.0.4（2026-08-14 吸收；`references/frontend-design-methodology.md`，方法论引用层第 5 对象；Modes/三层权威/craft-floor/59 反模式字典/finish_reviewer 完工审查模式 + v4.0.4 自动判别设计任务类型；G13 断言守引用存在性） | v4.0.4（2026-08-14 GitHub 实测） | synced（2026-08-14 升级；吸收 v4.0.4 自动判别设计任务类型 5 类 + 骰子决定方向，无 CLI 调用） | baseline_status=synced |
-| codex-security | openai/codex-security | Apache-2.0（完全开源） | v0.1.11（2026-08-14 升级；`references/codex-security-methodology.md`，CLI 接线层第 4 对象；**AI 约束推理扫描（非传统 SAST——OpenAI 官方明确「不包含 SAST 报告」）** + source→sink 数据流 + 静态评估七元组 + 威胁模型五要素 + 攻击路径分析 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；v0.1.11 嵌套 Git 仓库 scan + 多架构容器镜像/AppArmor 降级；`--sast-deep` 门禁 `SAST_DEEP_TOOL=codex-security` 时显式调用，**非降级链一环（非 SAST，auto 降级链不变，两者正交可并行）**；开源 Apache-2.0，Trusted Access 非付费门槛（推荐的身份审核），API 按 token 计费；G15 断言守 CLI 接线存在性） | v0.1.11（2026-08-14 GitHub 实测） | synced（2026-08-14 升级；吸收嵌套 Git scan + 多架构容器镜像） | baseline_status=synced |
+| openspec | Fission-AI/OpenSpec | MIT | v1.10.0（2026-08-21 升级；`references/review-methodology.md:130`） | npm 1.10.0 | synced（2026-08-21 升级；吸收 v1.10 task plan 强制完成判据 + 诊断输出一律走 stderr 纪律） | baseline_status=synced |
+| comet | rpamis/comet | MIT | v0.3.9（`references/subagent-orchestration.md:118`） | npm 0.4.0-beta.18（2026-08-21 重核；仍 beta 通道） | drifted（观望——0.4.0-beta 已发到 beta.18 仍无正式版；等 0.4.0 正式版发布后升级引用基线） | baseline_status=drifted |
+| GitNexus | abhigyanpatwari/GitNexus | **PolyForm Noncommercial 1.0.0**（禁商用，API 返回 NOASSERTION，LICENSE 原文实测） | npm 1.6.9（引用 `context/trace`） | npm 1.6.9（2026-08-21 重核，仍停滞于 2026-07-04） | license-risk（降级为非默认，仅非商用可选） | baseline_status=license-risk |
+| gsd-core | open-gsd/gsd-core | MIT | v1.11.0（2026-08-21 升级；`references/gsd-patterns.md` + `references/decision-governance.md` §2.4 + `references/review-methodology.md:311`） | npm 1.11.0（next 分支 tag） | synced（2026-08-21 升级；吸收 v1.11 guard 必须能观测自身失败分支 + STATE.md 盖 commit 戳新鲜度检测 + validator 收敛统一 envelope） | baseline_status=synced |
+| claude-mem | thedotmack/claude-mem | Apache-2.0 | v13.15.3（2026-08-21 升级；`references/memory-persistence.md` sensitive 观察类型吸收 + G10 版本 oracle 吸收） | npm 13.15.3 | watch（迭代极快；2026-08-21 升级 + 吸收 v13.15.x 错误信封分类 quota 不重试 + 多界面文案单一事实源） | baseline_status=watch |
+| ocr | alibaba/open-code-review | Apache-2.0 | v1.9.8（2026-08-21 升级；`references/review-methodology.md`） | v1.9.8（Go） | synced（2026-08-21 升级；吸收 v1.9.3-8 JSON/SARIF 输出时进度走 stderr + 非 TTY 关颜色 + api_key 从命令解析 + SARIF 输出 + resume 可信校验） | baseline_status=synced |
+| graphify | Graphify-Labs/graphify（原 safishamsi/graphify，已迁移） | Apache-2.0（2026-07-18 MIT->Apache 2.0，v0.9.25） | v0.9.47（2026-08-21 升级，origin/v8 线；`references/code-graph-tools.md` Windows 可移植性吸收 + `references/memory-persistence.md` 知识溯源三标吸收） | npm graphifyy 0.10.0 / PyPI 0.9.47 | synced（2026-08-21 升级 research 仓库到 v0.9.47；**v1.0.0 是异源旧分支不取**——2026-04-05 发布，与 v0.9.47 diverged；吸收 v0.9.43-47 OCaml/CommonLisp 语言扩展 + no-op 产物字节一致幂等写入 + 超时二分降级） | baseline_status=synced |
+| superpowers | obra/superpowers | MIT | v6.3.0（2026-08-14 升级；`references/subagent-orchestration.md` 修复环+5轮熔断 + brainstorming 仪式按任务规模缩放吸收 + `references/review-methodology.md` 可证伪性纪律吸收；**核心插件未 vendor**，离线包仅 marketplace 元数据；不 vendor 决策见 `docs/2026-07-20-upstream-vendor-decision.md`） | v6.3.0（2026-08-21 重核，无新版） | synced（2026-08-14 升级；吸收 v6.3 brainstorming 仪式按任务规模缩放 + controller 冲突不卡住 + resume-fix-loop/scoped-re-review/falsifiability） | baseline_status=synced |
+| gstack | garrytan/gstack | MIT | v1.68.2.0（2026-08-21 升级，master commit 51932ec；offline-cache vendor `offline-cache/gstack/VERSION:1`） | v1.68.2.0（2026-08-20 commit；无 release 无 tag，版本靠 VERSION 文件递增） | synced（2026-08-21 升级；吸收 v1.60-68 pipeline guard 全部可证明触发 + evidence ledger + fail-closed hooks + issue/PR 关闭附 receipt 证据） | baseline_status=synced |
+| ruflo | ruvnet/ruflo（原 Claude Flow） | MIT | v3.38.12（2026-08-21 升级；`references/subagent-orchestration.md:277`、`references/review-methodology.md:208-209`） | npm 3.38.12（npm 领先 GitHub release 3.38.9，以 npm 为准） | synced（2026-08-21 升级；3.38.10-12 为 patch 列车 + SynthID-Text 水印 crate 新方向（本仓不吸收——与运行时无关）；方法论引用层，无运行时调用） | baseline_status=synced |
+| ECC | affaan-m/ECC | MIT | v2.1.0（2026-08-14 升级；`references/subagent-orchestration.md:149`；Plan Canvas 可视化 plan review + Kimi Code harness） | v2.1.0（2026-08-21 重核，仍 2026-07-27 版） | synced（2026-08-14 升级；吸收 Plan Canvas 可视化审查） | baseline_status=synced |
+| impeccable | pbakaus/impeccable | Apache-2.0 | v4.1.1（2026-08-21 升级；`references/frontend-design-methodology.md`，方法论引用层第 5 对象；Modes/三层权威/craft-floor/59 反模式字典/finish_reviewer 完工审查模式 + v4.1 对抗性 verdict 多候选先内部比较再呈交 + 平台感知验证 + 证据坏则重取证重跑；G13 断言守引用存在性） | v4.1.1（2026-08-14 GitHub 实测，tag 名 skill-v4.1.1） | synced（2026-08-21 升级；吸收 v4.1 对抗性 verdict + 平台感知验证 + 拒绝假证据纪律） | baseline_status=synced |
+| codex-security | openai/codex-security | Apache-2.0（完全开源） | v0.1.16（2026-08-21 升级；`references/codex-security-methodology.md`，CLI 接线层第 4 对象；**AI 约束推理扫描（非传统 SAST——OpenAI 官方明确「不包含 SAST 报告」）** + source→sink 数据流 + 静态评估七元组 + 威胁模型五要素 + 攻击路径分析 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；v0.1.16 Linear 深度集成 + 交互式修复闭环 + verify-fix 只读命令 + bulk-scan 每仓库成本上限；`--sast-deep` 门禁 `SAST_DEEP_TOOL=codex-security` 时显式调用，**非降级链一环（非 SAST，auto 降级链不变，两者正交可并行）**；开源 Apache-2.0，Trusted Access 非付费门槛（推荐的身份审核），API 按 token 计费；G15 断言守 CLI 接线存在性） | v0.1.16（2026-08-20 GitHub 实测） | synced（2026-08-21 升级；吸收 v0.1.12-16 Linear 深度集成 + 交互式修复闭环 + verify-fix + bulk 成本上限） | baseline_status=synced |
+| dsh | deepseek-ai/deepseek-harness | MIT | dsh-v0.1.0-rc.8（2026-08-20 R12 重调研；`references/dsh-engineering-methodology.md` 四簇吸收——决策审计/状态韧性/增量自成长/工程纪律） | dsh-v0.1.0-rc.8（2026-08-21 重核，master HEAD=141eb6f 2026-08-19 与 rc.8 对齐） | synced（2026-08-20 R12 重调研落地；rc.8 无新版） | baseline_status=synced |
 
 ## 二、关键结论
 
 1. **许可证风险（最高优先）**：GitNexus = PolyForm Noncommercial 1.0.0，禁止商业使用。冻结措辞（全仓库统一引用）：**GitNexus（PolyForm Noncommercial 禁商用）降级为非默认；graphify（Apache-2.0，2026-07-18 MIT->Apache 2.0）提为默认代码图谱工具。**
-2. **版本漂移（1 项 drifted，2026-07-26 升级后）**：comet 0.3.9->0.4.0-beta.6（P1-7 已重核，结论=观望，见 §三）。2026-07-26 升级轮把 graphify（v0.9.27）、ruflo（v3.32.9）的 research 仓库对齐到上游最新稳定版并吸收方法论，引用基线同步更新为 synced（详见 `docs/runtime-update-2026-07.md`）。
-3. **watch（1 项）**：claude-mem 迭代极快（13.4->13.15.0），持续观察；2026-08-14 升级 research 仓库到 v13.15.0 并吸收 v13.13.0 `sensitive` 观察类型 + version oracle 单源真值（G10）。
+2. **版本漂移（1 项 drifted，2026-08-21 重核后）**：comet 0.3.9→0.4.0-beta.18（仍观望——beta 已发到 beta.18 但无 0.4.0 正式版；等正式版发布后升级引用基线）。本轮 2026-08-21 全量重核把 openspec/gsd-core/claude-mem/ocr/graphify/gstack/ruflo/impeccable/codex-security 9 项升级到最新并吸收对应方法论（详见各条目吸收注记 + `docs/runtime-update-2026-08.md`）。
+3. **watch（1 项）**：claude-mem 迭代极快（13.15.0->13.15.3，3 天 3 个 patch），持续观察；2026-08-21 升级 research 仓库到 v13.15.3 并吸收错误信封分类 + 多界面文案单一事实源纪律。
 4. **org 迁移**：graphify 仓库已迁至 Graphify-Labs/graphify，引用一律用新 URL。
-5. **存续风险**：12 个运行时中个人/小团队项目占比高（comet/GitNexus/claude-mem/gsd-core），上游存续监测纳入审计例程；GSD v1 上游（gsd-build/get-shit-done）已于 2026-06-26 归档，引用 open-gsd/gsd-core 为既定应对。
+5. **存续风险**：14 个运行时中个人/小团队项目占比高（comet/GitNexus/claude-mem/gsd-core），上游存续监测纳入审计例程；GSD v1 上游（gsd-build/get-shit-done）已于 2026-06-26 归档，引用 open-gsd/gsd-core 为既定应对。
+6. **gstack 版本递增节奏**：v1.60.1.0（2026-08-14 基线）→ v1.68.2.0（2026-08-20 master HEAD）7 天 8 个 minor——大批量 tracker 清理波（v1.64.0 90 修复 + v1.64.1 净删 24,943 行 + v1.68.0 16 验证修复）；本仓引用为 vendor 离线包，离线包内容不升级（vendor 决策见 `docs/2026-07-20-upstream-vendor-decision.md`），只升引用基线。
 
 ## 三、comet 0.4 能力重核结论（P1-7，2026-07-20 实测）
 
@@ -62,14 +64,17 @@
 
 **复审触发条件**：npm dist-tag latest 出现 0.4.0 正式版（非 beta）→ 升级引用基线为 v0.4.x、状态改 synced、重写能力清单（脚本形态 + run-state.json/state-events.jsonl + 稳定 CLI + isolation 绑定语义）。
 
+**2026-08-21 R4 重核**：0.4.0-beta.18（2026-08-13）仍 beta 通道，14 天 6 beta → 38 天 18 beta，发版节奏加快但正式版未出。维持观望结论；beta.4-18 间新增 `.comet/run-state.json` 与 `.comet/state-events.jsonl` 分离、稳定 CLI `comet state|guard|handoff|archive`、verify 失败回 Build 前 3 条可执行发现 + 连续失败计数持久化、CRITICAL/IMPORTANT 不可豁免、isolation 漂移在 build/verify/archive 入口与写守卫处拦截——这些与本仓 fail-gate-hook.sh 的 flag 捕获模型 + R12-A 全量审计 + R3-2 last-good 红线机器执法语义对齐，理念已在自实现路径落地，无需追 beta。
+
 ## WP-Y：自动化 drift 检测
 
-上述 `baseline_status=drifted` 的 1 项（comet，2026-07-26 升级后；graphify/ruflo 已升级为 synced）现在由 `--upstream-baseline` 门禁自动检测。
+上述 `baseline_status=drifted` 的 1 项（comet，2026-08-21 重核后仍观望；其余 8 项本轮已升级为 synced）现在由 `--upstream-baseline` 门禁自动检测。
 门禁扫描本文件的 `baseline_status=` 标记，drifted 项 warn 提示（advisory 级，不阻断交付）。
 
-**处置策略**：
+**处置策略**（2026-08-21 R4 更新）：
 - **comet**：0.4.0 正式版发布后升级引用基线（swarm-yuan 对 comet 是方法论级引用，state-machine.sh 是自实现的 comet 风格状态机，升级不阻塞）
-- **graphify**：2026-08-14 已升级 research 仓库到 v0.9.42（Apache 2.0，origin/v8 线）并吸收 Windows 可移植性加固（source_file POSIX 规范化/provenance 仓库盖戳）+ honest-edge provenance 三标；npm 0.10.0 是异源包待评估（**不取 v1.0.0 异源旧分支**——2026-04-05 发布，与 v0.9.42 diverged，落后 1273 commit，取它丢 v8 线 40 语言/10 平台能力）
-- **ruflo**：2026-07-26 已升级 research 仓库到 v3.32.9（方法论引用层，无运行时调用）
+- **graphify**：2026-08-21 已升级 research 仓库到 v0.9.47（Apache 2.0，origin/v8 线）并吸收 OCaml/CommonLisp 语言扩展 + no-op 产物字节一致幂等写入 + 超时二分降级（**不取 v1.0.0 异源旧分支**——2026-04-05 发布，与 v0.9.47 diverged）
+- **gstack**：2026-08-21 升引用基线到 v1.68.2.0（vendor 离线包内容不动——仍 v1.60.1.0 时代码快照；只升引用基线反映"跟踪到哪个上游版本"）
+- **ruflo**：2026-08-21 升引用基线到 npm 3.38.12（npm 领先 GitHub release，以 npm 为准）
 
 升级基线时：更新本表"引用基线"列版本号 → 将 `baseline_status=drifted` 改为 `baseline_status=synced` → 跑 `bash scripts/self-check.sh --check-only` 确认无 drift warn。
