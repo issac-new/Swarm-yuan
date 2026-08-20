@@ -98,4 +98,20 @@ echo '{"hook_event_name":"PostToolUse","tool_name":"Bash","tool_input":{"command
 echo '{"hook_event_name":"PostToolUse","tool_name":"Bash","tool_input":{"command":"bash scripts/precheck.sh --all"},"tool_response":{"exit_code":0},"cwd":"'$TMP'/p10"}' | bash "$HOOK" >/dev/null 2>&1
 [[ ! -f "$TMP/p10/.swarm-yuan/.gate-fail-flag" ]] && ok "态10 precheck pass → flag 清除" || bad "态10 flag 未清除"
 
+# --- 态 11：WP-Enforce3 --report（deny 事件审计报告） ---
+out=$(bash "$HOOK" --report --project "$TMP/p1" 2>&1); rc=$?
+[[ $rc -eq 0 ]] && ok "态11 --report exit 0" || bad "态11 exit=$rc"
+echo "$out" | grep -q '^## fail-gate deny 报告' && ok "态11 报告标题命中" || bad "态11 缺标题: $out"
+echo "$out" | grep -q '按门禁聚合' && ok "态11 聚合段命中" || bad "态11 缺聚合段: $out"
+echo "$out" | grep -q 'security' && ok "态11 security 门禁命中" || bad "态11 缺 security: $out"
+
+# --- 态 12：--report N（限制条数） ---
+out=$(bash "$HOOK" --report 1 --project "$TMP/p4" 2>&1)
+line_count=$(echo "$out" | grep -cE '^202[0-9]-' || true)
+[[ "$line_count" -eq 1 ]] && ok "态12 --report 1 仅 1 条事件" || bad "态12 line_count=$line_count 应=1"
+
+# --- 态 13：--report 无文件（fail-open） ---
+out=$(bash "$HOOK" --report --project "$TMP" 2>&1); rc=$?
+[[ $rc -eq 0 ]] && echo "$out" | grep -q '无 deny 事件' && ok "态13 无文件 fail-open" || bad "态13 exit=$rc 或缺提示: $out"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-fail-gate-hook"; exit 0; } || { echo "FAIL test-fail-gate-hook" >&2; exit 1; }

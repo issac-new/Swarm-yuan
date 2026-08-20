@@ -17,8 +17,47 @@
 #   stdin = Claude Code hook payload（JSON）
 #   stdout = deny 时 hookSpecificOutput JSON；其余静默 exit 0
 #   bash 3.2 兼容；解析失败一律放行（fail-open，不误伤正常流）
+#
+# WP-Enforce3：--report 子命令（deny 事件审计报告，独立于 hook stdin 流程）
+#   用法：bash fail-gate-hook.sh --report [N] [--project <项目根>]
+#     N = 输出最近 N 条 deny 事件（默认 20）
+#     --project = 项目根（缺省 = 当前目录）
+#   输出：① 最近 N 条 deny 事件 TSV（ts/tool/target/gates）② 按门禁聚合 ③ 按工具聚合
+#   退出码：0 正常（含空文件）；1 arg 错误。
 
 set -uo pipefail
+
+if [[ "${1:-}" == "--report" ]]; then
+  _rp_n=20
+  _rp_proj="$(pwd)"
+  shift
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --project) _rp_proj="${2:?--project 需要路径}"; shift 2 ;;
+      -h|--help) sed -n '22,29p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+      *) [[ "$1" =~ ^[0-9]+$ ]] && _rp_n="$1" || { echo "未知参数: $1" >&2; exit 1; }; shift ;;
+    esac
+  done
+  _rp_file="${_rp_proj}/.swarm-yuan/gate-deny.jsonl"
+  if [[ ! -f "$_rp_file" ]]; then
+    echo "## fail-gate deny 报告（project=${_rp_proj}）"
+    echo "无 deny 事件（.swarm-yuan/gate-deny.jsonl 不存在）"
+    exit 0
+  fi
+  echo "## fail-gate deny 报告（project=${_rp_proj}，最近 ${_rp_n} 条）"
+  echo
+  echo "### ① 最近 deny 事件（按时间倒序）"
+  printf '%s\t%s\t%s\t%s\n' "时间" "工具" "目标" "门禁"
+  # sed 抽 4 个字段（ts/tool/target/gates），逐行输出 TSV
+  tail -"$_rp_n" "$_rp_file" | LC_ALL=C sed -n 's/.*"ts":"\([^"]*\)".*"tool":"\([^"]*\)".*"target":"\([^"]*\)".*"gates":"\([^"]*\)".*/\1\t\2\t\3\t\4/p' | LC_ALL=C sort -r
+  echo
+  echo "### ② 按门禁聚合（哪些门禁 deny 最多）"
+  LC_ALL=C sed -n 's/.*"gates":"\([^"]*\)".*/\1/p' "$_rp_file" | LC_ALL=C sort | LC_ALL=C uniq -c | LC_ALL=C sort -rn | LC_ALL=C awk '{printf "%d\t%s\n", $1, $2}'
+  echo
+  echo "### ③ 按工具聚合"
+  LC_ALL=C sed -n 's/.*"tool":"\([^"]*\)".*/\1/p' "$_rp_file" | LC_ALL=C sort | LC_ALL=C uniq -c | LC_ALL=C sort -rn | LC_ALL=C awk '{printf "%d\t%s\n", $1, $2}'
+  exit 0
+fi
 
 HOOK_INPUT=$(cat 2>/dev/null || printf '')
 [[ -z "$HOOK_INPUT" ]] && exit 0
