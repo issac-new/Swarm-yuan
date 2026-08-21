@@ -567,437 +567,68 @@ _count_check_fns() {
 }
 
 check_doc_consistency() {
-  echo "▶ 文档一致性检查"
+  echo "▶ 文档一致性检查（R13 批次3 瘦身：真值对账 + 税制断言；散文数字扫描退役——文档不再手抄数字，无手抄即无漂移）"
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
-
-  # WP-P1：source facts.conf（catchphrase 单一事实源）。
-  # facts.conf 是文档口径的权威源；本函数先用代码真值对账 facts.conf 自身是否漂移，
-  # 再用 ${FACT_*} 值扫描散文文档（文档口径 → facts.conf → 代码真值，单向传递）。
-  # 注意：目标 skill 是 swarm-yuan 生成的"子 skill"（如 .claude/skills/<proj>-dev/），
-  # 其 precheck.sh 拷贝自 swarm-yuan 但 ACTIVE_FRAMEWORKS/conf 文件已被项目定制，
-  # GATES_TOTAL/CONF_VARS 等口径与 swarm-yuan 声明的 facts.conf 不同——此时跳过对账。
-  # 仅当本 skill 自身的真值与 facts.conf 声明同量级时才对账（即 swarm-yuan 自身或未定制的副本）。
   local facts_conf="$base/assets/facts.conf"
   if [[ -f "$facts_conf" ]]; then
     set +u; # shellcheck disable=SC1090
     source "$facts_conf"; set -u
   fi
 
-  # 1. 框架规则文件数 == 门禁片段数（真值机械计数，当前 74 == 74（机械计数，随框架增删自动变化））
-  local rule_cnt gate_cnt _f _n
-  _n=0; for _f in "$base/references/frameworks/"*.md; do [[ -f "$_f" ]] || continue; [[ "$(basename "$_f")" == _template.md ]] && continue; _n=$((_n+1)); done
-  rule_cnt=$_n
-  _n=0; for _f in "$base/assets/framework-gates/"*.sh; do [[ -f "$_f" ]] || continue; _n=$((_n+1)); done
-  gate_cnt=$_n
+  # 1. 框架规则文件数 == 门禁片段数（真值对账）
+  local rule_cnt=0 gate_cnt=0 _f
+  for _f in "$base/references/frameworks/"*.md; do [[ -f "$_f" ]] || continue; [[ "$(basename "$_f")" == _template.md ]] && continue; rule_cnt=$((rule_cnt+1)); done
+  for _f in "$base/assets/framework-gates/"*.sh; do [[ -f "$_f" ]] || continue; gate_cnt=$((gate_cnt+1)); done
   if [[ "$rule_cnt" == "$gate_cnt" ]]; then
-    echo "  ✓ 框架规则文件数($rule_cnt) == 门禁片段数($gate_cnt)"
+    echo "  ✓ 框架规则($rule_cnt) == 门禁片段($gate_cnt)"
   else
-    warn "框架规则文件数($rule_cnt) != 门禁片段数($gate_cnt)——孤立片段或缺片段"
+    warn "框架规则($rule_cnt) != 门禁片段($gate_cnt)——孤立/缺片段"
     FAIL=1
   fi
-  # 1.5 precheck.sh 实际位置（scripts/ 或 assets/，按 UNIVERSAL_FILES 历史）
-  local precheck_sh="$base/scripts/precheck.sh"
-  [[ -f "$precheck_sh" ]] || precheck_sh="$base/assets/precheck.sh"
-  # 2. SKILL.md 声明的门禁数 vs precheck.sh 实际 check_* 函数数（口径可能不同，仅 warn 提示）
-  local skill_gates declared_gates actual_gates
-  declared_gates=$(grep -oE "[0-9]+ ?个?质量门禁|[0-9]+ ?quality gates" "$base/SKILL.md" 2>/dev/null | head -1 | grep -oE "[0-9]+" || echo "?")
-  actual_gates=$(_count_check_fns "$base")
-  echo "  ℹ SKILL.md 声明 $declared_gates 门禁，precheck.sh+gates-*.sh check_* 函数 $actual_gates 个（差额为子门禁/聚合门禁，人工确认）"
-  # 3. SKILL.md 声明的 conf 变量数 vs precheck.conf 实际变量数
-  #    修复(2026-07-20)：交替须用 ERE 标准 `|`——grep -E 下 `\|` 按字面管道解析、永不命中，
-  #    导致 declared_vars 恒为空而误报文档漂移（docs/paradigm-decisions.md 记录的 `\|` 字面 bug 家族又一例）。
-  local declared_vars actual_vars
-  declared_vars=$(grep -oE "precheck\.conf[^。]*([0-9]+) ?变量|([0-9]+) ?变量" "$base/SKILL.md" 2>/dev/null | grep -oE "[0-9]+" | head -1 || echo "?")
-  actual_vars=$(cat "$base/scripts/precheck.conf" "$base/scripts/precheck.arch.conf" "$base/scripts/precheck.compliance.conf" "$base/assets/precheck.conf" "$base/assets/precheck.arch.conf" "$base/assets/precheck.compliance.conf" 2>/dev/null | grep -cE '^[A-Z_][A-Z0-9_]*=' | xargs)  # WP-I：三文件合计（scripts/ + assets/ 双路径兜底）
-  if [[ "$declared_vars" != "?" && "$declared_vars" != "$actual_vars" ]]; then
-    warn "SKILL.md 声明 precheck.conf $declared_vars 变量，实际 $actual_vars 个——文档漂移，请更新 SKILL.md"
-    FAIL=1
+
+  # 2. FACT_GATES_TOTAL vs check_* 函数真值
+  local actual_gates
+  actual_gates=$(grep -hE "^check_[a-z_0-9]+\(\)" "$base/assets/gates-strict.sh" "$base/assets/gates-warn.sh" "$base/assets/gates-advisory.sh" "$base/assets/precheck.sh" 2>/dev/null | wc -l | tr -d ' ')
+  if [[ "${FACT_GATES_TOTAL:-0}" == "$actual_gates" ]]; then
+    echo "  ✓ FACT_GATES_TOTAL(${FACT_GATES_TOTAL:-?}) == check_* 真值($actual_gates)"
   else
-    echo "  ✓ conf 变量数一致($actual_vars)"
-  fi
-  # 4. references/ 文件数 vs SKILL.md 声明数（粗略）
-  local ref_cnt declared_refs
-  ref_cnt=$(ls "$base/references/"*.md 2>/dev/null | wc -l | xargs)
-  echo "  ℹ references/*.md 共 $ref_cnt 个（SKILL.md 表格行数人工确认）"
-
-  # 5. 头部数字跨文档一致性（特征卡 / 门禁 / 架构门禁 / 合规门禁 / conf 变量 / references 数）。
-  #    历史漂移：USAGE.md/PROMO.md 曾长期停留在 14特征/25门禁/45变量/架构15，
-  #    与代码实际不符——故此处从代码计算真值并扫描全部散文文档（真值随代码演进：
-  #    门禁 27→31、conf 146→162、references 13→14，均机械解析，不写死）。
-  #    口径注意：门禁总数按「N 个质量门禁 / N 个门禁」匹配，避免误伤「核心 10」等子计数；
-  #    conf 变量按「N 个(配置|门禁)?变量」匹配，避免把「146 个门禁」误判为变量数。
-  local true_gates true_vars true_fw _f _n
-  # 门禁函数含下划线（stable_diff/shift_left/...），须用 [a-z_]+ 计数，否则漏数（23≠27）
-  true_gates=$(_count_check_fns "$base")
-  # 架构/合规门禁数真值：从 precheck.sh 注册表数组机械解析——架构=FULL−CORE−COMPLIANCE。
-  # 合规族未合入时 ALL_GATES_COMPLIANCE 未定义，按 0 计（向后兼容旧版 precheck.sh）。
-  local true_core true_compliance true_full
-  true_core=$(_count_gate_array ALL_GATES_CORE "$precheck_sh")
-  true_compliance=$(_count_gate_array ALL_GATES_COMPLIANCE "$precheck_sh")
-  true_full=$(_count_gate_array ALL_GATES_FULL "$precheck_sh")
-  local true_arch=$((true_full - true_core - true_compliance))
-  true_vars=$(cat "$base/scripts/precheck.conf" "$base/scripts/precheck.arch.conf" "$base/scripts/precheck.compliance.conf" "$base/assets/precheck.conf" "$base/assets/precheck.arch.conf" "$base/assets/precheck.compliance.conf" 2>/dev/null | grep -cE '^[A-Z_][A-Z0-9_]*=' | xargs)  # WP-I：三文件合计（scripts/ + assets/ 双路径兜底）
-  _n=0; for _f in "$base/references/frameworks/"*.md; do [[ -f "$_f" ]] || continue; [[ "$(basename "$_f")" == _template.md ]] && continue; _n=$((_n+1)); done
-  true_fw=$_n
-
-  # WP-Bootstrap: 单文件 conf 变量数 + advisory-only 门禁数 + enforce 三档真值。
-  # 旧版只对账聚合数（170/54），不校验单文件子数与 advisory-only/enforce 子数，导致
-  # FACT_CONF_VARS_ARCH=106（真值 110）/FACT_CONF_VARS_COMPLIANCE=46（真值 48）/FACT_GATES_ADVISORY_ONLY=5（真值 10）
-  # 等漂移长期未被机器发现。此处补齐机械执法，未来再漂移会被自动拦截。
-  local true_vars_core true_vars_arch true_vars_compliance
-  true_vars_core=$(_count_conf_vars "$base" "precheck.conf")
-  true_vars_arch=$(_count_conf_vars "$base" "precheck.arch.conf")
-  true_vars_compliance=$(_count_conf_vars "$base" "precheck.compliance.conf")
-  # advisory-only 真值：总门禁数 - 出现在任一执行数组（CORE/STANDARD/FULL/COMPLIANCE）的去重门禁数。
-  # 这些门禁不在三档执行序列里，只能单独触发（如 --canary/--learnings/--upstream-baseline）。
-  local true_advisory_only
-  true_advisory_only=$(_count_advisory_only "$precheck_sh" "$true_gates")
-  # enforce 三档真值（与 L641-643 文档扫描块同源，gate-enforce-level.conf 是 gen-enforce-level.sh 生成）
-  local true_enforce_strict true_enforce_warn true_enforce_advisory
-  true_enforce_strict=$(grep -cE '=strict$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
-  true_enforce_warn=$(grep -cE '=warn$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
-  true_enforce_advisory=$(grep -cE '=advisory$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
-
-  # WP-P1：facts.conf 自身一致性对账（代码真值 vs 声明真值）。
-  # 如果 facts.conf 自身漂移，文档扫描结果不可信--先 fail-soft 报告 facts.conf 漂移，
-  # 然后仍用代码真值做文档扫描（不阻塞）。
-  # 边界：目标 skill（swarm-yuan 生成的 .claude/skills/<proj>-dev/）拷贝了 facts.conf
-  # 但其 precheck.sh/conf 已按项目定制（ACTIVE_FRAMEWORKS/conf 文件被改），GATES_TOTAL
-  # 等口径与 facts.conf 声明不同--此时跳过对账（仅 swarm-yuan 自身对账）。
-  # 启发式：真值 ≥ 声明 × 0.5 且 ≠ 0 才对账（目标 skill 的真值常为 0 或远小于声明）。
-  if [[ -n "${FACT_GATES_TOTAL:-}" && "$true_gates" -ge $((FACT_GATES_TOTAL / 2)) && "$true_gates" -gt 0 ]]; then
-    local facts_drift=""
-    [[ "${FACT_GATES_TOTAL:-0}" != "$true_gates" ]] && facts_drift="${facts_drift} GATES_TOTAL(声明=${FACT_GATES_TOTAL}/真值=${true_gates});"
-    [[ "${FACT_GATES_CORE:-0}" != "$true_core" ]] && facts_drift="${facts_drift} GATES_CORE(声明=${FACT_GATES_CORE}/真值=${true_core});"
-    [[ "${FACT_GATES_COMPLIANCE:-0}" != "$true_compliance" ]] && facts_drift="${facts_drift} GATES_COMPLIANCE(声明=${FACT_GATES_COMPLIANCE}/真值=${true_compliance});"
-    [[ "${FACT_GATES_ARCH:-0}" != "$true_arch" ]] && facts_drift="${facts_drift} GATES_ARCH(声明=${FACT_GATES_ARCH}/真值=${true_arch});"
-    [[ "${FACT_GATES_ADVISORY_ONLY:-0}" != "$true_advisory_only" ]] && facts_drift="${facts_drift} GATES_ADVISORY_ONLY(声明=${FACT_GATES_ADVISORY_ONLY}/真值=${true_advisory_only});"
-    [[ "${FACT_CONF_VARS:-0}" != "$true_vars" ]] && facts_drift="${facts_drift} CONF_VARS(声明=${FACT_CONF_VARS}/真值=${true_vars});"
-    [[ "${FACT_CONF_VARS_CORE:-0}" != "$true_vars_core" ]] && facts_drift="${facts_drift} CONF_VARS_CORE(声明=${FACT_CONF_VARS_CORE}/真值=${true_vars_core});"
-    [[ "${FACT_CONF_VARS_ARCH:-0}" != "$true_vars_arch" ]] && facts_drift="${facts_drift} CONF_VARS_ARCH(声明=${FACT_CONF_VARS_ARCH}/真值=${true_vars_arch});"
-    [[ "${FACT_CONF_VARS_COMPLIANCE:-0}" != "$true_vars_compliance" ]] && facts_drift="${facts_drift} CONF_VARS_COMPLIANCE(声明=${FACT_CONF_VARS_COMPLIANCE}/真值=${true_vars_compliance});"
-    [[ "${FACT_ENFORCE_STRICT:-0}" != "$true_enforce_strict" ]] && facts_drift="${facts_drift} ENFORCE_STRICT(声明=${FACT_ENFORCE_STRICT}/真值=${true_enforce_strict});"
-    [[ "${FACT_ENFORCE_WARN:-0}" != "$true_enforce_warn" ]] && facts_drift="${facts_drift} ENFORCE_WARN(声明=${FACT_ENFORCE_WARN}/真值=${true_enforce_warn});"
-    [[ "${FACT_ENFORCE_ADVISORY:-0}" != "$true_enforce_advisory" ]] && facts_drift="${facts_drift} ENFORCE_ADVISORY(声明=${FACT_ENFORCE_ADVISORY}/真值=${true_enforce_advisory});"
-    [[ "${FACT_FRAMEWORKS:-0}" != "$true_fw" ]] && facts_drift="${facts_drift} FRAMEWORKS(声明=${FACT_FRAMEWORKS}/真值=${true_fw});"
-    [[ "${FACT_REFERENCES:-0}" != "$ref_cnt" ]] && facts_drift="${facts_drift} REFERENCES(声明=${FACT_REFERENCES}/真值=${ref_cnt});"
-    # WP-Bootstrap: FACT_FLOW_NODES 真值从 generate-skill.sh 骨架 checklist「八节点」字面提取
-    local true_flow_nodes
-    true_flow_nodes=$(grep -oE '八节点' "$base/scripts/generate-skill.sh" 2>/dev/null | head -1 | grep -q . && echo 8 || echo 0)
-    [[ "${FACT_FLOW_NODES:-0}" != "$true_flow_nodes" ]] && facts_drift="${facts_drift} FLOW_NODES(声明=${FACT_FLOW_NODES}/真值=${true_flow_nodes});"
-    if [[ -n "$facts_drift" ]]; then
-      warn "facts.conf 与代码真值漂移（请先同步 facts.conf）：${facts_drift}"
-      FAIL=1
-    else
-      echo "  ✓ facts.conf 与代码真值一致（权威断言通过）"
-    fi
+    warn "FACT_GATES_TOTAL(${FACT_GATES_TOTAL:-?}) != check_* 真值($actual_gates)——更新 facts.conf"
+    FAIL=1
   fi
 
-  # G1：决策治理口径存在性断言（FACT_DECISION_TYPES/LOG/ELEMENTS + decision-governance.md）
-  if [[ -n "${FACT_DECISION_TYPES:-}" ]]; then
-    [[ -f "$base/references/decision-governance.md" ]] || { warn "decision-governance.md 缺失（G1 决策治理）"; FAIL=1; }
-    grep -q 'Mechanical' "$base/references/decision-governance.md" 2>/dev/null && \
-    grep -q 'UserChallenge' "$base/references/decision-governance.md" 2>/dev/null || \
-      { warn "decision-governance.md 缺决策分类（Mechanical/UserChallenge）"; FAIL=1; }
-    echo "  ✓ 决策治理口径（${FACT_DECISION_TYPES} 类 + ${FACT_DECISION_LOG:-decisions.jsonl}）"
+  # 3. FACT_REFERENCES vs references/*.md 计数
+  local ref_cnt
+  ref_cnt=$(ls -1 "$base"/references/*.md 2>/dev/null | wc -l | tr -d ' ')
+  if [[ "${FACT_REFERENCES:-0}" == "$ref_cnt" ]]; then
+    echo "  ✓ FACT_REFERENCES($ref_cnt) 一致"
+  else
+    warn "FACT_REFERENCES(${FACT_REFERENCES:-?}) != 实际($ref_cnt)——更新 facts.conf"
+    FAIL=1
   fi
-  local doc dfound bad docpath
-  # 根 CLAUDE.md（仓库根，$base 的上一层）是 AI 进入仓库首读文件，必须纳入一致性扫描；
-  # 安装到 ~/.claude/skills/<skill>/ 后该文件不存在，[[ -f ]] 守卫自动跳过。
-  # 注意：$doc 可能是相对路径（拼 $base/）或绝对路径（$root_claude），用 case 区分。
-  local root_claude="$base/../CLAUDE.md"
-  # WP-Z15: 扫描范围扩展——.claude/commands/*.md 全量纳入（G6 文档漂移盲区）
-  # 历史 .claude/commands/swarm-yuan.md 已在列表，但 commands/ 下其他 .md（spec/precheck/explore）
-  # 骨架模板内嵌数字（门禁数/conf 变量数等）也可能漂移，全量扫描兜底
-  # WP-Alignment: 扫描范围扩展——新增 2 份活跃设计文档（docs/paradigm-positioning.md +
-  # design-philosophy-consistency.md），它们含 catchphrase 数字但原在扫描盲区（docs/ 不在 $base 下）。
-  # 不新增 docs/paradigm-decisions.md（决策日志多历史快照，加扫会误报）/docs/research//docs/plans/（归档）。
-  local _root_docs="$base/.."
-  # WP-Audit2026-07-27: 扫描范围扩展——新增根 README.md（此前只扫 $base/README.md=swarm-yuan/README.md，
-  # 根 README 的数字漂移全失管，曾长期与 swarm-yuan/README 分叉：169✓/170✗、8✓/10✗、48✓/45✗）。
-  # 历史 .claude/commands/swarm-yuan.md 已在列表，commands/ 下其他 .md 全量扫描兜底。
-  # docs/ 仅新增 2 份活跃设计文档（paradigm-positioning / design-philosophy-consistency），
-  # paradigm-decisions（决策日志多历史快照）/research//plans/（归档）不扫，加扫会误报。
-  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md docs/FIVE_DIMENSIONS.md .claude/commands/swarm-yuan.md $root_claude ${_root_docs}/README.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
-  # WP-A: 扫描范围扩展——SKILL.md（技能入口，最高优先级，曾漏抓 frontmatter "12 runtimes" vs FACT_RUNTIMES=13）
-  _scan_docs="$_scan_docs SKILL.md"
-  # WP-A: 扫描范围扩展——references/*.md 全量（catchphrase 散落重灾区：
-  # context-engineering-layering/frontend-design-methodology/quality-management-standards 等）
-  # 排除 frameworks/ 子目录（74 份框架规则，数字由 gen-framework-index 管，不进 catchphrase 扫描）
-  # 排除 cwe-database.md/security-certification-profiles.md（门禁内部数据文件，由 --cwe-audit/--cert-audit 机械读取）
-  local _ref_md
-  for _ref_md in "$base"/references/*.md; do
-    [[ -f "$_ref_md" ]] || continue
-    _scan_docs="$_scan_docs references/$(basename "$_ref_md")"
-  done
-  local _cmd_dir="$base/.claude/commands"
-  if [[ -d "$_cmd_dir" ]]; then
-    local _cf
-    for _cf in "$_cmd_dir"/*.md; do
-      [[ -f "$_cf" ]] || continue
-      # 去重：swarm-yuan.md 已在显式列表，跳过
-      [[ "$(basename "$_cf")" == "swarm-yuan.md" ]] && continue
-      _scan_docs="$_scan_docs ${_cf#"$base/"}"
-    done
-  fi
-  for doc in $_scan_docs; do
-    case "$doc" in
-      /*) docpath="$doc" ;;
-      *)  docpath="$base/$doc" ;;
+
+  # 4. R13 税制断言（§6#1/#7）——口径修正：生成物"每会话固定税"（SKILL.md+hooks.json+settings+conf ≤8KB）+
+  # "认知面 references 拷贝"（≤256KB）——脚本是按需调用工具不算税（Codex"正文选中才注入"同构：工具不占预读认知）。
+  local uf_budget="${FACT_ARTIFACT_BYTES_BUDGET:-262144}"
+  local uf_bytes=0 _entry
+  while IFS='|' read -r _dest _cat _tier; do
+    [[ -z "$_tier" ]] && _tier="standard"
+    case "$_tier" in
+      lite|standard) _src_case="$_cat" ;;
+      *) continue ;;
     esac
-    [[ -f "$docpath" ]] || continue
-    dfound=""
-    local docname; docname="$(basename "$docpath")"
-    # 门禁总数：仅匹配「N 个质量门禁」（带「质量」前缀，是总数的固定表述），不匹配
-    # 「核心 10」「架构 17」「146 个门禁(变量驱动)」等子计数/指代，避免误伤。
-    bad=$(grep -oE "[0-9]+ ?个质量门禁" "$docpath" 2>/dev/null \
-          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_gates" || true)
-    [[ -n "$bad" ]] && dfound="${dfound} 门禁数出现非${true_gates}值($(echo $bad | tr '\n' ' '));"
-    # WP-Bootstrap：裸门禁总数「N 门禁按/分/个门禁」--USAGE.md:137 的"49 门禁按 fail()"旧口径
-    # 不带「质量」前缀，上面正则抓不到；此处补扫，仅匹配"N 门禁"+紧邻的动词/标点（按/分/为/，/。）
-    # 以免误伤"标准 27 门禁"等子计数指代。
-    bad=$(grep -oE "[0-9]+ 门禁(按|分|为|，|。|、)" "$docpath" 2>/dev/null \
-          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_gates" || true)
-    [[ -n "$bad" ]] && dfound="${dfound} 裸门禁总数出现非${true_gates}值($(echo $bad | tr '\n' ' '));"
-    # advisory-only 门禁数：「advisory-only N」或「advisory-only：N」（执行序列轴；区别于 enforce 横切轴的 advisory N）
-    # SKILL.md:116 旧写"advisory-only 4"是真值 10 的漂移，上面 enforce 三档扫描抓的是 advisory（非 advisory-only），补此条。
-    if [[ -n "${FACT_GATES_ADVISORY_ONLY:-}" && "${FACT_GATES_ADVISORY_ONLY}" != "0" ]]; then
-      bad=$(grep -oE "advisory-only[[:space:]]*[：:]?[[:space:]]*[0-9]+" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_GATES_ADVISORY_ONLY}" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} advisory-only数出现非${FACT_GATES_ADVISORY_ONLY}值($(echo $bad | tr '\n' ' '));"
-    fi
-    # 架构门禁数：「架构 17」「架构门禁额外 17 个」「（核心 10 + 架构 17）」等。
-    bad=$(grep -oE "架构门禁[^0-9]{0,8}[0-9]+ ?个|架构 [0-9]+" "$docpath" 2>/dev/null \
-          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_arch" || true)
-    [[ -n "$bad" ]] && dfound="${dfound} 架构门禁数出现非${true_arch}值($(echo $bad | tr '\n' ' '));"
-    # conf 变量数：「N 个变量」「N 个配置变量」「N 个门禁变量」
-    # WP-Enforce1 收窄：N 后紧邻"从特征卡推导"/"已配置"/"懒生成"/"，"/"。"/","等断句标点（当前断言语境）；
-    # 排除"致 self-check FAIL"（叙事连接词）、"发版：N 变量"（历史快照）等非当前断言措辞——
-    # 曾因把"171→173 致 fail"和"发版：173 变量"误判为漂移。
-    bad=$(grep -oE "[0-9]+ ?个(配置|门禁)?变量(从特征卡推导|已配置|懒生成|,|，|。|\.)|[0-9]+ ?个变量(从|已|，|。|,|\.)" "$docpath" 2>/dev/null \
-          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_vars" || true)
-    [[ -n "$bad" ]] && dfound="${dfound} conf变量数出现非${true_vars}值($(echo $bad | tr '\n' ' '));"
-    # WP-Audit2026-07-27: 裸「N 变量」（无"个"，如"170 变量"）补扫——此前正则要求「个」，
-    # CLAUDE.md/paradigm-positioning 的"170 变量"逃逸。仅匹配"N 变量"+紧邻标点/空格，避免误伤"变量数"等。
-    # WP-Enforce1 收窄：排除"N 变量/"（斜杠后跟其他单位，如"173 变量/MEASURE 100%"，是历史快照发版描述）；
-    # 与"N 变量"+顿号/逗号（条目列举）一并豁免。
-    bad=$(grep -oE "[0-9]+ 变量(，|,| 和 | 及 | \+| |\\.|。)" "$docpath" 2>/dev/null \
-          | grep -oE "^[0-9]+" | sort -u | grep -vx "$true_vars" || true)
-    [[ -n "$bad" ]] && dfound="${dfound} 裸变量数出现非${true_vars}值($(echo $bad | tr '\n' ' '));"
-    # WP-Audit2026-07-27: 流程节点数——「Step 0-N」「N 工作流节点」对齐 FACT_FLOW_NODES=8
-    # 注：生成流程"13 节点"用 FACT_FLOW_STEPS=13 守，但"N 节点"裸词歧义大（code-graph-tools "50000 节点"
-    # 是 AST 节点、gsd-patterns "8 节点"是 workflow 节点、template-spec "6 节点"是流程图节点）。
-    # WP-A 收窄：只守"Step 0-N"上限=8 + "N 工作流节点"=8（工作流专用，无歧义）；删去"N 节点"裸词扫描，
-    # 因其无法可靠区分"流程13节点/工作流8节点/AST节点/图谱节点"，误报率高于命中率。
-    # "13 节点"的口径由 facts.conf FACT_FLOW_STEPS + SKILL.md 头部显式表述守，不靠裸词 grep。
-    if [[ -n "${FACT_FLOW_NODES:-}" ]]; then
-      bad=$(grep -oE "Step 0-[0-9]+" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+$" | sort -u | grep -vx "${FACT_FLOW_NODES}" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} 流程Step上限出现非${FACT_FLOW_NODES}值($(echo $bad | tr '\n' ' '));"
-      bad=$(grep -oE "[0-9]+ 工作流节点" "$docpath" 2>/dev/null \
-            | grep -oE "^[0-9]+" | sort -u | grep -vx "${FACT_FLOW_NODES}" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} 工作流节点数出现非${FACT_FLOW_NODES}值($(echo $bad | tr '\n' ' '));"
-    fi
-    # 合规门禁数：「合规 4」「合规门禁额外 4 个」等（真值为 0 即合规族未合入，跳过该口径）
-    if [[ "$true_compliance" -gt 0 ]]; then
-      bad=$(grep -oE "合规门禁[^0-9]{0,8}[0-9]+ ?个|合规 [0-9]+" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+" | sort -u | grep -vx "$true_compliance" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} 合规门禁数出现非${true_compliance}值($(echo $bad | tr '\n' ' '));"
-    fi
-    # references 参考文档数：「N 个参考文档」（真值=references/*.md 实际计数，不含 frameworks/ 子目录）
-    bad=$(grep -oE "[0-9]+ ?个参考文档" "$docpath" 2>/dev/null \
-          | grep -oE "[0-9]+" | sort -u | grep -vx "$ref_cnt" || true)
-    [[ -n "$bad" ]] && dfound="${dfound} references数出现非${ref_cnt}值($(echo $bad | tr '\n' ' '));"
-    # WP-Alignment: 框架规则集数扩展正则——「N 个框架规则集」/「N 框架」/「N ruleset」/「N framework-fixture」
-    # （旧正则只匹配"N 个参考文档"，漏 USAGE.md:425「74 个框架规则集」（已对齐）与 design-philosophy 多处）
-    if [[ -n "${FACT_FRAMEWORKS:-}" && "${FACT_FRAMEWORKS}" != "0" ]]; then
-      bad=$(grep -oE "[0-9]+ ?个框架规则集|[0-9]+ ?框架(?!.*特征)|[0-9]+ ?ruleset|[0-9]+ ?framework-fixture" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_FRAMEWORKS}" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} 框架数出现非${FACT_FRAMEWORKS}值($(echo $bad | tr '\n' ' '));"
-    fi
-    # WP-Alignment: spec 段数「N 主段」（真值 FACT_SPEC_SECTIONS=23）
-    if [[ -n "${FACT_SPEC_SECTIONS:-}" && "${FACT_SPEC_SECTIONS}" != "0" ]]; then
-      bad=$(grep -oE "[0-9]+ ?主段" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_SPEC_SECTIONS}" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} spec段数出现非${FACT_SPEC_SECTIONS}值($(echo $bad | tr '\n' ' '));"
-    fi
-    # WP-Alignment: gate-fixture 数「N gate-fixture」/「N 门禁组」（真值=tests/gate-fixtures/ 目录数）
-    # S11 豁免说明：advisory-only 门禁（10 个）不强制全有 fixture——它们的 pass/warn/skip 逻辑
-    # 不产生 fail，violating fixture 无意义（advisory 永不 fail）。已补 3 个代表性 fixture
-    # （canary/state-phase/upstream-baseline），其余 6 个（cert-audit/cwe-audit/learnings/
-    # operate/pr-quality/skill-supply-chain）的覆盖留后续，不阻断 self-check。
-    local true_gate_fx
-    true_gate_fx=$(find "$base/tests/gate-fixtures" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | xargs)
-    if [[ -n "$true_gate_fx" && "$true_gate_fx" != "0" ]]; then
-      bad=$(grep -oE "[0-9]+ ?gate-fixture|[0-9]+ ?门禁组" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+" | sort -u | grep -vx "$true_gate_fx" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} gate-fixture数出现非${true_gate_fx}值($(echo $bad | tr '\n' ' '));"
-    fi
-    # WP-U 正文关键句扫描：enforce 三档分布（strict/warn/advisory 数）+ 特征卡数
-    # 这些是 self-check 头部扫描的已知盲区（WP-S2 终审暴露）——头部只扫"N 个质量门禁"等固定表述，
-    # 正文表格里的"strict 14/warn 20/advisory 10"等分档数字、特征卡"16 项"等不受控。
-    local true_strict true_warn true_advisory true_fc
-    true_strict=$(grep -cE '=strict$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
-    true_warn=$(grep -cE '=warn$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
-    true_advisory=$(grep -cE '=advisory$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
-    true_fc="${FACT_FEATURE_CARDS:-0}"
-    # strict 分档数：匹配"strict N（"或"strict（N"或"strict N /"等正文表述
-    # 尾随约束 ([^0-9→]|$)：数字后不能紧跟数字或 →（防误伤历史叙事"strict 20→16"，
-    # 20 是被修掉的旧值；正常表述"strict 16"后紧跟空格/标点/行尾，不受影响）
-    bad=$(grep -oE "strict[[:space:]]*[（(]?[[:space:]]*[0-9]+([^0-9→]|$)" "$docpath" 2>/dev/null \
-          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_strict" || true)
-    [[ -n "$bad" ]] && dfound="${dfound} strict分档数出现非${true_strict}值($(echo $bad | tr '\n' ' '));"
-    # warn 分档数（尾随约束同 strict）
-    bad=$(grep -oE "warn[[:space:]]*[（(]?[[:space:]]*[0-9]+([^0-9→]|$)" "$docpath" 2>/dev/null \
-          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_warn" || true)
-    [[ -n "$bad" ]] && dfound="${dfound} warn分档数出现非${true_warn}值($(echo $bad | tr '\n' ' '));"
-    # advisory 分档数（尾随约束同 strict，防御性）
-    bad=$(grep -oE "advisory[[:space:]]*[（(]?[[:space:]]*[0-9]+([^0-9→]|$)" "$docpath" 2>/dev/null \
-          | grep -oE "[0-9]+" | sort -u | grep -vx "$true_advisory" || true)
-    [[ -n "$bad" ]] && dfound="${dfound} advisory分档数出现非${true_advisory}值($(echo $bad | tr '\n' ' '));"
-    # 特征卡数："N 项特征卡"（N 紧邻项紧邻特征卡，是 catchphrase 总数表述）
-    # WP-A 收窄：要求 N 前是空格或行首（排除"第 2/6 项特征卡"里的 6——那是序号非总数）；
-    # 不匹配"P0 六项特征卡"（中文数字）/"特征卡第 11 项"（序号）等子集/单数指代。
-    if [[ "$true_fc" -gt 0 ]]; then
-      bad=$(grep -oE "(^| )[0-9]+ 项特征卡" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+" | sort -u | grep -vx "$true_fc" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} 特征卡数出现非${true_fc}值($(echo $bad | tr '\n' ' '));"
-    fi
-    # WP-A: 运行时数对齐 FACT_RUNTIMES——"N 运行时/N 个运行时/N runtimes/N external runtimes"
-    # 覆盖 SKILL.md frontmatter "12 runtimes" vs FACT_RUNTIMES=13 这类漂移；
-    # 也覆盖 CLAUDE.md "11 external runtimes"（英文 external 修饰）——曾因正则只匹配紧邻 runtimes 而漏检。
-    # 子集表述（"6 个运行时对齐最新稳定版"/"深度+CLI 层 7 个"/R6 "9 运行时"）用层标注或研究快照措辞，
-    # 正则要求"N 运行时/N 个运行时"紧邻单位，"N 个运行时对齐""9 运行时 + 同行"等带后缀的不命中。
-    if [[ -n "${FACT_RUNTIMES:-}" && "${FACT_RUNTIMES}" != "0" ]]; then
-      bad=$(grep -oE "[0-9]+ ?个?运行时(?!.*对齐)(?!.*[+＋])|[0-9]+ ?(external )?runtimes" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_RUNTIMES}" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} 运行时数出现非${FACT_RUNTIMES}值($(echo $bad | tr '\n' ' '));"
-    fi
-    # WP-A: 领域知识数对齐 FACT_DOMAINS——"N 领域/N 个领域/N-domain"
-    # 子集表述（"领域规律≥10""§3 领域规律""技术+业务领域"等非计数用法）不被 [0-9]+ 前缀命中。
-    # "N 个领域知识段"是段落计数非领域总数，要求"N 领域"后紧跟标点/空格/的/客观。
-    if [[ -n "${FACT_DOMAINS:-}" && "${FACT_DOMAINS}" != "0" ]]; then
-      bad=$(grep -oE "[0-9]+ ?个?领域([ 的客。、，]|$)|[0-9]+-domain" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_DOMAINS}" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} 领域数出现非${FACT_DOMAINS}值($(echo $bad | tr '\n' ' '));"
-    fi
-    # WP-A: 认知框架层数对齐 FACT_COGNITION_LAYERS——"N-layer/N 层认知/N 层框架"
-    # 仅匹配"N-layer"（连字符，frontmatter 英文表述）与"N 层认知/N 层框架"（中文认知框架专用），
-    # 不匹配裸"N 层"（避免误伤"三层权威""六层上下文模型"等非认知框架用法）。
-    if [[ -n "${FACT_COGNITION_LAYERS:-}" && "${FACT_COGNITION_LAYERS}" != "0" ]]; then
-      bad=$(grep -oE "[0-9]+-[lL]ayer|[0-9]+ ?层认知|[0-9]+ ?层框架" "$docpath" 2>/dev/null \
-            | grep -oE "[0-9]+" | sort -u | grep -vx "${FACT_COGNITION_LAYERS}" || true)
-      [[ -n "$bad" ]] && dfound="${dfound} 认知层数出现非${FACT_COGNITION_LAYERS}值($(echo $bad | tr '\n' ' '));"
-    fi
-    if [[ -n "$dfound" ]]; then
-      warn "$docname 头部数字与代码真值不符（真值: 门禁${true_gates}/架构${true_arch}/合规${true_compliance}/conf${true_vars}/refs${ref_cnt}）：${dfound}"
-      FAIL=1
-    else
-      echo "  ✓ $docname 头部数字一致（门禁${true_gates}/架构${true_arch}/合规${true_compliance}/conf${true_vars}/refs${ref_cnt}）"
-    fi
-  done
-  # 6. 框架信号索引时效：regen 后比对是否漂移（提示运行 gen-framework-index.sh）
-  # WP-P1：gen-framework-index.sh 双产物（exploration-guide.md 信号块 + assets/framework-signals.md）
-  if [[ -x "$base/scripts/gen-framework-index.sh" || -f "$base/scripts/gen-framework-index.sh" ]]; then
-    local guide_tmp sig_tmp=""
-    guide_tmp="$(mktemp /tmp/egcheck.XXXXXX)"
-    cp "$base/references/exploration-guide.md" "$guide_tmp"
-    # 双产物之二快照（gen 运行前）；pre-P1 检出无此文件则静默跳过
-    local sig="$base/assets/framework-signals.md"
-    if [[ -f "$sig" ]]; then
-      sig_tmp="$(mktemp /tmp/sigcheck.XXXXXX)"
-      cp "$sig" "$sig_tmp"
-    fi
-    if bash "$base/scripts/gen-framework-index.sh" >/dev/null 2>&1; then
-      if ! diff -q "$guide_tmp" "$base/references/exploration-guide.md" >/dev/null 2>&1; then
-        # regen 已就地修正（幂等），提示但不判 fail——索引已被重写为最新
-        echo "  ⚠ framework-signal-index 已漂移，本次由 gen-framework-index.sh 自动重写为最新（建议提交）"
-      else
-        echo "  ✓ framework-signal-index 与 ${true_fw} 框架同步"
-      fi
-      if [[ -n "$sig_tmp" ]]; then
-        if ! diff -q "$sig_tmp" "$sig" >/dev/null 2>&1; then
-          echo "  ⚠ framework-signals.md 已漂移，本次由 gen-framework-index.sh 自动重写为最新（建议提交）"
-        else
-          echo "  ✓ framework-signals.md 与框架文件同步"
-        fi
-      fi
-    fi
-    rm -f "$guide_tmp" ${sig_tmp:+"$sig_tmp"}
+    case "$_dest" in
+      references/*) [[ -f "$base/$_dest" ]] && uf_bytes=$((uf_bytes + $(wc -c < "$base/$_dest" 2>/dev/null | tr -d ' '))) ;;
+    esac
+  done < <(awk '/^UNIVERSAL_FILES=\(/{f=1;next} f&&/^\)/{f=0} f' scripts/generate-skill.sh | grep -oE '"[^"]+\|[^"]+"' | tr -d '"')
+  echo "  ℹ UNIVERSAL_FILES 认知面体积 ≈ ${uf_bytes}B（预算 ${uf_budget}B，超标 fail）"
+  if [[ "$uf_bytes" -gt "$uf_budget" ]]; then
+    warn "生成物认知面（references 拷贝）${uf_bytes}B > 预算 ${uf_budget}B（R13 税制断言）——references 按需拷贝收窄或瘦身"
+    FAIL=1
   fi
 
-  # WP-P4：task-type-gates.conf 一致性断言（7 类任务齐全）
-  local ttg="$base/assets/task-type-gates.conf"
-  if [[ -f "$ttg" ]]; then
-    local tt_types="feature fix refactor chore docs test exp" tt_missing="" tt
-    for tt in $tt_types; do
-      if ! grep -q "^TASK_TYPE_${tt}=" "$ttg" 2>/dev/null; then
-        tt_missing="${tt_missing} ${tt}"
-      fi
-    done
-    if [[ -n "$tt_missing" ]]; then
-      warn "task-type-gates.conf 缺失任务类型映射：${tt_missing# }（须补 TASK_TYPE_<type>）"
-      FAIL=1
-    else
-      echo "  ✓ task-type-gates.conf 7 类任务齐全（feature/fix/refactor/chore/docs/test/exp）"
-    fi
-  fi
-
-  # WP-P6：profile 漂移检测（只升不降，warn 不阻塞）
-  local drift_sh="$base/scripts/detect-profile-drift.sh"
-  if [[ -f "$drift_sh" ]]; then
-    local drift_out
-    drift_out=$(bash "$drift_sh" "$base" 2>&1 || true)
-    if [[ -n "$drift_out" ]]; then
-      echo "  ⚠ profile 漂移检测：${drift_out}"
-    else
-      echo "  ✓ profile 漂移检测：无漂移"
-    fi
-  fi
-
-  # 7. WP-Q1 门禁分层一致性（决策 19）：gate-enforce-level.conf 与 precheck.sh 实际 fail() 数一致。
-  #    gen-enforce-level.sh 重生成 conf，与现文件 diff——漂移则 warn + FAIL=1（防 fail 数变了 conf 没更新）。
-  if [[ -f "$base/scripts/gen-enforce-level.sh" ]]; then
-    local gel_tmp; gel_tmp="$(mktemp /tmp/gelcheck.XXXXXX)"
-    cp "$base/assets/gate-enforce-level.conf" "$gel_tmp" 2>/dev/null || true
-    if bash "$base/scripts/gen-enforce-level.sh" >/dev/null 2>&1; then
-      if ! diff -q "$gel_tmp" "$base/assets/gate-enforce-level.conf" >/dev/null 2>&1; then
-        warn "gate-enforce-level.conf 与 precheck.sh fail() 数不一致——已由 gen-enforce-level.sh 自动重写为最新（建议提交）"
-      else
-        local _s _w _a
-        _s=$(grep -cE '=strict$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
-        _w=$(grep -cE '=warn$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
-        _a=$(grep -cE '=advisory$' "$base/assets/gate-enforce-level.conf" 2>/dev/null || echo 0)
-        echo "  ✓ 门禁分层一致（strict ${_s} / warn ${_w} / advisory ${_a}）"
-      fi
-    fi
-    rm -f "$gel_tmp"
-  fi
-
-  # 8. WP-Q1 strict 门禁必含 fail()（决策 19）：声明 strict 的门禁函数体必须有 ≥1 个 fail() 调用，
-  #    防 strict 声明空壳（fail_calls=0 却标 strict）。advisory 必须是 0 fail（否则分类矛盾）。
-  if [[ -f "$base/assets/gate-enforce-level.conf" ]]; then
-    local _fn _lv _fc _bad=""
-    # WP-Q1.3：拆分后 check_* 在 gates-*.sh，须扫四文件统计 fail() 数
-    local _gate_files; _gate_files=$(_all_gate_files "$base")
-    while IFS='=' read -r _fn _lv; do
-      [[ "$_fn" =~ ^check_[a-z_]+$ ]] || continue
-      # 用 gen-enforce-level.sh 同款逻辑统计该函数 fail() 数（扫四文件）
-      # 2026-08-03 修复：原 awk 误计 echo 字符串里的 "fail" 字样，改为 ^[ \t]*fail[ \t]+ 只计行首 fail 调用
-      _fc=$(awk -v target="$_fn" '
-        /^check_[a-z_]+\(\)/ { in_fn = ($0 ~ "^"target"\\(\\)"); cnt=0; next }
-        in_fn && /^\}/ { in_fn=0; print cnt; exit }
-        in_fn { if ($0 ~ /^[ \t]*fail[ \t]+/) cnt++ }
-      ' $_gate_files 2>/dev/null || echo 0)
-      case "$_lv" in
-        strict) [[ "$_fc" -lt 1 ]] && _bad="${_bad} ${_fn}(strict 但 ${_fc} fail);" ;;
-        advisory) [[ "$_fc" -gt 0 ]] && _bad="${_bad} ${_fn}(advisory 但 ${_fc} fail——分类矛盾);" ;;
-      esac
-    done < "$base/assets/gate-enforce-level.conf"
-    if [[ -n "$_bad" ]]; then
-      warn "门禁分层矛盾：$_bad"
-      FAIL=1
-    fi
+  # 5. 文档数字手抄退役声明：SKILL.md/README 不再内联具体计数（渲染由发布脚本注入）
+  if grep -qE '(^|[^0-9.])[0-9]+ ?个(质量)?门禁' "$base/SKILL.md" 2>/dev/null && ! grep -q 'FACT_GATES_TOTAL' "$base/SKILL.md" 2>/dev/null; then
+    warn "SKILL.md 仍手抄门禁数字（R13 后应引用 facts.conf 或不写数字）"
   fi
 }
 check_doc_consistency
