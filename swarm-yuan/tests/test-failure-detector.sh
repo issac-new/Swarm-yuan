@@ -34,7 +34,7 @@ echo "$out" | grep -q 'L3 —' && bad "态4 误发完整 L3（应 brief）: $out
 # --- 态 5：换签名 → same_sig_count 重置 → L 等级按 COUNT 走 ---
 out=$(echo '{"tool_name":"Bash","tool_result":{"exit_code":1,"content":"error: different thing"},"session_id":"s1"}' | bash "$FD" 2>&1)
 # 第 5 次失败，COUNT=5 → L4
-echo "$out" | grep -qE 'L4 — 交接报告|L[1-3]' && ok "态5 换签名 L 等级命中" || bad "态5 缺 L 块: $out"
+echo "$out" | grep -qE 'L5 — 连续 5 次失败|L[1-4]' && ok "态5 换签名 L 等级命中（R13 形态）" || bad "态5 缺 L 块: $out"
 # same_sig_count 应重置为 1
 cnt=$(cat "$TMP/proj/.swarm-yuan/.same_sig_count" 2>/dev/null)
 [[ "$cnt" == "1" ]] && ok "态5 换签名 same_sig_count 重置" || bad "态5 same_sig_count=$cnt 应=1"
@@ -51,7 +51,7 @@ for i in 1 2 3 4; do
   out=$(echo "{\"tool_name\":\"Bash\",\"tool_result\":{\"exit_code\":1,\"content\":\"error: thing $i happened\"},\"session_id\":\"s1\"}" | bash "$FD" 2>&1)
 done
 echo "$out" | grep -qE '3\.25|毕业' && bad "态7 tone 仍有 3.25/毕业话术: $out" || ok "态7 tone 软化（无 3.25/毕业）"
-echo "$out" | grep -q 'L3 — 换路线审问' && ok "态7 L3 重命名为换路线审问" || bad "态7 缺新 L3 名: $out"
+echo "$out" | grep -qE 'L[0-9] — 连续 [0-9] 次失败' && ok "态7 R13 L 块（数字级提示，叙事剧场已退役）" || bad "态7 缺 R13 L 块: $out"
 
 # --- 态 8：trace-log --key-node 落盘 ---
 mkdir -p "$TMP/proj8"

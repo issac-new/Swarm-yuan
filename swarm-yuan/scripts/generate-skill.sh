@@ -1244,7 +1244,13 @@ PEOF
       "Bash(rm -rf ~:*)",
       "Bash(sudo:*)",
       "Bash(curl:* | sh)",
-      "Bash(curl:* | bash)"
+      "Bash(curl:* | bash)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/id_rsa)",
+      "Read(**/id_ed25519)",
+      "Read(**/*.pem)"
     ]
   }
 }
@@ -1589,7 +1595,9 @@ _write_if_absent "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
 HEOF
 
 # settings.local.json（WP-A1：真生成，落实 SKILL.md Step 9 宣称）
-# 最小权限模板：允许本 skill 自带脚本执行；deny 危险命令。项目特定权限由 AI 填充。
+# 最小权限模板：允许本 skill 自带脚本执行；deny 危险命令 + 敏感文件读（沙箱通配符 deny——
+# Claude Code v2.1.236 起 ** glob 防重命名绕过：Read(**/.env) 在 allowed read 区域内优先生效）。
+# 项目特定权限由 AI 填充。
 _write_if_absent "$SKILL_DIR/settings.local.json" <<'SEOF'
 {
   "permissions": {
@@ -1607,7 +1615,13 @@ _write_if_absent "$SKILL_DIR/settings.local.json" <<'SEOF'
       "Bash(rm -rf ~:*)",
       "Bash(sudo:*)",
       "Bash(curl:* | sh)",
-      "Bash(curl:* | bash)"
+      "Bash(curl:* | bash)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/id_rsa)",
+      "Read(**/id_ed25519)",
+      "Read(**/*.pem)"
     ]
   }
 }

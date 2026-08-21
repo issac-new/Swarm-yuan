@@ -237,55 +237,8 @@ elif [[ "$COUNT" -eq 3 ]]; then
 elif [[ "$COUNT" -eq 2 ]]; then
   CURRENT_LEVEL=1
 fi
-if [[ "$CURRENT_LEVEL" -gt "$PEAK_LEVEL" ]]; then
-  echo "$CURRENT_LEVEL" > "$PEAK_LEVEL_FILE"
-fi
 
-# ===== 压力升级注入 =====
-# 第 1 次失败不干预
-[[ "$COUNT" -lt 2 ]] && exit 0
-
-PATTERN_TYPE=$(echo "$PATTERN_ANALYSIS" | cut -d'|' -f1)
-PATTERN_DETAIL=$(echo "$PATTERN_ANALYSIS" | cut -d'|' -f2-)
-
-# 构建模式感知注入块
-PATTERN_BLOCK=""
-if [[ -n "$PATTERN_TYPE" && "$PATTERN_TYPE" != "" ]]; then
-  case "$PATTERN_TYPE" in
-    SPINNING)
-      PATTERN_BLOCK="
-[🔄 模式: SPINNING — 同一错误重复]
-> 最近 3 次错误签名相同：${PATTERN_DETAIL}
-> 你没有在取得进展。禁止重试同一方法。
-> 强制：列出 3 个本质不同的策略再执行下一个 Bash 调用。
-> （swarm-yuan 铁律：如果你在改同一个 conf 变量/同一个门禁——那只算一种策略，你需要 2 个完全不同的）"
-      ;;
-    EXPLORING)
-      PATTERN_BLOCK="
-[📊 模式: EXPLORING — 每次错误不同]
-> 最近 3 次尝试产生了不同的错误——你在收敛问题空间。
-> 保持方向，但增加结构：每个新错误告诉你什么根因信息？
-> 错误签名：
-$(echo "$PATTERN_DETAIL" | tr '|' '\n' | sed 's/^/> · /')"
-      ;;
-    MIXED)
-      PATTERN_BLOCK="
-[📊 模式: MIXED — 部分重复部分新]
-> 部分错误重复，部分新。检查：你是否在两个方案间振荡？
-> 错误签名：
-$(echo "$PATTERN_DETAIL" | tr '|' '\n' | sed 's/^/> · /')
-> 选错误最新的那个方向（最接近工作的那个）提交，不要在两方案间反复横跳。"
-      ;;
-  esac
-fi
-
-# ===== 按压力等级注入（swarm-yuan 叙事，不用 PUA 话术）=====
-# WP-Q2-lite 修复 tone + 去重：
-#   ① 同签名连续 3+ 次 → 仅第 3 次起发 SPINNING brief（不再发完整 L2/L3/L4 块；完整诊断已在 L2 给出）
-#   ② tone 软化：L3 改"361 考核"为"换路线审问"（删 3.25/毕业话术），L4 改"毕业警告"为"交接报告"
-
-# 同签名 3+ 次 → 仅一行 brief（不再发完整 L2/L3/L4 块；WP-Q2-lite 修复）
-# 设计：同签名第 1 次 → 无干预；第 2 次 → L1 完整块；第 3 次起 → SPINNING brief（完整诊断已在 L2 给出，不再重复）
+# 同签名 3+ 次 → 仅一行 brief（WP-Q2-lite 修复：完整诊断已在 L2 给出，不重复；R13 保留）
 if [[ "${SAME_SIG_COUNT:-1}" -ge 3 ]]; then
   cat << EOF
 [swarm-yuan SPINNING brief — 同一错误第 ${SAME_SIG_COUNT} 次]
@@ -297,62 +250,17 @@ EOF
   exit 0
 fi
 
+# R13 批次4：按等级输出（L1 简短提示保留；L2+ 一行换路线提示——叙事剧场退役）
 if [[ "$COUNT" -eq 2 ]]; then
   cat << EOF
 [swarm-yuan L1 — 连续失败检测]
 
 检测到连续 2 次失败。你必须切换到本质不同的方案——不是改参数/改函数名，是换策略。
-${PATTERN_BLOCK}
-
-swarm-yuan 纪律：
-- 门禁 fail 时不要反复改 conf 试试——读完整错误输出，列 3 个不同假设
-- conf 占位符改不动时切换到 conf-render.sh 自动嗅探
-- generate-skill.sh fail 时读完整错误，不要猜
-- 穷尽一切之前禁止说「我无法解决」（三条铁律之三）
 EOF
-elif [[ "$COUNT" -eq 3 ]]; then
+elif [[ "$COUNT" -ge 3 ]]; then
   cat << EOF
-[swarm-yuan L2 — 根因七问]
-
-连续 3 次失败。你的底层逻辑是什么？
-${PATTERN_BLOCK}
-
-强制动作（7 项检查清单）：
-- [ ] 逐字读完失败信号了吗？
-- [ ] 用工具搜索过核心问题了吗？
-- [ ] 读过失败位置的原始上下文了吗（源码 50 行，不是摘要）？
-- [ ] 所有假设都用工具确认了吗（版本/路径/权限/依赖）？
-- [ ] 试过完全相反的假设吗？
-- [ ] 能在最小范围内复现问题吗？
-- [ ] 换过工具/方法/角度/技术栈吗？
-
-swarm-yuan 门禁纪律：conf 变量改不动 → 跑 conf-render.sh 初稿；
-门禁 fail → 读 gate-runs.jsonl 看 fail-id 级断言；占位符消不掉 → --verify-completeness --strict 列 file:line。
-EOF
-elif [[ "$COUNT" -eq 4 ]]; then
-  cat << EOF
-[swarm-yuan L3 — 换路线审问]
-
-连续 4 次失败。你在改同一个变量/同一个门禁吗？退回需求本身质疑。
-${PATTERN_BLOCK}
-
-强制：完成上方 7 项检查清单后才能继续。
-git log + git diff 检查：你是否在重复上一轮的改动？
-EOF
-else
-  # COUNT >= 5
-  cat << EOF
-[swarm-yuan L4 — 交接报告]
-
-连续 ${COUNT} 次失败。可能确实卡在边界条件上（需外部权限/根本性需求变更）。
-${PATTERN_BLOCK}
-
-输出结构化失败报告：
-- 已验证事实（你确认成立的事）
-- 已排除可能性（已试过不工作的方案）
-- 缩小范围（问题最可能的位置）
-- 推荐下一步（需要谁/什么权限/什么变更）
-- 交接信息（下个接手者最需要知道的 3 件事）
+[swarm-yuan L${COUNT} — 连续 ${COUNT} 次失败]
+换路线：不是改参数/函数名，是换策略。先自己跑一遍验证命令确认通过再继续。
 EOF
 fi
 
