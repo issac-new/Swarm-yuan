@@ -173,6 +173,8 @@ swarm-yuan 的**本体是一条自成长闭环流**：代码仓库 →① 生成
 | 长期维护（技能须跟项目演进） | 任意档 | 只要门禁不要认知设施 | 单文件 precheck.sh |
 | 小项目要基础门禁 | lite | | |
 
+**范式外轻量方案**（不套本范式的替代）：① 单文件 precheck.sh——直接拷 `swarm-yuan/assets/precheck.sh` 到项目，配 precheck.conf 跑 `--all` 核心门禁，不建 skill 目录；② 传统工具链——ESLint/Prettier/golangci-lint/pylint + Git hooks；③ AI 原生裸写——一次性任务直接对 AI 说需求。
+
 ### 1.3 与历史定位的差异（诚实记录）
 
 2026-07（WP-P10）定位是"重量级范式，重量是设计选择"——那是真实，也是五轮"过重"诊断反复追问的对象。R13（2026-08-21）后修正为两体系统：**重量没有消失，只是归位**——生成器侧 ~68K 行自举仍在（一次性消费不算税），生成物侧 ~25 文件、概念负担从 150+ 记忆槽降到 5 个层次名词。
@@ -271,7 +273,26 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 三层关系：门禁层做事中拦截（条件），审计层做事后复盘（证据），评测层做评测自身可信（元证据）——每层消费下层的账本（gate-runs → goal 聚合 → 链式锚定），互补不竞争。
 
-### 3.6 概念体系收敛
+### 3.6 工程一致性三矩阵（宣称→可核对的事实）
+
+**运行时接线明细**（历史快照表见归档 design-philosophy-consistency；权威计数 facts.conf）：每层每运行时的"真实接线方式（脚本里会执行的命令）/降级载体/self-check 可安装/验证 fixture"四列对账——深度 4（GitNexus 19 处子进程调用等）/CLI 4/方法论 5。
+
+**研发全流程 7 阶段 × 门禁映射**（每阶段四件套核对，无空壳）：
+
+| 阶段 | spec 章节 | workflow 节点 | 门禁函数（代表） | 双态 fixture |
+|------|----------|--------------|-----------------|-------------|
+| 需求 | §1/§4 | ①② | check_requirements（+openspec validate） | ✅ |
+| 分析（左移） | §19/§20/§21 | ②③★ | check_shift_left / check_impact | ✅ |
+| 设计 | §3/§5/§5.5 | ②③ | check_layer/stable_diff/link_depth/reuse/deps/security/cognition/domain | ✅ |
+| 开发 | plan Tasks | ④⑤ | check_build / check_framework（74 框架动态分发） | ✅ |
+| 测试 | §11/§19 | ⑥ | check_test / check_review（+gsd-tools health） | ✅ |
+| 交付 | §12/§22 | ⑦⑧ | check_branch / check_release_sign / --compliance-suite 族 | ✅ |
+
+**三平台 CI 矩阵**：Linux ubuntu-latest 全覆盖（74 ruleset + 74 fixture + 48 gate-fixture + e2e + verifier + shellcheck + generator-self-gate）；macOS/windows 轻量腿（windows-syntax bash -n + .bat 冒烟，全量降频周跑——bash 硬前置下的诚实分层）。
+
+**两条奠基理念的落实状态**：① 连贯动作（一键生成+一键使用，`/swarm-yuan <路径>` 全自动；7 处用户决策点保留确认属设计性例外）；② 全链路追踪（stdout 公告 + trace-log 落盘 + gate-runs + hooks 摘要 + 第三方工具调用点 trace_tool 桥 7 工具 10 调用点）——机器执法：verify-completeness 校验 workflow 每节点含调用追踪。
+
+### 3.7 概念体系收敛
 
 只允许 5 个层次名词为主轴：**探查 / 约束 / 演化 / 留痕 / 生成**。认知框架类概念（六阶链/六维动力学/三元演化/七推理/辩证范畴/五维偏差/思维模型）不删除不堆砌——以"工作时按此思考"的指引式表述融入对应层次，落地为 AI 判断引导（逐维自查 → `.swarm-yuan/notes/` 留痕，GATE_AI_JUDGMENT 唯一模式）。
 
@@ -282,6 +303,16 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
   > **实证来源（sess_733ff1c4, 2026-07-11）**：ncwk-dev 初版只列 10 个组件，真实代码库有 99 .vue + 8 store + 12 adapter + 17 loop 模块——样本化填充仅 10% 覆盖。0.95 红线由此定：强制穷举 + 三层调用链（注册装配/模块依赖矩阵/组件挂载树）+ 编排约束 6 类（导入方向/注册顺序/路由挂载/文件落位/状态所有权/测试边界，每条须代码证据）+ 接口全量枚举禁通配符。
 - **两维表规范**：地图行 = `| 路径 | 说明与约束 |`。路径反引号包裹（path-check 校验存在性）；说明列写"它是什么+接口/约束+稳定性标注词"（"导出 add（禁止改）"——stability-audit 按行内字面词识别，与列位置无关）。维度/来源等纯记账列已退役（R13）。
 - **特征卡**：P0 六项强制 / P1 十一项可增量（draft 期「（P1 待补）」允许，mark-active 前清零）；探查期产出，受检不自证。
+
+### 4.1 框架规则引擎格式契约（74 框架规则的结构约定，方案 A 选型 2026-07-17）
+
+**规则文件 `references/frameworks/<fw>.md` 六段式**：frontmatter（ruleset_id/适用版本/最后调研来源）→ §1 探查信号（依赖/注解/文件/配置四类，各带置信度——§C+.0.5 激活依据）→ §2 特定构件枚举（命令+计数核验基准）→ §3 领域规律（≥10 条，每条五要素：适用版本/规律/违反后果（挂 CWE 或官方 issue）/验证方法（具体 grep 命令）/对应门禁 id）→ §4 门禁清单（id/级别/实现逻辑/依赖 conf 变量）→ §5+ 深化材料。
+
+**门禁片段 `assets/framework-gates/<fw>.sh`**：与规则 md 1:1 配对（框架证据台账对账），注入目标 precheck.sh 标记区块（`# >>> swarm-yuan:framework-gates >>>`），生成与 --upgrade 共用幂等注入，区块 sha 记录漂移检测。
+
+**生成时数据流**：§C+.0.5 探查 → ACTIVE_FRAMEWORKS+版本 → Step 4.5 逐框架读 md（信号确认→构件枚举→规律种子实例化附证据）→ Step 7.5 --inject-frameworks 注入门禁片段+生成 framework-knowledge.md 骨架+填 conf 变量 → Step 12 四要素量化验收（规律数≥门槛且 100% 含证据字段，不过回 Step 4.5）。
+
+**ncwk-dev 反哺机制**：已实战验证的手写框架检查（vue/naiveui/pinia/koa/socketio/vite/vitest 7 框架 28 项）先反向收割进片段库作种子，再经注入回灌——"从成功实践反哺范式库"，片段库起步即有高质量样本。
 
 ## 5. 约束设计（门禁层）
 
@@ -353,7 +384,13 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 演化模式定型为"吸收→膨胀→诊断→减重"五轮循环；R13 是第一个以落地化（而非加法治理）收口的循环。
 
-### 9.3 吸收边界（明确不做）
+### 9.3 历史专题决策的存续原则（三份决策文档的有效结论）
+
+**范式审计五类因果削弱与修复原则**（2026-07-20 审计，10 项已修 + 刻意不修清单）：算术骨架成立但因果链被四类问题削弱——①崩溃（set -e+pipefail+空数组，修复原则：grep 管线加 `|| true`、空数组 `${ARR[@]+"${ARR[@]}"}` 防护）；②静默跳过（未配置门禁跳过仍显绿，修复原则：SKIP 显式披露）；③存在性自证（对范式自带模板判 pass，修复原则：模板自证闭合）；④文档数字漂移（修复原则：facts.conf 单源+机械对账）。**刻意不修原则**：修复会改变门禁判定行为且无 fixture 覆盖时，不贸然"唤醒沉睡门禁"——先补 fixture 再评估苏醒影响（五层认知基底装饰性叙事的处置即循此原则，直至 R13 以"机械计分退役"根治）。
+
+**不 vendor 上游核心插件决策**（superpowers v6.1.1 案例，2026-07-20）：四理由——①体积（offline zip 已 44MB，vendor 20+ skills 本体进一步膨胀分发成本）；②维护面（vendor 即承担逐版重核，上游六周 5 tag 迭代快，而文档级方法论引用无运行时收益——纯为引用背维护负担）；③许可证敞口（marketplace 编目 10 插件各有独立 license，不 vendor 则收敛在单 MIT 元数据）；④生态（正规获取路径是插件市场在线安装，vendor 静态副本脱离更新通道）。**存续原则：方法论引用不 vendor、运行时调用才考虑深度整合——"调用不重实现"的最低成本形态**。
+
+**机械 vs AI 边界评审结论**（q2-heavy-review，2026-07）：D1 探索式 gate（cognition/diagram/pr_quality 等）应转 AI 自觉判断——机械 grep 误报高；D2 "假装可机器"的门禁（taste 判定类）降 warn；D4 生成流程过度脚本化环节让 AI 判断。**R13 全量落地**：GATE_AI_JUDGMENT 唯一模式 + 机械计分退役 + spec 仪式节转按需——评审结论已从建议变为现状。
 
 OS 沙箱（宿主职责，吸收决策架构不复制实现）/ Guardian LLM 分类器（bash 层不建，只留形态约定）/ Starlark 解释器（行格式规则即可）/ 会话 SQLite 投影（trace.jsonl 够用）/ 迁移工具（手工升级一次）/ harness 内部（exec/SDK/app-server 是宿主集成层）。
 
