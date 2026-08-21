@@ -21,119 +21,23 @@ _ai_hint() { # $1=门禁名 $2=AI 自查要点
   pass "$1 已转 AI 自觉判断（advisory，不计 fail）"
 }
 check_consistency() {
+
   if [[ "$_AI_JUDGMENT" == "1" ]]; then
     _ai_hint "check_consistency" "逐文件读业务规则，对照数据勾稽核对（订单金额=Σ明细 / 库存=Σ在库+在途）；在 CONSISTENCY_DIRS 内人读 3-5 个核心文件；不要靠 grep"
-    return 0
+  return 0
   fi
-  echo "=== 业务规则 + 数据勾稽核对（check §2/§3 无多漏错重）==="
-  for dir in ${CONSISTENCY_DIRS[@]+"${CONSISTENCY_DIRS[@]}"}; do
-    [[ -d "$dir" ]] || continue
-    # 检查是否有未标注幂等的重复写入逻辑（粗筛：同名 INSERT/create 多处出现）
-    local dup_writes
-    dup_writes=$(_scan_src '(INSERT INTO|\.create\(|db\.(insert|create))' 'ts,js,py,go,java' 'test\|mock\|seed\|fixture\|migration' "$dir")
-    if [[ -n "$dup_writes" ]]; then
-      local count
-      count=$(echo "$dup_writes" | wc -l | xargs)
-      if [[ $count -gt 5 ]]; then
-        warn "  ⚠ $dir 有 $count 处写入逻辑，请确认幂等性（重复请求不产生副作用）"
-      fi
-    fi
-  done
-  pass "业务规则与勾稽核对完成（详见 reference-manual.md §数据勾稽核对）"
-  echo "  提示: 无多漏错重核对项见 reference-manual.md §数据勾稽核对："
-  echo "    - 无遗漏：关联记录无缺失"
-  echo "    - 无多余：无冗余/重复记录"
-  echo "    - 记录正确：字段值符合业务规则"
-  echo "    - 勾稽正确：外键/聚合/关联关系正确"
-  echo "    - 一致性：同源数据多处一致"
-  echo "    - 幂等性：重复请求不产生副作用"
+  # R13 批次2：机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
+
 }
 
 check_link_depth() {
+
   if [[ "$_AI_JUDGMENT" == "1" ]]; then
     _ai_hint "check_link_depth" "挑 3 个核心用例，沿调用链逐层读代码（controller→service→repo），数层数；若 >6 层，AI 判断是否为适配层堆叠而非真实复杂度"
-    return 0
+  return 0
   fi
-  echo "=== 调用链深度检查（DDD：链路膨胀/跨聚合事务/Repository 查询泄漏）==="
-  local found=0
+  # R13 批次2：机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
 
-  if [[ "$MAX_LINK_DEPTH" -le 0 ]]; then
-    skip_if_unconfigured "MAX_LINK_DEPTH=0，跳过调用链深度检查"
-    return
-  fi
-
-  # ---- 1. 优先用 gitnexus trace（最准确，基于代码图谱）----
-  if has_gitnexus && gitnexus_indexed; then
-    trace_tool "gitnexus" "trace --format text"
-    local depth_output; depth_output=$(gitnexus trace --format text 2>/dev/null | head -50 || true)
-    if [[ -n "$depth_output" ]]; then
-      local max_depth; max_depth=$(echo "$depth_output" | grep -oE '[0-9]+' | sort -n | tail -1 || echo 0)
-      if [[ "$max_depth" -gt "$MAX_LINK_DEPTH" ]]; then
-        warn "调用链最大深度 ${max_depth}（gitnexus trace）超过阈值 ${MAX_LINK_DEPTH}，建议拆分中转层"
-      fi
-      pass "调用链深度检查完成（基于 gitnexus trace，最大深度 ${max_depth}）"
-      return
-    fi
-  fi
-
-  # ---- 2. 降级 graphify path ----
-  if has_graphify && graphify_built; then
-    trace_tool "graphify" "explain"
-    local report; report=$(graphify explain 2>/dev/null | head -50 || true)
-    if echo "$report" | grep -qiE "depth|max.*path|longest"; then
-      local depths; depths=$(echo "$report" | grep -oE '[0-9]+' | sort -n | tail -1 || true)
-      if [[ -n "$depths" && "$depths" -gt "$MAX_LINK_DEPTH" ]]; then
-        warn "调用链最大深度 ${depths} 超过阈值 ${MAX_LINK_DEPTH}（graphify 报告，建议拆分中间适配层）"
-      fi
-    fi
-    pass "调用链深度检查完成（基于 graphify 图谱）"
-    return
-  fi
-
-  # ---- 3. 降级 madge ----
-  if has_madge; then
-    local tree _madge_err
-    _madge_err=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-madge.XXXXXX")
-    tree=$(madge --tree --extensions ts,js "$PROJECT_DIR" 2>"$_madge_err" || true)
-    if [[ -z "$tree" ]]; then
-      warn "madge 执行无输出（stderr: $(head -1 "$_madge_err" 2>/dev/null || echo 空)）——调用链深度降级为纯转发统计"
-      rm -f "$_madge_err"
-    else
-      rm -f "$_madge_err"
-      local max_indent=0
-      while IFS= read -r line; do
-        local spaces; spaces=$(echo "$line" | grep -oE '^[ ]*' | wc -c | xargs)
-        [[ "$spaces" -gt "$max_indent" ]] && max_indent=$spaces
-      done <<< "$tree"
-      local depth=$(( max_indent / 2 ))
-      if [[ "$depth" -gt "$MAX_LINK_DEPTH" ]]; then
-        warn "调用链最大深度约 ${depth}（madge 估算）超过阈值 ${MAX_LINK_DEPTH}，建议拆分中转层"
-      fi
-      pass "调用链深度检查完成（基于 madge，最大深度约 ${depth}）"
-      return
-    fi
-  fi
-
-  # ---- 2. 降级：统计"纯转发函数"（只调用下一个函数、无其他逻辑）作为链路膨胀信号 ----
-  local forwarders=0
-  local dir
-  for dir in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}; do
-    [[ -d "$dir" ]] || continue
-    # 粗筛：函数体只有一行 return xxx()，疑似纯转发
-    local hits
-    hits=$(grep -rnE '^\s*(export\s+)?(async\s+)?function\s+\w+.*\{$' "$dir" \
-      --include='*.ts' --include='*.js' 2>/dev/null | wc -l | xargs || true)
-    # 进一步：找函数体只有 return 调用的（粗略，需多行匹配）
-    local pure_fwd
-    pure_fwd=$(grep -rzoP 'function\s+\w+\([^)]*\)\s*\{\s*return\s+\w+\([^)]*\)\s*;?\s*\}' "$dir" \
-      --include='*.ts' --include='*.js' 2>/dev/null | grep -c 'function' || true)
-    forwarders=$((forwarders + ${pure_fwd:-0}))
-  done
-  if [[ $forwarders -gt 5 ]]; then
-    warn "检测到 $forwarders 个疑似纯转发函数（只 return 调用下一个函数）——可能是链路膨胀的适配层堆叠，建议合并"
-  fi
-  warn "未安装 graphify/madge，调用链深度检查降级为纯转发函数统计。安装 madge（npm i -g madge）或 graphify（uv tool install graphifyy）以获得准确调用链深度"
-  pass "调用链深度检查完成（降级模式）"
 }
 
 check_consistency_cross() {
@@ -272,48 +176,13 @@ check_cognition() {
 
 
 check_diagram() {
+
   if [[ "$_AI_JUDGMENT" == "1" ]]; then
     _ai_hint "check_diagram" "AI 看 reference-manual.md 是否有架构图/调用链图（mermaid/echarts 任选）；没有则在 §9 加一段简短 ASCII 调用链（10 行内）"
-    return 0
+  return 0
   fi
-  echo "=== 可视化检查（架构图/流程图/调用链 + 统计/分布/趋势）==="
-  local found=0
+  # R13 批次2：机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
 
-  # 检查 reference-manual.md 是否含可视化图（mermaid 结构图 或 echarts/antv 数据图）
-  local rm_file
-  rm_file=$(_first_existing_file "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md")
-  local has_mermaid=0 has_echarts=0 has_any=0
-  if [[ -n "$rm_file" ]]; then
-    # mermaid：结构关系图（依赖图/调用链/分层矩阵/流程图/状态图/C4 架构图）
-    grep -qiE '```mermaid|<mermaid' "$rm_file" 2>/dev/null && { has_mermaid=1; has_any=1; }
-    # echarts/antv：数据图表（统计分布/趋势/指标对比/饼图柱图）
-    grep -qiE '```echarts|```antv|<echarts|<antv|echarts\.init|antv\.' "$rm_file" 2>/dev/null && { has_echarts=1; has_any=1; }
-  fi
-
-  # 检查 spec-template.md 是否含可视化引导
-  local spec_file
-  spec_file=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
-  local spec_diagram=0
-  if [[ -n "$spec_file" ]]; then
-    grep -qiE 'mermaid|echarts|antv|架构图.*可视化|流程图.*Mermaid' "$spec_file" 2>/dev/null && spec_diagram=1
-  fi
-
-  if [[ $has_mermaid -eq 1 ]]; then
-    pass "reference-manual.md 含 mermaid 结构图（架构/流程/调用链）"
-  fi
-  if [[ $has_echarts -eq 1 ]]; then
-    pass "reference-manual.md 含 echarts/antv 数据图（统计/分布/趋势）"
-  fi
-  if [[ $has_any -eq 0 ]]; then
-    warn "reference-manual.md 未检测到可视化图——按内容选恰当图表：架构/流程/调用链/分层矩阵用 mermaid（GitHub 原生渲染）；统计/分布/趋势/指标对比用 echarts/antv（option JSON 代码块）"
-  fi
-  if [[ $spec_diagram -eq 1 ]]; then
-    pass "spec-template 含可视化引导"
-  fi
-
-  if [[ $found -eq 0 ]]; then
-    pass "可视化检查通过（mermaid 结构图 + echarts/antv 数据图双引擎）"
-  fi
 }
 
 # --operate：发布后运营验证（D 方向，warn 级 advisory——环境依赖型检查硬 fail 风险高）
@@ -636,73 +505,13 @@ check_upstream_baseline() {
 # 理念来源：gstack PR Quality Score + fingerprint 去重 +1 boost / Red Team（R5 §七.4）。
 # advisory 级（warn-only）。轻量实现：从 git diff 计算变更规模 + 重复模式检测。
 check_pr_quality() {
+
   if [[ "$_AI_JUDGMENT" == "1" ]]; then
     _ai_hint "check_pr_quality" "AI 看 git diff 三指标：①是否超过 500 行（建议拆 PR）②是否含 >3 个无关改动 ③重复模式（同一文件改 3+ 处相似逻辑）；给一句判断"
-    return 0
+  return 0
   fi
-  echo "=== PR 质量评分（--pr-quality，advisory；gstack 理念：变更规模 + 重复模式检测）==="
-  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    warn "非 git 仓库，PR 质量评分跳过"
-    return 0
-  fi
-  local found=0
-  # ① 变更规模评分（行数/文件数）
-  local diff_stat; diff_stat=$(git diff --cached --stat 2>/dev/null || git diff --stat 2>/dev/null || true)
-  if [[ -z "$diff_stat" ]]; then
-    # 无 staged 变更，检查 working tree
-    diff_stat=$(git diff --stat 2>/dev/null || true)
-  fi
-  if [[ -z "$diff_stat" ]]; then
-    echo "  ℹ 无变更（clean working tree），PR 质量评分跳过"
-    return 0
-  fi
-  local files_changed; files_changed=$(echo "$diff_stat" | grep -cE '^\s' || true)
-  local lines_added=0 lines_deleted=0
-  local diff_numstat; diff_numstat=$(git diff --cached --numstat 2>/dev/null || git diff --numstat 2>/dev/null || true)
-  while IFS=$'\t' read -r add del _f; do
-    [[ "$add" =~ ^[0-9]+$ ]] && lines_added=$((lines_added + add))
-    [[ "$del" =~ ^[0-9]+$ ]] && lines_deleted=$((lines_deleted + del))
-  done <<< "$diff_numstat"
-  local total_lines=$((lines_added + lines_deleted))
-  echo "  ⓘ 变更规模：${files_changed} 文件，+${lines_added}/-${lines_deleted}（合计 ${total_lines} 行）"
-  # 规模评分：>500 行 warn（大型变更须拆分）
-  if [[ $total_lines -gt 500 ]]; then
-    warn "PR 变更规模 ${total_lines} 行（>500）——大型变更建议拆分为多个小 PR（gstack：小 PR 质量更高）"
-    found=1
-  fi
-  # ② fingerprint 去重：检测重复代码模式（相同函数签名跨文件）
-  if [[ $files_changed -gt 1 ]]; then
-    local changed_files; changed_files=$(git diff --cached --name-only 2>/dev/null || git diff --name-only 2>/dev/null || true)
-    local dup_funcs=""
-    while IFS= read -r cf; do
-      [[ -z "$cf" ]] && continue
-      [[ -f "$cf" ]] || continue
-      case "$cf" in
-        *.ts|*.js|*.py|*.java|*.go|*.kt|*.cs|*.c|*.cpp)
-          local funcs; funcs=$(grep -oE '\b(function|def|func|public|private|protected)\s+[a-zA-Z_][a-zA-Z0-9_]*' "$cf" 2>/dev/null || true)
-          [[ -n "$funcs" ]] && dup_funcs="${dup_funcs}${funcs}\n"
-          ;;
-      esac
-    done <<< "$changed_files"
-    # 检测重复函数名
-    if [[ -n "$dup_funcs" ]]; then
-      local dups; dups=$(printf '%b\n' "$dup_funcs" | sort | uniq -d | head -5 || true)
-      if [[ -n "$dups" ]]; then
-        warn "检出重复函数签名跨文件（fingerprint 去重）：
-$(printf '%s\n' "$dups" | head -3 | sed 's/^/    /')"
-        found=1
-      fi
-    fi
-  fi
-  # ③ Red Team 检查：spec 是否含"替代方案"段（gstack Red Team：考虑替代方案）
-  local spec_file="${SPEC_FILE:-}"
-  if [[ -n "$spec_file" && -f "$spec_file" ]]; then
-    if ! grep -qE '替代方案|alternative|备选|trade.off|权衡' "$spec_file" 2>/dev/null; then
-      warn "spec 未含'替代方案/权衡'段（gstack Red Team：每个设计决策须考虑替代方案）"
-      found=1
-    fi
-  fi
-  [[ $found -eq 0 ]] && pass "PR 质量评分通过（规模合理，无重复模式，含替代方案）"
+  # R13 批次2：机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
+
 }
 
 # check_skill_supply_chain（--skill-supply-chain，WP-Y）：Skill 供应链安全审计

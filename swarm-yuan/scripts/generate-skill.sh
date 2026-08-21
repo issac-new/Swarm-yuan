@@ -74,6 +74,10 @@ UNIVERSAL_FILES=(
   # WP-R3-5：inventory-update.sh 给目标 skill 的 AI 用（编码中发现语义变化 → 局部更新清单单条目），
   # 与 inventory-verify.sh 的"生成器侧核验"角色区分——本脚本必须拷到目标 skill 的 scripts/ 下。
   "scripts/inventory-update.sh|gen|lite"
+  # R13 批次2：规则即数据——三值求值器 + 默认规则集随生成物分发（conf 收缩的载体：门禁阈值/白名单类参数迁入规则数据）
+  "scripts/gate-rules.sh|gen|lite"
+  "rules.d/bash-advance.rules|rules|lite"
+  "rules.d/readonly-safe.rules|rules|lite"
   "scripts/self-check.sh|gen|lite"
   "scripts/detect-frameworks.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
@@ -1118,6 +1122,7 @@ copy_universal_templates() {
         fi
         ;;
       ref)    src="$SRC_REF/${dest##*/}" ;;
+      rules)  src="$ASSETS_DIR/$dest" ;;   # R13 批次2：rules.d 规则数据（dest=rules.d/xxx.rules → assets/rules.d/xxx.rules）
       gen)    src="$SRC_SCRIPTS/${dest##*/}" ;;
       *) echo "ERROR: UNIVERSAL_FILES 未知源类别: $entry" >&2; return 1 ;;
     esac
