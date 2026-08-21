@@ -119,6 +119,22 @@ bash scripts/audit-closure.sh <项目根> --strict   # 有 open goal → exit 2
 
 ---
 
+## 运行时三层接线 + 领域知识
+
+**运行时**（只引用调用不重新实现，按接线深度分三层；`docs/upstream-baseline.md` 登记运行时的仓库/许可证/基线版本/drift 状态）：
+
+| 层 | 运行时 | 接线方式 |
+|----|--------|---------|
+| 深度接线 | GitNexus / graphify / claude-mem / ocr | precheck.sh 门禁内真实子进程调用 + 多级降级链 |
+| CLI 接线 | OpenSpec / comet / gsd-core / codex-security | 门禁/状态机按需调用 CLI（`openspec validate`/`comet guard`/`gsd-tools validate health`）+ 降级到自带载体 |
+| 方法论引用 | superpowers / gstack / Ruflo / ECC / impeccable | AI 按 workflow 节点引用其模式，swarm-yuan 自带等价降级载体 |
+
+每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深度接线。`--upstream-baseline` 门禁（advisory）自动检测 upstream drift，CI 可见但不阻断构建。
+
+**领域知识**：数据库 ACID / 网络 CORS / 安全密码哈希 / IM 消息保序 / 电商库存原子扣减 / 金融金额 Decimal……多领域客观规律（详见 `swarm-yuan/references/domain-knowledge.md`，计数真值见 facts.conf）。AI 探查时识别技术+业务领域，推导客观规律驱动 `--domain` 违规检测——防达克效应（对不熟悉的领域自信地写出错误代码）。
+
+---
+
 ## 零占位符 + 自举
 
 **零占位符**：AI 执行完整生成流程后由脚本机器执法（`--verify-completeness`）——零残留才算完成，命中"待填充"/"填充指引"/占位符即列 file:line 并 exit 1。
