@@ -619,11 +619,11 @@ verify_completeness() {
     # 导致 [一] 匹配任意 ASCII 字符（已实测）。index() 固定子串匹配对 UTF-8 安全。
     trace_miss=$(awk '
       /^#{1,6} / && index($0, "节点") > 0 && (index($0, "：") > 0 || index($0, ":") > 0) {
-        if (node != "" && !has) print FILENAME":"line": 节点段缺「调用追踪」要素（template-spec §2 第⑨要素）: " node
+        if (node != "" && !has) print FILENAME":"line": 节点段缺追踪要素（R13 4 要素模型：⑥ 产出物与追踪段须含 trace-log.sh 调用）: " node
         node=$0; line=FNR; has=0; next
       }
-      /调用追踪/ { has=1 }
-      END { if (node != "" && !has) print FILENAME":"line": 节点段缺「调用追踪」要素（template-spec §2 第⑨要素）: " node }
+      /调用追踪|trace-log\.sh/ { has=1 }
+      END { if (node != "" && !has) print FILENAME":"line": 节点段缺追踪要素（R13 4 要素模型：⑥ 产出物与追踪段须含 trace-log.sh 调用）: " node }
     ' "$wf" 2>/dev/null || true)
   fi
   hits=$(printf '%s\n%s\n' "$hits" "$trace_miss" | grep -v '^$' || true)
@@ -1384,20 +1384,17 @@ for f in $_placeholder_refs; do
 **④ 质量门禁：**
 - （离开本节点前必须满足的条件，可被 precheck.sh 验证）
 
-**⑤ 分支处理：**
-- 成功：（对分支的处理）
-- 失败/错误：（如何回退、重试）
-- 信息不足：（暂停澄清还是降级处理）
 
-**⑥ 产出物归档：**
+
+**⑥ 产出物与追踪：**
 - 持久化：（落盘到哪个路径）
 - 临时上下文：（仅对话/草稿的产物）
 
-**⑦ 流程控制：** （可否暂停/恢复/重启；恢复方式）
 
-**⑧ 状态控制：** （状态保存在哪，如何恢复）
 
-**⑨ 调用追踪（全链路提示，无需用户确认）：**
+
+
+**追踪（⑨ 并入）：**
 - 公告：进入本节点时 AI 输出一行结构化提示，格式 `→ [节点① 需求理解] 调用 <技能/子代理/工具> · <目的>`
 - 落盘：节点级默认——进入/完成本节点时执行 `bash scripts/trace-log.sh --node "需求理解" --actor "<技能/子代理>" --tool "<工具/命令>"`，追加到 `.swarm-yuan/trace.jsonl`
 
@@ -1416,20 +1413,17 @@ for f in $_placeholder_refs; do
 **④ 质量门禁：**
 - 探查覆盖度（组件库清单全量穷举，非代表性样本）
 
-**⑤ 分支处理：**
-- 成功：产出特征卡 + 组件库清单 + 调用链
-- 失败/错误：降级到 grep+madge（无图谱工具时）
-- 信息不足：暂停提问
 
-**⑥ 产出物归档：**
+
+**⑥ 产出物与追踪：**
 - 持久化：特征卡写入 SKILL.md；组件库清单写入 codebase.md
 - 临时上下文：探查中间产物
 
-**⑦ 流程控制：** 三路子代理可并行，controller 收集结果
 
-**⑧ 状态控制：** progress ledger 记录三路完成状态
 
-**⑨ 调用追踪（全链路提示，无需用户确认）：**
+
+
+**追踪（⑨ 并入）：**
 - 公告：每路子代理启动/完成时输出 `→ [节点② 探查] 调用 结构子代理 · gitnexus context（started/done）`
 - 落盘：每路子代理启动前执行 `bash scripts/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`，完成后 `--status done`（规范/代码组织子代理同理）
 
@@ -1445,13 +1439,13 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** ★测试左移（spec §19 测试设计）+ ★运维左移（spec §21 可观测性约束）
 
-**⑤ 分支处理：** spec 评审失败→回节点②补探查或节点③修订
 
-**⑥ 产出物归档：** 持久化：references/spec.md
 
-**⑦ 流程控制：** spec 可多轮修订
+**⑥ 产出物与追踪：** 持久化：references/spec.md
 
-**⑧ 状态控制：** state-machine.sh design 阶段
+
+
+
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "设计 spec" --actor "<技能>" --tool "<工具>"`
 
@@ -1465,7 +1459,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** ★变更左移（plan §20 变更影响范围：消费方反查/回滚预案/灰度策略/迁移兼容窗口）
 
-**⑥ 产出物归档：** 持久化：references/plan.md（OpenSpec tasks checkbox 格式）
+**⑥ 产出物与追踪：** 持久化：references/plan.md（OpenSpec tasks checkbox 格式）
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "实施 plan" --actor "<技能>" --tool "<工具>"`
 
@@ -1477,7 +1471,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** ★测试左移（每个 task 先写/更新测试再实现，TDD/BDD；precheck `--shift-left` 校验 test 与 impl 同分支提交）
 
-**⑥ 产出物归档：** 代码提交 + 测试提交
+**⑥ 产出物与追踪：** 代码提交 + 测试提交
 
 **⑨ 调用追踪：** 子代理派发时 `bash scripts/trace-log.sh --node "编码实现" --actor "implementer" --tool "<task>" --status started`
 
@@ -1489,7 +1483,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** gstack/OCR 5 审查维度 + AUTO-FIX/ASK；★运维左移（验证 metrics/日志/trace 已埋点）
 
-**⑥ 产出物归档：** 测试报告 + 审查记录
+**⑥ 产出物与追踪：** 测试报告 + 审查记录
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "测试验证" --actor "reviewer" --tool "ocr review"`
 
@@ -1501,7 +1495,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** ★变更左移（回滚预案存在 + 数据库变更兼容：向前兼容/双写期）
 
-**⑥ 产出物归档：** merge commit
+**⑥ 产出物与追踪：** merge commit
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "合入 main" --actor "<技能>" --tool "git merge"`
 
@@ -1513,7 +1507,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** ★运维左移（灰度/金丝雀策略 + 监控告警阈值 + 运维 runbook）
 
-**⑥ 产出物归档：** 发布产物 + release notes
+**⑥ 产出物与追踪：** 发布产物 + release notes
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "构建发布" --actor "<技能>" --tool "<构建命令>"`
 
@@ -1533,34 +1527,34 @@ for f in $_placeholder_refs; do
 WFEOF
   else
     if [[ "$f" == "reference-manual.md" ]]; then
-      # WP-R3-4：reference-manual.md 从一行占位升级为结构化骨架（§4/§6/§9 五维表头 + 示例行）
+      # R13 批次1b：reference-manual.md 两维表骨架（五维表减负——"维度/来源"列纯记账退役）。
       # 原因：inventory-verify --path-check / --stability-audit 期望 §4/§6/§9 表格行内含反引号路径
       # + 稳定性标注（稳定/禁止改），骨架连表头都没有时 AI 只能从 0 造，常缺五维必填字段（维度/路径/稳定性/来源/接口）。
       # 骨架仅给表头 + 一行示例（P1 待补标记——mark-active 前必须替换为真实条目）。
       _write_if_absent "$SKILL_DIR/references/$f" <<'RMEOF'
 # reference-manual.md — 项目参考手册（组件库清单 / 接口约束 / 数据勾稽）
 
-> 填充指引：按 exploration-guide §C+ 探查后填充。所有 §4/§6/§9 表格行必须含**五维字段**：
-> `| 维度 | 路径 | 稳定性 | 来源 | 接口/约束 |`；路径用反引号包裹（inventory-verify --path-check 校验存在性）；
-> 稳定性标注词：`稳定`/`禁止改`/`不稳定`（--stability-audit 校验与 git churn/fan-in/测试存在性信号一致性）。
+> 填充指引：按 exploration-guide §C+ 探查后填充。§4/§6/§9 表格行两列：`| 路径 | 说明与约束 |`；
+> 路径用反引号包裹（--path-check 校验存在性）；稳定性标注词写进说明列（如"导出 add（禁止改）"）——
+> --stability-audit 按行内字面词识别（与列位置无关）。说明列 = AI 读代码后的理解，不是填表。
 
 ## §4 组件库清单
 
-| 维度 | 路径 | 稳定性 | 来源 | 接口/约束 |
-|------|------|--------|------|-----------|
-| （P1 待补）示例组件 | `src/components/Example.tsx` | 稳定 | 探查 | 导出 `Example` 函数；入参 `props: Props` |
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/components/Example.tsx` | （P1 待补）导出 `Example` 函数；入参 `props: Props`（稳定） |
 
 ## §6 接口清单
 
-| 维度 | 路径 | 稳定性 | 来源 | 接口/约束 |
-|------|------|--------|------|-----------|
-| （P1 待补）示例接口 | `src/api/example.ts` | 稳定 | 探查 | `GET /api/example`；返回 `ExampleVO` |
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/api/example.ts` | （P1 待补）`GET /api/example`；返回 `ExampleVO`（稳定） |
 
 ## §9 数据勾稽
 
-| 维度 | 路径 | 稳定性 | 来源 | 接口/约束 |
-|------|------|--------|------|-----------|
-| （P1 待补）示例勾稽 | `src/service/order.ts` | 稳定 | 探查 | 订单金额 = Σ 明细金额；库存 = 在库 + 在途 |
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/service/order.ts` | （P1 待补）订单金额 = Σ 明细金额；库存 = 在库 + 在途（禁止改——勾稽恒等式） |
 
 ---
 
