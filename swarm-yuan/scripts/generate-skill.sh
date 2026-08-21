@@ -625,7 +625,7 @@ verify_completeness() {
     # 不用正则字符类匹配①-⑩/CJK数字——BSD awk 20200816 把多字节字符类按字节解析
     # 导致 [一] 匹配任意 ASCII 字符（已实测）。index() 固定子串匹配对 UTF-8 安全。
     trace_miss=$(awk '
-      /^#{1,6} / && index($0, "节点") > 0 && (index($0, "：") > 0 || index($0, ":") > 0) {
+      /^## / && index($0, "节点") > 0 && (index($0, "：") > 0 || index($0, ":") > 0) {
         if (node != "" && !has) print FILENAME":"line": 节点段缺追踪要素（R13 4 要素模型：⑥ 产出物与追踪段须含 trace-log.sh 调用）: " node
         node=$0; line=FNR; has=0; next
       }
@@ -1370,7 +1370,7 @@ fi
 
 fill_guide() {
   case "$1" in
-    workflow.md) echo "八节点全流程，每节点 10 要素（含★调用追踪），4-Phase SOP，节点①含读取项目知识子步骤" ;;
+    workflow.md) echo "八节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP" ;;
     codebase.md) echo "目录结构+技术栈版本表+端口+配置" ;;
     dev-guide.md) echo "改造分类+拼装式开发原则+安全编码规范" ;;
     release.md) echo "编译规则+构建命令+产物位置" ;;
@@ -1383,13 +1383,13 @@ _placeholder_refs="workflow.md codebase.md dev-guide.md release.md reference-man
 [[ "$PROFILE" == "lite" ]] && _placeholder_refs="reference-manual.md"
 for f in $_placeholder_refs; do
   if [[ "$f" == "workflow.md" ]]; then
-    # S10/S4 实装：workflow.md 不再 2 行占位，emit 8 节点骨架（10 要素/节点），
+    # S10/S4 实装：workflow.md 不再 2 行占位，emit 8 节点骨架（R13 批次1b 后 4 要素/节点），
     # 节点②探查的 ⑨ 调用追踪预填 trace-log 模板（具体化 SKILL.md:86 的 AI 自由动作）。
     # 节点名对齐 template-spec.md:198-207 标准 8 节点（第 9 项"发布后运营"是可选 D 方向，非 8 节点之一）。
     _write_if_absent "$SKILL_DIR/references/$f" <<'WFEOF'
-# workflow.md — 八节点全流程（10 要素/节点，含★调用追踪）
+# workflow.md — 八节点全流程（4 要素/节点：入口/参与方/门禁/产出物与调用追踪）
 
-> 填充指引：八节点全流程，每节点 10 要素（含★调用追踪），4-Phase SOP，节点①含读取项目知识子步骤。
+> 填充指引：八节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP。
 > 节点名对齐 references/template-spec.md §2 标准 8 节点；按项目实际裁剪。
 
 ## 流程总览
@@ -1413,7 +1413,7 @@ for f in $_placeholder_refs; do
 
 
 
-**⑥ 产出物与追踪：**
+**⑥ 产出物与调用追踪：**
 - 持久化：（落盘到哪个路径）
 - 临时上下文：（仅对话/草稿的产物）
 
@@ -1421,7 +1421,7 @@ for f in $_placeholder_refs; do
 
 
 
-**追踪（⑨ 并入）：**
+**调用追踪：**
 - 公告：进入本节点时 AI 输出一行结构化提示，格式 `→ [节点① 需求理解] 调用 <技能/子代理/工具> · <目的>`
 - 落盘：节点级默认——进入/完成本节点时执行 `bash scripts/trace-log.sh --node "需求理解" --actor "<技能/子代理>" --tool "<工具/命令>"`，追加到 `.swarm-yuan/trace.jsonl`
 
@@ -1442,7 +1442,7 @@ for f in $_placeholder_refs; do
 
 
 
-**⑥ 产出物与追踪：**
+**⑥ 产出物与调用追踪：**
 - 持久化：特征卡写入 SKILL.md；组件库清单写入 codebase.md
 - 临时上下文：探查中间产物
 
@@ -1450,7 +1450,7 @@ for f in $_placeholder_refs; do
 
 
 
-**追踪（⑨ 并入）：**
+**调用追踪：**
 - 公告：每路子代理启动/完成时输出 `→ [节点② 探查] 调用 结构子代理 · gitnexus context（started/done）`
 - 落盘：每路子代理启动前执行 `bash scripts/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`，完成后 `--status done`（规范/代码组织子代理同理）
 
@@ -1468,7 +1468,7 @@ for f in $_placeholder_refs; do
 
 
 
-**⑥ 产出物与追踪：** 持久化：references/spec.md
+**⑥ 产出物与调用追踪：** 持久化：references/spec.md
 
 
 
@@ -1486,7 +1486,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** ★变更左移（plan §20 变更影响范围：消费方反查/回滚预案/灰度策略/迁移兼容窗口）
 
-**⑥ 产出物与追踪：** 持久化：references/plan.md（OpenSpec tasks checkbox 格式）
+**⑥ 产出物与调用追踪：** 持久化：references/plan.md（OpenSpec tasks checkbox 格式）
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "实施 plan" --actor "<技能>" --tool "<工具>"`
 
@@ -1498,7 +1498,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** ★测试左移（每个 task 先写/更新测试再实现，TDD/BDD；precheck `--shift-left` 校验 test 与 impl 同分支提交）
 
-**⑥ 产出物与追踪：** 代码提交 + 测试提交
+**⑥ 产出物与调用追踪：** 代码提交 + 测试提交
 
 **⑨ 调用追踪：** 子代理派发时 `bash scripts/trace-log.sh --node "编码实现" --actor "implementer" --tool "<task>" --status started`
 
@@ -1510,7 +1510,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** gstack/OCR 5 审查维度 + AUTO-FIX/ASK；★运维左移（验证 metrics/日志/trace 已埋点）
 
-**⑥ 产出物与追踪：** 测试报告 + 审查记录
+**⑥ 产出物与调用追踪：** 测试报告 + 审查记录
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "测试验证" --actor "reviewer" --tool "ocr review"`
 
@@ -1522,7 +1522,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** ★变更左移（回滚预案存在 + 数据库变更兼容：向前兼容/双写期）
 
-**⑥ 产出物与追踪：** merge commit
+**⑥ 产出物与调用追踪：** merge commit
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "合入 main" --actor "<技能>" --tool "git merge"`
 
@@ -1534,7 +1534,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：** ★运维左移（灰度/金丝雀策略 + 监控告警阈值 + 运维 runbook）
 
-**⑥ 产出物与追踪：** 发布产物 + release notes
+**⑥ 产出物与调用追踪：** 发布产物 + release notes
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "构建发布" --actor "<技能>" --tool "<构建命令>"`
 
@@ -1556,7 +1556,7 @@ WFEOF
     if [[ "$f" == "reference-manual.md" ]]; then
       # R13 批次1b：reference-manual.md 两维表骨架（五维表减负——"维度/来源"列纯记账退役）。
       # 原因：inventory-verify --path-check / --stability-audit 期望 §4/§6/§9 表格行内含反引号路径
-      # + 稳定性标注（稳定/禁止改），骨架连表头都没有时 AI 只能从 0 造，常缺五维必填字段（维度/路径/稳定性/来源/接口）。
+      # + 稳定性标注（稳定/禁止改），骨架表头让 AI 有结构起点而非从 0 造（R13 批次1b 已减负为两维）。
       # 骨架仅给表头 + 一行示例（P1 待补标记——mark-active 前必须替换为真实条目）。
       _write_if_absent "$SKILL_DIR/references/$f" <<'RMEOF'
 # reference-manual.md — 项目参考手册（组件库清单 / 接口约束 / 数据勾稽）
@@ -1721,7 +1721,7 @@ EOF
 # WP-E：checklist 按档裁剪（lite 无 workflow/commands/hooks 条目）
 if [[ "$PROFILE" != "lite" ]]; then
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
-- [ ] workflow: 八节点+每节点 10 要素（含★调用追踪）+4-Phase SOP+每节点读取项目知识
+- [ ] workflow: 八节点+每节点 4 要素（入口/参与方/门禁/产出物与调用追踪）+4-Phase SOP
 - [ ] reference: codebase/dev-guide/release/reference-manual + 方法论+认知 reference
 EOF
 else
@@ -1731,7 +1731,7 @@ EOF
 fi
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] assets: spec-template(§5.5-§18) + plan + branch + env + data + state-machine
-- [ ] check: precheck.sh 门禁（标准 27 随 --all-full；合规 13 随 --compliance-suite 按需）
+- [ ] check: precheck.sh 门禁四族（计数真值见 assets/facts.conf；core 随 --all，arch 随 --all-full，compliance 随 --compliance-suite）
 - [ ] scripts: precheck + state-machine + trace-log + cost-report
 EOF
 # WP-R2-2：自成长指引段（固定操作指引，非填充项——目标技能的 AI 按此链保持技能与项目同步）
