@@ -402,3 +402,43 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 **与决策 26（复杂度负向预算）的关系**：决策 26 守"门禁数/conf 变量数"预算；本决策补"上下文表面字节"预算——三者同源（负向预算防膨胀），但维度不同（数量 vs 字节）。字节预算 warn-only（渐进式），数量预算 fail（已达标）。
 
 **与 generate-skill.sh 目标技能 SKILL.md 的关系**：目标技能侧已实现按 profile 档过滤 SKILL.md 索引表（`generate-skill.sh:1328` WP-P5），本决策给 swarm-yuan 自身 SKILL.md 加同层级的"按需折叠"——生成器自身先做到精简，生成的目标技能才能继承精简模式。
+
+
+## 决策 33：范式作为条件而非内容——去抽象化重构与落地优先原则（2026-08-21，R13）
+
+**决定**：swarm-yuan 从"内容驱动"重构为**两体系统（厚生成器 + 薄生成物）**，全部机制按"条件 vs 内容"判别式归位；总原则确立 **落地优先于删除**。
+
+**背景**：R13 根本性复盘（zcode 会话库 32 主会话全量还原五轮"过重"诊断史 + 仓库病理量化 + Codex 源码级对照）确诊：范式被编码为要 AI 阅读、记忆、自觉执行的内容——40+ 概念体系靠机械打分落地（0 fail）、10/54 门禁默认不可触达、7 份行业 profile 无脚本加载、生成物 AI 读代码前先消费 5 万 token。维护者三问纠正：①概念体系不删除、完善落地；②门禁不下调；③industry-profile 必须真实加载。
+
+**判别式**：机制分两类——**条件**（运行时约束行为、零认知占用、糊弄结构上不可能）与**内容**（要 AI 先读先记再自觉、每会话重复付税、糊弄结构上必然）。保护清单全部在条件侧；病灶清单全部在内容侧。补充教义：权限边界 fail-closed；fail-open 只允许在有下层强制兜底处。
+
+**关键落地**（五批次，批次合计净 -653 行，diff 铁律机器验证）：
+- 认知框架落地化：check_cognition 机械计分退役 → AI 判断引导 + `.swarm-yuan/notes/` 留痕（概念不删除，落地为"AI 判断的检查单"）
+- 十门禁全接线：cert/cwe-audit→compliance 序列、decision/state-phase→full 序列、upstream-baseline→precheck 启动、其余挂宿主 hooks/loop-hook（可达率 54/54，FACT_GATES_TOTAL 保持 54）
+- industry-profile 真实加载：`conf-render.sh --industry` 渲染 precheck.industry.conf 挂 source 链
+- 模板减负：spec 仪式节折叠按需（9 核心节）/ workflow 10→4 要素 / 核对清单 96→12 / 五维表→两维表
+- 门禁条件化：`scripts/gate-rules.sh` 三值求值器（allow/prompt/forbid 取最严）+ `rules.d/*.rules` 规则即数据 + FORBID 消息带替代方案
+- 生成器瘦身：SKILL.md 重写为工作指引式（142→93 行/8.7KB，决策号/WP 号退出正文）/ facts 21 记账键退役 / check_doc_consistency 434→70 行（散文数字扫描退役——不手抄即无漂移）/ 税制断言（认知面 ≤256KB）
+- 宿主下沉：Codex hooks 渲染（v0.148 exit 2=deny 经 codex-gate-wrapper.sh 协议适配）+ settings 沙箱通配符 deny（**/.env 防重命名绕过）+ failure-detector 叙事剧场退役
+
+**验收（§6 进 self-check 断言）**：固定税 ≤8KB｜概念 ≤12｜可达率 54/54｜认知面 252KB<256KB｜孤儿资产=0（G18）｜反向引用=0（G19）｜吸收落地率 100%。
+
+**预算变更**：FACT_GATES_TOTAL 54（不下调）/ FACT_ARTIFACT_BYTES_BUDGET=262144（新增）/ FACT_SKILLMD_BYTES_BUDGET=8192（新增）/ FACT_CONF_VARS_USERFACE=20（新增）。
+
+## 决策 34：概念落地问责 + 吸收三问 + 生成物税制（防复胖三制度，2026-08-21，R13）
+
+**决定**：三条防复胖制度成为生成器侧条件（self-check 机器可查），替代决策 26 的纯数量预算（数量预算只防新增，不防概念闲置——闲置才是棘轮失效的根因）。
+
+1. **概念落地问责**：新概念体系进 SKILL.md 或生成物，必须同时给出落地路径（接线/AI 判断引导/路由——三选一，不接受"先放着"）。机器载体：self-check 概念消费路径断言。
+2. **吸收三问**：①能否落到运行时条件（门禁/hook/脚本）？②替换既有机制还是叠加？③六个月后谁会引用？——三问不过只留调研报告（docs/research/），不进 references。R4 六段叠加吸收已按此回退（批次 0）。
+3. **生成物税制**：进 UNIVERSAL_FILES 的审核问题 = "目标 AI 每会话为它付多少税"；行为参数留在包内不进全局配置（conf user 面收缩，43 glob 已迁 rules.d/framework-globs.rules）。机器载体：`FACT_ARTIFACT_BYTES_BUDGET` / `FACT_SKILLMD_BYTES_BUDGET` / `FACT_CONF_VARS_USERFACE` 三断言键。
+
+**节奏注记**：批次之间至少间隔一个真实使用周期（用当前形态生成真实项目技能验证后再进下一批）——慢本身就是防复胖（07-21 一天 32 commit 曾被点名为"减重密度可疑"）。
+
+**与决策 26 的关系**：决策 26 守"门禁数/conf 变量数"负向预算；本决策补"概念闲置/吸收纪律/生成物税"三个维度——同源（防膨胀）但覆盖存量与过程，不止数量。
+
+**与决策 27 的关系**：决策 27（吸收优先于新增门禁）被三问强化——"吸收"不再自动成立，必须答出落地形态；方法论文档不再是合法归宿，条件是。
+
+---
+
+**决策索引（R13 后）**：决策 1-17 见 `paradigm-decisions-archive.md`；决策 18-29 见本文前部；决策 30-32 自适应与压缩；决策 33-34 R13 重构与防复胖。

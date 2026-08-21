@@ -1,6 +1,6 @@
 ---
 name: swarm-yuan
-description: "Meta-skill generator: produces a project-specific dev skill for ANY code repo. Integrates 13 runtimes, 54 quality gates, 5-layer cognition framework, 32-domain knowledge. Core capability: exhaustive component inventory + call-chain analysis → orchestration constraints derivation. Use when user says '为某项目生成开发技能', 'create a dev skill', '六段式 skill'."
+description: "元技能生成器：为任意代码仓库生成项目专属开发技能（六段式：SKILL.md+workflow+references+assets+precheck+scripts）。核心能力：探查期全量组件库清单+调用链分析→编排约束推导；门禁三值规则（rules.d）；自成长链。何时用：用户说'为某项目生成开发技能'、'create a dev skill'、'六段式 skill'。计数真值见 assets/facts.conf（不手抄）。"
 ---
 
 # swarm-yuan — 项目需求交付技能生成器
@@ -39,12 +39,12 @@ description: "Meta-skill generator: produces a project-specific dev skill for AN
 
 ## 工作时的思考框架（R13：概念以指引式落地，非名词堆砌）
 
-工作时按这些检查单思考（不再要求背概念名词——每条在对应环节被真实使用）：
+工作时按检查单思考（每条在对应环节被真实使用）：
 
-- **探查时**：按认知六阶链逐层看项目——概念（术语表与代码命名一致吗）→结构（模块边界/循环依赖）→空间（目录布局）→映射（需求→组件→测试对应）→规律（隐性编排约束显式化）→处理（数据流走向）。判断留痕写 `.swarm-yuan/notes/cognition.md`。
-- **思考时**：用思维语言推演（三元演化/七推理），用逻辑剃刀删冗余假设；每个方案过偏差自检（五维偏差 + 8 类思维模型——见 cognitive-bias.md 按需读）。
-- **决策时**：三级分类（Mechanical 直接做 / Taste 给方案+推荐 / UserChallenge 必停五要素）——`scripts/trace-log.sh --decision` 落痕 `decisions.jsonl`，含备选对比与 rationale。
-- **纠偏时**：辩证推演（7 对范畴）统一多视角冲突；领域知识防达克（32 领域速查 domain-knowledge.md 按需读）。
+- **探查**：认知六阶链逐层看项目——概念→结构→空间→映射→规律→处理；判断留痕 `.swarm-yuan/notes/cognition.md`。
+- **思考**：思维语言推演 + 逻辑剃刀删冗余假设；方案过偏差自检（cognitive-bias.md 按需读）。
+- **决策**：三级分类（Mechanical 直接做 / Taste 给方案+推荐 / UserChallenge 必停五要素）——`trace-log.sh --decision` 落痕 decisions.jsonl。
+- **纠偏**：辩证推演统一多视角冲突；领域知识防达克（domain-knowledge.md 按需读）。
 
 ## 三条铁律
 
@@ -73,21 +73,10 @@ meta（SKILL.md）/ workflow（8 节点×4 要素）/ reference（map + spec-tem
 
 ## 三层接线（13 运行时，调用不重实现）
 
-| 层 | 运行时 | 接线 | 降级 |
-|----|--------|------|------|
-| 深度（4） | GitNexus/graphify/claude-mem/ocr | 门禁内真实子进程调用 | grep+madge 等 |
-| CLI（4） | OpenSpec/comet/gsd-core/codex-security | 按需调用 CLI | 自带文档检查等 |
-| 方法论（5） | superpowers/gstack/ECC/Ruflo/impeccable | AI 按节点引用模式 | 自带等价载体 |
+深度（GitNexus/graphify/claude-mem/ocr，门禁内真实子进程）/ CLI（OpenSpec/comet/gsd-core/codex-security，按需 CLI）/ 方法论（superpowers/gstack/ECC/Ruflo/impeccable，AI 按节点引用）——代码图谱平权选型可并用。13 个运行时清单与降级链详见 `references/subagent-orchestration.md` 按需读。
 
-代码图谱按技术能力平权选型（GitNexus 调用图 / graphify 知识图，可并用）。
-
-**reference 清单（按需读取，40 份全带"何时读我"路由头）**：探查→exploration-guide；填充→template-spec；认知→cognition-framework 等 4 份；方法论→各 *-methodology.md；合规→standards-compliance + 7 行业 profile（`--industry` 真实加载）；安全→security-spec + frameworks/ 74 规则库按 ACTIVE_FRAMEWORKS 选读。孤儿资产由 self-check 扫描（=0）。
+**reference 清单（按需读取，全部带"何时读我"路由头）**：探查→exploration-guide；填充→template-spec；认知→cognition-framework 等；方法论→各 *-methodology.md；合规→standards-compliance + 行业 profile（`--industry` 真实加载）；安全→security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读。计数真值见 facts.conf。
 
 ## 使用说明
 
-1. 确认目标项目路径与 skill 名称
-2. `bash scripts/self-check.sh` 自检
-3. 按任务路由读对应 reference（各文件头部"何时读我"）
-4. `scripts/generate-skill.sh <name> <project-dir>` 创建骨架（`--upgrade` 升级）
-5. 按生成流程执行（铁律见上）
-6. 填充完成后 `bash scripts/generate-skill.sh --mark-active <skill_dir>` 翻 active
+`scripts/generate-skill.sh <name> <project-dir>` 创建骨架（`--upgrade` 升级）→ 按生成流程执行（铁律见上）→ `--mark-active` 翻 active。各 reference 头部有"何时读我"路由。
