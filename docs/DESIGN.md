@@ -93,16 +93,6 @@ Palantir 的一句话在这个系统里的对应："你建不出绕过治理的�
 - 本体论承诺：[SEP: Ontological Commitment](https://plato.stanford.edu/entries/ontological-commitment/)
 - Palantir 本体论工程：[Ontology Overview](https://palantir.com/docs/foundry/ontology/overview/) / [Why create an Ontology?](https://palantir.com/docs/foundry/ontology/why-ontology/) / 本仓 R11 报告
 
-闭环流（动力学）
-
-```
-代码仓库 →① 生成段（探查+装配）→② 产物段（目标技能，出口受税制预算门约束）
-  →③ 使用段（AI 按需 grep 地图做拼装式开发，行为被条件实时拦截）
-  →④ 账本段（全量留痕）→⑤ 回流段（审计+评测校验体系自身，改进写回①②）
-```
-
-**自成长是闭环流的闭合条件**——砍掉回流边，系统退化为一次性脚手架生成器。
-
 ### 0.5 闭环流（系统的过程形态）
 
 ```
@@ -132,7 +122,7 @@ Palantir 的一句话在这个系统里的对应："你建不出绕过治理的�
 | **校验轴** | 表征关系（aboutness） | 表征可信：指向/覆盖/时效 | 三层 Harness（门禁=事中/审计=事后/评测=元）、path-check/计数核验/stability-audit |
 | **边界轴** | 依赖关系（dependence） | 依赖连通：输入口/执行口/锚 | 三层接线（①段输入口）、宿主下沉（③段执行口）、digest 链（锚） |
 
-**历史层次语言的归位由此成立**：每套语言都是对某个维度的观测记录（两体系统=时间轴频次观测、税制=产物轴出口观测、三层 Harness=校验轴相位观测、三层接线=边界轴端口观测）——它们不冲突，因为本体的 2×2 结构只有四格，每套语言各守一格。九条内核与贯穿原则跨格（不变量与守恒律，见本体文档）。
+**历史层次语言的归位由此成立**：每套语言都是对某个维度的观测记录（两体系统=时间轴频次观测、税制=产物轴出口观测、三层 Harness=校验轴相位观测、三层接线=边界轴端口观测）——它们不冲突，因为本体的 2×2 结构只有四格，每套语言各守一格。九条内核与贯穿原则跨格（不变量与守恒律，见 §2.1 与 §9.1）。
 
 ---
 
@@ -140,9 +130,7 @@ Palantir 的一句话在这个系统里的对应："你建不出绕过治理的�
 
 #### 本体与主线
 
-swarm-yuan 的**本体是一条自成长闭环流**：代码仓库 →① 生成段（探查+装配）→② 产物段（目标技能，出口受税制预算门约束）→③ 使用段（AI 按需 grep 地图做拼装式开发，行为被条件实时拦截）→④ 账本段（全量留痕）→⑤ 回流段（审计+评测校验体系自身，改进写回生成器与技能）。**自成长不是特性，是闭环流的闭合条件**——砍掉回流边即退化为一次性脚手架生成器。
-
-各章使用的每套层次语言（两体系统/税制/三层 Harness/三层接线/五层树/九条内核……）都是本体 2×2 结构沿闭环流的投影观测（§0.7 四个测量维度表逐套归位）。
+本体 = 一条自成长闭环流（图与闭合条件见 §0.5）；各章层次语言（两体系统/税制/三层 Harness/三层接线/五层树/九条内核……）都是本体 2×2 结构沿闭环流的投影观测（§0.7 四维表逐套归位）。
 
 #### 问题定义（五轮诊断从未动摇的内核）
 
@@ -381,6 +369,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **决策 33**（范式作为条件而非内容——R13 去抽象化重构与落地优先原则）：同上
 - **决策 34**（概念落地问责 + 吸收三问 + 生成物税制——防复胖三制度）：同上
 - **R12 调研**（DeepSeek Harness dsh rc.8 重调研，2026-08-20）：产品层四簇机制识别——决策审计/状态韧性/增量自成长/工程纪律；WP-R12-A/B/C/D 四批落地（fail-gate deny-only→全量决策审计 + 方法论四载体 + dir_cksums scope 感知 + decisions.jsonl outcome 生命周期）；guard/ 澄清为循环卫生非权限守卫。详见 `docs/research/R12-dsh-rc8-resurvey.md`。
+- **R13 重构**（去抽象化，2026-08-21，即决策 33/34 + 终态方案 v6）：五批次落地——落地化接线（认知计分退役转 AI 判断引导/十门禁全接线 54-54/industry 真实加载/40 references 路由头）、模板减负（spec 仪式节折叠/workflow 10→4 要素/核对清单 96→12/五维表→两维表）、条件化（rules.d 三值/FORBID 带替代/G18/G19 断言）、生成器瘦身（SKILL.md 142→93 行/facts 21 键退役/check_doc 434→70 行/税制断言）、宿主下沉（Codex hooks/settings 沙箱 deny）。方案全文 `docs/research/R13-final-plan.md`（v6）。
 - **R14 吸收**（阿里云 Qoder Better Harness，2026-08-21）：审计/复盘/趋势三层机制落地——审计单元目标闭环化（decisions.jsonl 增 goal_id+closure）、证据态分级（gate-report §4.2：Present/Wired/Exercised/Outcome-supported + 分数上限）、双账本（gate-trends：Repair Progress 当窗验证 + guardrail 配对指标）、修复复核位（decisions.jsonl 增 repair_review）。与过程强制层（门禁）互补不竞争。详见 `docs/research/R14-better-harness-absorption.md`。
 - **R15 吸收**（MirroS HarnessEval，2026-08-21）：评测层 Harness 落地——digest 链式锚定（decisions.jsonl 增 ref_trace_hash：三本账从并列升级为链式，上游篡改全链 stale 可检出）、missing_evidence 态（gate-report 证据态加"该测没测"≤59）、gate-plan 选择即证据（`scripts/gate-plan.sh`：启用/跳过理由负空间可审计，收口 diff 计划 vs 实际触发）、audit-closure 审计即完成条件（`scripts/audit-closure.sh`：goal 闭环完备性重走，串 mark-active advisory 门）。三层 Harness 拼图完整：过程强制门禁层（R13 前）+ 工作流审计层（R14）+ 评测层（R15）。详见 `docs/research/R15-harnesseval-absorption.md`。
 - **R16 重构**（本体论驱动，2026-08-21）：显式本体层落地——`assets/ontology/` 三目录（objects 21 类型含负面承诺/links 10 关系各配机器锚/actions 11 受治理动作）作为与 facts.conf 平行的**类型事实源**；self-check 类型对账（18 实存点）；`scripts/ontology-verify.sh` 六锚一站式健康检查；地图骨架语义/动能两区纪律（是/应当不混写）；本体层随生成物分发。设计闭环：本体论驱动原理（本文 §0）→ 类型事实源 → 机器对账 → 运行时健康检查。
@@ -428,7 +417,7 @@ OS 沙箱（宿主职责，吸收决策架构不复制实现）/ Guardian LLM �
 
 **决策史原文**：`docs/paradigm-decisions.md`（18-34）+ `docs/paradigm-decisions-archive.md`（1-17）——本文件 §9.2 是索引，原文是详情。
 
-**调研证据**：`docs/research/`（R1-R13；R13 三份：final-plan 方案 v6 / codex-deep-dive Codex 源码证据 / de-abstraction 复盘草稿）——调研报告是证据的合法归宿，不晋升 references（吸收三问）。
+**调研证据**：`docs/research/`（R1-R15；R13 三份：final-plan 方案 v6 / codex-deep-dive Codex 源码证据 / de-abstraction 复盘草稿；R14/R15 吸收报告各一份）——调研报告是证据的合法归宿，不晋升 references（吸收三问）。
 
 **运行时文档**：`swarm-yuan/references/`（40 份，全部带"何时读我"路由头）——方法论细节按需读取，本文件不再复制其内容。
 
