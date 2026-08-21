@@ -77,6 +77,8 @@ UNIVERSAL_FILES=(
   "scripts/inventory-update.sh|gen|lite"
   # R13 批次2：规则即数据——三值求值器 + 默认规则集随生成物分发（conf 收缩的载体：门禁阈值/白名单类参数迁入规则数据）
   "scripts/gate-rules.sh|gen|lite"
+  "scripts/gate-plan.sh|gen|lite"      # R15 HarnessEval P4：选择即证据（启用/跳过理由，负空间可审计）
+  "scripts/audit-closure.sh|gen|lite"  # R15 HarnessEval P7：审计即完成条件（closure 完备性重走）
   "rules.d/bash-advance.rules|rules|lite"
   "rules.d/readonly-safe.rules|rules|lite"
   "scripts/self-check.sh|gen|lite"
@@ -760,6 +762,19 @@ if [[ "${1:-}" == "--mark-active" ]]; then
     fi
   else
     echo "⚠ inventory-verify.sh 不存在（$BASE/scripts/），跳过 ②③" >&2
+  fi
+  # R15（HarnessEval P7）：audit-closure --strict 闭环完备性检查（advisory 降级——
+  # 无 decisions.jsonl 或全部 closed 时过；有 open goal 时 warn 不阻断，fail-open 教义：
+  # 审计未完成是提示信号不是阻断条件，有下层门禁兜底）
+  _ma_ac="$(cd "$(dirname "$0")" && pwd)/audit-closure.sh"
+  if [[ -x "$_ma_ac" || -f "$_ma_ac" ]]; then
+    _ac_proj=$( (set +u; . "$_ma_dir/scripts/precheck.conf" 2>/dev/null; printf '%s' "${PROJECT_DIR:-}") )
+    if [[ -n "$_ac_proj" && -d "$_ac_proj" ]]; then
+      if ! bash "$_ma_ac" "$_ac_proj" --strict >/dev/null 2>&1; then
+        echo "⚠ audit-closure：存在 open goal（change↔validation 未闭合）——advisory 提示，不阻断 mark-active" >&2
+        bash "$_ma_ac" "$_ac_proj" 2>&1 | grep '⚠' >&2 || true
+      fi
+    fi
   fi
   sed -i.bak 's/^status: draft/status: active/' "$_ma_dir/SKILL.md" && rm -f "$_ma_dir/SKILL.md.bak"
   echo "✓ 已标记 status: active（--all-full/--compliance-suite 已解锁）"
