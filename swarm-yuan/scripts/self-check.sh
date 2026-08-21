@@ -1494,6 +1494,47 @@ check_cordis_composability_wiring
 
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
+# ===== R16-A：本体层类型对账（objects/links/actions 三目录 vs 实现存证）=====
+# 类型目录是承诺清单——每个类型声明了"实现存证"列；本断言抽可机械验证的存证点逐一对账。
+# 类型与实现漂移（如 Fingerprint 脚本改名/四本账少一本）→ warn（advisory，本体层是口径不是门禁）。
+check_ontology_types() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local onto="$base/assets/ontology"
+  [[ -f "$onto/objects.md" ]] || { echo "  ⊘ 本体层缺失（assets/ontology/objects.md 不存在）——跳过对账"; return 0; }
+  local hits=0 miss=0
+  _o_check() { # $1=存证描述关键词 $2=待验证命令
+    if eval "$2" >/dev/null 2>&1; then hits=$((hits+1)); else
+      warn "本体类型对账失配：$1（$2 无实存）"; miss=$((miss+1))
+    fi
+  }
+  # 独立持续体存证
+  _o_check "Repository/PROJECT_DIR 变量"      "grep -q 'PROJECT_DIR' '$base/assets/precheck.conf'"
+  _o_check "Generator/版本戳文件模板引用"      "grep -rq 'swarm-yuan-version' '$base/scripts/generate-skill.sh'"
+  _o_check "Skill/status 字段翻转"            "grep -q 'status: draft' '$base/scripts/generate-skill.sh'"
+  _o_check "RuleFile/rules.d 目录"            "ls '$base/assets/rules.d/'*.rules >/dev/null 2>&1"
+  _o_check "Ledger/四本账引用"                "grep -q 'trace.jsonl' '$base/assets/trace-log.sh' && grep -q 'decisions.jsonl' '$base/assets/trace-log.sh' && grep -q 'gate-runs.jsonl' '$base/scripts/gate-report.sh' && grep -q 'gate-audit.jsonl' '$base/assets/hooks/fail-gate-hook.sh'"
+  _o_check "HostCLI/双宿主渲染"               "grep -q 'codex-gate-wrapper' '$base/assets/tool-adapters/codex.sh'"
+  # 特定依赖持续体的机器锚
+  _o_check "StabilityMark/stability-audit"    "grep -q 'stability-audit' '$base/scripts/inventory-verify.sh'"
+  _o_check "Fingerprint/指纹脚本"             "test -x '$base/scripts/project-fingerprint.sh'"
+  # 类依赖持续体的失锚检测
+  _o_check "Methodology/升级机制"             "grep -q '\-\-upgrade' '$base/scripts/generate-skill.sh'"
+  _o_check "FrameworkRule/注入机制"           "grep -q 'inject-frameworks' '$base/scripts/generate-skill.sh'"
+  # 发生体的记录载体
+  _o_check "Decision/outcome 生命周期"        "grep -q 'outcome' '$base/assets/trace-log.sh'"
+  _o_check "AuditClosure/goal_id+closure"    "grep -q 'goal_id' '$base/assets/trace-log.sh' && test -x '$base/scripts/audit-closure.sh'"
+  # links.md 的锚抽验
+  _o_check "represents/path-check"            "grep -q 'path-check' '$base/scripts/inventory-verify.sh'"
+  _o_check "anchors/ref_trace_hash"           "grep -q 'ref_trace_hash' '$base/assets/trace-log.sh'"
+  _o_check "plans/gate-plan"                 "test -x '$base/scripts/gate-plan.sh'"
+  # actions.md 的治理载体抽验
+  _o_check "mark_active/三关状态门"           "grep -q 'mark-active' '$base/scripts/generate-skill.sh'"
+  _o_check "update_map_entry/inventory-update" "test -x '$base/scripts/inventory-update.sh'"
+  _o_check "gate_deny/rules 三值求值器"       "test -x '$base/scripts/gate-rules.sh'"
+  echo "  ✓ 本体类型对账：${hits} 实存命中${miss:+ / ${miss} 失配（详见上方 warn）}"
+}
+check_ontology_types
+
 exit $FAIL
 
 
@@ -1542,3 +1583,4 @@ check_r13_layer_references() {
 }
 check_r13_orphan_assets
 check_r13_layer_references
+
