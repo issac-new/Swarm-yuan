@@ -54,7 +54,7 @@ swarm-yuan 是被本体论驱动的生成系统：**先说清世界里有什么�
 
 Palantir 的一句话在这个系统里的对应："你建不出绕过治理的看板，因为看板读的是受治理的对象" ↔ **AI 做不出绕过门禁的操作，因为操作过的是受治理的规则和账本**。
 
-- AI 读到的不是一堆散文档，是类型名词（21 类型）+ 封闭动作空间（11 动作——每个都有治理载体和留痕载体）
+- AI 读到的不是一堆散文档，是类型名词（17 类型）+ 封闭动作空间（11 动作——每个都有治理载体和留痕载体）
 - 想直接改文件？挂载在宿主上的 hooks 拦（mounted_in 关系生效）
 - 想改账本抹痕迹？integrity-guard 的自指防护拦（Ledger 是受治理对象）
 - 想跑危险命令？rules.d 三值判 forbid，FORBID 消息带替代方案——**在受约束空间里指路，而不是在自由空间里祈祷**
@@ -76,7 +76,7 @@ Palantir 的一句话在这个系统里的对应："你建不出绕过治理的�
 
 ### 0.4 本体本身（引擎的燃料）
 
-- **实体**：21 类型（objects.md）——仓库/组件/技能/规则/账本/门禁/决策/目标...；刻意**不承诺**的：AI 的"理解"、认知分数（不可观测的东西不进本体，只承诺其行为记录）
+- **实体**：17 类型（objects.md）——仓库/组件/技能/规则/账本/门禁/决策/目标...；刻意**不承诺**的：AI 的"理解"、认知分数（不可观测的东西不进本体，只承诺其行为记录）
 - **关系**：10 条（links.md）——每条带机器锚（关系的实例可验证存在）
 - **动作**：11 个（actions.md）——封闭空间，每个动作可审计
 
@@ -365,14 +365,14 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | ⑤回流 | inventory-update.sh | 地图单条更新（replace/delete/append） |
 | ⑤回流 | gate-plan.sh / audit-closure.sh | 选择即证据/闭环完备性 |
 | ⑤回流 | ontology-verify.sh | 六锚健康检查 |
-| 治理 | self-check.sh | 28 断言（含 G18 孤儿/G19 反向引用/类型对账 18 点） |
+| 治理 | self-check.sh | 33 断言（含 G18 孤儿/G19 反向引用/类型对账 18 点） |
 | 治理 | adaptive-gating.sh / task-scale.sh / detect-spec-scale.sh / detect-profile-drift.sh | 自适应四维（profile/任务规模/spec 规模/档位漂移） |
 | 治理 | framework-evidence.sh / verify-framework-ruleset.sh | 框架证据台账/规则集验证 |
 | 治理 | compare-baseline.sh / context-surface.sh / to-sarif.sh / gate-report.sh / gate-trends.sh / profile-threshold-survey.sh / migrate-verify-blocks.sh / release-src-packages.sh | 基线对比/上下文预算/SARIF 输出/门禁报告/趋势/阈值调查/verify 块迁移/发布打包 |
 
 **关键资产**（`assets/`）：gates-strict/warn/advisory.sh（三档门禁物理文件）+ gate-enforce-level.conf（分层配置，gen-enforce-level 自动生成）+ industry-profiles/（7 行业 conf，conf-render --industry 真实加载）+ framework-gates/（74 门禁片段）+ facts.conf（数字事实源：FACT_GATES_TOTAL/FACT_REFERENCES/FACT_ARTIFACT_BYTES_BUDGET/FACT_SKILLMD_BYTES_BUDGET/FACT_CONF_VARS_USERFACE 等预算断言键）+ hooks/failure-detector.sh（SPINNING 检测+L1 提示）。
 
-**验证器（司法层）**：`verifier/v1/`——fixture 双态（violating/compliant 各一套最小样例，74 框架规则各一对）+ golden-vector（75 条预期门禁 exit-code 向量，回归基线）+ cli A/B 沙箱逐字节等价断言（历史 131 次调用一致性）。**诚实边界（R9 教训）**：fixture 是构造样例，5 个真实项目测试曾漏 3 个 P0/P1 bug——fixture + 真实项目双轨制；外部有效性立项稿 `verifier/v2/external-validity.md`（未达阈值前不得宣称"守护代码合规"）。
+**验证器（司法层）**：`verifier/v1/`——fixture 双态（violating/compliant 各一套最小样例，74 框架规则各一对）+ golden-vector（74 条框架 FIXTURE 预期向量 + 1 汇总行，回归基线）+ cli A/B 沙箱逐字节等价断言（历史 131 次调用一致性）。**诚实边界（R9 教训）**：fixture 是构造样例，5 个真实项目测试曾漏 3 个 P0/P1 bug——fixture + 真实项目双轨制；外部有效性立项稿 `verifier/v2/external-validity.md`（未达阈值前不得宣称"守护代码合规"）。
 
 ### 5.2 三值规则引擎（Codex Decision 架构 bash 落地）
 
@@ -454,7 +454,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **R13 重构**（去抽象化，2026-08-21，即决策 33/34 + 终态方案 v6）：五批次落地——落地化接线（认知计分退役转 AI 判断引导/十门禁全接线 54-54/industry 真实加载/40 references 路由头）、模板减负（spec 仪式节折叠/workflow 10→4 要素/核对清单 96→12/五维表→两维表）、条件化（rules.d 三值/FORBID 带替代/G18/G19 断言）、生成器瘦身（SKILL.md 142→93 行/facts 21 键退役/check_doc 434→70 行/税制断言）、宿主下沉（Codex hooks/settings 沙箱 deny）。方案全文 `docs/research/R13-final-plan.md`（v6）。
 - **R14 吸收**（阿里云 Qoder Better Harness，2026-08-21）：审计/复盘/趋势三层机制落地——审计单元目标闭环化（decisions.jsonl 增 goal_id+closure）、证据态分级（gate-report §4.2：Present/Wired/Exercised/Outcome-supported + 分数上限）、双账本（gate-trends：Repair Progress 当窗验证 + guardrail 配对指标）、修复复核位（decisions.jsonl 增 repair_review）。与过程强制层（门禁）互补不竞争。详见 `docs/research/R14-better-harness-absorption.md`。
 - **R15 吸收**（MirroS HarnessEval，2026-08-21）：评测层 Harness 落地——digest 链式锚定（decisions.jsonl 增 ref_trace_hash：三本账从并列升级为链式，上游篡改全链 stale 可检出）、missing_evidence 态（gate-report 证据态加"该测没测"≤59）、gate-plan 选择即证据（`scripts/gate-plan.sh`：启用/跳过理由负空间可审计，收口 diff 计划 vs 实际触发）、audit-closure 审计即完成条件（`scripts/audit-closure.sh`：goal 闭环完备性重走，串 mark-active advisory 门）。三层 Harness 拼图完整：过程强制门禁层（R13 前）+ 工作流审计层（R14）+ 评测层（R15）。详见 `docs/research/R15-harnesseval-absorption.md`。
-- **R16 重构**（本体论驱动，2026-08-21）：显式本体层落地——`assets/ontology/` 三目录（objects 21 类型含负面承诺/links 10 关系各配机器锚/actions 11 受治理动作）作为与 facts.conf 平行的**类型事实源**；self-check 类型对账（18 实存点）；`scripts/ontology-verify.sh` 六锚一站式健康检查；地图骨架语义/动能两区纪律（是/应当不混写）；本体层随生成物分发。设计闭环：本体论驱动原理（本文 §0）→ 类型事实源 → 机器对账 → 运行时健康检查。
+- **R16 重构**（本体论驱动，2026-08-21）：显式本体层落地——`assets/ontology/` 三目录（objects 17 类型含负面承诺/links 10 关系各配机器锚/actions 11 受治理动作）作为与 facts.conf 平行的**类型事实源**；self-check 类型对账（18 实存点）；`scripts/ontology-verify.sh` 六锚一站式健康检查；地图骨架语义/动能两区纪律（是/应当不混写）；本体层随生成物分发。设计闭环：本体论驱动原理（本文 §0）→ 类型事实源 → 机器对账 → 运行时健康检查。
 
 演化模式定型为"吸收→膨胀→诊断→减重"五轮循环；R13 是第一个以落地化（而非加法治理）收口的循环。
 
