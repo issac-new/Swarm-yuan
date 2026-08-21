@@ -1702,6 +1702,19 @@ status: draft
 # $SKILL_NAME — （填充指引：项目名 + 需求交付全流程技能）
 > 由 swarm-yuan 生成器创建（${SWARM_YUAN_STAMP}，profile=${PROFILE}），需 AI agent 探查后填充。
 > 填充规范见 swarm-yuan/references/template-spec.md
+
+## 项目认知摘要（生成器检测回填——特征卡 #1 项目类型 / #4 技术栈的承接点，AI 填充时在此基础上深化）
+
+| 特征项 | 生成器检测值（AUTO:detected） |
+|--------|------------------------------|
+| 项目根 | ${PROJECT_DIR} |
+| 构建命令 | $(grep -m1 '^BUILD_CMD=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null | sed "s/^BUILD_CMD=//;s/'//g;s| *#.*||" || echo "（AI 探查填充）") |
+| 测试命令 | $(grep -m1 '^TEST_CMD=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null | sed "s/^TEST_CMD=//;s/'//g;s| *#.*||" || echo "（AI 探查填充）") |
+| 检测框架 | $(bash "$SRC_SCRIPTS/detect-frameworks.sh" "$PROJECT_DIR" 2>/dev/null | grep -E '^ACTIVE_FRAMEWORKS=' | sed 's/^ACTIVE_FRAMEWORKS=//;s/[()"]//g' || echo "（无已知框架）") |
+
+> 项目类型（单体/monorepo/overlay-fork/微服务）与改造分类（A 纯新增/B 骨架修改）由 AI 探查判定后填充——
+> 生成器只做机械嗅探（构建/测试命令/框架清单），形态判定（§C+.0）与改造分类是语义判断属 AI 职责。
+
 ## 填充指引
 - [ ] meta: 核心理念+改造分类+流程总览+命令速查+门禁+反借口表（借口/反驳两列表，从门禁步骤逐条反推，见 template-spec §1.5）+假设清单（需求/架构/范围三维度+"现在纠正我"，见 template-spec §1.5）
 EOF
