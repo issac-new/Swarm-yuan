@@ -175,6 +175,15 @@ Palantir 的一句话在这个系统里的对应："你建不出绕过治理的�
 
 ① 元技能生成器定位 + 六段式产物结构；② "AI 短板在项目认知不在代码生成"；③ 零占位符铁律 + draft/active 状态门；④ 单文件 precheck 可移植；⑤ 三层接线 + 降级链 + 调用不重实现；⑥ 自适应轻重（质量优先于效率）；⑦ facts.conf 单一事实源；⑧ "账面与实质一致"三层诚实化（数字/修辞/证据）；⑨ **AI 全自动、零手动配置**（奠基期铁律，sess_4782d626/sess_d466cc75 反复强化）：生成 skill 是 AI 一键完成（探查→填充→配置→验证全自动）；skill 使用时研发人员对 AI 说话而非手动跑命令——SKILL.md 是 AI 读的（写"零手动"铁律），USAGE 层保留 bash 双轨制（排查/CI/脚本场景需要）；安装的一次性 `cp -r` 不属于"日常使用"，允许手动。
 
+### 2.1.1 奠基理念四条（README 对外口径的四个理念，ncwk 期确立）
+
+| 理念 | 含义 |
+|------|------|
+| **先认识，再行动** | AI 写代码前必须先认识项目。特征卡完成认知，门禁守护行动——"认知 DNA"（特征项是项目认知的基因图谱） |
+| **呈现递进的关系** | 门禁不是"数 import 数"——每个计数背后指向一条关系规律（计数核验 0.95 是表征覆盖度的关系性度量） |
+| **分层整合，诚实降级** | 运行时按深度接线（4 深度子进程/4 CLI/5 方法论引用）三层整合，每层有自带降级载体，未装不阻塞，不假装全深度接线 |
+| **领域知识防达克** | 领域知识库（`references/domain-knowledge.md`，计数真值 facts.conf）——AI 探查时识别技术+业务领域、推导客观规律驱动 `--domain` 违规检测，防止对不熟悉领域自信地写出错误代码 |
+
 ### 2.2 R13 新增两条理念
 
 **范式作为条件，而非内容**：机制分两类——**条件**（运行时约束行为、零认知占用、糊弄结构上不可能）与**内容**（要 AI 先读先记再自觉、每会话重复付税、糊弄结构上必然）。机器执法只保留"防 AI 说谎"的条件类；"给理解打分"与"防文档数字漂移"的内容类退役或转落地化。AI 的理解深度由行为证据兜底（测试过没过/门禁红不红/决策留没留痕），不由表格验证。
@@ -280,9 +289,26 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 **两条奠基理念的落实状态**：① 连贯动作（一键生成+一键使用，`/swarm-yuan <路径>` 全自动；7 处用户决策点保留确认属设计性例外）；② 全链路追踪（stdout 公告 + trace-log 落盘 + gate-runs + hooks 摘要 + 第三方工具调用点 trace_tool 桥 7 工具 10 调用点）——机器执法：verify-completeness 校验 workflow 每节点含调用追踪。
 
-### 3.7 概念体系收敛
+### 3.7 概念体系收敛与方法论承载
 
-只允许 5 个层次名词为主轴：**探查 / 约束 / 演化 / 留痕 / 生成**。认知框架类概念（六阶链/六维动力学/三元演化/七推理/辩证范畴/五维偏差/思维模型）不删除不堆砌——以"工作时按此思考"的指引式表述融入对应层次，落地为 AI 判断引导（逐维自查 → `.swarm-yuan/notes/` 留痕，GATE_AI_JUDGMENT 唯一模式）。
+只允许 5 个层次名词为主轴：**探查 / 约束 / 演化 / 留痕 / 生成**。认知框架类概念（六阶链/六维动力学/三元演化/七推理/辩证范畴/五维偏差/思维模型）不删除不堆砌——以“工作时按此思考”的指引式表述融入对应层次，落地为 AI 判断引导（逐维自查 → `.swarm-yuan/notes/cognition.md` 留痕，GATE_AI_JUDGMENT 唯一模式；骨架的“工作时的思考框架”表四行：探查按六阶链/思考用逻辑剃刀/决策三级分类/纠偏辩证+领域防达克）。
+
+**方法论 references 承载表**（40 份全带“何时读我”路由头，核心 10 份职责）：
+
+| reference | 层次 | 职责 |
+|-----------|------|------|
+| exploration-guide.md | 探查 | §C+ 探查方法论（形态判定/全量穷举/三层调用链/编排约束/五维字段定义） |
+| template-spec.md | 探查→产物 | 六段式填充规范 + 生成后核对清单 + 96→12 项核对规则 |
+| generation-flow.md | 生成 | 生成流程 Step 0-8 详解（决策 32 折叠，按需读） |
+| workflow 模板 | 使用 | 八节点 × 4 要素骨架 |
+| decision-governance.md | 留痕 | G1 决策治理（三级分类/五要素/decisions.jsonl 格式/ISO 42001 对齐） |
+| review-methodology.md | 留痕 | 代码审查方法论（rubric 判定/P0-P3/规则溯源） |
+| memory-persistence.md | 留痕 | 记忆持久化（claude-mem 吸收/version oracle） |
+| subagent-orchestration.md | 使用 | 子代理编排（comet/gstack/ECC/Ruflo 四源方法论） |
+| cognition-framework.md | 使用 | 五层认知基底详表（认知递进/思维语言/辩证/偏差/统一——工程启发式框架，非心理测量学构念） |
+| domain-knowledge.md | 探查 | 领域知识库（防达克） |
+| task-methodology-router.md | 使用 | 任务类型×方法论路由（8 类任务选关键节点序列+门禁聚焦，避免全任务跑全量 13 节点） |
+| logic-razor.md / cognitive-bias.md | 使用 | 逻辑剃刀删冗余假设 / 认知偏差防范（五维偏差+思维模型） |
 
 ## 4. 探查设计（认知层）
 
@@ -428,6 +454,18 @@ OS 沙箱（宿主职责，吸收决策架构不复制实现）/ Guardian LLM �
 | 10 | 有效性：恒零拦截门禁 | 季度质疑清单 | gate-trends |
 | 11 | 适配性：三档差异化 | gen-e2e 断言（lite 无 hooks.json / compliance 含 industry 注入） | gen-e2e |
 | 12 | 成长性：吸收落地率 | 100%（decisions.jsonl phase=absorption） | decision-audit 抽样 |
+
+**测试资产矩阵**（tests/ 17 脚本 + CI 三平台）：
+
+| 类 | 测试 | 守护 |
+|----|------|------|
+| 核心机制 | test-gate-rules / test-fail-gate-hook / test-failure-detector / test-ai-judgment | 三值求值 9 态/hook 拦截/deny 审计/AI 判断引导模式（含机械退役确认） |
+| 探查与自成长 | test-project-fingerprint / test-inventory-verify / test-inventory-update / test-detect-frameworks | 指纹+last-good 15 态/计数核验+path-check+stability 14 态/地图单条更新 9 态/框架检测 |
+| 生成与模板 | test-conf-render / test-cost-report / test-context-surface / test-compare-baseline | conf 渲染+industry 注入/成本汇总/上下文预算/基线对比 |
+| 门禁与规格 | test-framework-evidence / test-migrate-verify-blocks / test-signal-index / test-spec-task-type-gating / test-spec-template-gating | 框架证据台账/verify 块迁移/信号索引/任务类型门控/spec 模板门控 |
+| E2E | tests/e2e/run-gen-e2e.sh + run-e2e.sh | 生成产物质量回归（含三档差异化断言）+ 全流程 |
+
+CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verifier + shellcheck + e2e）；macOS/windows 轻量腿（bash 硬前置下的诚实分层）。
 
 治理节奏：批次之间至少间隔一个真实使用周期（用当前形态生成真实项目技能验证后再进下一批）——慢本身就是防复胖。
 
