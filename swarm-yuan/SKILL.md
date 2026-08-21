@@ -7,7 +7,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 元技能（生成器）：针对任意代码仓库，按六段式模板生成项目专属开发技能（下称"目标技能"）。跨项目复用，不依赖任何具体项目内容。
 
-> **docs/ 路径注**：本文引用的 `docs/paradigm-decisions.md`、`docs/paradigm-positioning.md`、`docs/upstream-baseline.md`、`docs/runtime-update-2026-07.md` 位于仓库根 `docs/`（swarm-yuan 父级），非 `swarm-yuan/docs/`；standalone 安装时不携带，核心内容已内联到 references/ 或 SKILL.md。
+> **docs/ 路径注**：设计单一事实源 = `docs/DESIGN.md`（仓库根 docs/ 下，swarm-yuan 父级）；决策史详情见 `docs/paradigm-decisions*.md`，上游版本见 `docs/upstream-baseline.md`——均位于仓库根 `docs/`；standalone 安装时不携带，核心内容已内联到 references/ 或 SKILL.md。
 >
 > **工具脚本路径注**：`trace-log.sh`/`state-machine.sh`/`memory-writeback.sh` 在**生成器侧**（本仓库/安装态 swarm-yuan 目录）物理位于 `assets/`；在**生成的目标技能侧**经 UNIVERSAL_FILES 映射为 `scripts/`。本文按目标技能路径书写为 `scripts/xxx.sh`；执行**生成流程**（Step 0-8）时应以 `assets/xxx.sh` 路径调用（`cost-report.sh`/`generate-skill.sh`/`self-check.sh` 等生成器工具本就位于 `scripts/`，不受影响）。
 >

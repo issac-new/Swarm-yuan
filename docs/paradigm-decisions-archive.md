@@ -1,3 +1,5 @@
+> **角色标注（2026-08-21）**：本文件是决策史**原文档**（每个决策的完整记录）；`docs/DESIGN.md` §9.2（决策史索引） 是索引与归纳——查"为什么决定"用 DESIGN.md 索引，查"决策全文"用本文件。
+
 # swarm-yuan 范式决策归档（Paradigm Decisions Archive）
 
 > 归档日期：2026-07-31 ｜ 来源：`docs/paradigm-decisions.md` 决策 1-17（建议 1-7 + 8 条建议表 + 决策 9-17）

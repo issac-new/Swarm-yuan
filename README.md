@@ -446,7 +446,8 @@ Swarm-yuan/
 ├── LICENSE                       ← MIT
 ├── docs/                         ← 设计文档 + 计划 + 研究交付物
 │   ├── paradigm-decisions.md     ← 决策 18-31（1-17 见 paradigm-decisions-archive.md，口径权威源 facts.conf）
-│   ├── paradigm-positioning.md   ← WP-P10 范式定位
+│   ├── DESIGN.md                 ← 单一设计事实源（终态完整设计）
+│   ├── paradigm-positioning.md   ← 定位历史档案（已并入 DESIGN.md §1）
 │   ├── upstream-baseline.md      ← 13 运行时登记 + drift 处置
 │   ├── 2026-07-17-framework-rules-engine-design.md
 │   ├── 2026-07-20-audit-optimization-decisions.md
