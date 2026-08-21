@@ -1,3 +1,5 @@
+> **档案标注（2026-08-21）**：本文已并入 `docs/DESIGN.md` §2（设计理念）与 §9（决策原则）——DESIGN.md 是单一设计事实源；本文保留为理念一致性的历史原文档（不再单独维护，内容以 DESIGN.md 为准）。
+
 # swarm-yuan 设计理念与实现一致性核对表
 
 > 日期：2026-07-21 ｜ 单一事实源：本文表与 `swarm-yuan/scripts/self-check.sh` 的 `check_doc_consistency` 机械解析互证。

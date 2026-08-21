@@ -1,3 +1,5 @@
+> **档案标注（2026-08-21）**：本文已并入 `docs/DESIGN.md` §4-§6（探查/约束/演化设计）——DESIGN.md 是单一设计事实源；本文保留为框架规则引擎专题（历史）的历史原文档（不再单独维护，内容以 DESIGN.md 为准）。
+
 # swarm-yuan 框架规则引擎设计（Framework Rules Engine）
 
 > 日期：2026-07-17 ｜ 分支：`feat/framework-rules-engine` ｜ 状态：待评审

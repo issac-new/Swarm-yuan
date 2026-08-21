@@ -18,7 +18,7 @@
 
 ## 适用场景（WP-P10 范式定位）
 
-> 详见 `docs/paradigm-positioning.md`。swarm-yuan 是重量级范式，重量是设计选择不是缺陷——通过 profile 自适应让重量显式可选。
+> 详见 `docs/DESIGN.md`（单一设计事实源）。swarm-yuan 是"生成器厚、生成物薄"的两体系统——生成时刻厚（探查全量），生成物薄（每会话固定税 ≤8KB、概念体系 ≤5）。
 
 **适用**：团队协作项目（≥2 人）、中大型项目（≥80 文件或 ≥3 形态）、强监管交付（合规要求）、长期维护项目（需沉淀记忆）、多技术栈混合项目（微服务/全栈）。
 
@@ -350,7 +350,8 @@ Swarm-yuan/
 ├── .gitignore                    ← 忽略 swarm-yuan 本地状态
 ├── docs/                         ← 设计文档 + 计划 + 研究交付物（USAGE/PROMO/FIVE_DIMENSIONS 唯一来源在 swarm-yuan/docs/）
 │   ├── paradigm-decisions.md     ← 决策 18-31（1-17 见 paradigm-decisions-archive.md，口径权威源 facts.conf）
-│   ├── paradigm-positioning.md   ← WP-P10 范式定位
+│   ├── DESIGN.md                 ← 单一设计事实源（终态完整设计）
+│   ├── paradigm-positioning.md   ← 定位历史档案（已并入 DESIGN.md §1）
 │   ├── upstream-baseline.md      ← 13 运行时登记 + drift 处置
 │   ├── plans/                    ← 4 份 dated 计划
 │   └── research/                 ← R1-R9 九份研究交付物

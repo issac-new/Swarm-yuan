@@ -1,3 +1,5 @@
+> **档案标注（2026-08-21）**：本文已并入 `docs/DESIGN.md` §3.3（接线）与 §9.3（吸收边界）——DESIGN.md 是单一设计事实源；本文保留为上游 vendor 决策（历史）的历史原文档（不再单独维护，内容以 DESIGN.md 为准）。
+
 # 上游 vendor 决策：不 vendor superpowers 核心插件 v6.1.1
 
 > 日期：2026-07-20 ｜ 分支：`feat/standards-compliance`（P1-7）
