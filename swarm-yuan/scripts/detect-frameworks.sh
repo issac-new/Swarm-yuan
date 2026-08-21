@@ -179,7 +179,21 @@ _pyproject_deps=""
 # 提取 dependencies + devDependencies 的 key(pkg 名)
 # WP-R Bug#3: \s 在 BSD sed(macOS)不识别,改 [[:space:]];提取后 trim 前导空白(边界匹配依赖纯净 key)
 while IFS= read -r _pj; do
-  _deps=$(grep -E '^[[:space:]]+"[^"]+":[[:space:]]' "$_pj" 2>/dev/null | sed -E 's/^[[:space:]]+"([^"]+)":.*/\1/' || true)
+  # WP-fix-consistency：冒号后空白改为可选 + 单行 JSON 兜底——紧凑/单行 JSON（npm 生成常见）
+  # 此前 `^[[:space:]]+"..."` 只匹配行首 key，单行 JSON 的 key 全在行中间被漏检。
+  if command -v python3 >/dev/null 2>&1; then
+    _deps=$(python3 -c "
+import json,sys
+try:
+    d=json.load(open(sys.argv[1]))
+    for sec in ('dependencies','devDependencies','peerDependencies'):
+        for k in (d.get(sec) or {}): print(k)
+except Exception: pass
+" "$_pj" 2>/dev/null || true)
+  else
+    # 无 python3 降级：行首 + 行内 "key":" 双模式提取
+    _deps=$(grep -oE '(^|,|\{)[[:space:]]*"[^"]+":[[:space:]]?' "$_pj" 2>/dev/null | sed -E 's/.*"([^"]+)":.*/\1/' || true)
+  fi
   _pkgjson_deps="${_pkgjson_deps}
 ${_deps}"
 done < <(find "$PROJ" -name package.json -not -path '*/node_modules/*' -not -path '*/.git/*' 2>/dev/null || true)
