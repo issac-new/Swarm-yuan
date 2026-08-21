@@ -68,6 +68,7 @@ UNIVERSAL_FILES=(
   "assets/hooks/failure-detector.sh|assets|lite"
   "assets/hooks/integrity-guard.sh|assets|lite"
   "assets/hooks/fail-gate-hook.sh|assets|lite"
+  "assets/hooks/codex-gate-wrapper.sh|assets|standard"  # R13 批次4：Codex deny 协议适配（exit 2+stderr）
   "assets/hooks/setup-loop.sh|assets|standard"
   "assets/hooks/loop-hook.sh|assets|standard"
   "scripts/project-fingerprint.sh|gen|lite"
