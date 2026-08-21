@@ -139,11 +139,20 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
     # R14（better-harness 吸收）：goal_id + closure——审计单元从"运行/会话"升级为"目标闭环"
     # （一个用户目标 + 一个验收边界；change set ↔ final validation set 链接才 closed）
     [[ -z "$D_CLOSURE" ]] && D_CLOSURE="open"
-    _dec_line=$(printf '{"ts":"%s","phase":"%s","type":"%s","ai_suggestion":"%s","user_action":"%s","outcome":"%s","rationale":"%s","actor":"%s","alternatives":"%s","missing_context":"%s","cost_if_wrong":"%s","reversibility":"%s","confidence":"%s","goal_id":"%s","closure":"%s","repair_review":"%s"}' \
+    # R15（HarnessEval 吸收 P3）：digest 链式锚定——decisions 记录引用同项目 trace.jsonl 末行 hash。
+    # 下游 artifact（decisions）的 digest 含上游（trace 末行）：trace 被篡改 → ref_trace_hash 失配 → 全链 stale 可检出。
+    _ref_trace_hash=""
+    if [[ -f "$STATE_DIR/trace.jsonl" ]]; then
+      _last_line=$(tail -1 "$STATE_DIR/trace.jsonl" 2>/dev/null || printf '')
+      if [[ -n "$_last_line" ]]; then
+        _ref_trace_hash=$(printf '%s' "$_last_line" | cksum | awk '{print $1}')
+      fi
+    fi
+    _dec_line=$(printf '{"ts":"%s","phase":"%s","type":"%s","ai_suggestion":"%s","user_action":"%s","outcome":"%s","rationale":"%s","actor":"%s","alternatives":"%s","missing_context":"%s","cost_if_wrong":"%s","reversibility":"%s","confidence":"%s","goal_id":"%s","closure":"%s","repair_review":"%s","ref_trace_hash":"%s"}' \
       "$ts" "$(_json_esc "$D_PHASE")" "$(_json_esc "$D_TYPE")" "$(_json_esc "$D_SUGGESTION")" \
       "$(_json_esc "$D_USER_ACTION")" "$(_json_esc "$D_OUTCOME")" "$(_json_esc "$D_RATIONALE")" "$(_json_esc "${ACTOR:-swarm-yuan/ai}")" \
       "$(_json_esc "$D_ALTERNATIVES")" "$(_json_esc "$D_MISSING_CONTEXT")" "$(_json_esc "$D_COST_IF_WRONG")" \
-      "$(_json_esc "$D_REVERSIBILITY")" "$(_json_esc "$D_CONFIDENCE")" "$(_json_esc "$D_GOAL")" "$(_json_esc "$D_CLOSURE")" "$(_json_esc "$D_REPAIR_REVIEW")")
+      "$(_json_esc "$D_REVERSIBILITY")" "$(_json_esc "$D_CONFIDENCE")" "$(_json_esc "$D_GOAL")" "$(_json_esc "$D_CLOSURE")" "$(_json_esc "$D_REPAIR_REVIEW")" "$_ref_trace_hash")
     if ! printf '%s\n' "$_dec_line" >> "$STATE_DIR/decisions.jsonl" 2>/dev/null; then
       echo "⚠ trace-log: decisions.jsonl 落盘失败（$STATE_DIR/decisions.jsonl 不可写），决策未留痕（不阻塞）" >&2
     else

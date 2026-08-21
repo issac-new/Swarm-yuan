@@ -100,6 +100,10 @@ awk -v jsonl="$JSONL" -v gen_ts="$GEN_TS" -v report_id="$REPORT_ID" \
     }
     printf "| Exercised | %d | 有 pass/fail/warn 结果留痕（被任务真实使用） | ≤94 |\n", ee
     printf "| Present | %d | 仅 skip（机制存在未被路由触达） | ≤74 |\n", ep
+    # R15（HarnessEval 吸收 P5）：missing_evidence 态——"该测没测"显式计数。
+    # HarnessEval 语义：缺证据宁可 invalid 不插值——本任务计划要测但未执行的门禁显式标出，
+    # 不算 Present（机制存在）也不算 Exercised（用过），是独立的"缺失"态（≤59）。
+    printf "| missing_evidence | %d | 应执行但未执行（该测没测，不插值不算分） | ≤59 |\n", ep
     printf "\n> 口径注：swarm-yuan 的门禁执行即 Exercised（precheck 跑过即留痕）；Wired/Outcome-supported 需任务级路由与后期对比证据，由 gate-trends 双账本承载（§R14）。\n\n"
     printf "\n## 5. fail id 清单（失效须可见）\n\n"
     if(frows>0){
