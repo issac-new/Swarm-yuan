@@ -68,6 +68,19 @@
 
 **核对结论**：理念 1 此前已落实；理念 2 的缺口（AI 行为层无调用公告铁律、无机器校验、hooks 静默）由 WP4 补齐——workflow 10 要素（新增第 ⑨ 调用追踪）+ trace-log.sh 双通道 + verify-completeness 机器执法 + hooks 单行摘要。
 
+---
+
+## 五之二：R13 后的一致性修订（2026-08-21，v2.0/v2.1）
+
+| 理念 | R13 后形态 | 状态 |
+|------|-----------|------|
+| **1. 连贯动作** | 不变（Step 0-8 全自动 + 8 工作流节点）；workflow 骨架从 10 要素精简为 **4 要素**（入口/参与方/门禁/产出物——其余 6 要素并入产出物说明，80 槽→32 槽） | ✅ 持续落实（verify-completeness 的「调用追踪」检查已同步为 ⑥ 产出物与追踪段含 trace-log.sh 调用） |
+| **2. 全链路追踪** | 不变（stdout 公告 + trace-log.sh + gate-runs + SARIF + hooks 摘要）；failure-detector 的 L2-L4 叙事剧场退役（保留 L1 简短提示 + SPINNING brief——hooks 输出从叙事降为条件提示） | ✅ 持续落实（test-failure-detector 已同步新形态断言） |
+| **3. 范式作为条件（R13 新增）** | 机制分条件/内容两类：条件（运行时约束，零认知占用）保留并强化（path-check/计数核验/last-good/状态门/三值规则/FORBID 带替代）；内容类转落地化（概念框架→AI 判断引导+notes 留痕）或接线（10 门禁全接线 54/54）/路由（40 references 何时读我） | ✅ R13 批次 0-4 + 增量全部收口（五维断言 G18/G19 守护） |
+| **4. 落地优先于删除（R13 总原则）** | 概念/门禁/profile/references 一概不删——病根是"没有正确落地"（机械打分/僵尸孤立/无路由），全部转为真实消费路径 | ✅ 认知框架落地化、industry-profile conf-render 真实加载、装饰文档路由化、methodology 执法载体提取 |
+
+**R13 后一致性自检入口**：`bash swarm-yuan/scripts/self-check.sh --check-only`（含 G18 孤儿资产扫描 + G19 层间反向引用 + 认知面税制断言 252KB<256KB + FACT_GATES_TOTAL=54 真值对账）。
+
 ## 六、自检命令
 
 ```bash
