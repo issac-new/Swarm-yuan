@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 治理 Agent 拓扑（四权分离，借鉴 tanweai/pua 改写）
+
 # 治理 Agent 拓扑（四权分离，借鉴 tanweai/pua 改写）
 
 > 整合自 [tanweai/pua](https://github.com/tanweai/pua) 的四权分离治理模型。

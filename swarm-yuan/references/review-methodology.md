@@ -1,3 +1,5 @@
+> **何时读我**：执行代码审查或设计门禁输出格式时。审查方法论——rubric 判定/P0-P3/规则溯源。
+
 # 代码审查方法论 (Code Review Methodology)
 
 > 整合自 [gstack](https://github.com/garrytan/gstack) 的审查清单/specialist 模式与 [open-code-review](https://github.com/alibaba/open-code-review) 的 5 维度/规则链/严重度分级。

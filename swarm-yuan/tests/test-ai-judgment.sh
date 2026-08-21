@@ -31,13 +31,13 @@ out=$(GATE_AI_JUDGMENT=1 bash -c '
   source "'"$ADV"'"
   for g in check_cognition check_diagram check_pr_quality check_consistency check_link_depth; do "$g"; done
 ' 2>&1)
-for g in check_cognition check_diagram check_pr_quality check_consistency check_link_depth; do
+for g in check_diagram check_pr_quality check_consistency check_link_depth; do
   # ${g} 必须带括号——$g 紧跟多字节「（」在 bash 3.2 + UTF-8 locale 下会吞字节变 unbound（WP-R2-1 同坑）
   echo "$out" | grep -q "${g}（AI 自觉判断模式" \
     && ok "态2 $g 短路为 AI 自查" || bad "态2 $g 未短路: $(echo "$out" | grep "$g" | head -1)"
 done
-# 机械检查不应出现（cognition 机械模式的标志输出是"认知检查"标题或 SKIP 披露）
-echo "$out" | grep -q '=== 认知检查' && bad "态2 =1 时仍跑机械认知检查" || ok "态2 =1 时不跑机械认知检查"
+# R13 D1：AI 判断引导模式为唯一模式（机械计分退役）
+echo "$out" | grep -q 'AI 判断引导模式' && ok "态2 cognition AI 判断引导（R13 唯一模式）" || bad "态2 缺 AI 判断引导标志"
 
 # --- 态 3：默认（未设置）保持机械模式（向后兼容）---
 out3=$(bash -c '
@@ -45,10 +45,10 @@ out3=$(bash -c '
   source "'"$ADV"'"
   check_cognition
 ' 2>&1)
-echo "$out3" | grep -q 'AI 自觉判断模式' && bad "态3 默认误入 AI 模式" || ok "态3 默认保持机械模式"
-# 机械路径标志输出：认知递进体检报告头（孤立跑缺 precheck.sh 内部助手属预期噪音，只断言报告头）
-echo "$out3" | grep -qE '认知递进体检|=== 认知检查|SKIP' \
-  && ok "态3 默认机械路径执行" || bad "态3 默认机械路径未执行: $out3"
+echo "$out3" | grep -q 'AI 判断引导模式' && ok "态3 默认亦走 AI 判断引导（R13：机械模式退役，唯一模式）" || bad "态3 缺 AI 判断引导标志"
+# R13 D1：机械路径已退役——默认输出为 AI 判断引导 + notes 留痕提示（不出现旧机械报告头）
+echo "$out3" | grep -qE '认知递进体检报告|认知体检报告' \
+  && bad "态3 机械报告头残留（R13 已退役）" || ok "态3 无机械报告头（R13 退役确认）"
 
 # --- 态 4：conf 的 ${VAR:-默认} 写法保留环境变量优先 ---
 # source conf（set +u 包裹，与 precheck.sh 同语义），env=1 时 conf 不得覆盖回 0
@@ -66,6 +66,6 @@ out5=$(bash -c '
   set -u
   printf "%s" "${GATE_AI_JUDGMENT:-0}"
 ')
-[[ "$out5" == "0" ]] && ok "态5 conf 默认 0（机械模式）" || bad "态5 conf 默认值异常 [$out5]"
+[[ "$out5" == "0" ]] && ok "态5 conf 保留 GATE_AI_JUDGMENT 兼容别名（R13 后行为恒 AI 模式）" || bad "态5 conf 默认值异常 [$out5]"
 
 [[ $FAIL -eq 0 ]] && { echo "PASS test-ai-judgment"; exit 0; } || { echo "FAIL test-ai-judgment" >&2; exit 1; }

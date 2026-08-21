@@ -4,9 +4,12 @@
 #   每变量带溯源注释: # AUTO:detected（探测所得）/ # AUTO:default（默认值未动）/ # TODO:model（语义型，须人工）
 # 模型新动作: 只处理 # TODO:model 清单 + 审 diff（从「写 158 行」变「审 + 补少数」）
 # 用法:
-#   bash conf-render.sh <PROJECT_DIR> [--feature-card <f>] [--profile <lite|standard|compliance>] [--out <dir>]
+#   bash conf-render.sh <PROJECT_DIR> [--feature-card <f>] [--profile <lite|standard|compliance>] [--industry <name>] [--out <dir>]
 #     --feature-card  特征卡 md（解析结构化字段补实值，可选）
 #     --profile       lite(只 core) / standard(core+arch) / compliance(三件套)，默认 standard
+#     --industry      行业 profile（finance|gov|medical|telecom|automotive|energy|industrial）
+#                     真实加载 assets/industry-profiles/<name>.conf 并渲染为 precheck.industry.conf
+#                     追加到 precheck.conf 尾部 source 链（R13 批次1a/D3：替代"手工 cat >>"伪激活）
 #     --out           落盘目录（不给则 stdout 合并三件套）
 # 输出: conf 初稿（每变量行带 # AUTO:* 溯源）；末尾 # TODO:model 清单汇总。
 # 退出码: 0 正常（fail-open，嗅探失败用默认）；1 arg 错误。
@@ -14,11 +17,12 @@
 set -uo pipefail
 BASE="$(cd "$(dirname "${0}")/.." && pwd)"
 
-PROJ=""; CARD=""; PROFILE="standard"; OUT=""
+PROJ=""; CARD=""; PROFILE="standard"; INDUSTRY=""; OUT=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --feature-card) CARD="${2:?--feature-card 需要路径}"; shift 2 ;;
     --profile) PROFILE="${2:?--profile 需要 lite|standard|compliance}"; shift 2 ;;
+    --industry) INDUSTRY="${2:?--industry 需要 finance|gov|medical|telecom|automotive|energy|industrial}"; shift 2 ;;
     --out) OUT="${2:?--out 需要目录}"; shift 2 ;;
     -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) [[ -z "$PROJ" ]] && PROJ="$1" || { echo "未知参数: $1" >&2; exit 1; }; shift ;;
@@ -160,6 +164,28 @@ core=$(_render_conf "assets/precheck.conf")
 if [[ "$PROFILE" == "lite" ]]; then
   core=$(printf '%s\n' "$core" | grep -vE '^#.*precheck\.(arch|compliance)\.conf')
 fi
+# R13 批次1a（D3）：industry profile 真实加载——渲染为 precheck.industry.conf，
+# 并在 precheck.conf 尾部追加 source 行（加载顺序：core→arch→compliance→industry→patch，
+# 行业层后于生成层 = 行业覆盖胜出，用户 patch 层仍最末）。
+if [[ -n "$INDUSTRY" ]]; then
+  _ip_src="$BASE/assets/industry-profiles/${INDUSTRY}.conf"
+  if [[ ! -f "$_ip_src" ]]; then
+    echo "✗ 未知行业 profile: ${INDUSTRY}（可选：finance|gov|medical|telecom|automotive|energy|industrial）" >&2
+    exit 1
+  fi
+  # 行业层头部改写：原"手工 cat >>"用法注释替换为"本文件由 conf-render --industry 生成"溯源
+  _ip_content=$(sed -e '1,10s|^# 用法：.*|# 本文件由 conf-render.sh --industry '"$INDUSTRY"' 生成（R13 D3 真实加载，勿手工编辑）|' "$_ip_src")
+  _emit_section "precheck.industry.conf" "$_ip_content"
+  # precheck.conf 尾部挂 source（core 的 patch source 之前——行业先于用户覆盖）
+  _ind_line='[[ -f "${_conf_self_dir}/precheck.industry.conf" ]] && source "${_conf_self_dir}/precheck.industry.conf" || true'
+  _patch_line='[[ -f "$_conf_self_dir/precheck.patch.conf" ]] && source "$_conf_self_dir/precheck.patch.conf" || true'
+  # 插到 patch source 行之前（行业先于用户覆盖；patch 仍最末胜出）
+  core=$(printf '%s\n' "$core" | awk -v ind="$_ind_line" -v pat="$_patch_line" '
+    $0 == pat { print ind }
+    { print }
+  ')
+fi
+
 _emit_section "precheck.conf" "$core"
 
 if [[ "$PROFILE" == "standard" || "$PROFILE" == "compliance" ]]; then

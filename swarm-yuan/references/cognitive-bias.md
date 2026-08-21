@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 认知偏差防范与思维模型图谱 (Cognitive Bias & Mental Models)
+
 # 认知偏差防范与思维模型图谱 (Cognitive Bias & Mental Models)
 
 本文件是 swarm-yuan 第四层"认知偏差防范"的**参考图谱**，供生成的目标技能在 spec §16 与 workflow 偏差检查锚点中引用。核心理念：**认知偏差不是随机犯错，而是大脑在特定情境下的系统性捷径——可预测、可防范。**

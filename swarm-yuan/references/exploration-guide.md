@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 仓库探查指南 (Repository Exploration Guide)
+
 # 仓库探查指南 (Repository Exploration Guide)
 
 生成目标技能前，必须先探查目标仓库。本指南说明如何高效探查各类项目，**包括环境依赖、外部资源、MCP 工具**。

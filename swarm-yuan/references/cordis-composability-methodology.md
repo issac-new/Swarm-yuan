@@ -1,3 +1,5 @@
+> **何时读我**：设计可组合/时空可扩展的机制时。DeepSeek Cordis 吸收——时空可组合性方法论。
+
 # 时空可组合性方法论（Spatiotemporal Composability）
 
 > 来源：[DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) + [Cordis](https://github.com/cordiverse/cordis)，论文 [_A Programming Paradigm for Spatiotemporal Composability_](https://github.com/cordiverse/paper)（2026-08-13 草稿，cordiverse 组织）。

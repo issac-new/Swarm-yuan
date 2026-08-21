@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 医疗行业 profile：法规标准 × 门禁映射（industry-profile-medical）
+
 # 医疗行业 profile：法规标准 × 门禁映射（industry-profile-medical）
 
 > 版本：v1（2026-07-20，P3 批次）

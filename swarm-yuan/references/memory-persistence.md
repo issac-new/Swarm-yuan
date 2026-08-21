@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 记忆持久化模式 (Memory Persistence Patterns)
+
 # 记忆持久化模式 (Memory Persistence Patterns)
 
 > 整合自 [claude-mem](https://github.com/thedotmack/claude-mem) 的方法论模式。

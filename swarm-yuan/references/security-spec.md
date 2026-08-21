@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 安全规范 (Security Specification)
+
 # 安全规范 (Security Specification)
 
 > swarm-yuan 必须遵守应用安全规范及代码安全、网络安全规范，防范常见安全问题。

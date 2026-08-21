@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 汽车行业 profile 立法文档（industry-profile-automotive）
+
 # 汽车行业 profile 立法文档（industry-profile-automotive）
 
 > 版本：v1（2026-07-23，WP-U 批次）

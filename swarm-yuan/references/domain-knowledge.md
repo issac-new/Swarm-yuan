@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 领域知识速查表 (Domain Knowledge Quick Reference)
+
 # 领域知识速查表 (Domain Knowledge Quick Reference)
 
 本文件是 swarm-yuan `--domain` 门禁的分析起点参考。**不是直接复制到 reference-manual 的清单**——而是提供"该领域有哪些客观规律值得在项目中验证"的速查。

@@ -1,3 +1,5 @@
+> **何时读我**：参考 GSD 计划/验证/状态管理模式时。gsd-core 吸收——计划验证/STATE 戳/validator envelope。
+
 # gsd-core 模式整合 (GSD-Core Patterns)
 
 > 整合自 [gsd-core](https://github.com/open-gsd/gsd-core) 的方法论模式与运行时工具。
