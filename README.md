@@ -5,7 +5,7 @@
 > 17 项特征卡让 AI 认识你的项目，54 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
 > （边界声明：门禁外部有效性目前在 Java/JS Web 品类上验证（R9），跨品类见 `verifier/v2/external-validity.md` 立项稿。）
 
-[![Release](https://img.shields.io/badge/release-v2.1-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.1)
+[![Release](https://img.shields.io/badge/release-v2.2-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.2)
 [![Feature Card](https://img.shields.io/badge/feature%20card-17-green)]()
 [![Quality Gates](https://img.shields.io/badge/quality%20gates-54-orange)]()
 [![Frameworks](https://img.shields.io/badge/frameworks-74-blueviolet)]()
@@ -34,7 +34,7 @@ bash <skill>/scripts/precheck.sh --all                       # ③ 开发完跑�
 > **Windows**：需 Git for Windows（自带 Git Bash）或 WSL；纯 cmd/PowerShell 不支持（bash 是硬前置）。
 > **不适用**：个人脚本/一次性原型/改 typo/无 AI 辅助的纯人工开发——直接用 AI 裸写，套范式 ROI 为负。
 
-📖 完整发版说明（设计取舍 / 门禁示例 / 质量基线）：见 [v1.0 Release Notes](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.1)
+📖 完整发版说明（设计取舍 / 门禁示例 / 质量基线）：见 [v1.0 Release Notes](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.2)
 
 ---
 
