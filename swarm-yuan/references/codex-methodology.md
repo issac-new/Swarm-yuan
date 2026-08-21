@@ -99,3 +99,39 @@ Codex Skills 只常载 frontmatter（name/description），正文按触发注入
 - **补强 `review-methodology.md`**：§2 的 rubric 判定与五维度审查互补——五维度定「查什么」，rubric 定「什么算 finding」。
 - **补强 `memory-persistence.md`**：§1.2 的 checkpoint 模板与 builder-journal 互补——journal 记「状态」，checkpoint 模板定「交接摘要的结构」。
 - **补强 `subagent-orchestration.md`**：§3 的测试哲学进节点⑤执行纪律。
+
+---
+
+## R4 补核（2026-08-21）：v0.146 → v0.148 两 stable + v0.149-alpha 预告
+
+> 基线 v0.146.0（2026-08-14 调研）→ 最新 stable v0.148.0（2026-08-18）+ v0.149.0-alpha.4（2026-08-20）预告。详见 `docs/upstream-baseline.md` §三 CLI 专题。
+
+### hooks 异步命令 + MCP 工具调用（v0.148——重要机会）
+
+Codex hooks 现在支持**异步执行命令**并**调用 MCP 工具**。这意味着 precheck 门禁可注册为 Codex hook 而非仅靠 prompt 约定——门禁"执法"在 Codex 侧获得官方强制点（本仓 fail-gate-hook.sh 在 Claude Code 侧已有 PreToolUse/PostToolUse 强制点，Codex 侧此前缺失）。
+登记候选：下轮评估 Codex hooks 配置格式，生成器为 Codex 目标输出等价的 hooks 注册。
+
+### Agent Plugins 四类目录（v0.147）
+
+可移植插件安装，跨 local/personal/workspace/remote 四类目录搜索。生成技能的分发新通道：打包为 Codex 插件而非仅放 `~/.codex`。登记候选。
+
+### 会话资产化（v0.147-148 + v0.149-alpha）
+
+- `codex exec fork` 派生会话 + TUI resume 选择器归档/恢复（v0.148）
+- `/export` 会话完整导出 Markdown（v0.148）——门禁验收记录可随会话导出留档
+- 排队消息（向既有会话排队消息 + 跨进程分发，v0.149-alpha）
+- `codex agents` 仪表盘 + 异步用户消息工具（v0.149-alpha）——多代理管理界面成形
+
+### Guardian 审批体系（v0.147 入口 + v0.149-alpha v2）
+
+`--approve-for-me` CLI flag（v0.147）是自动审批正式入口；v0.149-alpha 的 Guardian v2 补齐：风险分类改进、transcript 图像纳入审查、默认跳沙箱命令、风险评分错误 fail-closed、可代替必需模型审查。
+观察项：Guardian 成熟后，生成技能中的高危门禁命令（删除/依赖升级）可标注给自动审批分类器。
+
+### skill-creator validation 拒绝 TODO 占位符（v0.148）
+
+Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--verify-completeness`（零占位符检测，P0/P1 分级）同构，方向验证。
+
+### 破坏性变更（两处）
+
+1. **v0.147 移除 `codex exec --full-auto`**——改用 `--sandbox workspace-write`。本仓生成脚本无 `--full-auto` 引用（无影响）；install.sh 对 Codex 目标的检测登记版本下限候选（≥0.147）。
+2. **v0.149-alpha 移除技能模型委托**——skills 不能再指定委托模型。本仓无按子任务指定模型的设计（无影响）。

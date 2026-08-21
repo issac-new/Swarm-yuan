@@ -576,3 +576,43 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 | **调用追踪（贯穿全程）** | 每步 stdout 公告 `→ [节点X] 调用 …` | — | trace-log.sh --node/--actor/--tool（落盘 `.swarm-yuan/trace.jsonl`） | — |
 | **插件管理** | — | `claude plugin init/list/eval` | — | — |
 | **MCP 管理** | — | `claude mcp add/list/get/serve` | — | — |
+
+---
+
+## R4 补核（2026-08-21）：v2.1.233 → v2.1.237 五版增量
+
+> 基线 v2.1.232（2026-08-13 调研）→ 最新 v2.1.237（2026-08-20）。详见 `docs/upstream-baseline.md` §三 CLI 专题。
+
+### Todo/Task 工具默认移除（v2.1.233，破坏性）
+
+TaskCreate/Get/Update/List、TodoWrite 在 **Opus 4.8、Sonnet 5、Fable 5、Mythos 5 及更新模型**上默认不再可用；需设 `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` 恢复。Anthropic 在把任务跟踪内化进模型能力。
+
+**对目标技能的影响**：生成的 SKILL.md **不应依赖 TodoWrite/TaskCreate 跟踪门禁进度**——本仓自有 `trace-log.sh`（`--node/--key-node` 模式，key-nodes.jsonl 落盘）是稳定的进度跟踪链路，不受 CLI 工具表面变化影响。骨架的检查表（`- [ ]` checkbox）是 markdown 文本，不受影响。
+
+### 跨会话协作原语（v2.1.236）
+
+`SendMessage` 新增 `notify_when_idle`：请求本机另一个 Claude Code 会话在下次空闲时发一条通知——opt-in、一次性、无轮询（macOS/Linux）。
+登记候选：未来"门禁长跑完成后通知主会话"的多会话工作流可走此官方机制。
+
+### "Concise" output style（v2.1.237）
+
+内置简洁输出风格：Claude 直接给结果、跳过开场白和叙述，工作深度不变。`/config` → Output style 选择。
+与门禁驱动开发契合（跑门禁-看结果-修复，无需叙述）；生成技能的使用文档可推荐用户开启。
+
+### 上下文成本治理样板（v2.1.234）
+
+`claude-api` 内置技能上下文成本从 ~200k+ token 降到 ~25k（参考文档改为按需加载）——**降 87.5%**。
+本仓"按需读取引用索引"（SKILL.md 自动生成表格，WP-P5）是同构机制，方向验证。
+
+### 沙箱与权限硬化（v2.1.233-236）
+
+- macOS 沙箱通配符 read-deny（如 `**/.env`）在 allowed read 区域内优先生效、**无法通过重命名绕过**（v2.1.236）
+- Windows NT `\??\` 命名空间路径全面拒绝（远程读取/会话恢复/CLAUDE.md include/工作流脚本/文件上传，v2.1.234）
+- 权限对话框 "don't ask again" 严格匹配授权覆盖范围（v2.1.235）
+- MCP 诊断打印已解析密钥改为 `${VAR}` 形式（v2.1.234）
+
+目标技能的 settings.local.json deny 规则（`**/.env` 等）在 v2.1.236+ 更强了。
+
+### 可运维性环境变量（v2.1.233-236）
+
+`ANTHROPIC_DEFAULT_MODEL`（新会话起始模型，`/model` 可覆盖）/ `CLAUDE_CODE_TOOL_MEMORY_LIMIT`（Linux Bash 工具 cgroup 内存上限）/ `CLAUDE_CODE_WEBFETCH_CACHE_TTL_MS`（WebFetch 缓存 TTL）/ `CLAUDE_CODE_PROJECT_DIR_NAME`（per-project transcript 短名）/ `CLAUDE_CODE_GOAL_CHECKIN_MINUTES`（goal 阻塞 check-in 间隔）。
