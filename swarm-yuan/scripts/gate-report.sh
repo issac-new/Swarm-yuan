@@ -88,6 +88,19 @@ awk -v jsonl="$JSONL" -v gen_ts="$GEN_TS" -v report_id="$REPORT_ID" \
     idx=0
     for(i=1;i<=ng;i++){ g=order[i]; if(g in cnt){ idx++; emit_row(g, idx) } }
     for(g in cnt) if(!(g in ord)){ idx++; emit_row(g, idx) }
+    printf "### 4.2 证据状态分级（R14 better-harness 吸收：配置≠使用≠有效）\n\n"
+    printf "证据态语义（better-harness agent-work-loop）：**Present**（机制存在未路由）/ **Wired**（任务路由可达）/ **Exercised**（被任务使用并留结果）/ **Outcome-supported**（后期可比结果支持）。分数上限：Missing/Unobserved ≤59 · Present ≤74 · Wired ≤84 · Exercised ≤94 · Outcome-supported ≤100。\n\n"
+    printf "| 证据态 | 门禁数 | 含义 | 分数上限 |\n|---|---|---|---|\n"
+    ep=0; ew=0; ee=0; eo=0; em=0
+    for(g in cnt){
+      has_pass=0; has_result=0
+      if(index(seq[g],"p")>0) has_result=1
+      if(index(seq[g],"f")>0 || index(seq[g],"w")>0) has_result=1
+      if(has_result){ ee++ } else { ep++ }
+    }
+    printf "| Exercised | %d | 有 pass/fail/warn 结果留痕（被任务真实使用） | ≤94 |\n", ee
+    printf "| Present | %d | 仅 skip（机制存在未被路由触达） | ≤74 |\n", ep
+    printf "\n> 口径注：swarm-yuan 的门禁执行即 Exercised（precheck 跑过即留痕）；Wired/Outcome-supported 需任务级路由与后期对比证据，由 gate-trends 双账本承载（§R14）。\n\n"
     printf "\n## 5. fail id 清单（失效须可见）\n\n"
     if(frows>0){
       printf("| # | 门禁 | fail id | 时间(UTC) |\n|---|---|---|---|\n")
