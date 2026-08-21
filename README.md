@@ -3,6 +3,8 @@
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 >
 > 17 项特征卡让 AI 认识你的项目，54 个质量门禁守护代码合规——特征卡是立法，门禁是执法。
+> **两体系统**（R13）：生成器厚（探查全量，一次性消费）、生成物薄（每会话固定税 ≤8KB、概念体系 ≤5）；范式作为条件而非内容。
+> **三层 Harness 拼图**（R13-R15）：过程强制门禁层（54 门禁 + rules.d 三值 + hooks 双宿主）+ 工作流审计层（goal_id+closure 目标闭环 + 证据态分级 + 双账本）+ 评测层（digest 链式锚定 + 选择即证据 + 审计即完成条件）。
 > （边界声明：门禁外部有效性目前在 Java/JS Web 品类上验证（R9），跨品类见 `verifier/v2/external-validity.md` 立项稿。）
 
 [![Release](https://img.shields.io/badge/release-v2.4-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.4)
@@ -34,7 +36,7 @@ bash <skill>/scripts/precheck.sh --all                       # ③ 开发完跑�
 > **Windows**：需 Git for Windows（自带 Git Bash）或 WSL；纯 cmd/PowerShell 不支持（bash 是硬前置）。
 > **不适用**：个人脚本/一次性原型/改 typo/无 AI 辅助的纯人工开发——直接用 AI 裸写，套范式 ROI 为负。
 
-📖 完整发版说明（设计取舍 / 门禁示例 / 质量基线）：见 [v1.0 Release Notes](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.4)
+📖 完整发版说明（设计取舍 / 门禁示例 / 质量基线）：见 [v2.4 Release Notes](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.4)（[v1.0 完整介绍](https://github.com/issac-new/Swarm-yuan/releases/tag/v1.0)）
 
 ---
 
@@ -59,7 +61,9 @@ bash <skill>/scripts/precheck.sh --all                       # ③ 开发完跑�
 | 呈现递进的关系 | 门禁不是"数 import 数"——每个计数背后指向一条关系规律 |
 | 特征卡是立法，门禁是执法，验证器是司法 | 17 项特征卡定义「项目应该是什么样的」，54 个门禁验证「代码是否符合」，`verifier/v1` 用 fixture 双态 + cli A/B 字节级等价做独立司法 |
 | 分层整合，诚实降级 | 13 运行时按深度/CLI/方法论三层整合，每层有自带降级载体，未装不阻塞，不假装全深度接线 |
-| 重量是设计选择，不是缺陷 | 重量级范式通过 `--profile auto\|lite\|standard\|compliance` 四档自适应让重量显式可选（决策 18/25，WP-P10 范式定位） |
+| 生成器厚、生成物薄（R13 两体系统） | 生成时刻允许厚（探查知识全量，一次性消费），生成物必须薄（每会话固定税 ≤8KB、概念体系 ≤5，税制有机器预算）；`--profile auto|lite|standard|compliance` 四档自适应 |
+| 范式作为条件而非内容（R13） | 机器执法只保留"防 AI 说谎"的条件类（path-check/计数核验/last-good/状态门/三值规则/FORBID 带替代）；概念/门禁/profile/references 一概不删，病根是"没有正确落地"，全部转为真实消费路径（落地优先于删除） |
+| 审计是闭环不是事件（R14-R15） | 审计单元是"一个用户目标+一个验收边界"（goal_id+closure）；证据态分级（配置≠使用≠有效）；三本账从并列升级为链式（ref_trace_hash 锚定，上游篡改全链 stale 可检出）；选择即证据（启用/跳过理由负空间可审计）；审计即完成条件（closure 完备性重走） |
 
 ---
 
