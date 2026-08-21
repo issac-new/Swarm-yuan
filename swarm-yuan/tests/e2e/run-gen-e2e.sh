@@ -148,7 +148,24 @@ for _prof in lite compliance; do
       bad "${_prof} 档产物缺 ${_pf}（骨架残缺）"
     fi
   done
+  # R13 批次3（§4.5.4 适配性差异化断言）：lite 档无 hooks.json（无 hooks 生命周期），
+  # compliance 档有 hooks.json 且含 industry 注入接线（conf-render --industry 独立冒烟见下）
+  if [[ "${_prof}" == "lite" ]]; then
+    [[ ! -f "${_pdir}/p-${_prof}/hooks/hooks.json" ]]       && ok "lite 档无 hooks.json（差异化正确）" || bad "lite 档含 hooks.json（差异化错误）"
+  else
+    [[ -f "${_pdir}/p-${_prof}/hooks/hooks.json" ]]       && ok "${_prof} 档有 hooks.json" || bad "${_prof} 档缺 hooks.json"
+  fi
 done
+
+# --- 10.5 R13 批次3：industry profile 加载冒烟（conf-render --industry 真实接线）---
+_indir="${TMP}/industry-out"
+mkdir -p "${_indir}"
+if bash "${PARADIGM}/scripts/conf-render.sh" "${DEMO}" --profile compliance --industry finance --out "${_indir}"      >/tmp/gene2e-industry.log 2>&1; then
+  [[ -f "${_indir}/precheck.industry.conf" ]]     && ok "industry profile 渲染出 precheck.industry.conf" || bad "industry conf 未生成"
+  grep -q 'precheck.industry.conf' "${_indir}/precheck.conf"     && ok "precheck.conf 挂 industry source 链" || bad "precheck.conf 缺 industry source 链"
+else
+  bad "conf-render --industry 失败（见 /tmp/gene2e-industry.log）"
+fi
 
 # --- 11. --upgrade 路径回归（五轮复盘补盲区）---
 # 背景：--upgrade 是用户长期使用的升级路径（覆盖通用模板/保留项目特定文件），

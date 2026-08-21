@@ -2,6 +2,7 @@
 
 > 用途：登记 swarm-yuan 引用/吸收的 **16 个上游运行时**的许可证与版本基线，支撑供应链可审计性（ISO/IEC 5230 OpenChain 方向）与文档漂移治理。
 > 数据来源：GitHub REST API + npm/PyPI registry **2026-08-21 实测**（本轮 R4 全量重核）；历史实测轮次见 `docs/research/R6-upstream-web.md` §0（2026-07-20）/ `docs/runtime-update-2026-07.md`（2026-07-26）/ 2026-08-14 轮。
+> **重核节奏（R13 批次3，§4.5.5）**：从"每轮全量重核 16 个"改为**破坏性变更驱动**——上游 GitHub release 标 breaking/major 时触发重核 + 季度例行一次。重核是维护不是成长，砍全量形态给成长腾带宽。
 > 机器可读契约：每个 drifted 条目所在行必须含字面漂移标记（行尾「机器标记」列，格式 baseline_status=状态值）；self-check 的轻量基线忠告仅 grep 漂移标记所在行并 warn（不联网）。
 > 状态取值：`synced`（基线≈最新）｜`drifted`（基线落后，需重核）｜`watch`（迭代极快，持续观察）｜`license-risk`（许可证合规风险）。
 >
