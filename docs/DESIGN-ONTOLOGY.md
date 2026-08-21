@@ -142,6 +142,22 @@ R11 调研发现 swarm-yuan 与 Palantir Foundry 本体论（[官方文档](http
 7. 它引入的**依赖**有没有机器锚？（无锚的依赖 = 未来漂移 bug 的预定位置）
 8. 它是让**发生体固化为持续体**（记账），还是让**持续体参与新发生**（用账本驱动改进）？
 
+## 九、实现映射（R16 落地：本体论从刻画变为资产）
+
+本文前八节是**刻画**；R16（2026-08-21）把它落为**可执行资产**：
+
+| 落地物 | 位置 | 承载本文哪节 |
+|--------|------|--------------|
+| 类型目录（对象 21 类型含负面承诺） | `assets/ontology/objects.md` | §一承诺清单 + §二范畴 |
+| 关系目录（10 关系各配机器锚） | `assets/ontology/links.md` | §四关系 + §五依赖 |
+| 动作目录（11 受治理动作） | `assets/ontology/actions.md` | §六 Palantir 动能对照 |
+| 类型对账断言（18 实存点） | self-check `check_ontology_types` | §一"每类型可机器查实"纪律 |
+| 六锚健康检查 | `scripts/ontology-verify.sh` | §五依赖细目的一站式入口 |
+| 语义/动能两区纪律 | 地图骨架头部声明 | §四"描述 vs 规范不混写" |
+| 本体层随生成物分发 | 生成物 `references/ontology/` 三姊妹 | AI 拼装时的类型名词引用 |
+
+设计闭环：**本体论刻画（本文）→ 类型事实源（ontology/ 三目录）→ 机器对账（self-check）→ 运行时健康检查（ontology-verify）**——与 facts.conf（数字事实源）平行的"类型事实源"体系。
+
 ## 调研来源
 
 - BFO：[bfo-ontology.github.io](https://bfo-ontology.github.io/) / [Wikipedia: Basic Formal Ontology](https://en.wikipedia.org/wiki/Basic_Formal_Ontology) / [Introduction to BFO I: Continuants (IEEE)](http://ieeexplore.ieee.org/document/7288715/) / [BFO:0000020 specifically dependent continuant](https://www.virtualflybrain.org/term/specifically-dependent-continuant-bfo_0000020/)

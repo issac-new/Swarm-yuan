@@ -7,7 +7,7 @@
 > **三层 Harness 拼图**（R13-R15）：过程强制门禁层（rules.d 三值 + hooks 双宿主）+ 工作流审计层（goal_id+closure 目标闭环 + 证据态分级）+ 评测层（digest 链式锚定 + 选择即证据 + 审计即完成条件）。
 > 计数真值见 `assets/facts.conf`（不手抄；`scripts/self-check.sh` 机器执法）。
 
-[![Release](https://img.shields.io/badge/release-v2.4-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.4)
+[![Release](https://img.shields.io/badge/release-v2.5-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.5)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
