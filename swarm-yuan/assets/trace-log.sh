@@ -20,7 +20,7 @@ set -uo pipefail
 
 NODE=""; ACTOR=""; TOOL=""; STATUS="started"; NOTE=""
 # --decision 模式变量（G1 决策治理）
-DECISION_MODE=0; D_TYPE=""; D_SUGGESTION=""; D_USER_ACTION=""; D_RATIONALE=""
+DECISION_MODE=0; D_TYPE=""; D_SUGGESTION=""; D_USER_ACTION=""; D_RATIONALE=""; D_GOAL=""; D_CLOSURE=""; D_REPAIR_REVIEW=""
 D_ALTERNATIVES=""; D_MISSING_CONTEXT=""; D_COST_IF_WRONG=""; D_PHASE=""
 D_REVERSIBILITY=""; D_CONFIDENCE=""; D_OUTCOME=""
 # --key-node 模式变量（WP-Q2-lite 关键节点化）
@@ -34,6 +34,9 @@ while [[ $# -gt 0 ]]; do
     --note)   NOTE="${2:-}";   shift 2 ;;
     --key-node) KEY_NODE_MODE=1; KEY_NODE_NAME="${2:-}"; shift 2 ;;
     --decision)  DECISION_MODE=1; shift ;;
+    --goal)      D_GOAL="${2:-}"; shift 2 ;;
+    --closure)   D_CLOSURE="${2:-}"; shift 2 ;;
+    --repair-review) D_REPAIR_REVIEW="${2:-}"; shift 2 ;;
     --type)      D_TYPE="${2:-}"; shift 2 ;;
     --suggestion) D_SUGGESTION="${2:-}"; shift 2 ;;
     --user-action) D_USER_ACTION="${2:-}"; shift 2 ;;
@@ -133,11 +136,14 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
   STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
   if mkdir -p "$STATE_DIR" 2>/dev/null; then
     ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    _dec_line=$(printf '{"ts":"%s","phase":"%s","type":"%s","ai_suggestion":"%s","user_action":"%s","outcome":"%s","rationale":"%s","actor":"%s","alternatives":"%s","missing_context":"%s","cost_if_wrong":"%s","reversibility":"%s","confidence":"%s"}' \
+    # R14（better-harness 吸收）：goal_id + closure——审计单元从"运行/会话"升级为"目标闭环"
+    # （一个用户目标 + 一个验收边界；change set ↔ final validation set 链接才 closed）
+    [[ -z "$D_CLOSURE" ]] && D_CLOSURE="open"
+    _dec_line=$(printf '{"ts":"%s","phase":"%s","type":"%s","ai_suggestion":"%s","user_action":"%s","outcome":"%s","rationale":"%s","actor":"%s","alternatives":"%s","missing_context":"%s","cost_if_wrong":"%s","reversibility":"%s","confidence":"%s","goal_id":"%s","closure":"%s","repair_review":"%s"}' \
       "$ts" "$(_json_esc "$D_PHASE")" "$(_json_esc "$D_TYPE")" "$(_json_esc "$D_SUGGESTION")" \
       "$(_json_esc "$D_USER_ACTION")" "$(_json_esc "$D_OUTCOME")" "$(_json_esc "$D_RATIONALE")" "$(_json_esc "${ACTOR:-swarm-yuan/ai}")" \
       "$(_json_esc "$D_ALTERNATIVES")" "$(_json_esc "$D_MISSING_CONTEXT")" "$(_json_esc "$D_COST_IF_WRONG")" \
-      "$(_json_esc "$D_REVERSIBILITY")" "$(_json_esc "$D_CONFIDENCE")")
+      "$(_json_esc "$D_REVERSIBILITY")" "$(_json_esc "$D_CONFIDENCE")" "$(_json_esc "$D_GOAL")" "$(_json_esc "$D_CLOSURE")" "$(_json_esc "$D_REPAIR_REVIEW")")
     if ! printf '%s\n' "$_dec_line" >> "$STATE_DIR/decisions.jsonl" 2>/dev/null; then
       echo "⚠ trace-log: decisions.jsonl 落盘失败（$STATE_DIR/decisions.jsonl 不可写），决策未留痕（不阻塞）" >&2
     else

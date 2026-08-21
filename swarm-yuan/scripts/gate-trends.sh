@@ -94,6 +94,12 @@ if [[ -z "$HTML_OUT" ]]; then
   _gate_kinds=$(awk -v RS='\n' '{ if (match($0,/"gate":"[^"]+"/)) print substr($0,RSTART+8,RLENGTH-9) }' "$JSONL" | sort -u | wc -l | xargs)
   _density=$((_total_fail * 100 / (_gate_kinds > 0 ? _gate_kinds : 1)))
   printf "弱点密度: %d%%（fail %d 次 / 门禁 %d 种）\n" "$_density" "$_total_fail" "$_gate_kinds"
+  # R14（better-harness 吸收）：双账本——当窗验证（Repair Progress）vs 跨窗效果（Loop Effectiveness）。
+  # "本次修复已验证 ≠ 下次任务真的变好"——同窗口通过率只证明修复状态，跨窗改进需后期可比窗口证据。
+  # 本账本：当窗 repair_verified_rate = pass/记录数（即时验证）；跨窗 later_outcome 需 --window 两次执行对比（登记候选，当前输出当窗位 + guardrail 配对）
+  _guardrail=$_density
+  printf "当窗验证（Repair Progress）: pass %d 条已验证（repair_verified_rate %d%%）；guardrail 配对指标 = 弱点密度 %d%%（fail %d / %d 门禁种——改进声明须主指标升且 guardrail 不恶化）\n" "$_total_pass" "$_overall_rate" "$_guardrail" "$_total_fail" "$_gate_kinds"
+  printf "跨窗效果（Loop Effectiveness）: 需 --window 两次执行对比判定（better-harness 语义：后期可比 Task Episode 证据才允许效果声明；当前账本不输出，登记候选）\n"
   exit 0
 fi
 
