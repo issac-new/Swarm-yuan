@@ -253,6 +253,28 @@ EOF
       _cmd_second=$(printf '%s' "$CMD" | awk '{print $2}' | tr '[:upper:]' '[:lower:]')
       # 拼成 cmd_first:cmd_second 形式做白名单匹配（git:push / npm:publish / bash:deploy.sh 等）
       _cmd_key="${_cmd_first}:${_cmd_second}"
+      # R13 批次2：rules.d 三值求值优先（gate-rules.sh；多规则取最严 forbid > prompt > allow）。
+      # deny 消息 = 给模型的 API（Codex 拒绝带替代语义）：FORBID 行含命中规则与替代方案。
+      _gr="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/gate-rules.sh"
+      _rd="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)/rules.d"
+      if [[ -f "$_gr" && -d "$_rd" ]]; then
+        _gr_out=$(bash "$_gr" "$_rd" "$CMD" 2>&1); _gr_rc=$?
+        case "$_gr_rc" in
+          2)  # forbid → 直接 deny（即使 flag 不存在——forbid 规则是无条件条件，不依赖门禁红）
+              _gates=$(cat "$FLAG" 2>/dev/null || printf 'rules.d')
+              _audit_log "fail-gate-hook:bash" "Bash" "$CMD" "deny" "rules-forbid" "$_gates"
+              _deny_log "Bash" "$CMD" "rules.d:forbid"
+              _forbid_msg=$(printf '%s\n' "$_gr_out" | grep '^FORBID' | head -1)
+              cat << EOF
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan rules.d: ${_forbid_msg}","additionalContext":"swarm-yuan fail-gate: DENY Bash（rules.d 三值判定 forbid）——${_forbid_msg}。规则数据在 rules.d/*.rules（可审计/可沉淀审批）；解除方式：按替代方案改道，或修订规则文件（UserChallenge 决策须落痕）。deny 已落盘 gate-audit.jsonl。"}}
+EOF
+              exit 0 ;;
+          0)  # allow → 放行（只读白名单命中，跳过下方旧白名单逻辑）
+              _audit_log "fail-gate-hook:bash" "Bash" "$CMD" "pass" "rules-allow" "$(cat "$FLAG" 2>/dev/null || printf 'configured')"
+              exit 0 ;;
+          *)  : ;;  # prompt（3）或无规则（3）→ 落回旧白名单逻辑（prompt 语义=flag 红时拦）
+        esac
+      fi
       # 白名单匹配（逗号分隔，支持三种形式：cmd_first 兜底 / cmd_first:cmd_second 精确 / cmd_second 单独）
       # 例：白名单 "push" 命中 "git push ..."（cmd_second）；白名单 "git" 命中所有 git 子命令（cmd_first 兜底）；
       #     白名单 "git:push" 精确命中。

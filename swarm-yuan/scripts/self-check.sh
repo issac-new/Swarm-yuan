@@ -1864,3 +1864,50 @@ check_cordis_composability_wiring
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
 exit $FAIL
+
+
+# ===== R13 批次2（§4.5 五维保障的机器载体）：孤儿资产扫描 + 层间反向引用 =====
+# G18 孤儿资产（连接性 §4.5.2）：references/*.md 无"何时读我"路由头 = 无消费路径候选；
+# rules.d/*.rules 无任何消费者引用 = 死规则。warn-only（advisory，与概念落地问责同构）。
+check_r13_orphan_assets() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local orphans=0
+  for f in "$base"/references/*.md; do
+    [[ -f "$f" ]] || continue
+    if ! head -3 "$f" 2>/dev/null | grep -q '何时读我'; then
+      warn "孤儿资产候选：references/$(basename "$f") 无「何时读我」路由头（无消费路径）"
+      orphans=$((orphans+1))
+    fi
+  done
+  # rules.d 消费者：gate-rules.sh / fail-gate-hook 引用即活
+  if [[ -d "$base/assets/rules.d" ]]; then
+    _consumers=$(grep -rl "rules.d" "$base/scripts/gate-rules.sh" "$base/assets/hooks/fail-gate-hook.sh" 2>/dev/null | wc -l | tr -d ' ')
+    [[ "$_consumers" -ge 1 ]] || warn "rules.d 存在但无消费者（gate-rules/fail-gate-hook 未引用）"
+  fi
+  [[ "$orphans" -eq 0 ]] && echo "  ✓ 孤儿资产扫描：references 全部带路由头（R13 §4.5.2 连接性）"
+}
+
+# G19 层间反向引用（结构性 §4.5.1）：references/ 硬编码 scripts/ 路径 = 地图依赖约束层（违单向性）。
+# 例外：路由头/指引文本中的相对提及（含"scripts/"字样但为指针说明非 import）——判据：
+# 引用形如 `bash scripts/xxx.sh` 的可执行调用且出现在代码语义行（以 | 或 ``` 起）外的指令句。
+check_r13_layer_references() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local hits=0
+  for f in "$base"/references/*.md; do
+    [[ -f "$f" ]] || continue
+    # 表格行/代码块内的 scripts/ 引用是指针（合法）；正文段落中的 `bash scripts/` 调用算依赖
+    while IFS= read -r line; do
+      case "$line" in
+        \|*|'#'*) continue ;;
+      esac
+      if printf '%s' "$line" | grep -qE 'bash +scripts/|source +scripts/'; then
+        # SKILL.md 路由头/自成长段是合法入口指引——references 内则算反向依赖
+        warn "层间反向引用：references/$(basename "$f") 含对 scripts/ 的调用依赖（地图不应依赖约束层）：${line:0:80}"
+        hits=$((hits+1))
+      fi
+    done < "$f"
+  done
+  [[ "$hits" -eq 0 ]] && echo "  ✓ 层间反向引用：0（references 不依赖 scripts——R13 §4.5.1 结构性）"
+}
+check_r13_orphan_assets
+check_r13_layer_references
