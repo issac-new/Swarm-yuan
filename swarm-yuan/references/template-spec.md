@@ -577,133 +577,154 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 
 ---
 
-## 生成后核对清单
+## 生成后核对清单（R13 批次1b：96→12——只留可机器验证入口 + P0 核心映射）
+
+**机器验证四件套（跑命令即核，代替人工逐项）：**
+- [ ] 1. 零占位符：`bash generate-skill.sh --verify-completeness <skill-dir> --strict`
+- [ ] 2. 清单可信：`bash inventory-verify.sh <项目根> --skill-dir <skill-dir> --tsv --path-check --stability-audit`（HALLUCINATION=0）
+- [ ] 3. 计数覆盖：同上命令中各维度 ratio ≥ 0.95 或有 FAIL 告警已处理
+- [ ] 4. 状态门：`bash generate-skill.sh --mark-active <skill-dir>`（三关全过翻 active）
+
+**P0 核心映射八项（人工目检，每项一行判断）：**
+- [ ] 5. SKILL.md description 任务触发式（做什么+何时用）
+- [ ] 6. 地图（reference-manual）条目含路径列且 stability 标注词在说明列
+- [ ] 7. precheck.conf 核心变量已填（PROJECT_DIR/WRITABLE/TEST_CMD/BUILD_CMD）
+- [ ] 8. hooks.json 双宿主接线（fail-gate/integrity-guard）
+- [ ] 9. 编排约束含代码证据（dev-guide §8 或地图说明列）
+- [ ] 10. 测试/构建命令真跑过一次
+- [ ] 11. 特征卡 P0 六项承接（项目类型/可改范围/技术栈/构建命令/分支规范/安全规则）
+- [ ] 12. AI 生成声明与决策记录（decisions.jsonl ≥1 条）
+
+<details>
+<summary>历史 96 项细目（按需展开自查——方法论参考，非 mark-active 前置）</summary>
+
+
 
 生成目标技能后，用本清单逐项核对材料要素覆盖 + **特征卡 17 项承接（P0 强制 / P1 可增量）** + **拼装式开发 + 编排约束** + 方法论整合：
 
 **★特征卡 P0 六项全覆盖（逐项核对，任何一项遗漏 = 未完成；P1 十项 draft 期可「（P1 待补）」，--mark-active 前清零）：**
-- [ ] 1.项目类型 → SKILL.md + codebase.md
-- [ ] 2.可改范围 → SKILL.md（铁律）+ dev-guide.md + precheck.sh --scope
-- [ ] 3.改造分类 → SKILL.md + dev-guide.md
-- [ ] 4.技术栈摘要 → codebase.md
-- [ ] 5.构建发布命令 → SKILL.md（命令速查）+ release.md + codebase.md（端口）
-- [ ] 6.分支规范 → SKILL.md（铁律）+ branch-setup.sh + precheck.sh --branch
-- [ ] 7.安全规则 → reference-manual.md §2 + precheck.sh --sensitive
-- [ ] 8.文档约定 → workflow.md 节点②③ + spec-template.md + plan-template.md
-- [ ] 9.测试体系 → reference-manual.md check §1 + precheck.sh --test
-- [ ] 10.环境与外部资源 → env-setup.sh + codebase.md + mcp-tools.md
-- [ ] 11.**可复用稳定单元** → reference-manual.md §4/5/6/9（签名/路径/用途/复用方式/稳定性标注）+ dev-guide.md §7（拼装式开发原则）+ spec-template.md（复用约束段）+ precheck.sh --reuse
-- [ ] 12.数据规范 → reference-manual.md §8 + data-sample-template.md + precheck.sh --consistency
-- [ ] 13.**五层认知基底** → reference-manual.md（认知映射表+六维动力学基线+逻辑谬误图谱+辩证映射表）+ spec-template.md（§14交付衰减/§15蓝图/§16偏差自检/§17辩证映射）+ precheck.sh --cognition（五层总分≥15/22）
-- [ ] 14.**领域知识** → reference-manual.md（领域知识段：技术领域+业务领域+客观规律）+ spec-template.md（§18领域知识约束：领域识别+客观规律表+声明）+ precheck.sh --domain（spec §18存在性+reference-manual领域知识段+客观规律违规检测）
-- [ ] 15.**编排调用关系及约束** → dev-guide.md §8（编排约束：导入方向/注册顺序/路由挂载/改造分类/状态所有权/测试边界，每条含代码证据）+ reference-manual.md §5.1（链路图约束注释）+ precheck.sh --layer/--frontend
-- [ ] 16.**详尽组件库清单（全量）** → reference-manual.md §4（全量组件表，清单计数 ≥ find 计数 × 0.95）+ §6（全量端点表，每路由文件一张）+ §9（全量 store/类型表）
+· 1.项目类型 → SKILL.md + codebase.md
+· 2.可改范围 → SKILL.md（铁律）+ dev-guide.md + precheck.sh --scope
+· 3.改造分类 → SKILL.md + dev-guide.md
+· 4.技术栈摘要 → codebase.md
+· 5.构建发布命令 → SKILL.md（命令速查）+ release.md + codebase.md（端口）
+· 6.分支规范 → SKILL.md（铁律）+ branch-setup.sh + precheck.sh --branch
+· 7.安全规则 → reference-manual.md §2 + precheck.sh --sensitive
+· 8.文档约定 → workflow.md 节点②③ + spec-template.md + plan-template.md
+· 9.测试体系 → reference-manual.md check §1 + precheck.sh --test
+· 10.环境与外部资源 → env-setup.sh + codebase.md + mcp-tools.md
+· 11.**可复用稳定单元** → reference-manual.md §4/5/6/9（签名/路径/用途/复用方式/稳定性标注）+ dev-guide.md §7（拼装式开发原则）+ spec-template.md（复用约束段）+ precheck.sh --reuse
+· 12.数据规范 → reference-manual.md §8 + data-sample-template.md + precheck.sh --consistency
+· 13.**五层认知基底** → reference-manual.md（认知映射表+六维动力学基线+逻辑谬误图谱+辩证映射表）+ spec-template.md（§14交付衰减/§15蓝图/§16偏差自检/§17辩证映射）+ precheck.sh --cognition（五层总分≥15/22）
+· 14.**领域知识** → reference-manual.md（领域知识段：技术领域+业务领域+客观规律）+ spec-template.md（§18领域知识约束：领域识别+客观规律表+声明）+ precheck.sh --domain（spec §18存在性+reference-manual领域知识段+客观规律违规检测）
+· 15.**编排调用关系及约束** → dev-guide.md §8（编排约束：导入方向/注册顺序/路由挂载/改造分类/状态所有权/测试边界，每条含代码证据）+ reference-manual.md §5.1（链路图约束注释）+ precheck.sh --layer/--frontend
+· 16.**详尽组件库清单（全量）** → reference-manual.md §4（全量组件表，清单计数 ≥ find 计数 × 0.95）+ §6（全量端点表，每路由文件一张）+ §9（全量 store/类型表）
 
 **★拼装式开发核对：**
-- [ ] dev-guide.md §7 含拼装式开发原则（优先复用既有稳定单元；禁止重复造轮子/侵入式重构/破坏性改造）
-- [ ] reference-manual.md §4/5/6/9 含可复用稳定单元清单（API接口/组件/类/函数/方法/store/类型定义，每个含签名/路径/用途/复用方式/稳定性标注）
-- [ ] spec-template.md 含复用约束段（复用的既有单元表 + 新增胶水代码表 + 拼装合规声明）
-- [ ] precheck.sh 含 `--reuse` 子命令（检测重复造轮子 + 提示核对稳定单元清单）
+· dev-guide.md §7 含拼装式开发原则（优先复用既有稳定单元；禁止重复造轮子/侵入式重构/破坏性改造）
+· reference-manual.md §4/5/6/9 含可复用稳定单元清单（API接口/组件/类/函数/方法/store/类型定义，每个含签名/路径/用途/复用方式/稳定性标注）
+· spec-template.md 含复用约束段（复用的既有单元表 + 新增胶水代码表 + 拼装合规声明）
+· precheck.sh 含 `--reuse` 子命令（检测重复造轮子 + 提示核对稳定单元清单）
 
 **★编排约束核对（按项目形态动态）：**
-- [ ] dev-guide.md §8 含编排约束段，**按 §C+.0 形态选择约束类别**
-- [ ] 前端项目：含导入方向/跨模块边界/注册顺序/feature-gate/路由挂载/状态所有权/测试边界
-- [ ] 后端项目：含分层依赖方向/事务边界/DTO转换/中间件顺序/认证层/外部副作用隔离/测试边界
-- [ ] 异步项目：含消费幂等/消息时序/重试DLQ/生产消费解耦
-- [ ] 微服务项目：含服务调用方向/共享DB禁止/trace透传/熔断降级
-- [ ] 每条约束标注代码证据（文件:行 或 grep 命令）
-- [ ] reference-manual.md §5 按形态选链路模型（前端三层 / 后端请求管道+分层 / 异步消息流 / 微服务跨服务链）
-- [ ] reference-manual.md §6 按接口形态全量（REST逐端点 / GraphQL逐resolver / gRPC逐method / MQ逐queue）
+· dev-guide.md §8 含编排约束段，**按 §C+.0 形态选择约束类别**
+· 前端项目：含导入方向/跨模块边界/注册顺序/feature-gate/路由挂载/状态所有权/测试边界
+· 后端项目：含分层依赖方向/事务边界/DTO转换/中间件顺序/认证层/外部副作用隔离/测试边界
+· 异步项目：含消费幂等/消息时序/重试DLQ/生产消费解耦
+· 微服务项目：含服务调用方向/共享DB禁止/trace透传/熔断降级
+· 每条约束标注代码证据（文件:行 或 grep 命令）
+· reference-manual.md §5 按形态选链路模型（前端三层 / 后端请求管道+分层 / 异步消息流 / 微服务跨服务链）
+· reference-manual.md §6 按接口形态全量（REST逐端点 / GraphQL逐resolver / gRPC逐method / MQ逐queue）
 
 **★详尽构件库清单核对（新增，防止样本化+维度错配）：**
-- [ ] 先做 §C+.0 项目形态判定，记录"本项目含以下维度：[...]"
-- [ ] reference-manual.md §4 按判定的维度全量填充，每个维度独立计数核验
-- [ ] 纯后端项目：§4 含 controller/service/repository/middleware/model 全量，无 UI 组件表
-- [ ] 纯前端项目：§4 含 UI组件/store/composable 全量，无 controller/service 表
-- [ ] 全栈项目：前端+后端维度都全量填充
-- [ ] 不存在的维度标注"本项目无此维度"，不留空
-- [ ] reference-manual.md §9 按形态填（前端store+类型 / 后端model+entity+DTO / 通用类型）
-- [ ] 可用 `find` + `grep` 对每个维度独立核验计数
+· 先做 §C+.0 项目形态判定，记录"本项目含以下维度：[...]"
+· reference-manual.md §4 按判定的维度全量填充，每个维度独立计数核验
+· 纯后端项目：§4 含 controller/service/repository/middleware/model 全量，无 UI 组件表
+· 纯前端项目：§4 含 UI组件/store/composable 全量，无 controller/service 表
+· 全栈项目：前端+后端维度都全量填充
+· 不存在的维度标注"本项目无此维度"，不留空
+· reference-manual.md §9 按形态填（前端store+类型 / 后端model+entity+DTO / 通用类型）
+· 可用 `find` + `grep` 对每个维度独立核验计数
 
 **★版本锁定核对：**
-- [ ] codebase.md 含技术栈版本基线表（探查时的当前版本）
-- [ ] spec-template.md 含版本约束声明段（本次变更是否涉及版本升级 + 理由 + 用户确认）
-- [ ] precheck.sh 含 `--deps` 子命令（对比基线检测依赖版本变更）
+· codebase.md 含技术栈版本基线表（探查时的当前版本）
+· spec-template.md 含版本约束声明段（本次变更是否涉及版本升级 + 理由 + 用户确认）
+· precheck.sh 含 `--deps` 子命令（对比基线检测依赖版本变更）
 
 **★安全规范核对：**
-- [ ] reference-manual.md §2 含安全检查清单（OWASP Top 10：注入/XSS/CSRF/访问控制/身份认证/敏感数据/路径穿越/SSRF/依赖安全/安全配置/日志安全）
-- [ ] dev-guide.md 含安全编码规范（参数化查询/输入校验/输出编码/路径校验/SSRF 防御/不安全反序列化禁止）
-- [ ] precheck.sh 含 `--security` 子命令（检测 SQL 拼接/命令注入/eval/v-html/路径穿越/硬编码密钥/弱哈希/禁用 TLS/CORS */调试模式）
-- [ ] 引用 `references/security-spec.md`
+· reference-manual.md §2 含安全检查清单（OWASP Top 10：注入/XSS/CSRF/访问控制/身份认证/敏感数据/路径穿越/SSRF/依赖安全/安全配置/日志安全）
+· dev-guide.md 含安全编码规范（参数化查询/输入校验/输出编码/路径校验/SSRF 防御/不安全反序列化禁止）
+· precheck.sh 含 `--security` 子命令（检测 SQL 拼接/命令注入/eval/v-html/路径穿越/硬编码密钥/弱哈希/禁用 TLS/CORS */调试模式）
+· 引用 `references/security-spec.md`
 
 **★三平台兼容核对（swarm-yuan 自身脚本，非目标技能强制）：**
-- [ ] swarm-yuan 的 .sh 脚本兼容 macOS(BSD bash 3.2)+Linux(GNU bash 4+)（不用 declare -A / sed -i.bak / grep -E / date -u / cd+pwd / wc|xargs / ${var}防C-locale）
-- [ ] 无硬编码平台特定路径（用配置/env/相对路径）
-- [ ] 文件名小写无特殊字符（Windows 兼容）
-- [ ] 代码模板中路径用 / + path.join()（Node）/ os.path.join()（Python）
+· swarm-yuan 的 .sh 脚本兼容 macOS(BSD bash 3.2)+Linux(GNU bash 4+)（不用 declare -A / sed -i.bak / grep -E / date -u / cd+pwd / wc|xargs / ${var}防C-locale）
+· 无硬编码平台特定路径（用配置/env/相对路径）
+· 文件名小写无特殊字符（Windows 兼容）
+· 代码模板中路径用 / + path.join()（Node）/ os.path.join()（Python）
 
 **★左移核对（Shift-Left，新增）：**
-- [ ] spec-template.md 含 §19 测试左移段（测试策略+用例骨架+边界/异常+左移声明）
-- [ ] spec-template.md 含 §20 变更左移段（影响范围+回滚预案+迁移兼容+灰度策略）
-- [ ] spec-template.md 含 §21 可观测性约束段（日志规范+metrics埋点+trace透传+健康检查+告警runbook）
-- [ ] workflow 节点②（spec）标注"测试左移+运维左移"要求
-- [ ] workflow 节点③（plan）标注"变更左移"要求
-- [ ] workflow 节点⑤（编码）标注"先测试后实现（TDD/BDD）"要求
-- [ ] workflow 节点⑦（合入）标注"确认回滚预案+迁移兼容"要求
-- [ ] workflow 节点⑧（发布）标注"灰度+告警+runbook"要求
-- [ ] dev-guide.md §9 含左移要求说明（测试/变更/运维左移三项的关系）
-- [ ] precheck.sh 含 `--shift-left` 子命令（校验 §19/§20/§21 段 + test 先于 impl + 回滚预案 + 迁移兼容 + 埋点 + 健康检查）
-- [ ] precheck.conf 含左移配置段（TEST_DESIGN_FILE/CHANGE_IMPACT_FILE/OBSERVABILITY_FILE/METRIC_ENDPOINTS/HEALTH_CHECK_URLS/MIGRATION_DIRS）
+· spec-template.md 含 §19 测试左移段（测试策略+用例骨架+边界/异常+左移声明）
+· spec-template.md 含 §20 变更左移段（影响范围+回滚预案+迁移兼容+灰度策略）
+· spec-template.md 含 §21 可观测性约束段（日志规范+metrics埋点+trace透传+健康检查+告警runbook）
+· workflow 节点②（spec）标注"测试左移+运维左移"要求
+· workflow 节点③（plan）标注"变更左移"要求
+· workflow 节点⑤（编码）标注"先测试后实现（TDD/BDD）"要求
+· workflow 节点⑦（合入）标注"确认回滚预案+迁移兼容"要求
+· workflow 节点⑧（发布）标注"灰度+告警+runbook"要求
+· dev-guide.md §9 含左移要求说明（测试/变更/运维左移三项的关系）
+· precheck.sh 含 `--shift-left` 子命令（校验 §19/§20/§21 段 + test 先于 impl + 回滚预案 + 迁移兼容 + 埋点 + 健康检查）
+· precheck.conf 含左移配置段（TEST_DESIGN_FILE/CHANGE_IMPACT_FILE/OBSERVABILITY_FILE/METRIC_ENDPOINTS/HEALTH_CHECK_URLS/MIGRATION_DIRS）
 
 **★框架适配核对（新增）：**
-- [ ] exploration-guide §C+.0.5 框架探查层存在（从依赖清单+注解+配置文件识别框架）
-- [ ] exploration-guide §C+.1-FW 框架特定构件枚举段存在（按激活框架动态枚举）
-- [ ] `references/frameworks/<fw>.md` 含探查到框架的领域规则集（六段式，探查到才激活；domain-knowledge.md 仅留通用领域速查——框架规则已迁移，见其"框架特定领域规则集（已迁移）"声明）
-- [ ] precheck.conf 含框架适配配置段（ACTIVE_FRAMEWORKS/MYBATIS_MAPPER_DIRS/SQL_INJECTION_WHITELIST/LOMBOK_SRC_GLOBS/SHARDING_KEY_COLUMNS/SHARDED_TABLES/SPRING_BATCH_JOB_DIRS/JAVA_BUILD_FILES）
-- [ ] precheck.sh `--security` 区分 MyBatis #{} vs ${}（#{} 安全跳过，${} 须白名单）
-- [ ] precheck.sh `_sec_scan` 当 MYBATIS_MAPPER_DIRS 非空时追加 .xml include
-- [ ] precheck.sh `_extract_deps` 支持 pom.xml/build.gradle（JVM 项目 --deps 门禁可用）
-- [ ] precheck.conf DOMAIN_FORBIDDEN_IMPORTS 含 Java 框架 import（springframework/ibatis/mybatisplus/shardingsphere）
-- [ ] precheck.conf LOG_CODE_PATTERNS 含 @Slf4j + log. 方法调用（Lombok 日志感知）
-- [ ] dev-guide.md §10 含框架特定约束（按 ACTIVE_FRAMEWORKS 推导）
+· exploration-guide §C+.0.5 框架探查层存在（从依赖清单+注解+配置文件识别框架）
+· exploration-guide §C+.1-FW 框架特定构件枚举段存在（按激活框架动态枚举）
+· `references/frameworks/<fw>.md` 含探查到框架的领域规则集（六段式，探查到才激活；domain-knowledge.md 仅留通用领域速查——框架规则已迁移，见其"框架特定领域规则集（已迁移）"声明）
+· precheck.conf 含框架适配配置段（ACTIVE_FRAMEWORKS/MYBATIS_MAPPER_DIRS/SQL_INJECTION_WHITELIST/LOMBOK_SRC_GLOBS/SHARDING_KEY_COLUMNS/SHARDED_TABLES/SPRING_BATCH_JOB_DIRS/JAVA_BUILD_FILES）
+· precheck.sh `--security` 区分 MyBatis #{} vs ${}（#{} 安全跳过，${} 须白名单）
+· precheck.sh `_sec_scan` 当 MYBATIS_MAPPER_DIRS 非空时追加 .xml include
+· precheck.sh `_extract_deps` 支持 pom.xml/build.gradle（JVM 项目 --deps 门禁可用）
+· precheck.conf DOMAIN_FORBIDDEN_IMPORTS 含 Java 框架 import（springframework/ibatis/mybatisplus/shardingsphere）
+· precheck.conf LOG_CODE_PATTERNS 含 @Slf4j + log. 方法调用（Lombok 日志感知）
+· dev-guide.md §10 含框架特定约束（按 ACTIVE_FRAMEWORKS 推导）
 
 **★框架适配四要素核验（新增，对应 SKILL.md Step 12 框架适配四要素核验）：**
-- [ ] ① 构件枚举计数 ≥ 实际 × 0.95——对 ACTIVE_FRAMEWORKS 每个框架，按 `references/frameworks/<fw>.md` §2 的 `find`/`grep` 命令实跑，对比 reference-manual.md §4 框架特定构件表行数，偏差 >5% 须回 Step 4.5 补全
-- [ ] ② framework-knowledge.md 规律数 ≥ 规则文件 frontmatter 声明的"深度门槛"且 100% 规律行含"证据:"字段（剔除的规律不计；"待验证"规律须有版本区间标注，缺失证据 → 回 Step 4.5）
-- [ ] ③ precheck.sh 含 `_fw_<id>_check` 动态分发器（模板内置，`declare -f _fw_<id>_<rule>` 派发），门禁片段位于 `assets/framework-gates/<fw>.sh` 且已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，`precheck.sh --framework <id>` 实跑 exit 0
-- [ ] ④ dev-guide.md §10 含该框架约束段 ≥ 3 条（每条含代码证据：文件:行 或 grep 命令），约束数 <3 → 回 Step 4.5 补全
+· ① 构件枚举计数 ≥ 实际 × 0.95——对 ACTIVE_FRAMEWORKS 每个框架，按 `references/frameworks/<fw>.md` §2 的 `find`/`grep` 命令实跑，对比 reference-manual.md §4 框架特定构件表行数，偏差 >5% 须回 Step 4.5 补全
+· ② framework-knowledge.md 规律数 ≥ 规则文件 frontmatter 声明的"深度门槛"且 100% 规律行含"证据:"字段（剔除的规律不计；"待验证"规律须有版本区间标注，缺失证据 → 回 Step 4.5）
+· ③ precheck.sh 含 `_fw_<id>_check` 动态分发器（模板内置，`declare -f _fw_<id>_<rule>` 派发），门禁片段位于 `assets/framework-gates/<fw>.sh` 且已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，`precheck.sh --framework <id>` 实跑 exit 0
+· ④ dev-guide.md §10 含该框架约束段 ≥ 3 条（每条含代码证据：文件:行 或 grep 命令），约束数 <3 → 回 Step 4.5 补全
 
 **材料要素覆盖：**
-- [ ] **meta**：铁律、改造分类、流程总览（含入口顺序）、命令速查、门禁、检查表、**自成长段**（骨架内置固定指引，保留未删——感知/更新链/落基线四环齐全）
-- [ ] **workflow 10 要素**：每节点都有 流程入口/参与方/准入/门禁/分支处理/产出物归档/流程控制/状态控制/★调用追踪（公告格式 + trace-log.sh 落盘命令）；末尾有完成检查表
-- [ ] **reference 9 项**：目录结构/安全检查/编译规则/组件库(全量)/组件依赖链路(三层+约束)/接口清单(全量端点)/UI-UX资源/数据字典/store+类型(全量)
-- [ ] **assets 7 项**：环境加载/资源检测/分支拉取/任务配置模版/静态资源/库表样例/组件填充说明
-- [ ] **check 4 项**：单测接口集成回归安全/业务规则案例/数据勾稽(无多漏错重)/UI脱敏日志
-- [ ] **scripts 3 项**：执行脚本/代码片段+组件参数/MCP工具
+· **meta**：铁律、改造分类、流程总览（含入口顺序）、命令速查、门禁、检查表、**自成长段**（骨架内置固定指引，保留未删——感知/更新链/落基线四环齐全）
+· **workflow 10 要素**：每节点都有 流程入口/参与方/准入/门禁/分支处理/产出物归档/流程控制/状态控制/★调用追踪（公告格式 + trace-log.sh 落盘命令）；末尾有完成检查表
+· **reference 9 项**：目录结构/安全检查/编译规则/组件库(全量)/组件依赖链路(三层+约束)/接口清单(全量端点)/UI-UX资源/数据字典/store+类型(全量)
+· **assets 7 项**：环境加载/资源检测/分支拉取/任务配置模版/静态资源/库表样例/组件填充说明
+· **check 4 项**：单测接口集成回归安全/业务规则案例/数据勾稽(无多漏错重)/UI脱敏日志
+· **scripts 3 项**：执行脚本/代码片段+组件参数/MCP工具
 
 **方法论整合（7 项）：**
-- [ ] **Spec-driven（OpenSpec）**：workflow 节点②③用 proposal→spec(delta)→design→tasks 模式；spec/plan 模板用 OpenSpec 格式（delta ADDED/MODIFIED + SHALL/MUST + Scenario WHEN/THEN；tasks `- [ ]` checkbox）
-- [ ] **Subagent-driven（superpowers）**：workflow 节点⑤引用 subagent-orchestration.md（orchestrator + 每任务新 subagent + 两阶段审查 + progress ledger + 文件交接）；**复杂变更用 Dynamic Workflows 并行扇出 + 交叉验证（降级：Task(subagent) 手动并行）**
-- [ ] **State machine（comet）**：scripts/state-machine.sh 实现阶段状态持久化 + 阶段转换硬门禁；workflow 状态控制段引用它
-- [ ] **Review（gstack/OCR）**：check 段含 5 审查维度 + 两遍清单 + AUTO-FIX/ASK + 严重度分级；precheck.sh --review；引用 review-methodology.md
-- [ ] **Code-graph（GitNexus/graphify）**：references/code-graph-tools.md 引用工具命令（只引用不复制）；探查阶段先用图谱索引；组件依赖链路从图谱读
-- [ ] **Phase-loop + capability（gsd-core）**：引用 gsd-patterns.md；check 用 goal-backward 对抗验证（任务完成≠目标达成，FORCE 立场，BLOCKER/WARNING 分类）；门禁分 4 类（pre-flight/revision/escalation/abort）；workflow 可选 wave 并行；**若装了 gsd-core 则调用 `/gsd-execute-phase`/`/gsd-verify`/`gsd-tools` 运行时引擎，若未装则降级为 state-machine.sh + subagent 手动编排**
-- [ ] **Memory persistence（claude-mem）**：引用 memory-persistence.md；状态控制段说明跨会话记忆方案（state-machine.sh 管阶段 + progress ledger 管任务 + claude-mem 若装则管跨会话知识）；3 层渐进式检索
+· **Spec-driven（OpenSpec）**：workflow 节点②③用 proposal→spec(delta)→design→tasks 模式；spec/plan 模板用 OpenSpec 格式（delta ADDED/MODIFIED + SHALL/MUST + Scenario WHEN/THEN；tasks `- [ ]` checkbox）
+· **Subagent-driven（superpowers）**：workflow 节点⑤引用 subagent-orchestration.md（orchestrator + 每任务新 subagent + 两阶段审查 + progress ledger + 文件交接）；**复杂变更用 Dynamic Workflows 并行扇出 + 交叉验证（降级：Task(subagent) 手动并行）**
+· **State machine（comet）**：scripts/state-machine.sh 实现阶段状态持久化 + 阶段转换硬门禁；workflow 状态控制段引用它
+· **Review（gstack/OCR）**：check 段含 5 审查维度 + 两遍清单 + AUTO-FIX/ASK + 严重度分级；precheck.sh --review；引用 review-methodology.md
+· **Code-graph（GitNexus/graphify）**：references/code-graph-tools.md 引用工具命令（只引用不复制）；探查阶段先用图谱索引；组件依赖链路从图谱读
+· **Phase-loop + capability（gsd-core）**：引用 gsd-patterns.md；check 用 goal-backward 对抗验证（任务完成≠目标达成，FORCE 立场，BLOCKER/WARNING 分类）；门禁分 4 类（pre-flight/revision/escalation/abort）；workflow 可选 wave 并行；**若装了 gsd-core 则调用 `/gsd-execute-phase`/`/gsd-verify`/`gsd-tools` 运行时引擎，若未装则降级为 state-machine.sh + subagent 手动编排**
+· **Memory persistence（claude-mem）**：引用 memory-persistence.md；状态控制段说明跨会话记忆方案（state-machine.sh 管阶段 + progress ledger 管任务 + claude-mem 若装则管跨会话知识）；3 层渐进式检索
 
 **★五层认知基底核对（第三+四+五层，见 SKILL.md 五层框架段 + references/cognition-framework.md）：**
-- [ ] **第一层 认知递进**：reference-manual.md 含"认知映射表"段（六阶落点）+ "六维动力学基线"段；特征卡第 13 项已填；`--cognition` ①-⑥ 体检可运行
-- [ ] **第二层 思维语言**：spec-template.md 含 §14 交付衰减分析 + §15 蓝图任务段；workflow 节点含七推理落点；spec §2 决策记录含思维模型对照列
-- [ ] **第三层 认知辩证**：workflow 含 4-Phase 多轮交互 SOP（概念澄清→破局重构→七步推演→行动落地，每 Phase 暂停）；check 段含逻辑剃刀 6 步对抗审查（观点镜像/核心定调/病理诊断/降维反驳/建设性重构/灵魂拷问）；reference-manual.md 含"逻辑谬误图谱"段（四类谬误）；引用 references/logic-razor.md
-- [ ] **第四层 偏差防范**：spec-template.md 含 §16 认知偏差自检段（五维偏差扫描表 + 思维模型对照表 + 自检声明 3 checkbox）；workflow 6 节点含偏差检查锚点；引用 references/cognitive-bias.md
-- [ ] **第五层 辩证认知**：SKILL.md 含辩证认知框架段（本质与现象+7对辩证关系+矛盾分析法落点）；spec-template.md 含 §17 辩证映射分析段（主要矛盾+7对≥2对+辩证声明）；reference-manual.md 含"辩证映射表"段（7对辩证关系落点）；workflow 节点含矛盾识别（主要矛盾+矛盾主要方面）；引用 references/cognition-framework.md 第五层
-- [ ] **`--cognition` 五层总分**：`bash precheck.sh --cognition` 输出五层认知基底总分 ≥15/22（第一层 14 + 第二层 3 + 第三层 2 + 第四层 2 + 第五层 1）
-- [ ] **最小意识三条件**：M(门禁可运行) + H(state-machine+记忆) + A(认知体检+对抗验证) 三条件标注在 dev-guide.md
+· **第一层 认知递进**：reference-manual.md 含"认知映射表"段（六阶落点）+ "六维动力学基线"段；特征卡第 13 项已填；`--cognition` ①-⑥ 体检可运行
+· **第二层 思维语言**：spec-template.md 含 §14 交付衰减分析 + §15 蓝图任务段；workflow 节点含七推理落点；spec §2 决策记录含思维模型对照列
+· **第三层 认知辩证**：workflow 含 4-Phase 多轮交互 SOP（概念澄清→破局重构→七步推演→行动落地，每 Phase 暂停）；check 段含逻辑剃刀 6 步对抗审查（观点镜像/核心定调/病理诊断/降维反驳/建设性重构/灵魂拷问）；reference-manual.md 含"逻辑谬误图谱"段（四类谬误）；引用 references/logic-razor.md
+· **第四层 偏差防范**：spec-template.md 含 §16 认知偏差自检段（五维偏差扫描表 + 思维模型对照表 + 自检声明 3 checkbox）；workflow 6 节点含偏差检查锚点；引用 references/cognitive-bias.md
+· **第五层 辩证认知**：SKILL.md 含辩证认知框架段（本质与现象+7对辩证关系+矛盾分析法落点）；spec-template.md 含 §17 辩证映射分析段（主要矛盾+7对≥2对+辩证声明）；reference-manual.md 含"辩证映射表"段（7对辩证关系落点）；workflow 节点含矛盾识别（主要矛盾+矛盾主要方面）；引用 references/cognition-framework.md 第五层
+· **`--cognition` 五层总分**：`bash precheck.sh --cognition` 输出五层认知基底总分 ≥15/22（第一层 14 + 第二层 3 + 第三层 2 + 第四层 2 + 第五层 1）
+· **最小意识三条件**：M(门禁可运行) + H(state-machine+记忆) + A(认知体检+对抗验证) 三条件标注在 dev-guide.md
 
 **质量：**
-- [ ] 无占位符残留（`<待填充>`/`<项目根>` 等）
-- [ ] 所有 .sh 通过 `bash -n`
-- [ ] frontmatter description 含项目关键词
-- [ ] **工具引用合规**：只引用 GitNexus/graphify/ocr/claude-mem/gsd-core 命令，无重新实现
+· 无占位符残留（`<待填充>`/`<项目根>` 等）
+· 所有 .sh 通过 `bash -n`
+· frontmatter description 含项目关键词
+· **工具引用合规**：只引用 GitNexus/graphify/ocr/claude-mem/gsd-core 命令，无重新实现
 
 ---
 
@@ -731,3 +752,5 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 - 评审报告：`docs/q2-heavy-review.md`（2026-08-19）
 - 生成流程边界：`references/generation-flow.md` §WP-Q2H-C
 - 门禁分层实现：`assets/precheck.sh` `_ENFORCE_OVERRIDE_K/V` + `assets/gates-advisory.sh` `_ai_hint`
+
+</details>
