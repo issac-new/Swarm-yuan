@@ -1,3 +1,5 @@
+> **归档标注（2026-08-21 v3 整合）**：本文已并入 `docs/DESIGN.md` §1（定位与适用域）——DESIGN.md 是单一设计事实源；本文保留为历史原文档（不再单独维护，内容以 DESIGN.md 为准）。
+
 > **档案标注（2026-08-21）**：本文已并入 `docs/DESIGN.md` §1（定位与适用域）——DESIGN.md 是单一设计事实源；本文保留为定位 v2的历史原文档（不再单独维护，内容以 DESIGN.md 为准）。
 
 # swarm-yuan 范式定位（Paradigm Positioning）
