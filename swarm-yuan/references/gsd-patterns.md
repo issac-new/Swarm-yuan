@@ -335,23 +335,3 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 ### `gsd-tools` CLI（20 个模块）
 
 关键模块：`state`(load/json/update/get/patch/advance-plan/record-metric) / `phase`(next-decimal/add/insert/remove/complete/uat-passed) / `roadmap`(get-phase/analyze/validate/upgrade) / `verify`(summary/plan-structure/phase-completeness/references/commits/artifacts/key-links) / `validate`(consistency/health/context) / `scaffold`(context/uat/verification/phase-dir) / `init`(execute-phase/plan-phase/new-project/new-milestone/quick/resume/verify-work) / `capability`(install/update/remove/list/outdated/disable/enable/state/set) / `graphify`(build/query/status/diff/snapshot) / `intel`(api-surface)
-
----
-
-## R4 吸收（2026-08-21）：gsd-core v1.11 guard 可观测性 + STATE commit 戳
-
-### guard 必须能观测自身失败分支（v1.11）
-
-gsd-core v1.11 落地"guard 可观测性"原则：**拒绝注册无法观测自身失败分支的 shell guard**——guard 不仅要拦"坏事发生"，还要能告诉你"我拦了"。
-本仓对齐：fail-gate-hook.sh 的 flag 捕获模型天然满足——PostToolUse precheck 退出码 → 写 flag → PreToolUse 读 flag 决策 deny；deny 时同时落 gate-deny.jsonl + gate-audit.jsonl 双审计（WP-R12-A 已落地）。
-- 审查口径：任何 guard/hook 拦截动作必须留下"我拦了"的可观测痕迹（日志/审计行/状态标记）；静默拦截（改了行为但无记录）视同不存在
-
-### STATE.md 盖 commit 戳 + 新鲜度检测（v1.11）
-
-gsd-core v1.11 给 STATE.md 盖 commit 戳（写入时记录当前 HEAD SHA），读取时比对当前 HEAD 提示新鲜度（"STATE 是 3 commits 前写的"）。
-本仓对齐：`.swarm-yuan-version` 已有 `source_repo` 盖戳（生成器来源仓 + 版本）；可扩展为 `state.yaml` 盖 commit 戳 + `state-machine.sh status` 增 stale 告警（"state 是 N commits 前写的"）。**本轮登记候选**，下轮落地。
-
-### validator 收敛统一 envelope + owner 分阶段 ratchet（v1.11）
-
-gsd-core v1.11 把所有 validator 输出收敛到统一 envelope（`{status, findings, owner}`），按 owner 分阶段 ratchet（先 warn 后 fail）。
-本仓对齐：trace-log.sh 单 JSONL envelope（`{ts, phase, type, ...}`）已对齐；precheck 的 strict/warn/advisory 三档分级（WP-Q2-heavy）已是"分阶段 ratchet"模式。

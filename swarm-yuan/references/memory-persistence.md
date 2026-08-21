@@ -424,28 +424,3 @@ ECC 的 knowledge-ops 定义了 6 层知识架构：
 ### 10+ IDE 集成
 
 claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli / antigravity / goose / roo-code / warp
-
----
-
-## R4 吸收（2026-08-21）：claude-mem v13.15.x 错误信封分类 + 单一事实源
-
-### 错误信封分类（v13.15.2）
-
-claude-mem v13.15.2 识别 cmem.ai gateway 的结构化错误信封 `{code, message, action, url, request_id}`，把错误分类为：
-- **quota 类**（402/配额耗尽）：**不重试**——重试无意义（配额不会秒级恢复），失败收敛为单行日志 + 用户行动指引（`action` 字段告诉用户去哪充值/升级）
-- **网络瞬断类**：可重试（指数退避）
-- **认证类**（401/403）：不重试，提示重新认证
-
-本仓对齐：trace-log.sh / fail-gate-hook.sh 等落盘脚本遇 I/O 错误不重试（一次性 `|| true` 放行，不阻塞主流程）；但"配置错误"类（如 PROJECT_DIR 未配置）应当 fail-fast 报错而非静默跳过。
-- 审查口径：任何外部调用（网络/文件/子进程）失败时先分类——"用户能立即修复的"（配置错/认证错/quota 尽）→ 单行报错带 action 指引；"瞬断可恢复的"（网络抖动/文件锁）→ 可重试但需上限（≤3 次）
-
-### 多界面文案单一事实源（v13.15.2 Pro 试用提示）
-
-claude-mem 把 7 天 Pro 试用提示统一收敛到 `src/shared/pro-promo.ts` 单一事实源，所有露出 viewer URL 的界面共享同一文案 + `?from=` 归因参数。
-本仓对齐：`assets/facts.conf` 已是单一事实源（FACT_GATES_TOTAL/FACT_CONF_VARS 等数字机器执法）；SKILL.md 骨架的"自成长段"文案由 generate-skill.sh 单点生成（WP-R3-1 分档后仍单源）。
-- 审查口径：任何"多处出现的相同文案/数字/路径"应收敛到单一事实源（conf 变量 / 共享函数 / 模板），而非多处 hardcode
-
-### session-start observer-health 告警（v13.15.2）
-
-observation 停止流入时 session-start 发告警（"What's wrong / What to do"双段格式）。
-本仓对齐：SessionStart hook 的 fingerprint 感知是同构机制（WP-Q3-1 已落地）；告警格式"问题 + 行动指引"可借鉴到 fail-gate-hook.sh 的 deny 消息（已有 additionalContext 指引字段）。
