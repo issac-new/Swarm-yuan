@@ -310,26 +310,3 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | **`pascal` 可选 extra** | v0.9.7 | Delphi 提取（AST-quality） | Delphi 项目可引用 |
 | **大小写不敏感扩展名分发** | v0.9.7 | `App.PY`/`script.JS` 不再被跳过 | 跨平台文件名可引用 |
 | **`affected <Class>` 成员种子** | v0.9.7 | `affected` 从类的成员节点种子反向遍历 | 影响分析可引用 |
-
----
-
-## R4 吸收（2026-08-21）：graphify v0.9.43-47 幂等写入 + 超时二分降级
-
-### no-op 运行产物字节一致 / 不触碰时间戳（v0.9.47）
-
-graphify v0.9.47 落地两条幂等写入纪律：
-- **`graph.json` 字段序稳定**：no-op 重跑产物字节一致（字段序不漂移，无随机 map 序）
-- **manifest 时间戳 no-op 时不重写**：避免假 dirty commit（内容没变就不更新 mtime）
-
-本仓对齐：`project-fingerprint.sh --diff` 无变化时不重写基线文件（已对齐）；`generate-skill.sh --upgrade` 对未变化的通用文件做字节对比后跳过写入（可登记的候选改进）。
-- 审查口径：任何"生成器/构建器"类脚本，输出内容未变时不应触碰目标文件 mtime（避免 git 假 dirty）；map/dict 序列化须固定 key 序（`LC_ALL=C sort`）
-
-### 超时二分降级（v0.9.47）
-
-文件 chunk 抽取超时时**二分拆分**（把一个大 chunk 拆成两个各半的 chunk 重试），而非整块失败放弃。
-本仓对齐登记候选：`inventory-verify.sh _enum_count` 对大项目 grep/find 可能超时——可借鉴"超时二分"模式：先按顶层目录分组跑，超时组再按子目录二分。本轮不落地（无用户报超时场景），登记候选。
-
-### node id 不变 / 不重键既有图（v0.9.43-47 全程保证）
-
-破坏性变更零容忍：所有版本升级保证 node id 不变、不重键既有图（replay 兼容）。
-本仓对齐：`decisions.jsonl` 回放规则不可变原则（WP-R12-D 已落地）——旧行无 outcome 字段视为 implemented，新字段向后兼容不破坏旧记录。
