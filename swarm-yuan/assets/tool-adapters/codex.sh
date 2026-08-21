@@ -21,7 +21,7 @@ render_tool_codex_hooks() {  # <proj>
 {
   "hooks": {
     "PreToolUse": [
-      {"matcher": "Bash", "command": "bash scripts/fail-gate-hook.sh 2>/dev/null || true", "timeout": 5}
+      {"matcher": "Bash", "command": "bash scripts/codex-gate-wrapper.sh 2>/dev/null || true", "timeout": 5}
     ],
     "PostToolUse": [
       {"matcher": "Bash", "command": "bash scripts/failure-detector.sh 2>/dev/null || true", "timeout": 5}
