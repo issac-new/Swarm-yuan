@@ -79,6 +79,10 @@ UNIVERSAL_FILES=(
   "scripts/gate-rules.sh|gen|lite"
   "scripts/gate-plan.sh|gen|lite"      # R15 HarnessEval P4：选择即证据（启用/跳过理由，负空间可审计）
   "scripts/audit-closure.sh|gen|lite"  # R15 HarnessEval P7：审计即完成条件（closure 完备性重走）
+  "scripts/ontology-verify.sh|gen|lite" # R16-B：本体论健康检查（六锚一站式）
+  "references/ontology/objects.md|onto|lite"  # R16-A：本体层类型目录（对象/关系/动作三姊妹，从 assets/ontology/ 拷入）
+  "references/ontology/links.md|onto|lite"
+  "references/ontology/actions.md|onto|lite"
   "rules.d/bash-advance.rules|rules|lite"
   "rules.d/readonly-safe.rules|rules|lite"
   "scripts/self-check.sh|gen|lite"
@@ -1139,6 +1143,7 @@ copy_universal_templates() {
         ;;
       ref)    src="$SRC_REF/${dest##*/}" ;;
       rules)  src="$ASSETS_DIR/$dest" ;;   # R13 批次2：rules.d 规则数据（dest=rules.d/xxx.rules → assets/rules.d/xxx.rules）
+      onto)   src="$ASSETS_DIR/ontology/$(basename "$dest")" ;;  # R16-A：本体层（dest=references/ontology/x.md → assets/ontology/x.md）
       gen)    src="$SRC_SCRIPTS/${dest##*/}" ;;
       *) echo "ERROR: UNIVERSAL_FILES 未知源类别: $entry" >&2; return 1 ;;
     esac
@@ -1564,6 +1569,8 @@ WFEOF
 > 填充指引：按 exploration-guide §C+ 探查后填充。§4/§6/§9 表格行两列：`| 路径 | 说明与约束 |`；
 > 路径用反引号包裹（--path-check 校验存在性）；稳定性标注词写进说明列（如"导出 add（禁止改）"）——
 > --stability-audit 按行内字面词识别（与列位置无关）。说明列 = AI 读代码后的理解，不是填表。
+>
+> **语义/动能两区纪律**（本体层口径，见 `references/ontology/links.md` 使用纪律）：本文件的说明列是**表征区**（描述性——仓库是什么样的：组件/接口/依赖）；**规范性内容**（应当怎样——约束/禁令的执行体）只落 rules.d/*.rules 与门禁，本文件至多**引用**规范词（如稳定性标注词），不承载规范的执行逻辑。是/应当不混写。
 
 ## §4 组件库清单
 
