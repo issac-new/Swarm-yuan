@@ -11,8 +11,9 @@
 # 背景：Q2 报告（机械门禁破坏 AI 灵活性）+ Q2-heavy 评审（D1 探索式）。
 # 5 个候选：cognition / diagram / pr_quality / consistency / link_depth——
 # 这些门禁的"质量判断"本质是 AI 看语义，不是 grep 能搞定的。
-# 默认 GATE_AI_JUDGMENT=0（保留机械，向后兼容）；=1 时仅输出"AI 自查提示"，不跑机械检查。
-_AI_JUDGMENT="${GATE_AI_JUDGMENT:-0}"
+# R13 批次1a：GATE_AI_JUDGMENT 成为唯一模式（恒 1）——机械打分逻辑退役（D1 落地化）。
+# 变量保留为兼容别名（旧 conf 设 0/1 均不影响行为），下游 _ai_hint 路径无条件生效。
+_AI_JUDGMENT=1
 _ai_hint() { # $1=门禁名 $2=AI 自查要点
   echo "=== $1（AI 自觉判断模式，GATE_AI_JUDGMENT=1）==="
   echo "  → AI 自查（不机械跑）：$2"
@@ -247,321 +248,28 @@ check_state() {
 }
 
 check_cognition() {
-  if [[ "$_AI_JUDGMENT" == "1" ]]; then
-    _ai_hint "check_cognition" "AI 自查 5 维度：①目标（项目解决什么问题）②约束（技术栈/合规）③证据（每条规律的 grep 证据）④边界（什么不做）⑤价值（用户视角收益）；逐条读 reference-manual.md §1-§5，给一句判断"
-    return 0
-  fi
-  # WP-P5: 认知扩展包 §14-§18 按 profile 门控——节不存在 → SKIP 披露（不 fail，不静默）
-  # spec-template.md 无 §14 → profile=lite/standard 已裁剪该节（generate-skill.sh 按 profile 分层拷贝）
-  # 路径解析：技能根 = $_CONF_DIR/..（precheck.sh 在 scripts/，assets/ 在技能根）；
-  # precheck 运行时已 cd "$PROJECT_DIR"，故 $PWD 是项目目录而非技能目录——不能依赖 $PWD。
-  # 多路回退：_CONF_DIR/.. → SKILL_DIR → CONF_DIR → $PWD；找不到模板则不 SKIP（放行正常流程）。
-  local _st="" _skill_root=""
-  [[ -n "${_CONF_DIR:-}" ]] && _skill_root="$(cd "${_CONF_DIR}/.." 2>/dev/null && pwd)"
-  for _cand in "$_skill_root" "${SKILL_DIR:-}" "${CONF_DIR:-}" "${PWD:-}"; do
-    [[ -z "$_cand" ]] && continue
-    if [[ -f "${_cand}/assets/spec-template.md" ]]; then _st="${_cand}/assets/spec-template.md"; break; fi
-    if [[ -f "${_cand}/spec-template.md" ]]; then _st="${_cand}/spec-template.md"; break; fi
-  done
-  if [[ -n "$_st" ]] && ! grep -q '^## 14\.' "$_st" 2>/dev/null; then
-    echo "=== 认知检查（check_cognition）==="
-    echo "  ⊘ SKIP: 认知扩展包 §14-§18 未启用（profile=lite/standard，spec-template 已裁剪该节）"
-    pass "认知检查 SKIP（profile 门控，节不存在）"
-    return
-  fi
-  echo "=== 认知递进体检（六阶认知链 + 六维动力学）==="
-  echo "  理念：先有概念→结构→空间→映射→规律→处理；关系在时空变化中呈现速度/聚散/趋势/强度/能耗/累积量"
-  echo "  ℹ 性质：认知体检报告（metric，warn-only，永不 fail，不参与门禁否决；计分供认知基线参考）"
-  echo "  ℹ WP-Z12 明确声明：本检查为度量报告（metric）而非门禁（gate）——G3 决策：cognition 无 fail 路径，"
-  echo "     降级为 metric 是设计选择而非缺陷（理念 4 的哲学层落地用度量而非否决）"
-  echo ""
-
-  # WP-Z12：认知度量 JSONL 落盘（metric 证据，供 gate-trends/adaptive-gating 消费）
-  local _cog_metric_file="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/cognition-metrics.jsonl"
-  _cog_metric_emit() {
-    # $1=metric_name $2=value $3=unit $4=max
-    local _ts; _ts=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%SZ)
-    mkdir -p "$(dirname "$_cog_metric_file")" 2>/dev/null || true
-    printf '{"ts":"%s","metric":"%s","value":%s,"unit":"%s","max":%s}\n' \
-      "$_ts" "$1" "$2" "$3" "$4" >> "$_cog_metric_file" 2>/dev/null || true
-  }
-
-  # ---- ①概念定义：项目核心概念是否被定义 ----
-  echo "  ①概念定义（是什么）"
-  local concept_score=0
-  if [[ -n "$GLOSSARY_FILE" && -f "$GLOSSARY_FILE" ]]; then
-    local term_count; term_count=$(LC_ALL=C awk '/^\|/ && !/^\|[-: ]+\|/ && !/业务名|代码/ {c++} END{print c+0}' "$GLOSSARY_FILE" 2>/dev/null || echo 0)
-    echo "    业务术语表：${GLOSSARY_FILE}（${term_count} 个概念定义）"
-    [[ "$term_count" -gt 0 ]] && concept_score=$((concept_score+1))
+  # R13 批次1a（D1 落地化）：机械计分退役（awk 数表行数给"理解"打分——五轮诊断的病灶标本：
+  # 0 fail、诱导填表冒充理解）。认知框架概念不删除，落地为 AI 判断引导 + notes 留痕——
+  # 概念从"要背的名词"变为"AI 判断的检查单"，被真实消费（GATE_AI_JUDGMENT 唯一模式）。
+  echo "=== 认知体检（check_cognition——AI 判断引导模式，R13 D1）==="
+  echo "  机械计分已退役：本门禁不再用 awk 数表行数给理解打分。"
+  echo "  → AI 按认知框架逐维自查（对照 reference-manual.md §1-§9），每维一句判断："
+  echo "    ① 概念（六阶链第 1 阶）：核心业务概念是否都有定义？术语表与代码命名一致吗？"
+  echo "    ② 结构（六阶链第 2 阶）：分层/模块边界清晰吗？有没有循环依赖？"
+  echo "    ③ 映射（六阶链第 4 阶）：需求→组件→测试的对应关系完整吗？"
+  echo "    ④ 规律（六阶链第 5 阶）：项目的隐性规律（编排约束/数据流向）被显式记录了吗？"
+  echo "    ⑤ 动力学（六维）：关键链路的速度/聚散/趋势/强度/能耗/累积量中，哪维是本项目的痛点？"
+  echo "    ⑥ 稳定性（五层认知）：哪些单元禁止改/稳定/不稳定？与 git churn 信号一致吗？"
+  echo "  → 判断留痕：把每维一句判断写入 ${PROJECT_DIR:-.}/.swarm-yuan/notes/cognition.md"
+  echo "    （六个月后回看 = 认知基线的纵向对比，替代此前的 14/22 机械分数）"
+  if [[ ! -f "${PROJECT_DIR:-.}/.swarm-yuan/notes/cognition.md" ]]; then
+    warn "认知自查留痕缺失（.swarm-yuan/notes/cognition.md 不存在）——AI 完成逐维自查后写入（advisory，不阻断）"
   else
-    warn "无业务术语表（GLOSSARY_FILE 未配置）——概念未显式定义，依赖口头约定"
+    pass "认知自查留痕存在（notes/cognition.md，${PROJECT_DIR:-.}）——纵向对比见文件历史"
   fi
-  # 稳定单元清单（reference-manual §4/5/6）
-  local rm_file
-  rm_file=$(_first_existing_file "references/reference-manual.md" "reference-manual.md" ".claude/skills/*/references/reference-manual.md")
-  if [[ -n "$rm_file" ]]; then
-    local unit_count; unit_count=$(LC_ALL=C awk '/^#+ .*[§4-6].*(组件|依赖链路|接口)/{in_sec=1} /^#+ /&&!/[§4-6]/{in_sec=0} in_sec&&/^\|/&&!/^\|[-: ]+\|/{c++} END{print c+0}' "$rm_file" 2>/dev/null || echo 0)
-    echo "    稳定单元清单：${rm_file}（${unit_count} 个单元登记）"
-    [[ "$unit_count" -gt 0 ]] && concept_score=$((concept_score+1))
-  else
-    warn "无 reference-manual.md——稳定单元未盘点"
-  fi
-  echo "    ①概念定义认知度：${concept_score}/2"
-
-  # ---- ②结构：概念怎么组织成结构 ----
-  echo ""
-  echo "  ②结构（怎么组织）"
-  local struct_score=0
-  if [[ ${#LAYER_DEFS[@]} -gt 0 ]]; then
-    echo "    分层定义：${#LAYER_DEFS[@]} 层（${LAYER_ORDER[*]+"${LAYER_ORDER[*]}"})"
-    struct_score=$((struct_score+1))
-  else
-    warn "无分层定义（LAYER_DEFS）——结构未显式声明"
-  fi
-  if [[ -n "$AGGREGATE_DIR" && -d "$AGGREGATE_DIR" ]]; then
-    local agg_count; agg_count=$(find "$AGGREGATE_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | xargs || echo 0)
-    echo "    聚合边界：${AGGREGATE_DIR}（${agg_count} 个聚合根）"
-    [[ "$agg_count" -gt 0 ]] && struct_score=$((struct_score+1))
-  fi
-  if [[ ${#CONTEXT_DIRS[@]} -gt 0 ]]; then
-    echo "    限界上下文：${#CONTEXT_DIRS[@]} 个"
-    struct_score=$((struct_score+1))
-  fi
-  echo "    ②结构认知度：${struct_score}/3"
-
-  # ---- ③空间：结构占据什么空间 ----
-  echo ""
-  echo "  ③空间（在哪里）"
-  local space_score=0
-  if [[ ${#SERVICE_DIRS[@]} -gt 0 ]]; then
-    echo "    服务空间：${#SERVICE_DIRS[@]} 个服务目录"
-    space_score=$((space_score+1))
-  fi
-  if [[ -n "$COMPONENT_DIR" && -d "$COMPONENT_DIR" ]]; then
-    local comp_count; comp_count=$(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.jsx' -o -name '*.vue' -o -name '*.svelte' \) 2>/dev/null | wc -l | xargs || echo 0)
-    echo "    组件空间：${COMPONENT_DIR}（${comp_count} 个组件）"
-    space_score=$((space_score+1))
-  fi
-  if [[ -n "$STORE_DIR" && -d "$STORE_DIR" ]]; then
-    echo "    状态空间：${STORE_DIR}"
-    space_score=$((space_score+1))
-  fi
-  echo "    ③空间认知度：${space_score}/3"
-
-  # ---- ④三者映射：概念↔结构↔空间是否一致 ----
-  echo ""
-  echo "  ④三者映射（概念↔结构↔空间是否一致）"
-  local map_score=0
-  # COGNITION_MAP：认知映射表（可选；配置且存在时纳入映射检查输入——原死变量接入，不改变 /3 计分口径）
-  if [[ -n "${COGNITION_MAP:-}" && -f "${COGNITION_MAP}" ]]; then
-    echo "    认知映射表：${COGNITION_MAP}（已配置，纳入映射检查）"
-  fi
-  # 术语表标识符 vs 代码存在性（概念↔空间映射）
-  if [[ -n "$GLOSSARY_FILE" && -f "$GLOSSARY_FILE" && ${#WRITABLE_DIRS[@]} -gt 0 ]]; then
-    local drift_count=0
-    local entries; entries=$(LC_ALL=C awk '
-      /^\|/ {
-        gsub(/^\||\|$/,""); n=split($0,a,"|");
-        if (n>=2) { gsub(/^ +| +$/,"",a[1]); gsub(/^ +| +$/,"",a[2]);
-          if(a[1]!=""&&a[2]!=""&&a[1]!="业务名"&&a[2] !~ /^[-:]+$/) print a[2]
-        }
-      }
-    ' "$GLOSSARY_FILE" 2>/dev/null || true)
-    if [[ -n "$entries" ]]; then
-      local code
-      while IFS= read -r code; do
-        [[ -z "$code" ]] && continue
-        local hits; hits=$(grep -rnwF --include='*.ts' --include='*.js' --include='*.py' --include='*.go' -e "$code" "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" 2>/dev/null | wc -l | xargs || true)
-        [[ "$hits" -eq 0 ]] && drift_count=$((drift_count+1))
-      done <<< "$entries"
-      if [[ $drift_count -eq 0 ]]; then
-        echo "    术语↔代码映射：一致（无漂移）"
-        map_score=$((map_score+1))
-      else
-        warn "术语↔代码映射：${drift_count} 个术语在代码中未找到（概念↔空间漂移）"
-      fi
-    fi
-  fi
-  # 分层↔目录映射（结构↔空间）
-  if [[ ${#LAYER_DEFS[@]} -gt 0 ]]; then
-    echo "    分层↔目录映射：${#LAYER_DEFS[@]} 层均绑定目录 glob"
-    map_score=$((map_score+1))
-  fi
-  # 数据所有权↔服务映射（概念↔空间）
-  if [[ -n "$SOR_FILE" && -f "$SOR_FILE" ]]; then
-    echo "    数据所有权↔服务映射：${SOR_FILE} 存在"
-    map_score=$((map_score+1))
-  fi
-  echo "    ④映射认知度：${map_score}/3"
-
-  # ---- ⑤认知规律：从映射中发现的规律是否被编码 ----
-  echo ""
-  echo "  ⑤认知规律（规律是否被编码成门禁）"
-  local rule_count=0
-  [[ ${#LAYER_DEFS[@]} -gt 0 ]] && { echo "    规律：依赖单向（上层→下层）→ --layer"; rule_count=$((rule_count+1)); }
-  [[ -n "$AGGREGATE_DIR" ]] && { echo "    规律：聚合间只引用 ID → --layer"; rule_count=$((rule_count+1)); }
-  [[ ${#STABLE_GLOBS[@]} -gt 0 ]] && { echo "    规律：稳定单元不可擅改 → --stable-diff"; rule_count=$((rule_count+1)); }
-  [[ -n "$ACL_DIR" ]] && { echo "    规律：跨上下文须经 ACL → --contract"; rule_count=$((rule_count+1)); }
-  [[ ${#DB_CONFIG_FILES[@]} -gt 0 ]] && { echo "    规律：每服务独立 DB → --service"; rule_count=$((rule_count+1)); }
-  [[ -n "$API_SPEC_DIR" ]] && { echo "    规律：契约须版本化 → --api"; rule_count=$((rule_count+1)); }
-  [[ -n "$ADR_DIR" ]] && { echo "    规律：决策须可追溯 → --adr"; rule_count=$((rule_count+1)); }
-  echo "    ⑤规律编码数：${rule_count}（每个规律对应一个门禁）"
-
-  # ---- ⑥处理关系：关系被破坏时如何处理 ----
-  echo ""
-  echo "  ⑥处理关系（违规时的处置机制）"
-  local handle_score=0
-  [[ -n "$SPEC_FILE" || -f "spec-template.md" ]] && { echo "    spec 声明变更（MODIFIED 段）"; handle_score=$((handle_score+1)); }
-  [[ -n "$ADR_DIR" && -d "$ADR_DIR" ]] && { echo "    ADR 记录决策"; handle_score=$((handle_score+1)); }
-  [[ -n "$TECH_DEBT_FILE" && -f "$TECH_DEBT_FILE" ]] && { echo "    技术债登记"; handle_score=$((handle_score+1)); }
-  echo "    处置机制：${handle_score}/3（spec/ADR/技术债）"
-
-  # ---- 六维动力学观测 ----
-  echo ""
-  echo "  ── 六维关系动力学观测（关系的时空变化）──"
-
-  # 速度：单次变更文件数
-  local speed_val=0
-  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    speed_val=$(_git_changed_files | wc -l | xargs || true)
-  fi
-  echo "    速度：本次变更 ${speed_val} 个文件", "$([[ "$COG_SPEED_FILES" -gt 0 && "$speed_val" -gt "$COG_SPEED_FILES" ]] && echo "⚠ 过快（>${COG_SPEED_FILES}，耦合扩散风险）" || echo "正常")"
-
-  # 聚散：服务/组件数
-  local gather_val=0
-  [[ ${#SERVICE_DIRS[@]} -gt 0 ]] && gather_val=${#SERVICE_DIRS[@]}
-  [[ -n "$COMPONENT_DIR" && -d "$COMPONENT_DIR" ]] && gather_val=$((gather_val + $(find "$COMPONENT_DIR" -type f \( -name '*.tsx' -o -name '*.vue' -o -name '*.svelte' -o -name '*.jsx' \) 2>/dev/null | wc -l | xargs || echo 0)))
-  echo "    聚散：${gather_val} 个服务/组件单元", "$([[ "$gather_val" -gt 50 ]] && echo "趋向分散" || echo "聚合适中")"
-
-  # 趋势：依赖深度变化（与基线对比）
-  local trend_val="未知"
-  if [[ -n "$COGNITION_BASELINE" && -f "$COGNITION_BASELINE" ]]; then
-    local base_depth; base_depth=$(grep -iE '依赖深度|depth' "$COGNITION_BASELINE" 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo "")
-    if [[ -n "$base_depth" ]]; then trend_val="基线深度 ${base_depth}"; fi
-  fi
-  echo "    趋势：依赖深度 ${trend_val}（对比基线判断上升/下降）"
-
-  # 强度：高 fan-in 文件（被多处引用）
-  if [[ "$COG_STRENGTH_FANIN" -gt 0 && ${#WRITABLE_DIRS[@]} -gt 0 ]]; then
-    local strong_files=0
-    local wd
-    for wd in "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}"; do
-      [[ -d "$wd" ]] || continue
-      # 找被 >COG_STRENGTH_FANIN 个文件 import 的模块（粗筛：找高频 import 目标）
-      local hot
-      hot=$(grep -rhoE "from ['\"][^'\"]+['\"]" "$wd" --include='*.ts' --include='*.js' 2>/dev/null \
-        | sed "s/.*['\"]//;s/['\"]$//" | sort | uniq -c | sort -rn \
-        | awk -v th="$COG_STRENGTH_FANIN" '$1>th{c++} END{print c+0}' || true)
-      strong_files=$((strong_files + ${hot:-0}))
-    done
-    echo "    强度：${strong_files} 个高 fan-in 模块（被 >${COG_STRENGTH_FANIN} 处引用）", "$([[ "$strong_files" -gt 3 ]] && echo "⚠ 强依赖集中" || echo "强度分散")"
-  fi
-
-  # 能耗：巨型文件数（store/组件）
-  local energy_val=0
-  [[ -n "$STORE_DIR" && "$MAX_STORE_LINES" -gt 0 ]] && energy_val=$(find "$STORE_DIR" -type f \( -name '*.ts' -o -name '*.js' \) 2>/dev/null | while read -r f; do wc -l < "$f"; done | awk -v th="$MAX_STORE_LINES" '$1>th{c++} END{print c+0}' || true)
-  echo "    能耗：${energy_val:-0} 个巨型 store 文件（>${MAX_STORE_LINES} 行，认知负荷高）"
-
-  # 累积量：TODO/FIXME 累积
-  local cumul_val=0
-  if [[ "$COG_CUMULATIVE_TODO" -gt 0 && ${#WRITABLE_DIRS[@]} -gt 0 ]]; then
-    cumul_val=$(_scan_src 'TODO|FIXME|HACK|XXX' 'ts,js,py' 'node_modules\|\.patch' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" | wc -l | xargs || true)
-    echo "    累积量：${cumul_val} 处 TODO/FIXME", "$([[ "$cumul_val" -gt "$COG_CUMULATIVE_TODO" ]] && echo "⚠ 技术债累积过载（>${COG_CUMULATIVE_TODO}）" || echo "正常")"
-  fi
-
-  # ---- 认知总结 ----
-  echo ""
-  local total_score=$((concept_score + struct_score + space_score + map_score + handle_score))
-  echo "  ── 认知递进总结（第一层）──"
-  echo "    ①概念(${concept_score}/2) → ②结构(${struct_score}/3) → ③空间(${space_score}/3) → ④映射(${map_score}/3) → ⑤规律(${rule_count}条) → ⑥处理(${handle_score}/3)"
-  echo "    认知总分：${total_score}/14 + ${rule_count} 条规律编码"
-  if [[ $total_score -ge 8 && $rule_count -ge 4 ]]; then
-    pass "第一层认知递进完整（${total_score}/14 + ${rule_count} 条规律）——关系脉络清晰，可处理关系而非仅计数"
-  elif [[ $total_score -ge 5 ]]; then
-    warn "第一层认知递进部分建立（${total_score}/14）——存在认知断层，建议补全缺失阶（见上表 ⚠ 项）"
-  else
-    warn "第一层认知递进不足（${total_score}/14）——概念/结构/空间未显式定义，门禁沦为计数，建议先建立 ①概念定义"
-  fi
-
-  # ---- 五层认知基底完整性检查（第二/三/四/五层）----
-  echo ""
-  echo "  ── 五层认知基底完整性（第一层 + 第二/三/四/五层）──"
-  local layer2_score=0 layer3_score=0 layer4_score=0
-
-  # 第二层：思维语言框架——spec 含三导向段（§1.1现状/§1.2目标/§14交付衰减/§15蓝图）
-  local spec_for_cog="${SPEC_FILE:-}"
-  [[ -z "$spec_for_cog" ]] && spec_for_cog=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
-  if [[ -n "$spec_for_cog" && -f "$spec_for_cog" ]]; then
-    # 强化：要求 §14/§15 章节标题存在（非仅关键词），且段落有实质内容
-    grep -qE '^## 14\..*交付衰减' "$spec_for_cog" 2>/dev/null && layer2_score=$((layer2_score+1))
-    grep -qE '^## 15\..*蓝图' "$spec_for_cog" 2>/dev/null && layer2_score=$((layer2_score+1))
-    # §1.1 现状须含"痛点/根因/溯因"之一（实质内容，非仅标题）
-    awk '/^## 1\.1|^### 1\.1/{in_sec=1} /^## [0-9]/{if(in_sec)in_sec=0} in_sec && /痛点|根因|溯因|为什么/{found=1} END{exit !found}' "$spec_for_cog" 2>/dev/null && layer2_score=$((layer2_score+1))
-    echo "    第二层(思维语言)：spec §14交付衰减/§15蓝图/§1.1现状溯因 ${layer2_score}/3"
-  else
-    warn "第二层(思维语言)：未找到 spec，三导向段无法检查"
-  fi
-
-  # 第三层：认知辩证——reference-manual 含逻辑谬误图谱 + spec 含思维模型对照
-  if [[ -n "$rm_file" ]]; then
-    # 须含 2+ 个剃刀/谬误信号（非仅一个关键词）
-    local l3_hits=0
-    grep -qiE '逻辑剃刀|谬误图谱' "$rm_file" 2>/dev/null && l3_hits=$((l3_hits+1))
-    grep -qiE '对抗审查|灵魂拷问|降维反驳' "$rm_file" 2>/dev/null && l3_hits=$((l3_hits+1))
-    [[ $l3_hits -ge 2 ]] && layer3_score=$((layer3_score+1))
-  fi
-  if [[ -n "$spec_for_cog" && -f "$spec_for_cog" ]]; then
-    # spec §16.2 思维模型对照须有实际表格行（非仅标题）
-    awk '/思维模型对照/{in_sec=1} in_sec && /^\|[^|]+\|[^|]+\|/{row++} in_sec && /^### /{if(in_sec&&row>0){found=1}} END{exit !found}' "$spec_for_cog" 2>/dev/null && layer3_score=$((layer3_score+1))
-  fi
-  echo "    第三层(认知辩证)：reference-manual 逻辑剃刀+谬误图谱(2+信号) + spec §16.2 思维模型对照(有行) ${layer3_score}/2"
-
-  # 第四层：认知偏差防范——spec §16 认知偏差自检段须有实质内容
-  if [[ -n "$spec_for_cog" && -f "$spec_for_cog" ]]; then
-    # §16 章节标题存在 + 五维偏差表有行
-    grep -qE '^## 16\..*认知偏差自检' "$spec_for_cog" 2>/dev/null && layer4_score=$((layer4_score+1))
-    # 偏差扫描表须含"感知/记忆/社会/决策/元认知"至少 3 维
-    local bias_dims=0
-    grep -qiE '感知.*确认偏误|确认偏误.*感知' "$spec_for_cog" 2>/dev/null && bias_dims=$((bias_dims+1))
-    grep -qiE '决策.*沉没成本|沉没成本.*决策' "$spec_for_cog" 2>/dev/null && bias_dims=$((bias_dims+1))
-    grep -qiE '元认知.*达克|达克.*元认知' "$spec_for_cog" 2>/dev/null && bias_dims=$((bias_dims+1))
-    [[ $bias_dims -ge 2 ]] && layer4_score=$((layer4_score+1))
-  fi
-  echo "    第四层(偏差防范)：spec §16 章节存在 + 五维偏差表(≥2维有内容) ${layer4_score}/2"
-
-  # ---- 第五层：辩证认知——reference-manual 含辩证映射表 ----
-  local layer5_score=0
-  if [[ -n "$rm_file" ]]; then
-    # 检查含"辩证映射表"或 7 对辩证关系中的 ≥3 对
-    local dialectic_hits=0
-    grep -qiE '辩证映射表|辩证关系|辩证认知' "$rm_file" 2>/dev/null && dialectic_hits=$((dialectic_hits+1))
-    grep -qiE '内容与形式|内容.*形式.*辩证' "$rm_file" 2>/dev/null && dialectic_hits=$((dialectic_hits+1))
-    grep -qiE '原因与结果|因果.*辩证' "$rm_file" 2>/dev/null && dialectic_hits=$((dialectic_hits+1))
-    grep -qiE '必然与偶然|必然.*偶然' "$rm_file" 2>/dev/null && dialectic_hits=$((dialectic_hits+1))
-    grep -qiE '现实与可能|现实.*可能' "$rm_file" 2>/dev/null && dialectic_hits=$((dialectic_hits+1))
-    grep -qiE '实践与认识|实践.*认识' "$rm_file" 2>/dev/null && dialectic_hits=$((dialectic_hits+1))
-    grep -qiE '真理与谬误|真理.*谬误' "$rm_file" 2>/dev/null && dialectic_hits=$((dialectic_hits+1))
-    grep -qiE '绝对.*相对.*真理|相对.*绝对.*真理' "$rm_file" 2>/dev/null && dialectic_hits=$((dialectic_hits+1))
-    [[ $dialectic_hits -ge 3 ]] && layer5_score=1
-  fi
-  echo "    第五层(辩证认知)：reference-manual 辩证映射表+7对辩证关系(≥3对) ${layer5_score}/1"
-
-  # 五层总评
-  local five_layer_total=$((total_score + layer2_score + layer3_score + layer4_score + layer5_score))
-  local five_layer_max=22  # 14 + 3 + 2 + 2 + 1
-  echo "    五层认知基底总分：${five_layer_total}/${five_layer_max}"
-  # WP-Z12：认知度量落盘（metric 证据，供 gate-trends/adaptive-gating 消费）
-  _cog_metric_emit "cognition_layer1_score" "$total_score" "count" 14
-  _cog_metric_emit "cognition_layer1_rules" "$rule_count" "count" 7
-  _cog_metric_emit "cognition_five_layer_total" "$five_layer_total" "count" "$five_layer_max"
-  if [[ $five_layer_total -ge 15 ]]; then
-    pass "五层认知基底完整（${five_layer_total}/${five_layer_max}）——本质(①-④)+实践认识(思维语言)+现象分析(逻辑剃刀)+真理边界(偏差防范)+辩证统一(7对范畴)"
-  elif [[ $five_layer_total -ge 10 ]]; then
-    warn "五层认知基底部分建立（${five_layer_total}/${five_layer_max}）——补全缺失层（见上表）"
-  else
-    warn "五层认知基底不足（${five_layer_total}/${five_layer_max}）——认知有系统性漏洞，建议先补第一层+第四层+第五层"
-  fi
+  return 0
 }
+
 
 check_diagram() {
   if [[ "$_AI_JUDGMENT" == "1" ]]; then

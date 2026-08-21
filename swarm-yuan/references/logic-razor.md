@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 逻辑剃刀对抗审查方法论 (Logic Razor Adversarial Review)
+
 # 逻辑剃刀对抗审查方法论 (Logic Razor Adversarial Review)
 
 本文件是 swarm-yuan 第三层"认知辩证"的**审查方法论 reference**，供生成的目标技能 check 段引用。核心理念：**审查者不得全盘肯定——即使方案看似无懈可击，也须挑出至少 10% 严谨性瑕疵。**

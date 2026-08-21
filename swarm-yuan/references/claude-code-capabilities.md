@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.232 全
+
 # Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.232 全 190 版 + `claude --help` CLI 调研）
 
 > 本文件基于 https://github.com/anthropics/claude-code/releases **全量 159 个版本**发布说明 + `claude --help` / `claude mcp --help` / `claude agents --help` / `claude plugin --help` / `claude project --help` / `claude ultrareview --help` / `claude install --help` / `claude gateway --help` CLI 调研整理。

@@ -1,3 +1,5 @@
+> **何时读我**：设计审计/状态韧性/增量自成长机制时。DeepSeek Harness rc.8 产品层吸收——配对决策审计/状态韧性/增量自成长/工程纪律。
+
 # dsh 工程机制方法论（DeepSeek Harness 产品层吸收）
 
 > 来源：[DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) @ `141eb6fe`（2026-08-19，tag `dsh-v0.1.0-rc.8`，developer preview）。调研报告：`docs/research/R12-dsh-rc8-resurvey.md`（证据到包/文件级）。

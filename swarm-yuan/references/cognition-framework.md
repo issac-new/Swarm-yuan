@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 五层认知基底总览 (Five-Layer Cognition Framework)
+
 # 五层认知基底总览 (Five-Layer Cognition Framework)
 
 本文件是 swarm-yuan 五层认知基底的**总导航**。每层只放一句话定位 + 指向详细 reference 的指针，详细内容在各自子文件中。

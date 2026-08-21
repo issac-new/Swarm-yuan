@@ -1,3 +1,5 @@
+> **何时读我**：做反借口/假设前置/Prove-It 自证/自治硬停判断时。Addy Osmani agent-skills 吸收——反借口表/假设清单/Prove-It 五步/自治三类硬停/Composition 协议。
+
 # agent-skills 工程纪律方法论（反借口表 / 假设前置 / Prove-It / 自治硬停）
 
 > 来源：[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)（Addy Osmani，Google 工程总监，83.6K star，MIT，HEAD df1edb2 / plugin v0.6.7，2026-08-14 源码实测）。24 技能 + 8 斜杠命令 + 4 专家角色，内容主体为纯 Markdown。

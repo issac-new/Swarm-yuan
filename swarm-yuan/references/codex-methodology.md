@@ -1,3 +1,5 @@
+> **何时读我**：优化执行纪律（截断/压缩/缓存/rubric/测试哲学）时。OpenAI Codex CLI 吸收——省 token 三件套/review rubric/测试哲学。
+
 # Codex 执行纪律方法论（OpenAI Codex CLI 吸收——省 token / 高效 / 质量三线）
 
 > 来源：[openai/codex](https://github.com/openai/codex)（Rust 实现的本地编码 agent，Apache-2.0，2026-08 调研，基于官方文档 + `codex-rs` 源码实证：`compact.rs`/`compact_token_budget.rs`/`truncation.rs`/`prompts/templates/compact/*`/`review/rubric.md`/`protocol/src/prompts/base_instructions`）。

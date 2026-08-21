@@ -442,6 +442,12 @@ SILENT=0
 # WP-CogAudit：--strict-skip 模式下，SKIP_COUNT>0 且 FAIL=0 时返回 rc=2（默认 0，opt-in）
 # 用 ${STRICT_SKIP:-0} 避免覆盖参数解析已设的值（--strict-skip 在 while 循环中先设 1）
 STRICT_SKIP=${STRICT_SKIP:-0}
+# ===== R13 批次1a（D2 接线）：precheck 启动挂 upstream-baseline（advisory warn）=====
+# 原为 advisory-only（不在任何执行序列，须显式 --upstream-baseline 才跑——五轮病理的"僵尸门禁"）。
+# 接线语义：每次 precheck 启动时顺带跑一次（fail-open warn，docs/upstream-baseline.md 不存在
+# 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 教义。
+check_upstream_baseline 2>/dev/null || true
+
 # ===== WP-H 状态门：所属 skill 为 draft（骨架填充未完成）时禁用全量门禁集 =====
 # draft = 生成器产出的未填充骨架（SKILL.md frontmatter `status: draft`）。
 # 半填充产物跑全量门禁会给"接近可用"的错觉——禁用 --all-full/--compliance-suite；
@@ -518,11 +524,11 @@ skip_if_unconfigured() {
 # 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
 ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
 # 合规门禁（标准合规族 + P1 安全门禁族深化 + P3 长期清单 rtm/release-sign，仅 --compliance-suite/单门禁执行；未配置的静默跳过）
-ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign)
+ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_cert_audit check_cwe_audit)
 # 标准门禁（核心 10 + 架构 17 = 27）：--all-full 执行序列（合规 17 已拆出为 --compliance-suite 按需执行）
 ALL_GATES_STANDARD=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_test)
 # 全部门禁（含架构/认知/合规门禁，未配置的静默跳过；--fix-suggest 用）
-ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_test)
+ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_cert_audit check_cwe_audit check_decision_audit check_state_phase check_test)
 # 单门禁 flag 清单（Usage 顺序）。flag → 函数映射规则：check_ + flag 去 -- 前缀并将 - 转为 _
 #（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
 # --diagram（原 --mermaid，升级为多图表引擎）：mermaid 结构图 + echarts/antv 数据图；--mermaid 保留为别名
@@ -821,6 +827,7 @@ if [[ "$MODE" == "--list-gates" ]]; then
     for _g in "${ALL_GATES_CORE[@]}"; do [[ "$_g" == "$_fn" ]] && _tier="${_tier}${_tier:+ }core"; done
     for _g in "${ALL_GATES_STANDARD[@]}"; do [[ "$_g" == "$_fn" ]] && _tier="${_tier}${_tier:+ }standard"; done
     for _g in "${ALL_GATES_COMPLIANCE[@]}"; do [[ "$_g" == "$_fn" ]] && _tier="${_tier}${_tier:+ }compliance"; done
+    for _g in "${ALL_GATES_FULL[@]}"; do [[ "$_g" == "$_fn" ]] && _tier="${_tier}${_tier:+ }full"; done
     [[ -z "$_tier" ]] && _tier="(explicit-flag-only)"
     printf '%-18s %-26s %-10s %s\n' "$_flag" "$_fn" "$_enf" "$_tier"
   done

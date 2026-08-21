@@ -1,3 +1,5 @@
+> **何时读我**：长任务规划与审计证据引用时。阿里 LongHorizon-Harness 吸收——MEA 循环/verify_evidence 铁律。
+
 # MEA 循环方法论（Manage-Execute-Audit，长程执行的任务状态管理）
 
 > 来源：[AMAP-ML/LongHorizon-Harness](https://github.com/AMAP-ML/LongHorizon-Harness)（阿里，v0.1.5，2026-08-14 源码实测），论文 arXiv:2608.01964；中文报道《DeepSeek Harness 刚开源，阿里长程 Harness 也来了》（PaperAgent，2026-08）。

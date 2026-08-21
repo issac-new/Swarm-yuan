@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 金融行业 profile 立法文档（industry-profile-finance）
+
 # 金融行业 profile 立法文档（industry-profile-finance）
 
 > 版本：v1（2026-07-20，P3 批次 调研员_P3C 调研编制）

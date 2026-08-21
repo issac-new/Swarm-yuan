@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Subagent 编排模式 (Subagent-Driven Development)
+
 # Subagent 编排模式 (Subagent-Driven Development)
 
 > 整合自 [superpowers](https://github.com/obra/superpowers) 的 `subagent-driven-development` 方法论。

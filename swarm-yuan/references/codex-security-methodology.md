@@ -1,3 +1,5 @@
+> **何时读我**：安全扫描门禁接线与威胁建模时。codex-security 吸收——约束推理扫描/source-sink/威胁模型五要素。
+
 # codex-security 安全扫描方法论（OpenAI Codex Security CLI 接线）
 
 > 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.11（Apache-2.0，**完全开源免费**），CLI 接线层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。

@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 任务类型 × 方法论路由表（借鉴 tanweai/pua methodology-router 改写）
+
 # 任务类型 × 方法论路由表（借鉴 tanweai/pua methodology-router 改写）
 
 > 整合自 [tanweai/pua](https://github.com/tanweai/pua) 的方法论智能路由理念。

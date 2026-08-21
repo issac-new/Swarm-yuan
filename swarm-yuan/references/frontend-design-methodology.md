@@ -1,3 +1,5 @@
+> **何时读我**：目标项目含前端设计任务时。impeccable 吸收——Modes/三层权威/反模式字典/对抗性 verdict。
+
 # 前端设计质量方法论（impeccable v4.0.2 吸收）
 
 > 来源：[pbakaus/impeccable](https://github.com/pbakaus/impeccable) v4.0.4（Apache-2.0），方法论引用层第 5 对象（与 superpowers/gstack/ECC/Ruflo 同档）。

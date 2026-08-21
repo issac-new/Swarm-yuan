@@ -1,3 +1,5 @@
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 代码图谱工具引用 (Code-Graph Tools Reference)
+
 # 代码图谱工具引用 (Code-Graph Tools Reference)
 
 > 本文件指导目标技能如何**引用调用** [GitNexus](https://github.com/abhigyanpatwari/GitNexus) 与 [graphify](https://github.com/Graphify-Labs/graphify) 构建代码知识图谱。
