@@ -22,8 +22,10 @@
 | impeccable | v4.0.4 | **skill-v4.1.1**（2026-08-14） | 1 minor | 升基线 + 吸收 |
 | codex-security | v0.1.11 | **v0.1.16**（2026-08-20） | 5 patch | 升基线 + 吸收 |
 | dsh | rc.8 | rc.8（master=141eb6f 2026-08-19） | 无新版 | 已同步 |
+| **claude-code** | v2.1.232（2026-08-13 调研基线） | **v2.1.237**（2026-08-20） | 5 patch | 升基线 + 吸收（R4 补核） |
+| **codex-cli** | v0.146.0（2026-08-14 调研基线；本机 0.146.0） | **v0.148.0**（2026-08-18 stable）+ v0.149.0-alpha.4 预告 | 2 stable | 升基线 + 吸收（R4 补核；**破坏性**两处） |
 
-**新增**：dsh（deepseek-harness）首次入表——R12 重调研后已作为第 14 个上游运行时（方法论吸收层，非运行时调用）。
+**新增**：dsh（deepseek-harness）+ claude-code + codex-cli 三项入表——表从 13 扩到 16 个运行时。claude-code/codex 是核心安装目标（install.sh 检测），CLI 侧差异单列 `docs/upstream-baseline.md` §三。
 
 ## 二、可吸收点 → 落地点
 
@@ -85,6 +87,23 @@
 
 SynthID-Text 风格的 LLM 文本水印（WASM crate + 浏览器/Deno ESM 入口）是新能力方向，但与 swarm-yuan 运行时无关（本仓无 LLM 文本生成场景）。仅升引用基线到 3.38.12（patch 列车跟随），不吸收。
 
+### 2.10 Claude Code v2.1.237 → `references/claude-code-capabilities.md`
+
+- **Todo/Task 工具默认移除**（v2.1.233，破坏性）：Opus 4.8 / Sonnet 5 / Fable 5 / Mythos 5 及更新模型上 TaskCreate/TodoWrite 默认不可用（`CLAUDE_CODE_ENABLE_TODO_TOOLS=1` 兜底）。
+  落地：claude-code-capabilities.md 增"Todo 工具移除与自有链路"注记——本仓目标技能的进度跟踪走 `trace-log.sh`（自有链路，不依赖 CLI Todo 工具），无兼容性风险；生成器提醒 SKILL.md 不依赖 TodoWrite 表述门禁进度。
+- **`notify_when_idle` 跨会话通知**（v2.1.236）：本机另一 Claude Code 会话空闲时发一次性通知（opt-in 无轮询）。登记候选：未来"门禁长跑完成后通知主会话"可走官方机制。
+- **"Concise" output style**（v2.1.237）：直接给结果跳叙述。与门禁驱动开发契合；生成技能使用文档可推荐。
+- **`claude-api` 技能 200k→25k 按需加载**（v2.1.234）：swarm-yuan 的"按需读取引用索引"（WP-P5）同构机制，方向验证（不新增落地）。
+- **沙箱通配符 read-deny 防重命名绕过**（v2.1.236）：目标技能 settings.local.json 的 `**/.env` deny 规则更强了（文档注记级吸收）。
+
+### 2.11 Codex v0.148.0 → `references/codex-methodology.md`
+
+- **hooks 异步命令 + MCP 工具调用**（v0.148）：**重要机会**——precheck 门禁可注册为 Codex hook 而非仅靠 prompt 约定，门禁"执法"在 Codex 侧获得官方强制点。登记候选（下轮评估 hooks.json 的 Codex 等价物）。
+- **Agent Plugins 四类目录**（v0.147）：local/personal/workspace/remote——生成技能的分发新通道（打包为 Codex 插件）。登记候选。
+- **skill-creator validation 拒绝 TODO 占位符**（v0.148）：本仓 `--verify-completeness` 零占位符检测同构，方向验证。
+- **`/export` 会话导出**（v0.148）：门禁验收记录随会话导出留档（契合 ai-process-records 方法论，文档注记级）。
+- **破坏性两处**：① v0.147 移除 `codex exec --full-auto` → `--sandbox workspace-write`（本仓生成脚本无 `--full-auto` 引用，无影响；install.sh Codex 检测登记版本下限候选）；② v0.149-alpha 移除技能模型委托（本仓无按子任务指定模型设计，无影响）。
+
 ## 三、不吸收清单（显式登记）
 
 | 能力 | 来源 | 不吸收理由 |
@@ -103,6 +122,10 @@ SynthID-Text 风格的 LLM 文本水印（WASM crate + 浏览器/Deno ESM 入口
 | inventory-verify 大项目超时二分降级（graphify v0.9.47） | 用户报"inventory-verify 大项目跑超时" | 中（_enum_count 加 timeout + 二分） |
 | plan 完成判据模板字段（openspec v1.10） | 用户反馈"plan 没写怎么算完成" | 小（plan-template.md 加字段 + 文档） |
 | api_key 命令解析模式（ocr v1.9.8） | 本仓未来接入 AI 工具需 secret | 小（precheck.conf 加 SECRET_CMD 模式） |
+| Codex hooks 注册 precheck 门禁（codex v0.148 hooks 异步命令 + MCP 工具调用） | 下轮适配评估——门禁在 Codex 侧获官方强制点 | 中（调研 Codex hooks.json 等价物 + 生成器支持） |
+| Codex Agent Plugins 打包分发（codex v0.147 四类目录） | install.sh 对 Codex 目标增加插件形态选项 | 中（打包脚本 + 目录约定） |
+| `notify_when_idle` 门禁长跑通知（claude-code v2.1.236） | 用户需要"门禁跑完通知主会话"场景 | 小（SendMessage 调用脚本） |
+| install.sh Codex 版本下限检测（≥0.147，`--full-auto` 已移除） | 下次 install.sh 改动时顺带 | 小（版本比较 + 提示） |
 
 ## 五、落地清单（本轮已做）
 
