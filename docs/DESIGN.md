@@ -517,6 +517,29 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 
 **对外案例**：`swarm-yuan/references/case-studies/articulation-orchestration.md`（关节编排对外汇报的论点→能力映射）；temppt 四个会话（PPT V41→V81 迭代史 + sess_fcc61435 外部评审祛魅记录）是 §2.4 对外叙事红线的来源。
 
+**仓库全量结构地图**（第九轮 find 全量枚举对账——每个目录在文档中的定位）：
+
+| 位置 | 内容 | 定位 |
+|------|------|------|
+| `docs/DESIGN.md` | 本文（单一设计事实源 v4） | 设计层 |
+| `docs/paradigm-decisions{,-archive}.md` | 决策史原文（1-34） | §9.2 索引的详情 |
+| `docs/research/` | R1-R15 调研报告 | 证据层（吸收三问的合法归宿） |
+| `docs/plans/` | 4 份历史计划文档（framework-rules-engine / research-plan / standards-gap / paradigm-slimming，2026-07） | 历史计划存档（已执行完毕，不维护） |
+| `swarm-yuan/SKILL.md` | 生成器入口（AI 读） | 产品文档（§3.2 读者双轨制） |
+| `swarm-yuan/docs/USAGE.md` | 使用手册（研发人员读——bash 双轨制的落地文件） | §3.2 读者双轨制 |
+| `swarm-yuan/docs/PROMO.md` | 推广文案 | 对外口径（受 §2.4 祛魅红线约束） |
+| `swarm-yuan/docs/FIVE_DIMENSIONS.md` | 五维审查详表 | 方法论层附件 |
+| `swarm-yuan/assets/` + `scripts/` + `references/` + `tests/` | 门禁/脚本/方法论/测试（§5.1 工具入口表+references 全索引+测试矩阵已覆盖） | 实现层 |
+| `swarm-yuan/ci/self-precheck.conf` | CI 自举最小 conf（generator-self-gate job 用） | §3.6 三平台 CI 矩阵 |
+| `swarm-yuan/install.sh` + `.bat` | 安装器（检测 7 个 AI 工具环境） | 入口工具 |
+| `swarm-yuan/hooks/`（源）→ 生成物 `hooks/` | hooks 五件套源文件 | §5.3 宿主下沉 |
+| `verifier/v1/` + `v2/` | 司法层（v1 现行：golden-vector 74 + cli A/B；v2 外部有效性立项稿） | §5.1 验证器 |
+| `verifier/baselines/` + `runs/` | 基线快照与运行记录 | 证据层 |
+| 根级 `tests/fixtures/` | fixture 语料 | 测试资产 |
+| `swarm-yuan/offline-cache/` | 离线包（仅 marketplace 元数据，不 vendor 核心插件） | §9.3 vendor 决策 |
+| `.github/workflows/ci.yml` | CI 三平台（Linux 全覆盖 + mac/win 轻量腿） | §3.6 |
+| `.swarm-yuan/`（项目级，运行时生成） | 账本四本 + gate-plan + 指纹 + notes | §7 留痕设计的落盘位置 |
+
 **已知边界**（登记待修，非设计内容）：`detect-profile-drift.sh` 在 worktree 场景的路径推导误报（把 worktree 内 README 副本误判为目标项目升档信号）——main 分支无此问题，worktree 内跑 self-check 时可能出现"假漂移"；处置候选：识别自身处于 swarm-yuan 仓 worktree 时跳过，或拆分"扫描目标项目"与"扫描自身"两命令。
 
 ---
