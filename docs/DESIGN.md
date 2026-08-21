@@ -308,6 +308,32 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 54 门禁（FACT_GATES_TOTAL，真值对账）= 核心 10 + 架构 17 + 合规 17 + advisory 10。**全部有真实触发路径（54/54 可达）**：cert/cwe-audit→compliance 序列、decision/state-phase→full 序列、upstream-baseline→precheck 启动、operate/pr-quality/supply-chain→PostToolUse、decision-audit/learnings→Stop hook、state-phase→SessionStart、loop-oracle→loop-hook。enforce 分层（strict/warn/advisory）是实现细节，模型只选执行序列（`--all`/`--all-full`/`--compliance-suite`）。
 
+**核心工具入口**（生成器侧 `scripts/`，按流段归类）：
+
+| 流段 | 工具 | 职责 |
+|------|------|------|
+| ①生成 | generate-skill.sh | 主生成器（create/upgrade/refresh/mark-active/inject-frameworks/verify-completeness/render-tools 子命令） |
+| ①生成 | detect-frameworks.sh | 框架探查（package.json/pom/go.mod/pyproject → ACTIVE_FRAMEWORKS） |
+| ①生成 | conf-render.sh | conf 初稿渲染（嗅探+溯源注释+--industry 行业注入） |
+| ①生成 | extract-feature-cards.sh | 特征卡结构化字段提取 |
+| ①生成 | gen-framework-index.sh / gen-enforce-level.sh | 框架索引/enforce 分层自动生成 |
+| ②产物 | split-gates.sh | precheck 三文件拆分（strict/warn/advisory） |
+| ③使用 | gate-rules.sh | rules.d 三值求值器 |
+| ④账本 | trace-log.sh | 三模式落盘（--node/--key-node/--decision） |
+| ④账本 | cost-report.sh | token 成本汇总 |
+| ④账本 | state-machine.sh | 阶段状态追踪（status/restore-journal/dump-journal） |
+| ⑤回流 | project-fingerprint.sh | 结构指纹（--write/--diff/--force） |
+| ⑤回流 | inventory-verify.sh | 计数核验+--path-check+--stability-audit |
+| ⑤回流 | inventory-update.sh | 地图单条更新（replace/delete/append） |
+| ⑤回流 | gate-plan.sh / audit-closure.sh | 选择即证据/闭环完备性 |
+| ⑤回流 | ontology-verify.sh | 六锚健康检查 |
+| 治理 | self-check.sh | 28 断言（含 G18 孤儿/G19 反向引用/类型对账 18 点） |
+| 治理 | adaptive-gating.sh / task-scale.sh / detect-spec-scale.sh / detect-profile-drift.sh | 自适应四维（profile/任务规模/spec 规模/档位漂移） |
+| 治理 | framework-evidence.sh / verify-framework-ruleset.sh | 框架证据台账/规则集验证 |
+| 治理 | compare-baseline.sh / context-surface.sh / to-sarif.sh / gate-report.sh / gate-trends.sh / profile-threshold-survey.sh / migrate-verify-blocks.sh / release-src-packages.sh | 基线对比/上下文预算/SARIF 输出/门禁报告/趋势/阈值调查/verify 块迁移/发布打包 |
+
+**关键资产**（`assets/`）：gates-strict/warn/advisory.sh（三档门禁物理文件）+ gate-enforce-level.conf（分层配置，gen-enforce-level 自动生成）+ industry-profiles/（7 行业 conf，conf-render --industry 真实加载）+ framework-gates/（74 门禁片段）+ facts.conf（数字事实源：FACT_GATES_TOTAL/FACT_REFERENCES/FACT_ARTIFACT_BYTES_BUDGET/FACT_SKILLMD_BYTES_BUDGET/FACT_CONF_VARS_USERFACE 等预算断言键）+ hooks/failure-detector.sh（SPINNING 检测+L1 提示）。
+
 **验证器（司法层）**：`verifier/v1/`——fixture 双态（violating/compliant 各一套最小样例，74 框架规则各一对）+ golden-vector（75 条预期门禁 exit-code 向量，回归基线）+ cli A/B 沙箱逐字节等价断言（历史 131 次调用一致性）。**诚实边界（R9 教训）**：fixture 是构造样例，5 个真实项目测试曾漏 3 个 P0/P1 bug——fixture + 真实项目双轨制；外部有效性立项稿 `verifier/v2/external-validity.md`（未达阈值前不得宣称"守护代码合规"）。
 
 ### 5.2 三值规则引擎（Codex Decision 架构 bash 落地）
