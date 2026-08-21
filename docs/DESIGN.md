@@ -310,6 +310,18 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | task-methodology-router.md | 使用 | 任务类型×方法论路由（8 类任务选关键节点序列+门禁聚焦，避免全任务跑全量 13 节点） |
 | logic-razor.md / cognitive-bias.md | 使用 | 逻辑剃刀删冗余假设 / 认知偏差防范（五维偏差+思维模型） |
 
+**references 全承载索引**（40 份全列，按六类——每份都是真实消费路径，孤儿=0 由 self-check G18 执法）：
+
+| 类 | 文件 |
+|----|------|
+| 探查方法论（4） | exploration-guide.md / template-spec.md / generation-flow.md / code-graph-tools.md（图谱工具选型平权） |
+| 认知框架（4） | cognition-framework.md（五层基底）/ logic-razor.md / cognitive-bias.md / domain-knowledge.md（领域防达克） |
+| 编排与审查（4） | subagent-orchestration.md / review-methodology.md / task-methodology-router.md / gsd-patterns.md |
+| 外部吸收方法论（10） | codex-methodology.md / codex-security-methodology.md / claude-code-capabilities.md / dsh-engineering-methodology.md / cordis-composability-methodology.md / mea-loop-methodology.md / agent-skills-methodology.md / frontend-design-methodology.md / context-engineering-layering.md / memory-persistence.md |
+| 治理与合规（11） | decision-governance.md / governance-agents.md / standards-compliance.md / quality-management-standards.md / crypto-spec.md / cwe-database.md（门禁内部数据）/ security-spec.md / security-certification-profiles.md / mcp-governance.md / ai-process-records.md / canary-monitoring.md |
+| 行业 profile（7） | industry-profile-finance.md / industry-profile-medical.md / industry-profile-gov.md / industry-profile-automotive.md / industry-profile-energy.md / industry-profile-industrial.md / industry-profile-telecom.md（法规依据文档，与 conf 配对——conf-render --industry 真实加载） |
+| 案例与骨架 | case-studies/articulation-orchestration.md（对外汇报论据）/ workflow.md·reference-manual.md 等骨架由生成器产出 |
+
 ## 4. 探查设计（认知层）
 
 - **形态判定先行**（§C+.0）：backend/frontend/async/desktop/mobile/lib/common，维度适配由 `inventory-dimensions.conf` 承载；不预设项目类型。
@@ -374,11 +386,29 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 - **Claude Code**：fail-gate-hook（PreToolUse deny JSON + PostToolUse flag 捕获）+ settings.local.json 沙箱通配符 deny（`Read(**/.env)` 等，v2.1.236 防重命名绕过）。
 - **Codex**：hooks.json PreToolUse → `codex-gate-wrapper.sh`（JSON deny 解析 → **exit 2 + stderr 透传**，v0.148 官方语义）。
+- hooks 五件套：failure-detector.sh（SPINNING 检测+L1 提示）、integrity-guard.sh（自指防护）、fail-gate-hook.sh（门禁拦截）、setup-loop.sh（Oracle Gate 初始化）、loop-hook.sh（Stop 时 loop-oracle 接线 + 30 分钟超时）。
+- rules.d 内置两个示例规则集随生成物分发：bash-advance.rules（推进态命令：git push/commit/merge→prompt，npm publish/rm -rf/git reset --hard/sudo→forbid 各带替代方案）、readonly-safe.rules（只读白名单：git status/log/diff、ls/cat/grep、precheck 自身→allow）。
 - hooks fail-open 的合法性：有下层门禁兜底（§2.3 教义）。
 
 ### 5.4 conf 面收缩
 
 物理变量 176 保留（兼容既有生成物）；**user 面必配 ≈ 20 项**（开关/路径/预算，`FACT_CONF_VARS_USERFACE=20`）——43 个框架 glob 阈值已迁 `rules.d/framework-globs.rules`（数据快照，conf 同名可覆盖）；行为参数留在模板/脚本内（Codex skills 全局配置仅 4 键的同构）。
+
+**core conf 语义分组**（precheck.conf 16 变量，完整清单以 conf 文件自身为准——设计文档只列语义分组）：
+- 路径类（6）：PROJECT_DIR / WRITABLE_DIRS / READONLY_DIRS / SCAN_DIRS / CONSISTENCY_DIRS / BRANCH_REGEX+PROTECTED_BRANCHES（分支规范）
+- 命令类（2）：TEST_CMD / BUILD_CMD（真实可执行命令，AUTO:detected 嗅探）
+- 工具选择类（2）：SENSITIVE_TOOL / SECURITY_TOOL（auto→builtin/gitleaks/semgrep 降级链）
+- 执法开关类（3）：GATE_ENFORCE_DENY / GATE_ENFORCE_DENY_BASH（默认空=关，UserChallenge 决策）/ GATE_AI_JUDGMENT（R13 后恒 1 唯一模式）
+- 证据类（1）：GATE_RUNS_DIR（非空时 gate-runs.jsonl 落盘，SARIF 证据链）
+- 分层加载：core→arch→compliance→industry→patch（后 source 胜出；patch 是用户覆盖层，根治升级漂移）
+
+**facts.conf 键分类法**（数字单一事实源，self-check 机械对账——完整键集以文件自身为准）：
+- 预算断言类（5，已逐一列于上文关键资产段）：FACT_GATES_TOTAL / FACT_REFERENCES / FACT_ARTIFACT_BYTES_BUDGET / FACT_SKILLMD_BYTES_BUDGET / FACT_CONF_VARS_USERFACE
+- 预算上限类（3）：FACT_GATES_BUDGET=54（门禁数负向预算，新增须等额删除）/ FACT_CONF_VARS_BUDGET=200 / FACT_CONTEXT_SURFACE_BUDGET
+- 分层计数类（~20）：FACT_GATES_{CORE,ARCH,COMPLIANCE,ADVISORY_ONLY,STANDARD} / FACT_CONF_VARS_{CORE,ARCH,COMPLIANCE} / FACT_RUNTIMES{,_DEEP,_CLI,_METHOD} / FACT_ENFORCE_{STRICT,WARN,ADVISORY} / FACT_COMPAT_{TIERS,DEEP,CLI} 等
+- 结构计数类（~15）：FACT_FEATURE_CARDS{,_P0,_P1} / FACT_FRAMEWORKS / FACT_FLOW_{STEPS,NODES} / FACT_SPEC_SECTIONS / FACT_DOMAINS / FACT_COGNITION_LAYERS / FACT_UNIVERSAL_FILES{,_CORE} 等
+- 机制存在类（~8）：FACT_LOOP_ORACLE / FACT_COMPACTION_JOURNAL / FACT_FAILURE_DETECTOR / FACT_INTEGRITY_GUARD / FACT_DECISION_{TYPES,LOG} / FACT_BOOTSTRAP_GATES / FACT_STABLE_PROPAGATE{,_HOPS} 等
+- 原则类（2）：FACT_VERSION_ORACLE_RULE（G10 版本单源真值）/ FACT_MEASURE_METADATA_REQUIRED（GB/T 测度元数据覆盖）
 
 ## 6. 演化设计（成长层）
 
