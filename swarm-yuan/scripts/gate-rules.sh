@@ -15,9 +15,13 @@
 # 用法:
 #   bash gate-rules.sh <rules.d 目录> <待判定命令串>          # 输出三值之一 + FORBID 行
 #   bash gate-rules.sh <rules.d 目录> <命令> --quiet           # 只输出三值（脚本内嵌用）
+#   bash gate-rules.sh <rules.d 目录> --persist "<pattern>" <allow|prompt|forbid> "<justification>" [--goal <goal_id>]
+#                                                               # 审批沉淀：临时放行持久化为规则
+#                                                               # （写 approved.rules + decisions.jsonl 落痕，DESIGN §5.2）
 # 退出码: 0=allow / 3=prompt / 2=forbid / 1=参数错（fail-closed：rules.d 缺失时 deny-ish →
 #   返回 prompt——无规则数据时命令须过宿主审批通道，不静默放行；§2.2 教义）
-# 红线: 本脚本不改任何文件；FORBID 文案透传 stderr（宿主 hook deny 的 stderr 会回给模型）。
+# 红线: 求值模式不改任何文件；--persist 是唯一写入路径（校验→写 approved.rules→决策落痕，
+#   禁止绕过校验直写规则文件）。FORBID 文案透传 stderr（宿主 hook deny 的 stderr 会回给模型）。
 set -uo pipefail
 
 RULES_DIR="${1:-}"
@@ -25,8 +29,48 @@ CMD="${2:-}"
 QUIET=0
 [[ "${3:-}" == "--quiet" ]] && QUIET=1
 
+# ===== 审批沉淀模式（--persist）=====
+if [[ "$CMD" == "--persist" ]]; then
+  P_PAT="${3:-}"; P_DEC="${4:-}"; P_JUST="${5:-}"; P_GOAL=""
+  shift 5 2>/dev/null || true
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --goal) P_GOAL="${2:-}"; shift 2 ;;
+      *) echo "未知参数: $1（--persist 支持 --goal <goal_id>）" >&2; exit 1 ;;
+    esac
+  done
+  [[ -d "$RULES_DIR" ]] || { echo "✗ rules.d 不存在: $RULES_DIR" >&2; exit 1; }
+  [[ -n "$P_PAT" && -n "$P_JUST" ]] || { echo "Usage: bash gate-rules.sh <rules.d> --persist \"<pattern>\" <allow|prompt|forbid> \"<justification>\" [--goal <goal_id>]" >&2; exit 1; }
+  case "$P_DEC" in allow|prompt|forbid) ;; *) echo "✗ verdict 须为 allow|prompt|forbid（收到: ${P_DEC}）" >&2; exit 1 ;; esac
+  # 行格式纪律：forbid 须带替代方案（规则文件 §格式 同款约束）
+  if [[ "$P_DEC" == "forbid" ]] && ! printf '%s' "$P_JUST" | grep -q '替代[：:]'; then
+    echo "✗ forbid 规则的 justification 须含「替代：<方案>」（FORBID 消息 = 给模型的 API，§5.2）" >&2; exit 1
+  fi
+  # 幂等防线：同 pattern 已在任何规则文件 → 拒绝重复沉淀（改判请先删旧行）
+  if grep -qF -- "$P_PAT" "$RULES_DIR"/*.rules 2>/dev/null; then
+    echo "✗ pattern 已存在规则（$RULES_DIR 中命中「$P_PAT」）——改判请先删旧行再沉淀，避免双规则" >&2; exit 1
+  fi
+  _today=$(date +%Y-%m-%d)
+  _target="$RULES_DIR/approved.rules"
+  [[ -f "$_target" ]] || printf '# approved.rules — 审批沉淀（gate-rules.sh --persist 写入；每行 = 一次审批的持久化，可删行回退）\n' > "$_target"
+  printf '%s → %s # %s（沉淀于 %s）\n' "$P_PAT" "$P_DEC" "$P_JUST" "$_today" >> "$_target" || { echo "✗ 写入失败: $_target" >&2; exit 1; }
+  # 决策落痕（trace-log --decision；找不到记录器则降级提示，规则已生效不回滚）
+  _tl=""; for _cand in "$(dirname "$0")/trace-log.sh" "$(dirname "$0")/../assets/trace-log.sh"; do
+    [[ -f "$_cand" ]] && _tl="$_cand" && break
+  done
+  if [[ -n "$_tl" ]]; then
+    _tl_args=(--decision --type UserChallenge --suggestion "rules: $P_PAT → $P_DEC" --user-action approved --outcome implemented --rationale "$P_JUST" --phase rules --reversibility reversible)
+    [[ -n "$P_GOAL" ]] && _tl_args+=(--goal "$P_GOAL")
+    bash "$_tl" "${_tl_args[@]}" >/dev/null 2>&1 && echo "✓ 已沉淀并落痕：${P_PAT} → ${P_DEC}（approved.rules + decisions.jsonl）" || echo "✓ 已沉淀：${P_PAT} → ${P_DEC}（approved.rules）；⚠ decisions.jsonl 落痕失败（trace-log 降级）" >&2
+  else
+    echo "✓ 已沉淀：${P_PAT} → ${P_DEC}（approved.rules）；⊘ trace-log.sh 未找到（决策落痕降级跳过）" >&2
+  fi
+  exit 0
+fi
+
 [[ -n "$CMD" ]] || {
   echo "Usage: bash gate-rules.sh <rules.d> <command> [--quiet]" >&2
+  echo "       bash gate-rules.sh <rules.d> --persist \"<pattern>\" <verdict> \"<justification>\" [--goal <id>]" >&2
   exit 1
 }
 

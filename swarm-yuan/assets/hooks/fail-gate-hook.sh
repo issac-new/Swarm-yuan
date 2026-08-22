@@ -266,7 +266,7 @@ EOF
               _deny_log "Bash" "$CMD" "rules.d:forbid"
               _forbid_msg=$(printf '%s\n' "$_gr_out" | grep '^FORBID' | head -1)
               cat << EOF
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan rules.d: ${_forbid_msg}","additionalContext":"swarm-yuan fail-gate: DENY Bash（rules.d 三值判定 forbid）——${_forbid_msg}。规则数据在 rules.d/*.rules（可审计/可沉淀审批）；解除方式：按替代方案改道，或修订规则文件（UserChallenge 决策须落痕）。deny 已落盘 gate-audit.jsonl。"}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan rules.d: ${_forbid_msg}","additionalContext":"swarm-yuan fail-gate: DENY Bash（rules.d 三值判定 forbid）——${_forbid_msg}。规则数据在 rules.d/*.rules（可审计）；解除方式：①按替代方案改道；②审批沉淀：bash scripts/gate-rules.sh rules.d --persist \"<pattern>\" allow \"<理由>\" --goal <goal_id>（写 approved.rules + decisions.jsonl 落痕）。deny 已落盘 gate-audit.jsonl。"}}
 EOF
               exit 0 ;;
           0)  # allow → 放行（只读白名单命中，跳过下方旧白名单逻辑）

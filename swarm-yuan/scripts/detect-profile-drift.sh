@@ -37,6 +37,15 @@ _profile_rank() { case "$1" in lite) echo 1;; compliance) echo 3;; *) echo 2;; e
 PROJECT_DIR=$(cd "$SKILL_DIR/../../.." 2>/dev/null && pwd)
 [[ -d "$PROJECT_DIR" ]] || { echo "ℹ 无法推导项目根目录，跳过 profile 漂移检测" >&2; exit 0; }
 
+# 自扫守卫（impl-conformance，关闭 DESIGN §11 已知边界①）：扫描目标是 swarm-yuan 生成器仓自身
+# （repo 根或其 worktree——同布局）时，仓内 README/行业 profile 文档天然含合规关键词，
+# 会误报"应升 compliance"。生成器仓的 profile 由自举 conf 显式管理，跳过探测。
+if [[ -f "$PROJECT_DIR/swarm-yuan/assets/facts.conf" ]] || \
+   { [[ -f "$PROJECT_DIR/assets/facts.conf" ]] && [[ -f "$PROJECT_DIR/scripts/generate-skill.sh" ]]; }; then
+  echo "ℹ 扫描目标是 swarm-yuan 生成器仓自身（或其 worktree），跳过 profile 漂移检测（防自扫误报）" >&2
+  exit 0
+fi
+
 # 合规信号（最强，命中即 compliance）
 COMPLIANCE_KW="等保|密评|GB/T[[:space:]]*39786|GB/T[[:space:]]*22239|个人信息保护|个保法|金融行业|医疗行业"
 sig=$(grep -rliE "$COMPLIANCE_KW" "$PROJECT_DIR/docs" "$PROJECT_DIR"/README* 2>/dev/null | head -1 || true)

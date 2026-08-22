@@ -295,7 +295,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 **三平台 CI 矩阵**：Linux ubuntu-latest 全覆盖（74 ruleset + 74 fixture + 48 gate-fixture + e2e + verifier + shellcheck + generator-self-gate）；macOS/windows 轻量腿（windows-syntax bash -n + .bat 冒烟，全量降频周跑——bash 硬前置下的诚实分层）。
 
-**两条奠基理念的落实状态**：① 连贯动作（一键生成+一键使用，`/swarm-yuan <路径>` 全自动；7 处用户决策点保留确认属设计性例外）；② 全链路追踪（stdout 公告 + trace-log 落盘 + gate-runs + hooks 摘要 + 第三方工具调用点 trace_tool 桥 7 工具 10 调用点）——机器执法：verify-completeness 校验 workflow 每节点含调用追踪。
+**两条奠基理念的落实状态**：① 连贯动作（一键生成+一键使用，`/swarm-yuan <路径>` 全自动；7 处用户决策点保留确认属设计性例外）；② 全链路追踪（stdout 公告 + trace-log 落盘 + gate-runs + hooks 摘要 + 第三方工具调用点 trace_tool 桥——工具×调用点以 `grep -rh 'trace_tool "' assets/*.sh` 机械计数，不手抄数字）——机器执法：verify-completeness 校验 workflow 每节点含调用追踪。
 
 ### 3.7 概念体系收敛与方法论承载
 
@@ -364,7 +364,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | ①生成 | extract-feature-cards.sh | 特征卡结构化字段提取 |
 | ①生成 | gen-framework-index.sh / gen-enforce-level.sh | 框架索引/enforce 分层自动生成 |
 | ②产物 | split-gates.sh | precheck 三文件拆分（strict/warn/advisory） |
-| ③使用 | gate-rules.sh | rules.d 三值求值器 |
+| ③使用 | gate-rules.sh | rules.d 三值求值器 + --persist 审批沉淀 |
 | ④账本 | trace-log.sh | 三模式落盘（--node/--key-node/--decision） |
 | ④账本 | cost-report.sh | token 成本汇总 |
 | ④账本 | state-machine.sh | 阶段状态追踪（status/restore-journal/dump-journal） |
@@ -380,7 +380,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 **关键资产**（`assets/`）：gates-strict.sh、gates-warn.sh、gates-advisory.sh（三档门禁物理文件）+ gate-enforce-level.conf（分层配置，gen-enforce-level 自动生成）+ industry-profiles/（7 行业 conf，conf-render --industry 真实加载）+ framework-gates/（74 门禁片段）+ facts.conf（数字事实源：FACT_GATES_TOTAL/FACT_REFERENCES/FACT_ARTIFACT_BYTES_BUDGET/FACT_SKILLMD_BYTES_BUDGET/FACT_CONF_VARS_USERFACE 等预算断言键）+ ontology/（R16 类型事实源三份：objects/links/actions，带路由头随生成物分发）+ rules.d/（底座规则两套 + framework-globs 默认值快照，§5.2/§5.4）+ hooks/ 五件套（failure-detector SPINNING 检测+L1 提示 / integrity-guard 自指防护 / fail-gate-hook 门禁拦截 / setup-loop / loop-hook，§5.3）。
 
-**验证器（司法层）**：`verifier/v1/`——fixture 双态（violating/compliant 各一套最小样例，74 框架规则各一对）+ golden-vector（74 条框架 FIXTURE 预期向量 + 1 汇总行，回归基线）+ cli A/B 沙箱逐字节等价断言（历史 131 次调用一致性）。**诚实边界（R9 教训）**：fixture 是构造样例，5 个真实项目测试曾漏 3 个 P0/P1 bug——fixture + 真实项目双轨制；外部有效性立项稿 `verifier/v2/external-validity.md`（未达阈值前不得宣称"守护代码合规"）。
+**验证器（司法层）**：`verifier/v1/`——fixture 双态（violating/compliant 各一套最小样例，74 框架规则各一对；WP-Q2H-B 后 check_framework=advisory，violating 断言 = 检测命中 expected-fail-ids 而非退出码非零——违规不阻断是设计语义，检出能力才是被验证物）+ golden-vector（74 条框架 FIXTURE 预期向量 + 1 汇总行，回归基线）+ cli A/B 沙箱逐字节等价断言（历史 131 次调用一致性）。**诚实边界（R9 教训）**：fixture 是构造样例，5 个真实项目测试曾漏 3 个 P0/P1 bug——fixture + 真实项目双轨制；外部有效性立项稿 `verifier/v2/external-validity.md`（未达阈值前不得宣称"守护代码合规"）。
 
 ### 5.2 三值规则引擎（Codex Decision 架构 bash 落地）
 
@@ -388,7 +388,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **三值作用域**：只作用于"命令该不该跑"的判定（Bash 命令放行，那里有宿主审批通道）；门禁家族不重分类。
 - **拒绝消息 = 给模型的 API**：`FORBID <rule-id>: <原因>；替代：<方案>`——拒绝携带替代方案，AI 能自动改道。
 - **自指防护**：integrity-guard deny 保护 facts/trace/规则自身不被 AI 篡改（执行前哈希自校验）。
-- **审批沉淀**：GATE_ENFORCE_DENY 临时放行可持久化为规则（写回 rules.d + justification + 日期 + decisions.jsonl 落痕——R14 起含 goal_id/closure/repair_review，R15 起含 ref_trace_hash 链式锚定）。
+- **审批沉淀**：临时放行持久化为规则——`gate-rules.sh --persist "<pattern>" <verdict> "<justification>" [--goal <id>]`（写 rules.d/approved.rules + 沉淀日期；同步 trace-log --decision 落痕 UserChallenge 决策，R14 起含 goal_id/closure/repair_review、R15 起含 ref_trace_hash 链式锚定）。校验三防：verdict 白名单/forbid 须含替代/同 pattern 幂等拒绝（改判先删旧行）。fail-gate-hook 的 deny 消息携带该命令（FORBID 消息 = 给模型的 API——拒绝即指路）。
 
 ### 5.3 宿主下沉（双宿主真实拦截）
 
@@ -420,7 +420,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ## 6. 演化设计（成长层）
 
-- **生成物自成长链**：fingerprint 感知（SessionStart/手动 --diff）→ 变化目录 scope 报告（局部重探查，不整仓重扫）→ inventory-update 单条更新（replace/delete/append §4/§6/§9，原子替换 + 决策落痕）→ last-good 红线（文件数骤降 >50% 拒绝 --write，需 --force）→ `--commit-fp` 落新基线。新增闭环：局部重探查产出的新组件自动进地图（探查即入账）。
+- **生成物自成长链**：fingerprint 感知（SessionStart/手动 --diff）→ 变化目录 scope 报告（局部重探查，不整仓重扫）→ inventory-update 单条更新（replace/delete/append §4/§6/§9，原子替换 + 决策落痕）→ last-good 红线（文件数骤降 >50% 拒绝 --write，需 --force）→ `--commit-fp` 落新基线。局部重探查产出的新组件经 `inventory-update append` 入地图（AI 按自成长链操作显式入账，非隐式自动写——探查产出先给 AI 判稳，再登记，决策落痕）。
 - **生成器成长通道**：吸收一律走"调研报告（docs/research/）→ 三问评审 → 落地为条件/路由/引导之一"（phase=absorption 留痕 decisions.jsonl）；上游重核从全量改为破坏性变更驱动（breaking/major 触发 + 季度例行）。
 - **生成器演进协议**（R16 起，本体先行——§0.2 冲程三的工程化）：新机制/新概念先过冲程二四问——新实体进 objects.md、新关系进 links.md（必配机器锚）、新动作进 actions.md；再派生实现；收尾跑 self-check 类型对账 + ontology-verify 六锚。吸收三问（准入评审：要不要吸收）与本体四问（设计方法：怎么落地）串联——先三问、后四问。
 - **成长的预算约束**：成长 = 预算内替换（新知识进来必须有旧知识出去或税不增），否则只是膨胀。
@@ -489,6 +489,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **R13 重构**（去抽象化，2026-08-21，即决策 33/34 + 终态方案 v6）：五批次落地——落地化接线（认知计分退役转 AI 判断引导/十门禁全接线 54-54/industry 真实加载/40 references 路由头）、模板减负（spec 仪式节折叠/workflow 10→4 要素/核对清单 96→12/五维表→两维表）、条件化（rules.d 三值/FORBID 带替代/G18/G19 断言）、生成器瘦身（SKILL.md 142→93 行/facts 21 键退役/check_doc 434→70 行/税制断言）、宿主下沉（Codex hooks/settings 沙箱 deny）。方案全文 `docs/research/R13-final-plan.md`（v6）。
 - **R14 吸收**（阿里云 Qoder Better Harness，2026-08-21）：审计/复盘/趋势三层机制落地——审计单元目标闭环化（decisions.jsonl 增 goal_id+closure）、证据态分级（gate-report.sh 输出的"§4.2 证据状态分级"段：Present/Wired/Exercised/Outcome-supported + 分数上限）、双账本（gate-trends：Repair Progress 当窗验证 + guardrail 配对指标）、修复复核位（decisions.jsonl 增 repair_review）。与过程强制层（门禁）互补不竞争。详见 `docs/research/R14-better-harness-absorption.md`。
 - **R15 吸收**（MirroS HarnessEval，2026-08-21）：评测层 Harness 落地——digest 链式锚定（decisions.jsonl 增 ref_trace_hash：三本账从并列升级为链式，上游篡改全链 stale 可检出）、missing_evidence 态（gate-report 证据态加"该测没测"≤59）、gate-plan 选择即证据（`scripts/gate-plan.sh`：启用/跳过理由负空间可审计，收口 diff 计划 vs 实际触发）、audit-closure 审计即完成条件（`scripts/audit-closure.sh`：goal 闭环完备性重走，串 mark-active advisory 门）。三层 Harness 拼图完整：过程强制门禁层（R13 前）+ 工作流审计层（R14）+ 评测层（R15）。详见 `docs/research/R15-harnesseval-absorption.md`。
+- **实现符合性收口**（impl-conformance，2026-08-23）：DESIGN 宣称 vs 实现逐章对账后的补齐——①审批沉淀从宣称变实现（gate-rules.sh --persist：写 approved.rules + decisions.jsonl 落痕 + 三重校验，§5.2）；②CI 长红修复：WP-Q2H-B 降 check_framework=advisory 后三层断言（fixture 双态退出码/E2E fail 链/verifier 判据）未跟上新语义，统一改为"检测命中 expected-fail-ids"（检出能力是被验证物，违规不阻断是设计语义），golden-vector 重建；③facts.conf 三键真值同步（SCRIPT_LOC 5917/UNIVERSAL_FILES 58/UNIVERSAL_FILES_CORE 30——R14-R16 新增条目后长期漂移，C1 与行数断言终于全绿）；④G14/G17 absorb 三载体补齐（SKILL.md 引用行）；⑤G21 新增：framework-globs 快照对账锚；⑥detect-profile-drift 自扫守卫（关 §11 边界①）。
 - **R16 重构**（本体论驱动，2026-08-21）：显式本体层落地——`assets/ontology/` 三份类型目录（objects 17 类型含负面承诺/links 10 关系各配机器锚/actions 11 受治理动作）作为与 facts.conf 平行的**类型事实源**；self-check 类型对账（18 实存点）；`scripts/ontology-verify.sh` 六锚一站式健康检查；地图骨架语义/动能两区纪律（是/应当不混写）；本体层带"何时读我"路由头随生成物分发（G18 孤儿扫描覆盖 assets/ontology/）。设计闭环：本体论驱动原理（本文 §0）→ 类型事实源 → 机器对账 → 运行时健康检查。
 
 演化模式定型为"吸收→膨胀→诊断→减重"五轮循环；R13 是第一个以落地化（而非加法治理）收口的循环。
@@ -524,7 +525,7 @@ OS 沙箱（宿主职责，吸收决策架构不复制实现）/ Guardian LLM �
 
 | 类 | 测试 | 守护 |
 |----|------|------|
-| 核心机制 | test-gate-rules / test-fail-gate-hook / test-failure-detector / test-ai-judgment | 三值求值 9 态/hook 拦截/deny 审计/AI 判断引导模式（含机械退役确认） |
+| 核心机制 | test-gate-rules / test-fail-gate-hook / test-failure-detector / test-ai-judgment | 三值求值+审批沉淀 15 态/hook 拦截/deny 审计/AI 判断引导模式（含机械退役确认） |
 | 探查与自成长 | test-project-fingerprint / test-inventory-verify / test-inventory-update / test-detect-frameworks | 指纹+last-good 15 态/计数核验+path-check+stability 14 态/地图单条更新 9 态/框架检测 |
 | 生成与模板 | test-conf-render / test-cost-report / test-context-surface / test-compare-baseline | conf 渲染+industry 注入/成本汇总/上下文预算/基线对比 |
 | 门禁与规格 | test-framework-evidence / test-migrate-verify-blocks / test-signal-index / test-spec-task-type-gating / test-spec-template-gating | 框架证据台账/verify 块迁移/信号索引/任务类型门控/spec 模板门控 |
@@ -575,7 +576,9 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 | `.github/workflows/ci.yml` | CI 三平台（Linux 全覆盖 + mac/win 轻量腿） | §3.6 |
 | `.swarm-yuan/`（项目级，运行时生成） | 四本账（trace/decisions/gate-runs/gate-audit）+ key-nodes 看板 + gate-plan 声明 + 指纹 + notes | §7 留痕设计的落盘位置 |
 
-**已知边界**（登记待修，非设计内容）：① `detect-profile-drift.sh` 在 worktree 场景的路径推导误报（把 worktree 内 README 副本误判为目标项目升档信号）——main 分支无此问题，worktree 内跑 self-check 时可能出现"假漂移"；处置候选：识别自身处于 swarm-yuan 仓 worktree 时跳过，或拆分"扫描目标项目"与"扫描自身"两命令。② `assets/rules.d/framework-globs.rules` 默认值快照无运行时消费者（R13 conf 收缩的未竟接线，§5.4）——处置候选：conf-render 改为从快照读默认值（快照升为真值源），或删快照回归纯 conf 口径。
+**已知边界**（登记待修，非设计内容；已修复的移入下条修复记录）：无。
+
+**已修复边界**（impl-conformance，2026-08-23）：① `detect-profile-drift.sh` worktree 自扫误报——加自扫守卫（识别 swarm-yuan 仓布局即跳过）；② `framework-globs.rules` 快照无消费者——self-check G21 对账锚（快照 43 变量 vs arch.conf 集与值一致，漂移可检出）。
 
 ---
 
