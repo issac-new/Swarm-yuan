@@ -126,9 +126,9 @@ fi
 _new_lines=$(wc -l < "$_tmp" | tr -d ' ')
 _old_lines=$(wc -l < "$RM" | tr -d ' ')
 case "$_op_desc" in
-  replace) [[ "$_new_lines" -eq "$_old_lines" ]] || { echo "✗ replace 行数漂移（$_old_lines → $_new_lines）" >&2; exit 1; } ;;
-  delete)  [[ "$_new_lines" -eq $((_old_lines - 1)) ]] || { echo "✗ delete 行数漂移（$_old_lines → $_new_lines）" >&2; exit 1; } ;;
-  append)  [[ "$_new_lines" -eq $((_old_lines + 1)) ]] || { echo "✗ append 行数漂移（$_old_lines → $_new_lines）" >&2; exit 1; } ;;
+  replace) [[ "$_new_lines" -eq "$_old_lines" ]] || { echo "✗ replace 行数漂移（${_old_lines} → ${_new_lines}）" >&2; exit 1; } ;;
+  delete)  [[ "$_new_lines" -eq $((_old_lines - 1)) ]] || { echo "✗ delete 行数漂移（${_old_lines} → ${_new_lines}）" >&2; exit 1; } ;;
+  append)  [[ "$_new_lines" -eq $((_old_lines + 1)) ]] || { echo "✗ append 行数漂移（${_old_lines} → ${_new_lines}）" >&2; exit 1; } ;;
 esac
 
 # 原子替换
