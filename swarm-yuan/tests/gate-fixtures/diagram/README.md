@@ -1,3 +1,10 @@
+# diagram gate-fixture（R13 后语义）
+
+check_diagram 自 WP-Q2H-A/R13 起 转 AI 自觉判断模式（机械 grep 分支退役，
+GATE_AI_JUDGMENT 恒 1）：输出固定引导文案（自查要点 + notes 留痕提示 + advisory pass 行），
+子组输出一致——原机械双态区分（含图/无图、深链/浅链）已随机械分支退役。
+样本源码保留（给 AI 判断场景提供真实上下文）。
+
 # diagram 门禁 fixture 语义登记（原 mermaid，升级为多图表引擎）
 
 `check_diagram`（--diagram，原 --mermaid 别名仍兼容；架构图/流程图/调用链 + 统计/分布/趋势可视化检查）**永不 fail**：
