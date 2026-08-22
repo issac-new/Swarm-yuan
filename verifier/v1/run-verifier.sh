@@ -35,8 +35,10 @@ fixtures() {
     rc_v=$(echo "$outcome" | awk '{print $1}')
     rc_c=$(echo "$outcome" | awk '{print $2}')
     id_fail=$(echo "$outcome" | awk '{print $3}')
-    # id 级双态断言（P2 #5）：violating 期望非 0，compliant 期望 0，且 expected-fail-ids 全命中（id_fail=0）
-    if [ "$rc_v" != "0" ] && [ "$rc_c" = "0" ] && [ "$id_fail" = "0" ]; then
+    # id 级双态断言（P2 #5 + impl-conformance 修正）：check_framework 自 WP-Q2H-B 降 advisory，
+    # violating 退出码恒 0 是设计语义——判据改为：expected-fail-ids 全命中（id_fail=0，检测能力）
+    # 且 compliant 期望 0。rc_v 仍记录进向量（行为基线），不作为通过条件。
+    if [ "$rc_c" = "0" ] && [ "$id_fail" = "0" ]; then
       echo "FIXTURE $id OK (v=$rc_v c=$rc_c ids=0)"
     else
       echo "FIXTURE $id BAD (v=$rc_v c=$rc_c ids=$id_fail)"; fails=$((fails+1))

@@ -61,4 +61,36 @@ out=$(bash "$SH" assets/rules.d "sudo rm -rf /" --quiet 2>/dev/null); rc=$?
 out=$(bash "$SH" assets/rules.d "git diff --stat" --quiet 2>/dev/null)
 [[ "$out" == "allow" ]] && ok "态9 默认规则集 allow 冒烟" || bad "态9b: $out"
 
+# ===== --persist 审批沉淀（impl-conformance 补齐，DESIGN §5.2）=====
+_pdir="$TMP/persist-rules"; mkdir -p "$_pdir" "$TMP/proj"
+# 态10 沉淀 allow 规则 + 决策落痕（trace-log 在 ../assets，生成器布局）
+PROJECT_DIR="$TMP/proj" bash "$SH" "$_pdir" --persist "cargo test *" allow "本地测试放行" --goal g-test 2>/dev/null
+rc=$?
+[[ -f "$_pdir/approved.rules" ]] && grep -q 'cargo test \* → allow' "$_pdir/approved.rules" && [[ $rc -eq 0 ]] \
+  && ok "态10 沉淀写入 approved.rules" || bad "态10 rc=$rc"
+grep -q '"goal_id":"g-test"' "$TMP/proj/.swarm-yuan/decisions.jsonl" 2>/dev/null \
+  && ok "态10b decisions.jsonl 落痕（含 goal_id）" || bad "态10b 决策未落痕"
+
+# 态11 沉淀后判定生效（allow 放行）
+out=$(bash "$SH" "$_pdir" "cargo test --all" --quiet 2>/dev/null)
+[[ "$out" == "allow" ]] && ok "态11 沉淀规则即生效" || bad "态11: $out"
+
+# 态12 幂等防线：同 pattern 重复沉淀拒绝
+bash "$SH" "$_pdir" --persist "cargo test *" prompt "改判尝试" >/dev/null 2>&1; rc=$?
+[[ $rc -eq 1 ]] && ok "态12 重复 pattern 拒绝" || bad "态12 rc=${rc}（应 1）"
+
+# 态13 forbid 无替代拒绝（行格式纪律）
+bash "$SH" "$_pdir" --persist "cargo clean" forbid "就是不让跑" >/dev/null 2>&1; rc=$?
+[[ $rc -eq 1 ]] && ok "态13 forbid 无「替代：」拒绝" || bad "态13 rc=${rc}（应 1）"
+
+# 态14 非法 verdict 拒绝
+bash "$SH" "$_pdir" --persist "make *" maybe "非法值" >/dev/null 2>&1; rc=$?
+[[ $rc -eq 1 ]] && ok "态14 非法 verdict 拒绝" || bad "态14 rc=${rc}（应 1）"
+
+# 态15 forbid 带替代沉淀成功 + FORBID 消息带替代
+bash "$SH" "$_pdir" --persist "cargo clean" forbid "删产物拖慢验证；替代：cargo clean -p <crate> 单包清理" >/dev/null 2>&1; rc=$?
+[[ $rc -eq 0 ]] && ok "态15 forbid 带替代可沉淀" || bad "态15 rc=$rc"
+err=$(bash "$SH" "$_pdir" "cargo clean" 2>&1 >/dev/null)
+printf '%s' "$err" | grep -q '替代：cargo clean -p' && ok "态15b FORBID 消息带替代" || bad "态15b: $err"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-gate-rules"; exit 0; } || { echo "FAIL test-gate-rules" >&2; exit 1; }

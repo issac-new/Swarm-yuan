@@ -1440,6 +1440,34 @@ check_multibyte_var_adjacency() {
 check_stable_propagate_wiring
 check_multibyte_var_adjacency
 
+# ===== G21：framework-globs 快照对账（impl-conformance：快照消费者，关闭 §11 已知边界②）=====
+# assets/rules.d/framework-globs.rules 是 R13 conf 收缩的 glob 默认值快照（43 变量）。
+# 本断言让它获得真实消费路径：arch.conf 里的 glob 变量集与值须与快照一致——
+# 快照从"无消费者的数据副本"升级为"arch.conf glob 默认值的对账锚"（漂移即 warn）。
+check_framework_globs_reconciliation() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local snap="$base/assets/rules.d/framework-globs.rules" arch="$base/assets/precheck.arch.conf"
+  if [[ ! -f "$snap" || ! -f "$arch" ]]; then
+    warn "framework-globs 快照或 arch.conf 缺失——G21 对账跳过（快照失锚）"; return 0
+  fi
+  local drift=0 total=0 var snap_val arch_val
+  while IFS= read -r var; do
+    [[ -z "$var" ]] && continue
+    total=$((total+1))
+    snap_val=$(grep -m1 "^${var}=" "$snap" | sed 's/#.*$//' | tr -d '[:space:]')
+    arch_val=$(grep -m1 "^${var}=" "$arch" | sed 's/#.*$//' | tr -d '[:space:]')
+    if [[ -z "$arch_val" ]]; then
+      warn "G21 快照漂移：${var} 在快照但不在 precheck.arch.conf（删快照行或补 conf 变量）"
+      drift=$((drift+1))
+    elif [[ "$snap_val" != "$arch_val" ]]; then
+      warn "G21 快照漂移：${var} 值不一致（快照=${snap_val} vs arch.conf=${arch_val}）——快照是默认值单一事实源，改值须两侧同步"
+      drift=$((drift+1))
+    fi
+  done < <(grep -oE '^[A-Z_]+=' "$snap" | tr -d '=')
+  [[ "$drift" -eq 0 ]] && echo "  ✓ framework-globs 快照对账：${total} 变量集与值均与 arch.conf 一致（G21，默认值漂移可检出）"
+}
+check_framework_globs_reconciliation
+
 # ===== Cordis 时空可组合性方法论引用存在性断言（G17，DeepSeek Harness/Cordis 吸收）=====
 # 决策 27（吸收优先于新增门禁）：Cordis 论文（A Programming Paradigm for Spatiotemporal
 # Composability）提出"时间可组合性（移除时撤销副作用）+ 空间可组合性（响应式依赖管理）"，

@@ -42,12 +42,13 @@ for fn in _fw_mybatis_check _fw_lombok_check _fw_spring_batch_check _fw_sharding
   grep -q "^${fn}()" "${FIX_DIR}/scripts/precheck.sh" && echo "✓ ${fn} 已注入" || { echo "✗ ${fn} 未注入"; exit 1; }
 done
 
-# 3. 跑 --framework，断言 exit≠0 且输出含四个 fail id
+# 3. 跑 --framework，断言检出四个 fail id（WP-Q2H-B 后 check_framework=advisory——违规不阻断
+#    退出码是设计语义，断言 = 检测命中：advisory/fail 行含植入的四个违规 id）
 echo "== Step 2: --framework 实跑，断言四个 fail id =="
 out="$(cd "${DEMO}" && bash "${FIX_DIR}/scripts/precheck.sh" --framework 2>&1 || true)"
-rc=0
-(cd "${DEMO}" && bash "${FIX_DIR}/scripts/precheck.sh" --framework >/dev/null 2>&1) || rc=1
-[[ "$rc" -eq 1 ]] && echo "✓ --framework exit≠0（有 fail）" || { echo "✗ --framework exit=0（应有 fail）"; echo "$out" | tail -20; exit 1; }
+printf '%s\n' "$out" | grep -qE '⚠ advisory: fw_|✗ fw_' \
+  && echo "✓ --framework 检出违规（advisory 语义，不断行退出码）" \
+  || { echo "✗ --framework 未检出任何违规（无 advisory/fail 行）"; echo "$out" | tail -20; exit 1; }
 
 for gid in fw_mybatis_dollar fw_lombok_data_jpa fw_batch_step_scope fw_sharding_key_in_dml; do
   echo "$out" | grep -q "$gid" && echo "✓ 输出含 fail id: $gid" || { echo "✗ 输出缺 fail id: $gid"; echo "$out" | grep -E '✗|✓' | head -15; exit 1; }
