@@ -205,7 +205,7 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 | 攻击路径分析 | `--reuse` 门禁的既有稳定单元盘点 | 复用 `--reuse` 结果做反证据检查 |
 | SECURITY.md 策略合并 | 目标 skill 的 security-spec.md（§2） | AI 引用本文 §六 的 root→leaf 合并 |
 | scan contract 三件套 | `to-sarif.sh` SARIF 管线 | codex-security SARIF 与门禁级 SARIF 并行消费 |
-| 14 bundled skills | swarm-yuan 13 节点生成流程 | AI 按 workflow 节点引用对应 skill 模式（本文 §八） |
+| 14 bundled skills | swarm-yuan 12 步生成流程（Step 1-12） | AI 按 workflow 节点引用对应 skill 模式（本文 §八） |
 | Docker 沙箱 | `--sbom` / `--release-sign` 门禁的 CI 配置 | AI 引用本文 §九 做目标 skill CI 沙箱设计 |
 
 ---

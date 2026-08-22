@@ -9,25 +9,25 @@
 
 ## 核心理念
 
-swarm-yuan 的 13 节点生成流程是线性的（Step 0-8），但不同任务类型的关键节点不同：
-- **新项目生成**：全 13 节点 + compliance 档合规矩阵
-- **框架规则注入**：Step 2/4.5/5 + framework-gates 四要素核验
-- **升级已有技能**：Step 1.5/4/7 + PROJECT_SPECIFIC_FILES 保留
-- **合规审计**：Step 3/5.5/7 + industry-profiles + Z3 fail-closed
+swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径见 generation-flow.md），但不同任务类型的关键节点不同：
+- **新项目生成**：全 12 步 + compliance 档合规矩阵
+- **框架规则注入**：Step 3（探查框架）→ Step 7 内④.5（框架深化）→ ⑦.5（门禁注入）→ Step 11（记忆写回）+ framework-gates 四要素核验
+- **升级已有技能**：Step 4（项目形态重判）→ Step 7（填充，保留 PROJECT_SPECIFIC_FILES）→ Step 11（记忆写回）→ Step 12（最终检查）
+- **合规审计**：Step 5（特征卡含合规基线）→ Step 8（合规门禁配置）→ Step 9（集成拓扑）→ Step 12（fail-closed 核验）+ industry-profiles
 
-**路由表的价值**：避免「所有任务都跑全量 13 节点」的浪费，聚焦关键路径。
+**路由表的价值**：避免「所有任务都跑全量 12 步」的浪费，聚焦关键路径。
 
 ## 路由表
 
 | 任务类型 | 触发信号 | 关键节点序列 | 门禁聚焦 | profile 档 |
 |---------|---------|-------------|---------|-----------|
-| **新项目生成** | `generate-skill.sh <name> <project-dir>`（无 --upgrade） | 全 13 节点（Step 0-8） | --all-full（标准 27）+ 按需 --compliance-suite | auto（默认 standard，合规信号→compliance） |
-| **框架规则注入** | `--inject-frameworks` 或 ACTIVE_FRAMEWORKS 变更 | Step 2（探查框架）→ 4.5（框架深化）→ 5（门禁注入）→ 7（记忆写回） | 框架四要素核验（计数/规则/函数/约束）+ --framework <id> exit 0 | 继承现有 profile |
-| **升级已有技能** | `--upgrade <name> <project-dir>` | Step 1.5（项目形态重判）→ 4（填充，保留 PROJECT_SPECIFIC_FILES）→ 7（记忆写回）→ 8（最终检查） | --verify-completeness + 维度计数核验 + 框架四要素 | 继承现有 profile |
-| **合规审计** | `--compliance-suite` 或 compliance 档项目 | Step 3（特征卡含合规基线）→ 5.5（合规门禁配置）→ 7（四权分离拓扑）→ 8（Z3 fail-closed 核验） | --compliance-suite（合规 17：sbom/crypto/dengbao/pia/sast-deep/oss-eval/release-sign）+ 行业 profile | compliance |
-| **占位符修复** | `--verify-completeness` 报占位符残留 | Step 4（填充缺失文件）→ 5（conf 占位符）→ 8（复验） | --verify-completeness --strict（列 file:line）+ self-check 数字漂移 | 继承现有 profile |
-| **门禁 fail 修复** | precheck.sh --all-full 报 fail | Step 5（conf 调整）→ 6（重跑门禁）→ 7（记忆写回） | gate-runs.jsonl fail-id 级断言 + conf-render.sh 重嗅探 | 继承现有 profile |
-| **数字漂移修复** | self-check.sh 报文档数字与 facts.conf 不符 | Step 7（文档同步）→ 8（self-check 复验） | self-check.sh --check-only（数字漂移检测） | N/A（生成器自身维护） |
+| **新项目生成** | `generate-skill.sh <name> <project-dir>`（无 --upgrade） | 全 12 步（Step 1-12） | --all-full（标准 27）+ 按需 --compliance-suite | auto（默认 standard，合规信号→compliance） |
+| **框架规则注入** | `--inject-frameworks` 或 ACTIVE_FRAMEWORKS 变更 | Step 3（探查框架）→ Step 7 内④.5（框架深化）→ ⑦.5（门禁注入）→ Step 11（记忆写回） | 框架四要素核验（计数/规则/函数/约束）+ --framework <id> exit 0 | 继承现有 profile |
+| **升级已有技能** | `--upgrade <name> <project-dir>` | Step 4（项目形态重判）→ Step 7（填充，保留 PROJECT_SPECIFIC_FILES）→ Step 11（记忆写回）→ Step 12（最终检查） | --verify-completeness + 维度计数核验 + 框架四要素 | 继承现有 profile |
+| **合规审计** | `--compliance-suite` 或 compliance 档项目 | Step 5（特征卡含合规基线）→ Step 8（合规门禁配置）→ Step 9（四权分离拓扑）→ Step 12（Z3 fail-closed 核验） | --compliance-suite（合规 17：sbom/crypto/dengbao/pia/sast-deep/oss-eval/release-sign）+ 行业 profile | compliance |
+| **占位符修复** | `--verify-completeness` 报占位符残留 | Step 7（填充缺失文件）→ Step 8（conf 占位符）→ Step 12（复验） | --verify-completeness --strict（列 file:line）+ self-check 数字漂移 | 继承现有 profile |
+| **门禁 fail 修复** | precheck.sh --all-full 报 fail | Step 8（conf 调整）→ Step 10（重跑门禁）→ Step 11（记忆写回） | gate-runs.jsonl fail-id 级断言 + conf-render.sh 重嗅探 | 继承现有 profile |
+| **数字漂移修复** | self-check.sh 报文档数字与 facts.conf 不符 | Step 7（文档同步）→ Step 12（self-check 复验） | self-check.sh --check-only（数字漂移检测） | N/A（生成器自身维护） |
 | **Oracle Gate 循环** | `setup-loop.sh` 启动 | 无固定节点——AI 自主迭代直到 verify_command 通过 | verify_command（默认 self-check + precheck --all-full） | 继承现有 profile |
 
 ## 路由决策准则

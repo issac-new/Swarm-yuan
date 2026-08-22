@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # setup-loop.sh — 启动 swarm-yuan Oracle Gate 循环（借鉴 tanweai/pua pua-loop + autoresearch Oracle Isolation）
 #
-# 设计理念：swarm-yuan 生成流程跑完 13 节点后，AI 说「已生成 skill」——但没独立验证。
+# 设计理念：swarm-yuan 生成流程跑完 Step 1-12 后，AI 说「已生成 skill」——但没独立验证。
 # 本脚本创建状态文件，loop-hook.sh 在 Stop 事件时独立跑 verify_command，
 # promise 被 Oracle 拒绝则 loop 继续，直到验证通过或 loop-abort。
 #

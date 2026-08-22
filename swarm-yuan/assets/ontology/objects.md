@@ -1,5 +1,7 @@
 # swarm-yuan 对象类型目录（Object Types）——显式本体层的语义原语
 
+> **何时读我**：新增/修改实体类型、评审机制提案的实体归属、跑 self-check 类型对账或 ontology-verify 六锚健康检查时读。日常开发任务不读。
+>
 > 本文件是 swarm-yuan 的**类型事实源**：定义系统承诺的全部实体类型（Quine 本体论承诺的机器可读形态）。
 > 与 facts.conf 的分工：facts.conf 管**数字口径**（多少门禁/变量），本目录管**类型口径**（存在哪几类实体、各带什么属性、参与什么关系）。
 > 三姊妹文件：`objects.md`（本文件，名词/语义原语）｜`links.md`（关系类型）｜`actions.md`（动词/动能原语）。
@@ -45,7 +47,7 @@
 
 | 类型 ID | 名称 | 时间部分 | 记录载体（occurrent 固化为 continuant） |
 |---------|------|----------|----------------------------------------|
-| `Generation` | 生成过程 | Step 0-8 | trace.jsonl 节点行 |
+| `Generation` | 生成过程 | Step 1-12 | trace.jsonl 节点行 |
 | `DevSession` | 开发会话 | turns | hooks 生命周期；trace 会话段 |
 | `GateExecution` | 门禁执行 | 单次 check 起止 | gate-runs.jsonl 行 |
 | `Decision` | 决策事件 | 提议→审议→落定 | decisions.jsonl 行（含 outcome 生命周期） |

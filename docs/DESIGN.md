@@ -1,7 +1,7 @@
 # swarm-yuan 设计文档（单一事实源）
 
 > **文档性质**：swarm-yuan 的**单一设计事实源**——本体论驱动原理、闭环流动力学、定位理念、架构规格、决策演化史、验收，全部整合于此一份。原 DESIGN-ONTOLOGY.md / DESIGN-LOGIC.md 已并入 §0，原文档归档。
-> **版本**：v4（2026-08-21/22；v1=R13 终态整理，v2=+R14/R15，v3=并入本体论驱动原理与闭环流+8 份归档文档内容，v4=八轮排查修复——数字虚报 3 处/工具入口表/references 全索引/奠基理念/测试矩阵/总承诺口径修正）。
+> **版本**：v4（2026-08-21/22；v1=R13 终态整理，v2=+R14/R15，v3=并入本体论驱动原理与闭环流+8 份归档文档内容，v4=十轮排查修复＋设计一致性收口——数字虚报/工具入口表/references 全索引/奠基理念/测试矩阵/口径/仓库结构/读者可用性；收口=派生表 10 关系全量化、规则来源四层澄清、生成流程唯一编号 Step 1-12、本体层消费路径、账本落盘全景）。
 > **证据基础**：zcode 会话库 32 个主会话全量提取（五轮"过重"诊断史）｜仓库病理量化诊断｜openai/codex 源码深挖（锚定 file:line）｜本 session 十轮迭代执行者自省。
 > **方案总承诺**：R13 重构期（v2.0）每个迁移单元的 diff 必须为净减法或等量替换（新增 ≤ 删除，`git diff --stat` 机器验证）；R16 起新概念须过本体驱动四问（§0.2 冲程二——新实体进 objects.md 前想清区别、新关系必配机器锚），不设"永不新增"的绝对禁令——演进纪律从"数量冻结"升级为"结构约束"。
 
@@ -18,12 +18,18 @@ swarm-yuan 是被本体论驱动的生成系统：**先说清世界里有什么�
 
 | 本体里的关系（先有） | 派生的机制（后有） |
 |---------------------|-------------------|
-| 地图**表征**仓库 | path-check（验证表征指向真实存在）、计数核验 ≥0.95（验证表征覆盖够全）、stability-audit（验证表征没过时） |
-| 规则**治理**命令 | 三值求值器（治理的判定）、FORBID 带替代（治理的表达方式）、审批沉淀（治理的演化通道） |
-| 账本**记录**过程 | trace-log（记录的工具）、gate-audit（记录的固化）、审计闭环（记录的复盘） |
-| 技能**依赖**生成器版本 | .swarm-yuan-version 版本戳、--upgrade 升级机制 |
-| 决策**锚定**trace | ref_trace_hash digest 链 |
-| 好基线**不因坏状态**失效 | last-good 红线（骤降 >50% 拒写） |
+| 地图**表征**仓库（represents） | path-check（验证表征指向真实存在）、计数核验 ≥0.95（验证表征覆盖够全）、stability-audit（验证表征没过时） |
+| 账本**记录**过程（records） | trace-log（记录的工具）、gate-audit（记录的固化）、审计闭环（记录的复盘） |
+| 指纹**快照**仓库时态（snapshot_of） | project-fingerprint --diff（快照 vs 当前态断裂检测）、last-good 红线（骤降 >50% 拒写——好基线不因坏状态失效） |
+| 决策**闭环**目标（closes） | goal_id+closure 字段（末次决策定闭环态）、audit-closure 完备性重走 |
+| 技能**生成自**生成器（generated_by） | .swarm-yuan-version 版本戳、--upgrade 升级机制 |
+| 规则**治理**命令（governs） | 三值求值器（治理的判定）、FORBID 带替代（治理的表达方式）、审批沉淀（治理的演化通道） |
+| 技能 hooks **挂载**宿主（mounted_in） | hooks.json 双宿主渲染、fail-gate-hook 拦截（挂载即生效） |
+| 账本行**锚定**上游账本（anchors） | ref_trace_hash digest 链（上游篡改 → 失配 → 全链 stale） |
+| 稳定性标注**传播**下游（propagates_to） | --stable-diff 下游传播 warn（决策 28，Palantir markings-propagate 映射） |
+| 计划**声明**门禁选择（plans） | gate-plan.json 声明 + --diff 收口（选择即证据，负空间可审计） |
+
+上表 = links.md 10 条关系**全量**（表征系 4 条落校验轴机制、依赖系 6 条落边界轴机制——§0.3 的 2×2 投影在此自证）；机制不派生自目录外关系（类型封闭性）。
 
 **反推纪律（这条冲程的执法）**：每个机制必须能回答"我实现本体里的哪条关系"。答不出的机制是孤儿——要么删掉，要么先回本体补定义再实现。这一条直接继承 R13 的"概念落地问责"，但从"落地"深化到"从本体派生"。
 
@@ -38,6 +44,8 @@ swarm-yuan 是被本体论驱动的生成系统：**先说清世界里有什么�
 4. **锚怎么检测失效？**（进 self-check 对账或 ontology-verify 健康检查）
 
 四问答完，实现是水到渠成的；四问没答就写代码，就是 R13 之前五轮膨胀的老路。
+
+**示例（四问走一遍——R15 ref_trace_hash 的实际推导）**：需求"决策记录与执行证据要可配对"→①新实体？无——复用既有 Decision/Ledger 类型；②新关系？有：`anchors`（decisions 行 → trace 末行，进 links.md）；③机器锚？`ref_trace_hash` 字段 = trace.jsonl 末行 cksum；④锚失效怎么检测？ontology-verify 锚四抽验 digest 链——失配即全链 stale 可检出。四问走完，实现收敛为 trace-log.sh 一个字段 + 对账点两处，没有多余设计。
 
 #### 冲程三：本体驱动演进（系统怎么成长）
 
@@ -54,7 +62,7 @@ swarm-yuan 是被本体论驱动的生成系统：**先说清世界里有什么�
 
 Palantir 的一句话在这个系统里的对应："你建不出绕过治理的看板，因为看板读的是受治理的对象" ↔ **AI 做不出绕过门禁的操作，因为操作过的是受治理的规则和账本**。
 
-- AI 读到的不是一堆散文档，是类型名词（17 类型）+ 封闭动作空间（11 动作——每个都有治理载体和留痕载体）
+- AI 读到的不是一堆散文档，是类型名词（17 类型）+ 封闭动作空间（11 动作——每个都有治理载体和留痕载体）——三份类型目录带"何时读我"路由头随生成物分发，设计新机制/演进本体/对账时读取，不占每会话认知面
 - 想直接改文件？挂载在宿主上的 hooks 拦（mounted_in 关系生效）
 - 想改账本抹痕迹？integrity-guard 的自指防护拦（Ledger 是受治理对象）
 - 想跑危险命令？rules.d 三值判 forbid，FORBID 消息带替代方案——**在受约束空间里指路，而不是在自由空间里祈祷**
@@ -240,7 +248,7 @@ harness（宿主 CLI：Codex/Claude Code）管 agent loop/沙箱/审批通道；
 
 ### 3.3 结构性保障（层依赖显式单向）
 
-五层一棵树：生成 → 探查（产地图）/ 约束（rules.d+precheck+hooks）/ 演化（fingerprint+inventory-update）/ 留痕（trace+decisions）。单向边由目录物理隔离承载：references/ 不 import scripts/（self-check G19 反向引用=0 断言）；每层唯一入口命令；分层失败隔离（地图坏不影响约束；rules.d 缺失降级最小规则集）。
+五层一棵树：生成 → 探查（产地图）/ 约束（rules.d+precheck+hooks）/ 演化（fingerprint+inventory-update）/ 留痕（trace+decisions）。单向边由目录物理隔离承载：references/ 不 import scripts/（self-check G19 反向引用=0 断言）；每层唯一入口命令；分层失败隔离（地图坏不影响约束；rules.d 缺失降级最小规则集）。五层各有章节着落：§8 生成 / §4 探查 / §5 约束 / §6 演化 / §7 留痕。
 
 ### 3.4 兄弟工具与装配关系（外部系统边界澄清）
 
@@ -291,7 +299,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ### 3.7 概念体系收敛与方法论承载
 
-只允许 5 个层次名词为主轴：**探查 / 约束 / 演化 / 留痕 / 生成**。认知框架类概念（六阶链/六维动力学/三元演化/七推理/辩证范畴/五维偏差/思维模型）不删除不堆砌——以“工作时按此思考”的指引式表述融入对应层次，落地为 AI 判断引导（逐维自查 → `.swarm-yuan/notes/cognition.md` 留痕，GATE_AI_JUDGMENT 唯一模式；骨架的“工作时的思考框架”表四行：探查按六阶链/思考用逻辑剃刀/决策三级分类/纠偏辩证+领域防达克）。
+只允许 5 个层次名词为主轴：**探查 / 约束 / 演化 / 留痕 / 生成**。认知框架类概念（六阶链/六维动力学/三元演化/七推理/辩证范畴/五维偏差/思维模型）不删除不堆砌——以“工作时按此思考”的指引式表述融入对应层次，落地为 AI 判断引导（逐维自查 → `.swarm-yuan/notes/cognition.md` 留痕，GATE_AI_JUDGMENT 唯一模式；骨架的“工作时的思考框架”表四行：探查按六阶链/思考用逻辑剃刀/决策三级分类/纠偏辩证+领域防达克）。本体层词汇（17 类型/10 关系/11 动作，§0.4）不占这 5 个概念预算——它是机器对账的类型事实源（§0.2 冲程一），不是叙事概念体系：AI 只在设计新机制/演进本体/对账时经“何时读我”路由读取，不进每会话认知面。
 
 **方法论 references 承载表**（40 份全带“何时读我”路由头，核心 10 份职责）：
 
@@ -299,7 +307,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 |-----------|------|------|
 | exploration-guide.md | 探查 | §C+ 探查方法论（形态判定/全量穷举/三层调用链/编排约束/五维字段定义） |
 | template-spec.md | 探查→产物 | 六段式填充规范 + 生成后核对清单 + 96→12 项核对规则 |
-| generation-flow.md | 生成 | 生成流程 Step 0-8 详解（决策 32 折叠，按需读） |
+| generation-flow.md | 生成 | 生成流程 Step 1-12 详解（决策 32 折叠，按需读；唯一编号口径见 §8.1） |
 | workflow 模板 | 使用 | 八节点 × 4 要素骨架 |
 | decision-governance.md | 留痕 | G1 决策治理（三级分类/五要素/decisions.jsonl 格式/ISO 42001 对齐） |
 | review-methodology.md | 留痕 | 代码审查方法论（rubric 判定/P0-P3/规则溯源） |
@@ -307,7 +315,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | subagent-orchestration.md | 使用 | 子代理编排（comet/gstack/ECC/Ruflo 四源方法论） |
 | cognition-framework.md | 使用 | 五层认知基底详表（认知递进/思维语言/辩证/偏差/统一——工程启发式框架，非心理测量学构念） |
 | domain-knowledge.md | 探查 | 领域知识库（防达克） |
-| task-methodology-router.md | 使用 | 任务类型×方法论路由（8 类任务选关键节点序列+门禁聚焦，避免全任务跑全量 13 节点） |
+| task-methodology-router.md | 使用 | 任务类型×方法论路由（8 类任务选关键节点序列+门禁聚焦，避免全任务跑全量 12 步） |
 | logic-razor.md / cognitive-bias.md | 使用 | 逻辑剃刀删冗余假设 / 认知偏差防范（五维偏差+思维模型） |
 
 **references 全承载索引**（40 份全列，按六类——每份都是真实消费路径，孤儿=0 由 self-check G18 执法）：
@@ -327,7 +335,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **形态判定先行**（§C+.0）：backend/frontend/async/desktop/mobile/lib/common，维度适配由 `inventory-dimensions.conf` 承载；不预设项目类型。
 - **全量穷举 + 计数核验**：组件清单 ≥ 枚举计数 × 0.95；`--path-check` 杀幻觉路径（HALLUCINATION 阻断 mark-active）；`--stability-audit` 三机械信号（git churn/fan-in/测试存在性）与标注冲突 → STABILITY_WARN（advisory）。
   > **实证来源（sess_733ff1c4, 2026-07-11）**：ncwk-dev 初版只列 10 个组件，真实代码库有 99 .vue + 8 store + 12 adapter + 17 loop 模块——样本化填充仅 10% 覆盖。0.95 红线由此定：强制穷举 + 三层调用链（注册装配/模块依赖矩阵/组件挂载树）+ 编排约束 6 类（导入方向/注册顺序/路由挂载/文件落位/状态所有权/测试边界，每条须代码证据）+ 接口全量枚举禁通配符。
-- **两维表规范**：地图行 = `| 路径 | 说明与约束 |`。路径反引号包裹（path-check 校验存在性）；说明列写"它是什么+接口/约束+稳定性标注词"（"导出 add（禁止改）"——stability-audit 按行内字面词识别，与列位置无关）。维度/来源等纯记账列已退役（R13）。
+- **两维表规范**：地图行 = `| 路径 | 说明与约束 |`。路径反引号包裹（path-check 校验存在性）；说明列写"它是什么+接口/约束+稳定性标注词"（"导出 add（禁止改）"——stability-audit 按行内字面词识别，与列位置无关）。维度/来源等纯记账列已退役（R13）。说明列执行**语义/动能两区纪律**（R16 本体层口径，是/应当不混写）：说明列是表征区——只写"是什么"（组件/接口/依赖/稳定性标注词的引用）；"应当怎样"的规范执行体只落 rules.d/*.rules 与门禁，地图至多引用规范词、不承载执行逻辑（地图骨架自带该纪律说明，links.md 使用纪律第 3 条同口径）。
 - **特征卡**：P0 六项强制 / P1 十一项可增量（draft 期「（P1 待补）」允许，mark-active 前清零）；探查期产出，受检不自证。
 
 ### 4.1 框架规则引擎格式契约（74 框架规则的结构约定，方案 A 选型 2026-07-17）
@@ -336,7 +344,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 **门禁片段 `assets/framework-gates/<fw>.sh`**：与规则 md 1:1 配对（框架证据台账对账），注入目标 precheck.sh 标记区块（`# >>> swarm-yuan:framework-gates >>>`），生成与 --upgrade 共用幂等注入，区块 sha 记录漂移检测。
 
-**生成时数据流**：§C+.0.5 探查 → ACTIVE_FRAMEWORKS+版本 → Step 4.5 逐框架读 md（信号确认→构件枚举→规律种子实例化附证据）→ Step 7.5 --inject-frameworks 注入门禁片段+生成 framework-knowledge.md 骨架+填 conf 变量 → Step 12 四要素量化验收（规律数≥门槛且 100% 含证据字段，不过回 Step 4.5）。
+**生成时数据流**（步骤编号用 §8.1 唯一口径）：§C+.0.5 探查 → ACTIVE_FRAMEWORKS+版本 → ④.5 框架深化（Step 7 填充期内：逐框架读 md，信号确认→构件枚举→规律种子实例化附证据）→ ⑦.5 门禁注入（Step 10 后：--inject-frameworks 注入门禁片段+生成 framework-knowledge.md 骨架+填 conf 变量）→ Step 12 最终检查四要素量化验收（规律数≥门槛且 100% 含证据字段，不过回 ④.5）。
 
 **ncwk-dev 反哺机制**：已实战验证的手写框架检查（vue/naiveui/pinia/koa/socketio/vite/vitest 7 框架 28 项）先反向收割进片段库作种子，再经注入回灌——"从成功实践反哺范式库"，片段库起步即有高质量样本。
 
@@ -365,18 +373,18 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | ⑤回流 | inventory-update.sh | 地图单条更新（replace/delete/append） |
 | ⑤回流 | gate-plan.sh / audit-closure.sh | 选择即证据/闭环完备性 |
 | ⑤回流 | ontology-verify.sh | 六锚健康检查 |
-| 治理 | self-check.sh | 33 断言（含 G18 孤儿/G19 反向引用/类型对账 18 点） |
+| 治理 | self-check.sh | 33 断言（含 G18 孤儿/G19 反向引用/类型对账 18 点/G20 多字节铁律 + 尾部死代码防线：exit 后无可执行行） |
 | 治理 | adaptive-gating.sh / task-scale.sh / detect-spec-scale.sh / detect-profile-drift.sh | 自适应四维（profile/任务规模/spec 规模/档位漂移） |
 | 治理 | framework-evidence.sh / verify-framework-ruleset.sh | 框架证据台账/规则集验证 |
 | 治理 | compare-baseline.sh / context-surface.sh / to-sarif.sh / gate-report.sh / gate-trends.sh / profile-threshold-survey.sh / migrate-verify-blocks.sh / release-src-packages.sh | 基线对比/上下文预算/SARIF 输出/门禁报告/趋势/阈值调查/verify 块迁移/发布打包 |
 
-**关键资产**（`assets/`）：gates-strict.sh、gates-warn.sh、gates-advisory.sh（三档门禁物理文件）+ gate-enforce-level.conf（分层配置，gen-enforce-level 自动生成）+ industry-profiles/（7 行业 conf，conf-render --industry 真实加载）+ framework-gates/（74 门禁片段）+ facts.conf（数字事实源：FACT_GATES_TOTAL/FACT_REFERENCES/FACT_ARTIFACT_BYTES_BUDGET/FACT_SKILLMD_BYTES_BUDGET/FACT_CONF_VARS_USERFACE 等预算断言键）+ hooks/failure-detector.sh（SPINNING 检测+L1 提示）。
+**关键资产**（`assets/`）：gates-strict.sh、gates-warn.sh、gates-advisory.sh（三档门禁物理文件）+ gate-enforce-level.conf（分层配置，gen-enforce-level 自动生成）+ industry-profiles/（7 行业 conf，conf-render --industry 真实加载）+ framework-gates/（74 门禁片段）+ facts.conf（数字事实源：FACT_GATES_TOTAL/FACT_REFERENCES/FACT_ARTIFACT_BYTES_BUDGET/FACT_SKILLMD_BYTES_BUDGET/FACT_CONF_VARS_USERFACE 等预算断言键）+ ontology/（R16 类型事实源三份：objects/links/actions，带路由头随生成物分发）+ rules.d/（底座规则两套 + framework-globs 默认值快照，§5.2/§5.4）+ hooks/ 五件套（failure-detector SPINNING 检测+L1 提示 / integrity-guard 自指防护 / fail-gate-hook 门禁拦截 / setup-loop / loop-hook，§5.3）。
 
 **验证器（司法层）**：`verifier/v1/`——fixture 双态（violating/compliant 各一套最小样例，74 框架规则各一对）+ golden-vector（74 条框架 FIXTURE 预期向量 + 1 汇总行，回归基线）+ cli A/B 沙箱逐字节等价断言（历史 131 次调用一致性）。**诚实边界（R9 教训）**：fixture 是构造样例，5 个真实项目测试曾漏 3 个 P0/P1 bug——fixture + 真实项目双轨制；外部有效性立项稿 `verifier/v2/external-validity.md`（未达阈值前不得宣称"守护代码合规"）。
 
 ### 5.2 三值规则引擎（Codex Decision 架构 bash 落地）
 
-- **规则即数据**：`rules.d/*.rules` 行格式 `<pattern(glob)> → <allow|prompt|forbid> # <justification>`；求值器 `scripts/gate-rules.sh`（多规则命中取最严 forbid > prompt > allow）；仓库零内置规则——项目规则由探查期生成 + 审批沉淀写入。
+- **规则即数据**：`rules.d/*.rules` 行格式 `<pattern(glob)> → <allow|prompt|forbid> # <justification>`；求值器 `scripts/gate-rules.sh`（多规则命中取最严 forbid > prompt > allow）。规则来源四层：①底座两套内置示例（bash-advance 推进态 / readonly-safe 只读白名单——全档位随生成物分发，见 §5.3）；②探查期生成的项目特有规则；③审批沉淀写入（见下）；④`framework-globs.rules` 是 conf glob 默认值快照、非三值规则（当前无运行时消费者，见 §5.4 与 §11 已知边界）。
 - **三值作用域**：只作用于"命令该不该跑"的判定（Bash 命令放行，那里有宿主审批通道）；门禁家族不重分类。
 - **拒绝消息 = 给模型的 API**：`FORBID <rule-id>: <原因>；替代：<方案>`——拒绝携带替代方案，AI 能自动改道。
 - **自指防护**：integrity-guard deny 保护 facts/trace/规则自身不被 AI 篡改（执行前哈希自校验）。
@@ -392,7 +400,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ### 5.4 conf 面收缩
 
-物理变量 176 保留（兼容既有生成物）；**user 面必配 ≈ 20 项**（开关/路径/预算，`FACT_CONF_VARS_USERFACE=20`）——43 个框架 glob 阈值已迁 `rules.d/framework-globs.rules`（数据快照，conf 同名可覆盖）；行为参数留在模板/脚本内（Codex skills 全局配置仅 4 键的同构）。
+物理变量 176 保留（兼容既有生成物）；**user 面必配 ≈ 20 项**（开关/路径/预算，`FACT_CONF_VARS_USERFACE=20`）——43 个框架 glob 阈值从 user 面摘出（运行时仍读 conf 同名变量，后赋值胜出），默认值快照存 `assets/rules.d/framework-globs.rules`（conf 风格数据、非三值规则；当前无运行时消费者——未竟接线已登记 §11 已知边界）；行为参数留在模板/脚本内（Codex skills 全局配置仅 4 键的同构）。
 
 **core conf 语义分组**（precheck.conf 16 变量，完整清单以 conf 文件自身为准——设计文档只列语义分组）：
 - 路径类（6）：PROJECT_DIR / WRITABLE_DIRS / READONLY_DIRS / SCAN_DIRS / CONSISTENCY_DIRS / BRANCH_REGEX+PROTECTED_BRANCHES（分支规范）
@@ -414,6 +422,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 - **生成物自成长链**：fingerprint 感知（SessionStart/手动 --diff）→ 变化目录 scope 报告（局部重探查，不整仓重扫）→ inventory-update 单条更新（replace/delete/append §4/§6/§9，原子替换 + 决策落痕）→ last-good 红线（文件数骤降 >50% 拒绝 --write，需 --force）→ `--commit-fp` 落新基线。新增闭环：局部重探查产出的新组件自动进地图（探查即入账）。
 - **生成器成长通道**：吸收一律走"调研报告（docs/research/）→ 三问评审 → 落地为条件/路由/引导之一"（phase=absorption 留痕 decisions.jsonl）；上游重核从全量改为破坏性变更驱动（breaking/major 触发 + 季度例行）。
+- **生成器演进协议**（R16 起，本体先行——§0.2 冲程三的工程化）：新机制/新概念先过冲程二四问——新实体进 objects.md、新关系进 links.md（必配机器锚）、新动作进 actions.md；再派生实现；收尾跑 self-check 类型对账 + ontology-verify 六锚。吸收三问（准入评审：要不要吸收）与本体四问（设计方法：怎么落地）串联——先三问、后四问。
 - **成长的预算约束**：成长 = 预算内替换（新知识进来必须有旧知识出去或税不增），否则只是膨胀。
 
 ## 7. 留痕设计（追踪层）
@@ -421,12 +430,38 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **trace.jsonl**：节点级调用落盘（stdout 公告 `→ [节点X] 调用 …` + `trace-log.sh --node/--key-node/--decision`）；永不 fail 阻塞主流程。
 - **decisions.jsonl**：G1 决策治理（三级分类 Mechanical/Taste/UserChallenge + outcome 生命周期 proposed/implemented/rejected/superseded + 未采纳决策照常落盘 + 回放规则不可变——旧行无 outcome 视 implemented）。R14 增 `goal_id`+`closure`（审计单元目标闭环化：一个用户目标+一个验收边界，change↔validation 链接才 closed）+ `repair_review`（修复复核位：verified/partial/blocked，空=pending）。
 - **gate-audit.jsonl**：fail-gate 全量决策审计（invoked/result 单行自包含 + 稳定 handler id + target 截断 500 + 休眠不写）；`--report` 四段（最近决策/拦截率按 handler/deny 聚合/工具分布）。R14：gate-report 增证据态分级（配置≠使用≠有效：Present/Wired/Exercised/Outcome-supported）；gate-trends 双账本（当窗验证 repair_verified_rate + guardrail 配对 vs 跨窗效果 Loop Effectiveness——后者需两次执行对比，诚实声明登记候选）。
+- **gate-runs.jsonl**：门禁执行流水（每次 precheck 运行追加一行带 run 序号，`GATE_RUNS_DIR` 非空启用）——SARIF 证据链、连续零发现统计（metrics 门禁）、gate-trends 趋势的数据源。
 - **key-nodes.jsonl**：八节点关键调用看板。
 - **gate-plan.json**（R15 评测层）：任务开工的门禁选择声明（enable/skip + 理由，负空间可审计）；`scripts/gate-plan.sh --plan/--diff` 收口对比计划 vs 实际触发（missing_evidence/计划外/skip 违反，advisory）。
 - **decisions.jsonl `ref_trace_hash`**（R15 评测层）：decisions 记录引用 trace.jsonl 末行 cksum——三本账从并列升级为**链式**（上游篡改 → 失配 → 全链 stale 可检出；HarnessEval evidence tree 的 bash 最小切片）。
 - **audit-closure 完备性**（R15 评测层）：`scripts/audit-closure.sh` 按 goal_id 全集重走 closure 完备性（open/closed 分布 + open goals 列表）；`--strict` 有 open 时 exit 2，串 mark-active advisory 门（审计即完成条件）。
 
-## 8. spec 设计规则（生成物模板规范）
+**落盘全景**（`.swarm-yuan/`）：四本账 = trace / decisions / gate-runs / gate-audit（objects.md `Ledger` 类型的四个实例）；辅助存盘 = key-nodes 看板 + gate-plan 声明 + 指纹快照 + notes/。
+
+## 8. 生成设计（流程 + 生成物模板规范）
+
+### 8.1 生成流程（Step 1-12 唯一编号口径）
+
+生成流程的**唯一编号口径** = `references/generation-flow.md` 的详解号（Step 1-12，`grep '^## Step'` 机械可数）。分工视图 ⓪-⑧ 是同一流程的机械/AI 边界压缩标记，与详解号一一对应（⓪=Step 1、⓪.5=2、①=3、①.5=4、②=5、③=6、④=7、⑤=8、⑤.5=9、⑥=10、⑦=11、⑧=12）；④.5 框架深化、⑦.5 门禁注入是两个插入子阶段。历史文档里的"Step 0-8 / 13 节点"均为旧口径残留，以本节为准（FACT_FLOW_STEPS 真值已同步为 12）。
+
+| Step | 职责 | 机械/AI 分工 | 关键产出 |
+|------|------|--------------|----------|
+| 1 自检 | self-check 运行时检测 | 机械 | 生成器健康报告 |
+| 2 读项目知识 | 读 AGENTS.md/CLAUDE.md/记忆，自行提取规则 | AI（extract-feature-cards 只出模板） | 项目规则初稿 |
+| 3 探查仓库 | 三路并行扇出 + 图谱工具调用 | 机械扇出 + AI 判断结构/规范 | 探查原始材料 |
+| 4 形态判定+组件库+调用链 | §C+.0 形态判定 + 详尽组件库 + 三层调用链（★不可跳过） | AI 判断 + inventory-verify 计数核验 | reference-manual 清单 |
+| 5 特征卡 | 17 项骨架逐项填具体值 | AI（脚本不猜） | 特征卡 |
+| 6 创建骨架 | 拷 UNIVERSAL_FILES | 机械 | skill 骨架 |
+| 7 填充全部文件 | 真实探查内容替换占位符；④.5 框架深化（framework-evidence grep 证据 + AI 判规律适用性） | AI 为主 | 全量填充产物 |
+| 8 配置 precheck.conf | conf-render 嗅探初稿 → AI 审 + 补 `# TODO:model` | 机械初稿 + AI 审 | conf |
+| 9 集成宿主 | hooks.json / commands / settings / .mcp.json 真生成；AI 审 hooks 适用性（不适用即删） | 机械生成 + AI 审 | 宿主接线 |
+| 10 运行门禁 | precheck 机械跑；AI 判断 fail/warn 是否要修 | 机械跑 + AI 判 | gate-runs |
+| 11 记忆写回 | memory-writeback 落盘（⑦.5 --inject-frameworks 门禁注入在 Step 10 后、本步前） | 机械 + AI 判沉淀 | 记忆 + 框架门禁 |
+| 12 最终检查 | verify-completeness + inventory-verify；AI 终审清单覆盖项目真实形态 | 机械验 + AI 终审 | mark-active 候选 |
+
+红线：机械脚本只在"信号可信误报少"的环节跑（骨架/conf 初稿/核验/mark-active/enforce 加载）；判断性环节（特征卡填值/框架规律实例化/hooks 适用性/warn 采纳）必须 AI（WP-Q2H 机械 vs AI 边界）。
+
+### 8.2 生成物模板规范
 
 - **spec-template 9 节核心必填**：背景与目标 / 决策记录 / 复用·版本·安全三约束 / 测试策略 / 风险与回滚 / 左移三节（§19 测试设计/§20 变更影响/§21 可观测性） / 标准合规。其余节（详细设计/分层设计/参考/§14-18 认知仪式/运营）**默认折叠**——`--task-type full` 的复杂变更才展开。
 - **workflow 4 要素**：入口（顺序/并行）/ 参与方 / 质量门禁 / 产出物与追踪（含 trace-log 调用）；原 10 要素中分支/流程控制/状态控制并入产出物说明。
@@ -435,7 +470,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ## 9. 决策原则与演化史
 
-### 9.1 防复胖四制度（生成器侧条件）
+### 9.1 防复胖四制度（贯穿原则——跨四维度成立的现行守恒律；生成器侧条件）
 
 1. **概念落地问责**：新概念进 SKILL.md/生成物必须给出落地路径（接线/AI 判断引导/路由，不接受"先放着"）。
 2. **吸收三问**：①能否落到运行时条件？②替换还是叠加？③六个月后谁引用？——不过只留调研报告，不进 references。
@@ -454,7 +489,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **R13 重构**（去抽象化，2026-08-21，即决策 33/34 + 终态方案 v6）：五批次落地——落地化接线（认知计分退役转 AI 判断引导/十门禁全接线 54-54/industry 真实加载/40 references 路由头）、模板减负（spec 仪式节折叠/workflow 10→4 要素/核对清单 96→12/五维表→两维表）、条件化（rules.d 三值/FORBID 带替代/G18/G19 断言）、生成器瘦身（SKILL.md 142→93 行/facts 21 键退役/check_doc 434→70 行/税制断言）、宿主下沉（Codex hooks/settings 沙箱 deny）。方案全文 `docs/research/R13-final-plan.md`（v6）。
 - **R14 吸收**（阿里云 Qoder Better Harness，2026-08-21）：审计/复盘/趋势三层机制落地——审计单元目标闭环化（decisions.jsonl 增 goal_id+closure）、证据态分级（gate-report.sh 输出的"§4.2 证据状态分级"段：Present/Wired/Exercised/Outcome-supported + 分数上限）、双账本（gate-trends：Repair Progress 当窗验证 + guardrail 配对指标）、修复复核位（decisions.jsonl 增 repair_review）。与过程强制层（门禁）互补不竞争。详见 `docs/research/R14-better-harness-absorption.md`。
 - **R15 吸收**（MirroS HarnessEval，2026-08-21）：评测层 Harness 落地——digest 链式锚定（decisions.jsonl 增 ref_trace_hash：三本账从并列升级为链式，上游篡改全链 stale 可检出）、missing_evidence 态（gate-report 证据态加"该测没测"≤59）、gate-plan 选择即证据（`scripts/gate-plan.sh`：启用/跳过理由负空间可审计，收口 diff 计划 vs 实际触发）、audit-closure 审计即完成条件（`scripts/audit-closure.sh`：goal 闭环完备性重走，串 mark-active advisory 门）。三层 Harness 拼图完整：过程强制门禁层（R13 前）+ 工作流审计层（R14）+ 评测层（R15）。详见 `docs/research/R15-harnesseval-absorption.md`。
-- **R16 重构**（本体论驱动，2026-08-21）：显式本体层落地——`assets/ontology/` 三目录（objects 17 类型含负面承诺/links 10 关系各配机器锚/actions 11 受治理动作）作为与 facts.conf 平行的**类型事实源**；self-check 类型对账（18 实存点）；`scripts/ontology-verify.sh` 六锚一站式健康检查；地图骨架语义/动能两区纪律（是/应当不混写）；本体层随生成物分发。设计闭环：本体论驱动原理（本文 §0）→ 类型事实源 → 机器对账 → 运行时健康检查。
+- **R16 重构**（本体论驱动，2026-08-21）：显式本体层落地——`assets/ontology/` 三份类型目录（objects 17 类型含负面承诺/links 10 关系各配机器锚/actions 11 受治理动作）作为与 facts.conf 平行的**类型事实源**；self-check 类型对账（18 实存点）；`scripts/ontology-verify.sh` 六锚一站式健康检查；地图骨架语义/动能两区纪律（是/应当不混写）；本体层带"何时读我"路由头随生成物分发（G18 孤儿扫描覆盖 assets/ontology/）。设计闭环：本体论驱动原理（本文 §0）→ 类型事实源 → 机器对账 → 运行时健康检查。
 
 演化模式定型为"吸收→膨胀→诊断→减重"五轮循环；R13 是第一个以落地化（而非加法治理）收口的循环。
 
@@ -538,9 +573,9 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 | 根级 `tests/fixtures/` | fixture 语料 | 测试资产 |
 | `swarm-yuan/offline-cache/` | 离线包（仅 marketplace 元数据，不 vendor 核心插件） | §9.3 vendor 决策 |
 | `.github/workflows/ci.yml` | CI 三平台（Linux 全覆盖 + mac/win 轻量腿） | §3.6 |
-| `.swarm-yuan/`（项目级，运行时生成） | 账本四本 + gate-plan + 指纹 + notes | §7 留痕设计的落盘位置 |
+| `.swarm-yuan/`（项目级，运行时生成） | 四本账（trace/decisions/gate-runs/gate-audit）+ key-nodes 看板 + gate-plan 声明 + 指纹 + notes | §7 留痕设计的落盘位置 |
 
-**已知边界**（登记待修，非设计内容）：`detect-profile-drift.sh` 在 worktree 场景的路径推导误报（把 worktree 内 README 副本误判为目标项目升档信号）——main 分支无此问题，worktree 内跑 self-check 时可能出现"假漂移"；处置候选：识别自身处于 swarm-yuan 仓 worktree 时跳过，或拆分"扫描目标项目"与"扫描自身"两命令。
+**已知边界**（登记待修，非设计内容）：① `detect-profile-drift.sh` 在 worktree 场景的路径推导误报（把 worktree 内 README 副本误判为目标项目升档信号）——main 分支无此问题，worktree 内跑 self-check 时可能出现"假漂移"；处置候选：识别自身处于 swarm-yuan 仓 worktree 时跳过，或拆分"扫描目标项目"与"扫描自身"两命令。② `assets/rules.d/framework-globs.rules` 默认值快照无运行时消费者（R13 conf 收缩的未竟接线，§5.4）——处置候选：conf-render 改为从快照读默认值（快照升为真值源），或删快照回归纯 conf 口径。
 
 ---
 

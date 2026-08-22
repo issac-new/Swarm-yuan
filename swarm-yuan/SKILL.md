@@ -9,7 +9,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 > **docs/ 路径注**：设计单一事实源 = `docs/DESIGN.md`（仓库根 docs/ 下，swarm-yuan 父级）；决策史详情见 `docs/paradigm-decisions*.md`，上游版本见 `docs/upstream-baseline.md`——均位于仓库根 `docs/`；standalone 安装时不携带，核心内容已内联到 references/ 或 SKILL.md。
 >
-> **工具脚本路径注**：`trace-log.sh`/`state-machine.sh`/`memory-writeback.sh` 在**生成器侧**（本仓库/安装态 swarm-yuan 目录）物理位于 `assets/`；在**生成的目标技能侧**经 UNIVERSAL_FILES 映射为 `scripts/`。本文按目标技能路径书写为 `scripts/xxx.sh`；执行**生成流程**（Step 0-8）时应以 `assets/xxx.sh` 路径调用（`cost-report.sh`/`generate-skill.sh`/`self-check.sh` 等生成器工具本就位于 `scripts/`，不受影响）。
+> **工具脚本路径注**：`trace-log.sh`/`state-machine.sh`/`memory-writeback.sh` 在**生成器侧**（本仓库/安装态 swarm-yuan 目录）物理位于 `assets/`；在**生成的目标技能侧**经 UNIVERSAL_FILES 映射为 `scripts/`。本文按目标技能路径书写为 `scripts/xxx.sh`；执行**生成流程**（Step 1-12）时应以 `assets/xxx.sh` 路径调用（`cost-report.sh`/`generate-skill.sh`/`self-check.sh` 等生成器工具本就位于 `scripts/`，不受影响）。
 >
 > **口径权威源**：`assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 >

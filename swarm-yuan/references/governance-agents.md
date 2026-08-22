@@ -23,7 +23,7 @@ agent 骂得更努力，而是让 agent **没有机会把「看起来完成」�
 | swarm-yuan 三权 | 对应 pua 四权 | 职责 |
 |----------------|--------------|------|
 | 立法（特征卡 + 门禁规则） | 环境修改权审查（policy-guardian） | 改 precheck.conf / facts.conf / 门禁片段前须过此 agent |
-| 执法（generate-skill + 门禁运行） | 行动权（action-executor） | 执行 13 节点生成流程，输出候选结果 |
+| 执法（generate-skill + 门禁运行） | 行动权（action-executor） | 执行 12 步生成流程（Step 1-12），输出候选结果 |
 | 司法（verifier + self-check） | 自评权 + 评分建议权（self-reviewer + verifier） | 跑 self-check + verifier/v1，给 pass/fail 建议 |
 
 ## 何时启用四权分离拓扑
@@ -49,7 +49,7 @@ agent 骂得更努力，而是让 agent **没有机会把「看起来完成」�
          ▼
 ┌──────────────────┐
 │ action-executor   │ ← 行动权（执法侧执行）
-│ (全工具含 Edit/   │   执行 generate-skill 13 节点 / 改代码
+│ (全工具含 Edit/   │   执行 generate-skill 12 步 / 改代码
 │  Write)           │   输出: candidate_pass / blocked / needs_review
 └────────┬─────────┘
          │ candidate_pass
