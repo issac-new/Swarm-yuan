@@ -446,7 +446,10 @@ STRICT_SKIP=${STRICT_SKIP:-0}
 # 原为 advisory-only（不在任何执行序列，须显式 --upstream-baseline 才跑——五轮病理的"僵尸门禁"）。
 # 接线语义：每次 precheck 启动时顺带跑一次（fail-open warn，docs/upstream-baseline.md 不存在
 # 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 教义。
-check_upstream_baseline 2>/dev/null || true
+# 段头降级（impl-conformance）：启动期输出的 "=== " 段头改写为 "··· "——"=== X ===" 命名空间
+# 只属于门禁执行段（cli-ab CORE10_SEQUENCE 断言按 '^=== ' 提取执行序列，启动 advisory
+# 不得混入；显式 --upstream-baseline 单跑时仍保留原段头）。
+check_upstream_baseline 2>/dev/null | sed 's/^=== /··· /' || true
 
 # ===== WP-H 状态门：所属 skill 为 draft（骨架填充未完成）时禁用全量门禁集 =====
 # draft = 生成器产出的未填充骨架（SKILL.md frontmatter `status: draft`）。
