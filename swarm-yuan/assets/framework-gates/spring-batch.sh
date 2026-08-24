@@ -79,8 +79,9 @@ _fw_spring_batch_check() {
       while IFS= read -r cl; do
         [[ -z "$cl" ]] && continue
         # 提取 .chunk( 后第一个参数（到 , 或 ) ）
+        # audit-claims-reality（F2）：sed -E 下 \s 在 BSD 是字面 s——与 A3/A9 同类破窗，改 [[:space:]]
         local arg
-        arg=$(printf '%s' "$cl" | sed -E 's/.*\.chunk\(\s*//; s/\s*[,)].*//')
+        arg=$(printf '%s' "$cl" | sed -E 's/.*\.chunk\([[:space:]]*//; s/[[:space:]]*[,)].*//')
         if [[ -z "$arg" ]]; then
           bad=1  # 无参
         elif [[ "$arg" =~ ^[0-9]+$ ]]; then

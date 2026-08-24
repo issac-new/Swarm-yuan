@@ -244,6 +244,7 @@ ECC 的 `governance-capture.js` hook 捕获安全相关事件为 `governanceEven
   - `sed -i` → macOS 需 `sed -i ''`，Linux 需 `sed -i`；统一用 `sed -i.bak ... && rm -f .bak`
   - `date` → macOS 无 `date -d`，用 `date -u +%Y-%m-%dT%H:%M:%SZ`（兼容）
   - `grep` → macOS 无 `grep -P`，统一用 `grep -E`（ERE）
+  - **`sed` 正则方言**（audit-claims-reality F2 固化，G22 机器执法）：BSD sed（macOS）不认 GNU 扩展——`\s`/`\b`/`\w` 被当字面字母（`requests`→`requet` 实证），BRE 的 `\?`/`\+` 不支持；统一用 `[[:space:]]` 等 POSIX 类 + `sed -E`（ERE 的 `?`/`+` 合法）。grep -E 的 `\s`/`\b` 在三平台现行版本可用，属存量容忍；新增代码优先 POSIX 类。
   - `readlink` → macOS 无 `readlink -f`，用 `$(cd "$(dirname "$0")" && pwd)`
   - `wc -l` → 输出含前导空格，用 `| xargs` 清理
   - **`$var中文` 须 `${var}`**（bash C-locale 下 `$var` 紧跟多字节字符会报 unbound variable）
