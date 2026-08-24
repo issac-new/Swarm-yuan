@@ -874,7 +874,7 @@ check_sbom() {
   fi
   local out_dir="${SBOM_OUTPUT_DIR:-.sbom}"
   local ts sbom_file lic_file
-  ts=$(date '+%Y%m%d-%H%M%S')
+  ts=$(date -u '+%Y%m%d-%H%M%S')
   sbom_file="${out_dir}/sbom-${ts}.txt"
   lic_file="${out_dir}/licenses-${ts}.txt"
   mkdir -p "$out_dir" 2>/dev/null || true

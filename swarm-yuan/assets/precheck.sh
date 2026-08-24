@@ -1237,16 +1237,6 @@ gitnexus_indexed() {
 # graphify 已构建图谱？（检查 graphify-out/graph.json）
 graphify_built() { [[ -f "$PROJECT_DIR/graphify-out/graph.json" ]]; }
 
-
-
-
-
-# --sensitive 工具链降级辅助（P1-3）：gitleaks 路径。
-# 返回：0=已处理（pass/fail 已记录）；1=gitleaks 执行失败（调用方降级内置）；2=SCAN_DIRS 空（交回内置披露路径）
-
-
-
-
 # ===== DDD / 分层 / 拼装门禁（--layer / --stable-diff / --link-depth）=====
 # 防范：层级穿透 / 依赖倒置 / 循环依赖 / 领域层污染框架 / 稳定单元被篡改 / 调用链膨胀
 

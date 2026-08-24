@@ -1,7 +1,7 @@
 # swarm-yuan 设计文档（单一事实源）
 
 > **文档性质**：swarm-yuan 的**单一设计事实源**——本体论驱动原理、闭环流动力学、定位理念、架构规格、决策演化史、验收，全部整合于此一份。原 DESIGN-ONTOLOGY.md / DESIGN-LOGIC.md 已并入 §0，原文档归档。
-> **版本**：**终态 v4**（2026-08-21/22；v1=R13 终态整理，v2=+R14/R15，v3=并入本体论驱动原理与闭环流+8 份归档文档内容，v4=十轮排查修复＋设计一致性收口——数字虚报/工具入口表/references 全索引/奠基理念/测试矩阵/口径/仓库结构/读者可用性；收口=派生表 10 关系全量化、规则来源四层澄清、生成流程唯一编号 Step 1-12、本体层消费路径、账本落盘全景）。终态的含义：结构完整（§0 原理 → §1-9 设计 → §10 验收 → §11 档案）、与实现一致性机器可验（self-check 全绿项覆盖）、单一事实源地位确立——但**不是冻结**：演进按 §0.2 冲程二四问与 §6 演进协议追加，已知边界两项登记在 §11。
+> **版本**：**终态 v4**（2026-08-21/22；v1=R13 终态整理，v2=+R14/R15，v3=并入本体论驱动原理与闭环流+8 份归档文档内容，v4=十轮排查修复＋设计一致性收口——数字虚报/工具入口表/references 全索引/奠基理念/测试矩阵/口径/仓库结构/读者可用性；收口=派生表 10 关系全量化、规则来源四层澄清、生成流程唯一编号 Step 1-12、本体层消费路径、账本落盘全景）。终态的含义：结构完整（§0 原理 → §1-9 设计 → §10 验收 → §11 档案）、与实现一致性机器可验（self-check 全绿项覆盖）、单一事实源地位确立——但**不是冻结**：演进按 §0.2 冲程二四问与 §6 演进协议追加，已知边界两项均已修复并登记于 §11 已修复边界（audit-claims-reality 同步：头部此前与 §11"已知边界：无"自相矛盾）。
 > **证据基础**：zcode 会话库 32 个主会话全量提取（五轮"过重"诊断史）｜仓库病理量化诊断｜openai/codex 源码深挖（锚定 file:line）｜多轮排查与设计一致性收口的执行者自省。
 > **方案总承诺**：R13 重构期（v2.0）每个迁移单元的 diff 必须为净减法或等量替换（新增 ≤ 删除，`git diff --stat` 机器验证）；R16 起新概念须过本体驱动四问（§0.2 冲程二——新实体进 objects.md 前想清区别、新关系必配机器锚），不设"永不新增"的绝对禁令——演进纪律从"数量冻结"升级为"结构约束"。
 
@@ -384,7 +384,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ### 5.2 三值规则引擎（Codex Decision 架构 bash 落地）
 
-- **规则即数据**：`rules.d/*.rules` 行格式 `<pattern(glob)> → <allow|prompt|forbid> # <justification>`；求值器 `scripts/gate-rules.sh`（多规则命中取最严 forbid > prompt > allow）。规则来源四层：①底座两套内置示例（bash-advance 推进态 / readonly-safe 只读白名单——全档位随生成物分发，见 §5.3）；②探查期生成的项目特有规则；③审批沉淀写入（见下）；④`framework-globs.rules` 是 conf glob 默认值快照、非三值规则（当前无运行时消费者，见 §5.4 与 §11 已知边界）。
+- **规则即数据**：`rules.d/*.rules` 行格式 `<pattern(glob)> → <allow|prompt|forbid> # <justification>`；求值器 `scripts/gate-rules.sh`（多规则命中取最严 forbid > prompt > allow）。规则来源四层：①底座两套内置示例（bash-advance 推进态 / readonly-safe 只读白名单——全档位随生成物分发，见 §5.3）；②探查期生成的项目特有规则；③审批沉淀写入（见下）；④`framework-globs.rules` 是 conf glob 默认值快照、非三值规则（运行时消费者 = self-check G21 对账锚，见 §5.4 与 §11 已修复边界②）。
 - **三值作用域**：只作用于"命令该不该跑"的判定（Bash 命令放行，那里有宿主审批通道）；门禁家族不重分类。
 - **拒绝消息 = 给模型的 API**：`FORBID <rule-id>: <原因>；替代：<方案>`——拒绝携带替代方案，AI 能自动改道。
 - **自指防护**：integrity-guard deny 保护 facts/trace/规则自身不被 AI 篡改（执行前哈希自校验）。
@@ -400,7 +400,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ### 5.4 conf 面收缩
 
-物理变量 176 保留（兼容既有生成物）；**user 面必配 ≈ 20 项**（开关/路径/预算，`FACT_CONF_VARS_USERFACE=20`）——43 个框架 glob 阈值从 user 面摘出（运行时仍读 conf 同名变量，后赋值胜出），默认值快照存 `assets/rules.d/framework-globs.rules`（conf 风格数据、非三值规则；当前无运行时消费者——未竟接线已登记 §11 已知边界）；行为参数留在模板/脚本内（Codex skills 全局配置仅 4 键的同构）。
+物理变量 176 保留（兼容既有生成物）；**user 面必配 ≈ 20 项**（开关/路径/预算，`FACT_CONF_VARS_USERFACE=20`）——43 个框架 glob 阈值从 user 面摘出（运行时仍读 conf 同名变量，后赋值胜出），默认值快照存 `assets/rules.d/framework-globs.rules`（conf 风格数据、非三值规则；运行时消费者 = self-check G21 对账锚——原"无消费者"边界已闭环，登记 §11 已修复边界②）；行为参数留在模板/脚本内（Codex skills 全局配置仅 4 键的同构）。
 
 **core conf 语义分组**（precheck.conf 16 变量，完整清单以 conf 文件自身为准——设计文档只列语义分组）：
 - 路径类（6）：PROJECT_DIR / WRITABLE_DIRS / READONLY_DIRS / SCAN_DIRS / CONSISTENCY_DIRS / BRANCH_REGEX+PROTECTED_BRANCHES（分支规范）
@@ -547,7 +547,7 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 
 **决策史原文**：`docs/paradigm-decisions.md`（18-34）+ `docs/paradigm-decisions-archive.md`（1-17）——本文件 §9.2 是索引，原文是详情。
 
-**调研证据**：`docs/research/`（R1-R15；R13 三份：final-plan 方案 v6 / codex-deep-dive Codex 源码证据 / de-abstraction 复盘草稿；R14/R15 吸收报告各一份）——调研报告是证据的合法归宿，不晋升 references（吸收三问）。
+**调研证据**：`docs/research/`（R1-R9、R11-R15，R10 无报告——仅 v2 立项稿提及待测品类；R13 三份：final-plan 方案 v6 / codex-deep-dive Codex 源码证据 / de-abstraction 复盘草稿；R14/R15 吸收报告各一份）——调研报告是证据的合法归宿，不晋升 references（吸收三问）。
 
 **运行时文档**：`swarm-yuan/references/`（40 份，全部带"何时读我"路由头）——方法论细节按需读取，本文件不再复制其内容。
 
@@ -559,7 +559,7 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 |------|------|------|
 | `docs/DESIGN.md` | 本文（单一设计事实源 v4） | 设计层 |
 | `docs/paradigm-decisions{,-archive}.md` | 决策史原文（1-34） | §9.2 索引的详情 |
-| `docs/research/` | R1-R15 调研报告 | 证据层（吸收三问的合法归宿） |
+| `docs/research/` | R1-R9、R11-R15 调研报告（R10 无报告——仅 v2 立项稿提及待测品类） | 证据层（吸收三问的合法归宿） |
 | `docs/plans/` | 4 份历史计划文档（framework-rules-engine / research-plan / standards-gap / paradigm-slimming，2026-07） | 历史计划存档（已执行完毕，不维护） |
 | `swarm-yuan/SKILL.md` | 生成器入口（AI 读） | 产品文档（§3.2 读者双轨制） |
 | `swarm-yuan/docs/USAGE.md` | 使用手册（研发人员读——bash 双轨制的落地文件） | §3.2 读者双轨制 |
@@ -568,10 +568,9 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 | `swarm-yuan/assets/` + `scripts/` + `references/` + `tests/` | 门禁/脚本/方法论/测试（§5.1 工具入口表+references 全索引+测试矩阵已覆盖） | 实现层 |
 | `swarm-yuan/ci/self-precheck.conf` | CI 自举最小 conf（generator-self-gate job 用） | §3.6 三平台 CI 矩阵 |
 | `swarm-yuan/install.sh` + `.bat` | 安装器（检测 7 个 AI 工具环境） | 入口工具 |
-| `swarm-yuan/hooks/`（源）→ 生成物 `hooks/` | hooks 五件套源文件 | §5.3 宿主下沉 |
+| `swarm-yuan/assets/hooks/`（源）→ 生成物 `scripts/`（hooks.json 配置在 `hooks/`） | hooks 五件套源文件 | §5.3 宿主下沉 |
 | `verifier/v1/` + `v2/` | 司法层（v1 现行：golden-vector 74 + cli A/B；v2 外部有效性立项稿） | §5.1 验证器 |
 | `verifier/baselines/` + `runs/` | 基线快照与运行记录 | 证据层 |
-| 根级 `tests/fixtures/` | fixture 语料 | 测试资产 |
 | `swarm-yuan/offline-cache/` | 离线包（仅 marketplace 元数据，不 vendor 核心插件） | §9.3 vendor 决策 |
 | `.github/workflows/ci.yml` | CI 三平台（Linux 全覆盖 + mac/win 轻量腿） | §3.6 |
 | `.swarm-yuan/`（项目级，运行时生成） | 四本账（trace/decisions/gate-runs/gate-audit）+ key-nodes 看板 + gate-plan 声明 + 指纹 + notes | §7 留痕设计的落盘位置 |

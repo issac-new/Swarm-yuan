@@ -18,6 +18,10 @@
 
 set -uo pipefail
 
+# JSON 最小转义（audit-claims-reality D4：统一定义于此——此前 _esc（key-node 段内联）与
+# _json_esc（决策段）是同体重复定义；bash 函数须先于执行点定义，故提到主流程最前）
+_json_esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n'; }
+
 NODE=""; ACTOR=""; TOOL=""; STATUS="started"; NOTE=""
 # --decision 模式变量（G1 决策治理）
 DECISION_MODE=0; D_TYPE=""; D_SUGGESTION=""; D_USER_ACTION=""; D_RATIONALE=""; D_GOAL=""; D_CLOSURE=""; D_REPAIR_REVIEW=""
@@ -74,11 +78,9 @@ if [[ "$KEY_NODE_MODE" -eq 1 ]]; then
   STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
   if mkdir -p "$STATE_DIR" 2>/dev/null; then
     ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    # JSON 最小转义
-    _esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n'; }
     _kn_line=$(printf '{"ts":"%s","key_node":"%s","actor":"%s","status":"%s","note":"%s"}' \
-      "$ts" "$(_esc "$KEY_NODE_NAME")" "$(_esc "${ACTOR:-swarm-yuan/ai}")" \
-      "$(_esc "$STATUS")" "$(_esc "$NOTE")")
+      "$ts" "$(_json_esc "$KEY_NODE_NAME")" "$(_json_esc "${ACTOR:-swarm-yuan/ai}")" \
+      "$(_json_esc "$STATUS")" "$(_json_esc "$NOTE")")
     if ! printf '%s\n' "$_kn_line" >> "$STATE_DIR/key-nodes.jsonl" 2>/dev/null; then
       echo "⚠ trace-log: key-nodes.jsonl 落盘失败（不阻塞）" >&2
     else
@@ -116,9 +118,6 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
     esac
   fi
 fi
-
-# JSON 最小转义：反斜杠 / 双引号；剔除换行与回车（单行 jsonl 铁律）
-_json_esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n'; }
 
 # 1) stdout 结构化提示（主通道：用户可见"调用了何种工具及技能"）
 _line="→ "

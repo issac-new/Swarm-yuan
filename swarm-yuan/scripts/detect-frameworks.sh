@@ -298,7 +298,7 @@ fi
 # 输出 ACTIVE_FRAMEWORKS 格式（可直接写入 precheck.arch.conf）
 if [[ -n "$_detected" ]]; then
   # bash 数组格式
-  echo "# 由 scripts/detect-frameworks.sh 自动探测（$(date +%Y-%m-%d)）"
+  echo "# 由 scripts/detect-frameworks.sh 自动探测（$(date -u +%Y-%m-%d)）"
   # 转成数组元素（带引号）
   _arr=""
   _cnt=0
@@ -310,7 +310,7 @@ if [[ -n "$_detected" ]]; then
   echo "" >&2
   echo "探测到 ${_cnt} 个框架: $_detected" >&2
 else
-  echo "# 未探测到任何已知框架（scripts/detect-frameworks.sh $(date +%Y-%m-%d)）"
+  echo "# 未探测到任何已知框架（scripts/detect-frameworks.sh $(date -u +%Y-%m-%d)）"
   echo "ACTIVE_FRAMEWORKS=()"
   echo "" >&2
   echo "未探测到已知框架（项目可能用自定义/冷门框架，需 AI 手工探查 §C+.0.5）" >&2

@@ -50,7 +50,7 @@ if [[ "$CMD" == "--persist" ]]; then
   if grep -qF -- "$P_PAT" "$RULES_DIR"/*.rules 2>/dev/null; then
     echo "✗ pattern 已存在规则（$RULES_DIR 中命中「$P_PAT」）——改判请先删旧行再沉淀，避免双规则" >&2; exit 1
   fi
-  _today=$(date +%Y-%m-%d)
+  _today=$(date -u +%Y-%m-%d)
   _target="$RULES_DIR/approved.rules"
   [[ -f "$_target" ]] || printf '# approved.rules — 审批沉淀（gate-rules.sh --persist 写入；每行 = 一次审批的持久化，可删行回退）\n' > "$_target"
   printf '%s → %s # %s（沉淀于 %s）\n' "$P_PAT" "$P_DEC" "$P_JUST" "$_today" >> "$_target" || { echo "✗ 写入失败: $_target" >&2; exit 1; }
