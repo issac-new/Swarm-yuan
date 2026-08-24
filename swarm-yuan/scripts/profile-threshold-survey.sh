@@ -95,7 +95,7 @@ echo "P67 (standard 上限): $_p67 文件"
 # 生成 profile-thresholds.conf
 {
   echo "# profile-thresholds.conf —— auto_detect_profile 阈值配置（决策 18 修订 + WP-Q2 + WP-Q3）"
-  echo "# 由 scripts/profile-threshold-survey.sh 统计生成（$(date +%Y-%m-%d)，样本 $_total 个）"
+  echo "# 由 scripts/profile-threshold-survey.sh 统计生成（$(date -u +%Y-%m-%d)，样本 $_total 个）"
   echo "# 用户可按项目类型调整。WP-Q2 偏置修正：信号明确才升档，模糊走默认 standard。"
   echo "#"
   echo "# 阈值：文件数 P33/P67 分位数（样本统计），用户可按项目类型微调"

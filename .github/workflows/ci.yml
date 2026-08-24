@@ -151,7 +151,7 @@ jobs:
           rc=$?
           rm -rf "$tmpdir"
           [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --all RC=0)" || { echo "✗ Generator self-gate failed RC=$rc"; exit 1; }
-      # G4 自举闭环：--all-full（标准 27 门）+ --compliance-suite（合规 17 门），三档全 RC=0
+      # G4 自举闭环：--all-full（标准 27 门）+ --compliance-suite（合规 19 门），三档全 RC=0
       - name: Self-gate --all-full (27 gates)
         run: |
           tmpdir="$(mktemp -d)"
@@ -162,7 +162,7 @@ jobs:
           rc=$?
           rm -rf "$tmpdir"
           [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --all-full RC=0)" || { echo "✗ Generator self-gate --all-full failed RC=$rc"; exit 1; }
-      - name: Self-gate --compliance-suite (17 gates)
+      - name: Self-gate --compliance-suite (19 gates)
         run: |
           tmpdir="$(mktemp -d)"
           cp swarm-yuan/assets/precheck.sh swarm-yuan/assets/gates-strict.sh swarm-yuan/assets/gates-warn.sh swarm-yuan/assets/gates-advisory.sh "$tmpdir/"
@@ -201,6 +201,21 @@ jobs:
           bash tests/test-conf-render.sh
           bash tests/test-spec-template-gating.sh
           bash tests/test-compare-baseline.sh
+      - name: 治理/hook/账本/指纹/记忆写回/行业 profile 测试（audit-claims-reality 接线）
+        # 此前这九个测试写完即脱钩（CI 绿 ≠ 它们过）：AI 判断/fail-gate/失败检测/rules 三值/
+        # 清单更新/指纹/任务类型门控/记忆写回/行业 profile。逐个本地跑绿后接线。
+        run: |
+          bash tests/test-ai-judgment.sh
+          bash tests/test-fail-gate-hook.sh
+          bash tests/test-failure-detector.sh
+          bash tests/test-gate-rules.sh
+          bash tests/test-inventory-update.sh
+          bash tests/test-project-fingerprint.sh
+          bash tests/test-spec-task-type-gating.sh
+          bash tests/scripts/test-memory-writeback.sh
+          for p in finance medical gov automotive energy telecom industrial; do
+            bash tests/run-industry-profile.sh "$p"
+          done
 
   # ---------- Job 4：shellcheck 静态检查（核心脚本）----------
   shellcheck:
@@ -359,8 +374,10 @@ jobs:
           echo === generate-skill.bat 骨架生成到临时目录 ===
           mkdir -p ..\win-smoke-proj
           echo {"name":"win-smoke"} > ..\win-smoke-proj\package.json
-          generate-skill.bat win-smoke-skill ..\win-smoke-proj ..\win-smoke-out || echo "generate-skill.bat 退出码非 0（记录但不中断，验证 .bat 路径转换不崩）"
-          if exist ..\win-smoke-out\win-smoke-skill\SKILL.md (echo ✓ .bat 骨架生成成功) else (echo ⚠ .bat 骨架未生成（路径转换可能需人工复查）)
+          REM audit-claims-reality（C6）：.bat 在 scripts\ 下——此前裸调 generate-skill.bat 在 cmd 下
+          REM 必报 not recognized 且被 || echo 吞掉，该步骤从未真测过；修路径 + 失败即中断（烟雾须真断言）。
+          scripts\generate-skill.bat win-smoke-skill ..\win-smoke-proj ..\win-smoke-out || (echo ✗ generate-skill.bat 执行失败 & exit /b 1)
+          if exist ..\win-smoke-out\win-smoke-skill\SKILL.md (echo ✓ .bat 骨架生成成功) else (echo ✗ .bat 骨架未生成 & exit /b 1)
 
   # ---------- Job 8b：Windows 全量兼容（周跑 + 手动，WP-L 降频）----------
   windows-compat:
@@ -420,5 +437,6 @@ jobs:
           echo === generate-skill.bat 骨架生成到临时目录 ===
           mkdir -p ..\win-smoke-proj
           echo {"name":"win-smoke"} > ..\win-smoke-proj\package.json
-          generate-skill.bat win-smoke-skill ..\win-smoke-proj ..\win-smoke-out || echo "generate-skill.bat 退出码非 0（记录但不中断，验证 .bat 路径转换不崩）"
-          if exist ..\win-smoke-out\win-smoke-skill\SKILL.md (echo ✓ .bat 骨架生成成功) else (echo ⚠ .bat 骨架未生成（路径转换可能需人工复查）)
+          REM audit-claims-reality（C6）：同 windows-syntax-smoke 修复——scripts\ 下真路径 + 失败即中断
+          scripts\generate-skill.bat win-smoke-skill ..\win-smoke-proj ..\win-smoke-out || (echo ✗ generate-skill.bat 执行失败 & exit /b 1)
+          if exist ..\win-smoke-out\win-smoke-skill\SKILL.md (echo ✓ .bat 骨架生成成功) else (echo ✗ .bat 骨架未生成 & exit /b 1)

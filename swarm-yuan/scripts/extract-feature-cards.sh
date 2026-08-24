@@ -57,17 +57,17 @@ rest_endpoints=$(grep -rnE '@GetMapping|@PostMapping|@PutMapping|@DeleteMapping|
 # GraphQL: type Query/Mutation
 graphql_ops=$(grep -rnE 'type Query|type Mutation' "$PROJ" --include='*.graphql' --include='*.ts' --include='*.js' 2>/dev/null | wc -l | xargs || true)
 # gRPC: rpc 方法
-grpc_methods=$(grep -rnE '^\s*rpc\s+\w+\s*\(' "$PROJ" --include='*.proto' 2>/dev/null | wc -l | xargs || true)
+grpc_methods=$(grep -rnE '^[[:space:]]*rpc[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\(' "$PROJ" --include='*.proto' 2>/dev/null | wc -l | xargs || true)
 # MQ: queue/topic 消费
 mq_consumers=$(grep -rnE '@KafkaListener|@RabbitListener|@RocketMQMessageListener|@JmsListener|@SqsListener' "$PROJ" --include='*.java' --include='*.kt' 2>/dev/null | wc -l | xargs || true)
 total_endpoints=$((rest_endpoints + graphql_ops + grpc_methods + mq_consumers))
 
 # ---- 11. 可复用稳定单元（导出函数/类/组件计数）----
 # 前端组件：export default / export const / export function（.vue/.jsx/.tsx）
-frontend_components=$(grep -rnE '^export\s+(default\s+)?(const|function|class|let)' "$PROJ" \
+frontend_components=$(grep -rnE '^export[[:space:]]+(default[[:space:]]+)?(const|function|class|let)' "$PROJ" \
   --include='*.vue' --include='*.jsx' --include='*.tsx' 2>/dev/null | wc -l | xargs || true)
 # 后端服务/工具：export class/function/def/func（.py/.java/.go）
-backend_units=$(grep -rnE '^export\s+(class|function|def|func)|^public\s+(class|interface)|^def\s+\w+|^func\s+\w+' "$PROJ" \
+backend_units=$(grep -rnE '^export[[:space:]]+(class|function|def|func)|^public[[:space:]]+(class|interface)|^def[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*|^func[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$PROJ" \
   --include='*.py' --include='*.java' --include='*.go' --include='*.ts' --include='*.js' 2>/dev/null \
   | grep -viE 'example|mock|node_modules|test|Test' | wc -l | xargs || true)
 total_units=$((frontend_components + backend_units))

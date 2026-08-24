@@ -4,7 +4,7 @@
 # 用法:
 #   bash precheck.sh                  # 核心 10 门禁（--all）
 #   bash precheck.sh --all-full       # 标准 27 门禁（核心 10 + 架构 17）
-#   bash precheck.sh --compliance-suite  # 合规 17 门禁套件（强监管交付按需；未配置静默跳过）
+#   bash precheck.sh --compliance-suite  # 合规 19 门禁套件（强监管交付按需；未配置静默跳过）
 #   bash precheck.sh --branch         # 分支规范
 #   bash precheck.sh --scope          # 改动范围（可改 vs 只读）
 #   bash precheck.sh --build          # 构建状态
@@ -442,15 +442,6 @@ SILENT=0
 # WP-CogAudit：--strict-skip 模式下，SKIP_COUNT>0 且 FAIL=0 时返回 rc=2（默认 0，opt-in）
 # 用 ${STRICT_SKIP:-0} 避免覆盖参数解析已设的值（--strict-skip 在 while 循环中先设 1）
 STRICT_SKIP=${STRICT_SKIP:-0}
-# ===== R13 批次1a（D2 接线）：precheck 启动挂 upstream-baseline（advisory warn）=====
-# 原为 advisory-only（不在任何执行序列，须显式 --upstream-baseline 才跑——五轮病理的"僵尸门禁"）。
-# 接线语义：每次 precheck 启动时顺带跑一次（fail-open warn，docs/upstream-baseline.md 不存在
-# 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 教义。
-# 段头降级（impl-conformance）：启动期输出的 "=== " 段头改写为 "··· "——"=== X ===" 命名空间
-# 只属于门禁执行段（cli-ab CORE10_SEQUENCE 断言按 '^=== ' 提取执行序列，启动 advisory
-# 不得混入；显式 --upstream-baseline 单跑时仍保留原段头）。
-check_upstream_baseline 2>/dev/null | sed 's/^=== /··· /' || true
-
 # ===== WP-H 状态门：所属 skill 为 draft（骨架填充未完成）时禁用全量门禁集 =====
 # draft = 生成器产出的未填充骨架（SKILL.md frontmatter `status: draft`）。
 # 半填充产物跑全量门禁会给"接近可用"的错觉——禁用 --all-full/--compliance-suite；
@@ -467,8 +458,10 @@ if [[ -f "$_skill_md" ]] && grep -q '^status: draft' "$_skill_md" 2>/dev/null; t
 fi
 # WP-P6：profile 漂移检测（轻量，stderr 输出，不阻塞主流程；只升不降，质量优先）
 # 重跑 auto_detect_profile 逻辑对比 frontmatter profile，升档漂移 warn 提示升级
+# audit-claims-reality（A10）：显式传 PROJECT_DIR——旧版靠 $SKILL_DIR/../../.. 推导，
+# 用户级安装（~/.claude/skills/<name>）布局下会误扫 $HOME。
 if [[ -f "${_CONF_DIR}/detect-profile-drift.sh" ]]; then
-  bash "${_CONF_DIR}/detect-profile-drift.sh" "${_CONF_DIR}/.." 2>/dev/null || true
+  bash "${_CONF_DIR}/detect-profile-drift.sh" "${_CONF_DIR}/.." "${PROJECT_DIR:-}" 2>/dev/null || true
 fi
 # WP-P7：spec 规模检测（轻量，stderr 输出，不阻塞主流程；规模与门禁集不匹配 warn 提示升档）
 # 若 SPEC_FILE 存在，推断规模等级，当前 MODE < 推断档则 warn 提示升档（只升不降）
@@ -528,7 +521,7 @@ skip_if_unconfigured() {
 ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
 # 合规门禁（标准合规族 + P1 安全门禁族深化 + P3 长期清单 rtm/release-sign，仅 --compliance-suite/单门禁执行；未配置的静默跳过）
 ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_cert_audit check_cwe_audit)
-# 标准门禁（核心 10 + 架构 17 = 27）：--all-full 执行序列（合规 17 已拆出为 --compliance-suite 按需执行）
+# 标准门禁（核心 10 + 架构 17 = 27）：--all-full 执行序列（合规 19 已拆出为 --compliance-suite 按需执行）
 ALL_GATES_STANDARD=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_test)
 # 全部门禁（含架构/认知/合规门禁，未配置的静默跳过；--fix-suggest 用）
 ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_cert_audit check_cwe_audit check_decision_audit check_state_phase check_test)
@@ -613,6 +606,18 @@ if [[ -z "${SWARM_YUAN_BUNDLED:-}" ]]; then
     [[ -f "$_gp" ]] && source "$_gp" || true
   done
 fi
+
+# ===== R13 批次1a（D2 接线）：precheck 启动挂 upstream-baseline（advisory warn）=====
+# 原为 advisory-only（不在任何执行序列，须显式 --upstream-baseline 才跑——五轮病理的"僵尸门禁"）。
+# 接线语义：每次 precheck 启动时顺带跑一次（fail-open warn，docs/upstream-baseline.md 不存在
+# 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 教义。
+# 段头降级（impl-conformance）：启动期输出的 "=== " 段头改写为 "··· "——"=== X ===" 命名空间
+# 只属于门禁执行段（cli-ab CORE10_SEQUENCE 断言按 '^=== ' 提取执行序列，启动 advisory
+# 不得混入；显式 --upstream-baseline 单跑时仍保留原段头）。
+# 位置约束（audit-claims-reality 修复）：必须在上方 source 守卫之后——check_upstream_baseline
+# 定义于 gates-advisory.sh；此前置于 source 前（452 行附近），函数未定义 exit 127 被 || true
+# 吞掉，接线从未真实执行（僵尸复生失败）。移回 source 后才是真正接线。
+check_upstream_baseline 2>/dev/null | sed 's/^=== /··· /' || true
 
 # Usage 文本由 GATE_FLAGS 生成
 _usage() {
@@ -1232,16 +1237,6 @@ gitnexus_indexed() {
 # graphify 已构建图谱？（检查 graphify-out/graph.json）
 graphify_built() { [[ -f "$PROJECT_DIR/graphify-out/graph.json" ]]; }
 
-
-
-
-
-# --sensitive 工具链降级辅助（P1-3）：gitleaks 路径。
-# 返回：0=已处理（pass/fail 已记录）；1=gitleaks 执行失败（调用方降级内置）；2=SCAN_DIRS 空（交回内置披露路径）
-
-
-
-
 # ===== DDD / 分层 / 拼装门禁（--layer / --stable-diff / --link-depth）=====
 # 防范：层级穿透 / 依赖倒置 / 循环依赖 / 领域层污染框架 / 稳定单元被篡改 / 调用链膨胀
 
@@ -1466,11 +1461,11 @@ case "$MODE" in
     for _gate in "${ALL_GATES_CORE[@]}"; do _gate_exec "$_gate" 1; done
     ;;
   --all-full)
-    # 标准门禁 27（核心 10 + 架构 17）；合规 17 拆出为 --compliance-suite 按需执行
+    # 标准门禁 27（核心 10 + 架构 17）；合规 19 拆出为 --compliance-suite 按需执行
     for _gate in "${ALL_GATES_STANDARD[@]}"; do _gate_exec "$_gate" 1; done
     ;;
   --compliance-suite)
-    # 合规 17 门禁独立套件（强监管交付场景按需执行；未配置的静默跳过）
+    # 合规 19 门禁独立套件（强监管交付场景按需执行；未配置的静默跳过）
     for _gate in "${ALL_GATES_COMPLIANCE[@]}"; do _gate_exec "$_gate" 1; done
     ;;
   --fix-suggest)

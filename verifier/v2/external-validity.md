@@ -69,7 +69,7 @@ Phase 1-3 可在一个独立 WP 内完成；Phase 4 依赖 R10 品类测试进�
 | 语料 | 构造的 fixture（最小样例） | 真实历史 bug commit |
 | 指标 | 退出码向量逐字节相等 | recall / precision / F1 |
 | 性质 | 内部自洽 | 外部有效 |
-| 状态 | 已实现，CI 强制 | 立项稿，未实现 |
+| 状态 | 已实现，CI 强制 | Phase 2 测量脚本已落地（2026-08-15），Phase 1 语料待采集、Phase 5 断言未接——达阈值前无外部有效性证据 |
 | 阈值 | diff 必须为空 | recall ≥ 0.5 / precision ≥ 0.7 |
 
 v1 是 v2 的前提--若门禁连"前后一致"都做不到（v1 红），测 recall/precision 无意义。v1 绿是 v2 启动的门槛。

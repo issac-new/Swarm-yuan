@@ -133,9 +133,7 @@ fi
 
 # --diff 模式：parse 两边字段做差异（避免直接 diff 文本——cksum 变化不直观）
 # bash 3.2 不支持关联数组，用 _kv_KEY=value 形式前缀变量模拟
-_parse() {  # $1=file，输出 KEY=VALUE 到 stdout
-  LC_ALL=C sed -n 's/^\([a-z_]*\)=.*/\1/p' "$1"
-}
+# （audit-claims-reality D4：_parse 函数已删——定义后零调用，_load_kv 才是活路径）
 _load_kv() { # $1=file  $2=prefix  → 设置 _kv_<prefix>_<key>="value"
   local prefix="$2" key value
   # awk: key=第 1 字段；value=拼接 NF>=2 之后所有字段（ext_dist 含等号）

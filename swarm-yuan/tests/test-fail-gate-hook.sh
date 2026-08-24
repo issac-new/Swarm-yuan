@@ -147,4 +147,47 @@ echo "$out" | grep -q '拦截率' && ok "态18 拦截率段命中" || bad "态18
 echo "$out" | grep -q '50.0%' && ok "态18 拦截率 50.0% 正确" || bad "态18 拦截率错误: $(echo "$out" | grep '%')"
 echo "$out" | grep -q '按工具决策分布' && ok "态18 工具决策分布段命中" || bad "态18 缺分布段: $out"
 
+# --- 态 19-22：rules.d 无条件面（audit-claims-reality 修复回归锚）---
+# 修复前：rules.d 求值被 GATE_ENFORCE_DENY 空 + GATE_ENFORCE_DENY_BASH 空两道 early-exit 挡死，
+# 默认配置下 FORBID 永不生效。修复后：forbid 无条件 deny（不依赖开关、不依赖门禁红 flag）。
+# 布局：模拟生成物 scripts/ 归一（hook + gate-rules.sh 同目录，rules.d 在上一级），
+# 与 UNIVERSAL_FILES 新 dest（scripts/fail-gate-hook.sh|hook）一致。
+setup_rules_proj() {
+  mkdir -p "$1/scripts" "$1/rules.d" "$1/.swarm-yuan"
+  cat > "$1/SKILL.md" <<EOF
+---
+status: active
+---
+EOF
+  cat > "$1/scripts/precheck.conf" <<EOF
+PROJECT_DIR="$1"
+GATE_ENFORCE_DENY=""
+EOF
+  cp "$HOOK" "$1/scripts/fail-gate-hook.sh"
+  cp "scripts/gate-rules.sh" "$1/scripts/gate-rules.sh"
+  cp assets/rules.d/*.rules "$1/rules.d/"
+}
+
+# 态 19：默认配置（白名单全空）+ 无 flag → rules.d FORBID（npm publish）仍硬拦
+setup_rules_proj "$TMP/pr1"
+out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"npm publish --access public"},"cwd":"'$TMP'/pr1"}' | bash "$TMP/pr1/scripts/fail-gate-hook.sh" 2>&1)
+echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态19 rules.d forbid 默认配置硬拦" || bad "态19 未 deny: $out"
+echo "$out" | grep -q '替代' && ok "态19 deny 消息带替代方案" || bad "态19 缺替代方案: $out"
+grep -q '"reason":"rules-forbid"' "$TMP/pr1/.swarm-yuan/gate-audit.jsonl" 2>/dev/null \
+  && ok "态19 forbid 审计落盘" || bad "态19 审计未落盘"
+
+# 态 20：rules.d allow（git status）→ 放行（无 deny 输出）+ 审计 rules-allow
+out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git status"},"cwd":"'$TMP'/pr1"}' | bash "$TMP/pr1/scripts/fail-gate-hook.sh" 2>&1)
+[[ -z "$out" ]] && ok "态20 rules.d allow 放行" || bad "态20 误拦只读: $out"
+grep -q '"reason":"rules-allow"' "$TMP/pr1/.swarm-yuan/gate-audit.jsonl" 2>/dev/null \
+  && ok "态20 allow 审计落盘" || bad "态20 审计未落盘"
+
+# 态 21：rm -rf 命中 forbid（无条件面第二条默认规则）
+out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"rm -rf node_modules"},"cwd":"'$TMP'/pr1"}' | bash "$TMP/pr1/scripts/fail-gate-hook.sh" 2>&1)
+echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态21 rm -rf forbid 硬拦" || bad "态21 未 deny: $out"
+
+# 态 22：prompt 命中（git push）+ 默认配置（白名单空）→ 落回白名单 → 放行不拦
+out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git push origin main"},"cwd":"'$TMP'/pr1"}' | bash "$TMP/pr1/scripts/fail-gate-hook.sh" 2>&1)
+[[ -z "$out" ]] && ok "态22 prompt 落回白名单默认放行" || bad "态22 prompt 被误拦: $out"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-fail-gate-hook"; exit 0; } || { echo "FAIL test-fail-gate-hook" >&2; exit 1; }

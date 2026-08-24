@@ -240,7 +240,7 @@ bash install.sh
 
 | 步骤 | 做什么 |
 |------|--------|
-| 0 | 自检 13 个运行时工具 |
+| 0 | 自检 11 个运行时工具（13 为含方法论引用的接线口径） |
 | 0.5 | 读取项目知识（AGENTS.md / CLAUDE.md / 记忆 / agent 运行时） |
 | 1 | 三路并行探查代码库（结构 / 规范 / 代码组织） |
 | 1.5 | **项目形态判定 + 详尽构件库清单 + 调用链路分析**（§C+.0-C+.5，按形态选维度，全量穷举 + 计数核验） |
@@ -250,7 +250,7 @@ bash install.sh
 | 4.5 | **框架深化**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + 门禁清单对齐 |
 | 5 | AI 配置 precheck.conf——**176 个变量从特征卡推导** |
 | 5.5 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
-| 6 | AI 运行门禁（--all 核心 10 → --all-full 标准 27；合规 17 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
+| 6 | AI 运行门禁（--all 核心 10 → --all-full 标准 27；合规 19 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
 | 7.5 | **门禁注入**——`generate-skill.sh --inject-frameworks` 把激活框架门禁片段写入 precheck.sh 标记区块 |
 | 7 | AI 写回项目记忆（闭环） |
 | 8 | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**零占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
@@ -268,7 +268,7 @@ bash install.sh
 | `auto`（默认） | 让生成器按项目信号判定 | 按下方三档之一产出，附判定依据 |
 | `lite` | 小项目 / 试水 / 增量采用 | 特征卡 + reference-manual + 核心门禁脚本（precheck/state-machine/trace-log/self-check/cost-report）+ spec/plan 模板；无 hooks/commands/settings/.mcp.json |
 | `standard` | 一般项目 | 全量骨架（hooks + commands + 方法论 references 全集） |
-| `compliance` | 金融/医疗等强监管交付 | standard + 标准合规矩阵参考（`references/standards-compliance.md`，配套 `--compliance-suite` 合规 17 门禁） |
+| `compliance` | 金融/医疗等强监管交付 | standard + 标准合规矩阵参考（`references/standards-compliance.md`，配套 `--compliance-suite` 合规 19 门禁） |
 
 零占位符铁律按档适用：只要求当前档包含的文件零占位符。**自适应的偏置方向是质量优先：宁可偏重，不可偏轻**——auto 判定不确定时升档；后续开发中任务规模判断同样升档（见 §6 任务级门禁映射）。
 
@@ -295,7 +295,7 @@ AI 自动：创建 spec → 判断规模 → **从特征卡第 11 项检索可�
 ```bash
 bash .claude/skills/my-project-dev/scripts/precheck.sh --all         # 核心 10 门禁
 bash .claude/skills/my-project-dev/scripts/precheck.sh --all-full    # 标准 27 门禁（核心 10 + 架构 17）
-bash .claude/skills/my-project-dev/scripts/precheck.sh --compliance-suite  # 合规 17 门禁（强监管交付按需）
+bash .claude/skills/my-project-dev/scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交付按需）
 ```
 
 **结果**：`✓` 通过 / `✗` 必须修复 / `⚠` 人工评估
@@ -415,7 +415,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 | 维度 | 数值 |
 |------|------|
 | **特征卡** | **17 项（驱动全部文件 + 176 个门禁变量 + 开发流程）** |
-| **质量门禁** | **54 个（核心 10 + 架构 17 + 合规 17 + advisory-only 10，特征卡立法 + 门禁执法）** |
+| **质量门禁** | **54 个（核心 10 + 架构 17 + 合规 19 + FULL-only 2 + advisory-only 6，特征卡立法 + 门禁执法）** |
 | 运行时工具 | 13 |
 | spec 模板 | 23 整数节（§1-§23，不含 §5.5/5.6/5.7 三个子节） |
 | 领域知识 | 32 个领域 |
@@ -448,7 +448,7 @@ swarm-yuan 内置 74 个框架规则集（references/frameworks/*.md + assets/fr
 ```bash
 bash scripts/precheck.sh --framework    # 运行所有激活框架门禁
 bash scripts/precheck.sh --all-full     # 标准 27 门禁（核心 10 + 架构 17，含 --framework）
-bash scripts/precheck.sh --compliance-suite  # 合规 17 门禁（强监管交付按需）
+bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交付按需）
 ```
 
 ### 时效检查

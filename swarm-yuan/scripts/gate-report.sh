@@ -28,17 +28,25 @@ OS_INFO="$(uname -srm 2>/dev/null || echo 未知)"
 BASH_INFO="${BASH_VERSION:-未知}"
 GIT_INFO="$(git rev-parse --short HEAD 2>/dev/null || echo 非-git-环境)"
 
+# audit-claims-reality（A4）：门禁固定序动态取自 assets/precheck.sh 的 ALL_GATES_FULL
+# （单一事实源；此前硬编码 34 门禁，FULL 实际 48——14 个门禁落"未登记追加"分支，
+# 且 missing_evidence 计数打印错变量恒等于 Present）。取不到时降级空序（全部追加于后）。
+_PRE="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)/assets/precheck.sh"
+FULL_GATES="$(sed -n 's/^ALL_GATES_FULL=(\(.*\))/\1/p' "$_PRE" 2>/dev/null || true)"
+
+
 if [[ -z "$OUT" && -n "$RUNS_DIR" ]]; then
   OUT="$RUNS_DIR/report-$(date -u '+%Y%m%dT%H%M%SZ').md"
 fi
 
-# awk 生成全文（34 门禁固定序与 precheck.sh ALL_GATES_FULL 一致；未登记门禁追加于后）。
+# awk 生成全文（门禁固定序动态取自 precheck.sh ALL_GATES_FULL；未登记门禁追加于后）。
 # 趋势摘要固定近 10 次窗口（与 gate-trends.sh 缺省口径一致）。
 awk -v jsonl="$JSONL" -v gen_ts="$GEN_TS" -v report_id="$REPORT_ID" \
-    -v os_info="$OS_INFO" -v bash_info="$BASH_INFO" -v git_info="$GIT_INFO" '
+    -v os_info="$OS_INFO" -v bash_info="$BASH_INFO" -v git_info="$GIT_INFO" \
+    -v full_gates="$FULL_GATES" '
   function esc(x){ gsub(/\|/,"\\|",x); return x }
   BEGIN{
-    ng=split("check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_test", order, " ")
+    ng=split(full_gates, order, " ")
     for(i=1;i<=ng;i++) ord[order[i]]=i
   }
   {
@@ -73,7 +81,7 @@ awk -v jsonl="$JSONL" -v gen_ts="$GEN_TS" -v report_id="$REPORT_ID" \
     printf "- 报告编号：`%s`\n- 生成时间(UTC)：%s\n- 数据源：`%s`（gate-runs JSONL 契约 `{\"ts\",\"run\",\"gate\",\"status\",\"ids\",\"duration_s\"}`）\n\n", report_id, gen_ts, jsonl
     printf "## 2. 概述\n\n"
     printf "- 目的：汇总门禁族近次运行结果，使失效可见、趋势可查，支撑准入/准出评审。\n"
-    printf "- 范围：34 门禁（precheck.sh ALL_GATES_FULL）；记录时间范围(UTC) %s ～ %s；总记录 %d 条，覆盖门禁 %d 个。\n", tmin, tmax, tot, ngates
+    printf "- 范围：%d 门禁（precheck.sh ALL_GATES_FULL 动态取序）；记录时间范围(UTC) %s ～ %s；总记录 %d 条，覆盖门禁 %d 个。\n", ng, tmin, tmax, tot, ngates
     printf "- 引用文档：\n"
     printf "  - GB/T 15532-2008《计算机软件测试规范》（2008-04-11 发布，2008-09-01 实施，现行）——国家标准全文公开系统 https://openstd.samr.gov.cn/bzgk/gb/（2026-07-20 访问）\n"
     printf "  - references/standards-compliance.md §F「门禁姿态与豁免登记」（fail 须可见、豁免留痕 5 字段）\n\n"
@@ -103,7 +111,11 @@ awk -v jsonl="$JSONL" -v gen_ts="$GEN_TS" -v report_id="$REPORT_ID" \
     # R15（HarnessEval 吸收 P5）：missing_evidence 态——"该测没测"显式计数。
     # HarnessEval 语义：缺证据宁可 invalid 不插值——本任务计划要测但未执行的门禁显式标出，
     # 不算 Present（机制存在）也不算 Exercised（用过），是独立的"缺失"态（≤59）。
-    printf "| missing_evidence | %d | 应执行但未执行（该测没测，不插值不算分） | ≤59 |\n", ep
+    # audit-claims-reality（A4）：em = 计划应执行（ALL_GATES_FULL）− 有记录门禁数——
+    # 此前错印 ep（与 Present 恒等，"该测没测"永远错报）。
+    em=0
+    for(i=1;i<=ng;i++){ if(!(order[i] in cnt)) em++ }
+    printf "| missing_evidence | %d | 应执行但未执行（该测没测，不插值不算分） | ≤59 |\n", em
     printf "\n> 口径注：swarm-yuan 的门禁执行即 Exercised（precheck 跑过即留痕）；Wired/Outcome-supported 需任务级路由与后期对比证据，由 gate-trends 双账本承载（§R14）。\n\n"
     printf "\n## 5. fail id 清单（失效须可见）\n\n"
     if(frows>0){

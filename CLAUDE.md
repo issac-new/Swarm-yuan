@@ -11,14 +11,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 There is no compiled artifact and no conventional build — the product is a set of bash scripts, markdown templates/references, and shell gate fragments that get copied into a target skill directory.
 
-## 范式定位（WP-P10）
+## 范式定位（WP-P10 → R13 修正）
 
-swarm-yuan 是**重量级范式**——重量是设计选择不是缺陷：通过 `--profile auto|lite|standard|compliance` 四档让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` `适用场景` 与 `docs/paradigm-positioning.md`。
+swarm-yuan 现为**两体系统**（DESIGN.md §1.3）：生成器侧 ~68K 行自举仍在（一次性消费不算税），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` `适用场景` 与 `docs/paradigm-positioning.md`。（2026-07 WP-P10 的"重量级范式，重量是设计选择"是历史定位，R13 起以上述两体系统为准。）
 
 ## Repository layout (three top-level roles)
 
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
-  - `SKILL.md` — the AI entry point / operating manual (the generation pipeline Step 0–8, 13 nodes incl. five .5 sub-steps).
+  - `SKILL.md` — the AI entry point / operating manual (generation pipeline 唯一口径 = `references/generation-flow.md` Step 1–12；分工视图 ⓪-⑧ 为同一流程压缩标记，"Step 0-8 / 13 节点"是已被 DESIGN.md §9 退役的旧口径).
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
   - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` + `gates-strict.sh` + `gates-warn.sh` + `gates-advisory.sh` (54 gates split across four files; LOC tracked by `facts.conf` `FACT_SCRIPT_LOC`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (config vars, WP-I split), `spec-template.md` (23-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (74 per-framework gate fragments).
   - `references/` — methodology docs + `references/frameworks/<fw>.md` (74 framework rule sources).
@@ -37,7 +37,7 @@ bash swarm-yuan/install.sh                 # auto-detect + install
 bash swarm-yuan/install.sh --list          # just list detected runtimes
 bash swarm-yuan/install.sh --version       # version + bash version
 
-# --- Self-check (verifies the 13 runtimes; not a unit test) ---
+# --- Self-check (verifies 11 runtime tools; not a unit test. 13 = 含方法论引用的接线口径 FACT_RUNTIMES) ---
 bash swarm-yuan/scripts/self-check.sh --check-only   # detect only, don't install
 
 # --- Generate a skill for some project ---
