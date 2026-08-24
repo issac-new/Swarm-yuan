@@ -443,4 +443,16 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 
 ---
 
-**决策索引（R13 后）**：决策 1-17 见 `paradigm-decisions-archive.md`；决策 18-29 见本文前部；决策 30-32 自适应与压缩；决策 33-34 R13 重构与防复胖。
+## 决策 35：创造纪律——未创建且未运行的机制不得声称（2026-08-24，audit-claims-reality 轮）
+
+**决定**：§0.2 冲程一的反推纪律（机制必须答出派生自哪条本体关系）补第二条执法——**创造纪律：声称的机制必须能被创建（可运行）且被运行（CI/断言接线）；只存在于文档的机制不是实体，是传闻**。费曼两条的范式翻译：*What I cannot create, I do not understand*（未创建=不理解）；*Know how to solve every problem that has been solved*（已解未接线=未占有）。
+
+**背景**：audit-claims-reality 轮三路并行审计发现 44 项"声称-现实"裂缝，全部可归约为两类创造缺失——①设计了没实现（precheck 启动接线在 source 前死调用、生成物 hooks 装错目录被 `|| true` 兜底静默失效、G-cognition/SKILLMD 预算空头断言）；②实现了没接线（`_count_advisory_only` 定义后零调用——最能抓漂移的函数自身是死代码、九个孤儿测试写完即脱钩、sarif-fixture 无 runner、Windows .bat 步骤被 `|| echo` 吞成永绿）。修复按 MECE 四类落地（A 功能断裂 11 / B 口径 7 组 / C 执法 7 / D 卫生 7，6 commit，verifier 八票绿）。
+
+**执法载体**（防复发的结构性安排，不是一次性修复）：①facts.conf 每个 catchphrase 数字必须配 self-check 等值断言（子族六键/conf 变量四键模式）——新增数字不配断言即空头执法；②生成物接线由 gen-e2e mounted_in 锚机器守（hooks.json 引用路径实存断言）；③测试写完必须当批接 CI（孤儿测试=知识未占有）；④历史快照文档（decisions/research/verifier runs）旧数字刻意不同步——声称的边界清晰化也是纪律的一部分。
+
+**与决策 34 的关系**：决策 34 的概念落地问责防"概念闲置"（新概念进 SKILL.md 须有落地路径）；本决策防"机制虚报"（既存声称须真被创建并运行）——一个管新增概念的入口，一个管既有声称的真值。
+
+---
+
+**决策索引（R13 后）**：决策 1-17 见 `paradigm-decisions-archive.md`；决策 18-29 见本文前部；决策 30-32 自适应与压缩；决策 33-34 R13 重构与防复胖；决策 35 创造纪律（audit-claims-reality 轮）。
