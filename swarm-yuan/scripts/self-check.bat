@@ -3,6 +3,8 @@ REM self-check.bat - Windows 包装器，自动查找 bash 并运行 self-check.
 REM 用法:
 REM   self-check.bat                  检测 + 自动安装
 REM   self-check.bat --check-only     仅检测不安装
+REM   self-check.bat --install <name> 仅安装指定项目
+REM   self-check.bat --latest         全部升级最新版
 
 setlocal enabledelayedexpansion
 

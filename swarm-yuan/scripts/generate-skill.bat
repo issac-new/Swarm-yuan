@@ -3,6 +3,8 @@ REM generate-skill.bat - Windows 包装器，自动查找 bash 并运行 generat
 REM 用法:
 REM   generate-skill.bat <skill-name> <project-dir> [target-dir]
 REM   generate-skill.bat --upgrade <skill-name> <project-dir> [target-dir]
+REM   generate-skill.bat --mark-active / --verify-completeness / --refresh / --render-tools / --inject-frameworks / --rollback-frameworks <args>
+REM   （%* 全量透传，子命令与 generate-skill.sh 一致）
 
 setlocal enabledelayedexpansion
 

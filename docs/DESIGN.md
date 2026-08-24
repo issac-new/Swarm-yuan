@@ -280,7 +280,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ### 3.6 工程一致性三矩阵（宣称→可核对的事实）
 
-**运行时接线明细**（历史快照表见归档 design-philosophy-consistency；权威计数 facts.conf）：每层每运行时的"真实接线方式（脚本里会执行的命令）/降级载体/self-check 可安装/验证 fixture"四列对账——深度 4（GitNexus 19 处子进程调用等）/CLI 4/方法论 5。
+**运行时接线明细**（历史快照表见归档 design-philosophy-consistency；权威计数 facts.conf）：每层每运行时的"真实接线方式（脚本里会执行的命令）/降级载体/self-check 可安装/验证 fixture"四列对账——深度 4（GitNexus 子进程调用等，调用点计数以代码为准）/CLI 4/方法论 5。
 
 **研发全流程 7 阶段 × 门禁映射**（每阶段四件套核对，无空壳）：
 
@@ -352,7 +352,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ### 5.1 门禁族与可达率
 
-54 门禁（FACT_GATES_TOTAL，真值对账）= 核心 10 + 架构 17 + 合规 17 + advisory 10。**全部有真实触发路径（54/54 可达）**：cert/cwe-audit→compliance 序列、decision/state-phase→full 序列、upstream-baseline→precheck 启动、operate/pr-quality/supply-chain→PostToolUse、decision-audit/learnings→Stop hook、state-phase→SessionStart、loop-oracle→loop-hook。enforce 分层（strict/warn/advisory）是实现细节，模型只选执行序列（`--all`/`--all-full`/`--compliance-suite`）。
+54 门禁（FACT_GATES_TOTAL，真值对账）= FULL 48 + advisory-only 6；FULL 48 = 标准 27（核心 10 + 架构 17）+ 合规 19 + FULL-only 2（decision/state-phase）。**全部有真实触发路径（54/54 可达）**：cert/cwe-audit→compliance 序列、decision/state-phase→full 序列、upstream-baseline→precheck 启动、operate/pr-quality/supply-chain→PostToolUse、decision-audit/learnings→Stop hook、state-phase→SessionStart、loop-oracle→loop-hook。enforce 分层（strict/warn/advisory）是实现细节，模型只选执行序列（`--all`/`--all-full`/`--compliance-suite`）。（audit-claims-reality 修正：旧分解"核心 10 + 架构 17 + 合规 17 + advisory 10"未随 cert/cwe 入列与序列迁移同步，子族计数漂移——facts.conf 已补闭合方程机器断言。）
 
 **核心工具入口**（生成器侧 `scripts/`，按流段归类）：
 
@@ -373,7 +373,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | ⑤回流 | inventory-update.sh | 地图单条更新（replace/delete/append） |
 | ⑤回流 | gate-plan.sh / audit-closure.sh | 选择即证据/闭环完备性 |
 | ⑤回流 | ontology-verify.sh | 六锚健康检查 |
-| 治理 | self-check.sh | 33 断言（含 G18 孤儿/G19 反向引用/类型对账 18 点/G20 多字节铁律 + 尾部死代码防线：exit 后无可执行行） |
+| 治理 | self-check.sh | 22 个命名断言段（`grep -c 'echo "▶"'` 机械可数）+ 18 个本体对账点（含 G18 孤儿/G19 反向引用/类型对账/G20 多字节铁律 + 尾部死代码防线：exit 后无可执行行） |
 | 治理 | adaptive-gating.sh / task-scale.sh / detect-spec-scale.sh / detect-profile-drift.sh | 自适应四维（profile/任务规模/spec 规模/档位漂移） |
 | 治理 | framework-evidence.sh / verify-framework-ruleset.sh | 框架证据台账/规则集验证 |
 | 治理 | compare-baseline.sh / context-surface.sh / to-sarif.sh / gate-report.sh / gate-trends.sh / profile-threshold-survey.sh / migrate-verify-blocks.sh / release-src-packages.sh | 基线对比/上下文预算/SARIF 输出/门禁报告/趋势/阈值调查/verify 块迁移/发布打包 |

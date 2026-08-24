@@ -151,7 +151,7 @@ jobs:
           rc=$?
           rm -rf "$tmpdir"
           [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --all RC=0)" || { echo "✗ Generator self-gate failed RC=$rc"; exit 1; }
-      # G4 自举闭环：--all-full（标准 27 门）+ --compliance-suite（合规 17 门），三档全 RC=0
+      # G4 自举闭环：--all-full（标准 27 门）+ --compliance-suite（合规 19 门），三档全 RC=0
       - name: Self-gate --all-full (27 gates)
         run: |
           tmpdir="$(mktemp -d)"
@@ -162,7 +162,7 @@ jobs:
           rc=$?
           rm -rf "$tmpdir"
           [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --all-full RC=0)" || { echo "✗ Generator self-gate --all-full failed RC=$rc"; exit 1; }
-      - name: Self-gate --compliance-suite (17 gates)
+      - name: Self-gate --compliance-suite (19 gates)
         run: |
           tmpdir="$(mktemp -d)"
           cp swarm-yuan/assets/precheck.sh swarm-yuan/assets/gates-strict.sh swarm-yuan/assets/gates-warn.sh swarm-yuan/assets/gates-advisory.sh "$tmpdir/"

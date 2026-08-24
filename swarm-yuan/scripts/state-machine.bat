@@ -8,6 +8,8 @@ REM   state-machine.bat transition <phase> 阶段转换（带门禁）
 REM   state-machine.bat guard <phase>    检查阶段准入
 REM   state-machine.bat next             下一阶段
 REM   state-machine.bat status           当前状态
+REM   state-machine.bat update           增量更新状态
+REM   state-machine.bat dump-journal / restore-journal / checkpoint / restore   状态续传（compaction 压力不重置）
 REM 注：本 .bat 供已生成的目标 skill 使用（其 scripts/state-machine.sh 存在）；
 REM     swarm-yuan 源仓库内 state-machine.sh 位于 assets/ 而非 scripts/，源仓库开发请直接 bash assets/state-machine.sh。
 

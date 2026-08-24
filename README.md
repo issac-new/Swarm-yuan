@@ -151,7 +151,7 @@ bash scripts/audit-closure.sh <项目根> --strict   # 有 open goal → exit 2
 - 生成物税：SKILL.md ≤8KB / 认知面 references 拷贝 ≤256KB（断言过）
 - 测试：17 测试脚本 + gen-e2e + self-check 全 PASS（CI：ubuntu/macos/windows 三平台）
 
-详细设计见 `docs/DESIGN.md`（单一设计事实源，11 章）；演化史与决策记录见 `docs/paradigm-decisions.md`（决策 1-34 索引）；落地案例见 `swarm-yuan/references/case-studies/articulation-orchestration.md`。
+详细设计见 `docs/DESIGN.md`（单一设计事实源，§0–§11）；演化史与决策记录见 `docs/paradigm-decisions.md`（决策 1-34 索引）；落地案例见 `swarm-yuan/references/case-studies/articulation-orchestration.md`。
 
 ## License
 

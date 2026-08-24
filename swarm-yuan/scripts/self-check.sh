@@ -473,7 +473,7 @@ fw_freshness_check() {
 }
 fw_freshness_check
 
-# ===== 框架规则集核验（62 规则集四要素机械核验）=====
+# ===== 框架规则集核验（74 规则集四要素机械核验）=====
 fw_ruleset_verify() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local vfy="$base/scripts/verify-framework-ruleset.sh"
