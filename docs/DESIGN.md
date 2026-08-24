@@ -1,7 +1,7 @@
 # swarm-yuan 设计文档（单一事实源）
 
 > **文档性质**：swarm-yuan 的**单一设计事实源**——本体论驱动原理、闭环流动力学、定位理念、架构规格、决策演化史、验收，全部整合于此一份。原 DESIGN-ONTOLOGY.md / DESIGN-LOGIC.md 已并入 §0，原文档归档。
-> **版本**：**终态 v4**（2026-08-21/22；v1=R13 终态整理，v2=+R14/R15，v3=并入本体论驱动原理与闭环流+8 份归档文档内容，v4=十轮排查修复＋设计一致性收口——数字虚报/工具入口表/references 全索引/奠基理念/测试矩阵/口径/仓库结构/读者可用性；收口=派生表 10 关系全量化、规则来源四层澄清、生成流程唯一编号 Step 1-12、本体层消费路径、账本落盘全景）。终态的含义：结构完整（§0 原理 → §1-9 设计 → §10 验收 → §11 档案）、与实现一致性机器可验（self-check 全绿项覆盖）、单一事实源地位确立——但**不是冻结**：演进按 §0.2 冲程二四问与 §6 演进协议追加，已知边界两项均已修复并登记于 §11 已修复边界（audit-claims-reality 同步：头部此前与 §11"已知边界：无"自相矛盾）。
+> **版本**：**终态 v4**（2026-08-21/22；v1=R13 终态整理，v2=+R14/R15，v3=并入本体论驱动原理与闭环流+8 份归档文档内容，v4=十轮排查修复＋设计一致性收口——数字虚报/工具入口表/references 全索引/奠基理念/测试矩阵/口径/仓库结构/读者可用性；收口=派生表 10 关系全量化、规则来源四层澄清、生成流程唯一编号 Step 1-12、本体层消费路径、账本落盘全景；2026-08-24 增量：audit-claims-reality 轮——44 项"声称-现实"裂缝四类修复 + 决策 35 创造纪律入 §0.2 冲程一，演进按四问协议追加的实例）。终态的含义：结构完整（§0 原理 → §1-9 设计 → §10 验收 → §11 档案）、与实现一致性机器可验（self-check 全绿项覆盖）、单一事实源地位确立——但**不是冻结**：演进按 §0.2 冲程二四问与 §6 演进协议追加，已知边界两项均已修复并登记于 §11 已修复边界（audit-claims-reality 同步：头部此前与 §11"已知边界：无"自相矛盾）。
 > **证据基础**：zcode 会话库 32 个主会话全量提取（五轮"过重"诊断史）｜仓库病理量化诊断｜openai/codex 源码深挖（锚定 file:line）｜多轮排查与设计一致性收口的执行者自省。
 > **方案总承诺**：R13 重构期（v2.0）每个迁移单元的 diff 必须为净减法或等量替换（新增 ≤ 删除，`git diff --stat` 机器验证）；R16 起新概念须过本体驱动四问（§0.2 冲程二——新实体进 objects.md 前想清区别、新关系必配机器锚），不设"永不新增"的绝对禁令——演进纪律从"数量冻结"升级为"结构约束"。
 
@@ -32,6 +32,8 @@ swarm-yuan 是被本体论驱动的生成系统：**先说清世界里有什么�
 上表 = links.md 10 条关系**全量**（表征系 4 条落校验轴机制、依赖系 6 条落边界轴机制——§0.3 的 2×2 投影在此自证）；机制不派生自目录外关系（类型封闭性）。
 
 **反推纪律（这条冲程的执法）**：每个机制必须能回答"我实现本体里的哪条关系"。答不出的机制是孤儿——要么删掉，要么先回本体补定义再实现。这一条直接继承 R13 的"概念落地问责"，但从"落地"深化到"从本体派生"。
+
+**创造纪律（这条冲程的第二执法，费曼推论——audit-claims-reality 轮固化，即决策 35）**：反推纪律问"机制从哪条关系派生"，创造纪律问"机制是否被创建且被运行"——**声称的机制必须能被创建（可运行）且被运行（CI/断言接线），否则视为不理解、不得声称**。只存在于文档的机制不是实体，是传闻；机器锚是创造证明，CI 接线是占有证明。固化依据（2026-08-24 轮 44 项"声称-现实"裂缝全部可归约为两类创造缺失）：①设计了没实现——precheck 启动接线在 source 前死调用（exit 127 被吞）、生成物 hooks 装错目录 + `|| true` 兜底静默失效、G-cognition/SKILLMD 预算空头断言；②实现了没接线——`_count_advisory_only` 定义后零调用（最能抓漂移的函数自身是死代码）、九个测试写完即脱钩（CI 绿≠它们过）、sarif-fixture 无 runner、Windows .bat 步骤被 `|| echo` 吞成永绿。
 
 #### 冲程二：本体驱动设计（新需求来了怎么想）
 
@@ -485,11 +487,13 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **决策 30-32**（自适应偏置/门禁分层/上下文压缩）：同上
 - **决策 33**（范式作为条件而非内容——R13 去抽象化重构与落地优先原则）：同上
 - **决策 34**（概念落地问责 + 吸收三问 + 生成物税制——防复胖三制度）：同上
+- **决策 35**（创造纪律——未创建且未运行的机制不得声称，audit-claims-reality 轮）：同上
 - **R12 调研**（DeepSeek Harness dsh rc.8 重调研，2026-08-20）：产品层四簇机制识别——决策审计/状态韧性/增量自成长/工程纪律；WP-R12-A/B/C/D 四批落地（fail-gate deny-only→全量决策审计 + 方法论四载体 + dir_cksums scope 感知 + decisions.jsonl outcome 生命周期）；guard/ 澄清为循环卫生非权限守卫。详见 `docs/research/R12-dsh-rc8-resurvey.md`。
 - **R13 重构**（去抽象化，2026-08-21，即决策 33/34 + 终态方案 v6）：五批次落地——落地化接线（认知计分退役转 AI 判断引导/十门禁全接线 54-54/industry 真实加载/40 references 路由头）、模板减负（spec 仪式节折叠/workflow 10→4 要素/核对清单 96→12/五维表→两维表）、条件化（rules.d 三值/FORBID 带替代/G18/G19 断言）、生成器瘦身（SKILL.md 142→93 行/facts 21 键退役/check_doc 434→70 行/税制断言）、宿主下沉（Codex hooks/settings 沙箱 deny）。方案全文 `docs/research/R13-final-plan.md`（v6）。
 - **R14 吸收**（阿里云 Qoder Better Harness，2026-08-21）：审计/复盘/趋势三层机制落地——审计单元目标闭环化（decisions.jsonl 增 goal_id+closure）、证据态分级（gate-report.sh 输出的"§4.2 证据状态分级"段：Present/Wired/Exercised/Outcome-supported + 分数上限）、双账本（gate-trends：Repair Progress 当窗验证 + guardrail 配对指标）、修复复核位（decisions.jsonl 增 repair_review）。与过程强制层（门禁）互补不竞争。详见 `docs/research/R14-better-harness-absorption.md`。
 - **R15 吸收**（MirroS HarnessEval，2026-08-21）：评测层 Harness 落地——digest 链式锚定（decisions.jsonl 增 ref_trace_hash：三本账从并列升级为链式，上游篡改全链 stale 可检出）、missing_evidence 态（gate-report 证据态加"该测没测"≤59）、gate-plan 选择即证据（`scripts/gate-plan.sh`：启用/跳过理由负空间可审计，收口 diff 计划 vs 实际触发）、audit-closure 审计即完成条件（`scripts/audit-closure.sh`：goal 闭环完备性重走，串 mark-active advisory 门）。三层 Harness 拼图完整：过程强制门禁层（R13 前）+ 工作流审计层（R14）+ 评测层（R15）。详见 `docs/research/R15-harnesseval-absorption.md`。
 - **实现符合性收口**（impl-conformance，2026-08-23）：DESIGN 宣称 vs 实现逐章对账后的补齐——①审批沉淀从宣称变实现（gate-rules.sh --persist：写 approved.rules + decisions.jsonl 落痕 + 三重校验，§5.2）；②CI 长红修复：WP-Q2H-B 降 check_framework=advisory 后三层断言（fixture 双态退出码/E2E fail 链/verifier 判据）未跟上新语义，统一改为"检测命中 expected-fail-ids"（检出能力是被验证物，违规不阻断是设计语义），golden-vector 重建；③facts.conf 三键真值同步（SCRIPT_LOC 5917/UNIVERSAL_FILES 58/UNIVERSAL_FILES_CORE 30——R14-R16 新增条目后长期漂移，C1 与行数断言终于全绿）；④G14/G17 absorb 三载体补齐（SKILL.md 引用行）；⑤G21 新增：framework-globs 快照对账锚；⑥detect-profile-drift 自扫守卫（关 §11 边界①）。
+- **audit-claims-reality 轮**（第一性原理审计 + 修复，2026-08-24）：三路并行审计（设计↔实现/脚本质量/测试-CI-verifier）发现 44 项"声称-现实"裂缝，MECE 四类修复 6 commit——A 功能断裂 11（precheck 启动接线复活/生成物 hooks 归一 scripts/ 并补 gen-e2e mounted_in 锚/BSD sed 破窗等）+ B 口径 7 组（合规 19/advisory-only 6/FULL 48 闭合方程、conf 176/16、自检 11、Step 1-12）+ C 执法 7（self-check 子族六键+conf 变量四键+G-cognition 等值断言接线、SKILLMD 预算首个消费者、九孤儿测试接 CI、Windows .bat 步骤真断言化、test-to-sarif）+ D 卫生 7（根级 tests/ 出册、DESIGN 头/§11 矛盾闭环、死代码清理、date -u 统一）。固化决策 35（创造纪律，§0.2 冲程一第二执法）。
 - **R16 重构**（本体论驱动，2026-08-21）：显式本体层落地——`assets/ontology/` 三份类型目录（objects 17 类型含负面承诺/links 10 关系各配机器锚/actions 11 受治理动作）作为与 facts.conf 平行的**类型事实源**；self-check 类型对账（18 实存点）；`scripts/ontology-verify.sh` 六锚一站式健康检查；地图骨架语义/动能两区纪律（是/应当不混写）；本体层带"何时读我"路由头随生成物分发（G18 孤儿扫描覆盖 assets/ontology/）。设计闭环：本体论驱动原理（本文 §0）→ 类型事实源 → 机器对账 → 运行时健康检查。
 
 演化模式定型为"吸收→膨胀→诊断→减重"五轮循环；R13 是第一个以落地化（而非加法治理）收口的循环。
