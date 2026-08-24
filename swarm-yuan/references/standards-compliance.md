@@ -3,7 +3,7 @@
 # 标准合规映射矩阵（standards-compliance）
 
 > 版本：v1（2026-07-20，随 `feat/standards-compliance` 批次冻结 6 个锚点标题）
-> 证据基线：`docs/research/R7-quality-standards.md`、`docs/research/R8-security-standards.md`（2026-07-20，条款号均出自该两报告，禁止虚构）；门禁语义基线：`swarm-yuan/assets/precheck.sh`（54 门禁 = 标准 27（核心 10+架构 17）+ 合规 17 + advisory-only 10：WP-S1/S2 新增 authz/requirements/crypto + 2 P3 新增 rtm/release-sign + 4 WP-S1 新增 dengbao/pia/sast-deep/oss-eval）与 `swarm-yuan/assets/precheck.conf`。
+> 证据基线：`docs/research/R7-quality-standards.md`、`docs/research/R8-security-standards.md`（2026-07-20，条款号均出自该两报告，禁止虚构）；门禁语义基线：`swarm-yuan/assets/precheck.sh`（54 门禁 = FULL 48 + advisory-only 6；FULL 48 = 标准 27（核心 10+架构 17）+ 合规 19 + FULL-only 2（decision/state-phase）——audit-claims-reality 修正旧分解未随 cert/cwe 入列同步）与 `swarm-yuan/assets/precheck.conf`。
 > **口径权威源**：`../assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 ## 本文件作用与用法

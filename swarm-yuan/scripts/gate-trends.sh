@@ -107,14 +107,18 @@ fi
 TMP_TOP="$(mktemp /tmp/gate-trends-top.XXXXXX)" || { echo "✗ mktemp 失败" >&2; exit 1; }
 trap 'rm -f "$TMP_TOP"' EXIT
 
-# 主体 awk：34 门禁固定序（与 precheck.sh ALL_GATES_FULL 一致）保证输出顺序稳定；
+# 主体 awk：门禁固定序动态取自 precheck.sh ALL_GATES_FULL（单一事实源，与 gate-report.sh 同款——
+# audit-claims-reality：此前硬编码 34 门禁，FULL 实际 48）保证输出顺序稳定；
 # 未登记门禁追加于后。fail id 以「次数|最近ts|gate|id」写入 TMP_TOP（id 含 | 不支持，契约内不出现）。
-awk -v n="$N" -v topfile="$TMP_TOP" -v jsonl="$JSONL" -v gen_ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')" '
+_PRE="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)/assets/precheck.sh"
+FULL_GATES="$(sed -n 's/^ALL_GATES_FULL=(\(.*\))/\1/p' "$_PRE" 2>/dev/null || true)"
+awk -v n="$N" -v topfile="$TMP_TOP" -v jsonl="$JSONL" -v gen_ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+    -v full_gates="$FULL_GATES" '
   function esc(x){ gsub(/&/,"\\&amp;",x); gsub(/</,"\\&lt;",x); gsub(/>/,"\\&gt;",x); return x }
   function scolor(c){ if(c=="p")return "#7d9c7a"; if(c=="f")return "#bf7a5e"; if(c=="w")return "#cfa96f"; return "#b9b0a4" }
   function slabel(c){ if(c=="p")return "pass"; if(c=="f")return "fail"; if(c=="w")return "warn"; return "skip" }
   BEGIN{
-    ng=split("check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_test", order, " ")
+    ng=split(full_gates, order, " ")
     for(i=1;i<=ng;i++) ord[order[i]]=i
   }
   {
