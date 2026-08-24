@@ -1507,6 +1507,76 @@ check_multibyte_var_adjacency() {
 check_stable_propagate_wiring
 check_multibyte_var_adjacency
 
+# ===== G22：sed 正则方言铁律机械检查（audit-claims-reality F2，决策 35 解法占有锚）=====
+# BSD sed（macOS）不认 GNU 扩展：\s/\b/\w 被当字面字母（requests→requet 实证），
+# BRE 的 \?/\+ 不支持。该类已被修三次（WP-R Bug#3、A3/A9、spring-batch F2）——
+# 散文纪律（security-spec §6.1）不防复发，机器扫描才占有解法。
+# 范围与 G20 同（含 framework-gates）；只查 sed 类（grep -E 的 \s/\b 三平台现行版本
+# 均支持，属存量容忍——新增代码仍应优先 POSIX 类）。违规即 fail（清零后严格成立）。
+check_sed_regex_dialect() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  echo "▶ sed 正则方言铁律（G22，security-spec §6.1：BSD 不认 GNU 扩展，POSIX 类 + sed -E 唯一合法）"
+  local hits=0 f line trimmed
+  for f in "$base"/scripts/*.sh "$base"/assets/*.sh "$base"/assets/hooks/*.sh \
+           "$base"/assets/framework-gates/*.sh \
+           "$base"/tests/*.sh "$base"/tests/e2e/*.sh \
+           "$base"/../verifier/v1/*.sh "$base"/../verifier/v2/*.sh; do
+    [[ -f "$f" ]] || continue
+    while IFS= read -r line; do
+      trimmed="$(printf '%s' "$line" | sed 's/^[[:space:]]*//')"
+      [[ "$trimmed" == \#* ]] && continue
+      case "$line" in
+        *sed*) : ;;
+        *) continue ;;
+      esac
+      # R1：sed 表达式（ERE/BRE 不论）含 \s \b \w → 违规（BSD 当字面字母）
+      if printf '%s' "$line" | grep -qE "sed[^|;]*'[^']*\\\\[sbw]" \
+         || printf '%s' "$line" | grep -qE 'sed[^|;]*"[^"]*\\\\[sbw]'; then
+        echo "  ✗ $(basename "$f"): $line" >&2
+        hits=$((hits+1)); continue
+      fi
+      # R2：BRE sed（无 -E）含 \? \+ → 违规（BSD BRE 不支持）
+      if ! printf '%s' "$line" | grep -q 'sed -E'; then
+        if printf '%s' "$line" | grep -qE "sed[^|;]*'[^']*\\\\[?+]"; then
+          echo "  ✗ $(basename "$f"): $line" >&2
+          hits=$((hits+1))
+        fi
+      fi
+    done < "$f"
+  done
+  if [[ "$hits" -gt 0 ]]; then
+    warn "sed 正则方言违规 ${hits} 处——BSD 不认 \\s/\\b/\\w 与 BRE \\?/\\+，改 POSIX 类 + sed -E（security-spec §6.1）"
+    FAIL=1
+  else
+    echo "  ✓ 无 sed 正则方言违规（POSIX 类 + sed -E 纪律）"
+  fi
+}
+check_sed_regex_dialect
+
+# ===== 决策 35 创造锚：gate-enforce-level.conf 再生能力断言（audit-claims-reality F1）=====
+# 入库产物 + 生成器不被运行 = 占有产物但无法证明仍保有创造能力（费曼第一条）。
+# 再生到临时 base（不动真文件）与现文件逐字节 diff——漂移即 fail。
+check_enforce_level_regen() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local gen="$base/scripts/gen-enforce-level.sh" conf="$base/assets/gate-enforce-level.conf"
+  [[ -f "$gen" && -f "$conf" ]] || return 0
+  echo "▶ enforce-level 再生能力断言（决策 35 创造锚：入库产物须可逐字节再生）"
+  local tmp; tmp="$(mktemp -d "${TMPDIR:-/tmp}/enforce-regen.XXXXXX")"
+  mkdir -p "$tmp/scripts" "$tmp/assets"
+  cp "$gen" "$tmp/scripts/"
+  cp "$base/assets/precheck.sh" "$base"/assets/gates-*.sh "$tmp/assets/" 2>/dev/null
+  bash "$tmp/scripts/gen-enforce-level.sh" >/dev/null 2>&1
+  if [[ -f "$tmp/assets/gate-enforce-level.conf" ]] \
+     && diff -q "$conf" "$tmp/assets/gate-enforce-level.conf" >/dev/null 2>&1; then
+    echo "  ✓ gate-enforce-level.conf 可逐字节再生（创造能力在）"
+  else
+    warn "gate-enforce-level.conf 与 gen-enforce-level.sh 再生结果不一致——生成器或入库文件已漂移"
+    FAIL=1
+  fi
+  rm -rf "$tmp"
+}
+check_enforce_level_regen
+
 # ===== G21：framework-globs 快照对账（impl-conformance：快照消费者，关闭 §11 已知边界②）=====
 # assets/rules.d/framework-globs.rules 是 R13 conf 收缩的 glob 默认值快照（43 变量）。
 # 本断言让它获得真实消费路径：arch.conf 里的 glob 变量集与值须与快照一致——
