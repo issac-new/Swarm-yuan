@@ -314,8 +314,9 @@ if [[ -n "$SINGLE" ]]; then
       exit 1
     fi
     echo "=== 安装 ${name}（最新版）==="
+    # audit-claims-reality（A5）：传播安装退出码——此前无条件 exit 0，安装失败也报成功
     "$inst"
-    exit 0
+    exit $?
   done
   echo "✗ 未知项目: $SINGLE"
   avail=""

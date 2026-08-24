@@ -8,8 +8,10 @@
 # 用法:
 #   bash scripts/setup-loop.sh "任务描述" [--verify '<命令>'] [--max-iterations <n>] [--completion-promise '<text>']
 #
-# verify_command 默认绑定 swarm-yuan 已有资产:
-#   bash scripts/self-check.sh --check-only && bash scripts/precheck.sh --all-full
+# verify_command 默认绑定生成物中真实存在的入口（绝对路径，cwd 无关）:
+#   bash <skill>/scripts/precheck.sh --all
+# （hook 以项目根为 cwd 跑 verify_command；相对路径在项目根不存在——
+#   audit-claims-reality A8 修复：旧默认 self-check+--all-full 永不通过。）
 #
 # 三平台兼容：bash 3.2 / 无 declare -A / date -u / md5sum→md5 降级。
 # 借鉴 Ralph Wiggum (Anthropic MIT) + tanweai/pua pua-loop，改写为 swarm-yuan 叙事。
@@ -36,7 +38,7 @@ ARGUMENTS:
 
 OPTIONS:
   --verify '<command>'             验证命令——hook 在 <promise> 后独立运行（Oracle Gate）
-                                   默认: bash scripts/self-check.sh --check-only && bash scripts/precheck.sh --all-full
+                                   默认: bash <本脚本同目录>/precheck.sh --all（绝对路径，cwd 无关）
   --max-iterations <n>             最大迭代数（默认 0=无限）
   --completion-promise '<text>'    完成信号词（默认 SWARM_YUAN_DONE）
   -h, --help                       显示帮助
@@ -51,8 +53,8 @@ GATE PROTOCOL（借鉴 autoresearch Oracle Isolation）:
 暂停:     <loop-pause>缺什么</loop-pause>
 
 EXAMPLES:
-  bash scripts/setup-loop.sh "修复 precheck.conf 占位符" --verify 'bash scripts/self-check.sh --check-only'
-  bash scripts/setup-loop.sh "生成完整 skill" --max-ions 20
+  bash scripts/setup-loop.sh "修复 precheck.conf 占位符" --verify 'bash scripts/precheck.sh --all'
+  bash scripts/setup-loop.sh "生成完整 skill" --max-iterations 20
   bash scripts/setup-loop.sh "让合规门禁全过" --verify 'bash scripts/precheck.sh --compliance-suite'
 
 STOPPING:
@@ -80,10 +82,18 @@ HELP_EOF
 done
 
 PROMPT="${PROMPT_PARTS[*]}"
-[[ -z "$PROMPT" ]] && { echo "❌ 缺任务描述" >&2; echo "   例: bash scripts/setup-loop.sh \"修复占位符\" --verify 'bash scripts/self-check.sh --check-only'" >&2; exit 1; }
+[[ -z "$PROMPT" ]] && { echo "❌ 缺任务描述" >&2; echo "   例: bash scripts/setup-loop.sh \"修复占位符\" --verify 'bash scripts/precheck.sh --all'" >&2; exit 1; }
 
-# 默认 verify：swarm-yuan 自检 + 标准门禁
-[[ -z "$VERIFY_COMMAND" ]] && VERIFY_COMMAND="bash scripts/self-check.sh --check-only && bash scripts/precheck.sh --all-full"
+# 默认 verify：生成物侧 Oracle = precheck --all（核心 10 门禁对 PROJECT_DIR 真跑真判）。
+# audit-claims-reality（A8）：用脚本自身绝对路径——hook 以项目根为 cwd 执行 verify_command
+# （loop-hook.sh bash -c），相对路径 scripts/*.sh 在项目根不存在，旧默认永不通过；
+# self-check 是生成器侧事实源校验（facts.conf 不随生成物分发），不适合做生成物默认 Oracle。
+if [[ -z "$VERIFY_COMMAND" ]]; then
+  _self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+  _pc="${_self_dir}/precheck.sh"
+  [[ -f "$_pc" ]] || _pc="${_self_dir}/../precheck.sh"   # 生成器侧 assets/hooks/ 布局兜底
+  VERIFY_COMMAND="bash \"${_pc}\" --all"
+fi
 
 # ===== 状态文件（cwd 哈希命名，多项目隔离）=====
 PROJECT_DIR="${PROJECT_DIR:-$(pwd)}"

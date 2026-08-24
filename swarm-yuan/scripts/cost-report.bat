@@ -1,7 +1,8 @@
 @echo off
 REM cost-report.bat - Windows 包装器，自动查找 bash 并运行 cost-report.sh
-REM 用法:
-REM   cost-report.bat [项目目录]    生成成本报告（token/调用统计）
+REM 用法（与 cost-report.sh 参数一致，%* 全量透传；不支持位置参数）:
+REM   cost-report.bat --dir <项目目录>    生成成本报告（token/调用统计）
+REM   cost-report.bat --stdout            输出到 stdout
 REM 注：本 .bat 供已生成的目标 skill 使用（其 scripts/cost-report.sh 存在）；
 REM     swarm-yuan 源仓库内 cost-report.sh 位于 scripts/，源仓库开发请直接 bash scripts/cost-report.sh。
 

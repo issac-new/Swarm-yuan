@@ -442,15 +442,6 @@ SILENT=0
 # WP-CogAudit：--strict-skip 模式下，SKIP_COUNT>0 且 FAIL=0 时返回 rc=2（默认 0，opt-in）
 # 用 ${STRICT_SKIP:-0} 避免覆盖参数解析已设的值（--strict-skip 在 while 循环中先设 1）
 STRICT_SKIP=${STRICT_SKIP:-0}
-# ===== R13 批次1a（D2 接线）：precheck 启动挂 upstream-baseline（advisory warn）=====
-# 原为 advisory-only（不在任何执行序列，须显式 --upstream-baseline 才跑——五轮病理的"僵尸门禁"）。
-# 接线语义：每次 precheck 启动时顺带跑一次（fail-open warn，docs/upstream-baseline.md 不存在
-# 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 教义。
-# 段头降级（impl-conformance）：启动期输出的 "=== " 段头改写为 "··· "——"=== X ===" 命名空间
-# 只属于门禁执行段（cli-ab CORE10_SEQUENCE 断言按 '^=== ' 提取执行序列，启动 advisory
-# 不得混入；显式 --upstream-baseline 单跑时仍保留原段头）。
-check_upstream_baseline 2>/dev/null | sed 's/^=== /··· /' || true
-
 # ===== WP-H 状态门：所属 skill 为 draft（骨架填充未完成）时禁用全量门禁集 =====
 # draft = 生成器产出的未填充骨架（SKILL.md frontmatter `status: draft`）。
 # 半填充产物跑全量门禁会给"接近可用"的错觉——禁用 --all-full/--compliance-suite；
@@ -467,8 +458,10 @@ if [[ -f "$_skill_md" ]] && grep -q '^status: draft' "$_skill_md" 2>/dev/null; t
 fi
 # WP-P6：profile 漂移检测（轻量，stderr 输出，不阻塞主流程；只升不降，质量优先）
 # 重跑 auto_detect_profile 逻辑对比 frontmatter profile，升档漂移 warn 提示升级
+# audit-claims-reality（A10）：显式传 PROJECT_DIR——旧版靠 $SKILL_DIR/../../.. 推导，
+# 用户级安装（~/.claude/skills/<name>）布局下会误扫 $HOME。
 if [[ -f "${_CONF_DIR}/detect-profile-drift.sh" ]]; then
-  bash "${_CONF_DIR}/detect-profile-drift.sh" "${_CONF_DIR}/.." 2>/dev/null || true
+  bash "${_CONF_DIR}/detect-profile-drift.sh" "${_CONF_DIR}/.." "${PROJECT_DIR:-}" 2>/dev/null || true
 fi
 # WP-P7：spec 规模检测（轻量，stderr 输出，不阻塞主流程；规模与门禁集不匹配 warn 提示升档）
 # 若 SPEC_FILE 存在，推断规模等级，当前 MODE < 推断档则 warn 提示升档（只升不降）
@@ -613,6 +606,18 @@ if [[ -z "${SWARM_YUAN_BUNDLED:-}" ]]; then
     [[ -f "$_gp" ]] && source "$_gp" || true
   done
 fi
+
+# ===== R13 批次1a（D2 接线）：precheck 启动挂 upstream-baseline（advisory warn）=====
+# 原为 advisory-only（不在任何执行序列，须显式 --upstream-baseline 才跑——五轮病理的"僵尸门禁"）。
+# 接线语义：每次 precheck 启动时顺带跑一次（fail-open warn，docs/upstream-baseline.md 不存在
+# 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 教义。
+# 段头降级（impl-conformance）：启动期输出的 "=== " 段头改写为 "··· "——"=== X ===" 命名空间
+# 只属于门禁执行段（cli-ab CORE10_SEQUENCE 断言按 '^=== ' 提取执行序列，启动 advisory
+# 不得混入；显式 --upstream-baseline 单跑时仍保留原段头）。
+# 位置约束（audit-claims-reality 修复）：必须在上方 source 守卫之后——check_upstream_baseline
+# 定义于 gates-advisory.sh；此前置于 source 前（452 行附近），函数未定义 exit 127 被 || true
+# 吞掉，接线从未真实执行（僵尸复生失败）。移回 source 后才是真正接线。
+check_upstream_baseline 2>/dev/null | sed 's/^=== /··· /' || true
 
 # Usage 文本由 GATE_FLAGS 生成
 _usage() {

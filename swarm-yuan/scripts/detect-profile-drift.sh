@@ -11,7 +11,8 @@
 #   - 探测失败/边界不确定 → 不提示（保守不误报）
 #
 # 用法：
-#   bash detect-profile-drift.sh <skill_dir>
+#   bash detect-profile-drift.sh <skill_dir> [project_dir]
+#   project_dir 缺省：skill conf 的 PROJECT_DIR= → 旧推导（<project>/.claude/skills/<name> 布局限定）
 #   退出码：0=无漂移或仅 warn（不阻塞）；1=参数错误
 #
 # 触发点：precheck.sh --all/--all-full 启动时（轻量调用，stderr 输出，不阻塞主流程）
@@ -32,10 +33,23 @@ CURRENT_PROFILE=$(grep -E "^profile:" "$SKILL_MD" 2>/dev/null | head -1 | sed -E
 # profile 档序（rank：lite=1 < standard=2 < compliance=3；auto 视为 standard 对比基准）
 _profile_rank() { case "$1" in lite) echo 1;; compliance) echo 3;; *) echo 2;; esac; }
 
-# 重跑 auto_detect_profile 逻辑（从 generate-skill.sh 移植）
-# 需要项目目录——从 SKILL_DIR 推导：skill 通常在 <project>/.claude/skills/<name>/
-PROJECT_DIR=$(cd "$SKILL_DIR/../../.." 2>/dev/null && pwd)
-[[ -d "$PROJECT_DIR" ]] || { echo "ℹ 无法推导项目根目录，跳过 profile 漂移检测" >&2; exit 0; }
+# 重跑 auto_detect_profile 逻辑（从 generate-skill.sh 移植；本脚本是运行时 advisory 子集——
+# 合规关键词 + 规模两信号、只升不降，全量信号集以 generate-skill.sh:auto_detect_profile 为单一来源）
+# audit-claims-reality（A10）：项目根解析三级回退——①显式第 2 参数（precheck.sh 调用点传入，
+# 它从 conf 已知真值）②skill conf 的 PROJECT_DIR= ③旧推导 $SKILL_DIR/../../..（仅适配
+# <project>/.claude/skills/<name> 布局；用户级安装 ~/.claude/skills/<name> 下旧推导会误扫 $HOME）。
+PROJECT_DIR="${2:-}"
+if [[ -z "$PROJECT_DIR" && -f "$SKILL_DIR/scripts/precheck.conf" ]]; then
+  PROJECT_DIR=$(grep -m1 '^PROJECT_DIR=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null \
+    | sed 's/^PROJECT_DIR=//;s/^"//;s/"$//' || true)
+fi
+[[ -z "$PROJECT_DIR" ]] && PROJECT_DIR=$(cd "$SKILL_DIR/../../.." 2>/dev/null && pwd)
+[[ -n "$PROJECT_DIR" && -d "$PROJECT_DIR" ]] || { echo "ℹ 无法推导项目根目录，跳过 profile 漂移检测" >&2; exit 0; }
+
+# 阈值与生成器单一来源对齐（WP-CogAudit 同款 source；缺 conf 走默认 80）
+_pthr="$SKILL_DIR/assets/profile-thresholds.conf"
+[[ -f "$_pthr" ]] && { set +u; source "$_pthr"; set -u; }
+_lite_max=${PROFILE_LITE_MAX_FILES:-80}
 
 # 自扫守卫（impl-conformance，关闭 DESIGN §11 已知边界①）：扫描目标是 swarm-yuan 生成器仓自身
 # （repo 根或其 worktree——同布局）时，仓内 README/行业 profile 文档天然含合规关键词，
@@ -53,17 +67,17 @@ if [[ -n "$sig" ]]; then
   DETECTED_PROFILE="compliance"
   DRIFT_REASON="命中合规信号（${sig#"$PROJECT_DIR"/}）"
 else
-  # 规模信号：文件数（head 截断加速，≥80 即 standard；统计失败按 standard——升档偏置）
+  # 规模信号：文件数（head 截断加速，≥${_lite_max} 即 standard；统计失败按 standard——升档偏置）
   n=$(find "$PROJECT_DIR" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' \
-      2>/dev/null | head -81 | wc -l | tr -d ' ')
-  n="${n:-81}"
-  [[ "$n" =~ ^[0-9]+$ ]] || n=81
-  if [[ "$n" -lt 80 ]]; then
+      2>/dev/null | head -$((_lite_max+1)) | wc -l | tr -d ' ')
+  n="${n:-$((_lite_max+1))}"
+  [[ "$n" =~ ^[0-9]+$ ]] || n=$((_lite_max+1))
+  if [[ "$n" -lt "$_lite_max" ]]; then
     DETECTED_PROFILE="lite"
-    DRIFT_REASON="规模信号：文件数 ${n}（<80 → lite）"
+    DRIFT_REASON="规模信号：文件数 ${n}（<${_lite_max} → lite）"
   else
     DETECTED_PROFILE="standard"
-    DRIFT_REASON="规模信号：文件数 ${n}（≥80 → standard）"
+    DRIFT_REASON="规模信号：文件数 ${n}（≥${_lite_max} → standard）"
   fi
 fi
 

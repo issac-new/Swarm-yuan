@@ -213,21 +213,23 @@ done < <(find "$PROJ" -name pom.xml -not -path '*/target/*' -not -path '*/.git/*
 
 # --- go.mod: 只读根(Go 项目通常单 go.mod;多模块各自 go.mod 也递归) ---
 while IFS= read -r _gm; do
-  _deps=$(grep -E '^\s*[a-z]' "$_gm" 2>/dev/null | awk '{print $1}' || true)
+  _deps=$(grep -E '^[[:space:]]*[a-z]' "$_gm" 2>/dev/null | awk '{print $1}' || true)
   _gomod_deps="${_gomod_deps}
 ${_deps}"
 done < <(find "$PROJ" -name go.mod -not -path '*/.git/*' 2>/dev/null || true)
 
 # --- requirements.txt: 递归(Python 多环境/子项目) ---
+# audit-claims-reality（A3）：\s 在 BSD sed(macOS) 是字面字母 s（requests→requet），
+# 改 [[:space:]]——本文件 :180 已立此规，这两处是漏改点。
 while IFS= read -r _rq; do
-  _deps=$(grep -vE '^\s*#|^\s*$' "$_rq" 2>/dev/null | sed -E 's/[=<>~!].*//; s/\[.*//; s/\s//g' || true)
+  _deps=$(grep -vE '^[[:space:]]*#|^[[:space:]]*$' "$_rq" 2>/dev/null | sed -E 's/[=<>~!].*//; s/\[.*//; s/[[:space:]]//g' || true)
   _pyreq_deps="${_pyreq_deps}
 ${_deps}"
 done < <(find "$PROJ" -name requirements.txt -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null || true)
 
 # --- pyproject.toml: 递归 ---
 while IFS= read -r _pp; do
-  _deps=$(grep -E '^\s*[a-zA-Z]' "$_pp" 2>/dev/null | sed -E 's/[=<>~!].*//; s/\[.*//; s/"//g; s/\s//g' || true)
+  _deps=$(grep -E '^[[:space:]]*[a-zA-Z]' "$_pp" 2>/dev/null | sed -E 's/[=<>~!].*//; s/\[.*//; s/"//g; s/[[:space:]]//g' || true)
   _pyproject_deps="${_pyproject_deps}
 ${_deps}"
 done < <(find "$PROJ" -name pyproject.toml -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null || true)
@@ -265,7 +267,13 @@ while IFS='|' read -r fw pattern ftype; do
   else
     # pom/gomod/pyreq/pyproject: groupId/artifactId/模块名,固定字符串包含匹配
     # (groupId 如 org.apache.dubbo 是完整前缀,包含匹配即可;artifactId 短名同理)
-    printf '%s\n' "$_bucket" | grep -qF "$pattern" && _hit=1
+    # audit-claims-reality（A3）：py* 大小写不敏感（pip 包名大小写不敏感，
+    # 信号表 Django/Flask/SQLAlchemy 是 PyPI 大名,requirements.txt 通行小写）；
+    # pom/gomod 保持大小写敏感（Java groupId/Go module 通行小写,精确性优先）。
+    case "$ftype" in
+      pyreq|pyproject) printf '%s\n' "$_bucket" | grep -qiF "$pattern" && _hit=1 ;;
+      *)               printf '%s\n' "$_bucket" | grep -qF "$pattern" && _hit=1 ;;
+    esac
   fi
   if [[ "$_hit" -eq 1 ]]; then
     case " $_detected " in

@@ -156,39 +156,12 @@ FLAG="$FLAG_DIR/.gate-fail-flag"
 # 白名单读取（GATE_ENFORCE_DENY=check_security,check_sensitive 或 all）
 DENY_LIST=""
 [[ -f "$CONF" ]] && DENY_LIST=$(grep -m1 '^GATE_ENFORCE_DENY=' "$CONF" 2>/dev/null | sed 's/^GATE_ENFORCE_DENY=//;s/^"//;s/"$//' | tr -d '[:space:]' || printf '')
-# 白名单空（默认）= 完全关闭，不读 flag、不输出任何东西
-[[ -z "$DENY_LIST" ]] && exit 0
 
-# draft 期自动关闭（骨架期门禁红是常态）
+# draft 期自动关闭（骨架期门禁红是常态；全局静默，含 rules.d 无条件面与 fail-gate 捕获面）
 if [[ -f "$ROOT/SKILL.md" ]] && grep -q '^status: draft' "$ROOT/SKILL.md" 2>/dev/null; then
   exit 0
 fi
 
-# ===== PostToolUse Bash：precheck 退出码 → flag 记/清 =====
-if [[ "$EVENT" == "PostToolUse" && "$TOOL" == "Bash" ]]; then
-  # 只对 precheck.sh 调用感兴趣
-  case "$CMD" in
-    *precheck.sh*)
-      mkdir -p "$FLAG_DIR" 2>/dev/null || true
-      if [[ "${EXIT_CODE:-0}" != "0" && -n "$EXIT_CODE" ]]; then
-        # 记录白名单门禁名（逗号分隔原样落盘，deny 时原样展示）
-        printf '%s' "$DENY_LIST" > "$FLAG" 2>/dev/null || true
-      else
-        rm -f "$FLAG" 2>/dev/null || true
-      fi
-      ;;
-  esac
-  exit 0
-fi
-
-# ===== PreToolUse Write/Edit/MultiEdit/Bash：flag 存在 → deny =====
-# WP-Enforce2 扩展：
-#   ① 拦截范围加 Bash（仅拦"推进态"命令白名单：git push/commit/merge/release/deploy/install 等；
-#      不拦只读命令 git status/log/diff/ls/cat/grep，也不拦测试命令 npm test/build/lint——fail 后
-#      需要重跑这些诊断，拦了反而死锁）。
-#   ② deny 事件落盘 .swarm-yuan/gate-deny.jsonl（时间/工具/目标/白名单门禁），供 verifier 审计
-#      和用户复盘——这是 deny 动作的"留痕"（G1 决策治理对齐 ISO/IEC 42001）。
-#   ③ Bash 拦截需独立开关 GATE_ENFORCE_DENY_BASH（默认空=不拦 Bash，避免误伤）。
 _deny_log() { # $1=tool $2=target $3=gates
   local _dl_dir="$ROOT/.swarm-yuan"
   local _dl_file="${_dl_dir}/gate-deny.jsonl"
@@ -220,6 +193,65 @@ _audit_log() {
     "$_al_ts" "$1" "$_a2" "$4" "$5" "$_a3" "$_a6" >> "$_al_file" 2>/dev/null || true
 }
 
+# ===== R13 批次2：rules.d 三值求值（无条件面）——PreToolUse Bash 先过规则数据 =====
+# forbid 是无条件的：不依赖 GATE_ENFORCE_DENY/GATE_ENFORCE_DENY_BASH 开关、不依赖门禁红 flag——
+# 随生成物分发的 rules.d/*.rules 即"规则治理命令"的常态面（npm publish/rm -rf/git reset --hard/sudo
+# 默认硬拦，deny 消息带替代方案）。allow → 审计 pass 放行；prompt（3）/无规则 → 落回下方白名单（opt-in 面）。
+# audit-claims-reality 修复：此前求值嵌在 Bash 分支内，被 GATE_ENFORCE_DENY 空（:160 区域）与
+# GATE_ENFORCE_DENY_BASH 空两道 early-exit 挡死——默认配置下 rules.d 永不生效，与"无条件"注释矛盾。
+if [[ "$EVENT" == "PreToolUse" && "$TOOL" == "Bash" && -n "$CMD" ]]; then
+  _gr="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/gate-rules.sh"
+  _rd="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)/rules.d"
+  if [[ -f "$_gr" && -d "$_rd" ]]; then
+    _gr_out=$(bash "$_gr" "$_rd" "$CMD" 2>&1); _gr_rc=$?
+    case "$_gr_rc" in
+      2)  # forbid → 直接 deny（即使 flag 不存在——forbid 规则是无条件条件，不依赖门禁红）
+          _gates=$(cat "$FLAG" 2>/dev/null || printf 'rules.d')
+          _audit_log "fail-gate-hook:bash" "Bash" "$CMD" "deny" "rules-forbid" "$_gates"
+          _deny_log "Bash" "$CMD" "rules.d:forbid"
+          _forbid_msg=$(printf '%s\n' "$_gr_out" | grep '^FORBID' | head -1)
+          cat << EOF
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan rules.d: ${_forbid_msg}","additionalContext":"swarm-yuan fail-gate: DENY Bash（rules.d 三值判定 forbid）——${_forbid_msg}。规则数据在 rules.d/*.rules（可审计）；解除方式：①按替代方案改道；②审批沉淀：bash scripts/gate-rules.sh rules.d --persist \"<pattern>\" allow \"<理由>\" --goal <goal_id>（写 approved.rules + decisions.jsonl 落痕）。deny 已落盘 gate-audit.jsonl。"}}
+EOF
+          exit 0 ;;
+      0)  # allow → 放行（只读白名单命中，跳过下方旧白名单逻辑）
+          _audit_log "fail-gate-hook:bash" "Bash" "$CMD" "pass" "rules-allow" "$(cat "$FLAG" 2>/dev/null || printf 'configured')"
+          exit 0 ;;
+      *)  : ;;  # prompt（3）或无规则（3）→ 落回旧白名单逻辑（prompt 语义=flag 红时拦）
+    esac
+  fi
+fi
+
+# 白名单空（默认）= 完全关闭，不读 flag、不输出任何东西
+[[ -z "$DENY_LIST" ]] && exit 0
+
+# ===== PostToolUse Bash：precheck 退出码 → flag 记/清 =====
+if [[ "$EVENT" == "PostToolUse" && "$TOOL" == "Bash" ]]; then
+  # 只对 precheck.sh 调用感兴趣
+  case "$CMD" in
+    *precheck.sh*)
+      mkdir -p "$FLAG_DIR" 2>/dev/null || true
+      if [[ "${EXIT_CODE:-0}" != "0" && -n "$EXIT_CODE" ]]; then
+        # 记录白名单门禁名（逗号分隔原样落盘，deny 时原样展示）
+        printf '%s' "$DENY_LIST" > "$FLAG" 2>/dev/null || true
+      else
+        rm -f "$FLAG" 2>/dev/null || true
+      fi
+      ;;
+  esac
+  exit 0
+fi
+
+# ===== PreToolUse Write/Edit/MultiEdit/Bash：flag 存在 → deny =====
+# WP-Enforce2 扩展：
+#   ① 拦截范围加 Bash（仅拦"推进态"命令白名单：git push/commit/merge/release/deploy/install 等；
+#      不拦只读命令 git status/log/diff/ls/cat/grep，也不拦测试命令 npm test/build/lint——fail 后
+#      需要重跑这些诊断，拦了反而死锁）。
+#   ② deny 事件落盘 .swarm-yuan/gate-deny.jsonl（时间/工具/目标/白名单门禁），供 verifier 审计
+#      和用户复盘——这是 deny 动作的"留痕"（G1 决策治理对齐 ISO/IEC 42001）。
+#   ③ Bash 拦截需独立开关 GATE_ENFORCE_DENY_BASH（默认空=不拦 Bash，避免误伤）。
+# （_deny_log/_audit_log 定义与 rules.d 无条件求值已前移至 DENY_LIST 检查之前——
+#   audit-claims-reality：FORBID 是无条件面，不应被白名单开关挡死。）
 if [[ "$EVENT" == "PreToolUse" ]]; then
   case "$TOOL" in
     Write|Edit|MultiEdit)
@@ -253,28 +285,8 @@ EOF
       _cmd_second=$(printf '%s' "$CMD" | awk '{print $2}' | tr '[:upper:]' '[:lower:]')
       # 拼成 cmd_first:cmd_second 形式做白名单匹配（git:push / npm:publish / bash:deploy.sh 等）
       _cmd_key="${_cmd_first}:${_cmd_second}"
-      # R13 批次2：rules.d 三值求值优先（gate-rules.sh；多规则取最严 forbid > prompt > allow）。
-      # deny 消息 = 给模型的 API（Codex 拒绝带替代语义）：FORBID 行含命中规则与替代方案。
-      _gr="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/gate-rules.sh"
-      _rd="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)/rules.d"
-      if [[ -f "$_gr" && -d "$_rd" ]]; then
-        _gr_out=$(bash "$_gr" "$_rd" "$CMD" 2>&1); _gr_rc=$?
-        case "$_gr_rc" in
-          2)  # forbid → 直接 deny（即使 flag 不存在——forbid 规则是无条件条件，不依赖门禁红）
-              _gates=$(cat "$FLAG" 2>/dev/null || printf 'rules.d')
-              _audit_log "fail-gate-hook:bash" "Bash" "$CMD" "deny" "rules-forbid" "$_gates"
-              _deny_log "Bash" "$CMD" "rules.d:forbid"
-              _forbid_msg=$(printf '%s\n' "$_gr_out" | grep '^FORBID' | head -1)
-              cat << EOF
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan rules.d: ${_forbid_msg}","additionalContext":"swarm-yuan fail-gate: DENY Bash（rules.d 三值判定 forbid）——${_forbid_msg}。规则数据在 rules.d/*.rules（可审计）；解除方式：①按替代方案改道；②审批沉淀：bash scripts/gate-rules.sh rules.d --persist \"<pattern>\" allow \"<理由>\" --goal <goal_id>（写 approved.rules + decisions.jsonl 落痕）。deny 已落盘 gate-audit.jsonl。"}}
-EOF
-              exit 0 ;;
-          0)  # allow → 放行（只读白名单命中，跳过下方旧白名单逻辑）
-              _audit_log "fail-gate-hook:bash" "Bash" "$CMD" "pass" "rules-allow" "$(cat "$FLAG" 2>/dev/null || printf 'configured')"
-              exit 0 ;;
-          *)  : ;;  # prompt（3）或无规则（3）→ 落回旧白名单逻辑（prompt 语义=flag 红时拦）
-        esac
-      fi
+      # rules.d 三值求值已前移至 DENY_LIST 检查之前（无条件面：forbid 不依赖本开关）；
+      # 走到这里的是 prompt/无规则命中——落回旧白名单逻辑（prompt 语义=flag 红时拦）。
       # 白名单匹配（逗号分隔，支持三种形式：cmd_first 兜底 / cmd_first:cmd_second 精确 / cmd_second 单独）
       # 例：白名单 "push" 命中 "git push ..."（cmd_second）；白名单 "git" 命中所有 git 子命令（cmd_first 兜底）；
       #     白名单 "git:push" 精确命中。

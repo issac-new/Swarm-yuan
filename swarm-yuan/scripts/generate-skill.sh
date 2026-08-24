@@ -65,12 +65,16 @@ UNIVERSAL_FILES=(
   "scripts/state-machine.sh|assets|lite"
   "scripts/trace-log.sh|assets|lite"
   "scripts/memory-writeback.sh|assets|lite"
-  "assets/hooks/failure-detector.sh|assets|lite"
-  "assets/hooks/integrity-guard.sh|assets|lite"
-  "assets/hooks/fail-gate-hook.sh|assets|lite"
-  "assets/hooks/codex-gate-wrapper.sh|assets|standard"  # R13 批次4：Codex deny 协议适配（exit 2+stderr）
-  "assets/hooks/setup-loop.sh|assets|standard"
-  "assets/hooks/loop-hook.sh|assets|standard"
+  # audit-claims-reality 修复：hooks 统一装到 scripts/（kind=hook，源 assets/hooks/）。
+  # 此前 dest=assets/hooks/，但 hooks.json/settings 白名单/codex 适配器/文档全部引用 scripts/*.sh，
+  # 且 hook 命令带 || true 兜底——生成物 hooks 整体静默失效（fail-gate 真拦截从不触发）。
+  # 归一后全部既有引用点成立；fail-gate-hook 的 rules.d 相对解析（scripts/gate-rules.sh + rules.d/）也随之接通。
+  "scripts/failure-detector.sh|hook|lite"
+  "scripts/integrity-guard.sh|hook|lite"
+  "scripts/fail-gate-hook.sh|hook|lite"
+  "scripts/codex-gate-wrapper.sh|hook|standard"  # R13 批次4：Codex deny 协议适配（exit 2+stderr）
+  "scripts/setup-loop.sh|hook|standard"
+  "scripts/loop-hook.sh|hook|standard"
   "scripts/project-fingerprint.sh|gen|lite"
   # WP-R3-5：inventory-update.sh 给目标 skill 的 AI 用（编码中发现语义变化 → 局部更新清单单条目），
   # 与 inventory-verify.sh 的"生成器侧核验"角色区分——本脚本必须拷到目标 skill 的 scripts/ 下。
@@ -982,7 +986,7 @@ auto_detect_profile() {
   { [[ -d "$proj/electron" || -d "$proj/src-tauri" || -d "$proj/android" || -d "$proj/ios" ]]; } && forms=$((forms+1))
   # 框架信号：依赖文件中的框架数（package.json dependencies + pom.xml + go.mod 等，粗计）
   fws=0
-  [[ -f "$proj/package.json" ]] && fws=$(grep -cE '"[a-z@/][^"]+":\s*"' "$proj/package.json" 2>/dev/null | head -1 || echo 0)
+  [[ -f "$proj/package.json" ]] && fws=$(grep -cE '"[a-z@/][^"]+":[[:space:]]*"' "$proj/package.json" 2>/dev/null | head -1 || echo 0)
   [[ -f "$proj/pom.xml" ]] && fws=$((fws + $(grep -cE "<artifactId>" "$proj/pom.xml" 2>/dev/null || echo 0)))
   [[ -f "$proj/go.mod" ]] && fws=$((fws + $(grep -cE "^\s*[a-z]" "$proj/go.mod" 2>/dev/null || echo 0)))
   [[ "$fws" =~ ^[0-9]+$ ]] || fws=0
@@ -1127,9 +1131,8 @@ copy_universal_templates() {
     [[ "$mode" == "upgrade" && ( "$dest" == "scripts/precheck.conf" || "$dest" == "scripts/precheck.arch.conf" || "$dest" == "scripts/precheck.compliance.conf" ) ]] && continue
     case "$kind" in
       # WP-B: assets 类源文件统一平铺在 $ASSETS_DIR/（assets/precheck.sh 等）。
-      # dest 有两种形态：
-      #   1) scripts/precheck.sh → 源 = assets/precheck.sh（取 basename，文件平铺在 assets/）
-      #   2) assets/hooks/failure-detector.sh → 源 = assets/hooks/failure-detector.sh（保留 hooks/ 子目录）
+      # dest 形态：scripts/precheck.sh → 源 = assets/precheck.sh（取 basename，文件平铺在 assets/）。
+      # （hooks 不再走本分支——audit-claims-reality 起 dest 归一 scripts/，由 hook 分支映射 assets/hooks/ 源。）
       # 历史 bug：assets) src=$ASSETS_DIR/${dest#assets/} —— dest=scripts/precheck.sh 时
       # ${dest#assets/} 不剥前缀（不以 assets/ 开头），得 $ASSETS_DIR/scripts/precheck.sh（不存在），
       # cp 失败致 scripts/ 目录整批漏拷（precheck.sh/gates-*.sh/state-machine.sh 等）。
@@ -1144,12 +1147,13 @@ copy_universal_templates() {
       ref)    src="$SRC_REF/${dest##*/}" ;;
       rules)  src="$ASSETS_DIR/$dest" ;;   # R13 批次2：rules.d 规则数据（dest=rules.d/xxx.rules → assets/rules.d/xxx.rules）
       onto)   src="$ASSETS_DIR/ontology/$(basename "$dest")" ;;  # R16-A：本体层（dest=references/ontology/x.md → assets/ontology/x.md）
+      hook)   src="$ASSETS_DIR/hooks/${dest##*/}" ;;  # audit-claims-reality：hooks 源在 assets/hooks/，dest 归一 scripts/
       gen)    src="$SRC_SCRIPTS/${dest##*/}" ;;
       *) echo "ERROR: UNIVERSAL_FILES 未知源类别: $entry" >&2; return 1 ;;
     esac
-    # WP-B: dest 可能含子目录（assets/hooks/failure-detector.sh），mkdir -p 父目录再 cp，
-    # 否则 cp 报"No such file or directory"（顶层 mkdir 只建了 references/assets/scripts/hooks/commands，
-    # assets/hooks/ 子目录不在内）。此前的 cp 失败因 src 路径错，修 src 后暴露 dest 父目录缺失。
+    # WP-B: dest 可能含子目录（rules.d/bash-advance.rules、references/ontology/objects.md），
+    # mkdir -p 父目录再 cp，否则 cp 报"No such file or directory"
+    # （顶层 mkdir 只建了 references/assets/scripts/hooks/commands，子目录不在内）。
     mkdir -p "$dir/$(dirname "$dest")"
     cp "$src" "$dir/$dest"
     # WP-P5: spec-template §14-§18 认知扩展包按 profile 门控
@@ -1170,6 +1174,17 @@ copy_universal_templates() {
       rm -f "$dir/$dest.bak"
     fi
   done
+  # audit-claims-reality：清理旧版生成物残留的 assets/hooks/*.sh（dest 已归一 scripts/）。
+  # 仅当 scripts/ 新位存在同名文件才删旧位（幂等；upgrade/create 后旧位即残留死文件，
+  # 留着会让 AI 误读"hooks 在 assets/hooks/"的旧布局）。
+  local _hb
+  for _hb in failure-detector integrity-guard fail-gate-hook codex-gate-wrapper setup-loop loop-hook; do
+    if [[ -f "$dir/scripts/${_hb}.sh" && -f "$dir/assets/hooks/${_hb}.sh" ]]; then
+      rm -f "$dir/assets/hooks/${_hb}.sh"
+    fi
+  done
+  # assets/hooks/ 清空后移除空目录（rmdir 仅删空目录，非空静默跳过）
+  rmdir "$dir/assets/hooks" 2>/dev/null || true
   # chmod +x 所有 .sh（四轮复盘 P0 修复）：原写法 `chmod +x "$dir/assets/"*.sh "$dir/scripts/"*.sh`
   # 在 lite 档下必然失败——lite 档 UNIVERSAL_FILES 只拷 assets/ 下的 .md/.conf（无任何 .sh），
   # glob 无匹配时 chmod 报 "No such file or directory"，set -euo pipefail 直接中断生成，

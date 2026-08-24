@@ -823,9 +823,11 @@ check_service() {
     for cf in "${DB_CONFIG_FILES[@]}"; do
       [[ -f "$cf" ]] || continue
       # 提取数据库连接 URI/host（粗筛：含 host/port/database 的配置行）
+      # audit-claims-reality（A9）：BRE sed 的 \s（字面 s）与 \?（GNU 扩展）在 BSD 不支持，
+      # 改 ERE + [[:space:]] + ?——此前 macOS 上 URI 剥离行为分歧。
       local uri
-      uri=$(grep -hoE '(host|HOST|url|URL|dsn|DSN|database_url|DATABASE_URL)\s*[:=]\s*["'"'"']?[^"'"'"'\s,;]+' "$cf" 2>/dev/null \
-        | sed 's/.*[:=]\s*["'"'"']\?//' | sort -u || true)
+      uri=$(grep -hoE '(host|HOST|url|URL|dsn|DSN|database_url|DATABASE_URL)[[:space:]]*[:=][[:space:]]*["'"'"']?[^"'"'"'[:space:],;]+' "$cf" 2>/dev/null \
+        | sed -E 's/.*[:=][[:space:]]*["'"'"']?//' | sort -u || true)
       if [[ -n "$uri" ]]; then
         db_uris+=("${cf}::${uri}")
       fi

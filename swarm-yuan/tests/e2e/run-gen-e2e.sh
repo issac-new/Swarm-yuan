@@ -38,11 +38,25 @@ for f in \
   "scripts/precheck.sh" "scripts/gates-strict.sh" "scripts/gates-warn.sh" "scripts/gates-advisory.sh" \
   "scripts/precheck.conf" "scripts/precheck.arch.conf" \
   "assets/spec-template.md" "assets/task-type-gates.conf" \
-  "assets/hooks/failure-detector.sh" "assets/hooks/integrity-guard.sh" \
-  "assets/hooks/fail-gate-hook.sh"
+  "scripts/failure-detector.sh" "scripts/integrity-guard.sh" \
+  "scripts/fail-gate-hook.sh"
 do
   [[ -f "${SKILL_DIR}/${f}" ]] && ok "骨架文件存在: ${f}" || bad "骨架文件缺失: ${f}"
 done
+
+# audit-claims-reality（A2 机器锚，mounted_in 关系锚）：hooks.json 引用的每个脚本路径
+# 必须在生成物中真实存在——此前 6 个 hook 装 assets/hooks/ 而 hooks.json 引用 scripts/*.sh，
+# 全部 || true 兜底静默失效。本断言把"hooks 挂载宿主"从纸面变成机器可验（纯 bash 无 python 依赖）。
+_hook_missing=""
+while IFS= read -r _p; do
+  [[ -f "${SKILL_DIR}/${_p}" ]] || _hook_missing="${_hook_missing} ${_p}"
+done < <(grep -oE '\$\{CLAUDE_PLUGIN_ROOT:-\.\}/[^"[:space:]]+\.sh' "${SKILL_DIR}/hooks/hooks.json" 2>/dev/null \
+         | sed 's|\${CLAUDE_PLUGIN_ROOT:-\.}/||' | sort -u)
+if [[ -z "$_hook_missing" ]]; then
+  ok "hooks.json 引用路径全部实存（A2 mounted_in 锚）"
+else
+  bad "hooks.json 引用但生成物缺失:${_hook_missing}"
+fi
 
 # WP-Enforce1：fail-gate-hook 挂接双事件 + conf 白名单默认空（捕获门随产物附带）
 grep -q 'fail-gate-hook' "${SKILL_DIR}/hooks/hooks.json" 2>/dev/null \
