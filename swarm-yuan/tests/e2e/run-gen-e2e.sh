@@ -123,6 +123,20 @@ else
   ok "hooks.json SessionStart 指引不引用生成器侧脚本"
 fi
 
+# --- 7.6 audit-claims-reality（C4，FACT_SKILLMD_BYTES_BUDGET 消费者）：生成物 SKILL.md ≤ 预算 ---
+# DESIGN §10 #1/#6 的"每会话固定税 ≤8KB / description ≤1024"此前无机器锚（空头断言）。
+# 锚定对象是【生成物】SKILL.md（每会话加载税），非生成器自身 SKILL.md（工具入口不在此预算）。
+_skmd_bytes=$(wc -c < "${SKILL_DIR}/SKILL.md" | tr -d ' ')
+_skmd_budget=$(grep -m1 '^FACT_SKILLMD_BYTES_BUDGET=' "${PARADIGM}/assets/facts.conf" 2>/dev/null | sed 's/^FACT_SKILLMD_BYTES_BUDGET=//; s/[^0-9].*$//')
+_skmd_budget="${_skmd_budget:-8192}"
+[[ "${_skmd_bytes:-0}" -le "$_skmd_budget" ]] \
+  && ok "产物 SKILL.md ${_skmd_bytes}B ≤ 预算 ${_skmd_budget}B（C4 固定税锚）" \
+  || bad "产物 SKILL.md ${_skmd_bytes}B 超预算 ${_skmd_budget}B（每会话固定税超标）"
+_desc_len=$(LC_ALL=C awk '/^description:/{sub(/^description:[[:space:]]*/,""); print length($0); exit}' "${SKILL_DIR}/SKILL.md")
+[[ "${_desc_len:-0}" -gt 0 && "${_desc_len:-0}" -le 1024 ]] \
+  && ok "产物 SKILL.md description ${_desc_len}B ≤1024（DESIGN §10 #6）" \
+  || bad "产物 SKILL.md description 长度 ${_desc_len}B（缺失或超 1024）"
+
 # --- 8. 产物 precheck.sh 自身可跑 --all（draft 骨架空 conf 不应崩）---
 # 注：产物 precheck.sh 的 conf 是嗅探初稿，部分语义型变量=()，--all 应 fail-open 不崩
 # fail-open 语义：rc=0（pass）或 rc=1（有门禁 fail 属正常）；rc>1（如 126/127/段错误）= 真崩

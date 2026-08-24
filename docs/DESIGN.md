@@ -232,7 +232,7 @@ harness（宿主 CLI：Codex/Claude Code）管 agent loop/沙箱/审批通道；
 
 ```
 <skill-name>/
-├── SKILL.md          # ≤8KB 预算（FACT_SKILLMD_BYTES_BUDGET=8192 断言）
+├── SKILL.md          # ≤8KB 预算（FACT_SKILLMD_BYTES_BUDGET=8192，锚点=gen-e2e §7.6 对生成物实测）
 ├── references/
 │   ├── map.md        # 项目地图：两列 |路径|说明与约束|；32KiB 硬顶；stability 词在说明列
 │   ├── spec-template.md  # 9 节核心必填（需求/决策记录/约束/测试/回滚/左移三节/合规）；仪式节 --task-type full 展开
@@ -508,12 +508,12 @@ OS 沙箱（宿主职责，吸收决策架构不复制实现）/ Guardian LLM �
 
 | # | 指标 | 终态 | 度量方式 |
 |---|------|------|----------|
-| 1 | 每会话固定税（SKILL.md+hooks+settings+conf） | ≤8KB | self-check 断言 |
+| 1 | 每会话固定税（SKILL.md+hooks+settings+conf） | ≤8KB | gen-e2e §7.6 断言（产物 SKILL.md ≤ FACT_SKILLMD_BYTES_BUDGET） |
 | 2 | 生成物概念体系 | ≤5 | 人工评审 |
 | 3 | 冷启动到读项目代码动作数 | ≤3 步 | 定义：mark-active 后新会话到首个 Read/Grep 项目源码 |
 | 4 | 门禁可达率 | 100%（54/54） | 默认执行序列可触达 / FACT_GATES_TOTAL |
 | 5 | 地图预算 | 32KiB 硬顶 | self-check 断言 |
-| 6 | description ≤1024 字符 / SKILL.md 正文 ≤8KB | 达标 | self-check 断言 |
+| 6 | description ≤1024 字符 / SKILL.md 正文 ≤8KB | 达标 | gen-e2e §7.6 断言（锚定生成物，非生成器自身 SKILL.md——工具入口不在此预算） |
 | 7 | 认知面体积（references 拷贝） | ≤256KB | self-check 断言（当前 252KB） |
 | 8 | 结构性：反向引用数 | 0 | G19 断言 |
 | 9 | 连接性：孤儿资产数 | 0 | G18 扫描 |

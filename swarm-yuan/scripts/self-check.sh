@@ -597,6 +597,72 @@ check_doc_consistency() {
     FAIL=1
   fi
 
+  # 2b. 门禁子族计数六键等值断言（audit-claims-reality C1：复活 _count_gate_array/
+  # _count_advisory_only——这组函数本为守子族计数而生，定义后从未接线（死代码），
+  # 致 COMPLIANCE 17→19 / ADVISORY_ONLY 10→6 漂移漏网。fail 级，与 FACT_GATES_TOTAL 同级）
+  local _psh="$base/assets/precheck.sh"
+  local _c_core _c_std _c_comp _c_full _c_adv _c_arch
+  _c_core=$(_count_gate_array ALL_GATES_CORE "$_psh")
+  _c_std=$(_count_gate_array ALL_GATES_STANDARD "$_psh")
+  _c_comp=$(_count_gate_array ALL_GATES_COMPLIANCE "$_psh")
+  _c_full=$(_count_gate_array ALL_GATES_FULL "$_psh")
+  _c_adv=$(_count_advisory_only "$_psh" "$actual_gates")
+  _c_arch=$(( _c_std - _c_core ))   # ARCH 是派生族（STANDARD−CORE），不直接对应单一数组
+  local _subfail=0
+  [[ "${FACT_GATES_CORE:-0}" == "$_c_core" ]] || { warn "FACT_GATES_CORE(${FACT_GATES_CORE:-?}) != 真值($_c_core)——更新 facts.conf"; _subfail=1; }
+  [[ "${FACT_GATES_ARCH:-0}" == "$_c_arch" ]] || { warn "FACT_GATES_ARCH(${FACT_GATES_ARCH:-?}) != STANDARD−CORE 真值($_c_arch)——更新 facts.conf"; _subfail=1; }
+  [[ "${FACT_GATES_STANDARD:-0}" == "$_c_std" ]] || { warn "FACT_GATES_STANDARD(${FACT_GATES_STANDARD:-?}) != 真值($_c_std)——更新 facts.conf"; _subfail=1; }
+  [[ "${FACT_GATES_COMPLIANCE:-0}" == "$_c_comp" ]] || { warn "FACT_GATES_COMPLIANCE(${FACT_GATES_COMPLIANCE:-?}) != 真值($_c_comp)——更新 facts.conf"; _subfail=1; }
+  [[ "${FACT_GATES_FULL:-0}" == "$_c_full" ]] || { warn "FACT_GATES_FULL(${FACT_GATES_FULL:-?}) != 真值($_c_full)——更新 facts.conf"; _subfail=1; }
+  [[ "${FACT_GATES_ADVISORY_ONLY:-0}" == "$_c_adv" ]] || { warn "FACT_GATES_ADVISORY_ONLY(${FACT_GATES_ADVISORY_ONLY:-?}) != 真值($_c_adv)——更新 facts.conf"; _subfail=1; }
+  if [[ "$_subfail" -eq 0 ]]; then
+    echo "  ✓ 门禁子族六键一致（CORE ${_c_core} / ARCH ${_c_arch} / STANDARD ${_c_std} / COMPLIANCE ${_c_comp} / FULL ${_c_full} / advisory-only ${_c_adv}）"
+  else
+    FAIL=1
+  fi
+
+  # 2c. conf 变量四键等值断言（audit-claims-reality C2：此前仅 ≤200 预算断言，等值漂移
+  # 漏网——PROMO 174/14 即实证。USERFACE 是"约 20"估算值非机械可数，不设等值断言）
+  local _v_core _v_arch _v_comp _v_total
+  _v_core=$(_count_conf_vars "$base" "precheck.conf")
+  _v_arch=$(_count_conf_vars "$base" "precheck.arch.conf")
+  _v_comp=$(_count_conf_vars "$base" "precheck.compliance.conf")
+  _v_total=$(( _v_core + _v_arch + _v_comp ))
+  local _varfail=0
+  [[ "${FACT_CONF_VARS_CORE:-0}" == "$_v_core" ]] || { warn "FACT_CONF_VARS_CORE(${FACT_CONF_VARS_CORE:-?}) != 真值($_v_core)——更新 facts.conf"; _varfail=1; }
+  [[ "${FACT_CONF_VARS_ARCH:-0}" == "$_v_arch" ]] || { warn "FACT_CONF_VARS_ARCH(${FACT_CONF_VARS_ARCH:-?}) != 真值($_v_arch)——更新 facts.conf"; _varfail=1; }
+  [[ "${FACT_CONF_VARS_COMPLIANCE:-0}" == "$_v_comp" ]] || { warn "FACT_CONF_VARS_COMPLIANCE(${FACT_CONF_VARS_COMPLIANCE:-?}) != 真值($_v_comp)——更新 facts.conf"; _varfail=1; }
+  [[ "${FACT_CONF_VARS:-0}" == "$_v_total" ]] || { warn "FACT_CONF_VARS(${FACT_CONF_VARS:-?}) != 三件套合计真值($_v_total)——更新 facts.conf"; _varfail=1; }
+  if [[ "$_varfail" -eq 0 ]]; then
+    echo "  ✓ conf 变量四键一致（CORE ${_v_core} + ARCH ${_v_arch} + COMPLIANCE ${_v_comp} = ${_v_total}）"
+  else
+    FAIL=1
+  fi
+
+  # 2d. FACT_COGNITION_LAYERS 对齐（audit-claims-reality C3：facts.conf 声称的 G-cognition
+  # 扫描此前不存在——空头执法。窄域实现：①定义源表（cognition-framework.md 五层总览表）
+  # 层数行机械计数对账；②计数型表述扫描（"N层认知框架/基底"），非 5/五 即漂移——
+  # 限定"框架/基底"搭配，避开"第三层认知辩证"等单层引用与"3 层接线"等异轴表述）
+  local _cog_file="$base/references/cognition-framework.md"
+  local _cog_def=0 _cog_bad=""
+  if [[ -f "$_cog_file" ]]; then
+    _cog_def=$(grep -cE '^\|[[:space:]]*第[一二三四五六七八九十]+层' "$_cog_file" 2>/dev/null | xargs)
+    _cog_def="${_cog_def:-0}"
+  fi
+  local _cog_hit
+  while IFS= read -r _cog_hit; do
+    [[ -n "$_cog_hit" ]] && _cog_bad="${_cog_bad} ${_cog_hit}"
+  done < <(grep -rhoE '[0-9一二三四五六七八九十]+[[:space:]]*层[[:space:]]*认知(框架|基底)' \
+           "$base"/references/*.md "$base"/SKILL.md "$base"/../docs/*.md 2>/dev/null \
+           | grep -vE '^[5五５][[:space:]]*层' || true)
+  if [[ "${FACT_COGNITION_LAYERS:-0}" == "$_cog_def" && -z "$_cog_bad" ]]; then
+    echo "  ✓ 认知层数对齐（定义表 ${_cog_def} 层 = FACT_COGNITION_LAYERS ${FACT_COGNITION_LAYERS:-?}；计数型表述无非 5 漂移）"
+  else
+    [[ "${FACT_COGNITION_LAYERS:-0}" == "$_cog_def" ]] || warn "认知定义表 ${_cog_def} 层 != FACT_COGNITION_LAYERS(${FACT_COGNITION_LAYERS:-?})"
+    [[ -z "$_cog_bad" ]] || warn "认知层数计数型表述漂移（应均为 5/五层）：${_cog_bad}"
+    FAIL=1
+  fi
+
   # 3. FACT_REFERENCES vs references/*.md 计数
   local ref_cnt
   ref_cnt=$(ls -1 "$base"/references/*.md 2>/dev/null | wc -l | tr -d ' ')
