@@ -460,8 +460,14 @@ fi
 # 重跑 auto_detect_profile 逻辑对比 frontmatter profile，升档漂移 warn 提示升级
 # audit-claims-reality（A10）：显式传 PROJECT_DIR——旧版靠 $SKILL_DIR/../../.. 推导，
 # 用户级安装（~/.claude/skills/<name>）布局下会误扫 $HOME。
+# audit-2026-08-25（决策 22 触发面对齐）：漂移检测只在 --all/--all-full 启动时跑——
+# 此前每个 MODE（含 --doctor/--list-gates 等 meta 命令与单门禁）都 fork 一次，超出设计触发面。
 if [[ -f "${_CONF_DIR}/detect-profile-drift.sh" ]]; then
-  bash "${_CONF_DIR}/detect-profile-drift.sh" "${_CONF_DIR}/.." "${PROJECT_DIR:-}" 2>/dev/null || true
+  case "${MODE:-}" in
+    --all|--all-full)
+      bash "${_CONF_DIR}/detect-profile-drift.sh" "${_CONF_DIR}/.." "${PROJECT_DIR:-}" 2>/dev/null || true
+      ;;
+  esac
 fi
 # WP-P7：spec 规模检测（轻量，stderr 输出，不阻塞主流程；规模与门禁集不匹配 warn 提示升档）
 # 若 SPEC_FILE 存在，推断规模等级，当前 MODE < 推断档则 warn 提示升档（只升不降）
@@ -1114,19 +1120,38 @@ _gate_exec() {
   local _trace_bf=$FAIL_COUNT _trace_bw=$WARN_COUNT
   # WP-Q1（决策 19）：门禁分层 enforce_level 分流——advisory 门禁永不 fail/warn 计数。
   # 在子 shell 内重定义 fail()/warn()/pass() 为纯 echo，advisory 门禁的 fail/warn 调用变成纯输出行，
-  # 不进 FAIL_COUNT/WARN_COUNT/SKIP_COUNT——"advisory 是观测类门禁，不阻断交付"语义机器化。
+  # 不进 FAIL_COUNT/WARN_COUNT——"advisory 是观测类门禁，不阻断交付"语义机器化。
   # strict/warn 门禁走原路径（fail/warn 正常计数），行为不变。
+  # audit-2026-08-25 修复：skip 仍须计数披露（WP-F"跳过≠通过"对 advisory 同样成立）——
+  # 子 shell 内的 skip_if_unconfigured 自增会随子 shell 退出丢失，改为落临时文件由父 shell 归并。
   local _enforce
   _enforce=$(_enforce_of "$1")
   if [[ "$_enforce" == "advisory" ]]; then
-    # 非证据模式：子 shell 内重定义 fail/warn/pass，原样调用门禁
+    local _ad_skip="${TMPDIR:-/tmp}/precheck-adv-skip.$$"
+    : > "$_ad_skip"
+    # 非证据模式：子 shell 内重定义 fail/warn/pass/skip，原样调用门禁
     if [[ "$_EVIDENCE_ON" -eq 0 ]]; then
       (
         fail() { echo "  ⚠ advisory: $1"; }   # advisory 不进 FAIL_COUNT
         warn() { echo "  ⚠ advisory: $1"; }   # advisory 不进 WARN_COUNT
         pass() { echo "  ✓ advisory: $1"; }
+        skip_if_unconfigured() {  # skip 落盘由父 shell 归并计数（WP-F 披露语义保留）
+          [[ -n "$_CURRENT_GATE" ]] && printf '%s\n' "$_CURRENT_GATE" >> "$_ad_skip"
+          [[ $SILENT -eq 1 ]] && return 0
+          echo "  ⊘ SKIPPED（未配置）: $1"
+          return 0
+        }
         if [[ "$2" == "1" ]]; then "$1" || true; else "$1"; fi
       )
+      local _sg
+      while IFS= read -r _sg; do
+        [[ -n "$_sg" ]] || continue
+        case " $SKIP_LIST " in
+          *" $_sg "*) ;;
+          *) SKIP_LIST="${SKIP_LIST} ${_sg}"; SKIP_COUNT=$((SKIP_COUNT+1));;
+        esac
+      done < "$_ad_skip"
+      rm -f "$_ad_skip"
       if [[ -f "${TRACE_LOG_SH:-}" ]]; then
         bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status advisory >&2 2>/dev/null || true
       fi
@@ -1139,10 +1164,25 @@ _gate_exec() {
       fail() { echo "  ⚠ advisory: $1"; }
       warn() { echo "  ⚠ advisory: $1"; }
       pass() { echo "  ✓ advisory: $1"; }
+      skip_if_unconfigured() {
+        [[ -n "$_CURRENT_GATE" ]] && printf '%s\n' "$_CURRENT_GATE" >> "$_ad_skip"
+        [[ $SILENT -eq 1 ]] && return 0
+        echo "  ⊘ SKIPPED（未配置）: $1"
+        return 0
+      }
       if [[ "$2" == "1" ]]; then "$1" || true; else "$1"; fi
     ) > "$_GATE_TMP" 2>&1 || true
     _t1=$(date +%s)
     cat "$_GATE_TMP"
+    local _sg
+    while IFS= read -r _sg; do
+      [[ -n "$_sg" ]] || continue
+      case " $SKIP_LIST " in
+        *" $_sg "*) ;;
+        *) SKIP_LIST="${SKIP_LIST} ${_sg}"; SKIP_COUNT=$((SKIP_COUNT+1));;
+      esac
+    done < "$_ad_skip"
+    rm -f "$_ad_skip"
     _st="advisory"
     _ids=$(_gate_ids "$_GATE_TMP")
     _json_add_result "$1" "$_st" "$_ids"
@@ -1177,7 +1217,7 @@ _gate_exec() {
   fi
   _t1=$(date +%s)
   cat "$_GATE_TMP"
-  # 状态优先级 fail > skip > warn > pass（skip_if_unconfigured 非静默时同时计 warn，fail 最严）
+  # 状态优先级 fail > skip > warn > pass（fail 最严；skip 只进 SKIP_COUNT 绝不计 warn——WP-F 语义）
   if [[ $FAIL_COUNT -gt $_bf ]]; then _st="fail"
   elif [[ $SKIP_COUNT -gt $_bs ]]; then _st="skip"
   elif [[ $WARN_COUNT -gt $_bw ]]; then _st="warn"

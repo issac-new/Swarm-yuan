@@ -157,11 +157,6 @@ FLAG="$FLAG_DIR/.gate-fail-flag"
 DENY_LIST=""
 [[ -f "$CONF" ]] && DENY_LIST=$(grep -m1 '^GATE_ENFORCE_DENY=' "$CONF" 2>/dev/null | sed 's/^GATE_ENFORCE_DENY=//;s/^"//;s/"$//' | tr -d '[:space:]' || printf '')
 
-# draft 期自动关闭（骨架期门禁红是常态；全局静默，含 rules.d 无条件面与 fail-gate 捕获面）
-if [[ -f "$ROOT/SKILL.md" ]] && grep -q '^status: draft' "$ROOT/SKILL.md" 2>/dev/null; then
-  exit 0
-fi
-
 _deny_log() { # $1=tool $2=target $3=gates
   local _dl_dir="$ROOT/.swarm-yuan"
   local _dl_file="${_dl_dir}/gate-deny.jsonl"
@@ -220,6 +215,12 @@ EOF
       *)  : ;;  # prompt（3）或无规则（3）→ 落回旧白名单逻辑（prompt 语义=flag 红时拦）
     esac
   fi
+fi
+
+# draft 期自动关闭（骨架期门禁红是常态）——静默面=白名单/flag 捕获面；
+# 不含 rules.d 无条件面：forbid 是无条件的（A6 既定意图），骨架期 rm -rf/sudo 照样硬拦。
+if [[ -f "$ROOT/SKILL.md" ]] && grep -q '^status: draft' "$ROOT/SKILL.md" 2>/dev/null; then
+  exit 0
 fi
 
 # 白名单空（默认）= 完全关闭，不读 flag、不输出任何东西

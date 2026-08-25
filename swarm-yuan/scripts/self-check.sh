@@ -1052,6 +1052,62 @@ check_gates_header_comment() {
 }
 check_gates_header_comment
 
+# ===== audit-2026-08-25：FACT_ENFORCE_* 双层对账（此前三键无消费者——死数字）=====
+# 静态层（gate-enforce-level.conf，gen-enforce-level 按 fail() 计数生成）对账 FACT_ENFORCE_*；
+# 有效层（静态 + precheck.sh _ENFORCE_OVERRIDE 的 WP-Q2H 降级）对账 FACT_ENFORCE_EFFECTIVE_*。
+check_enforce_facts() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local elc="$base/assets/gate-enforce-level.conf" pc="$base/assets/precheck.sh"
+  [[ -f "$elc" && -f "$pc" ]] || return 0
+  local _s _w _a bad=0
+  _s=$(grep -cE '=strict$' "$elc" 2>/dev/null || echo 0)
+  _w=$(grep -cE '=warn$' "$elc" 2>/dev/null || echo 0)
+  _a=$(grep -cE '=advisory$' "$elc" 2>/dev/null || echo 0)
+  [[ "$_s" -eq "${FACT_ENFORCE_STRICT:-16}" ]] || { warn "FACT_ENFORCE_STRICT 声明 ${FACT_ENFORCE_STRICT:-空} ≠ 静态真值 ${_s}"; bad=1; }
+  [[ "$_w" -eq "${FACT_ENFORCE_WARN:-23}" ]] || { warn "FACT_ENFORCE_WARN 声明 ${FACT_ENFORCE_WARN:-空} ≠ 静态真值 ${_w}"; bad=1; }
+  [[ "$_a" -eq "${FACT_ENFORCE_ADVISORY:-15}" ]] || { warn "FACT_ENFORCE_ADVISORY 声明 ${FACT_ENFORCE_ADVISORY:-空} ≠ 静态真值 ${_a}"; bad=1; }
+  # 有效分层：重放 _ENFORCE_OVERRIDE（单行 K/V 并行写法）
+  local _es="$_s" _ew="$_w" _ea="$_a" _line _g _nv _lv
+  while IFS= read -r _line; do
+    case "$_line" in *_ENFORCE_OVERRIDE_K+=*) ;; *) continue;; esac
+    _g=$(printf '%s' "$_line" | sed -n 's/.*_ENFORCE_OVERRIDE_K+=(\([a-z_0-9]*\)).*/\1/p')
+    _nv=$(printf '%s' "$_line" | sed -n 's/.*_ENFORCE_OVERRIDE_V+=(\([a-z]*\)).*/\1/p')
+    [[ -n "$_g" && -n "$_nv" ]] || continue
+    _lv=$(sed -n "s/^${_g}=\\([a-z]*\\).*/\\1/p" "$elc" | head -1)
+    [[ -n "$_lv" ]] || _lv="warn"
+    [[ "$_lv" == "$_nv" ]] && continue
+    case "$_lv" in strict) _es=$((_es-1));; warn) _ew=$((_ew-1));; advisory) _ea=$((_ea-1));; esac
+    case "$_nv" in strict) _es=$((_es+1));; warn) _ew=$((_ew+1));; advisory) _ea=$((_ea+1));; esac
+  done < <(grep '_ENFORCE_OVERRIDE_K+=' "$pc")
+  [[ "$_es" -eq "${FACT_ENFORCE_EFFECTIVE_STRICT:-16}" ]] || { warn "FACT_ENFORCE_EFFECTIVE_STRICT 声明 ${FACT_ENFORCE_EFFECTIVE_STRICT:-空} ≠ 有效真值 ${_es}"; bad=1; }
+  [[ "$_ew" -eq "${FACT_ENFORCE_EFFECTIVE_WARN:-18}" ]] || { warn "FACT_ENFORCE_EFFECTIVE_WARN 声明 ${FACT_ENFORCE_EFFECTIVE_WARN:-空} ≠ 有效真值 ${_ew}"; bad=1; }
+  [[ "$_ea" -eq "${FACT_ENFORCE_EFFECTIVE_ADVISORY:-20}" ]] || { warn "FACT_ENFORCE_EFFECTIVE_ADVISORY 声明 ${FACT_ENFORCE_EFFECTIVE_ADVISORY:-空} ≠ 有效真值 ${_ea}"; bad=1; }
+  if [[ "$bad" -eq 1 ]]; then
+    FAIL=1
+  else
+    echo "  ✓ FACT_ENFORCE 双层对账：静态 ${_s}/${_w}/${_a} + 有效 ${_es}/${_ew}/${_ea}（override 重放一致）"
+  fi
+}
+check_enforce_facts
+
+# 决策 22 第二触发点（audit-2026-08-25 补接线）：profile 漂移自检（warn 不 fail）。
+# 第一触发点=precheck --all/--all-full 启动（本批已对决策收窄触发面）；此处为自检面：
+# 载体存在 + 阈值单一来源（profile-thresholds.conf，防 auto_detect_profile 漂移副本）。
+check_profile_drift() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local d="$base/scripts/detect-profile-drift.sh"
+  if [[ ! -f "$d" ]]; then
+    warn "profile-drift：detect-profile-drift.sh 缺失（决策 22 触发点无载体）"
+    return 0
+  fi
+  if grep -q 'profile-thresholds.conf' "$d" 2>/dev/null; then
+    echo "  ✓ profile-drift：载体存在 + 阈值单一来源（profile-thresholds.conf）"
+  else
+    warn "profile-drift：detect-profile-drift.sh 未读 profile-thresholds.conf（阈值硬编码=漂移副本风险）"
+  fi
+}
+check_profile_drift
+
 # ===== C1 修复：UNIVERSAL_FILES 计数断言（G11）=====
 # facts.conf FACT_UNIVERSAL_FILES 声明值须与 generate-skill.sh UNIVERSAL_FILES 数组条目数一致。
 # 此前该 FACT 无断言守，曾长期漂移（声明 29，实际 39）。本断言机械计数对齐。
@@ -1076,9 +1132,11 @@ check_universal_files_count() {
   fi
   # WP-Audit2026-07-27: lite 档条目数断言（FACT_UNIVERSAL_FILES_CORE）——此前该 FACT 无断言守，
   # 曾长期漂移（声明 21，真值 20）。机械计数 UNIVERSAL_FILES 中第三段为 lite 的条目。
+  # audit-2026-08-25：计数模式去行尾锚——带尾注释的 lite 条目（gate-plan/audit-closure/ontology-verify/objects.md）
+  # 曾被 `\|lite"$` 漏数 4 条（读数 30 ≠ 真值 34，断言假绿）。模式与 generate-skill.sh 解析语义对齐。
   local _core_declared="${FACT_UNIVERSAL_FILES_CORE:-20}"
   local _core_true
-  _core_true=$(sed -n '/^UNIVERSAL_FILES=(/,/^)/p' "$gen" | grep -cE '\|lite"$' || echo 0)
+  _core_true=$(sed -n '/^UNIVERSAL_FILES=(/,/^)/p' "$gen" | grep -cE '\|lite"' || echo 0)
   if [[ "$_core_true" -ne "$_core_declared" ]]; then
     warn "UNIVERSAL_FILES lite 档声明 ${_core_declared} 与真值 ${_core_true} 不符——改 facts.conf FACT_UNIVERSAL_FILES_CORE 或核实 generate-skill.sh 数组"
     FAIL=1
@@ -1725,6 +1783,23 @@ check_r13_orphan_assets() {
   if [[ -d "$base/assets/rules.d" ]]; then
     _consumers=$(grep -rl "rules.d" "$base/scripts/gate-rules.sh" "$base/assets/hooks/fail-gate-hook.sh" 2>/dev/null | wc -l | tr -d ' ')
     [[ "$_consumers" -ge 1 ]] || warn "rules.d 存在但无消费者（gate-rules/fail-gate-hook 未引用）"
+  fi
+  # audit-2026-08-25（G23）：forbid 必带替代方案的格式契约机器锚——此前仅 --persist 写入口有校验，
+  # 数据文件本身无锚（手写/探查期生成的 rules.d 缺替代方案不可检出）。fail 级（底座当前 4/4 合规）。
+  local _g23_bad=0 _g23_f _g23_hits
+  for _g23_f in "$base"/assets/rules.d/*.rules; do
+    [[ -f "$_g23_f" ]] || continue
+    _g23_hits=$(grep -nE '→[[:space:]]*forbid' "$_g23_f" 2>/dev/null | grep -vE '替代[：:]' || true)
+    if [[ -n "$_g23_hits" ]]; then
+      warn "G23 forbid 缺替代方案：assets/rules.d/$(basename "$_g23_f")"
+      printf '%s\n' "$_g23_hits" | while IFS= read -r _l; do echo "    ${_l}"; done
+      _g23_bad=1
+    fi
+  done
+  if [[ "$_g23_bad" -eq 1 ]]; then
+    FAIL=1
+  else
+    echo "  ✓ G23 rules.d forbid 全带替代方案（格式契约机器锚）"
   fi
   [[ "$orphans" -eq 0 ]] && echo "  ✓ 孤儿资产扫描：references+ontology 全部带路由头（R13 §4.5.2 连接性）"
 }

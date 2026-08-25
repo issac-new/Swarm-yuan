@@ -437,6 +437,29 @@ inject_frameworks() {
     echo "⚠ 框架 '${fw}' 无对应门禁片段（references/frameworks/${fw}.md 缺失）——列入未覆盖清单"
   done
 
+  # 4.5) framework-knowledge.md 骨架（DESIGN §4.1 声称的机械产出；audit-2026-08-25 落地——
+  # 此前该文件完全依赖 AI 从零手写）。已存在不覆盖（AI 可能已实例化）；按 ACTIVE_FRAMEWORKS
+  # 逐框架生成节，规律行数=该框架规则文件声明的"深度门槛"（机械节点只出骨架，实例化是 AI 审的活）。
+  local fk="$skill_dir/references/framework-knowledge.md"
+  if [[ ! -f "$fk" && ${#ACTIVE_FRAMEWORKS[@]} -gt 0 ]]; then
+    {
+      echo "# 框架知识库（--inject-frameworks 生成骨架；AI 按 references/frameworks/<fw>.md §3 实例化）"
+      echo ""
+      echo "> 每框架一节：规律数 ≥ 该框架「深度门槛」，每条必须含「证据：」字段（本项目源码证据，非通用常识）。"
+      local fw _th _i
+      for fw in ${ACTIVE_FRAMEWORKS[@]+"${ACTIVE_FRAMEWORKS[@]}"}; do
+        _th=$(grep -m1 '^深度门槛:' "$paradigm_dir/references/frameworks/${fw}.md" 2>/dev/null | sed 's/^深度门槛:[[:space:]]*//; s/[^0-9].*$//')
+        _th="${_th:-5}"
+        echo ""
+        echo "## ${fw}（规律 ≥ ${_th} 条，每条含「证据：」）"
+        for ((_i=1; _i<=_th; _i++)); do
+          echo "- 规律 ${_i}：待填充（证据：待填充）"
+        done
+      done
+    } > "$fk"
+    echo "✓ framework-knowledge.md 骨架已生成（${#ACTIVE_FRAMEWORKS[@]} 框架；待 AI 实例化）"
+  fi
+
   # 5) 记录区块哈希 + 效果 ledger（更新而非追加；首次注入则新建 ver）
   #    F4（dsh 吸收·效果记账）：framework_gates_effects 显式记录本次注入动了什么
   #    （conf_add=追加的占位变量清单）——--rollback-frameworks 据此+快照整体撤销。
@@ -910,7 +933,7 @@ if [[ "${1:-}" == "--upgrade" ]]; then MODE="upgrade"; shift; fi
 # ---- 解析 --profile（WP-E 三档骨架：lite/standard/compliance；WP-N1：auto 项目级自适应，默认）----
 # 档序：lite(1) 只拷认知档最小集；standard(2) 当前默认全集（不含合规档文件）；
 #       compliance(3) = standard + 合规档文件（references/standards-compliance.md 等）。
-# auto：按项目信号自动判定（合规信号 > 规模信号；质量优先偏置——不确定一律升档不降级）。
+#   auto：按项目信号自动判定（合规信号 > 规模信号；决策 30 现行口径：信号明确才升档，模糊走默认 standard）。
 PROFILE="auto"
 PROFILE_EXPLICIT=0
 while [[ "${1:-}" == --* ]]; do
@@ -1626,7 +1649,7 @@ _write_if_absent "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
     "SessionStart": [{"matcher": "startup|clear|compact", "command": "echo \"→ [hook:SessionStart] 调用 state-machine.sh status（阶段状态追踪）\"; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" status 2>/dev/null || true; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" restore-journal 2>/dev/null || true; _fp=\"${CLAUDE_PLUGIN_ROOT:-.}/scripts/project-fingerprint.sh\"; if [[ -f \"$_fp\" ]]; then _proj=$( (set +u; . \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.conf\" 2>/dev/null; printf '%s' \"${PROJECT_DIR:-}\") ); if [[ -n \"$_proj\" && -d \"$_proj\" ]]; then _fp_out=$(bash \"$_fp\" \"$_proj\" --diff --quiet 2>/dev/null || true); if printf '%s\\n' \"$_fp_out\" | LC_ALL=C grep -q '⚠'; then echo \"⚠ [hook:SessionStart] 项目源码指纹已变化——按 SKILL.md「自成长」段走更新链（感知: bash scripts/project-fingerprint.sh <项目根> --diff）\"; fi; fi; fi; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --state-phase 2>/dev/null || true"}],
     "PreCompact": [{"matcher": "*", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/state-machine.sh\" dump-journal 2>/dev/null || true", "timeout": 5}],
     "PreToolUse": [{"matcher": "Write|Edit", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --scope >/dev/null 2>&1 && echo \"→ [hook:PreToolUse] 调用 precheck --scope：✓ pass\" || echo \"→ [hook:PreToolUse] 调用 precheck --scope：✗ FAIL——运行 bash scripts/precheck.sh --scope 查看详情\""}, {"matcher": "Write|Edit|MultiEdit|Bash|WebSearch|WebFetch", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/integrity-guard.sh\" 2>/dev/null || true", "timeout": 5}, {"matcher": "Write|Edit|MultiEdit|Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/fail-gate-hook.sh\" 2>/dev/null || true", "timeout": 5}],
-    "PostToolUse": [{"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/failure-detector.sh\" 2>/dev/null || true", "timeout": 5}, {"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/fail-gate-hook.sh\" 2>/dev/null || true", "timeout": 5}, {"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --operate 2>/dev/null || true", "timeout": 5}, {"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --pr-quality --skill-supply-chain 2>/dev/null || true", "timeout": 10}],
+    "PostToolUse": [{"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/failure-detector.sh\" 2>/dev/null || true", "timeout": 5}, {"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/fail-gate-hook.sh\" 2>/dev/null || true", "timeout": 5}, {"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --operate 2>/dev/null || true", "timeout": 5}, {"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --pr-quality 2>/dev/null || true", "timeout": 10}, {"matcher": "Bash", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --skill-supply-chain 2>/dev/null || true", "timeout": 10}],
     "Stop": [{"matcher": "*", "command": "bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/loop-hook.sh\" 2>/dev/null || true; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --decision-audit 2>/dev/null || true; bash \"${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh\" --learnings 2>/dev/null || true", "timeout": 310}]
   }
 }

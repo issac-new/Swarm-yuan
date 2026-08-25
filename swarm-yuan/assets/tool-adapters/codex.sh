@@ -13,6 +13,8 @@ render_tool_codex() {  # <skill_dir> <proj> <level>
 # R13 批次4（宿主下沉）：Codex v0.148 hooks 注册——生成目标技能的预检门禁接 Codex 官方强制点。
 # PreToolUse Bash → fail-gate-hook（exit 2=deny，stderr 原因透传给模型）；PostToolUse → failure-detector。
 # 配置位置：项目级 <proj>/.codex/hooks.json（hooks/src/engine/discovery.rs 的 config layer 探测点）。
+# 铁律（audit-2026-08-25）：PreToolUse 命令禁止 `|| true` / `2>/dev/null`——|| true 把 exit 2 吞成 0、
+# stderr 重定向丢弃透传原因，deny 协议将整体静默失效；PostToolUse 为 advisory 可 fail-open（|| true）但须保留 stderr。
 render_tool_codex_hooks() {  # <proj>
   local hdir="$1/.codex" hfile="$1/.codex/hooks.json"
   mkdir -p "$hdir"
@@ -21,10 +23,10 @@ render_tool_codex_hooks() {  # <proj>
 {
   "hooks": {
     "PreToolUse": [
-      {"matcher": "Bash", "command": "bash scripts/codex-gate-wrapper.sh 2>/dev/null || true", "timeout": 5}
+      {"matcher": "Bash", "command": "bash scripts/codex-gate-wrapper.sh", "timeout": 5}
     ],
     "PostToolUse": [
-      {"matcher": "Bash", "command": "bash scripts/failure-detector.sh 2>/dev/null || true", "timeout": 5}
+      {"matcher": "Bash", "command": "bash scripts/failure-detector.sh || true", "timeout": 5}
     ]
   }
 }

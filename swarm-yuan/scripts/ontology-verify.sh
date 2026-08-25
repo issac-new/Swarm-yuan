@@ -60,20 +60,41 @@ else
   _bad "版本戳缺失（.swarm-yuan-version 不存在——生成物↔生成器依赖未锚定，--upgrade 溯源将失效）"
 fi
 
-# 锚4：decisions↔trace 链式依赖（digest 锚）
+# 锚4：decisions↔trace 链式依赖（digest 锚；audit-2026-08-25 重写）
+# 旧实现只比"decisions 末行 ref vs trace 当前末行"——决策后正常追加 trace 即系统性误报，
+# 且篡改任何非末行永不检出。新语义（与写入端对齐）：每条带锚 decisions 行的 ref_trace_hash
+# 必须能在 trace.jsonl 中解析到具体行（存在性——被引用行遭篡改则 cksum 变、解析失败），
+# 且解析位置须随 decisions 行序单调不减（顺序性）；任一失败即"全链自该点 stale"。
 DEC="$PROJ/.swarm-yuan/decisions.jsonl"; TR="$PROJ/.swarm-yuan/trace.jsonl"
 if [[ -f "$DEC" && -f "$TR" ]]; then
-  last_dec_hash=$(tail -1 "$DEC" | sed -n 's/.*"ref_trace_hash":"\([^"]*\)".*/\1/p')
-  if [[ -z "$last_dec_hash" ]]; then
-    _ok "decisions↔trace（digest 链）：最近决策无 ref_trace_hash（R15 前旧行——回放兼容，非失配）"
-  else
-    cur_hash=$(tail -1 "$TR" | cksum | awk '{print $1}')
-    if [[ "$last_dec_hash" == "$cur_hash" ]]; then
-      _ok "decisions↔trace（digest 链）：末锚匹配（trace 未被篡改）"
-    else
-      _bad "decisions↔trace（digest 链）：末锚失配（decisions 记 ${last_dec_hash} vs trace 当前 ${cur_hash}——trace 在决策后有新行=正常追加；若怀疑篡改，比对 trace 历史）"
+  _tr_cksum="${TMPDIR:-/tmp}/ov-tr-cksum.$$"
+  _dec_anchors="${TMPDIR:-/tmp}/ov-dec-anchors.$$"
+  : > "$_tr_cksum"
+  while IFS= read -r _tl; do
+    printf '%s' "$_tl" | cksum | awk '{print $1}' >> "$_tr_cksum"
+  done < "$TR"
+  grep -nE '"ref_trace_hash":"[^"]+"' "$DEC" | sed -n 's/^\([0-9][0-9]*\):.*"ref_trace_hash":"\([^"]*\)".*/\1 \2/p' > "$_dec_anchors"
+  _total_dec=$(wc -l < "$DEC" | tr -d ' ')
+  _anchored=$(wc -l < "$_dec_anchors" | tr -d ' ')
+  _legacy=$((_total_dec - _anchored))
+  _pos=0; _stale_at=""; _resolved=0
+  while read -r _dln _dh; do
+    [[ -n "${_dln:-}" && -n "${_dh:-}" ]] || continue
+    _found=$(awk -v h="$_dh" -v p="$_pos" 'NR>p && $1==h {print NR; exit}' "$_tr_cksum")
+    if [[ -z "$_found" ]]; then
+      _stale_at="decisions 第 ${_dln} 行（锚 ${_dh} 在 trace 中无解）"
+      break
     fi
+    _pos="$_found"; _resolved=$((_resolved+1))
+  done < "$_dec_anchors"
+  if [[ -n "$_stale_at" ]]; then
+    _bad "decisions↔trace（digest 链）：失配——${_stale_at}；被引用的 trace 行遭篡改或丢失，全链自该点 stale"
+  elif [[ "$_anchored" -eq 0 ]]; then
+    _ok "decisions↔trace（digest 链）：无锚定行（${_legacy} 行均为 R15 前旧行/写入时无 trace——非失配）"
+  else
+    _ok "decisions↔trace（digest 链）：${_resolved}/${_anchored} 锚定行解析且顺序一致（另 ${_legacy} 行旧式无锚）"
   fi
+  rm -f "$_tr_cksum" "$_dec_anchors"
 else
   _bad "digest 链跳过（decisions.jsonl 或 trace.jsonl 不存在）"
 fi

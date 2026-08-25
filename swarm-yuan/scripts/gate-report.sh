@@ -160,6 +160,17 @@ if [[ $_rc -eq 3 ]]; then
 fi
 [[ $_rc -eq 0 ]] || { rm -f /tmp/.gate-report.$$.tmp; echo "✗ 报告聚合失败（awk 退出 ${_rc}）" >&2; exit 1; }
 
+# audit-2026-08-25（H10）：key-nodes 看板首个消费者——八节点关键调用各节点最新状态。
+# 数据源与 gate-runs 同目录（.swarm-yuan/key-nodes.jsonl）；不存在则跳过（非必选账）。
+_kn="$(dirname "$JSONL")/key-nodes.jsonl"
+if [[ -f "$_kn" ]]; then
+  {
+    printf '\n## 8. 关键节点看板（key-nodes.jsonl 各节点最新状态）\n\n'
+    printf '| 节点 | 最新状态 | 时间 | 备注 |\n|---|---|---|---|\n'
+    awk -F'"' '{kn="";st="";ts="";nt="";for(i=1;i<=NF;i++){if($i=="key_node")kn=$(i+2);if($i=="status")st=$(i+2);if($i=="ts")ts=$(i+2);if($i=="note")nt=$(i+2)};if(kn!="")last[kn]=st"|"ts"|"nt} END{for(k in last){split(last[k],a,"|");printf "| %s | %s | %s | %s |\n",k,a[1],a[2],a[3]}}' "$_kn"
+  } >> /tmp/.gate-report.$$.tmp 2>/dev/null || true
+fi
+
 if [[ -n "$OUT" ]]; then
   if cp /tmp/.gate-report.$$.tmp "$OUT" 2>/dev/null; then
     rm -f /tmp/.gate-report.$$.tmp

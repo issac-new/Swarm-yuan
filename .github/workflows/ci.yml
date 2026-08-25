@@ -209,6 +209,7 @@ jobs:
           bash tests/test-fail-gate-hook.sh
           bash tests/test-failure-detector.sh
           bash tests/test-gate-rules.sh
+          bash tests/test-codex-adapter.sh
           bash tests/test-inventory-update.sh
           bash tests/test-project-fingerprint.sh
           bash tests/test-spec-task-type-gating.sh
