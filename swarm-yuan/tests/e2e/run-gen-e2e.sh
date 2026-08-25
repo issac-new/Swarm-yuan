@@ -137,6 +137,16 @@ _desc_len=$(LC_ALL=C awk '/^description:/{sub(/^description:[[:space:]]*/,""); p
   && ok "产物 SKILL.md description ${_desc_len}B ≤1024（DESIGN §10 #6）" \
   || bad "产物 SKILL.md description 长度 ${_desc_len}B（缺失或超 1024）"
 
+# --- 7.7 audit-2026-08-25（FACT_MAP_BYTES_BUDGET 首个消费者）：生成物地图 ≤ 32KiB 硬顶 ---
+# DESIGN §10 #5"地图预算 32KiB 硬顶"此前无机器锚（空头断言）。地图载体=生成物
+# references/reference-manual.md（两列 |路径|说明与约束| 表所在文件，设计文档旧称 map.md）。
+_map_bytes=$(wc -c < "${SKILL_DIR}/references/reference-manual.md" 2>/dev/null | tr -d ' ')
+_map_budget=$(grep -m1 '^FACT_MAP_BYTES_BUDGET=' "${PARADIGM}/assets/facts.conf" 2>/dev/null | sed 's/^FACT_MAP_BYTES_BUDGET=//; s/[^0-9].*$//')
+_map_budget="${_map_budget:-32768}"
+[[ -n "${_map_bytes}" && "${_map_bytes:-0}" -le "$_map_budget" ]] \
+  && ok "产物地图 ${_map_bytes}B ≤ 硬顶 ${_map_budget}B（§10 #5 锚）" \
+  || bad "产物地图 ${_map_bytes:-缺失}B 超硬顶 ${_map_budget}B（或 reference-manual.md 缺失）"
+
 # --- 8. 产物 precheck.sh 自身可跑 --all（draft 骨架空 conf 不应崩）---
 # 注：产物 precheck.sh 的 conf 是嗅探初稿，部分语义型变量=()，--all 应 fail-open 不崩
 # fail-open 语义：rc=0（pass）或 rc=1（有门禁 fail 属正常）；rc>1（如 126/127/段错误）= 真崩

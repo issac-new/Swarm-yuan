@@ -190,4 +190,14 @@ echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态21 rm -rf forbid �
 out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git push origin main"},"cwd":"'$TMP'/pr1"}' | bash "$TMP/pr1/scripts/fail-gate-hook.sh" 2>&1)
 [[ -z "$out" ]] && ok "态22 prompt 落回白名单默认放行" || bad "态22 prompt 被误拦: $out"
 
+# 态 23：draft 期 rules.d forbid 仍硬拦（audit-2026-08-25：forbid 无条件面不被 draft 静默）；
+# 但 draft 期白名单/flag 捕获面仍休眠（态 8 语义不变）
+setup_rules_proj "$TMP/pr2"
+sed -i.bak 's/status: active/status: draft/' "$TMP/pr2/SKILL.md"
+rm -f "$TMP/pr2/SKILL.md.bak"
+out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"rm -rf node_modules"},"cwd":"'$TMP'/pr2"}' | bash "$TMP/pr2/scripts/fail-gate-hook.sh" 2>&1)
+echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态23 draft 期 forbid 仍硬拦" || bad "态23 draft 吞了 forbid: $out"
+out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git status"},"cwd":"'$TMP'/pr2"}' | bash "$TMP/pr2/scripts/fail-gate-hook.sh" 2>&1)
+[[ -z "$out" ]] && ok "态23 draft 期 allow 仍放行" || bad "态23 draft 误拦只读: $out"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-fail-gate-hook"; exit 0; } || { echo "FAIL test-fail-gate-hook" >&2; exit 1; }

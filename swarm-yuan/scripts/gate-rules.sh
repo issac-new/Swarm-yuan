@@ -122,10 +122,16 @@ done
 _decision="${_decision:-prompt}"   # 规则文件存在但无一命中 → prompt（兜底矩阵语义）
 
 if [[ "$_decision" == "forbid" ]]; then
+  # 消息规格（头注释契约）：FORBID <rule-id>: <原因>；替代：<方案>——
+  # audit-2026-08-25：_alt 提取后曾未使用（死变量），整段 justification 原样输出。
   _alt=$(printf '%s' "${_hit_just:-}" | sed -n 's/.*替代[：:][[:space:]]*//p')
+  _reason=$(printf '%s' "${_hit_just:-}" | sed 's/[；;][[:space:]]*替代[：:].*$//')
   _rid=$(basename "${_hit_file:-${_rule_files[0]}}" .rules)
-  [[ $QUIET -eq 0 ]] && printf 'FORBID %s: 命中规则「%s」——%s' "$_rid" "${_hit_pat}" "${_hit_just:-无理由}" >&2
-  [[ $QUIET -eq 0 ]] && printf '\n' >&2
+  if [[ -n "$_alt" ]]; then
+    [[ $QUIET -eq 0 ]] && printf 'FORBID %s: %s；替代：%s\n' "$_rid" "${_reason:-命中规则「${_hit_pat}」}" "$_alt" >&2
+  else
+    [[ $QUIET -eq 0 ]] && printf 'FORBID %s: 命中规则「%s」——%s\n' "$_rid" "${_hit_pat}" "${_hit_just:-无理由}" >&2
+  fi
 elif [[ "$_decision" == "prompt" && $QUIET -eq 0 && -n "${_hit_just:-}" ]]; then
   printf 'PROMPT: %s\n' "$_hit_just" >&2
 fi

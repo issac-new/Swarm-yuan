@@ -71,8 +71,13 @@ framework-gates/.*\.sh
 gate-enforce-level\.conf
 verifier/v1/
 self-precheck\.conf
+rules\.d/.*\.rules
+gate-rules\.sh
 hidden_solution|gold_patch|golden_patch|benchmark_answer|answer_key|official_solution
 '
+# rules.d/*.rules 与 gate-rules.sh（规则自身）入 deny（audit-2026-08-25，DESIGN §5.2"规则自身不被 AI 篡改"）：
+# AI 改规则数据=治理绕过。合法通道不破——--persist 审批沉淀是 `bash scripts/gate-rules.sh ...`
+# 纯脚本调用，不含 MUTATING_RE 变更原语，不会触发 Bash 面 deny；直写（>>/sed -i/rm）才拦。
 
 PROTECTED_ADVISORY_PATTERNS='
 precheck\.conf
