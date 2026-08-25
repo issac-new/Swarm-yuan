@@ -3,6 +3,8 @@
 > 对 AI 说"为这个项目生成 skill"，AI 全自动探查 → 生成 → 配置 → 验证，你拿到一套零占位符的项目专属开发技能。
 >
 > **口径权威源**：`assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
+>
+> **两体阅读提示**：本文覆盖两个对象——**生成器**（swarm-yuan 本身，"生成"段落操作它）与**目标技能**（生成器产出的项目专属规则包，"日常使用"段落操作它；亦称"生成物"）。17 项特征卡、54 个门禁、四本账都是**目标技能**的资产；生成器是它们的模板来源。
 
 ---
 
@@ -12,7 +14,7 @@ swarm-yuan 的设计基于三个关键理念：
 
 ### 理念一：先认识，再行动（认知递进）
 
-AI 写代码前必须先认识项目——概念→结构→空间→映射→规律→处理。不认识就写 = 盲动。swarm-yuan 用 **17 项特征卡** 完成认知，用 **54 个质量门禁** 守护行动。
+AI 写代码前必须先认识项目——概念→结构→空间→映射→规律→处理。不认识就写 = 盲动。swarm-yuan 生成的目标技能用 **17 项特征卡** 完成认知，用 **54 个质量门禁** 守护行动。
 
 ### 理念二：拼装式开发（复用优先）
 
@@ -290,7 +292,7 @@ AI 自动：创建 spec → 判断规模 → **从特征卡第 11 项检索可�
 
 > **任务级自适应规则（质量优先偏置）**：规模判断不确定时**按更大规模处理**（升档不降级）；涉及公共接口/数据模型/权限的改动，无论规模一律按「完整」执行门禁集；compliance 档项目任意规模都追加 `--compliance-suite`（强监管场景无"简单任务"豁免）。
 
-### 提交前自检
+### 提交前门禁检查
 
 ```bash
 bash .claude/skills/my-project-dev/scripts/precheck.sh --all         # 核心 10 门禁
@@ -356,7 +358,7 @@ bash scripts/generate-skill.sh --render-tools <skill-dir> [project-root] [tool]
 | 医疗 | `references/industry-profile-medical.md`（个保法/数安法 + 卫健委办法/互联网诊疗细则 + GB/T 39725 ↔ 门禁映射） | `assets/industry-profiles/medical.conf` |
 | 政务 | `references/industry-profile-gov.md`（网安法 21 条/密评/个保法 55-56 + GB/T 22239/39786/43848 ↔ 门禁映射） | `assets/industry-profiles/gov.conf` |
 
-用法：`cat assets/industry-profiles/finance.conf >> <目标技能>/scripts/precheck.conf`，再按项目裁剪（逐行注释含条款依据）；追加后 `bash scripts/precheck.sh --doctor` 自检应为 0 fail。医疗器械注册申报（SaMD/SiMD）场景不适用，见 standards-compliance.md §E.5 功能安全域占位。
+用法：`cat assets/industry-profiles/finance.conf >> <目标技能>/scripts/precheck.conf`，再按项目裁剪（逐行注释含条款依据）；追加后 `bash scripts/precheck.sh --doctor` 诊断应为 0 fail。医疗器械注册申报（SaMD/SiMD）场景不适用，见 standards-compliance.md §E.5 功能安全域占位。
 
 ---
 
