@@ -99,7 +99,7 @@ if [[ -z "$HTML_OUT" ]]; then
   # 本账本：当窗 repair_verified_rate = pass/记录数（即时验证）；跨窗 later_outcome 需 --window 两次执行对比（登记候选，当前输出当窗位 + guardrail 配对）
   _guardrail=$_density
   printf "当窗验证（Repair Progress）: pass %d 条已验证（repair_verified_rate %d%%）；guardrail 配对指标 = 弱点密度 %d%%（fail %d / %d 门禁种——改进声明须主指标升且 guardrail 不恶化）\n" "$_total_pass" "$_overall_rate" "$_guardrail" "$_total_fail" "$_gate_kinds"
-  printf "跨窗效果（Loop Effectiveness）: 需 --window 两次执行对比判定（better-harness 语义：后期可比 Task Episode 证据才允许效果声明；当前账本不输出，登记候选）\n"
+  printf "跨窗效果（Loop Effectiveness）: 需两次执行对比判定（--window 接口未实现）（better-harness 语义：后期可比 Task Episode 证据才允许效果声明；当前账本不输出，登记候选）\n"
   exit 0
 fi
 

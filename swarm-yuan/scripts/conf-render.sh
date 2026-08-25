@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # conf-render.sh — precheck.conf 三件套初稿渲染（WP-P4/M3）
-# 把 Step 8 模型手译 158 变量的机械工作脚本化：嗅探项目 → 渲染 conf 初稿
+# 把 Step 8 模型手译 176 变量的机械工作脚本化：嗅探项目 → 渲染 conf 初稿
 #   每变量带溯源注释: # AUTO:detected（探测所得）/ # AUTO:default（默认值未动）/ # TODO:model（语义型，须人工）
 # 模型新动作: 只处理 # TODO:model 清单 + 审 diff（从「写 158 行」变「审 + 补少数」）
 # 用法:
