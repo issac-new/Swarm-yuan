@@ -1,6 +1,7 @@
 # swarm-yuan 设计文档（单一事实源）
 
 > **文档性质**：swarm-yuan 的**单一设计事实源**——本体论驱动原理、闭环流动力学、定位理念、架构规格、决策演化史、验收，全部整合于此一份。原 DESIGN-ONTOLOGY.md / DESIGN-LOGIC.md 已并入 §0，原文档归档。
+> **阅读顺序**：零背景读者先读 `docs/DESIGN-PRIMER.md`（解释层入门：术语首次出现即定义、易混概念辨析），再读本文（规格层）。
 > **版本**：**终态 v4**（2026-08-21/22；v1=R13 终态整理，v2=+R14/R15，v3=并入本体论驱动原理与闭环流+8 份归档文档内容，v4=十轮排查修复＋设计一致性收口——数字虚报/工具入口表/references 全索引/奠基理念/测试矩阵/口径/仓库结构/读者可用性；收口=派生表 10 关系全量化、规则来源四层澄清、生成流程唯一编号 Step 1-12、本体层消费路径、账本落盘全景；2026-08-24 增量：audit-claims-reality 轮——44 项"声称-现实"裂缝四类修复 + 决策 35 创造纪律入 §0.2 冲程一，演进按四问协议追加的实例）。终态的含义：结构完整（§0 原理 → §1-9 设计 → §10 验收 → §11 档案）、与实现一致性机器可验（self-check 全绿项覆盖）、单一事实源地位确立——但**不是冻结**：演进按 §0.2 冲程二四问与 §6 演进协议追加，已知边界两项均已修复并登记于 §11 已修复边界（audit-claims-reality 同步：头部此前与 §11"已知边界：无"自相矛盾）。
 > **证据基础**：zcode 会话库 32 个主会话全量提取（五轮"过重"诊断史）｜仓库病理量化诊断｜openai/codex 源码深挖（锚定 file:line）｜多轮排查与设计一致性收口的执行者自省。
 > **方案总承诺**：R13 重构期（v2.0）每个迁移单元的 diff 必须为净减法或等量替换（新增 ≤ 删除，`git diff --stat` 机器验证）；R16 起新概念须过本体驱动四问（§0.2 冲程二——新实体进 objects.md 前想清区别、新关系必配机器锚），不设"永不新增"的绝对禁令——演进纪律从"数量冻结"升级为"结构约束"。
@@ -549,7 +550,7 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 - `docs/2026-07-17-framework-rules-engine-design.md` / `2026-07-20-*`（历史专题设计）
 - `docs/q2-heavy-review.md`（机械 vs AI 边界复盘）
 
-**决策史原文**：`docs/paradigm-decisions.md`（18-34）+ `docs/paradigm-decisions-archive.md`（1-17）——本文件 §9.2 是索引，原文是详情。
+**决策史原文**：`docs/paradigm-decisions.md`（18-35）+ `docs/paradigm-decisions-archive.md`（1-17）——本文件 §9.2 是索引，原文是详情。
 
 **调研证据**：`docs/research/`（R1-R9、R11-R15，R10 无报告——仅 v2 立项稿提及待测品类；R13 三份：final-plan 方案 v6 / codex-deep-dive Codex 源码证据 / de-abstraction 复盘草稿；R14/R15 吸收报告各一份）——调研报告是证据的合法归宿，不晋升 references（吸收三问）。
 
@@ -561,8 +562,9 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 
 | 位置 | 内容 | 定位 |
 |------|------|------|
-| `docs/DESIGN.md` | 本文（单一设计事实源 v4） | 设计层 |
-| `docs/paradigm-decisions{,-archive}.md` | 决策史原文（1-34） | §9.2 索引的详情 |
+| `docs/DESIGN.md` | 本文（单一设计事实源 v4，规格层） | 设计层 |
+| `docs/DESIGN-PRIMER.md` | 设计入门（零背景版：解释层——术语首次出现即定义、易混概念辨析、阅读地图；不承载规格，数字指向 facts.conf） | 解释层（第 0 读） |
+| `docs/paradigm-decisions{,-archive}.md` | 决策史原文（1-35） | §9.2 索引的详情 |
 | `docs/research/` | R1-R9、R11-R15 调研报告（R10 无报告——仅 v2 立项稿提及待测品类） | 证据层（吸收三问的合法归宿） |
 | `docs/plans/` | 4 份历史计划文档（framework-rules-engine / research-plan / standards-gap / paradigm-slimming，2026-07） | 历史计划存档（已执行完毕，不维护） |
 | `swarm-yuan/SKILL.md` | 生成器入口（AI 读） | 产品文档（§3.2 读者双轨制） |
