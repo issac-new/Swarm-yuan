@@ -1,5 +1,5 @@
 <!-- 由 scripts/gen-framework-index.sh 生成（WP-P1 数据化外迁），手改会被覆盖 -->
-# 框架信号索引（74 个框架）
+# 框架信号索引（79 个框架）
 
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
@@ -45,6 +45,11 @@
 | dockerfile | 文件 | `**/docker-compose*.y*ml` 中含 `build:` 段 | 中（编排文件引用 Dockerfile，组合判定） |
 | dockerfile | 配置 | `FROM ...` / `RUN ...` / `COPY ...` / `ENTRYPOINT ...` 指令行 | 高（Dockerfile 指令特征） |
 | dockerfile | 配置 | `# syntax=docker/dockerfile:` 解析器指令 | 高（BuildKit 解析器前缀，BuildKit 工程特征） |
+| doris | 依赖 | `org.apache.doris:doris-fe-common` / `doris-spark-connector` / `doris-flink-connector` / `mysql-connector-java`（Doris 兼容 MySQL 协议） | 高 |
+| doris | 配置 | `fe.conf` 含 `priority_networks` / `meta_dir`；`be.conf` 含 `storage_root_path` / `webserver_port` | 高 |
+| doris | 代码 | `DorisStreamLoadClient` / `DorisSource` / `DorisSink` / `insert into` / `SELECT` from `information_schema` | 高 |
+| doris | SQL | `DISTRIBUTED BY HASH` / `PROPERTIES("replication_num"` / `ROLLUP` / `MATERIALIZED VIEW` / `COLOCATE WITH` | 高 |
+| doris | 文件 | `fe.conf` / `be.conf` / `*.sql` 含 `CREATE TABLE` Doris 语法 | 中 |
 | dotnet | 文件 | `*.csproj` 含 `Microsoft.NET.Sdk` | 高 |
 | dotnet | 文件 | `Program.cs` 或 `Startup.cs` | 中 |
 | dotnet | 依赖 | `*.cs` 含 `using Microsoft.AspNetCore` | 高 |
@@ -110,6 +115,16 @@
 | gorm | 文件 | `**/go.mod` 含 `gorm.io/gorm` | 高 |
 | gorm | 配置 | 无独立配置文件（DSN 走代码/env） | — |
 | gorm | 代码 | `gorm.Open(` / `gorm.DB` / `db.AutoMigrate(` / `db.Preload(` / `db.Transaction(` / `db.Model(` / `db.Create(` / `db.First(` / `db.Find(` / `gorm.Model` / `gorm.DeletedAt` / `errors.Is(err, gorm.ErrRecordNotFound)` | 高 |
+| harmonyos | 文件 | `*.ets` / `*.ts`（ArkTS）/ `CMakeLists.txt` / `*.cpp` / `*.c` / `*.h`（NDK native）/ `module.json5` / `app.json5` | 高 |
+| harmonyos | 依赖 | `ohos` npm scope / `@ohos` 包 / `libace_napi.z.so` / `native_buffer` / `napi` | 高 |
+| harmonyos | 配置 | `module.json5` 含 `requestPermissions` / `abilities` / `extensionAbilities` | 高 |
+| harmonyos | 代码 | `napi_*` / `NAPI` / `ArkTSToNative` / `Native API` / `@Entry` / `@Component` / `AbilityStage` / `onCreate` | 高 |
+| harmonyos | 目录 | `src/main/ets/` / `src/main/cpp/` / `src/main/resources/` / `entry/src/` | 中 |
+| hive | 依赖 | `org.apache.hive:hive-exec` / `hive-jdbc` / `hive-metastore` / `hive-service` | 高 |
+| hive | 配置 | `hive-site.xml` 含 `javax.jdo.option.ConnectionURL` / `hive.metastore.uris` / `hive.execution.engine` | 高 |
+| hive | 代码 | `HiveConf` / `HiveDriver` / `HiveMetastoreClient` / `IMetaStoreClient` / `TezSession` | 高 |
+| hive | SQL/HQL | `CREATE TABLE` 含 `PARTITIONED BY` / `CLUSTERED BY ... INTO ... BUCKETS` / `STORED AS ORC` / `TBLPROPERTIES('transactional'='true')` | 高 |
+| hive | 文件 | `hive-site.xml` / `hive-env.sh` / `*.hql` / `*.q` / `beeline` 脚本 | 中 |
 | ios-swiftui | 文件 | `*.swift` 含 `import SwiftUI` | 高 |
 | ios-swiftui | 文件 | `*.xcodeproj` 或 `Package.swift` | 高 |
 | ios-swiftui | 依赖 | `import UIKit` + `import SwiftUI` | 中 |
@@ -288,6 +303,11 @@
 | sharding | 代码 | `HintManager` / `addDatabaseShardingValue` / `addTableShardingValue` / `setDatabaseShardingValue` / `HintShardingAlgorithm` / `StandardShardingAlgorithm` / `ComplexKeysShardingAlgorithm` | 高 |
 | sharding | 文件 | `**/sharding*.yaml` / `**/config-sharding*.yaml` / `META-INF` 下含 sharding 规则的 yaml | 中 |
 | sharding | DistSQL | `CREATE SHARDING TABLE RULE` / `ALTER SHARDING TABLE RULE` / `CREATE BROADCAST TABLE RULE`（Proxy 侧） | 中 |
+| spark | 依赖 | `org.apache.spark:spark-core_2.12` / `spark-sql_2.12` / `spark-streaming_2.12` / `pyspark` / `spark_*` | 高 |
+| spark | 代码 | `SparkSession` / `JavaSparkContext` / `SparkContext` / `SparkConf` / `Dataset` / `RDD` | 高 |
+| spark | 配置 | `spark.` 前缀配置（`spark.sql.shuffle.partitions` / `spark.executor.memory` / `spark.default.parallelism`） | 高 |
+| spark | 文件 | `*.scala` 含 `import org.apache.spark` / `*.py` 含 `from pyspark` / `*.java` 含 `org.apache.spark` | 高 |
+| spark | 注解 | `@transient` / `@volatile`（RDD 闭包共享变量标注） | 中 |
 | spring-batch | 依赖 | `org.springframework.batch:spring-batch-core` / `org.springframework.batch:spring-batch-infrastructure` / `org.springframework.batch:spring-batch-integration` | 高 |
 | spring-batch | 注解 | `@EnableBatchProcessing` / `@StepScope` / `@JobScope` / `@BatchStep` / `@BatchJob` | 高 |
 | spring-batch | 类 | `JobBuilder` / `StepBuilder` / `JobBuilderFactory`（5.x 前已废弃）/ `StepBuilderFactory`（5.x 前已废弃）/ `JobRepository` / `JobLauncher` / `JobOperator` / `RunIdIncrementer` | 高 |
@@ -329,6 +349,11 @@
 | tailwind | 文件 | `tailwind.config.{js,ts,cjs,mjs}` / `postcss.config.*` 含 `tailwindcss` / `app.css` 含 `@import "tailwindcss"` | 高 |
 | tailwind | 代码 | `class="[^"]*\b(flex|grid|p-[0-9]|text-[a-z]+|bg-[a-z]+)` / `@apply` / `@theme` | 高 |
 | tailwind | 配置 | `content:` / `theme.extend` / `darkMode:` / `@source` | 高 |
+| tdengine | 依赖 | `com.taosdata.jdbc:taos-jdbcdriver` / `taos` / `tdengine` / `taospy` / `TDengine` npm | 高 |
+| tdengine | 配置 | `taos.cfg` 含 `firstEp` / `fqdn` / `serverPort=6030` / `keep` / `days` / `rows` | 高 |
+| tdengine | 代码 | `TSDB` / `stmt` / `taos` / `WSConnection` / `TDengine` / `createStable` / `create table using` | 高 |
+| tdengine | SQL | `CREATE STABLE` / `CREATE TABLE ... USING` / `TAGS` / `KEEP` / `DAYS` / `ROWS` | 高 |
+| tdengine | 文件 | `*.sql` 含 `CREATE STABLE` / `taos.cfg` / `*.taos` 脚本 | 中 |
 | terraform | 文件 | `**/*.tf` / `**/*.tfvars` | 高（HCL 专属扩展名） |
 | terraform | 文件 | `.terraform.lock.hcl` | 高（provider 锁文件，init 产物） |
 | terraform | 配置 | `terraform {` 块 / `required_providers` / `backend "` | 高 |
