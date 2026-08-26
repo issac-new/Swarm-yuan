@@ -69,7 +69,7 @@ Discuss → Plan → Execute → Verify → Ship
 - **Verify** — 不只是测试。检查需求覆盖、决策覆盖、阶段目标对齐。"阶段完成不是因为执行没报错，而是因为建的就是计划的"
 - **Ship** — 创建 PR，归档阶段，循环下一阶段
 
-> 与 swarm-yuan 的 workflow 8 节点映射：Discuss≈①②，Plan≈③，Execute≈⑤，Verify≈⑥，Ship≈⑦⑧。gsd 的 5 步是更高层抽象，swarm-yuan 的 8 节点更细。目标技能可选用哪种粒度。
+> 与 swarm-yuan 的 workflow 9 节点映射：Discuss≈①②，Plan≈③，Execute≈⑤，Verify≈⑥，Review≈⑦，Ship≈⑧⑨。gsd 的 5 步是更高层抽象，swarm-yuan 的 9 节点更细。目标技能可选用哪种粒度。
 
 ## swarm-yuan 4-Phase SOP 定义页（第三层认知辩证 · 本范式自有方法论）
 

@@ -1627,6 +1627,47 @@ check_review_record() {
   [[ $found -eq 0 ]] && pass "评审记录检查通过（评审人/日期/结论齐备，零待定项）"
 }
 
+check_review() {
+  echo "=== 独立审查留痕核验（check_review 门禁：独立 code review 非自检，review-record 须作为产物落盘）==="
+  # 与 gates-warn.sh 的 check_review（ocr 5 维审查执行）互补：本函数专司「审查留痕核验」——
+  # 生成物目录须存在 references/review-record.md 且非空（含 5 维审查点 + findings 表），否则 fail。
+  # 这是 ⑦独立审查 节点的硬性交付门（P0-4 九节点硬拆：原 ⑥ 混测试/审查，本批次独立为 ⑦）。
+  local found=0
+  local _rr="${REVIEW_RECORD_FILE:-references/review-record.md}"
+  # 允许 SKILL_DIR 前缀推导
+  local _rr_path="$_rr"
+  if [[ ! -f "$_rr_path" && -n "${SKILL_DIR:-}" && -f "${SKILL_DIR}/${_rr}" ]]; then
+    _rr_path="${SKILL_DIR}/${_rr}"
+  fi
+  if [[ ! -f "$_rr_path" ]]; then
+    fail "gate_review_record_missing: 独立审查产物不存在：${_rr}（⑦独立审查节点须 cp review-record-template.md 并填充 5 维审查点 + findings 表，作为审查证据落盘；缺则 review 门禁 fail）"
+    found=1
+  else
+    if [[ ! -s "$_rr_path" ]]; then
+      fail "gate_review_record_empty: 独立审查产物为空：${_rr_path}（须含评审表 + 5 维审查要点 + findings 表，非空）"
+      found=1
+    else
+      # 5 维审查点存在性核验
+      local _dims="正确性|安全|性能|可维护|测试覆盖"
+      if ! grep -qE "$_dims" "$_rr_path" 2>/dev/null; then
+        fail "gate_review_record_dims_missing: ${_rr_path} 缺 5 维审查点（正确性/安全/性能/可维护/测试覆盖）"
+        found=1
+      fi
+      # findings 表存在性核验
+      if ! grep -qE '发现项|findings|finding|## ' "$_rr_path" 2>/dev/null; then
+        fail "gate_review_record_findings_missing: ${_rr_path} 缺 findings 表（独立审查须列发现项：文件/问题/处置）"
+        found=1
+      fi
+      # 零 TBD
+      if grep -qE 'TBD|待定|待明确|待补充' "$_rr_path" 2>/dev/null; then
+        fail "gate_review_record_tbd: ${_rr_path} 含待定项——审查结论必须完整"
+        found=1
+      fi
+    fi
+  fi
+  [[ $found -eq 0 ]] && pass "独立审查留痕核验通过（${_rr_path} 存在且含 5 维审查点 + findings 表，零待定项）"
+}
+
 check_release_sign() {
   echo "=== 发布签名与 provenance 检查（SLSA Build L2 / SSDF PS.2 发布完整性）==="
   if [[ "${RELEASE_SIGN_REQUIRED:-0}" != "1" ]]; then

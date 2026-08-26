@@ -58,7 +58,8 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 用户："为 /path/to/project 生成 skill"
 ⓪自检 → ⓪.5读项目知识 → ①探查（三路并行） → ①.5形态判定+组件库清单+调用链
 → ②特征卡 → ③骨架 → ④填充（消除全部占位符） → ④.5框架深化 → ⑤conf
-→ ⑤.5hooks/commands/MCP → ⑥门禁验证 → ⑦.5门禁注入 → ⑦记忆写回 → ⑧终检
+→ ⑤.5hooks/commands/MCP → ⑥编码验证（测试门禁）→ ⑦独立审查（review 门禁）
+→ ⑦.5门禁注入 → ⑧记忆写回 → ⑨终检
 ```
 
 铁律：①完整流程后才算完成，draft 骨架不可交付（状态门：`--mark-active` 零占位符核验才翻 active；中断重跑断点续传）；②每步公告调用 `→ [节点X] 调用 …` + trace-log 节点级落盘；③门禁误报自动调 conf 重跑，每节点有降级策略；④不预设项目形态——先 §C+.0 判定再按维度全量穷举+计数核验（≥ 枚举×0.95），编排约束每条须代码证据；⑤任务类型路由避免全任务跑全量（task-methodology-router.md）。
@@ -67,7 +68,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 ## 六段式模板
 
-meta（SKILL.md）/ workflow（8 节点×4 要素）/ reference（map + spec-template + 按需）/ assets（模板）/ check（precheck.sh 门禁族（真值见 facts.conf）+ rules.d 三值规则）/ scripts（工具箱）。
+meta（SKILL.md）/ workflow（9 节点×4 要素）/ reference（map + spec-template + 按需）/ assets（模板）/ check（precheck.sh 门禁族（真值见 facts.conf）+ rules.d 三值规则）/ scripts（工具箱）。
 
 门禁：四族（核心/架构/合规/advisory，计数真值见 `assets/facts.conf`——文档不手抄数字，R13 后无漂移源）（全部有真实触发路径——序列/hooks/loop-hook，R13 接线）；规则数据在 `rules.d/*.rules`（三值 allow/prompt/forbid 取最严，FORBID 消息带替代方案）；审批可沉淀为持久规则。enforce 分层（strict/warn/advisory）是实现细节，模型只选执行序列（`--all`/`--all-full`/`--compliance-suite`）。
 

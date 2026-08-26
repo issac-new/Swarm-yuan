@@ -239,7 +239,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 （全流程完成前的 checkbox 清单，汇总所有节点的门禁）
 ```
 
-**标准节点（权威 8 节点命名表，对齐 facts.conf FACT_FLOW_NODES=8；可按项目裁剪）：**
+**标准节点（权威 9 节点命名表，对齐 facts.conf FACT_FLOW_NODES=9；可按项目裁剪）：**
 
 | 节点 | 名称 | 左移要求 |
 |------|------|----------|
@@ -248,12 +248,13 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | ③ | 实施 plan | ★变更左移（§20） |
 | ④ | 分支准备 | — |
 | ⑤ | 编码实现 | ★测试左移（TDD/BDD，test 与 impl 同分支提交） |
-| ⑥ | 测试验证 | ★运维左移（metrics/日志/trace 埋点验证） |
-| ⑦ | 合入 main | ★变更左移（回滚预案 + 迁移兼容） |
-| ⑧ | 构建发布 | ★运维左移（灰度 + 告警 + runbook） |
+| ⑥ | 测试验证 | ★运维左移（metrics/日志/trace 埋点验证）+ check_test 门禁 |
+| ⑦ | 独立审查 | check_review 门禁（review-record 留痕核验，独立 code review 非自检） |
+| ⑧ | 合入 main | ★变更左移（回滚预案 + 迁移兼容） |
+| ⑨ | 构建发布 | ★运维左移（灰度 + 告警 + runbook） |
 
-> 第 9 项"发布后运营"是可选 D 方向运行态验证（`--operate`，advisory），非 8 节点之一。
-> generate-skill.sh 的 workflow.md emit 按 8 节点骨架生成（S10 实装）。
+> 第 10 项"发布后运营"是可选 D 方向运行态验证（`--operate`，advisory），非 9 节点之一。
+> generate-skill.sh 的 workflow.md emit 按 9 节点骨架生成（S10 实装）。
 
 **详细节点说明：**
 1. 需求理解
@@ -261,10 +262,11 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 3. 实施 plan（采用 OpenSpec tasks checkbox 格式 + superpowers writing-plans bite-sized 步骤）—— **★变更左移**：plan 须含"变更影响范围"段（消费方反查/回滚预案/灰度策略/数据库迁移兼容窗口）
 4. 分支准备
 5. 编码实现（采用 superpowers subagent-driven：orchestrator + 每任务新 subagent + 两阶段审查；**复杂变更（>3 文件/跨模块）用 Dynamic Workflows 并行扇出 + 交叉验证**）—— **★测试左移**：每个 task 须先写/更新测试再实现（TDD/BDD），precheck `--shift-left` 校验 test 与 impl 同分支提交
-6. 测试验证（含 gstack/OCR 5 审查维度 + AUTO-FIX/ASK + 可选 `claude ultrareview` 云端多 agent 审查）—— **★运维左移**：验证阶段须确认 metrics/日志/trace 已埋点且可通过健康检查端点访问
-7. 合入 main —— **★变更左移**：合入前须确认回滚预案存在 + 数据库变更兼容（向前兼容/双写期）
-8. 构建发布 —— **★运维左移**：发布须含灰度/金丝雀策略 + 监控告警阈值已设 + 运维 runbook 已更新
-9. 发布后运营 —— **★运维左移运行态验证（D 方向）**：发布后验证健康检查端点可访问 + 告警阈值已设 + runbook 已更新 + 灰度观察期无异常（precheck `--operate`，warn 级 advisory）
+6. 测试验证（含 gstack/OCR 5 审查维度 + AUTO-FIX/ASK + 可选 `claude ultrareview` 云端多 agent 审查）—— **★运维左移**：验证阶段须确认 metrics/日志/trace 已埋点且可通过健康检查端点访问；独立跑单元/集成测试，`check_test` 门禁核验 0 用例检测 + 断言密度 + Mutation Check 测试有效性
+7. 独立审查 —— **独立 code review（非自检）**：以第三方 reviewer 视角找 Step 7 填充后仍残留的逻辑错误/占位符遗漏/门禁误配/清单错漏等低级错误；`check_review` 门禁核验 `references/review-record.md` 留痕非空（5 维审查点 + findings 表），缺则 fail
+8. 合入 main —— **★变更左移**：合入前须确认回滚预案存在 + 数据库变更兼容（向前兼容/双写期）
+9. 构建发布 —— **★运维左移**：发布须含灰度/金丝雀策略 + 监控告警阈值已设 + 运维 runbook 已更新
+10. 发布后运营 —— **★运维左移运行态验证（D 方向）**：发布后验证健康检查端点可访问 + 告警阈值已设 + runbook 已更新 + 灰度观察期无异常（precheck `--operate`，warn 级 advisory）
 
 > 项目可能有额外节点（如"代码审查"、"部署验证"），或无发布环节。按项目实际裁剪。
 > **方法论整合：** 节点②③用 OpenSpec 的 proposal→spec(delta)→design→tasks 模式（specs as source of truth）；节点⑤用 superpowers 的 subagent 编排（见 subagent-orchestration.md）；节点间状态用 comet 风格脚本背书（state-machine.sh，非 prompt-only）；节点⑥含 gstack/OCR 审查维度（见 review-methodology.md）。

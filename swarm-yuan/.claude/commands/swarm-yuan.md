@@ -57,7 +57,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh <skill名称> <项目
 - `references/dev-guide.md` — 改造分类、拼装式开发原则、可复用单元清单、AI agent 配置指引
 - `references/release.md` — 编译规则表、构建命令、产物位置
 - `references/reference-manual.md` — 安全清单、组件库、依赖链路、接口清单、数据字典、认知映射表、六维动力学基线、逻辑谬误图谱、辩证映射表、领域知识、AI Agent 运行时段
-- `references/workflow.md` — 八节点全流程（10 要素/节点，含★调用追踪 + 4-Phase SOP + 每节点读取项目知识子步骤）
+- `references/workflow.md` — 九节点全流程（4 要素/节点，含★调用追踪 + 4-Phase SOP + 每节点读取项目知识子步骤）
 - `scripts/snippets.md` — 常用代码片段、组件参数配置
 - `scripts/mcp-tools.md` — MCP 工具接入说明
 

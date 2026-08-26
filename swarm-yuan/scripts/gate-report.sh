@@ -160,7 +160,7 @@ if [[ $_rc -eq 3 ]]; then
 fi
 [[ $_rc -eq 0 ]] || { rm -f /tmp/.gate-report.$$.tmp; echo "✗ 报告聚合失败（awk 退出 ${_rc}）" >&2; exit 1; }
 
-# audit-2026-08-25（H10）：key-nodes 看板首个消费者——八节点关键调用各节点最新状态。
+# audit-2026-08-25（H10）：key-nodes 看板首个消费者——九节点关键调用各节点最新状态。
 # 数据源与 gate-runs 同目录（.swarm-yuan/key-nodes.jsonl）；不存在则跳过（非必选账）。
 _kn="$(dirname "$JSONL")/key-nodes.jsonl"
 if [[ -f "$_kn" ]]; then

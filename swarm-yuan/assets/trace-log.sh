@@ -55,7 +55,7 @@ while [[ $# -gt 0 ]]; do
     *) echo "未知参数: $1" >&2
        echo "Usage: bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]" >&2
        echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--rationale <理由>] [--phase <阶段>] [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [--outcome <implemented|rejected|superseded|proposed>] [--alternatives <备选>] [--missing-context <缺失上下文>] [--cost-if-wrong <代价>]" >&2
-       echo "       bash trace-log.sh --key-node <节点名> [--actor <谁>] [--status started|done|fail] [--note <说明>]  # WP-Q2-lite 关键节点化（八节点关键调用看板）" >&2
+       echo "       bash trace-log.sh --key-node <节点名> [--actor <谁>] [--status started|done|fail] [--note <说明>]  # WP-Q2-lite 关键节点化（九节点关键调用看板）" >&2
        exit 1 ;;
   esac
 done
@@ -67,7 +67,7 @@ if [[ "$DECISION_MODE" -eq 0 && -z "$TOOL" && "$KEY_NODE_MODE" -eq 0 ]]; then
 fi
 
 # --key-node 模式（WP-Q2-lite 关键节点化）：落盘 .swarm-yuan/key-nodes.jsonl
-# 八节点视角的"关键调用看板"——trace.jsonl 是全链路流水，key-nodes.jsonl 是节点级关键调用记录。
+# 九节点视角的"关键调用看板"——trace.jsonl 是全链路流水，key-nodes.jsonl 是节点级关键调用记录。
 # 用法：bash trace-log.sh --key-node "①探查仓库" --actor "swarm-yuan/ai" --status started --note "三路并行+图谱工具"
 #       bash trace-log.sh --key-node "⑦写回项目记忆" --status done --note "memory-writeback.sh"
 if [[ "$KEY_NODE_MODE" -eq 1 ]]; then
