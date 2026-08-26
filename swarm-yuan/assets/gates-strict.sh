@@ -674,6 +674,19 @@ check_shift_left() {
     fi
   fi
 
+  # field-feedback 2026-08-26（反馈 3 补强）：spec §11 测试策略段非占位核验——
+  # "测试兜底逻辑错误"的前提是 spec 里有真测试设计，不是空表。§19 管"测试左移段存在"，
+  # 此处管"§11 测试策略有实质内容"（单元/集成行须填覆盖范围，非空单元格）。
+  if [[ -n "$test_design_file" && -f "$test_design_file" ]]; then
+    local _s11_filled
+    _s11_filled=$(awk '/^## 11\./,/^## 12\./' "$test_design_file" 2>/dev/null | grep -E '^\|[[:space:]]*[^|[:space:]（]' | grep -cvE '\|[[:space:]]*\|[[:space:]]*\|[[:space:]]*\|' || true)
+    if [[ "${_s11_filled:-0}" -ge 2 ]]; then
+      pass "spec §11 测试策略段有实质内容（${_s11_filled} 个非空行）"
+    else
+      warn "spec §11 测试策略段疑似占位（非空行 ${_s11_filled:-0}<2）——逻辑错误的测试兜底要求§11 有真设计（单测/集测覆盖范围必填）"
+    fi
+  fi
+
   echo "  ── 变更左移（plan §20 变更影响 + 回滚预案 + 迁移兼容）──"
 
   # 2a. plan §20 变更影响段存在（硬门禁）

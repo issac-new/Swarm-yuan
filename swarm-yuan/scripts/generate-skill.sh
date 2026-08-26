@@ -45,6 +45,7 @@ MERGED_FRAMEWORK_MAP=(
 UNIVERSAL_FILES=(
   "assets/spec-template.md|assets|lite"
   "assets/plan-template.md|assets|lite"
+  "assets/review-record-template.md|assets|lite"  # field-feedback：审查留痕载体（check_review 提示落 docs/reviews/YYYY-MM-DD.md 时按此模板）
   "assets/branch-setup.sh|assets"
   "assets/env-setup.sh|assets"
   "assets/data-sample-template.md|assets"
