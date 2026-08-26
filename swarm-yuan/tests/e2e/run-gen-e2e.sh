@@ -4,7 +4,7 @@
 #
 # 目的：verifier 现有 e2e 只测 --inject-frameworks 注入链路（生成器自身行为），
 # 本脚本测 generate-skill.sh create 模式的「生成产物」质量——断言骨架文件清单完整、
-# hooks/JSON 合法、workflow.md 8 节点、precheck.conf 含真实嗅探值、commands/spec.md 含任务类型映射。
+# hooks/JSON 合法、workflow.md 9 节点、precheck.conf 含真实嗅探值、commands/spec.md 含任务类型映射。
 #
 # 不断言零占位符：create 产物的 4 个 reference 文件（codebase/dev-guide/release/reference-manual）
 # 设计即为「（待填充）」占位骨架，等 AI 填充；本脚本只断言「稳定可断言的部分」（骨架/JSON/嗅探值）。
@@ -80,12 +80,12 @@ for jf in "hooks/hooks.json" "settings.local.json" ".mcp.json"; do
   fi
 done
 
-# --- 4. workflow.md 含 8 个节点标题 + 每节点含「调用追踪」要素 ---
+# --- 4. workflow.md 含 9 个节点标题 + 每节点含「调用追踪」要素 ---
 wf="${SKILL_DIR}/references/workflow.md"
 node_cnt=$(grep -c '^## 节点' "${wf}" 2>/dev/null || echo 0)
-[[ "${node_cnt}" -eq 8 ]] && ok "workflow.md 含 8 个节点标题" || bad "workflow.md 节点数=${node_cnt}（期望 8）"
+[[ "${node_cnt}" -eq 9 ]] && ok "workflow.md 含 9 个节点标题" || bad "workflow.md 节点数=${node_cnt}（期望 9）"
 trace_cnt=$(grep -c '调用追踪' "${wf}" 2>/dev/null || echo 0)
-[[ "${trace_cnt}" -ge 8 ]] && ok "workflow.md 含调用追踪要素（${trace_cnt} 处）" || bad "workflow.md 调用追踪要素不足（${trace_cnt} 处，期望≥8）"
+[[ "${trace_cnt}" -ge 9 ]] && ok "workflow.md 含调用追踪要素（${trace_cnt} 处）" || bad "workflow.md 调用追踪要素不足（${trace_cnt} 处，期望≥9）"
 
 # --- 5. precheck.conf/arch.conf 含 ACTIVE_FRAMEWORKS 非空 + 嗅探到的框架（detect-frameworks.sh 真值）+ AUTO:detected 注释 ---
 # 注：ACTIVE_FRAMEWORKS 渲染到 precheck.arch.conf（架构门禁配置），非 precheck.conf（核心 10 门禁）。

@@ -1,5 +1,6 @@
 # ruleset: celery  requires_conf: CELERY_SRC_GLOBS
 # gates: fw_celery_acks_late_idempotent(fail) fw_celery_serializer_pickle(fail) fw_celery_retry_backoff(warn) fw_celery_result_backend(warn) fw_celery_timezone(warn) fw_celery_concurrency_model(warn) fw_celery_task_routes(warn) fw_celery_time_limit(warn) fw_celery_monitoring(warn) fw_celery_beat_idempotent(warn) fw_celery_canvas_error(warn)
+# harvested-from: WP-R 阶段 2 Python 异步任务队列补强（2026-07-22），规律源自 Celery 5.3+ 官方文档与 celery-exporter 实践
 _fw_celery_check() {
   echo "  [celery] Celery 5.x 框架规律"
   local srcs srcarr=()

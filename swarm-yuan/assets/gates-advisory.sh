@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # advisory 物理文件（15 个 check_* 函数；原由 split-gates.sh 抽取，现手工维护；决策 19）
 # 被 precheck.sh source（开发态/安装态同路径；install.sh 整目录拷贝含本文件）。
-# 注：物理函数数 15 = enforce-level advisory 15——本文件物理位置与 enforce 分档恰好一致
-#   （check_cognition 在 Z3 fail-closed 化后由 warn 降为 advisory，物理与分档归位）。
+# 注：物理函数数 15 ≠ enforce-level advisory 16——check_method_size 物理在 gates-warn.sh
+#   但 0 fail 机械归 advisory（field-feedback 新增，物理未迁移）；
+#   check_cognition 在 Z3 fail-closed 化后由 warn 降为 advisory，物理与分档归位本文件。
 # _enforce_of 读 gate-enforce-level.conf 而非文件位置（跨档情况见 gates-strict/warn.sh 头部）。
 # 头部数字由 self-check.sh check_gates_header_comment 机器执法（防注释漂移）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。

@@ -226,7 +226,7 @@ harness（宿主 CLI：Codex/Claude Code）管 agent loop/沙箱/审批通道；
 厚生成器（一次性消费，可厚）          薄生成物（每会话重复消费，必须薄）
   探查知识库（74 框架规则/40 references）   SKILL.md（≤8KB：何时用/约束摘要/入口/路由/元规则/自成长）
   行业 profile（7 份，conf-render 真实加载）  地图（≤32KiB：两列表 |路径|说明与约束|）
-  探查/渲染/自检脚本                     spec 9 节核心 + workflow 8 节点×4 要素
+  探查/渲染/自检脚本                     spec 9 节核心 + workflow 9 节点×4 要素
   决策史/调研史（docs/）                 rules.d/*.rules + precheck + hooks（双宿主）
                                       scripts（按需调用的工具，不算税）
 ```
@@ -238,7 +238,7 @@ harness（宿主 CLI：Codex/Claude Code）管 agent loop/沙箱/审批通道；
 ├── SKILL.md          # ≤8KB 预算（FACT_SKILLMD_BYTES_BUDGET=8192，锚点=gen-e2e §7.6 对生成物实测）
 ├── references/
 │   ├── reference-manual.md  # 项目地图载体：§4/§6/§9 两列 |路径|说明与约束|；32KiB 硬顶（FACT_MAP_BYTES_BUDGET，gen-e2e §7.7 锚）；stability 词在说明列
-│   ├── codebase.md / dev-guide.md / release.md / workflow.md  # 探查填充件（workflow=8 节点 × 4 要素：入口/参与方/门禁/产出物）
+│   ├── codebase.md / dev-guide.md / release.md / workflow.md  # 探查填充件（workflow=9 节点 × 4 要素：入口/参与方/门禁/产出物）
 │   └── （激活框架文档 + 任务路由命中的方法论文档，按需拷贝）
 ├── assets/spec-template.md  # 23 节模板（9 节核心必填：需求/决策记录/约束/测试/回滚/左移三节/合规；仪式节 --task-type full 展开）
 ├── scripts/          # precheck.sh + gates + gate-rules.sh + inventory-update + fingerprint + trace-log + state-machine（inventory-verify 是生成器侧核验，不进生成物）
@@ -311,7 +311,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | exploration-guide.md | 探查 | §C+ 探查方法论（形态判定/全量穷举/三层调用链/编排约束/五维字段定义） |
 | template-spec.md | 探查→产物 | 六段式填充规范 + 生成后核对清单 + 96→12 项核对规则 |
 | generation-flow.md | 生成 | 生成流程 Step 1-12 详解（决策 32 折叠，按需读；唯一编号口径见 §8.1） |
-| workflow 模板 | 使用 | 八节点 × 4 要素骨架 |
+| workflow 模板 | 使用 | 九节点 × 4 要素骨架 |
 | decision-governance.md | 留痕 | G1 决策治理（三级分类/五要素/decisions.jsonl 格式/ISO 42001 对齐） |
 | review-methodology.md | 留痕 | 代码审查方法论（rubric 判定/P0-P3/规则溯源） |
 | memory-persistence.md | 留痕 | 记忆持久化（claude-mem 吸收/version oracle） |
@@ -443,7 +443,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **decisions.jsonl**：G1 决策治理（三级分类 Mechanical/Taste/UserChallenge + outcome 生命周期 proposed/implemented/rejected/superseded + 未采纳决策照常落盘 + 回放规则不可变——旧行无 outcome 视 implemented）。R14 增 `goal_id`+`closure`（审计单元目标闭环化：一个用户目标+一个验收边界，change↔validation 链接才 closed）+ `repair_review`（修复复核位：verified/partial/blocked，空=pending）。
 - **gate-audit.jsonl**：fail-gate 全量决策审计（invoked/result 单行自包含 + 稳定 handler id + target 截断 500 + 休眠不写）；`--report` 四段（最近决策/拦截率按 handler/deny 聚合/工具分布）。R14：gate-report 增证据态分级（配置≠使用≠有效）——落地三级（Present/Exercised/missing_evidence；Wired/Outcome-supported 由 gate-trends 双账本承载，未落地，登记候选）；gate-trends 双账本（当窗验证 repair_verified_rate + guardrail 配对 vs 跨窗效果 Loop Effectiveness——后者需两次执行对比，诚实声明登记候选）。
 - **gate-runs.jsonl**：门禁执行流水（每次 precheck 运行追加一行带 run 序号，`GATE_RUNS_DIR` 非空启用）——SARIF 证据链、连续零发现统计（metrics 门禁）、gate-trends 趋势的数据源。
-- **key-nodes.jsonl**：八节点关键调用看板。
+- **key-nodes.jsonl**：九节点关键调用看板。
 - **gate-plan.json**（R15 评测层）：任务开工的门禁选择声明（enable/skip + 理由，负空间可审计）；`scripts/gate-plan.sh --plan/--diff` 收口对比计划 vs 实际触发（missing_evidence/计划外/skip 违反，advisory）。
 - **decisions.jsonl `ref_trace_hash`**（R15 评测层）：decisions 记录引用 trace.jsonl 末行 cksum——三本账从并列升级为**链式**（上游篡改 → 失配 → 全链 stale 可检出；HarnessEval evidence tree 的 bash 最小切片）。
 - **audit-closure 完备性**（R15 评测层）：`scripts/audit-closure.sh` 按 goal_id 全集重走 closure 完备性（open/closed 分布 + open goals 列表）；`--strict` 有 open 时 exit 2，串 mark-active advisory 门（审计即完成条件）。

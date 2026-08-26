@@ -403,7 +403,7 @@ inject_frameworks() {
       /^# <<< swarm-yuan:framework-gates <<</ { skip=0; next }
       !skip { print }
     ' "$sh" > "$tmp"
-  elif grep -q '^case "\$MODE" in' "$sh"; then
+  elif grep -q '^case "\$MODE" in' "$sh"; then  # shellcheck disable=SC2016
     # 无标记区块：追加到文件末尾会落在 main case/exit 之后，注入的函数永不被定义。
     # 改为插入 main case（case "$MODE" in）之前，保证函数先定义后被调用。
     awk -v blockfile="$block" '
@@ -1414,7 +1414,7 @@ fi
 
 fill_guide() {
   case "$1" in
-    workflow.md) echo "八节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP" ;;
+    workflow.md) echo "九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP" ;;
     codebase.md) echo "目录结构+技术栈版本表+端口+配置" ;;
     dev-guide.md) echo "改造分类+拼装式开发原则+安全编码规范" ;;
     release.md) echo "编译规则+构建命令+产物位置" ;;
@@ -1427,14 +1427,14 @@ _placeholder_refs="workflow.md codebase.md dev-guide.md release.md reference-man
 [[ "$PROFILE" == "lite" ]] && _placeholder_refs="reference-manual.md"
 for f in $_placeholder_refs; do
   if [[ "$f" == "workflow.md" ]]; then
-    # S10/S4 实装：workflow.md 不再 2 行占位，emit 8 节点骨架（R13 批次1b 后 4 要素/节点），
+    # S10/S4 实装：workflow.md 不再 2 行占位，emit 9 节点骨架（R13 批次1b 后 4 要素/节点），
     # 节点②探查的 ⑨ 调用追踪预填 trace-log 模板（具体化 SKILL.md:86 的 AI 自由动作）。
-    # 节点名对齐 template-spec.md:198-207 标准 8 节点（第 9 项"发布后运营"是可选 D 方向，非 8 节点之一）。
+    # 节点名对齐 template-spec.md:198-207 标准 9 节点（⑥测试验证 + ⑦独立审查独立拆分，审查留痕 review-record 落盘）。
     _write_if_absent "$SKILL_DIR/references/$f" <<'WFEOF'
-# workflow.md — 八节点全流程（4 要素/节点：入口/参与方/门禁/产出物与调用追踪）
+# workflow.md — 九节点全流程（4 要素/节点：入口/参与方/门禁/产出物与调用追踪）
 
-> 填充指引：八节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP。
-> 节点名对齐 references/template-spec.md §2 标准 8 节点；按项目实际裁剪。
+> 填充指引：九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP。
+> 节点名对齐 references/template-spec.md §2 标准 9 节点（⑥测试验证 + ⑦独立审查独立拆分，审查留痕 review-record 落盘）；按项目实际裁剪。
 
 ## 流程总览
 
@@ -1552,17 +1552,29 @@ for f in $_placeholder_refs; do
 
 **① 流程入口（顺序/并行）：** 前序=节点⑤
 
-**④ 质量门禁：** gstack/OCR 5 审查维度 + AUTO-FIX/ASK；★运维左移（验证 metrics/日志/trace 已埋点）
+**④ 质量门禁：** gstack/OCR 5 审查维度 + AUTO-FIX/ASK；★运维左移（验证 metrics/日志/trace 已埋点）；独立跑单元/集成测试 + `check_test` 门禁（0 用例检测 / 断言密度 / Mutation Check 测试有效性）
 
-**⑥ 产出物与调用追踪：** 测试报告 + 审查记录
+**⑥ 产出物与调用追踪：** 测试报告 + 测试有效性证据（mutation score）
 
-**⑨ 调用追踪：** `bash scripts/trace-log.sh --node "测试验证" --actor "reviewer" --tool "ocr review"`
+**⑨ 调用追踪：** `bash scripts/trace-log.sh --node "测试验证" --actor "tester" --tool "pytest/mutation"`
 
 ---
 
-## 节点⑦：合入 main
+## 节点⑦：独立审查
 
 **① 流程入口（顺序/并行）：** 前序=节点⑥
+
+**④ 质量门禁：** 独立 code review（第三方 reviewer 视角，非 Step 7 自检）+ `check_review` 门禁（核验 `references/review-record.md` 留痕非空：5 维审查点 + findings 表）
+
+**⑥ 产出物与调用追踪：** `references/review-record.md` 审查证据产物（从 review-record-template.md 填充）
+
+**⑨ 调用追踪：** `bash scripts/trace-log.sh --node "独立审查" --actor "reviewer" --tool "review-record"`
+
+---
+
+## 节点⑧：合入 main
+
+**① 流程入口（顺序/并行）：** 前序=节点⑦
 
 **④ 质量门禁：** ★变更左移（回滚预案存在 + 数据库变更兼容：向前兼容/双写期）
 
@@ -1584,7 +1596,7 @@ for f in $_placeholder_refs; do
 
 ---
 
-## ⑩ 流程完成检查表
+## ⑪ 流程完成检查表
 
 （全流程完成前的 checkbox 清单，汇总所有节点的门禁）
 - [ ] 节点①需求理解：特征卡 17 项齐备
@@ -1592,9 +1604,10 @@ for f in $_placeholder_refs; do
 - [ ] 节点③设计 spec：§19 测试设计 + §21 可观测性
 - [ ] 节点④实施 plan：§20 变更影响范围
 - [ ] 节点⑤编码实现：测试与实现同分支提交
-- [ ] 节点⑥测试验证：5 维度审查通过
-- [ ] 节点⑦合入 main：回滚预案 + 迁移兼容
-- [ ] 节点⑧构建发布：灰度 + 告警 + runbook
+- [ ] 节点⑥测试验证：5 维度审查通过 + check_test 门禁
+- [ ] 节点⑦独立审查：review-record.md 留痕 + check_review 门禁
+- [ ] 节点⑧合入 main：回滚预案 + 迁移兼容
+- [ ] 节点⑨构建发布：灰度 + 告警 + runbook
 WFEOF
   else
     if [[ "$f" == "reference-manual.md" ]]; then
@@ -1767,7 +1780,7 @@ EOF
 # WP-E：checklist 按档裁剪（lite 无 workflow/commands/hooks 条目）
 if [[ "$PROFILE" != "lite" ]]; then
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
-- [ ] workflow: 八节点+每节点 4 要素（入口/参与方/门禁/产出物与调用追踪）+4-Phase SOP
+- [ ] workflow: 九节点+每节点 4 要素（入口/参与方/门禁/产出物与调用追踪）+4-Phase SOP
 - [ ] reference: codebase/dev-guide/release/reference-manual + 方法论+认知 reference
 EOF
 else

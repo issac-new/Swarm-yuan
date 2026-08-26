@@ -6,7 +6,7 @@
 >
 > 节点总览（SKILL.md 正文常驻）：
 > ```
-> ⓪自检(13运行时) → ⓪.5读取项目知识 → ①探查仓库 → ①.5项目形态判定+组件库+调用链 → ②提取17项特征卡 → ③create骨架 → ④AI填充全部文件 → ④.5框架深化 → ⑤AI配置precheck.conf → ⑤.5 AI生成hooks/commands/MCP → ⑥AI运行门禁 → ⑦.5门禁注入 → ⑦AI写回记忆 → ⑧AI最终检查
+> ⓪自检(13运行时) → ⓪.5读取项目知识 → ①探查仓库 → ①.5项目形态判定+组件库+调用链 → ②提取17项特征卡 → ③create骨架 → ④AI填充全部文件 → ④.5框架深化 → ⑤AI配置precheck.conf → ⑤.5 AI生成hooks/commands/MCP → ⑥编码验证（测试门禁）→ ⑦独立审查（review 门禁）→ ⑦.5门禁注入 → ⑧AI写回记忆 → ⑨AI最终检查
 > ```
 
 ---
@@ -15,7 +15,7 @@
 
 **核心原则**：脚本只做"机械出初稿"（模板/嗅探/枚举），AI 做"审 + 判断"。机械脚本不要假装能判断质量，AI 不要重复跑机械流程。
 
-**各环节分工（分工视图 ⓪-⑧——同一流程的机械/AI 边界压缩标记，与详解号一一对应：⓪=Step 1、⓪.5=2、①=3、①.5=4、②=5、③=6、④=7、⑤=8、⑤.5=9、⑥=10、⑦=11、⑧=12；④.5/⑦.5 为插入子阶段）：**
+**各环节分工（分工视图 ⓪-⑨——同一流程的机械/AI 边界压缩标记，与详解号一一对应：⓪=Step 1、⓪.5=2、①=3、①.5=4、②=5、③=6、④=7、⑤=8、⑤.5=9、⑥=10、⑦=10.5、⑧=11、⑨=12；④.5/⑦.5/⑩.5 为插入子阶段）：**
 
 | Step | 机械（脚本做） | AI 审（AI 做） |
 |------|----------------|-----------------|
@@ -29,10 +29,11 @@
 | ④.5 框架深化 | framework-evidence.sh 机械 grep 证据 | AI 判断"该框架规律是否适用于本项目"，证据由 AI 写 |
 | ⑤ AI 配置 precheck.conf | conf-render.sh 嗅探+渲染初稿 | AI 审 + 补 `# TODO:model` 清单（语义型变量） |
 | ⑤.5 hooks/commands/MCP | generate-skill.sh 生成 hooks.json/commands/ 模板 | AI **审 hooks 是否适用**（不适用就删对应 hook） |
-| ⑥ AI 运行门禁 | precheck.sh 机械跑门禁 | AI 看 fail/warn 输出，**判断是否要修**（不是所有 warn 都要修） |
+| ⑥ 编码验证（测试） | precheck.sh 机械跑 check_test 门禁 | AI 看 fail/warn 输出，**判断是否要修**（不是所有 warn 都要修）；独立跑单元/集成测试 |
+| ⑦ 独立审查（review） | check_review 门禁机械核验 review-record 留痕 | AI 做**独立** code review（非自检），填 references/review-record.md 产物 |
 | ⑦.5 门禁注入 | generate-skill.sh --inject-frameworks | — |
-| ⑦ 写回项目记忆 | memory-writeback.sh 落盘 | AI 判断哪些经验值得沉淀 |
-| ⑧ AI 最终检查 | verify_completeness / inventory-verify | AI 终审：清单是否覆盖项目真实形态 |
+| ⑧ 写回项目记忆 | memory-writeback.sh 落盘 | AI 判断哪些经验值得沉淀 |
+| ⑨ 最终检查 | verify_completeness / inventory-verify | AI 终审：清单是否覆盖项目真实形态 |
 
 **红线**：机械脚本只在"信号可信误报少"的领域跑（骨架创建 / conf-render / verify_completeness / mark-active / enforce_level 加载）；其余环节（特征卡填值 / 框架规律实例化 / hooks 适用性 / 门禁警告采纳）必须 AI 判断。
 
@@ -91,9 +92,13 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools
 
 定制 generate-skill.sh 已生成的 hooks/hooks.json + commands/ + settings.local.json + .mcp.json 模板（脚本骨架已建，AI 补项目特定配置）+ workflow.md 节点标注。hooks 含 PostToolUse(Bash) failure-detector（失败模式机械检测：SPINNING/EXPLORING/MIXED 三态 + L1-L4 压力升级，借鉴 tanweai/pua 改写）+ PreToolUse 防作弊门（integrity-guard：受保护治理资产 deny/advisory 两档，借鉴 tanweai/pua 改写为 swarm-yuan 资产清单）。详见 `references/claude-code-capabilities.md`
 
-## Step 10. AI 运行门禁
+## Step 10. AI 编码验证（测试）
 
-`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--mark-active` 翻 active 后 `--all-full`（标准 28：核心 10+架构 18）；强监管交付按需追加 `--compliance-suite`（合规 19）。**★compliance 档 / 改治理资产 / 发布链路：强制走四权分离 agent 拓扑**（policy-guardian → action-executor → self-reviewer → verifier，借鉴 tanweai/pua 改写为立法/执法/司法三权隐喻，详见 `references/governance-agents.md`）——action-executor 只给 candidate_pass，最终 verifier_status 由 external harness/hook/human 定，防「自己改自己验收」。**★compaction 状态续传（借鉴 tanweai/pua builder-journal）**：PreCompact hook 自动 `bash scripts/state-machine.sh dump-journal` 把 phase/failure_count/peak_level dump 到 `.swarm-yuan/builder-journal.md`；SessionStart 自动 `restore-journal` 检测 <2h 的 journal 并恢复压力状态——压力不因 compaction 重置
+`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--mark-active` 翻 active 后 `--all-full`（标准 28：核心 10+架构 18）；强监管交付按需追加 `--compliance-suite`（合规 19）。**★测试门禁（check_test）**：独立承载单元/集成测试验证——脚本机械跑项目测试套件，`check_test` 门禁核验 0 用例检测（无测试即 fail）、断言密度等硬指标；**测试有效性**引用 P1-6 已接入的 **Mutation Check**（变异测试：注入故障后测试套件必须捕获，捕获率不达标 fail，防止"假绿"测试）。**★compliance 档 / 改治理资产 / 发布链路：强制走四权分离 agent 拓扑**（policy-guardian → action-executor → self-reviewer → verifier，借鉴 tanweai/pua 改写为立法/执法/司法三权隐喻，详见 `references/governance-agents.md`）——action-executor 只给 candidate_pass，最终 verifier_status 由 external harness/hook/human 定，防「自己改自己验收」。**★compaction 状态续传（借鉴 tanweai/pua builder-journal）**：PreCompact hook 自动 `bash scripts/state-machine.sh dump-journal` 把 phase/failure_count/peak_level dump 到 `.swarm-yuan/builder-journal.md`；SessionStart 自动 `restore-journal` 检测 <2h 的 journal 并恢复压力状态——压力不因 compaction 重置
+
+## Step 10.5. AI 独立审查（review）
+
+**独立 code review（非自检）**：AI 以"第三方 reviewer"视角重新审视生成产物（SKILL.md / workflow / references / precheck.conf / scripts），不重复 Step 7 的填充自检，而是找 Step 7 之后仍残留的逻辑错误、占位符遗漏、门禁误配、组件库清单错漏等**低级错误**（用户原始痛点："swarm-yuan 没有测试和审查这个关键环节，错误太低级了"）。**★review 门禁（check_review）**：`check_review` 机械核验**审查留痕**——生成物目录存在 `references/review-record.md` 且非空（含 5 维审查点 + findings 表）即 fail。审查完须 `cp swarm-yuan/assets/review-record-template.md <skill>/references/review-record.md` 并填充 5 维审查点 + findings 表，作为独立审查证据产物落盘（review-record-template.md 路径：生成器侧 `assets/`，目标技能侧 `references/`）。**审查留痕是 review 门的硬性交付物，缺则门禁 fail，不允口头"已审查"。**
 
 ## Step 11. AI 写回记忆
 

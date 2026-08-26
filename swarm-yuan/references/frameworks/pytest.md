@@ -188,6 +188,8 @@ expect: always
 | 交互对 | 规则 | 理由 |
 | pytest × celery | celery 任务测试须用 eager 模式（task_always_eager=True） | 避免测试依赖 broker |
 | pytest × django | 须用 pytest-django 的 django_db fixture | 避免 Django ORM 测试事务冲突 |
+| pytest × fastapi | 用 httpx.AsyncClient + ASGITransport（TestClient 已 deprecated in 0.100+） | 防 starlette 升级后 fixture 失效 |
+| pytest × sqlalchemy | 用 pytest-sqlalchemy 或 scoped_session fixture | 防 session 跨测试污染事务 |
 
 ## §6 版本陷阱速查
 | 版本 | 变化 | 影响 |

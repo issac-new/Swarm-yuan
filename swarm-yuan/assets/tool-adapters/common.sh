@@ -145,7 +145,7 @@ ta_build_body() {  # $1=skill_dir（绝对路径）→ stdout 规则正文（mar
 ## ${TA_SKILL_NAME}（swarm-yuan 生成技能）
 
 - 用途：${TA_SKILL_DESC}
-- 技能本体：$1/SKILL.md（八节点工作流 + references/ 项目知识库）
+- 技能本体：$1/SKILL.md（九节点工作流 + references/ 项目知识库）
 - 质量门禁：bash "$1/scripts/precheck.sh" --all（门禁配置：$1/scripts/precheck.conf）
 - 激活框架门禁：${TA_FRAMEWORKS:-未配置}
 - 流程状态机：bash "$1/scripts/state-machine.sh" status
