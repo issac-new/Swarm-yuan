@@ -442,6 +442,7 @@ inject_frameworks() {
   # 逐框架生成节，规律行数=该框架规则文件声明的"深度门槛"（机械节点只出骨架，实例化是 AI 审的活）。
   local fk="$skill_dir/references/framework-knowledge.md"
   if [[ ! -f "$fk" && ${#ACTIVE_FRAMEWORKS[@]} -gt 0 ]]; then
+    mkdir -p "$(dirname "$fk")" 2>/dev/null || true
     {
       echo "# 框架知识库（--inject-frameworks 生成骨架；AI 按 references/frameworks/<fw>.md §3 实例化）"
       echo ""
@@ -456,8 +457,7 @@ inject_frameworks() {
           echo "- 规律 ${_i}：待填充（证据：待填充）"
         done
       done
-    } > "$fk"
-    echo "✓ framework-knowledge.md 骨架已生成（${#ACTIVE_FRAMEWORKS[@]} 框架；待 AI 实例化）"
+    } > "$fk"       && echo "✓ framework-knowledge.md 骨架已生成（${#ACTIVE_FRAMEWORKS[@]} 框架；待 AI 实例化）"       || echo "⚠ framework-knowledge.md 骨架写入失败（references/ 不可写；不阻塞注入）" >&2
   fi
 
   # 5) 记录区块哈希 + 效果 ledger（更新而非追加；首次注入则新建 ver）
