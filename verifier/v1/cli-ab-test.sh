@@ -47,6 +47,15 @@ fi
 
 # flag 清单：运行时自 B 版 GATE_FLAGS 注册表解析（门禁扩缩容随注册表自动跟随）
 FLAGS=$(sed -n 's/^GATE_FLAGS=(\([^)]*\)).*/\1/p' "$PRECHECK_B")
+# field-feedback 2026-08-26：新门禁 flag（A 版 HEAD 不认识的）豁免 A/B 逐字节对比——
+# A 版对新 flag 必报 usage（stdout 含 usage 全文），与 B 版真实执行必然 DIFF，属"功能新增"
+# 而非回归。判别：A 版 GATE_FLAGS 注册表不含该 flag 即豁免。新门禁的回归保护由
+# fixtures/gate-fixtures（violating/compliant 双态断言）承担，不在 A/B 对比面。
+FLAGS_A=$(sed -n 's/^GATE_FLAGS=(\([^)]*\)).*/\1/p' "$WORK/precheck-A.sh" 2>/dev/null || true)
+# 既有 flag 的刻意输出增强豁免清单（field-feedback：check_reuse 补 AI 自查段 → --reuse 输出多 7 行）。
+# 登记于 facts.conf FACT_CLI_AB_ENHANCED_GATES（逗号分隔 flag 名，含 -- 前缀）；空=无豁免。
+# 与"新 flag 豁免"并列：新 flag 豁免管"门禁从无到有"，本清单管"既有门禁输出被刻意增强"。
+_ENHANCED=$(grep -m1 '^FACT_CLI_AB_ENHANCED_GATES=' "$SY/assets/facts.conf" 2>/dev/null | sed 's/^FACT_CLI_AB_ENHANCED_GATES=//;s/^"//;s/"$//' | tr ',' ' ' || true)
 [ -n "$FLAGS" ] || { echo "CLI_AB FAIL: 无法从 B 版解析 GATE_FLAGS 注册表"; exit 1; }
 
 # 语料 conf（运行时生成；__REPO_ROOT__ 语义=语料目录，机器无关）
@@ -128,15 +137,37 @@ run_pair() { # $1=用例标签 $2=profile $3=arg(可空)
 
 # ① 全 flag × 双语料 A/B 逐字节等价
 for flag in $FLAGS; do
+  case " $FLAGS_A " in
+    *" $flag "*) : ;;  # A 版认识 → 继续往下判增强豁免
+    *) echo "CLI_AB $flag@* SKIP（A 版 HEAD 无此 flag，新门禁豁免 A/B 对比；回归保护走 fixtures）"; continue ;;
+  esac
+  case " $_ENHANCED " in
+    *" $flag "*) echo "CLI_AB $flag@* SKIP（FACT_CLI_AB_ENHANCED_GATES 在册：输出刻意增强，A/B 豁免）"; continue ;;
+  esac
   run_pair "$flag@compliant" comp "$flag"
   run_pair "$flag@violating" viol "$flag"
 done
 
 # ② 固定用例：无参数（默认 --all）/ --all-full / 未知 flag
-for prof in comp viol; do
-  run_pair "(no-args=--all)@$prof" "$prof" ""
-  run_pair "--all-full@$prof" "$prof" "--all-full"
+# field-feedback 2026-08-26：序列成员新增（--all-full 序列 +check_method_size）时 A/B 必 DIFF——
+# A 版（HEAD）序列无新门禁，B 版多一段输出与汇总计数。判别：B 版 GATE_FLAGS 含而 A 版不含新 flag
+# → 序列用例豁免 A/B 对比（新门禁回归保护走 fixtures；序列基线由下方断言③守 core10 段头）。
+_seq_new=0
+for flag in $FLAGS; do
+  case " $FLAGS_A " in *" $flag "*) ;; *) _seq_new=1;; esac
 done
+# 序列内任一在册 flag 有输出增强时，--all/--all-full 同样豁免（汇总计数/段输出会变）
+for _eg in $_ENHANCED; do
+  case " $FLAGS " in *" $_eg "*) _seq_new=1;; esac
+done
+if [[ "$_seq_new" -eq 0 ]]; then
+  for prof in comp viol; do
+    run_pair "(no-args=--all)@$prof" "$prof" ""
+    run_pair "--all-full@$prof" "$prof" "--all-full"
+  done
+else
+  echo "CLI_AB (--all/--all-full)@* SKIP（序列含 A 版无的新门禁 flag，A/B 对比豁免）"
+fi
 run_pair "--bogus-flag@compliant" comp "--bogus-flag"
 
 # ③ --all 核心 10 序列基线断言（B 版，compliant 语料）

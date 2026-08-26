@@ -145,7 +145,7 @@ bash scripts/audit-closure.sh <项目根> --strict   # 有 open goal → exit 2
 
 ## 质量基线（facts.conf 真值，不手抄）
 
-- 门禁：四族全部有真实触发路径（可达率 54/54，`FACT_GATES_TOTAL` 机器对账）
+- 门禁：四族全部有真实触发路径（可达率 55/55，`FACT_GATES_TOTAL` 机器对账）
 - 配置：物理变量保留（兼容既有生成物）；user 面必配 ≈ 20 项（开关/路径/预算，`FACT_CONF_VARS_USERFACE`）
 - references：全部带"何时读我"路由头（孤儿资产 = 0，self-check G18 断言）
 - 生成物税：SKILL.md ≤8KB / 认知面 references 拷贝 ≤256KB（断言过）

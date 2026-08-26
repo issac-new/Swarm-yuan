@@ -217,14 +217,9 @@ EOF
   fi
 fi
 
-# draft 期自动关闭（骨架期门禁红是常态）——静默面=白名单/flag 捕获面；
-# 不含 rules.d 无条件面：forbid 是无条件的（A6 既定意图），骨架期 rm -rf/sudo 照样硬拦。
-if [[ -f "$ROOT/SKILL.md" ]] && grep -q '^status: draft' "$ROOT/SKILL.md" 2>/dev/null; then
-  exit 0
-fi
-
-# 白名单空（默认）= 完全关闭，不读 flag、不输出任何东西
-[[ -z "$DENY_LIST" ]] && exit 0
+# 白名单空（默认）= flag 捕获面关闭——但不挡 spec-first 无条件面（field-feedback：
+# SPEC_REQUIRED 与 rules.d 同级，不依赖 GATE_ENFORCE_DENY 开关）。DENY_LIST 空的判定下沉到
+# PreToolUse flag 分支内。
 
 # ===== PostToolUse Bash：precheck 退出码 → flag 记/清 =====
 if [[ "$EVENT" == "PostToolUse" && "$TOOL" == "Bash" ]]; then
@@ -256,6 +251,51 @@ fi
 if [[ "$EVENT" == "PreToolUse" ]]; then
   case "$TOOL" in
     Write|Edit|MultiEdit)
+      # draft 期自动关闭（骨架期门禁红是常态）——静默面=白名单/flag 捕获面 + spec 前置门；
+      # 不含 rules.d 无条件面：forbid 是无条件的（A6 既定意图），骨架期 rm -rf/sudo 照样硬拦。
+      # 位置：必须在 spec-first 之前——draft 骨架期无 spec 是常态，spec 门若先判会把骨架期
+      # 全部写操作 deny 死锁（field-feedback 修复期实证：顺序反了 draft 态写 src/ 被误拦）。
+      if [[ -f "$ROOT/SKILL.md" ]] && grep -q '^status: draft' "$ROOT/SKILL.md" 2>/dev/null; then
+        exit 0
+      fi
+      # field-feedback 2026-08-26（SPEC_REQUIRED 流程前置门，无条件面）：
+      # 写源码区（WRITABLE_DIRS 内）但当前无已批准 spec → deny。spec 缺失跳流程是
+      # "流程性约束缺失"反馈的根因——workflow.md 是文档自觉，这里是机器强制。
+      # draft 骨架期放行（骨架期无 spec 是常态）；conf 缺失/WRITABLE_DIRS 未配 → 放行（不阻碍诊断）。
+      _spec_req=""
+      [[ -f "$CONF" ]] && _spec_req=$(grep -m1 '^SPEC_REQUIRED=' "$CONF" 2>/dev/null | sed 's/^SPEC_REQUIRED=//;s/^"//;s/"$//' | tr -d '[:space:]' || printf '')
+      if [[ "$_spec_req" == "1" ]]; then
+        _in_src=0
+        _wd=""
+        [[ -f "$CONF" ]] && _wd=$(grep -m1 '^WRITABLE_DIRS=' "$CONF" 2>/dev/null | sed 's/^WRITABLE_DIRS=(//;s/)$//;s/"//g' || printf '')
+        _norm_p=$(printf '%s' "$FILE_PATH" | tr '\\' '/')
+        for _d in $_wd; do
+          case "$_norm_p" in *"/${_d}/"*|"${PROJECT_DIR:-}/${_d}/"*) _in_src=1; break;; esac
+        done
+        if [[ "$_in_src" -eq 1 ]]; then
+          _spec_glob=""
+          [[ -f "$CONF" ]] && _spec_glob=$(grep -m1 '^SPEC_GLOB=' "$CONF" 2>/dev/null | sed 's/^SPEC_GLOB=//;s/^"//;s/"$//' || printf '')
+          _spec_glob="${_spec_glob:-docs/specs/*.md}"
+          _spec_found=""
+          for _sf in "${ROOT}"/${_spec_glob}; do
+            [[ -f "$_sf" ]] || continue
+            # 已批准判定：含「## 决策记录」段且非全占位符
+            if grep -q '^## .*决策记录' "$_sf" 2>/dev/null && ! grep -qE '待填充|<占位符>' "$_sf" 2>/dev/null; then
+              _spec_found="$_sf"; break
+            fi
+          done
+          if [[ -z "$_spec_found" ]]; then
+            _audit_log "fail-gate-hook:edit" "$TOOL" "$FILE_PATH" "deny" "spec-required" "spec-first"
+            _deny_log "$TOOL" "$FILE_PATH" "spec-required"
+            cat << EOF
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"swarm-yuan spec-first: 写源码区 ${_norm_p} 但无已批准 spec（${_spec_glob} 无含「## 决策记录」段的非占位文件）——流程强制：先 spec（需求/决策/约束/测试/回滚）再编码。","additionalContext":"swarm-yuan spec-first: DENY — 流程前置门生效（SPEC_REQUIRED=1）。解除方式：1) 用 /spec 命令生成本任务 spec 并填入决策记录；2) 若是排版/测试/文档改动不在 WRITABLE_DIRS 内则不拦；3) 关闭：conf 置 SPEC_REQUIRED=0（UserChallenge 类决策，须落痕）。deny 已落盘 gate-audit.jsonl。"}}
+EOF
+            exit 0
+          fi
+        fi
+      fi
+      # 白名单空 = flag 捕获面关闭（spec-first 已在上方判定，不受影响）
+      [[ -z "$DENY_LIST" ]] && exit 0
       # flag 不存在 → 放行（休眠态不写审计：总体=门禁红期间的决策点）
       [[ ! -f "$FLAG" ]] && exit 0
       # 文件目标豁免：修 .swarm-yuan/ conf 或 precheck.sh 本身不拦（修配置通道）
@@ -275,6 +315,10 @@ if [[ "$EVENT" == "PreToolUse" ]]; then
 EOF
       ;;
     Bash)
+      # draft 期自动关闭（骨架期门禁红是常态）——Bash 捕获面静默（rules.d 无条件面已在上方前置）；
+      if [[ -f "$ROOT/SKILL.md" ]] && grep -q '^status: draft' "$ROOT/SKILL.md" 2>/dev/null; then
+        exit 0
+      fi
       # WP-Enforce2：Bash 拦截需独立开关 GATE_ENFORCE_DENY_BASH（默认空=不拦，避免误伤）
       # 白名单：git push/commit/merge/release/deploy/install/publish；不拦只读（status/log/diff/ls/cat/grep）与测试命令（npm test/build/lint）——fail 后需要重跑诊断。
       _bash_deny=""
