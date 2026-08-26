@@ -1744,6 +1744,13 @@ check_review() {
 
   # ── 第二段：独立审查留痕核验（⑦独立审查节点硬性交付门，P0-4 九节点硬拆）──
   # 生成物目录须存在 references/review-record.md 且非空（含 5 维审查点 + findings 表），否则 fail。
+  # 开关守卫（对齐 WP-S2 check_review_record 惯例）：REVIEW_RECORD_REQUIRED 未配置（默认 0）时
+  # 降级 warn 明示、不 fail——CI 自举/工具仓库无生成物产物是常态，fail-closed 会让
+  # precheck --all 在无 SKILL_DIR 上下文的环境恒红（2026-08-26 CI 复盘：gate-fixture review/summary 红）。
+  # =1 时本段为 ⑦ 节点硬门（目标技能 active 态建议在 conf 里配置）。
+  if [[ "${REVIEW_RECORD_REQUIRED:-0}" != "1" ]]; then
+    warn "独立审查留痕核验未启用（REVIEW_RECORD_REQUIRED 未配置=warn 不 fail；=1 后核验 references/review-record.md 五维点+findings+零TBD）"
+  else
   # 重置 found：第一段的结果已在上方各自 pass/warn/fail 落账，本段独立判定。
   found=0
   local _rr="${REVIEW_RECORD_FILE:-references/review-record.md}"
@@ -1779,6 +1786,7 @@ check_review() {
     fi
   fi
   [[ $found -eq 0 ]] && pass "独立审查留痕核验通过（${_rr_path} 存在且含 5 维审查点 + findings 表，零待定项）"
+  fi
 }
 
 check_release_sign() {
