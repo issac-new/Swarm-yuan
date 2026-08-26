@@ -658,7 +658,8 @@ check_impact() {
   fi
 
   # ---- 3. 变更影响分析：优先用 gitnexus impact/detect_changes，降级 grep ----
-  if has_gitnexus && gitnexus_indexed; then
+  # P0-5：消费前确保已构建（gitnexus_ensure_indexed/graphify_ensure_built），未构建则触发构建提示/降级
+  if has_gitnexus && gitnexus_ensure_indexed; then
     # gitnexus detect_changes: git diff → 受影响进程（最准确）
     trace_tool "gitnexus" "detect_changes"
     local gn_impact; gn_impact=$(gitnexus detect_changes 2>/dev/null | head -30 || true)
@@ -670,7 +671,7 @@ check_impact() {
       echo "  gitnexus detect_changes 输出（前 10 行）："
       echo "$gn_impact" | head -10 | sed 's/^/    /'
     fi
-  elif has_graphify && graphify_built; then
+  elif has_graphify && graphify_ensure_built; then
     # WP-X: graphify God Nodes 变更影响检测（R6 P1：God Nodes 是变更风险放大器）
     # C4 修复：graphify v0.9.22+ 的 god-nodes 是顶层子命令（graphify god-nodes），非 graphify explain god-nodes。
     trace_tool "graphify" "god-nodes"

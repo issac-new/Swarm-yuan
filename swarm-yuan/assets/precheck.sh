@@ -1296,6 +1296,63 @@ gitnexus_indexed() {
 # graphify 已构建图谱？（检查 graphify-out/graph.json）
 graphify_built() { [[ -f "$PROJECT_DIR/graphify-out/graph.json" ]]; }
 
+# ===== P0-5：4 深度接线全量触发——构建触发助手（消费前确保已构建）=====
+# 策略：构建是重型操作（分钟级），门禁不自动跑构建。采用「检测未构建 → 提示用户构建」fail-closed 或 opt-in 构建。
+# 消费门禁（check_impact/check_layer/check_link_depth）在 has_* + indexed/built 双守卫后调用：
+#   - 已构建 → 消费（detect_changes/query/god-nodes 等真实调用）
+#   - 未构建 → 若 BUILD_DEEP_RUNTIMES=1 则触发构建（分钟级，opt-in）；否则 warn 提示用户构建并降级到 grep/awk 静态分析
+# 构建命令（真实子进程）：
+#   gitnexus analyze <path>（构建索引，full analysis）
+#   graphify update <path>（构建图谱，re-extract code files）
+#   claude-mem add <content>（真实写入记忆；原仅 search 触发 observation 捕获）
+#   ocr scan --path <dirs>（全文件扫描；已用，无需新增）
+
+# gitnexus 构建触发（opt-in：BUILD_DEEP_RUNTIMES=1 才真实跑 analyze，分钟级）
+# 返回：0=已索引（无需构建或构建成功）；1=未索引（降级静态分析）
+gitnexus_ensure_indexed() {
+  if gitnexus_indexed; then
+    return 0
+  fi
+  if ! has_gitnexus; then
+    return 1
+  fi
+  # 未索引：opt-in 构建 或 warn 提示
+  if [[ "${BUILD_DEEP_RUNTIMES:-0}" == "1" ]]; then
+    trace_tool "gitnexus" "analyze ${PROJECT_DIR:-.}"
+    echo "  [gitnexus] 触发索引构建（gitnexus analyze，分钟级，opt-in BUILD_DEEP_RUNTIMES=1）..." >&2
+    if gitnexus analyze "${PROJECT_DIR:-.}" 2>/dev/null | tail -5; then
+      gitnexus_indexed && return 0
+    fi
+    warn "gitnexus analyze 执行后仍未索引成功——降级到 grep/awk 静态分析"
+    return 1
+  fi
+  warn "gitnexus 已装但未索引（${PROJECT_DIR:-.} 无 .gitnexus/）——消费门禁降级到 grep/awk 静态分析；构建索引：gitnexus analyze <path> 或 BUILD_DEEP_RUNTIMES=1 自动构建"
+  return 1
+}
+
+# graphify 构建触发（opt-in：BUILD_DEEP_RUNTIMES=1 才真实跑 update，分钟级）
+# 返回：0=已构建（无需构建或构建成功）；1=未构建（降级静态分析）
+graphify_ensure_built() {
+  if graphify_built; then
+    return 0
+  fi
+  if ! has_graphify; then
+    return 1
+  fi
+  # 未构建：opt-in 构建 或 warn 提示
+  if [[ "${BUILD_DEEP_RUNTIMES:-0}" == "1" ]]; then
+    trace_tool "graphify" "update ${PROJECT_DIR:-.}"
+    echo "  [graphify] 触发图谱构建（graphify update，分钟级，opt-in BUILD_DEEP_RUNTIMES=1）..." >&2
+    if graphify update "${PROJECT_DIR:-.}" 2>/dev/null | tail -5; then
+      graphify_built && return 0
+    fi
+    warn "graphify update 执行后仍未构建成功——降级到 grep/awk 静态分析"
+    return 1
+  fi
+  warn "graphify 已装但未构建图谱（${PROJECT_DIR:-.} 无 graphify-out/graph.json）——消费门禁降级到 grep/awk 静态分析；构建图谱：graphify update <path> 或 BUILD_DEEP_RUNTIMES=1 自动构建"
+  return 1
+}
+
 # ===== DDD / 分层 / 拼装门禁（--layer / --stable-diff / --link-depth）=====
 # 防范：层级穿透 / 依赖倒置 / 循环依赖 / 领域层污染框架 / 稳定单元被篡改 / 调用链膨胀
 

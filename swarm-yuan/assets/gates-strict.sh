@@ -45,7 +45,8 @@ check_layer() {
   fi
 
   # ---- 0. 优先用 gitnexus query 查跨层依赖（最准确）----
-  if has_gitnexus && gitnexus_indexed; then
+  # P0-5：消费前确保已构建（gitnexus_ensure_indexed），未构建则触发构建提示/降级
+  if has_gitnexus && gitnexus_ensure_indexed; then
     trace_tool "gitnexus" "query cross-layer imports"
     local gn_layer_issues; gn_layer_issues=$(gitnexus query "cross-layer imports" --format text 2>/dev/null | head -20 || true)
     if [[ -n "$gn_layer_issues" ]]; then
