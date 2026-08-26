@@ -114,3 +114,24 @@
 5. 3GPP 规范门户（TS 33.501《Security architecture and procedures for 5G System》检索入口，条款号待原文核实）：https://www.3gpp.org/dynareport/33-series.htm
 6. NIST SP 800-218（SSDF v1.1，PS.2 发布完整性）：https://csrc.nist.gov/pubs/sp/800/218/final
 7. ISO/IEC/IEEE 29148（需求工程标准页）：https://www.iso.org/standard/72089.html
+
+## 6. 典型技术栈 → 框架映射表（P1-8）
+
+> 行业典型技术栈常激活的框架门禁（与 `assets/industry-profiles/telecom.conf` 的 `ACTIVE_FRAMEWORKS_HINT` 对齐；
+> 非强制启用——实际以探查信号为准，详见对应 `references/frameworks/<id>.md`）。
+
+| 典型技术栈 | 激活框架门禁 |
+|-----------|-------------|
+| Spring Boot | `spring-boot` |
+| Spring Cloud | `spring-cloud` |
+| Spring Security | `spring-security` |
+| MyBatis | `mybatis` |
+| Redis 缓存 | `redis` |
+| Kafka 信令/消息 | `kafka` |
+| RocketMQ 异步 | `rocketmq` |
+| RabbitMQ 内部消息 | `rabbitmq` |
+| Nacos 配置/注册 | `nacos` |
+| Sentinel 限流 | `sentinel` |
+| Seata 事务 | `seata` |
+| Dubbo 电信 RPC | `dubbo` |
+

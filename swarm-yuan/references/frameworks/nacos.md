@@ -236,9 +236,11 @@ fixture 验证覆盖：violating 含配置明文密码 + 无命名空间隔离 �
 | 交互对 | 规则 | 理由 |
 |-------|------|------|
 | nacos × sentinel | Sentinel 规则持久化用 sentinel-datasource-nacos，namespace/group 须与业务配置分开 | 规则与业务配置混 group 易误删 |
-| nacos × spring-cloud | Spring Cloud Alibaba 体系：bootstrap/import 引入 nacos config；@Value 须 @RefreshScope | Boot 2.4+ 用 spring.config.import=nacos: |
+| nacos × spring-cloud | Spring Cloud Alibaba 体系：bootstrap/import 引入 nacos config；@Value 须 @RefreshScope；配置中心敏感 key 值须 {cipher} 前缀 | Boot 2.4+ 用 spring.config.import=nacos:；明文入 Nacos 致敏感配置泄露（见 P1-2 编排加严：Nacos 未加密 → Spring Cloud 须 cipher） |
 | nacos × dubbo | Dubbo 注册中心用 nacos 时 namespace 与 group 须与 RPC 治理对齐 | 跨 namespace 服务不可见导致调用失败 |
 | nacos × spring-boot | spring.profiles.active 决定 dataId 解析，环境注入须与部署平台一致 | 硬编码 profile 导致跨环境读错配置 |
+| nacos × redis | 配置推送/监听可用 Redis 作二级缓存，须配连接池与密码且 key 带 TTL | 无密码 Redis 被读致配置泄露，无 TTL 致陈旧配置滞留 |
+| nacos × seata | Seata 注册中心/配置中心可共用 nacos，namespace/group 须与业务配置分开 | 混 group 易误删事务配置触发全局回滚失败 |
 
 <!--
 本表聚焦 nacos 生态内高频组合。

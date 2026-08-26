@@ -379,6 +379,18 @@ while [[ $# -gt 0 ]]; do
       MODE="--framework"
       if [[ $# -ge 2 && "$2" != --* ]]; then FRAMEWORK_ID="$2"; shift 2; else shift; fi
       ;;
+    --framework-orchestration)
+      # P1-2：框架编排旁路子模式（默认不启用，对齐 strict-skip 模式）。
+      # 语义：框架 A 触发某门禁 → 框架 B 相关门禁加严（如 druid 检出 wall 缺失 → mybatis ${} 注入门禁从 warn 升 fail）。
+      # 仅新增旁路，不改动既有 check_framework 调度逻辑：先跑 check_framework 捕获输出，再交由 _framework_orchestrate 分析。
+      MODE="--framework-orchestration"
+      shift
+      ;;
+    --governance-topology)
+      # P1-7：打印治理 Agent 四权分离拓扑映射（仅打印，不改动门禁逻辑）。
+      MODE="--governance-topology"
+      shift
+      ;;
     --list-gates)
       # WP-Q1.5：列出所有门禁的 flag / 函数名 / enforce_level 三列表
       MODE="--list-gates"
@@ -1000,7 +1012,7 @@ fi
 # 未知 MODE 拦截（须在 cd 前）：meta 命令已 exit，能到此处的是门禁模式。
 # 聚合模式 + GATE_FLAGS 覆盖所有合法 MODE；其余报「未知操作」+ 用法，不走到 cd 误导。
 case "$MODE" in
-  --all|--all-full|--compliance-suite|--fix-suggest|--framework) ;;
+  --all|--all-full|--compliance-suite|--fix-suggest|--framework|--framework-orchestration|--governance-topology) ;;
   *)
     _is_gate=0
     for _gf in "${GATE_FLAGS[@]}"; do [[ "$MODE" == "$_gf" ]] && { _is_gate=1; break; }; done
@@ -1012,17 +1024,24 @@ case "$MODE" in
     ;;
 esac
 
-cd "$PROJECT_DIR" 2>/dev/null || {
-  # cd 失败：PROJECT_DIR 未配置 / 占位符（生成器自身 assets/precheck.conf 模板含
-  # <项目根绝对路径>）/ 路径不存在。meta 命令（--list-gates/--doctor 等）已在上方
-  # exit，能到此处的都是门禁模式——给明确错误，不报原始 cd 语义错误（误导排障）。
-  case "$PROJECT_DIR" in
-    \<*\>|'') echo "✗ PROJECT_DIR 未配置或为占位符（当前: '${PROJECT_DIR}'）" >&2 ;;
-    *) echo "✗ PROJECT_DIR 不存在: $PROJECT_DIR" >&2 ;;
-  esac
-  echo "  请在 precheck.conf 填写真实项目根绝对路径，或运行 bash generate-skill.sh 生成项目技能" >&2
-  exit 2
-}
+case "$MODE" in
+  --governance-topology|--framework-orchestration)
+    # P1-2/P1-7：meta 模式不依赖 PROJECT_DIR，跳过 cd 直接走下方 MODE 分支（函数已定义）。
+    ;;
+  *)
+    cd "$PROJECT_DIR" 2>/dev/null || {
+      # cd 失败：PROJECT_DIR 未配置 / 占位符（生成器自身 assets/precheck.conf 模板含
+      # <项目根绝对路径>）/ 路径不存在。meta 命令（--list-gates/--doctor 等）已在上方
+      # exit，能到此处的都是门禁模式——给明确错误，不报原始 cd 语义错误（误导排障）。
+      case "$PROJECT_DIR" in
+        \<*\>|'') echo "✗ PROJECT_DIR 未配置或为占位符（当前: '${PROJECT_DIR}'）" >&2 ;;
+        *) echo "✗ PROJECT_DIR 不存在: $PROJECT_DIR" >&2 ;;
+      esac
+      echo "  请在 precheck.conf 填写真实项目根绝对路径，或运行 bash generate-skill.sh 生成项目技能" >&2
+      exit 2
+    }
+    ;;
+esac
 
 # ===== 门禁工具化运行时（P1-4/P1-5）：--format json + gate-runs 证据落盘 =====
 # 铁律约束：FORMAT=text 且 GATE_RUNS_DIR 为空时 _gate_exec 走原始分发路径
@@ -1370,6 +1389,18 @@ graphify_built() { [[ -f "$PROJECT_DIR/graphify-out/graph.json" ]]; }
 # >>> swarm-yuan:framework-gates >>> （由 generate-skill.sh --inject-frameworks 维护，勿手改）
 # <<< swarm-yuan:framework-gates <<<
 
+# ===== P1-7 治理 Agent 四权分离拓扑（governance-agents.md 四权）=====
+# 四权：决策（policy-guardian / 立法）/ 执行（action-executor / 执法）/
+#       审计（self-reviewer / 司法）/ 仲裁（verifier / 终验）。
+# 门禁运行与验收必须跨权：action-executor 只产出 candidate_pass，
+# 最终 verifier_status 由 external harness/hook/human 定，防「自己改自己验收」。
+# 拓扑映射（详见 references/governance-agents.md）：
+#   决策权 → policy-guardian    ：定义门禁阈值 / enforce_level / 放行策略
+#   执行权 → action-executor    ：跑 generate-skill 12 步 / 改代码 / 跑门禁
+#   审计权 → self-reviewer      ：只读复核执行结果 / 边界 / 失败路径 / 证据完整性
+#   仲裁权 → verifier           ：终验（外部 harness/hook/human），定 verifier_status
+# 可用 --governance-topology 打印此四权映射（仅打印，不改动门禁逻辑）。
+
 # 将 *_FILE_GLOBS（含 ** 递归通配）解析为实际文件列表（兼容 bash 3.2 无 globstar）。
 # 每个 glob 形如 "overlay/custom/client/**/*.vue" → find overlay/custom/client -name '*.vue'
 # 输出：以空格分隔的文件路径串（供 unquoted 展开给 grep 作 path 参数）。
@@ -1480,6 +1511,48 @@ $3"
   fi
 }
 
+# ===== P1-2 框架编排旁路（--framework-orchestration）：默认不启用，仅作观测/建议 =====
+# 设计：框架 A 触发某门禁 → 框架 B 相关门禁加严（见 ORCH_RULES 表）。
+# 该旁路不改动既有 check_framework 调度逻辑，仅在本模式下复用其检测输出，
+# 对触发-加严关系做二次声明（fail 级须 AI 亲自验证修复；warn 级评估后采纳）。
+# 加严仅为输出建议（echo），不修改任何门禁 enforce_level、不产生新 fail/warn 计数。
+# ===== P1-7 治理 Agent 四权分离拓扑打印（仅打印，不改动门禁逻辑）=====
+_print_governance_topology() {
+  echo "▶ 治理 Agent 四权分离拓扑（governance-agents.md）"
+  echo "  ① 决策权 (policy-guardian / 立法)：定义门禁阈值 / enforce_level / 放行策略"
+  echo "  ② 执行权 (action-executor / 执法)：跑 generate-skill 12 步 / 改代码 / 跑门禁，仅产出 candidate_pass"
+  echo "  ③ 审计权 (self-reviewer / 司法)：只读复核执行结果 / 边界 / 失败路径 / 证据完整性"
+  echo "  ④ 仲裁权 (verifier / 终验)：外部 harness/hook/human 定 verifier_status，防「自己改自己验收」"
+  echo "  跨权硬约束：action-executor 不得自判 verifier_status；仲裁权须独立于执行权。"
+}
+
+_framework_orchestrate() {
+  # 规则表：trigger_fw|trigger_gate|target_fw|target_gate|target_upgrade(warn->fail)|reason
+  local _rules=(
+    "druid|fw_druid_wall_filter|mybatis|fw_mybatis_dollar|warn->fail|Druid wall 未启用时 MyBatis \${} 注入无 JDBC 层缓解，注入门禁须升 fail"
+    "nacos|fw_nacos_config_encrypt|spring-cloud|fw_scloud_config_encrypt|warn->fail|Nacos 配置未加密时 Spring Cloud 配置中心敏感 key 须强制 cipher 前缀"
+    "sentinel|fw_sentinel_rule_persist|spring-cloud|fw_scloud_config_failfast|warn->fail|Sentinel 规则未持久化时 Spring Cloud 配置须 fail-fast 防启动即错配"
+    "kafka|fw_kafka_acks|celery|fw_celery_serializer_pickle|warn->fail|Kafka acks 确认可丢失时 Celery 序列化须禁用 pickle（防 RCE 叠加持久性风险）"
+    "redis|fw_redis_no_expire|celery|fw_celery_time_limit|warn->fail|Redis 键无过期致缓存膨胀时 Celery 任务须显式 time_limit 防堆积"
+  )
+  echo "▶ 框架编排旁路（--framework-orchestration，仅建议不阻断）"
+  local _out="$1" _r _trig_fw _trig_gate _tgt_fw _tgt_gate _upg _why _hit
+  for _r in "${_rules[@]}"; do
+    _trig_fw="${_r%%|*}"; _r="${_r#*|}"
+    _trig_gate="${_r%%|*}"; _r="${_r#*|}"
+    _tgt_fw="${_r%%|*}"; _r="${_r#*|}"
+    _tgt_gate="${_r%%|*}"; _r="${_r#*|}"
+    _upg="${_r%%|*}"; _why="${_r#*|}"
+    # 仅当触发门禁在输出中命中（advisory/fail/warn 任一发现行）时声明加严
+    if printf '%s\n' "$_out" | grep -qF "$_trig_gate"; then
+      _hit=1
+      echo "  ⚠ orchestration: 命中触发 [$_trig_fw] $_trig_gate → [$_tgt_fw] $_tgt_gate 建议加严($_upg)"
+      echo "      理由：$_why"
+    fi
+  done
+  [[ -z "${_hit:-}" ]] && echo "  ✓ 未命中任何编排触发条件（无加严建议）"
+}
+
 # ===== shellcheck 静态锚点（运行时恒假，零副作用）=====
 # 门禁经数组循环动态分发（"$_gate" / "$_gate_fn"），静态分析无法追踪间接调用，
 # 会使全部门禁函数体被误报不可达（SC2317 级联）。此处静态引用全部门禁函数，
@@ -1524,6 +1597,8 @@ case "$MODE" in
     fi
     exit 0
     ;;
+
+
   --*)
     # 单门禁分发：精确匹配 GATE_FLAGS 后按映射规则得函数名（如 --stable-diff → check_stable_diff）
     # 别名：--mermaid → --diagram（向后兼容，check_mermaid 已升级为 check_diagram 多图表引擎）

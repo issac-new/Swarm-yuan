@@ -242,6 +242,9 @@ CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
 | rocketmq × seata | 事务消息与 Seata AT 不可混用同一业务写路径，须二选一或 TCC 编排 | 两套分布式事务协议叠加导致悬挂/双写不一致 |
 | rocketmq × mybatis | 消费幂等落库建议 DB 唯一键 + INSERT IGNORE / ON DUPLICATE KEY，Mapper 层须显式 | 仅 Redis 去重在 Redis 故障窗口失效，DB 唯一键兜底 |
 | rocketmq × xxl-job | DLQ 兜底重投建议 xxl-job 定时扫描 `%DLQ%<group>` 而非常驻线程 | 常驻线程与消费组 rebalance 互相干扰 |
+| rocketmq × redis | 用 Redis 作幂等/去重缓存须带 TTL 且与事务消息回查时序一致 | 无 TTL 致去重窗口膨胀，回查窗口错位丢幂等防护 |
+| rocketmq × celery | 与 celery 任务编排时 RocketMQ 事务消息与 celery 异步任务须解耦，避免事务消息阻塞 worker | 事务消息半消息超时回滚与 celery 任务状态机冲突致双写 |
+| rocketmq × seata | 事务消息与 Seata TCC 同写路径须显式二选一或 TCC 编排（见上 rocketmq × seata 行） | 协议叠加致悬挂/双写不一致 |
 
 <!--
 本表聚焦 rocketmq 生态内高频组合；无强交互的组合不列。

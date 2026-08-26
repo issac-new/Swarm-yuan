@@ -105,3 +105,23 @@
 5. NIST SP 800-218（SSDF v1.1，PS.2 发布完整性）：https://csrc.nist.gov/pubs/sp/800/218/final
 6. ISO/IEC/IEEE 29148（需求工程标准页）：https://www.iso.org/standard/72089.html
 7. ISO/IEC 42001:2023 人工智能管理体系（标准页，AI 过程信息项参照）：https://www.iso.org/standard/81230.html
+
+## 6. 典型技术栈 → 框架映射表（P1-8）
+
+> 行业典型技术栈常激活的框架门禁（与 `assets/industry-profiles/automotive.conf` 的 `ACTIVE_FRAMEWORKS_HINT` 对齐；
+> 非强制启用——实际以探查信号为准，详见对应 `references/frameworks/<id>.md`）。
+
+| 典型技术栈 | 激活框架门禁 |
+|-----------|-------------|
+| Spring Boot | `spring-boot` |
+| Spring Cloud | `spring-cloud` |
+| Spring Security | `spring-security` |
+| MyBatis | `mybatis` |
+| Redis 缓存 | `redis` |
+| Kafka 车云消息 | `kafka` |
+| Nacos 配置/注册 | `nacos` |
+| Sentinel 限流 | `sentinel` |
+| Seata 分布式事务 | `seata` |
+| Netty 车载通信 | `netty` |
+| Dubbo 车云 RPC | `dubbo` |
+

@@ -99,3 +99,23 @@
 2. 国家法律法规数据库（《网络安全法》《密码法》《商用密码管理条例》《个人信息保护法》《数据安全法》原文检索入口）：https://flk.npc.gov.cn/
 3. NIST SP 800-218（SSDF v1.1，PS.2 发布完整性）：https://csrc.nist.gov/pubs/sp/800/218/final
 4. ISO/IEC/IEEE 29148（需求工程标准页）：https://www.iso.org/standard/72089.html
+
+## 6. 典型技术栈 → 框架映射表（P1-8）
+
+> 行业典型技术栈常激活的框架门禁（与 `assets/industry-profiles/gov.conf` 的 `ACTIVE_FRAMEWORKS_HINT` 对齐；
+> 非强制启用——实际以探查信号为准，详见对应 `references/frameworks/<id>.md`）。
+
+| 典型技术栈 | 激活框架门禁 |
+|-----------|-------------|
+| Spring Boot | `spring-boot` |
+| Spring Cloud | `spring-cloud` |
+| Spring Security | `spring-security` |
+| MyBatis | `mybatis` |
+| Redis 缓存 | `redis` |
+| Kafka 政务消息 | `kafka` |
+| Nacos 配置/注册 | `nacos` |
+| Sentinel 限流 | `sentinel` |
+| Seata 事务 | `seata` |
+| XXL-JOB 定时任务 | `xxl-job` |
+| Quartz 调度 | `quartz` |
+

@@ -260,4 +260,11 @@ ${lazy_files}"
 "
   done
   _fw_report warn fw_react_no_forwardref "${fwd_hit}" "检出 forwardRef（React 19 起 ref 可作 prop 直传，新组件禁用 forwardRef 包裹；存量组件标注待迁移）" "未检出 forwardRef"
+
+### P1-4 AI 自查段（仅注释，不改动函数体）
+# 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
+#   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
+# 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。
+# 门禁 id 映射：本函数覆盖的 fw_<id> 与 references/frameworks/<id>.md §4 一一对应；
+#   沉睡门禁检查：声明 id 须全部被 pass/fail/warn 任一分支命中，否则为未唤醒死门禁。
 }

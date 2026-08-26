@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# strict 物理文件（18 个 check_* 函数；由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
+# strict 物理文件（19 个 check_* 函数；由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
 # 被 precheck.sh source（开发态/安装态同路径；install.sh 整目录拷贝含本文件）。
 # 注：物理函数数 18 ≠ enforce-level strict 16——物理位置与 enforce 分档正交，两者各自准确：
 #   本文件内 check_authz/privacy/requirements/rtm 的 enforce=warn（Z3 fail-closed 化后降档，
@@ -1813,3 +1813,112 @@ check_loop_oracle() {
   [[ $found -eq 0 ]] && pass "Oracle Gate 循环状态核验通过"
 }
 
+
+check_review() {
+  echo "=== 代码审查（check gstack/OCR 5 维度）==="
+  local found=0
+  local _review_executed=0  # WP-Alignment: 追踪是否真跑了审查（ocr 未装时 fallback 不假装完成）
+
+  if has_ocr; then
+    pass "ocr 已安装"
+    _review_executed=1
+    # 优先用 ocr review（diff 审查），有 git diff 时用 --from + --to
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      local base; base=$(_git_base)
+      local head_ref; head_ref=$(git rev-parse HEAD 2>/dev/null || echo "HEAD")
+      trace_tool "ocr" "review --from $base --to $head_ref"
+      local diff_output; diff_output=$(ocr review --from "$base" --to "$head_ref" --audience agent --format text 2>&1 || true)
+      if [[ -n "$diff_output" && "$diff_output" != *"Error"* ]]; then
+        echo "$diff_output" | tail -30
+        # 检查是否有 High 级问题
+        if echo "$diff_output" | grep -qiE 'high|critical|严重'; then
+          fail "ocr review 检测到 High/Critical 级问题（须修复）"
+          found=1
+        fi
+        # A 方向：pre-emit 引用门（gstack #1539 吸收，治 fail-open/误报）——
+        # finding 须逐字引用动机代码行（file:line），缺引用的 finding 降级 warn 压出主报告。
+        # "If you cannot quote the motivating line(s), the finding is unverified."
+        local _noref_cnt
+        _noref_cnt=$(echo "$diff_output" | grep -iE 'issue|finding|问题|风险|漏洞' \
+          | grep -vE '[a-zA-Z0-9_/.-]+\.[a-zA-Z]+:[0-9]+' | grep -c . || true)
+        if [[ "${_noref_cnt:-0}" -gt 0 ]]; then
+          warn "pre-emit 引用门：${_noref_cnt} 条 finding 未引用动机代码行（file:line），按 gstack #1539 降级（未验证 finding 不进主报告）"
+        fi
+        # A 方向：FP 硬排除清单（gstack cso 22 条硬排除吸收，治误报）——
+        # 已知误报类模式命中时降级提示（可配 FP_EXCLUSIONS，| 分隔的 ERE 模式）。
+        # 内置默认排除：文档文件误报（md/txt 不是可执行代码）、注释行、test/mock 样本。
+        local _fp_patterns="${FP_EXCLUSIONS:-README|\.md:|\.txt:|// |# |\* }"
+        local _fp_cnt
+        _fp_cnt=$(echo "$diff_output" | grep -iE 'issue|finding|问题|风险|漏洞' \
+          | grep -E "$_fp_patterns" | grep -c . || true)
+        if [[ "${_fp_cnt:-0}" -gt 0 ]]; then
+          warn "FP 硬排除：${_fp_cnt} 条 finding 命中已知误报类（文档/注释/样本），降级提示（可配 FP_EXCLUSIONS 扩展）"
+        fi
+      else
+        # --from/--to 失败时降级为 ocr scan
+        warn "ocr review --from/--to 失败（可能无 diff 或参数不支持），降级 ocr scan"
+        local scan_dirs=""; scan_dirs=$(printf '%s ' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}")
+        if [[ -n "$scan_dirs" ]]; then
+          trace_tool "ocr" "scan --path $scan_dirs"
+          ocr scan --path "$scan_dirs" --audience agent --format text 2>&1 | tail -30 || true
+        fi
+      fi
+    else
+      # 非 git 仓库：用 ocr scan
+      trace_tool "ocr" "scan"
+      ocr scan --audience agent --format text 2>&1 | tail -30 || warn "ocr scan 返回非零"
+    fi
+  else
+    warn "ocr 未安装，安装 ocr（npm i -g @alibaba-group/open-code-review）或由 AI 按 5 维度审查：正确性/安全/性能/可维护/测试覆盖"
+    echo "  两遍清单：CRITICAL（SQL/竞态/注入/越权/路径穿越）+ INFORMATIONAL（命名/注释/风格）"
+    echo "  严重度：High（必修）/ Medium（评估）/ Low（丢弃）"
+    # A 方向：pre-emit 引用门指引（gstack #1539）——AI 审查每条 finding 须引用动机代码行（file:line），
+    # 缺引用的 finding 视为未验证，压出主报告。置信度标定：high/medium/low，低置信压附录。
+    echo "  pre-emit 引用门（gstack #1539）：每条 finding 须引用动机代码行（file:line），缺引用=未验证压出主报告"
+    # A 方向：置信度标定 + FP 硬排除指引（gstack cso 吸收）——
+    # finding 带置信度（high/medium/low，低置信压附录）；已知误报类（文档/注释/样本）先排除。
+    echo "  置信度标定（gstack cso）：finding 带 high/medium/low 置信度，低置信压附录；FP 硬排除：文档/注释/test/mock 样本误报先过滤（可配 FP_EXCLUSIONS）"
+  fi
+
+  # 附加：如果装了 gstack，提示可用的扩展审查维度
+  if [[ -d "$HOME/.claude/skills/gstack" ]]; then
+    echo "  gstack 扩展审查可用：/cso（安全 OWASP+STRIDE）/ /investigate（根因调试）/ /codex（跨模型第二意见）/ /benchmark（性能）"
+  fi
+
+  # 附加：gsd-tools CLI 接线（WP1.3）：若装了 gsd-tools 且项目用了 gsd-core（有 .planning/ 或 .gsd/），
+  # 跑 `gsd-tools validate health` 检查项目一致性健康度。status!=healthy → warn（项目配置问题，非代码缺陷，不 fail）。
+  # 未装/项目未用 gsd-core 时降级（本函数上方 ocr/手动清单已覆盖代码审查）。
+  if has_gsd_tools; then
+    local gsd_root="${GSD_PROJECT_DIR:-$PROJECT_DIR}"
+    if [[ -n "$gsd_root" && ( -d "$gsd_root/.planning" || -d "$gsd_root/.gsd" ) ]]; then
+      trace_tool "gsd-tools" "validate health --cwd $gsd_root"
+      local gsd_health; gsd_health=$(gsd-tools validate health --cwd "$gsd_root" 2>/dev/null || true)
+      if [[ -n "$gsd_health" ]]; then
+        local gsd_status; gsd_status=$(echo "$gsd_health" | grep -oE '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"status"[[:space:]]*:[[:space:]]*"//;s/"$//')
+        if [[ "$gsd_status" == "healthy" ]]; then
+          pass "gsd-tools validate health: 项目一致性健康度通过"
+        else
+          warn "gsd-tools validate health: status=${gsd_status:-unknown}（项目 gsd-core 配置不一致，建议修复）"
+          echo "$gsd_health" | grep -oE '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | head -5 | sed 's/^/    /'
+        fi
+      fi
+    fi
+  fi
+
+  # field-feedback 2026-08-26（反馈 3 补强）：审查须留痕——AI 审查是逻辑错误的审查兜底，
+  # 但"看过了"没有证据等于没看。docs/reviews/ 下落一行审查记录（日期+范围+结论三要素，
+  # 与 check_review_record 合规门禁的要素口径一致），给审查留可回放证据。
+  local _rr_dir="${REVIEW_RECORD_DIR:-docs/reviews}"
+  local _rr_today="${PROJECT_DIR:-.}/${_rr_dir}/$(date -u +%Y-%m-%d).md"
+  if [[ -f "$_rr_today" ]]; then
+    pass "今日审查留痕存在（${_rr_today}）"
+  else
+    warn "审查未留痕（${_rr_dir}/$(date -u +%Y-%m-%d).md 不存在）——AI 审查后须落一行：日期/范围/结论三要素"
+  fi
+  # WP-Alignment: ocr 未装时走 AI fallback（found=0 但未真审查），不假装完成，诚实 warn。
+  if [[ $_review_executed -eq 1 ]]; then
+    [[ $found -eq 0 ]] && pass "代码审查检查完成（ocr 已执行，无 High/Critical 级问题）"
+  else
+    warn "代码审查未执行（ocr 未装；AI 须自行按 5 维度审查：正确性/安全/性能/可维护/测试覆盖，本门禁未验证）"
+  fi
+}

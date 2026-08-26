@@ -111,3 +111,24 @@
 - E10 第二类医疗器械独立软件技术审评规范（北京市药监局，引 2022-9 号/7 号指导原则、YY/T 0664-2020、GB/T 42062-2022、YY/T 1843-2022、GB/T 25000.51-2016）：https://yjj.beijing.gov.cn/yjj/ztzl48/ylqxjgfwzn/jsscgfzl64/yycp60/543474194/index.html
 - E11 电子病历系统应用水平分级评价管理办法及标准（国卫办医函〔2018〕1079 号，国家卫健委）：http://www.nhc.gov.cn/yzygj/s7659/201812/3cae6834a65d48e9bfd783f3c7d54745.shtml
 - E12 《2022 版医疗器械软件注册审查指导原则》解读培训（北京大学医学部）：https://chyb.bjmu.edu.cn/kczx/zxdt/2aa48b4df929436292017562a5bb9bb4.htm
+
+## 6. 典型技术栈 → 框架映射表（P1-8）
+
+> 行业典型技术栈常激活的框架门禁（与 `assets/industry-profiles/medical.conf` 的 `ACTIVE_FRAMEWORKS_HINT` 对齐；
+> 非强制启用——实际以探查信号为准，详见对应 `references/frameworks/<id>.md`）。
+
+| 典型技术栈 | 激活框架门禁 |
+|-----------|-------------|
+| Spring Boot | `spring-boot` |
+| Spring Cloud | `spring-cloud` |
+| Spring Security | `spring-security` |
+| MyBatis | `mybatis` |
+| Redis 缓存 | `redis` |
+| Kafka 医疗消息 | `kafka` |
+| Nacos 配置 | `nacos` |
+| Sentinel 限流 | `sentinel` |
+| Seata 事务 | `seata` |
+| PostgreSQL | `postgresql` |
+| 达梦 Dameng | `dameng` |
+| openGauss | `opengauss` |
+
