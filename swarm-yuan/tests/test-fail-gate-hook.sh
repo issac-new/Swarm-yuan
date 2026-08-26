@@ -200,4 +200,38 @@ echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态23 draft 期 forbi
 out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git status"},"cwd":"'$TMP'/pr2"}' | bash "$TMP/pr2/scripts/fail-gate-hook.sh" 2>&1)
 [[ -z "$out" ]] && ok "态23 draft 期 allow 仍放行" || bad "态23 draft 误拦只读: $out"
 
+# 态 24-27：spec 前置门（field-feedback 2026-08-26 P0 锚：SPEC_REQUIRED=1 时写源码区无已批准 spec → deny）
+setup_spec_proj() {
+  mkdir -p "$1/scripts" "$1/.swarm-yuan" "$1/src" "$1/docs/specs"
+  cat > "$1/SKILL.md" <<EOF
+---
+status: active
+---
+EOF
+  cat > "$1/scripts/precheck.conf" <<EOF
+PROJECT_DIR="$1"
+WRITABLE_DIRS=("src")
+SPEC_REQUIRED="1"
+GATE_ENFORCE_DENY=""
+EOF
+  cp "$HOOK" "$1/scripts/fail-gate-hook.sh"
+}
+setup_spec_proj "$TMP/ps1"
+# 态24：无 spec 写源码区 → deny
+out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/ps1/src/foo.py"},"cwd":"'$TMP'/ps1"}' | bash "$TMP/ps1/scripts/fail-gate-hook.sh" 2>&1)
+echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态24 无 spec 写 src/ 硬拦" || bad "态24 未 deny: $out"
+# 态25：已批准 spec（含决策记录、无占位符）→ 放行
+printf '# 需求 X\n## 决策记录\n- 方案 A\n' > "$TMP/ps1/docs/specs/001.md"
+out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/ps1/src/foo.py"},"cwd":"'$TMP'/ps1"}' | bash "$TMP/ps1/scripts/fail-gate-hook.sh" 2>&1)
+[[ -z "$out" ]] && ok "态25 已批准 spec 放行" || bad "态25 误拦: $out"
+# 态26：占位符 spec → deny（骨架铁律同款：占位不算批准）
+rm "$TMP/ps1/docs/specs/001.md"; printf '# s\n## 决策记录\n- 待填充\n' > "$TMP/ps1/docs/specs/002.md"
+out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/ps1/src/foo.py"},"cwd":"'$TMP'/ps1"}' | bash "$TMP/ps1/scripts/fail-gate-hook.sh" 2>&1)
+echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态26 占位符 spec 仍拦" || bad "态26 占位符被放行: $out"
+rm "$TMP/ps1/docs/specs/002.md"
+# 态27：draft 骨架期 → spec 门放行（骨架期无 spec 是常态）
+sed -i.bak 's/status: active/status: draft/' "$TMP/ps1/SKILL.md"; rm -f "$TMP/ps1/SKILL.md.bak"
+out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/ps1/src/foo.py"},"cwd":"'$TMP'/ps1"}' | bash "$TMP/ps1/scripts/fail-gate-hook.sh" 2>&1)
+[[ -z "$out" ]] && ok "态27 draft 骨架期放行" || bad "态27 draft 误拦: $out"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-fail-gate-hook"; exit 0; } || { echo "FAIL test-fail-gate-hook" >&2; exit 1; }

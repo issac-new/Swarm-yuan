@@ -1632,6 +1632,49 @@ check_oss_eval() {
   [[ $found -eq 0 ]] && pass "开源代码安全评价通过（成分清单在案，许可证未命中块名单）"
 }
 
+# field-feedback 2026-08-26（反馈 5：单方法太大无拆分——此前无任何方法粒度门禁）
+# 语言无关启发式：按函数/方法起始行（java/py/go/js/ts 常见声明模式）到下一个同级起始或文件尾的行数，
+# 超 METHOD_MAX_LINES（默认 60）warn。不抓圈复杂度（语义边界），只抓"物理太大"这个可机械判定面。
+check_method_size() {
+  echo "=== 方法粒度检查（单方法行数上限）==="
+  local max_lines="${METHOD_MAX_LINES:-60}"
+  local scan_dirs="${WRITABLE_DIRS[*]:-}"
+  if [[ -z "$scan_dirs" ]]; then
+    skip_if_unconfigured "WRITABLE_DIRS 未配置，方法粒度检查跳过"
+    return
+  fi
+  local found=0 _dir _f
+  for _dir in $scan_dirs; do
+    [[ -d "${PROJECT_DIR:-.}/${_dir}" ]] || continue
+    while IFS= read -r _f; do
+      [[ -f "$_f" ]] || continue
+      # awk：匹配函数起始行模式，到下一个起始或 EOF 计行数，超阈值输出
+      awk -v max="$max_lines" -v file="$_f" '
+        /^[[:space:]]*(public |private |protected |static |def |func |function |[a-zA-Z_][a-zA-Z0-9_]*\s*\()/ {
+          if (start > 0 && NR - start > max) printf "%s:%d 方法起始于第 %d 行，长度 %d 行 > 上限 %d\n", file, NR, start, NR-start, max
+          start = NR
+        }
+        END { if (start > 0 && NR - start > max) printf "%s:%d 方法起始于第 %d 行，长度 %d 行 > 上限 %d\n", file, NR, start, NR-start, max }
+      ' "$_f" 2>/dev/null
+    done < <(find "${PROJECT_DIR:-.}/${_dir}" -type f \( -name '*.java' -o -name '*.py' -o -name '*.go' -o -name '*.js' -o -name '*.ts' -o -name '*.kt' \) 2>/dev/null | head -200)
+  done | while IFS= read -r _line; do
+    [[ -n "$_line" ]] && warn "$_line"
+  done
+  # 汇总（子管道内 warn 计数不进主 shell——此处只决定 pass/fail 出口）
+  local _big
+  _big=$(for _dir in $scan_dirs; do
+    [[ -d "${PROJECT_DIR:-.}/${_dir}" ]] || continue
+    find "${PROJECT_DIR:-.}/${_dir}" -type f \( -name '*.java' -o -name '*.py' -o -name '*.go' -o -name '*.js' -o -name '*.ts' -o -name '*.kt' \) 2>/dev/null | head -200 | while read -r _f; do
+      awk -v max="$max_lines" 'BEGIN{s=0;c=0} /^[[:space:]]*(public |private |protected |static |def |func |function |[a-zA-Z_][a-zA-Z0-9_]*\s*\()/ {if(s>0&&NR-s>max)c++; s=NR} END{if(s>0&&NR-s>max)c++; print c+0}' "$_f" 2>/dev/null
+    done
+  done | awk '{s+=$1} END{print s+0}')
+  if [[ "${_big:-0}" -gt 0 ]]; then
+    warn "发现 ${_big} 个方法超 ${max_lines} 行（METHOD_MAX_LINES）——拆分职责或抽子方法"
+  else
+    pass "方法粒度达标（无超 ${max_lines} 行方法）"
+  fi
+}
+
 check_metrics() {
   echo "=== 度量门禁化检查（GB/T 25000.30 质量度量 / DevOps 度量趋势恶化告警）==="
   local runs_dir="${GATE_RUNS_DIR:-}"

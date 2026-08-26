@@ -45,7 +45,7 @@ AI 写代码前必须先认识项目。swarm-yuan 生成的目标技能用 **17 
 
 > 📌 **隐喻边界**：三权分立为教学类比，非政治学严格对应--门禁无法律普遍约束力，verifier/v1 与门禁同仓库同 CI、无司法独立裁量权。详见根 `README.md` [^separation] 脚注。
 
-17 项特征卡定义「项目应该是什么样的」，54 个门禁验证「代码是否符合」。两者构成闭环——特征卡驱动门禁配置，门禁验证特征卡定义的规则。**门禁还按执法强度分三档（决策 19）**：strict 16（真 fail 阻断）/ warn 23（混合）/ advisory 15（永不 fail，观测类）——让"门禁是执法"不再是一句宣称，而是机器可核验的分层。
+17 项特征卡定义「项目应该是什么样的」，55 个门禁验证「代码是否符合」。两者构成闭环——特征卡驱动门禁配置，门禁验证特征卡定义的规则。**门禁还按执法强度分三档（决策 19）**：strict 16（真 fail 阻断）/ warn 23（混合）/ advisory 16（永不 fail，观测类）——让"门禁是执法"不再是一句宣称，而是机器可核验的分层。
 
 ---
 
@@ -82,9 +82,9 @@ AI 写代码前必须先认识项目。swarm-yuan 生成的目标技能用 **17 
 
 **→ 文件填充：** SKILL.md 铁律 ← 第 2/6 项 → codebase.md 技术栈 ← 第 4 项 → dev-guide.md 改造分类 ← 第 3 项 → reference-manual.md 组件库 ← 第 11 项 → release.md 命令 ← 第 5 项……
 
-**→ 门禁配置：** precheck.conf 三件套 176 个变量（core 16 + arch 112 + compliance 48）从特征卡推导——WRITABLE_DIRS ← 第 2 项、TEST_CMD ← 第 5 项、LAYER_DEFS ← 第 3 项、STABLE_GLOBS ← 第 11 项、SERVICE_DIRS ← 第 10 项……
+**→ 门禁配置：** precheck.conf 三件套 178 个变量（core 18 + arch 112 + compliance 48）从特征卡推导——WRITABLE_DIRS ← 第 2 项、TEST_CMD ← 第 5 项、LAYER_DEFS ← 第 3 项、STABLE_GLOBS ← 第 11 项、SERVICE_DIRS ← 第 10 项……
 
-**→ 开发流程：** 开始新需求时 AI 从第 11 项检索可复用单元 → 预填 spec §5.5 → 编码时查第 11 项组件库拼装优先 → 提交前 54 个门禁按特征卡规则检查。
+**→ 开发流程：** 开始新需求时 AI 从第 11 项检索可复用单元 → 预填 spec §5.5 → 编码时查第 11 项组件库拼装优先 → 提交前 55 个门禁按特征卡规则检查。
 
 ### 落地示例（SwarmStudio overlay）
 
@@ -223,7 +223,7 @@ claude-mem search（记忆库）→ 文件检测
 
 **零占位符：** AI 执行完整 12 步流程后由脚本机器执法（`bash scripts/generate-skill.sh --verify-completeness <skill_dir>`）——零残留才算完成。
 
-**自举：** swarm-yuan 能用自身的 54 个门禁检查自身（CI 三档 RC=0）。**自举只证明内部自洽，不证明外部有效**--详见 README.md §自举（S17 去重：此处不再重复完整论证，PROMO 仅声明要点，完整诚实声明在 README）。
+**自举：** swarm-yuan 能用自身的 55 个门禁检查自身（CI 三档 RC=0）。**自举只证明内部自洽，不证明外部有效**--详见 README.md §自举（S17 去重：此处不再重复完整论证，PROMO 仅声明要点，完整诚实声明在 README）。
 
 ---
 
@@ -243,8 +243,8 @@ Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi——自�
 
 | 维度 | 数值 |
 |------|------|
-| **特征卡** | **17 项（驱动全部文件 + 176 个门禁变量 + 开发流程）** |
-| **质量门禁** | **54 个（核心 10 + 架构 17 + 合规 19 + FULL-only 2 + advisory-only 6，特征卡立法 + 门禁执法）** |
+| **特征卡** | **17 项（驱动全部文件 + 178 个门禁变量 + 开发流程）** |
+| **质量门禁** | **55 个（核心 10 + 架构 18 + 合规 19 + FULL-only 2 + advisory-only 6，特征卡立法 + 门禁执法）** |
 | 运行时工具 | 13 |
 | 领域知识 | 32 个领域 |
 | 认知框架 | 5 层 |
