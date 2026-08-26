@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# warn 物理文件（20 个 check_* 函数；由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
+# warn 物理文件（21 个 check_* 函数；由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
 # 被 precheck.sh source（开发态/安装态同路径；install.sh 整目录拷贝含本文件）。
-# 注：物理函数数 21 ≠ enforce-level warn 23——物理位置与 enforce 分档正交，两者各自准确：
+# 注：物理函数数 21 ≠ enforce-level warn 22——物理位置与 enforce 分档正交，两者各自准确：
 #   本文件内 check_sast_deep/oss_eval 的 enforce=strict（Z3 fail-closed 化后升档，物理未迁移）；
 #   反之 check_authz/privacy/requirements/rtm 物理在 gates-strict.sh 但 enforce=warn。
 # _enforce_of 读 gate-enforce-level.conf 而非文件位置，功能正确。
