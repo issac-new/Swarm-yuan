@@ -55,8 +55,18 @@ check_test() {
     echo "  (跳过：未配置 TEST_CMD)"
     return
   fi
-  if eval "$TEST_CMD" 2>&1 | tail -20; then
-    pass "测试通过"
+  local _tout
+  _tout=$(eval "$TEST_CMD" 2>&1 | tail -20) && _trc=0 || _trc=1
+  printf '%s
+' "$_tout"
+  # field-feedback 2026-08-26（反馈 3 补强）：0 用例检出——"测试通过"且输出明示 0 用例时
+  # warn（空跑通过是逻辑错误的最弱兜底，不算真兜底）。各框架输出格式启发式匹配。
+  if [[ "$_trc" -eq 0 ]]; then
+    if printf '%s' "$_tout" | grep -qiE '0 (passed|tests?|examples?)|tests?: 0|0 个用例|0 tests? found'; then
+      warn "测试命令退出码 0 但输出 0 用例——空跑通过不算兜底，须补真实用例"
+    else
+      pass "测试通过"
+    fi
   else
     fail "测试失败"
   fi
@@ -268,6 +278,16 @@ check_review() {
     fi
   fi
 
+  # field-feedback 2026-08-26（反馈 3 补强）：审查须留痕——AI 审查是逻辑错误的审查兜底，
+  # 但"看过了"没有证据等于没看。docs/reviews/ 下落一行审查记录（日期+范围+结论三要素，
+  # 与 check_review_record 合规门禁的要素口径一致），给审查留可回放证据。
+  local _rr_dir="${REVIEW_RECORD_DIR:-docs/reviews}"
+  local _rr_today="${PROJECT_DIR:-.}/${_rr_dir}/$(date -u +%Y-%m-%d).md"
+  if [[ -f "$_rr_today" ]]; then
+    pass "今日审查留痕存在（${_rr_today}）"
+  else
+    warn "审查未留痕（${_rr_dir}/$(date -u +%Y-%m-%d).md 不存在）——AI 审查后须落一行：日期/范围/结论三要素"
+  fi
   # WP-Alignment: ocr 未装时走 AI fallback（found=0 但未真审查），不假装完成，诚实 warn。
   if [[ $_review_executed -eq 1 ]]; then
     [[ $found -eq 0 ]] && pass "代码审查检查完成（ocr 已执行，无 High/Critical 级问题）"

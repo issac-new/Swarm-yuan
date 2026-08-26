@@ -293,7 +293,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | 分析（左移） | §19/§20/§21 | ②③★ | check_shift_left / check_impact | ✅ |
 | 设计 | §3/§5/§5.5 | ②③ | check_layer/stable_diff/link_depth/reuse/deps/security/cognition/domain | ✅ |
 | 开发 | plan Tasks | ④⑤ | check_build / check_framework（74 框架动态分发） | ✅ |
-| 测试 | §11/§19 | ⑥ | check_test / check_review（+gsd-tools health） | ✅ |
+| 测试 | §11/§19 | ⑥ | check_test（TEST_CMD 退出码 + 0 用例检出——"空跑通过"warn）/ check_review（+gsd-tools health + 审查留痕核验：docs/reviews/<日期>.md 三要素） | ✅ |
 | 交付 | §12/§22 | ⑦⑧ | check_branch / check_release_sign / --compliance-suite 族 | ✅ |
 
 **三平台 CI 矩阵**：Linux ubuntu-latest 全覆盖（74 ruleset + 74 fixture + 48 gate-fixture + e2e + verifier + shellcheck + generator-self-gate）；macOS/windows 轻量腿（windows-syntax bash -n + .bat 冒烟，全量降频周跑——bash 硬前置下的诚实分层）。
@@ -352,6 +352,15 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 **ncwk-dev 反哺机制**：已实战验证的手写框架检查（vue/naiveui/pinia/koa/socketio/vite/vitest 7 框架 28 项）先反向收割进片段库作种子，再经注入回灌——"从成功实践反哺范式库"，片段库起步即有高质量样本。
 
 ## 5. 约束设计（门禁层）
+
+### 5.0 逻辑错误的兜底链（field-feedback 2026-08-26 补）
+
+门禁是词法/结构模式匹配——抓"不懂规矩"，不抓"想错逻辑"。逻辑错误的兜底是**测试+审查**，且机器层对兜底本身有核验（不假装"提示了就算做了"）：
+
+| 兜底 | 机器核验点 | 产物载体 |
+|------|-----------|---------|
+| 测试 | check_test：TEST_CMD 退出码 + 0 用例检出（"0 passed"输出 warn）；check_shift_left：spec §11 测试策略段非占位核验 + test 先于 impl 提交 | spec §11 测试策略表 + 测试套件本身 |
+| 审查 | check_review：docs/reviews/<YYYY-MM-DD>.md 存在（三要素：评审人/日期/结论）；合规档 check_review_record 全要素+零 TBD | docs/reviews/<日期>.md（模板 assets/review-record-template.md 随生成物分发） |
 
 ### 5.1 门禁族与可达率
 
