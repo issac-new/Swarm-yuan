@@ -1,5 +1,6 @@
 # ruleset: dotnet  requires_conf: DOTNET_GLOBS
 # gates: fw_dotnet_sql_injection(fail) fw_dotnet_password_hash(fail) fw_dotnet_cors(fail) fw_dotnet_https(warn) fw_dotnet_auth(warn) fw_dotnet_async(warn) fw_dotnet_di(warn) fw_dotnet_logging(warn) fw_dotnet_ef_migration(warn) fw_dotnet_nullable(warn)
+# harvested-from: WP-W 语言生态补强（2026-07-23），规律源自 OWASP .NET 安全指南 + Microsoft Secure Coding Guidelines for .NET
 _fw_dotnet_check() {
   echo "  [dotnet] .NET / C# 框架规律"
   local srcs srcarr=()

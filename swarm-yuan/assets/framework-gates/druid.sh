@@ -1,7 +1,9 @@
 # ruleset: druid  requires_conf: DRUID_CONFIG_FILES
 # gates: fw_druid_statview_expose(fail) fw_druid_wall_filter(warn) fw_druid_datasource_pool(warn) fw_druid_slow_sql(warn)
+# harvested-from: WP-R A4 新增：druid 数据库连接池规则集（references/frameworks/druid.md §4 对齐）；调研时点 2026-07-22，源码 druid 1.2.24 / druid-spring-boot-starter 1.2.24
 # WP-R A4 新增：druid 数据库连接池规则集（references/frameworks/druid.md §4 对齐）
 # 调研时点 2026-07-22，源码 druid 1.2.24 / druid-spring-boot-starter 1.2.24
+# WP-P0-five-breaks：4 规律统一改用 _fw_report 报告器（fail_id 提取对齐 precheck.sh:498 FAIL_IDS 收集）
 _fw_druid_check() {
   echo "  [druid] Druid 1.2.x 连接池框架规律"
 
@@ -36,54 +38,51 @@ _fw_druid_check() {
   # fw_druid_statview_expose(fail)：StatViewServlet 注册但缺鉴权 → 监控面板暴露
   # CWE-200：无鉴权暴露全量 SQL 与连接信息
   # ====================================================================
-  local statview_registered=0
+  local statview_registered=0 bad=""
   if printf '%s\n' "$all_cfg" | grep -qE 'StatViewServlet|druid\.stat-view-servlet|stat-view-servlet' 2>/dev/null; then
     statview_registered=1
   fi
   if [[ "$statview_registered" -eq 1 ]]; then
     # 检查是否配了 login-username/login-password（两者都非空才算鉴权）
-    local has_user has_pass
+    local has_user has_pass user_val pass_val
     has_user=$(printf '%s\n' "$all_cfg" | grep -iE 'login-username|loginUsername' 2>/dev/null | head -1 || true)
     has_pass=$(printf '%s\n' "$all_cfg" | grep -iE 'login-password|loginPassword' 2>/dev/null | head -1 || true)
     # 提取值并判空（yml: login-username: xxx；properties: druid.stat-view-servlet.login-username=xxx）
-    local user_val pass_val
     user_val=$(printf '%s\n' "${has_user}" | sed -E 's/.*[:=][[:space:]]*//' | tr -d '[:space:]"'"'"'' || true)
     pass_val=$(printf '%s\n' "${has_pass}" | sed -E 's/.*[:=][[:space:]]*//' | tr -d '[:space:]"'"'"'' || true)
     if [[ -z "$user_val" || -z "$pass_val" ]]; then
-      fail "fw_druid_statview_expose: StatViewServlet 已注册但缺 login-username/login-password（监控面板 /druid/* 无鉴权暴露，CWE-200）"
-    else
-      pass "fw_druid_statview_expose: StatViewServlet 已配鉴权（login-username/password 非空）"
+      bad="login-username/password 至少一项为空（监控面板 /druid/* 无鉴权暴露）"
     fi
+    _fw_report fail fw_druid_statview_expose "$bad" "StatViewServlet 暴露无鉴权（CWE-200）" "StatViewServlet 已配鉴权（login-username/password 非空）"
   else
-    pass "fw_druid_statview_expose: 未注册 StatViewServlet（无监控面板暴露）"
+    _fw_report pass fw_druid_statview_expose "" "未注册 StatViewServlet（无监控面板暴露）" ""
   fi
 
   # ====================================================================
   # fw_druid_wall_filter(warn)：缺 wall filter 或 noneBaseStatementAllow 误开
   # CWE-89：缺 wall 则 MyBatis ${} 注入直通 JDBC 层
   # ====================================================================
-  local has_wall=0
+  local has_wall=0 bad=""
   # wall 可声明在 druid.filters=stat,wall 或 druid.filter.wall.* 或 WallFilter Bean
   if printf '%s\n' "$all_cfg" | grep -qE 'druid\.filters.*wall|filter\.wall|WallFilter|filters.*wall' 2>/dev/null; then
     has_wall=1
   fi
   if [[ "$has_wall" -eq 0 ]]; then
-    warn "fw_druid_wall_filter: druid.filters 不含 wall（缺 SQL 防火墙，MyBatis \${} 注入无 JDBC 层拦截，CWE-89）"
+    bad="druid.filters 不含 wall（缺 SQL 防火墙，MyBatis \${} 注入无 JDBC 层拦截）"
   else
     # wall 启用，检查 noneBaseStatementAllow 误开
     if printf '%s\n' "$all_cfg" | grep -qiE 'none-base-statement-allow.*true|noneBaseStatementAllow.*true' 2>/dev/null; then
-      warn "fw_druid_wall_filter: wall.none-base-statement-allow=true（DDL 直通，DROP/ALTER 等不被拦截）"
-    else
-      pass "fw_druid_wall_filter: wall filter 已启用且 noneBaseStatementAllow 未误开"
+      bad="wall.none-base-statement-allow=true（DDL 直通，DROP/ALTER 等不被拦截）"
     fi
   fi
+  _fw_report warn fw_druid_wall_filter "$bad" "缺 SQL 防火墙或 DDL 直通配置误开" "wall filter 已启用且 noneBaseStatementAllow 未误开"
 
   # ====================================================================
   # fw_druid_datasource_pool(warn)：max-active 缺失(默认8) / min-idle≠initial-size / keepAlive 未开
   # CWE-400：默认 maxActive=8 高并发连接耗尽
   # ====================================================================
   local has_maxactive=0 has_minidle=0 has_initialsize=0 has_keepalive=0
-  local minidle_val initialsize_val
+  local minidle_val initialsize_val pool_bad=""
   printf '%s\n' "$all_cfg" | grep -qiE 'max-active|maxActive' 2>/dev/null && has_maxactive=1
   if printf '%s\n' "$all_cfg" | grep -qiE 'min-idle|minIdle' 2>/dev/null; then
     has_minidle=1
@@ -95,42 +94,41 @@ _fw_druid_check() {
   fi
   printf '%s\n' "$all_cfg" | grep -qiE 'keep-alive|keepAlive' 2>/dev/null && has_keepalive=1
 
-  local pool_bad=""
   if [[ "$has_maxactive" -eq 0 ]]; then
-    pool_bad="${pool_bad}max-active 未配置（默认 8，高并发连接耗尽 CWE-400）；"
+    pool_bad="${pool_bad}max-active 未配置（默认 8，高并发连接耗尽 CWE-400）；
+"
   fi
   if [[ "$has_minidle" -eq 1 && "$has_initialsize" -eq 1 ]]; then
     if [[ -n "$minidle_val" && -n "$initialsize_val" && "$minidle_val" != "$initialsize_val" ]]; then
-      pool_bad="${pool_bad}min-idle(${minidle_val})≠initial-size(${initialsize_val})（启动期连接抖动）；"
+      pool_bad="${pool_bad}min-idle(${minidle_val})≠initial-size(${initialsize_val})（启动期连接抖动）；
+"
     fi
   fi
   if [[ "$has_minidle" -eq 1 && "$has_keepalive" -eq 0 ]]; then
-    pool_bad="${pool_bad}min-idle>0 但 keep-alive 未显式 true（连接被 DB wait_timeout 断开）；"
+    pool_bad="${pool_bad}min-idle>0 但 keep-alive 未显式 true（连接被 DB wait_timeout 断开）；
+"
   fi
-  if [[ -n "$pool_bad" ]]; then
-    warn "fw_druid_datasource_pool: ${pool_bad}"
-  else
-    pass "fw_druid_datasource_pool: 连接池参数健壮（max-active/min-idle/keepAlive 配置合理）"
-  fi
+  _fw_report warn fw_druid_datasource_pool "$pool_bad" "Druid 连接池参数不健壮（缺 max-active/min-idle 不齐/keepAlive 未开）" "连接池参数健壮（max-active/min-idle/keepAlive 配置合理）"
 
   # ====================================================================
   # fw_druid_slow_sql(warn)：slow-sql-millis 与 log-slow-sql 未配套
   # CWE-778：慢 SQL 不记录致性能问题不可观测
   # ====================================================================
-  local has_slow_millis=0 has_log_slow=0
+  local has_slow_millis=0 has_log_slow=0 slow_bad=""
   printf '%s\n' "$all_cfg" | grep -qiE 'slow-sql-millis|slowSqlMillis' 2>/dev/null && has_slow_millis=1
   printf '%s\n' "$all_cfg" | grep -qiE 'log-slow-sql|logSlowSql' 2>/dev/null && has_log_slow=1
   if [[ "$has_slow_millis" -ne "$has_log_slow" ]]; then
     # 一个配了另一个没配
     if [[ "$has_slow_millis" -eq 1 && "$has_log_slow" -eq 0 ]]; then
-      warn "fw_druid_slow_sql: 配了 slow-sql-millis 但未配 log-slow-sql（慢 SQL 不记录日志 CWE-778）"
+      slow_bad="配了 slow-sql-millis 但未配 log-slow-sql（慢 SQL 不记录日志 CWE-778）"
     elif [[ "$has_log_slow" -eq 1 && "$has_slow_millis" -eq 0 ]]; then
-      warn "fw_druid_slow_sql: 配了 log-slow-sql 但未配 slow-sql-millis（无阈值，慢 SQL 不触发记录）"
+      slow_bad="配了 log-slow-sql 但未配 slow-sql-millis（无阈值，慢 SQL 不触发记录）"
     fi
+    _fw_report warn fw_druid_slow_sql "$slow_bad" "slow-sql-millis 与 log-slow-sql 未配套" ""
   elif [[ "$has_slow_millis" -eq 1 && "$has_log_slow" -eq 1 ]]; then
-    pass "fw_druid_slow_sql: slow-sql-millis 与 log-slow-sql 已配套"
+    _fw_report pass fw_druid_slow_sql "" "slow-sql-millis 与 log-slow-sql 已配套" ""
   else
-    pass "fw_druid_slow_sql: 未配慢 SQL 监控（可选项，跳过）"
+    _fw_report pass fw_druid_slow_sql "" "未配慢 SQL 监控（可选项，跳过）" ""
   fi
 
 ### P1-4 AI 自查段（仅注释，不改动函数体）

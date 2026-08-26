@@ -186,7 +186,9 @@ expect: always
 ## §5 跨框架交互
 | 交互对 | 规则 | 理由 |
 | celery × redis | 结果后端/ Broker 用 Redis 须配连接池与密码 | 防 Redis 宕机致任务丢失 |
+| celery × rabbitmq | 须显式 confirm_publish + heartbeat 配置 | 防消息丢失与连接断开 |
 | celery × flask/django | 须用 @shared_task 而非 @app.task（解耦 app 实例） | 避免循环导入 |
+| celery × prometheus | exporter 用 celery-exporter 而非自写 | 自写漏计 worker 状态/重试次数 |
 
 ## §6 版本陷阱速查
 | 版本 | 变化 | 影响 |

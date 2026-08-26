@@ -1,5 +1,6 @@
 # ruleset: ios-swiftui  requires_conf: IOS_SWIFTUI_GLOBS
 # gates: fw_ios_webview_js(fail) fw_ios_userdefaults_secret(fail) fw_ios_print(warn) fw_ios_ats(fail) fw_ios_keychain(warn) fw_ios_privacy_manifest(warn) fw_ios_state_object(warn) fw_ios_lazy_list(warn) fw_ios_swiftlint(warn) fw_ios_async(warn)
+# harvested-from: WP-W 移动端补强（2026-07-23），规律源自 Apple iOS Security Guide + OWASP MASVS 1.4 + SwiftLint 默认规则集
 _fw_ios_swiftui_check() {
   echo "  [ios-swiftui] iOS Swift/SwiftUI 框架规律"
   local srcs srcarr=()
