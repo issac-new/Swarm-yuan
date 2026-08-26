@@ -256,6 +256,9 @@ CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
 | kafka × flink | Flink Kafka source 须开 checkpoint + 两阶段提交 sink 才达 exactly-once；隔离级别 read_committed | 否则 failover 重复消费/读到中止事务 |
 | kafka × mybatis | 消费幂等落库用 DB 唯一键兜底，offset 与业务写不可跨系统事务 | Kafka 与 RDBMS 无 XA，幂等只能最终一致 |
 | kafka × jackson | JsonSerializer 演进须与 Schema Registry 策略一致；@JsonIgnoreProperties(ignoreUnknown) 兜底 | 新增字段反序列化炸老消费者 |
+| kafka × celery | celery 以 kafka 为 broker 时须显式 acks=all + 消费幂等，任务侧配 time_limit 防堆积 | kafka acks 可丢失时 celery 任务无时间上限易资源耗尽（见 P1-2 编排加严） |
+| kafka × redis | 用 Redis 作去重/幂等缓存须带 TTL 且与 offset 提交时序一致 | Redis 键无过期致去重窗口膨胀，与 Kafka 位点错配丢幂等防护 |
+| kafka × seata | 消费落库与 Seata AT 不可混用同一业务写路径，须二选一或 TCC 编排 | 两套分布式事务协议叠加致重复消费与双写不一致 |
 
 <!--
 本表聚焦 kafka 生态内高频组合；无强交互的组合不列。

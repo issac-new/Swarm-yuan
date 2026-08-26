@@ -73,9 +73,19 @@ AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特
 
 SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`。**reference-manual.md §4 构件表/§6 接口表/§9 store+类型表按形态动态填充（维度错配=未完成），§5 链路按形态选模型 + §5.1 约束注释，dev-guide.md §8 按形态选约束类别**
 
+### Step 7.1 gsd Wave + Worktree 分批（P1-6 接入 generation-flow）
+
+> 注：本小节接入 **gsd Wave（分批）+ Worktree 隔离**（下面统一用 gsd）。
+
+当本 Step 涉及多文件/多模块并行填充时，按 **gsd Wave（分批）** 切分工作量：每 Wave 是一组可独立验收的变更（如「先在 3 个 service 层文件落地约束段」），Wave 之间显式交接（前 Wave 全绿再进下一 Wave），避免一次性铺开导致 fail 互相掩盖。**Worktree 隔离**：每个 Wave（或独立功能切片）在独立 git worktree 中推进（`git worktree add .claude/worktrees/<wave-id>`），main 始终保持可发布态；Wave 内频繁提交，收口时 rebase origin/main 后再合回 main（`--no-ff` 保留 Wave 边界），合入成功才删 worktree。并行 Wave 上限 ≤3，超出的先收口一个。该模式与 Step 12 的 Oracle Gate 循环互补：Wave 管「分批推进不污染主线」，Loop 管「单点 fail 无限迭代直到绿」。
+
 ## Step 8. AI 配置 precheck.conf
 
 **★WP-P4 脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/SERVICE_DIRS/STORE_DIR/WRITABLE_DIRS 等语义型变量，须从特征卡推导）+ 审 diff 是否符合特征卡意图——从「写 176 变量」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
+
+## Step 8.5 review-methodology Mutation Check（P1-6 接入 generation-flow）
+
+本 Step 配置/写回 `references/review-methodology.md` 的审查口径时，须纳入 **Mutation Check（变异测试有效性验证）**：对 `framework-gates/<fw>.sh` 的 `_fw_<id>_check()` 函数，施加少量变异（如把 `fail` 改成 `pass`、把某正则 `=true` 改成 `=false`）后重跑对应 fixture（`bash swarm-yuan/tests/run-framework-fixture.sh <id>`）——**若变异后 violating 侧仍 PASS（未被检出），说明该门禁的测试/断言无效，须回 Step 7 补强断言**；变异后仍检出（fail 不变）= 测试有效。Mutation Check 是「测试有效性」而非「覆盖率」的硬证据：绿 ≠ 有效，只有「变异后被抓」才证明绿有意义。与 Step 10 门禁运行、Step 12 零残留核验形成三层把关（门禁绿 / 变异绿 / 零残留）。
 
 ## Step 9. AI 集成 Claude Code
 

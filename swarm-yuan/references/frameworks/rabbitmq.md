@@ -244,6 +244,8 @@ CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
 | rabbitmq × jackson | Jackson2JsonMessageConverter 须配 trusted packages（默认仅 java.util/java.lang 等白名单）；schema 演进须保留旧字段反序列化兼容 | 反序列化白名单拦截即消费失败进 DLQ；CWE-502 反序列化风险 |
 | rabbitmq × mybatis | 消费幂等落库用 DB 唯一键兜底；手动 ack 须在 DB 事务提交之后 | 先 ack 后提交失败即丢消息；先提交后 ack 宕机即重复（故仍需幂等） |
 | rabbitmq × spring-retry | listener retry（spring.rabbitmq.listener.simple.retry）与 DLQ 配合：max-attempts 收敛，重试耗尽后 republish 进 DLQ 而非 requeue | 本地重试 + requeue 叠加即无限循环 |
+| rabbitmq × celery | celery 以 rabbitmq 为 broker 时须配 prefetch 限流 + 序列化禁用 pickle + 任务 time_limit | pickle 反序列化 RCE 叠加 broker 暴露即远程执行，无 time_limit 易堆积 |
+| rabbitmq × redis | 用 Redis 作任务状态/去重缓存须带 TTL 且与 manual ack 时序一致 | 无 TTL 致去重窗口膨胀，先 ack 后写缓存断层即重复消费 |
 
 <!--
 本表聚焦 rabbitmq 生态内高频组合；无强交互的组合不列。

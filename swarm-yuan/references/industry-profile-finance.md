@@ -143,3 +143,24 @@ R8 既有证据（GB/T 22239/28448/35273/39786/39204/43848、三法原文、JR/T
 15. 金融行业密评政策要求梳理（微信公众号，金融 IC 卡/网银/移动支付密码应用要求）：https://mp.weixin.qq.com/s?__biz=Mzg4NTkyNjY3MA==&mid=2247493383&idx=1&sn=f903dfed79f2cafff5d4d1c038771458
 16. JR/T 0171-2020 标准目次（4 个人金融信息概述/5 安全基本原则/6 安全技术要求/7 安全管理要求/附录 A 信息屏蔽，标准全文 PDF）：https://www.antpedia.com/standard/pdf/1/200308/JR_T%200171%E2%80%942020.pdf
 17. JR/T 0171-2020 6.1.1/6.1.2 收集与传输条文引用（无锡锡商银行企业标准 PDF 引述 6.1.2/6.1.3/6.1.4；凡人图书馆全文页含 6.1.1 条文）：https://static1.tianyancha.com/czd_file/fs/940e5979-ee4c-4c58-b565-b2f11b3d78cb.pdf ；https://www.stdlibrary.com/p-4244777.html
+
+## 6. 典型技术栈 → 框架映射表（P1-8）
+
+> 行业典型技术栈常激活的框架门禁（与 `assets/industry-profiles/finance.conf` 的 `ACTIVE_FRAMEWORKS_HINT` 对齐；
+> 非强制启用——实际以探查信号为准，详见对应 `references/frameworks/<id>.md`）。
+
+| 典型技术栈 | 激活框架门禁 |
+|-----------|-------------|
+| Spring Boot | `spring-boot` |
+| Spring Cloud | `spring-cloud` |
+| Spring Security | `spring-security` |
+| MyBatis | `mybatis` |
+| Redis 缓存 | `redis` |
+| Kafka 交易消息 | `kafka` |
+| RocketMQ 异步通知 | `rocketmq` |
+| Nacos 配置 | `nacos` |
+| Sentinel 限流 | `sentinel` |
+| Seata 事务 | `seata` |
+| Sharding 分库分表 | `sharding` |
+| XXL-JOB 定时 | `elasticjob` |
+

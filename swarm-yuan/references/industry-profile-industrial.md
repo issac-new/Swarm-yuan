@@ -106,3 +106,23 @@
 3. IEC 62443 工业自动化与控制系统 IT 安全（ISA99 官方页，SL1-SL4 安全等级、Zones & Conduits 分段隔离，已核验）：https://www.isa.org/standards-and-publications/isa-standards/isa-iec-62443-series-of-standards
 4. NIST SP 800-218（SSDF v1.1，PS.2 发布完整性）：https://csrc.nist.gov/pubs/sp/800/218/final
 5. ISO/IEC/IEEE 29148（需求工程标准页）：https://www.iso.org/standard/72089.html
+
+## 6. 典型技术栈 → 框架映射表（P1-8）
+
+> 行业典型技术栈常激活的框架门禁（与 `assets/industry-profiles/industrial.conf` 的 `ACTIVE_FRAMEWORKS_HINT` 对齐；
+> 非强制启用——实际以探查信号为准，详见对应 `references/frameworks/<id>.md`）。
+
+| 典型技术栈 | 激活框架门禁 |
+|-----------|-------------|
+| Spring Boot | `spring-boot` |
+| Spring Cloud | `spring-cloud` |
+| Spring Security | `spring-security` |
+| MyBatis | `mybatis` |
+| Redis 缓存 | `redis` |
+| Kafka 产线消息 | `kafka` |
+| RabbitMQ 设备消息 | `rabbitmq` |
+| Nacos 配置 | `nacos` |
+| Sentinel 限流 | `sentinel` |
+| Seata 事务 | `seata` |
+| Kubernetes 编排 | `kubernetes` |
+

@@ -1063,9 +1063,9 @@ check_enforce_facts() {
   _s=$(grep -cE '=strict$' "$elc" 2>/dev/null || echo 0)
   _w=$(grep -cE '=warn$' "$elc" 2>/dev/null || echo 0)
   _a=$(grep -cE '=advisory$' "$elc" 2>/dev/null || echo 0)
-  [[ "$_s" -eq "${FACT_ENFORCE_STRICT:-16}" ]] || { warn "FACT_ENFORCE_STRICT 声明 ${FACT_ENFORCE_STRICT:-空} ≠ 静态真值 ${_s}"; bad=1; }
-  [[ "$_w" -eq "${FACT_ENFORCE_WARN:-23}" ]] || { warn "FACT_ENFORCE_WARN 声明 ${FACT_ENFORCE_WARN:-空} ≠ 静态真值 ${_w}"; bad=1; }
-  [[ "$_a" -eq "${FACT_ENFORCE_ADVISORY:-15}" ]] || { warn "FACT_ENFORCE_ADVISORY 声明 ${FACT_ENFORCE_ADVISORY:-空} ≠ 静态真值 ${_a}"; bad=1; }
+  [[ "$_s" -eq "${FACT_ENFORCE_STRICT:-17}" ]] || { warn "FACT_ENFORCE_STRICT 声明 ${FACT_ENFORCE_STRICT:-空} ≠ 静态真值 ${_s}"; bad=1; }
+  [[ "$_w" -eq "${FACT_ENFORCE_WARN:-22}" ]] || { warn "FACT_ENFORCE_WARN 声明 ${FACT_ENFORCE_WARN:-空} ≠ 静态真值 ${_w}"; bad=1; }
+  [[ "$_a" -eq "${FACT_ENFORCE_ADVISORY:-16}" ]] || { warn "FACT_ENFORCE_ADVISORY 声明 ${FACT_ENFORCE_ADVISORY:-空} ≠ 静态真值 ${_a}"; bad=1; }
   # 有效分层：重放 _ENFORCE_OVERRIDE（单行 K/V 并行写法）
   local _es="$_s" _ew="$_w" _ea="$_a" _line _g _nv _lv
   while IFS= read -r _line; do
@@ -1079,9 +1079,9 @@ check_enforce_facts() {
     case "$_lv" in strict) _es=$((_es-1));; warn) _ew=$((_ew-1));; advisory) _ea=$((_ea-1));; esac
     case "$_nv" in strict) _es=$((_es+1));; warn) _ew=$((_ew+1));; advisory) _ea=$((_ea+1));; esac
   done < <(grep '_ENFORCE_OVERRIDE_K+=' "$pc")
-  [[ "$_es" -eq "${FACT_ENFORCE_EFFECTIVE_STRICT:-16}" ]] || { warn "FACT_ENFORCE_EFFECTIVE_STRICT 声明 ${FACT_ENFORCE_EFFECTIVE_STRICT:-空} ≠ 有效真值 ${_es}"; bad=1; }
-  [[ "$_ew" -eq "${FACT_ENFORCE_EFFECTIVE_WARN:-18}" ]] || { warn "FACT_ENFORCE_EFFECTIVE_WARN 声明 ${FACT_ENFORCE_EFFECTIVE_WARN:-空} ≠ 有效真值 ${_ew}"; bad=1; }
-  [[ "$_ea" -eq "${FACT_ENFORCE_EFFECTIVE_ADVISORY:-20}" ]] || { warn "FACT_ENFORCE_EFFECTIVE_ADVISORY 声明 ${FACT_ENFORCE_EFFECTIVE_ADVISORY:-空} ≠ 有效真值 ${_ea}"; bad=1; }
+  [[ "$_es" -eq "${FACT_ENFORCE_EFFECTIVE_STRICT:-17}" ]] || { warn "FACT_ENFORCE_EFFECTIVE_STRICT 声明 ${FACT_ENFORCE_EFFECTIVE_STRICT:-空} ≠ 有效真值 ${_es}"; bad=1; }
+  [[ "$_ew" -eq "${FACT_ENFORCE_EFFECTIVE_WARN:-17}" ]] || { warn "FACT_ENFORCE_EFFECTIVE_WARN 声明 ${FACT_ENFORCE_EFFECTIVE_WARN:-空} ≠ 有效真值 ${_ew}"; bad=1; }
+  [[ "$_ea" -eq "${FACT_ENFORCE_EFFECTIVE_ADVISORY:-21}" ]] || { warn "FACT_ENFORCE_EFFECTIVE_ADVISORY 声明 ${FACT_ENFORCE_EFFECTIVE_ADVISORY:-空} ≠ 有效真值 ${_ea}"; bad=1; }
   if [[ "$bad" -eq 1 ]]; then
     FAIL=1
   else
