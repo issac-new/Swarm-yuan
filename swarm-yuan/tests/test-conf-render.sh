@@ -16,10 +16,10 @@ cat > "$TMP/proj/package.json" <<'EOF'
 EOF
 out="$(bash "$SH" "$TMP/proj" --profile standard 2>/dev/null)"; rc=$?
 [[ $rc -eq 0 ]] && ok "渲染 exit 0" || bad "exit=$rc"
-echo "$out" | grep -qE 'PROJECT_DIR=.*# AUTO:detected' && ok "PROJECT_DIR detected" || bad "PROJECT_DIR 缺失: $out"
-echo "$out" | grep -qE "BUILD_CMD=.*# AUTO:default" && ok "BUILD_CMD default" || bad "BUILD_CMD 缺失"
-echo "$out" | grep -qE 'LAYER_DEFS=.*# TODO:model' && ok "LAYER_DEFS TODO:model" || bad "LAYER_DEFS 未留 TODO: $out"
-echo "$out" | grep -qE 'ACTIVE_FRAMEWORKS=.*react' && ok "ACTIVE_FRAMEWORKS detected react" || bad "框架未探测: $out"
+grep -qE 'PROJECT_DIR=.*# AUTO:detected' <<<\"$out\" && ok "PROJECT_DIR detected" || bad "PROJECT_DIR 缺失: $out"
+grep -qE "BUILD_CMD=.*# AUTO:default" <<<\"$out\" && ok "BUILD_CMD default" || bad "BUILD_CMD 缺失"
+grep -qE 'LAYER_DEFS=.*# TODO:model' <<<\"$out\" && ok "LAYER_DEFS TODO:model" || bad "LAYER_DEFS 未留 TODO: $out"
+grep -qE 'ACTIVE_FRAMEWORKS=.*react' <<<\"$out\" && ok "ACTIVE_FRAMEWORKS detected react" || bad "框架未探测: $out"
 
 # --- 态 2：Java/Maven 项目 → BUILD_CMD maven detected ---
 mkdir -p "$TMP/proj2/src/main/java"
@@ -29,15 +29,15 @@ cat > "$TMP/proj2/pom.xml" <<'EOF'
 </dependencies></project>
 EOF
 out="$(bash "$SH" "$TMP/proj2" --profile standard 2>/dev/null)"
-echo "$out" | grep -qE 'BUILD_CMD=.*mvn.*# AUTO:detected' && ok "Java BUILD_CMD mvn detected" || bad "态2 BUILD_CMD: $out"
-echo "$out" | grep -qE 'ACTIVE_FRAMEWORKS=.*spring-boot' && ok "spring-boot detected" || bad "态2 框架: $out"
+grep -qE 'BUILD_CMD=.*mvn.*# AUTO:detected' <<<\"$out\" && ok "Java BUILD_CMD mvn detected" || bad "态2 BUILD_CMD: $out"
+grep -qE 'ACTIVE_FRAMEWORKS=.*spring-boot' <<<\"$out\" && ok "spring-boot detected" || bad "态2 框架: $out"
 
 # --- 态 3：lite profile 不渲染 arch.conf/compliance.conf 段（section header 不得出现） ---
 # 注：core 模板里的 `[[ -f .../precheck.arch.conf ]] && source ... || true` 功能行保留（lite 无兄弟时 no-op，
 # 未来补 arch.conf 可自动加载），故用 section header `^# ===== precheck.arch.conf =====` 判定是否渲染了完整段。
 out="$(bash "$SH" "$TMP/proj" --profile lite 2>/dev/null)"
-echo "$out" | grep -qE '^# ===== precheck\.arch\.conf =====' && bad "lite 不应渲染 arch 段" || ok "lite 无 arch.conf 段"
-echo "$out" | grep -qE '^# ===== precheck\.compliance\.conf =====' && bad "lite 不应渲染 compliance 段" || ok "lite 无 compliance.conf 段"
+grep -qE '^# ===== precheck\.arch\.conf =====' <<<\"$out\" && bad "lite 不应渲染 arch 段" || ok "lite 无 arch.conf 段"
+grep -qE '^# ===== precheck\.compliance\.conf =====' <<<\"$out\" && bad "lite 不应渲染 compliance 段" || ok "lite 无 compliance.conf 段"
 
 # --- 态 4：--out 落盘三文件 + TODO:model 清单 ---
 mkdir -p "$TMP/out"
