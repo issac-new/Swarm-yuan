@@ -29,6 +29,7 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 | **门禁 fail 修复** | precheck.sh --all-full 报 fail | Step 8（conf 调整）→ Step 10（重跑门禁）→ Step 11（记忆写回） | gate-runs.jsonl fail-id 级断言 + conf-render.sh 重嗅探 | 继承现有 profile |
 | **数字漂移修复** | self-check.sh 报文档数字与 facts.conf 不符 | Step 7（文档同步）→ Step 12（self-check 复验） | self-check.sh --check-only（数字漂移检测） | N/A（生成器自身维护） |
 | **Oracle Gate 循环** | `setup-loop.sh` 启动 | 无固定节点——AI 自主迭代直到 verify_command 通过 | verify_command（默认 self-check + precheck --all-full） | 继承现有 profile |
+| **架构设计/演进类变更** | spec 变更触及服务划分/数据模型重构/技术选型/迁移升级 | Step 3 探查加 §C+.0.6 四层枚举（TOGAF BDAT）→ Step 7 spec 填 §24 架构映射（四层+纵向链验证） | --adr + --contract + --consistency-cross + --impact（治理三角已机器化）+ spec §24 纵向链完整性 | 继承现有 profile；纯编码/文案类不触发（适配矩阵 ★★+ 才路由，见 togaf-metamodel-methodology.md §4） |
 
 ## 路由决策准则
 
