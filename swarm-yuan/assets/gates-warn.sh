@@ -1409,9 +1409,12 @@ check_sast_deep() {
     local _cs_rc=0
     # 扫描日志落在 _cs_scan_root 内（原写死 /tmp/codex-security-sast-deep.log，多实例并行会互相覆盖）
     local _cs_log="$_cs_scan_root/sast-deep.log"
+    # 回归发现#26（2026-08-27 R12 运行时签名核对）：原 `--json` 不在 codex-security scan 的
+    # 真实 flag 面（0.1.21：--format <toon|json|yaml|md|jsonl>，真源 CLI --help 核验）——未知
+    # flag → rc=2 走降级链，codex-security 载体从不真执行（恒降 semgrep 的假 opt-in）。改 --format json。
     npx @openai/codex-security scan "${SECURITY_SCAN_DIRS[@]}" \
       --output-dir "$_cs_scan_root/results" \
-      --json \
+      --format json \
       --fail-on-severity "$_cs_sev" \
       >"$_cs_log" 2>&1 || _cs_rc=$?
     if [[ $_cs_rc -eq 1 ]]; then
