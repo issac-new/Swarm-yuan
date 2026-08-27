@@ -659,6 +659,9 @@ check_impact() {
 
   # ---- 3. 变更影响分析：优先用 gitnexus impact/detect_changes，降级 grep ----
   # P0-5：消费前确保已构建（gitnexus_ensure_indexed/graphify_ensure_built），未构建则触发构建提示/降级
+  # 回归发现#22（2026-08-27 深度接线抽检）：graphify god-nodes 原挂在 gitnexus 分支的 elif 上——
+  # 两工具同装时 graphify 永不执行，与 SKILL.md「代码图谱平权选型可并用」声称不符。两者检测面
+  # 不同（gitnexus=受影响进程 / graphify=God Node 枢纽），正交应并行；grep 降级仍兜底在最后。
   if has_gitnexus && gitnexus_ensure_indexed; then
     # gitnexus detect_changes: git diff → 受影响进程（最准确）
     trace_tool "gitnexus" "detect_changes"
@@ -671,7 +674,8 @@ check_impact() {
       echo "  gitnexus detect_changes 输出（前 10 行）："
       echo "$gn_impact" | head -10 | sed 's/^/    /'
     fi
-  elif has_graphify && graphify_ensure_built; then
+  fi
+  if has_graphify && graphify_ensure_built; then
     # WP-X: graphify God Nodes 变更影响检测（R6 P1：God Nodes 是变更风险放大器）
     # C4 修复：graphify v0.9.22+ 的 god-nodes 是顶层子命令（graphify god-nodes），非 graphify explain god-nodes。
     trace_tool "graphify" "god-nodes"
@@ -683,7 +687,9 @@ check_impact() {
         echo "$gf_report" | grep -iE 'god.node|hub|surprising' | head -5 | sed 's/^/    /'
       fi
     fi
-  elif git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  fi
+  if ! ( ( has_gitnexus && gitnexus_ensure_indexed ) || ( has_graphify && graphify_ensure_built ) ) \
+     && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # 降级：git diff + grep 反查消费方
     local changed; changed=$(_git_changed_files)
     if [[ -n "$changed" ]]; then
@@ -702,7 +708,7 @@ check_impact() {
         [[ -z "$mod" ]] && continue
         local consumers
         consumers=$(grep -rlwF -- "$mod" "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" \
-          --include='*.ts' --include='*.js' --include='*.py' 2>/dev/null \
+          --include='*.ts' --include='*.js' --include='*.py' --include='*.java' --include='*.vue' 2>/dev/null \
           | grep -v "^${cf}$" || true)
         if [[ -n "$consumers" ]]; then
           local ccount; ccount=$(echo "$consumers" | wc -l | xargs || true)
