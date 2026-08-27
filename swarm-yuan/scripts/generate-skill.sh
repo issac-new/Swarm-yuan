@@ -73,6 +73,7 @@ UNIVERSAL_FILES=(
   "scripts/failure-detector.sh|hook|lite"
   "scripts/integrity-guard.sh|hook|lite"
   "scripts/fail-gate-hook.sh|hook|lite"
+  "scripts/install.sh|assets|lite"  # 回归#27：安装器转发垫片（install.bat 同伴；source_repo 定位；安装器本体不入生成物）
   "scripts/generate-skill.sh|assets|lite"  # 回归#25：生成器转发垫片（source_repo 定位；白名单与 .bat 同伴复活的根修）
   "scripts/codex-gate-wrapper.sh|hook|standard"  # R13 批次4：Codex deny 协议适配（exit 2+stderr）
   "scripts/setup-loop.sh|hook|standard"
