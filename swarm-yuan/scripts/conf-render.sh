@@ -129,7 +129,11 @@ _render_var() { # $1=变量名 $2=模板行
       else
         printf "ACTIVE_FRAMEWORKS=()  # AUTO:default"
       fi ;;
-    LAYER_DEFS|SERVICE_DIRS|STORE_DIR|WRITABLE_DIRS|READONLY_DIRS|SCAN_DIRS|CONSISTENCY_DIRS|COMPONENT_DIR)
+    # 注意：STORE_DIR / COMPONENT_DIR 是标量（单目录，门禁按 "$STORE_DIR" 引用），
+    # 不在此处强渲染成数组——bash 3.2 + set -u 下空数组标量展开即 unbound（回归#18：
+    # 原白名单把它们与数组型变量混写 =()，导致 check_state/check_frontend 崩）。
+    # 它们走 * 分支保留模板标量形态（=""，门禁 [[ -n "$STORE_DIR" ]] 安全）。
+    LAYER_DEFS|SERVICE_DIRS|WRITABLE_DIRS|READONLY_DIRS|SCAN_DIRS|CONSISTENCY_DIRS)
       printf "%s=()  # TODO:model" "$vn" ;;
     *) printf "%s" "$line" ;;  # 其余保留模板原行
   esac
@@ -240,7 +244,8 @@ _emit_section "precheck.patch.conf" "$patch_skel"
 
 # TODO:model 清单汇总
 todo="# ===== # TODO:model 清单（须模型补实值）=====
-# LAYER_DEFS / SERVICE_DIRS / STORE_DIR / WRITABLE_DIRS / READONLY_DIRS / SCAN_DIRS / CONSISTENCY_DIRS / COMPONENT_DIR"
+# LAYER_DEFS / SERVICE_DIRS / WRITABLE_DIRS / READONLY_DIRS / SCAN_DIRS / CONSISTENCY_DIRS
+# （STORE_DIR / COMPONENT_DIR 为单目录标量，保留模板 "" 形态不列入数组 TODO 清单——回归#18）"
 if [[ -n "$OUT" ]]; then
   printf '%s\n' "$todo" > "$OUT/TODO-model.txt"
 else

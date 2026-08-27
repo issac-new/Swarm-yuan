@@ -1083,6 +1083,15 @@ else
   TARGET_DIR="$3"
   TARGET_DIR="$(_win_path_to_posix "$TARGET_DIR")"
 fi
+# 回归发现#21（2026-08-27 第九轮边缘形态回归）：第 4+ 位置参数被静默丢弃——后置
+# `--profile compliance`（标志位须前置，后置沦为多余位置参数）与不存在的 `--auto`
+# 均被吞掉：用户以为拿到 compliance 实际生成 lite（静默错档）。多余参数显式报错。
+if [[ $# -ge 4 ]]; then
+  _extra_args="$4"
+  [[ $# -gt 4 ]] && _extra_args="$4 ...（共 ${#} 个参数）"
+  echo "ERROR: 多余参数「${_extra_args}」——用法仅接受 3 个位置参数（skill-name project-dir [target-dir]）；标志位（--profile/--upgrade 等）须置于位置参数之前；无 --auto 标志（自动检测默认开启）" >&2
+  exit 1
+fi
 
 [[ ! -d "$PROJECT_DIR" ]] && { echo "ERROR: 项目目录不存在: $PROJECT_DIR"; exit 1; }
 mkdir -p "$TARGET_DIR"

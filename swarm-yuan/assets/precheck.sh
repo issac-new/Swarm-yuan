@@ -1160,7 +1160,7 @@ _gate_exec() {
           echo "  ⊘ SKIPPED（未配置）: $1"
           return 0
         }
-        if [[ "$2" == "1" ]]; then "$1" || true; else "$1"; fi
+        if [[ "$2" == "1" ]]; then "$1" || true; else "$1" || true; fi
       )
       local _sg
       while IFS= read -r _sg; do
