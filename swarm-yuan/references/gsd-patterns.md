@@ -186,7 +186,7 @@ open_count: 2
 
 **swarm-yuan 落地（warn 不 fail，守决策 26 预算）**：
 - `assets/state-machine.sh` 的 `archive` 阶段 guard 已实装：若 `.swarm-yuan/WINDOWS.md` 存在且 `open_count > 0`（或正文含 `- [ ]`），输出 warn 提示"建议 ship 前清账或 waive"。
-- **不阻断 archive**（gsd-core 的 `/gsd-ship` 是 fail；swarm-yuan 降为 warn，避免在 archive guard 新增 fail 调用触发 enforce_level 重算，守决策 26 的 `FACT_GATES_BUDGET=54` 上限）。
+- **不阻断 archive**（gsd-core 的 `/gsd-ship` 是 fail；swarm-yuan 降为 warn，避免在 archive guard 新增 fail 调用触发 enforce_level 重算，守决策 26 的门禁数负向预算（现值见 facts.conf FACT_GATES_BUDGET，决策 26.2））。
 - 优先读 frontmatter `open_count`；缺 frontmatter 时降级数正文 `- [ ]` 未决项。
 
 **清账机制**：
