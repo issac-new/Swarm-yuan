@@ -11,6 +11,11 @@
 #   bash state-machine.sh status                       # 显示当前状态
 #   bash state-machine.sh update                       # 原地修订 plan（openspec /opsx:update 能力）
 # 生成目标技能时：替换 PHASES / GUARDS 为项目实际阶段与门禁
+#
+# 六阶段 ↔ workflow.md 九节点对照（粗粒度状态桶 ↔ 细粒度执行流，两套模型一体两面）：
+#   open=①需求理解+②探查 ｜ design=③设计 spec+④实施 plan ｜ build=⑤编码实现
+#   verify=⑥测试验证+⑦独立审查 ｜ archive=⑧合入 main ｜ operate=⑨构建发布
+# 阶段转换（transition）即节点组完成：如 design→build 意味 ③④ 节点全绿进入 ⑤。
 
 set -euo pipefail
 
