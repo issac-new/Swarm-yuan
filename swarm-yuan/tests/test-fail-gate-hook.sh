@@ -234,4 +234,29 @@ sed -i.bak 's/status: active/status: draft/' "$TMP/ps1/SKILL.md"; rm -f "$TMP/ps
 out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/ps1/src/foo.py"},"cwd":"'$TMP'/ps1"}' | bash "$TMP/ps1/scripts/fail-gate-hook.sh" 2>&1)
 [[ -z "$out" ]] && ok "态27 draft 骨架期放行" || bad "态27 draft 误拦: $out"
 
+# 态 28-29：双目录布局（回归发现#20b 锁死测试）——生成物真实形态：
+# CLAUDE_PLUGIN_ROOT=skill 目录（conf/SKILL.md/hooks 所在），cwd=项目目录（src/.swarm-yuan 所在）。
+# 原实现 CONF 全取 CWD 侧 → 双目录下 conf 读不到、spec 门死代码（态 24-27 单目录布局测不出）。
+mkdir -p "$TMP/skill28/scripts" "$TMP/proj28/src" "$TMP/proj28/.swarm-yuan"
+cat > "$TMP/skill28/SKILL.md" <<EOF
+---
+status: active
+---
+EOF
+cat > "$TMP/skill28/scripts/precheck.conf" <<EOF
+PROJECT_DIR="$TMP/proj28"
+WRITABLE_DIRS=("src")
+SPEC_REQUIRED="\${SPEC_REQUIRED:-1}"
+SPEC_GLOB="\${SPEC_GLOB:-docs/specs/*.md}"
+GATE_ENFORCE_DENY=""
+EOF
+cp "$HOOK" "$TMP/skill28/scripts/fail-gate-hook.sh"
+# 态28：双目录布局无 spec 写项目 src/ → deny（conf 自引用默认 SPEC_REQUIRED 求值为 1）
+out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/proj28/src/foo.py"},"cwd":"'$TMP'/proj28"}' | CLAUDE_PLUGIN_ROOT="$TMP/skill28" bash "$TMP/skill28/scripts/fail-gate-hook.sh" 2>&1)
+echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态28 双目录布局无 spec 硬拦（#20b 锁死）" || bad "态28 双目录未 deny: $out"
+# 态29：双目录布局批准 spec → 放行（spec 搜索根=项目侧）
+mkdir -p "$TMP/proj28/docs/specs"; printf '# X\n## 决策记录\n- 方案 A\n' > "$TMP/proj28/docs/specs/001.md"
+out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/proj28/src/foo.py"},"cwd":"'$TMP'/proj28"}' | CLAUDE_PLUGIN_ROOT="$TMP/skill28" bash "$TMP/skill28/scripts/fail-gate-hook.sh" 2>&1)
+[[ -z "$out" ]] && ok "态29 双目录布局批准 spec 放行" || bad "态29 双目录误拦: $out"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-fail-gate-hook"; exit 0; } || { echo "FAIL test-fail-gate-hook" >&2; exit 1; }

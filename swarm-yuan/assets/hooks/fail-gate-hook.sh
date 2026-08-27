@@ -148,10 +148,25 @@ fi
 
 # ===== 定位 skill 根与配置 =====
 # hooks.json 用 ${CLAUDE_PLUGIN_ROOT:-.} 调用，cwd 是项目根；skill 脚本在 scripts/ 下
-ROOT="${CWD:-$(pwd)}"
-CONF="$ROOT/scripts/precheck.conf"
+# 回归发现#20b（2026-08-27 第八轮回归）：原实现 CONF/SKILL.md 全部取自 CWD 侧——测试的单目录
+# 布局（skill 即项目）碰巧成立，但生成物是双目录布局（CLAUDE_PLUGIN_ROOT=skill 目录 ≠ cwd=
+# 项目根），CONF 永远读不到 → spec 前置门在真实部署中整体死代码。修复：skill 侧文件三级
+# 解析（CLAUDE_PLUGIN_ROOT → CWD（测试/单目录布局）→ 脚本自身位置）；项目侧（.swarm-yuan、
+# spec 搜索）保持 CWD 语义不变。
+ROOT="${CWD:-$(pwd)}"                       # 项目侧：状态/留痕/spec 搜索
 FLAG_DIR="$ROOT/.swarm-yuan"
 FLAG="$FLAG_DIR/.gate-fail-flag"
+_sm_self="$(cd "$(dirname "$0")" && pwd)"
+CONF=""
+SKILL_MD=""
+for _cand in "${CLAUDE_PLUGIN_ROOT:-}/scripts/precheck.conf" "$ROOT/scripts/precheck.conf" "${_sm_self}/../scripts/precheck.conf"; do
+  [[ -z "$_cand" || ! -f "$_cand" ]] && continue
+  CONF="$_cand"; break
+done
+for _cand in "${CLAUDE_PLUGIN_ROOT:-}/SKILL.md" "$ROOT/SKILL.md" "${_sm_self}/../../SKILL.md" "${_sm_self}/../SKILL.md"; do
+  [[ -z "$_cand" || ! -f "$_cand" ]] && continue
+  SKILL_MD="$_cand"; break
+done
 
 # 白名单读取（GATE_ENFORCE_DENY=check_security,check_sensitive 或 all）
 DENY_LIST=""
@@ -255,7 +270,7 @@ if [[ "$EVENT" == "PreToolUse" ]]; then
       # 不含 rules.d 无条件面：forbid 是无条件的（A6 既定意图），骨架期 rm -rf/sudo 照样硬拦。
       # 位置：必须在 spec-first 之前——draft 骨架期无 spec 是常态，spec 门若先判会把骨架期
       # 全部写操作 deny 死锁（field-feedback 修复期实证：顺序反了 draft 态写 src/ 被误拦）。
-      if [[ -f "$ROOT/SKILL.md" ]] && grep -q '^status: draft' "$ROOT/SKILL.md" 2>/dev/null; then
+      if [[ -n "$SKILL_MD" ]] && grep -q '^status: draft' "$SKILL_MD" 2>/dev/null; then
         exit 0
       fi
       # field-feedback 2026-08-26（SPEC_REQUIRED 流程前置门，无条件面）：
@@ -263,7 +278,16 @@ if [[ "$EVENT" == "PreToolUse" ]]; then
       # "流程性约束缺失"反馈的根因——workflow.md 是文档自觉，这里是机器强制。
       # draft 骨架期放行（骨架期无 spec 是常态）；conf 缺失/WRITABLE_DIRS 未配 → 放行（不阻碍诊断）。
       _spec_req=""
-      [[ -f "$CONF" ]] && _spec_req=$(grep -m1 '^SPEC_REQUIRED=' "$CONF" 2>/dev/null | sed 's/^SPEC_REQUIRED=//;s/^"//;s/"$//' | tr -d '[:space:]' || printf '')
+      # 回归发现#20b：conf 惯用自引用默认（SPEC_REQUIRED="${SPEC_REQUIRED:-1}"，source 时求值
+      # 为 1）——原 grep 提取拿到字面 ${SPEC_REQUIRED:-1} ≠ "1"，spec 前置门恒不启用（死代码）。
+      # 改为末行生效 + 解析自引用默认；grep 无命中时 || printf '' 保空。
+      if [[ -f "$CONF" ]]; then
+        _spec_req=$(grep '^SPEC_REQUIRED=' "$CONF" 2>/dev/null | tail -1 | cut -d'#' -f1 | tr -d '[:space:]' | sed 's/^SPEC_REQUIRED=//;s/^"//;s/"$//' || printf '')
+        case "$_spec_req" in
+          '${SPEC_REQUIRED:-'*'}')
+            _spec_req="${_spec_req#\$\{SPEC_REQUIRED:-}"; _spec_req="${_spec_req%\}}" ;;
+        esac
+      fi
       if [[ "$_spec_req" == "1" ]]; then
         _in_src=0
         _wd=""
@@ -274,7 +298,13 @@ if [[ "$EVENT" == "PreToolUse" ]]; then
         done
         if [[ "$_in_src" -eq 1 ]]; then
           _spec_glob=""
-          [[ -f "$CONF" ]] && _spec_glob=$(grep -m1 '^SPEC_GLOB=' "$CONF" 2>/dev/null | sed 's/^SPEC_GLOB=//;s/^"//;s/"$//' || printf '')
+          # #20b 同款：末行生效 + 剥注释/空白 + 解析 ${SPEC_GLOB:-...} 自引用默认
+          if [[ -f "$CONF" ]]; then
+            _spec_glob=$(grep '^SPEC_GLOB=' "$CONF" 2>/dev/null | tail -1 | cut -d'#' -f1 | tr -d '[:space:]' | sed 's/^SPEC_GLOB=//;s/^"//;s/"$//' || printf '')
+            case "$_spec_glob" in
+              '${SPEC_GLOB:-'*'}') _spec_glob="${_spec_glob#\$\{SPEC_GLOB:-}"; _spec_glob="${_spec_glob%\}}" ;;
+            esac
+          fi
           _spec_glob="${_spec_glob:-docs/specs/*.md}"
           _spec_found=""
           for _sf in "${ROOT}"/${_spec_glob}; do
@@ -316,7 +346,7 @@ EOF
       ;;
     Bash)
       # draft 期自动关闭（骨架期门禁红是常态）——Bash 捕获面静默（rules.d 无条件面已在上方前置）；
-      if [[ -f "$ROOT/SKILL.md" ]] && grep -q '^status: draft' "$ROOT/SKILL.md" 2>/dev/null; then
+      if [[ -n "$SKILL_MD" ]] && grep -q '^status: draft' "$SKILL_MD" 2>/dev/null; then
         exit 0
       fi
       # WP-Enforce2：Bash 拦截需独立开关 GATE_ENFORCE_DENY_BASH（默认空=不拦，避免误伤）

@@ -19,6 +19,28 @@
 
 set -euo pipefail
 
+# ===== 回归发现#20（2026-08-27 第八轮回归）：conf 接线断裂修复 =====
+# 守卫错误提示一直教用户"可在 precheck.conf 配 PROPOSAL_FILE/TASKS_FILE/SPEC_*"，但本脚本
+# 从未读取该 conf——用户照提示配置不生效（断裂指引）。对齐 fail-gate-hook 的 grep 读取惯例
+# （不 source、无副作用、路径含 # 与空格的边界不放宽）；调用方 export 的环境变量优先，
+# 仅未设置时取 conf 注册值。conf 定位：脚本同目录 precheck.conf（生成物布局二者同在 scripts/）。
+_sm_conf="$(cd "$(dirname "$0")" && pwd)/precheck.conf"
+_sm_conf_val() {  # $1=变量名 → conf 末行赋值（剥引号/行内注释/空白；解析 ${VAR:-def} 自引用；恒 rc=0）
+  local _v=""
+  if [[ -f "$_sm_conf" ]]; then
+    _v=$(grep "^$1=" "$_sm_conf" 2>/dev/null | tail -1 | cut -d'#' -f1 | tr -d '[:space:]' | sed "s/^$1=//;s/^\"//;s/\"\$//" || true)
+    case "$_v" in
+      "\${$1:-"*'}') _v="${_v#\$\{$1:-}"; _v="${_v%\}}" ;;
+    esac
+  fi
+  printf '%s' "$_v"
+  return 0
+}
+if [[ -z "${PROJECT_DIR:-}" ]]; then
+  _sm_pd="$(_sm_conf_val PROJECT_DIR)"
+  [[ -n "$_sm_pd" ]] && PROJECT_DIR="$_sm_pd"
+fi
+
 # ===== 按项目定制 =====
 STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
 STATE_FILE="$STATE_DIR/state.yaml"
@@ -127,12 +149,14 @@ guard_phase() {
       # WP-C1：实装产出物检查（替换原占位 pass）。检查 open 阶段产出 proposal.md 存在。
       # 可配 PROPOSAL_FILE（默认 $PROJECT_DIR/.swarm-yuan/proposal.md 或 $SPEC_FILE）。
       local proposal="${PROPOSAL_FILE:-}"
+      [[ -z "$proposal" ]] && proposal="$(_sm_conf_val PROPOSAL_FILE)"   # #20：conf 接线
       [[ -z "$proposal" ]] && proposal="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/proposal.md"
       if [[ -f "$proposal" ]]; then
         pass "design 准入: open 阶段产出存在（${proposal}）"
       else
         # 降级：未配置 PROPOSAL_FILE 且默认路径无文件时，检查 SPEC_FILE（项目可能用 spec.md 替代 proposal）
         local spec_f="${SPEC_FILE:-}"
+        [[ -z "$spec_f" ]] && spec_f="$(_sm_conf_val SPEC_FILE)"           # #20：conf 接线
         if [[ -n "$spec_f" && -f "$spec_f" ]]; then
           pass "design 准入: spec 存在（${spec_f}，作为 proposal 等价物）"
         else
@@ -151,17 +175,43 @@ guard_phase() {
       fi
       ;;
     build)
-      # 门禁：design 阶段产出 design doc + tasks
+      # 门禁：build_mode/isolation 状态字段 + design 阶段产出 spec。
+      # 回归发现#20（2026-08-27 第八轮回归）：原注释声称"检查 design doc + tasks"但代码只查
+      # init 即写入的 build_mode/isolation——design→build 零产物守卫（注释-代码断裂）。
+      # 对齐 fail-gate-hook SPEC_REQUIRED 同名开关同判据（SPEC_GLOB 默认 docs/specs/*.md，
+      # 已批准=含「## 决策记录」段且非占位）：SPEC_REQUIRED=1 时硬拦，未启用降级提示（与
+      # hook 层"conf 缺失不阻碍"的口径一致——state-machine 不引入 hook 未启用的第二套强制）。
       local bm iso
       bm=$(get_field build_mode); iso=$(get_field isolation)
       [[ -z "$bm" ]] && { fail "build_mode 未设置"; ok=0; }
       [[ -z "$iso" ]] && { fail "isolation 未设置"; ok=0; }
       [[ $ok -eq 1 ]] && pass "build 准入: build_mode=$bm, isolation=$iso"
+      local _sm_sr="${SPEC_REQUIRED:-}"
+      [[ -z "$_sm_sr" ]] && _sm_sr="$(_sm_conf_val SPEC_REQUIRED)"        # #20：conf 接线
+      if [[ "$_sm_sr" == "1" ]]; then
+        local _sg="${SPEC_GLOB:-docs/specs/*.md}" _sf _approved=""
+        [[ "$_sg" == "docs/specs/*.md" ]] && { local _sgc; _sgc="$(_sm_conf_val SPEC_GLOB)"; [[ -n "$_sgc" ]] && _sg="$_sgc"; }
+        for _sf in "${PROJECT_DIR:-$(pwd)}"/$_sg; do
+          [[ -f "$_sf" ]] || continue
+          if grep -q '^## .*决策记录' "$_sf" 2>/dev/null && ! grep -qE '待填充|<占位符>' "$_sf" 2>/dev/null; then
+            _approved="$_sf"; break
+          fi
+        done
+        if [[ -n "$_approved" ]]; then
+          pass "build 准入: design 阶段产出 spec 已批准（${_approved}）"
+        else
+          fail "build 准入失败: SPEC_REQUIRED=1 但 ${_sg} 无已批准 spec（须含「## 决策记录」段且非占位；可配 SPEC_GLOB，或 conf 置 SPEC_REQUIRED=0 显式豁免并落痕）"
+          ok=0
+        fi
+      else
+        echo "  (SPEC_REQUIRED 未启用——design 产出 spec 准入降级跳过；conf 置 1 启用，与 fail-gate-hook 同开关)"
+      fi
       ;;
     verify)
       # WP-C1：实装产出物检查（替换原占位 pass）。检查 tasks.md 全部 - [x]（所有任务完成）。
       # 可配 TASKS_FILE（默认 $PROJECT_DIR/.swarm-yuan/tasks.md）。未配置/不存在时降级 skip（不阻塞）。
       local tasks_f="${TASKS_FILE:-}"
+      [[ -z "$tasks_f" ]] && tasks_f="$(_sm_conf_val TASKS_FILE)"         # #20：conf 接线
       [[ -z "$tasks_f" ]] && tasks_f="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/tasks.md"
       if [[ -f "$tasks_f" ]]; then
         local unchecked
