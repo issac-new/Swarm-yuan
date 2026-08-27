@@ -11,7 +11,7 @@ _fw_vue_check() {
   while IFS= read -r ln; do fa+=("$ln"); done <<< "$files"
 
   # 规律1: <script setup> 强制
-  if [[ "$VUE_REQUIRE_SCRIPT_SETUP" == "1" ]]; then
+  if [[ "${VUE_REQUIRE_SCRIPT_SETUP:-}" == "1" ]]; then
     local total setup bad=""
     total=$(_fw_grep_count "<script" "${fa[@]}")
     setup=$(_fw_grep_count "<script setup" "${fa[@]}")
@@ -22,22 +22,22 @@ _fw_vue_check() {
   fi
 
   # 规律2: 禁 Options API
-  if [[ -n "$VUE_FORBIDDEN_OPTIONS_API" ]]; then
+  if [[ -n "${VUE_FORBIDDEN_OPTIONS_API:-}" ]]; then
     local hits bad=""
-    hits=$(grep -rnE "$VUE_FORBIDDEN_OPTIONS_API" "${fa[@]}" 2>/dev/null || true)
+    hits=$(grep -rnE "${VUE_FORBIDDEN_OPTIONS_API:-}" "${fa[@]}" 2>/dev/null || true)
     [[ -n "$hits" ]] && bad="$hits"
     _fw_report fail fw_vue_no_options_api "$bad" "检出 Options API（Vue 3 推荐 Composition API + <script setup>）" "无 Options API"
   fi
 
   # 规律3: v-html 须配套 sanitize（同文件级）
-  if [[ "$VUE_VHTML_SANITIZE_REQUIRED" == "1" ]]; then
+  if [[ "${VUE_VHTML_SANITIZE_REQUIRED:-}" == "1" ]]; then
     local vhtml_files="" bad="" offenders="" cnt=0
     while IFS= read -r f; do vhtml_files="$vhtml_files $f"; done < <(grep -rlE "v-html" "${fa[@]}" 2>/dev/null || true)
     if [[ -z "${vhtml_files// }" ]]; then
       _fw_report pass fw_vue_vhtml_sanitize "" "无 v-html 使用" ""
     else
       for f in $vhtml_files; do
-        if ! grep -qE "$VUE_VHTML_SANITIZE_PATTERNS" "$f" 2>/dev/null; then
+        if ! grep -qE "${VUE_VHTML_SANITIZE_PATTERNS:-}" "$f" 2>/dev/null; then
           offenders="$offenders $f"
         fi
         cnt=$((cnt+1))
@@ -48,16 +48,16 @@ _fw_vue_check() {
   fi
 
   # 规律4: v-for 禁 index 作 key（warn 级）
-  if [[ -n "$VUE_VFOR_FORBIDDEN_INDEX_KEY" ]]; then
+  if [[ -n "${VUE_VFOR_FORBIDDEN_INDEX_KEY:-}" ]]; then
     local hits bad=""
-    hits=$(grep -rnE "$VUE_VFOR_FORBIDDEN_INDEX_KEY" "${fa[@]}" 2>/dev/null || true)
+    hits=$(grep -rnE "${VUE_VFOR_FORBIDDEN_INDEX_KEY:-}" "${fa[@]}" 2>/dev/null || true)
     [[ -n "$hits" ]] && bad="$hits"
     _fw_report warn fw_vue_vfor_index_key "$bad" "v-for 用 index 作 key（稳定数组可接受，动态数组需 item.id）" "v-for 无 index 作 key"
   fi
 
   # 规律5: reactive 用量预警（仅超阈值时 warn，无 bad 累积）
   local rc; rc=$( { grep -rhoE "\breactive\b" "${fa[@]}" 2>/dev/null || true; } | wc -l | xargs)
-  if [[ -n "$VUE_REACTIVE_WARN_THRESHOLD" && "$rc" -gt "$VUE_REACTIVE_WARN_THRESHOLD" ]]; then
+  if [[ -n "${VUE_REACTIVE_WARN_THRESHOLD:-}" && "$rc" -gt "${VUE_REACTIVE_WARN_THRESHOLD:-}" ]]; then
     warn "fw_vue_reactivity_threshold: reactive 用量 $rc 处（阈值 ${VUE_REACTIVE_WARN_THRESHOLD}），建议优先 ref/computed"
   fi
 
@@ -84,7 +84,7 @@ _fw_vue_check() {
   # ====================================================================
   if [[ -n "${VUE_PINIA_AGGREGATE_STORE:-}" ]]; then
     local bad=""
-    [[ ! -f "$VUE_PINIA_AGGREGATE_STORE" ]] && bad="VUE_PINIA_AGGREGATE_STORE=${VUE_PINIA_AGGREGATE_STORE} 未配置或不存在"
+    [[ ! -f "${VUE_PINIA_AGGREGATE_STORE:-}" ]] && bad="VUE_PINIA_AGGREGATE_STORE=${VUE_PINIA_AGGREGATE_STORE} 未配置或不存在"
     _fw_report warn fw_vue_pinia_aggregate "$bad" "聚合层 store 缺失（pinia root 不可达）" "聚合层 store 存在（${VUE_PINIA_AGGREGATE_STORE}）"
   fi
 

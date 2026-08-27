@@ -59,8 +59,12 @@ _monorepo=0
 [[ -d "$PROJ/packages" && $(ls -1 "$PROJ/packages" 2>/dev/null | wc -l | tr -d ' ') -gt 1 ]] && _monorepo=1
 [[ -d "$PROJ/services" && $(ls -1 "$PROJ/services" 2>/dev/null | wc -l | tr -d ' ') -gt 1 ]] && _monorepo=1
 # ACTIVE_FRAMEWORKS（调 detect-frameworks.sh；其行式解析器对紧凑单行 package.json 会漏探，fail-open 兜底补 pkgjson）
+# 回归发现#2（2026-08-27 RuoYi 双项目回归）：原解析 sed 's/.*"\([^"]*\)".*/\1/p' 贪婪匹配
+# 只捕获 ACTIVE_FRAMEWORKS=("vue" "element" "vite") 行的最后一个 "vite" → 骨架 conf 只落
+# 1 个框架（SKILL.md 认知摘要另一套正确解析写 3 个 → 设计/实现/生成物三体不一致）。
+# 修复：整行剥壳（去 ACTIVE_FRAMEWORKS= 前缀 + 剥 ()"），框架 id 全量保留。
 if [[ -x "$BASE/scripts/detect-frameworks.sh" ]]; then
-  _frameworks=$("$BASE/scripts/detect-frameworks.sh" "$PROJ" 2>/dev/null | sed -n 's/.*"\([^"]*\)".*/\1/p' | tr '\n' ' ' | sed 's/ *$//')
+  _frameworks=$("$BASE/scripts/detect-frameworks.sh" "$PROJ" 2>/dev/null | sed -n 's/^ACTIVE_FRAMEWORKS=//p' | tr -d '()"' | sed 's/^ *//; s/ *$//')
 fi
 # 兜底：detect-frameworks.sh 行式 grep 要求 `"key":` 在行首空白后，紧凑 JSON（键内联）会漏；
 # 此处仅当主探测为空且存在 package.json 时，用键无关位置的稳健提取补 pkgjson 类框架（ID 与 detect-frameworks.sh 对齐）。

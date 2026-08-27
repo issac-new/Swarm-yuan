@@ -147,7 +147,7 @@ _fw_lombok_check() {
         done
       done
       # 去重（A<->B 与 B<->A 算一对）
-      circ_warn=$(printf '%s\n' "$circ_warn" | grep -E '^/.+' | sort -u)
+      circ_warn=$(printf '%s\n' "$circ_warn" |  grep -E '.+' | sort -u)
       _fw_report warn fw_lombok_requiredargs_circular "$circ_warn" "检出两类互引 final 字段 + 均带 @RequiredArgsConstructor/@AllArgsConstructor（Spring 6 默认禁循环依赖，启动期 BeanCurrentlyInCreationException）" "未检出明显的构造注入互引循环"
     fi
   fi

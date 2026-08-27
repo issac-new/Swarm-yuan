@@ -1472,7 +1472,11 @@ _fw_resolve_globs() {
       # WP-R P1-1: 无 ** 的 glob（如 src/store/modules/*.js）原仅 [[ -e ]] 判定，
       # 对含通配符的 glob 永远 false（字面路径 *.js 不存在）→ 门禁静默失效（假 warn）。
       # 修复：含通配符的用 shopt nullglob + compgen 展开；纯路径/文件用 [[ -e ]]
-      if [[ "$g" == *['*?[]'* ]]; then
+      # 回归发现#5（2026-08-27 RuoYi 双项目回归）：通配符判定原写法 *['*?[]'* 在
+      # bash 3.2（macOS 系统 bash）下 quoted 字符字面化 → 恒 NOMATCH → compgen 分支
+      # 永不执行 → 所有含通配 glob 静默失效（CI bash 5 MATCH 所以全绿，本地 macOS 全瘫）。
+      # 改转义写法（3.2/5.x 双实测 MATCH）。
+      if [[ "$g" == *[\*\?\[]* ]]; then
         # 含通配符：在当前目录(cwd=PROJECT_DIR)下用 compgen 展开
         local _expanded
         _expanded=$(compgen -G "$g" 2>/dev/null || true)
@@ -1481,8 +1485,15 @@ _fw_resolve_globs() {
         [[ -e "$g" ]] && printf '%s\n' "$g"
       fi
     else
-      [[ -d "$dir" ]] || continue
-      find "$dir" -type f -name "$name" 2>/dev/null
+      # 回归发现#3（2026-08-27）：目录前缀含通配符（多模块 monorepo 如 ruoyi-*/src/main/java）
+      # 时 [[ -d $dir ]] 多匹配恒 false → 静默跳过 → 多模块项目框架门禁全失效。
+      # 修复：展开通配目录集合逐个 find（compgen -G 列目录，3.2 兼容）。
+      local _d
+      while IFS= read -r _d; do
+        [[ -z "$_d" ]] && continue
+        [[ -d "$_d" ]] || continue
+        find "$_d" -type f -name "$name" 2>/dev/null
+      done < <(compgen -G "$dir" 2>/dev/null || true)
     fi
   done
 }
