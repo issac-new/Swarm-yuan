@@ -232,10 +232,17 @@ ${_deps}"
 done < <(find "$PROJ" -name requirements.txt -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null || true)
 
 # --- pyproject.toml: 递归 ---
+# 回归发现#8（2026-08-27 fastapi-tpl 回归）：现代 pyproject 依赖在 [project] dependencies
+# 数组双引号串中（"fastapi[standard]>=0.141"），原 grep 只认裸 key 行首（^字母），
+# array 元素行首是引号 → 整桶零命中 → fastapi/sqlmodel/alembic 全漏探。
+# 修复：双桶——裸 key 行 + 数组元素（含引号串）各抽一份。
 while IFS= read -r _pp; do
   _deps=$(grep -E '^[[:space:]]*[a-zA-Z]' "$_pp" 2>/dev/null | sed -E 's/[=<>~!].*//; s/\[.*//; s/"//g; s/[[:space:]]//g' || true)
+  # array 元素：引号串里的包名（"fastapi[standard]>=x"、"sqlmodel>=y"）剥引号+截版本
+  _arr_deps=$(grep -oE '"[a-zA-Z][a-zA-Z0-9_-]*(\[[^"]*\])?[=<>~!][^"]*"' "$_pp" 2>/dev/null | sed -E 's/"//g; s/\[.*//; s/[=<>~!].*//' || true)
   _pyproject_deps="${_pyproject_deps}
-${_deps}"
+${_deps}
+${_arr_deps}"
 done < <(find "$PROJ" -name pyproject.toml -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null || true)
 
 # 匹配信号表,输出命中的框架 ID

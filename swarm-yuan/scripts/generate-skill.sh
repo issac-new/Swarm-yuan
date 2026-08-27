@@ -383,6 +383,22 @@ inject_frameworks() {
       uncovered+=("$fw")
     fi
   done
+  # 回归发现#9（2026-08-27 四栈回归）：注入只负责"缺失补占位"，但骨架期框架变量行零存在
+  # （懒生成移除空占位）→ AI/用户想预填无处落笔（sed 锚定不存在行=无操作，注入又懒补 ()）。
+  # 此处补"已填非空值保留"——若变量行存在但值非空（非 ()），视为已配置，从 missing_conf 移除；
+  # 仅当行不存在或值为空 () 时才懒补占位。这样 inject 幂等可重跑，不覆盖 AI 填充结果。
+  if [[ ${#missing_conf[@]} -gt 0 ]]; then
+    local _kept=() _mv _mline
+    for _mv in "${missing_conf[@]}"; do
+      # 查两 conf 里该变量的当前值；非空（非 () 非 ""）则保留
+      _mline=$( { grep -h "^${_mv}=" "$arch_conf" 2>/dev/null; [[ "$arch_conf" != "$conf" ]] && grep -h "^${_mv}=" "$conf" 2>/dev/null; } | head -1 || true)
+      if [[ -n "$_mline" && "$_mline" != *"()"* && "$_mline" != *'=""'* && "$_mline" != *"=() "* ]]; then
+        continue  # 已填非空值——保留，不补占位
+      fi
+      _kept+=("$_mv")
+    done
+    missing_conf=("${_kept[@]+"${_kept[@]}"}")
+  fi
   echo '# <<< swarm-yuan:framework-gates <<<' >> "$block"
 
   # 2) 幂等替换标记区块（awk 三平台兼容）
