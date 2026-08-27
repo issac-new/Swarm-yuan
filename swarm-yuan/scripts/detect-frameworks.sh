@@ -138,6 +138,10 @@ flink|apache-flink|pyproject
 # druid（WP-R A4 新增，双信号 groupId+artifactId 兜底）
 druid|com.alibaba.druid|pom
 druid|druid-spring-boot-starter|pom
+# 回归发现#1（2026-08-27 RuoYi 回归）：SpringBoot 4 适配版 druid-spring-boot-4-starter
+# （groupId 为 com.alibaba 非 com.alibaba.druid）两旧信号均不中 → 主流项目漏探。
+# 宽信号覆盖 1/2/3/4 starter（依赖命中即高置信）。
+druid|druid-spring-boot|pom
 # WP-U：opentelemetry（可观测性）——三语言生态信号
 opentelemetry|@opentelemetry/api|pkgjson
 opentelemetry|opentelemetry-sdk|pyproject

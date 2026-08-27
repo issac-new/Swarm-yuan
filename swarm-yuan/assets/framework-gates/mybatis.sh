@@ -15,7 +15,7 @@ _fw_mybatis_check() {
     done < <(find "$d" -type f -name '*.xml' 2>/dev/null)
   done
   # 去空行 + 去重
-  xmls=$(printf '%s\n' "$xmls" | grep -E '^/.+' | sort -u)
+  xmls=$(printf '%s\n' "$xmls" |  grep -E '.+' | sort -u)
   if [[ -z "$xmls" ]]; then
     warn "mybatis: 无 mapper XML 可检（MYBATIS_MAPPER_DIRS）"
     return

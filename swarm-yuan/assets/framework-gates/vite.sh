@@ -3,7 +3,7 @@
 # harvested-from: ncwk-dev precheck.sh:2602-2632 (2026-07-17) + P5 扩展（2026-07-17），规律源自 Vite 8.x / 7.x 官方文档
 _fw_vite_check() {
   echo "  [vite] Vite 8.x / 7.x 框架规律"
-  local cfg="$VITE_CONFIG_FILE"
+  local cfg="${VITE_CONFIG_FILE:-}"
 
   if [[ -z "$cfg" || ! -f "$cfg" ]]; then
     warn "vite: VITE_CONFIG_FILE 未配置或不存在 ($cfg)"
@@ -49,21 +49,21 @@ _fw_vite_check() {
   # 门禁 grep 不到 --clean 直接 fail。修复：文件存在但非 inject 脚本(无 inject 特征)
   # 降为 warn(可能误配);仅当明确是 inject.mjs 但缺 --clean 才 fail。空值仍 skip。
   # ====================================================================
-  if [[ -n "$VITE_INJECT_SCRIPT" && -f "$VITE_INJECT_SCRIPT" ]]; then
+  if [[ -n "${VITE_INJECT_SCRIPT:-}" && -f "${VITE_INJECT_SCRIPT:-}" ]]; then
     # 判定是否 inject 脚本:文件名含 inject 或内容含 inject 相关特征(transform/inject/replace)
     local _is_inject=0
-    case "$(basename "$VITE_INJECT_SCRIPT")" in
+    case "$(basename "${VITE_INJECT_SCRIPT:-}")" in
       *inject*) _is_inject=1 ;;
     esac
-    [[ $_is_inject -eq 0 ]] && grep -qiE "inject|transform.*plugin|replace.*code" "$VITE_INJECT_SCRIPT" 2>/dev/null && _is_inject=1
+    [[ $_is_inject -eq 0 ]] && grep -qiE "inject|transform.*plugin|replace.*code" "${VITE_INJECT_SCRIPT:-}" 2>/dev/null && _is_inject=1
     if [[ $_is_inject -eq 1 ]]; then
-      if grep -qE "\-\-clean" "$VITE_INJECT_SCRIPT" 2>/dev/null; then
+      if grep -qE "\-\-clean" "${VITE_INJECT_SCRIPT:-}" 2>/dev/null; then
         pass "fw_vite_inject_clean: inject 脚本含 --clean 回滚分支"
       else
         fail "fw_vite_inject_clean: inject 脚本须支持 --clean 回滚"
       fi
     else
-      warn "fw_vite_inject_clean: VITE_INJECT_SCRIPT 指向非 inject 脚本($VITE_INJECT_SCRIPT),可能误配——若项目无 inject 需求请置空该变量"
+      warn "fw_vite_inject_clean: VITE_INJECT_SCRIPT 指向非 inject 脚本(${VITE_INJECT_SCRIPT:-}),可能误配——若项目无 inject 需求请置空该变量"
     fi
   else
     pass "fw_vite_inject_clean: 无 inject 脚本,跳过"

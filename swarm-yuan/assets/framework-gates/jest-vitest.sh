@@ -8,8 +8,8 @@ _fw_jest_vitest_check() {
   local cfgs cfgarr=()
   cfgs=$(_fw_resolve_globs ${VITEST_CONFIG_GLOBS[@]+"${VITEST_CONFIG_GLOBS[@]}"} 2>/dev/null | sort -u)
   # 回退：GLOBS 未配置或无结果时，用 VITEST_CONFIG_FILE 单文件路径（兼容旧 conf / 单配置项目）
-  if [[ -z "$cfgs" && -n "${VITEST_CONFIG_FILE:-}" && -f "$VITEST_CONFIG_FILE" ]]; then
-    cfgs="$VITEST_CONFIG_FILE"
+  if [[ -z "$cfgs" && -n "${VITEST_CONFIG_FILE:-}" && -f "${VITEST_CONFIG_FILE:-}" ]]; then
+    cfgs="${VITEST_CONFIG_FILE:-}"
   fi
   while IFS= read -r ln; do
     [[ -n "$ln" ]] && cfgarr+=("$ln")
