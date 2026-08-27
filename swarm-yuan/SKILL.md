@@ -76,7 +76,7 @@ meta（SKILL.md）/ workflow（9 节点×4 要素）/ reference（map + spec-tem
 
 深度（GitNexus/graphify/claude-mem/ocr，门禁内真实子进程）/ CLI（OpenSpec/comet/gsd-core/codex-security，按需 CLI）/ 方法论（superpowers/gstack/ECC/Ruflo/impeccable，AI 按节点引用）——代码图谱平权选型可并用。13 个运行时清单与降级链详见 `references/subagent-orchestration.md` 按需读。
 
-**reference 清单（按需读取，全部带"何时读我"路由头）**：探查→exploration-guide；填充→template-spec；认知→cognition-framework 等；方法论→各 *-methodology.md（含纯方法论吸收 cordis-composability / mea-loop / agent-skills / dsh-engineering 等）+ context-engineering-layering（上下文分层预算）；合规→standards-compliance + 行业 profile（`--industry` 真实加载）；安全→security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读。计数真值见 facts.conf。
+**reference 清单（按需读取，全部带"何时读我"路由头）**：探查→exploration-guide（含 §C+.0.6 四层架构视角）；填充→template-spec（spec §24 架构映射）；认知→cognition-framework 等；方法论→各 *-methodology.md（含纯方法论吸收 cordis-composability / mea-loop / agent-skills / dsh-engineering / togaf-metamodel 等）+ context-engineering-layering（上下文分层预算）；合规→standards-compliance + 行业 profile（`--industry` 真实加载）；安全→security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读。计数真值见 facts.conf。
 
 ## 使用说明
 
