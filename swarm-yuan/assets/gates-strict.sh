@@ -60,6 +60,10 @@ check_layer() {
       # WP-D3：空结果也提示（修静默——原代码 gitnexus 无跨层问题时连 pass 都不打印）
       pass "gitnexus 查询跨层依赖:无问题"
     fi
+  else
+    # 回归发现#17（2026-08-27 第六轮回归）：gitnexus 缺失/未索引时原静默跳过（无 else 提示），
+    # 与 check_review 的 ocr 缺失 warn 提示诚实化不一致——降级链须显式披露，不假装跑了图谱分析。
+    warn "gitnexus 未装/未索引——分层检查降级为 grep/awk 静态分析（未用代码图谱，精度较低；gitnexus analyze 或 BUILD_DEEP_RUNTIMES=1 可升级）"
   fi
 
   # 临时映射文件（兼容 bash 3.2，不用 declare -A）
