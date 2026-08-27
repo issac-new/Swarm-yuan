@@ -98,13 +98,15 @@ _write_claude_mem() {
   # 3) claude-mem CLI（仅当 CLI 存在；best-effort，不阻塞）
   command -v claude-mem >/dev/null 2>&1 || return 0
   # P0-5：真实写入——优先 `claude-mem add` 显式写记忆，失败/不支持时降级 search 触发 observation 捕获。
-  # 注：add 子命令签名按 claude-mem 上游（title + content）；不支持 add 的旧版自动降级，不阻塞。
+  # 深度接线抽检修正（2026-08-27 #22 批）：claude-mem 现行上游（v12.4.7 CLI / v13.x worker）已移除
+  # add 子命令——写入机制是 hooks 捕获 observation，CLI 层 search 触发即现行真实写入路径（非降级假象）。
+  # add 调用保留：面向仍带 add 的旧版上游（title + content 签名），新版自动落入 search 路径，不阻塞。
   local _content="swarm-yuan skill generated ${ts}: 项目知识已写回（特征卡+框架清单+spec 摘要）"
   if claude-mem add "swarm-yuan 生成" "$_content" >/dev/null 2>&1; then
     echo "→ [记忆写回] claude-mem: 已写入（add 真实子进程）"
     return 0
   fi
-  # 降级：search 触发 observation 捕获（原机制，治旧版无 add）
+  # 现行上游写入路径：search 触发 observation 捕获（hooks 侧落库）
   if claude-mem search "swarm-yuan skill generated ${ts}" >/dev/null 2>&1; then
     echo "→ [记忆写回] claude-mem: 已触发（observation 由其 hooks 捕获）"
   fi
