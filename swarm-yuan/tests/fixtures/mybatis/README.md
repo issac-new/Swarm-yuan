@@ -5,7 +5,7 @@
   - fw_mybatis_binding —— MYBATIS_SRC_GLOBS 非空时 Mapper 接口数(mcnt) = XML namespace 数(xcnt)；空 SRC_GLOBS 跳过。
   - fw_mybatis_select_dup_result —— `<select>` 同行同时声明 resultType 与 resultMap → fail。
 - 断言登记：**3/3 主触发已断言**（2026-08-26 实跑登记，见 violating/expected-fail-ids）。
-- 反模式：violating 侧复现上述 3 条 fail 门禁命中场景；compliant 侧以对应修复（配置/代码修正）消除命中。
+- 回归发现#18 正向用例（2026-08-27 第七轮回归）：violating/WrapperMapper.java（QueryWrapper + .apply/.last/.having 拼接）→ fw_mybatis_wrapper_injection(warn) 命中；同时保护 #18 修复分支——先筛含 Wrapper 文件再扫，非 MP 项目的 Function.apply 不再误报（RuoYi SensitiveJsonSerializer 实证驱动）。
 - 门禁无沉睡：声明的 fail 门禁全部命中，无需唤醒修复。
 
 ## violating vs compliant 差异
