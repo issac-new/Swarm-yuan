@@ -7,7 +7,7 @@
 > **三层 Harness 拼图**（R13-R15）：过程强制门禁层（rules.d 三值 + hooks 双宿主）+ 工作流审计层（goal_id+closure 目标闭环 + 证据态分级）+ 评测层（digest 链式锚定 + 选择即证据 + 审计即完成条件）。
 > 计数真值见 `assets/facts.conf`（不手抄；`scripts/self-check.sh` 机器执法）。
 
-[![Release](https://img.shields.io/badge/release-v2.5-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.5)
+[![Release](https://img.shields.io/badge/release-v2.6-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.6)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -149,7 +149,7 @@ bash scripts/audit-closure.sh <项目根> --strict   # 有 open goal → exit 2
 - 配置：物理变量保留（兼容既有生成物）；user 面必配 ≈ 20 项（开关/路径/预算，`FACT_CONF_VARS_USERFACE`）
 - references：全部带"何时读我"路由头（孤儿资产 = 0，self-check G18 断言）
 - 生成物税：SKILL.md ≤8KB / 认知面 references 拷贝 ≤256KB（断言过）
-- 测试：17 测试脚本 + gen-e2e + self-check 全 PASS（CI：ubuntu/macos/windows 三平台）
+- 测试：19 测试脚本 + gen-e2e + self-check 全 PASS（CI：ubuntu/macos/windows 三平台）
 
 零背景入门见 `../docs/DESIGN-PRIMER.md`（术语首现即定义的设计导读）；详细设计见 `../docs/DESIGN.md`（单一设计事实源，§0–§11）；演化史与决策记录见 `../docs/paradigm-decisions.md`（决策 1-35 索引）；落地案例见 `references/case-studies/articulation-orchestration.md`。
 
