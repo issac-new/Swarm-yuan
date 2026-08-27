@@ -194,6 +194,31 @@ _emit_section "precheck.conf" "$core"
 
 if [[ "$PROFILE" == "standard" || "$PROFILE" == "compliance" ]]; then
   arch=$(_render_conf "assets/precheck.arch.conf")
+  # 回归发现#14（2026-08-27 第五轮回归）：arch.conf 模板把 79 框架的全部变量行（51+）整份渲染进
+  # 骨架，与 WP-P3 懒生成约定（骨架期只留激活框架变量）断裂——ACTIVE_FRAMEWORKS 只激活 N 个，
+  # 骨架却带 51 个框架变量行（C 维死变量扫描 53 个实锤：48 个非激活框架占位 + 注释死变量）。
+  # 修复：渲染后按 ACTIVE_FRAMEWORKS 懒裁剪——保留激活框架 requires_conf 并集 + 非框架专属变量
+  # （通用安全/构建/部署），注释死变量行（可恢复，与 sync_framework_vars 同款处置，不删除）。
+  if [[ -n "$_frameworks" ]]; then
+    _keep_vars=""
+    for _fw in $_frameworks; do
+      _frag="$BASE/assets/framework-gates/${_fw}.sh"
+      [[ -f "$_frag" ]] || continue
+      _keep_vars="$_keep_vars $(sed -n 's/^# ruleset:.*requires_conf: *//p' "$_frag" | tr -s ' ')"
+    done
+    arch=$(printf '%s\n' "$arch" | awk -v keep="$_keep_vars" '
+      BEGIN { n = split(keep, arr, " "); for (i = 1; i <= n; i++) if (arr[i] != "") kv[arr[i]] = 1 }
+      {
+        # 框架专属变量行（含 _GLOBS/_FILES/_PATTERNS/_DIRS/_THRESHOLD/_STORE/_REQUIRED/_FILE 后缀）且不在激活并集
+        # 且不在激活并集 → 注释死变量；其余（通用变量 + 激活框架变量）保留
+        if (/^[A-Z_][A-Z0-9_]+=/ && /(_GLOBS|_FILES|_PATTERNS|_DIRS|_THRESHOLD|_STORE|_REQUIRED|_FILE)=/) {
+          vn = $0; sub(/=.*/, "", vn)
+          if (!(vn in kv)) { print "# deprecated（框架未激活，可恢复）" $0; next }
+        }
+        print
+      }
+    ')
+  fi
   _emit_section "precheck.arch.conf" "$arch"
 fi
 

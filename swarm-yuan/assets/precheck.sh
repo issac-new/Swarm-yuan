@@ -1751,6 +1751,8 @@ if [[ $SKIP_COUNT -gt 0 ]]; then
 fi
 
 if [[ $FAIL -eq 0 ]]; then
+  # 回归发现#13：修复后解锁——清除 fail flag（fail-gate-hook 据此放行 Write/Edit/推进态命令）
+  rm -f "${PROJECT_DIR:-$(pwd)}/.swarm-yuan/.gate-fail-flag" 2>/dev/null || true
   # WP-CogAudit：--strict-skip 模式下，SKIP>0 时在"✓ 通过"行加前缀 + 返回 rc=2（确认偏误防治）
   # 默认 STRICT_SKIP=0：输出 "✓ 门禁检查通过" + rc=0（保 cli-ab 逐字节等价与 CI/自举不破坏）
   # opt-in STRICT_SKIP=1：输出 "✓ 门禁检查通过 [部分跳过 N 个未配置]" + rc=2（区分"全通过"与"部分跳过"）
@@ -1786,6 +1788,16 @@ else
     echo "—— 修复建议结束（执行修复仍需 AI/用户确认，与「用户决策」原则一致）——"
   fi
   _final_rc=1
+  # 回归发现#13（2026-08-27 第五轮回归）：fail-gate-hook.sh:12 声明的 flag 协议
+  # （"门禁 fail 时捕获到 .swarm-yuan/.gate-fail-flag，退出码 0 时清除"）此前只有 hook
+  # 单侧实现——precheck 从不写 flag，WP-Enforce 拦截链（fail→hook 拦改文件/推进命令）
+  # 在真实运行中永不为真（唯一写入方是测试脚本造 fixture）。本处接通写侧：
+  # FAIL>0 写 flag（内容=失败门禁 id 清单，hook cat 后作 deny reason 展示）；
+  # 修复后（FAIL=0 分支开头）rm -f 清除解锁。纯副作用，不动 stdout/rc——cli-ab 逐字节等价保持。
+  {
+    mkdir -p "${PROJECT_DIR:-$(pwd)}/.swarm-yuan" 2>/dev/null
+    printf '%s\n' ${FAIL_IDS[@]+"${FAIL_IDS[@]}"} > "${PROJECT_DIR:-$(pwd)}/.swarm-yuan/.gate-fail-flag" 2>/dev/null || true
+  } || true
 fi
 # P1-5：json 模式在运行结束输出 SARIF 子集（text 默认模式无此行，输出与改造前逐字节一致）
 if [[ "$FORMAT" == "json" ]]; then _emit_json; fi

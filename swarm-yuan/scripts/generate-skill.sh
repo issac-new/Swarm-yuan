@@ -717,7 +717,8 @@ for i, line in enumerate(sys.stdin, 1):
       done < "$dec_file"
     fi
   fi
-  # C2: --strict 模式下强制 decisions.jsonl 至少 1 条记录（SKILL.md:64 契约：--mark-active 前须≥1 决策）
+  # C2: --strict 模式下强制 decisions.jsonl 至少 1 条记录（spec-template §2 决策记录契约：
+  # --mark-active 前须≥1 决策；UserChallenge 类决策须带 missing_context/cost_if_wrong）
   # draft 期（非 strict）允许空；strict 时文件缺失或零记录均记为 hit
   if [[ "$strict" == "--strict" ]]; then
     local _dec_cnt=0
@@ -725,7 +726,7 @@ for i, line in enumerate(sys.stdin, 1):
       _dec_cnt=$(grep -c '.' "$dec_file" 2>/dev/null | xargs)
     fi
     if [[ "$_dec_cnt" -eq 0 ]]; then
-      decisions_miss="${decisions_miss}${decisions_miss:+$'\n'}$dec_file: 缺少决策记录（--mark-active 须≥1 条，SKILL.md:64 契约）"
+      decisions_miss="${decisions_miss}${decisions_miss:+$'\n'}$dec_file: 缺少决策记录（--mark-active 须≥1 条，spec-template §2 契约；UserChallenge 须带 missing_context/cost_if_wrong）"
     fi
   fi
   hits=$(printf '%s\n%s\n' "$hits" "$decisions_miss" | grep -v '^$' || true)
@@ -1765,7 +1766,10 @@ _write_if_absent "$SKILL_DIR/commands/explore.md" <<'CEOF'
 ---
 description: 探查项目结构
 ---
+
 用 gitnexus/graphify/claude-mem 探查项目，更新特征卡。
+
+探查方法论与降级链：`references/exploration-guide.md`（§C+.0 形态判定 → §C+.0.5 框架激活 → §C+.0.6 四层架构枚举 → §C+.1 全量穷举）。
 CEOF
 fi  # PROFILE != lite
 
@@ -1812,6 +1816,7 @@ cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] assets: spec-template(§5.5-§18) + plan + branch + env + data + state-machine
 - [ ] check: precheck.sh 门禁四族（计数真值见 assets/facts.conf；core 随 --all，arch 随 --all-full，compliance 随 --compliance-suite）
 - [ ] scripts: precheck + state-machine + trace-log + cost-report
+- [ ] 决策记录：spec §2 决策记录段写本技能生成/选型决策到 \`.swarm-yuan/decisions.jsonl\`（≥1 条；UserChallenge 类须带 missing_context/cost_if_wrong）——\`--mark-active\` 核验项
 EOF
 # WP-R2-2：自成长指引段（固定操作指引，非填充项——目标技能的 AI 按此链保持技能与项目同步）
 # WP-R3-1：profile 分档——lite 档 WP-E 不装 hooks/hooks.json，SessionStart 自动感知链不存在；
