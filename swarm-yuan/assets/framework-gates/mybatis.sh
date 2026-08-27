@@ -185,12 +185,21 @@ _fw_mybatis_check() {
   fi
 
   # ---------- fw_mybatis_wrapper_injection(warn)：Wrapper last/having/apply 字符串注入面 ----------
-  if [[ ${#srcarr[@]} -gt 0 ]]; then
-    local w_hits
-    w_hits=$(grep -rnE '\.(last|having|apply)\(' "${srcarr[@]}" 2>/dev/null | grep -vE 'checkSqlInjection' || true)
-    _fw_report warn fw_mybatis_wrapper_injection "$(printf '%s\n' "$w_hits" | head -5)" "检出 Wrapper last()/having()/apply()（须核对参数来源，建议 checkSqlInjection(true)）" "无 Wrapper 字符串 API 调用"
-  else
+  # 回归发现#18（2026-08-27 第七轮回归）：原实现对全部 Java 源扫 \.(last|having|apply)\(，非 MP
+  # 项目命中全是函数式接口 Function.apply 误报（RuoYi SensitiveJsonSerializer 实证），且与同族
+  # fw_mybatis_logic_delete 的 has_mp 守卫口径不一致。改为先筛含 Wrapper 用法的文件再扫——
+  # Wrapper 之外的 .last/.having/.apply 无 SQL 语义（MP 项目内同样消灭 Function.apply 误报）。
+  if [[ ${#srcarr[@]} -eq 0 ]]; then
     pass "fw_mybatis_wrapper_injection: 无 Java 源文件，跳过"
+  else
+    local w_files w_hits
+    w_files=$(grep -lE 'QueryWrapper|LambdaQueryWrapper|UpdateWrapper|Wrapper<[[:space:]]' "${srcarr[@]}" 2>/dev/null || true)
+    if [[ -n "$w_files" ]]; then
+      w_hits=$(grep -nE '\.(last|having|apply)\(' $w_files 2>/dev/null | grep -vE 'checkSqlInjection' || true)
+      _fw_report warn fw_mybatis_wrapper_injection "$(printf '%s\n' "$w_hits" | head -5)" "检出 Wrapper last()/having()/apply()（须核对参数来源，建议 checkSqlInjection(true)）" "无 Wrapper 字符串 API 调用"
+    else
+      pass "fw_mybatis_wrapper_injection: 未检出 Wrapper 用法（非 MP 或纯 XML 项目），跳过"
+    fi
   fi
 
   # ---------- fw_mybatis_mapper_locations(warn)：starter 须显式 mapper-locations ----------
