@@ -224,7 +224,7 @@ harness（宿主 CLI：Codex/Claude Code）管 agent loop/沙箱/审批通道；
 
 ```
 厚生成器（一次性消费，可厚）          薄生成物（每会话重复消费，必须薄）
-  探查知识库（74 框架规则/40 references）   SKILL.md（≤8KB：何时用/约束摘要/入口/路由/元规则/自成长）
+  探查知识库（79 框架规则/41 references）   SKILL.md（≤8KB：何时用/约束摘要/入口/路由/元规则/自成长）
   行业 profile（7 份，conf-render 真实加载）  地图（≤32KiB：两列表 |路径|说明与约束|）
   探查/渲染/自检脚本                     spec 9 节核心 + workflow 9 节点×4 要素
   决策史/调研史（docs/）                 rules.d/*.rules + precheck + hooks（双宿主）
@@ -292,7 +292,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | 需求 | §1/§4 | ①② | check_requirements（+openspec validate） | ✅ |
 | 分析（左移） | §19/§20/§21 | ②③★ | check_shift_left / check_impact | ✅ |
 | 设计 | §3/§5/§5.5 | ②③ | check_layer/stable_diff/link_depth/reuse/deps/security/cognition/domain | ✅ |
-| 开发 | plan Tasks | ④⑤ | check_build / check_framework（74 框架动态分发） | ✅ |
+| 开发 | plan Tasks | ④⑤ | check_build / check_framework（79 框架动态分发） | ✅ |
 | 测试 | §11/§19 | ⑥ | check_test（TEST_CMD 退出码 + 0 用例检出——"空跑通过"warn）/ check_review（+gsd-tools health + 审查留痕核验：docs/reviews/<日期>.md 三要素） | ✅ |
 | 交付 | §12/§22 | ⑦⑧ | check_branch / check_release_sign / --compliance-suite 族 | ✅ |
 
@@ -341,7 +341,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **两维表规范**：地图行 = `| 路径 | 说明与约束 |`。路径反引号包裹（path-check 校验存在性）；说明列写"它是什么+接口/约束+稳定性标注词"（"导出 add（禁止改）"——stability-audit 按行内字面词识别，与列位置无关）。维度/来源等纯记账列已退役（R13）。说明列执行**语义/动能两区纪律**（R16 本体层口径，是/应当不混写）：说明列是表征区——只写"是什么"（组件/接口/依赖/稳定性标注词的引用）；"应当怎样"的规范执行体只落 rules.d/*.rules 与门禁，地图至多引用规范词、不承载执行逻辑（地图骨架自带该纪律说明，links.md 使用纪律第 3 条同口径）。
 - **特征卡**：P0 六项强制 / P1 十一项可增量（draft 期「（P1 待补）」允许，mark-active 前清零）；探查期产出，受检不自证。
 
-### 4.1 框架规则引擎格式契约（74 框架规则的结构约定，方案 A 选型 2026-07-17）
+### 4.1 框架规则引擎格式契约（79 框架规则的结构约定，方案 A 选型 2026-07-17；74→79 见 WP-P2-extension）
 
 **规则文件 `references/frameworks/<fw>.md` 六段式**：frontmatter（ruleset_id/适用版本/最后调研来源）→ §1 探查信号（依赖/注解/文件/配置四类，各带置信度——§C+.0.5 激活依据）→ §2 特定构件枚举（命令+计数核验基准）→ §3 领域规律（≥10 条，每条五要素：适用版本/规律/违反后果（挂 CWE 或官方 issue）/验证方法（具体 grep 命令）/对应门禁 id）→ §4 门禁清单（id/级别/实现逻辑/依赖 conf 变量）→ §5+ 深化材料。
 
