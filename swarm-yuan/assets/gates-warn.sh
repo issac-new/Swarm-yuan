@@ -905,6 +905,10 @@ check_frontend() {
   echo "=== 前端组件架构检查（层级深/容器展示分离/props多/重复依赖/循环依赖/CSS污染）==="
   local found=0
 
+  # 回归#18 防御：COMPONENT_DIR 为单目录标量；误配成数组时 [[ -z "$COMPONENT_DIR" ]]
+  # 在 set -u + bash 3.2 直接 unbound 崩溃。兜底后"If it's an array, treat as unset"。
+  [[ -z "${COMPONENT_DIR:-}" ]] && COMPONENT_DIR=""
+
   if [[ -z "$COMPONENT_DIR" || ! -d "$COMPONENT_DIR" ]]; then
     warn "未配置 COMPONENT_DIR 或目录不存在，跳过前端组件检查"
     return
