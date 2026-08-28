@@ -85,7 +85,7 @@
 | 渲染 | DOM 操作昂贵，须批量/虚拟 DOM diff | 看是否有直接 DOM 操作 |
 | key | 列表 key 须稳定唯一，不可用 index | grep v-for/key/map key |
 | 虚拟滚动 | 大列表（>100 项）须虚拟滚动 | 看列表组件 |
-| 首屏 | 须懒加载/代码分割 | 看 import() / lazy |
+| 首屏 | 须懒加载/代码分割 | 看 import / lazy |
 | 状态 | 派生状态不可存 useState（用 useMemo/computed） | grep useState(.map/.filter) |
 | 响应式 | 须正确声明响应式（ref/reactive/useState），不可直接赋值 | 看状态管理 |
 
@@ -283,7 +283,7 @@
 
 ### TOGAF（企业架构框架）
 
-> 建模维度（五层元模型/BDAT 四层枚举/读图 SOP/适配矩阵）已独立成 `references/togaf-metamodel-methodology.md`（2026-08-27 吸收，单一事实源）；下表保留治理规律的验证口径。
+> 建模维度（五层元模型/BDAT 四层枚举/读图 SOP/适配矩阵）已独立成 `references/togaf-metamodel-methodology.md`（单一事实源）；下表保留治理规律的验证口径。
 
 | 分析维度 | 须验证的客观规律 | 验证方法 |
 |---------|----------------|---------|
@@ -391,11 +391,11 @@
 
 ## 框架特定领域规则集（已迁移）
 
-> **T4 改造：框架规则已迁移至 `references/frameworks/`**（每框架 1 文件，六段式结构：§1 探查信号 / §2 特定构件枚举 / §3 领域规律 / §4 门禁清单 / §5 跨框架交互 / §6 版本陷阱）。生成时按 §C+.0.5 探查结果读取对应 `references/frameworks/<fw>.md`，AI 逐条用项目代码验证后实例化为 `references/framework-knowledge.md`（成立→附证据；不成立→剔除记录原因；版本区间外→标"待验证"）。框架门禁片段位于 `assets/framework-gates/<fw>.sh`，由 `scripts/generate-skill.sh --inject-frameworks` 注入到 `scripts/precheck.sh` 的 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，模板内置 `check_framework()` 通过 `declare -f` 动态分发到 `_fw_<id>_check`。四要素核验（构件计数/规律门槛/门禁实跑/dev-guide §10 约束数）见 SKILL.md Step 12 与 `references/template-spec.md` "框架适配四要素核验"。
+> **T4 改造：框架规则已迁移至 `references/frameworks/`**（每框架 1 文件，六段式结构：§1 探查信号 / §2 特定构件枚举 / §3 领域规律 / §4 门禁清单 / §5 跨框架交互 / §6 版本陷阱）。生成时按 §C+.0.5 探查结果读取对应 `references/frameworks/<fw>.md`，AI 逐条用项目代码验证后实例化为 `references/framework-knowledge.md`（成立→附证据；不成立→剔除记录原因；版本区间外→标"待验证"）。框架门禁片段位于 `assets/framework-gates/<fw>.sh`，由 `scripts/generate-skill.sh --inject-frameworks` 注入到 `scripts/precheck.sh` 的 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，模板内置 `check_framework` 通过 `declare -f` 动态分发到 `_fw_<id>_check`。四要素核验（构件计数/规律门槛/门禁实跑/dev-guide §10 约束数）见 SKILL.md Step 12 与 `references/template-spec.md` "框架适配四要素核验"。
 >
-> 框架规则集扩展方式：`references/frameworks/<fw>.md` 加六段式规则文件（ruleset_id/适用版本/最后调研/深度门槛 frontmatter 四字段）+ `assets/framework-gates/<fw>.sh` 加门禁片段（`_fw_<id>_check` 函数 + 头注释 `# ruleset: <id> requires_conf: VAR1 VAR2` / `# gates: fw_<id>_<rule>(fail) ...`）+ `precheck.arch.conf` 加框架适配配置变量（WP-I 物理三分：框架变量落 arch 组）。`scripts/verify-framework-ruleset.sh <id>` 做**范式侧规则集完整性机械核验**（规则文件/门禁片段存在 + 规律数≥门槛 + §4 门禁 id ⊆ 片段函数 + fixture 双态 + freshness 时效），与 SKILL.md Step 12 的**生成流程侧四要素核验**（构件计数/规律证据/门禁实跑/dev-guide §10 约束数，在目标技能 上执行）是不同集合——前者核范式文件，后者核生成产物。`scripts/gen-framework-index.sh` 生成 assets/framework-signals.md 并把 exploration-guide.md §C+.0.5 重写为指针区块（WP-P1 数据化外迁）。
+> 框架规则集扩展方式：`references/frameworks/<fw>.md` 加六段式规则文件（ruleset_id/适用版本/最后调研/深度门槛 frontmatter 四字段）+ `assets/framework-gates/<fw>.sh` 加门禁片段（`_fw_<id>_check` 函数 + 头注释 `# ruleset: <id> requires_conf: VAR1 VAR2` / `# gates: fw_<id>_<rule>(fail) ...`）+ `precheck.arch.conf` 加框架适配配置变量。`scripts/verify-framework-ruleset.sh <id>` 做**范式侧规则集完整性机械核验**（规则文件/门禁片段存在 + 规律数≥门槛 + §4 门禁 id ⊆ 片段函数 + fixture 双态 + freshness 时效），与 SKILL.md Step 12 的**生成流程侧四要素核验**（构件计数/规律证据/门禁实跑/dev-guide §10 约束数，在目标技能 上执行）是不同集合——前者核范式文件，后者核生成产物。`scripts/gen-framework-index.sh` 生成 assets/framework-signals.md 并把 exploration-guide.md §C+.0.5 重写为指针区块。
 >
-> **fixture 双态分级（WP-K）**：核心 10 规则集（spring-boot/mybatis/react/vue/gin/kafka/mysql/django/fastapi/nextjs）缺 fixture 双态 = 核验 fail；非核心集缺 fixture 仅 warn 建议补。**freshness 政策**：frontmatter「最后调研」超 365 天 → 核验 warn（`--strict-freshness` 可 fail-closed）；self-check.sh 有同构全量检查（CI 断言执行）。
+> **fixture 双态分级**：核心 10 规则集（spring-boot/mybatis/react/vue/gin/kafka/mysql/django/fastapi/nextjs）缺 fixture 双态 = 核验 fail；非核心集缺 fixture 仅 warn 建议补。**freshness 政策**：frontmatter「最后调研」超 365 天 → 核验 warn（`--strict-freshness` 可 fail-closed）；self-check.sh 有同构全量检查（CI 断言执行）。
 >
 > 本文件保留通用领域速查（数据库/缓存/网络/安全/并发/业务/架构/管理/运维），不含框架特定规律——所有框架规则一律以 `references/frameworks/<fw>.md` 为唯一来源。
 

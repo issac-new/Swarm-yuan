@@ -11,7 +11,7 @@
 
 ## 一、决策审计（簇 A）
 
-### 1.1 配对审计事件（✅ 已落地 WP-R12-A）
+### 1.1 配对审计事件（✅ 已落地 -A）
 
 dsh `hook-protocol/src/events.ts`：每次门禁触发写 `invoked` + 配对 `result` 两行，稳定 `handlerId`（配置派生，非随机 UUID）关联，决策派生规则统一 `output.decision ?? (continue===false?'stop':'pass')`——**解析失败也落一行 pass，不丢记录**；stderr 摘要截断 500 字符；全部 log-only 不进模型上下文。
 
@@ -33,7 +33,7 @@ bash 映射：本仓 hook 生产 JSON 时的纪律——① `hookEventName` 必�
 
 dsh `user-approval`：审批审计写不进去时**宁可拒绝也不返回未记录的决策**。
 
-本仓取舍（WP-R12-A 已声明）：**不采用**。我们的 deny 是安全侧动作，fail-open 纪律优先——审计写失败不阻塞主流程（`|| true`）。dsh 的审批是"用户授权"（记录缺失=授权无凭据必须拒绝），我们的 deny 是"门禁拦截"（拦截失效=安全退化）。原则留存：涉及"授权"语义的日志（decisions.jsonl 的 UserChallenge 决策）应向 dsh 看齐——授权留痕失败时提示用户重试，不静默继续。
+本仓取舍：**不采用**。我们的 deny 是安全侧动作，fail-open 纪律优先——审计写失败不阻塞主流程（`|| true`）。dsh 的审批是"用户授权"（记录缺失=授权无凭据必须拒绝），我们的 deny 是"门禁拦截"（拦截失效=安全退化）。原则留存：涉及"授权"语义的日志（decisions.jsonl 的 UserChallenge 决策）应向 dsh 看齐——授权留痕失败时提示用户重试，不静默继续。
 
 ## 二、状态韧性（簇 B）
 
@@ -73,13 +73,13 @@ bash 映射：目标技能 `reference-manual.md` 的组件清单段是 catalog�
 
 dsh `agent-instructions`：不靠 inotify，观察 read/write/edit 工具的 durable result——touch 到某 scope 才做该 scope 重探查；`{path, version, sha1 digest}` 缓存跳过未变文件。
 
-bash 映射（部分落地 WP-R12-C）：`project-fingerprint.sh` 增路径级 digest 缓存——结构指纹感知到变化后，AI 重探查**只针对 git diff 涉及的目录/维度**，SHA 未变的路径直接复用旧清单条目。增量且幂等。
+bash 映射（部分落地 -C）：`project-fingerprint.sh` 增路径级 digest 缓存——结构指纹感知到变化后，AI 重探查**只针对 git diff 涉及的目录/维度**，SHA 未变的路径直接复用旧清单条目。增量且幂等。
 
 ### 3.3 fail-closed 解析 + last-good 保留（📖 原则）
 
 dsh `skill-filesystem`：frontmatter 解析失败**整个条目带警告剔除**（坏数据不出现在禁用面）；发现过程 I/O 失败时快照标 `complete: false`、不缓存、消费者继续用 last-good。
 
-bash 映射（红线已入骨架 SKILL.md 自成长段，WP-R12-C 机械化）：清单更新**先完整生成到临时文件再原子替换**（`mv` 同目录原子性），探查中途失败绝不覆盖上一份好清单；探查输出本身畸形（条目数骤降 >50%）视为失败，保留 last-good 并告警。
+bash 映射（红线已入骨架 SKILL.md 自成长段，-C 机械化）：清单更新**先完整生成到临时文件再原子替换**（`mv` 同目录原子性），探查中途失败绝不覆盖上一份好清单；探查输出本身畸形（条目数骤降 >50%）视为失败，保留 last-good 并告警。
 
 ## 四、工程纪律（簇 D）
 
@@ -91,7 +91,7 @@ bash 映射（红线已入骨架 SKILL.md 自成长段，WP-R12-C 机械化）�
 | 回调异常收容在调度器内（一个坏 listener 不破坏核心生命周期） | hooks fail-open 的理论表述：任一 hook 崩不影响其他 hook 与主流程 |
 | 不把不可信输出交给 ambient 环境或可预测路径（env 清洗 drop `*KEY*`/`*SECRET*`/`*TOKEN*`，0700 私有目录 + 随机名 + `wx` 独占创建） | hook/脚本写临时文件：`mktemp`（已做）；涉及凭据的 conf 加载不 export 到子进程环境 |
 | dispose 必须到达 quiescence（kill 后 await 子进程真正退出；先关 listener 注册表再 kill） | 生成流程中断清理：worktree 收口前先确认无在途写；`--upgrade` 备份完成才覆盖 |
-| 异步状态不是同步状态（`whenIdle()` 不是单条消息的完成信号；等的迁移若永不会发生要显式处理"没得等"分支） | PostToolUse hook 语义：precheck 的 exit_code 是这次运行的结果，不是"门禁整体健康度"——flag 捕获模型本就如此设计，文档化 |
+| 异步状态不是同步状态（`whenIdle` 不是单条消息的完成信号；等的迁移若永不会发生要显式处理"没得等"分支） | PostToolUse hook 语义：precheck 的 exit_code 是这次运行的结果，不是"门禁整体健康度"——flag 捕获模型本就如此设计，文档化 |
 | unlink 链接形路径（lstat 判 symlink → unlink 只删链接不跟随） | 清理脚本删文件前 `[[ -L ]]` 判定（bash：`rm` 默认不跟随符号链接删目标，但 `rm -r` 会——清理逻辑避免 `rm -rf` 用户路径） |
 
 ### 4.2 解释性空实现契约（dsh `runtime-diagnostics/invariants`）
@@ -100,7 +100,7 @@ bash 映射（红线已入骨架 SKILL.md 自成长段，WP-R12-C 机械化）�
 
 bash 映射：swarm-yuan 已有同构——门禁 `skip_if_unconfigured` 必须带原因（SKIP 披露而非静默），Q2-heavy "机械只在信号可信处"同源于"只断言可观察关系"。强化点：self-check.sh 的每类检查若整类不适用，须输出 `No <check>: <原因>` 而非静默跳过。
 
-### 4.3 Agent Notes 生命周期（✅ 已落地 WP-R12-D）
+### 4.3 Agent Notes 生命周期（✅ 已落地 -D）
 
 dsh `.agents/notes/{proposed,implemented,rejected,archived}/<date>-<slug>.md`：决策笔记四态生命周期。关键增量是 **proposed/rejected 的未采纳决策留痕**——ISO/IEC 42001 审计视角下，被拒绝的方案同样是治理证据。
 
@@ -120,4 +120,4 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 
 ## 六、与上轮吸收（cordis 框架层）的关系
 
-上轮（2026-08-14）吸收可逆效应/响应式依赖，落地 `--inject-frameworks` 快照+ledger+`--rollback-frameworks` 与 precheck.patch.conf 分层 patch。本轮产品层机制与框架层同根（都是"动态组合系统的可信度工程"），但回答的问题不同：框架层回答"组件加装/拆除是否可控"，产品层回答"决策是否可审计、状态是否可恢复、感知是否可持续"。两者在 swarm-yuan 的交点：自成长链（WP-Q3-1/R2-2 感知 + 本文簇 C 增量更新）+ fail-gate 审计（WP-Enforce2/3 + 本文簇 A 全量化）。
+上轮（2026-08-14）吸收可逆效应/响应式依赖，落地 `--inject-frameworks` 快照+ledger+`--rollback-frameworks` 与 precheck.patch.conf 分层 patch。本轮产品层机制与框架层同根（都是"动态组合系统的可信度工程"），但回答的问题不同：框架层回答"组件加装/拆除是否可控"，产品层回答"决策是否可审计、状态是否可恢复、感知是否可持续"。两者在 swarm-yuan 的交点：自成长链+ fail-gate 审计。

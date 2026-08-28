@@ -23,8 +23,8 @@ npx claude-mem install
 # - MCP server (search/timeline/get_observations) → 按需检索
 
 # 记忆存储位置
-~/.claude-mem/claude-mem.db      # SQLite (FTS5 全文搜索)
-~/.claude-mem/chroma/            # ChromaDB 向量嵌入
+~/.claude-mem/claude-mem.db # SQLite (FTS5 全文搜索)
+~/.claude-mem/chroma/ # ChromaDB 向量嵌入
 ```
 
 > **铁律：只引用 claude-mem 命令，不重新实现记忆存储/检索/嵌入功能。**
@@ -40,13 +40,13 @@ npx claude-mem install
 observation XML 格式：
 ```xml
 <observation>
-  <type>bugfix|feature|refactor|change|discovery|decision|security_alert|sensitive</type>
-  <title>...</title>
-  <facts><fact>...</fact></facts>
-  <narrative>...</narrative>
-  <concepts><concept>how-it-works|why-it-exists|what-changed|problem-solution|gotcha|pattern|trade-off</concept></concepts>
-  <files_read><file>...</file></files_read>
-  <files_modified><file>...</file></files_modified>
+ <type>bugfix|feature|refactor|change|discovery|decision|security_alert|sensitive</type>
+ <title>...</title>
+ <facts><fact>...</fact></facts>
+ <narrative>...</narrative>
+ <concepts><concept>how-it-works|why-it-exists|what-changed|problem-solution|gotcha|pattern|trade-off</concept></concepts>
+ <files_read><file>...</file></files_read>
+ <files_modified><file>...</file></files_modified>
 </observation>
 ```
 
@@ -105,7 +105,7 @@ observation XML 格式：
 
 **在目标技能中的落地：**
 - security-spec §3 网络安全：若项目启动 LLM SDK 子进程，须显式透传 `HTTPS_PROXY` 等代理 env
-- precheck.sh 的 `--security` 可扫描 `spawn()` 调用是否过滤了 `env`（若显式传 `env:` 须包含 `HTTPS_PROXY`）
+- precheck.sh 的 `--security` 可扫描 `spawn` 调用是否过滤了 `env`（若显式传 `env:` 须包含 `HTTPS_PROXY`）
 
 ## Mode-JSON 分类法（生成+检索同源）
 
@@ -189,7 +189,7 @@ SQLite 在 WAL（Write-Ahead Logging）模式下，`*.db` + `*-wal` + `*-shm` �
 # better-sqlite3 在线备份（推荐，非破坏式只读源）
 const backup = db.backup(`${dest}.db`);
 while (backup.remaining > 0) backup.transfer(-1);
-backup.close();
+backup.close;
 
 # 或 SQLite CLI
 sqlite3 "$DB" ".backup '$DEST'"
@@ -201,7 +201,7 @@ sqlite3 "$DB" ".backup '$DEST'"
 - **可选异地**：备份完成后上传到 GCS (`--gcs gs://bucket/path`) 或 S3
 
 **在目标技能中的落地：**
-- 若项目用 SQLite 做状态存储（state-machine.sh 的 `.swarm-yuan/state.yaml` 是 YAML 不涉及，但若项目自建 SQLite 记忆/缓存层），dev-guide.md 须提示：WAL 模式 DB 不可直接 `cp`，须用在线 `.backup()`
+- 若项目用 SQLite 做状态存储（state-machine.sh 的 `.swarm-yuan/state.yaml` 是 YAML 不涉及，但若项目自建 SQLite 记忆/缓存层），dev-guide.md 须提示：WAL 模式 DB 不可直接 `cp`，须用在线 `.backup`
 - precheck.sh 的 `--memory` 子命令可扫描 `cp *.db` 或 `fs.copyFile(*.db)` 模式并告警
 
 ## Failure-signal 真实捕获（ruflo v3.22.0）
@@ -228,9 +228,9 @@ observer 之前在 PostToolUse hook 中记录 `success: true` 硬编码值（898
 ### 蒸馏流水线
 ```
 memory_entries (raw observations)
-  → episodes (相关 observation 聚合为一个事件)
-    → reasoning_patterns (从 episodes 抽象出可复用模式 + embeddings)
-      → weak relational edges (pattern 间的弱关联)
+ → episodes (相关 observation 聚合为一个事件)
+ → reasoning_patterns (从 episodes 抽象出可复用模式 + embeddings)
+ → weak relational edges (pattern 间的弱关联)
 ```
 
 **特性：**
@@ -301,9 +301,9 @@ ECC 的 instinct 系统将观察升级为**原子 instinct**——每个观察�
 
 ```
 session 观察（PostToolUse hook）
-  → atomic instinct（带 confidence score 0.0-1.0）
-    → instinct 演化（置信度 ≥ 阈值时）
-      → 提升为 skill / command / agent
+ → atomic instinct（带 confidence score 0.0-1.0）
+ → instinct 演化（置信度 ≥ 阈值时）
+ → 提升为 skill / command / agent
 ```
 
 **置信度评分维度：**

@@ -189,7 +189,7 @@
 
 ```bash
 # precheck.compliance.conf 或环境变量
-CERT_PROFILE=dengbao4    # dengbao4 | bcp5 | gb22240 | pcidss | iso27001 | all
+CERT_PROFILE=dengbao4 # dengbao4 | bcp5 | gb22240 | pcidss | iso27001 | all
 ```
 
 ### 6.2 行为

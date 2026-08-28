@@ -45,10 +45,10 @@ codex-security 与 swarm-yuan 既有安全能力是**正交互补**关系：
 # 前置：npm install @openai/codex-security + npx @openai/codex-security login（或设 OPENAI_API_KEY）
 # 扫描（AI 约束推理，非 SAST 模式匹配）：
 npx @openai/codex-security scan "${SECURITY_SCAN_DIRS[@]}" \
-  --output-dir "$SCAN_ROOT/results" \
-  --json \
-  --fail-on-severity "$SEVERITY" \
-  --model gpt-5.6-sol --effort high
+ --output-dir "$SCAN_ROOT/results" \
+ --json \
+ --fail-on-severity "$SEVERITY" \
+ --model gpt-5.6-sol --effort high
 # 导出 SARIF：
 npx @openai/codex-security export "$SCAN_ROOT/results" --export-format sarif --output "$SCAN_ROOT/results.sarif"
 ```

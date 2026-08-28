@@ -42,18 +42,18 @@ GITNEXUS_SKIP_OPTIONAL_GRAMMARS=1 npm install -g gitnexus
 
 ### 核心命令
 ```bash
-gitnexus setup                     # 一次性：为检测到的编辑器写 MCP 配置（-c 选择）
-gitnexus analyze [path]            # 索引仓库（或更新过期索引）— 在仓库根运行
-gitnexus analyze --force           # 全量重建
-gitnexus analyze --embeddings [n]  # 启用语义嵌入（默认上限 50000 节点；0 禁用）
-gitnexus analyze --skills          # 生成仓库专属 skill 文件
-gitnexus mcp                       # 启动 MCP server（stdio）— 服务所有已索引仓库
-gitnexus serve                     # 本地 HTTP server（多仓库）供 Web UI 桥接
-gitnexus list                      # 列出所有已索引仓库
-gitnexus status                    # 当前仓库的索引状态
-gitnexus clean [--all --force]     # 删除索引
-gitnexus wiki [path] [--model m]   # 从图谱生成仓库 wiki
-gitnexus group create <name>       # 多仓库/monorepo 组 + 跨仓库契约同步
+gitnexus setup # 一次性：为检测到的编辑器写 MCP 配置（-c 选择）
+gitnexus analyze [path] # 索引仓库（或更新过期索引）— 在仓库根运行
+gitnexus analyze --force # 全量重建
+gitnexus analyze --embeddings [n] # 启用语义嵌入（默认上限 50000 节点；0 禁用）
+gitnexus analyze --skills # 生成仓库专属 skill 文件
+gitnexus mcp # 启动 MCP server（stdio）— 服务所有已索引仓库
+gitnexus serve # 本地 HTTP server（多仓库）供 Web UI 桥接
+gitnexus list # 列出所有已索引仓库
+gitnexus status # 当前仓库的索引状态
+gitnexus clean [--all --force] # 删除索引
+gitnexus wiki [path] [--model m] # 从图谱生成仓库 wiki
+gitnexus group create <name> # 多仓库/monorepo 组 + 跨仓库契约同步
 ```
 
 ### 输入/输出
@@ -83,20 +83,20 @@ pipx install graphifyy
 
 ### 核心命令
 ```bash
-graphify install                       # 注册 skill 到 AI 助手（默认 Claude Code）
-graphify install --platform agents     # 注册到 .agents/skills/（跨框架）
-graphify install --project             # 安装到当前仓库而非用户 profile
-graphify .                             # 构建图谱（当前文件夹）
-graphify extract ./docs --backend claude  # 无头提取（非代码需 API key）
-graphify query "什么连接了 auth 和数据库？"  # 自然语言查询 graph.json
-graphify path "ComponentA" "ComponentB"    # 依赖链/最短路径
-graphify explain "RateLimiter"             # 节点邻域
-graphify export callflow-html              # Mermaid 调用流 HTML
-graphify hook install                      # git commit 时自动重建图
-graphify hook-guard <search|read>          # hook 守卫子命令（跨平台，v0.9.8+）
-graphify merge-graphs a.json b.json        # 合并图
-python -m graphify.serve graphify-out/graph.json              # MCP server（stdio）
-python -m graphify.serve graph.json --transport http --port 8080  # 共享 HTTP MCP
+graphify install # 注册 skill 到 AI 助手（默认 Claude Code）
+graphify install --platform agents # 注册到 .agents/skills/（跨框架）
+graphify install --project # 安装到当前仓库而非用户 profile
+graphify . # 构建图谱（当前文件夹）
+graphify extract ./docs --backend claude # 无头提取（非代码需 API key）
+graphify query "什么连接了 auth 和数据库？" # 自然语言查询 graph.json
+graphify path "ComponentA" "ComponentB" # 依赖链/最短路径
+graphify explain "RateLimiter" # 节点邻域
+graphify export callflow-html # Mermaid 调用流 HTML
+graphify hook install # git commit 时自动重建图
+graphify hook-guard <search|read> # hook 守卫子命令（跨平台，v0.9.8+）
+graphify merge-graphs a.json b.json # 合并图
+python -m graphify.serve graphify-out/graph.json # MCP server（stdio）
+python -m graphify.serve graph.json --transport http --port 8080 # 共享 HTTP MCP
 ```
 
 > ⚠️ **hook-guard 子命令（v0.9.8+）**：`PreToolUse` / `BeforeTool` hook 逻辑已移入 shell 无关的 `graphify hook-guard <search|read>` 子命令，Windows/macOS/Linux 行为字节一致。不再依赖 POSIX bash 内联（`case/esac`、`[ -f ]`），Windows 上 hook 不再静默失败。Gemini 的 `BeforeTool` 用 `graphify hook-guard gemini`，移除对 bare `python` 在 PATH 的依赖。
@@ -302,7 +302,7 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | **不静默丢弃：无 extractor 的代码文件** | v0.9.9 | `.r`/`.ejs`/`.ets` 等被分类为代码但无 AST extractor 的文件，现在 print grouped warning 而非静默消失 | 探查阶段可引用（图完整性） |
 | **不静默丢弃：`os.walk` 错误** | v0.9.11 | `os.walk` 的 `os.scandir` 失败（权限/并发写入）现在记录每个跳过的子树 + warn，而非吞掉整棵子树 | 探查阶段可引用（图完整性） |
 | **anti-shrink guard** | v0.9.11 | 非空但不可读的旧 `graph.json` 拒绝覆盖（须 `force=True`），空文件仍继续 | 图完整性可引用 |
-| **幻影边防御：builtin-typed receivers** | v0.9.10 | TS/JS `x: Date; x.getTime()` 不再绑定到同名用户 `class DATE` | 图正确性可引用 |
+| **幻影边防御：builtin-typed receivers** | v0.9.10 | TS/JS `x: Date; x.getTime` 不再绑定到同名用户 `class DATE` | 图正确性可引用 |
 | **幻影边防御：跨语言 calls** | v0.9.10 | 禁止跨语言 `calls` 边（按 interop family 过滤候选） | 图正确性可引用 |
 | **语义超边保留** | v0.9.12 | `graphify update` 不再在 AST 重建时删除 doc-sourced hyperedges | 增量探查可引用 |
 | **PostgreSQL 只读 FK 内省** | v0.9.12 | `--postgres` 从 `pg_catalog.pg_constraint` 读 FK，只读角色也能得 `references` 边 | DB 项目可引用 |

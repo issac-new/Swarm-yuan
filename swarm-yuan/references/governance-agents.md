@@ -41,36 +41,36 @@ agent 骂得更努力，而是让 agent **没有机会把「看起来完成」�
 
 ```
 ┌──────────────────┐
-│  policy-guardian  │ ← 环境修改权审查（立法侧守卫）
-│  (只读: Read/Grep │   改门禁/conf/verifier 前须过此 agent
-│   /Glob/Bash)     │   输出: allow / ask_human / deny + risk_class
+│ policy-guardian │ ← 环境修改权审查（立法侧守卫）
+│ (只读: Read/Grep │ 改门禁/conf/verifier 前须过此 agent
+│ /Glob/Bash) │ 输出: allow / ask_human / deny + risk_class
 └────────┬─────────┘
-         │ allow
-         ▼
+ │ allow
+ ▼
 ┌──────────────────┐
-│ action-executor   │ ← 行动权（执法侧执行）
-│ (全工具含 Edit/   │   执行 generate-skill 12 步 / 改代码
-│  Write)           │   输出: candidate_pass / blocked / needs_review
+│ action-executor │ ← 行动权（执法侧执行）
+│ (全工具含 Edit/ │ 执行 generate-skill 12 步 / 改代码
+│ Write) │ 输出: candidate_pass / blocked / needs_review
 └────────┬─────────┘
-         │ candidate_pass
-         ▼
+ │ candidate_pass
+ ▼
 ┌──────────────────┐
-│ self-reviewer     │ ← 自评权（司法侧自检）
-│ (只读)            │   复核执行结果 / 边界 / 失败路径 / 证据完整性
-│                   │   输出: review_pass / review_fail / needs_verifier
+│ self-reviewer │ ← 自评权（司法侧自检）
+│ (只读) │ 复核执行结果 / 边界 / 失败路径 / 证据完整性
+│ │ 输出: review_pass / review_fail / needs_verifier
 └────────┬─────────┘
-         │ needs_verifier (或 review_pass 仍须独立验)
-         ▼
+ │ needs_verifier (或 review_pass 仍须独立验)
+ ▼
 ┌──────────────────┐
-│ verifier          │ ← 评分建议权（司法侧独立验收）
-│ (只读 + 跑公开    │   跑 self-check + verifier/v1，给 pass/fail 建议
-│  验证命令)        │   输出: pass / fail / inconclusive
-│                   │   ⚠ 不写最终 status——最终 status 由 human/hook 定
+│ verifier │ ← 评分建议权（司法侧独立验收）
+│ (只读 + 跑公开 │ 跑 self-check + verifier/v1，给 pass/fail 建议
+│ 验证命令) │ 输出: pass / fail / inconclusive
+│ │ ⚠ 不写最终 status——最终 status 由 human/hook 定
 └────────┬─────────┘
-         │
-         ▼
-   external harness / hook / human
-   （写最终 verifier_status）
+ │
+ ▼
+ external harness / hook / human
+ （写最终 verifier_status）
 ```
 
 ## 四个 Agent 定义
@@ -112,7 +112,7 @@ power: ENVIRONMENT_MODIFICATION_RIGHT_REVIEW
 recommendation: allow|ask_human|deny
 risk_class: grader_gaming|solution_contamination|self_report_cheating|persistent_hallucination|capability_abuse|trace_deception|none
 affected_assets:
-  - <path/tool/scope>
+ - <path/tool/scope>
 reasoning: <concise evidence-backed reason>
 safer_path: <external verifier / human gate / readonly inspection / no change>
 mechanical_gate_owner: integrity-guard / external harness / human
@@ -159,10 +159,10 @@ mechanical_gate_owner: integrity-guard / external harness / human
 power: ACTION_RIGHT
 task_contract: <feature_id or summary>
 modified_files:
-  - <path>
+ - <path>
 verification_run:
-  - command: <cmd>
-    result: <pass/fail/not-run>
+ - command: <cmd>
+ result: <pass/fail/not-run>
 agent_proposed_status: candidate_pass|blocked|needs_review
 forbidden_assets_touched: no|yes:<explain>
 handoff_notes: <what self-reviewer/verifier should inspect>
@@ -200,13 +200,13 @@ power: SELF_EVALUATION_RIGHT
 review_status: review_pass|review_fail|needs_verifier
 intent_drift: no|yes:<explain>
 unverified_claims:
-  - <claim or none>
+ - <claim or none>
 forbidden_risks:
-  - <risk or none>
+ - <risk or none>
 required_executor_fixes:
-  - <fix or none>
+ - <fix or none>
 verifier_focus:
-  - <what independent verifier must check>
+ - <what independent verifier must check>
 ```
 
 ### 4. verifier（评分建议权）
@@ -244,13 +244,13 @@ verifier_recommendation: pass|fail|inconclusive
 integrity: clean|suspect|violation
 contract_audit: aligned|unknown|needs_revision|invalid
 commands:
-  - command: <cmd>
-    exit_code: <code>
-    evidence: <short output summary>
+ - command: <cmd>
+ exit_code: <code>
+ evidence: <short output summary>
 acceptance_result:
-  - <criterion>: pass|fail|inconclusive
+ - <criterion>: pass|fail|inconclusive
 forbidden_result:
-  - <constraint>: pass|fail|inconclusive
+ - <constraint>: pass|fail|inconclusive
 final_status_owner: external_harness_or_human
 ```
 
@@ -260,9 +260,9 @@ final_status_owner: external_harness_or_human
 - `integrity`：验证过程本身干净吗——证据是新鲜跑出来的，还是贴的旧输出 / 被测物在验证期间被顺手改过？`clean`（干净）/ `suspect`（存疑）/ `violation`（检测到篡改或坏捷径）
 - `contract_audit`：与任务契约对齐吗——验收标准逐条反查了吗？`aligned` / `unknown`（未逐条反查）/ `needs_revision`（契约本身要修）/ `invalid`（验证对象错位）
 - **给 `pass` 前自查三条守卫**（机器可校验的降级链，不信任自报）：
-  1. `acceptance_result` 存在 fail 或 inconclusive（即 blocking 项）时，不得给 `pass`
-  2. `integrity != clean` 或 `contract_audit != aligned` 时，`pass` 无效——降为 `fail`（violation）或 `inconclusive`（suspect/unknown）
-  3. 只有 `pass + integrity:clean + contract_audit:aligned` 三轴齐绿才构成可收口结论；收口时把本报告落为 state-machine 的 `verify_evidence`（引用 gate-run#N 或报告路径）
+ 1. `acceptance_result` 存在 fail 或 inconclusive（即 blocking 项）时，不得给 `pass`
+ 2. `integrity != clean` 或 `contract_audit != aligned` 时，`pass` 无效——降为 `fail`（violation）或 `inconclusive`（suspect/unknown）
+ 3. 只有 `pass + integrity:clean + contract_audit:aligned` 三轴齐绿才构成可收口结论；收口时把本报告落为 state-machine 的 `verify_evidence`（引用 gate-run#N 或报告路径）
 
 ## Composition 协议（角色互调禁止，agent-skills 吸收 2026-08-16）
 
@@ -313,21 +313,21 @@ verifier 报告），无证据引用的完成结论标 untrusted，不得作为�
 ## 与现有机制的关系
 
 - **与 integrity-guard（E4）的关系**：policy-guardian 是 prompt 层审查，integrity-guard 是
-  hook 层机械门。prompt 层先审，hook 层兜底——两层防御。integrity-guard `deny` 时
-  policy-guardian 的 `allow` 无效（机械门权威）。
+ hook 层机械门。prompt 层先审，hook 层兜底——两层防御。integrity-guard `deny` 时
+ policy-guardian 的 `allow` 无效（机械门权威）。
 - **与决策治理（G1）的关系**：四权分离是权责维度，G1 三级分类（Mechanical/Taste/UserChallenge）
-  是决策维度。改治理资产 = UserChallenge 类决策（须五要素 + 人工确认），同时走四权分离拓扑。
+ 是决策维度。改治理资产 = UserChallenge 类决策（须五要素 + 人工确认），同时走四权分离拓扑。
 - **与 verifier/v1 的关系**：verifier agent 是 prompt 层评分建议，verifier/v1 是脚本层
-  司法预言机。verifier agent 可调 verifier/v1 跑独立验收，但不写最终 status。
+ 司法预言机。verifier agent 可调 verifier/v1 跑独立验收，但不写最终 status。
 - **与 state-machine.sh 的关系**：四权分离拓扑在 verify 阶段（state-machine 的 verify phase）
-  启用——guard_phase 校验 tasks 全勾后，进 verifier agent 独立验收。
-- **与 LHH MEA 循环的关系**（2026-08-16 吸收）：阿里 LongHorizon-Harness 的 Manager/
-  Executor/Auditor 三角色与本拓扑后三权同构（Manager↔主 agent 编排、Executor↔action-executor、
-  Auditor↔self-reviewer+verifier）；本拓扑多出的 policy-guardian 是 LHH 没有的立法侧维度。
-  从 LHH 吸收的增量不在拓扑，在四个实现细节：审计证据引用（gate-runs.jsonl `run` 序号）、
-  verify_evidence 字段（自我声明 ≠ 持久状态）、任务契约三维（state_carrier/
-  persistence_boundary/contamination_watch）、verifier 报告三轴守卫降级链。
-  详见 `references/mea-loop-methodology.md`。
+ 启用——guard_phase 校验 tasks 全勾后，进 verifier agent 独立验收。
+- **与 LHH MEA 循环的关系**（：阿里 LongHorizon-Harness 的 Manager/
+ Executor/Auditor 三角色与本拓扑后三权同构（Manager↔主 agent 编排、Executor↔action-executor、
+ Auditor↔self-reviewer+verifier）；本拓扑多出的 policy-guardian 是 LHH 没有的立法侧维度。
+ 从 LHH 吸收的增量不在拓扑，在四个实现细节：审计证据引用（gate-runs.jsonl `run` 序号）、
+ verify_evidence 字段（自我声明 ≠ 持久状态）、任务契约三维（state_carrier/
+ persistence_boundary/contamination_watch）、verifier 报告三轴守卫降级链。
+ 详见 `references/mea-loop-methodology.md`。
 
 ## 文化叙事绑定（不混搭）
 
@@ -346,11 +346,11 @@ swarm-yuan 用「立法 / 执法 / 司法」三权分立隐喻，不用 pua 的�
 
 ## §Y Q2-heavy 边界：机械门禁不破坏 AI 灵活性
 
-**背景**：Q2 报告指出机械门禁/脚本扫描破坏 AI 灵活性。Q2-heavy 评审（D1/D2/D4）单独评审后落地 WP-Q2H-A/B/C：
+**背景**：Q2 报告指出机械门禁/脚本扫描破坏 AI 灵活性。Q2-heavy 评审（D1/D2/D4）单独评审后落地 H-A/B/C：
 
-- **WP-Q2H-A**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）转 AI 自觉判断——`GATE_AI_JUDGMENT=1` 时机械脚本不跑，输出 _ai_hint 提示 AI 自查要点。
-- **WP-Q2H-B**：warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）降级 advisory——误报高启发式强，不再 fail 打断主流程。
-- **WP-Q2H-C**：生成流程边界明确——机械脚本只做"出初稿"（骨架/conf-render/verify_completeness/mark-active/enforce_level），AI 做"审 + 判断"（特征卡填值/框架规律实例化/hooks 适用性/门禁警告采纳）。
+- **H-A**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）转 AI 自觉判断——`GATE_AI_JUDGMENT=1` 时机械脚本不跑，输出 _ai_hint 提示 AI 自查要点。
+- **H-B**：warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）降级 advisory——误报高启发式强，不再 fail 打断主流程。
+- **H-C**：生成流程边界明确——机械脚本只做"出初稿"（骨架/conf-render/verify_completeness/mark-active/enforce_level），AI 做"审 + 判断"（特征卡填值/框架规律实例化/hooks 适用性/门禁警告采纳）。
 
 **与三权分立的关系**：本边界不是放宽"执法侧/司法侧"的职责分工，而是让"司法侧"（自检/独立验收）聚焦在"信号可信"的门禁上（strict 档 16 个），不再让"假装可机器"的门禁（启发式/误报高）打断 AI 工作流。
 

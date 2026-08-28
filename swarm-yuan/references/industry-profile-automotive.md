@@ -2,10 +2,10 @@
 
 # 汽车行业 profile 立法文档（industry-profile-automotive）
 
-> 版本：v1（2026-07-23，WP-U 批次）
+> 版本：v1（2026-07-23，批次）
 > 条款纪律：条款号仅采用已核验事实；不虚构条款号、不虚构 URL——标准统一指向 ISO/IEC 官方页或国家标准全文公开系统检索页，法规统一指向国家法律法规数据库，访问日期均 2026-07-23。
 > 配套配置包：`assets/industry-profiles/automotive.conf`（用法：`cat` 追加到 `precheck.conf` 末尾后按项目裁剪）。
-> 门禁基线：49 既有（`precheck.sh` GATE_FLAGS 注册表，含 WP-S1/S2 合规门禁）；本 profile 不新增门禁，仅覆盖配置开关。
+> 门禁基线：49 既有（`precheck.sh` GATE_FLAGS 注册表，含 /S2 合规门禁）；本 profile 不新增门禁，仅覆盖配置开关。
 > 边界声明：ISO 26262 功能安全评估、ASIL 定级、CSMS/SUMS 认证属线下外审，本范式不覆盖认证——门禁输出**不构成型式认证合规证据**（§3 差额项）。
 
 ## 0. 定位与适用
@@ -98,7 +98,7 @@
 
 回避纪律：不虚构条款号、不虚构深层 URL。国际法规/标准统一经官方页核验；国家标准统一经国家标准全文公开系统按标准号检索核验。
 
-1. UNECE 车辆法规 155 号（R155 车辆网络安全，CSMS 要求）：https://unece.org/transport/documents/2021/01/standards/un-regulation-no-155-cyber-security-and-cyber-security
+1. UNECE 车辆法规 155 号：https://unece.org/transport/documents/2021/01/standards/un-regulation-no-155-cyber-security-and-cyber-security
 2. ISO 26262:2018 道路车辆功能安全（12 部分标准页，Part 6 软件级产品开发、Part 8 支持过程）：https://www.iso.org/standard/68383.html
 3. 国家标准全文公开系统（GB 44495-2024、GB 44496-2024、GB/T 43848-2024、GB/T 8567-2006 检索入口）：https://openstd.samr.gov.cn/bzgk/gb/
 4. ISO/SAE 21434:2021 道路车辆网络安全工程（标准页）：https://www.iso.org/standard/70918.html

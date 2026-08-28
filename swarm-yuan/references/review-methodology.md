@@ -166,9 +166,9 @@ openspec update <change-id>
 - 示例 hooks 片段：
 ```json
 {
-  "PreToolUse": [
-    { "matcher": "Bash", "hooks": [{"type": "command", "command": "echo '{\"permission\":\"allow\"}'"}], "condition": "tool_input.command matches /^openspec|^opsx/" }
-  ]
+ "PreToolUse": [
+ { "matcher": "Bash", "hooks": [{"type": "command", "command": "echo '{\"permission\":\"allow\"}'"}], "condition": "tool_input.command matches /^openspec|^opsx/" }
+ ]
 }
 ```
 - 这减少高频 opsx 调用（validate/update/change/archive）的重复确认，同时不弱化其他工具的权限门
@@ -436,7 +436,7 @@ ocr 新增 LLM provider 支持：
 | 陷阱 | 表现 | 为什么坏 |
 |------|------|----------|
 | **string-presence trap**（字符串存在陷阱）| grep 式测试--检查代码/输出里"含有某字符串"而非检查行为 | 可观察的是行为，不是文本；重构改写法（如把 `if x` 改 `if true == x`）会让字符串消失但行为不变，测试误报失败；反之行为坏了但字符串还在，测试误报通过。**对脚本/技能/prompt 的 grep 式测试是此陷阱的重灾区** |
-| **change-detector trap**（变化检测器陷阱）| 测试断言常量或断言"输出==自身跑一遍的输出" | 常量断言能失败（改常量）却保护不了什么；`assert output == run()` 是 tautology，任何改动都"通过" |
+| **change-detector trap**（变化检测器陷阱）| 测试断言常量或断言"输出==自身跑一遍的输出" | 常量断言能失败（改常量）却保护不了什么；`assert output == run` 是 tautology，任何改动都"通过" |
 
 **与 review 的整合**：
 - `--review` 审查代码质量维度时，对新增/修改的测试用本纪律审查：答不出"什么改动会让它失败"的测试，判 Important（建议补 mutation check 或重写）。

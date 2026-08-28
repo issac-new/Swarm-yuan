@@ -36,7 +36,7 @@ description: <项目名> 的需求交付全流程技能。当用户...都应使�
 ## 快速入口（按任务类型）
 （任务类型 → 起始节点 → 关键参考 的表）
 
-> **WP-P4 任务类型维度**：7 类任务（feature/fix/refactor/chore/docs/test/exp）各有门禁集与豁免，
+> **任务类型维度**：7 类任务（feature/fix/refactor/chore/docs/test/exp）各有门禁集与豁免，
 > 映射单一事实源：`assets/task-type-gates.conf`（bash 可 source）。AI 在 `/spec` 命令时：
 > ①从分支名或用户意图判任务类型 → ②取 `TASK_TYPE_<type>` 门禁集 → ③按 spec 规模判档位
 > （detect-spec-scale.sh）→ ④两者取并集（更重档，质量优先）。
@@ -57,7 +57,7 @@ description: <项目名> 的需求交付全流程技能。当用户...都应使�
 ## 质量门禁
 （核心门禁清单，对应 check 段；含机械/AI 审边界一句：strict 档信号可信机械执行，
 warn/advisory 输出由 AI 判断采纳不必全修；GATE_AI_JUDGMENT=1 时 advisory 档 5 个质量门禁
-转 AI 自觉判断，见 scripts/precheck.conf——WP-R2-3）
+转 AI 自觉判断，见 scripts/precheck.conf——-3）
 
 ## 常见借口与纠正
 （Rationalizations 两列表：第一人称借口 + 量化反驳，5-8 条，从门禁步骤逐条反推——见 §1.5）
@@ -84,7 +84,7 @@ reference-manual.md 清单（未变 scope 条目不重写）+ inventory-verify �
 - 改造分类必须反映项目实际（探查得出），不要套用通用模板
 - 全流程总览的流程图要标注**入口顺序**（谁先做、谁后做、谁并行）——对应材料 workflow 要素 1
 - 常用命令必须真实可执行
-- **自成长段不删**：骨架自带的「自成长」段是固定操作指引（非占位符），填充时保留——它是组件库清单交付后防腐的唯一感知链（WP-R2-2）
+- **自成长段不删**：骨架自带的「自成长」段是固定操作指引（非占位符），填充时保留——它是组件库清单交付后防腐的唯一感知链
 - **引用规则而非写死**：来自项目规则文件的约束，写"见 AGENTS.md / 项目记忆"，不重复具体值
 
 ### 1.1 Must-Always / Must-Never 规则（ECC v2.0.0, RULES.md）
@@ -292,7 +292,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 ## 3. reference 段（references/*.md）— 8 项 + 特征卡 17 项完整承接
 
 > **铁律：特征卡 17 项必须全部承接进目标技能的文件中，不得遗漏。** 下表是 17 项特征卡 → 目标技能文件的完整映射。
-> **P0/P1 分级（WP-G）**：P0 六项（1/4/5/11/15/16，表中加粗行）= 生成完成强制门槛 + 计数核验仅 P0 维度强制；P1 十一项 draft 期可「（P1 待补）」占位，`--mark-active` 前清零。
+> **P0/P1 分级**：P0 六项（1/4/5/11/15/16，表中加粗行）= 生成完成强制门槛 + 计数核验仅 P0 维度强制；P1 十一项 draft 期可「（P1 待补）」占位，`--mark-active` 前清零。
 
 | 特征卡项 | 承接的目标技能文件 | 承接章节 |
 |---------|-------------------|---------|
@@ -343,46 +343,46 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 **填充规则：**
 - 全部用探查到的**真实路径、版本号、命令名、连接串格式**
 - **★构件库清单（reference-manual.md §4 必须全量，按 exploration-guide §C+.1 方法论）**：
-  - 先做 §C+.0 项目形态判定，按判定结果选择的维度做全量枚举
-  - 每个维度独立计数核验：清单计数 ≥ 枚举计数 × 0.95（偏差须注明原因）
-  - 按模块/层分组，每个构件含：名称/路径/签名/用途/复用方式/稳定性标注
-  - 严禁"代表性样本"填充——必须穷举
-  - 严禁"维度错配"——纯后端项目不填 UI 组件表；纯前端项目不填 controller 表
-  - 通用维度（类型/工具函数/配置）所有项目都填
+ - 先做 §C+.0 项目形态判定，按判定结果选择的维度做全量枚举
+ - 每个维度独立计数核验：清单计数 ≥ 枚举计数 × 0.95（偏差须注明原因）
+ - 按模块/层分组，每个构件含：名称/路径/签名/用途/复用方式/稳定性标注
+ - 严禁"代表性样本"填充——必须穷举
+ - 严禁"维度错配"——纯后端项目不填 UI 组件表；纯前端项目不填 controller 表
+ - 通用维度（类型/工具函数/配置）所有项目都填
 - **★调用链路（reference-manual.md §5 按形态选模型，按 exploration-guide §C+.2 方法论）**：
-  - 按 §C+.0 判定结果选择链路模型（前端/后端/异步/微服务/桌面/库）
-  - 前端含：注册装配链路 + 模块依赖矩阵 + 组件挂载树 + store 依赖
-  - 后端含：请求处理管道 + 分层依赖矩阵 + 数据流图 + 外部依赖链路
-  - 异步含：消息流转链路 + 幂等/DLQ/重试策略
-  - 微服务含：跨服务调用链 + 共享DB检测 + trace透传
-  - §5.1 编排约束注释：按 §C+.3 推导的约束类别
+ - 按 §C+.0 判定结果选择链路模型（前端/后端/异步/微服务/桌面/库）
+ - 前端含：注册装配链路 + 模块依赖矩阵 + 组件挂载树 + store 依赖
+ - 后端含：请求处理管道 + 分层依赖矩阵 + 数据流图 + 外部依赖链路
+ - 异步含：消息流转链路 + 幂等/DLQ/重试策略
+ - 微服务含：跨服务调用链 + 共享DB检测 + trace透传
+ - §5.1 编排约束注释：按 §C+.3 推导的约束类别
 - **★接口清单（reference-manual.md §6 必须全量，按 exploration-guide §C+.4 方法论）**：
-  - 按探查到的接口形态枚举：REST(逐端点) / GraphQL(逐resolver) / gRPC(逐method) / MQ(逐queue+handler) / 库(逐导出)
-  - 每个接口文件一张表，每行含：方法/类型 + 完整路径/名称 + handler + 认证 + 用途 + 复用方式
-  - 严禁通配符占位（"GET/POST /api/xxx/*"）
+ - 按探查到的接口形态枚举：REST(逐端点) / GraphQL(逐resolver) / gRPC(逐method) / MQ(逐queue+handler) / 库(逐导出)
+ - 每个接口文件一张表，每行含：方法/类型 + 完整路径/名称 + handler + 认证 + 用途 + 复用方式
+ - 严禁通配符占位（"GET/POST /api/xxx/*"）
 - 数据字典含 schema 定义位置、数据流、**勾稽核对项**（无多漏错重：无遗漏、无多余、记录正确、勾稽正确、一致性、幂等性）
 - 业务规则案例：列出关键业务规则 + 对应的测试案例数据
 - **★拼装式开发原则（dev-guide.md §7 必须含）**：
-  - 优先复用特征卡第 11 项盘点的**既有稳定单元**（接口/组件/类/函数/方法/store/类型）
-  - 新功能 = 既有稳定单元的拼装 + 最小新增胶水代码
-  - **禁止重复造轮子**：新增函数/组件前，先查特征卡第 11 项是否已有同等功能的稳定单元
-  - **禁止侵入式重构**：不修改既有稳定单元的签名/行为，只通过组合/扩展复用
-  - **禁止破坏性改造**：不改只读骨架/第三方依赖/框架核心，只通过项目允许的机制（patch/overlay/插件）接入
-  - 每个新增文件须标注：复用了哪些既有单元（引用特征卡第 11 项的路径/签名）
+ - 优先复用特征卡第 11 项盘点的**既有稳定单元**（接口/组件/类/函数/方法/store/类型）
+ - 新功能 = 既有稳定单元的拼装 + 最小新增胶水代码
+ - **禁止重复造轮子**：新增函数/组件前，先查特征卡第 11 项是否已有同等功能的稳定单元
+ - **禁止侵入式重构**：不修改既有稳定单元的签名/行为，只通过组合/扩展复用
+ - **禁止破坏性改造**：不改只读骨架/第三方依赖/框架核心，只通过项目允许的机制（patch/overlay/插件）接入
+ - 每个新增文件须标注：复用了哪些既有单元（引用特征卡第 11 项的路径/签名）
 - **★编排约束（dev-guide.md §8 必须含，从 exploration-guide §C+.3 + 特征卡第 15 项承接）**：
-  - **按 §C+.0 项目形态选择约束类别**——只推导项目实际存在的约束
-  - 前端约束：导入方向/跨模块边界/注册顺序/feature-gate/路由挂载/状态所有权/测试边界
-  - 后端约束：分层依赖方向/事务边界/DTO转换边界/中间件顺序/认证层/外部副作用隔离/测试边界
-  - 异步约束：消费幂等/消息时序/重试DLQ/生产消费解耦
-  - 微服务约束：服务调用方向/共享DB禁止/trace透传/熔断降级/Saga补偿
-  - 通用约束：改造分类与文件落位/版本锁定/可改vs只读边界
-  - 每条约束须标注代码证据（文件:行 或 grep 命令）
+ - **按 §C+.0 项目形态选择约束类别**——只推导项目实际存在的约束
+ - 前端约束：导入方向/跨模块边界/注册顺序/feature-gate/路由挂载/状态所有权/测试边界
+ - 后端约束：分层依赖方向/事务边界/DTO转换边界/中间件顺序/认证层/外部副作用隔离/测试边界
+ - 异步约束：消费幂等/消息时序/重试DLQ/生产消费解耦
+ - 微服务约束：服务调用方向/共享DB禁止/trace透传/熔断降级/Saga补偿
+ - 通用约束：改造分类与文件落位/版本锁定/可改vs只读边界
+ - 每条约束须标注代码证据（文件:行 或 grep 命令）
 - **★版本锁定原则（dev-guide.md 必须含 + codebase.md 版本表必须记录基线）**：
-  - 功能性开发过程中，**不允许随意升级或更换核心技术及基础组件及依赖的版本**
-  - 例外条件（须满足之一）：(1) 用户主动要求；(2) 严重安全漏洞；(3) 严重性能隐患；(4) 功能缺失（当前版本无法实现需求且无替代方案）
-  - 探查时记录当前版本基线（特征卡第 4 项 → codebase.md 技术栈版本表）
-  - 任何版本变更须在 spec-template.md 版本约束声明段中显式声明理由 + 经用户确认
-  - precheck.sh `--deps` 检测 package.json/pyproject.toml/go.mod 等依赖版本是否被变更
+ - 功能性开发过程中，**不允许随意升级或更换核心技术及基础组件及依赖的版本**
+ - 例外条件（须满足之一）：(1) 用户主动要求；(2) 严重安全漏洞；(3) 严重性能隐患；(4) 功能缺失（当前版本无法实现需求且无替代方案）
+ - 探查时记录当前版本基线（特征卡第 4 项 → codebase.md 技术栈版本表）
+ - 任何版本变更须在 spec-template.md 版本约束声明段中显式声明理由 + 经用户确认
+ - precheck.sh `--deps` 检测 package.json/pyproject.toml/go.mod 等依赖版本是否被变更
 - **★可复用稳定单元清单（reference-manual.md §4/5/6/9 必须含，全量）**：从特征卡第 11 项整理，列出全部稳定单元的签名/路径/用途/复用方式/稳定性标注。**不允许样本化——清单计数须通过 §C+.1 计数核验**
 - **★安全规范（reference-manual.md §2 必须含 + dev-guide.md 必须含安全编码规范）**：引用 `references/security-spec.md`，覆盖 OWASP Top 10（注入/XSS/CSRF/访问控制/身份认证/敏感数据/依赖安全）、代码安全（路径穿越/反序列化/SSRF/安全配置/日志安全）、网络安全（接口安全/传输安全/端口安全）、LLM 信任边界。precheck.sh `--security` 检测常见安全模式
 - **★三平台兼容（swarm-yuan 自身的 .sh 脚本必须遵守，非目标技能强制）**：不用 declare -A / sed -i.bak+rm / grep -E / date -u / cd+pwd 替代 readlink -f / wc|xargs / ${var} 防 C-locale。详见 `references/security-spec.md` §六
@@ -467,33 +467,33 @@ spec §4 的 Requirement/Scenario 写法须按 EARS（Easy Approach to Requireme
 
 **precheck.sh 子命令：**
 ```bash
-bash precheck.sh                  # 全部门禁
-bash precheck.sh --branch         # 分支规范
-bash precheck.sh --scope          # 改动范围（可改 vs 只读）
-bash precheck.sh --build          # 构建状态
-bash precheck.sh --test           # 测试（check §1）
-bash precheck.sh --sensitive      # 敏感信息脱敏（check §4）
-bash precheck.sh --consistency    # 业务规则 + 数据勾稽核对（check §2/§3）
-bash precheck.sh --review         # ★代码审查（gstack/OCR 5 维度，调用 ocr review 若可用）
-bash precheck.sh --reuse          # ★复用合规检查（拼装式开发：禁止重复造轮子）
-bash precheck.sh --deps           # ★依赖版本锁定：对比基线检测依赖版本变更（未经确认=违规）
-bash precheck.sh --security       # ★安全规范：OWASP Top 10 模式扫描（注入/XSS/eval/硬编码密钥/TLS）
-bash precheck.sh --layer          # ★DDD 分层边界：层穿透/依赖倒置/循环依赖/领域层污染框架/聚合跨引用
-bash precheck.sh --stable-diff    # ★稳定单元篡改：稳定层文件改动必须先立 spec（MODIFIED 声明）
-bash precheck.sh --link-depth     # ★调用链深度：链路膨胀/纯转发函数堆叠检测（graphify/madge 优先，降级启发式）
-bash precheck.sh --adr            # ★TOGAF 架构决策：ADR 目录 + 新依赖须有 ADR + 技术债登记
-bash precheck.sh --contract       # ★TOGAF 接口契约：契约 version 字段 + 跨上下文 import 必须经 ACL 防腐层
+bash precheck.sh # 全部门禁
+bash precheck.sh --branch # 分支规范
+bash precheck.sh --scope # 改动范围（可改 vs 只读）
+bash precheck.sh --build # 构建状态
+bash precheck.sh --test # 测试（check §1）
+bash precheck.sh --sensitive # 敏感信息脱敏（check §4）
+bash precheck.sh --consistency # 业务规则 + 数据勾稽核对（check §2/§3）
+bash precheck.sh --review # ★代码审查（gstack/OCR 5 维度，调用 ocr review 若可用）
+bash precheck.sh --reuse # ★复用合规检查（拼装式开发：禁止重复造轮子）
+bash precheck.sh --deps # ★依赖版本锁定：对比基线检测依赖版本变更（未经确认=违规）
+bash precheck.sh --security # ★安全规范：OWASP Top 10 模式扫描（注入/XSS/eval/硬编码密钥/TLS）
+bash precheck.sh --layer # ★DDD 分层边界：层穿透/依赖倒置/循环依赖/领域层污染框架/聚合跨引用
+bash precheck.sh --stable-diff # ★稳定单元篡改：稳定层文件改动必须先立 spec（MODIFIED 声明）
+bash precheck.sh --link-depth # ★调用链深度：链路膨胀/纯转发函数堆叠检测（graphify/madge 优先，降级启发式）
+bash precheck.sh --adr # ★TOGAF 架构决策：ADR 目录 + 新依赖须有 ADR + 技术债登记
+bash precheck.sh --contract # ★TOGAF 接口契约：契约 version 字段 + 跨上下文 import 必须经 ACL 防腐层
 bash precheck.sh --consistency-cross # ★TOGAF BDAT 一致性：业务术语表 vs 代码标识符 + 数据所有权 SoR
-bash precheck.sh --impact         # ★TOGAF 变更影响：spec 须含"影响范围"段 + 变更文件消费方反查
-bash precheck.sh --service        # ★微服务架构：共享DB/同步链/共享模型/网关/trace透传
-bash precheck.sh --api            # ★API 契约与幂等：版本化/幂等键/跨服务事务/Outbox
-bash precheck.sh --state          # ★前端状态管理：巨型store/prop drilling/派生状态useState
-bash precheck.sh --frontend       # ★前端组件架构：层级深/容器展示分离/props多/循环依赖/CSS污染
-bash precheck.sh --cognition      # ★认知递进体检：六阶认知链完整性 + 六维动力学（速度/聚散/趋势/强度/能耗/累积量）
-bash precheck.sh --domain         # ★领域知识：技术+业务领域识别 + 客观规律违规检测（密码明文/SQL拼接/XSS/并发竞态）
-bash precheck.sh --knowledge      # ★项目知识复用：AGENTS.md/CLAUDE.md/记忆 → 生成 skill 是否复用
-bash precheck.sh --diagram        # ★可视化：架构/流程/调用链用 mermaid + 统计/分布/趋势用 echarts/antv（--mermaid 为别名）
-bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影响段+可观测性段+测试先于impl+回滚预案+健康检查端点
+bash precheck.sh --impact # ★TOGAF 变更影响：spec 须含"影响范围"段 + 变更文件消费方反查
+bash precheck.sh --service # ★微服务架构：共享DB/同步链/共享模型/网关/trace透传
+bash precheck.sh --api # ★API 契约与幂等：版本化/幂等键/跨服务事务/Outbox
+bash precheck.sh --state # ★前端状态管理：巨型store/prop drilling/派生状态useState
+bash precheck.sh --frontend # ★前端组件架构：层级深/容器展示分离/props多/循环依赖/CSS污染
+bash precheck.sh --cognition # ★认知递进体检：六阶认知链完整性 + 六维动力学（速度/聚散/趋势/强度/能耗/累积量）
+bash precheck.sh --domain # ★领域知识：技术+业务领域识别 + 客观规律违规检测（密码明文/SQL拼接/XSS/并发竞态）
+bash precheck.sh --knowledge # ★项目知识复用：AGENTS.md/CLAUDE.md/记忆 → 生成 skill 是否复用
+bash precheck.sh --diagram # ★可视化：架构/流程/调用链用 mermaid + 统计/分布/趋势用 echarts/antv（--mermaid 为别名）
+bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响段+可观测性段+测试先于impl+回滚预案+健康检查端点
 ```
 
 **reference-manual.md 检查段包含（对应 check 4 项 + 审查 + 复用）：**
@@ -579,7 +579,7 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 
 ---
 
-## 生成后核对清单（R13 批次1b：96→12——只留可机器验证入口 + P0 核心映射）
+## 生成后核对清单
 
 **机器验证四件套（跑命令即核，代替人工逐项）：**
 - [ ] 1. 零占位符：`bash generate-skill.sh --verify-completeness <skill-dir> --strict`
@@ -663,7 +663,7 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 · swarm-yuan 的 .sh 脚本兼容 macOS(BSD bash 3.2)+Linux(GNU bash 4+)（不用 declare -A / sed -i.bak / grep -E / date -u / cd+pwd / wc|xargs / ${var}防C-locale）
 · 无硬编码平台特定路径（用配置/env/相对路径）
 · 文件名小写无特殊字符（Windows 兼容）
-· 代码模板中路径用 / + path.join()（Node）/ os.path.join()（Python）
+· 代码模板中路径用 / + path.join（Node）/ os.path.join（Python）
 
 **★左移核对（Shift-Left，新增）：**
 · spec-template.md 含 §19 测试左移段（测试策略+用例骨架+边界/异常+左移声明）
@@ -730,7 +730,7 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 
 ---
 
-## §X Q2-heavy：机械门禁 vs AI 灵活性的边界（WP-Q2H-A/B/C 落地）
+## §X Q2-heavy：机械门禁 vs AI 灵活性的边界
 
 **背景**：Q2 报告（"机械门禁/脚本扫描破坏 AI 灵活性"）的深水区单独评审——54 门禁按"机械信号 vs AI 判断"二分。
 
@@ -739,12 +739,12 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 | 档 | 数量 | 处置 | 理由 |
 |----|------|------|------|
 | strict | 16 | **不动** | 信号可信误报少（branch/layer/security/sensitive/requirements/rtm/test_evidence/review_record/release_sign 等） |
-| warn | 18 | **5 个降级 advisory**（WP-Q2H-B） | 误报高启发式强（stable_diff/framework/knowledge/metrics/crypto） |
-| advisory | 20 | **5 个转 AI 自觉判断**（WP-Q2H-A） | "质量判断"本质是 AI 看语义不是 grep（cognition/diagram/pr_quality/consistency/link_depth） |
+| warn | 18 | **5 个降级 advisory** | 误报高启发式强（stable_diff/framework/knowledge/metrics/crypto） |
+| advisory | 20 | **5 个转 AI 自觉判断** | "质量判断"本质是 AI 看语义不是 grep（cognition/diagram/pr_quality/consistency/link_depth） |
 
-**生成流程边界（WP-Q2H-C）：**
+**生成流程边界：**
 
-机械脚本只做"出初稿"（模板/嗅探/枚举），AI 做"审 + 判断"。详见 references/generation-flow.md §WP-Q2H-C 表格。
+机械脚本只做"出初稿"（模板/嗅探/枚举），AI 做"审 + 判断"。详见 references/generation-flow.md §H-C 表格。
 
 **开关**：
 - `GATE_AI_JUDGMENT=1`——5 个 advisory 门禁转 AI 自觉判断（advisory 不机械跑，输出 _ai_hint）
@@ -752,7 +752,7 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 
 **关联文档**：
 - 评审报告：README.md §6.6 历史档案 A9（Q2 重量级审查）（2026-08-19）
-- 生成流程边界：`references/generation-flow.md` §WP-Q2H-C
+- 生成流程边界：`references/generation-flow.md` §H-C
 - 门禁分层实现：`assets/precheck.sh` `_ENFORCE_OVERRIDE_K/V` + `assets/gates-advisory.sh` `_ai_hint`
 
 </details>

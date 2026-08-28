@@ -114,9 +114,9 @@ verifier 运行记录统一归档于 `verifier/runs/`，作为 GB/T 25000.51 §7
 ## 4. 与 spec §22 剪裁声明的联动
 
 - **§22.1 剪裁声明**：声明本变更采用 AI 过程信息项的级别与剪裁理由——
-  - **最小集**（简单变更）：commit message 标注"AI 生成 + 复核人" + 关键决策 prompt 摘要；
-  - **完整集**（标准/完整变更）：四级留痕全量 + verifier 归档。
-  剪裁示例见 `references/standards-compliance.md` §B"剪裁声明写法示例"。
+ - **最小集**（简单变更）：commit message 标注"AI 生成 + 复核人" + 关键决策 prompt 摘要；
+ - **完整集**（标准/完整变更）：四级留痕全量 + verifier 归档。
+ 剪裁示例见 `references/standards-compliance.md` §B"剪裁声明写法示例"。
 - **§22.2 文档包清单**：勾选文档包时，AI 过程记录作为对应文档的证据附件（如测试报告附 gate-runs / verifier 归档路径）。
 - **§22.3 安全豁免登记**：与第三级人工复核记录同源互认（见 §2.3）。
 - **联动校验**：`--docs-pack` 的 custom profile 可把 `ai-records/` 目录纳入必备清单；未配置时静默跳过。

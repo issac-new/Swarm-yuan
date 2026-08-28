@@ -21,14 +21,14 @@
 ```
 1. 读 plan 一次，记录上下文 + 全局约束，创建 todos
 2. Pre-Flight Plan Review — 扫描一遍，找出相互矛盾或违反全局约束的任务；
-   批量汇总成一个问题问人（不是一个发现一个中断）
+ 批量汇总成一个问题问人（不是一个发现一个中断）
 3. 每任务循环：
-   a. 派发全新 implementer subagent（带 task brief）
-   b. 若 implementer 提问 → 回答、提供上下文、重新派发
-   c. implementer 实现、测试、提交、自审，回报状态
-   d. controller 派发 task reviewer subagent（审查 spec 合规 + 代码质量）
-   e. 若有问题 → 派发 fix subagent → 重新审查
-   f. 标记任务完成 + 追加 progress ledger；下一个任务
+ a. 派发全新 implementer subagent（带 task brief）
+ b. 若 implementer 提问 → 回答、提供上下文、重新派发
+ c. implementer 实现、测试、提交、自审，回报状态
+ d. controller 派发 task reviewer subagent（审查 spec 合规 + 代码质量）
+ e. 若有问题 → 派发 fix subagent → 重新审查
+ f. 标记任务完成 + 追加 progress ledger；下一个任务
 4. 全部任务完成后 → 派发 final whole-branch reviewer → 收尾
 ```
 
@@ -374,23 +374,23 @@ ECC 的 session 适配器契约（`docs/SESSION-ADAPTER-CONTRACT.md`）定义了
 
 ```json
 {
-  "version": "ecc.session.v1",
-  "sessions": [{
-    "id": "...",
-    "kind": "claude-code|codex|opencode|dmux|...",
-    "state": "idle|running|complete|failed",
-    "sourceTarget": "...",
-    "workers": [{
-      "id": "...",
-      "state": "idle|running|complete|failed",
-      "health": "ok|degraded|error",
-      "runtime": { "model": "...", "tokens": 0, "durationMs": 0 },
-      "intent": "...",
-      "outputs": { "commits": [], "files": [], "pr": "..." },
-      "artifacts": { "log": "...", "trace": "..." }
-    }],
-    "aggregates": { "workerCount": 0, "states": {}, "healths": {} }
-  }]
+ "version": "ecc.session.v1",
+ "sessions": [{
+ "id": "...",
+ "kind": "claude-code|codex|opencode|dmux|...",
+ "state": "idle|running|complete|failed",
+ "sourceTarget": "...",
+ "workers": [{
+ "id": "...",
+ "state": "idle|running|complete|failed",
+ "health": "ok|degraded|error",
+ "runtime": { "model": "...", "tokens": 0, "durationMs": 0 },
+ "intent": "...",
+ "outputs": { "commits": [], "files": [], "pr": "..." },
+ "artifacts": { "log": "...", "trace": "..." }
+ }],
+ "aggregates": { "workerCount": 0, "states": {}, "healths": {} }
+ }]
 }
 ```
 
@@ -468,7 +468,7 @@ ruflo 修复了"N 个 worktree 调度 N 个独立 AI worker"的基数 bug：
 | **hourly cap** | `daemon budget show` | 全局每小时 AI worker 上限 |
 | **pause/resume** | `daemon budget pause\|resume` | 独立可脚本的预算控制 |
 
-**structured token telemetry**：`claude --print --output-format json` 解析（lenient），receipt 到 `GlobalAiBudget.recordUsage()`。schema 不匹配时降级为"不记录用量"，不破坏分析输出。
+**structured token telemetry**：`claude --print --output-format json` 解析（lenient），receipt 到 `GlobalAiBudget.recordUsage`。schema 不匹配时降级为"不记录用量"，不破坏分析输出。
 
 **在目标技能中的落地：**
 - 若项目用 ruflo swarm 编排，dev-guide.md 引用 global budget：多 worktree 时不会失控
@@ -489,12 +489,12 @@ ruflo 修复了"N 个 worktree 调度 N 个独立 AI worker"的基数 bug：
 
 ```
 3.32.4+ad.164.387.34.gabc123.cat5
-         │   │   │  │      │
-         │   │   │  │      └─ catalog generation (signed GAIA/HAL tier)
-         │   │   │  └──────── git SHA
-         │   │   └─────────── skill count (34)
-         │   └─────────────── MCP tool count (387)
-         └─────────────────── agent type count (164)
+ │ │ │ │ │
+ │ │ │ │ └─ catalog generation (signed GAIA/HAL tier)
+ │ │ │ └──────── git SHA
+ │ │ └─────────── skill count (34)
+ │ └─────────────── MCP tool count (387)
+ └─────────────────── agent type count (164)
 ```
 
 - `catalog-manifest.json` 记录真实 git-measured counts（不编造数字）
@@ -509,4 +509,4 @@ ruflo 修复了"N 个 worktree 调度 N 个独立 AI worker"的基数 bug：
 
 gstack context-save 的标题在 **bash 层**用允许表消毒（仅 `a-z 0-9 - .` 存活），文件名仅追加不覆盖、同秒碰撞加随机后缀——"用户输入永不进 LLM 层拼路径"（`context-save/SKILL.md:870-897`，防注入设计明确写在注释里）。
 
-swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input()` 白名单字符集过滤（`a-zA-Z0-9._-`），应用于 init 的 change name——用户输入经 bash 层过滤后才写入 state.yaml，防路径穿越/命令注入。与 `references/security-spec.md` §六 bash 脚本安全一致。
+swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input` 白名单字符集过滤（`a-zA-Z0-9._-`），应用于 init 的 change name——用户输入经 bash 层过滤后才写入 state.yaml，防路径穿越/命令注入。与 `references/security-spec.md` §六 bash 脚本安全一致。

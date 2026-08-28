@@ -47,7 +47,7 @@
 ## 4. 随机数质量
 
 - 安全场景（密钥/token/盐/nonce/会话 ID）**必须 CSPRNG**：Linux `/dev/urandom`、Python `secrets`、Java `SecureRandom`、Node `crypto.randomBytes`、Go `crypto/rand`。
-- **禁用**于安全上下文：`Math.random`（JS）、`rand()`/`random`（Python/C 伪随机）、`java.util.Random`、时间戳/自增 ID 充当随机源。
+- **禁用**于安全上下文：`Math.random`（JS）、`rand`/`random`（Python/C 伪随机）、`java.util.Random`、时间戳/自增 ID 充当随机源。
 - 门禁协同：`check_crypto`（gm profile）对安全上下文的弱随机数用法做 warn 级提示。
 
 ## 5. PKI 与证书管理

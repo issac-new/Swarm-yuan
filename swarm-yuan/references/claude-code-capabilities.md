@@ -102,7 +102,7 @@
 ### Hook 关键特性
 
 - **matcher 精确匹配**：v2.1.195 修复连字符标识符（`code-reviewer`/`mcp__brave-search`）子串误匹配——现在精确匹配，用 `mcp__brave-search__.*` 匹配 MCP server 全部工具
-- **if 条件**：`if: "Bash(...)"` 条件匹配（v2.1.163 修复 `$()`/`$VAR` 子 shell 误触）
+- **if 条件**：`if: "Bash(...)"` 条件匹配（v2.1.163 修复 `$`/`$VAR` 子 shell 误触）
 - **additionalContext 反馈**：Stop/SubagentStop 可返回反馈让 Claude 继续（v2.1.163）
 - **stderr 可见**：v2.1.199 修复 SessionStart/Setup/SubagentStart 的 stderr 被隐藏
 
@@ -125,25 +125,25 @@ ECC 的 hook 系统有 4 层治理——生成的目标技能的 hooks.json 可�
 **目标技能可参考的 hooks.json 结构：**
 ```json
 {
-  "hooks": {
-    "PreToolUse": [
-      {
-        "id": "pre:bash:dispatcher",
-        "matcher": "Bash",
-        "command": "bash scripts/hook-dispatcher.sh",
-        "profile": "standard"
-      }
-    ]
-  },
-  "profiles": {
-    "minimal": ["pre:bash:dispatcher"],
-    "standard": ["pre:bash:dispatcher", "pre:write:gateguard"],
-    "strict": ["pre:bash:dispatcher", "pre:write:gateguard", "pre:write:config-protection"]
-  }
+ "hooks": {
+ "PreToolUse": [
+ {
+ "id": "pre:bash:dispatcher",
+ "matcher": "Bash",
+ "command": "bash scripts/hook-dispatcher.sh",
+ "profile": "standard"
+ }
+ ]
+ },
+ "profiles": {
+ "minimal": ["pre:bash:dispatcher"],
+ "standard": ["pre:bash:dispatcher", "pre:write:gateguard"],
+ "strict": ["pre:bash:dispatcher", "pre:write:gateguard", "pre:write:config-protection"]
+ }
 }
 ```
 
-### 门禁失败捕获门 fail-gate-hook.sh（WP-Enforce1，2026-08-18）
+### 门禁失败捕获门 fail-gate-hook.sh
 
 生成的目标技能附带 `scripts/fail-gate-hook.sh`（PreToolUse + PostToolUse 双挂）——把 precheck fail 从「输出红字」升级为「真拦截」：
 
@@ -152,7 +152,7 @@ ECC 的 hook 系统有 4 层治理——生成的目标技能的 hooks.json 可�
 - **两道保险防误伤**：draft 期（骨架期门禁红是常态）自动关闭；改 `.swarm-yuan/` conf 与 precheck.sh 本身豁免（修门禁配置的通道）
 - **与 integrity-guard 的分工**：integrity-guard 管「别作弊」（受保护治理资产 deny 清单），fail-gate 管「别绕过」（门禁 fail 未修复禁继续改文件）——两层 hook 正交
 - 开启是 UserChallenge 类决策（须决策落痕）
-- **审计双层（WP-R12-A，dsh R12 吸收）**：deny 行双写 `gate-deny.jsonl`（旧格式保留），同时每个决策点（门禁红期间的拦截域调用）落 `gate-audit.jsonl` 全量审计行 `{ts,handler,tool,decision,reason,target≤500字符,gates}`——pass 也落行（exempt-path / bash-not-whitelisted），`--report` 据此输出拦截率（deny/决策点）与工具决策分布；休眠态（flag 不存在/工具不在域）不写。fail-open：审计写失败不阻塞主流程
+- **审计双层**：deny 行双写 `gate-deny.jsonl`（旧格式保留），同时每个决策点（门禁红期间的拦截域调用）落 `gate-audit.jsonl` 全量审计行 `{ts,handler,tool,decision,reason,target≤500字符,gates}`——pass 也落行（exempt-path / bash-not-whitelisted），`--report` 据此输出拦截率（deny/决策点）与工具决策分布；休眠态（flag 不存在/工具不在域）不写。fail-open：审计写失败不阻塞主流程
 
 ### MCP Health Check（ECC v2.0.0）
 
@@ -357,13 +357,13 @@ Claude 根据任务描述自动生成一个 JS 脚本，把大任务拆成多个
 生成目标技能时，须在以下位置集成 Dynamic Workflows：
 
 1. **workflow.md 节点⑤（编码实现）**：复杂变更（>3 文件/跨模块/架构变更）时，AI 优先用 Dynamic Workflow 并行执行：
-   - prompt 含 "workflow" 关键词触发
-   - 拆分任务 → 并行 subagent → 交叉验证
-   - 降级策略：简单变更（≤3 文件）用传统 Task(subagent) 单任务派发
+ - prompt 含 "workflow" 关键词触发
+ - 拆分任务 → 并行 subagent → 交叉验证
+ - 降级策略：简单变更（≤3 文件）用传统 Task(subagent) 单任务派发
 
 2. **workflow.md 节点⑥（测试审查）**：大规模代码审计/安全扫描用 Dynamic Workflow：
-   - 多代理并行扫描不同模块 → 交叉验证发现
-   - 降级策略：小范围用 `ocr review` / 手动 5 维度清单
+ - 多代理并行扫描不同模块 → 交叉验证发现
+ - 降级策略：小范围用 `ocr review` / 手动 5 维度清单
 
 3. **spec 模板**：spec §4 tasks 拆分时，如任务数 >5，标注"建议用 Dynamic Workflow 并行执行"
 
@@ -604,7 +604,7 @@ TaskCreate/Get/Update/List、TodoWrite 在 **Opus 4.8、Sonnet 5、Fable 5、Myt
 ### 上下文成本治理样板（v2.1.234）
 
 `claude-api` 内置技能上下文成本从 ~200k+ token 降到 ~25k（参考文档改为按需加载）——**降 87.5%**。
-本仓"按需读取引用索引"（SKILL.md 自动生成表格，WP-P5）是同构机制，方向验证。
+本仓"按需读取引用索引"（SKILL.md 自动生成表格，）是同构机制，方向验证。
 
 ### 沙箱与权限硬化（v2.1.233-236）
 
