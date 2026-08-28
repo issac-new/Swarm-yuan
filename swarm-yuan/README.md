@@ -5,6 +5,7 @@
 > **特征卡是立法，门禁是执法，验证器是司法**——特征卡让 AI 认识你的项目，门禁守护代码合规，独立验证器做司法。
 > **两体系统**（R13）：生成器厚（探查全量，一次性消费）、生成物薄（每会话固定税 ≤8KB、概念体系 ≤5）；范式作为条件而非内容。
 > **三层 Harness 拼图**（R13-R15）：过程强制门禁层（rules.d 三值 + hooks 双宿主）+ 工作流审计层（goal_id+closure 目标闭环 + 证据态分级）+ 评测层（digest 链式锚定 + 选择即证据 + 审计即完成条件）。
+> **回归收口**（R6-R12，v2.6）：十一轮回归 28 项修复全部落库——双宿主（Claude Code/Codex）集成断链修复（schema 核验/绝对路径部署/垫片复活死引用）+ 运行时全量接线（13 运行时 + 降级链辅助工具全部真执行实证）+ 复杂度预算收口（决策 26.2）+ 文档零旧口径。
 > 计数真值见 `assets/facts.conf`（不手抄；`scripts/self-check.sh` 机器执法）。
 
 [![Release](https://img.shields.io/badge/release-v2.6-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.6)
@@ -75,7 +76,7 @@ AI 探查项目后提取特征项（P0 强制 + P1 可增量，真值见 facts.c
 
 | 层 | 机制 | 落地版本 |
 |----|------|---------|
-| **过程强制门禁层** | 门禁四族（真值见 facts.conf）全部有真实触发路径；rules.d 三值规则（allow/prompt/forbid 取最严）；FORBID 消息带替代方案；hooks 双宿主真实拦截（Claude Code deny JSON + Codex exit 2）；沙箱通配符 deny（**/.env 防重命名绕过） | v2.0（R13 去抽象化重构） |
+| **过程强制门禁层** | 门禁四族（真值见 facts.conf）全部有真实触发路径；rules.d 三值规则（allow/prompt/forbid 取最严）；FORBID 消息带替代方案；hooks 双宿主真实拦截（Claude Code deny JSON + Codex exit 2，schema 对 Codex 源码逐字段核验、命令绝对路径部署、旧文件自动升级重写）；沙箱通配符 deny（**/.env 防重命名绕过） | v2.0（R13 去抽象化重构）/ v2.6（R11 双宿主断链修复） |
 | **工作流审计层** | 审计单元目标闭环化（`goal_id`+`closure`：一个用户目标+一个验收边界，change↔validation 链接才 closed）；证据态分级（配置≠使用≠有效）；双账本（当窗验证 repair_verified_rate + guardrail 配对）；修复复核位（repair_review） | v2.2（R14 better-harness 吸收） |
 | **评测层** | digest 链式锚定（`ref_trace_hash`：三本账从并列升级为链式，上游篡改全链 stale 可检出）；missing_evidence 态（"该测没测"显式态）；gate-plan 选择即证据（启用/跳过理由负空间可审计）；audit-closure 审计即完成条件（goal 闭环完备性重走） | v2.3（R15 HarnessEval 吸收） |
 
@@ -96,7 +97,8 @@ AI 探查项目后提取特征项（P0 强制 + P1 可增量，真值见 facts.c
 ```bash
 # ① 安装（自动检测 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi）
 git clone https://github.com/issac-new/Swarm-yuan.git && cd Swarm-yuan
-bash install.sh
+bash install.sh            # macOS / Linux / Git Bash
+# Windows：先装 Git for Windows（或 WSL），再双击 install.bat——Windows 原生 cmd/PowerShell 不支持
 
 # ② 为项目生成技能（AI 一键完成：探查→填充→配置→验证全自动）
 # 对 AI 说："为 /path/to/project 生成开发技能"
@@ -117,6 +119,8 @@ bash scripts/gate-plan.sh <项目根> --diff   # 收口 diff 计划 vs 实际触
 bash scripts/audit-closure.sh <项目根> --strict   # 有 open goal → exit 2
 ```
 
+> **平台兼容**：macOS（bash 3.2 原生）/ Linux / Windows（Git Bash > WSL > MSYS2）三平台全支持，CI 矩阵背书；11 个 .bat 包装器与同伴脚本全部随发（R12 对账收口）。
+
 ---
 
 ## 运行时三层接线 + 领域知识
@@ -125,11 +129,11 @@ bash scripts/audit-closure.sh <项目根> --strict   # 有 open goal → exit 2
 
 | 层 | 运行时 | 接线方式 |
 |----|--------|---------|
-| 深度接线 | GitNexus / graphify / claude-mem / ocr | precheck.sh 门禁内真实子进程调用 + 多级降级链 |
-| CLI 接线 | OpenSpec / comet / gsd-core / codex-security | 门禁/状态机按需调用 CLI（`openspec validate`/`comet guard`/`gsd-tools validate health`）+ 降级到自带载体 |
+| 深度接线 | GitNexus / graphify / claude-mem / ocr | precheck.sh 门禁内真实子进程调用 + 多级降级链（v2.6 全部真执行实证：graphify 建图谱→god-nodes 检出、claude-mem worker+search 命中、gitnexus detect_changes、ocr scan） |
+| CLI 接线 | OpenSpec / comet / gsd-core / codex-security | 门禁/状态机按需调用 CLI（`openspec validate`/`comet init`/`gsd-tools validate health`/`codex-security scan --format json`）+ 降级到自带载体 |
 | 方法论引用 | superpowers / gstack / Ruflo / ECC / impeccable | AI 按 workflow 节点引用其模式，swarm-yuan 自带等价降级载体 |
 
-每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深度接线。`--upstream-baseline` 门禁（advisory）自动检测 upstream drift，CI 可见但不阻断构建。
+每层有自带降级载体，未装运行时时不阻塞（fail-open + 降级），不假装全深度接线——v2.6 已实证「已安装≠接线可达」三类盲区修复（codex-security flag 签名、graphify elif 遮蔽、Codex schema）。`--upstream-baseline` 门禁（advisory）自动检测 upstream drift，CI 可见但不阻断构建。
 
 **领域知识**：数据库 ACID / 网络 CORS / 安全密码哈希 / IM 消息保序 / 电商库存原子扣减 / 金融金额 Decimal……多领域客观规律（详见 `references/domain-knowledge.md`，计数真值见 facts.conf）。AI 探查时识别技术+业务领域，推导客观规律驱动 `--domain` 违规检测——防达克效应（对不熟悉的领域自信地写出错误代码）。
 
@@ -145,11 +149,12 @@ bash scripts/audit-closure.sh <项目根> --strict   # 有 open goal → exit 2
 
 ## 质量基线（facts.conf 真值，不手抄）
 
-- 门禁：四族全部有真实触发路径（可达率 55/55，`FACT_GATES_TOTAL` 机器对账）
+- 门禁：四族全部有真实触发路径（可达率 55/55，`FACT_GATES_TOTAL` 机器对账；决策 26.2 预算 55 冻结）
 - 配置：物理变量保留（兼容既有生成物）；user 面必配 ≈ 20 项（开关/路径/预算，`FACT_CONF_VARS_USERFACE`）
 - references：全部带"何时读我"路由头（孤儿资产 = 0，self-check G18 断言）
 - 生成物税：SKILL.md ≤8KB / 认知面 references 拷贝 ≤256KB（断言过）
-- 测试：19 测试脚本 + gen-e2e + self-check 全 PASS（CI：ubuntu/macos/windows 三平台）
+- 测试：19 测试脚本 + gen-e2e + self-check RC=0 全 PASS（CI：ubuntu/macos/windows 三平台）
+- 回归收口（v2.6）：fixtures 79 双态 / gate-fixture 48 / cli-ab 逐字节 0 fails / 双重点栈（RuoYi 前 vue+element、后 SpringBoot+MySQL）九节点真实交付验证
 
 零背景入门见 `../docs/DESIGN-PRIMER.md`（术语首现即定义的设计导读）；详细设计见 `../docs/DESIGN.md`（单一设计事实源，§0–§11）；演化史与决策记录见 `../docs/paradigm-decisions.md`（决策 1-35 索引）；落地案例见 `references/case-studies/articulation-orchestration.md`。
 
