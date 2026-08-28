@@ -356,4 +356,4 @@ swarm-yuan 用「立法 / 执法 / 司法」三权分立隐喻，不用 pua 的�
 
 **verifier 侧调整**：verifier 跑独立验收时，严格档 16 个门禁 fail → block；warn/advisory 档只报不 block；advisory 档 5 个 AI 自觉判断由 verifier 人读判断（不跑机械脚本）。
 
-**关联**：评审报告见 README.md §8 附录 A9（Q2 重量级审查）；分层实现 `assets/precheck.sh` `_ENFORCE_OVERRIDE_K/V` + `assets/gates-advisory.sh` `_ai_hint`。
+**关联**：评审报告见 README.md §6.6 历史档案 A9（Q2 重量级审查）；分层实现 `assets/precheck.sh` `_ENFORCE_OVERRIDE_K/V` + `assets/gates-advisory.sh` `_ai_hint`。
