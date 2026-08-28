@@ -114,5 +114,5 @@ if [[ -f "$FP" ]]; then
   _ok "last-good 红线：当前基线 total=${total}（骤降 >50% 时 --write 将拒绝并要求 --force）"
 fi
 
-echo "→ 六锚语义详见 README.md 完整文档/当前事实源/DESIGN.md §0（本体论驱动原理——每条依赖的断裂可检测点）"
+echo "→ 六锚语义详见 README.md §7.1 设计规格 §0（本体论驱动原理——每条依赖的断裂可检测点）"
 exit 0
