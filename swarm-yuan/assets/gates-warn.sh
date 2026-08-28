@@ -1540,8 +1540,8 @@ check_oss_eval() {
     fi
   fi
   # ③ 上游来源登记（管理维度，warn-only）
-  if [[ ! -f docs/upstream-baseline.md && ! -f UPSTREAM.md && ! -f docs/UPSTREAM.md ]]; then
-    warn "未见上游来源登记文档（docs/upstream-baseline.md 或 UPSTREAM.md）——GB/T 43848-2024 来源维度建议登记开源成分来源"
+  if [[ ! -f README.md && ! -f UPSTREAM.md ]]; then
+    warn "未见上游来源登记文档（README.md 或 UPSTREAM.md）——GB/T 43848-2024 来源维度建议登记开源成分来源"
   fi
   # ④ 豁免到期检查（warn-only：SBOM_LICENSE_EXEMPTIONS 五字段第 5 字段日期 < 今天）
   if [[ ${#SBOM_LICENSE_EXEMPTIONS[@]} -gt 0 ]]; then

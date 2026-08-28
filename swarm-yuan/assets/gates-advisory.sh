@@ -470,17 +470,17 @@ else:
 
 # check_upstream_baseline（--upstream-baseline，WP-X）：上游运行时基线 drift 核验
 # 理念来源：R6 §上游基线漂移（comet/graphify/ruflo 版本落后）。
-# 检查 docs/upstream-baseline.md 的 baseline_status 标记，drifted 项 warn。
+# 检查 README.md（已整合 upstream-baseline.md）的 baseline_status 标记，drifted 项 warn。
 check_upstream_baseline() {
   echo "=== 上游运行时基线 drift 核验（--upstream-baseline，advisory）==="
-  local bl_file="${PROJECT_DIR:-$(pwd)}/docs/upstream-baseline.md"
+  local bl_file="${PROJECT_DIR:-$(pwd)}/README.md"
   if [[ ! -f "$bl_file" ]]; then
-    # 兜底：SKILL_DIR/../docs/
+    # 兜底：SKILL_DIR/../（README.md 已整合 upstream-baseline.md）
     local _sd="${SKILL_DIR:-${_CONF_DIR:-$(pwd)}/..}"
-    bl_file="${_sd}/docs/upstream-baseline.md"
+    bl_file="${_sd}/README.md"
   fi
   if [[ ! -f "$bl_file" ]]; then
-    warn "upstream-baseline.md 不存在（上游运行时版本基线未登记）"
+    warn "README.md 不存在（上游运行时版本基线未登记）"
     return 0
   fi
   local drifted=0 synced=0 watch=0 license_risk=0

@@ -583,7 +583,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ## R4 补核（2026-08-21）：v2.1.233 → v2.1.237 五版增量
 
-> 基线 v2.1.232（2026-08-13 调研）→ 最新 v2.1.237（2026-08-20）。详见 `docs/upstream-baseline.md` §三 CLI 专题。
+> 基线 v2.1.232（2026-08-13 调研）→ 最新 v2.1.237（2026-08-20）。详见 README.md 完整文档/当前事实源/upstream-baseline §三 CLI 专题。
 
 ### Todo/Task 工具默认移除（v2.1.233，破坏性）
 
