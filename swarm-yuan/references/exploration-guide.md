@@ -206,7 +206,7 @@ graphify export callflow-html                    # 调用流导出（组件依�
 - 可复用类型定义：列出全部 TS interface/type（路径/定义/复用方式）
 - 稳定性标注：见 §11f（唯一定义点：稳定层/不稳定层/禁止改层）
   → 用 gitnexus mcp 或 graphify path 系统性盘点调用链/依赖链，而非随机 grep
-  → 每个稳定单元记录：签名、路径、用途、复用方式（五维字段见 README.md §8 附录 A12（五维稳定单元），供 dev-guide.md 引用）
+  → 每个稳定单元记录：签名、路径、用途、复用方式（五维字段见 README.md §6.6 历史档案 A12（五维稳定单元），供 dev-guide.md 引用）
 - 测试体系：框架、目录、运行命令、测试案例数据
 
 必查（环境与外部资源——材料 assets 段要求）：
@@ -872,7 +872,7 @@ git --version; gh --version; docker --version
 - **不稳定层**（慎用）：内部实现细节、私有方法、实验性代码、标注 @deprecated 的
 - **禁止改层**：upstream 骨架、第三方依赖、框架核心
 
-> **本节是"稳定单元"概念的唯一权威定义点**——全仓其余文件引用此概念时一律指回"见 references/exploration-guide.md §11f"，不重复定义。每个稳定单元记录五维字段（签名/路径/用途/复用方式/稳定性标注），五维字段详解见 README.md §8 附录 A12（五维稳定单元）。
+> **本节是"稳定单元"概念的唯一权威定义点**——全仓其余文件引用此概念时一律指回"见 references/exploration-guide.md §11f"，不重复定义。每个稳定单元记录五维字段（签名/路径/用途/复用方式/稳定性标注），五维字段详解见 README.md §6.6 历史档案 A12（五维稳定单元）。
 
 > 探查时用 `gitnexus analyze` + `gitnexus mcp` 或 `graphify .` 构建图谱，用图谱查询调用链/依赖链，**系统性盘点**而非随机 grep。对每个稳定单元记录：签名、路径、用途、复用方式。
 

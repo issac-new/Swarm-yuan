@@ -361,7 +361,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | 51 | `--pr-quality` / check_pr_quality | advisory-only（0 fail） | 同上；PR 质量信号观测 |
 | 52 | `--skill-supply-chain` / check_skill_supply_chain | advisory-only（0 fail） | 同上；技能供应链（来源/签名/版本）观测 |
 | 53 | `--state-phase` / check_state_phase | advisory-only（0 fail） | 同上；状态机阶段流转一致性观测 |
-| 54 | `--upstream-baseline` / check_upstream_baseline | advisory-only（0 fail） | 同上；上游基线漂移观测（README.md §7.4 上游运行时基线 对账，drifted → warn） |
+| 54 | `--upstream-baseline` / check_upstream_baseline | advisory-only（0 fail） | 同上；上游基线漂移观测（README.md §6.4 上游运行时基线 对账，drifted → warn） |
 
 汇总姿态约定（与 GB/T 15532 准出「失效须可见」对齐）：`--all-full` 末次汇总打印「—— 执行汇总：调用 N，执行 N−S，跳过 S（清单），fail F，warn W ——」（P0 跳过计数器）；退出码与既有输出行一字不改。
 
