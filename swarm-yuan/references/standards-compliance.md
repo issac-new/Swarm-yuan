@@ -140,13 +140,13 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 本项目采用 AI 辅助敏捷生存周期，对 GB/T 8566-2022 第 6 章过程组剪裁如下：
 
 - 采用的过程组：6.2 组织的项目使能（知识管理/工具链）、6.3 技术管理（质量保证策划、
-  配置管理）、6.4 技术过程组（需求分析/实现/验证/确认）。
+ 配置管理）、6.4 技术过程组（需求分析/实现/验证/确认）。
 - 剪裁掉的过程：6.1 协定过程组——理由：本项目为内部演进式开发，无甲乙双方协定场景；
-  对外采购/外包时须恢复并补充协定信息项。
+ 对外采购/外包时须恢复并补充协定信息项。
 - 剪裁掉的信息项：正式评审会议记录——理由：以门禁运行记录（precheck 输出）+ ADR +
-  spec 变更声明替代人工评审留痕；验收测试前须补正式评审记录（GB/T 15532 评审点）。
+ spec 变更声明替代人工评审留痕；验收测试前须补正式评审记录（GB/T 15532 评审点）。
 - AI 过程信息项扩展：prompt 记录、AI 产出 diff、人工复核记录纳入配置管理
-  （R7 Q-16：AI 过程信息项为 8566 信息项的合理扩展，本批先声明，制度化留 P2）。
+ （R7 Q-16：AI 过程信息项为 8566 信息项的合理扩展，本批先声明，制度化留 P2）。
 - 门禁↔过程映射：见 references/standards-compliance.md §A/§B。
 ```
 
@@ -344,14 +344,14 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | 34 | `--crypto` / check_crypto（P1，安全类） | skip-if-unconfigured → 启用后 fail-closed | CRYPTO_PROFILE 空 → 静默跳过；=gm 且 CRYPTO_SCAN_DIRS 空 → warn 披露 fail-open（同 sensitive 姿态）；弱算法命中 → fail |
 | 35 | `--rtm` / check_rtm（P3） | skip-if-unconfigured → 启用后 fail-closed | RTM_REQUIRED≠1 → 静默跳过；RTM_MATRIX_REQUIRED=1 且矩阵缺失 → fail（`gate_rtm_matrix_missing`）；REQ- 在测试目录与矩阵均无追溯 → fail（`gate_rtm_untraced:<REQ->`）；矩阵缺失未强制 → warn 降级仅测试目录追溯 |
 | 36 | `--release-sign` / check_release_sign（P3，安全类） | skip-if-unconfigured → 启用后 fail-closed | RELEASE_SIGN_REQUIRED≠1 → 静默跳过；产物缺伴随签名 → fail（`gate_release_sign_missing`）；cosign verify-blob 验签失败 → fail（`gate_release_sign_verify_failed`）；RELEASE_PROVENANCE_REQUIRED=1 缺 provenance → fail（`gate_release_provenance_missing`）；无 cosign 降级签名存在性检查 |
-| 37 | `--dengbao` / check_dengbao（WP-S1，安全类） | fail-closed（Z3） | DENGBAO_LEVEL 未配置且无 DENGBAO_EXEMPT_REASON → fail（`gate_dengbao_unconfigured`）；豁免 → warn 留痕；启用后双因子/审计日志/审计字段缺口 → fail |
-| 38 | `--pia` / check_pia（WP-S1，安全类） | fail-closed（Z3） | PIA_REQUIRED 未启用且无 PIA_EXEMPT_REASON → fail（`gate_pia_unconfigured`）；豁免 → warn 留痕；启用后 PIA 文档缺失/待定项 → fail |
-| 39 | `--sast-deep` / check_sast_deep（WP-S1，安全类） | fail-closed（Z3） | SECURITY_SCAN_DIRS 未配置且无 SAST_DEEP_EXEMPT_REASON → fail（`gate_sast_deep_unconfigured`）；豁免 → warn 留痕；启用后 semgrep→opengrep→内置降级链检出 sink → fail |
-| 40 | `--oss-eval` / check_oss_eval（WP-S1，安全类） | fail-closed（Z3） | OSS_EVAL_REQUIRED 未启用且无 OSS_EVAL_EXEMPT_REASON → fail（`gate_oss_eval_unconfigured`）；豁免 → warn 留痕；启用后复用 --sbom 产物，成分/许可证缺口 → fail |
-| 41 | `--quality-model` / check_quality_model（WP-S2） | skip-if-unconfigured → 启用后 fail-closed | 未配置质量特性剪裁 → 静默跳过；启用后八特性剪裁/证据缺口 → fail |
-| 42 | `--test-evidence` / check_test_evidence（WP-S2） | skip-if-unconfigured → 启用后 fail-closed | TEST_EVIDENCE_REQUIRED 未启用 → SKIP 明示；启用后测试证据缺失 → fail |
-| 43 | `--review-record` / check_review_record（WP-S2） | skip-if-unconfigured → 启用后 fail-closed | REVIEW_RECORD_REQUIRED 未启用 → SKIP 明示；启用后评审记录缺失 → fail |
-| 44 | `--metrics` / check_metrics（WP-S2） | skip-if-unconfigured → warn 为主 | 未配置度量基线 → 静默跳过；启用后度量趋势异常 warn（enforce=warn，1 fail 触发窄） |
+| 37 | `--dengbao` / check_dengbao | fail-closed（Z3） | DENGBAO_LEVEL 未配置且无 DENGBAO_EXEMPT_REASON → fail（`gate_dengbao_unconfigured`）；豁免 → warn 留痕；启用后双因子/审计日志/审计字段缺口 → fail |
+| 38 | `--pia` / check_pia | fail-closed（Z3） | PIA_REQUIRED 未启用且无 PIA_EXEMPT_REASON → fail（`gate_pia_unconfigured`）；豁免 → warn 留痕；启用后 PIA 文档缺失/待定项 → fail |
+| 39 | `--sast-deep` / check_sast_deep | fail-closed（Z3） | SECURITY_SCAN_DIRS 未配置且无 SAST_DEEP_EXEMPT_REASON → fail（`gate_sast_deep_unconfigured`）；豁免 → warn 留痕；启用后 semgrep→opengrep→内置降级链检出 sink → fail |
+| 40 | `--oss-eval` / check_oss_eval | fail-closed（Z3） | OSS_EVAL_REQUIRED 未启用且无 OSS_EVAL_EXEMPT_REASON → fail（`gate_oss_eval_unconfigured`）；豁免 → warn 留痕；启用后复用 --sbom 产物，成分/许可证缺口 → fail |
+| 41 | `--quality-model` / check_quality_model | skip-if-unconfigured → 启用后 fail-closed | 未配置质量特性剪裁 → 静默跳过；启用后八特性剪裁/证据缺口 → fail |
+| 42 | `--test-evidence` / check_test_evidence | skip-if-unconfigured → 启用后 fail-closed | TEST_EVIDENCE_REQUIRED 未启用 → SKIP 明示；启用后测试证据缺失 → fail |
+| 43 | `--review-record` / check_review_record | skip-if-unconfigured → 启用后 fail-closed | REVIEW_RECORD_REQUIRED 未启用 → SKIP 明示；启用后评审记录缺失 → fail |
+| 44 | `--metrics` / check_metrics | skip-if-unconfigured → warn 为主 | 未配置度量基线 → 静默跳过；启用后度量趋势异常 warn（enforce=warn，1 fail 触发窄） |
 | 45 | `--operate` / check_operate | advisory-only（0 fail） | 不在三档执行序列，显式单门禁调用；发布后运营观测（日志/告警/灰度清单），warn/pass |
 | 46 | `--decision-audit` / check_decision_audit | advisory-only（0 fail） | 同上；decisions.jsonl 决策留痕完整性观测 |
 | 47 | `--canary` / check_canary | advisory-only（0 fail） | 同上；灰度/金丝雀发布配置观测 |
@@ -386,11 +386,11 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 ```bash
 # 示例 1：SBOM 许可证豁免——内部自研组件误标 GPL-3.0，实为私有许可
 SBOM_LICENSE_EXEMPTIONS=(
-  "internal-utils@2.3.0|GPL-3.0-only|自研组件许可证误标，法务实为私有许可，已出确认函|张三|2026-07-20"
+ "internal-utils@2.3.0|GPL-3.0-only|自研组件许可证误标，法务实为私有许可，已出确认函|张三|2026-07-20"
 )
 # 示例 2：隐私豁免——测试固化的样例身份证串，属构造数据非真实 PII
 PRIVACY_EXEMPTIONS=(
-  "tests/fixtures/idcard-sample.txt|PII:18位身份证|测试夹具构造数据（全 1 序列），非真实个人信息，见夹具 README|李四|2026-07-20"
+ "tests/fixtures/idcard-sample.txt|PII:18位身份证|测试夹具构造数据（全 1 序列），非真实个人信息，见夹具 README|李四|2026-07-20"
 )
 ```
 

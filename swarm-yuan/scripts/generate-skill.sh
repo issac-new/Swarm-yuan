@@ -737,14 +737,14 @@ for i, line in enumerate(sys.stdin, 1):
     printf '%s\n' "$hits"
     if [[ "$_vc_status" == "draft" && "$strict" != "--strict" ]]; then
       echo "ℹ draft 状态：允许残留（填充中段，断点续传安全）；--mark-active 前须清零"
-      [[ "$p1_cnt" -gt 0 ]] && echo "  （含 ${p1_cnt} 处 P1 占位符：WP-Q4 分级，draft 期允许，--mark-active 前 exit 1）"
+      [[ "$p1_cnt" -gt 0 ]] && echo "  （含 ${p1_cnt} 处 P1 占位符：P1 分级，draft 期允许，--mark-active 前 exit 1）"
       return 0
     fi
     return 1
   fi
   # P1 占位符在非 --strict 模式下单独 warn（不 exit 1）
   if [[ "$p1_cnt" -gt 0 && "$strict" != "--strict" ]]; then
-    echo "⚠ 发现 ${p1_cnt} 处 P1 占位符（WP-Q4 分级，draft 期允许，--mark-active 前须清零）:"
+    echo "⚠ 发现 ${p1_cnt} 处 P1 占位符（P1 分级，draft 期允许，--mark-active 前须清零）:"
     printf '%s\n' "$p1_hits"
   fi
   echo "✓ 零占位符确认"
@@ -1135,7 +1135,7 @@ if [[ "$PROFILE" == "auto" ]]; then
   fi
   [[ $_forms -ge ${PROFILE_FORMS_THRESHOLD:-3} ]] && _auto_reason="${_auto_reason}；技术栈复杂度：${_forms} 种形态${_msig:+（${_msig}）}（≥${PROFILE_FORMS_THRESHOLD:-3} → 升 standard）"
   PROFILE=$(auto_detect_profile "$PROJECT_DIR")
-  echo "profile auto 判定: ${PROFILE}（${_auto_reason}；WP-Q2 偏置修正——信号明确才升档，模糊走默认 standard。显式 --profile 可覆盖）"
+  echo "profile auto 判定: ${PROFILE}（${_auto_reason}；信号明确才升档，模糊走默认 standard。显式 --profile 可覆盖）"
 fi
 
 # WP-Q3：auto 档时探测框架，写入 precheck.arch.conf 的 ACTIVE_FRAMEWORKS（standard+ 档）
@@ -1753,7 +1753,7 @@ argument-hint: <需求描述>
 ---
 AI 自动：
 1.创建 spec 文件
-2.判断任务类型（WP-P4，从分支名/用户意图）：feature/fix/refactor/chore/docs/test/exp——映射见 assets/task-type-gates.conf
+2.判断任务类型（从分支名/用户意图）：feature/fix/refactor/chore/docs/test/exp——映射见 assets/task-type-gates.conf
 3.判断规模（优先 task-scale.sh 事前判定；spec 写完后用 detect-spec-scale.sh 复核）：
   - bash scripts/task-scale.sh → simple/standard/full（基于 git diff，不需要 spec）
   - 规则：simple（≤5 文件且不触碰敏感目录）；standard（6-10 文件单一模块）；full（>10 或触碰 public/api/schema/migration/auth/model 等敏感目录 或 跨多服务）
@@ -1839,11 +1839,11 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 
 本技能的组件库清单/编排约束是生成时刻的快照。项目代码演进后按此链更新：
 
-1. **感知**（会话开始时手动跑，秒级——lite 档按 WP-E 裁剪未装 SessionStart hook，AI 须在每个开发会话开始时主动跑一次）：`bash scripts/project-fingerprint.sh <项目根> --diff`；提示无基线时先 `--write` 落基线。若升级到 standard/compliance 档会自动装 SessionStart hook 实现自动感知。
+1. **感知**（会话开始时手动跑，秒级——lite 档未装 SessionStart hook，AI 须在每个开发会话开始时主动跑一次）：`bash scripts/project-fingerprint.sh <项目根> --diff`；提示无基线时先 `--write` 落基线。若升级到 standard/compliance 档会自动装 SessionStart hook 实现自动感知。
 2. **判断**：输出「⚠ 项目源码已变化」→ 走更新链；「无变化」→ 继续正常开发。
 3. **更新链**（检测到变化后）：
    - 工具链刷新：用生成器（路径见本目录 `.swarm-yuan-version` 的 `source_repo`）跑 `generate-skill.sh --refresh <本技能目录>` 看 dry-run 报告 → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留不动）
-   - 内容刷新（局部重探查，dsh R12 吸收）：`--diff` 报告的「变化目录（scope）」就是重探查范围——**只针对变化 scope** 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查（新增/消失/改名组件），更新 `references/reference-manual.md` 对应清单条目；未变 scope 的条目原样保留（SHA 未变即不重写）
+   - 内容刷新（局部重探查）：`--diff` 报告的「变化目录（scope）」就是重探查范围——**只针对变化 scope** 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查（新增/消失/改名组件），更新 `references/reference-manual.md` 对应清单条目；未变 scope 的条目原样保留（SHA 未变即不重写）
    - 核验：生成器侧 `inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉）
 4. **落新基线**：更新完成后 `bash scripts/project-fingerprint.sh <项目根> --write`。
 
@@ -1860,7 +1860,7 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 2. **判断**：输出「⚠ 项目源码已变化」→ 走更新链；「无变化」→ 继续正常开发。
 3. **更新链**（检测到变化后）：
    - 工具链刷新：用生成器（路径见本目录 `.swarm-yuan-version` 的 `source_repo`）跑 `generate-skill.sh --refresh <本技能目录>` 看 dry-run 报告 → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留不动）
-   - 内容刷新（局部重探查，dsh R12 吸收）：`--diff` 报告的「变化目录（scope）」就是重探查范围——**只针对变化 scope** 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查（新增/消失/改名组件），更新 `references/reference-manual.md` 对应清单条目；未变 scope 的条目原样保留（SHA 未变即不重写）
+   - 内容刷新（局部重探查）：`--diff` 报告的「变化目录（scope）」就是重探查范围——**只针对变化 scope** 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查（新增/消失/改名组件），更新 `references/reference-manual.md` 对应清单条目；未变 scope 的条目原样保留（SHA 未变即不重写）
    - 核验：生成器侧 `inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉）
 4. **落新基线**：更新完成后 `bash scripts/project-fingerprint.sh <项目根> --write`。
 

@@ -14,7 +14,7 @@
 
 每路子代理的 prompt 要明确"报告具体路径、命令名、版本号、文件名、连接串格式、端口"。
 
-> **WP-P8 per-phase profile 探查分级**：探查阶段按项目规模分级（与 `auto_detect_profile` 同信号源），轻量项目降级为单路探查，重量项目升级为三路+图谱工具：
+> **per-phase profile 探查分级**：探查阶段按项目规模分级（与 `auto_detect_profile` 同信号源），轻量项目降级为单路探查，重量项目升级为三路+图谱工具：
 >
 > | profile | 规模信号 | 探查策略 | 图谱工具 |
 > |---------|---------|---------|---------|
@@ -85,15 +85,15 @@
 
 **GitNexus（Node 生态，深度代码调用图）：**
 ```bash
-npm install -g gitnexus && gitnexus analyze   # 在目标仓库根构建知识图
-gitnexus mcp                                    # 启动 MCP server 供 agent 查询
+npm install -g gitnexus && gitnexus analyze # 在目标仓库根构建知识图
+gitnexus mcp # 启动 MCP server 供 agent 查询
 ```
 
 **graphify（Python 生态，广谱知识图）：**
 ```bash
-uv tool install graphifyy && graphify .         # 构建 → graphify-out/GRAPH_REPORT.md + graph.json
-graphify path "ComponentA" "ComponentB"          # 查依赖链/最短路径
-graphify export callflow-html                    # 调用流导出（组件依赖链路段可视化，结构关系图用 mermaid）
+uv tool install graphifyy && graphify . # 构建 → graphify-out/GRAPH_REPORT.md + graph.json
+graphify path "ComponentA" "ComponentB" # 查依赖链/最短路径
+graphify export callflow-html # 调用流导出（组件依赖链路段可视化，结构关系图用 mermaid）
 ```
 
 探查时读 `graphify-out/GRAPH_REPORT.md` 获取架构概览（god nodes、surprising connections），用 `graphify path/explain` 查具体依赖链。详见 `references/code-graph-tools.md`。**只引用调用，不复制实现。**
@@ -134,7 +134,7 @@ graphify export callflow-html                    # 调用流导出（组件依�
 必查：
 - 顶层目录结构（识别 monorepo/overlay/upstream/submodule）
 - 包描述文件：package.json / pyproject.toml / go.mod / Cargo.toml / pom.xml
-  → name, version, scripts/targets, engines/runtime, type, 依赖列表
+ → name, version, scripts/targets, engines/runtime, type, 依赖列表
 - 构建系统：vite/webpack/rollup/esbuild/Makefile/CMake/docker/electron-builder
 - 构建配置文件：*.config.ts / tsconfig.json / Dockerfile / docker-compose
 - 开发命令：dev/build/test/lint/release 命令及端口约定
@@ -205,15 +205,15 @@ graphify export callflow-html                    # 调用流导出（组件依�
 - 可复用 Store：列出全部状态管理 store（路径/暴露的状态和方法/复用方式）
 - 可复用类型定义：列出全部 TS interface/type（路径/定义/复用方式）
 - 稳定性标注：见 §11f（唯一定义点：稳定层/不稳定层/禁止改层）
-  → 用 gitnexus mcp 或 graphify path 系统性盘点调用链/依赖链，而非随机 grep
-  → 每个稳定单元记录：签名、路径、用途、复用方式（五维字段见 README.md §6.6 历史档案 A12（五维稳定单元），供 dev-guide.md 引用）
+ → 用 gitnexus mcp 或 graphify path 系统性盘点调用链/依赖链，而非随机 grep
+ → 每个稳定单元记录：签名、路径、用途、复用方式（五维字段见 README.md §6.6 历史档案 A12（五维稳定单元），供 dev-guide.md 引用）
 - 测试体系：框架、目录、运行命令、测试案例数据
 
 必查（环境与外部资源——材料 assets 段要求）：
 - 开发环境依赖：node/python/go/java 版本要求（engines/runtime）
 - 外部资源：数据库（MySQL/PostgreSQL/SQLite/MongoDB）、缓存（Redis）、消息队列（Kafka/RabbitMQ/RocketMQ）、搜索（ES/ELK）
-  → 连接方式（连接串格式、端口、env 变量名）
-  → 是否有 MCP 工具接入（DB 查询工具、ELK 查询、Redis 访问）
+ → 连接方式（连接串格式、端口、env 变量名）
+ → 是否有 MCP 工具接入（DB 查询工具、ELK 查询、Redis 访问）
 - 静态资源：图片/字体/配置文件位置、下载/填充方式
 - 样例数据：seed/fixture/mock 数据位置与格式
 - CI/CD：.github/workflows、Jenkinsfile、部署流程
@@ -258,11 +258,11 @@ graphify export callflow-html                    # 调用流导出（组件依�
 ```bash
 # JVM 项目：从 pom.xml / build.gradle 提取框架依赖
 grep -hE 'spring-boot-starter|mybatis|lombok|sharding|spring-batch|dubbo|rocketmq|spring-kafka|spring-amqp|data-redis|quartz|elasticjob' \
-  pom.xml build.gradle 2>/dev/null | sort -u
+ pom.xml build.gradle 2>/dev/null | sort -u
 
 # Node 项目：从 package.json 提取框架依赖
 grep -hE '"express"|"koa"|"fastify"|"@nestjs"|"vue"|"react"|"svelte"|"element-ui"|"element-plus"|"antd"|"ant-design-vue"|"naive-ui"' \
-  package.json 2>/dev/null | sort -u
+ package.json 2>/dev/null | sort -u
 
 # Go 项目：从 go.mod 提取框架依赖
 grep -hE 'gin|echo|fiber|gorm' go.mod 2>/dev/null | sort -u
@@ -277,12 +277,12 @@ grep -rlE '@Data|@Slf4j|@Builder|@Mapper|@Transactional|@DubboService|@RocketMQM
 find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2>/dev/null
 ```
 
-**框架信号→规则集激活表已数据化外迁（WP-P1/M4）：完整表见 `assets/framework-signals.md`（由 `scripts/gen-framework-index.sh` 扫描 `references/frameworks/*.md` §1 生成维护）。运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件。**
+**框架信号→规则集激活表已数据化外迁：完整表见 `assets/framework-signals.md`（由 `scripts/gen-framework-index.sh` 扫描 `references/frameworks/*.md` §1 生成维护）。运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件。**
 
 <!-- T4 改造：本区块由 gen-framework-index.sh 自动重写，手改内容会被覆盖。脚本失败会保留原文件不动（mv 守卫），不阻塞生成流程。 -->
 
 # >>> framework-signal-index >>>
-> 本表已数据化外迁（WP-P1/M4）：完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。
+> 本表已数据化外迁：完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。
 > 运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件，无需常驻上下文。
 # <<< framework-signal-index <<<
 
@@ -391,9 +391,9 @@ grep -rlE 'RedisTemplate|StringRedisTemplate|@Cacheable|@CacheEvict|RedissonClie
 grep -rlE '@Scheduled|Scheduler|JobDetail|CronTrigger|@SchedulerLock' <可改源码目录> --include='*.java'
 
 # === element / antd / naiveui 规则集（前端）===
-grep -rlE 'el-|ElButton|ElTable|ElForm' <可改源码目录> --include='*.vue' --include='*.ts'   # Element
+grep -rlE 'el-|ElButton|ElTable|ElForm' <可改源码目录> --include='*.vue' --include='*.ts' # Element
 grep -rlE 'a-|AntButton|AntTable|AntForm' <可改源码目录> --include='*.vue' --include='*.tsx' # Ant Design
-grep -rlE 'n-|NButton|NDataTable|NForm' <可改源码目录> --include='*.vue' --include='*.ts'    # NaiveUI
+grep -rlE 'n-|NButton|NDataTable|NForm' <可改源码目录> --include='*.vue' --include='*.ts' # NaiveUI
 ```
 
 **C+.1-A 异步/事件维度（仅当 C+.0 判定含异步消费时）**
@@ -453,9 +453,9 @@ grep -nH "defineProps\|interface.*Props\|withDefaults\|defineEmits\|defineSlots"
 
 ```
 对每个维度独立核验：
-  枚举计数 = 该维度 find/grep 命令输出的文件数
-  清单计数 = reference-manual 对应章节的表格行数（去重后）
-  断言：清单计数 ≥ 枚举计数 × 0.95（允许少量非公开/内部文件不列，但偏差须注明原因）
+ 枚举计数 = 该维度 find/grep 命令输出的文件数
+ 清单计数 = reference-manual 对应章节的表格行数（去重后）
+ 断言：清单计数 ≥ 枚举计数 × 0.95（允许少量非公开/内部文件不列，但偏差须注明原因）
 ```
 
 > 若某维度清单计数远小于枚举计数（如 10 vs 85），**禁止提交**，回到 Step 2 继续补全该维度。
@@ -482,11 +482,11 @@ grep -nH "defineProps\|interface.*Props\|withDefaults\|defineEmits\|defineSlots"
 Layer 1 注册装配链路：
 ```
 追查路径：
-  应用入口（main.ts/index.ts/App.vue/main.jsx）
-    → 注册中枢（bootstrap.ts/register.ts/plugin install/app.use）
-      → 各功能模块的 registerXxx(app) 或 app.use(plugin)
-        → registerRoute / registerNav / registerComponent / 路由表
-          → 视图组件 → 子组件
+ 应用入口（main.ts/index.ts/App.vue/main.jsx）
+ → 注册中枢（bootstrap.ts/register.ts/plugin install/app.use）
+ → 各功能模块的 registerXxx(app) 或 app.use(plugin)
+ → registerRoute / registerNav / registerComponent / 路由表
+ → 视图组件 → 子组件
 ```
 分析方法：
 1. 找入口（package.json scripts.dev / index.html script src / main 入口）
@@ -504,11 +504,11 @@ grep -rn "^import.*from" <可改源码目录> | grep -oE "from ['\"][^'\"]+['\"]
 Layer 3 组件挂载树（每个容器视图递归追 import）：
 ```
 ContainerView (路由 /xxx)
-  ├─ import ChildA from './ChildA'
-  ├─ import CrossModuleComp from '<other-module>/components/...'  ← 跨模块引用
-  └─ import { useContainerStore } from '<this-module>/store'
-       ├─ import { useOtherStore } from '<other-module>/stores/...'  ← store 跨模块
-       └─ import * as someApi from '<foundation>/api/xxx'
+ ├─ import ChildA from './ChildA'
+ ├─ import CrossModuleComp from '<other-module>/components/...' ← 跨模块引用
+ └─ import { useContainerStore } from '<this-module>/store'
+ ├─ import { useOtherStore } from '<other-module>/stores/...' ← store 跨模块
+ └─ import * as someApi from '<foundation>/api/xxx'
 ```
 
 Layer 4 store/服务依赖链路：
@@ -523,14 +523,14 @@ Layer 4 store/服务依赖链路：
 Layer 1 请求处理管道（从入口到 DB/外部副作用）：
 ```
 追查路径：
-  服务入口（server.ts/index.js/main.py/main.go/Application.java）
-    → 全局中间件（cors/bodyParser/auth/errorHandler/logging）
-      → 路由挂载（app.use(router) / @ComponentScan / include_router）
-        → 路由级中间件/守卫（@Guard/beforeEach/jwt verify）
-          → controller handler
-            → service/usecase（业务逻辑）
-              → repository/dao（数据访问）
-                → DB / 外部 API / 缓存 / MQ
+ 服务入口（server.ts/index.js/main.py/main.go/Application.java）
+ → 全局中间件（cors/bodyParser/auth/errorHandler/logging）
+ → 路由挂载（app.use(router) / @ComponentScan / include_router）
+ → 路由级中间件/守卫（@Guard/beforeEach/jwt verify）
+ → controller handler
+ → service/usecase（业务逻辑）
+ → repository/dao（数据访问）
+ → DB / 外部 API / 缓存 / MQ
 ```
 分析方法：
 1. 找服务入口（scripts.start / main 函数 / Application 启动类）
@@ -549,12 +549,12 @@ grep -rn "^import\|^from\|^use " <可改源码目录> | grep -E "service|reposit
 Layer 3 数据流图（每条核心业务的数据流）：
 ```
 Endpoint POST /api/xxx
-  → Controller.handler(req)
-    → Service.method(dto)
-      → Repository.find/query/save(entity)
-        → ORM → DB
-      → EventBus.publish(event)  ← 副作用
-    → return ResponseDto
+ → Controller.handler(req)
+ → Service.method(dto)
+ → Repository.find/query/save(entity)
+ → ORM → DB
+ → EventBus.publish(event) ← 副作用
+ → return ResponseDto
 ```
 
 Layer 4 外部依赖链路：
@@ -569,10 +569,10 @@ Layer 4 外部依赖链路：
 
 ```
 追查路径：
-  生产者（publish/emit/send）
-    → 队列/Topic/Exchange（拓扑定义）
-      → 消费者（@Listener/consumer/worker）
-        → handler → service → 副作用（DB/通知/下游消息）
+ 生产者（publish/emit/send）
+ → 队列/Topic/Exchange（拓扑定义）
+ → 消费者（@Listener/consumer/worker）
+ → handler → service → 副作用（DB/通知/下游消息）
 ```
 记录：**队列拓扑**、**消费幂等键**、**重试/DLQ 策略**、**消息时序保证**、**背压/限流**。
 
@@ -582,11 +582,11 @@ Layer 4 外部依赖链路：
 
 ```
 追查路径：
-  API Gateway / BFF
-    → 服务A（同步 REST/gRPC 调用服务B）
-      → 服务B
-    → 服务A（异步发消息到队列，服务C消费）
-      → 服务C
+ API Gateway / BFF
+ → 服务A（同步 REST/gRPC 调用服务B）
+ → 服务B
+ → 服务A（异步发消息到队列，服务C消费）
+ → 服务C
 ```
 记录：**同步调用链长度**、**共享DB**、**traceId透传**、**熔断/降级**、**Saga/Outbox 模式**。
 
@@ -626,7 +626,7 @@ Layer 4 外部依赖链路：
 ```
 1. 从 C+.2 的依赖矩阵，识别所有跨边界 import/调用边
 2. 对每条边判断：允许的依赖 vs 应避免的反向依赖？
-   → 依据：项目既有分层约定 + 循环依赖检测（madge/graphify）
+ → 依据：项目既有分层约定 + 循环依赖检测（madge/graphify）
 3. 从注册链路/中间件链，识别顺序与 feature-gate
 4. 从路由表/事务注解，识别挂载方式与事务边界
 5. 把每条约束写成"因为 [代码证据]，所以 [约束规则]，违反则 [后果]"
@@ -767,7 +767,7 @@ git --version; gh --version; docker --version
 
 ## 提取项目特征卡
 
-**P0/P1 分级规则（WP-G 减重）**：P0 六项 = {1 项目类型, 4 技术栈摘要, 5 构建发布命令, 11 可复用稳定单元, 15 编排调用关系及约束, 16 详尽组件库清单}——生成完成的强制门槛，计数核验（清单计数 ≥ 枚举计数 × 0.95）仅对 P0 维度强制；P1 十项 = {2,3,6,7,8,9,10,12,13,14}——draft 期可以「（P1 待补）」占位（不触发 --verify-completeness 的占位符命中），`--mark-active` 前必须填实。
+**P0/P1 分级规则**：P0 六项 = {1 项目类型, 4 技术栈摘要, 5 构建发布命令, 11 可复用稳定单元, 15 编排调用关系及约束, 16 详尽组件库清单}——生成完成的强制门槛，计数核验（清单计数 ≥ 枚举计数 × 0.95）仅对 P0 维度强制；P1 十项 = {2,3,6,7,8,9,10,12,13,14}——draft 期可以「（P1 待补）」占位（不触发 --verify-completeness 的占位符命中），`--mark-active` 前必须填实。
 
 探查完成后，整理成结构化特征卡（供 Step 3 填充模板用）：
 
@@ -850,7 +850,7 @@ git --version; gh --version; docker --version
 #### 11c. 可复用类/函数/方法
 | 名称 | 类型 | 签名 | 路径 | 用途 | 复用方式 |
 |------|------|------|------|------|---------|
-| `useAuth` | composable | `() => { user, login, logout }` | composables/useAuth | 认证 | import 调用 |
+| `useAuth` | composable | ` => { user, login, logout }` | composables/useAuth | 认证 | import 调用 |
 | `formatDate` | 函数 | `(ts: number) => string` | utils/date | 格式化日期 | import 调用 |
 | `DatabaseSync` | 类 | `new DatabaseSync(path)` | node:sqlite | DB | 内置 |
 （列出项目全部稳定类/函数/方法/composable/store/工具函数，含完整签名）
@@ -951,21 +951,21 @@ git --version; gh --version; docker --version
 
 ```
 Step 1: 动态识别领域边界
-  → 从 14a/14b 的识别结果，确定项目涉及哪些技术领域 + 业务领域
-  → 产出："本项目涉及以下领域：[领域A, 领域B, ...]"
+ → 从 14a/14b 的识别结果，确定项目涉及哪些技术领域 + 业务领域
+ → 产出："本项目涉及以下领域：[领域A, 领域B, ...]"
 
 Step 2: 逐领域深入分析
-  → 对每个识别出的领域，回答以下问题（须有代码/文档证据）：
-    (1) 该领域在本项目中的核心实体是什么？（从代码提取，非猜测）
-    (2) 这些实体间的因果关系是什么？（A 导致 B，B 依赖 C）
-    (3) 该领域有哪些不可违反的物理/逻辑约束？（从代码模式+行业常识推导）
-    (4) 当前代码是否遵循了这些约束？有无违反迹象？
-    (5) 这些约束在本次变更中是否可能被破坏？
+ → 对每个识别出的领域，回答以下问题（须有代码/文档证据）：
+ (1) 该领域在本项目中的核心实体是什么？（从代码提取，非猜测）
+ (2) 这些实体间的因果关系是什么？（A 导致 B，B 依赖 C）
+ (3) 该领域有哪些不可违反的物理/逻辑约束？（从代码模式+行业常识推导）
+ (4) 当前代码是否遵循了这些约束？有无违反迹象？
+ (5) 这些约束在本次变更中是否可能被破坏？
 
 Step 3: 推导客观规律
-  → 基于 Step 2 的分析，推导出该领域在本项目中的客观规律
-  → 每条规律格式："因为 [代码证据/文档证据/行业常识]，所以 [客观规律]，违反则 [后果]"
-  → 产出：写入 reference-manual.md "领域知识"段
+ → 基于 Step 2 的分析，推导出该领域在本项目中的客观规律
+ → 每条规律格式："因为 [代码证据/文档证据/行业常识]，所以 [客观规律]，违反则 [后果]"
+ → 产出：写入 reference-manual.md "领域知识"段
 ```
 
 **分析示例（以 IM 通讯领域为例，展示"动态分析→推导"过程）：**
@@ -1017,7 +1017,7 @@ Step 3: 推导客观规律
 | 路由 | 挂载方式 | 定义位置 | 代码证据 |
 |------|---------|---------|---------|
 | /xxx | 静态定义 | router/index.ts (patch NNN) | grep addRoute |
-| /xxx/:id | 动态 addRoute | registerXxxRoutes() | bootstrap 注册 |
+| /xxx/:id | 动态 addRoute | registerXxxRoutes | bootstrap 注册 |
 
 #### 15d. 改造分类与文件落位约束
 | 变更类型 | 落位目录 | 机制 | 约束 |
@@ -1043,7 +1043,7 @@ Step 3: 推导客观规律
 > 按 §C+.0 项目形态判定 → §C+.1 按维度全量穷举 → 每维度计数核验（清单计数 ≥ 枚举计数 × 0.95）。
 > 产出写入 reference-manual.md §4（全量构件表）+ §6（全量接口端点表）+ §9（全量 store/类型表）。
 
-#### 16a. 枚举计数核验表（WP-P2 脚本化）
+#### 16a. 枚举计数核验表
 
 > **本表由 `scripts/inventory-verify.sh` 自动产出（维度注册表 `assets/inventory-dimensions.conf` 数据驱动）。**
 > 跑 `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <§C+.0形态> [--tsv]`：
@@ -1056,7 +1056,7 @@ Step 3: 推导客观规律
 |------|---------|---------|------|---------|---------|
 （由 inventory-verify.sh 报告填，按 §C+.0 判定的维度）
 
-### 17. 合规与质量特性基线（P1·可增量）（WP-S2 增设；驱动 precheck.compliance.conf 48 变量与 --compliance-suite 合规 19 门禁）
+### 17. 合规与质量特性基线（P1·可增量）
 
 > **本项是强监管交付的探查基线**：项目若无合规要求，填"无合规要求（默认约定，可调整）"即可，不必硬凑；
 > 若命中金融/医疗/政务/央企等强监管场景，本项是 compliance profile 与合规门禁族的输入。
@@ -1073,9 +1073,9 @@ Step 3: 推导客观规律
 1. 先确认是否真的没有（换关键词再搜）
 2. 确实没有 → 填合理默认值，在目标技能中标注 `（默认约定，可调整）`
 3. 默认值参考：
-   - 分支命名：`feat/*` `fix/*` `refactor/*`
-   - 合入：`git merge --no-ff`
-   - 推送：不自动推送（需确认）
-   - spec/plan：`docs/specs/` `docs/plans/`，命名 `YYYY-MM-DD-<feature>.md`
-   - 测试目录：`tests/` 或 `__tests__/`
-   - 环境/资源/MCP：无则标注"本项目无此项"
+ - 分支命名：`feat/*` `fix/*` `refactor/*`
+ - 合入：`git merge --no-ff`
+ - 推送：不自动推送（需确认）
+ - spec/plan：`docs/specs/` `docs/plans/`，命名 `YYYY-MM-DD-<feature>.md`
+ - 测试目录：`tests/` 或 `__tests__/`
+ - 环境/资源/MCP：无则标注"本项目无此项"

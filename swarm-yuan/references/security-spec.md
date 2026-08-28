@@ -50,12 +50,12 @@
 ## 二、代码安全（Code Security）
 
 ### 2.1 路径穿越（Path Traversal, CWE-22）
-- 所有文件路径操作必须校验在允许目录内（如 `isPathWithin()` 或 `path.resolve()` + 前缀校验）
+- 所有文件路径操作必须校验在允许目录内（如 `isPathWithin` 或 `path.resolve` + 前缀校验）
 - 用户输入的文件名必须正则校验（如 `^[A-Za-z0-9._-]+$`）
 - 禁止 `../` 序列
 
 ### 2.2 不安全反序列化（OWASP A08）
-- 禁止 `eval()` / `Function()` / `unserialize()` 处理不可信数据
+- 禁止 `eval` / `Function` / `unserialize` 处理不可信数据
 - JSON.parse 输入需 try-catch
 - 禁止 `document.write` / `setTimeout(string)` / `setInterval(string)`
 
@@ -67,7 +67,7 @@
 
 ### 2.4 SSRF 防御（Server-Side Request Forgery, CWE-918）
 - 所有出站 HTTP 请求必须经 SSRF 校验（协议白名单、私有 IP 阻断、DNS rebinding 防护）
-- 参考 url-guard.ts 模式：`assertSafeOutboundUrl()`
+- 参考 url-guard.ts 模式：`assertSafeOutboundUrl`
 
 ### 2.5 安全配置（OWASP A05）
 - 错误处理不泄露堆栈/路径/版本信息（生产环境）
@@ -122,9 +122,9 @@
 
 ### 4.3 浏览器意图工具安全（ruflo v3.22.0, ADR-175）
 - 若提供 `browser_act` 类 MCP 工具（自然语言意图操作浏览器），须：
-  - **fail-closed 防火墙**：strip demo auto-connect 到第三方沙箱（如 Alibaba sandbox），默认不连接任何远程
-  - **LLM key 代理透传**：LLM API key 由后端代理注入，不进入 page context（防 page-side JS 窃取）
-  - **selector 工具与 intent 工具分离**：底层 selector 工具（click/type/read）与上层 intent 工具（`browser_act "点击登录按钮"`）分离，intent 经后端 LLM 解析为 selector 序列
+ - **fail-closed 防火墙**：strip demo auto-connect 到第三方沙箱（如 Alibaba sandbox），默认不连接任何远程
+ - **LLM key 代理透传**：LLM API key 由后端代理注入，不进入 page context（防 page-side JS 窃取）
+ - **selector 工具与 intent 工具分离**：底层 selector 工具（click/type/read）与上层 intent 工具（`browser_act "点击登录按钮"`）分离，intent 经后端 LLM 解析为 selector 序列
 - 这适用于 swarm-yuan 生成的目标技能若包含浏览器自动化能力
 
 ### 4.4 Prompt 注入防御基线（ECC v2.0.0, CLAUDE.md）
@@ -233,21 +233,21 @@ ECC 的 `governance-capture.js` hook 捕获安全相关事件为 `governanceEven
 > 本节是 **swarm-yuan 生成器自身**的兼容性要求——precheck.sh / generate-skill.sh / self-check.sh / state-machine.sh 等脚本必须兼容三平台。生成的目标技能如需三平台兼容，由目标技能自行声明（非强制）。
 
 ### 6.0 硬前置：bash（Windows 用户必读）
-- swarm-yuan 是 **bash 工具**——54 门禁（`check_*()` 函数）+ 生成器 + 自检全是 bash 脚本，**Windows 原生 cmd/PowerShell 不支持**（无 `.ps1` 原生实现）。
+- swarm-yuan 是 **bash 工具**——54 门禁（`check_*` 函数）+ 生成器 + 自检全是 bash 脚本，**Windows 原生 cmd/PowerShell 不支持**（无 `.ps1` 原生实现）。
 - 三平台兼容的含义是「macOS/Linux 原生 bash + Windows 经 Git Bash/WSL/MSYS2 的 bash」，**不是**「纯 cmd/PowerShell 可跑」。
 - Windows 上的正确姿势：先装 Git for Windows（`https://git-scm.com/download/win`，自带 Git Bash；这也是 `git clone` 的前提）或 WSL（`wsl --install`），再用 `.bat` 包装器调起 bash 运行 `.sh`。
 - `.bat` 找不到 bash 时硬失败（`exit /b 1`）并明确提示，**不静默降级**——避免用户误以为装上了一个能用的工具却什么都跑不了。
 
 ### 6.1 Shell 脚本兼容（swarm-yuan 自身）
 - swarm-yuan 的 `.sh` 脚本必须兼容 macOS（BSD bash 3.2）和 Linux（GNU bash 4+）：
-  - **不用 `declare -A`**（bash 3.2 不支持关联数组）→ 用 `case` 或临时文件替代
-  - `sed -i` → macOS 需 `sed -i ''`，Linux 需 `sed -i`；统一用 `sed -i.bak ... && rm -f .bak`
-  - `date` → macOS 无 `date -d`，用 `date -u +%Y-%m-%dT%H:%M:%SZ`（兼容）
-  - `grep` → macOS 无 `grep -P`，统一用 `grep -E`（ERE）
-  - **`sed` 正则方言**（audit-claims-reality F2 固化，G22 机器执法）：BSD sed（macOS）不认 GNU 扩展——`\s`/`\b`/`\w` 被当字面字母（`requests`→`requet` 实证），BRE 的 `\?`/`\+` 不支持；统一用 `[[:space:]]` 等 POSIX 类 + `sed -E`（ERE 的 `?`/`+` 合法）。grep -E 的 `\s`/`\b` 在三平台现行版本可用，属存量容忍；新增代码优先 POSIX 类。
-  - `readlink` → macOS 无 `readlink -f`，用 `$(cd "$(dirname "$0")" && pwd)`
-  - `wc -l` → 输出含前导空格，用 `| xargs` 清理
-  - **`$var中文` 须 `${var}`**（bash C-locale 下 `$var` 紧跟多字节字符会报 unbound variable）
+ - **不用 `declare -A`**（bash 3.2 不支持关联数组）→ 用 `case` 或临时文件替代
+ - `sed -i` → macOS 需 `sed -i ''`，Linux 需 `sed -i`；统一用 `sed -i.bak ... && rm -f .bak`
+ - `date` → macOS 无 `date -d`，用 `date -u +%Y-%m-%dT%H:%M:%SZ`（兼容）
+ - `grep` → macOS 无 `grep -P`，统一用 `grep -E`（ERE）
+ - **`sed` 正则方言**（audit-claims-reality F2 固化，G22 机器执法）：BSD sed（macOS）不认 GNU 扩展——`\s`/`\b`/`\w` 被当字面字母（`requests`→`requet` 实证），BRE 的 `\?`/`\+` 不支持；统一用 `[[:space:]]` 等 POSIX 类 + `sed -E`（ERE 的 `?`/`+` 合法）。grep -E 的 `\s`/`\b` 在三平台现行版本可用，属存量容忍；新增代码优先 POSIX 类。
+ - `readlink` → macOS 无 `readlink -f`，用 `$(cd "$(dirname "$0")" && pwd)`
+ - `wc -l` → 输出含前导空格，用 `| xargs` 清理
+ - **`$var中文` 须 `${var}`**（bash C-locale 下 `$var` 紧跟多字节字符会报 unbound variable）
 - 路径分隔符：脚本中用 `/`（bash 在 Windows Git Bash/WSL 下兼容）
 - 换行符：`.sh` 文件用 LF（不 CRLF）
 - 环境变量引用：统一 `${VAR}` 形式
@@ -255,8 +255,8 @@ ECC 的 `governance-capture.js` hook 捕获安全相关事件为 `governanceEven
 ### 6.2 路径兼容
 - 代码中路径用 `/`（Node/Python 跨平台兼容）
 - 不硬编码绝对路径（用配置/env/相对路径）
-- 路径拼接用 `path.join()`（Node）/ `os.path.join()`（Python）/ `path/filepath.Join()`（Go）
-- 临时目录用 `os.tmpdir()` / `mktemp -d`，不硬编码 `/tmp`
+- 路径拼接用 `path.join`（Node）/ `os.path.join`（Python）/ `path/filepath.Join`（Go）
+- 临时目录用 `os.tmpdir` / `mktemp -d`，不硬编码 `/tmp`
 
 ### 6.3 平台特定逻辑
 - 平台判断：`process.platform`（Node `win32`/`darwin`/`linux`）/ `sys.platform`（Python）/ `runtime.GOOS`（Go）
@@ -270,21 +270,21 @@ ECC 的 `governance-capture.js` hook 捕获安全相关事件为 `governanceEven
 
 ### 6.5 Windows 进程 spawn 安全（claude-mem v13.10.2）
 - **集中化 spawn shim**：所有 `child_process.spawn/exec` 调用通过统一的 shim 函数，移除 `shell: true` footgun
-  - `shell: true` 让命令经 shell 解析，用户输入中的 `;`/`&&`/`$()` 会变成命令注入
-  - shim 强制 `shell: false` + 参数数组传递，唯一例外须显式标注并 review
+ - `shell: true` 让命令经 shell 解析，用户输入中的 `;`/`&&`/`$` 会变成命令注入
+ - shim 强制 `shell: false` + 参数数组传递，唯一例外须显式标注并 review
 - **codex hooks Windows-executable 命令**：hooks 在 Windows 上须发射 Windows-executable 命令（`.cmd`/`.bat`/`.exe`），而非 POSIX-only 的 `bash -c '...'`
-  - Windows 上 `bash` 可能不在 PATH（除非装了 Git Bash/WSL）
-  - hooks 须检测 `process.platform === 'win32'` 并发射对应平台的命令
+ - Windows 上 `bash` 可能不在 PATH（除非装了 Git Bash/WSL）
+ - hooks 须检测 `process.platform === 'win32'` 并发射对应平台的命令
 
 ### 6.6 可选依赖间接化（ruflo v3.25.6）
 - optional-dep imports 须通过**字符串变量间接化**，使 `tsc` 不静态解析缺失的可选包
-  ```ts
-  // ❌ 直接 import —— tsc 会报错（可选包可能未装）
-  import { learn } from '@ruvector/learning-wasm';
-  // ✅ 间接化 —— tsc 不静态解析，运行时动态加载
-  const PKG = '@ruvector/learning-wasm';
-  const mod = await import(PKG).catch(() => null);
-  ```
+ ```ts
+ // ❌ 直接 import —— tsc 会报错（可选包可能未装）
+ import { learn } from '@ruvector/learning-wasm';
+ // ✅ 间接化 —— tsc 不静态解析，运行时动态加载
+ const PKG = '@ruvector/learning-wasm';
+ const mod = await import(PKG).catch( => null);
+ ```
 - install-safety 构建（可选依赖缺失时）须编译通过
 - `package.json` 的 `optionalDependencies` 须对应 try-catch 动态 import 模式
 
@@ -298,7 +298,7 @@ gsd-core v1.7.0 引入 **6 条 AST 可移植性规则**（G1–G6），用 AST �
 | **G2: no-posix-mode-bit-assert** | `assert.equal(mode, 0o755)` | 禁止断言 POSIX mode bit（Windows 无 chmod） |
 | **G3: no-unguarded-nonportable-exec** | `exec('cmd')` 无平台判断 | 禁止无平台守卫的不可移植 exec |
 | **G4: normalize-path-in-content** | 写入内容的路径须 `path.normalize` | 防止 Windows `\` 泄漏到内容 |
-| **G5: require-fs-op-fallback** | `fs.op()` 无 fallback | fs 操作须有 Windows fallback |
+| **G5: require-fs-op-fallback** | `fs.op` 无 fallback | fs 操作须有 Windows fallback |
 | **G6: destSubpath write-confinement** | `destSubpath` 须在允许目录内 | 安装目标路径须限制（防路径穿越） |
 
 **在目标技能中的落地：**

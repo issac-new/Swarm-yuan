@@ -22,11 +22,11 @@ LHH 的出发点与「不断加长上下文/轨迹」的路线相反：**长任�
 ## 二、MEA 三角色与权力边界
 
 ```
-┌────────────┐   子任务契约    ┌────────────┐   执行报告     ┌────────────┐
-│  Manager   │ ─────────────→ │  Executor  │ ────────────→ │  Auditor   │
-│ 无环境接口  │                │ 全新上下文   │               │ 只读权限    │
-│ 读:状态+审计│ ←───────────── │ 每轮失忆    │ ←──────────── │ 快照diff守卫│
-└────────────┘   审计报告      └────────────┘   独立查环境    └────────────┘
+┌────────────┐ 子任务契约 ┌────────────┐ 执行报告 ┌────────────┐
+│ Manager │ ─────────────→ │ Executor │ ────────────→ │ Auditor │
+│ 无环境接口 │ │ 全新上下文 │ │ 只读权限 │
+│ 读:状态+审计│ ←───────────── │ 每轮失忆 │ ←──────────── │ 快照diff守卫│
+└────────────┘ 审计报告 └────────────┘ 独立查环境 └────────────┘
 ```
 
 | 角色 | 权力 | 禁止 | 对应 swarm-yuan 载体 |
@@ -43,7 +43,7 @@ LHH 的出发点与「不断加长上下文/轨迹」的路线相反：**长任�
 
 LHH 任务状态的每条事实必须引用 auditor 轮次（如 `round_003`）；Manager 下发子任务时按引用拉取对应审计报告原文注入（默认 5000 chars/轮，上限 60000 chars），**不是全量历史**——这是 Manager 只占 2-8% token 的机制根源。
 
-**落地**：`precheck.sh` 的 `_gate_evidence()` 给 gate-runs.jsonl 每行加 `"run":<序号>`——门禁证据从「某时刻某门禁的输出」升级为**可被引用的编号证据**（决策记录/verifier 报告/state-machine 字段引用 `gate-run#N`）。下游解析（gate-report/trends/adaptive-gating）逐行读 JSONL，新增字段向后兼容。
+**落地**：`precheck.sh` 的 `_gate_evidence` 给 gate-runs.jsonl 每行加 `"run":<序号>`——门禁证据从「某时刻某门禁的输出」升级为**可被引用的编号证据**（决策记录/verifier 报告/state-machine 字段引用 `gate-run#N`）。下游解析（gate-report/trends/adaptive-gating）逐行读 JSONL，新增字段向后兼容。
 
 ### 3.2 verify_evidence 字段（自我声明 ≠ 持久状态）
 
@@ -73,9 +73,9 @@ LHH 任务级契约规则 12 项，其中 swarm-yuan Task Contract（intent/acce
 LHH auditor 报告前三行控制头是机器可解析的：
 
 ```
-Status: complete|incomplete|blocked        # 做完了吗
-Integrity: clean|suspect|violation         # 证据干净吗（快照 diff 是否检测到篡改）
-Contract audit: aligned|unknown|needs_revision|invalid   # 与契约对齐吗
+Status: complete|incomplete|blocked # 做完了吗
+Integrity: clean|suspect|violation # 证据干净吗（快照 diff 是否检测到篡改）
+Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 ```
 
 三条机器守卫（脚本侧强制，不信任 LLM 自报）：

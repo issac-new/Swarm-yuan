@@ -30,7 +30,7 @@ npx @opengsd/gsd-core --claude --global --uninstall
 ### 项目初始化（运行时 skill，非 CLI）
 安装后在 AI runtime（如 Claude Code）中运行：
 ```
-/gsd:new-project    # 创建 .planning/{PROJECT,REQUIREMENTS,ROADMAP,STATE}.md + config.json + research/
+/gsd:new-project # 创建 .planning/{PROJECT,REQUIREMENTS,ROADMAP,STATE}.md + config.json + research/
 ```
 
 ### 运行时命令（目标技能可调用）
@@ -135,11 +135,11 @@ Discuss → Plan → Execute → Verify → Ship
 - **razor 适用于证据充分的审查轮次**：被审查对象材料完整、可推演、可反证时，禁止以"信息不足"为由全盘肯定或弃权——仍须挑出 ≥10% 严谨性瑕疵。
 - **abstain 适用于证据不足的探查轮次**：材料不足以推断 backstop truth 时，禁止编造瑕疵凑满 10%——输出 `abstain: insufficient_spec` + 待补信息清单，补充后重新验证。弃权 ≠ 通过（`--review` 中计为"需人工确认"，非 pass 非 fail）。
 - **判据 = 证据完备度 checklist**（全部满足 = 审查轮次；任一不满足 = 探查轮次，abstain 输出须指明缺哪条）：
-  - [ ] 主张明确：核心论点可一句话复述（观点镜像无歧义）
-  - [ ] 数据可得：关键证据可追溯（文件:行 或命令输出）
-  - [ ] 假设可识别：隐含假设（Warrant）可显式提取
-  - [ ] 反例可构造：材料充分到能推演极端场景/边界反例
-  - [ ] 结论可复验：第三方按同样材料可复现审查结论
+ - [ ] 主张明确：核心论点可一句话复述（观点镜像无歧义）
+ - [ ] 数据可得：关键证据可追溯（文件:行 或命令输出）
+ - [ ] 假设可识别：隐含假设（Warrant）可显式提取
+ - [ ] 反例可构造：材料充分到能推演极端场景/边界反例
+ - [ ] 结论可复验：第三方按同样材料可复现审查结论
 - **两条严禁**：证据不足强行挑 10% 瑕疵 = 编造（违反 honest verifier）；证据充分却弃权 = 逃避对抗审查（违反 razor 铁律）。
 
 > 本条款在 `references/logic-razor.md` 文末同步登记（razor 侧源文件），两处文本须保持一致，修改时同步。

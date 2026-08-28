@@ -38,8 +38,8 @@ canary 监控现以 Oracle Gate 循环形式落地：
 
 ```bash
 bash scripts/setup-loop.sh "发布后 canary 监控" \
-  --verify 'test "$(jq -r .latency_ms .swarm-yuan/canary-baseline.jsonl | tail -1)" -lt 500' \
-  --completion-promise 'CANARY_OK'
+ --verify 'test "$(jq -r .latency_ms .swarm-yuan/canary-baseline.jsonl | tail -1)" -lt 500' \
+ --completion-promise 'CANARY_OK'
 ```
 
 AI 输出 `<promise>CANARY_OK</promise>` 后，hook 独立跑 verify（canary 基线 latency<500ms），

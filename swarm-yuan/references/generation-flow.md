@@ -11,7 +11,7 @@
 
 ---
 
-## WP-Q2H-C：机械 vs AI 审 边界（Q2-heavy D4 落地）
+## H-C：机械 vs AI 审 边界（Q2-heavy D4 落地）
 
 **核心原则**：脚本只做"机械出初稿"（模板/嗅探/枚举），AI 做"审 + 判断"。机械脚本不要假装能判断质量，AI 不要重复跑机械流程。
 
@@ -37,7 +37,7 @@
 
 **红线**：机械脚本只在"信号可信误报少"的领域跑（骨架创建 / conf-render / verify_completeness / mark-active / enforce_level 加载）；其余环节（特征卡填值 / 框架规律实例化 / hooks 适用性 / 门禁警告采纳）必须 AI 判断。
 
-**对应 WP-Q2H-A/B**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）+ warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）已转 AI 自觉判断 / advisory——机械脚本不再跑这些，AI 自行判断是否参考。
+**对应 H-A/B**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）+ warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）已转 AI 自觉判断 / advisory——机械脚本不再跑这些，AI 自行判断是否参考。
 
 ---
 
@@ -51,7 +51,7 @@ AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特
 
 ## Step 3. 探查仓库
 
-三路并行子代理（结构/规范/代码组织），优先用 gitnexus/graphify/claude-mem/LSP，大型项目用 Dynamic Workflow 并行扇出。工具矩阵+降级策略见 `references/exploration-guide.md`。**★WP-P8 per-phase profile 探查分级**：按 `auto_detect_profile` 的判定结果分级——lite（文件数 <80 且无合规信号）单路探查不用图谱；standard（其余默认档）三路并行图谱可选；compliance（合规关键词命中）三路并行 + 强制图谱工具。规模边界不确定按更重档处理（质量优先）。**★全链路追踪（设计理念 2）**：每路子代理启动前 AI 调 `bash assets/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`（规范/代码组织子代理同理；生成器侧路径注：trace-log/state-machine/memory-writeback 物理在 assets/，见 SKILL.md:12），完成后 `--status done`——用户可见每步调用何种工具，无需确认（trace 输出 stderr + 落盘 trace.jsonl，不阻塞主流程）
+三路并行子代理（结构/规范/代码组织），优先用 gitnexus/graphify/claude-mem/LSP，大型项目用 Dynamic Workflow 并行扇出。工具矩阵+降级策略见 `references/exploration-guide.md`。**★per-phase profile 探查分级**：按 `auto_detect_profile` 的判定结果分级——lite（文件数 <80 且无合规信号）单路探查不用图谱；standard（其余默认档）三路并行图谱可选；compliance（合规关键词命中）三路并行 + 强制图谱工具。规模边界不确定按更重档处理（质量优先）。**★全链路追踪（设计理念 2）**：每路子代理启动前 AI 调 `bash assets/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`（规范/代码组织子代理同理；生成器侧路径注：trace-log/state-machine/memory-writeback 物理在 assets/，见 SKILL.md:12），完成后 `--status done`——用户可见每步调用何种工具，无需确认（trace 输出 stderr + 落盘 trace.jsonl，不阻塞主流程）
 
 ## Step 4. ★项目形态判定 + 详尽组件库清单 + 调用链路分析（探查的深化，不可跳过）
 
@@ -68,7 +68,7 @@ AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特
 
 ## Step 6. 创建骨架
 
-`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ + precheck.conf）。`--profile auto|lite|standard|compliance` 四档，**默认 auto 项目级自适应**（合规关键词 → compliance；文件数 <80 → lite；其余 standard；**WP-Q2 偏置修正：信号明确才升档，模糊走默认 standard**，auto 会打印判定依据供用户评估）：**lite**（认知档）= 特征卡 + reference-manual + 核心门禁脚本最小集（无 hooks/commands/settings/.mcp.json）；**standard** = 全量骨架；**compliance** = standard + 标准合规矩阵参考（references/standards-compliance.md）。**零占位符铁律适用范围 = 当前 profile 的文件集**（profile 是显式声明不启用，与"未配置静默跳过"本质不同）。默认生成到 `<project-dir>/.claude/skills/`（"为目标项目生成"名副其实）；可用第 3 参数 `target-dir` 显式指定其他目录，如 `--upgrade <name> <project-dir> <target-dir>`。全局安装到 `~/.claude/skills/` 等运行时目录走 `install.sh`。
+`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ + precheck.conf）。`--profile auto|lite|standard|compliance` 四档，**默认 auto 项目级自适应**（合规关键词 → compliance；文件数 <80 → lite；其余 standard；**偏置修正：信号明确才升档，模糊走默认 standard**，auto 会打印判定依据供用户评估）：**lite**（认知档）= 特征卡 + reference-manual + 核心门禁脚本最小集（无 hooks/commands/settings/.mcp.json）；**standard** = 全量骨架；**compliance** = standard + 标准合规矩阵参考（references/standards-compliance.md）。**零占位符铁律适用范围 = 当前 profile 的文件集**（profile 是显式声明不启用，与"未配置静默跳过"本质不同）。默认生成到 `<project-dir>/.claude/skills/`（"为目标项目生成"名副其实）；可用第 3 参数 `target-dir` 显式指定其他目录，如 `--upgrade <name> <project-dir> <target-dir>`。全局安装到 `~/.claude/skills/` 等运行时目录走 `install.sh`。
 
 ## Step 7. AI 填充全部文件
 
@@ -82,11 +82,11 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools
 
 ## Step 8. AI 配置 precheck.conf
 
-**★WP-P4 脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/SERVICE_DIRS/STORE_DIR/WRITABLE_DIRS 等语义型变量，须从特征卡推导）+ 审 diff 是否符合特征卡意图——从「写 176 变量」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
+**★脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/SERVICE_DIRS/STORE_DIR/WRITABLE_DIRS 等语义型变量，须从特征卡推导）+ 审 diff 是否符合特征卡意图——从「写 176 变量」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
 
 ## Step 8.5 review-methodology Mutation Check（P1-6 接入 generation-flow）
 
-本 Step 配置/写回 `references/review-methodology.md` 的审查口径时，须纳入 **Mutation Check（变异测试有效性验证）**：对 `framework-gates/<fw>.sh` 的 `_fw_<id>_check()` 函数，施加少量变异（如把 `fail` 改成 `pass`、把某正则 `=true` 改成 `=false`）后重跑对应 fixture（`bash swarm-yuan/tests/run-framework-fixture.sh <id>`）——**若变异后 violating 侧仍 PASS（未被检出），说明该门禁的测试/断言无效，须回 Step 7 补强断言**；变异后仍检出（fail 不变）= 测试有效。Mutation Check 是「测试有效性」而非「覆盖率」的硬证据：绿 ≠ 有效，只有「变异后被抓」才证明绿有意义。与 Step 10 门禁运行、Step 12 零残留核验形成三层把关（门禁绿 / 变异绿 / 零残留）。
+本 Step 配置/写回 `references/review-methodology.md` 的审查口径时，须纳入 **Mutation Check（变异测试有效性验证）**：对 `framework-gates/<fw>.sh` 的 `_fw_<id>_check` 函数，施加少量变异（如把 `fail` 改成 `pass`、把某正则 `=true` 改成 `=false`）后重跑对应 fixture（`bash swarm-yuan/tests/run-framework-fixture.sh <id>`）——**若变异后 violating 侧仍 PASS（未被检出），说明该门禁的测试/断言无效，须回 Step 7 补强断言**；变异后仍检出（fail 不变）= 测试有效。Mutation Check 是「测试有效性」而非「覆盖率」的硬证据：绿 ≠ 有效，只有「变异后被抓」才证明绿有意义。与 Step 10 门禁运行、Step 12 零残留核验形成三层把关（门禁绿 / 变异绿 / 零残留）。
 
 ## Step 9. AI 集成 Claude Code
 
@@ -106,4 +106,4 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools
 
 ## Step 12. AI 最终检查
 
-运行 `bash scripts/generate-skill.sh --verify-completeness <skill_dir>` 做零占位符 + workflow 调用追踪要素机器执法（active 态或 --strict：命中即列 file:line 并 exit 1；draft 态默许残留仅列清单 return 0——WP-H 断点续传设计；零命中打印「✓ 零占位符确认」），确认零"待填充"/零"填充指引"/零"<占位符>"残留；**维度计数核验（WP-P2 脚本化）**：跑 `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <§C+.0形态>`，全 PASS → 直接引用报告结论；FAIL（清单计数 < 枚举计数 × 0.95）→ 只针对失败维度回 Step 4 补漏；DIM_MISMATCH（声明形态与枚举结果矛盾）→ 回 §C+.0 重判形态。维度注册表见 `assets/inventory-dimensions.conf`（数据驱动，新增维度改注册表不改脚本）；**框架适配四要素核验**：对 ACTIVE_FRAMEWORKS 每个框架——① 构件枚举计数 ≥ 实际 × 0.95（依 `references/frameworks/<fw>.md` §2 的计数基准）② `framework-knowledge.md` 规律数 ≥ 规则文件声明的深度门槛且 100% 含"证据:"字段 ③ `precheck.sh` 含 `_fw_<id>_check` 动态分发器且 `--framework <id>` 实跑 exit 0（门禁片段位于 `assets/framework-gates/<fw>.sh`，已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块）④ `dev-guide.md` §10 含该框架约束段 ≥ 3 条。任一不过 → 回 Step 4.5。**★Oracle Gate 循环（可选，借鉴 autoresearch + tanweai/pua pua-loop）**：self-check/precheck 持续 fail 时，用户可 `bash assets/hooks/setup-loop.sh "修复任务" --verify 'bash scripts/self-check.sh --check-only'` 启动无限迭代模式——AI 输出 `<promise>SWARM_YUAN_DONE</promise>` 后，Stop hook 独立跑 verify_command，拒绝则 loop 继续 + 错误输出喂回，Stall Detection（5+ 次拒绝强制退回需求本身）。详见 `assets/hooks/setup-loop.sh --help`。**如有残留，回到 Step 7 继续填充，直到零残留。**
+运行 `bash scripts/generate-skill.sh --verify-completeness <skill_dir>` 做零占位符 + workflow 调用追踪要素机器执法（active 态或 --strict：命中即列 file:line 并 exit 1；draft 态默许残留仅列清单 return 0——断点续传设计；零命中打印「✓ 零占位符确认」），确认零"待填充"/零"填充指引"/零"<占位符>"残留；**维度计数核验**：跑 `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <§C+.0形态>`，全 PASS → 直接引用报告结论；FAIL（清单计数 < 枚举计数 × 0.95）→ 只针对失败维度回 Step 4 补漏；DIM_MISMATCH（声明形态与枚举结果矛盾）→ 回 §C+.0 重判形态。维度注册表见 `assets/inventory-dimensions.conf`（数据驱动，新增维度改注册表不改脚本）；**框架适配四要素核验**：对 ACTIVE_FRAMEWORKS 每个框架——① 构件枚举计数 ≥ 实际 × 0.95（依 `references/frameworks/<fw>.md` §2 的计数基准）② `framework-knowledge.md` 规律数 ≥ 规则文件声明的深度门槛且 100% 含"证据:"字段 ③ `precheck.sh` 含 `_fw_<id>_check` 动态分发器且 `--framework <id>` 实跑 exit 0（门禁片段位于 `assets/framework-gates/<fw>.sh`，已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块）④ `dev-guide.md` §10 含该框架约束段 ≥ 3 条。任一不过 → 回 Step 4.5。**★Oracle Gate 循环（可选，借鉴 autoresearch + tanweai/pua pua-loop）**：self-check/precheck 持续 fail 时，用户可 `bash assets/hooks/setup-loop.sh "修复任务" --verify 'bash scripts/self-check.sh --check-only'` 启动无限迭代模式——AI 输出 `<promise>SWARM_YUAN_DONE</promise>` 后，Stop hook 独立跑 verify_command，拒绝则 loop 继续 + 错误输出喂回，Stall Detection（5+ 次拒绝强制退回需求本身）。详见 `assets/hooks/setup-loop.sh --help`。**如有残留，回到 Step 7 继续填充，直到零残留。**

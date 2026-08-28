@@ -75,9 +75,9 @@
 
 ```
 ASSUMPTIONS I'M MAKING:
-1. [assumption about requirements]     ← 需求假设（如"这是 Web 应用而非原生移动端"）
-2. [assumption about architecture]     ← 架构假设（如"认证用 session 而非 JWT"）
-3. [assumption about scope]            ← 范围假设（如"只支持现代浏览器"）
+1. [assumption about requirements] ← 需求假设（如"这是 Web 应用而非原生移动端"）
+2. [assumption about architecture] ← 架构假设（如"认证用 session 而非 JWT"）
+3. [assumption about scope] ← 范围假设（如"只支持现代浏览器"）
 → Correct me now or I'll proceed with these.
 ```
 
@@ -91,11 +91,11 @@ ASSUMPTIONS I'M MAKING:
 
 ```
 Bug report arrives
-  → Write a test that demonstrates the bug
-  → Test FAILS（bug 确认存在——这一步失败即证据）
-  → Implement the fix
-  → Test PASSES（修复被证明有效）
-  → Run full test suite（无回归）
+ → Write a test that demonstrates the bug
+ → Test FAILS（bug 确认存在——这一步失败即证据）
+ → Implement the fix
+ → Test PASSES（修复被证明有效）
+ → Run full test suite（无回归）
 ```
 
 - 复现测试同时是回归守卫：修好后再坏会被同一个测试抓住。
