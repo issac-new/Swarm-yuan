@@ -627,7 +627,7 @@ fi
 
 # ===== R13 批次1a（D2 接线）：precheck 启动挂 upstream-baseline（advisory warn）=====
 # 原为 advisory-only（不在任何执行序列，须显式 --upstream-baseline 才跑——五轮病理的"僵尸门禁"）。
-# 接线语义：每次 precheck 启动时顺带跑一次（fail-open warn，docs/upstream-baseline.md 不存在
+# 接线语义：每次 precheck 启动时顺带跑一次（fail-open warn，README.md 中 upstream-baseline 段不存在
 # 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 教义。
 # 段头降级（impl-conformance）：启动期输出的 "=== " 段头改写为 "··· "——"=== X ===" 命名空间
 # 只属于门禁执行段（cli-ab CORE10_SEQUENCE 断言按 '^=== ' 提取执行序列，启动 advisory

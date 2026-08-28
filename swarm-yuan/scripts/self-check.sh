@@ -653,7 +653,7 @@ check_doc_consistency() {
   while IFS= read -r _cog_hit; do
     [[ -n "$_cog_hit" ]] && _cog_bad="${_cog_bad} ${_cog_hit}"
   done < <(grep -rhoE '[0-9一二三四五六七八九十]+[[:space:]]*层[[:space:]]*认知(框架|基底)' \
-           "$base"/references/*.md "$base"/SKILL.md "$base"/../docs/*.md 2>/dev/null \
+           "$base"/references/*.md "$base"/SKILL.md 2>/dev/null \
            | grep -vE '^[5五５][[:space:]]*层' || true)
   if [[ "${FACT_COGNITION_LAYERS:-0}" == "$_cog_def" && -z "$_cog_bad" ]]; then
     echo "  ✓ 认知层数对齐（定义表 ${_cog_def} 层 = FACT_COGNITION_LAYERS ${FACT_COGNITION_LAYERS:-?}；计数型表述无非 5 漂移）"
@@ -926,11 +926,11 @@ check_measure_metadata
 upstream_baseline_check() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   # 登记表在仓库根 docs/（T8 维护）；安装到 ~/.claude/skills 后无此文件，静默跳过
-  local bl="$base/../docs/upstream-baseline.md"
+  local bl="$base/README.md"
   [[ -f "$bl" ]] || return 0
   local drifted
   # WP-Bootstrap: 锚定表格行（以 `|` 起始、`baseline_status=drifted |` 结尾）。
-  # 旧版裸 grep 'baseline_status=drifted' 会误匹配 docs/upstream-baseline.md 里的散文行
+  # 旧版裸 grep 'baseline_status=drifted' 会误匹配 README.md（已整合 upstream-baseline.md）里的散文行
   # （如"上述 `baseline_status=drifted` 的 3 项..."、"将 `baseline_status=drifted` 改为..."），
   # 散文行经 IFS='|' 切分后第 2 列为空 -> 输出"（未命名行）"，且计数从 3 虚高到 5。
   drifted=$(grep -cE '^\| .*baseline_status=drifted \|$' "$bl" 2>/dev/null)
@@ -940,7 +940,7 @@ upstream_baseline_check() {
   # 仅 warn 不置 FAIL--版本漂移是提醒而非门禁失败
   grep -E '^\| .*baseline_status=drifted \|$' "$bl" | while IFS='|' read -r _ name _rest; do
     name=$(echo "$name" | sed 's/^ *//;s/ *$//')
-    warn "上游基线 drifted：${name:-（未命名行）}--引用基线落后上游最新版，详见 docs/upstream-baseline.md（重核列入 P1-7）"
+    warn "上游基线 drifted：${name:-（未命名行）}--引用基线落后上游最新版，详见 README.md 完整文档/当前事实源/upstream-baseline（重核列入 P1-7）"
   done
 }
 upstream_baseline_check
@@ -967,7 +967,7 @@ check_complexity_budget() {
   # 门禁数预算
   local _gates_budget="${FACT_GATES_BUDGET:-54}"
   if [[ "$_gates_true" -gt "$_gates_budget" ]]; then
-    warn "门禁数 ${_gates_true} > 预算 ${_gates_budget}（决策 26）--超预算须等额删除旧门禁，或申请预算上调（docs/paradigm-decisions.md 决策 26 修订）"
+    warn "门禁数 ${_gates_true} > 预算 ${_gates_budget}（决策 26）--超预算须等额删除旧门禁，或申请预算上调（README.md 完整文档/当前事实源/paradigm-decisions 决策 26 修订）"
     FAIL=1
   else
     echo "  ✓ 门禁数 ${_gates_true} ≤ 预算 ${_gates_budget}（决策 26，预留 $((_gates_budget - _gates_true)) 增长空间）"
@@ -1155,7 +1155,7 @@ check_claim_intensity() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local _root_docs="$base/.."
   # 与 check_doc_consistency 的 _scan_docs 保持一致（G6/G8 同源盲区）
-  local _scan_docs="README.md docs/USAGE.md docs/PROMO.md docs/FIVE_DIMENSIONS.md .claude/commands/swarm-yuan.md $base/../CLAUDE.md ${_root_docs}/docs/paradigm-positioning.md ${_root_docs}/docs/design-philosophy-consistency.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
+  local _scan_docs="README.md .claude/commands/swarm-yuan.md $base/../CLAUDE.md references/case-studies/articulation-orchestration.md references/standards-compliance.md ${_root_docs}/verifier/v1/acceptance-criteria.md"
   local _cmd_dir="$base/.claude/commands"
   if [[ -d "$_cmd_dir" ]]; then
     local _cf

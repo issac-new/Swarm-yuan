@@ -751,7 +751,7 @@ bash precheck.sh --shift-left    # ★左移检查：测试设计段+变更影�
 - 默认 0 保留机械，向后兼容
 
 **关联文档**：
-- 评审报告：`docs/q2-heavy-review.md`（2026-08-19）
+- 评审报告：README.md 完整文档/历史档案/q2-heavy-review（2026-08-19）
 - 生成流程边界：`references/generation-flow.md` §WP-Q2H-C
 - 门禁分层实现：`assets/precheck.sh` `_ENFORCE_OVERRIDE_K/V` + `assets/gates-advisory.sh` `_ai_hint`
 

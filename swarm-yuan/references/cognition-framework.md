@@ -119,7 +119,7 @@ ECC 的 `intent-driven-development` 将模糊/高影响变更转化为**可验�
 | H 历史适应性 | 行为受历史互动影响 | claude-mem 记忆 + 特征卡 + ADR |
 | A 自主能动性 | 基于内部动态发起行动 | `--cognition` 主动呈现断层 + goal-backward 对抗验证 |
 
-> **决策 29 注**：语义/动能二分（Palantir semantic/kinetic primitives 映射）已降为决策记录（见 `docs/paradigm-decisions.md` 决策 29），不再独立成节。三权隐喻（立法/执法/司法）已足够描述 swarm-yuan 的结构分层与权力分立，语义/动能命名属冗余叙事。
+> **决策 29 注**：语义/动能二分（Palantir semantic/kinetic primitives 映射）已降为决策记录（见 README.md 完整文档/当前事实源/paradigm-decisions 决策 29），不再独立成节。三权隐喻（立法/执法/司法）已足够描述 swarm-yuan 的结构分层与权力分立，语义/动能命名属冗余叙事。
 
 ## 目标技能落地要求
 
