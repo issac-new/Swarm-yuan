@@ -1,5 +1,7 @@
 # R13 伴生调研：openai/codex 深度源码分析（理念/设计/功能/实现）
 
+> 调研日期：2026-08-21（档案日期，自 git 首次提交补录）
+
 > 服务于 `R13-de-abstraction-retrospective.md` v3 方案。三路并行源码深挖（运行时强制架构 / 模型面设计 / 技能-会话-审批体系）的浓缩证据，全部锚定 file:line。
 > 源码：`swarm-yuan/research/codex/`（master f20b63e，2026-08-21 浅克隆，gitignored）。路径 `codex-rs/...` 相对该克隆。
 > 已有 `references/codex-methodology.md` 覆盖"效率侧"（截断/压缩/缓存/rubric/测试哲学）；本文聚焦其未覆盖的差集：**强制架构、内容面纪律、技能形态、配置纪律**。实施时按吸收三问更新该文档（替换而非追加）。

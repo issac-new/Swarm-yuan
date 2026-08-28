@@ -1,5 +1,7 @@
 # R3 · 方法论体系深度分析：references/ 14 篇方法论文档
 
+> 调研日期：2026-07-20（档案日期，自 git 首次提交补录——本目录为决策史过程档案，内容定格于调研时点，不随后续演进更新）
+
 > 角色：R3-方法论体系分析员 ｜ 日期：2026-07-20
 > 范围：`swarm-yuan/references/` 下 13 篇方法论文档 + `references/frameworks/_template.md`（合计 14 个文件，5453 行）
 > 方法：全文通读 + 全仓 grep 引用图谱 + 门禁代码（`assets/precheck.sh`，2667 行）交叉验证 + 审计文档（`docs/2026-07-20-audit-optimization-decisions.md`、`docs/paradigm-decisions.md`）比对
