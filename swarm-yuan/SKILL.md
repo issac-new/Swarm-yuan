@@ -46,20 +46,48 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **三层接线**（13 运行时，调用不重实现）：深度（GitNexus/graphify/claude-mem/ocr，门禁内真实子进程）/ CLI（OpenSpec/comet/gsd-core/codex-security，按需 CLI）/ 方法论（superpowers/gstack/ECC/Ruflo/impeccable，AI 按节点引用）——代码图谱平权选型可并用。清单与降级链详见 `references/subagent-orchestration.md`。
 
-## 第四层 实现
+## 第四层 工作流程（双流闭环）
 
-**生成流程**（AI 自动执行，用户提供项目路径即开始）：
+**生命周期总闭环**——两个工作流首尾相接，反馈回路驱动循环：
 
 ```
-⓪自检 → ⓪.5读项目知识 → ①探查（三路并行） → ①.5形态判定+组件库清单+调用链
-→ ②特征卡 → ③骨架 → ④填充（消除全部占位符） → ④.5框架深化 → ⑤conf
-→ ⑤.5hooks/commands/MCP → ⑥编码验证（测试门禁）→ ⑦独立审查（review 门禁）
-→ ⑦.5门禁注入 → ⑧记忆写回 → ⑨终检
+流A 生成流（本 skill）：⓪自检→⓪.5读知识→①探查→①.5清单+调用链→②特征卡
+ →③骨架→④填充→④.5框架深化→⑤conf→⑤.5hooks→⑥验证→⑦审查→⑦.5注入
+ →⑧写回→⑨终检→ --mark-active →【目标技能 active】
+        ↓ 交付接力：目标技能接管项目
+流B 开发流（目标技能，AI 对用户）：①需求理解+②探查→③spec→④plan
+ →⑤编码（hook 拦无 spec/违规）→⑥测试→⑦独立审查→⑧合入→⑨发布
+ （六阶段状态机逐段守卫前序产出物）
+        ↓ 项目演进：fingerprint 感知变化
+反馈回路：变指纹→--diff 定位变化 scope→局部重探查→清单单条更新
+ （last-good 防坏）→ --upgrade 更新工具链 → 回流B 继续（技能随项目生长）
 ```
 
-铁律：①完整流程后才算完成，draft 骨架不可交付（`--mark-active` 零占位符核验才翻 active；中断重跑断点续传）；②每步公告 `→ [节点X] 调用 …` + trace-log 落盘；③门禁误报自动调 conf 重跑，每节点有降级策略；④不预设项目形态——先 §C+.0 判定再按维度全量穷举+计数核验（≥ 枚举×0.95），编排约束每条须代码证据；⑤任务类型路由避免全任务跑全量（task-methodology-router.md）。
+**流A 逐步实物调用**（每步：做什么 → 调什么）：
 
-**核心能力**：基于代码结构与调用链分析，产出**全量组件库清单**（穷举非抽样）与**编排调用关系及约束**（导入方向/注册顺序/路由挂载/状态所有权/测试边界，每条含代码证据）。方法论见 `references/exploration-guide.md` §C+。
+| 步 | 动作 | 实物调用 |
+|----|------|---------|
+| ⓪ | 自检 | `scripts/self-check.sh --check-only`（运行时/文档一致性） |
+| ⓪.5 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem search 提取规则 |
+| ① | 探查三路并行 | `references/exploration-guide.md` §C+（结构/规范/代码组织子代理各按其方法论） |
+| ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95）；gitnexus/graphify 真图谱 |
+| ② | 特征卡 | 特征项写入认知缓冲（17 项 P0 强制，见 template-spec §1） |
+| ③ | 骨架 | `scripts/generate-skill.sh <name> <proj>`（UNIVERSAL_FILES 按档拷贝） |
+| ④ | 填充 | template-spec §1-§24 逐节填 + codebase/dev-guide/release/reference-manual/workflow 五文件 |
+| ④.5 | 框架深化 | `--inject-frameworks`（门禁片段注入 + framework-knowledge 实例化） |
+| ⑤ | conf | precheck.conf 三件套（conf-render 初稿 + AI 补 TODO:model） |
+| ⑤.5 | hooks/MCP | hooks.json（双宿主）+ settings + .mcp.json 按需 |
+| ⑥ | 编码验证 | `bash scripts/precheck.sh --all`（目标技能侧 core 门禁） |
+| ⑦ | 独立审查 | `--review`（ocr 5 维度或 AI 清单）+ review-record 落盘 |
+| ⑦.5 | 门禁注入 | 框架门禁片段（④.5 产物）挂入 precheck 区块 |
+| ⑧ | 记忆写回 | `assets/memory-writeback.sh`（三路） |
+| ⑨ | 终检 | `--verify-completeness --strict`（零占位符）→ `--mark-active`（+路径存在+决策留痕） |
+
+铁律：draft 骨架不可交付（状态门三关）；每步公告 `→ [节点X] 调用 …` + `assets/trace-log.sh` 落盘；门禁误报调 conf 重跑（每节点有降级）；编排约束每条须代码证据；任务路由避免全任务全量（task-methodology-router.md）。流程详解按需读 `references/generation-flow.md`。
+
+**流B 的守卫**（目标技能侧，本 skill 生成的实物在执勤）：spec-first hook（fail-gate-hook 拦"无 spec 写源码"，Claude deny/Codex exit 2 双宿主）→ 状态机阶段守卫（design 需 proposal、build 需批准 spec、verify 需 tasks 全勾、archive 需 verify pass+证据）→ 门禁四族按序列 → 拦截落 gate-deny.jsonl 可复盘。九节点×4 要素由目标技能 `references/workflow.md` 承载。
+
+**反馈回路**：SessionStart hook（lite 档 AI 主动）跑 `scripts/project-fingerprint.sh <proj> --diff` → 变化 scope → exploration-guide §C+ 局部重探查 → reference-manual 单条更新（骤降 >50% 拒写）→ 生成器 `--upgrade`（项目内容文件保留）→ 落新基线——自成长闭环。
 
 ## 第五层 使用
 
