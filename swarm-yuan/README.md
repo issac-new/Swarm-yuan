@@ -8,7 +8,7 @@
 > **回归收口**（R6-R12，v2.6）：十一轮回归 28 项修复全部落库——双宿主（Claude Code/Codex）集成断链修复（schema 核验/绝对路径部署/垫片复活死引用）+ 运行时全量接线（13 运行时 + 降级链辅助工具全部真执行实证）+ 复杂度预算收口（决策 26.2）+ 文档零旧口径。
 > 计数真值见 `assets/facts.conf`（不手抄；`scripts/self-check.sh` 机器执法）。
 
-[![Release](https://img.shields.io/badge/release-v2.6-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.6)
+[![Release](https://img.shields.io/badge/release-v2.6.1-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.6.1)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
