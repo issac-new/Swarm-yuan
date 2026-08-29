@@ -1794,8 +1794,14 @@ profile: $PROFILE
 status: draft
 ---
 # $SKILL_NAME — （填充指引：项目名 + 需求交付全流程技能）
-> 由 swarm-yuan 生成器创建（${SWARM_YUAN_STAMP}，profile=${PROFILE}），需 AI agent 探查后填充。
-> 填充规范见 swarm-yuan/references/template-spec.md
+> 由 swarm-yuan 生成器创建（${SWARM_YUAN_STAMP}，profile=${PROFILE}），AI 探查填充后 \`--mark-active\` 激活。填充规范见 swarm-yuan/references/template-spec.md
+
+**五层导航**（本文按理念→设计→架构→工作流程→使用组织，闭环=执勤→变化→自成长→再执勤）：
+- **理念**：拼装式开发（零件目录=reference-manual §4 清单，禁重复造轮子）；三权分立——特征卡立法（地图=reference-manual）/门禁执法（precheck 四族）/审查司法（节点⑦+review-record）；诚实降级——误报走 conf+decisions.jsonl 留痕
+- **设计**：改造分类+拼装原则+安全规范→dev-guide.md；左移 spec §19-21→spec-template.md；决策纪律（Mechanical/Taste/UserChallenge）→decisions.jsonl
+- **架构**：项目认知=下方摘要表；六段式结构+框架规律→framework-knowledge.md（AI 按 ACTIVE_FRAMEWORKS 实例化）
+- **工作流程**：执勤九节点（①需求→…→⑨发布）→workflow.md；守卫链=spec-first hook（无 spec 写码即拦）→状态机阶段守卫→门禁序列→拦截落 gate-deny.jsonl
+- **使用**：对 AI 说话——"开始新需求：xxx"（进九节点）/ "跑门禁"（--all-full）/ "项目变了，刷新技能"（自成长段）/ "报了误报"（conf 调整+留痕）
 
 ## 项目认知摘要（生成器检测回填——特征卡 #1 项目类型 / #4 技术栈的承接点，AI 填充时在此基础上深化）
 
@@ -1806,8 +1812,7 @@ status: draft
 | 测试命令 | $(grep -m1 '^TEST_CMD=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null | sed "s/^TEST_CMD=//;s/'//g;s| *#.*||" || echo "（AI 探查填充）") |
 | 检测框架 | $(bash "$SRC_SCRIPTS/detect-frameworks.sh" "$PROJECT_DIR" 2>/dev/null | grep -E '^ACTIVE_FRAMEWORKS=' | sed 's/^ACTIVE_FRAMEWORKS=//;s/[()"]//g' || echo "（无已知框架）") |
 
-> 项目类型（单体/monorepo/overlay-fork/微服务）与改造分类（A 纯新增/B 骨架修改）由 AI 探查判定后填充——
-> 生成器只做机械嗅探（构建/测试命令/框架清单），形态判定（§C+.0）与改造分类是语义判断属 AI 职责。
+> 项目类型与改造分类（A/B）由 AI 探查判定（§C+.0 语义判断）；生成器只做机械嗅探（命令/框架清单）。
 
 ## 填充指引
 - [ ] meta: 核心理念+改造分类+流程总览+命令速查+门禁+反借口表（借口/反驳两列表，从门禁步骤逐条反推，见 template-spec §1.5）+假设清单（需求/架构/范围三维度+"现在纠正我"，见 template-spec §1.5）
