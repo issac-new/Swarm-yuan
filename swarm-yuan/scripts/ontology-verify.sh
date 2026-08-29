@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ontology-verify.sh — R16-B：本体论健康检查（统一依赖完整性入口）
 #
-# 设计来源：README.md §完整文档/当前事实源/DESIGN.md §0.2 冲程一/§5（本体关系派生机制——每条依赖配机器锚）。
+# 设计来源：README.md §6.1 设计规格/DESIGN.md §0.2 冲程一/§5（本体关系派生机制——每条依赖配机器锚）。
 # 此前六锚散落各命令（fingerprint/stability-audit/版本/digest/audit/last-good），用户要判断
 # "本体论依赖是否完整"须跑多个命令——本脚本一站式汇总，输出六锚健康报告。
 #
