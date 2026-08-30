@@ -4,14 +4,14 @@
 
 > 来源：[Vibe编码 公众号《Opus 4.8 删掉了73%的提示词，Opus 5 为何又新增了 82%》](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（2026-07-27，作者 VibeCoder）+ Anthropic Context Engineering 文档。
 > 纪律：只引用方法论模式与证据视角，不调任何上游 CLI / 引擎 / 截获工具；不复制文章原文（上游文章可按需存档到 `swarm-yuan/research/context-engineering/` 供 AI 阅读，本地 gitignored，不入 git）。
-> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 54；守决策 26：复杂度预算不增。
-> 适用场景：目标 skill 在**生成自身骨架**（SKILL.md / hooks / commands / MCP / precheck.conf / CLAUDE.md）时，AI 引用本文方法论决定**规则应该放在哪一层**——是常驻 System、还是 CLAUDE.md、还是按需 Skill、还是 typed schema、还是运行时门禁。也用于 swarm-yuan 仓库自身的配置分层（本仓库是一套分层 Agent 运行时的元范例）。
+> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；守决策 26：复杂度预算不增。
+> 适用场景：目标技能 在**生成自身骨架**（SKILL.md / hooks / commands / MCP / precheck.conf / CLAUDE.md）时，AI 引用本文方法论决定**规则应该放在哪一层**——是常驻 System、还是 CLAUDE.md、还是按需 Skill、还是 typed schema、还是运行时门禁。也用于 swarm-yuan 仓库自身的配置分层（本仓库是一套分层 Agent 运行时的元范例）。
 
 ---
 
 ## 一、定位：填补 swarm-yuan 的"规则该放哪一层"空白
 
-swarm-yuan 当前 17 项特征卡 / 54 门禁 / 79 框架规则集回答了「项目应该是什么样的」与「代码是否合规」，但**没有显式回答「我新加的这条规则，应该放进哪一层上下文」**——是写进 SKILL.md 常驻、还是 precheck.conf 配置、还是 reference 按需读、还是门禁机器执法、还是 hooks 阻断。
+swarm-yuan 当前 17 项特征卡 / 55 门禁 / 79 框架规则集回答了「项目应该是什么样的」与「代码是否合规」，但**没有显式回答「我新加的这条规则，应该放进哪一层上下文」**——是写进 SKILL.md 常驻、还是 precheck.conf 配置、还是 reference 按需读、还是门禁机器执法、还是 hooks 阻断。
 
 文章给出的 U 型曲线证据把这个问题显式化了：
 
@@ -23,7 +23,7 @@ swarm-yuan 当前 17 项特征卡 / 54 门禁 / 79 框架规则集回答了「�
 
 **关键证据解读**：4.8→5 的 System 增长 82.12%，但 System+Tools 只增长 4.14%——围绕提示词长短争论很容易忽略真正占上下文的大块接口层。
 
-**吸收价值**：swarm-yuan 的 SKILL.md / references / precheck.conf 三件套 / 54 门禁 / hooks.json / .mcp.json 本身就是一套分层上下文，但分层原则此前是隐性的（散落在各 WP 决策里）。本文把"分层放置规则"的方法论显式化，给 swarm-yuan 一个可引用的元决策框架。
+**吸收价值**：swarm-yuan 的 SKILL.md / references / precheck.conf 三件套 / 55 门禁 / hooks.json / .mcp.json 本身就是一套分层上下文，但分层原则此前是隐性的（散落在各 WP 决策里）。本文把"分层放置规则"的方法论显式化，给 swarm-yuan 一个可引用的元决策框架。
 
 ---
 
@@ -51,12 +51,12 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 | 层 | 职责 | swarm-yuan 对应载体 | 不该装什么 |
 |----|------|-------------------|-----------|
 | **模型** | 判断、工具调用、自验证 | （外部模型能力，swarm-yuan 不控制） | — |
-| **System / SKILL.md** | 产品身份、授权边界、完成定义、全局信任协议 | 目标 skill 的 `SKILL.md`（铁律段：可改范围 / 分支规范 / 安全铁律） | 仓库目标与代码中推得出的约定 |
-| **Tools / typed schema** | 动作空间定义 | 目标 skill 的 `hooks.json` / `.mcp.json` / commands/*.md + `precheck.sh` 的 flag 接口 | 自然语言教程（应压成参数名/枚举/返回结构） |
+| **System / SKILL.md** | 产品身份、授权边界、完成定义、全局信任协议 | 目标技能 的 `SKILL.md`（铁律段：可改范围 / 分支规范 / 安全铁律） | 仓库目标与代码中推得出的约定 |
+| **Tools / typed schema** | 动作空间定义 | 目标技能 的 `hooks.json` / `.mcp.json` / commands/*.md + `precheck.sh` 的 flag 接口 | 自然语言教程（应压成参数名/枚举/返回结构） |
 | **CLAUDE.md / 仓库事实** | 仓库目标与代码中推不出的约定 | 目标项目的 `CLAUDE.md` / `AGENTS.md`（第 2/6 项特征卡驱动） | 跨任务通用的产品身份（属 System 层） |
-| **Skills / References（按需加载）** | 专项流程 | swarm-yuan 的 `references/*.md`（30+ 文档）+ 目标 skill 的 snippets.md / mcp-tools.md | 常驻规则（按需才读） |
+| **Skills / References（按需加载）** | 专项流程 | swarm-yuan 的 `references/*.md`（30+ 文档）+ 目标技能 的 snippets.md / mcp-tools.md | 常驻规则（按需才读） |
 | **Memory** | 跨会话经验 | swarm-yuan 的 `memory-writeback.sh` / `.swarm-yuan/cognition-metrics.jsonl` + `references/memory-persistence.md` | 当前任务事实（属 CLAUDE.md） |
-| **permissions / sandbox / hooks** | 真正阻断副作用 | 目标 skill 的 `hooks.json`（PreToolUse Write 范围检查）+ `precheck.sh` 54 门禁 + `integrity-guard.sh` / `failure-detector.sh` | 软约束（阻断交给门禁，叙事交给 System） |
+| **permissions / sandbox / hooks** | 真正阻断副作用 | 目标技能 的 `hooks.json`（PreToolUse Write 范围检查）+ `precheck.sh` 55 门禁 + `integrity-guard.sh` / `failure-detector.sh` | 软约束（阻断交给门禁，叙事交给 System） |
 
 **关键铁律（文章原话转译）**：permissions、sandbox、hooks 才负责真正阻断副作用——System 不该假装是阻断层，它只是治理内核。
 
@@ -64,7 +64,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 ## 四、4.7 长规则书的代价（反面教材）
 
-文章对 Opus 4.7 的批评，恰好是 swarm-yuan 在生成目标 skill 时要避免的反模式：
+文章对 Opus 4.7 的批评，恰好是 swarm-yuan 在生成目标技能 时要避免的反模式：
 
 | 4.7 的代价 | swarm-yuan 的对应警示 |
 |-----------|---------------------|
@@ -73,7 +73,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 | 模型能力变化后旧约束诱发过度检查 | 门禁分层 strict/warn/advisory（决策 19），advisory 永不 fail |
 | Bash 9,821 字符教程式描述 | precheck.sh flag 接口压成 `--branch`/`--scope`/`--reuse`，用法在 `--list-gates` |
 
-**吸收动作**：生成目标 skill 时，若 AI 发现自己在 SKILL.md 写超过 3 段的「如何做 X」教程式内容，应触发本层判断——大概率该挪进 reference 或压成 flag 接口。
+**吸收动作**：生成目标技能 时，若 AI 发现自己在 SKILL.md 写超过 3 段的「如何做 X」教程式内容，应触发本层判断——大概率该挪进 reference 或压成 flag 接口。
 
 ---
 
@@ -128,7 +128,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 - 新的稳定失败模式出现后，加入少量跨任务治理。
 - 追求最小充分集合，字符最少只是可能结果。
 
-**对 swarm-yuan 的映射**：swarm-yuan 生成目标 skill 时，SKILL.md 的铁律段本质上就是「model adapter」——它适配的是「AI 模型对项目的认知」这一能力缺口。当目标项目的 CLAUDE.md / 仓库代码已经能提供更高保真的约定时，SKILL.md 不该重复，只补缺口。
+**对 swarm-yuan 的映射**：swarm-yuan 生成目标技能 时，SKILL.md 的铁律段本质上就是「model adapter」——它适配的是「AI 模型对项目的认知」这一能力缺口。当目标项目的 CLAUDE.md / 仓库代码已经能提供更高保真的约定时，SKILL.md 不该重复，只补缺口。
 
 **与五层认知基底的关系**：`references/cognition-framework.md` 的五层（认知递进/思维语言/认知辩证/偏差防范/辩证认知）回答「AI 如何认识项目」；本文回答「认识项目的规则该装在哪一层」。两者正交，互补。
 
@@ -136,7 +136,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 ## 八、升级模型时的自检清单（AI 引用）
 
-文章给的自检方式，转译为 swarm-yuan 生成目标 skill 时的自检：
+文章给的自检方式，转译为 swarm-yuan 生成目标技能 时的自检：
 
 1. **重新跑自己的任务集**——生成 skill 后用 `precheck.sh --all` 三档自举验证（RC=0）。
 2. **重点看**：范围扩张（`--scope` 是否触只读）、澄清次数（task-methodology-router 是否路由正确）、完成率（`--verify-completeness` 零占位）、过度验证（advisory 门禁是否误 warn）、子 Agent 成本（subagent 编排是否过度扇出）、纠错噪声（json/sarif 输出是否可消费）。
@@ -149,7 +149,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 | 文章概念 | swarm-yuan 既有触点 | 接线方式 |
 |---------|---------------------|---------|
-| 六层上下文模型 | SKILL.md / references / precheck.conf / hooks.json / .mcp.json / memory-writeback | 本文显式化分层原则，AI 生成目标 skill 时引用本文做「规则放哪层」决策 |
+| 六层上下文模型 | SKILL.md / references / precheck.conf / hooks.json / .mcp.json / memory-writeback | 本文显式化分层原则，AI 生成目标技能 时引用本文做「规则放哪层」决策 |
 | minimal ≠ short | `--profile auto`（按规模自适应披露）+ advisory 门禁分层 | 引用本文支撑「advisory 永不 fail」的合理性——最小充分不等于最短 |
 | Prompt = model adapter | SKILL.md 铁律段（P0 六项特征卡驱动） | 引用本文解释「为何 SKILL.md 只放 P0 六项铁律」——它是项目认知的 adapter |
 | Delivering work | governance-agents / decision-governance / generate-skill --verify-completeness | 治理回路 WP 批次的理论依据 |
@@ -173,6 +173,6 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 - 来源：[Vibe编码 公众号《Opus 4.8 删掉了73%的提示词，Opus 5 为何又新增了 82%》](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（2026-07-27，作者 VibeCoder）+ Anthropic Context Engineering 文档
 - 许可证：文章内容版权归原作者，swarm-yuan 只引用方法论模式与证据视角，不复制原文
 - 上游文章：[Vibe编码 公众号原文](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（可按需存档到 `swarm-yuan/research/context-engineering/` 供 AI 阅读，本地 gitignored，不入 git）
-- 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 54）
+- 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
 - 自检断言：G14 `check_context_engineering_layering`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 接线 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_REFERENCES=33`（本文档 +1）

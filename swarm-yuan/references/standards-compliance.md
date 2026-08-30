@@ -3,7 +3,7 @@
 # 标准合规映射矩阵（standards-compliance）
 
 > 版本：v1（2026-07-20，随 `feat/standards-compliance` 批次冻结 6 个锚点标题）
-> 证据基线：`docs/research/R7-quality-standards.md`、`docs/research/R8-security-standards.md`（2026-07-20，条款号均出自该两报告，禁止虚构）；门禁语义基线：`swarm-yuan/assets/precheck.sh`（54 门禁 = FULL 48 + advisory-only 6；FULL 48 = 标准 27（核心 10+架构 17）+ 合规 19 + FULL-only 2（decision/state-phase）——audit-claims-reality 修正旧分解未随 cert/cwe 入列同步）与 `swarm-yuan/assets/precheck.conf`。
+> 证据基线：仓库根 `docs/research/R7-quality-standards.md`、仓库根 `docs/research/R8-security-standards.md`（2026-07-20，条款号均出自该两报告，禁止虚构）；门禁语义基线：`swarm-yuan/assets/precheck.sh`（55 门禁 = FULL 49 + advisory-only 6；FULL 49 = 标准 28（核心 10+架构 18）+ 合规 19 + FULL-only 2（decision/state-phase）——audit-claims-reality 修正旧分解未随 cert/cwe 入列同步）与 `swarm-yuan/assets/precheck.conf`。
 > **口径权威源**：`../assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 ## 本文件作用与用法
@@ -15,13 +15,13 @@
 1. **机器校验**：`precheck.sh --compliance` 门禁以本文件为校验对象——逐一检查 §A–§F 共 6 个锚点标题（冻结契约，一字不得改）存在、全文无占位标记残留；`SPEC_FILE` 存在时同时校验 spec 含「## 22. 标准合规」段。矩阵缺失或锚点不全即 fail。
 2. **配置入口**：`precheck.conf` 标准合规段 16 变量（`COMPLIANCE_MATRIX_FILE` / `DOCS_PACK_PROFILE` / `SBOM_REQUIRED` / `PRIVACY_SCAN_DIRS` 等）驱动 §C/§D/§E 对应的 `--docs-pack` / `--sbom` / `--privacy` 门禁；P3「长期清单收口」段 8 变量（`RTM_REQUIRED` / `RTM_MATRIX_FILE` / `RTM_MATRIX_REQUIRED` / `RELEASE_SIGN_REQUIRED` / `RELEASE_ARTIFACTS_GLOB` / `RELEASE_SIGN_TOOL` / `RELEASE_PROVENANCE_REQUIRED` / `RELEASE_PROVENANCE_FILE`）驱动 `--rtm` / `--release-sign`。
 3. **人工引用**：生成目标技能 时，AI 在 spec §22.1 剪裁声明中引用本矩阵（§B 附录 A 示例）；安全豁免按 §F 格式登记；验收（verifier）按 §D/§E 的「缺口（P1/P2）」标注判断哪些标准条款当前无门禁覆盖、须人工兜底。
-4. **姿态约定**（与计划铁律一致）：新门禁未配置时静默跳过；安全类门禁启用后 fail-closed；豁免必须留痕（§F）；既有 27 门禁的判定语义与输出行不因本文件而改变。
+4. **姿态约定**（与计划铁律一致）：新门禁未配置时静默跳过；安全类门禁启用后 fail-closed；豁免必须留痕（§F）；既有 28 门禁的判定语义与输出行不因本文件而改变。
 
 ---
 
 ## A. GB/T 25000.51 八特性 × 门禁映射
 
-依据 GB/T 25000.51-2016（RUSP）§5.2 用户文档集要求、§5.3 软件质量要求（八特性，与 GB/T 25000.10-2016 质量模型一致），将 54 个门禁按八特性逐行登记；「测量函数/阈值/证据」列对齐 GB/T 25000.21-2019 测度元素格式（R7 Q-06，本文件即 P0 级「门禁级四元组登记」的落地）。特性名同时标注 ISO/IEC 25010:2023 双轨命名（R7 ⑦：国标尚未跟进 2023 版）。
+依据 GB/T 25000.51-2016（RUSP）§5.2 用户文档集要求、§5.3 软件质量要求（八特性，与 GB/T 25000.10-2016 质量模型一致），将 55 个门禁按八特性逐行登记；「测量函数/阈值/证据」列对齐 GB/T 25000.21-2019 测度元素格式（R7 Q-06，本文件即 P0 级「门禁级四元组登记」的落地）。特性名同时标注 ISO/IEC 25010:2023 双轨命名（R7 ⑦：国标尚未跟进 2023 版）。
 
 ### A.1 功能适合性（Functional Suitability）
 
@@ -30,7 +30,7 @@
 | 功能适合性 | `--build`（check_build） | 构建命令执行退出码 | 退出码=0；未配置 BUILD_CMD 跳过（fail-open 已知，P1 conf lint 收口） | 终端 pass/fail 行 + 构建输出尾部 10 行 |
 | 功能适合性 | `--test`（check_test） | 测试命令执行退出码 | 退出码=0；未配置 TEST_CMD 跳过（同上） | 终端 pass/fail 行 + 测试输出尾部 20 行 |
 | 功能适合性 | `--consistency`（check_consistency） | 可改目录内重复写入点计数（INSERT/create 粗筛） | >5 处 → warn 要求确认幂等性 | pass/warn 行 + 「无多漏错重」核对提示（人工核对清单） |
-| 功能适合性 | `--framework`（check_framework） | 74 规则集 `_fw_<id>_<rule>` 逐条判定计数 | 任一规则 fail 即 fail；`ACTIVE_FRAMEWORKS` 空 → 静默跳过 | 各框架规则 fail 行（稳定 id）+ 74/74 fixture 绿 |
+| 功能适合性 | `--framework`（check_framework） | 79 规则集 `_fw_<id>_<rule>` 逐条判定计数 | 任一规则 fail 即 fail；`ACTIVE_FRAMEWORKS` 空 → 静默跳过 | 各框架规则 fail 行（稳定 id）+ 79/79 fixture 绿 |
 
 差距登记：需求↔测试追溯（RTM）—— 已覆盖（P3 `--rtm` 门禁挂接：spec REQ- 编号须在测试目录或追溯矩阵可追溯，`RTM_MATRIX_REQUIRED=1` 时矩阵缺失 fail-closed；原 P2 缺口，R7 Q-11 / 差距矩阵 §1.1 功能适合性行）。
 
@@ -247,7 +247,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 
 | 标准要求 | 门禁映射 | 状态 |
 |---|---|---|
-| 可靠性/安全性/性能/可维护性四特性弱点静态计数 | `--security` 10 模式族 + framework 74 规则集（词法层 grep） | ✅ 仓库实际涉及的 60 个唯一 CWE 全量元数据已建（`references/cwe-database.md`，6 维分级：CWE 编号/名称/OWASP/严重度/ISO 5055 四特性/检查点；`--cwe-audit` 门禁对账）；security-spec §5.1 参考表（15 项高频弱点）；ISO 5055 全集 138 条的完整覆盖需机构 SAST 工具 |
+| 可靠性/安全性/性能/可维护性四特性弱点静态计数 | `--security` 10 模式族 + framework 79 规则集（词法层 grep） | ✅ 仓库实际涉及的 60 个唯一 CWE 全量元数据已建（`references/cwe-database.md`，6 维分级：CWE 编号/名称/OWASP/严重度/ISO 5055 四特性/检查点；`--cwe-audit` 门禁对账）；security-spec §5.1 参考表（15 项高频弱点）；ISO 5055 全集 138 条的完整覆盖需机构 SAST 工具 |
 | 弱点密度/合规率双指标 | 无度量入库 | ❌ 缺口（P2 密度度量/趋势，R7 Q-08/Q-20） |
 
 ### E.2 NIST SSDF v1.1（SP 800-218，PO/PS/PW/RV 四组 19 项）
@@ -256,7 +256,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 |---|---|---|---|
 | PO（组织准备 PO.1–PO.5：安全需求/角色/工具链/检查标准） | 生成器配置层：特征卡定级 + precheck.conf 测度实例化 + 本矩阵 | 本矩阵 + conf（P0） | ✅🟡 文档层覆盖 |
 | PS（保护软件 PS.1–PS.3：代码防篡改/**发布完整性验证机制**/发布归档） | PS.1/PS.3 部分 ↔ git 工作流 + `--stable-diff`；**PS.2 ↔ `--release-sign`（P3）** | `--release-sign` | ✅🟡 已覆盖（P3 挂门禁：产物伴随签名 .sig/.asc/.att/.bundle + cosign verify-blob 验签 + provenance fail-closed；无 cosign 降级存在性检查） |
-| PW（生产安全软件 PW.1–PW.9：安全设计/编码/构建/评审/测试/默认安全配置） | 门禁体系主体：`--security`/`--layer`/`--review`/`--test`/`--shift-left` | 54 门禁 | ✅ 主体覆盖（PW≈门禁体系，R8 §⑧） |
+| PW（生产安全软件 PW.1–PW.9：安全设计/编码/构建/评审/测试/默认安全配置） | 门禁体系主体：`--security`/`--layer`/`--review`/`--test`/`--shift-left` | 55 门禁 | ✅ 主体覆盖（PW≈门禁体系，R8 §⑧） |
 | RV（响应漏洞 RV.1–RV.3：识别/修复/**根因分析**） | `--review` 部分覆盖；缺陷追踪根因字段 | 无 | 🟡 部分；RV ❌ 缺口（P2 根因字段） |
 
 动态登记：SP 800-218 Rev.1（v1.2）公开草案强化 SBOM/VEX/签名发布（R8 §⑧）——P2 发布签名门禁设计须对齐 v1.2。
@@ -286,7 +286,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 
 **理由**：这些标准要求完整的功能安全生命周期（HARA 危害分析 / ASIL 分解 / 安全案例 Safety Case / SOUP 评估 / 工具链鉴定），属机构测评/认证级，远超门禁级自动化范畴。强行门禁化会淹没误报（违反"不贸然唤醒沉睡门禁"原则——无真实项目校准的硬门禁是头号风险）。正确做法是显式声明边界，让"不覆盖"成为诚实声明而非隐性缺口。
 
-**外审指引**：涉及功能安全域的项目，swarm-yuan 的 54 门禁可作为**通用质量/安全基线**，但功能安全合规必须由具备资质的机构按标准全文外审。swarm-yuan 的门禁证据（gate-runs.jsonl / SBOM 产物 / RTM 追溯矩阵 / 豁免 5 字段登记）可作为外审输入材料，**不构成合规证据本身**。
+**外审指引**：涉及功能安全域的项目，swarm-yuan 的 55 门禁可作为**通用质量/安全基线**，但功能安全合规必须由具备资质的机构按标准全文外审。swarm-yuan 的门禁证据（gate-runs.jsonl / SBOM 产物 / RTM 追溯矩阵 / 豁免 5 字段登记）可作为外审输入材料，**不构成合规证据本身**。
 
 > **适用范围声明**：本范式暂不覆盖功能安全认证场景。涉及车规（ISO 26262 ASIL 分级）、医疗软件（IEC 62304 安全分级）或工控功能安全（IEC 61508/62443）时，本矩阵与门禁体系**不构成合规证据**——须经具备资质的外部机构评审（外审），并补充行业专用过程（危害分析/HARA、安全案例 safety case、SOUP 评估、工具链鉴定等）后方可用于对应场景。
 
@@ -296,13 +296,13 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | IEC 62304（医疗器械软件生存周期） | 医疗软件 A/B/C 安全分级 | 不覆盖；涉医疗时须外审 + 补充 SOUP/遗留软件评估 | ❌ 占位（P2 行业 profile） |
 | IEC 61508 / IEC 62443（工控功能安全/信息安全） | 工控系统 SIL 分级 | 不覆盖；涉工控时须外审 | ❌ 占位（P2 行业 profile） |
 
-> **行业 profile 落地（P3）**：金融/医疗行业立法文档与配套配置包已入库——`references/industry-profile-finance.md` + `assets/industry-profiles/finance.conf`、`references/industry-profile-medical.md` + `assets/industry-profiles/medical.conf`（用法：conf 追加到目标技能 `precheck.conf` 末尾后按项目裁剪，追加后 `--doctor` 自检）。医疗 profile 覆盖医疗机构信息系统（HIS/EMR/LIS/PACS/互联网医院平台）研发交付；上表医疗器械注册申报（IEC 62304/YY/T 0664 SaMD/SiMD）场景仍维持外审占位，profile 与门禁输出**不构成注册合规证据**。
+> **行业 profile 落地（P3）**：金融/医疗行业立法文档与配套配置包已入库——生成器仓 `references/industry-profile-{finance,medical}.md` + `assets/industry-profiles/{finance,medical}.conf`（md 方法论不随发；conf 由 --industry 实际加载）（用法：conf 追加到目标技能 `precheck.conf` 末尾后按项目裁剪，追加后 `--doctor` 自检）。医疗 profile 覆盖医疗机构信息系统（HIS/EMR/LIS/PACS/互联网医院平台）研发交付；上表医疗器械注册申报（IEC 62304/YY/T 0664 SaMD/SiMD）场景仍维持外审占位，profile 与门禁输出**不构成注册合规证据**。
 
 ---
 
 ## F. 门禁姿态与豁免登记
 
-### F.1 全 54 门禁姿态表
+### F.1 全 55 门禁姿态表
 
 姿态三值：`fail-closed`（启用即执法，命中即 fail）/ `skip-if-unconfigured`（未配置静默跳过，--all-full 下不打印；显式单门禁调用时 warn 提示）/ `warn-only`（只告警不判违规）。混合姿态以「主姿态+备注」记。判定语义与既有输出行不因本登记改变。
 
@@ -361,7 +361,8 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | 51 | `--pr-quality` / check_pr_quality | advisory-only（0 fail） | 同上；PR 质量信号观测 |
 | 52 | `--skill-supply-chain` / check_skill_supply_chain | advisory-only（0 fail） | 同上；技能供应链（来源/签名/版本）观测 |
 | 53 | `--state-phase` / check_state_phase | advisory-only（0 fail） | 同上；状态机阶段流转一致性观测 |
-| 54 | `--upstream-baseline` / check_upstream_baseline | advisory-only（0 fail） | 同上；上游基线漂移观测（README.md §6.4 上游运行时基线 对账，drifted → warn） |
+| 54 | `--upstream-baseline` / check_upstream_baseline | advisory-only（0 fail） | 同上；上游基线漂移观测（生成器仓 README.md §6.4 上游运行时基线 对账，drifted → warn） |
+| 55 | `--method-size` / check_method_size | warn-only（enforce advisory，0 fail） | 在标准/完整序列内执勤（field-feedback 新增，决策 26.2 追认预算 55）；方法体规模预算观测，超限 warn |
 
 汇总姿态约定（与 GB/T 15532 准出「失效须可见」对齐）：`--all-full` 末次汇总打印「—— 执行汇总：调用 N，执行 N−S，跳过 S（清单），fail F，warn W ——」（P0 跳过计数器）；退出码与既有输出行一字不改。
 

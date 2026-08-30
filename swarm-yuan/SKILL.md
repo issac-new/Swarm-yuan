@@ -9,7 +9,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **总闭环**（各层围绕它展开）：本 skill 探查项目→生成目标技能→目标技能在项目里执勤开发→项目演进产生变化→指纹感知→技能局部更新→继续执勤。五层依次回答：为什么这样做（理念）、原则是什么（设计）、结构长什么样（架构）、流程怎么转与机制落地（实现）、用户怎么进入（使用）——每层的每个概念都能在第四层的流程表里找到诞生步与消费方。
 
-> **口径权威源**：`assets/facts.conf`（数字单一事实源，self-check 机器执法）；全部设计/决策/上游基线见仓库根 `README.md`（standalone 安装时不携带，核心已内联到本文与 references/）。
+> **口径权威源**：`assets/facts.conf`（数字单一事实源，self-check 机器执法）；全部设计/决策/上游基线见本目录 `README.md`（仓库内即 `swarm-yuan/README.md`，standalone 安装时随技能自包含；核心已内联到本文与 references/）。
 >
 > **路径注**：`trace-log.sh`/`state-machine.sh`/`memory-writeback.sh` 在生成器侧位于 `assets/`，在目标技能侧映射为 `scripts/`；执行生成流程（Step 1-12）时以 `assets/xxx.sh` 调用（`cost-report.sh`/`generate-skill.sh`/`self-check.sh` 位于 `scripts/` 不受影响）。
 
@@ -79,7 +79,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | ⓪.5 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem search 提取规则 |
 | ① | 探查三路并行 | `references/exploration-guide.md` §C+（结构/规范/代码组织子代理各按其方法论） |
 | ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95）；gitnexus/graphify 真图谱 |
-| ② | 特征卡 | 特征项写入认知缓冲（17 项 P0 强制，见 template-spec §1） |
+| ② | 特征卡 | 特征项写入认知缓冲（17 项 = P0 6 强制 + P1 11，承接表见 template-spec §3） |
 | ③ | 骨架 | `scripts/generate-skill.sh <name> <proj>`（UNIVERSAL_FILES 按档拷贝） |
 | ④ | 填充 | template-spec §1-§24 逐节填 + codebase/dev-guide/release/reference-manual/workflow 五文件 |
 | ④.5 | 框架深化 | `--inject-frameworks`（门禁片段注入 + framework-knowledge 实例化） |

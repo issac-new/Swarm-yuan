@@ -5,7 +5,7 @@
 # 单项键缺失=该项跳过；启用后 fail-closed）：
 #   ① LOC 增长：precheck.sh 行数较基线增长 <40%（整数判定 5*loc < 7*baseline）
 #   ② 重复度：framework-gates 注入双副本 diff 行数 <30
-#      口径：临时 skill 骨架 ACTIVE_FRAMEWORKS=74 全量，generate-skill.sh
+#      口径：临时 skill 骨架 ACTIVE_FRAMEWORKS=79 全量，generate-skill.sh
 #      --inject-frameworks 产物的标记块（不含标记行）与 assets/framework-gates/*.sh
 #      同序串联逐行 diff，计 '^[<>]' 行数（正常应为 0，阈值容忍标记/空行级漂移）
 #   ③ 文档一致性：self-check.sh 输出「▶ 文档一致性检查」段（至下一「▶ 」段前）

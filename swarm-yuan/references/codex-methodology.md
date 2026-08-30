@@ -43,7 +43,7 @@ Codex 的 compaction prompt 原文结构（`prompts/templates/compact/prompt.md`
 
 Codex Skills 只常载 frontmatter（name/description），正文按触发注入（`skills.frontmatter_max_bytes`）。
 
-> **目标技能落地**：同决策 32——SKILL.md 只常驻「做什么 + 何时用」，Step 详解折叠到 generation-flow.md 按需读。门禁清单一行一 flag（`--list-gates`），不常驻 54 条正文。
+> **目标技能落地**：同决策 32——SKILL.md 只常驻「做什么 + 何时用」，Step 详解折叠到 generation-flow.md 按需读。门禁清单一行一 flag（`--list-gates`），不常驻 55 条正文。
 
 ## 二、Review rubric 工程化（什么算 bug 的 8 条判定 + 结构化输出）
 
@@ -92,7 +92,7 @@ Codex Skills 只常载 frontmatter（name/description），正文按触发注入
 
 - **OS 级沙箱**（Seatbelt/bwrap）：运行时职责；swarm-yuan 的 precheck 门禁跑在用户自己的 shell。
 - **模型路由**（mini 干杂活/旗舰主审）：运行时控制模型调用。
-- **Hooks 确定性裁决**：swarm-yuan 已有等价物（54 门禁本来就是确定性 bash 检查 + integrity-guard/failure-detector hooks）。
+- **Hooks 确定性裁决**：swarm-yuan 已有等价物（55 门禁本来就是确定性 bash 检查 + integrity-guard/failure-detector hooks）。
 - **并行子代理调度**（spawn_agent/max_threads=6）：运行时的编排原语；swarm-yuan 的 subagent-orchestration.md 已引用方法论。
 
 ## 五、与其他 references 的关系

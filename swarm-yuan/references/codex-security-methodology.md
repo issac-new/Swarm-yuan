@@ -5,7 +5,7 @@
 > 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.11（Apache-2.0，**完全开源免费**），CLI 接线层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。
 > 📌 **v0.1.11 升级吸收（2026-08-14）**：① 嵌套 Git 仓库 scan snapshots（#116）——含 submodule 的项目可整仓扫描，remediation checkout 保留嵌套仓库；② protected multi-architecture 容器镜像（x64/arm64）+ AppArmor 受限主机自动降级到 legacy sandbox——Docker 沙箱在受限 Ubuntu/容器环境不再硬崩。这两项让 codex-security 在真实项目（常含 submodule）+ 受限 CI 环境更可靠。
 > 纪律：CLI 接线层允许真实命令调用（`npx @openai/codex-security scan`），不重新实现、不复制源码（上游 clone 在 `swarm-yuan/research/codex-security/`，仅供 AI 阅读引用，gitignored）。
-> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 54；守决策 26：复杂度预算不增。
+> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；守决策 26：复杂度预算不增。
 > 适用场景：目标项目需要**AI 驱动的语义级安全扫描**（非传统 SAST 的模式匹配）时，`--sast-deep` 门禁的 `SAST_DEEP_TOOL=codex-security` 显式调用 codex-security CLI，产出 SARIF + findings.json + coverage.json 三件套。也用于 AI 在 spec/审查节点引用本文的静态评估七元组 + 威胁模型五要素 + 攻击路径分析方法论。
 
 ---
@@ -124,7 +124,7 @@ codex-security 的 `skills/attack-path-analysis` 定义了从 finding 到攻击�
 
 codex-security 的 `references/security-guidance.md` 定义了 SECURITY.md 约定——从扫描根到目标目录的根→叶顺序合并，**最靠近目标的策略优先**。
 
-swarm-yuan AI 在生成目标 skill 的 `security-spec.md`（§2 安全规范）时引用此模型：
+swarm-yuan AI 在生成目标技能 的 `security-spec.md`（§2 安全规范）时引用此模型：
 
 | 层级 | SECURITY.md 位置 | 装什么 |
 |------|------------------|--------|
@@ -174,14 +174,14 @@ codex-security 的 `_bundled_plugin/skills/` 含 14 个 skill，swarm-yuan AI �
 | `vulnerability-writeup` | `--sast-deep` 漏洞报告 | findings.json codeEvidence |
 | `track-findings` | `--sast-deep` 跟踪 | scan history + workbench |
 | `propose-security-hardening` | spec §20 变更影响 | 加固建议 |
-| `define-security-policy` | 生成目标 skill 的 security-spec.md | SECURITY.md 策略合并（本文 §六） |
+| `define-security-policy` | 生成目标技能 的 security-spec.md | SECURITY.md 策略合并（本文 §六） |
 | `config-preflight` | `--sast-deep` 前置检查 | `--doctor` 自检 |
 
 ---
 
 ## 九、Docker 沙箱模式（CI 批量扫描参考）
 
-codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json` 提供了 CI 批量扫描的沙箱范式，swarm-yuan AI 在生成目标 skill 的 CI 配置时引用：
+codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json` 提供了 CI 批量扫描的沙箱范式，swarm-yuan AI 在生成目标技能 的 CI 配置时引用：
 
 | 沙箱层 | codex-security 实现 | swarm-yuan 引用价值 |
 |--------|---------------------|---------------------|
@@ -203,10 +203,10 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 | 静态评估七元组 | `--security` / `--sast-deep` / `--authz` 门禁的误报复核 | AI 引用本文 §三 做七元组核对 |
 | 威胁模型五要素 | spec §19 测试设计 + `--shift-left` | AI 引用本文 §四 建仓库级威胁模型 |
 | 攻击路径分析 | `--reuse` 门禁的既有稳定单元盘点 | 复用 `--reuse` 结果做反证据检查 |
-| SECURITY.md 策略合并 | 目标 skill 的 security-spec.md（§2） | AI 引用本文 §六 的 root→leaf 合并 |
+| SECURITY.md 策略合并 | 目标技能 的 security-spec.md（§2） | AI 引用本文 §六 的 root→leaf 合并 |
 | scan contract 三件套 | `to-sarif.sh` SARIF 管线 | codex-security SARIF 与门禁级 SARIF 并行消费 |
 | 14 bundled skills | swarm-yuan 12 步生成流程（Step 1-12） | AI 按 workflow 节点引用对应 skill 模式（本文 §八） |
-| Docker 沙箱 | `--sbom` / `--release-sign` 门禁的 CI 配置 | AI 引用本文 §九 做目标 skill CI 沙箱设计 |
+| Docker 沙箱 | `--sbom` / `--release-sign` 门禁的 CI 配置 | AI 引用本文 §九 做目标技能 CI 沙箱设计 |
 
 ---
 
@@ -227,6 +227,6 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 - 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.4（Apache-2.0）
 - 许可证：Apache License 2.0
 - 上游 clone 位置：`swarm-yuan/research/codex-security/`（本地参考，gitignored，不入 git）
-- 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 54）
+- 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
 - 自检断言：G15 `check_codex_security_cli_wiring`（`self-check.sh`，warn-only，守 CLI 接线 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_RUNTIMES=13` / `FACT_RUNTIMES_CLI=4` / `FACT_REFERENCES=34`

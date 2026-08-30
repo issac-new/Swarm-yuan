@@ -597,7 +597,7 @@ $(printf '%b\n' "$suspicious_files" | head -5 | sed 's/^/    /')"
 }
 
 # check_canary 已于 2026-07-27 决策 26.1 等价替换为 check_loop_oracle（gates-strict.sh）
-# 以腾出门禁预算（决策 26 冻结 54 上限）。canary 监控能力保留为 references/canary-monitoring.md
+# 以腾出门禁预算（决策 26.2 冻结 55 上限）。canary 监控能力保留为 references/canary-monitoring.md
 # 文档 + Oracle Gate 循环形式（bash scripts/setup-loop.sh --verify '<canary 验证命令>'）。
 # 原 check_canary 函数体已删除，此处保留占位注释供 self-check 计数核验（check_canary 不再计入
 # FACT_GATES_TOTAL，FACT_GATES_ADVISORY_ONLY 从 10 降至 9）。

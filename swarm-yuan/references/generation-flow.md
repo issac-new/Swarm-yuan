@@ -98,7 +98,7 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools
 
 ## Step 10.5. AI 独立审查（review）
 
-**独立 code review（非自检）**：AI 以"第三方 reviewer"视角重新审视生成产物（SKILL.md / workflow / references / precheck.conf / scripts），不重复 Step 7 的填充自检，而是找 Step 7 之后仍残留的逻辑错误、占位符遗漏、门禁误配、组件库清单错漏等**低级错误**（用户原始痛点："swarm-yuan 没有测试和审查这个关键环节，错误太低级了"）。**★review 门禁（check_review）**：`check_review` 机械核验**审查留痕**——生成物目录存在 `references/review-record.md` 且非空（含 5 维审查点 + findings 表）即 fail。审查完须 `cp swarm-yuan/assets/review-record-template.md <skill>/references/review-record.md` 并填充 5 维审查点 + findings 表，作为独立审查证据产物落盘（review-record-template.md 路径：生成器侧 `assets/`，目标技能侧 `references/`）。**审查留痕是 review 门的硬性交付物，缺则门禁 fail，不允口头"已审查"。**
+**独立 code review（非自检）**：AI 以"第三方 reviewer"视角重新审视生成产物（SKILL.md / workflow / references / precheck.conf / scripts），不重复 Step 7 的填充自检，而是找 Step 7 之后仍残留的逻辑错误、占位符遗漏、门禁误配、组件库清单错漏等**低级错误**（用户原始痛点："swarm-yuan 没有测试和审查这个关键环节，错误太低级了"）。**★review 门禁（check_review）**：`check_review` 机械核验**审查留痕**——生成物目录存在 `references/review-record.md` 且非空（含 5 维审查点 + findings 表）即 fail。审查完须 `cp swarm-yuan/assets/review-record-template.md <skill>/references/review-record.md` 并填充 5 维审查点 + findings 表，作为独立审查证据产物落盘（review-record-template.md 路径：生成器侧与目标技能侧均为 `assets/`；填充产物落目标技能 `references/review-record.md`）。**审查留痕是 review 门的硬性交付物，缺则门禁 fail，不允口头"已审查"。**
 
 ## Step 11. AI 写回记忆
 

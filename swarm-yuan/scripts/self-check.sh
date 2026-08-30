@@ -571,9 +571,12 @@ check_doc_consistency() {
   echo "▶ 文档一致性检查（R13 批次3 瘦身：真值对账 + 税制断言；散文数字扫描退役——文档不再手抄数字，无手抄即无漂移）"
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local facts_conf="$base/assets/facts.conf"
+  local _have_facts=1
   if [[ -f "$facts_conf" ]]; then
     set +u; # shellcheck disable=SC1090
     source "$facts_conf"; set -u
+  else
+    _have_facts=0   # global-consistency-r2：目标技能上下文（facts.conf 不随发）——FACT_ 断言走 :-0 假默认必误报，整段跳过
   fi
 
   # 1. 框架规则文件数 == 门禁片段数（真值对账）
@@ -587,6 +590,7 @@ check_doc_consistency() {
     FAIL=1
   fi
 
+  if [[ "$_have_facts" -eq 1 ]]; then
   # 2. FACT_GATES_TOTAL vs check_* 函数真值
   local actual_gates
   actual_gates=$(grep -hE "^check_[a-z_0-9]+\(\)" "$base/assets/gates-strict.sh" "$base/assets/gates-warn.sh" "$base/assets/gates-advisory.sh" "$base/assets/precheck.sh" 2>/dev/null | wc -l | tr -d ' ')
@@ -673,6 +677,28 @@ check_doc_consistency() {
     FAIL=1
   fi
 
+  # 3b. FACT_FRAMEWORKS 等值断言（global-consistency-r2：此前仅 golden-vector 行数间接断言，facts 漂移无直接执法）
+  if [[ "${FACT_FRAMEWORKS:-0}" == "$rule_cnt" ]]; then
+    echo "  ✓ FACT_FRAMEWORKS($rule_cnt) == 规则库真值"
+  else
+    warn "FACT_FRAMEWORKS(${FACT_FRAMEWORKS:-?}) != 规则库真值($rule_cnt)——更新 facts.conf"
+    FAIL=1
+  fi
+
+  # 3c. FACT_SPEC_SECTIONS 等值断言（global-consistency-r2：该 key 此前零消费者——装饰性死配置判例同型，补真实消费路径）
+  local _spec_secs
+  _spec_secs=$(grep -cE '^## [0-9]+\. ' "$base/assets/spec-template.md" 2>/dev/null)
+  _spec_secs="${_spec_secs:-0}"
+  if [[ "${FACT_SPEC_SECTIONS:-0}" == "$_spec_secs" ]]; then
+    echo "  ✓ FACT_SPEC_SECTIONS($_spec_secs) == spec-template.md 整数节"
+  else
+    warn "FACT_SPEC_SECTIONS(${FACT_SPEC_SECTIONS:-?}) != spec-template.md 整数节($_spec_secs)——更新 facts.conf"
+    FAIL=1
+  fi
+  else
+    echo "  ℹ 非生成器仓（无 assets/facts.conf）——#2/#2b/#2c/#2d/#3 FACT_ 真值断言跳过（防 :-0 假默认误报）；#1 结构对账与 #4 税制断言仍执行"
+  fi
+
   # 4. R13 税制断言（§6#1/#7）——口径修正：生成物"每会话固定税"（SKILL.md+hooks.json+settings+conf ≤8KB）+
   # "认知面 references 拷贝"（≤256KB）——脚本是按需调用工具不算税（Codex"正文选中才注入"同构：工具不占预读认知）。
   local uf_budget="${FACT_ARTIFACT_BYTES_BUDGET:-262144}"
@@ -686,7 +712,7 @@ check_doc_consistency() {
     case "$_dest" in
       references/*) [[ -f "$base/$_dest" ]] && uf_bytes=$((uf_bytes + $(wc -c < "$base/$_dest" 2>/dev/null | tr -d ' '))) ;;
     esac
-  done < <(awk '/^UNIVERSAL_FILES=\(/{f=1;next} f&&/^\)/{f=0} f' scripts/generate-skill.sh | grep -oE '"[^"]+\|[^"]+"' | tr -d '"')
+  done < <(awk '/^UNIVERSAL_FILES=\(/{f=1;next} f&&/^\)/{f=0} f' "$base/scripts/generate-skill.sh" | grep -oE '"[^"]+\|[^"]+"' | tr -d '"')
   echo "  ℹ UNIVERSAL_FILES 认知面体积 ≈ ${uf_bytes}B（预算 ${uf_budget}B，超标 fail）"
   if [[ "$uf_bytes" -gt "$uf_budget" ]]; then
     warn "生成物认知面（references 拷贝）${uf_bytes}B > 预算 ${uf_budget}B（R13 税制断言）——references 按需拷贝收窄或瘦身"
@@ -699,6 +725,31 @@ check_doc_consistency() {
   fi
 }
 check_doc_consistency
+
+# ===== 已删除文档族死链扫描（global-consistency-r2，warn-only）=====
+# b67af27 单一文档整合删除 docs/ 17 份后，README/正文仍残留 80+ 活指针（本文件散文扫描半径
+# 不含外层仓库，长期漏网）。本扫描守"已删除文档族"复活：允许两类合法残留——
+# ①"原 docs/…"历史归档标注；② docs/research/（真实存在）；③ file:line 式历史证据引文（docs/XX.md:215）。
+# 其余命中即 warn；连续绿后可翻 FAIL（对齐 MEASURE 渐进式模式）。
+check_dead_doc_links() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local _hits=0 _hit
+  while IFS= read -r _hit; do
+    [[ -z "$_hit" ]] && continue
+    warn "已删除文档引用（改指 swarm-yuan/README.md §6.x 或标注'原 docs/…'）：${_hit}"
+    _hits=1
+  done < <(grep -rnE '(docs/(DESIGN|paradigm-|USAGE|PROMO|FIVE_DIMENSIONS|runtime-update|upstream-baseline|2026-07|q2-heavy)|swarm-yuan/docs/)' \
+            "$base/SKILL.md" "$base/README.md" "$base"/references/*.md "$base"/scripts/*.sh 2>/dev/null \
+            | grep -v 'docs/research/' \
+            | grep -vE '原 ?\`?(swarm-yuan/)?docs/' \
+            | grep -vE 'docs/[A-Za-z0-9_.-]+\.md:[0-9]+' \
+            | grep -vE '（现 §|整合删除' \
+            | grep -v 'grep -rnE' || true)
+  if [[ "$_hits" -eq 0 ]]; then
+    echo "  ✓ 已删除 docs/ 文档族零活引用（历史归档标注/file:line 证据引文除外）"
+  fi
+}
+check_dead_doc_links
 
 # ===== 自举门禁三档断言（G4）=====
 # 对账 ci/self-precheck.conf 存在 + SPEC_FILE 显式配置（impact 门 --all-full fail 面）
@@ -848,11 +899,11 @@ check_golden_vector() {
   # golden-vector.txt 行数 = FACT_FRAMEWORKS 行 FIXTURE + 1 行 FIXTURES_TOTAL
   local golden_lines exp_lines
   golden_lines=$(wc -l < "$golden" | tr -d ' ')
-  exp_lines=$(( ${FACT_FRAMEWORKS:-74} + 1 ))
+  exp_lines=$(( ${FACT_FRAMEWORKS:-79} + 1 ))
   if [[ "$golden_lines" == "$exp_lines" ]]; then
-    echo "  ✓ golden-vector.txt ${golden_lines} 行（${FACT_FRAMEWORKS:-74} fixture + 1 尾行）与 facts.conf 一致"
+    echo "  ✓ golden-vector.txt ${golden_lines} 行（${FACT_FRAMEWORKS:-79} fixture + 1 尾行）与 facts.conf 一致"
   else
-    warn "golden-vector.txt ${golden_lines} 行 ≠ 期望 ${exp_lines} 行（FACT_FRAMEWORKS=${FACT_FRAMEWORKS:-74} + 1）--新增框架后需重跑 run-verifier.sh rebuild-golden 重建基线"
+    warn "golden-vector.txt ${golden_lines} 行 ≠ 期望 ${exp_lines} 行（FACT_FRAMEWORKS=${FACT_FRAMEWORKS:-79} + 1）--新增框架后需重跑 run-verifier.sh rebuild-golden 重建基线"
     FAIL=1
   fi
 }
@@ -882,7 +933,7 @@ check_framework_fixture_pairing() {
     fi
   done
   if [[ -n "$_missing" ]]; then
-    warn "框架缺 fixture 配对：${_missing}（S12 后全 74 框架强制双态覆盖）"
+    warn "框架缺 fixture 配对：${_missing}（S12 后全 79 框架强制双态覆盖）"
     FAIL=1
   elif [[ "$_rules" -ne "$_fx" ]]; then
     warn "框架规则集数 ${_rules} ≠ fixture 目录数 ${_fx}（S12 配对断言）"
@@ -965,7 +1016,7 @@ check_complexity_budget() {
   _v_comp=$(_count_conf_vars "$base" "precheck.compliance.conf")
   _vars_true=$((_v_core + _v_arch + _v_comp))
   # 门禁数预算
-  local _gates_budget="${FACT_GATES_BUDGET:-54}"
+  local _gates_budget="${FACT_GATES_BUDGET:-55}"
   if [[ "$_gates_true" -gt "$_gates_budget" ]]; then
     warn "门禁数 ${_gates_true} > 预算 ${_gates_budget}（决策 26）--超预算须等额删除旧门禁，或申请预算上调（README.md §6.3 决策史 决策 26 修订）"
     FAIL=1
@@ -1121,7 +1172,7 @@ check_universal_files_count() {
     source "$facts"; set -u
   fi
   echo "▶ UNIVERSAL_FILES 计数断言（G11，C1 修复）"
-  local _declared="${FACT_UNIVERSAL_FILES:-39}"
+  local _declared="${FACT_UNIVERSAL_FILES:-61}"
   local _true
   _true=$(sed -n '/^UNIVERSAL_FILES=(/,/^)/p' "$gen" | grep -cE '"[^"]+\|' || echo 0)
   if [[ "$_true" -ne "$_declared" ]]; then
@@ -1134,7 +1185,7 @@ check_universal_files_count() {
   # 曾长期漂移（声明 21，真值 20）。机械计数 UNIVERSAL_FILES 中第三段为 lite 的条目。
   # audit-2026-08-25：计数模式去行尾锚——带尾注释的 lite 条目（gate-plan/audit-closure/ontology-verify/objects.md）
   # 曾被 `\|lite"$` 漏数 4 条（读数 30 ≠ 真值 34，断言假绿）。模式与 generate-skill.sh 解析语义对齐。
-  local _core_declared="${FACT_UNIVERSAL_FILES_CORE:-20}"
+  local _core_declared="${FACT_UNIVERSAL_FILES_CORE:-37}"
   local _core_true
   _core_true=$(sed -n '/^UNIVERSAL_FILES=(/,/^)/p' "$gen" | grep -cE '\|lite"' || echo 0)
   if [[ "$_core_true" -ne "$_core_declared" ]]; then
@@ -1268,7 +1319,7 @@ check_version_oracle_single_source
 #   - references/frontend-design-methodology.md 必须存在且非空（absorb 载体 ① references 文档）
 #   - SKILL.md 方法论引用表须含 impeccable（absorb 载体 ② SKILL.md 叙事）
 #   - facts.conf FACT_RUNTIMES_METHOD=5 / FACT_RUNTIMES=12（口径同步硬约束）
-# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=54（决策 27 第 4 条：G<N> 是合规扩展点）。
+# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=55（决策 27 第 4 条：G<N> 是合规扩展点）。
 # 风格：对齐 G10 warn-only——文件缺失才 fail，叙事/口径漂移只 warn。
 check_frontend_design_methodology() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
@@ -1331,7 +1382,7 @@ check_frontend_design_methodology
 #   - references/context-engineering-layering.md 必须存在且非空（absorb 载体 ① references 文档）
 #   - SKILL.md 须含 context-engineering-layering 引用（absorb 载体 ② SKILL.md 叙事）
 #   - facts.conf FACT_REFERENCES 同步（口径同步硬约束，当前=33）
-# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=54（决策 27 第 4 条：G<N> 是合规扩展点）。
+# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=55（决策 27 第 4 条：G<N> 是合规扩展点）。
 # 风格：对齐 G13 warn-only——文件缺失才 fail，叙事/口径漂移只 warn。
 # 注：本文为"非运行时纯方法论"吸收（不进 FACT_RUNTIMES=12 / FACT_RUNTIMES_METHOD=5），
 #    只 +1 FACT_REFERENCES——与 impeccable（运行时+方法论双栖，进 12/5）区分。
@@ -1394,7 +1445,7 @@ check_context_engineering_layering
 #   - references/codex-security-methodology.md 必须存在且非空（absorb 载体 ① references 文档）
 #   - SKILL.md CLI 接线表须含 codex-security（absorb 载体 ② SKILL.md 叙事）
 #   - facts.conf FACT_RUNTIMES=13 / FACT_RUNTIMES_CLI=4（口径同步硬约束）
-# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=54（决策 27 第 4 条：G<N> 是合规扩展点）。
+# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=55（决策 27 第 4 条：G<N> 是合规扩展点）。
 # 风格：对齐 G13/G14 warn-only——文件缺失才 fail，叙事/口径漂移只 warn。
 check_codex_security_cli_wiring() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
@@ -1458,7 +1509,7 @@ check_codex_security_cli_wiring
 #   - references/exploration-guide.md §11g 含"下游影响域"段（填充指引载体，warn-only）
 #   - assets/precheck.arch.conf 含 STABLE_PROPAGATE / STABLE_PROPAGATE_HOPS（开关载体）
 #   - facts.conf 含 FACT_STABLE_PROPAGATE / FACT_STABLE_PROPAGATE_HOPS（口径同步）
-# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=54（决策 27 第 4 条：G<N> 是合规扩展点）。
+# 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=55（决策 27 第 4 条：G<N> 是合规扩展点）。
 # 风格：对齐 G13/G14/G15 warn-only——开关缺失才 fail，叙事/口径漂移只 warn。
 # 目标技能（生成产物）不强制此断言——下游影响域是 swarm-yuan 自身的探查方法论吸收，
 # 目标技能的 reference-manual.md §5 是否含 stable-propagate 标记由 AI 探查时按需填（不 fail）。
@@ -1669,7 +1720,7 @@ check_framework_globs_reconciliation
 # 与 swarm-yuan 的框架门禁标记区块（轻量可逆效应）、conf 变量（声明式协效应的缺失）、
 # profile 分层（档位过滤 vs 增量 patch）有清晰对照。作为方法论引用层吸收（非运行时，
 # 与 context-engineering-layering/frontend-design-methodology 同档）。
-# G17 断言守 absorb 三载体一致性（warn-only，对齐 G13-G16），不计入 FACT_GATES_TOTAL=54。
+# G17 断言守 absorb 三载体一致性（warn-only，对齐 G13-G16），不计入 FACT_GATES_TOTAL=55。
 check_cordis_composability_wiring() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local facts="$base/assets/facts.conf"

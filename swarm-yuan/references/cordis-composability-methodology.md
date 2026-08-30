@@ -4,8 +4,8 @@
 
 > 来源：[DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) + [Cordis](https://github.com/cordiverse/cordis)，论文 [_A Programming Paradigm for Spatiotemporal Composability_](https://github.com/cordiverse/paper)（2026-08-13 草稿，cordiverse 组织）。
 > 纪律：只引用方法论模式与设计视角，不调任何上游 CLI / 运行时引擎；不复制源码（上游仓库可按需 `git clone` 到 `swarm-yuan/research/cordis/` 供 AI 阅读，本地 gitignored，不入 git）。
-> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 54；守决策 26：复杂度预算不增。
-> 适用场景：目标 skill 的**扩展机制设计**（框架门禁注入/移除、conf 变量依赖管理、profile 升降档、hooks 注册/清理）时，AI 引用本文方法论决定**组件变更的副作用是否可控、依赖是否可追踪**。也用于 swarm-yuan 仓库自身的 `--inject-frameworks` / `--upgrade` / conf 渲染等扩展点设计（本仓库的框架门禁标记区块是一套"轻量时空可组合性"的元范例）。
+> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；守决策 26：复杂度预算不增。
+> 适用场景：目标技能 的**扩展机制设计**（框架门禁注入/移除、conf 变量依赖管理、profile 升降档、hooks 注册/清理）时，AI 引用本文方法论决定**组件变更的副作用是否可控、依赖是否可追踪**。也用于 swarm-yuan 仓库自身的 `--inject-frameworks` / `--upgrade` / conf 渲染等扩展点设计（本仓库的框架门禁标记区块是一套"轻量时空可组合性"的元范例）。
 
 ---
 
@@ -85,7 +85,7 @@ swarm-yuan 的 lite/standard/compliance 三档是**档位过滤**（UNIVERSAL_FI
 
 ## 五、AI 填充指引
 
-目标 skill 的 references/framework-knowledge.md 在 §"框架适配扩展机制"段引用本文：
+目标技能 的 references/framework-knowledge.md 在 §"框架适配扩展机制"段引用本文：
 - 注入框架门禁时说明"标记区块是可逆效应的轻量实现——重跑 inject 会先清空再重建"
 - 设计 conf 时建议声明变量依赖关系（至少在注释里标 `# DEPS: --sensitive,--security`）
 - profile 升降档时说明"升档是叠加（lite→standard 补齐文件），不是替换"

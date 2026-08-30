@@ -45,7 +45,7 @@ _collect_summary() {
   local spec_md="${SKILL_DIR}/references/spec.md"
   if [[ -f "$skill_md" ]]; then
     # 取 SKILL.md 的前 20 行（含项目名 + 核心约束）
-    summary+="## 项目技能摘要（$(basename "$SKILL_DIR")）"$'\n\n'
+    summary+="## 目标技能摘要（$(basename "$SKILL_DIR")）"$'\n\n'
     summary+=$(head -20 "$skill_md" 2>/dev/null)
     summary+=$'\n\n'
   fi

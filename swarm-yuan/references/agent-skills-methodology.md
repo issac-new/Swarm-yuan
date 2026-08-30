@@ -4,8 +4,8 @@
 
 > 来源：[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)（Addy Osmani，Google 工程总监，83.6K star，MIT，HEAD df1edb2 / plugin v0.6.7，2026-08-14 源码实测）。24 技能 + 8 斜杠命令 + 4 专家角色，内容主体为纯 Markdown。
 > 纪律：只引用方法论模式与一手措辞，不调上游 CLI（其发布渠道是 Claude Code 插件市场 / `npx skills add`，与 swarm-yuan 安装目标重叠但机制独立）；不复制技能全文（上游可浅克隆到 `swarm-yuan/research/` 供 AI 阅读，gitignored 不入 git）。
-> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 54；非运行时纯方法论吸收，不进 13/5 运行时计数。
-> 适用场景：目标 skill 的 **SKILL.md meta 段写作**（反借口表/假设前置/描述纪律）、**bug 修复流程**（Prove-It 五步）、**自治执行暂停**（三类硬停）、**角色组合**（Composition 协议）。填充规范落点见 `template-spec.md` §1.2。
+> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；非运行时纯方法论吸收，不进 13/5 运行时计数。
+> 适用场景：目标技能 的 **SKILL.md meta 段写作**（反借口表/假设前置/描述纪律）、**bug 修复流程**（Prove-It 五步）、**自治执行暂停**（三类硬停）、**角色组合**（Composition 协议）。填充规范落点见 `template-spec.md` §1.2。
 
 ---
 

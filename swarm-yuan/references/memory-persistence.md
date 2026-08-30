@@ -153,7 +153,7 @@ claude-mem 支持的查询维度：
 
 ## 知识溯源三级标记（Honest-edge Provenance）
 
-> 理念来源：graphify v0.9.x（`research/graphify/ARCHITECTURE.md:43-56`）。graphify 对每条图边标 `EXTRACTED`/`INFERRED`/`AMBIGUOUS`，让用户始终知道什么是读出来的、什么是猜的。swarm-yuan 已在 `references/code-graph-tools.md:185` 引用 graphify 的 `GRAPH_REPORT.md` 三标输出，本节把它吸收进自身决策/记忆层。统一语义同时兼容 ECC instinct 的 0.0-1.0 置信度（见下文 §Memory Distillation 的 instinct 置信度）。
+> 理念来源：graphify v0.9.x（上游仓 `research/graphify/ARCHITECTURE.md:43-56`（克隆于生成器仓 swarm-yuan/research/，不入生成物））。graphify 对每条图边标 `EXTRACTED`/`INFERRED`/`AMBIGUOUS`，让用户始终知道什么是读出来的、什么是猜的。swarm-yuan 已在 `references/code-graph-tools.md:185` 引用 graphify 的 `GRAPH_REPORT.md` 三标输出，本节把它吸收进自身决策/记忆层。统一语义同时兼容 ECC instinct 的 0.0-1.0 置信度（见下文 §Memory Distillation 的 instinct 置信度）。
 
 **核心问题**：AI 写回的记忆/断言/决策若不分"读出来的"和"推断的"，后续会话会把推断当事实用，累积成幻觉。溯源三级标记让每条知识的**来源确定性**显式可见。
 
