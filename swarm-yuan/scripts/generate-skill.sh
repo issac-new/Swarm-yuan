@@ -1885,17 +1885,52 @@ fi
 # WP-P5: SKILL.md「按需读取」索引表自动生成（依据实际拷入的 UNIVERSAL_FILES 分级清单）
 # 仅 create 分支执行（resume 分支走 else 跳过，不重复追加）；表按 UNIVERSAL_FILES 数组顺序输出。
 _idx_file="$SKILL_DIR/.universal-files-index.md"
+# 用途描述：列头承诺"用途"，原实现填的是内部类目码（ref/onto/gen…）=信息断环。
+# 知名文件给精确描述，其余按类目给通用描述——读者不看源码也能知道每个文件干什么。
+_idx_desc() {  # $1=path $2=cat → 用途短语（≤10 字，防 8KB 预算爆）
+  case "$(basename "$1")" in
+    precheck.sh) echo "门禁执行入口";;
+    gates-strict.sh) echo "strict 门禁";;
+    gates-warn.sh) echo "warn 门禁";;
+    gates-advisory.sh) echo "advisory 门禁";;
+    state-machine.sh) echo "六阶段守卫";;
+    fail-gate-hook.sh) echo "spec-first 拦截";;
+    integrity-guard.sh) echo "完整性防护";;
+    failure-detector.sh) echo "失败检测";;
+    memory-writeback.sh) echo "记忆写回";;
+    trace-log.sh) echo "调用/决策留痕";;
+    project-fingerprint.sh) echo "指纹感知入口";;
+    generate-skill.sh) echo "生成器垫片";;
+    cost-report.sh) echo "成本报告";;
+    spec-template.md) echo "spec 模板 §1-24";;
+    plan-template.md) echo "plan 模板";;
+    review-record-template.md) echo "审查留痕模板";;
+    reference-manual.md) echo "项目地图/零件目录";;
+    task-type-gates.conf) echo "任务→门禁映射";;
+    profile-thresholds.conf) echo "档位阈值";;
+    ontology/objects.md|ontology/links.md|ontology/actions.md) echo "本体事实源";;
+    *) case "$2" in
+         ref) echo "方法论 reference";;
+         onto) echo "本体事实源";;
+         rules) echo "三值规则数据";;
+         gen) echo "生成器工具";;
+         hook) echo "宿主拦截脚本";;
+         assets) echo "模板/配置资产";;
+         *) echo "$2";;
+       esac;;
+  esac
+}
 {
   echo "## 按需读取引用索引（自动生成，勿手改——由 generate-skill.sh 依据 profile 档生成）"
   echo ""
-  echo "| 文件 | 用途 | profile 档 |"
-  echo "|------|------|-----------|"
+  echo "| 文件 | 用途 |"
+  echo "|------|------|"
   for entry in "${UNIVERSAL_FILES[@]}"; do
     _path=${entry%%|*}; _rest=${entry#*|}; _cat=${_rest%%|*}; _tier=${_rest#*|}
     [[ "$_tier" == "$_rest" ]] && _tier="standard"
     # 按 profile 档过滤（档序 lite<standard<compliance，已由拷贝逻辑保证存在性，这里只列已拷入的）
     [[ -f "$SKILL_DIR/$_path" ]] || continue
-    printf '| %s | %s | %s |\n' "$_path" "$_cat" "$_tier"
+    printf '| %s | %s |\n' "$_path" "$(_idx_desc "$_path" "$_cat")"
   done
 } > "$_idx_file"
 [[ -f "$SKILL_DIR/SKILL.md" ]] && cat "$_idx_file" >> "$SKILL_DIR/SKILL.md" && rm -f "$_idx_file"
