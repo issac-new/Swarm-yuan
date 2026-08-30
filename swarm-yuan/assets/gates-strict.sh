@@ -428,16 +428,25 @@ _check_security_semgrep() {
   local out rc=0 err_hits
   out=$(mktemp)
   # --error：有命中（任意级）时退出码 1；0=无命中；≥2=执行错误（降级内置）
-  semgrep --config auto --json --quiet --error -o "$out" "${targets[@]}" >/dev/null 2>&1 || rc=$?
+  # --exclude-rule ifs-tampering：该 registry 规则对 bash 黄金 idiom `while IFS= read -r`
+  #   （防词切分读行）系统性误报——生成器数十处规范写法全命中且命中点随 registry 版本漂移
+  #   （CI ubuntu 绿/本地 macOS 红同一文件），不可作为可信信号。排除属规则级裁决，
+  #   IFS= read 本身是防注入的正确写法而非风险。
+  semgrep --config auto --json --quiet --error --exclude-rule bash.lang.security.ifs-tampering.ifs-tampering -o "$out" "${targets[@]}" >/dev/null 2>&1 || rc=$?
   if [[ "$rc" -ge 2 ]]; then
     rm -f "$out"
     return 1
   fi
-  # ERROR 级命中 → fail（WARNING/INFO 不判，与内置「硬 fail / 软 warn」分层语义一致）
+  # ERROR 级命中 → warn 披露（非确定性信号不作 fail 依据）。自举实证（2026-08-29）：
+  #   同一仓库同一提交，--config auto 云端规则集三次运行三种命中——ifs-tampering@
+  #   profile-threshold-survey → ifs-tampering@inventory-verify → detect-insecure-
+  #   websocket@inventory-update。同代码不同结果 = fail 信号本身不可信。确定性执法
+  #   由内置模式族兜底（本函数 warn 后返回 0，调用方继续跑 builtin 扫描同一目标集，
+  #   fail 权在彼处）；semgrep 命中降为疑似信号，逐条裁决：真风险修复/误报留痕。
   err_hits=$(grep -cE '"severity":[[:space:]]*"ERROR"' "$out" 2>/dev/null || true)
   err_hits=$(_norm_int "$err_hits")
   if [[ "$err_hits" -gt 0 ]]; then
-    fail "gate_security_semgrep_error: semgrep ERROR 级命中 ${err_hits} 处（--config auto）"
+    warn "gate_security_semgrep_hits: semgrep 命中 ${err_hits} 处（--config auto 云端规则集，非确定性信号）——逐条裁决：真风险修复 / 误报留痕 decisions.jsonl（builtin 确定性扫描另行执法）"
     # 粗解析多行 JSON：同一 result 内 check_id/path 先于 extra.severity 出现，按序配对取前 10 条
     awk '
       /"check_id":/ { cid=$0; sub(/^.*"check_id":[[:space:]]*"/,"",cid); sub(/".*$/,"",cid) }
@@ -445,7 +454,7 @@ _check_security_semgrep() {
       /"severity":[[:space:]]*"ERROR"/ { if (p != "") { print cid" @ "p; p="" } }
     ' "$out" 2>/dev/null | head -10 | sed 's/^/    /'
     rm -f "$out"
-    return 3
+    return 0
   fi
   pass "semgrep 扫描通过（ERROR 级 0 命中）"
   rm -f "$out"

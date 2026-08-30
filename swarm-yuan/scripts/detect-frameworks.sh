@@ -200,7 +200,7 @@ except Exception: pass
   fi
   _pkgjson_deps="${_pkgjson_deps}
 ${_deps}"
-done < <(find "$PROJ" -name package.json -not -path '*/node_modules/*' -not -path '*/.git/*' 2>/dev/null || true)
+done < <(find "$PROJ" -name package.json -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/research/*' -not -path '*/docs/*' -not -path '*/vendor/*' -not -path '*/third_party/*' -not -path '*/tests/fixtures/*' -not -path '*/tests/gate-fixtures/*' 2>/dev/null || true)
 
 # --- pom.xml: 递归扫描子模块(排除 target),同时提取 groupId 和 artifactId ---
 # 关键: pom 信号 pattern 多为 groupId(org.apache.dubbo),须提取 <groupId> 才能命中
@@ -213,14 +213,14 @@ while IFS= read -r _pom; do
   _pom_deps="${_pom_deps}
 ${_a}
 ${_g}"
-done < <(find "$PROJ" -name pom.xml -not -path '*/target/*' -not -path '*/.git/*' 2>/dev/null || true)
+done < <(find "$PROJ" -name pom.xml -not -path '*/target/*' -not -path '*/.git/*' -not -path '*/research/*' -not -path '*/docs/*' -not -path '*/vendor/*' -not -path '*/third_party/*' -not -path '*/tests/fixtures/*' -not -path '*/tests/gate-fixtures/*' 2>/dev/null || true)
 
 # --- go.mod: 只读根(Go 项目通常单 go.mod;多模块各自 go.mod 也递归) ---
 while IFS= read -r _gm; do
   _deps=$(grep -E '^[[:space:]]*[a-z]' "$_gm" 2>/dev/null | awk '{print $1}' || true)
   _gomod_deps="${_gomod_deps}
 ${_deps}"
-done < <(find "$PROJ" -name go.mod -not -path '*/.git/*' 2>/dev/null || true)
+done < <(find "$PROJ" -name go.mod -not -path '*/.git/*' -not -path '*/research/*' -not -path '*/docs/*' -not -path '*/vendor/*' -not -path '*/third_party/*' -not -path '*/tests/fixtures/*' -not -path '*/tests/gate-fixtures/*' 2>/dev/null || true)
 
 # --- requirements.txt: 递归(Python 多环境/子项目) ---
 # audit-claims-reality（A3）：\s 在 BSD sed(macOS) 是字面字母 s（requests→requet），
@@ -229,7 +229,7 @@ while IFS= read -r _rq; do
   _deps=$(grep -vE '^[[:space:]]*#|^[[:space:]]*$' "$_rq" 2>/dev/null | sed -E 's/[=<>~!].*//; s/\[.*//; s/[[:space:]]//g' || true)
   _pyreq_deps="${_pyreq_deps}
 ${_deps}"
-done < <(find "$PROJ" -name requirements.txt -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null || true)
+done < <(find "$PROJ" -name requirements.txt -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/research/*' -not -path '*/docs/*' -not -path '*/vendor/*' -not -path '*/third_party/*' -not -path '*/tests/fixtures/*' -not -path '*/tests/gate-fixtures/*' 2>/dev/null || true)
 
 # --- pyproject.toml: 递归 ---
 # 回归发现#8（2026-08-27 fastapi-tpl 回归）：现代 pyproject 依赖在 [project] dependencies
@@ -243,7 +243,7 @@ while IFS= read -r _pp; do
   _pyproject_deps="${_pyproject_deps}
 ${_deps}
 ${_arr_deps}"
-done < <(find "$PROJ" -name pyproject.toml -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null || true)
+done < <(find "$PROJ" -name pyproject.toml -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/research/*' -not -path '*/docs/*' -not -path '*/vendor/*' -not -path '*/third_party/*' -not -path '*/tests/fixtures/*' -not -path '*/tests/gate-fixtures/*' 2>/dev/null || true)
 
 # 匹配信号表,输出命中的框架 ID
 # WP-R Bug#3 ②: 强制使用 file_type 分桶匹配,消除跨语言误匹配
