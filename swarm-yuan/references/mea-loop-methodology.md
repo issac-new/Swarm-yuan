@@ -4,8 +4,8 @@
 
 > 来源：[AMAP-ML/LongHorizon-Harness](https://github.com/AMAP-ML/LongHorizon-Harness)（阿里，v0.1.5，2026-08-14 源码实测），论文 arXiv:2608.01964；中文报道《DeepSeek Harness 刚开源，阿里长程 Harness 也来了》（PaperAgent，2026-08）。
 > 纪律：只引用方法论模式与实现视角，不调上游 CLI（LHH 是 Python agent 运行时，swarm-yuan 不做运行时接线）；不复制源码（上游可浅克隆到 `swarm-yuan/research/` 供 AI 阅读，gitignored 不入 git）。
-> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 54；非运行时纯方法论吸收，不进 13/5 运行时计数（与 dsh/Codex 同口径）。
-> 适用场景：目标 skill 的**验证/收口/多轮长任务治理**设计——AI 在设计 verify 阶段准入、archive 收口、任务契约、verifier 报告协议时，引用本文决定「完成」由谁说了算、凭什么证据说了算。
+> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；非运行时纯方法论吸收，不进 13/5 运行时计数（与 dsh/Codex 同口径）。
+> 适用场景：目标技能 的**验证/收口/多轮长任务治理**设计——AI 在设计 verify 阶段准入、archive 收口、任务契约、verifier 报告协议时，引用本文决定「完成」由谁说了算、凭什么证据说了算。
 
 ---
 
@@ -105,7 +105,7 @@ Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 
 ## 六、AI 填充指引
 
-目标 skill 遇到以下场景时引用本文：
+目标技能 遇到以下场景时引用本文：
 
 - **verify/archive 阶段设计**：收口判定必须两轴（结果 pass + 证据引用非空）；只有 AI 自述没有独立证据的「完成」标 untrusted，不得作为下游依赖
 - **多轮长任务状态设计**：轮与轮之间只传结构化状态 + 证据引用，不传「我上次已经搞定了」的自然语言自述

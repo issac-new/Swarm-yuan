@@ -4,7 +4,7 @@
 #
 # 扫描文件：package.json / pom.xml / go.mod / pyproject.toml / requirements.txt
 # 匹配源：内置 SIGNALS 依赖信号表（framework|pattern|file_type）；
-#         探查信号全集（文件/注解/配置等）见 assets/framework-signals.md（gen-framework-index.sh 生成）
+#         探查信号全集（文件/注解/配置等）见生成器仓 assets/framework-signals.md（gen-framework-index.sh 生成，不入生成物）
 # 用法: detect-frameworks.sh <项目目录> [--verbose]（--verbose 命中明细走 stderr，不污染 stdout）
 #
 # 兼容 bash 3.2（不用 declare -A）

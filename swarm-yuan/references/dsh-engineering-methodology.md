@@ -4,7 +4,7 @@
 
 > 来源：[DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) @ `141eb6fe`（2026-08-19，tag `dsh-v0.1.0-rc.8`，developer preview）。调研报告：`docs/research/R12-dsh-rc8-resurvey.md`（证据到包/文件级）。
 > 与 `cordis-composability-methodology.md` 的分工：那份吸收 Cordis **框架层**（时空可组合性：可逆效应 + 响应式依赖，论文级）；本文吸收 dsh **产品层**工程机制（决策审计/状态韧性/增量感知/工程纪律，源码级）。论文无新版（2026-08-13 草稿），理念层无增量。
-> 纪律：只引用方法论模式与设计视角，不调任何上游 CLI/运行时；不复制源码（上游克隆在 `swarm-yuan/research/dsh/`，gitignored）。守决策 26/27：不新增 `check_*`，门禁总数保持 54。
+> 纪律：只引用方法论模式与设计视角，不调任何上游 CLI/运行时；不复制源码（上游克隆在 `swarm-yuan/research/dsh/`，gitignored）。守决策 26/27：不新增 `check_*`，门禁总数保持 55（决策 26.2）。
 > 适用场景：目标技能与生成器自身的 hook/门禁审计、状态机与日志韧性、自成长链（项目变化感知→清单更新）、复盘与决策治理设计。
 
 ---

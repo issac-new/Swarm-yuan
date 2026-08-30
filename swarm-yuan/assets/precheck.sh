@@ -1037,7 +1037,7 @@ case "$MODE" in
         \<*\>|'') echo "✗ PROJECT_DIR 未配置或为占位符（当前: '${PROJECT_DIR}'）" >&2 ;;
         *) echo "✗ PROJECT_DIR 不存在: $PROJECT_DIR" >&2 ;;
       esac
-      echo "  请在 precheck.conf 填写真实项目根绝对路径，或运行 bash generate-skill.sh 生成项目技能" >&2
+      echo "  请在 precheck.conf 填写真实项目根绝对路径，或运行 bash generate-skill.sh 生成目标技能" >&2
       exit 2
     }
     ;;

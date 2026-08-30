@@ -12,7 +12,7 @@
 
 ```bash
 git clone https://github.com/issac-new/Swarm-yuan.git && cd Swarm-yuan
-bash install.sh        # macOS / Linux / Git Bash（Windows 先装 Git for Windows，或用 install.bat）
+bash swarm-yuan/install.sh   # macOS / Linux / Git Bash（Windows 先装 Git for Windows，或用 swarm-yuan/install.bat）
 ```
 
-仓库布局：`swarm-yuan/` = 生成器与范式本体（技能/门禁/验证器）；`verifier/` = 独立验证器；`docs/research/` = 决策史引用的调研证据链；`research/` = 上游运行时调研克隆。
+仓库布局：`swarm-yuan/` = 生成器与范式本体（技能/门禁/验证器）；`verifier/` = 独立验证器；`docs/research/` = 决策史引用的调研证据链；`swarm-yuan/research/` = 上游运行时调研克隆（本地缓存，不入 git）。

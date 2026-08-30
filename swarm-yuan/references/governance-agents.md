@@ -230,8 +230,8 @@ verifier_focus:
 - `bash scripts/self-check.sh --check-only`（数字漂移 + 运行时检测）
 - `bash scripts/generate-skill.sh --verify-completeness <skill_dir>`（零占位符机器执法）
 - `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <形态>`（维度计数核验）
-- `bash scripts/precheck.sh --all-full`（标准 27 门禁）
-- `bash scripts/precheck.sh --compliance-suite`（合规 17，compliance 档）
+- `bash scripts/precheck.sh --all-full`（标准 28 门禁）
+- `bash scripts/precheck.sh --compliance-suite`（合规 19，compliance 档）
 - `bash verifier/v1/run-verifier.sh`（司法层独立验收）
 
 **验证命令需要不可用基础设施时**：标 `inconclusive` 并说明缺的外部依赖。
@@ -352,7 +352,7 @@ swarm-yuan 用「立法 / 执法 / 司法」三权分立隐喻，不用 pua 的�
 - **H-B**：warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）降级 advisory——误报高启发式强，不再 fail 打断主流程。
 - **H-C**：生成流程边界明确——机械脚本只做"出初稿"（骨架/conf-render/verify_completeness/mark-active/enforce_level），AI 做"审 + 判断"（特征卡填值/框架规律实例化/hooks 适用性/门禁警告采纳）。
 
-**与三权分立的关系**：本边界不是放宽"执法侧/司法侧"的职责分工，而是让"司法侧"（自检/独立验收）聚焦在"信号可信"的门禁上（strict 档 16 个），不再让"假装可机器"的门禁（启发式/误报高）打断 AI 工作流。
+**与三权分立的关系**：本边界不是放宽"执法侧/司法侧"的职责分工，而是让"司法侧"（自检/独立验收）聚焦在"信号可信"的门禁上（strict 档 17 个），不再让"假装可机器"的门禁（启发式/误报高）打断 AI 工作流。
 
 **verifier 侧调整**：verifier 跑独立验收时，严格档 16 个门禁 fail → block；warn/advisory 档只报不 block；advisory 档 5 个 AI 自觉判断由 verifier 人读判断（不跑机械脚本）。
 

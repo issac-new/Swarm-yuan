@@ -5,14 +5,14 @@
 > 来源：[pbakaus/impeccable](https://github.com/pbakaus/impeccable) v4.0.4（Apache-2.0），方法论引用层第 5 对象（与 superpowers/gstack/ECC/Ruflo 同档）。
 > 纪律：只引用模式，不调 impeccable CLI / detector 引擎 / live 浏览器模式 / 子代理 TOML；不复制 `scripts/` 源码（上游仓库 [pbakaus/impeccable](https://github.com/pbakaus/impeccable) 可按需 `git clone` 到 `swarm-yuan/research/impeccable/` 供 AI 阅读引用，本地 gitignored，不入 git）。
 > 📌 **v4.0.4 升级吸收（2026-08-14）**：① **自动判别设计任务类型**——impeccable 现自行识别 5 类（blank-slate 空白/new-page 新页/addition 增段/redesign 重设计/refinement 局部精修），每类给不同自由度。这与 swarm-yuan 的改造分类（拼装式/侵入式/破坏式）+ 任务类型路由（feature/fix/refactor…）同向：redesign 把旧貌当证据替换（非打磨），addition 继承周围页面世界只决定引入部分。② 方向由骰子决定（dice-seeded）而非品味——外部种子命名方向 + 6 个挑战者世界，防同一 brief 总落在同三字体。这两项强化了 §二 Modes 四分类（按访客成功形态）之外的「按任务自由度」维度。
-> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 54；守决策 26：复杂度预算不增。
+> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；守决策 26：复杂度预算不增。
 > 适用场景：目标项目含前端 UI 维度（§C+.0 判定）时，AI 在探查/填充/spec/审查节点引用本文方法论做前端设计质量决策。
 
 ---
 
 ## 一、定位：填补 swarm-yuan 的视觉设计空白
 
-swarm-yuan 当前 17 项特征卡 / 54 门禁 / 79 框架规则集覆盖前端的「机械维度」（组件枚举/调用链/状态管理/props/循环依赖/CSS 污染/框架代码模式），但**零视觉设计规则**——不回答「这个 UI 是否在视觉上合格」。
+swarm-yuan 当前 17 项特征卡 / 55 门禁 / 79 框架规则集覆盖前端的「机械维度」（组件枚举/调用链/状态管理/props/循环依赖/CSS 污染/框架代码模式），但**零视觉设计规则**——不回答「这个 UI 是否在视觉上合格」。
 
 impeccable 补的正是这条空白：
 
@@ -253,6 +253,6 @@ impeccable shipped 的 `finish_reviewer` 子代理做完工审查，三段式：
 - 来源：[pbakaus/impeccable](https://github.com/pbakaus/impeccable) v4.0.2
 - 许可证：Apache License 2.0
 - 上游仓库：[pbakaus/impeccable](https://github.com/pbakaus/impeccable) v4.0.2（可按需 `git clone` 到 `swarm-yuan/research/impeccable/` 供 AI 阅读源码，本地 gitignored，不入 git）
-- 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 54）
+- 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
 - 自检断言：G13 `check_frontend_design_methodology`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 接线 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_RUNTIMES=12` / `FACT_RUNTIMES_METHOD=5` / `FACT_REFERENCES=30`

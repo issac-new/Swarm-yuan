@@ -21,10 +21,10 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 
 | 任务类型 | 触发信号 | 关键节点序列 | 门禁聚焦 | profile 档 |
 |---------|---------|-------------|---------|-----------|
-| **新项目生成** | `generate-skill.sh <name> <project-dir>`（无 --upgrade） | 全 12 步（Step 1-12） | --all-full（标准 27）+ 按需 --compliance-suite | auto（默认 standard，合规信号→compliance） |
+| **新项目生成** | `generate-skill.sh <name> <project-dir>`（无 --upgrade） | 全 12 步（Step 1-12） | --all-full（标准 28）+ 按需 --compliance-suite | auto（默认 standard，合规信号→compliance） |
 | **框架规则注入** | `--inject-frameworks` 或 ACTIVE_FRAMEWORKS 变更 | Step 3（探查框架）→ Step 7 内④.5（框架深化）→ ⑦.5（门禁注入）→ Step 11（记忆写回） | 框架四要素核验（计数/规则/函数/约束）+ --framework <id> exit 0 | 继承现有 profile |
 | **升级已有技能** | `--upgrade <name> <project-dir>` | Step 4（项目形态重判）→ Step 7（填充，保留 PROJECT_SPECIFIC_FILES）→ Step 11（记忆写回）→ Step 12（最终检查） | --verify-completeness + 维度计数核验 + 框架四要素 | 继承现有 profile |
-| **合规审计** | `--compliance-suite` 或 compliance 档项目 | Step 5（特征卡含合规基线）→ Step 8（合规门禁配置）→ Step 9（四权分离拓扑）→ Step 12（Z3 fail-closed 核验） | --compliance-suite（合规 17：sbom/crypto/dengbao/pia/sast-deep/oss-eval/release-sign）+ 行业 profile | compliance |
+| **合规审计** | `--compliance-suite` 或 compliance 档项目 | Step 5（特征卡含合规基线）→ Step 8（合规门禁配置）→ Step 9（四权分离拓扑）→ Step 12（Z3 fail-closed 核验） | --compliance-suite（合规 19：sbom/crypto/dengbao/pia/sast-deep/oss-eval/release-sign）+ 行业 profile | compliance |
 | **占位符修复** | `--verify-completeness` 报占位符残留 | Step 7（填充缺失文件）→ Step 8（conf 占位符）→ Step 12（复验） | --verify-completeness --strict（列 file:line）+ self-check 数字漂移 | 继承现有 profile |
 | **门禁 fail 修复** | precheck.sh --all-full 报 fail | Step 8（conf 调整）→ Step 10（重跑门禁）→ Step 11（记忆写回） | gate-runs.jsonl fail-id 级断言 + conf-render.sh 重嗅探 | 继承现有 profile |
 | **数字漂移修复** | self-check.sh 报文档数字与 facts.conf 不符 | Step 7（文档同步）→ Step 12（self-check 复验） | self-check.sh --check-only（数字漂移检测） | N/A（生成器自身维护） |
@@ -57,10 +57,10 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 
 ## 使用方式
 
-AI 在 Step 0（开工）时读本表，按任务类型选节点序列 + 门禁聚焦，在 trace-log 公告路由结果：
+AI 在开工（⓪ 自检/任务路由）时读本表，按任务类型选节点序列 + 门禁聚焦，在 trace-log 公告路由结果：
 
 ```
-→ [Step 0] 任务类型路由：合规审计 → 节点序列 Step 3/5.5/7/8 → 门禁聚焦 --compliance-suite + Z3 fail-closed
+→ [任务路由] 合规审计 → 节点序列 Step 5/8/9/12（同路由表行）→ 门禁聚焦 --compliance-suite + Z3 fail-closed
 ```
 
 用户也可手动指定：`/swarm-yuan <项目路径> --task-type compliance-audit`（AI 按指定类型路由，不自动识别）。

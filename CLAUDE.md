@@ -7,25 +7,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **17-item feature card** （特征卡， the "legislation") and enforces them with **54 quality gates** （54 个质量门禁， the "enforcement"). It integrates 13 external runtimes by **invoking them, never reimplementing** —按接线深度分三层（深度接线/CLI 接线/方法论引用），每层有自带降级载体，未装不阻塞。运行时/门禁/变量/框架等口径数字详见 `swarm-yuan/README.md` `数字一览` 与 `swarm-yuan/assets/facts.conf`（单一事实源，self-check 机器执法做漂移检测）。
+`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **17-item feature card** （特征卡， the "legislation") and enforces them with **55 quality gates** （55 个质量门禁， the "enforcement"). It integrates 13 external runtimes by **invoking them, never reimplementing** —按接线深度分三层（深度接线/CLI 接线/方法论引用），每层有自带降级载体，未装不阻塞。运行时/门禁/变量/框架等口径数字详见 `swarm-yuan/README.md` `数字一览` 与 `swarm-yuan/assets/facts.conf`（单一事实源，self-check 机器执法做漂移检测）。
 
 There is no compiled artifact and no conventional build — the product is a set of bash scripts, markdown templates/references, and shell gate fragments that get copied into a target skill directory.
 
 ## 范式定位（WP-P10 → R13 修正）
 
-swarm-yuan 现为**两体系统**（DESIGN.md §1.3）：生成器侧 ~68K 行自举仍在（一次性消费不算税），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` `适用场景` 与 `docs/paradigm-positioning.md`。（2026-07 WP-P10 的"重量级范式，重量是设计选择"是历史定位，R13 起以上述两体系统为准。）
+swarm-yuan 现为**两体系统**（swarm-yuan/README.md §2.1）：生成器侧 ~68K 行自举仍在（一次性消费不算税），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` §2.1-§2.4 与 §6.6 A1（定位档案）。（2026-07 WP-P10 的"重量级范式，重量是设计选择"是历史定位，R13 起以上述两体系统为准。）
 
 ## Repository layout (three top-level roles)
 
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
-  - `SKILL.md` — the AI entry point / operating manual (generation pipeline 唯一口径 = `references/generation-flow.md` Step 1–12；分工视图 ⓪-⑧ 为同一流程压缩标记，"Step 0-8 / 13 节点"是已被 DESIGN.md §9 退役的旧口径).
+  - `SKILL.md` — the AI entry point / operating manual (generation pipeline 唯一口径 = `references/generation-flow.md` Step 1–12；分工视图 ⓪-⑨ 为同一流程压缩标记（⑦=Step 10.5 独立审查），"Step 0-8 / 13 节点"是已退役旧口径（见 swarm-yuan/README.md §8.1）).
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
-  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` + `gates-strict.sh` + `gates-warn.sh` + `gates-advisory.sh` (54 gates split across four files; LOC tracked by `facts.conf` `FACT_SCRIPT_LOC`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (config vars, WP-I split), `spec-template.md` (23-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (74 per-framework gate fragments).
-  - `references/` — methodology docs + `references/frameworks/<fw>.md` (74 framework rule sources).
+  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` + `gates-strict.sh` + `gates-warn.sh` + `gates-advisory.sh` (55 gates split across four files; LOC tracked by `facts.conf` `FACT_SCRIPT_LOC`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (config vars, WP-I split), `spec-template.md` (24-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (79 per-framework gate fragments).
+  - `references/` — methodology docs + `references/frameworks/<fw>.md` (79 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).
 - **`verifier/`** — a self-contained acceptance harness that re-runs the whole suite (fixture double-state + id-level assertions) with golden-vector line-count reconciliation (`run-verifier.sh golden` does content comparison; `rebuild-golden` rebuilds the baseline after intentional gate changes).
-- **`docs/`** — design docs & decision records (`paradigm-decisions.md` explains *why* gates are the way they are — read before "fixing" a gate).
+- **`swarm-yuan/README.md`** — the single documentation（五层递进 + §6.1 设计规格 / §6.3 决策史 / §6.4 上游基线 / §6.5 使用手册 / §6.6 历史档案；read §6.3 before "fixing" a gate）。`docs/research/` — 调研证据链 archive.
 
 ## Common commands
 
@@ -69,9 +69,9 @@ bash swarm-yuan/scripts/verify-framework-ruleset.sh <id> && \
 bash swarm-yuan/tests/run-framework-fixture.sh <id>
 ```
 
-## The 74-framework system (most edits touch this)
+## The 79-framework system (most edits touch this)
 
-Each of 74 supported frameworks (vue, koa, mybatis, django, gin, kafka, …) has **three coupled artifacts** that must stay consistent:
+Each of 79 supported frameworks (vue, koa, mybatis, django, gin, kafka, …) has **three coupled artifacts** that must stay consistent:
 
 1. `swarm-yuan/references/frameworks/<fw>.md` — the rules/规律 (frontmatter declares a `深度门槛:` = min number of rules).
 2. `swarm-yuan/assets/framework-gates/<fw>.sh` — the executable gate fragment defining a `_fw_<id>_check` function.
@@ -84,15 +84,15 @@ Gate fragments are **injected** into a generated skill's `precheck.sh` between t
 ## Key architecture rules
 
 ### Cross-platform bash constraint (swarm-yuan's own scripts)
-The generator's own scripts must run on **Windows/macOS/Linux**. **Bash is a hard prerequisite** (the 54 gates and generator are all bash scripts; native Windows cmd/PowerShell are not supported). On Windows, install Git for Windows (bundles Git Bash) or WSL first, then `.bat` wrappers locate Git Bash/WSL/MSYS2 to run the `.sh` scripts. In bash: **no `declare -A`** (use parallel arrays / strings), use `sed -i.bak` then `rm`, `grep -E`, `date -u`, `$(cd ... && pwd)` instead of `readlink -f`, and `${var}` quoting for C-locale safety. See `swarm-yuan/references/security-spec.md` §六.
+The generator's own scripts must run on **Windows/macOS/Linux**. **Bash is a hard prerequisite** (the 55 gates and generator are all bash scripts; native Windows cmd/PowerShell are not supported). On Windows, install Git for Windows (bundles Git Bash) or WSL first, then `.bat` wrappers locate Git Bash/WSL/MSYS2 to run the `.sh` scripts. In bash: **no `declare -A`** (use parallel arrays / strings), use `sed -i.bak` then `rm`, `grep -E`, `date -u`, `$(cd ... && pwd)` instead of `readlink -f`, and `${var}` quoting for C-locale safety. See `swarm-yuan/references/security-spec.md` §六.
 
 ### Gates are intentionally conservative
-Many gates "sleep" (match nothing) on purpose; `docs/paradigm-decisions.md` documents cases where a naive fix would **wake a sleeping gate and flood real projects with false positives**. Before changing gate matching logic, check that doc and validate against a real project sample, not just the fixture.
+Many gates "sleep" (match nothing) on purpose; `swarm-yuan/README.md` §6.3（决策史）documents cases where a naive fix would **wake a sleeping gate and flood real projects with false positives**. Before changing gate matching logic, check §6.3 and validate against a real project sample, not just the fixture.
 
 ## Testing notes
 
 - **No unit-test framework.** Correctness = fixture double-state tests + e2e + shellcheck + the `verifier/` golden-vector comparison.
 - **Single test** = `run-framework-fixture.sh <id>` (one framework) or `run-verifier.sh fixtures` (all).
 - **Fixture `precheck.conf` uses a `__REPO_ROOT__` placeholder** that the runner substitutes at runtime, so fixtures are machine-independent.
-- `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 74-fixture exit-code vector.
-- CI (`.github/workflows/ci.yml`) runs on push/PR to `main`. Core four: 74 ruleset verifies, 74 fixture double-states, self-check freshness, and shellcheck on core scripts. Extended: generator self-gate (bootstrap `--all`/`--all-full`/`--compliance-suite` on this repo), e2e, verifier-all, macOS BSD compat, real-project smoke, Windows syntax smoke (Windows full compat runs weekly/manual).
+- `verifier/runs/` holds timestamped run logs (append-only record). `verifier/v1/golden-vector.txt` is the expected 79-fixture exit-code vector.
+- CI (`.github/workflows/ci.yml`) runs on push/PR to `main`. Core four: 79 ruleset verifies, 79 fixture double-states, self-check freshness, and shellcheck on core scripts. Extended: generator self-gate (bootstrap `--all`/`--all-full`/`--compliance-suite` on this repo), e2e, verifier-all, macOS BSD compat, real-project smoke, Windows syntax smoke (Windows full compat runs weekly/manual).

@@ -61,6 +61,7 @@ UNIVERSAL_FILES=(
   "scripts/precheck.conf|assets|lite"
   "scripts/precheck.arch.conf|assets"
   "scripts/precheck.compliance.conf|assets|compliance"
+  "assets/standards-map.conf|assets|compliance"  # global-consistency-r2：WP-S1 标准映射表随发（gates-strict 默认探测 <skill>/assets/standards-map.conf，未随发则该核验在生成物中恒静默跳过）
   "scripts/snippets.md|assets"
   "scripts/mcp-tools.md|assets"
   "scripts/state-machine.sh|assets|lite"
@@ -92,6 +93,7 @@ UNIVERSAL_FILES=(
   "references/ontology/actions.md|onto|lite"
   "rules.d/bash-advance.rules|rules|lite"
   "rules.d/readonly-safe.rules|rules|lite"
+  "rules.d/framework-globs.rules|rules"  # global-consistency-r2：G21 对账锚随发（目标侧 self-check framework-globs 快照对账，未随发则恒 warn"快照失锚"）
   "scripts/self-check.sh|gen|lite"
   "scripts/detect-frameworks.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
@@ -113,6 +115,8 @@ UNIVERSAL_FILES=(
   "references/domain-knowledge.md|ref"
   "references/claude-code-capabilities.md|ref"
   "references/standards-compliance.md|ref|compliance"
+  "references/cwe-database.md|ref|compliance"  # global-consistency-r2：cwe_audit 门禁数据参照（standards-compliance.md 引用，防拷贝后死链）
+  "references/security-certification-profiles.md|ref|compliance"  # global-consistency-r2：cert_audit 门禁数据参照（F.1 #49 引用，同 cwe-database 口径）
 )
 
 # 项目特定文件（upgrade 保留不覆盖、不备份）
@@ -447,7 +451,7 @@ inject_frameworks() {
 
   # 3) 缺失 conf 变量：注入占位 + warn（不静默）——WP-I：落 arch conf（框架变量组）
   for var in ${missing_conf[@]+"${missing_conf[@]}"}; do
-    printf '%s=()  # TODO(framework-gates): 由生成流程 Step 7.5 填充\n' "${var}" >> "$arch_conf"
+    printf '%s=()  # TODO(framework-gates): 由生成流程 ⑦.5 门禁注入阶段填充\n' "${var}" >> "$arch_conf"
     echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
   done
 
@@ -1462,7 +1466,7 @@ for f in $_placeholder_refs; do
 # workflow.md — 九节点全流程（4 要素/节点：入口/参与方/门禁/产出物与调用追踪）
 
 > 填充指引：九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP。
-> 节点名对齐 references/template-spec.md §2 标准 9 节点（⑥测试验证 + ⑦独立审查独立拆分，审查留痕 review-record 落盘）；按项目实际裁剪。
+> 节点名对齐生成器仓 references/template-spec.md §2 标准 9 节点（template-spec 不随发生成物）（⑥测试验证 + ⑦独立审查独立拆分，审查留痕 review-record 落盘）；按项目实际裁剪。
 
 ## 流程总览
 
@@ -1636,7 +1640,7 @@ for f in $_placeholder_refs; do
 - [ ] 节点③设计 spec：§19 测试设计 + §21 可观测性
 - [ ] 节点④实施 plan：§20 变更影响范围
 - [ ] 节点⑤编码实现：测试与实现同分支提交
-- [ ] 节点⑥测试验证：5 维度审查通过 + check_test 门禁
+- [ ] 节点⑥测试验证：check_test 门禁通过（5 维度审查属节点⑦）
 - [ ] 节点⑦独立审查：review-record.md 留痕 + check_review 门禁
 - [ ] 节点⑧合入 main：回滚预案 + 迁移兼容
 - [ ] 节点⑨构建发布：灰度 + 告警 + runbook
@@ -1780,7 +1784,7 @@ description: 探查项目结构
 
 用 gitnexus/graphify/claude-mem 探查项目，更新特征卡。
 
-探查方法论与降级链：`references/exploration-guide.md`（§C+.0 形态判定 → §C+.0.5 框架激活 → §C+.0.6 四层架构枚举 → §C+.1 全量穷举）。
+探查方法论与降级链：生成器仓 `references/exploration-guide.md`（不随发，回生成器仓读；§C+.0 形态判定 → §C+.0.5 框架激活 → §C+.0.6 四层架构枚举 → §C+.1 全量穷举）；随发工具速查 `references/code-graph-tools.md`。
 CEOF
 fi  # PROFILE != lite
 
@@ -1790,10 +1794,10 @@ if [[ "$RESUME" -eq 0 || ! -f "$SKILL_DIR/SKILL.md" ]]; then
 if [[ "$PROFILE" == "lite" ]]; then
   _nav_design="改造分类与拼装原则内嵌于下方填充指引与 reference-manual（lite 精简档）；安全规范依据 security-spec"
   _nav_arch="项目认知=下方摘要表；六段式精简为 meta/reference/check/scripts（lite）"
-  _nav_flow="执勤=precheck --all（core 门禁序列）+ state-machine 阶段守卫；九节点详解按生成器 references/generation-flow.md 执勤（lite 不含 workflow.md 模板）"
+  _nav_flow="执勤=precheck --all（core 门禁序列）+ state-machine 阶段守卫（六阶段↔九节点对照见 scripts/state-machine.sh 头注）；lite 不含 workflow.md，九节点详解不随发"
 else
   _nav_design="改造分类+拼装原则+安全规范→references/dev-guide.md；左移 spec §19-21→assets/spec-template.md；决策纪律（Mechanical/Taste/UserChallenge）→decisions.jsonl"
-  _nav_arch="项目认知=下方摘要表；六段式结构+框架规律→references/framework-knowledge.md（AI 按 ACTIVE_FRAMEWORKS 实例化）"
+  _nav_arch="项目认知=下方摘要表；六段式结构+框架规律→references/framework-knowledge.md（按 ACTIVE_FRAMEWORKS 生成）"
   _nav_flow="执勤九节点（①需求→…→⑨发布）→references/workflow.md；守卫链=spec-first hook（无 spec 写码即拦）→状态机阶段守卫→门禁序列→拦截落 gate-deny.jsonl"
 fi
 cat > "$SKILL_DIR/SKILL.md" <<EOF
@@ -1838,9 +1842,15 @@ cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] reference: reference-manual（特征卡 P0 六项 + 全量构件库清单）
 EOF
 fi
+# global-consistency-r2：checklist assets 行档位感知（lite 无 branch/env/data；§14-§18 仅 compliance 保留；state-machine 在 scripts/ 段）
+case "$PROFILE" in
+  lite)       _ck_assets="spec-template(§5.5-§13+§19-24) + plan + review-record + task-type-gates + profile-thresholds" ;;
+  compliance) _ck_assets="spec-template(§5.5-§18 全节) + plan + review-record + branch/env/data + snippets + mcp-tools + standards-map" ;;
+  *)          _ck_assets="spec-template(§5.5-§13+§19-24) + plan + branch/env/data" ;;
+esac
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
-- [ ] assets: spec-template(§5.5-§18) + plan + branch + env + data + state-machine
-- [ ] check: precheck.sh 门禁四族（计数真值见 assets/facts.conf；core 随 --all，arch 随 --all-full，compliance 随 --compliance-suite）
+- [ ] assets: ${_ck_assets}
+- [ ] check: precheck.sh 门禁四族（计数真值见生成器仓 facts.conf；core 随 --all，arch 随 --all-full，compliance 随 --compliance-suite）
 - [ ] scripts: precheck + state-machine + trace-log + cost-report
 - [ ] 决策记录：spec §2 决策记录段写本技能生成/选型决策到 \`.swarm-yuan/decisions.jsonl\`（≥1 条；UserChallenge 类须带 missing_context/cost_if_wrong）——\`--mark-active\` 核验项
 EOF

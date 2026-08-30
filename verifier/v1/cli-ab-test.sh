@@ -2,7 +2,7 @@
 # cli-ab-test.sh — C5 CLI 兼容断言化（A/B 沙箱逐字节等价，验收标准 v1 C5）
 #
 # A 版 = git HEAD 版 precheck.sh；B 版 = 工作区版 precheck.sh。
-# 对 GATE_FLAGS 全部 flag（运行时从 B 版注册表解析，当前 54 个）×
+# 对 GATE_FLAGS 全部 flag（运行时从 B 版注册表解析，当前 55 个）×
 # compliant/violating 两语料 × A/B 双版本逐用例断言：
 #   断言① 退出码 ∈ {0,1}（崩溃/段错误/用法错误等异常退出即失败）
 #   断言② A/B stdout 逐字节一致 且 退出码一致（历史 C5「131 次调用逐字节一致」的脚本化）
