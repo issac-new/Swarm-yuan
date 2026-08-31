@@ -113,15 +113,31 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **反馈回路**：SessionStart hook（lite 档 AI 主动）跑 `scripts/project-fingerprint.sh <proj> --diff` → 变化 scope → exploration-guide §C+ 局部重探查 → reference-manual 单条更新（骤降 >50% 拒写）→ 生成器 `--upgrade`（项目内容文件保留）→ 落新基线——自成长闭环。
 
-## 第五层 使用
+## 第五层 使用——一个需求的完整旅程
 
-**安装**：`bash install.sh`（自动检测 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi；`install.sh --list` 详列）。slash 命令 `/swarm-yuan <项目路径>`（`.claude/commands/swarm-yuan.md`）。
+**首次部署（一次）**：`bash install.sh` 安装生成器（自动检测 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi，详见 `install.sh --list`）→ 对 AI 说"为 /path/to/project 生成开发技能"→ AI 执行流A（见第四层，全步自动）→ 终检后 `--mark-active` 激活。
 
-**生成**：`scripts/generate-skill.sh <name> <project-dir>` 创建骨架 → 按生成流程执行 → `--mark-active` 翻 active（`--upgrade` 升级既有技能）。
+**之后每个需求**（流B，AI 与用户协作，门禁全程执勤）：
 
-**用户动作 → 闭环入口**："生成技能"=流A 起点；"开始新需求"=流B 起点；"项目变了/升级 skill"=反馈回路；"跑门禁/报了误报"=流B 执勤干预。四个入口覆盖全部日常，其余由 hook 与状态机自动驱动。
+```
+用户："开始新需求：给订单列表加导出按钮"
+  ↓ ① 需求理解    AI 复述需求+列影响面，用户确认或纠正（现在纠正我）
+  ↓ ② 探查        AI 按 reference-manual 地图定位既有组件（拼装零件）
+  ↓ ③ 设计 spec    AI 写 spec（决策记录+影响范围+测试设计）→ 用户评审批准
+  ↓ ④ 实施 plan    AI 拆 tasks（.swarm-yuan/tasks.md）
+  ↓ ⑤ 编码        AI 实现；【若跳过了 spec】fail-gate-hook 直接拒绝写源码（spec-first 强制）
+                    【若违反 rules.d 禁令】hook deny + 替代方案提示
+                    【若改动敏感路径】门禁 fail 拦下并给出修复建议
+  ↓ ⑥ 测试验证     门禁序列执行（--all/--all-full 按变更面）；全绿进下一步
+  ↓ ⑦ 独立审查     review 门禁 + review-record 落盘；发现问题回 ⑤ 修复环
+  ↓ ⑧ 合入        状态机核验 verify pass + 证据引用；断环台账无 open 项
+  ↓ ⑨ 发布        构建+发布门禁（release-sign 等）→ 完成
+任何一步被拦：提示给出原因+解除路径（补 spec/调 conf/留痕豁免），修复后重跑该步即可。
+```
 
-## 第六层 引用（按需路由，全部带"何时读我"头）
+**用户动作 → 闭环入口**（对照第四层流程图）："生成技能"=流A 起点；"开始新需求"=流B 起点（上面旅程）；"项目变了/升级 skill"=反馈回路（指纹感知→局部更新）；"跑门禁/报了误报"=执勤干预（门禁执行/调 conf 消误报+decisions.jsonl 留痕）。四个入口覆盖全部日常，其余由 hook 与状态机自动驱动。
+
+## 第六层 引用## 第六层 引用（按需路由，全部带"何时读我"头）
 
 > 本段各 reference 本身是流A ③骨架随发的产物（知识库自举）：生成器用它们生成目标技能，目标技能执勤时又按路由读它们——文档即流程产物，流程即文档消费者。
 
