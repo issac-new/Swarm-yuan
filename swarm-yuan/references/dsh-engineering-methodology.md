@@ -2,7 +2,7 @@
 
 # dsh 工程机制方法论（DeepSeek Harness 产品层吸收）
 
-> 来源：[DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) @ `141eb6fe`（2026-08-19，tag `dsh-v0.1.0-rc.8`，developer preview）。调研报告：`docs/research/R12-dsh-rc8-resurvey.md`（证据到包/文件级）。
+> 来源：[DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) @ `141eb6fe`（2026-08-19，tag `dsh-v0.1.0-rc.8`，developer preview；R16 补核至 `b150a551b` tag `dsh-v0.1.1-rc.2`，2026-09-01，见 §七）。调研报告：`docs/research/R12-dsh-rc8-resurvey.md` + `docs/research/R16-runtime-refresh.md`（证据到包/文件级）。
 > 与 `cordis-composability-methodology.md` 的分工：那份吸收 Cordis **框架层**（时空可组合性：可逆效应 + 响应式依赖，论文级）；本文吸收 dsh **产品层**工程机制（决策审计/状态韧性/增量感知/工程纪律，源码级）。论文无新版（2026-08-13 草稿），理念层无增量。
 > 纪律：只引用方法论模式与设计视角，不调任何上游 CLI/运行时；不复制源码（上游克隆在 `swarm-yuan/research/dsh/`，gitignored）。守决策 26/27：不新增 `check_*`，门禁总数保持 55（决策 26.2）。
 > 适用场景：目标技能与生成器自身的 hook/门禁审计、状态机与日志韧性、自成长链（项目变化感知→清单更新）、复盘与决策治理设计。
@@ -117,7 +117,36 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 | state.jsonl 事件溯源化 | state-machine.sh 的 state.yaml → 整快照 JSONL 追加 + revision CAS + 追加前校验器（§2.1/2.2 机械化） | 真实出现并发写损坏/竞态事故；或多 AI 并行操作同一项目状态成为常态 |
 | gate-audit 拦截率阈值告警 | `--report` 输出拦截率异常（如 7 天内 deny 率 >80% = 门禁可能过严/误伤）时 warn | gate-audit.jsonl 积累 ≥2 周真实数据后再定阈值（当前无数据无真相） |
 | hook 输出 schema 机械校验 | self-check 增断言：本仓 hook 输出的 deny JSON 的 hookEventName 与注册事件逐字一致（§1.3 机械化） | 出现一次因事件名写错导致宿主丢决策的真实事故 |
+| 二版本模式（规范形 vs 派生投影） | 报告/账本类产物：落盘存 canonical 结构，渲染视图为派生缓存，派生层坏了从 canonical 重算（§七 0.1.1 印证） | 出现一次"渲染层损坏导致账本不可信"的真实事故（当前账本本身就是 canonical，无独立渲染层） |
 
 ## 六、与上轮吸收（cordis 框架层）的关系
 
 上轮（2026-08-14）吸收可逆效应/响应式依赖，落地 `--inject-frameworks` 快照+ledger+`--rollback-frameworks` 与 precheck.patch.conf 分层 patch。本轮产品层机制与框架层同根（都是"动态组合系统的可信度工程"），但回答的问题不同：框架层回答"组件加装/拆除是否可控"，产品层回答"决策是否可审计、状态是否可恢复、感知是否可持续"。两者在 swarm-yuan 的交点：自成长链+ fail-gate 审计。
+
+## 七、0.1.1 增量补核（2026-09-01）：rc.8 → dsh-v0.1.1-rc.2
+
+> 基线 rc.8（2026-08-19）→ 0.1.1-rc.2（b150a551b，2026-08-21，207 commits；功能线非修复线，无 breaking）。调研报告 `docs/research/R16-runtime-refresh.md`。skill/compaction/context/spill/jobs/guard 包无接口演进；goal/decision 审计核心无演进。
+
+### 7.1 Authorization seam 三件套（簇 A 补充——凭据治理）
+
+新 seam `ctx.authorization`（新包 `packages/credentials/authorization`）：①**键空间按所有者划界**——`CredentialRef`（env 名）之外新增 `CredentialKey`（`<插件scope>/<id>`），凭据记录含 alternatives；②**flow 拥有写入**——插件注册 flow 声明如何获取凭据，`run()` resolve 即已提交，seam 校验提交而非存在性；③**交互随请求走而非注册表**（headless 传入 decline 交互）；每 key 同时仅一次尝试（二次拒绝 `ALREADY_IN_FLIGHT` 不合并）；`authorization/settled` 事件覆盖所有终态。"有些凭据不能配置只能获取"。
+
+📖 文档化原则：本仓 secrets 管理若引入凭据注入（当前 SECURITY.md 仅界定不注入），按此三件套划界。
+
+### 7.2 二版本模式：durable 规范形 vs 派生请求版本（簇 B 补充）
+
+统一图片管线（PR #2676）：后端只存 **provider 无关的规范化附件**（EXIF 纠向/8-bit sRGB/长边≤2048/≤4MiB/内容寻址去重），每条模型路由持有**确定性派生版本**并缓存；inline 字节与 provider file id 皆为瞬态投影；批量录取"先全部准备验证再发布"，失败无部分写入。
+
+📖 文档化原则：**历史存 canonical、传输派生瞬态投影**——通用韧性设计，与本仓"账本即规范形、报告即投影"结构同构（已登记候选，见 §五）。
+
+### 7.3 投影态 schema 校验 + 坏态整 log 重建（簇 B 升级论据）
+
+`SessionProjectionStateMap`（host 折叠态表带 `stateSchema`，restore 时校验、**坏态回退整 log 重建**）；**`persist` opt-in 取消——所有 unit 一律 checkpoint**（不再允许"不落盘"的投影）。对 §2.1/2.2 既有原则的升级论据：校验失败不修补、回放重建（本仓 trace-log/dir_cksums 同语义，对账通过）。
+
+### 7.4 合而复撤的发布纪律（簇 D 新样本）
+
+PR #2608（permission 默认值/标签）合入后在 rc.2 **整体回退**并同步测试快照——"回退优先于带病修复"，不在 release 分支修修复。与 §4.1 defensive-patterns 同簇：发布线的失败方向显式化。
+
+### 7.5 0.1.2-alpha 方向登记（截至 2026-08-31 alpha.3，1430 commits）
+
+persistence 线（alpha.1）：storage per-record 布局 + 旧格式一次性迁移 + 一对一迁移纪律 + prepared sessions + **删除 SQLite 后端（breaking，收敛到 jsonl/json 事件日志单线）**；Agent Teams（experimental/agent-team-profile）；api/*-controller + Remote 拆分（session/settings/workspace 控制器、SDK bundle）；inspector（CDP 暴露 Cordis 运行时，实验可观测性）；session-turn-outline 深历史分页。**吸收边界：等 0.1.2 出 rc 后另立一轮调研**（R12 先例：rc 档才做产品层吸收）。
