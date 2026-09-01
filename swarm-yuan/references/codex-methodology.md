@@ -140,35 +140,11 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 
 ## R16 补核（2026-09-01）：v0.149 → v0.152 四 stable
 
-> 基线 v0.148.0（2026-08-21 R4 补核）→ 最新 stable v0.152.0（2026-09-01 发布；v0.153.0-alpha.1 已出）。区间 405 commits；docs/skills.md 零 diff（技能目录/格式不变）。详见 README.md §6.4 §三 CLI 专题 R16 表。
+> 基线 v0.148.0（R4 补核）→ 最新 stable v0.152.0（2026-09-01；v0.153.0-alpha.1 已出）。区间 405 commits；docs/skills.md 零 diff（技能目录/格式不变）。详见 README §6.4 §三 3.4 R16 表。
 
-### Guardian v2 落地形态（v0.149-152）
-
-feature flag `features.guardianv2` 默认 false 迭代中（`codex-rs/config/src/config_requirements.rs:1464`）；`--approve-for-me`（别名 `--not-so-yolo`，`codex-rs/utils/cli/src/shared_options.rs:45`）背后是 fail-closed Guardian 评审（90s 超时、严格 JSON，`codex-rs/core/src/guardian/mod.rs`）。要点：**用户显式调用的 skills 受 Guardian 信任**（v0.151）；**过期风险分类在权限变化后不再授权动作**（v0.151）；自动审批评审跨 compaction 保留用户指令与有效授权（v0.152）。
-
-**对目标技能的启示**：门禁验证步骤产出结构化 PASS/FAIL 结论（本仓 gate-report 已是），可被 Guardian 引用为 trusted context——"证据态输出"与宿主审批体系天然咬合。
-
-### skills token 预算（v0.149——直接影响技能形态）
-
-新增 `[skills] max_context_tokens`（默认上下文窗口 2%、上限 10k，`codex-rs/config/src/skills_config.rs`）——**技能目录整体进入 prompt 前有预算截断**，另有实验性技能路由（recent/character-routed/shadow）。本仓生成的 SKILL.md frontmatter/描述须保持紧凑（已满足：frontmatter 三行制）；技能数量多的项目须意识到目录本身的 token 成本。
-
-### 破坏性变更（两处）
-
-1. **v0.150 untrusted 项目不再加载项目级 AGENTS.md**——本仓 install.sh 走 `~/.codex/skills` 用户级安装（`install.sh:37`），不受影响；但目标项目若依赖项目级 AGENTS.md 注入门禁提示，在 untrusted 状态下会静默失效（生成器不向项目根写 AGENTS.md，无暴露面）。
-2. **v0.152 planning 工具默认禁用**——需 `tools.update_plan.enabled = true` 显式开启。本仓目标技能不依赖宿主内置 plan 工具（spec/plan 是项目内文件，自备自足），无影响。
-
-### Interrupt hook 事件（v0.150）
-
-新增 hook 事件 `Interrupt`（命令或 MCP handler 被打断、顶层 turn 被打断时触发；hooks 事件共 11 个，`codex-rs/hooks/src/schema.rs`）。登记候选："用户打断后半成品检查"守护点——触发条件=宿主 hook 配置接线轮（与 R4 登记的 hooks 候选同批评估）。
-
-### extensions 可拦截/替换 MCP 工具结果（v0.151）
-
-插件体系从"提供工具"扩展到"改造其他来源的工具输出"——中间层治理位。观察项。
-
-### 安全加固波（v0.150）
-
-unsafe config/sed 解析 fail-closed、Seatbelt writable root 绑定加固、bubblewrap mount registry 隔离、Codex app 签名校验、resumed/fork 线程恢复原 permission profile。与 Claude Code v2.1.246-252 硬化波同向：**两个宿主 CLI 同期收紧沙箱边界**。
-
-### 会话资产化续（v0.149-152）
-
-`codex agents` 交互仪表盘（搜索/启动/重命名/停止）、`codex queue` 向会话发消息、`@` mention 引用其他任务（agent 可读/建/发消息）、任务自动命名；per-tool `output_token_limit`（v0.152）；thread/shellCommand 超时可配置 >1h（v0.152）。
+- **Guardian v2 落地形态**（v0.149-152）：flag 默认 false 迭代；`--approve-for-me`（别名 `--not-so-yolo`）fail-closed 评审（90s 超时严格 JSON）；**用户显式调用的 skills 受信任**（v0.151）；过期风险分类不授权（v0.151）；跨 compaction 保留授权（v0.152）。**门禁产出的结构化 PASS/FAIL 结论可被 Guardian 引用为 trusted context——证据态输出与宿主审批体系咬合。**
+- **skills token 预算**（v0.149，直接影响技能形态）：`[skills] max_context_tokens`（默认 2% 上下文、上限 10k）——技能目录进 prompt 前有预算截断 + 实验性路由。本仓生成技能 frontmatter 三行制紧凑已满足；多技能项目须知目录 token 成本。
+- **破坏性两处对账全过**：①v0.150 untrusted 项目不加载项目级 AGENTS.md——install.sh 走用户级 `~/.codex/skills` 无暴露面；②v0.152 planning 工具默认禁用——目标技能自备 spec/plan 文件不依赖宿主 plan 工具。
+- **Interrupt hook 事件**（v0.150；hooks 共 11 事件）：登记候选（打断后半成品守护点，与 R4 hooks 候选同批评估）；**extensions 可拦截/替换 MCP 工具结果**（v0.151，观察项）。
+- **安全加固波**（v0.150）：config/sed 解析 fail-closed、Seatbelt/bubblewrap 加固、app 签名校验——与 Claude Code v2.1.246-252 硬化波同期同向。
+- 会话资产化续（v0.149-152）：agents 仪表盘、queue、`@` mention 任务、per-tool `output_token_limit`（v0.152）、thread/shellCommand 超时 >1h 可配置。

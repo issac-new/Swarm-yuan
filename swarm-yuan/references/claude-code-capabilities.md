@@ -623,47 +623,12 @@ TaskCreate/Get/Update/List、TodoWrite 在 **Opus 4.8、Sonnet 5、Fable 5、Myt
 
 ## R16 补核（2026-09-01）：v2.1.238 → v2.1.252 增量（npm 15 版，CHANGELOG 12 条）
 
-> 基线 v2.1.237（2026-08-21 R4 补核）→ npm latest v2.1.252（2026-08-31）。纯修复版（240/241/245/250）不列。详见 README.md §6.4 §三 CLI 专题 R16 表。
+> 基线 v2.1.237（R4 补核）→ npm latest v2.1.252（2026-08-31）。纯修复版（240/241/245/250）不列。详见 README §6.4 §三 3.4 R16 表。
 
-### `--restricted` 锁定模式（v2.1.248）
-
-`claude --restricted`（或 `CLAUDE_CODE_RESTRICTED=1`）：移除执行命令/代码的内置工具与 WebFetch（除非 `--tools` 显式保留）、文件工具限工作目录内、拒绝 `bypassPermissions`、**忽略 user/project/local settings**。
-
-**对目标技能的影响（环境前置诚实化）**：本仓生成的门禁链路（precheck.sh/state-machine.sh/fail-gate-hook.sh）全部依赖 Bash——在 `--restricted` 会话中门禁不可执行，技能退化为纯方法论引用。生成的 SKILL.md 不需改动（技能本就声明 Bash 前置），但 AI 使用者须知：restricted 会话=门禁失能会话，交付断言不可作数。
-
-### PreModelSwitch / PostModelSwitch hooks（v2.1.251）
-
-模型切换前后 hook 事件，可 block/confirm/annotate——**模型切换首次成为可治理点**。`SessionStart` resume hooks 增收 session staleness 与 re-cache 成本估算。
-
-登记候选：`adaptive-gating.sh` 的模型能力分档若要硬执法（防低能力模型跑高门禁档），PreModelSwitch 是官方挂点——触发条件=出现"弱模型越档执行"真实场景。
-
-### Workflow 工具 prompt 外置瘦身（v2.1.248——skill 化样板再验证）
-
-内置 Workflow 工具描述从 ~5.7k token 降到 ~1k，脚本编写参考移入 bundled `workflow-authoring` skill 按需加载。与 v2.1.234 claude-api skill 200k→25k 同构：**上下文外置到 skill 文件**是官方反复使用的成本治理模式，本仓 references/ 按需读取索引（WP-P5）第三次方向验证。
-
-### 子代理缓存与韧性（v2.1.243/246/247/251）
-
-- agent frontmatter `experimental.cacheTtl`（"5m"/"1h"，v2.1.248）+ settings `promptCacheTtl`/`subagentPromptCacheTtl`（v2.1.243）——子代理 prompt 缓存可独立配 TTL
-- `CLAUDE_CODE_SUBAGENT_MODEL` 语义变化（v2.1.251）：改为设默认而非覆盖——agent 定义 `model:` 与 per-spawn 指定优先于它
-- 子代理撞 `maxTurns` 上限时结果标记 **partial** 并提示可 `SendMessage` 续跑（v2.1.246）——"完成"与"中途停"不再混淆
-- 子代理首调模型 404 走会话 fallback 模型链（v2.1.247）；agent teams 队友终答达达队长（v2.1.251 修复）
-
-### 沙箱与权限硬化波（v2.1.246-252）
-
-- Bash allow 规则通配符告警：`Bash(git * main)` 类规则会误匹配子命令前插入的选项（v2.1.246）——目标技能 settings 模板禁用此模式
-- symlink TOCTOU 修复：文件工具在权限检查后跟随被换的 symlink 读写越界（v2.1.251 修复）；Grep/Glob 对 symlinked 搜索路径应用 Read deny（v2.1.251）
-- 沙箱内 Bash 输出文件创建/回读加固，沙箱命令无法重定向替换（v2.1.252）
-- 服务器托管设置中弱化沙箱隔离/终止沙箱 TLS/注入凭据的项须批准（v2.1.252）；project `.claude/settings.json` 的 `env` 不再能设 `CLAUDE_CONFIG_DIR`/`TMPDIR`（v2.1.252）
-- 权限检查收紧：算术赋值（`OPTIND=1/0`）、悬空 `&&`/`||` 的畸形命令一律须批准（v2.1.246/252）
-
-### hooks 错误可见化（v2.1.246/248）
-
-hook stdout 输出非法 JSON 对象→显式报 hook error 而非当纯文本（v2.1.248）；后台会话 hook 应答无效时，`claude agents` 行点名 hook 名与 schema 错误（v2.1.246）——fail-gate-hook.sh 的输出纪律（纯文本/合法 JSON 二选一）对齐无虞。
-
-### 跨会话协作全面化 + /goal 退避（v2.1.239）
-
-Windows 补齐 `SendMessage`/`ListAgents` 跨机跨会话（三平台齐）；`/goal` 长任务 check-in 退避 30min→1h→2h 而非每 30 分钟重复——**R14 goal_id/closure 闭环的同构印证**：goal 跟踪要防"检查本身成为负载"。
-
-### CLI 子命令扩充（v2.1.251）
-
-`claude --help` 新增 `attach`/`logs`/`stop`/`respawn`/`rm`（后台会话生命周期管理）；`--resume` 提示精确到 `claude attach <id>`。
+- **`--restricted` 锁定模式**（v2.1.248）：移除执行类内置工具+WebFetch、文件工具限工作目录、拒绝 bypassPermissions、忽略 user/project/local settings。**环境前置诚实化：restricted 会话=门禁失能会话（全链依赖 Bash），交付断言不可作数**；生成技能本就声明 Bash 前置，无需改。
+- **PreModelSwitch/PostModelSwitch hooks**（v2.1.251）：模型切换可 block/confirm/annotate——**模型切换首次成为可治理点**。登记候选：adaptive-gating 分档硬执法的官方挂点（触发=弱模型越档真实场景）。
+- **Workflow 工具 prompt 外置**（v2.1.248）：工具描述 5.7k→1k token，脚本参考移入 bundled skill——上下文外置 skill 化第三次官方验证（本仓 WP-P5 同构）。
+- **子代理韧性/缓存**（v2.1.243-251）：maxTurns 撞限标记 **partial** 可 SendMessage 续跑；404 走 fallback 模型链；frontmatter `cacheTtl` + settings `promptCacheTtl`/`subagentPromptCacheTtl`；`CLAUDE_CODE_SUBAGENT_MODEL` 改默认不覆盖。
+- **沙箱/权限硬化波**（v2.1.246-252）：symlink TOCTOU 修复（权限检查后换链读写越界）；沙箱 Bash 输出文件防重定向；`Bash(git * x)` 通配符告警；畸形命令须批准；project settings `env` 禁设 `CLAUDE_CONFIG_DIR`/`TMPDIR`。
+- **hooks 错误可见化**（v2.1.246/248）：hook stdout 非法 JSON→显式 hook error；后台会话点名失败 hook 与 schema 错误——fail-gate-hook 输出纪律对齐无虞。
+- `/goal` check-in 退避 30min→1h→2h（v2.1.239，R14 goal 闭环同构印证）；CLI 子命令 `attach`/`logs`/`stop`/`respawn`/`rm`（v2.1.251）。

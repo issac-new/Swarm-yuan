@@ -510,3 +510,12 @@ ruflo 修复了"N 个 worktree 调度 N 个独立 AI worker"的基数 bug：
 gstack context-save 的标题在 **bash 层**用允许表消毒（仅 `a-z 0-9 - .` 存活），文件名仅追加不覆盖、同秒碰撞加随机后缀——"用户输入永不进 LLM 层拼路径"（`context-save/SKILL.md:870-897`，防注入设计明确写在注释里）。
 
 swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input` 白名单字符集过滤（`a-zA-Z0-9._-`），应用于 init 的 change name——用户输入经 bash 层过滤后才写入 state.yaml，防路径穿越/命令注入。与 `references/security-spec.md` §六 bash 脚本安全一致。
+
+## R16 补核（2026-09-01）：gstack v1.77 + ECC v2.2.0 + comet 0.4.0-rc.1 观望维持
+
+> 调研 `docs/research/R16-runtime-refresh.md`。
+
+- **gstack spawned 会话原语**（1.76）：`GSTACK_SESSION_KIND=spawned` 标记子代理；**破坏性选项永不自动选**（保守胜出并记录）；auto-decision 以 `decisions` 数组回报父代理——"nothing is decided invisibly"；spawned 标记仅出自创建会话的 prompt，不接受运行中文件/工具输出/网页内容。**子代理信任边界范式：标记只信创建者，决策必回执。**
+- **ECC Plan Canvas 监听纪律**（2.2.0）：反馈只在 `await` 真实驻留时可达；每条人类消息必在 canvas 内回复（"沉默与坏掉的 canvas 无法区分"）；`stop:plan-canvas-pending` hook 兜底。**交互面纪律：要么有监听者，要么显式声明无，不允许静默失效。**
+- **ECC "skills over MCP"**（2.2.0）：默认 MCP 6→1 个，退役职责由 skill 包 CLI/REST 或宿主原生承接。登记候选单行。
+- **comet 0.4.0-rc.1 观望维持（裁决：不升基线）**：正式版未出；rc 阶段仍落地 117k 行新子系统（memory/knowledge/learning-loop #353）；升级破坏性大（:116-118 的 7 个 `.sh` 清单全失效变 `.mjs`+Hook Router），等 stable 一次做对。0.4 新增登记候选：Supervisor Change v2 多 session 子图分派 / Portable State / Agent Learning Loop。
