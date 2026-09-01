@@ -1355,16 +1355,16 @@ enforce_level 随 profile 调整是"门禁内部分级随项目档变化"的维�
 **决策**：自 v2026.07.26 起确立"运行时升级整合纪律"--
 
 1. **定期对齐**：`research/` 下 11 个运行时仓库定期对齐上游最新稳定版（非 rc/beta/alpha）；升级留底按 §6.6 A10/A11 系列格式在本文档追加"运行时升级报告"。
-2. **吸收优先于新增门禁**：升级挖出的新功能概念，**优先以方法论吸收**（references 文档 / SKILL.md 叙事 / state-machine warn 分支 / trace-log 字段 / 新增 G<N> self-check 断言）落地，**不新增 `check_*` 门禁**（守决策 26 的 `FACT_GATES_BUDGET=54` 上限）。
+2. **吸收优先于新增门禁**：升级挖出的新功能概念，**优先以方法论吸收**（references 文档 / SKILL.md 叙事 / state-machine warn 分支 / trace-log 字段 / 新增 G<N> self-check 断言）落地，**不新增 `check_*` 门禁**（守决策 26 的门禁预算上限；决策 26.2 追认上调后现行值 `FACT_GATES_BUDGET=55`）。
 3. **新增门禁的最后手段**：仅当满足以下任一条件才允许新增门禁--① 等额删除旧门禁（守决策 26）；② 合规强制（如新增国标映射需新门禁族，按决策 26 修订流程申请预算上调）；③ 概念无法以方法论吸收且不机器执法会致范式失真。
-4. **self-check 断言不受门禁预算约束**：G<N> 断言（如 G10 版本 oracle 单源真值）是 `self-check.sh` 的自检逻辑，不计入 `FACT_GATES_TOTAL=54`（54 = `precheck.sh` 的 `check_*` 函数数）。新增 G<N> 断言是合规的扩展点。
+4. **self-check 断言不受门禁预算约束**：G<N> 断言（如 G10 版本 oracle 单源真值）是 `self-check.sh` 的自检逻辑，不计入 `FACT_GATES_TOTAL`（现行 55 = `precheck.sh` 的 `check_*` 函数数，决策 26.2 后）。新增 G<N> 断言是合规的扩展点。
 5. **conf 变量有余量**：`FACT_CONF_VARS_BUDGET=200` vs 当前 170，预留 30 槽位；新增 precheck.conf 变量在预算内。
 
 **理由**：
 1. **解耦上游节奏**：把"对齐上游"与"门禁膨胀"解耦--上游发版是外部节奏，门禁数是内部复杂度，后者不应被前者绑架。
 2. **方法论吸收的充分性**：多数运行时新概念是"模式指引"（如 reversibility 评级、resume-based fix loop），由 AI 引用执行即可，无需机器执法；硬门禁化是过度工程。
 3. **守决策 26 可信度**：决策 26 把"门禁数有上限"作为范式可信度的机器保障；本决策给"升级时如何不破上限"的操作纪律，两者互补。
-4. **self-check 断言是轻量扩展点**：G<N> 断言守的是 swarm-yuan 自身的健康（修辞诚实/复杂度预算/版本 oracle 单源），非项目门禁；它不受 54 预算约束，是吸收"运行时新概念催生的自检需求"的合规出口。
+4. **self-check 断言是轻量扩展点**：G<N> 断言守的是 swarm-yuan 自身的健康（修辞诚实/复杂度预算/版本 oracle 单源），非项目门禁；它不受门禁预算（现行 55）约束，是吸收"运行时新概念催生的自检需求"的合规出口。
 
 **与决策 26 的关系**：决策 26 确立"门禁数有预算上限"；本决策确立"运行时升级时如何守预算"--吸收优先、新增最后。本决策是决策 26 在升级场景的操作化。
 
@@ -4176,7 +4176,7 @@ MIT — see [LICENSE](../LICENSE)
 | GitNexus | npm 1.6.9 | v1.6.11-rc.23（GitHub 恢复活跃，全 rc） | — | 仍 license-risk 不追 |
 | impeccable | v4.1.1 | skill-v4.1.2（2026-08-26） | 1 patch | 有新 tag 但候选级（gate 协议合规一行），暂不升基线 |
 
-#### 二、吸收落地（全部文档层/候选登记，不新增 check_* 门禁，守 54 预算）
+#### 二、吸收落地（全部文档层/候选登记，不新增 check_* 门禁，守门禁预算 55）
 
 | # | 来源 | 概念 | 落地点 | 类型 |
 |---|------|------|--------|------|
@@ -4203,5 +4203,5 @@ MIT — see [LICENSE](../LICENSE)
 - [x] `bash scripts/self-check.sh --check-only` 无 drift warn（16 个 baseline_status 标记行齐全；11 synced + 1 drifted（comet 预期）+ 1 watch（claude-mem）+ 1 license-risk（GitNexus）+ 2 对账通过）
 - [x] references 八份补核段过吸收三问（①落到运行时条件/对账结论 ②追加式不替换既有段 ③六个月后由 R16/A14 引用）
 - [x] research/ 12 个本地克隆全部 checkout 到最新稳定 tag（gitignored 不入 git）；graphify 跟踪线确认=GitHub v8 分支 v0.9.53（npm 0.10.0/v1.0.0 异源旧分支不取）
-- [x] 门禁 54 不增、FACT_RUNTIMES 13/5 与 FACT_REFERENCES 41 不变（补核轮不加新载体）
+- [x] 门禁 55 不增（预算 55 守恒）、FACT_RUNTIMES 13/5 与 FACT_REFERENCES 41 不变（补核轮不加新载体）
 - [x] 本报告即 §6.6 A14；调研证据链 `docs/research/R16-runtime-refresh.md`
