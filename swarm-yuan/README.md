@@ -200,8 +200,8 @@ bash scripts/generate-skill.sh --mark-active <skill-dir>                 # 三�
 | 6.3 | 决策史（paradigm-decisions） | 每个决策的完整记录（问题/决策/理由/后果）——查"为什么这么定"。 |
 | 6.4 | 上游运行时基线（upstream-baseline） | 16 个上游运行时的许可证/版本基线/drift 状态登记表。 |
 | 6.5 | 使用手册（USAGE） | 命令级使用参考：生成/激活/升级/门禁/审计全命令行手册。 |
-| 6.6 | 历史档案 A1-A13 | 演化过程原文（定位/本体论/评审/升级报告等）。 |
-| 6.7 | 调研证据链 | `docs/research/` 16 份调研报告（R1-R15）——决策史引用的外部项目调研过程档案，未整合。 |
+| 6.6 | 历史档案 A1-A14 | 演化过程原文（定位/本体论/评审/升级报告等）。 |
+| 6.7 | 调研证据链 | `docs/research/` 17 份调研报告（R1-R16）——决策史引用的外部项目调研过程档案，未整合。 |
 
 ## 6.1 设计规格（DESIGN）
 
@@ -1560,12 +1560,13 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 ### 一、16 运行时登记表
 
 > **口径注（2026-08-21 R4）**：本表 16 行 = 供应链登记总口径（13 整合运行时 + dsh 纯方法论源 + claude-code/codex 两个核心安装目标 CLI）。SKILL.md 的"整合 13 个外部运行时"（`FACT_RUNTIMES=13`）是**接线分层口径**（深度 4 + CLI 4 + 方法论 5），两者语义不同：claude-code/codex 是 swarm-yuan 生成技能的**宿主**而非被整合对象，dsh 是方法论源而非运行时接线——三者不进 FACT_RUNTIMES 分层计数。
+> **重核口径注（2026-09-01 R16）**：本轮重核 claude-code/codex-cli/dsh 三行 + better-harness（纯方法论源，R14 起不入表，0.6.4→0.6.6 增量记入 `docs/research/R16-runtime-refresh.md`）；其余 13 行重核基线为 2026-08-21 R4（comet 仍 drifted 观望、claude-mem 仍 watch）。
 
-| 名称 | 仓库 | 许可证 | 引用基线 | 2026-08-21 最新版 | 状态 | 机器标记 |
+| 名称 | 仓库 | 许可证 | 引用基线 | 最新版（各行注明重核日期） | 状态 | 机器标记 |
 |------|------|--------|----------|--------------------|------|----------|
 | openspec | Fission-AI/OpenSpec | MIT | v1.10.0（2026-08-21 升级；`references/review-methodology.md:130`） | npm 1.10.0 | synced（2026-08-21 升级；吸收 v1.10 task plan 强制完成判据 + 诊断输出一律走 stderr 纪律） | baseline_status=synced |
-| claude-code | anthropics/claude-code | 专有（Anthropic Commercial Terms；CLI 二进制分发，源码不开） | v2.1.232（2026-08-13 调研基线；`references/claude-code-capabilities.md` 全 159 版调研） | npm @anthropic-ai/claude-code 2.1.237（2026-08-20） | synced（2026-08-21 R4 补核 v2.1.233-237 五版；吸收 Todo/Task 工具默认移除（Sonnet 5+/Opus 4.8+，`CLAUDE_CODE_ENABLE_TODO_TOOLS=1` 兜底）+ `ANTHROPIC_DEFAULT_MODEL` + `notify_when_idle` 跨会话通知 + "Concise" output style + 沙箱通配符 read-deny 防重命名绕过） | baseline_status=synced |
-| codex-cli | openai/codex | Apache-2.0 | v0.146.0（2026-08-14 调研基线；`references/codex-methodology.md` 省 token 三件套/review rubric/测试哲学执行纪律） | npm @openai/codex 0.148.0（2026-08-18 rust-v0.148.0；v0.149.0-alpha.4 2026-08-20 预告） | synced（2026-08-21 R4 补核 v0.147/v0.148 两 stable + v0.149-alpha 预告；吸收 v0.147 Agent Plugins 四类目录 + `--approve-for-me` 审批自动化 + v0.148 `/export` 会话导出 + hooks 异步命令 + MCP 工具调用 + skill-creator validation 拒绝 TODO 占位符；**破坏性**：v0.147 移除 `codex exec --full-auto` 改用 `--sandbox workspace-write`；v0.149-alpha 移除技能模型委托） | baseline_status=synced |
+| claude-code | anthropics/claude-code | 专有（Anthropic Commercial Terms；CLI 二进制分发，源码不开） | v2.1.252（2026-09-01 R16 补核；`references/claude-code-capabilities.md` 全量 159 版调研 + R4/R16 两轮补核） | npm @anthropic-ai/claude-code latest 2.1.252（2026-08-31）/ stable 通道 2.1.236（dist-tag 分裂，2026-09-01 观察） | synced（2026-09-01 R16 补核 v2.1.238-252（npm 15 版/CHANGELOG 12 条）；吸收 `--restricted` 锁定模式环境前置诚实化 + PreModelSwitch/PostModelSwitch hook（模型切换可治理点，adaptive-gating 候选挂点）+ Workflow 工具 prompt 外置 skill 化 5.7k→1k（上下文外置第三次方向验证）+ 子代理 partial 标记/缓存 TTL/404 fallback + 沙箱 symlink TOCTOU 硬化波 + hooks 错误可见化） | baseline_status=synced |
+| codex-cli | openai/codex | Apache-2.0 | v0.152.0（2026-09-01 R16 补核；`references/codex-methodology.md` 省 token 三件套/review rubric/测试哲学执行纪律 + R4/R16 两轮补核） | npm @openai/codex 0.152.0（2026-09-01 stable；v0.153.0-alpha.1 同日） | synced（2026-09-01 R16 补核 v0.149-152 四 stable（405 commits，docs/skills.md 零 diff）；吸收 Guardian 信任用户显式调用 skills（结构化 PASS/FAIL 证据态输出与宿主审批咬合）+ skills token 预算 `[skills] max_context_tokens` 2%/10k + Interrupt hook 事件（半成品守护点候选）+ extensions 可拦截 MCP 工具结果；**破坏性**：v0.150 untrusted 项目不加载项目级 AGENTS.md（本仓 install.sh 用户级安装无暴露面）、v0.152 planning 工具默认禁用（目标技能自备 spec/plan 文件无影响）） | baseline_status=synced |
 | comet | rpamis/comet | MIT | v0.3.9（`references/subagent-orchestration.md:118`） | npm 0.4.0-beta.18（2026-08-21 重核；仍 beta 通道） | drifted（观望——0.4.0-beta 已发到 beta.18 仍无正式版；等 0.4.0 正式版发布后升级引用基线） | baseline_status=drifted |
 | GitNexus | abhigyanpatwari/GitNexus | **PolyForm Noncommercial 1.0.0**（禁商用，API 返回 NOASSERTION，LICENSE 原文实测） | npm 1.6.9（引用 `context/trace`） | npm 1.6.9（2026-08-21 重核，仍停滞于 2026-07-04） | license-risk（降级为非默认，仅非商用可选） | baseline_status=license-risk |
 | gsd-core | open-gsd/gsd-core | MIT | v1.11.0（2026-08-21 升级；`references/gsd-patterns.md` + `references/decision-governance.md` §2.4 + `references/review-methodology.md:311`） | npm 1.11.0（next 分支 tag） | synced（2026-08-21 升级；吸收 v1.11 guard 必须能观测自身失败分支 + STATE.md 盖 commit 戳新鲜度检测 + validator 收敛统一 envelope） | baseline_status=synced |
@@ -1578,7 +1579,7 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 | ECC | affaan-m/ECC | MIT | v2.1.0（2026-08-14 升级；`references/subagent-orchestration.md:149`；Plan Canvas 可视化 plan review + Kimi Code harness） | v2.1.0（2026-08-21 重核，仍 2026-07-27 版） | synced（2026-08-14 升级；吸收 Plan Canvas 可视化审查） | baseline_status=synced |
 | impeccable | pbakaus/impeccable | Apache-2.0 | v4.1.1（2026-08-21 升级；`references/frontend-design-methodology.md`，方法论引用层第 5 对象；Modes/三层权威/craft-floor/59 反模式字典/finish_reviewer 完工审查模式 + v4.1 对抗性 verdict 多候选先内部比较再呈交 + 平台感知验证 + 证据坏则重取证重跑；G13 断言守引用存在性） | v4.1.1（2026-08-14 GitHub 实测，tag 名 skill-v4.1.1） | synced（2026-08-21 升级；吸收 v4.1 对抗性 verdict + 平台感知验证 + 拒绝假证据纪律） | baseline_status=synced |
 | codex-security | openai/codex-security | Apache-2.0（完全开源） | v0.1.16（2026-08-21 升级；`references/codex-security-methodology.md`，CLI 接线层第 4 对象；**AI 约束推理扫描（非传统 SAST——OpenAI 官方明确「不包含 SAST 报告」）** + source→sink 数据流 + 静态评估七元组 + 威胁模型五要素 + 攻击路径分析 + SECURITY.md 策略合并 + scan contract 三件套 + 14 bundled skills + Docker 沙箱范式；v0.1.16 Linear 深度集成 + 交互式修复闭环 + verify-fix 只读命令 + bulk-scan 每仓库成本上限；`--sast-deep` 门禁 `SAST_DEEP_TOOL=codex-security` 时显式调用，**非降级链一环（非 SAST，auto 降级链不变，两者正交可并行）**；开源 Apache-2.0，Trusted Access 非付费门槛（推荐的身份审核），API 按 token 计费；G15 断言守 CLI 接线存在性） | v0.1.16（2026-08-20 GitHub 实测） | synced（2026-08-21 升级；吸收 v0.1.12-16 Linear 深度集成 + 交互式修复闭环 + verify-fix + bulk 成本上限） | baseline_status=synced |
-| dsh | deepseek-ai/deepseek-harness | MIT | dsh-v0.1.0-rc.8（2026-08-20 R12 重调研；`references/dsh-engineering-methodology.md` 四簇吸收——决策审计/状态韧性/增量自成长/工程纪律） | dsh-v0.1.0-rc.8（2026-08-21 重核，master HEAD=141eb6f 2026-08-19 与 rc.8 对齐） | synced（2026-08-20 R12 重调研落地；rc.8 无新版） | baseline_status=synced |
+| dsh | deepseek-ai/deepseek-harness | MIT | dsh-v0.1.1-rc.2（2026-09-01 R16 补核；`references/dsh-engineering-methodology.md` 四簇吸收 + §七 0.1.1 增量） | dsh-v0.1.1-rc.2（b150a551b，2026-08-21；master 已到 0.1.2-alpha.3 2026-08-31——persistence per-record/删 SQLite/Agent Teams/Remote 拆分，等 0.1.2 rc 后另立一轮调研（R12 先例）） | synced（2026-09-01 R16 补核 rc.8→0.1.1-rc.2（207 commits，功能线非修复线）：Authorization seam 三件套（键空间按所有者划界/flow 拥有写入/交互随请求）+ 二版本模式（durable 规范形 vs 派生投影，登记候选）+ 投影态 stateSchema 校验坏态整 log 重建（对账本仓 trace-log 同语义，通过）+ #2608 合而复撤发布纪律；goal/decision 审计核心与 guard/skill/compaction 包无接口演进） | baseline_status=synced |
 
 ### 二、关键结论
 
@@ -1628,6 +1629,39 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 #### 3.3 共同信号：过程管理从 prompt 约定下沉为运行时机制
 
 两个 CLI 都在把"过程管理"（任务跟踪/审批/输出风格）从 prompt 约定下沉为运行时机制。swarm-yuan 的"特征卡立法 + 门禁执法"分层正依赖此方向——门禁从 bash 脚本 + prompt 约定逐步迁移到各 CLI 的官方 hook/审批机制，是未来 1-2 个版本最值得投入的适配线。
+
+#### 3.4 R16 补核（2026-09-01）：Claude Code v2.1.238→252 + Codex v0.149→152 + dsh/better-harness
+
+> 纯修复版不列；逐条细节在 `references/claude-code-capabilities.md` / `references/codex-methodology.md` / `references/dsh-engineering-methodology.md` R16 补核段。
+
+**Claude Code v2.1.238 → v2.1.252（npm 15 版，2026-08-14 至 08-31；npm dist-tag 分裂 latest=2.1.252 / stable=2.1.236）**
+
+| 主题 | 版本 | 内容 | 对 swarm-yuan 的影响 |
+|------|------|------|---------------------|
+| **`--restricted` 锁定模式** | v2.1.248 | 移除执行类内置工具+WebFetch、文件工具限工作目录、拒绝 bypassPermissions、忽略 user/project/local settings | **环境前置诚实化**：restricted 会话=门禁失能会话（全链依赖 Bash），交付断言不可作数；生成技能本就声明 Bash 前置，无需改 |
+| **PreModelSwitch/PostModelSwitch hooks** | v2.1.251 | 模型切换前后可 block/confirm/annotate | 模型切换首次成为可治理点——adaptive-gating.sh 分档硬执法的官方挂点（登记候选，触发=弱模型越档真实场景） |
+| **Workflow 工具 prompt 外置** | v2.1.248 | 工具描述 5.7k→1k token，脚本参考移入 bundled skill | 上下文外置 skill 化的第三次官方验证（v2.1.234 claude-api 200k→25k、本仓 WP-P5 同构） |
+| 子代理韧性/缓存 | v2.1.243/246/247/251 | maxTurns 撞限标记 **partial** 可 SendMessage 续跑；404 走 fallback 模型链；frontmatter `cacheTtl` + `promptCacheTtl`/`subagentPromptCacheTtl`；`CLAUDE_CODE_SUBAGENT_MODEL` 改默认不覆盖 | "完成"与"中途停"不再混淆——gate-report 证据态分级（partial 语义）方向验证；子代理编排 references 更新 |
+| 沙箱/权限硬化波 | v2.1.246-252 | symlink TOCTOU（权限检查后换链读写越界）修复；沙箱 Bash 输出文件防重定向；Bash 通配符 allow 规则告警；畸形命令一律须批准；project settings `env` 禁设 `CLAUDE_CONFIG_DIR`/`TMPDIR` | 目标技能 settings 模板禁用 `Bash(git * x)` 模式；与 Codex v0.150 硬化波同期同向 |
+| hooks 错误可见化 | v2.1.246/248 | hook stdout 非法 JSON → 显式 hook error；后台会话点名失败 hook 与 schema 错误 | fail-gate-hook 输出纪律（纯文本/合法 JSON）对齐无虞 |
+| `/goal` check-in 退避 | v2.1.239 | 30min→1h→2h 退避，防检查本身成为负载 | R14 goal_id/closure 闭环同构印证 |
+| CLI 子命令扩充 | v2.1.251 | `attach`/`logs`/`stop`/`respawn`/`rm` 后台会话生命周期 | 运维便利，无直接吸收 |
+
+**Codex v0.148.0 → v0.152.0（四 stable，08-20 至 09-01；v0.153.0-alpha.1 已出）**
+
+| 主题 | 版本 | 内容 | 对 swarm-yuan 的影响 |
+|------|------|------|---------------------|
+| **Guardian 落地形态** | v0.149-152 | flag 默认 false 迭代；`--approve-for-me`（别名 `--not-so-yolo`）fail-closed 评审；**用户显式调用 skills 受信任**（0.151）；过期分类不授权（0.151）；跨 compaction 保留授权（0.152） | 门禁产出的结构化 PASS/FAIL 结论可被 Guardian 引用为 trusted context——证据态输出与宿主审批体系咬合 |
+| **skills token 预算** | v0.149 | `[skills] max_context_tokens`（默认 2% 上下文、上限 10k）+ 实验性技能路由 | 技能目录进 prompt 前有预算截断——生成技能 frontmatter 须紧凑（已满足），多技能项目须知目录 token 成本 |
+| **untrusted 不加载项目 AGENTS.md** | v0.150（**破坏性**） | untrusted 项目忽略项目级 AGENTS.md | 本仓 install.sh 用户级（`~/.codex/skills`）安装无暴露面；生成器不写项目根 AGENTS.md |
+| **planning 工具默认禁用** | v0.152（**破坏性**） | 需 `tools.update_plan.enabled = true` | 目标技能自备 spec/plan 文件不依赖宿主 plan 工具，无影响 |
+| **Interrupt hook 事件** | v0.150 | 命令/MCP handler/顶层 turn 被打断时触发（11 事件之一） | "打断后半成品检查"守护点候选（与 R4 hooks 接线候选同批评估） |
+| extensions 拦截 MCP 工具结果 | v0.151 | 插件可改造其他来源的工具输出 | 中间层治理位，观察项 |
+| 安全加固波 | v0.150 | config/sed 解析 fail-closed、Seatbelt/bubblewrap 加固、app 签名校验 | 与 Claude Code 同期收紧沙箱，双宿主同向 |
+
+**dsh rc.8 → 0.1.1-rc.2 + better-harness 0.6.6**：dsh 0.1.1 是功能线（207 commits）——Authorization seam 三件套 / 二版本模式（规范形 vs 派生投影）/ 投影态 schema 校验+坏态整 log 重建 / #2608 合而复撤；master 已到 0.1.2-alpha.3（persistence per-record + 删 SQLite + Agent Teams），**等 0.1.2 rc 后另立一轮调研**。better-harness 0.6.5/0.6.6（Harness Studio 双语工作台 + Inspector 用量/上下文报告）中"缺失证据不显示为零"与本仓 missing_evidence 态对账通过，无新增落地单元。
+
+**评估**：CLI 双雄的 R16 信号是 §3.3 判断的延续与具体化——Claude Code 把"模型切换"和"restricted 降级"纳入治理面，Codex 把"审批信任"延伸到"用户显式调用的技能"。对 swarm-yuan 最实的两条：①生成的技能产出结构化证据（PASS/FAIL/证据态）正在成为宿主审批层的通用货币；②两个宿主同期收紧沙箱/权限边界，目标技能的 hooks/settings 模板须保持最保守形态。
 
 ### 四、comet 0.4 能力重核结论（P1-7，2026-07-20 实测）
 
@@ -2137,7 +2171,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 `bash scripts/self-check.sh` 末尾自动检查规则库时效（>180 天 warn，>365 天 warn 强烈建议重新核实）。
 
 
-## 6.6 历史档案（A1-A13）
+## 6.6 历史档案（A1-A14）
 
 | 编号 | 档案 | 说明 |
 |------|------|------|
@@ -2154,6 +2188,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 | A11 | 运行时升级 2026-08 | 2026-08 运行时升级差异报告。 |
 | A12 | 五维稳定单元 | 稳定单元五维字段定义。 |
 | A13 | 宣传文案 | 对外宣传口径（历史版本）。 |
+| A14 | 运行时升级 2026-09 | R16 运行时升级差异报告（claude-code/codex/dsh/better-harness）。 |
 
 ### A1. 范式定位
 
@@ -3426,8 +3461,8 @@ D4 流程过度脚本化）的边界清单。
 | impeccable | v4.0.4 | **skill-v4.1.1**（2026-08-14） | 1 minor | 升基线 + 吸收 |
 | codex-security | v0.1.11 | **v0.1.16**（2026-08-20） | 5 patch | 升基线 + 吸收 |
 | dsh | rc.8 | rc.8（master=141eb6f 2026-08-19） | 无新版 | 已同步 |
-| **claude-code** | v2.1.232（2026-08-13 调研基线） | **v2.1.237**（2026-08-20） | 5 patch | 升基线 + 吸收（R4 补核） |
-| **codex-cli** | v0.146.0（2026-08-14 调研基线；本机 0.146.0） | **v0.148.0**（2026-08-18 stable）+ v0.149.0-alpha.4 预告 | 2 stable | 升基线 + 吸收（R4 补核；**破坏性**两处） |
+| **claude-code** | v2.1.232（2026-08-13 调研基线） | **v2.1.237**（2026-08-20） | 5 patch | 升基线 + 吸收（R4 补核；2026-09-01 R16 再补核至 v2.1.252，见 §6.6 A14） |
+| **codex-cli** | v0.146.0（2026-08-14 调研基线；本机 0.146.0） | **v0.148.0**（2026-08-18 stable）+ v0.149.0-alpha.4 预告 | 2 stable | 升基线 + 吸收（R4 补核；**破坏性**两处；2026-09-01 R16 再补核至 v0.152.0，见 §6.6 A14） |
 
 **新增**：dsh（deepseek-harness）+ claude-code + codex-cli 三项入表——表从 13 扩到 16 个运行时。claude-code/codex 是核心安装目标（install.sh 检测），CLI 侧差异单列本文 §6.4 §三。
 
@@ -4108,3 +4143,39 @@ Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi——自�
 ## License
 
 MIT — see [LICENSE](../LICENSE)
+
+
+### A14. 运行时升级 2026-09（R16）
+
+> 触发：user message「更新 research 目录下运行时（包括 claude code、codex、deepseek harness 等工具的版本变化情况）到最新稳定版本，比较和上一版功能差异，然后整合吸收其功能理念，优化 swarm yuan skill 能力」
+> 数据来源：npm registry + GitHub releases + 本地克隆 git diff（2026-09-01 实测）；完整调研报告 `docs/research/R16-runtime-refresh.md`（含子代理源码级证据）
+> 范围：运行时四件套——claude-code / codex-cli / dsh（DeepSeek Harness）/ better-harness；其余 13 项登记运行时基线为 2026-08-21 A11 重核（comet 仍 drifted 观望、claude-mem 仍 watch，无变化）
+> 差异详表：见 §6.4 §三 3.4（CLI 双雄 R16 表）；references 三份 R16 补核段（claude-code-capabilities / codex-methodology / dsh-engineering-methodology §七）
+
+#### 一、版本差异速览（基线 → 最新）
+
+| 项目 | 基线 | 最新（2026-09-01 实测） | 跨度 | 动作 |
+|------|------|--------------------------|------|------|
+| **claude-code** | v2.1.232（调研基线）/ v2.1.237（R4 补核） | **v2.1.252**（npm latest，2026-08-31；stable dist-tag=2.1.236 通道分裂） | npm 15 版（CHANGELOG 12 条） | 升基线 + 吸收 |
+| **codex-cli** | v0.146.0（调研基线）/ v0.148.0（R4 补核） | **v0.152.0**（2026-09-01 stable；v0.153.0-alpha.1 同日） | 4 stable（405 commits） | 升基线 + 吸收 |
+| **dsh** | dsh-v0.1.0-rc.8（R12） | **dsh-v0.1.1-rc.2**（b150a551b；master 0.1.2-alpha.3 等 rc 再调研） | 207 commits（功能线） | 升基线 + 吸收 |
+| better-harness | 0.6.4（R14） | 0.6.6（v0.6.6 tag，2026-08-31） | 2 patch | 纯方法论源不入表；对账通过（missing≠zero），无新落地单元 |
+
+#### 二、吸收落地（全部文档层/候选登记，不新增 check_* 门禁，守 54 预算）
+
+| # | 来源 | 概念 | 落地点 | 类型 |
+|---|------|------|--------|------|
+| 1 | claude-code v2.1.248 | `--restricted` 锁定模式 → 环境前置诚实化（restricted 会话=门禁失能会话） | `references/claude-code-capabilities.md` R16 补核段 | 方法论 |
+| 2 | claude-code v2.1.251 | PreModelSwitch/PostModelSwitch hook（模型切换可治理点）+ hooks 表 2 行 | 同上 + §四 hooks 表 | 方法论 + 候选（adaptive-gating 硬执法挂点，触发=弱模型越档真实场景） |
+| 3 | claude-code v2.1.248 | Workflow 工具 prompt 外置 skill 化 5.7k→1k | 同上（上下文外置第三次方向验证） | 方法论（无实现——本仓 WP-P5 已同构） |
+| 4 | codex v0.151 | Guardian 信任用户显式调用 skills → 结构化 PASS/FAIL 证据态输出是宿主审批通用货币 | `references/codex-methodology.md` R16 补核段 | 方法论 |
+| 5 | codex v0.149/150/152 | 破坏性三处对账（untrusted AGENTS.md / planning 默认禁用 / skills token 预算 2%/10k） | 同上（逐条对账：本仓用户级安装无暴露面 / 自备 spec 无影响 / frontmatter 紧凑已满足） | 对账结论 |
+| 6 | dsh 0.1.1 | Authorization seam 三件套 + 二版本模式 + 投影态校验 + 合而复撤纪律 | `references/dsh-engineering-methodology.md` §七（+§五候选 1 条：二版本模式，触发=渲染层损坏事故） | 方法论 + 候选 |
+| 7 | better-harness 0.6.6 | "缺失证据不显示为零" | 对账通过（gate-report missing_evidence 态"不插值不算分"已同语义），无改动 | 对账结论 |
+
+#### 三、验证
+
+- [x] `bash scripts/self-check.sh --check-only` 无 drift warn（16 个 baseline_status 标记行齐全；R16 三行仍 synced）
+- [x] references 三份补核段过吸收三问（①落到运行时条件/对账结论 ②追加式不替换 R4 段 ③六个月后由 R16/A14 引用）
+- [x] research/ 本地克隆升到最新稳定 tag（codex@rust-v0.152.0 / dsh@dsh-v0.1.1-rc.2 / better-harness@v0.6.6；gitignored 不入 git）
+- [x] 本报告即 §6.6 A14；调研证据链 `docs/research/R16-runtime-refresh.md`

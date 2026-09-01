@@ -1,8 +1,8 @@
-> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.232 全
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全
 
-# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.232 全 190 版 + `claude --help` CLI 调研）
+# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研）
 
-> 本文件基于 https://github.com/anthropics/claude-code/releases **全量 159 个版本**发布说明 + `claude --help` / `claude mcp --help` / `claude agents --help` / `claude plugin --help` / `claude project --help` / `claude ultrareview --help` / `claude install --help` / `claude gateway --help` CLI 调研整理。
+> 本文件基于 https://github.com/anthropics/claude-code/releases 发布说明（初轮 2026-08-13 全量 159 版调研至 v2.1.232；R4 补核 2026-08-21 至 v2.1.237；R16 补核 2026-09-01 至 v2.1.252）+ `claude --help` / `claude mcp --help` / `claude agents --help` / `claude plugin --help` / `claude project --help` / `claude ultrareview --help` / `claude install --help` / `claude gateway --help` CLI 调研整理。npm dist-tag 分裂：`latest`=2.1.252 / `stable`=2.1.236（2026-09-01 观察）。
 > 生成目标技能时，AI 须把以下能力编织进 SKILL.md / workflow.md / reference-manual.md / hooks / commands / settings。
 
 ## 一、核心工具（Tools）
@@ -98,6 +98,8 @@
 | `DirectoryAdded` | `/add-dir` 或 SDK `register_repo_root` 注册新工作目录 | 会话中途新增工作目录时触发 | v2.1.219 |
 | `Setup` | 安装时 | 版本检查 | 早期 |
 | `ConfigChange` | 配置变更 | v2.1.140 修复符号链接误触 | v2.1.140 |
+| `PreModelSwitch` | 模型切换前 | 可 block/confirm/annotate 模型切换 | v2.1.251 |
+| `PostModelSwitch` | 模型切换后 | 切换完成通知/记录 | v2.1.251 |
 
 ### Hook 关键特性
 
@@ -618,3 +620,50 @@ TaskCreate/Get/Update/List、TodoWrite 在 **Opus 4.8、Sonnet 5、Fable 5、Myt
 ### 可运维性环境变量（v2.1.233-236）
 
 `ANTHROPIC_DEFAULT_MODEL`（新会话起始模型，`/model` 可覆盖）/ `CLAUDE_CODE_TOOL_MEMORY_LIMIT`（Linux Bash 工具 cgroup 内存上限）/ `CLAUDE_CODE_WEBFETCH_CACHE_TTL_MS`（WebFetch 缓存 TTL）/ `CLAUDE_CODE_PROJECT_DIR_NAME`（per-project transcript 短名）/ `CLAUDE_CODE_GOAL_CHECKIN_MINUTES`（goal 阻塞 check-in 间隔）。
+
+## R16 补核（2026-09-01）：v2.1.238 → v2.1.252 增量（npm 15 版，CHANGELOG 12 条）
+
+> 基线 v2.1.237（2026-08-21 R4 补核）→ npm latest v2.1.252（2026-08-31）。纯修复版（240/241/245/250）不列。详见 README.md §6.4 §三 CLI 专题 R16 表。
+
+### `--restricted` 锁定模式（v2.1.248）
+
+`claude --restricted`（或 `CLAUDE_CODE_RESTRICTED=1`）：移除执行命令/代码的内置工具与 WebFetch（除非 `--tools` 显式保留）、文件工具限工作目录内、拒绝 `bypassPermissions`、**忽略 user/project/local settings**。
+
+**对目标技能的影响（环境前置诚实化）**：本仓生成的门禁链路（precheck.sh/state-machine.sh/fail-gate-hook.sh）全部依赖 Bash——在 `--restricted` 会话中门禁不可执行，技能退化为纯方法论引用。生成的 SKILL.md 不需改动（技能本就声明 Bash 前置），但 AI 使用者须知：restricted 会话=门禁失能会话，交付断言不可作数。
+
+### PreModelSwitch / PostModelSwitch hooks（v2.1.251）
+
+模型切换前后 hook 事件，可 block/confirm/annotate——**模型切换首次成为可治理点**。`SessionStart` resume hooks 增收 session staleness 与 re-cache 成本估算。
+
+登记候选：`adaptive-gating.sh` 的模型能力分档若要硬执法（防低能力模型跑高门禁档），PreModelSwitch 是官方挂点——触发条件=出现"弱模型越档执行"真实场景。
+
+### Workflow 工具 prompt 外置瘦身（v2.1.248——skill 化样板再验证）
+
+内置 Workflow 工具描述从 ~5.7k token 降到 ~1k，脚本编写参考移入 bundled `workflow-authoring` skill 按需加载。与 v2.1.234 claude-api skill 200k→25k 同构：**上下文外置到 skill 文件**是官方反复使用的成本治理模式，本仓 references/ 按需读取索引（WP-P5）第三次方向验证。
+
+### 子代理缓存与韧性（v2.1.243/246/247/251）
+
+- agent frontmatter `experimental.cacheTtl`（"5m"/"1h"，v2.1.248）+ settings `promptCacheTtl`/`subagentPromptCacheTtl`（v2.1.243）——子代理 prompt 缓存可独立配 TTL
+- `CLAUDE_CODE_SUBAGENT_MODEL` 语义变化（v2.1.251）：改为设默认而非覆盖——agent 定义 `model:` 与 per-spawn 指定优先于它
+- 子代理撞 `maxTurns` 上限时结果标记 **partial** 并提示可 `SendMessage` 续跑（v2.1.246）——"完成"与"中途停"不再混淆
+- 子代理首调模型 404 走会话 fallback 模型链（v2.1.247）；agent teams 队友终答达达队长（v2.1.251 修复）
+
+### 沙箱与权限硬化波（v2.1.246-252）
+
+- Bash allow 规则通配符告警：`Bash(git * main)` 类规则会误匹配子命令前插入的选项（v2.1.246）——目标技能 settings 模板禁用此模式
+- symlink TOCTOU 修复：文件工具在权限检查后跟随被换的 symlink 读写越界（v2.1.251 修复）；Grep/Glob 对 symlinked 搜索路径应用 Read deny（v2.1.251）
+- 沙箱内 Bash 输出文件创建/回读加固，沙箱命令无法重定向替换（v2.1.252）
+- 服务器托管设置中弱化沙箱隔离/终止沙箱 TLS/注入凭据的项须批准（v2.1.252）；project `.claude/settings.json` 的 `env` 不再能设 `CLAUDE_CONFIG_DIR`/`TMPDIR`（v2.1.252）
+- 权限检查收紧：算术赋值（`OPTIND=1/0`）、悬空 `&&`/`||` 的畸形命令一律须批准（v2.1.246/252）
+
+### hooks 错误可见化（v2.1.246/248）
+
+hook stdout 输出非法 JSON 对象→显式报 hook error 而非当纯文本（v2.1.248）；后台会话 hook 应答无效时，`claude agents` 行点名 hook 名与 schema 错误（v2.1.246）——fail-gate-hook.sh 的输出纪律（纯文本/合法 JSON 二选一）对齐无虞。
+
+### 跨会话协作全面化 + /goal 退避（v2.1.239）
+
+Windows 补齐 `SendMessage`/`ListAgents` 跨机跨会话（三平台齐）；`/goal` 长任务 check-in 退避 30min→1h→2h 而非每 30 分钟重复——**R14 goal_id/closure 闭环的同构印证**：goal 跟踪要防"检查本身成为负载"。
+
+### CLI 子命令扩充（v2.1.251）
+
+`claude --help` 新增 `attach`/`logs`/`stop`/`respawn`/`rm`（后台会话生命周期管理）；`--resume` 提示精确到 `claude attach <id>`。
