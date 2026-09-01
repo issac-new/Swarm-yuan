@@ -178,6 +178,12 @@ harness（宿主 CLI：Codex/Claude Code）管 agent loop/沙箱/审批通道；
 **断点与降级**
 - **draft 状态门**（决策 13）：断点续传不用一次性否决令，用 draft/active 状态门——draft 可继续、active 须全绿。
 - **运行时全可选降级**（决策 9/10/11）：13 运行时未装自动降级且显式披露；三平台 CI 真实化；测试覆盖进 CI。
+- **离线包治理**（决策 14）：offline-cache 大件（whl/tgz/zip）迁 GitHub Release 附件、git 索引只留 UPSTREAM.md；`fetch-offline-cache.sh` 从 Release 拉取——分发体积不进 git。
+
+**质量与审查纪律**
+- **可证伪性门禁**（R10 吸收）：测试须"说出会让它失败的生产改动"，期望独立于被测代码推导 + 闭合 Mutation Check；硬止 string-presence/change-detector 两类伪造可证伪的陷阱。
+- **破窗台账**（R10 吸收）：stubs/TODOs/skipped tests/unrun verifies 跨阶段累积入台账，ship 门禁在有 open 条目时阻断——半成品不许带着出厂。
+- **resume 修复环 + 五轮熔断**（R10 吸收）：修复环 R1-3 resume 原实现者、R4-5 fresh 派更强模型、R=5 熔断由 controller 逐条 adjudicate 每个 open finding（禁止静默丢弃）。
 
 ## §3 架构
 上层原则在本层变成可见的系统结构。
