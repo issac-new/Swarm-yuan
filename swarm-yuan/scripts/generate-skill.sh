@@ -289,6 +289,14 @@ trace_tool() {  # $1=操作(create/inject/verify/upgrade) $2=说明
 }
 
 inject_frameworks() {
+
+  # 职责分解（大函数分段注释，企业级可读性）：
+  #   ① 检测框架（ACTIVE_FRAMEWORKS 提取 + 去重）
+  #   ② 注入门禁片段（framework-gates 按激活框架拼接标记区块）
+  #   ③ 更新 conf（precheck.conf/precheck.arch.conf 懒补变量）
+  #   ④ 生成 framework-knowledge.md 骨架（供 AI 实例化）
+  # 函数较长（~220 行）因四步强耦合且共享局部变量；段间以 # ===== 分割。
+
   local skill_dir="$1"
   trace_tool "inject-frameworks" "$skill_dir"
   local paradigm_dir; paradigm_dir="$(cd "$(dirname "$0")/.." && pwd)"
