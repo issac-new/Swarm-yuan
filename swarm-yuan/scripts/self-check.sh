@@ -993,7 +993,7 @@ upstream_baseline_check() {
   # 仅 warn 不置 FAIL--版本漂移是提醒而非门禁失败
   grep -E '^\| .*baseline_status=drifted \|$' "$bl" | while IFS='|' read -r _ name _rest; do
     name=$(echo "$name" | sed 's/^ *//;s/ *$//')
-    warn "上游基线 drifted：${name:-（未命名行）}--引用基线落后上游最新版，详见 README.md §6.4 上游运行时基线（重核列入 P1-7）"
+    warn "上游基线 drifted：${name:-（未命名行）}--引用基线落后上游最新版，详见 README.md §9 上游运行时基线（重核列入 P1-7）"
   done
 }
 upstream_baseline_check
@@ -1020,7 +1020,7 @@ check_complexity_budget() {
   # 门禁数预算
   local _gates_budget="${FACT_GATES_BUDGET:-55}"
   if [[ "$_gates_true" -gt "$_gates_budget" ]]; then
-    warn "门禁数 ${_gates_true} > 预算 ${_gates_budget}（决策 26）--超预算须等额删除旧门禁，或申请预算上调（README.md §6.3 决策史 决策 26 修订）"
+    warn "门禁数 ${_gates_true} > 预算 ${_gates_budget}（决策 26）--超预算须等额删除旧门禁，或申请预算上调（README.md §12 决策史 决策 26 修订）"
     FAIL=1
   else
     echo "  ✓ 门禁数 ${_gates_true} ≤ 预算 ${_gates_budget}（决策 26，预留 $((_gates_budget - _gates_true)) 增长空间）"
