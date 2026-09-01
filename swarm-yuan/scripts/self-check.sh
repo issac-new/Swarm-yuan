@@ -738,11 +738,12 @@ check_dead_doc_links() {
   local _hits=0 _hit
   while IFS= read -r _hit; do
     [[ -z "$_hit" ]] && continue
-    warn "已删除文档引用（改指 swarm-yuan/README.md §6.x 或标注'原 docs/…'）：${_hit}"
+    warn "已删除文档引用（改指 swarm-yuan/README.md 或标注'原 docs/…'）：${_hit}"
     _hits=1
-  done < <(grep -rnE '(docs/(DESIGN|paradigm-|USAGE|PROMO|FIVE_DIMENSIONS|runtime-update|upstream-baseline|2026-07|q2-heavy)|swarm-yuan/docs/)' \
+  done < <(grep -rnE '(docs/(DESIGN|paradigm-|USAGE|PROMO|FIVE_DIMENSIONS|runtime-update|2026-07|q2-heavy)|swarm-yuan/docs/)' \
             "$base/SKILL.md" "$base/README.md" "$base"/references/*.md "$base"/scripts/*.sh 2>/dev/null \
             | grep -v 'docs/research/' \
+            | grep -vE 'docs/(upstream-baseline|usage-manual|design-evolution)\.md' \
             | grep -vE '原 ?\`?(swarm-yuan/)?docs/' \
             | grep -vE 'docs/[A-Za-z0-9_.-]+\.md:[0-9]+' \
             | grep -vE '（现 §|整合删除' \
@@ -978,8 +979,9 @@ check_measure_metadata
 # ===== 上游基线漂移忠告（不联网，仅读登记表机器标记行）=====
 upstream_baseline_check() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
-  # 登记表在仓库根 docs/（T8 维护）；安装到 ~/.claude/skills 后无此文件，静默跳过
-  local bl="$base/README.md"
+  # 登记表在 docs/upstream-baseline.md（2026-09-01 终态重构自 README §9 物化移出）；安装到 ~/.claude/skills 后无此文件，静默跳过
+  local bl="$base/docs/upstream-baseline.md"
+  [[ -f "$bl" ]] || { [[ -f "$base/README.md" ]] && bl="$base/README.md"; }
   [[ -f "$bl" ]] || return 0
   local drifted
   # WP-Bootstrap: 锚定表格行（以 `|` 起始、`baseline_status=drifted |` 结尾）。
@@ -993,7 +995,7 @@ upstream_baseline_check() {
   # 仅 warn 不置 FAIL--版本漂移是提醒而非门禁失败
   grep -E '^\| .*baseline_status=drifted \|$' "$bl" | while IFS='|' read -r _ name _rest; do
     name=$(echo "$name" | sed 's/^ *//;s/ *$//')
-    warn "上游基线 drifted：${name:-（未命名行）}--引用基线落后上游最新版，详见 README.md §9 上游运行时基线（重核列入 P1-7）"
+    warn "上游基线 drifted：${name:-（未命名行）}--引用基线落后上游最新版，详见 docs/upstream-baseline.md 上游运行时基线（重核列入 P1-7）"
   done
 }
 upstream_baseline_check
