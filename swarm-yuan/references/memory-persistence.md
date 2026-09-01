@@ -426,3 +426,12 @@ ECC 的 knowledge-ops 定义了 6 层知识架构：
 ### 10+ IDE 集成
 
 claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli / antigravity / goose / roo-code / warp
+
+## R16 补核（2026-09-01）：claude-mem v13.15.3 → v13.21.2
+
+> 调研 `docs/research/R16-runtime-refresh.md`。**npm 通道异常澄清**：13.x 均发布到 npm，但 `latest` dist-tag 被回钉 12.4.7——主通道已切插件市场（`/plugin install claude-mem@thedotmack`）+ cmem.ai；oracle 以 GitHub tag 为准，npm 引用须显式钉 `claude-mem@13.21.1`。
+
+- **配额熔断器四规则**（13.20.0）：熔断状态跨 worker 重启持久化；冷却期只放一个探针；探针认领绑定 generator（防前辈退出误清后辈）；**"额度耗尽 ≠ 故障"**不计 health ledger——上轮错误信封分类的机制级延伸。
+- **观察者契约显式化**（13.18.1）：SILENT BY DESIGN（被观察者知道被观察就会改变行为）+ NO CONTACT（单向记录器，禁止联系任何 session）。
+- **有界会话代际**（13.20.0）：observer 改 memory 播种的有界 generation，回收自恢复——同时解决上下文无限增长与末条观察搁浅。
+- **重启验证语义**（13.19.0）：成功判定="继任者就绪"（/health 新 pid + /api/readiness ok），**bound port ≠ ready worker**；fail-soft 旁路（13.16.0）+ 显式优于探测（13.21.0）。

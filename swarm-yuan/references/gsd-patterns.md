@@ -337,3 +337,12 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 ### `gsd-tools` CLI（20 个模块）
 
 关键模块：`state`(load/json/update/get/patch/advance-plan/record-metric) / `phase`(next-decimal/add/insert/remove/complete/uat-passed) / `roadmap`(get-phase/analyze/validate/upgrade) / `verify`(summary/plan-structure/phase-completeness/references/commits/artifacts/key-links) / `validate`(consistency/health/context) / `scaffold`(context/uat/verification/phase-dir) / `init`(execute-phase/plan-phase/new-project/new-milestone/quick/resume/verify-work) / `capability`(install/update/remove/list/outdated/disable/enable/state/set) / `graphify`(build/query/status/diff/snapshot) / `intel`(api-surface)
+
+## R16 补核（2026-09-01）：gsd-core v1.11.0 → v1.12.0（next 分支，182 commits）
+
+> 调研 `docs/research/R16-runtime-refresh.md`；一个破坏性变更：`<fails_when>` 强制。
+
+- **`.planning/state.json` 机器可读状态契约**（#3227）：step 边界发布 versioned contract，best-effort 写永不失败 + `planning inspect` 只读快照——v1.11"guard 可观测性"升级为"状态本身可机器消费"。
+- **`<fails_when>` 强制**（#3172）：验收命令必须声明可观察失败信号——"无法表达失败模式的命令不是验收测试"；与 openspec v1.10 完成判据合并为两要素=命令+失败信号。
+- **证据纪律**：元数据缺失不得推出 [VERIFIED]（#2951，与本仓 missing_evidence 再印证）；多评审并行+共识门，孤立 HIGH 按证据加权（#2398/#3034）。
+- 供应链：runtime-identity 断言防同名工具（#3146/#3841）+ versioned exit contract + `state validate --strict` 可门禁。

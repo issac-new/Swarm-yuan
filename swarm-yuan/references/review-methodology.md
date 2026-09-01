@@ -444,3 +444,14 @@ ocr 新增 LLM provider 支持：
 - **不新增 check_* 门禁**（守决策 26 预算）；本纪律是 AI 审查的结构化指引，由 `--review` 的代码质量维度承载。
 
 **对脚本/技能/prompt 测试的特殊提醒**：swarm-yuan 自身的脚本（precheck.sh/state-machine.sh/trace-log.sh）和生成的技能 prompt 不宜用 grep 式测试（string-presence trap）。可观察的是行为（exit code / 输出结构 / 副作用），不是文本存在性。fixture 双态测试（violating/compliant）是行为测试的正解--它断言门禁在违规项目 fail、在合规项目 pass，而非断言脚本"含有某段代码"。
+
+## R16 补核（2026-09-01）：ocr v1.9.8→v1.11.1 + codex-security v0.1.24 + ruflo/impeccable
+
+> 调研 `docs/research/R16-runtime-refresh.md`。
+
+- **语义文件分组审查**（ocr #808，v1.10.0 headline）：LLM 先聚类变更文件（≤10 文件/组），每组一个 sub-agent 独立上下文审查——大 diff 降本直接模式，与两阶段审查互补。
+- **跨 session findings 比较**（ocr #922）：按 path+category+snippet（**非行号**）匹配，new/persisting/resolved/not-reviewed 四象限——为 scoped re-review 提供行号无关匹配键。
+- `--effort low/medium/high`（MaxReviewRounds 1/2/3）登记为 review 分档候选。
+- **assess-patch-risk 五值裁决**（codex-security #654/#664）：SHA-256 绑定工件 + 五维 + merge/revise/no_op/block/hold_for_evidence 五值 + auto_merge_candidate。登记候选。
+- **dream cycle**（ruflo）：假设评估前冻结 + 对抗性 critic 复现 + ACCEPT-scoped 落地。登记候选。
+- **impeccable skill-v4.1.2**：Stop hook 改发 Codex decision 格式——gate 输出必须匹配宿主拦截协议否则形同虚设。登记候选（R12 fail-gate 同向印证）。
