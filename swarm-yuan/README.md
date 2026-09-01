@@ -107,7 +107,7 @@ AI 的代码生成能力已经很强，但「项目认知」仍是被多数工�
 | 核心 | 10 | `--all`（日常） |
 | 架构 | 18 | `--all-full`（结构变更） |
 | 合规 | 19 | `--compliance-suite`（强监管交付） |
-| 专项/advisory | 8 | decision-audit/state-phase 专项（FULL-only 2）+ 宿主 hook 建议（advisory-only 6，真值 facts.conf） |
+| 专项/advisory | 8 | decision-audit/state-phase 专项（FULL-only 2）+ 宿主 hook 执行（advisory-only 6：loop-oracle 为 strict 档可阻断，其余 advisory，真值 facts.conf） |
 
 执行面三道：单命令（precheck）、hooks 强制（fail-gate-hook 双宿主拦截）、状态机阶段守卫（open→design→build→verify→archive→operate，每阶段核验前序产出物存在）。
 
@@ -359,7 +359,7 @@ Palantir 的一句话在这个系统里的对应："你建不出绕过治理的�
 ##### 文档边界
 
 - 本文件 = **设计层**（为什么这样做、做什么、做到什么程度算对）
-- `swarm-yuan/references/` = **方法论层**（怎么做的细节指引，40 份全带"何时读我"路由头，按需读取）
+- `swarm-yuan/references/` = **方法论层**（怎么做的细节指引，41 份全带"何时读我"路由头，按需读取）
 - `docs/research/` = **证据与调研史**（R1-R13 调研报告，留档不删）
 - 运行时机制（脚本/门禁/hook）不在本文档详述——它们的**设计规格**在 §4-§8，实现在仓库代码。
 
@@ -511,7 +511,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 只允许 5 个层次名词为主轴：**探查 / 约束 / 演化 / 留痕 / 生成**。认知框架类概念（六阶链/六维动力学/三元演化/七推理/辩证范畴/五维偏差/思维模型）不删除不堆砌——以“工作时按此思考”的指引式表述融入对应层次，落地为 AI 判断引导（逐维自查 → `.swarm-yuan/notes/cognition.md` 留痕，GATE_AI_JUDGMENT 唯一模式；骨架的“工作时的思考框架”表四行：探查按六阶链/思考用逻辑剃刀/决策三级分类/纠偏辩证+领域防达克）。本体层词汇（17 类型/10 关系/11 动作，§0.4）不占这 5 个概念预算——它是机器对账的类型事实源（§0.2 冲程一），不是叙事概念体系：AI 只在设计新机制/演进本体/对账时经“何时读我”路由读取，不进每会话认知面。
 
-**方法论 references 承载表**（40 份全带“何时读我”路由头，核心 10 份职责）：
+**方法论 references 承载表**（41 份全带“何时读我”路由头，核心 10 份职责）：
 
 | reference | 层次 | 职责 |
 |-----------|------|------|
@@ -528,7 +528,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | task-methodology-router.md | 使用 | 任务类型×方法论路由（8 类任务选关键节点序列+门禁聚焦，避免全任务跑全量 12 步） |
 | logic-razor.md / cognitive-bias.md | 使用 | 逻辑剃刀删冗余假设 / 认知偏差防范（五维偏差+思维模型） |
 
-**references 全承载索引**（40 份全列，按六类——每份都是真实消费路径，孤儿=0 由 self-check G18 执法）：
+**references 全承载索引**（41 份全列，按六类——每份都是真实消费路径，孤儿=0 由 self-check G18 执法）：
 
 | 类 | 文件 |
 |----|------|
