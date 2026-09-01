@@ -18,7 +18,9 @@
 # 环境变量:
 #   SRC_RELEASE_TAG   源码包 Release tag（默认 v<当天YYYYMMDD>-src，可覆盖）
 
-# 注意：set -u 与管道中 read 配合时需谨慎；这里不用 set -e 以便单个失败不中断整体
+# 错误处理说明（企业级规范偏离的显式化）：set -uo pipefail 无 -e——本脚本是聚合检查器，
+# 单个检查失败（运行时缺失/文档不一致等）不应中断后续检查，须全部跑完汇总报告。
+# 有意偏离 set -euo pipefail 标准（注释即规范），检查函数内部已用 fail/warn 分级处理。
 set -uo pipefail
 FAIL=0
 pass(){ echo "  ✓ $1"; }
