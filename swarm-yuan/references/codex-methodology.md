@@ -1,6 +1,6 @@
 > **何时读我**：优化执行纪律（截断/压缩/缓存/rubric/测试哲学）时。OpenAI Codex CLI 吸收——省 token 三件套/review rubric/测试哲学。
 
-# Codex 执行纪律方法论（OpenAI Codex CLI 吸收——省 token / 高效 / 质量三线）
+# Codex 执行纪律方法论（OpenAI Codex CLI——省 token / 高效 / 质量三线）
 
 > 来源：[openai/codex](https://github.com/openai/codex)（Rust 实现的本地编码 agent，Apache-2.0，2026-08 调研，基于官方文档 + `codex-rs` 源码实证：`compact.rs`/`compact_token_budget.rs`/`truncation.rs`/`prompts/templates/compact/*`/`review/rubric.md`/`protocol/src/prompts/base_instructions`）。
 > 纪律：**非运行时接线**——Codex 虽是 swarm-yuan 的 7 个安装目标之一（install.sh 检测），本文不调用 codex CLI，只吸收其「为什么省 token、效率高、质量高」的执行纪律，供生成目标技能的 AI 遵守 + 编织进目标技能的 workflow/执行 prompt。对齐决策 27 吸收模式（cordis/context-engineering-layering 先例），不新增门禁（守决策 26）。
@@ -86,7 +86,7 @@ Codex Skills 只常载 frontmatter（name/description），正文按触发注入
 
 > **目标技能落地**：这些直接进生成技能 workflow 节点⑤（编码实现）的执行 prompt；第 6 条依赖 AI 运行时的补丁式 Edit 语义（Claude Code Edit/Codex apply_patch 均满足）。
 
-## 四、吸收边界（诚实排除——不适合 skill 层的机制）
+## 四、引入边界（诚实排除——不适合 skill 层的机制）
 
 以下机制是 **agent harness 的职责**（Claude Code/Codex CLI 这类运行时自己实现），swarm-yuan 作为 skill 层不重复造：
 

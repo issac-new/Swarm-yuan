@@ -50,7 +50,7 @@ observation XML 格式：
 </observation>
 ```
 
-> **`sensitive` 观察类型（claude-mem v13.13.0 吸收）**：介于 `private`（私密）与公开之间的敏感信息——内部 URL、未发布计划、个人细节、业务指标、客户/合作方名称。与 `security_alert`（硬编码密钥等安全告警）正交：`security_alert` 是「代码里的安全缺陷」，`sensitive` 是「不应泄漏到后续内容开发错误上下文的业务敏感信息」。默认触发 Telegram 通知（与 `security_alert` 同通道，由 `CLAUDE_MEM_TELEGRAM_TRIGGER_TYPES` 控制）。与 swarm-yuan 门禁呼应：`--sensitive`（敏感信息扫描，gitleaks/正则）守代码层；`sensitive` 观察类型守记忆层——防业务敏感信息经记忆→生成链路泄漏。
+> **`sensitive` 观察类型（claude-mem v13.13.0）**：介于 `private`（私密）与公开之间的敏感信息——内部 URL、未发布计划、个人细节、业务指标、客户/合作方名称。与 `security_alert`（硬编码密钥等安全告警）正交：`security_alert` 是「代码里的安全缺陷」，`sensitive` 是「不应泄漏到后续内容开发错误上下文的业务敏感信息」。默认触发 Telegram 通知（与 `security_alert` 同通道，由 `CLAUDE_MEM_TELEGRAM_TRIGGER_TYPES` 控制）。与 swarm-yuan 门禁呼应：`--sensitive`（敏感信息扫描，gitleaks/正则）守代码层；`sensitive` 观察类型守记忆层——防业务敏感信息经记忆→生成链路泄漏。
 
 ### 在目标技能中的落地
 - 若项目已装 claude-mem：workflow 节点⑤的 subagent 编排无需手动写记忆，observer 自动捕获

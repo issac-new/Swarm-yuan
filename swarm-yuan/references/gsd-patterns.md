@@ -4,7 +4,7 @@
 
 > 整合自 [gsd-core](https://github.com/open-gsd/gsd-core) 的方法论模式与运行时工具。
 > **安装 gsd-core 并引用其命令（gsd-tools / /gsd-* / capability），不复制其源码。**
-> 📌 **v1.10.0 升级吸收（2026-08-14）**：① **effort surface axis**（v1.9.0 #2481）——negotiated 努力程度轴 + 调用时 effort 参数，与 swarm-yuan `task-scale.sh`（任务规模判定）同向：按任务复杂度协商投入；② **deferred-items.md 里程碑暴露**（v1.10.0 #2646）——milestone 关闭时 surface 未解决的 deferred items，与 swarm-yuan `--mark-active` 零占位符核验同向（关门前查遗留，不让 deferred 债务悄悄进 milestone）。
+> **gsd-core v1.9-1.10 要点**：① **effort surface axis**（v1.9.0 #2481）——negotiated 努力程度轴 + 调用时 effort 参数，与 swarm-yuan `task-scale.sh`（任务规模判定）同向：按任务复杂度协商投入；② **deferred-items.md 里程碑暴露**（v1.10.0 #2646）——milestone 关闭时 surface 未解决的 deferred items，与 swarm-yuan `--mark-active` 零占位符核验同向（关门前查遗留，不让 deferred 债务悄悄进 milestone）。
 
 ## gsd-core 安装与运行时调用（工具引用）
 

@@ -141,7 +141,7 @@ openspec update <change-id>
 /opsx:update <change-id>
 ```
 
-> 📌 **openspec v1.7-1.9 新增能力（2026-08-14 升级吸收）**：
+> **openspec v1.7-1.9 能力**：
 > - **原生支持 ZCode**（v1.7.0）：`openspec init --tools` 现覆盖 ZCode（与 swarm-yuan 多 AI 运行时定位一致）+ vendor-neutral `agents`（`.agents/skills/`，AGENTS.md-aware）。
 > - **`skip_specs: true`**（v1.7.0）：纯重构/文档 change 可声明跳过 spec，直接走 validate/archive——与 swarm-yuan 任务类型门控（refactor/docs/exp）呼应。
 > - **`openspec validate --archived`**（v1.9.0）：opt-in 检查归档 changes 的 tasks.md 是否全勾选，未完成则非零退出——适合 pre-commit/CI，与 swarm-yuan `--mark-active` 零占位符核验同向（关门前查遗留）。
