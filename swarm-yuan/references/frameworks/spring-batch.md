@@ -8,7 +8,7 @@ ruleset_id: spring-batch
 # Spring Batch 规则集
 
 <!--
-本规则集为 P1 第三批框架规则集，结构与 mybatis / lombok 规则集对齐（六段式）。
+本规则集为 P1 第三批框架规则集，结构与 mybatis / lombok 规则集对齐（六节式）。
 覆盖范围：Spring Batch 5.x（Spring Boot 3.x 基线；Jakarta EE 9；Java 17+）。
 调研时点：2026-07-17，已核对 spring-batch 5.x 最新发布为 5.2.6（2026-06-10）；6.0.x 已发布（适配 Spring Boot 4 / Spring Framework 7）。
 Spring Batch 5.0 为重大破坏性变更：JobBuilderFactory/StepBuilderFactory 废弃移除、@EnableBatchProcessing 不再暴露事务管理器 Bean、BatchConfigurer 接口删除、chunk/tasklet 显式传 PlatformTransactionManager。已落入 §6。
