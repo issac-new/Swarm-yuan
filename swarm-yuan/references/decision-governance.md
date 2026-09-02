@@ -146,9 +146,9 @@ claude-mem timeline <observation-id>
 
 **聚合分析**：`scripts/cost-report.sh` 输出决策治理段（按类型/裁定/阶段分布 + UserChallenge 计数），对齐 ISO/IEC 42001 §9.1 监视测量——决策绩效数据可用于评估"AI 主导+用户决策"的运行质量（如 UserChallenge 的 approved/rejected/revised 分布反映人工监督有效性）。
 
-## R16 补核（2026-09-01）：证据共识与 fail-closed 的 wiring 层
+## 证据共识与 fail-closed 的 wiring 层
 
-> 来源：gsd-core v1.12.0 + gstack v1.77.0.0。调研 `docs/research/R16-runtime-refresh.md`。
+> 来源：gsd-core v1.12.0 + gstack v1.77.0.0（调研档案 `docs/research/R16-runtime-refresh.md`）。
 
 - **共识门证据加权**（gsd #2398）：孤立 HIGH 按证据加权——存在性断言须 source-grounded 或有旁证；**多数决不是治理，证据才是**。
 - **缺失≠VERIFIED**（gsd #2951）：缺失既不能证实也不能证伪，唯一路径是阳性证伪尝试——无证据行不得判 implemented。

@@ -254,7 +254,7 @@ _default_conf() {
   SBOM_TOOL=""
   SBOM_LICENSE_BLOCKLIST=()
   SBOM_LICENSE_EXEMPTIONS=()
-  # WP-Z3: 安全门禁豁免变量（显式豁免须填理由，否则 fail-closed）
+  # 安全门禁豁免变量（显式豁免须填理由，否则 fail-closed）
   SBOM_EXEMPT_REASON=""
   DENGBAO_EXEMPT_REASON=""
   PIA_EXEMPT_REASON=""
@@ -277,7 +277,7 @@ _default_conf() {
   AUTHZ_EXTRA_PATTERNS=()
   REQUIREMENTS_STRICT=0
   REQUIREMENTS_ID_REQUIRED=0
-  # WP-Z7: 需求术语同义词对（ISO/IEC/IEEE 29148 §5.2.7.2 术语一致性检查）
+  # 需求术语同义词对（ISO/IEC/IEEE 29148 §5.2.7.2 术语一致性检查）
   # 格式: ("术语A|术语B" "同义词A|同义词B")，如 ("用户|客户" "系统|平台")
   REQUIREMENTS_SYNONYM_PAIRS=()
   CRYPTO_PROFILE=""
@@ -363,7 +363,7 @@ unset _conf_var
 FORMAT="text"
 MODE=""
 FRAMEWORK_ID=""
-TASK_TYPE=""   # WP-C：--task-type <type> 可选参数（配合 --reuse 校验必填/豁免节）
+TASK_TYPE=""   # --task-type <type> 可选参数（配合 --reuse 校验必填/豁免节）
 _CAL_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -431,7 +431,7 @@ while [[ $# -gt 0 ]]; do
       break
       ;;
     --task-type)
-      # WP-C：可选任务类型（feature/fix/refactor/chore/docs/test/exp），配合 --reuse 校验
+      # 可选任务类型（feature/fix/refactor/chore/docs/test/exp），配合 --reuse 校验
       # spec 节的必填/豁免落实。未传则维持现状（只校验 §5.5，向后兼容）。
       [[ $# -ge 2 ]] || { echo "✗ --task-type 缺少取值（feature|fix|refactor|chore|docs|test|exp）" >&2; exit 1; }
       TASK_TYPE="$2"; shift 2
@@ -468,7 +468,7 @@ if [[ -f "$_skill_md" ]] && grep -q '^status: draft' "$_skill_md" 2>/dev/null; t
       exit 2 ;;
   esac
 fi
-# WP-P6：profile 漂移检测（轻量，stderr 输出，不阻塞主流程；只升不降，质量优先）
+# profile 漂移检测（轻量，stderr 输出，不阻塞主流程；只升不降，质量优先）
 # 重跑 auto_detect_profile 逻辑对比 frontmatter profile，升档漂移 warn 提示升级
 # audit-claims-reality（A10）：显式传 PROJECT_DIR——旧版靠 $SKILL_DIR/../../.. 推导，
 # 用户级安装（~/.claude/skills/<name>）布局下会误扫 $HOME。
@@ -481,7 +481,7 @@ if [[ -f "${_CONF_DIR}/detect-profile-drift.sh" ]]; then
       ;;
   esac
 fi
-# WP-P7：spec 规模检测（轻量，stderr 输出，不阻塞主流程；规模与门禁集不匹配 warn 提示升档）
+# spec 规模检测（轻量，stderr 输出，不阻塞主流程；规模与门禁集不匹配 warn 提示升档）
 # 若 SPEC_FILE 存在，推断规模等级，当前 MODE < 推断档则 warn 提示升档（只升不降）
 if [[ -n "${SPEC_FILE:-}" && -f "${SPEC_FILE}" && -f "${_CONF_DIR}/detect-spec-scale.sh" ]]; then
   _spec_scale=$(bash "${_CONF_DIR}/detect-spec-scale.sh" "${SPEC_FILE}" 2>/dev/null | tail -1 || true)
@@ -501,13 +501,13 @@ SKIP_COUNT=0
 SKIP_LIST=""
 WARN_COUNT=0
 FAIL_COUNT=0
-# WP-B2：FAIL_IDS 收集 fail id（fail 首参数含 gate_xxx/fw_xxx id），供 fail 汇总段输出修复建议。
+# FAIL_IDS 收集 fail id（fail 首参数含 gate_xxx/fw_xxx id），供 fail 汇总段输出修复建议。
 # 兼容 bash 3.2：用换行分隔的字符串累积（不用 declare -A），去重靠 grep -F。
 FAIL_IDS=""
 # _CURRENT_GATE：当前分发中的门禁函数名（三个分发循环赋值），供跳过计数去重
 _CURRENT_GATE=""
 pass() { echo "  ✓ $1"; }
-# WP-B2：fail() 除 FAIL_COUNT++ 外，提取首参数的 fail id（gate_xxx/fw_xxx 前缀）追加到 FAIL_IDS。
+# fail() 除 FAIL_COUNT++ 外，提取首参数的 fail id（gate_xxx/fw_xxx 前缀）追加到 FAIL_IDS。
 # 首参数形如 "gate_requirements_tbd:12: spec 含 TBD" 或 "fw_vue_script_setup: ..."——取首个 : 前或整串。
 fail() {
   echo "  ✗ $1"; FAIL=1; FAIL_COUNT=$((FAIL_COUNT+1));
@@ -625,7 +625,7 @@ if [[ -z "${SWARM_YUAN_BUNDLED:-}" ]]; then
   done
 fi
 
-# ===== R13 批次1a（D2 接线）：precheck 启动挂 upstream-baseline（advisory warn）=====
+# ===== precheck 启动挂 upstream-baseline（advisory warn）=====
 # 原为 advisory-only（不在任何执行序列，须显式 --upstream-baseline 才跑——五轮病理的"僵尸门禁"）。
 # 接线语义：每次 precheck 启动时顺带跑一次（fail-open warn，README.md 中 upstream-baseline 段不存在
 # 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 教义。
@@ -714,7 +714,7 @@ _run_doctor() {
   else
     _dr_warn "conf 不存在（${conf}）——全部变量走内置默认值"
   fi
-  # WP-I：兄弟 conf（arch/compliance）语法 sanity（存在才查）
+  # 兄弟 conf（arch/compliance）语法 sanity（存在才查）
   local _sib
   for _sib in "$sh_dir/precheck.arch.conf" "$sh_dir/precheck.compliance.conf"; do
     [[ -f "$_sib" ]] || continue
@@ -772,7 +772,7 @@ $(cat "$sh_dir/$_f")"
       [[ -f "$_f" ]] && _refs="${_refs}
 $(cat "$_f")"
     done
-    # WP-I：conf 物理三分——变量定义扫描合并三个文件（存在的才拼），core/arch/compliance 全覆盖
+    # conf 物理三分——变量定义扫描合并三个文件（存在的才拼），core/arch/compliance 全覆盖
     local _conf_all=""
     for _f in "$conf" "$sh_dir/precheck.arch.conf" "$sh_dir/precheck.compliance.conf"; do
       [[ -f "$_f" ]] && _conf_all="${_conf_all}
@@ -839,7 +839,7 @@ if [[ "$MODE" == "--doctor" ]]; then
 fi
 
 # --list-gates 在 cd 前拦截：不需要 PROJECT_DIR，只读门禁注册表与 enforce_level
-# WP-D：用户视角只列「执行序列三档」（core/standard/compliance）+ 每门禁的 enforce 属性列；
+# 用户视角只列「执行序列三档」（core/standard/compliance）+ 每门禁的 enforce 属性列；
 # 不对用户暴露"advisory-only vs advisory-15"这类计数辨析（那是实现细节）。
 # (none) = 不在任何执行序列数组的门禁（advisory-only），需单 flag 显式调用。
 if [[ "$MODE" == "--list-gates" ]]; then
@@ -1114,7 +1114,7 @@ _gate_evidence() { # $1=gate $2=status $3=ids(空格分隔) $4=duration_s
 # SARIF 2.1.0 子集输出：version/runs/results（每门禁 {gate,status,ids[]}）
 _emit_json() {
   local _out _sk_json="" _g
-  # WP-F：skipped 数组披露未配置跳过的门禁（绿≠合规在 JSON 侧同样显式化）
+  # skipped 数组披露未配置跳过的门禁（绿≠合规在 JSON 侧同样显式化）
   for _g in $SKIP_LIST; do _sk_json="${_sk_json}${_sk_json:+,}\"${_g}\""; done
   _out="{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"swarm-yuan precheck.sh\",\"properties\":{\"skipped\":[${_sk_json}]}}},\"results\":[${_JSON_RESULTS}]}]}"
   _JSON_EMITTED=1
@@ -1132,7 +1132,7 @@ _emit_json() {
 _gate_exec() {
   _CURRENT_GATE="$1"
   INVOKE_COUNT=$((INVOKE_COUNT+1))
-  # WP-D1：门禁级 trace-log（设计理念 2：全链路追踪）——每门禁调用前/后向 stderr 输出追踪行 + 落盘 trace.jsonl
+  # 门禁级 trace-log（设计理念 2：全链路追踪）——每门禁调用前/后向 stderr 输出追踪行 + 落盘 trace.jsonl
   if [[ -f "${TRACE_LOG_SH:-}" ]]; then
     bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status started >&2 2>/dev/null || true
   fi
@@ -1244,7 +1244,7 @@ _gate_exec() {
   _ids=$(_gate_ids "$_GATE_TMP")
   _json_add_result "$1" "$_st" "$_ids"
   if [[ -n "$GATE_RUNS_DIR" ]]; then _gate_evidence "$1" "$_st" "$_ids" "$((_t1-_t0))" || true; fi
-  # WP-D1：门禁级 trace-log done/fail/skip/warn/pass（证据模式）
+  # 门禁级 trace-log done/fail/skip/warn/pass（证据模式）
   if [[ -f "${TRACE_LOG_SH:-}" ]]; then
     bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status "$_st" >&2 2>/dev/null || true
   fi
@@ -1266,7 +1266,7 @@ has_comet() { command -v comet >/dev/null 2>&1; }
 has_gsd_tools() { command -v gsd-tools >/dev/null 2>&1; }
 has_madge() { command -v madge >/dev/null 2>&1; }
 
-# WP-D1：trace_tool 辅助函数（全链路追踪——设计理念 2）
+# trace_tool 辅助函数（全链路追踪——设计理念 2）
 # 在第三方工具调用前调用，打印"→ [工具] 调用 X · Y（started）"到 **stderr**（不污染 stdout/cli-ab 逐字节等价）
 # + 落盘 trace.jsonl。trace-log.sh 路径优先 $_CONF_DIR/trace-log.sh，缺失则静默跳过（不阻塞）。
 # 口径：只 trace 实际工作调用；has_*/indexed/built 等守卫探测（如 gitnexus status）不 trace，避免噪音。
@@ -1650,7 +1650,7 @@ case "$MODE" in
     for _gate in "${ALL_GATES_COMPLIANCE[@]}"; do _gate_exec "$_gate" 1; done
     ;;
   --fix-suggest)
-    # WP-B3：跑全量门禁收集 fail，只输出修复建议不 exit 1（rc=0）。供 AI/用户 fail 后单独看建议。
+    # 跑全量门禁收集 fail，只输出修复建议不 exit 1（rc=0）。供 AI/用户 fail 后单独看建议。
     for _gate in "${ALL_GATES_FULL[@]}"; do _gate_exec "$_gate" 1; done
     echo ""
     echo "—— 修复建议（--fix-suggest 模式：只输出建议，不阻塞，rc=0）——"
@@ -1698,7 +1698,7 @@ echo "—— 执行汇总：调用 ${INVOKE_COUNT}，执行 $((INVOKE_COUNT-SKIP
 if [[ $SKIP_COUNT -gt 0 ]]; then
   echo "—— 注意：${SKIP_COUNT} 个门禁未配置跳过（${SKIP_LIST# }），「通过」≠ 全量覆盖——"
 fi
-# WP-B1：fail 修复建议映射表（常见 fail id → 建议文案）。未映射的输出通用建议。
+# fail 修复建议映射表（常见 fail id → 建议文案）。未映射的输出通用建议。
 # 设计理念 1（连贯动作）：门禁 fail 后脚本自动给出修复建议，而非只 exit 1 让用户/AI 猜。
 _fix_suggest() {
   local id="$1" suggest=""
@@ -1777,7 +1777,7 @@ if [[ $FAIL -eq 0 ]]; then
   fi
 else
   echo "✗ 门禁检查未通过，请修复上述问题"
-  # WP-B1：fail 修复建议（设计理念 1：连贯动作——fail 后自动给修复建议，非让用户猜）
+  # fail 修复建议（设计理念 1：连贯动作——fail 后自动给修复建议，非让用户猜）
   if [[ -n "$FAIL_IDS" ]]; then
     echo "—— 修复建议（${FAIL_COUNT} 项 fail，按 id 去重后 $(printf '%s\n' "$FAIL_IDS" | grep -c .) 项）——"
     local_id=""

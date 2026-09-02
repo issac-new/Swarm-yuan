@@ -203,7 +203,7 @@ _audit_log() {
     "$_al_ts" "$1" "$_a2" "$4" "$5" "$_a3" "$_a6" >> "$_al_file" 2>/dev/null || true
 }
 
-# ===== R13 批次2：rules.d 三值求值（无条件面）——PreToolUse Bash 先过规则数据 =====
+# ===== rules.d 三值求值（无条件面）——PreToolUse Bash 先过规则数据 =====
 # forbid 是无条件的：不依赖 GATE_ENFORCE_DENY/GATE_ENFORCE_DENY_BASH 开关、不依赖门禁红 flag——
 # 随生成物分发的 rules.d/*.rules 即"规则治理命令"的常态面（npm publish/rm -rf/git reset --hard/sudo
 # 默认硬拦，deny 消息带替代方案）。allow → 审计 pass 放行；prompt（3）/无规则 → 落回下方白名单（opt-in 面）。

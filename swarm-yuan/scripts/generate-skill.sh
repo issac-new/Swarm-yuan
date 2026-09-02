@@ -45,7 +45,7 @@ MERGED_FRAMEWORK_MAP=(
 UNIVERSAL_FILES=(
   "assets/spec-template.md|assets|lite"
   "assets/plan-template.md|assets|lite"
-  "assets/review-record-template.md|assets|lite"  # field-feedback：审查留痕载体（check_review 提示落 docs/reviews/YYYY-MM-DD.md 时按此模板）
+  "assets/review-record-template.md|assets|lite"  # 审查留痕载体（check_review 提示落 docs/reviews/YYYY-MM-DD.md 时按此模板）
   "assets/branch-setup.sh|assets"
   "assets/env-setup.sh|assets"
   "assets/data-sample-template.md|assets"
@@ -61,7 +61,7 @@ UNIVERSAL_FILES=(
   "scripts/precheck.conf|assets|lite"
   "scripts/precheck.arch.conf|assets"
   "scripts/precheck.compliance.conf|assets|compliance"
-  "assets/standards-map.conf|assets|compliance"  # global-consistency-r2：WP-S1 标准映射表随发（gates-strict 默认探测 <skill>/assets/standards-map.conf，未随发则该核验在生成物中恒静默跳过）
+  "assets/standards-map.conf|assets|compliance"  # WP-S1 标准映射表随发（gates-strict 默认探测 <skill>/assets/standards-map.conf，未随发则该核验在生成物中恒静默跳过）
   "scripts/snippets.md|assets"
   "scripts/mcp-tools.md|assets"
   "scripts/state-machine.sh|assets|lite"
@@ -76,14 +76,14 @@ UNIVERSAL_FILES=(
   "scripts/fail-gate-hook.sh|hook|lite"
   "scripts/install.sh|assets|lite"  # 回归#27：安装器转发垫片（install.bat 同伴；source_repo 定位；安装器本体不入生成物）
   "scripts/generate-skill.sh|assets|lite"  # 回归#25：生成器转发垫片（source_repo 定位；白名单与 .bat 同伴复活的根修）
-  "scripts/codex-gate-wrapper.sh|hook|standard"  # R13 批次4：Codex deny 协议适配（exit 2+stderr）
+  "scripts/codex-gate-wrapper.sh|hook|standard"  # Codex deny 协议适配（exit 2+stderr）
   "scripts/setup-loop.sh|hook|standard"
   "scripts/loop-hook.sh|hook|standard"
   "scripts/project-fingerprint.sh|gen|lite"
-  # WP-R3-5：inventory-update.sh 给目标 skill 的 AI 用（编码中发现语义变化 → 局部更新清单单条目），
+  # inventory-update.sh 给目标 skill 的 AI 用（编码中发现语义变化 → 局部更新清单单条目），
   # 与 inventory-verify.sh 的"生成器侧核验"角色区分——本脚本必须拷到目标 skill 的 scripts/ 下。
   "scripts/inventory-update.sh|gen|lite"
-  # R13 批次2：规则即数据——三值求值器 + 默认规则集随生成物分发（conf 收缩的载体：门禁阈值/白名单类参数迁入规则数据）
+  # 规则即数据——三值求值器 + 默认规则集随生成物分发（conf 收缩的载体：门禁阈值/白名单类参数迁入规则数据）
   "scripts/gate-rules.sh|gen|lite"
   "scripts/gate-plan.sh|gen|lite"      # R15 HarnessEval P4：选择即证据（启用/跳过理由，负空间可审计）
   "scripts/audit-closure.sh|gen|lite"  # R15 HarnessEval P7：审计即完成条件（closure 完备性重走）
@@ -93,7 +93,7 @@ UNIVERSAL_FILES=(
   "references/ontology/actions.md|onto|lite"
   "rules.d/bash-advance.rules|rules|lite"
   "rules.d/readonly-safe.rules|rules|lite"
-  "rules.d/framework-globs.rules|rules"  # global-consistency-r2：G21 对账锚随发（目标侧 self-check framework-globs 快照对账，未随发则恒 warn"快照失锚"）
+  "rules.d/framework-globs.rules|rules"  # G21 对账锚随发（目标侧 self-check framework-globs 快照对账，未随发则恒 warn"快照失锚"）
   "scripts/self-check.sh|gen|lite"
   "scripts/detect-frameworks.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
@@ -115,8 +115,8 @@ UNIVERSAL_FILES=(
   "references/domain-knowledge.md|ref"
   "references/claude-code-capabilities.md|ref"
   "references/standards-compliance.md|ref|compliance"
-  "references/cwe-database.md|ref|compliance"  # global-consistency-r2：cwe_audit 门禁数据参照（standards-compliance.md 引用，防拷贝后死链）
-  "references/security-certification-profiles.md|ref|compliance"  # global-consistency-r2：cert_audit 门禁数据参照（F.1 #49 引用，同 cwe-database 口径）
+  "references/cwe-database.md|ref|compliance"  # cwe_audit 门禁数据参照（standards-compliance.md 引用，防拷贝后死链）
+  "references/security-certification-profiles.md|ref|compliance"  # cert_audit 门禁数据参照（F.1 #49 引用，同 cwe-database 口径）
 )
 
 # 项目特定文件（upgrade 保留不覆盖、不备份）
@@ -158,7 +158,7 @@ merge_precheck_conf() {
   local paradigm_dir; paradigm_dir="$(cd "$(dirname "$0")/.." && pwd)"
   local conf="$skill_dir/scripts/precheck.conf"
   [[ -f "$conf" ]] || { echo "⚠ precheck.conf 不存在，跳过合并"; return 0; }
-  # WP-I：框架变量属 arch 组——补占位落 precheck.arch.conf（旧版 skill 无此文件则回落主 conf）
+  # 框架变量属 arch 组——补占位落 precheck.arch.conf（旧版 skill 无此文件则回落主 conf）
   local merge_target="$skill_dir/scripts/precheck.arch.conf"
   [[ -f "$merge_target" ]] || merge_target="$conf"
   # 读取用户 ACTIVE_FRAMEWORKS（含旧 id，迁移后补对应母框架变量）。
@@ -190,7 +190,7 @@ merge_precheck_conf() {
     local req
     req=$(sed -n 's/^# ruleset:.*requires_conf: *//p' "$frag" | tr -s ' ')
     for var in $req; do
-      # WP-I：变量可能定义在主 conf 或 arch conf（物理三分），两处都查
+      # 变量可能定义在主 conf 或 arch conf（物理三分），两处都查
       grep -q "^${var}=" "$conf" 2>/dev/null && continue
       [[ -f "$merge_target" ]] && grep -q "^${var}=" "$merge_target" 2>/dev/null && continue
       missing+=("$var")
@@ -279,7 +279,7 @@ sync_framework_vars() {
   echo "⚠ sync_framework_vars：注释死变量（${dead_vars} ）——只被未注入框架需要；恢复请解开对应行的 # deprecated 注释"
 }
 
-# WP-D3：trace_tool 辅助函数（全链路追踪——设计理念 2，generate-skill 侧）
+# trace_tool 辅助函数（全链路追踪——设计理念 2，generate-skill 侧）
 # 定义在 inject_frameworks 之前，确保 --inject-frameworks 独立拦截分支也能调用。
 # trace-log.sh 路径：脚本所在目录的 ../assets/trace-log.sh
 _TRACE_LOG_SH="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)/assets/trace-log.sh"
@@ -305,7 +305,7 @@ inject_frameworks() {
   local ver="$skill_dir/.swarm-yuan-version"
   [[ -f "$sh" ]]  || { echo "✗ 未找到 $sh"; return 1; }
   [[ -f "$conf" ]] || { echo "✗ 未找到 $conf"; return 1; }
-  # WP-I：框架变量属 arch 组——缺失判定与补占位落 precheck.arch.conf（旧版 skill 无此文件则回落主 conf）
+  # 框架变量属 arch 组——缺失判定与补占位落 precheck.arch.conf（旧版 skill 无此文件则回落主 conf）
   local arch_conf="$skill_dir/scripts/precheck.arch.conf"
   [[ -f "$arch_conf" ]] || arch_conf="$conf"
 
@@ -388,7 +388,7 @@ inject_frameworks() {
       # 解析 requires_conf（兼容行内多空格/无声明）
       req=$(sed -n 's/^# ruleset:.*requires_conf: *//p' "$frag" | tr -s ' ')
       for var in $req; do
-        # WP-I：变量可能定义在主 conf 或 arch conf（物理三分），两处都查
+        # 变量可能定义在主 conf 或 arch conf（物理三分），两处都查
         grep -q "^${var}=" "$conf" 2>/dev/null && continue
         [[ "$arch_conf" != "$conf" ]] && grep -q "^${var}=" "$arch_conf" 2>/dev/null && continue
         missing_conf+=("$var")
@@ -457,7 +457,7 @@ inject_frameworks() {
   cat "$tmp" > "$sh"
   rm -f "$tmp" "$block"
 
-  # 3) 缺失 conf 变量：注入占位 + warn（不静默）——WP-I：落 arch conf（框架变量组）
+  # 3) 缺失 conf 变量：注入占位 + warn（不静默）——落 arch conf（框架变量组）
   for var in ${missing_conf[@]+"${missing_conf[@]}"}; do
     printf '%s=()  # TODO(framework-gates): 由生成流程 ⑦.5 门禁注入阶段填充\n' "${var}" >> "$arch_conf"
     echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
@@ -625,7 +625,7 @@ verify_completeness() {
   # WP-R P3-3: precheck.arch.conf 也含 --inject-frameworks 注入的 TODO 占位符,须纳入扫描
   [[ -f "$skill_dir/scripts/precheck.arch.conf" ]] && targets+=("$skill_dir/scripts/precheck.arch.conf")
   [[ -f "$skill_dir/hooks/hooks.json" ]] && targets+=("$skill_dir/hooks/hooks.json")
-  # WP-Z2: commands/*.md 骨架模板内嵌数字可能漂移（G6），纳入零占位符扫描
+  # commands/*.md 骨架模板内嵌数字可能漂移（G6），纳入零占位符扫描
   for f in "$skill_dir"/commands/*.md; do
     [[ -f "$f" ]] && targets+=("$f")
   done
@@ -793,7 +793,7 @@ if [[ "${1:-}" == "--mark-active" ]]; then
     exit 1
   fi
   # ②③ inventory-verify 路径校验（HALLUCINATION 阻断；FAIL 维度作为告警不阻断——fail-open）
-  # WP-R3-3：补串 --stability-audit（WP-Q1A 时漏串，仅文档化）——稳定性标注与三机械信号
+  # 补串 --stability-audit（WP-Q1A 时漏串，仅文档化）——稳定性标注与三机械信号
   # （近 90 天 git churn / fan-in / 同名测试）冲突时 STABILITY_WARN（advisory，不阻断）。
   _ma_iv="$(cd "$(dirname "$0")" && pwd)/inventory-verify.sh"
   if [[ -x "$_ma_iv" || -f "$_ma_iv" ]]; then
@@ -814,7 +814,7 @@ if [[ "${1:-}" == "--mark-active" ]]; then
         echo "⚠ inventory-verify FAIL 维度 ${_iv_fail} 个（advisory：清单覆盖度 < 0.95；不阻断 mark-active，但建议补漏）" >&2
         printf '%s\n' "$_iv_out" | grep -E '\bFAIL\b' >&2 || true
       fi
-      # WP-R3-3：STABILITY_WARN 也作为告警（不阻断——advisory 级；标注与机械信号冲突须人工复核）
+      # STABILITY_WARN 也作为告警（不阻断——advisory 级；标注与机械信号冲突须人工复核）
       _iv_stab=$(printf '%s\n' "$_iv_out" | grep -c '^STABILITY_WARN' || true)
       if [[ "${_iv_stab:-0}" -gt 0 ]]; then
         echo "⚠ inventory-verify STABILITY_WARN ${_iv_stab} 条（advisory：稳定性标注与 git churn/fan-in/测试存在性信号冲突；不阻断 mark-active，但建议复核标注）" >&2
@@ -898,7 +898,7 @@ if [[ "${1:-}" == "--refresh" ]]; then
   _rf_status=$(grep -m1 '^status:' "$_rf_dir/SKILL.md" 2>/dev/null | sed 's/^status: *//')
   echo "  当前 skill 状态: ${_rf_status:-无 status 字段}"
   if printf '%s\n' "$_rf_out" | LC_ALL=C grep -q '⚠ 项目源码已变化'; then
-    # WP-R2-2：建议从"只 --upgrade"升级为完整更新链——--upgrade 只刷工具链，
+    # 建议从"只 --upgrade"升级为完整更新链——--upgrade 只刷工具链，
     # reference-manual.md 组件库清单需 AI 重探查更新 + inventory-verify 核验。
     echo "  → 检测到变化，更新链（详见目标技能 SKILL.md「自成长」段）："
     echo "      ① --upgrade 刷工具链（保留 reference-manual.md 内容文件）"
@@ -912,7 +912,7 @@ if [[ "${1:-}" == "--refresh" ]]; then
     fi
     exit 0
   elif printf '%s\n' "$_rf_out" | LC_ALL=C grep -q '无既有指纹'; then
-    # WP-R2-1：无基线 ≠ 无变化——此前落入 else 报"✓ 无变化"，首次感知场景假阴性。
+    # 无基线 ≠ 无变化——此前落入 else 报"✓ 无变化"，首次感知场景假阴性。
     echo "  → 无指纹基线（尚未做过首次感知），无法判断变化——建议落基线："
     echo "      bash scripts/generate-skill.sh --refresh <skill-dir> --commit-fp"
     if [[ "${1:-}" == "--commit-fp" ]]; then
@@ -962,7 +962,7 @@ detect_runtime_name() {
 MODE="create"
 if [[ "${1:-}" == "--upgrade" ]]; then MODE="upgrade"; shift; fi
 
-# ---- 解析 --profile（WP-E 三档骨架：lite/standard/compliance；WP-N1：auto 项目级自适应，默认）----
+# ---- 解析 --profile（WP-E 三档骨架：lite/standard/compliance；auto 项目级自适应，默认）----
 # 档序：lite(1) 只拷认知档最小集；standard(2) 当前默认全集（不含合规档文件）；
 #       compliance(3) = standard + 合规档文件（references/standards-compliance.md 等）。
 #   auto：按项目信号自动判定（合规信号 > 规模信号；决策 30 现行口径：信号明确才升档，模糊走默认 standard）。
@@ -1051,7 +1051,7 @@ auto_detect_profile() {
     local svc_cnt; svc_cnt=$(find "$proj/services" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
     [[ "$svc_cnt" =~ ^[0-9]+$ && "$svc_cnt" -ge 2 ]] && msig=1
   fi
-  # WP-Q2：技术栈复杂度升档（明确信号才升，不模糊）
+  # 技术栈复杂度升档（明确信号才升，不模糊）
   # 形态/框架/微服务任一明确 → 升 standard（覆盖 lite 判定）
   if [[ $forms -ge $_forms_thr ]]; then
     result="standard"; reason="${reason}；形态信号：${forms} 种形态（≥${_forms_thr} -> 升 standard）"
@@ -1062,7 +1062,7 @@ auto_detect_profile() {
   if [[ $msig -eq 1 ]]; then
     result="standard"; reason="${reason}；微服务信号：services/ 含多服务（→ 升 standard）"
   fi
-  # WP-Q2：monorepo 信号（明确升档，不降 lite）
+  # monorepo 信号（明确升档，不降 lite）
   if [[ -f "$proj/lerna.json" || -f "$proj/pnpm-workspace.yaml" || -f "$proj/turbo.json" ]]; then
     result="standard"; reason="${reason}；monorepo 信号（lerna/pnpm-workspace/turbo → 升 standard）"
   fi
@@ -1110,7 +1110,7 @@ fi
 [[ ! -d "$PROJECT_DIR" ]] && { echo "ERROR: 项目目录不存在: $PROJECT_DIR"; exit 1; }
 mkdir -p "$TARGET_DIR"
 
-# WP-N1：auto 档解析为具体档（在 PROJECT_DIR 校验后、骨架创建前；输出判定依据供用户评估）
+# auto 档解析为具体档（在 PROJECT_DIR 校验后、骨架创建前；输出判定依据供用户评估）
 if [[ "$PROFILE" == "auto" ]]; then
   # WP-CogAudit：source profile-thresholds.conf 让 reason 文案的阈值与 auto_detect_profile 一致（消除死配置）
   if [[ -z "${PROFILE_LITE_MAX_FILES:-}" ]]; then
@@ -1131,7 +1131,7 @@ if [[ "$PROFILE" == "auto" ]]; then
     _fc=$(find "$PROJECT_DIR" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' 2>/dev/null | wc -l | tr -d ' ')
     _auto_reason="规模信号：文件数 ${_fc:-?}（<${PROFILE_LITE_MAX_FILES:-80} → lite，否则 standard）"
   fi
-  # WP-P9：技术栈复杂度信号（只升不降，质量优先）
+  # 技术栈复杂度信号（只升不降，质量优先）
   # WP-R Bug#1: 原 find|head -1|grep -q . 在 set -euo pipefail 下，find 输出被 head 截断收 SIGPIPE(141)，
   # pipefail 使管道非零 → && 链非零 → set -e 触发脚本退出（5/5 真实项目崩溃 exit 141）。
   # 改用 find -print -quit：find 原生首匹配即停，无管道无 SIGPIPE。
@@ -1150,7 +1150,7 @@ if [[ "$PROFILE" == "auto" ]]; then
   echo "profile auto 判定: ${PROFILE}（${_auto_reason}；信号明确才升档，模糊走默认 standard。显式 --profile 可覆盖）"
 fi
 
-# WP-Q3：auto 档时探测框架，写入 precheck.arch.conf 的 ACTIVE_FRAMEWORKS（standard+ 档）
+# auto 档时探测框架，写入 precheck.arch.conf 的 ACTIVE_FRAMEWORKS（standard+ 档）
 # 替代 AI 手工探查 §C+.0.5。lite 档不拷 precheck.arch.conf，跳过。
 _wq3_script="$(cd "$(dirname "$0")" && pwd)/detect-frameworks.sh"
 if [[ "$PROFILE" != "lite" && -f "$_wq3_script" ]]; then
@@ -1194,7 +1194,7 @@ copy_universal_templates() {
     # precheck.conf 三件套：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
     [[ "$mode" == "upgrade" && ( "$dest" == "scripts/precheck.conf" || "$dest" == "scripts/precheck.arch.conf" || "$dest" == "scripts/precheck.compliance.conf" ) ]] && continue
     case "$kind" in
-      # WP-B: assets 类源文件统一平铺在 $ASSETS_DIR/（assets/precheck.sh 等）。
+      # assets 类源文件统一平铺在 $ASSETS_DIR/（assets/precheck.sh 等）。
       # dest 形态：scripts/precheck.sh → 源 = assets/precheck.sh（取 basename，文件平铺在 assets/）。
       # （hooks 不再走本分支——audit-claims-reality 起 dest 归一 scripts/，由 hook 分支映射 assets/hooks/ 源。）
       # 历史 bug：assets) src=$ASSETS_DIR/${dest#assets/} —— dest=scripts/precheck.sh 时
@@ -1209,18 +1209,18 @@ copy_universal_templates() {
         fi
         ;;
       ref)    src="$SRC_REF/${dest##*/}" ;;
-      rules)  src="$ASSETS_DIR/$dest" ;;   # R13 批次2：rules.d 规则数据（dest=rules.d/xxx.rules → assets/rules.d/xxx.rules）
+      rules)  src="$ASSETS_DIR/$dest" ;;   # rules.d 规则数据（dest=rules.d/xxx.rules → assets/rules.d/xxx.rules）
       onto)   src="$ASSETS_DIR/ontology/$(basename "$dest")" ;;  # R16-A：本体层（dest=references/ontology/x.md → assets/ontology/x.md）
       hook)   src="$ASSETS_DIR/hooks/${dest##*/}" ;;  # audit-claims-reality：hooks 源在 assets/hooks/，dest 归一 scripts/
       gen)    src="$SRC_SCRIPTS/${dest##*/}" ;;
       *) echo "ERROR: UNIVERSAL_FILES 未知源类别: $entry" >&2; return 1 ;;
     esac
-    # WP-B: dest 可能含子目录（rules.d/bash-advance.rules、references/ontology/objects.md），
+    # dest 可能含子目录（rules.d/bash-advance.rules、references/ontology/objects.md），
     # mkdir -p 父目录再 cp，否则 cp 报"No such file or directory"
     # （顶层 mkdir 只建了 references/assets/scripts/hooks/commands，子目录不在内）。
     mkdir -p "$dir/$(dirname "$dest")"
     cp "$src" "$dir/$dest"
-    # WP-P5: spec-template §14-§18 认知扩展包按 profile 门控
+    # spec-template §14-§18 认知扩展包按 profile 门控
     # lite/standard 裁掉 §14-§18（节不存在 → check_cognition SKIP 披露）；compliance 保留全部。
     # 裁剪范围：从门控注释 <!-- profile-gate: standard+ ... --> 起，到 ## 19. 止（不含 §19）。
     # 对 create/upgrade/resume 任意模式均生效（凡拷贝 spec-template 即按 profile 分层）。
@@ -1283,7 +1283,7 @@ copy_universal_templates() {
 # ============================================================
 if [[ "$MODE" == "upgrade" ]]; then
   [[ ! -d "$SKILL_DIR" ]] && { echo "ERROR: 目标技能不存在: $SKILL_DIR"; exit 1; }
-  # WP-E：upgrade 继承既有 profile（frontmatter `profile: <档>`）；显式 --profile 优先
+  # upgrade 继承既有 profile（frontmatter `profile: <档>`）；显式 --profile 优先
   if [[ "$PROFILE_EXPLICIT" -eq 0 && -f "$SKILL_DIR/SKILL.md" ]]; then
     _existing_profile=$(grep -m1 '^profile: ' "$SKILL_DIR/SKILL.md" 2>/dev/null | sed 's/^profile: *//' | tr -d '[:space:]')
     case "${_existing_profile:-}" in
@@ -1321,7 +1321,7 @@ PEOF
   fi
   echo "=== 3. 保留项目特定文件 ==="
   for f in "${PROJECT_SPECIFIC_FILES[@]}"; do [[ -f "$SKILL_DIR/$f" ]] && echo "  ✓ $f"; done
-  # WP-A3：settings.local.json / .mcp.json 不存在则生成（存在则保留用户定制，不覆盖）
+  # settings.local.json / .mcp.json 不存在则生成（存在则保留用户定制，不覆盖）
   for cfg in settings.local.json .mcp.json; do
     if [[ ! -f "$SKILL_DIR/$cfg" ]]; then
       echo "  → 补生成 ${cfg}（旧版生成器未产出）"
@@ -1411,7 +1411,7 @@ EOF
 fi
 
 # ============================================================
-# 创建模式（WP-H：draft 状态门 + 断点续传）
+# 创建模式（draft 状态门 + 断点续传）
 # ============================================================
 # 已存在目录：draft 骨架 → 续传（幂等补齐缺失文件，不覆盖已有内容）；active/无 status → 报错走 --upgrade
 RESUME=0
@@ -1431,7 +1431,7 @@ _write_if_absent() {  # $1=目标路径；stdin=内容
 echo "=== 创建: $SKILL_DIR ==="
 echo "  profile: ${PROFILE}（lite=认知档最小集 / standard=标准档 / compliance=强监管档）"
 trace_tool "create" "$SKILL_DIR"
-# WP-E：lite 档只建三目录（无 hooks/commands/settings/.mcp.json）
+# lite 档只建三目录（无 hooks/commands/settings/.mcp.json）
 if [[ "$PROFILE" == "lite" ]]; then
   mkdir -p "$SKILL_DIR"/{references,assets,scripts}
 else
@@ -1442,7 +1442,7 @@ if [[ "$RESUME" -eq 1 ]]; then
 else
   copy_universal_templates "$SKILL_DIR"
 fi
-# WP-P4: create 模式 precheck.conf 三件套由 conf-render.sh 渲染初稿（嗅探+溯源注释），覆盖模板拷贝
+# create 模式 precheck.conf 三件套由 conf-render.sh 渲染初稿（嗅探+溯源注释），覆盖模板拷贝
 # 仅新建（RESUME=0）时渲染；续传保留既有 conf 不覆盖。upgrade 模式在上文独立分支（merge_precheck_conf 保留用户配置）。
 if [[ "$RESUME" -eq 0 ]]; then
   if bash "$SRC_SCRIPTS/conf-render.sh" "$PROJECT_DIR" --profile "$PROFILE" --out "$SKILL_DIR/scripts" >/dev/null 2>&1; then
@@ -1462,12 +1462,12 @@ fill_guide() {
     *) echo "见 template-spec.md" ;;
   esac
 }
-# WP-E：lite 档只生成 reference-manual.md 占位（特征卡+参考手册承载认知；其余段随升档补）
+# lite 档只生成 reference-manual.md 占位（特征卡+参考手册承载认知；其余段随升档补）
 _placeholder_refs="workflow.md codebase.md dev-guide.md release.md reference-manual.md"
 [[ "$PROFILE" == "lite" ]] && _placeholder_refs="reference-manual.md"
 for f in $_placeholder_refs; do
   if [[ "$f" == "workflow.md" ]]; then
-    # S10/S4 实装：workflow.md 不再 2 行占位，emit 9 节点骨架（R13 批次1b 后 4 要素/节点），
+    # S10/S4 实装：workflow.md 不再 2 行占位，emit 9 节点骨架（每节点 4 要素），
     # 节点②探查的 ⑨ 调用追踪预填 trace-log 模板（具体化 SKILL.md:86 的 AI 自由动作）。
     # 节点名对齐 template-spec.md:198-207 标准 9 节点（⑥测试验证 + ⑦独立审查独立拆分，审查留痕 review-record 落盘）。
     _write_if_absent "$SKILL_DIR/references/$f" <<'WFEOF'
@@ -1655,9 +1655,9 @@ for f in $_placeholder_refs; do
 WFEOF
   else
     if [[ "$f" == "reference-manual.md" ]]; then
-      # R13 批次1b：reference-manual.md 两维表骨架（五维表减负——"维度/来源"列纯记账退役）。
+      # reference-manual.md 两维表骨架（五维表减负——"维度/来源"列纯记账退役）。
       # 原因：inventory-verify --path-check / --stability-audit 期望 §4/§6/§9 表格行内含反引号路径
-      # + 稳定性标注（稳定/禁止改），骨架表头让 AI 有结构起点而非从 0 造（R13 批次1b 已减负为两维）。
+      # + 稳定性标注（稳定/禁止改），骨架表头让 AI 有结构起点而非从 0 造（已减负为两维）。
       # 骨架仅给表头 + 一行示例（P1 待补标记——mark-active 前必须替换为真实条目）。
       _write_if_absent "$SKILL_DIR/references/$f" <<'RMEOF'
 # reference-manual.md — 项目参考手册（组件库清单 / 接口约束 / 数据勾稽）
@@ -1699,7 +1699,7 @@ EOF
   fi
 done
 
-# WP-E：lite 档跳过 hooks/settings/.mcp.json/commands（无 hooks 生命周期与 slash 命令负担）
+# lite 档跳过 hooks/settings/.mcp.json/commands（无 hooks 生命周期与 slash 命令负担）
 if [[ "$PROFILE" != "lite" ]]; then
 _write_if_absent "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
 {
@@ -1713,7 +1713,7 @@ _write_if_absent "$SKILL_DIR/hooks/hooks.json" <<'HEOF'
 }
 HEOF
 
-# settings.local.json（WP-A1：真生成，落实 SKILL.md Step 9 宣称）
+# settings.local.json（真生成，落实 SKILL.md Step 9 宣称）
 # 最小权限模板：允许本 skill 自带脚本执行；deny 危险命令 + 敏感文件读（沙箱通配符 deny——
 # Claude Code v2.1.236 起 ** glob 防重命名绕过：Read(**/.env) 在 allowed read 区域内优先生效）。
 # 项目特定权限由 AI 填充。
@@ -1746,7 +1746,7 @@ _write_if_absent "$SKILL_DIR/settings.local.json" <<'SEOF'
 }
 SEOF
 
-# .mcp.json（WP-A2：真生成，落实 SKILL.md Step 9 宣称）
+# .mcp.json（真生成，落实 SKILL.md Step 9 宣称）
 # 注释模板：列出可选 MCP server 接入示例，默认全 commented out，由 AI 按项目已装运行时激活。
 # JSON 不支持注释，用 "_comment" 字段承载说明；激活时删除对应 server 前的注释行（改为有效 JSON）。
 _write_if_absent "$SKILL_DIR/.mcp.json" <<'MEOF'
@@ -1796,7 +1796,7 @@ description: 探查项目结构
 CEOF
 fi  # PROFILE != lite
 
-# WP-H：SKILL.md 含续传追加段，整段按存在性守卫（draft 骨架的 SKILL.md 已存在时整体跳过）
+# SKILL.md 含续传追加段，整段按存在性守卫（draft 骨架的 SKILL.md 已存在时整体跳过）
 if [[ "$RESUME" -eq 0 || ! -f "$SKILL_DIR/SKILL.md" ]]; then
 # 五层导航档位感知指针（lite 精简档无 dev-guide/workflow/framework-knowledge——指向实存载体，防导航断环）
 if [[ "$PROFILE" == "lite" ]]; then
@@ -1839,7 +1839,7 @@ status: draft
 ## 填充指引
 - [ ] meta: 核心理念+改造分类+流程总览+命令速查+门禁+反借口表（借口/反驳两列表，从门禁步骤逐条反推，见 template-spec §1.5）+假设清单（需求/架构/范围三维度+"现在纠正我"，见 template-spec §1.5）
 EOF
-# WP-E：checklist 按档裁剪（lite 无 workflow/commands/hooks 条目）
+# checklist 按档裁剪（lite 无 workflow/commands/hooks 条目）
 if [[ "$PROFILE" != "lite" ]]; then
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] workflow: 九节点+每节点 4 要素（入口/参与方/门禁/产出物与调用追踪）+4-Phase SOP
@@ -1850,7 +1850,7 @@ cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] reference: reference-manual（特征卡 P0 六项 + 全量构件库清单）
 EOF
 fi
-# global-consistency-r2：checklist assets 行档位感知（lite 无 branch/env/data；§14-§18 仅 compliance 保留；state-machine 在 scripts/ 段）
+# checklist assets 行档位感知（lite 无 branch/env/data；§14-§18 仅 compliance 保留；state-machine 在 scripts/ 段）
 case "$PROFILE" in
   lite)       _ck_assets="spec-template(§5.5-§13+§19-24) + plan + review-record + task-type-gates + profile-thresholds" ;;
   compliance) _ck_assets="spec-template(§5.5-§18 全节) + plan + review-record + branch/env/data + snippets + mcp-tools + standards-map" ;;
@@ -1862,8 +1862,8 @@ cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] scripts: precheck + state-machine + trace-log + cost-report
 - [ ] 决策记录：spec §2 决策记录段写本技能生成/选型决策到 \`.swarm-yuan/decisions.jsonl\`（≥1 条；UserChallenge 类须带 missing_context/cost_if_wrong）——\`--mark-active\` 核验项
 EOF
-# WP-R2-2：自成长指引段（固定操作指引，非填充项——目标技能的 AI 按此链保持技能与项目同步）
-# WP-R3-1：profile 分档——lite 档 WP-E 不装 hooks/hooks.json，SessionStart 自动感知链不存在；
+# 自成长指引段（固定操作指引，非填充项——目标技能的 AI 按此链保持技能与项目同步）
+# profile 分档——lite 档 WP-E 不装 hooks/hooks.json，SessionStart 自动感知链不存在；
 # 须明示"lite 档须 AI 在会话开始时手动跑 --diff"，别让文档撒谎说"hook 已自动感知"。
 if [[ "$PROFILE" == "lite" ]]; then
 cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
@@ -1900,7 +1900,7 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 红线：① 指纹只感知结构变化（文件数/扩展名/骨架 cksum/目录 cksum）；语义变化（约束失效/接口语义变更）靠 AI 在编码流程中发现即更新清单，不等 refresh。② **清单更新先完整生成再原子替换，探查中途失败绝不覆盖上一份好清单**（last-good 保留：探查输出条目数骤降 >50% 视为失败，保留旧清单并告警）。
 EOF
 fi
-# WP-P5: SKILL.md「按需读取」索引表自动生成（依据实际拷入的 UNIVERSAL_FILES 分级清单）
+# SKILL.md「按需读取」索引表自动生成（依据实际拷入的 UNIVERSAL_FILES 分级清单）
 # 仅 create 分支执行（resume 分支走 else 跳过，不重复追加）；表按 UNIVERSAL_FILES 数组顺序输出。
 _idx_file="$SKILL_DIR/.universal-files-index.md"
 # 用途描述：列头承诺"用途"，原实现填的是内部类目码（ref/onto/gen…）=信息断环。

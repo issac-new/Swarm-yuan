@@ -282,7 +282,7 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 <!-- T4 改造：本区块由 gen-framework-index.sh 自动重写，手改内容会被覆盖。脚本失败会保留原文件不动（mv 守卫），不阻塞生成流程。 -->
 
 # >>> framework-signal-index >>>
-> 本表已数据化外迁：完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。
+> 本表已数据化外迁（WP-P1/M4）：完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。
 > 运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件，无需常驻上下文。
 # <<< framework-signal-index <<<
 

@@ -1,4 +1,4 @@
-# bash-advance.rules — 推进态命令三值规则（R13 批次2；GATE_ENFORCE_DENY_BASH 的数据化形态）
+# bash-advance.rules — 推进态命令三值规则（GATE_ENFORCE_DENY_BASH 的数据化形态）
 # 格式：<pattern(glob)> → <allow|prompt|forbid> # <justification（forbid 须含"替代："）>
 # 求值：gate-rules.sh（多规则命中取最严 forbid > prompt > allow）
 

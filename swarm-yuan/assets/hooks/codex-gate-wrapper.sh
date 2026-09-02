@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# codex-gate-wrapper.sh — R13 批次4 增量：Codex PreToolUse deny 协议适配
+# codex-gate-wrapper.sh — 增量：Codex PreToolUse deny 协议适配
 # Claude Code 协议（hookSpecificOutput JSON + exit 0）→ Codex 协议（exit 2 + stderr 原因透传给模型）
 # 用法：codex hooks.json 的 command 调用本脚本（stdin 透传给 fail-gate-hook）
 set -uo pipefail

@@ -212,7 +212,7 @@ else
 EOF
 fi
 
-# R13 批次1a（D2 接线）：Stop 时顺带跑 loop-oracle 门禁（advisory——原 advisory-only
+# Stop 时顺带跑 loop-oracle 门禁（advisory——原 advisory-only
 # 无触发路径，接线进 loop-hook 检查链；fail-open，有下层门禁兜底）
 _pc="${CLAUDE_PLUGIN_ROOT:-.}/scripts/precheck.sh"
 [[ -f "$_pc" ]] && bash "$_pc" --loop-oracle 2>/dev/null || true

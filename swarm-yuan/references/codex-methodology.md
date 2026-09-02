@@ -104,7 +104,7 @@ Codex Skills 只常载 frontmatter（name/description），正文按触发注入
 
 ---
 
-## R4 补核（2026-08-21）：v0.146 → v0.148 两 stable + v0.149-alpha 预告
+## 版本注记：v0.148（含 v0.147）
 
 > 基线 v0.146.0（2026-08-14 调研）→ 最新 stable v0.148.0（2026-08-18）+ v0.149.0-alpha.4（2026-08-20）预告。详见 README.md §6.4 上游运行时基线 §三 CLI 专题。
 
@@ -138,9 +138,9 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 1. **v0.147 移除 `codex exec --full-auto`**——改用 `--sandbox workspace-write`。本仓生成脚本无 `--full-auto` 引用（无影响）；install.sh 对 Codex 目标的检测登记版本下限候选（≥0.147）。
 2. **v0.149-alpha 移除技能模型委托**——skills 不能再指定委托模型。本仓无按子任务指定模型的设计（无影响）。
 
-## R16 补核（2026-09-01）：v0.149 → v0.152 四 stable
+## 版本注记：v0.152（2026-09-01 核）——v0.149-152 的能力变化
 
-> 基线 v0.148.0（R4 补核）→ 最新 stable v0.152.0（2026-09-01；v0.153.0-alpha.1 已出）。区间 405 commits；docs/skills.md 零 diff（技能目录/格式不变）。详见 README §6.4 §三 3.4 R16 表。
+> 当前 stable v0.152.0。本段覆盖 v0.149-152（docs/skills.md 零 diff，技能目录/格式不变）。详表见 `docs/upstream-baseline.md`。
 
 - **Guardian v2 落地形态**（v0.149-152）：flag 默认 false 迭代；`--approve-for-me`（别名 `--not-so-yolo`）fail-closed 评审（90s 超时严格 JSON）；**用户显式调用的 skills 受信任**（v0.151）；过期风险分类不授权（v0.151）；跨 compaction 保留授权（v0.152）。**门禁产出的结构化 PASS/FAIL 结论可被 Guardian 引用为 trusted context——证据态输出与宿主审批体系咬合。**
 - **skills token 预算**（v0.149，直接影响技能形态）：`[skills] max_context_tokens`（默认 2% 上下文、上限 10k）——技能目录进 prompt 前有预算截断 + 实验性路由。本仓生成技能 frontmatter 三行制紧凑已满足；多技能项目须知目录 token 成本。
