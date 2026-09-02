@@ -137,7 +137,7 @@ AI 的代码生成能力已经很强，但「项目认知」仍是被多数工�
 5. **刻意不修原则**：修复会改变门禁判定行为且无 fixture 覆盖时，不贸然"唤醒沉睡门禁"——先补 fixture 再评估苏醒影响。
 6. **不 vendor 上游核心插件**：方法论引用不 vendor、运行时调用才考虑深度整合——"调用不重实现"的最低成本形态（体积/维护面/许可证敞口/生态四理由）。
 7. **机械 vs AI 边界**：探索式判定（taste/质量/cognition）转 AI 自觉判断而非机械 grep；"假装可机器"的门禁降 warn；机械只在信号可信处。
-8. **宿主职责不复制**：OS 沙箱、LLM 审批分类器、供应链检测、解释器等——吸收其决策架构，实现复用宿主/既有工具（调用不重实现）。
+8. **宿主职责不复制**：OS 沙箱、LLM 审批分类器、供应链检测、解释器等——借鉴其架构决策，实现复用宿主/既有工具（调用不重实现）。
 
 ### 设计要点（每条原则的现行约束）
 
@@ -309,7 +309,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | workflow 模板 | 使用 | 九节点 × 4 要素骨架 |
 | decision-governance.md | 留痕 | G1 决策治理（三级分类/五要素/decisions.jsonl 格式/ISO 42001 对齐） |
 | review-methodology.md | 留痕 | 代码审查方法论（rubric 判定/P0-P3/规则溯源） |
-| memory-persistence.md | 留痕 | 记忆持久化（claude-mem 吸收/version oracle） |
+| memory-persistence.md | 留痕 | 记忆持久化方法论 + version oracle 单源 |
 | subagent-orchestration.md | 使用 | 子代理编排（comet/gstack/ECC/Ruflo 四源方法论） |
 | cognition-framework.md | 使用 | 五层认知基底详表（认知递进/思维语言/辩证/偏差/统一——工程启发式框架，非心理测量学构念） |
 | domain-knowledge.md | 探查 | 领域知识库（防达克） |
@@ -323,7 +323,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | 探查方法论（4） | exploration-guide.md / template-spec.md / generation-flow.md / code-graph-tools.md（图谱工具选型平权） |
 | 认知框架（4） | cognition-framework.md（五层基底）/ logic-razor.md / cognitive-bias.md / domain-knowledge.md（领域防达克） |
 | 编排与审查（4） | subagent-orchestration.md / review-methodology.md / task-methodology-router.md / gsd-patterns.md |
-| 外部吸收方法论（10） | codex-methodology.md / codex-security-methodology.md / claude-code-capabilities.md / dsh-engineering-methodology.md / cordis-composability-methodology.md / mea-loop-methodology.md / agent-skills-methodology.md / frontend-design-methodology.md / context-engineering-layering.md / memory-persistence.md |
+| 外部方法论（10） | codex-methodology.md / codex-security-methodology.md / claude-code-capabilities.md / dsh-engineering-methodology.md / cordis-composability-methodology.md / mea-loop-methodology.md / agent-skills-methodology.md / frontend-design-methodology.md / context-engineering-layering.md / memory-persistence.md |
 | 治理与合规（11） | decision-governance.md / governance-agents.md / standards-compliance.md / quality-management-standards.md / crypto-spec.md / cwe-database.md（门禁内部数据）/ security-spec.md / security-certification-profiles.md / mcp-governance.md / ai-process-records.md / canary-monitoring.md |
 | 行业 profile（7） | industry-profile-finance.md / industry-profile-medical.md / industry-profile-gov.md / industry-profile-automotive.md / industry-profile-energy.md / industry-profile-industrial.md / industry-profile-telecom.md（法规依据文档，与 conf 配对——conf-render --industry 真实加载） |
 | 案例与骨架 | case-studies/articulation-orchestration.md（对外汇报论据）/ workflow.md·reference-manual.md 等骨架由生成器产出 |
@@ -374,7 +374,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 **生成时数据流**（步骤编号用 §8.1 唯一口径）：§C+.0.5 探查 → ACTIVE_FRAMEWORKS+版本 → ④.5 框架深化（Step 7 填充期内：逐框架读 md，信号确认→构件枚举→规律种子实例化附证据）→ ⑦.5 门禁注入（Step 10.5 独立审查后：--inject-frameworks 注入门禁片段+生成 framework-knowledge.md 骨架+填 conf 变量）→ Step 12 最终检查四要素量化验收（规律数≥门槛且 100% 含证据字段，不过回 ④.5）。
 
-**实战种子机制**：已验证的手写框架检查（vue/naiveui/pinia/koa/socketio/vite/vitest 7 框架 28 项）反向收割进片段库作种子，再经注入回灌——从成功实践反哺片段库，起步即有高质量样本。
+**片段库种子**：来自 7 个框架的 28 项已实战验证检查（vue/naiveui/pinia/koa/socketio/vite/vitest），起步即有高质量样本。
 
 ### 4.7 约束机制（门禁层）
 #### 4.7.1 逻辑错误的兜底链
@@ -418,7 +418,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 **验证器（司法层）**：`verifier/v1/`——fixture 双态（violating/compliant 各一套最小样例，79 框架规则各一对；check_framework=advisory，violating 断言 = 检测命中 expected-fail-ids 而非退出码非零——违规不阻断是设计语义，检出能力才是被验证物）+ golden-vector（79 条框架 FIXTURE 预期向量 + 1 汇总行=80 行，回归基线）+ cli A/B 沙箱逐字节等价断言（历史 131 次调用一致性）。**诚实边界（R9 教训）**：fixture 是构造样例，5 个真实项目测试曾漏 3 个 P0/P1 bug——fixture + 真实项目双轨制；外部有效性立项稿 `verifier/v2/external-validity.md`（未达阈值前不得宣称"守护代码合规"）。
 
-#### 4.7.3 三值规则引擎（Codex Decision 架构 bash 落地）
+#### 4.7.3 三值规则引擎
 
 - **规则即数据**：`rules.d/*.rules` 行格式 `<pattern(glob)> → <allow|prompt|forbid> # <justification>`；求值器 `scripts/gate-rules.sh`（多规则命中取最严 forbid > prompt > allow）。规则来源四层：①底座两套内置示例（bash-advance 推进态 / readonly-safe 只读白名单——全档位随目标技能分发，见 §5.3）；②探查期生成的项目特有规则；③审批沉淀写入（见下）；④`framework-globs.rules` 是 conf glob 默认值快照、非三值规则（运行时消费者 = self-check G21 对账锚，见 §5.4 与 §11 已修复边界②）。
 - **三值作用域**：只作用于"命令该不该跑"的判定（Bash 命令放行，那里有宿主审批通道）；门禁家族不重分类。
@@ -456,8 +456,8 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ### 4.8 演化机制（成长层）
 - **目标技能自成长链**：fingerprint 感知（SessionStart/手动 --diff）→ 变化目录 scope 报告（局部重探查，不整仓重扫）→ inventory-update 单条更新（replace/delete/append §4/§6/§9，原子替换 + 决策落痕）→ last-good 红线（文件数骤降 >50% 拒绝 --write，需 --force）→ `--commit-fp` 落新基线。局部重探查产出的新组件经 `inventory-update append` 入地图（AI 按自成长链操作显式入账，非隐式自动写——探查产出先给 AI 判稳，再登记，决策落痕）。
-- **生成器成长通道**：吸收一律走"调研报告（docs/research/）→ 三问评审 → 落地为条件/路由/引导之一"（phase=absorption 留痕 decisions.jsonl）；上游重核从全量改为破坏性变更驱动（breaking/major 触发 + 季度例行）。
-- **生成器演进协议**（本体先行，见 §6.2 冲程三）：新机制/新概念先过冲程二四问——新实体进 objects.md、新关系进 links.md（必配机器锚）、新动作进 actions.md；再派生实现；收尾跑 self-check 类型对账 + ontology-verify 六锚。吸收三问（准入评审：要不要吸收）与本体四问（设计方法：怎么落地）串联——先三问、后四问。
+- **生成器成长通道**：外部概念的引入一律走"调研报告（docs/research/）→ 三问评审 → 落地为条件/路由/引导之一"（phase=absorption 留痕 decisions.jsonl）；上游重核从全量改为破坏性变更驱动（breaking/major 触发 + 季度例行）。
+- **生成器演进协议**（本体先行，见 §6.3 四问）：新机制/新概念先过四问——新实体进 objects.md、新关系进 links.md（必配机器锚）、新动作进 actions.md；再派生实现；收尾跑 self-check 类型对账 + ontology-verify 六锚。吸收三问（准入评审：要不要吸收）与本体四问（设计方法：怎么落地）串联——先三问、后四问。
 - **成长的预算约束**：成长 = 预算内替换（新知识进来必须有旧知识出去或税不增），否则只是膨胀。
 
 ### 4.9 留痕机制（追踪层）
@@ -467,7 +467,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **gate-runs.jsonl**：门禁执行流水（每次 precheck 运行追加一行带 run 序号，`GATE_RUNS_DIR` 非空启用）——SARIF 证据链、连续零发现统计（metrics 门禁）、gate-trends 趋势的数据源。
 - **key-nodes.jsonl**：九节点关键调用看板。
 - **gate-plan.json**（评测层）：任务开工的门禁选择声明（enable/skip + 理由，负空间可审计）；`scripts/gate-plan.sh --plan/--diff` 收口对比计划 vs 实际触发（missing_evidence/计划外/skip 违反，advisory）。
-- **decisions.jsonl `ref_trace_hash`**（评测层）：decisions 记录引用 trace.jsonl 末行 cksum——三本账从并列升级为**链式**（上游篡改 → 失配 → 全链 stale 可检出；HarnessEval evidence tree 的 bash 最小切片）。
+- **decisions.jsonl `ref_trace_hash`**（评测层）：decisions 记录引用 trace.jsonl 末行 cksum——三本账**链式**锚定（上游篡改 → 失配 → 全链 stale 可检出）。
 - **audit-closure 完备性**（评测层）：`scripts/audit-closure.sh` 按 goal_id 全集重走 closure 完备性（open/closed 分布 + open goals 列表）；`--strict` 有 open 时 exit 2，串 mark-active advisory 门（审计即完成条件）。
 
 **落盘全景**（`.swarm-yuan/`）：四本账 = trace / decisions / gate-runs / gate-audit（objects.md `Ledger` 类型的四个实例）；辅助存盘 = key-nodes 看板 + gate-plan 声明 + 指纹快照 + notes/。
@@ -533,155 +533,84 @@ bash scripts/generate-skill.sh --mark-active <skill-dir>                 # 三�
 
 ---
 
-## §6 本体论驱动原理（发动机——一切机制的上游）
+## §6 本体模型（一切机制的上游）
 
-> 前五章自下而上把系统讲完了；本章上溯到最上游——为什么这些机制必然存在、为什么新机制从这里长出来。这是深读章，理解演进逻辑再来。
+> 前五章讲完了系统是什么、怎么造、怎么用；本章回答最后一个问题：**凭什么这些机制是完备且互不冗余的**。答案是一个显式本体——三份类型目录 + 两条纪律 + 一套推导方法。
 
-### 6.1 一句话
+### 6.1 本体是什么
 
-swarm-yuan 是被本体论驱动的生成系统：**先说清世界里有什么，一切机制从"存在"推导出来，一切演进从本体开始改，AI 的一切行为被本体约束**。本体不是对系统的描述，是系统的上游——机制是它的实现投影，演进是它的丰富过程，行为空间是它划出的边界。
+本体 = 三份类型目录（`assets/ontology/`，与 facts.conf 平行的类型事实源）：
 
-### 6.2 引擎的四个冲程
+| 目录 | 内容 | 约束 |
+|------|------|------|
+| objects.md | **17 类实体**（仓库/组件/技能/规则/账本/门禁/决策/目标…） | 刻意不承诺不可观测的东西——AI 的"理解"、认知分数不进本体，只承诺行为记录 |
+| links.md | **10 条关系**，每条带机器锚 | 关系的实例可验证存在，无锚的关系不许进 |
+| actions.md | **11 个动作**（封闭空间） | 每个动作有治理载体和留痕载体，可审计 |
 
-##### 冲程一：本体生成机制（为什么有这些机制）
+self-check 对账 18 个实存点；`ontology-verify.sh` 六锚健康检查。
 
-每个机制都不是发明出来的，是本体里某条**关系的实现**：
+### 6.2 机制从本体推导（每个机制实现哪条关系）
 
-| 本体里的关系（先有） | 派生的机制（后有） |
-|---------------------|-------------------|
-| 地图**表征**仓库（represents） | path-check（验证表征指向真实存在）、计数核验 ≥0.95（验证表征覆盖够全）、stability-audit（验证表征没过时） |
-| 账本**记录**过程（records） | trace-log（记录的工具）、gate-audit（记录的固化）、审计闭环（记录的复盘） |
-| 指纹**快照**仓库时态（snapshot_of） | project-fingerprint --diff（快照 vs 当前态断裂检测）、last-good 红线（骤降 >50% 拒写——好基线不因坏状态失效） |
-| 决策**闭环**目标（closes） | goal_id+closure 字段（末次决策定闭环态）、audit-closure 完备性重走 |
-| 技能**生成自**生成器（generated_by） | .swarm-yuan-version 版本戳、--upgrade 升级机制 |
-| 规则**治理**命令（governs） | 三值求值器（治理的判定）、FORBID 带替代（治理的表达方式）、审批沉淀（治理的演化通道） |
-| 技能 hooks **挂载**宿主（mounted_in） | hooks.json 双宿主渲染、fail-gate-hook 拦截（挂载即生效） |
-| 账本行**锚定**上游账本（anchors） | ref_trace_hash digest 链（上游篡改 → 失配 → 全链 stale） |
+每个机制都是本体里某条关系的实现，无一例外：
+
+| 本体关系 | 实现的机制 |
+|---------|-----------|
+| 地图**表征**仓库（represents） | path-check（指向真实存在）、计数核验 ≥0.95（覆盖够全）、stability-audit（没过时） |
+| 账本**记录**过程（records） | trace-log、gate-audit、审计闭环 |
+| 指纹**快照**仓库时态（snapshot_of） | project-fingerprint --diff、last-good 红线（骤降 >50% 拒写） |
+| 决策**闭环**目标（closes） | goal_id+closure 字段、audit-closure 完备性重走 |
+| 技能**生成自**生成器（generated_by） | .swarm-yuan-version 版本戳、--upgrade |
+| 规则**治理**命令（governs） | 三值求值器、FORBID 带替代、审批沉淀 |
+| hooks **挂载**宿主（mounted_in） | hooks.json 双宿主渲染、fail-gate-hook 拦截 |
+| 账本行**锚定**上游账本（anchors） | ref_trace_hash digest 链（上游篡改全链可检出） |
 | 稳定性标注**传播**下游（propagates_to） | --stable-diff 下游传播 warn |
-| 计划**声明**门禁选择（plans） | gate-plan.json 声明 + --diff 收口（选择即证据，负空间可审计） |
+| 计划**声明**门禁选择（plans） | gate-plan.json + --diff 收口（选择即证据） |
 
-上表 = links.md 10 条关系**全量**（表征系 4 条落校验轴机制、依赖系 6 条落边界轴机制——§0.3 的 2×2 投影在此自证）；机制不派生自目录外关系（类型封闭性）。
+上表 = links.md 10 条关系的全量；机制不派生自目录外关系（类型封闭）。
 
-**反推纪律（这条冲程的执法）**：每个机制必须能回答"我实现本体里的哪条关系"。答不出的机制是孤儿——要么删掉，要么先回本体补定义再实现。
+**反推纪律**：每个机制必须能回答"我实现本体里的哪条关系"。答不出的是孤儿——删掉，或先回本体补定义再实现。
 
-**创造纪律（这条冲程的第二执法）**：反推纪律问"机制从哪条关系派生"，创造纪律问"机制是否被创建且被运行"——**声称的机制必须能被创建（可运行）且被运行（CI/断言接线），否则视为不理解、不得声称**。只存在于文档的机制不是实体，是传闻；机器锚是创造证明，CI 接线是占有证明。两类典型创造缺失：设计了没实现（死调用/兜底静默失效/空头断言）、实现了没接线（定义后零调用/测试写完脱钩 CI 绿≠它们过）。
+**创造纪律**：声称的机制必须能被创建（可运行）且被运行（CI/断言接线），否则不得声称。只存在于文档的机制不是实体，是传闻；机器锚是创造证明，CI 接线是占有证明。两类典型缺失：设计了没实现（死调用/兜底静默失效/空头断言）、实现了没接线（定义后零调用/测试写完脱钩）。
 
-##### 冲程二：本体驱动设计（新需求来了怎么想）
+### 6.3 新机制的四问推导（设计方法）
 
-传统思路：新需求 → 想加什么功能 → 实现功能清单。
-本体驱动思路：新需求 → 四问推导 → 功能只是推导链末端的投影：
+新需求不做功能清单，走四问——功能只是推导链末端的产出：
 
-1. **这引入什么新实体？**（进 objects.md——本体论节俭：想清楚它跟已有类型的区别）
-2. **实体间产生什么新关系？**（进 links.md——这条关系的语义是什么）
-3. **新关系的机器锚是什么？**（没有锚的关系 = 未来的漂移 bug——历史上全部漂移 bug 的统一根源）
-4. **锚怎么检测失效？**（进 self-check 对账或 ontology-verify 健康检查）
+1. **引入什么新实体？**（进 objects.md；想清楚它与已有类型的区别）
+2. **实体间产生什么新关系？**（进 links.md；这条关系的语义是什么）
+3. **新关系的机器锚是什么？**（无锚的关系 = 未来的漂移 bug——历史上全部漂移 bug 的统一根源）
+4. **锚怎么检测失效？**（进 self-check 对账或 ontology-verify）
 
-四问答完，实现是水到渠成的；四问没答就写代码，就是 R13 之前五轮膨胀的老路。
+**示例**：需求"决策记录与执行证据要可配对"→①新实体？无，复用 Decision/Ledger；②新关系？有：`anchors`（decisions 行 → trace 末行）；③机器锚？`ref_trace_hash` = trace.jsonl 末行 cksum；④失效检测？锚四抽验 digest 链，失配即全链 stale。四问走完，实现收敛为一个字段 + 两处对账点，没有多余设计。
 
-**示例（四问走一遍——R15 ref_trace_hash 的实际推导）**：需求"决策记录与执行证据要可配对"→①新实体？无——复用既有 Decision/Ledger 类型；②新关系？有：`anchors`（decisions 行 → trace 末行，进 links.md）；③机器锚？`ref_trace_hash` 字段 = trace.jsonl 末行 cksum；④锚失效怎么检测？ontology-verify 锚四抽验 digest 链——失配即全链 stale 可检出。四问走完，实现收敛为 trace-log.sh 一个字段 + 对账点两处，没有多余设计。
+### 6.4 行为约束（AI 怎么被管住）
 
-##### 冲程三：本体驱动演进（系统怎么成长）
+**AI 做不出绕过门禁的操作，因为操作过的是受治理的规则和账本**——治理不靠提示词自觉，靠把行为面全部压在受治理对象上：
 
-成长史 = 本体的丰富史 + 依赖的锚定史。这个视角把整个演化过程串成一条线：
+- AI 读到的不是散文档，是类型名词 + 封闭动作空间——三份目录带"何时读我"路由头随目标技能分发，不占每会话认知面
+- 想直接改文件？hooks 拦（mounted_in 生效）
+- 想改账本抹痕迹？integrity-guard 自指防护拦（Ledger 是受治理对象）
+- 想跑危险命令？rules.d 判 forbid 且消息带替代——**在受约束空间里指路，不在自由空间里祈祷**
 
-- **R13 之前**：本体是隐式的（没人写下"存在什么"），机制凭感觉加——机制与本体漂移，声称的关系没有锚（12 vs 13、6355 vs 6393 这类漂移 bug 全是这么来的）
-- **R13**：清理"机制↔本体"的错位——机械打分退役，因为它声称测"理解"，但本体里根本没有"理解"这个实体，只有行为记录
-- **R14**：补关系——goal 闭环、证据态、双账本（"账本记录过程"这条关系的深化）
-- **R15**：补锚——digest 链、gate-plan、audit-closure（给无锚关系配上断裂检测）
-- **R16**：本体显式化——assets/ontology/ 三目录成为事实源，机制↔本体可机器对账
-- **以后每次演进**：先改本体目录 → 派生实现 → 对账验证收尾。本体先行，实现跟随。
-
-##### 冲程四：本体约束行为（AI 怎么被管住）
-
-**AI 做不出绕过门禁的操作，因为操作过的是受治理的规则和账本**——治理不靠提示词自觉，靠把行为面全部压在受治理对象上。
-
-- AI 读到的不是一堆散文档，是类型名词（17 类型）+ 封闭动作空间（11 动作——每个都有治理载体和留痕载体）——三份类型目录带"何时读我"路由头随目标技能分发，设计新机制/演进本体/对账时读取，不占每会话认知面
-- 想直接改文件？挂载在宿主上的 hooks 拦（mounted_in 关系生效）
-- 想改账本抹痕迹？integrity-guard 的自指防护拦（Ledger 是受治理对象）
-- 想跑危险命令？rules.d 三值判 forbid，FORBID 消息带替代方案——**在受约束空间里指路，而不是在自由空间里祈祷**
-
-### 6.3 发动机与仪表盘（四冲程与四坐标系的本质关系）
-
-发动机（四冲程）是动力；效果需要在维度上**可观测**——这就是四坐标系（时间/产物/校验/边界）的位置。它们不是四个"视角"（此前表述的错误），而是**本体结构沿闭环流展开的必然测量维度**——本体有什么结构，流上就有什么维度可测：
-
-| 本体结构 | 沿流展开为 | 测什么 |
-|----------|-----------|--------|
-| **实体二分 · 发生体**（occurrent：生成/会话/决策/审计） | → **时间轴** | 流段、相位、消费频次（"两体系统"是这里的观测） |
-| **实体二分 · 持续体**（continuant：仓库/技能/规则/账本） | → **产物轴** | 载荷、出口预算、税（"税制"是这里的观测） |
-| **关系二分 · 表征关系**（represents/records/snapshot_of/closes——aboutness 一系） | → **校验轴** | 表征可信度：指向/覆盖/时效（"三层 Harness"是校验点在此轴的相位分布） |
-| **关系二分 · 依赖关系**（generated_by/governs/mounted_in/anchors/propagates_to/plans——dependence 一系） | → **边界轴** | 依赖连通：输入口/执行口/锚（"三层接线/宿主下沉"是这里的端口） |
-
-**为什么恰好是四个**：实体分两范畴（持续体/发生体），关系分两大类（指涉/依存——links.md 的 10 条关系恰可完备二分为 4+6）。2×2=4，不多不少——**四坐标系是本体结构的投影定律，不是设计者的分类趣味**。
-
-每个冲程的效果都落进这四个维度可验：冲程一派生的机制落在校验轴/边界轴（锚在哪、验什么）；冲程二的产出落在产物轴+时间轴（新实体进载荷、新过程进流段）；冲程三的演进轨迹四轴皆留（本体改了哪格、哪条锚补了）；冲程四的行为约束在校验轴（拦截率）+时间轴（会话过程）上可测。**没有仪表盘，发动机是否在做功无从知晓；没有发动机，仪表盘测的是一台停着的机器。**
-
-### 6.4 本体本身（引擎的燃料）
-
-- **实体**：17 类型（objects.md）——仓库/组件/技能/规则/账本/门禁/决策/目标...；刻意**不承诺**的：AI 的"理解"、认知分数（不可观测的东西不进本体，只承诺其行为记录）
-- **关系**：10 条（links.md）——每条带机器锚（关系的实例可验证存在）
-- **动作**：11 个（actions.md）——封闭空间，每个动作可审计
-
-三份目录是事实源（与 facts.conf 的数字口径平行），self-check 对账 18 实存点，ontology-verify 六锚健康检查。
-
-##### 范畴工具箱（附录：学术工具，非主体）
-
-需要精细刻画时才用的工具：持续体/发生体二分（恰好解释了"两体系统 vs 闭环流"不是矛盾是两个范畴）；部分学（部分 ≠ 构成材料——税制管的是构成不是部分）；本体承诺（承诺 = 量化遍历的实体）。这些是**镜头**，引擎是上面四个冲程。
-
-##### 理论来源（归档）
-
-> BFO 范畴论 / 部分学 / 本体承诺 / Palantir 本体论工程的原始调研链接见 `docs/design-evolution.md` A3 档案。
-
-### 6.5 闭环流（系统的过程形态）
+### 6.5 生命周期（系统的过程形态）
 
 ```
-代码仓库 →① 生成段（探查+装配）→② 产物段（目标技能，出口受税制预算门约束）
-  →③ 使用段（AI 按需 grep 地图做拼装式开发，行为被条件实时拦截）
-  →④ 账本段（全量留痕）→⑤ 回流段（审计+评测校验体系自身，改进写回①②）
+代码仓库 →① 生成（探查+装配）→② 产出（目标技能，出口受预算门约束）
+  →③ 使用（AI 按需 grep 地图做拼装式开发，行为被实时拦截）
+  →④ 留痕（全量记账）→⑤ 回流（审计+评测校验体系自身，改进写回①②）
 ```
 
-**自成长是闭环流的闭合条件**——砍掉回流边，系统退化为一次性脚手架生成器。
+**自成长是闭环的闭合条件**——砍掉⑤的回流边，系统退化为一次性脚手架生成器。
 
-### 6.6 流上的流速与流量
-
-- **厚薄**：①段知识一次性消费（厚是投资），③段产物每会话重复消费（厚是税）——"两体系统"就是这个消费频次差的旧名
+- **厚薄**：①段知识一次性消费（厚是投资），③段产物每会话重复消费（厚是税）——这就是"生成器厚、目标技能薄"
 - **流量阀**：profile 四档参数化①段装配多少
 - **出口预算门**：②→③ 边界上，固定税 ≤8KB / 认知面 ≤256KB / 概念 ≤5（机器断言）
-- **校验相位**：③段事中门禁、④段事后审计、⑤段对校验器自身的元评测——"三层 Harness"就是校验点在流上的三个相位
-- **对外端口**：①段输入端口（三层接线取外部证据）、③段执行端口（hooks 挂宿主）
+- **校验相位**：③段事中门禁、④段事后审计、⑤段对校验器自身的元评测
+- **对外端口**：①段输入端口（运行时接线取外部证据）、③段执行端口（hooks 挂宿主）
 
-### 6.7 四个测量维度（本体结构沿流的投影定律）
+### 6.6 理论工具（归档）
 
-闭环流被发动机驱动（§0.2 四冲程）做功，做功效果在四个维度上可测——**四维不是选出来的视角，是本体 2×2 结构的必然展开**（实体二分 × 关系二分，推导见 §0.3"发动机与仪表盘"）：
-
-| 维度 | 从本体哪格展开 | 测什么 | 在此维度上的历史语言 |
-|------|---------------|--------|---------------------|
-| **时间轴** | 发生体（occurrent） | 流段/相位/消费频次 | 两体系统（厚薄=频次差）、四档 profile（流量阀）、三层 Harness 的相位分布 |
-| **产物轴** | 持续体（continuant） | 载荷/出口预算/税 | 税制（≤8KB/≤256KB/概念≤5）、五层一棵树（载荷拓扑） |
-| **校验轴** | 表征关系（aboutness） | 表征可信：指向/覆盖/时效 | 三层 Harness（门禁=事中/审计=事后/评测=元）、path-check/计数核验/stability-audit |
-| **边界轴** | 依赖关系（dependence） | 依赖连通：输入口/执行口/锚 | 三层接线（①段输入口）、宿主下沉（③段执行口）、digest 链（锚） |
-
-**历史层次语言的归位由此成立**：每套语言都是对某个维度的观测记录（两体系统=时间轴频次观测、税制=产物轴出口观测、三层 Harness=校验轴相位观测、三层接线=边界轴端口观测）——它们不冲突，因为本体的 2×2 结构只有四格，每套语言各守一格。九条内核与贯穿原则跨格（不变量与守恒律，见 §2.1 与 §9.1）。
-
----
-
-### 6.8 文档元信息
-
-##### 本体与主线
-
-本体 = 一条自成长闭环流（图与闭合条件见 §0.5）；各章层次语言（两体系统/税制/三层 Harness/三层接线/五层树/九条内核……）都是本体 2×2 结构沿闭环流的投影观测（§0.7 四维表逐套归位）。
-
-##### 问题定义（五轮诊断从未动摇的内核）
-
-**AI 编程工具的短板不在代码生成能力，而在项目认知。** 同行（spec-kit/BMAD/SuperClaude）只做 spec 生成或 prompt 工程；"质量门禁的规模化强制"是 swarm-yuan 的目标域。
-
-**拼装式开发是应用层目的**：认知不是为了看懂项目，是为了**基于稳定可靠的组件进行拼装式开发**——尽可能复用项目既存的接口/组件/类/函数/方法等稳定单元，规避破坏性改造、重复造轮子、浸入式重构。这是特征卡第 11 项"可复用稳定单元清单"与地图"稳定性标注"的存在理由：探查产出 = AI 拼装时的零件目录。
-
-##### 文档边界
-
-- 本文件 = **设计层**（为什么这样做、做什么、做到什么程度算对）
-- `swarm-yuan/references/` = **方法论层**（怎么做的细节指引，41 份全带"何时读我"路由头，按需读取）
-- `docs/research/` = **证据与调研史**（R1-R13 调研报告，留档不删）
-- 运行时机制（脚本/门禁/hook）不在本文档详述——它们的**设计规格**在 §4-§8，实现在仓库代码。
+> 持续体/发生体二分、部分学、本体承诺、Palantir 本体论工程等学术工具与调研链接见 `docs/design-evolution.md` A3 档案。
 
 ## §7 验收与复审
 
@@ -741,7 +670,7 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 | draft 状态门 | 13 |
 | 运行时全可选降级 / 三平台 CI / 测试进 CI | 9 / 10 / 11 |
 | 离线包治理 | 14 |
-| 可证伪性 / 破窗台账 / resume 修复环 | 运行时升级轮吸收 |
+| 可证伪性 / 破窗台账 / resume 修复环 | 上游运行时升级轮 |
 | 范式作为条件而非内容 / 落地优先 | 33 |
 
 ## §9 证据与档案索引
