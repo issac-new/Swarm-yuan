@@ -1,9 +1,9 @@
-> **何时读我**：安全扫描门禁接线与威胁建模时。codex-security 吸收——约束推理扫描/source-sink/威胁模型五要素。
+> **何时读我**：安全扫描门禁接线与威胁建模时。codex-security——约束推理扫描/source-sink/威胁模型五要素。
 
 # codex-security 安全扫描方法论（OpenAI Codex Security CLI 接线）
 
 > 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.11（Apache-2.0，**完全开源免费**），CLI 接线层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。
-> 📌 **v0.1.11 升级吸收（2026-08-14）**：① 嵌套 Git 仓库 scan snapshots（#116）——含 submodule 的项目可整仓扫描，remediation checkout 保留嵌套仓库；② protected multi-architecture 容器镜像（x64/arm64）+ AppArmor 受限主机自动降级到 legacy sandbox——Docker 沙箱在受限 Ubuntu/容器环境不再硬崩。这两项让 codex-security 在真实项目（常含 submodule）+ 受限 CI 环境更可靠。
+> **v0.1.11 要点**：① 嵌套 Git 仓库 scan snapshots（#116）——含 submodule 的项目可整仓扫描，remediation checkout 保留嵌套仓库；② protected multi-architecture 容器镜像（x64/arm64）+ AppArmor 受限主机自动降级到 legacy sandbox——Docker 沙箱在受限 Ubuntu/容器环境不再硬崩。这两项让 codex-security 在真实项目（常含 submodule）+ 受限 CI 环境更可靠。
 > 纪律：CLI 接线层允许真实命令调用（`npx @openai/codex-security scan`），不重新实现、不复制源码（上游 clone 在 `swarm-yuan/research/codex-security/`，仅供 AI 阅读引用，gitignored）。
 > 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；守决策 26：复杂度预算不增。
 > 适用场景：目标项目需要**AI 驱动的语义级安全扫描**（非传统 SAST 的模式匹配）时，`--sast-deep` 门禁的 `SAST_DEEP_TOOL=codex-security` 显式调用 codex-security CLI，产出 SARIF + findings.json + coverage.json 三件套。也用于 AI 在 spec/审查节点引用本文的静态评估七元组 + 威胁模型五要素 + 攻击路径分析方法论。

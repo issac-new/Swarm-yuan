@@ -140,7 +140,7 @@ Bug report arrives
 
 | 候选 | 评估 | 决定 |
 |------|------|------|
-| 五轴审查全量移植（Correctness/Readability/Architecture/Security/Performance） | 与 review-methodology 五权审查高度同构；真增量是「概念计数」判据（"Count the concepts a reader must hold—if the count unchanged, it isn't cleaner"）+ 审查意见必须附结构处方 + 发现分级前缀（Critical/Nit/Optional/FYI 防止全部被当必修） | 登记，条件=review-methodology 下轮补强时合并吸收（避免与 codex rubric 双轨） |
+| 五轴审查全量引入（Correctness/Readability/Architecture/Security/Performance） | 与 review-methodology 五权审查高度同构；真增量是「概念计数」判据（"Count the concepts a reader must hold—if the count unchanged, it isn't cleaner"）+ 审查意见必须附结构处方 + 发现分级前缀（Critical/Nit/Optional/FYI 防止全部被当必修） | 登记，条件=review-methodology 下轮补强时合并吸收（避免与 codex rubric 双轨） |
 | 变更尺寸双阈值（diff ~100 好/~300 可接受/~1000 拆 + 单文件总行数 1000 预警 + 四种拆分策略） | check_pr_quality 已有尺寸维度？若有则补阈值口径 | 登记，条件=check_pr_quality 下轮调优时对齐 |
 | 路由 eval 体系（每技能 positive/negative 触发用例 + description 余弦相似度碰撞检测 >0.75 拒绝 + rank-1 ratchet） | 真空白（生成的技能会不会被正确触发无人管），但需 embedding 基建 | 登记，条件=出现"生成技能不被路由命中"的真实案例时立项（可先做纯文本相似度碰撞检测，零依赖） |
 | /ship 并行 fan-out 编排 | swarm-yuan 是 bash 生成器，无并行 subagent 基建 | 不做 |

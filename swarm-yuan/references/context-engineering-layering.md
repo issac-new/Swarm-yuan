@@ -23,7 +23,7 @@ swarm-yuan 当前 17 项特征卡 / 55 门禁 / 79 框架规则集回答了「�
 
 **关键证据解读**：4.8→5 的 System 增长 82.12%，但 System+Tools 只增长 4.14%——围绕提示词长短争论很容易忽略真正占上下文的大块接口层。
 
-**吸收价值**：swarm-yuan 的 SKILL.md / references / precheck.conf 三件套 / 55 门禁 / hooks.json / .mcp.json 本身就是一套分层上下文，但分层原则此前是隐性的（散落在各 WP 决策里）。本文把"分层放置规则"的方法论显式化，给 swarm-yuan 一个可引用的元决策框架。
+**对本系统的价值**：swarm-yuan 的 SKILL.md / references / precheck.conf 三件套 / 55 门禁 / hooks.json / .mcp.json 本身就是一套分层上下文，但分层原则此前是隐性的（散落在各 WP 决策里）。本文把"分层放置规则"的方法论显式化，给 swarm-yuan 一个可引用的元决策框架。
 
 ---
 
@@ -73,7 +73,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 | 模型能力变化后旧约束诱发过度检查 | 门禁分层 strict/warn/advisory（决策 19），advisory 永不 fail |
 | Bash 9,821 字符教程式描述 | precheck.sh flag 接口压成 `--branch`/`--scope`/`--reuse`，用法在 `--list-gates` |
 
-**吸收动作**：生成目标技能 时，若 AI 发现自己在 SKILL.md 写超过 3 段的「如何做 X」教程式内容，应触发本层判断——大概率该挪进 reference 或压成 flag 接口。
+**接线动作**：生成目标技能时，若 AI 发现自己在 SKILL.md 写超过 3 段的「如何做 X」教程式内容，应触发本层判断——大概率该挪进 reference 或压成 flag 接口。
 
 ---
 
@@ -116,7 +116,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 | 不让长篇道歉挤占注意力 | `--format json` + `to-sarif.sh` 结构化输出，不堆叙事 |
 | 先判断其他 Agent 的反馈，不自动升级子 Agent 输出为事实 | `references/subagent-orchestration.md` 两阶段审查 + `references/review-methodology.md` 5 维度交叉验证 |
 
-**吸收动作**：swarm-yuan 治理回路 WP 批次（governance-agents / failure-detector / integrity-guard / loop-oracle / compaction-state）的产品形态，可引用本文作为"为何要做这些 hook"的理论依据——它们都是把 System 层无法稳定承载的治理逻辑下沉到 hooks/门禁层。
+**接线动作**：swarm-yuan 治理回路（governance-agents / failure-detector / integrity-guard / loop-oracle / compaction-state）的产品形态，可引用本文作为"为何要做这些 hook"的理论依据——它们都是把 System 层无法稳定承载的治理逻辑下沉到 hooks/门禁层。
 
 ---
 
