@@ -444,7 +444,7 @@ swarm-yuan 内置 79 个框架规则集（references/frameworks/*.md + assets/fr
 
 #### 扩展新框架
 
-1. 复制 `references/frameworks/_template.md` 为 `<fw>.md`（六段式：§1 探查信号 + §2 构件枚举 + §3 领域规律≥10 + §4 门禁清单 + §5 跨框架交互 + §6 版本陷阱）
+1. 复制 `references/frameworks/_template.md` 为 `<fw>.md`（六节式：§1 探查信号 + §2 构件枚举 + §3 领域规律≥10 + §4 门禁清单 + §5 跨框架交互 + §6 版本陷阱）
 2. 创建 `assets/framework-gates/<fw>.sh`（`_fw_<id>_check()` 函数 + 头注释 `# ruleset:` + `# gates:`）
 3. 创建 `tests/fixtures/<fw>/{violating,compliant}/`
 4. 跑 `bash scripts/verify-framework-ruleset.sh <fw>` 核验

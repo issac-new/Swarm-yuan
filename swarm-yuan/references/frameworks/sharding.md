@@ -8,7 +8,7 @@ ruleset_id: sharding
 # ShardingSphere 分片规则集
 
 <!--
-本规则集为 P1 第四批框架规则集，结构与 mybatis / lombok / spring-batch 规则集对齐（六段式）。
+本规则集为 P1 第四批框架规则集，结构与 mybatis / lombok / spring-batch 规则集对齐（六节式）。
 覆盖范围：Apache ShardingSphere 5.5.x（ShardingSphere-JDBC 为主，Proxy 差异单独标注；ElasticJob 等子项目不属本规则集）。
 调研时点：2026-07-17，已核对 5.5.x 最新发布为 5.5.3（2026-03-01）；核心规律取自官方 features/sharding concept/limitation、
 features/transaction、user-manual hint 文档（master 分支现行版，与 5.5.x 对齐）。

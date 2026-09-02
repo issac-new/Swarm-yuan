@@ -8,7 +8,7 @@ ruleset_id: lombok
 # Lombok 规则集
 
 <!--
-本规则集为 P1 第二批框架规则集，结构与 mybatis 规则集对齐（六段式）。
+本规则集为 P1 第二批框架规则集，结构与 mybatis 规则集对齐（六节式）。
 覆盖范围：Project Lombok 1.18.x（现行最新 1.18.46，2026-04-22 发布）。
 调研时点：2026-07-17，已核对 lombok 官方 changelog 至 1.18.46；1.18.40 的 @Jacksonized/@Accessors 联动与默认不再 copy Jackson 注解为破坏性变更，已落入 §6。
 无法确认的版本点已标"待验证"，不臆造。
