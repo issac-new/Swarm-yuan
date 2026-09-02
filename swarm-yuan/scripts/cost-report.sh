@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cost-report.sh — 全链路追踪成本遥测（WP-D：把"重不重"从感觉变成数字）
+# cost-report.sh — 全链路追踪成本遥测（把"重不重"从感觉变成数字）
 # 数据源：<项目根>/.swarm-yuan/trace.jsonl（trace-log.sh 落盘，ts/node/actor/tool/status/note）
 #         可选 .gate-runs/gate-runs.jsonl 或 GATE_RUNS_DIR 证据（存在则汇总门禁 fail/warn 趋势）
 # 用法: bash cost-report.sh [--dir <项目根>] [--stdout]
@@ -43,7 +43,7 @@ _top() { # $1=字段名
   sed -E "s/.*\"$1\":\"([^\"]*)\".*/\1/" "$TRACE" 2>/dev/null | sort | uniq -c | sort -rn | head -10 || true
 }
 
-# WP-P0: ISO8601 UTC → epoch（三平台：GNU date -d / BSD date -j，都不可用返回 0）
+# ISO8601 UTC → epoch（三平台：GNU date -d / BSD date -j，都不可用返回 0）
 _iso2epoch() {
   if date -u -d "$1" +%s >/dev/null 2>&1; then date -u -d "$1" +%s;
   elif date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$1" +%s >/dev/null 2>&1; then date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$1" +%s;

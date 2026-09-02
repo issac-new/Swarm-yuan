@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# inventory-update.sh — 局部清单条目更新（WP-R3-5：AI 编码中发现语义变化的可执行入口）
+# inventory-update.sh — 局部清单条目更新（AI 编码中发现语义变化的可执行入口）
 #
 # 设计动机：SKILL.md 自成长段红线①承诺"语义变化发现即更新清单，不等 refresh"，
 # 但此前只有"整仓重探查 → 整表重写 reference-manual.md"的路径，没有"改一条清单条目"

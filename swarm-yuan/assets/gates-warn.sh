@@ -676,7 +676,7 @@ check_impact() {
     fi
   fi
   if has_graphify && graphify_ensure_built; then
-    # WP-X: graphify God Nodes 变更影响检测（R6 P1：God Nodes 是变更风险放大器）
+    # graphify God Nodes 变更影响检测（R6 P1：God Nodes 是变更风险放大器）
     # C4 修复：graphify v0.9.22+ 的 god-nodes 是顶层子命令（graphify god-nodes），非 graphify explain god-nodes。
     trace_tool "graphify" "god-nodes"
     local gf_report; gf_report=$(graphify god-nodes 2>/dev/null | head -50 || true)

@@ -12,7 +12,7 @@
 # 背景：Q2 报告（机械门禁破坏 AI 灵活性）+ Q2-heavy 评审（D1 探索式）。
 # 5 个候选：cognition / diagram / pr_quality / consistency / link_depth——
 # 这些门禁的"质量判断"本质是 AI 看语义，不是 grep 能搞定的。
-# R13 批次1a：GATE_AI_JUDGMENT 成为唯一模式（恒 1）——机械打分逻辑退役（D1 落地化）。
+# GATE_AI_JUDGMENT 成为唯一模式（恒 1）——机械打分逻辑退役（D1 落地化）。
 # 变量保留为兼容别名（旧 conf 设 0/1 均不影响行为），下游 _ai_hint 路径无条件生效。
 _AI_JUDGMENT=1
 _ai_hint() { # $1=门禁名 $2=AI 自查要点
@@ -27,7 +27,7 @@ check_consistency() {
     _ai_hint "check_consistency" "逐文件读业务规则，对照数据勾稽核对（订单金额=Σ明细 / 库存=Σ在库+在途）；在 CONSISTENCY_DIRS 内人读 3-5 个核心文件；不要靠 grep"
   return 0
   fi
-  # R13 批次2：机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
+  # 机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
 
 }
 
@@ -37,7 +37,7 @@ check_link_depth() {
     _ai_hint "check_link_depth" "挑 3 个核心用例，沿调用链逐层读代码（controller→service→repo），数层数；若 >6 层，AI 判断是否为适配层堆叠而非真实复杂度"
   return 0
   fi
-  # R13 批次2：机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
+  # 机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
 
 }
 
@@ -159,7 +159,7 @@ check_state() {
 }
 
 check_cognition() {
-  # R13 批次1a（D1 落地化）：机械计分退役（awk 数表行数给"理解"打分——五轮诊断的病灶标本：
+  # 机械计分退役（awk 数表行数给"理解"打分——五轮诊断的病灶标本：
   # 0 fail、诱导填表冒充理解）。认知框架概念不删除，落地为 AI 判断引导 + notes 留痕——
   # 概念从"要背的名词"变为"AI 判断的检查单"，被真实消费（GATE_AI_JUDGMENT 唯一模式）。
   echo "=== 认知体检（check_cognition——AI 判断引导模式，R13 D1）==="
@@ -188,7 +188,7 @@ check_diagram() {
     _ai_hint "check_diagram" "AI 看 reference-manual.md 是否有架构图/调用链图（mermaid/echarts 任选）；没有则在 §9 加一段简短 ASCII 调用链（10 行内）"
   return 0
   fi
-  # R13 批次2：机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
+  # 机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
 
 }
 
@@ -354,7 +354,7 @@ for i, line in enumerate(sys.stdin, 1):
     for k in ("gate", "root_cause", "fix_pattern"):
         if not obj.get(k):
             print("%d: 缺 %s 字段" % (i, k)); break
-    # WP-Z19: 置信度字段检查（gstack learn 移植）
+    # 置信度字段检查（gstack learn 移植）
     conf = obj.get("confidence", "")
     if conf and conf not in ("high", "medium", "low"):
         print("%d: confidence 非法值（%s，须 high/medium/low）" % (i, conf))
@@ -517,7 +517,7 @@ check_pr_quality() {
     _ai_hint "check_pr_quality" "AI 看 git diff 三指标：①是否超过 500 行（建议拆 PR）②是否含 >3 个无关改动 ③重复模式（同一文件改 3+ 处相似逻辑）；给一句判断"
   return 0
   fi
-  # R13 批次2：机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
+  # 机械分支已随 GATE_AI_JUDGMENT 恒 1 退役删除（D1 落地化——AI 判断引导为唯一模式）
 
 }
 

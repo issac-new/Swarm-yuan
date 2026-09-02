@@ -570,7 +570,7 @@ _count_check_fns() {
 }
 
 check_doc_consistency() {
-  echo "▶ 文档一致性检查（R13 批次3 瘦身：真值对账 + 税制断言；散文数字扫描退役——文档不再手抄数字，无手抄即无漂移）"
+  echo "▶ 文档一致性检查（真值对账 + 税制断言；文档不手抄数字，无手抄即无漂移）"
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local facts_conf="$base/assets/facts.conf"
   local _have_facts=1
@@ -1813,7 +1813,7 @@ check_ontology_types() {
 }
 check_ontology_types
 
-# ===== R13 批次2（§4.5 五维保障的机器载体）：孤儿资产扫描 + 层间反向引用 =====
+# ===== 孤儿资产扫描 + 层间反向引用 =====
 # G18 孤儿资产（连接性 §4.5.2）：references/*.md 无"何时读我"路由头 = 无消费路径候选；
 # rules.d/*.rules 无任何消费者引用 = 死规则。warn-only（advisory，与概念落地问责同构）。
 check_r13_orphan_assets() {

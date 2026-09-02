@@ -338,9 +338,9 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 
 关键模块：`state`(load/json/update/get/patch/advance-plan/record-metric) / `phase`(next-decimal/add/insert/remove/complete/uat-passed) / `roadmap`(get-phase/analyze/validate/upgrade) / `verify`(summary/plan-structure/phase-completeness/references/commits/artifacts/key-links) / `validate`(consistency/health/context) / `scaffold`(context/uat/verification/phase-dir) / `init`(execute-phase/plan-phase/new-project/new-milestone/quick/resume/verify-work) / `capability`(install/update/remove/list/outdated/disable/enable/state/set) / `graphify`(build/query/status/diff/snapshot) / `intel`(api-surface)
 
-## R16 补核（2026-09-01）：gsd-core v1.11.0 → v1.12.0（next 分支，182 commits）
+## gsd-core v1.12.0 要点
 
-> 调研 `docs/research/R16-runtime-refresh.md`；一个破坏性变更：`<fails_when>` 强制。
+> 一个破坏性变更：`<fails_when>` 强制。调研档案 `docs/research/R16-runtime-refresh.md`。
 
 - **`.planning/state.json` 机器可读状态契约**（#3227）：step 边界发布 versioned contract，best-effort 写永不失败 + `planning inspect` 只读快照——v1.11"guard 可观测性"升级为"状态本身可机器消费"。
 - **`<fails_when>` 强制**（#3172）：验收命令必须声明可观察失败信号——"无法表达失败模式的命令不是验收测试"；与 openspec v1.10 完成判据合并为两要素=命令+失败信号。

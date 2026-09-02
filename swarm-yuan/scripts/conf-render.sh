@@ -9,7 +9,7 @@
 #     --profile       lite(只 core) / standard(core+arch) / compliance(三件套)，默认 standard
 #     --industry      行业 profile（finance|gov|medical|telecom|automotive|energy|industrial）
 #                     真实加载 assets/industry-profiles/<name>.conf 并渲染为 precheck.industry.conf
-#                     追加到 precheck.conf 尾部 source 链（R13 批次1a/D3：替代"手工 cat >>"伪激活）
+#                     追加到 precheck.conf 尾部 source 链（替代"手工 cat >>"伪激活）
 #     --out           落盘目录（不给则 stdout 合并三件套）
 # 输出: conf 初稿（每变量行带 # AUTO:* 溯源）；末尾 # TODO:model 清单汇总。
 # 退出码: 0 正常（fail-open，嗅探失败用默认）；1 arg 错误。
@@ -172,7 +172,7 @@ core=$(_render_conf "assets/precheck.conf")
 if [[ "$PROFILE" == "lite" ]]; then
   core=$(printf '%s\n' "$core" | grep -vE '^#.*precheck\.(arch|compliance)\.conf')
 fi
-# R13 批次1a（D3）：industry profile 真实加载——渲染为 precheck.industry.conf，
+# industry profile 真实加载——渲染为 precheck.industry.conf，
 # 并在 precheck.conf 尾部追加 source 行（加载顺序：core→arch→compliance→industry→patch，
 # 行业层后于生成层 = 行业覆盖胜出，用户 patch 层仍最末）。
 if [[ -n "$INDUSTRY" ]]; then

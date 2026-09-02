@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gate-rules.sh — R13 批次2：rules.d 三值规则求值器（Codex Decision 架构的 bash 最小切片）
+# gate-rules.sh — rules.d 三值规则求值器（Codex Decision 架构的 bash 最小切片）
 #
 # 设计（docs/research/R13-final-plan.md §4.3）：
 #   规则是数据不是代码：rules.d/*.rules 行格式

@@ -2,7 +2,7 @@
 
 # Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研）
 
-> 本文件基于 https://github.com/anthropics/claude-code/releases 发布说明（初轮 2026-08-13 全量 159 版调研至 v2.1.232；R4 补核 2026-08-21 至 v2.1.237；R16 补核 2026-09-01 至 v2.1.252）+ `claude --help` / `claude mcp --help` / `claude agents --help` / `claude plugin --help` / `claude project --help` / `claude ultrareview --help` / `claude install --help` / `claude gateway --help` CLI 调研整理。npm dist-tag 分裂：`latest`=2.1.252 / `stable`=2.1.236（2026-09-01 观察）。
+> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.252 / stable=2.1.236。
 > 生成目标技能时，AI 须把以下能力编织进 SKILL.md / workflow.md / reference-manual.md / hooks / commands / settings。
 
 ## 一、核心工具（Tools）
@@ -583,9 +583,9 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ---
 
-## R4 补核（2026-08-21）：v2.1.233 → v2.1.237 五版增量
+## 版本注记：v2.1.233-237 的能力变化
 
-> 基线 v2.1.232（2026-08-13 调研）→ 最新 v2.1.237（2026-08-20）。详见 README.md §6.4 上游运行时基线 §三 CLI 专题。
+> 本段覆盖 v2.1.233-237；当前能力基线 v2.1.252（下节）。详表见 `docs/upstream-baseline.md`。
 
 ### Todo/Task 工具默认移除（v2.1.233，破坏性）
 
@@ -621,9 +621,9 @@ TaskCreate/Get/Update/List、TodoWrite 在 **Opus 4.8、Sonnet 5、Fable 5、Myt
 
 `ANTHROPIC_DEFAULT_MODEL`（新会话起始模型，`/model` 可覆盖）/ `CLAUDE_CODE_TOOL_MEMORY_LIMIT`（Linux Bash 工具 cgroup 内存上限）/ `CLAUDE_CODE_WEBFETCH_CACHE_TTL_MS`（WebFetch 缓存 TTL）/ `CLAUDE_CODE_PROJECT_DIR_NAME`（per-project transcript 短名）/ `CLAUDE_CODE_GOAL_CHECKIN_MINUTES`（goal 阻塞 check-in 间隔）。
 
-## R16 补核（2026-09-01）：v2.1.238 → v2.1.252 增量（npm 15 版，CHANGELOG 12 条）
+## 版本注记：v2.1.252（2026-09-01 核）——v2.1.238 起的能力变化
 
-> 基线 v2.1.237（R4 补核）→ npm latest v2.1.252（2026-08-31）。纯修复版（240/241/245/250）不列。详见 README §6.4 §三 3.4 R16 表。
+> 本段覆盖 v2.1.238-252（纯修复版不列）。npm dist-tag：latest=2.1.252 / stable=2.1.236。详表见 `docs/upstream-baseline.md`。
 
 - **`--restricted` 锁定模式**（v2.1.248）：移除执行类内置工具+WebFetch、文件工具限工作目录、拒绝 bypassPermissions、忽略 user/project/local settings。**环境前置诚实化：restricted 会话=门禁失能会话（全链依赖 Bash），交付断言不可作数**；生成技能本就声明 Bash 前置，无需改。
 - **PreModelSwitch/PostModelSwitch hooks**（v2.1.251）：模型切换可 block/confirm/annotate——**模型切换首次成为可治理点**。登记候选：adaptive-gating 分档硬执法的官方挂点（触发=弱模型越档真实场景）。

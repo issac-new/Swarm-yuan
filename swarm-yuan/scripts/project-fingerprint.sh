@@ -7,7 +7,7 @@
 #     --write  写入指纹到 <project>/.swarm-yuan/project-fingerprint（默认只算不写）
 #     --diff   与已存指纹对比，输出变化摘要（新增/删除/修改计数 + 前 10 条样例）
 #     --quiet  --diff 模式下，无变化时不输出（适合 SessionStart hook）
-#     --force  WP-R3-2：--write 时若 total 较既有基线骤降 >50%（last-good 红线），
+#     --force  --write 时若 total 较既有基线骤降 >50%（last-good 红线），
 #              默认拒绝写入并提示；--force 显式覆盖（用于项目大幅重构的真实场景）。
 # 退出码: 0 正常；1 arg 错误 / PROJECT_DIR 不存在 / --write 触发 last-good 红线且未 --force。
 # 红线：本脚本只做指纹（轻量、可秒级完成），不做内容分析；内容比对是 --upgrade 干的事。
@@ -158,7 +158,7 @@ if [[ "$_tot_a" == "$_tot_b" && "$_sk_a" == "$_sk_b" && "$_ext_a" == "$_ext_b" &
 fi
 
 # 有变化 → 输出差异摘要
-# WP-R2-2：指引从"只 --upgrade"升级为完整更新链（--upgrade 只刷工具链，清单需重探查+核验）
+# 指引从"只 --upgrade"升级为完整更新链（--upgrade 只刷工具链，清单需重探查+核验）
 echo "⚠ 项目源码已变化——按目标技能 SKILL.md「自成长」段走更新链："
 echo "  ① 生成器 generate-skill.sh --upgrade 刷工具链 ② AI 重探查变化维度更新 reference-manual.md 清单"
 echo "  ③ inventory-verify.sh 计数核验 ④ 本脚本 --write 落新基线"

@@ -445,9 +445,9 @@ ocr 新增 LLM provider 支持：
 
 **对脚本/技能/prompt 测试的特殊提醒**：swarm-yuan 自身的脚本（precheck.sh/state-machine.sh/trace-log.sh）和生成的技能 prompt 不宜用 grep 式测试（string-presence trap）。可观察的是行为（exit code / 输出结构 / 副作用），不是文本存在性。fixture 双态测试（violating/compliant）是行为测试的正解--它断言门禁在违规项目 fail、在合规项目 pass，而非断言脚本"含有某段代码"。
 
-## R16 补核（2026-09-01）：ocr v1.9.8→v1.11.1 + codex-security v0.1.24 + ruflo/impeccable
+## ocr / codex-security / ruflo / impeccable 要点（2026-09 核）
 
-> 调研 `docs/research/R16-runtime-refresh.md`。
+> 调研档案 `docs/research/R16-runtime-refresh.md`。
 
 - **语义文件分组审查**（ocr #808，v1.10.0 headline）：LLM 先聚类变更文件（≤10 文件/组），每组一个 sub-agent 独立上下文审查——大 diff 降本直接模式，与两阶段审查互补。
 - **跨 session findings 比较**（ocr #922）：按 path+category+snippet（**非行号**）匹配，new/persisting/resolved/not-reviewed 四象限——为 scoped re-review 提供行号无关匹配键。

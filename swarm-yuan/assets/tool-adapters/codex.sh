@@ -10,7 +10,7 @@ render_tool_codex() {  # <skill_dir> <proj> <level>
   [[ "$3" != "user" ]] && render_tool_codex_hooks "$1" "$2"
 }
 
-# R13 批次4（宿主下沉）：Codex v0.148 hooks 注册——生成目标技能的预检门禁接 Codex 官方强制点。
+# Codex v0.148 hooks 注册——生成目标技能的预检门禁接 Codex 官方强制点。
 # PreToolUse Bash → fail-gate-hook（exit 2=deny，stderr 原因透传给模型）；PostToolUse → failure-detector。
 # 配置位置：项目级 <proj>/.codex/hooks.json（hooks/src/engine/discovery.rs 的 config layer 探测点）。
 # 铁律（audit-2026-08-25）：PreToolUse 命令禁止 `|| true` / `2>/dev/null`——|| true 把 exit 2 吞成 0、

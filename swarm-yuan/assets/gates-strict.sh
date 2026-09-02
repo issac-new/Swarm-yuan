@@ -57,7 +57,7 @@ check_layer() {
       fi
       pass "分层检查增强（基于 gitnexus 代码图谱）"
     else
-      # WP-D3：空结果也提示（修静默——原代码 gitnexus 无跨层问题时连 pass 都不打印）
+      # 空结果也提示（修静默——原代码 gitnexus 无跨层问题时连 pass 都不打印）
       pass "gitnexus 查询跨层依赖:无问题"
     fi
   else
@@ -290,7 +290,7 @@ check_reuse() {
     fi
   fi
 
-  # ---- 1.5 WP-C：--task-type 校验 spec 节必填/豁免落实（可选，向后兼容）----
+  # ---- 1.5 --task-type 校验 spec 节必填/豁免落实（可选，向后兼容）----
   # 任务类型（feature/fix/refactor/chore/docs/test/exp）→ 必填节/可豁免节映射，
   # 数据来自 assets/task-type-gates.conf 的 TASK_EXEMPT_<type>（spec-template.md 头部表层化同源）。
   # 未传 --task-type 则跳过本段（维持现状：只校验 §5.5，向后兼容）。
@@ -1650,7 +1650,7 @@ check_review() {
   #   第二段：⑦独立审查节点硬性交付门（P0-4 九节点硬拆：原 ⑥ 混测试/审查，本批次独立为 ⑦）——
   #     生成物目录须存在 references/review-record.md 且非空（含 5 维审查点 + findings 表，零 TBD），否则 fail
   local found=0
-  local _review_executed=0  # WP-Alignment: 追踪是否真跑了审查（ocr 未装时 fallback 不假装完成）
+  local _review_executed=0  # 追踪是否真跑了审查（ocr 未装时 fallback 不假装完成）
 
   if has_ocr; then
     pass "ocr 已安装"
@@ -1748,7 +1748,7 @@ check_review() {
   else
     warn "审查未留痕（${_rr_dir}/$(date -u +%Y-%m-%d).md 不存在）——AI 审查后须落一行：日期/范围/结论三要素"
   fi
-  # WP-Alignment: ocr 未装时走 AI fallback（found=0 但未真审查），不假装完成，诚实 warn。
+  # ocr 未装时走 AI fallback（found=0 但未真审查），不假装完成，诚实 warn。
   if [[ $_review_executed -eq 1 ]]; then
     [[ $found -eq 0 ]] && pass "代码审查检查完成（ocr 已执行，无 High/Critical 级问题）"
   else
