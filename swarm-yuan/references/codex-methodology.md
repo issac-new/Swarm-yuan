@@ -2,7 +2,7 @@
 
 # Codex 执行纪律方法论（OpenAI Codex CLI——省 token / 高效 / 质量三线）
 
-> 来源：[openai/codex](https://github.com/openai/codex)（Rust 实现的本地编码 agent，Apache-2.0，2026-08 调研，基于官方文档 + `codex-rs` 源码实证：`compact.rs`/`compact_token_budget.rs`/`truncation.rs`/`prompts/templates/compact/*`/`review/rubric.md`/`protocol/src/prompts/base_instructions`）。
+> 来源：[openai/codex](https://github.com/openai/codex)（Rust 实现的本地编码 agent，Apache-2.0，2026-08 调研，基于官方文档 + `codex-rs` 源码实证：`compact.rs`/`compact_token_budget.rs`/`truncation.rs`/`prompts/templates/compact/*`/`review/rubric.md`/`protocol/src/prompts/base_instructions`）；版本核至 rust-v0.153.4（2026-09-05 R17 补核，见文末版本注记）。
 > 纪律：**非运行时接线**——Codex 虽是 swarm-yuan 的 7 个安装目标之一（install.sh 检测），本文不调用 codex CLI，只吸收其「为什么省 token、效率高、质量高」的执行纪律，供生成目标技能的 AI 遵守 + 编织进目标技能的 workflow/执行 prompt。对齐决策 27 吸收模式（cordis/context-engineering-layering 先例），不新增门禁（守决策 26）。
 
 ## 一、省 token 三件套（截断—压缩—缓存，全部是硬机制非玄学）
@@ -148,3 +148,13 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **Interrupt hook 事件**（v0.150；hooks 共 11 事件）：登记候选（打断后半成品守护点，与 R4 hooks 候选同批评估）；**extensions 可拦截/替换 MCP 工具结果**（v0.151，观察项）。
 - **安全加固波**（v0.150）：config/sed 解析 fail-closed、Seatbelt/bubblewrap 加固、app 签名校验——与 Claude Code v2.1.246-252 硬化波同期同向。
 - 会话资产化续（v0.149-152）：agents 仪表盘、queue、`@` mention 任务、per-tool `output_token_limit`（v0.152）、thread/shellCommand 超时 >1h 可配置。
+
+## 版本注记：v0.153（2026-09-05 核）——v0.153.0-153.4 的能力变化
+
+> 当前 stable：npm latest 0.153.3（git tag rust-v0.153.4 领先一个 patch，npm 未发）。本段覆盖 0.153.0-153.4（106 commits，其中 0.153.1-4 共 7 个为 GPT-6-Astra 模型目录热修；docs/skills.md 连续第二轮零 diff）。无 v0.150 级破坏项（仅 `disable_paste_burst` 移入 `[tui]`，旧键 legacy fallback）。详表见 `docs/upstream-baseline.md`。
+
+- **Guardian 条件性兜底**（v0.153.0，#42147/#42256）：Full Access 与 User approval 模式跳过 Guardian 评分/评审（含活动中途切换）；computer-use 评分尊重模型要求（v0.153.1，#42424）。**执法确定性论证必须落在自持门禁：Guardian 复核只是条件性兜底，宿主审批层不保证在场**——与 Claude Code v2.1.260 宿主 deny 回退（Read deny 应用至 Bash 参数后即回退）构成双宿主同向证据：R13"hooks fail-open 须下层门禁兜底"教义升级为"宿主治理层整体视为条件性"。
+- **回合中结构化问答原语**（v0.153.0，#42178）：`request_user_input_async`（替换 `send_user_message_async`）带建议答案的结构化问题、回合继续执行、按模型可用性限定——人机协作点首次进入协议层 schema。R16 登记的 Interrupt hook 半成品守护点自此有了正式参照（打断→问答→续跑）；登记候选不落地（本仓交互面走宿主审批通道已够）。
+- **hooks 内置白名单三层信任**（v0.153.0，#42110）：allowlisted bundled cleanup hooks 标记 `builtin: true`，信任态直接 Trusted 且无视 per-hook enabled——hook 信任模型成三层（builtin/managed/user）。本仓用户级 PreToolUse 三能力接线零变化（`codex-rs/hooks/src/engine/discovery.rs` 各 events 文件仅测试结构体加字段，对账通过）。
+- **实验性 context management**（v0.153.0，#42385）：`features.context_management.experimental_mode`——token 预算上下文 + history notes + `new_context` 工具；仅 ChatGPT Plus/Pro/Pro Lite 且 Codex 后端，自定义 provider 禁用。与 v0.149 `[skills] max_context_tokens` 预算机制相邻，登记观望（experimental + 后端限定，等 GA）。
+- 其余：插件 CLI 远程 marketplace（#42150/#42149，源策略约束）；network requirements 增 `header_injections`（企业托管向）；权限变换感知 executor 路径上下文（`sandboxing/policy_transforms.rs` +416 行，观察项）。

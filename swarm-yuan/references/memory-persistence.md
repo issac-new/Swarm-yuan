@@ -435,3 +435,8 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 - **观察者契约显式化**（13.18.1）：SILENT BY DESIGN（被观察者知道被观察就会改变行为）+ NO CONTACT（单向记录器，禁止联系任何 session）。
 - **有界会话代际**（13.20.0）：observer 改 memory 播种的有界 generation，回收自恢复——同时解决上下文无限增长与末条观察搁浅。
 - **重启验证语义**（13.19.0）：成功判定="继任者就绪"（/health 新 pid + /api/readiness ok），**bound port ≠ ready worker**；fail-soft 旁路（13.16.0）+ 显式优于探测（13.21.0）。
+
+### v13.22-13.24 补核（2026-09-05 R17）
+
+- **熔断器事件形状修正**（13.23.x，#3838）：`rate_limit_event` 判据与 SDK 真实消息形状不匹配——熔断器的触发判据必须绑定**上游真实事件形状**，凭想象定义的事件名永远不会命中。📖 对账：本仓门禁判据绑定真实命令退出码/产物存在性（不解析想象中的输出格式），同向印证；R16 吸收的四规则语义不变。
+- 多宿主分发扩充（13.24.0）：Cursor/Grok Bot 独立插件 + host-observer 安装流——非核心机制，不吸收。版本跨度 v13.21.2→v13.24.0（watch 状态维持）。

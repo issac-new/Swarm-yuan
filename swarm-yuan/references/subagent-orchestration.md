@@ -519,3 +519,4 @@ swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input` 白名单字符集�
 - **ECC Plan Canvas 监听纪律**（2.2.0）：反馈只在 `await` 真实驻留时可达；每条人类消息必在 canvas 内回复（"沉默与坏掉的 canvas 无法区分"）；`stop:plan-canvas-pending` hook 兜底。**交互面纪律：要么有监听者，要么显式声明无，不允许静默失效。**
 - **ECC "skills over MCP"**（2.2.0）：默认 MCP 6→1 个，退役职责由 skill 包 CLI/REST 或宿主原生承接。登记候选单行。
 - **comet 0.4.0-rc.1 观望维持（裁决：不升基线）**：正式版未出；rc 阶段仍落地 117k 行新子系统（memory/knowledge/learning-loop #353）；升级破坏性大（:116-118 的 7 个 `.sh` 清单全失效变 `.mjs`+Hook Router），等 stable 一次做对。0.4 新增登记候选：Supervisor Change v2 多 session 子图分派 / Portable State / Agent Learning Loop。
+- **comet rc.2-rc.4（2026-09-05 R17 重核）**：11 commits 全为稳定性修复（Archive 续跑死循环、native 内存/清理、workflow 恢复），正式版仍未出——观望维持，升级裁决不变。

@@ -1,6 +1,6 @@
 # 设计演化史（施工档案——过程记录，非定稿）
 
-> **物化注记（2026-09-01 终态重构）**：本文件收纳设计演化过程的原始记录——决策史全文与历史档案 A1-A14（历次 WP/批次/轮次施工记录）。
+> **物化注记（2026-09-01 终态重构）**：本文件收纳设计演化过程的原始记录——决策史全文与历史档案 A1-A15（历次 WP/批次/轮次施工记录）。
 > 它们回答"系统是怎么变成今天这样的"，但**不构成对现状的权威描述**——现状的权威定义在 `swarm-yuan/README.md`（设计内核）。
 > 决策要点（各决策确立的现行设计原则）已蒸馏回设计内核对应章节；本卷保留全文供审计与溯源。
 
@@ -486,7 +486,7 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 
 ---
 
-## §13 历史档案（A1-A14）
+## §13 历史档案（A1-A15）
 | 编号 | 档案 | 说明 |
 |------|------|------|
 | A1 | 范式定位 | 适用/不适用边界的原始论述。 |
@@ -503,6 +503,7 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 | A12 | 五维稳定单元 | 稳定单元五维字段定义。 |
 | A13 | 宣传文案 | 对外宣传口径（历史版本）。 |
 | A14 | 运行时升级 2026-09 | R16 运行时升级差异报告（claude-code/codex/dsh/better-harness）。 |
+| A15 | 运行时补核 2026-09 | R17 补核轮差异报告（claude-code/codex/dsh 三件套深审 + 外围九项快审）。 |
 
 ### A1. 范式定位
 
@@ -2512,3 +2513,52 @@ Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi——自�
 - [x] research/ 12 个本地克隆全部 checkout 到最新稳定 tag（gitignored 不入 git）；graphify 跟踪线确认=GitHub v8 分支 v0.9.53（npm 0.10.0/v1.0.0 异源旧分支不取）
 - [x] 门禁 55 不增（预算 55 守恒）、FACT_RUNTIMES 13/5 与 FACT_REFERENCES 41 不变（补核轮不加新载体）
 - [x] 本报告即 §6.6 A14；调研证据链 `docs/research/R16-runtime-refresh.md`
+
+### A15. 运行时补核 2026-09（R17，三件套深审 + 外围九项）
+
+> 触发：user message「更新 research 目录下运行时到最新稳定版本，（包括 claude code/codex/dsh）比较和上一版功能差异，然后整合吸收其功能理念，优化 swarm yuan skill」
+> 数据来源：npm registry dist-tags + GitHub tags + 本地 16 克隆 git fetch+checkout+diff + anthropics/claude-code CHANGELOG raw 抓取（2026-09-05 实测）；完整调研报告 `docs/research/R17-runtime-refresh.md`（四路子代理源码级证据）
+> 范围：点名三件套（claude-code/codex/dsh）深审 + research/ 下其余运行时全量快审（距 R16 四天的补核轮）
+> 差异详表：CLI 双雄见 upstream-baseline §三 3.5；dsh 见 references/dsh-engineering-methodology §八；外围九项见 R17 报告 §五
+
+#### 一、版本差异速览（基线 → 最新）
+
+| 项目 | 基线（R16） | 最新（2026-09-05 实测） | 跨度 | 动作 |
+|------|------|--------------------------|------|------|
+| **claude-code** | v2.1.252 | **v2.1.261**（npm latest，2026-09-04；stable=2.1.236 分裂持续） | npm 9 版 | 升基线 + 吸收（无头执法档/宿主 deny 漂移警示/skill-doctor） |
+| **codex-cli** | v0.152.0 | **rust-v0.153.4**（npm 0.153.3 慢一 patch；v0.154.0-alpha.3 在 alpha） | 106 commits，无破坏项 | 升基线 + 吸收（Guardian 条件性兜底/回合中结构化问答/hooks 三层信任） |
+| **dsh** | dsh-v0.1.1-rc.2 | **dsh-v0.1.2-rc.1**（2026-09-03；0.1.3-alpha.1 已出现） | 1735 commits / 8 breaking | 升基线 + 吸收（**R16 预告的 0.1.2 调研兑现**：跨版本读兼容/删后端纪律/失败词表/孵化围栏） |
+| **openspec** | v1.11.0 | v1.12.0（2026-09-03） | CLI 人体工学延续 | 升基线，对账通过 |
+| **claude-mem** | v13.21.2 | v13.24.0（2026-09-04） | #3838 熔断器事件形状修正 | 升基线 + 补核（watch 维持） |
+| **ocr** | v1.11.1 | v1.11.4 | 纯修复 | 升基线，对账通过 |
+| **ruflo** | v3.38.20 | v3.38.21 | 单 patch | 升基线，对账通过 |
+| **codex-security** | v0.1.24 | v0.1.25 | 跨扫描发现关系保留 + sealed 去重 | 升基线 + §十二注记 |
+| **GitNexus** | v1.6.11-rc.23 | v1.6.11 **stable**（Zig/Spring 摄取等实质功能；npm 停滞） | rc→stable | license-risk 不变，登记不追 |
+| comet | 0.4.0-rc.1 | 0.4.0-rc.4（正式版未出，rc.2-4 全稳定性修复） | — | **仍 drifted 观望**（裁决不变） |
+| impeccable | v4.1.1（候选级） | skill-v4.1.3 / v4.2.0（Comps 可执行契约 + 录制回放钉行为 830 命令逐字节） | 2 版 | 候选级维持不升基线，候选登记 |
+| better-harness | v0.6.6 | v0.7.0-alpha1 已出（证据上传端到端/原生 run streams） | alpha 未稳 | 观望，维持不入表 |
+| gsd-core/graphify/superpowers/gstack/ECC | — | 零增量 | — | 对账通过 |
+
+#### 二、吸收落地（全部文档层/候选登记，不新增 check_* 门禁，守预算 55）
+
+| # | 来源 | 概念 | 落地点 | 类型 |
+|---|------|------|--------|------|
+| 1 | claude-code v2.1.259 | `--permission-prompts none` 无头执法档 → prompt 档无人值守坍缩为 deny（R13 三值化环境边界） | `references/claude-code-capabilities.md` R17 注记段 | 方法论 + 候选注记 |
+| 2 | claude-code 259→260 + codex 0.153.0 | **宿主治理层条件性教义**：Claude Read-deny 应用至 Bash 参数后即回退 + strict sandbox `!` 出沙箱；Codex Full Access/User approval 跳过 Guardian——宿主 deny/审批层版本间不保证在场，执法确定性只能锚自持 55 门禁 | capabilities/codex-methodology R17 段 + upstream-baseline §3.5 评估 | 方法论（教义升级：R13"fail-open 须兜底"→"宿主治理层整体视为条件性"） |
+| 3 | claude-code v2.1.261 | `/skill-doctor` 技能成本审计（未用技能+上下文成本）+ 子代理提示词外置 + 输出预算设置 | 同上（门禁预算宿主侧证据源；外置第四次验证） | 方法论（登记） |
+| 4 | claude-code v2.1.257/260 | `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` + Workflow schema 前置校验 + Containment Escape + 后台命令限时移除 | 同上 | 方法论（登记） |
+| 5 | codex v0.153.0 | `request_user_input_async` 回合中结构化问答（Interrupt 守护点候选正式参照）+ hooks 三层信任 + context_management 实验模式（ChatGPT 后端限定） | `references/codex-methodology.md` R17 注记段 | 方法论 + 候选登记 |
+| 6 | dsh 0.1.2-rc.1 | 跨版本读兼容三件套（compatibleVersions/backup-and-skip/构建归档夹具）+ 删 SQLite 后端迁移纪律（显式切断+旧构建出口+归档原子替换）+ `<domain>/<reason>` 失败词表 + Agent Teams 孵化围栏 | `references/dsh-engineering-methodology.md` §八（簇 A/B/D 补核；机械落地触发条件未变） | 方法论（补核段） |
+| 7 | claude-mem #3838 | 熔断器判据必须绑定上游真实事件形状（rate_limit_event 与 SDK 消息形状不匹配案） | `references/memory-persistence.md` R17 补核 | 方法论（对账通过） |
+| 8 | impeccable v4.2.0 | Comps 可执行契约阶段门 + 录制回放钉行为（830 命令+16058 函数调用逐字节——cli-ab 同构印证）+ 统一规则引擎 | `references/review-methodology.md` R17 段 | 候选登记 |
+| 9 | codex-security v0.1.25 | 跨扫描发现关系保留（findings 生命周期跨扫描延续） | `references/codex-security-methodology.md` §十二注记 | 对账结论 |
+| 10 | comet rc.4 / GitNexus v1.6.11 / better-harness 0.7.0-alpha1 / openspec v1.12.0 / ocr v1.11.4 / ruflo v3.38.21 / gstack 零增量 | 观望维持 / license-risk 登记 / 观望 / 对账通过 | `references/subagent-orchestration.md` comet 行 + `references/code-graph-tools.md` GitNexus/graphify 事实同步 + upstream-baseline 各行 | 对账结论 |
+| 11 | 数字裂缝修正 | codex-security-methodology FACT_REFERENCES 34→41；code-graph-tools graphify 许可证 MIT→Apache-2.0、0.10.0 待评估注记与 R16 裁决对齐 | 两文件就地修正 | 裂缝修复 |
+
+#### 三、验证
+
+- [x] 16 克隆 git fetch + 移动项 checkout（codex rust-v0.153.4 / dsh 0.1.2-rc.1 / openspec v1.12.0 / claude-mem v13.24.0 / ocr v1.11.4 / ruflo v3.38.21 / codex-security npm-v0.1.25 / comet rc.4 跟踪 / gitnexus v1.6.11）；better-harness 维持 v0.6.6
+- [x] 吸收三问 14 项评审：落地 9（方法论层）+ 候选 3 + 对账若干；references 八份补核段全部追加式、不替换既有段
+- [x] 门禁 55 不增（预算 55 守恒）、FACT_RUNTIMES 13/5 不变、FACT_REFERENCES 41 不变（补核轮不加新载体）
+- [x] `bash scripts/self-check.sh --check-only` 无新 drift；16 个 baseline_status 标记行齐全（13 synced + 1 drifted（comet 预期）+ 1 watch（claude-mem）+ 1 license-risk（GitNexus））
+- [x] 本报告即 §13 A15；调研证据链 `docs/research/R17-runtime-refresh.md`

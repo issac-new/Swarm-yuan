@@ -455,3 +455,9 @@ ocr 新增 LLM provider 支持：
 - **assess-patch-risk 五值裁决**（codex-security #654/#664）：SHA-256 绑定工件 + 五维 + merge/revise/no_op/block/hold_for_evidence 五值 + auto_merge_candidate。登记候选。
 - **dream cycle**（ruflo）：假设评估前冻结 + 对抗性 critic 复现 + ACCEPT-scoped 落地。登记候选。
 - **impeccable skill-v4.1.2**：Stop hook 改发 Codex decision 格式——gate 输出必须匹配宿主拦截协议否则形同虚设。登记候选（R12 fail-gate 同向印证）。
+
+### R17 补核（2026-09-05）
+
+> 调研档案 `docs/research/R17-runtime-refresh.md`。ocr v1.11.2-4 纯修复（规则路由/优雅退出）；ruflo v3.38.21 patch；codex-security v0.1.25 见其 methodology 文档 §十二。
+
+- **impeccable skill-v4.2.0 候选两条**：①**Comps 成为可执行契约**（v4.1.3）——阶段门在"声称已按批准方向交付"之前测量结构/排版/材质/响应式还原度（验收命令两要素的视觉版：声称必须过可执行还原度门）；②**录制回放钉行为**（v4.2.0）——重写为编译二进制时对 830 条录制命令调用 + 16058 条函数调用逐字节回放比对，行为被固定而非重造（与本仓 cli-ab 逐字节等价断言同构，方向印证）。统一规则引擎（静态扫描/live overlay/扩展同套编译规则）登记观察。引用基线维持 v4.1.1（候选级，R16 裁决沿用）。
