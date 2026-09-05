@@ -429,7 +429,7 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 
 ## claude-mem v13.21 要点
 
-> **npm 通道**：13.x 均发布到 npm，但 `latest` dist-tag 被回钉 12.4.7——主通道已切插件市场（`/plugin install claude-mem@thedotmack`）+ cmem.ai；oracle 以 GitHub tag 为准，npm 引用须显式钉 `claude-mem@13.21.1`。调研档案 `docs/research/R16-runtime-refresh.md`。
+> **npm 通道**：npm `latest` 被回钉 12.4.7，主通道为插件市场 + cmem.ai；oracle 以 GitHub tag 为准（详见 `docs/upstream-baseline.md`）。调研档案 `docs/research/R16-runtime-refresh.md`。
 
 - **配额熔断器四规则**（13.20.0）：熔断状态跨 worker 重启持久化；冷却期只放一个探针；探针认领绑定 generator（防前辈退出误清后辈）；**"额度耗尽 ≠ 故障"**不计 health ledger——上轮错误信封分类的机制级延伸。
 - **观察者契约显式化**（13.18.1）：SILENT BY DESIGN（被观察者知道被观察就会改变行为）+ NO CONTACT（单向记录器，禁止联系任何 session）。
@@ -438,5 +438,4 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 
 ### v13.22-13.24 补核（2026-09-05 R17）
 
-- **熔断器事件形状修正**（13.23.x，#3838）：`rate_limit_event` 判据与 SDK 真实消息形状不匹配——熔断器的触发判据必须绑定**上游真实事件形状**，凭想象定义的事件名永远不会命中。📖 对账：本仓门禁判据绑定真实命令退出码/产物存在性（不解析想象中的输出格式），同向印证；R16 吸收的四规则语义不变。
-- 多宿主分发扩充（13.24.0）：Cursor/Grok Bot 独立插件 + host-observer 安装流——非核心机制，不吸收。版本跨度 v13.21.2→v13.24.0（watch 状态维持）。
+- **熔断器事件形状修正**（13.23.x，#3838）：判据与 SDK 真实消息形状不匹配——**触发判据必须绑定上游真实事件形状**。📖 对账：本仓门禁判据绑定真实退出码/产物，同向；R16 四规则语义不变。13.24.0 多宿主分发不吸收，watch 维持。
