@@ -229,4 +229,5 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 - 上游 clone 位置：`swarm-yuan/research/codex-security/`（本地参考，gitignored，不入 git）
 - 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
 - 自检断言：G15 `check_codex_security_cli_wiring`（`self-check.sh`，warn-only，守 CLI 接线 + facts.conf 口径）
-- 口径同步：`facts.conf` `FACT_RUNTIMES=13` / `FACT_RUNTIMES_CLI=4` / `FACT_REFERENCES=34`
+- 口径同步：`facts.conf` `FACT_RUNTIMES=13` / `FACT_RUNTIMES_CLI=4` / `FACT_REFERENCES=41`（2026-09-05 R17 同步；原值 34 为 v0.1.4 吸收时点数）
+- 版本注记：npm-v0.1.25（2026-09-05 R17 核）——patch 号下功能增量：**跨扫描发现关系保留**（findings 生命周期跨扫描延续：new/persisting/resolved 关系不因重扫丢失）+ sealed 扫描目录去重 + 去重评审阶段对齐加固。方法论无新增落地单元（发现生命周期管理与本仓 gate-trends 趋势对账同向，工程设施对账通过）。

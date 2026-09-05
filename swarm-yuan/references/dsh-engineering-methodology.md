@@ -2,7 +2,7 @@
 
 # dsh 工程机制方法论（DeepSeek Harness 产品层吸收）
 
-> 来源：[DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) @ `141eb6fe`（2026-08-19，tag `dsh-v0.1.0-rc.8`，developer preview；版本核至 `dsh-v0.1.1-rc.2`，见 §七）。调研报告：`docs/research/R12-dsh-rc8-resurvey.md` + `docs/research/R16-runtime-refresh.md`（证据到包/文件级）。
+> 来源：[DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) @ `141eb6fe`（2026-08-19，tag `dsh-v0.1.0-rc.8`，developer preview；版本核至 `dsh-v0.1.2-rc.1`，见 §七/§八）。调研报告：`docs/research/R12-dsh-rc8-resurvey.md` + `docs/research/R16-runtime-refresh.md` + `docs/research/R17-runtime-refresh.md`（证据到包/文件级）。
 > 与 `cordis-composability-methodology.md` 的分工：那份吸收 Cordis **框架层**（时空可组合性：可逆效应 + 响应式依赖，论文级）；本文吸收 dsh **产品层**工程机制（决策审计/状态韧性/增量感知/工程纪律，源码级）。论文无新版（2026-08-13 草稿），理念层无增量。
 > 纪律：只引用方法论模式与设计视角，不调任何上游 CLI/运行时；不复制源码（上游克隆在 `swarm-yuan/research/dsh/`，gitignored）。守决策 26/27：不新增 `check_*`，门禁总数保持 55（决策 26.2）。
 > 适用场景：目标技能与生成器自身的 hook/门禁审计、状态机与日志韧性、自成长链（项目变化感知→清单更新）、复盘与决策治理设计。
@@ -123,7 +123,7 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 
 上轮（2026-08-14）吸收可逆效应/响应式依赖，落地 `--inject-frameworks` 快照+ledger+`--rollback-frameworks` 与 precheck.patch.conf 分层 patch。本轮产品层机制与框架层同根（都是"动态组合系统的可信度工程"），但回答的问题不同：框架层回答"组件加装/拆除是否可控"，产品层回答"决策是否可审计、状态是否可恢复、感知是否可持续"。两者在 swarm-yuan 的交点：自成长链+ fail-gate 审计。
 
-## 七、0.1.1 版本注记（当前 dsh-v0.1.1-rc.2）
+## 七、0.1.1 版本注记（基线 rc.8 → 0.1.1-rc.2；当前版本见 §八）
 
 > 基线 rc.8（2026-08-19）→ 0.1.1-rc.2（b150a551b，2026-08-21，207 commits；功能线非修复线，无 breaking）。调研报告 `docs/research/R16-runtime-refresh.md`。skill/compaction/context/spill/jobs/guard 包无接口演进；goal/decision 审计核心无演进。
 
@@ -149,4 +149,32 @@ PR #2608（permission 默认值/标签）合入后在 rc.2 **整体回退**并�
 
 ### 7.5 0.1.2-alpha 方向登记（截至 2026-08-31 alpha.3，1430 commits）
 
-persistence 线（alpha.1）：storage per-record 布局 + 旧格式一次性迁移 + 一对一迁移纪律 + prepared sessions + **删除 SQLite 后端（breaking，收敛到 jsonl/json 事件日志单线）**；Agent Teams（experimental/agent-team-profile）；api/*-controller + Remote 拆分（session/settings/workspace 控制器、SDK bundle）；inspector（CDP 暴露 Cordis 运行时，实验可观测性）；session-turn-outline 深历史分页。**吸收边界：等 0.1.2 出 rc 后另立一轮调研**（R12 先例：rc 档才做产品层吸收）。
+persistence 线（alpha.1）：storage per-record 布局 + 旧格式一次性迁移 + 一对一迁移纪律 + prepared sessions + **删除 SQLite 后端（breaking，收敛到 jsonl/json 事件日志单线）**；Agent Teams（experimental/agent-team-profile）；api/*-controller + Remote 拆分（session/settings/workspace 控制器、SDK bundle）；inspector（CDP 暴露 Cordis 运行时，实验可观测性）；session-turn-outline 深历史分页。**吸收边界：等 0.1.2 出 rc 后另立一轮调研**（R12 先例：rc 档才做产品层吸收）——已兑现：0.1.2-rc.1 已出（2026-09-03），见 §八。
+
+## 八、0.1.2 版本注记（当前 dsh-v0.1.2-rc.1）
+
+> 基线 0.1.1-rc.2 → 0.1.2-rc.1（a66e47020，2026-09-03，1735 commits / 7633 文件，8 个 breaking 提交）。调研报告 `docs/research/R17-runtime-refresh.md`（R16 §7.5 预告的那轮）。0.1.3-alpha.1 已出现（主线继续）。
+
+### 8.1 跨版本读兼容三件套（簇 B 补强——§7.3 坏态重建的直接进化）
+
+session_projcache 三代盘面（v3 单文件/v4 per-record/v5 lineage 字段）：①`DomainSpec.compatibleVersions` **按域声明旧版可读、写恒盖当前版**；②坏记录处置 `invalidRecords: 'backup-and-skip'`——坏记录改名 `.bak.<分钟>` 跳过、**域照常打开**（默认仍 fail-loud）；③真实发布构建的盘面归档做**夹具回归**（note 2026-09-02-projcache-cross-version-read-compat；legacy bootstrap 须版本命中才迁移，修"毒化树"事故）。**权威格式删后端用"显式切断+旧构建出口"，缓存格式演代用"声明兼容+备份跳过+归档夹具"——两种迁移谱系分开对待。**
+
+📖 对账：本仓 inventory-update 单条原子替换 + last-good 红线同谱系（缓存格式演代侧）；`--upgrade` 对 `.swarm-yuan/` 旧账本的读兼容是"声明兼容"纪律的既有实践。触发条件未变（见 §五）：出现第二次盘面演代（state/账本出 v2）才需要 compatibleVersions 式声明机制。
+
+### 8.2 删后端的迁移纪律（簇 D 新样本——发布纪律从"合而复撤"扩展到"删减纪律"）
+
+删 SQLite 后端（breaking）三段式：①**不迁**——自动迁移须为无消费者的格式养平行事务协议，拒绝；②**出口**——"需要内容者用仍含该 provider 的旧构建导出逻辑 Session 再升级"，一句话操作者契约写进 note（2026-08-30-jsonl-only-session-persistence）；③**守门**——FTS5 查询库保留但降格为"可弃派生投影"，测试改为证明其观察 JSONL 而非共享权威库；Service Definition 保持 backend-neutral 留 out-of-tree 后端口。依据：opt-in 后端未被 shipped profile 选用，却使每个格式/迁移/CI 义务翻倍——**无真实部署的第二权威格式，删优于养**。配套 per-record 归档迁移：逐 Session 归档源工件后原子替换（`KvUnit.backupRecord`，packages/storage/storage/src/backend.ts:123）。
+
+📖 对账：本仓"复杂度负向预算"（决策 26：新增须等额删除）是同族纪律的预算面；dsh 补的是删除面的操作纪律（出口契约 + 测试改锚权威源）。
+
+### 8.3 `<domain>/<reason>` 失败词表单点声明（簇 A 补强）
+
+`RemoteError<Code>` 单一失败类：code=`<domain>/<reason>` 前缀自带所有者，details 映射单点声明合并；17 个 gateway 装配失败不再折成 internal（note 2026-08-28）。错误身份与 §1.3 事件鉴别器同根——**失败分类是单一事实源，不随装配点漂移**。
+
+📖 对账：本仓门禁失败输出已有 gate ID 体系（check_* 名即所有者前缀），同构满足；多包失败面出现前无需机械化。
+
+### 8.4 Agent Teams 孵化围栏（簇 D——可吸收的是围栏而非功能）
+
+experimental 私包 + 发布集机械排除 + release 禁依赖 experimental（单向）+ **晋升需具名 owner 接盘**（note 2026-08-18）。实验代码不进发布集、晋升有问责主体。同族：api 拆分走绞杀者模式（逐路由迁 controller、迁完即 `refactor(apiproxy)!: remove Xxx RPCs`，最后整包删除 4f00a8b82，无大爆炸切换）。
+
+📖 对账：本仓候选登记制（§五"已登记未实施"+ 触发条件）是同构的轻量形态；inspector/类型品牌（SessionSeq≠SessionLogOffset）/压缩级别评测纪律（501 session 语料 5 轮弃最高最低）登记不展开。

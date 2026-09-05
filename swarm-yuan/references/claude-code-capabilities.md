@@ -1,8 +1,8 @@
-> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.261，见文末版本注记）
 
-# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研）
+# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.261（2026-09-05 R17 补核，见文末版本注记））
 
-> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.252 / stable=2.1.236。
+> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.261 / stable=2.1.236（2026-09-05 实测，分裂持续）。
 > 生成目标技能时，AI 须把以下能力编织进 SKILL.md / workflow.md / reference-manual.md / hooks / commands / settings。
 
 ## 一、核心工具（Tools）
@@ -632,3 +632,16 @@ TaskCreate/Get/Update/List、TodoWrite 在 **Opus 4.8、Sonnet 5、Fable 5、Myt
 - **沙箱/权限硬化波**（v2.1.246-252）：symlink TOCTOU 修复（权限检查后换链读写越界）；沙箱 Bash 输出文件防重定向；`Bash(git * x)` 通配符告警；畸形命令须批准；project settings `env` 禁设 `CLAUDE_CONFIG_DIR`/`TMPDIR`。
 - **hooks 错误可见化**（v2.1.246/248）：hook stdout 非法 JSON→显式 hook error；后台会话点名失败 hook 与 schema 错误——fail-gate-hook 输出纪律对齐无虞。
 - `/goal` check-in 退避 30min→1h→2h（v2.1.239，R14 goal 闭环同构印证）；CLI 子命令 `attach`/`logs`/`stop`/`respawn`/`rm`（v2.1.251）。
+
+## 版本注记：v2.1.261（2026-09-05 核）——v2.1.253 起的能力变化
+
+> 本段覆盖 v2.1.253-261（纯修复版不列；253-256 无 changelog 条目，255 引入 macOS 12 启动回归 258 修复）。npm dist-tag：latest=2.1.261 / stable=2.1.236（stable 落后 25 个 patch，分裂持续）。详表见 `docs/upstream-baseline.md`。
+
+- **无头执法档 `--permission-prompts none`**（v2.1.259）：一切本会弹审批的操作自动拒绝——Claude 侧无人值守执法入口，与 Codex PreToolUse exit-2-deny 组成双宿主无头对偶。**对目标技能：无人值守会话（CI/`--permission-prompts none`）中"prompt 档"语义坍缩为 deny**——依赖宿主审批通道的 gate 交互在无头下不可用，执法主体仍是自持门禁（R13 三值化语义的环境边界，登记 adaptive-gating 候选注记）。
+- **宿主 deny 语义漂移警示**（v2.1.259→260）：259 将 Read deny 规则应用至 Bash 参数，260 即回退（误伤 `npm run build`）；260 起 strict sandbox（`allowUnsandboxedCommands: false`）下 `!` bash-mode 命令改跑沙箱外。**宿主 deny 层在版本间震荡、语义不保证稳定——生成物的 hooks/settings 模板不得把 deny 规则当执法主体，自持 55 门禁兜底教义再获实证**（同向：Codex Guardian 条件性跳过，见 codex-methodology v0.153 注记）。
+- **`/skill-doctor` 技能成本审计**（v2.1.261）：报告哪些已加载技能未使用、各占多少上下文——特征卡裁剪/门禁预算纪律的宿主侧证据源（55 门禁预算的宿主佐证工具，纯登记）。
+- **上下文外置第四次官方验证**（v2.1.261）：`--append-subagent-system-prompt-file` 子代理系统提示词文件化（"prompts too large to pass on the command line"）；同版输出预算设置 `bashOutputMaxChars`/`taskOutputMaxChars`（inline 上限提至 128K）——门禁/工具输出的上下文经济学成为宿主一等配置。
+- **目录外读取管控**（v2.1.257）：首次越界读取一次性提示 + `permissions.blockReadsOutsideWorkingDirectories`——worktree/子代理隔离的宿主侧支撑；同版 `CLAUDE_CODE_SUBAGENT_MODEL_FORCE`（无视 per-spawn 与 agent 定义强制子代理模型）——R16 PreModelSwitch 挂点候选的补全（弱模型越档治理的强制档）。
+- **Workflow schema 前置校验**（v2.1.260）：`agent({schema})` 拒绝"永不可满足"的 JSON Schema 且 retry 错误带最后校验失败——结构化输出 fail-fast，与 gate-report 证据态（missing_evidence/partial）同向印证。
+- **Containment Escape 规则**（v2.1.257）：auto mode 不再自动批准元凭据抓取/出口规避类操作——宿主红线收紧，与 last-good 红线同向。
+- 其余：managed settings 解析失败拒启（v2.1.259，fail-closed 同向）；`managedMcpServers` 组织级 MCP 分发；子代理后台命令 1h 限时移除（v2.1.260，门禁长跑可行）；项目级 `defaultMode:"bypassPermissions"` 被忽略（v2.1.257）；plugin validate `--json` 机器可读报告（v2.1.259，证据态对接候选挂点）。
