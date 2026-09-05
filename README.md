@@ -2,7 +2,7 @@
 
 > 让 AI 懂你的项目，再写代码——从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.6.1-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.6.1)
+[![Release](https://img.shields.io/badge/release-v2.7.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.7.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 [![CI](https://github.com/issac-new/Swarm-yuan/actions/workflows/ci.yml/badge.svg)](https://github.com/issac-new/Swarm-yuan/actions/workflows/ci.yml)
 

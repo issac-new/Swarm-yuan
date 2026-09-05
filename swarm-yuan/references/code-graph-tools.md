@@ -16,8 +16,8 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 
 | 工具 | 许可证（事实登记，供使用方自查） | 能力定位 |
 |------|--------|----------|
-| **graphify** | Apache-2.0（2026-07-18 MIT→Apache 2.0，v0.9.25 起；R17 核对 2026-09-05） | 广谱知识图（代码+文档+媒体）、可提交 graph.json、Mermaid 导出；91.7k stars、活跃（2026-07-18） |
-| **GitNexus** | PolyForm Noncommercial 1.0.0（GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20） | 深度代码调用图、Tree-sitter 原生解析、LadybugDB 持久图、`--pdg` 污点分析、PreToolUse/PostToolUse hooks、多仓库 group query（上游 v1.6.11 stable 已发布，2026-09-05 R17 核：rc.23→stable 含 Zig/Spring 摄取等实质功能；npm 分发仍停滞，license-risk 登记不变，选型方针照旧） |
+| **graphify** | Apache-2.0（2026-07-18 MIT→Apache 2.0） | 广谱知识图（代码+文档+媒体）、可提交 graph.json、Mermaid 导出；91.7k stars、活跃（2026-07-18） |
+| **GitNexus** | PolyForm Noncommercial 1.0.0（GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20） | 深度代码调用图、Tree-sitter 原生解析、LadybugDB 持久图、`--pdg` 污点分析、PreToolUse/PostToolUse hooks、多仓库 group query（v1.6.11 stable 已出；license-risk 登记不变） |
 
 两者**平权**，按项目需要选择或并用：
 - 侧重深度调用链分析、持久 DB、多仓库、 hooks 集成 → GitNexus
@@ -27,7 +27,7 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 补充说明：
 
 - **graphify 仓库已迁移**：org URL 由 `safishamsi/graphify` 迁至 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)（GitHub API 2026-07-20 实测），引用一律用新 URL。
-- **graphify 引用基线：v0.9.x（GitHub v8 分支线，当前 v0.9.53）**（本文能力清单基于 v0.9.5 源码调研 + v0.9.6–v0.9.19 release notes；0.9.20-0.9.53 持续活跃，方法论载体无新机制不补段）。npm `graphifyy` 0.10.0 / v1.0.0 已裁决为异源旧分支**不取**（2026-09-01 R16 复核沿用，登记见 `docs/upstream-baseline.md`）。
+- **graphify 引用基线：v0.9.x（GitHub v8 线，当前 v0.9.53）**（能力清单基于 v0.9.5 调研 + 0.9.6-19 release notes；后续 patch 不补段）。npm `graphifyy` 0.10.0/v1.0.0 为异源旧分支**不取**（R16 裁决沿用，登记见 `docs/upstream-baseline.md`）。
 
 ## GitNexus（Node 生态，深度代码调用图）
 

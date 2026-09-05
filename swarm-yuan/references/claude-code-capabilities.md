@@ -635,13 +635,10 @@ TaskCreate/Get/Update/List、TodoWrite 在 **Opus 4.8、Sonnet 5、Fable 5、Myt
 
 ## 版本注记：v2.1.261（2026-09-05 核）——v2.1.253 起的能力变化
 
-> 本段覆盖 v2.1.253-261（纯修复版不列；253-256 无 changelog 条目，255 引入 macOS 12 启动回归 258 修复）。npm dist-tag：latest=2.1.261 / stable=2.1.236（stable 落后 25 个 patch，分裂持续）。详表见 `docs/upstream-baseline.md`。
+> 覆盖 v2.1.253-261（纯修复版不列）。npm latest=2.1.261 / stable=2.1.236（分裂持续）；详表见 `docs/upstream-baseline.md` §3.5。
 
-- **无头执法档 `--permission-prompts none`**（v2.1.259）：一切本会弹审批的操作自动拒绝——Claude 侧无人值守执法入口，与 Codex PreToolUse exit-2-deny 组成双宿主无头对偶。**对目标技能：无人值守会话（CI/`--permission-prompts none`）中"prompt 档"语义坍缩为 deny**——依赖宿主审批通道的 gate 交互在无头下不可用，执法主体仍是自持门禁（R13 三值化语义的环境边界，登记 adaptive-gating 候选注记）。
-- **宿主 deny 语义漂移警示**（v2.1.259→260）：259 将 Read deny 规则应用至 Bash 参数，260 即回退（误伤 `npm run build`）；260 起 strict sandbox（`allowUnsandboxedCommands: false`）下 `!` bash-mode 命令改跑沙箱外。**宿主 deny 层在版本间震荡、语义不保证稳定——生成物的 hooks/settings 模板不得把 deny 规则当执法主体，自持 55 门禁兜底教义再获实证**（同向：Codex Guardian 条件性跳过，见 codex-methodology v0.153 注记）。
-- **`/skill-doctor` 技能成本审计**（v2.1.261）：报告哪些已加载技能未使用、各占多少上下文——特征卡裁剪/门禁预算纪律的宿主侧证据源（55 门禁预算的宿主佐证工具，纯登记）。
-- **上下文外置第四次官方验证**（v2.1.261）：`--append-subagent-system-prompt-file` 子代理系统提示词文件化（"prompts too large to pass on the command line"）；同版输出预算设置 `bashOutputMaxChars`/`taskOutputMaxChars`（inline 上限提至 128K）——门禁/工具输出的上下文经济学成为宿主一等配置。
-- **目录外读取管控**（v2.1.257）：首次越界读取一次性提示 + `permissions.blockReadsOutsideWorkingDirectories`——worktree/子代理隔离的宿主侧支撑；同版 `CLAUDE_CODE_SUBAGENT_MODEL_FORCE`（无视 per-spawn 与 agent 定义强制子代理模型）——R16 PreModelSwitch 挂点候选的补全（弱模型越档治理的强制档）。
-- **Workflow schema 前置校验**（v2.1.260）：`agent({schema})` 拒绝"永不可满足"的 JSON Schema 且 retry 错误带最后校验失败——结构化输出 fail-fast，与 gate-report 证据态（missing_evidence/partial）同向印证。
-- **Containment Escape 规则**（v2.1.257）：auto mode 不再自动批准元凭据抓取/出口规避类操作——宿主红线收紧，与 last-good 红线同向。
-- 其余：managed settings 解析失败拒启（v2.1.259，fail-closed 同向）；`managedMcpServers` 组织级 MCP 分发；子代理后台命令 1h 限时移除（v2.1.260，门禁长跑可行）；项目级 `defaultMode:"bypassPermissions"` 被忽略（v2.1.257）；plugin validate `--json` 机器可读报告（v2.1.259，证据态对接候选挂点）。
+- **无头执法档 `--permission-prompts none`**（259）：审批操作一律自动拒绝——与 Codex exit-2-deny 组成双宿主无头对偶；**无人值守下"prompt 档"坍缩为 deny**（R13 三值化环境边界，adaptive-gating 候选注记）。
+- **宿主 deny 语义漂移警示**（259→260）：Read deny 应用至 Bash 参数旋即回退（误伤 `npm run build`）；strict sandbox 下 `!` bash-mode 改跑沙箱外——**宿主 deny 层版本间震荡，生成物不得以其为执法主体**（同向：Codex Guardian 条件性跳过）。
+- **`/skill-doctor`**（261）：未使用技能及其上下文成本审计——特征卡裁剪/门禁预算的宿主侧证据源（登记）。
+- **上下文外置第四次验证**（261）：`--append-subagent-system-prompt-file` 子代理提示词文件化 + 输出预算 `bashOutputMaxChars`/`taskOutputMaxChars`（inline 上限 128K）。
+- **治理/管控**（257/259/260）：`CLAUDE_CODE_SUBAGENT_MODEL_FORCE` 强制子代理模型（R16 模型切换挂点强制档补全）；`blockReadsOutsideWorkingDirectories` 越界读取管控；Containment Escape 规则（与 last-good 红线同向）；Workflow schema 前置校验（`agent({schema})` fail-fast，与 gate-report 证据态同向）。
