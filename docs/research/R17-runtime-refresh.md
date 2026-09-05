@@ -6,6 +6,7 @@
 - 上轮基线：2026-09-01 R16 全量重核（claude-code v2.1.252 / codex v0.152.0 / dsh 0.1.1-rc.2 / 16 行全景）
 - 数据来源：npm registry dist-tags（2026-09-05 实测）、16 克隆 git fetch + tag checkout + diff、anthropics/claude-code CHANGELOG（raw 抓取）；四路子代理源码级调研（claude-code 253-261 / codex 152-153.4 / dsh 0.1.2-rc.1 / 外围九项快审）
 - 登记口径：本轮为**补核轮**（距 R16 四天，用户点名三件套），不新增 references 文档、不进 FACT_RUNTIMES 13/5、不新增 check_* 门禁（守 55 预算，决策 26/26.2）
+- **同日复核（2026-09-05 R17 收口后数小时）**：用户再次发起同口径请求，重新侦察 16 克隆 + npm dist-tags——三件套零新稳定版（codex npm 通道追平 0.153.4；dsh 0.1.3-alpha.1 仍在 alpha 线）；外围 4 行 patch 线移动（comet rc.5 / claude-mem v13.24.1 / ocr v1.11.5 / graphify v0.9.54）全部对账通过，克隆已 checkout、基线行已更新（见 upstream-baseline 同日复核注）。patch 级不开新调研轮（R13 重核节奏）、不新增吸收、不发版。
 
 ---
 

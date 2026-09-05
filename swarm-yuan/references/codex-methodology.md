@@ -151,7 +151,7 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 
 ## 版本注记：v0.153（2026-09-05 核）——v0.153.0-153.4 的能力变化
 
-> 当前 stable：npm latest 0.153.3（git tag rust-v0.153.4 领先一个 patch，npm 未发）。本段覆盖 0.153.0-153.4（106 commits，其中 0.153.1-4 共 7 个为 GPT-6-Astra 模型目录热修；docs/skills.md 连续第二轮零 diff）。无 v0.150 级破坏项（仅 `disable_paste_burst` 移入 `[tui]`，旧键 legacy fallback）。详表见 `docs/upstream-baseline.md`。
+> 当前 stable：0.153.4（npm latest 与 git tag 已追平，2026-09-05 同日复核）。本段覆盖 0.153.0-153.4（106 commits，其中 0.153.1-4 共 7 个为 GPT-6-Astra 模型目录热修；docs/skills.md 连续第二轮零 diff）。无 v0.150 级破坏项（仅 `disable_paste_burst` 移入 `[tui]`，旧键 legacy fallback）。详表见 `docs/upstream-baseline.md`。
 
 - **Guardian 条件性兜底**（v0.153.0，#42147/#42256）：Full Access 与 User approval 模式跳过 Guardian 评分/评审（含活动中途切换）；computer-use 评分尊重模型要求（v0.153.1，#42424）。**执法确定性论证必须落在自持门禁：Guardian 复核只是条件性兜底，宿主审批层不保证在场**——与 Claude Code v2.1.260 宿主 deny 回退（Read deny 应用至 Bash 参数后即回退）构成双宿主同向证据：R13"hooks fail-open 须下层门禁兜底"教义升级为"宿主治理层整体视为条件性"。
 - **回合中结构化问答原语**（v0.153.0，#42178）：`request_user_input_async`（替换 `send_user_message_async`）带建议答案的结构化问题、回合继续执行、按模型可用性限定——人机协作点首次进入协议层 schema。R16 登记的 Interrupt hook 半成品守护点自此有了正式参照（打断→问答→续跑）；登记候选不落地（本仓交互面走宿主审批通道已够）。
