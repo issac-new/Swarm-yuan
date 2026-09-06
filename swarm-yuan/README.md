@@ -98,7 +98,7 @@ AI 的代码生成能力已经很强，但「项目认知」仍是被多数工�
 
 为兑现"认知充分"与"每会话低税"的矛盾要求，系统切成两个体：
 
-- **生成器（厚）**：探查知识全量（79 框架规则、41 references、行业 profile、决策史）——只在生成时刻消费一次，允许厚。
+- **生成器（厚）**：探查知识全量（79 框架规则、42 references、行业 profile、决策史）——只在生成时刻消费一次，允许厚。
 - **目标技能（薄）**：每会话重复消费，必须薄——SKILL.md ≤8KB、概念体系 ≤5 个、认知面 references 拷贝 ≤256KB，全部有机器预算断言。
 
 ### 2.2 目标技能的三件套：地图 + 条件 + 演化链
@@ -177,7 +177,7 @@ AI 的代码生成能力已经很强，但「项目认知」仍是被多数工�
 
 ```
 厚生成器（一次性消费）                薄生成物（每会话消费）
-  探查知识库（79 框架规则/41 refs）     SKILL.md（≤8KB）
+  探查知识库（79 框架规则/42 refs）     SKILL.md（≤8KB）
   行业 profile（conf-render 加载）      地图（≤32KiB 两列表）
   决策史/调研史                         rules.d 三值规则 + precheck + hooks（双宿主）
   generate-skill.sh（12 步生成流）      scripts 工具（按需调用，不算税）
@@ -219,7 +219,7 @@ AI 的代码生成能力已经很强，但「项目认知」仍是被多数工�
 
 ```
 厚生成器（一次性消费，可厚）          薄生成物（每会话重复消费，必须薄）
-  探查知识库（79 框架规则/41 references）   SKILL.md（≤8KB：何时用/约束摘要/入口/路由/元规则/自成长）
+  探查知识库（79 框架规则/42 references）   SKILL.md（≤8KB：何时用/约束摘要/入口/路由/元规则/自成长）
   行业 profile（7 份，conf-render 真实加载）  地图（≤32KiB：两列表 |路径|说明与约束|）
   探查/渲染/自检脚本                     spec 9 节核心 + workflow 9 节点×4 要素
   决策史/调研史（§12）                  rules.d/*.rules + precheck + hooks（双宿主）
@@ -299,7 +299,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 只允许 5 个层次名词为主轴：**探查 / 约束 / 演化 / 留痕 / 生成**。认知框架类概念（六阶链/六维动力学/三元演化/七推理/辩证范畴/五维偏差/思维模型）不删除不堆砌——以“工作时按此思考”的指引式表述融入对应层次，落地为 AI 判断引导（逐维自查 → `.swarm-yuan/notes/cognition.md` 留痕，GATE_AI_JUDGMENT 唯一模式；骨架的“工作时的思考框架”表四行：探查按六阶链/思考用逻辑剃刀/决策三级分类/纠偏辩证+领域防达克）。本体层词汇（17 类型/10 关系/11 动作，§0.4）不占这 5 个概念预算——它是机器对账的类型事实源（§0.2 冲程一），不是叙事概念体系：AI 只在设计新机制/演进本体/对账时经“何时读我”路由读取，不进每会话认知面。
 
-**方法论 references 承载表**（41 份全带“何时读我”路由头，核心 10 份职责）：
+**方法论 references 承载表**（42 份全带“何时读我”路由头，核心 10 份职责）：
 
 | reference | 层次 | 职责 |
 |-----------|------|------|
@@ -316,14 +316,14 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | task-methodology-router.md | 使用 | 任务类型×方法论路由（8 类任务选关键节点序列+门禁聚焦，避免全任务跑全量 12 步） |
 | logic-razor.md / cognitive-bias.md | 使用 | 逻辑剃刀删冗余假设 / 认知偏差防范（五维偏差+思维模型） |
 
-**references 全承载索引**（41 份全列，按六类——每份都是真实消费路径，孤儿=0 由 self-check G18 执法）：
+**references 全承载索引**（42 份全列，按六类——每份都是真实消费路径，孤儿=0 由 self-check G18 执法）：
 
 | 类 | 文件 |
 |----|------|
 | 探查方法论（4） | exploration-guide.md / template-spec.md / generation-flow.md / code-graph-tools.md（图谱工具选型平权） |
 | 认知框架（4） | cognition-framework.md（五层基底）/ logic-razor.md / cognitive-bias.md / domain-knowledge.md（领域防达克） |
 | 编排与审查（4） | subagent-orchestration.md / review-methodology.md / task-methodology-router.md / gsd-patterns.md |
-| 外部方法论（10） | codex-methodology.md / codex-security-methodology.md / claude-code-capabilities.md / dsh-engineering-methodology.md / cordis-composability-methodology.md / mea-loop-methodology.md / agent-skills-methodology.md / frontend-design-methodology.md / context-engineering-layering.md / memory-persistence.md |
+| 外部方法论（11） | codex-methodology.md / codex-security-methodology.md / claude-code-capabilities.md / dsh-engineering-methodology.md / cordis-composability-methodology.md / mea-loop-methodology.md / agent-skills-methodology.md / frontend-design-methodology.md / context-engineering-layering.md / memory-persistence.md / engineering-cybernetics-methodology.md |
 | 治理与合规（11） | decision-governance.md / governance-agents.md / standards-compliance.md / quality-management-standards.md / crypto-spec.md / cwe-database.md（门禁内部数据）/ security-spec.md / security-certification-profiles.md / mcp-governance.md / ai-process-records.md / canary-monitoring.md |
 | 行业 profile（7） | industry-profile-finance.md / industry-profile-medical.md / industry-profile-gov.md / industry-profile-automotive.md / industry-profile-energy.md / industry-profile-industrial.md / industry-profile-telecom.md（法规依据文档，与 conf 配对——conf-render --industry 真实加载） |
 | 案例与骨架 | case-studies/articulation-orchestration.md（对外汇报论据）/ workflow.md·reference-manual.md 等骨架由生成器产出 |
@@ -682,7 +682,7 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 | 决策史 + 历史档案 | `docs/design-evolution.md` | 35 条决策全文 + A1-A14 施工档案（过程记录） |
 | 使用手册 + 术语 | `docs/usage-manual.md` | 特征卡/门禁/生成流程/FAQ/数字一览（操作层） |
 | 运行时基线登记 | `docs/upstream-baseline.md` | 16 运行时许可证/版本/drift 状态（供应链机器锚） |
-| 调研证据链 | `docs/research/` | 16 份调研报告（决策史引用的外部项目调研过程档案） |
+| 调研证据链 | `docs/research/` | 17 份调研报告（决策史引用的外部项目调研过程档案） |
 
 ## License
 
