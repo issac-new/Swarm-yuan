@@ -461,3 +461,9 @@ ocr 新增 LLM provider 支持：
 > 调研档 `docs/research/R17-runtime-refresh.md`；ocr v1.11.2-4 / ruflo v3.38.21 patch 线对账通过。
 
 - **impeccable v4.2.0 候选**：Comps 可执行契约阶段门（"声称已交付"前先过还原度门）+ 录制回放钉行为（830 命令逐字节回放——cli-ab 同构）。引用基线维持 v4.1.1（候选级）。
+
+### R18 补核（2026-09-06）
+
+> 调研档 `docs/research/R18-runtime-refresh.md`；openspec / ocr / ruflo / superpowers / ECC / codex-security 零增量对账通过。
+
+- **impeccable skill-v4.2.1（2026-09-05）**：Windows 引擎时间戳签名 + 下载失败三态区分 + 非交互 Claude 会话技能发现——候选级维持（引用基线不升），engine-v0.1.2 线起。

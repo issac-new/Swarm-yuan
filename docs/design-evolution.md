@@ -1,6 +1,6 @@
 # 设计演化史（施工档案——过程记录，非定稿）
 
-> **物化注记（2026-09-01 终态重构）**：本文件收纳设计演化过程的原始记录——决策史全文与历史档案 A1-A15（历次 WP/批次/轮次施工记录）。
+> **物化注记（2026-09-01 终态重构）**：本文件收纳设计演化过程的原始记录——决策史全文与历史档案 A1-A16（历次 WP/批次/轮次施工记录）。
 > 它们回答"系统是怎么变成今天这样的"，但**不构成对现状的权威描述**——现状的权威定义在 `swarm-yuan/README.md`（设计内核）。
 > 决策要点（各决策确立的现行设计原则）已蒸馏回设计内核对应章节；本卷保留全文供审计与溯源。
 
@@ -486,7 +486,7 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 
 ---
 
-## §13 历史档案（A1-A15）
+## §13 历史档案（A1-A16）
 | 编号 | 档案 | 说明 |
 |------|------|------|
 | A1 | 范式定位 | 适用/不适用边界的原始论述。 |
@@ -504,6 +504,7 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 | A13 | 宣传文案 | 对外宣传口径（历史版本）。 |
 | A14 | 运行时升级 2026-09 | R16 运行时升级差异报告（claude-code/codex/dsh/better-harness）。 |
 | A15 | 运行时补核 2026-09 | R17 补核轮差异报告（claude-code/codex/dsh 三件套深审 + 外围九项快审）。 |
+| A16 | 运行时补核 2026-09 | R18 补核轮差异报告（claude-code 263 纯修复轮 + gsd-core 1.13 证据纪律吸收 + graphify/gstack/impeccable 外围三行）。 |
 
 ### A1. 范式定位
 
@@ -2562,3 +2563,25 @@ Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi——自�
 - [x] 门禁 55 不增（预算 55 守恒）、FACT_RUNTIMES 13/5 不变、FACT_REFERENCES 41 不变（补核轮不加新载体）
 - [x] `bash scripts/self-check.sh --check-only` 无新 drift；16 个 baseline_status 标记行齐全（13 synced + 1 drifted（comet 预期）+ 1 watch（claude-mem）+ 1 license-risk（GitNexus））
 - [x] 本报告即 §13 A15；调研证据链 `docs/research/R17-runtime-refresh.md`
+
+---
+
+### A16. 运行时补核 2026-09（R18，claude-code 纯修复轮 + 外围四行移动）
+
+> 触发/协议/证据链同 `docs/research/R18-runtime-refresh.md`；本段为 §13 档案摘要。
+
+#### 一、结论
+
+- 三件套：claude-code v2.1.261→**v2.1.263**（纯修复轮，changelog 单条 reliability、npm 无 262——无机制级变化，无吸收）；codex rust-v0.153.4 / dsh 0.1.2-rc.1 零增量。
+- 外围 4 行移动：**gsd-core v1.13.0**（minor：证据纪律三连 + Review Dispositions Ledger 契约化，注记级吸收）；graphify v0.9.55（六项图谱完整性修复对账）；gstack v1.80.0.0（1.79 派发不搁浅 / 1.80 hooks 单一状态根——韧性族注记，vendor 不动）；impeccable skill-v4.2.1（候选级观察）。
+- 网络：github.com git 通道当日间歇 connection reset，16 克隆 fetch 分批重试后全部成功；版本真值 npm + GitHub API 双核。
+
+#### 二、吸收（三问 11 项浓缩）
+
+落地注记 5（gsd 证据纪律三连 #4085/#4157/#4163 + Dispositions Ledger #4345 + gstack 1.79 派发不搁浅）+ 一行印证 2（context-drift 前置门与 fingerprint --diff 同向 / gstack 1.80 状态根）+ 候选 1（dispatch.maxConcurrency + quick-batch manifest）+ 观察行 1（impeccable 4.2.1）+ 无吸收 1（claude-code 263）+ 对账 1（graphify 幻影边关闭）。零新 references 文档、门禁 55 守恒、FACT_RUNTIMES 13 / FACT_REFERENCES 41 不变、不发版。
+
+#### 三、验证
+
+- [x] 16 运行时 npm + GitHub API 双核；移动项克隆 checkout（gsd-core v1.13.0 / graphify v0.9.55 / gstack c241216）
+- [x] 规范层数字裂缝：code-graph-tools graphify 基线行滞后 0.9.53 → 0.9.55 就地修复
+- [x] `bash scripts/self-check.sh --check-only` 无新 drift；本报告即 §13 A16

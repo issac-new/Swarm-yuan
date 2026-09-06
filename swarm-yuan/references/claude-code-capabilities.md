@@ -1,8 +1,8 @@
-> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.261，见文末版本注记）
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.263，见文末版本注记）
 
-# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.261（2026-09-05 R17 补核，见文末版本注记））
+# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.263（2026-09-06 R18 补核，见文末版本注记））
 
-> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.261 / stable=2.1.236（2026-09-05 实测，分裂持续）。
+> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.263 / stable=2.1.236（2026-09-06 实测，分裂持续）。
 > 生成目标技能时，AI 须把以下能力编织进 SKILL.md / workflow.md / reference-manual.md / hooks / commands / settings。
 
 ## 一、核心工具（Tools）
@@ -583,43 +583,14 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ---
 
-## 版本注记：v2.1.233-237 的能力变化
+## 版本注记：v2.1.233-237 的能力变化（浓缩）
 
-> 本段覆盖 v2.1.233-237；当前能力基线 v2.1.252（下节）。详表见 `docs/upstream-baseline.md`。
+> 覆盖 v2.1.233-237；详表见 `docs/upstream-baseline.md`。
 
-### Todo/Task 工具默认移除（v2.1.233，破坏性）
-
-TaskCreate/Get/Update/List、TodoWrite 在 **Opus 4.8、Sonnet 5、Fable 5、Mythos 5 及更新模型**上默认不再可用；需设 `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` 恢复。Anthropic 在把任务跟踪内化进模型能力。
-
-**对目标技能的影响**：生成的 SKILL.md **不应依赖 TodoWrite/TaskCreate 跟踪门禁进度**——本仓自有 `trace-log.sh`（`--node/--key-node` 模式，key-nodes.jsonl 落盘）是稳定的进度跟踪链路，不受 CLI 工具表面变化影响。骨架的检查表（`- [ ]` checkbox）是 markdown 文本，不受影响。
-
-### 跨会话协作原语（v2.1.236）
-
-`SendMessage` 新增 `notify_when_idle`：请求本机另一个 Claude Code 会话在下次空闲时发一条通知——opt-in、一次性、无轮询（macOS/Linux）。
-登记候选：未来"门禁长跑完成后通知主会话"的多会话工作流可走此官方机制。
-
-### "Concise" output style（v2.1.237）
-
-内置简洁输出风格：Claude 直接给结果、跳过开场白和叙述，工作深度不变。`/config` → Output style 选择。
-与门禁驱动开发契合（跑门禁-看结果-修复，无需叙述）；生成技能的使用文档可推荐用户开启。
-
-### 上下文成本治理样板（v2.1.234）
-
-`claude-api` 内置技能上下文成本从 ~200k+ token 降到 ~25k（参考文档改为按需加载）——**降 87.5%**。
-本仓"按需读取引用索引"（SKILL.md 自动生成表格，）是同构机制，方向验证。
-
-### 沙箱与权限硬化（v2.1.233-236）
-
-- macOS 沙箱通配符 read-deny（如 `**/.env`）在 allowed read 区域内优先生效、**无法通过重命名绕过**（v2.1.236）
-- Windows NT `\??\` 命名空间路径全面拒绝（远程读取/会话恢复/CLAUDE.md include/工作流脚本/文件上传，v2.1.234）
-- 权限对话框 "don't ask again" 严格匹配授权覆盖范围（v2.1.235）
-- MCP 诊断打印已解析密钥改为 `${VAR}` 形式（v2.1.234）
-
-目标技能的 settings.local.json deny 规则（`**/.env` 等）在 v2.1.236+ 更强了。
-
-### 可运维性环境变量（v2.1.233-236）
-
-`ANTHROPIC_DEFAULT_MODEL`（新会话起始模型，`/model` 可覆盖）/ `CLAUDE_CODE_TOOL_MEMORY_LIMIT`（Linux Bash 工具 cgroup 内存上限）/ `CLAUDE_CODE_WEBFETCH_CACHE_TTL_MS`（WebFetch 缓存 TTL）/ `CLAUDE_CODE_PROJECT_DIR_NAME`（per-project transcript 短名）/ `CLAUDE_CODE_GOAL_CHECKIN_MINUTES`（goal 阻塞 check-in 间隔）。
+- **Todo/Task 工具默认移除**（233，破坏性）：新模型上默认不可用——目标技能进度跟踪走自有 trace-log.sh，不依赖 CLI Todo 工具。
+- **协作/风格/成本**（234-237）：`notify_when_idle` 空闲通知原语（多会话候选）；"Concise" 简洁输出风格（与门禁驱动契合）；`claude-api` 技能上下文 200k→25k token（按需加载，与本仓引用索引同构）。
+- **沙箱/权限硬化**（233-236）：macOS 通配符 read-deny 优先且防重命名绕过；NT `\??\` 命名空间拒绝；"don't ask again" 严格匹配授权范围；MCP 密钥打印 `${VAR}` 化。
+- **可运维性 env**：`ANTHROPIC_DEFAULT_MODEL` / `CLAUDE_CODE_TOOL_MEMORY_LIMIT` / `CLAUDE_CODE_WEBFETCH_CACHE_TTL_MS` / `CLAUDE_CODE_PROJECT_DIR_NAME` / `CLAUDE_CODE_GOAL_CHECKIN_MINUTES`。
 
 ## 版本注记：v2.1.252（2026-09-01 核）——v2.1.238 起的能力变化
 
@@ -642,3 +613,9 @@ TaskCreate/Get/Update/List、TodoWrite 在 **Opus 4.8、Sonnet 5、Fable 5、Myt
 - **`/skill-doctor`**（261）：未使用技能及其上下文成本审计——特征卡裁剪/门禁预算的宿主侧证据源（登记）。
 - **上下文外置第四次验证**（261）：`--append-subagent-system-prompt-file` 子代理提示词文件化 + 输出预算 `bashOutputMaxChars`/`taskOutputMaxChars`（inline 上限 128K）。
 - **治理/管控**（257/259/260）：`CLAUDE_CODE_SUBAGENT_MODEL_FORCE` 强制子代理模型（R16 模型切换挂点强制档补全）；`blockReadsOutsideWorkingDirectories` 越界读取管控；Containment Escape 规则（与 last-good 红线同向）；Workflow schema 前置校验（`agent({schema})` fail-fast，与 gate-report 证据态同向）。
+
+## 版本注记：v2.1.263（2026-09-06 核）——纯修复轮
+
+> npm latest 2.1.263（2026-09-05，npm 无 262）/ stable 仍 2.1.236。详表见 `docs/upstream-baseline.md`。
+
+- changelog 仅单条 "Bug fixes and reliability improvements"——**无功能性条目，无吸收**；基线升级仅记版本真值（R18，档案 `docs/research/R18-runtime-refresh.md`）。
