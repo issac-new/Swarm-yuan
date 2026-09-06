@@ -27,7 +27,7 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 补充说明：
 
 - **graphify 仓库已迁移**：org URL 由 `safishamsi/graphify` 迁至 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)（GitHub API 2026-07-20 实测），引用一律用新 URL。
-- **graphify 引用基线：v0.9.x（GitHub v8 线，当前 v0.9.53）**（能力清单基于 v0.9.5 调研 + 0.9.6-19 release notes；后续 patch 不补段）。npm `graphifyy` 0.10.0/v1.0.0 为异源旧分支**不取**（R16 裁决沿用，登记见 `docs/upstream-baseline.md`）。
+- **graphify 引用基线：v0.9.x（GitHub v8 线，当前 v0.9.55）**（能力清单基于 v0.9.5 调研 + 0.9.6-19 release notes；后续 patch 不补段——0.9.54/0.9.55 为幂等写入与图谱完整性修复族，对账通过）。npm `graphifyy` 0.10.0/v1.0.0 为异源旧分支**不取**（R16 裁决沿用，登记见 `docs/upstream-baseline.md`）。
 
 ## GitNexus（Node 生态，深度代码调用图）
 

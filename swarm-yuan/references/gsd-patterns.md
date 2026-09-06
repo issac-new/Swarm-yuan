@@ -346,3 +346,11 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 - **`<fails_when>` 强制**（#3172）：验收命令必须声明可观察失败信号——"无法表达失败模式的命令不是验收测试"；与 openspec v1.10 完成判据合并为两要素=命令+失败信号。
 - **证据纪律**：元数据缺失不得推出 [VERIFIED]（#2951，与本仓 missing_evidence 再印证）；多评审并行+共识门，孤立 HIGH 按证据加权（#2398/#3034）。
 - 供应链：runtime-identity 断言防同名工具（#3146/#3841）+ versioned exit contract + `state validate --strict` 可门禁。
+
+## gsd-core v1.13.0 要点（2026-09-06 R18 补核）
+
+> 调研档案 `docs/research/R18-runtime-refresh.md`；minor 级、无破坏性变更。
+
+- **证据纪律三连**：复核阻塞须确定性证据（#4085）+ **no-op 报真实条件与已算值**（#4157，"缺失证据不显示为零"族）+ **不可读目录不得报为空**（#4163）——复核/上报/枚举三面全钉确定性。
+- **Review Dispositions Ledger 契约化**（#4345）：评审处置台账——与 gate-audit.jsonl 同构印证。
+- 同向：context-drift 前置门（#4147，与 fingerprint --diff 同向）。候选：dispatch.maxConcurrency 容量轴（#4162）/ quick-batch 可恢复 manifest / bracket-tolerant id（#2867）。

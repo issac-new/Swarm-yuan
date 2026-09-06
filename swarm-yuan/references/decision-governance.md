@@ -148,9 +148,11 @@ claude-mem timeline <observation-id>
 
 ## 证据共识与 fail-closed 的 wiring 层
 
-> 来源：gsd-core v1.12.0 + gstack v1.77.0.0（调研档案 `docs/research/R16-runtime-refresh.md`）。
+> 来源：gsd-core v1.12.0 + gstack v1.77.0.0（调研档案 `docs/research/R16-runtime-refresh.md`）；R18 补强 gsd-core v1.13.0 + gstack v1.78-1.80（`docs/research/R18-runtime-refresh.md`）。
 
 - **共识门证据加权**（gsd #2398）：孤立 HIGH 按证据加权——存在性断言须 source-grounded 或有旁证；**多数决不是治理，证据才是**。
 - **缺失≠VERIFIED**（gsd #2951）：缺失既不能证实也不能证伪，唯一路径是阳性证伪尝试——无证据行不得判 implemented。
 - **fail-closed 机制自身会 fail-open**（gstack 1.77）：GitHub run-step 默认无 pipefail，`tee` 吞退出码，改 `PIPESTATUS[0]` 并钉 wiring 测试；跑 PR 代码的 job 不持评论写 token。**声明 fail-closed 不算数，wiring 测试钉住才算**（本仓 fail-gate-hook deny+CI 断言已是此形态）。
 - **简化 lens + 捷径台账**（gstack 1.75 ponytail）：第八 lens 封闭五标签 advisory-only；接受的捷径留 `gstack-shortcut(dec-<id>)` 由 /retro 采成债务台账——**捷径不是污点，未记账的捷径才是**。
+- **证据纪律三连（gsd 1.13，R18 补强）**：复核阻塞须确定性证据（#4085）+ no-op 报真实条件与已算值（#4157）+ 不可读目录不得报为空（#4163）——"缺失≠VERIFIED"（#2951）族的三条操作化样本：复核、上报、枚举三个面全钉确定性。
+- **派发不搁浅（gstack 1.79，R18 补强）**：ship subagent dispatches 不再搁浅整轮运行（#2772/#2440 族）——子代理失败面爆炸半径收敛，与 failure-detector SPINNING 检测同向；1.80 hooks 共享单一状态根 + setup 对失败 Chromium 安装存活（wiring 层韧性）。
