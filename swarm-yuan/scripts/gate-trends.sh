@@ -100,6 +100,20 @@ if [[ -z "$HTML_OUT" ]]; then
   _guardrail=$_density
   printf "当窗验证（Repair Progress）: pass %d 条已验证（repair_verified_rate %d%%）；guardrail 配对指标 = 弱点密度 %d%%（fail %d / %d 门禁种——改进声明须主指标升且 guardrail 不恶化）\n" "$_total_pass" "$_overall_rate" "$_guardrail" "$_total_fail" "$_gate_kinds"
   printf "跨窗效果（Loop Effectiveness）: 需两次执行对比判定（--window 接口未实现）（better-harness 语义：后期可比 Task Episode 证据才允许效果声明；当前账本不输出，登记候选）\n"
+  # 恒零清单（控制论"范围控制/恒零即能力 1"落地点：恒零拦截门禁显性列出，供季度质疑复核——修 README §7 指标 10 的创造-声称裂缝）
+  _PRE="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)/assets/precheck.sh"
+  _FULL_GATES="$(sed -n 's/^ALL_GATES_FULL=(\(.*\))/\1/p' "$_PRE" 2>/dev/null | tr ' ' '\n')"
+  _fires=$(awk 'match($0,/"gate":"[^"]+"/) { print substr($0,RSTART+8,RLENGTH-9) }' "$JSONL" 2>/dev/null | sort -u)
+  if [[ -n "$_FULL_GATES" && -n "$_fires" ]]; then
+    _zero="$(comm -23 <(printf '%s\n' "$_FULL_GATES" | sort -u) <(printf '%s\n' "$_fires" | sort -u) 2>/dev/null || true)"
+    if [[ -n "$_zero" ]]; then
+      _zn=$(printf '%s\n' "$_zero" | grep -c .)
+      echo ""
+      echo "=== 恒零清单（近 $N 次窗口内零触发门禁——控制能力为 1，季度质疑复核对象） ==="
+      printf '%s\n' "$_zero" | sed 's/^/  /'
+      printf "恒零门禁数: %d（真值对账以 precheck.sh ALL_GATES_FULL 为准）\n" "$_zn"
+    fi
+  fi
   exit 0
 fi
 
