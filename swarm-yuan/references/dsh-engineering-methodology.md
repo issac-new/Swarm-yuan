@@ -125,56 +125,13 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 
 ## 七、0.1.1 版本注记（基线 rc.8 → 0.1.1-rc.2；当前版本见 §八）
 
-> 基线 rc.8（2026-08-19）→ 0.1.1-rc.2（b150a551b，2026-08-21，207 commits；功能线非修复线，无 breaking）。调研报告 `docs/research/R16-runtime-refresh.md`。skill/compaction/context/spill/jobs/guard 包无接口演进；goal/decision 审计核心无演进。
-
-### 7.1 Authorization seam 三件套（簇 A 补充——凭据治理）
-
-新 seam `ctx.authorization`（新包 `packages/credentials/authorization`）：①**键空间按所有者划界**——`CredentialRef`（env 名）之外新增 `CredentialKey`（`<插件scope>/<id>`），凭据记录含 alternatives；②**flow 拥有写入**——插件注册 flow 声明如何获取凭据，`run()` resolve 即已提交，seam 校验提交而非存在性；③**交互随请求走而非注册表**（headless 传入 decline 交互）；每 key 同时仅一次尝试（二次拒绝 `ALREADY_IN_FLIGHT` 不合并）；`authorization/settled` 事件覆盖所有终态。"有些凭据不能配置只能获取"。
-
-📖 文档化原则：本仓 secrets 管理若引入凭据注入（当前 SECURITY.md 仅界定不注入），按此三件套划界。
-
-### 7.2 二版本模式：durable 规范形 vs 派生请求版本（簇 B 补充）
-
-统一图片管线（PR #2676）：后端只存 **provider 无关的规范化附件**（EXIF 纠向/8-bit sRGB/长边≤2048/≤4MiB/内容寻址去重），每条模型路由持有**确定性派生版本**并缓存；inline 字节与 provider file id 皆为瞬态投影；批量录取"先全部准备验证再发布"，失败无部分写入。
-
-📖 文档化原则：**历史存 canonical、传输派生瞬态投影**——通用韧性设计，与本仓"账本即规范形、报告即投影"结构同构（已登记候选，见 §五）。
-
-### 7.3 投影态 schema 校验 + 坏态整 log 重建（簇 B 升级论据）
-
-`SessionProjectionStateMap`（host 折叠态表带 `stateSchema`，restore 时校验、**坏态回退整 log 重建**）；**`persist` opt-in 取消——所有 unit 一律 checkpoint**（不再允许"不落盘"的投影）。对 §2.1/2.2 既有原则的升级论据：校验失败不修补、回放重建（本仓 trace-log/dir_cksums 同语义，对账通过）。
-
-### 7.4 合而复撤的发布纪律（簇 D 新样本）
-
-PR #2608（permission 默认值/标签）合入后在 rc.2 **整体回退**并同步测试快照——"回退优先于带病修复"，不在 release 分支修修复。与 §4.1 defensive-patterns 同簇：发布线的失败方向显式化。
-
-### 7.5 0.1.2-alpha 方向登记（截至 2026-08-31 alpha.3，1430 commits）
-
-persistence 线（alpha.1）：storage per-record 布局 + 旧格式一次性迁移 + 一对一迁移纪律 + prepared sessions + **删除 SQLite 后端（breaking，收敛到 jsonl/json 事件日志单线）**；Agent Teams（experimental/agent-team-profile）；api/*-controller + Remote 拆分（session/settings/workspace 控制器、SDK bundle）；inspector（CDP 暴露 Cordis 运行时，实验可观测性）；session-turn-outline 深历史分页。**吸收边界：等 0.1.2 出 rc 后另立一轮调研**（R12 先例：rc 档才做产品层吸收）——已兑现：0.1.2-rc.1 已出（2026-09-03），见 §八。
+> 基线 rc.8（2026-08-19）→ 0.1.1-rc.2（2026-08-21，207 commits，功能线无 breaking；goal/decision 审计核心无演进）。无新增落地单元，增量全部登记候选（§五）或留档：凭据 seam 三件套（本仓若引入凭据注入，按"键空间按所有者划界 / flow 拥有写入"划界）；二版本模式（历史存 canonical、传输派生投影，§五已登记）；坏态整 log 重建（§2.1/2.2 同语义对账通过）；发布纪律样本"合而复撤"（回退优先于带病修复，与 §4.1 同簇）。逐条细节留档 `docs/research/R16-runtime-refresh.md`，本节不再展开。
 
 ## 八、0.1.2 版本注记（当前 dsh-v0.1.2-rc.1）
 
-> 基线 0.1.1-rc.2 → 0.1.2-rc.1（a66e47020，2026-09-03，1735 commits / 7633 文件，8 个 breaking 提交）。调研报告 `docs/research/R17-runtime-refresh.md`（R16 §7.5 预告的那轮）。0.1.3-alpha.1 已出现（主线继续）。
+> 基线 0.1.1-rc.2 → 0.1.2-rc.1（2026-09-03，1735 commits / 8 breaking）。两条有操作含量的原则：
 
-### 8.1 跨版本读兼容三件套（簇 B 补强——§7.3 坏态重建的直接进化）
+- **两种格式迁移谱系分开对待**：缓存格式演代用"声明兼容（按域声明旧版可读、写恒盖当前版）+ 坏记录备份跳过、域照常打开 + 真实盘面归档夹具回归"；权威格式删后端用"显式切断 + 旧构建导出口"。本仓 inventory-update 原子替换 + last-good 红线属前者；机械化触发条件不变（§五：state/账本出 v2 时）。
+- **删后端纪律三段式**：不迁（拒绝为无消费者的格式养平行迁移协议）/ 出口（需要内容者用旧构建导出后再升级）/ 守门（派生投影降格为可弃、测试改锚权威源）。"无真实部署的第二权威格式，删优于养"——与决策 26 复杂度负向预算同族。
 
-session_projcache 三代盘面（v3 单文件/v4 per-record/v5 lineage 字段）：①`DomainSpec.compatibleVersions` **按域声明旧版可读、写恒盖当前版**；②坏记录处置 `invalidRecords: 'backup-and-skip'`——坏记录改名 `.bak.<分钟>` 跳过、**域照常打开**（默认仍 fail-loud）；③真实发布构建的盘面归档做**夹具回归**（note 2026-09-02-projcache-cross-version-read-compat；legacy bootstrap 须版本命中才迁移，修"毒化树"事故）。**权威格式删后端用"显式切断+旧构建出口"，缓存格式演代用"声明兼容+备份跳过+归档夹具"——两种迁移谱系分开对待。**
-
-📖 对账：本仓 inventory-update 单条原子替换 + last-good 红线同谱系（缓存格式演代侧）；`--upgrade` 对 `.swarm-yuan/` 旧账本的读兼容是"声明兼容"纪律的既有实践。触发条件未变（见 §五）：出现第二次盘面演代（state/账本出 v2）才需要 compatibleVersions 式声明机制。
-
-### 8.2 删后端的迁移纪律（簇 D 新样本——发布纪律从"合而复撤"扩展到"删减纪律"）
-
-删 SQLite 后端（breaking）三段式：①**不迁**——自动迁移须为无消费者的格式养平行事务协议，拒绝；②**出口**——"需要内容者用仍含该 provider 的旧构建导出逻辑 Session 再升级"，一句话操作者契约写进 note（2026-08-30-jsonl-only-session-persistence）；③**守门**——FTS5 查询库保留但降格为"可弃派生投影"，测试改为证明其观察 JSONL 而非共享权威库；Service Definition 保持 backend-neutral 留 out-of-tree 后端口。依据：opt-in 后端未被 shipped profile 选用，却使每个格式/迁移/CI 义务翻倍——**无真实部署的第二权威格式，删优于养**。配套 per-record 归档迁移：逐 Session 归档源工件后原子替换（`KvUnit.backupRecord`，packages/storage/storage/src/backend.ts:123）。
-
-📖 对账：本仓"复杂度负向预算"（决策 26：新增须等额删除）是同族纪律的预算面；dsh 补的是删除面的操作纪律（出口契约 + 测试改锚权威源）。
-
-### 8.3 `<domain>/<reason>` 失败词表单点声明（簇 A 补强）
-
-`RemoteError<Code>` 单一失败类：code=`<domain>/<reason>` 前缀自带所有者，details 映射单点声明合并；17 个 gateway 装配失败不再折成 internal（note 2026-08-28）。错误身份与 §1.3 事件鉴别器同根——**失败分类是单一事实源，不随装配点漂移**。
-
-📖 对账：本仓门禁失败输出已有 gate ID 体系（check_* 名即所有者前缀），同构满足；多包失败面出现前无需机械化。
-
-### 8.4 Agent Teams 孵化围栏（簇 D——可吸收的是围栏而非功能）
-
-experimental 私包 + 发布集机械排除 + release 禁依赖 experimental（单向）+ **晋升需具名 owner 接盘**（note 2026-08-18）。实验代码不进发布集、晋升有问责主体。同族：api 拆分走绞杀者模式（逐路由迁 controller、迁完即 `refactor(apiproxy)!: remove Xxx RPCs`，最后整包删除 4f00a8b82，无大爆炸切换）。
-
-📖 对账：本仓候选登记制（§五"已登记未实施"+ 触发条件）是同构的轻量形态；inspector/类型品牌（SessionSeq≠SessionLogOffset）/压缩级别评测纪律（501 session 语料 5 轮弃最高最低）登记不展开。
+其余增量（失败词表 `<domain>/<reason>` 单点声明、Agent Teams 孵化围栏、绞杀者模式 api 拆分）与本仓既有机制同族（gate ID 前缀、§五候选登记制），登记不展开。逐条细节留档 `docs/research/R17-runtime-refresh.md`。

@@ -627,7 +627,7 @@ self-check 对账 18 个实存点；`ontology-verify.sh` 六锚健康检查。
 | 7 | 认知面体积（references 拷贝） | ≤256KB | self-check 断言（当前 252KB） |
 | 8 | 结构性：反向引用数 | 0 | G19 断言 |
 | 9 | 连接性：孤儿资产数 | 0 | G18 扫描 |
-| 10 | 有效性：恒零拦截门禁 | 季度质疑清单 | gate-trends |
+| 10 | 有效性：零拦截/沉睡门禁 | 零拦截（窗口内全 pass 从未发现问题）入季度质疑；沉睡（连续 skip 零发现）入 GATE_CANDIDATE | gate-trends 零拦截清单 + adaptive-gating 活跃度报告 |
 | 11 | 适配性：三档差异化 | gen-e2e 断言（lite 无 hooks.json / compliance 含 industry 注入） | gen-e2e |
 | 12 | 成长性：吸收落地率 | 100%（decisions.jsonl phase=absorption） | decision-audit 抽样 |
 
