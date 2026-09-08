@@ -137,8 +137,8 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **用户动作 → 闭环入口**（对照第四层流程图）："生成技能"=流A 起点；"开始新需求"=流B 起点（上面旅程）；"项目变了/升级 skill"=反馈回路（指纹感知→局部更新）；"跑门禁/报了误报"=执勤干预（门禁执行/调 conf 消误报+decisions.jsonl 留痕）。四个入口覆盖全部日常，其余由 hook 与状态机自动驱动。
 
-## 第六层 引用## 第六层 引用（按需路由，全部带"何时读我"头）
+## 第六层 引用（按需路由，全部带"何时读我"头）
 
 > 本段各 reference 本身是流A ③骨架随发的产物（知识库自举）：生成器用它们生成目标技能，目标技能执勤时又按路由读它们——文档即流程产物，流程即文档消费者。
 
-探查→exploration-guide（含 §C+.0.6 四层架构视角）；填充→template-spec（spec §24 架构映射）；生成流程详解→generation-flow；认知→cognition-framework 等；方法论→各 *-methodology.md（cordis-composability / mea-loop / agent-skills / dsh-engineering / togaf-metamodel / engineering-cybernetics 等）+ context-engineering-layering；合规→standards-compliance + 行业 profile（`--industry` 真实加载）；安全→security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读；编排→subagent-orchestration。
+探查→exploration-guide（含 §C+.0.6 四层架构视角）；填充→template-spec（spec §24 架构映射）；生成流程详解→generation-flow；认知→cognition-framework 等；方法论→各 *-methodology.md（cordis-composability / mea-loop / agent-skills / dsh-engineering / togaf-metamodel / four-theories 等）+ context-engineering-layering；合规→standards-compliance + 行业 profile（`--industry` 真实加载）；安全→security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读；编排→subagent-orchestration。

@@ -323,7 +323,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 | 探查方法论（4） | exploration-guide.md / template-spec.md / generation-flow.md / code-graph-tools.md（图谱工具选型平权） |
 | 认知框架（4） | cognition-framework.md（五层基底）/ logic-razor.md / cognitive-bias.md / domain-knowledge.md（领域防达克） |
 | 编排与审查（4） | subagent-orchestration.md / review-methodology.md / task-methodology-router.md / gsd-patterns.md |
-| 外部方法论（11） | codex-methodology.md / codex-security-methodology.md / claude-code-capabilities.md / dsh-engineering-methodology.md / cordis-composability-methodology.md / mea-loop-methodology.md / agent-skills-methodology.md / frontend-design-methodology.md / context-engineering-layering.md / memory-persistence.md / engineering-cybernetics-methodology.md |
+| 外部方法论（11） | codex-methodology.md / codex-security-methodology.md / claude-code-capabilities.md / dsh-engineering-methodology.md / cordis-composability-methodology.md / mea-loop-methodology.md / agent-skills-methodology.md / frontend-design-methodology.md / context-engineering-layering.md / memory-persistence.md / four-theories-methodology.md |
 | 治理与合规（11） | decision-governance.md / governance-agents.md / standards-compliance.md / quality-management-standards.md / crypto-spec.md / cwe-database.md（门禁内部数据）/ security-spec.md / security-certification-profiles.md / mcp-governance.md / ai-process-records.md / canary-monitoring.md |
 | 行业 profile（7） | industry-profile-finance.md / industry-profile-medical.md / industry-profile-gov.md / industry-profile-automotive.md / industry-profile-energy.md / industry-profile-industrial.md / industry-profile-telecom.md（法规依据文档，与 conf 配对——conf-render --industry 真实加载） |
 | 案例与骨架 | case-studies/articulation-orchestration.md（对外汇报论据）/ workflow.md·reference-manual.md 等骨架由生成器产出 |
@@ -679,10 +679,10 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 
 | 材料 | 位置 | 内容 |
 |---|---|---|
-| 决策史 + 历史档案 | `docs/design-evolution.md` | 35 条决策全文 + A1-A14 施工档案（过程记录） |
+| 决策史 + 历史档案 | `docs/design-evolution.md` | 35 条决策全文 + A1-A16 施工档案（过程记录） |
 | 使用手册 + 术语 | `docs/usage-manual.md` | 特征卡/门禁/生成流程/FAQ/数字一览（操作层） |
 | 运行时基线登记 | `docs/upstream-baseline.md` | 16 运行时许可证/版本/drift 状态（供应链机器锚） |
-| 调研证据链 | `docs/research/` | 18 份调研报告（决策史引用的外部项目调研过程档案） |
+| 调研证据链 | `docs/research/` | 22 份调研报告（决策史引用的外部项目调研过程档案） |
 
 ## License
 
