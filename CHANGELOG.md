@@ -11,6 +11,7 @@ Release notes per version are also available at [GitHub Releases](https://github
 
 ### Changed
 - 去教条化轮（design-evolution 决策 36"恰当应用"）：dsh-engineering-methodology §七/§八 版本注记压缩为指针（操作原则各留一句，细节留 refresh 调研档）——止住上游发布节奏驱动本仓文档膨胀；upstream-baseline 补执行纪律（patch 零增量不登记/同日复核废止/细节留调研档），R16-R18 四段口径注各压一行
+- four-theories-methodology 同标准手术（决策 36 追记，用户裁定存量不豁免）：机制对照表一/二与落地桥表删除（纯重命名/判据全为既有断言复写），十律编号与权威叙事框架退场、五篇内容平实化保留，系统论七手段对账表改写为结构七问检查单；文档 197→156 行，四论框架与 R18 一手复核成果保留
 
 ### Fixed
 - gate-trends 恒零清单 → 零拦截清单名副其实化：原实现测"零执行"却自称"恒零拦截"，窗口口径与 N 无关且恒零集由运行档位结构性决定；修正为"窗口内全 pass（零 fail 零 warn）= 从未发现问题"语义（warn 档按设计不阻断、全 skip 沉睡信号归 adaptive-gating，均不入列）；新增 `tests/test-gate-trends.sh` 钉死四态语义并接 CI；four-theories-methodology 7 处"恒零"表述同步咬合
