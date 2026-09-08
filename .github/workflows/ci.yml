@@ -201,6 +201,7 @@ jobs:
           bash tests/test-conf-render.sh
           bash tests/test-spec-template-gating.sh
           bash tests/test-compare-baseline.sh
+          bash tests/test-gate-trends.sh
       - name: 治理/hook/账本/指纹/记忆写回/行业 profile 测试（audit-claims-reality 接线）
         # 此前这九个测试写完即脱钩（CI 绿 ≠ 它们过）：AI 判断/fail-gate/失败检测/rules 三值/
         # 清单更新/指纹/任务类型门控/记忆写回/行业 profile。逐个本地跑绿后接线。

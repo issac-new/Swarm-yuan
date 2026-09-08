@@ -8,6 +8,7 @@
 > 用途：登记 swarm-yuan 引用/吸收的 **16 个上游运行时**的许可证与版本基线，支撑供应链可审计性（ISO/IEC 5230 OpenChain 方向）与文档漂移治理。
 > 数据来源：GitHub REST API + npm/PyPI registry **2026-08-21 实测**（本轮 R4 全量重核）；历史实测轮次见 `docs/research/R6-upstream-web.md` §0（2026-07-20）/ §13 历史档案 A10（原 runtime-update-2026-07，2026-07-26）/ 2026-08-14 轮。
 > **重核节奏（R13 批次3，§4.5.5）**：从"每轮全量重核 16 个"改为**破坏性变更驱动**——上游 GitHub release 标 breaking/major 时触发重核 + 季度例行一次。重核是维护不是成长，砍全量形态给成长腾带宽。
+> **执行纪律（2026-09-08 增补，教训：R16→R18 六天三轮全量/补核 + R17 收口后数小时"同日复核"，均偏离上条节奏）**：①patch 级移动与零增量只更新表行版本号/日期，不开调研轮、不写口径注；②同日复核废止——一轮收口即封盘，新版本等下一触发点；③确需重核时细节一律留 `docs/research/`-runtime-refresh 档，本文件只记一行结论。
 > 机器可读契约：每个 drifted 条目所在行必须含字面漂移标记（行尾「机器标记」列，格式 baseline_status=状态值）；self-check 的轻量基线忠告仅 grep 漂移标记所在行并 warn（不联网）。
 > 状态取值：`synced`（基线≈最新）｜`drifted`（基线落后，需重核）｜`watch`（迭代极快，持续观察）｜`license-risk`（许可证合规风险）。
 >
@@ -16,10 +17,9 @@
 ### 一、16 运行时登记表
 
 > **口径注（2026-08-21 R4）**：本表 16 行 = 供应链登记总口径（13 整合运行时 + dsh 纯方法论源 + claude-code/codex 两个核心安装目标 CLI）。SKILL.md 的"整合 13 个外部运行时"（`FACT_RUNTIMES=13`）是**接线分层口径**（深度 4 + CLI 4 + 方法论 5），两者语义不同：claude-code/codex 是 swarm-yuan 生成技能的**宿主**而非被整合对象，dsh 是方法论源而非运行时接线——三者不进 FACT_RUNTIMES 分层计数。
-> **重核口径注（2026-09-01 R16）**：本轮为**全量重核**——16 行全部核实到最新稳定版（R16 初段四件套 + 用户要求扩展至 research/ 下全部第三方运行时）。结果：11 行升基线吸收（claude-code/codex-cli/dsh/gsd-core/claude-mem/ocr/graphify/gstack/ruflo/ECC/codex-security）、1 行仍 drifted 观望（comet 0.4.0-rc.1 正式版未出）、1 行仍 watch（claude-mem）、1 行仍 license-risk（GitNexus）、2 行对账通过无变化（superpowers/openspec 增量为 CLI 人体工学）、impeccable 有新 tag 但候选级暂不升基线。better-harness（纯方法论源，R14 起不入表）0.6.4→0.6.6 增量记入 `docs/research/R16-runtime-refresh.md`。
-> **重核口径注（2026-09-05 R17）**：补核轮（距 R16 四天）——用户点名 claude-code/codex/dsh 三件套深审 + research/ 下其余克隆全量快审。结果：三件套升基线吸收（claude-code v2.1.261 / codex-cli rust-v0.153.4 / **dsh v0.1.2-rc.1——0.1.2 调研兑现 R16 预告**）+ 6 行升基线或登记（openspec v1.12.0 / claude-mem v13.24.0 / ocr v1.11.4 / ruflo v3.38.21 / codex-security v0.1.25 / GitNexus v1.6.11 stable 登记）+ comet 仍 drifted（rc.4 正式版未出）+ 5 行零增量（gsd-core/graphify/superpowers/gstack/ECC）+ impeccable 候选级维持（v4.1.3/v4.2.0 观察登记）。better-harness v0.7.0-alpha1 已出（证据上传端到端 + 原生 run streams，alpha 未稳维持 v0.6.6 不入表）。详见 `docs/research/R17-runtime-refresh.md`。
-> **同日复核注（2026-09-05 R17+，R17 收口后数小时再确认）**：三件套零新稳定版（claude-code 仍 2.1.261 / codex git tag 仍 0.153.4——npm 通道已追平发布 0.153.4 / dsh 仍 0.1.2-rc.1，0.1.3-alpha.1 在 alpha 线）。外围 4 行 patch 线移动全部对账通过：comet 0.4.0-**rc.5**（dashboard 修复，正式版仍未出，drifted 维持）、claude-mem v13.24.**1**（插件构建修复，watch 维持）、ocr v1.11.**5**（依赖安全补丁 grpc/fast-uri/browserslist + viewer 评论标记，patch 线）、graphify v0.9.**54**（dup-edge collapse + 原子 version/canvas 写入——既有幂等写入吸收面同向增量，不补段）；GitNexus v1.6.12-rc.3（license-risk 不动）。patch 级不开新调研轮（R13 重核节奏），不发版。
-> **重核口径注（2026-09-06 R18）**：补核轮（距 R17 一天）——三件套 claude-code v2.1.261→**v2.1.263**（**纯修复轮**：changelog 单条 reliability、npm 无 262 版本号，无机制级变化无吸收）；codex rust-v0.153.4 / dsh 0.1.2-rc.1 零增量。外围 4 行移动：**gsd-core v1.13.0**（minor，证据纪律三连 + Review Dispositions Ledger 吸收注记）、graphify v0.9.55（六项图谱完整性修复对账）、gstack **v1.80.0.0**（1.79 派发不搁浅 + 1.80 hooks 单一状态根，韧性族注记，vendor 不动）、impeccable skill-v4.2.1（候选级观察）；其余 7 行零增量对账。github.com git 通道当日间歇 connection reset，16 克隆 fetch 重试后全部成功、移动项 checkout 完成，版本真值 npm + GitHub API 双核。详见 `docs/research/R18-runtime-refresh.md`。
+> **重核口径注（2026-09-01 R16）**：全量重核 16 行至最新稳定版：11 行升基线、comet 仍 drifted、claude-mem 仍 watch、GitNexus 仍 license-risk。细节 `docs/research/R16-runtime-refresh.md`。
+> **重核口径注（2026-09-05 R17）**：补核轮——claude-code v2.1.261 / codex rust-v0.153.4 / dsh v0.1.2-rc.1 三件套升基线 + 6 行升基线或登记；comet 仍 drifted。细节 `docs/research/R17-runtime-refresh.md`。
+> **重核口径注（2026-09-06 R18）**：补核轮——claude-code v2.1.263（纯修复）+ gsd-core/graphify/gstack 三行升基线，其余零增量。细节 `docs/research/R18-runtime-refresh.md`。
 
 | 名称 | 仓库 | 许可证 | 引用基线 | 最新版（各行注明重核日期） | 状态 | 机器标记 |
 |------|------|--------|----------|--------------------|------|----------|

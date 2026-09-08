@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [Unreleased]
+
+### Changed
+- 去教条化轮（design-evolution 决策 36"恰当应用"）：dsh-engineering-methodology §七/§八 版本注记压缩为指针（操作原则各留一句，细节留 refresh 调研档）——止住上游发布节奏驱动本仓文档膨胀；upstream-baseline 补执行纪律（patch 零增量不登记/同日复核废止/细节留调研档），R16-R18 四段口径注各压一行
+
+### Fixed
+- gate-trends 恒零清单 → 零拦截清单名副其实化：原实现测"零执行"却自称"恒零拦截"，窗口口径与 N 无关且恒零集由运行档位结构性决定；修正为"窗口内全 pass（零 fail 零 warn）= 从未发现问题"语义（warn 档按设计不阻断、全 skip 沉睡信号归 adaptive-gating，均不入列）；新增 `tests/test-gate-trends.sh` 钉死四态语义并接 CI；four-theories-methodology 7 处"恒零"表述同步咬合
+- README §7 指标 10 改双信号：gate-trends 零拦截清单（零拦截）+ adaptive-gating 活跃度报告（沉睡）
+
 ## [v2.7.0] - 2026-09-05
 
 ### Added

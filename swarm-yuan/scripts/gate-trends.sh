@@ -6,6 +6,9 @@
 # 用法: bash gate-trends.sh [--html <输出.html>] [gate-runs.jsonl 路径] [N=10]
 #   无 jsonl（或文件为空/无有效行）时提示并 exit 0——与门禁族「未配置静默跳过」姿态一致。
 # 口径：每门禁取近 N 条记录（含 skip），通过率=pass/记录数；趋势串按时间旧→新（✓=pass ✗=fail ⚠=warn ·=skip）。
+#   文本模式尾部输出零拦截清单：窗口内每次执行全 pass（执行≥1 且零 fail 零 warn）的门禁——
+#   从未发现过问题，拦截能力未获证据，季度质疑对象；warn 档门禁按设计不阻断不入列，
+#   全 skip 的沉睡信号由 adaptive-gating.sh 覆盖，三信号不混。
 # HTML 报告要素：时间范围统计 / 每门禁通过率折线（窗口内累计通过率）/ 状态色块 / 最近 fail id TOP 10（全量）。
 #   配色低饱和暖色系；不引用任何外部 URL（SVG 不声明 xmlns，保持 grep 可核的零外链）。
 set -u
@@ -46,7 +49,9 @@ fi
 
 # awk 聚合：逐行提取 gate/status（键序固定，与落盘契约一致），按门禁保序拼接状态首字母；
 # END 截近 N 条统计分状态计数与通过率。bsd awk 兼容（无关联数组遍历顺序要求，外部 sort 定序）。
-rows=$(awk -v n="$N" '
+# 同一 END 内顺带产出零拦截清单段（标记行 @ZEROBLOCK@ 之后：门禁名 + 窗口内真实执行次数）——
+# 窗口截取逻辑单点维护，防两份口径漂移。
+agg=$(awk -v n="$N" '
   {
     line=$0; g=""; s=""
     if (match(line, /"gate":"[^"]+"/))   g=substr(line, RSTART+8,  RLENGTH-9)
@@ -67,9 +72,14 @@ rows=$(awk -v n="$N" '
       t=win
       gsub(/p/,"✓",t); gsub(/f/,"✗",t); gsub(/w/,"⚠",t); gsub(/s/,"·",t)
       printf "%-28s %6d %6d %6d %6d %6d %7.1f%%  %s\n", g, m, p, f, w, k, (m>0 ? 100.0*p/m : 0), t
+      if (f==0 && w==0 && p>=1) zb[g]=p
     }
+    print "@ZEROBLOCK@"
+    for (g in zb) printf "%s %d\n", g, zb[g]
   }
 ' "$JSONL")
+rows=$(printf '%s\n' "$agg" | sed -n '1,/^@ZEROBLOCK@$/p' | sed '$d')
+zlines=$(printf '%s\n' "$agg" | sed -n '/^@ZEROBLOCK@$/,$p' | sed '1d')
 
 if [[ -z "$rows" ]]; then
   echo "ℹ $JSONL 中无有效门禁记录（行格式须符合 precheck.sh gate-runs JSONL 契约）"
@@ -100,19 +110,15 @@ if [[ -z "$HTML_OUT" ]]; then
   _guardrail=$_density
   printf "当窗验证（Repair Progress）: pass %d 条已验证（repair_verified_rate %d%%）；guardrail 配对指标 = 弱点密度 %d%%（fail %d / %d 门禁种——改进声明须主指标升且 guardrail 不恶化）\n" "$_total_pass" "$_overall_rate" "$_guardrail" "$_total_fail" "$_gate_kinds"
   printf "跨窗效果（Loop Effectiveness）: 需两次执行对比判定（--window 接口未实现）（better-harness 语义：后期可比 Task Episode 证据才允许效果声明；当前账本不输出，登记候选）\n"
-  # 恒零清单（控制论"范围控制/恒零即能力 1"落地点：恒零拦截门禁显性列出，供季度质疑复核——修 README §7 指标 10 的创造-声称裂缝）
-  _PRE="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)/assets/precheck.sh"
-  _FULL_GATES="$(sed -n 's/^ALL_GATES_FULL=(\(.*\))/\1/p' "$_PRE" 2>/dev/null | tr ' ' '\n')"
-  _fires=$(awk 'match($0,/"gate":"[^"]+"/) { print substr($0,RSTART+8,RLENGTH-9) }' "$JSONL" 2>/dev/null | sort -u)
-  if [[ -n "$_FULL_GATES" && -n "$_fires" ]]; then
-    _zero="$(comm -23 <(printf '%s\n' "$_FULL_GATES" | sort -u) <(printf '%s\n' "$_fires" | sort -u) 2>/dev/null || true)"
-    if [[ -n "$_zero" ]]; then
-      _zn=$(printf '%s\n' "$_zero" | grep -c .)
-      echo ""
-      echo "=== 恒零清单（近 $N 次窗口内零触发门禁——控制能力为 1，季度质疑复核对象） ==="
-      printf '%s\n' "$_zero" | sed 's/^/  /'
-      printf "恒零门禁数: %d（真值对账以 precheck.sh ALL_GATES_FULL 为准）\n" "$_zn"
-    fi
+  # 零拦截清单：窗口内每次执行全 pass（零 fail 零 warn）的门禁——从未发现过问题，拦截能力未获证据，
+  # 季度质疑对象（删/改/收窄触发条件）。warn 档按设计不阻断不入列；全 skip 沉睡信号见 adaptive-gating。
+  # 冷启动期数据不足时本清单接近全量属正常态，不作下岗依据。
+  if [[ -n "$zlines" ]]; then
+    _zn=$(printf '%s\n' "$zlines" | grep -c .)
+    echo ""
+    echo "=== 零拦截清单（近 $N 次窗口内执行全 pass——从未发现问题，季度质疑对象） ==="
+    printf '%s\n' "$zlines" | sort | awk '{printf "  %-28s 窗口内 pass %d 次（零 fail 零 warn）\n", $1, $2}'
+    printf "零拦截门禁数: %d（冷启动期接近全量为正常态）\n" "$_zn"
   fi
   exit 0
 fi
