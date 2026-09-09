@@ -121,7 +121,8 @@ UNIVERSAL_FILES=(
 
 # 项目特定文件（upgrade 保留不覆盖、不备份）
 # R21-A：+references/recipes.md（任务配方：§A 业务功能清单 + §B 五要素配方，生成器出骨架、AI 填充、成长链单条更新）
-PROJECT_SPECIFIC_FILES=("SKILL.md" "references/workflow.md" "references/codebase.md" "references/dev-guide.md" "references/release.md" "references/reference-manual.md" "references/recipes.md")
+# R21-D：+references/relations.jsonl（机器可读关系边集：relations-extract.sh 机械 import 边 + AI 语义边）
+PROJECT_SPECIFIC_FILES=("SKILL.md" "references/workflow.md" "references/codebase.md" "references/dev-guide.md" "references/release.md" "references/reference-manual.md" "references/recipes.md" "references/relations.jsonl")
 
 # 用户可填充模板（随 UNIVERSAL_FILES 分发但 AI 会填入项目内容——Step 7 填充对象）
 # R21-A 缺陷修复：此类文件 upgrade 时若已非占位骨架（不含「（填入」标记）则跳过覆盖，
@@ -863,6 +864,19 @@ if [[ "${1:-}" == "--mark-active" ]]; then
       if [[ "${_iv_stab:-0}" -gt 0 ]]; then
         echo "⚠ inventory-verify STABILITY_WARN ${_iv_stab} 条（advisory：稳定性标注与 git churn/fan-in/测试存在性信号冲突；不阻断 mark-active，但建议复核标注）" >&2
         printf '%s\n' "$_iv_out" | grep '^STABILITY_WARN' >&2 || true
+      fi
+      # R21-D：关系边集抽样核验（advisory——边集是可选产物：缺失不阻断；存在且有断边时披露并提示重建）
+      _ma_rx="$(cd "$(dirname "$0")" && pwd)/relations-extract.sh"
+      if [[ -f "$_ma_dir/references/relations.jsonl" && -f "$_ma_rx" ]]; then
+        if ! _rx_out=$(bash "$_ma_rx" "$_ma_proj" --verify --skill-dir "$_ma_dir" 2>&1); then
+          echo "⚠ relations-extract --verify 执行异常（advisory，不阻断）" >&2
+        else
+          _rx_miss=$(printf '%s\n' "$_rx_out" | grep -c '^RELATION_MISS' || true)
+          if [[ "${_rx_miss:-0}" -gt 0 ]]; then
+            echo "⚠ 关系边集抽样失锚 ${_rx_miss} 处（advisory：重跑 relations-extract.sh 重建边集；不阻断 mark-active）" >&2
+            printf '%s\n' "$_rx_out" | grep '^RELATION_MISS' >&2 || true
+          fi
+        fi
       fi
     else
       echo "⚠ inventory-verify 跳过（PROJECT_DIR 或 reference-manual.md 缺失：mark-active 不强求）" >&2

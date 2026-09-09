@@ -297,6 +297,20 @@ check_stable_diff() {
         | sed -E 's/<!-- stable-propagate:[^→]*→//; s/ *-->.*//' \
         | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | sort -u || true)
     fi
+    # 3a'. R21-D：机器可读关系边集（references/relations.jsonl，relations-extract.sh 产物）补充——
+    #      边 to=稳定文件 的 from 即 1 跳下游（import 边精确，优于 3b 的 basename grep 启发式）。
+    #      与标记集取并集（warn-only 语义：多召回只多提示不误拦）；无边集时行为不变。
+    local reledge
+    reledge=$(_first_existing_file "references/relations.jsonl" "docs/relations.jsonl")
+    if [[ -n "$reledge" && -f "$reledge" ]]; then
+      local sc3 e_hits
+      for sc3 in "${stable_changed[@]}"; do
+        e_hits=$(grep -F "\"to\":\"${sc3}\"" "$reledge" 2>/dev/null \
+          | sed -n 's/.*"from":"\([^"]*\)".*/\1/p' || true)
+        [[ -n "$e_hits" ]] && downstream_set="${downstream_set}${downstream_set:+$'\n'}${e_hits}"
+      done
+      downstream_set=$(printf '%s\n' "$downstream_set" | sort -u | grep -v '^$' || true)
+    fi
     # 3b. 降级：未记录时用 grep import 反查（best-effort，仅支持常见语言）
     if [[ -z "$downstream_set" ]]; then
       local sc2

@@ -322,6 +322,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | `release.md` | §3 项目编译规则清单 | 编译规则表 + 构建命令 + 产物位置 + 失败排查 |
 | `reference-manual.md` | §2/4/5/6/7/8/9 + check §1/2/3/4 | 见下方 |
 | `recipes.md`（R21 配方层，standard/compliance 档；lite 不生成） | exploration-guide §C+.6/§C+.7 | §A 业务功能清单（功能→入口→复用组件→接口→数据→测试编目）+ §B 任务配方（每配方五要素：触发场景/前置查询/复用件/胶水/门禁与验证） |
+| `relations.jsonl`（R21-D 关系边集，可选产物；探查期生成） | exploration-guide §C+.2.5 | 机器可读依赖边 `{"from","to","kind","evidence"}`：机械 import 边（relations-extract.sh）+ AI 语义边（call/route/message/ipc/export）；--stable-diff 传播与流B 探查消费 |
 
 **reference-manual.md 必须包含的章节（按项目形态动态适配）：**
 

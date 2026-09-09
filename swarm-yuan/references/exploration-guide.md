@@ -608,6 +608,18 @@ Layer 4 外部依赖链路：
 ```
 记录：**同步调用链长度**、**共享DB**、**traceId透传**、**熔断/降级**、**Saga/Outbox 模式**。
 
+#### C+.2.5 机器可读关系边集（relations.jsonl——R21-D，§C+.2 的索引层）
+
+调用链的 Markdown 图（mermaid 矩阵/挂载树）给 AI 读；同一批关系再落一份**机器可查的边集**给脚本消费：
+
+```bash
+bash scripts/relations-extract.sh <PROJECT_DIR> --skill-dir <目标技能目录>   # → references/relations.jsonl
+```
+
+- **机械层**（脚本产出，确定性零依赖）：import 边——TS/JS/Vue 相对说明符、py 相对导入、go module 内、java 包路径映射；每边带 `evidence`（file:line）。
+- **AI 层**（探查时在此初稿上补充）：语义边——`call`（调用）/`route`（路由挂载）/`message`（消息流）/`ipc`/`export`（库导出），行格式同款（`{"from","to","kind","evidence"}`）；madge/graphify/gitnexus 可用时按工具矩阵富化后重建。
+- **消费方**：`--stable-diff` 1 跳下游传播优先读边集（import 边精确于 basename grep 启发式）；流B ②探查"谁依赖 X"直接查边集，替代读图；`--mark-active` 抽样核验断边（advisory）。
+
 #### C+.3 编排调用关系及约束推导（从链路分析中提炼规则）
 
 > **这是"研发流程"的核心**：不仅是列出组件，还要提炼出**新功能开发时必须遵守的编排约束**。约束类别按项目形态动态选择——**只推导项目实际存在的约束类别**。
