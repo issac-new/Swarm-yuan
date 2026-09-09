@@ -20,7 +20,7 @@
 | Step | 机械（脚本做） | AI 审（AI 做） |
 |------|----------------|-----------------|
 | ⓪ 自检 | self-check.sh 11 运行时工具检测（13 为含方法论引用的接线口径） | — |
-| ⓪.5 读项目知识 | trace-log 调用记录 | AI 读 AGENTS.md/CLAUDE.md/记忆，**自行提取规则**（extract-feature-cards.sh 只输出模板） |
+| ⓪.5 读项目知识 | trace-log 调用记录 + **mine-habits.sh 行为统计初稿**（R21-B：提交前缀/分支/规模/共变对/热点/测试占比六维 → notes/habits.md） | AI 读 AGENTS.md/CLAUDE.md/记忆，**自行提取规则**（extract-feature-cards.sh 只输出模板）；**审读 habits.md 三去向**（铁律引用/开发偏好节/注意事项+配方佐证） |
 | ① 探查仓库 | 三路并行扇出 + 图谱工具调用 | AI 读探查结果，**自行判断结构/规范/代码组织** |
 | ①.5 形态判定+组件库+调用链 | inventory-verify 计数核验 | AI 判断维度适用性（§C+.0 形态判定是 AI 判断，不是脚本） |
 | ② 特征卡 | extract-feature-cards.sh 输出 17 项骨架 | AI **逐特征填具体值**，不靠脚本猜 |
@@ -47,7 +47,8 @@
 
 ## Step 2. 读取项目知识
 
-AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特征卡（不读=重复造轮子）
+AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特征卡（不读=重复造轮子）。
+**★行为观察（R21-B）**：`bash scripts/mine-habits.sh <PROJECT_DIR>` 出六维统计初稿 → AI 审读三去向（提交/分支习惯→SKILL.md 铁律段引用；工作偏好→dev-guide「开发偏好」节；共变对/热点→reference-manual 注意事项 + recipes 配方提取 §C+.7 源②）。统计事实 ≠ 规范，书面规则优先。
 
 ## Step 3. 探查仓库
 

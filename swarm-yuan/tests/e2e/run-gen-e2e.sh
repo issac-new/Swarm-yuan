@@ -54,6 +54,9 @@ for _el in 触发场景 前置查询 复用件 胶水 门禁与验证; do
   grep -q "${_el}" "${SKILL_DIR}/references/recipes.md" 2>/dev/null \
     && ok "recipes.md 示例配方含要素: ${_el}" || bad "recipes.md 示例配方缺要素: ${_el}"
 done
+# R21-B：dev-guide 骨架含「开发偏好」固定节（开发者实际习惯承接位）
+grep -q '开发偏好' "${SKILL_DIR}/references/dev-guide.md" 2>/dev/null \
+  && ok "dev-guide 骨架含开发偏好节（R21-B）" || bad "dev-guide 骨架缺开发偏好节（R21-B）"
 
 # audit-claims-reality（A2 机器锚，mounted_in 关系锚）：hooks.json 引用的每个脚本路径
 # 必须在生成物中真实存在——此前 6 个 hook 装 assets/hooks/ 而 hooks.json 引用 scripts/*.sh，
@@ -319,6 +322,8 @@ if bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard m-dev "${DEMO
   for rf in codebase dev-guide release reference-manual; do
     printf '# %s.md\n真实内容（E2E 填充样本）\n' "$rf" > "${_mskill}/references/${rf}.md"
   done
+  # R21-B：dev-guide 须保留「开发偏好」固定节（verify-completeness 节存在性执法；诚实降级写法）
+  printf '# dev-guide.md\n真实内容（E2E 填充样本）\n\n## 开发偏好\n\n暂无已记录偏好\n' > "${_mskill}/references/dev-guide.md"
   # R21-A：recipes.md 按结构填充（§A/§B 节存在即过配方结构执法；示例配方省略——零配方段合法）
   printf '# recipes.md\n\n## §A 业务功能清单\n\n| 功能 | 入口路径 | 复用组件 | 接口 | 数据 | 测试 |\n|------|------|------|------|------|------|\n\n## §B 任务配方\n\n（本项目暂无高频配方形态）\n' > "${_mskill}/references/recipes.md"
   # SKILL.md 的 description/标题占位符替换 + 删填充指引段

@@ -76,7 +76,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | 步 | 动作 | 实物调用 |
 |----|------|---------|
 | ⓪ | 自检 | `scripts/self-check.sh --check-only`（运行时/文档一致性） |
-| ⓪.5 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem search 提取规则 |
+| ⓪.5 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem search 提取规则 + mine-habits 行为初稿（习惯三去向） |
 | ① | 探查三路并行 | `references/exploration-guide.md` §C+（结构/规范/代码组织子代理各按其方法论） |
 | ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95）；gitnexus/graphify 真图谱 |
 | ② | 特征卡 | 特征项写入认知缓冲（17 项 = P0 6 强制 + P1 11，承接表见 template-spec §3） |

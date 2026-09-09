@@ -732,6 +732,13 @@ verify_completeness() {
     [[ -n "$_rcp_out" ]] && recipes_miss="${recipes_miss}${recipes_miss:+
 }$_rcp_out"
   fi
+  # R21-B：dev-guide「开发偏好」固定节存在性核验（整节被删即命中；
+  # 内容允许"暂无已记录偏好"诚实降级——占位符扫描管填充，此处只管节不丢）。
+  local dg="$skill_dir/references/dev-guide.md"
+  if [[ -f "$dg" ]] && ! LC_ALL=C grep -q '开发偏好' "$dg" 2>/dev/null; then
+    recipes_miss="${recipes_miss}${recipes_miss:+
+}$dg: 缺「开发偏好」节（R21-B 固定节——开发者实际习惯承接位，无来源写「暂无已记录偏好」）"
+  fi
   hits=$(printf '%s\n%s\n' "$hits" "$recipes_miss" | grep -v '^$' || true)
   # G1：decisions.jsonl 校验（decisions_miss 并入 hits 统一裁决）
   # 检查 ① 每行 JSON 合法性 ② UserChallenge 行五要素非空（文件不存在不告警——draft 期允许空）
@@ -1773,6 +1780,23 @@ RMEOF
 
 （按项目实际高频形态追加配方——如"新增接口/新增消费者/新增字段迁移"；每配方五要素齐全，P1 待补标记须在 --mark-active 前替换为真实内容）
 RCEOF
+    elif [[ "$f" == "dev-guide.md" ]]; then
+      # R21-B：dev-guide 固定「开发偏好」节——开发者实际研发流程与习惯的承接位
+      # （来源三路：mine-habits 行为初稿 / 已写下规则 AGENTS.md/CLAUDE.md/记忆 / 用户口述）。
+      # 无来源时显式写「暂无已记录偏好」（诚实降级）——不允许留占位符到 active。
+      _write_if_absent "$SKILL_DIR/references/$f" <<'DGEOF'
+# （待填充）dev-guide.md
+> 填充指引：改造分类+拼装式开发原则+安全编码规范+开发偏好
+
+## 开发偏好（开发者实际研发流程与习惯——R21-B 固定节）
+
+> 来源三路：① mine-habits 行为初稿（`bash scripts/mine-habits.sh <项目根>` 六维统计）② 已写下规则（AGENTS.md/CLAUDE.md/记忆 type: preference）③ 用户口述。AI 审读归纳填入，每条注明来源；无来源时本节写「暂无已记录偏好」（诚实降级，不留占位符）。
+
+- **提交习惯**：（P1 待补——前缀/粒度，引 mine-habits 实测分布）
+- **分支习惯**：（P1 待补——命名/生命周期/合并方式）
+- **工作流习惯**：（P1 待补——如先跑测试再提交、不自动 push）
+- **工具偏好**：（P1 待补——包管理器/lint/编辑器链）
+DGEOF
     else
       _write_if_absent "$SKILL_DIR/references/$f" <<EOF
 # （待填充）$f
