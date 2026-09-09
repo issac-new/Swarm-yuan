@@ -1986,6 +1986,7 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
    - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
    - 核验：生成器侧 `inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉）
 4. **落新基线**：`bash scripts/project-fingerprint.sh <项目根> --write`。
+5. **问题沉淀**（使用中随时，不等项目变化）：解决的新问题（新复用解法/新约束/新坑）三选一沉淀——`inventory-update` 入清单 / recipes.md 加配方或注意事项 / `gate-rules.sh --persist` 入规则——并 `bash scripts/trace-log.sh --decision` 留痕（问题→方案→沉淀物）。
 
 红线：① 指纹只感知结构变化；语义变化（约束失效/接口语义变更）靠 AI 编码中发现即更新清单，不等 refresh。② 清单先完整生成再原子替换，条目骤降 >50% 视为失败保留旧清单（last-good）。
 EOF
@@ -2003,6 +2004,7 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
    - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
    - 核验：生成器侧 `inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉）
 4. **落新基线**：`bash scripts/project-fingerprint.sh <项目根> --write`。
+5. **问题沉淀**（使用中随时，不等项目变化）：解决的新问题（新复用解法/新约束/新坑）三选一沉淀——`inventory-update` 入清单 / recipes.md 加配方或注意事项 / `gate-rules.sh --persist` 入规则——并 `bash scripts/trace-log.sh --decision` 留痕（问题→方案→沉淀物）。
 
 红线：① 指纹只感知结构变化；语义变化（约束失效/接口语义变更）靠 AI 编码中发现即更新清单，不等 refresh。② 清单先完整生成再原子替换，条目骤降 >50% 视为失败保留旧清单（last-good）。
 EOF

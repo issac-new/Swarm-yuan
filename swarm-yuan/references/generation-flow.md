@@ -85,6 +85,8 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/recipes/snippets/m
 
 **★脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/SERVICE_DIRS/STORE_DIR/WRITABLE_DIRS 等语义型变量，须从特征卡推导）+ 审 diff 是否符合特征卡意图——从「手写全部 conf 变量」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
 
+**★项目 rules.d 探查期生成（R21-C，②缺口收口）**：本 Step 从编排约束（§C+.3）与只读判定（特征卡 2 可改范围）推导项目特有三值规则初稿，写入产物 `rules.d/project.rules`——如 `src/generated/** → forbid # 生成代码禁手改，改生成器` / `src/core/** → prompt # 核心稳定层，改动须 spec` / `tests/** → allow`。求值器 `gate-rules.sh` 随发已可消费，零新机制；FORBID 行必须带替代方案（rules.d 行格式铁律）。
+
 ## Step 8.5 review-methodology Mutation Check（P1-6 接入 generation-flow）
 
 本 Step 配置/写回 `references/review-methodology.md` 的审查口径时，须纳入 **Mutation Check（变异测试有效性验证）**：对 `framework-gates/<fw>.sh` 的 `_fw_<id>_check` 函数，施加少量变异（如把 `fail` 改成 `pass`、把某正则 `=true` 改成 `=false`）后重跑对应 fixture（`bash swarm-yuan/tests/run-framework-fixture.sh <id>`）——**若变异后 violating 侧仍 PASS（未被检出），说明该门禁的测试/断言无效，须回 Step 7 补强断言**；变异后仍检出（fail 不变）= 测试有效。Mutation Check 是「测试有效性」而非「覆盖率」的硬证据：绿 ≠ 有效，只有「变异后被抓」才证明绿有意义。与 Step 10 门禁运行、Step 12 零残留核验形成三层把关（门禁绿 / 变异绿 / 零残留）。

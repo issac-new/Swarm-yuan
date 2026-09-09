@@ -28,7 +28,7 @@
 | 特性 | 门禁 | 测量函数 | 阈值 | 证据 |
 |---|---|---|---|---|
 | 功能适合性 | `--build`（check_build） | 构建命令执行退出码 | 退出码=0；未配置 BUILD_CMD 跳过（fail-open 已知，P1 conf lint 收口） | 终端 pass/fail 行 + 构建输出尾部 10 行 |
-| 功能适合性 | `--test`（check_test） | 测试命令执行退出码 | 退出码=0；未配置 TEST_CMD 跳过（同上） | 终端 pass/fail 行 + 测试输出尾部 20 行 |
+| 功能适合性 | `--test`（check_test） | 测试命令执行退出码 | 退出码=0；未配置 TEST_CMD：探到测试文件 → warn「测试体系存在但 TEST_CMD 未配置」（R21-C 消静默跳过），确无测试文件才安静跳过 | 终端 pass/warn/fail 行 + 测试输出尾部 20 行 |
 | 功能适合性 | `--consistency`（check_consistency） | 可改目录内重复写入点计数（INSERT/create 粗筛） | >5 处 → warn 要求确认幂等性 | pass/warn 行 + 「无多漏错重」核对提示（人工核对清单） |
 | 功能适合性 | `--framework`（check_framework） | 79 规则集 `_fw_<id>_<rule>` 逐条判定计数 | 任一规则 fail 即 fail；`ACTIVE_FRAMEWORKS` 空 → 静默跳过 | 各框架规则 fail 行（稳定 id）+ 79/79 fixture 绿 |
 
@@ -311,7 +311,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | 1 | `--branch` / check_branch | fail-closed | 非 git 仓库 / detached HEAD → skip-if-unconfigured |
 | 2 | `--scope` / check_scope | fail-closed | 非 git 仓库降级为 warn（只读目录无法自动检测） |
 | 3 | `--build` / check_build | skip-if-unconfigured | 未配置 BUILD_CMD 打印「(跳过)」返回（fail-open 已知，P1 conf lint 收口） |
-| 4 | `--test` / check_test | skip-if-unconfigured | 未配置 TEST_CMD 同上 |
+| 4 | `--test` / check_test | skip-if-unconfigured | 未配置 TEST_CMD：探到测试文件 warn（R21-C），无测试文件才跳过（同上） |
 | 5 | `--sensitive` / check_sensitive | fail-closed | SCAN_DIRS 空 → warn「未配置未执行（fail-open 风险）」（P0 修复，原为假 pass） |
 | 6 | `--consistency` / check_consistency | warn-only | 写入点 >5 warn；其余 pass + 人工核对清单提示 |
 | 7 | `--review` / check_review | fail-closed | ocr High/Critical fail；ocr 未装 → warn 转人工 5 维度清单 |

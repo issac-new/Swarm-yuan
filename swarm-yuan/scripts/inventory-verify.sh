@@ -80,13 +80,15 @@ _enum_count() { # $1=CMD模板
 }
 
 # 数 reference-manual.md 对应表行数：定位 §<n> 标题到下一个同级/更高级 ## 之间，数表格数据行（| 开头非分隔/表头）
-_list_count() { # $1=RM文件 $2=锚 §<n> 或 §<n>.<sub>
+_list_count() { # $1=RM文件 $2=锚 §<n> 或 §<n>.<sub> 或字面节名（如 §测试案例——R21-C 起 anchors 允许中文节名）
   local rm="$1" anchor="$2"
   [[ -f "$rm" ]] || { echo 0; return; }
   local sec=${anchor%%.*}
-  # awk：进入 §<n> 段，到下一个 ## 退出；数 | 开头且非纯分隔/表头行
+  # 进入段判定用 index() 固定子串（BSD awk 多字节字符类按字节解析的坑，勿用正则字符类）：
+  # 标题 = "## <sec>" 后随空格 / 句点 / 全角（ / 行尾 四种形态之一（"## §测试案例（check §1）"形态由全角（命中）。
   awk -v sec="$sec" '
-    { if ($0 ~ "^## " sec "[ .]") { insec=1; next }
+    { h = $0
+      if (index(h, "## " sec " ") == 1 || index(h, "## " sec ".") == 1 || index(h, "## " sec "（") == 1 || h == "## " sec) { insec=1; next }
       if (insec && $0 ~ "^## ") { insec=0 }
       if (insec && /^\|/) {
         line=$0; gsub(/[ \t]/,"",line)

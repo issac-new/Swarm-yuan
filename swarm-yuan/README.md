@@ -456,6 +456,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ### 4.8 演化机制（成长层）
 - **目标技能自成长链**：fingerprint 感知（SessionStart/手动 --diff）→ 变化目录 scope 报告（局部重探查，不整仓重扫）→ inventory-update 单条更新（replace/delete/append §4/§6/§9，原子替换 + 决策落痕）→ last-good 红线（文件数骤降 >50% 拒绝 --write，需 --force）→ `--commit-fp` 落新基线。局部重探查产出的新组件经 `inventory-update append` 入地图（AI 按自成长链操作显式入账，非隐式自动写——探查产出先给 AI 判稳，再登记，决策落痕）。
+- **问题驱动沉淀通道（R21-C）**：结构变化之外的第二条成长触发——使用中解决的新问题（新复用解法/新约束/新坑）三选一沉淀：`inventory-update` 入清单 / recipes.md 加配方或注意事项 / `gate-rules --persist` 入规则；每次沉淀 `trace-log --decision` 留痕（问题→方案→沉淀物，decisions.jsonl 可审计）。兑现"按具体问题及解决方案迭代成长"，不靠项目结构变化才触发。
 - **生成器成长通道**：外部概念的引入一律走"调研报告（docs/research/）→ 三问评审 → 落地为条件/路由/引导之一"（phase=absorption 留痕 decisions.jsonl）；上游重核从全量改为破坏性变更驱动（breaking/major 触发 + 季度例行）。
 - **生成器演进协议**（本体先行，见 §6.3 四问）：新机制/新概念先过四问——新实体进 objects.md、新关系进 links.md（必配机器锚）、新动作进 actions.md；再派生实现；收尾跑 self-check 类型对账 + ontology-verify 六锚。吸收三问（准入评审：要不要吸收）与本体四问（设计方法：怎么落地）串联——先三问、后四问。
 - **成长的预算约束**：成长 = 预算内替换（新知识进来必须有旧知识出去或税不增），否则只是膨胀。

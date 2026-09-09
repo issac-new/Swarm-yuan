@@ -52,7 +52,17 @@ check_build() {
 check_test() {
   echo "=== 测试检查（check §1 单测/接口/集成/回归/安全）==="
   if [[ -z "$TEST_CMD" || "$TEST_CMD" == "<test 命令>" ]]; then
-    echo "  (跳过：未配置 TEST_CMD)"
+    # R21-C：未配置 TEST_CMD 不再静默跳过——探到测试文件即显式 warn（探查漏项信号：
+    # 测试体系存在而无运行通道=验证能力缺口，"配置≠使用≠有效"三段论第一段就不过）。
+    # 检测模式与 assets/inventory-dimensions.conf 的 DIM_TESTFILES_CMD 镜像（两处注释互指，改一处须同步另一处）。
+    local _tf=""
+    _tf=$(find "${PROJECT_DIR:-.}" -type f \( -name '*test*.py' -o -name '*.test.ts' -o -name '*.test.tsx' -o -name '*.test.js' -o -name '*.spec.ts' -o -name '*.spec.tsx' -o -name '*.spec.js' -o -name '*Test.java' -o -name '*_test.go' \) \
+      -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -print -quit 2>/dev/null || true)
+    if [[ -n "${_tf}" ]]; then
+      warn "测试体系存在（${_tf}）但 TEST_CMD 未配置——探查漏项，回生成流程 Step 8 补 conf（无运行通道=零验证能力）"
+    else
+      echo "  (跳过：未配置 TEST_CMD，且未探到测试文件——诚实降级)"
+    fi
     return
   fi
   local _tout

@@ -180,4 +180,26 @@ echo "$out" | grep -qF '配方引用路径不存在: src/pages/List.tsx' && ok "
 echo "$out" | grep -qF '配方引用路径不存在: src/Table.tsx' && bad "态10 误伤真实路径 Table.tsx" || ok "态10 真实复用件通过"
 echo "$out" | grep -qF 'precheck.sh' && bad "态10 散文命令被误纳" || ok "态10 散文命令不进 path-check"
 
+# --- 态 11：R21-C tests 维度——测试文件枚举 ↔ §测试案例 清单计数核验 ---
+mkdir -p "$TMP/proj11/src" "$TMP/proj11/tests" "$TMP/skill11/references" "$TMP/skill11/scripts"
+printf 'export function A(): void {}\n' > "$TMP/proj11/src/a.ts"
+printf 'import { A } from "../src/a";\ntest("a", () => { expect(A()).toBeUndefined(); });\n' > "$TMP/proj11/tests/a.test.ts"
+printf 'import { A } from "../src/a";\ntest("b", () => {});\n' > "$TMP/proj11/tests/b.spec.ts"
+cat > "$TMP/skill11/references/reference-manual.md" <<'EOF'
+## §测试案例（check §1）
+
+| 路径 | 说明与约束 |
+|------|------------|
+| `tests/a.test.ts` | A 单测 |
+| `tests/b.spec.ts` | b 单测 |
+EOF
+echo "PROJECT_FORM=frontend" > "$TMP/skill11/scripts/precheck.conf"
+out="$(bash "$SH" "$TMP/proj11" --skill-dir "$TMP/skill11" --form frontend --tsv 2>/dev/null)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态11 exit 0" || bad "态11 exit=$rc"
+echo "$out" | grep -qF $'测试文件\t2\t' && echo "$out" | grep -F '测试文件' | grep -q 'PASS' \
+  && ok "态11 tests 维度枚举2 清单覆盖 PASS" || bad "态11 tests 维度行异常: $(echo "$out" | grep 测试文件)"
+# 零测试项目不误报：态 1 的 proj（无测试文件）跑全维度应无测试文件 FAIL 行
+out1="$(bash "$SH" "$TMP/proj" --skill-dir "$TMP/skill" --form backend --tsv 2>/dev/null)"
+echo "$out1" | grep -F '测试文件' | grep -qF 'FAIL' && bad "态11 零测试项目误报 FAIL" || ok "态11 零测试项目无 FAIL"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-inventory-verify"; exit 0; } || { echo "FAIL test-inventory-verify" >&2; exit 1; }
