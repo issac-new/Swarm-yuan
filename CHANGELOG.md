@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.10.1] - 2026-09-09
+
+### Added
+- quality:full 十步模式吸收（决策 37 追记）：workflow 节点⑥增「质量门禁序列」指引——十步串行建议（build→test→contract→reuse→consistency→layer/link-depth→docs-pack→security→deps）+ fail-fast 语义（任一步 fail 即停）+ 全部映射 precheck 既有 flag 不新增门禁；节点⑦审查范围扩到序列运行证据（gate-runs.jsonl 当次 run 记录）；commands/precheck.md 增常用序列建议
+
 ## [v2.10.0] - 2026-09-09
 
 > R21 核心链条补强轮（决策 37）：对照用户核心思路链条十环全面复盘——①②③④⑨⑩六环已实现有测试背书，本轮补齐四个真缺口并修复一个升级丢数据缺陷。核心思路不变，能力沿链条补强。
