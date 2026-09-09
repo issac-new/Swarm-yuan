@@ -100,6 +100,14 @@ node_cnt=$(grep -c '^## 节点' "${wf}" 2>/dev/null || echo 0)
 [[ "${node_cnt}" -eq 9 ]] && ok "workflow.md 含 9 个节点标题" || bad "workflow.md 节点数=${node_cnt}（期望 9）"
 trace_cnt=$(grep -c '调用追踪' "${wf}" 2>/dev/null || echo 0)
 [[ "${trace_cnt}" -ge 9 ]] && ok "workflow.md 含调用追踪要素（${trace_cnt} 处）" || bad "workflow.md 调用追踪要素不足（${trace_cnt} 处，期望≥9）"
+# quality-gate-chain：节点⑥含质量门禁序列（fail-fast 串行指引，映射既有 flag 不新增门禁）
+grep -q '质量门禁序列' "${wf}" 2>/dev/null \
+  && ok "workflow.md 节点⑥含质量门禁序列（quality-gate-chain）" \
+  || bad "workflow.md 节点⑥缺质量门禁序列"
+grep -q 'fail-fast' "${wf}" 2>/dev/null \
+  && ok "质量门禁序列含 fail-fast 语义" || bad "质量门禁序列缺 fail-fast"
+grep -q -- '--build.*check_test' "${wf}" 2>/dev/null \
+  && ok "质量门禁序列含顺序锚（build→test）" || bad "质量门禁序列缺顺序锚"
 
 # --- 5. precheck.conf/arch.conf 含 ACTIVE_FRAMEWORKS 非空 + 嗅探到的框架（detect-frameworks.sh 真值）+ AUTO:detected 注释 ---
 # 注：ACTIVE_FRAMEWORKS 渲染到 precheck.arch.conf（架构门禁配置），非 precheck.conf（核心 10 门禁）。

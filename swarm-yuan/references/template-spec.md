@@ -248,7 +248,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | ③ | 实施 plan | ★变更左移（§20） |
 | ④ | 分支准备 | — |
 | ⑤ | 编码实现 | ★测试左移（TDD/BDD，test 与 impl 同分支提交） |
-| ⑥ | 测试验证 | ★运维左移（metrics/日志/trace 埋点验证）+ check_test 门禁 |
+| ⑥ | 测试验证 | ★运维左移（metrics/日志/trace 埋点验证）+ check_test 门禁 + **质量门禁序列**（fail-fast 串行：build→test→contract→reuse→consistency→layer/link-depth→docs-pack→security→deps，映射 precheck 既有 flag 不新增门禁） |
 | ⑦ | 独立审查 | check_review 门禁（review-record 留痕核验，独立 code review 非自检） |
 | ⑧ | 合入 main | ★变更左移（回滚预案 + 迁移兼容） |
 | ⑨ | 构建发布 | ★运维左移（灰度 + 告警 + runbook） |
@@ -262,8 +262,8 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 3. 实施 plan（采用 OpenSpec tasks checkbox 格式 + superpowers writing-plans bite-sized 步骤）—— **★变更左移**：plan 须含"变更影响范围"段（消费方反查/回滚预案/灰度策略/数据库迁移兼容窗口）
 4. 分支准备
 5. 编码实现（采用 superpowers subagent-driven：orchestrator + 每任务新 subagent + 两阶段审查；**复杂变更（>3 文件/跨模块）用 Dynamic Workflows 并行扇出 + 交叉验证**）—— **★测试左移**：每个 task 须先写/更新测试再实现（TDD/BDD），precheck `--shift-left` 校验 test 与 impl 同分支提交
-6. 测试验证（含 gstack/OCR 5 审查维度 + AUTO-FIX/ASK + 可选 `claude ultrareview` 云端多 agent 审查）—— **★运维左移**：验证阶段须确认 metrics/日志/trace 已埋点且可通过健康检查端点访问；独立跑单元/集成测试，`check_test` 门禁核验 0 用例检测 + 断言密度 + Mutation Check 测试有效性
-7. 独立审查 —— **独立 code review（非自检）**：以第三方 reviewer 视角找 Step 7 填充后仍残留的逻辑错误/占位符遗漏/门禁误配/清单错漏等低级错误；`check_review` 门禁核验 `references/review-record.md` 留痕非空（5 维审查点 + findings 表），缺则 fail
+6. 测试验证（含 gstack/OCR 5 审查维度 + AUTO-FIX/ASK + 可选 `claude ultrareview` 云端多 agent 审查）—— **★运维左移**：验证阶段须确认 metrics/日志/trace 已埋点且可通过健康检查端点访问；独立跑单元/集成测试，`check_test` 门禁核验 0 用例检测 + 断言密度 + Mutation Check 测试有效性。**★质量门禁序列（quality:full 十步模式）**：多门禁按序执行、fail-fast（任一步 fail 即停不跑后续）、每步耗时留痕；序列=build→test→contract→reuse→consistency→layer/link-depth→docs-pack→security→deps，全部映射 precheck 既有 flag，不新增 check_*；执行入口 `--all-full`（标准 28 已含全部）或按需单跑。生成骨架 emit 该序列指引（workflow.md 节点⑥）。
+7. 独立审查 —— **独立 code review（非自检）**：以第三方 reviewer 视角找 Step 7 填充后仍残留的逻辑错误/占位符遗漏/门禁误配/清单错漏等低级错误；`check_review` 门禁核验 `references/review-record.md` 留痕非空（5 维审查点 + findings 表），缺则 fail；**审查范围含质量门禁序列运行证据**（确认节点⑥序列真实跑过——gate-runs.jsonl 有当次 run 记录）
 8. 合入 main —— **★变更左移**：合入前须确认回滚预案存在 + 数据库变更兼容（向前兼容/双写期）
 9. 构建发布 —— **★运维左移**：发布须含灰度/金丝雀策略 + 监控告警阈值已设 + 运维 runbook 已更新
 10. 发布后运营 —— **★运维左移运行态验证（D 方向）**：发布后验证健康检查端点可访问 + 告警阈值已设 + runbook 已更新 + 灰度观察期无异常（precheck `--operate`，warn 级 advisory）

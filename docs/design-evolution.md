@@ -516,6 +516,8 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 
 ---
 
+**追记（2026-09-09，同日 quality:full 吸收）**：用户提供 aifc 项目 quality-full.mjs（十步串行质量门禁，fail-fast + 每步耗时留痕）。处置：按决策 36 三态判——其十步与本仓既有门禁（build/test/contract/reuse/consistency/layer/docs-pack/security/deps 九旗）几乎全部重复，重复建 check_* 会撞 55 预算冻结且造第二事实源。落地形态=**用**（不并、不删）：把"十步串行 + fail-fast + 映射既有 flag"沉淀为 workflow.md 节点⑥⑦的质量门禁序列指引 + commands/precheck.md 常用序列建议，生成骨架自动携带；不新增门禁函数。吸收依据是真实缺陷——原节点⑥只列单门禁名，未给"多门禁按什么顺序跑、先跑构建还是安全"的执行面，quality:full 补上了这个排序与 fail-fast 纪律。
+
 **决策索引（R13 后）**：决策 1-17 见 §13 历史档案 A5 归档卷；决策 18-29 见本文前部；决策 30-32 自适应与压缩；决策 33-34 R13 重构与防复胖；决策 35 创造纪律（audit-claims-reality 轮）；决策 36 恰当应用（去教条化轮）；决策 37 R21 核心链条补强（复盘改进轮）。
 
 ---
