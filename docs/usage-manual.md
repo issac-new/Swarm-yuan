@@ -247,9 +247,9 @@ bash install.sh
 | 步骤 | 做什么 |
 |------|--------|
 | ⓪ | 自检（13 运行时接线口径 = 11 工具机械探测 + 2 方法论引用） |
-| ⓪.5 | 读取项目知识（AGENTS.md / CLAUDE.md / 记忆 / agent 运行时） |
+| ⓪.5 | 读取项目知识（AGENTS.md / CLAUDE.md / 记忆 / agent 运行时）+ **行为观察**（`mine-habits.sh` 六维统计初稿 → AI 审读三去向，R21-B） |
 | ① | 三路并行探查代码库（结构 / 规范 / 代码组织） |
-| ①.5 | **项目形态判定 + 详尽构件库清单 + 调用链路分析**（§C+.0-C+.5，按形态选维度，全量穷举 + 计数核验） |
+| ①.5 | **项目形态判定 + 详尽构件库清单 + 调用链路分析**（§C+.0-C+.7，按形态选维度，全量穷举 + 计数核验 + **业务功能盘点与任务配方提取**→recipes.md + **关系边集**→relations.jsonl，R21） |
 | ② | **提取 17 项特征卡**（每项落到真实路径，不用占位符） |
 | ③ | 创建骨架（含 hooks / commands / precheck.conf） |
 | ④ | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
@@ -382,6 +382,12 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 ---
 
 ### 8. FAQ
+
+#### R21 新增：任务配方（recipes.md）是什么？行为观察（mine-habits）会读我的什么数据？
+
+- **recipes.md**：目标技能里的"装配说明书"——§A 业务功能清单（既有功能各由哪些组件拼成）+ §B 任务配方（高频任务按什么顺序查表/复用/写胶水/过门禁，五要素）。开发时 AI 先查配方再动手；解决新问题后按 SKILL.md 自成长段第⑤环沉淀新配方。
+- **mine-habits.sh** 只读 git 元数据（提交信息前缀/分支名/变更文件清单/行数统计），产出 `.swarm-yuan/notes/habits.md` 统计初稿供 AI 审读；不读文件内容、不外传。统计事实 ≠ 规范——书面规则优先。
+- **relations.jsonl**：机器可读依赖边集（谁 import 谁），`--stable-diff` 传播与探查消费；`bash scripts/relations-extract.sh <项目根> --skill-dir <技能目录>` 重建。
 
 **Q: 门禁报误报？** → 对 AI 说"precheck 报了误报"。AI 分析原因 → 调整 precheck.conf（特征卡配置）→ 重跑。
 

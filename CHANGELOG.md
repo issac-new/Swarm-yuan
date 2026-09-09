@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.10.0] - 2026-09-09
+
+> R21 核心链条补强轮（决策 37）：对照用户核心思路链条十环全面复盘——①②③④⑨⑩六环已实现有测试背书，本轮补齐四个真缺口并修复一个升级丢数据缺陷。核心思路不变，能力沿链条补强。
+
+### Added
+- **任务配方层（⑤+③）**：目标技能新增 `references/recipes.md`（项目特定文件）——§A 业务功能清单（功能→入口→复用组件→接口→数据→测试编目）+ §B 任务配方五要素（触发场景/前置查询/复用件/胶水/门禁与验证）；探查方法论新增 §C+.6 业务功能盘点 / §C+.7 配方提取（三源：既有实现/git 同类任务历史/开发者文档）；verify-completeness 五要素结构执法 + inventory-verify path-check 扩展核验配方引用复用件；standard/compliance 档生成，lite 不生成
+- **开发者行为吸收（⑥）**：新增 `scripts/mine-habits.sh` 六维机械统计（提交前缀/分支命名/提交规模分桶/共变文件对/热点文件/测试提交占比）→ `.swarm-yuan/notes/habits.md` 初稿，AI 审读三去向（SKILL.md 铁律引用 / dev-guide 开发偏好节 / reference-manual 注意事项+配方佐证）；dev-guide 骨架固定「开发偏好」节（无来源写"暂无已记录偏好"诚实降级，节存在性执法）；配套 test-mine-habits.sh
+- **关系边集（①）**：新增 `scripts/relations-extract.sh` 机械 import 边提取（TS/JS/Vue 相对说明符扩展名/index 解析、py 相对导入、go module 剥离、java 包路径映射，零外部依赖）→ `references/relations.jsonl`；--stable-diff 1 跳下游传播优先读边集（精确于 basename grep 启发式）；--mark-active 抽样核验断边（advisory）；配套 test-relations-extract.sh 四态
+- **验证资产化（⑨）**：inventory-dimensions 新增 DIM_TESTFILES 测试文件维度（测试资产一等清单对象，锚 §测试案例）；check_test 未配置 TEST_CMD 且探到测试文件 → 显式 warn（消除静默跳过；enforce 档不动零 FACT 涟漪）+ gate-fixture compliant-unconfigured 回归锁
+- **问题驱动沉淀通道（⑩）**：生成的目标技能 SKILL.md 自成长段增第⑤环——使用中解决的新问题三选一沉淀（inventory-update 入清单 / recipes.md 加配方或注意事项 / gate-rules --persist 入规则）+ trace-log --decision 留痕；成长触发从"结构变化"单通道扩为"结构+问题"双通道
+- **项目 rules.d 探查期生成（②）**：generation-flow Step 8 从编排约束+只读判定推导项目特有三值规则初稿（求值器消费已存在，零新机制）
+- 生成器 SKILL.md 概念↔实物追踪表 +4 行（任务配方/开发偏好/关系边集/问题沉淀）；README/usage-manual/design-evolution 四载体同步；决策 37 登记
+
+### Fixed
+- **--upgrade 覆盖丢失已填充模板**：snippets.md / mcp-tools.md 属 UNIVERSAL_FILES（升级即覆盖）但 Step 7 要求 AI 填入项目实际内容——新增 USER_FILLABLE_FILES 守卫（已非占位骨架则跳过覆盖并提示），gen-e2e 回归锁
+- inventory-verify `_list_count` 锚定支持中文节名锚（index() 固定串四形态匹配，BSD awk 字节类坑规避）
+
 ## [v2.9.0] - 2026-09-09
 
 ### Added
