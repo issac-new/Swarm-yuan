@@ -29,10 +29,11 @@ rc_create=$?
 [[ $rc_create -eq 0 ]] && ok "generate-skill.sh create 成功（profile=standard）" || { bad "generate-skill.sh create 失败 rc=${rc_create}（见 /tmp/gene2e-create.log）"; cat /tmp/gene2e-create.log >&2; exit 1; }
 
 # --- 2. 骨架文件清单完整（PROJECT_SPECIFIC + hooks + commands + UNIVERSAL 抽样）---
+# R21-A：+references/recipes.md（任务配方骨架，standard/compliance 档）
 for f in \
   "SKILL.md" \
   "references/workflow.md" "references/codebase.md" "references/dev-guide.md" \
-  "references/release.md" "references/reference-manual.md" \
+  "references/release.md" "references/reference-manual.md" "references/recipes.md" \
   "hooks/hooks.json" "settings.local.json" ".mcp.json" \
   "commands/spec.md" "commands/precheck.md" "commands/explore.md" \
   "scripts/precheck.sh" "scripts/gates-strict.sh" "scripts/gates-warn.sh" "scripts/gates-advisory.sh" \
@@ -43,6 +44,19 @@ for f in \
 do
   [[ -f "${SKILL_DIR}/${f}" ]] && ok "骨架文件存在: ${f}" || bad "骨架文件缺失: ${f}"
 done
+
+# R21-A：recipes.md 骨架结构——§A/§B 节 + 五要素示例（verify-completeness 执法对象的存在性证明）
+grep -q '业务功能清单' "${SKILL_DIR}/references/recipes.md" 2>/dev/null \
+  && ok "recipes.md 含 §A 业务功能清单节" || bad "recipes.md 缺 §A 业务功能清单节"
+grep -q '任务配方' "${SKILL_DIR}/references/recipes.md" 2>/dev/null \
+  && ok "recipes.md 含 §B 任务配方节" || bad "recipes.md 缺 §B 任务配方节"
+for _el in 触发场景 前置查询 复用件 胶水 门禁与验证; do
+  grep -q "${_el}" "${SKILL_DIR}/references/recipes.md" 2>/dev/null \
+    && ok "recipes.md 示例配方含要素: ${_el}" || bad "recipes.md 示例配方缺要素: ${_el}"
+done
+# R21-B：dev-guide 骨架含「开发偏好」固定节（开发者实际习惯承接位）
+grep -q '开发偏好' "${SKILL_DIR}/references/dev-guide.md" 2>/dev/null \
+  && ok "dev-guide 骨架含开发偏好节（R21-B）" || bad "dev-guide 骨架缺开发偏好节（R21-B）"
 
 # audit-claims-reality（A2 机器锚，mounted_in 关系锚）：hooks.json 引用的每个脚本路径
 # 必须在生成物中真实存在——此前 6 个 hook 装 assets/hooks/ 而 hooks.json 引用 scripts/*.sh，
@@ -192,6 +206,8 @@ for _prof in lite compliance; do
   # compliance 档有 hooks.json 且含 industry 注入接线（conf-render --industry 独立冒烟见下）
   if [[ "${_prof}" == "lite" ]]; then
     [[ ! -f "${_pdir}/p-${_prof}/hooks/hooks.json" ]]       && ok "lite 档无 hooks.json（差异化正确）" || bad "lite 档含 hooks.json（差异化错误）"
+    # R21-A：lite 档无 recipes.md（任务配方属 standard+ 认知面）
+    [[ ! -f "${_pdir}/p-${_prof}/references/recipes.md" ]]  && ok "lite 档无 recipes.md（差异化正确）" || bad "lite 档含 recipes.md（差异化错误）"
   else
     [[ -f "${_pdir}/p-${_prof}/hooks/hooks.json" ]]       && ok "${_prof} 档有 hooks.json" || bad "${_prof} 档缺 hooks.json"
   fi
@@ -221,6 +237,8 @@ if bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard u-dev "${DEMO
   echo "# USER-CONTENT-MARKER" >> "${_uskill}/SKILL.md"
   echo 'USER_CUSTOM_VAR="keep-me"' >> "${_uskill}/scripts/precheck.conf"
   echo "user note" > "${_uskill}/references/user-custom.md"
+  # R21-A：模拟 AI 填充 scripts/snippets.md（用户可填充模板——不含「（填入」占位标记）
+  printf '# snippets\nnpm run dev  # 真实项目命令\n' > "${_uskill}/scripts/snippets.md"
   if bash "${PARADIGM}/scripts/generate-skill.sh" --upgrade u-dev "${DEMO}" "${_updir}" \
        >/tmp/gene2e-up.log 2>&1; then
     ok "--upgrade rc=0"
@@ -233,6 +251,10 @@ if bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard u-dev "${DEMO
     [[ -f "${_uskill}/references/user-custom.md" ]] \
       && ok "--upgrade 保留用户自定义文件" \
       || bad "--upgrade 删除了用户自定义文件"
+    # R21-A 缺陷回归锁：已填充的 snippets.md（用户可填充模板）不得被模板覆盖丢失
+    grep -q '真实项目命令' "${_uskill}/scripts/snippets.md" 2>/dev/null \
+      && ok "--upgrade 保留已填充 snippets.md（用户可填充模板，R21-A）" \
+      || bad "--upgrade 覆盖丢失 snippets.md 填充内容（R21-A 缺陷回归）"
   else
     bad "--upgrade 失败（见 /tmp/gene2e-up.log）"
   fi
@@ -300,6 +322,10 @@ if bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard m-dev "${DEMO
   for rf in codebase dev-guide release reference-manual; do
     printf '# %s.md\n真实内容（E2E 填充样本）\n' "$rf" > "${_mskill}/references/${rf}.md"
   done
+  # R21-B：dev-guide 须保留「开发偏好」固定节（verify-completeness 节存在性执法；诚实降级写法）
+  printf '# dev-guide.md\n真实内容（E2E 填充样本）\n\n## 开发偏好\n\n暂无已记录偏好\n' > "${_mskill}/references/dev-guide.md"
+  # R21-A：recipes.md 按结构填充（§A/§B 节存在即过配方结构执法；示例配方省略——零配方段合法）
+  printf '# recipes.md\n\n## §A 业务功能清单\n\n| 功能 | 入口路径 | 复用组件 | 接口 | 数据 | 测试 |\n|------|------|------|------|------|------|\n\n## §B 任务配方\n\n（本项目暂无高频配方形态）\n' > "${_mskill}/references/recipes.md"
   # SKILL.md 的 description/标题占位符替换 + 删填充指引段
   sed -i.bak -e 's|（填充指引：触发条件 + 项目关键词）|m-dev 开发技能（E2E 样本）|' \
              -e 's|（填充指引：项目名 + 需求交付全流程技能）|m-dev 需求交付技能|' \

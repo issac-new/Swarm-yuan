@@ -20,7 +20,7 @@
 | Step | 机械（脚本做） | AI 审（AI 做） |
 |------|----------------|-----------------|
 | ⓪ 自检 | self-check.sh 11 运行时工具检测（13 为含方法论引用的接线口径） | — |
-| ⓪.5 读项目知识 | trace-log 调用记录 | AI 读 AGENTS.md/CLAUDE.md/记忆，**自行提取规则**（extract-feature-cards.sh 只输出模板） |
+| ⓪.5 读项目知识 | trace-log 调用记录 + **mine-habits.sh 行为统计初稿**（R21-B：提交前缀/分支/规模/共变对/热点/测试占比六维 → notes/habits.md） | AI 读 AGENTS.md/CLAUDE.md/记忆，**自行提取规则**（extract-feature-cards.sh 只输出模板）；**审读 habits.md 三去向**（铁律引用/开发偏好节/注意事项+配方佐证） |
 | ① 探查仓库 | 三路并行扇出 + 图谱工具调用 | AI 读探查结果，**自行判断结构/规范/代码组织** |
 | ①.5 形态判定+组件库+调用链 | inventory-verify 计数核验 | AI 判断维度适用性（§C+.0 形态判定是 AI 判断，不是脚本） |
 | ② 特征卡 | extract-feature-cards.sh 输出 17 项骨架 | AI **逐特征填具体值**，不靠脚本猜 |
@@ -47,7 +47,8 @@
 
 ## Step 2. 读取项目知识
 
-AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特征卡（不读=重复造轮子）
+AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特征卡（不读=重复造轮子）。
+**★行为观察（R21-B）**：`bash scripts/mine-habits.sh <PROJECT_DIR>` 出六维统计初稿 → AI 审读三去向（提交/分支习惯→SKILL.md 铁律段引用；工作偏好→dev-guide「开发偏好」节；共变对/热点→reference-manual 注意事项 + recipes 配方提取 §C+.7 源②）。统计事实 ≠ 规范，书面规则优先。
 
 ## Step 3. 探查仓库
 
@@ -59,6 +60,7 @@ AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特
 - **全量穷举（§C+.1 按维度动态）**：按判定结果选择的维度（C+.1-F前端/C+.1-B后端/C+.1-A异步/C+.1-D桌面移动/C+.1-L库/C+.1-T通用）做 `find`+`grep` 机械枚举 → 提取导出签名 → 每维度独立计数核验
 - **调用链路分析（§C+.2 按形态选模型）**：前端(注册装配+模块矩阵+挂载树+store依赖) / 后端(请求处理管道+分层矩阵+数据流+外部依赖) / 异步(消息流转) / 微服务(跨服务调用链) / 桌面(IPC链路) / 库(导出依赖图)
 - **编排约束推导（§C+.3 按形态选约束类别）**：前端约束 / 后端约束 / 异步约束 / 微服务约束 / 通用约束，每条标注代码证据
+- **关系边集（§C+.2.5，R21-D）**：`bash scripts/relations-extract.sh <项目根> --skill-dir <目标技能目录>` 机械出 import 边初稿 → AI 补语义边（call/route/message/ipc/export）→ references/relations.jsonl（--stable-diff 传播与流B 探查消费）
 - **接口全量枚举（§C+.4 按接口形态适配）**：REST(逐端点) / GraphQL(逐resolver) / gRPC(逐method) / MQ(逐queue+handler) / 库(逐导出)，无通配符占位
 - 优先用 `gitnexus context/trace` 或 `graphify path/explain` 系统性提取签名与依赖链，而非随机 grep
 
@@ -72,7 +74,7 @@ AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特
 
 ## Step 7. AI 填充全部文件
 
-SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`。**reference-manual.md §4 构件表/§6 接口表/§9 store+类型表按形态动态填充（维度错配=未完成），§5 链路按形态选模型 + §5.1 约束注释，dev-guide.md §8 按形态选约束类别**
+SKILL.md/codebase/dev-guide/release/reference-manual/workflow/recipes/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`。**reference-manual.md §4 构件表/§6 接口表/§9 store+类型表按形态动态填充（维度错配=未完成），§5 链路按形态选模型 + §5.1 约束注释，dev-guide.md §8 按形态选约束类别；recipes.md（R21-A，standard/compliance 档）§A 业务功能清单从 §C+.1+§C+.2 归纳、§B 任务配方三源提取（§C+.6/§C+.7）**
 
 ### Step 7.1 gsd Wave + Worktree 分批（P1-6 接入 generation-flow）
 
@@ -83,6 +85,8 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools
 ## Step 8. AI 配置 precheck.conf
 
 **★脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/SERVICE_DIRS/STORE_DIR/WRITABLE_DIRS 等语义型变量，须从特征卡推导）+ 审 diff 是否符合特征卡意图——从「手写全部 conf 变量」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
+
+**★项目 rules.d 探查期生成（R21-C，②缺口收口）**：本 Step 从编排约束（§C+.3）与只读判定（特征卡 2 可改范围）推导项目特有三值规则初稿，写入产物 `rules.d/project.rules`——如 `src/generated/** → forbid # 生成代码禁手改，改生成器` / `src/core/** → prompt # 核心稳定层，改动须 spec` / `tests/** → allow`。求值器 `gate-rules.sh` 随发已可消费，零新机制；FORBID 行必须带替代方案（rules.d 行格式铁律）。
 
 ## Step 8.5 review-methodology Mutation Check（P1-6 接入 generation-flow）
 

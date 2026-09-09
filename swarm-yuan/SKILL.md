@@ -1,6 +1,6 @@
 ---
 name: swarm-yuan
-description: "元技能生成器：为任意代码仓库生成项目专属开发技能（六段式：SKILL.md+workflow+references+assets+precheck+scripts）。核心能力：探查期全量组件库清单+调用链分析→编排约束推导；门禁三值规则（rules.d）；自成长链。何时用：用户说'为某项目生成开发技能'、'create a dev skill'、'六段式 skill'。计数真值见 assets/facts.conf（不手抄）。"
+description: "元技能生成器：为任意代码仓库生成项目专属开发技能（六段式：SKILL.md+workflow+references+assets+precheck+scripts）。核心能力：探查期全量组件库清单+调用链分析→编排约束推导+任务配方（recipes 五要素）+行为观察（mine-habits）+关系边集（relations.jsonl）；门禁三值规则（rules.d）；自成长链（结构变化+问题沉淀双通道）。何时用：用户说'为某项目生成开发技能'、'create a dev skill'、'六段式 skill'。计数真值见 assets/facts.conf（不手抄）。"
 ---
 
 # swarm-yuan — 项目需求交付技能生成器
@@ -76,12 +76,12 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | 步 | 动作 | 实物调用 |
 |----|------|---------|
 | ⓪ | 自检 | `scripts/self-check.sh --check-only`（运行时/文档一致性） |
-| ⓪.5 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem search 提取规则 |
+| ⓪.5 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem search 提取规则 + mine-habits 行为初稿（习惯三去向） |
 | ① | 探查三路并行 | `references/exploration-guide.md` §C+（结构/规范/代码组织子代理各按其方法论） |
 | ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95）；gitnexus/graphify 真图谱 |
 | ② | 特征卡 | 特征项写入认知缓冲（17 项 = P0 6 强制 + P1 11，承接表见 template-spec §3） |
 | ③ | 骨架 | `scripts/generate-skill.sh <name> <proj>`（UNIVERSAL_FILES 按档拷贝） |
-| ④ | 填充 | template-spec §1-§24 逐节填 + codebase/dev-guide/release/reference-manual/workflow 五文件 |
+| ④ | 填充 | template-spec §1-§24 逐节填 + codebase/dev-guide/release/reference-manual/workflow/recipes 六文件（recipes=任务配方，§C+.6/§C+.7） |
 | ④.5 | 框架深化 | `--inject-frameworks`（门禁片段注入 + framework-knowledge 实例化） |
 | ⑤ | conf | precheck.conf 三件套（conf-render 初稿 + AI 补 TODO:model） |
 | ⑤.5 | hooks/MCP | hooks.json（双宿主）+ settings + .mcp.json 按需 |
@@ -98,13 +98,17 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | 概念（出处层） | 诞生（流A 步） | 消费方 | 闭环点 |
 |----------------|----------------|--------|--------|
 | 组件库清单/地图（理念/设计） | ①.5 穷举+计数核验 | 流B ⑤编码拼装（零件目录） | 变化后反馈回路更新（reference-manual） |
+| 任务配方/业务功能清单（理念·拼装式，R21） | ①.5 盘点+④ 填充（§C+.6/§C+.7） | 流B ②探查先查配方、⑤编码按配方拼装 | mark-active 五要素执法；问题沉淀追加配方 |
+| 开发偏好（设计，R21） | ⓪.5 行为观察（mine-habits 初稿） | 流B 全程（AI 遵开发者实际习惯） | memory-writeback 记忆闭环；节存在性执法 |
+| 关系边集（架构，R21） | ①.5 relations-extract 机械边 | --stable-diff 传播+流B ②探查查边集 | mark-active 抽样核验；断边→重建 |
 | 特征卡（理念） | ② 特征项提取 | ⑤ conf 三件套（门禁参数源） | mark-active 三关核验其真实性 |
 | 门禁四族（架构） | ⑤ conf+⑦.5 片段注入 | 流B 序列执勤+hook 强制 | 误报→调 conf 重跑；拦截落 gate-deny.jsonl |
-| rules.d 三值（设计/架构） | ③ 骨架随发 | 流B Bash/Edit 实时匹配 | 审批沉淀回写 rules.d（持久化闭环） |
+| rules.d 三值（设计/架构） | ③ 骨架随发+⑤ 探查期项目规则（R21） | 流B Bash/Edit 实时匹配 | 审批沉淀回写 rules.d（持久化闭环） |
 | hooks 双宿主（架构） | ⑤.5 hooks.json | 流B 每次 Write/Edit/Bash | deny→AI 修正→重试→放行 |
 | 三层接线（架构） | ⓪ 自检探测 | ①.5 探查+⑥验证真子进程 | 未装→降级链披露（诚实理念兑现） |
 | spec §19-21 左移（设计） | ④ template-spec 填写 | 流B ③spec 评审+--shift-left | 违缺→fail-gate 拦截→补齐 |
 | 决策留痕（设计） | 全程 trace-log --decision | 流B 复盘+audit-closure 闭环检查 | open goal→阻断收口 |
+| 问题沉淀通道（演化链，R21） | 流B 使用中随时（问题→方案→沉淀物） | 三载体：清单/配方/规则 | decisions.jsonl 留痕审计（自成长第⑤环） |
 | 项目指纹（演化链） | ⑧ 写回基线 | 反馈回路 --diff 感知 | 变化→局部更新→新基线 |
 
 上表即闭环整体的显式证明：**任何概念都有诞生步、消费方与回流点，无一悬空**。
@@ -122,7 +126,8 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 ```
 用户："开始新需求：给订单列表加导出按钮"
   ↓ ① 需求理解    AI 复述需求+列影响面，用户确认或纠正（现在纠正我）
-  ↓ ② 探查        AI 按 reference-manual 地图定位既有组件（拼装零件）
+  ↓ ② 探查        AI 先查 recipes 配方与 §A 同类功能，再按 reference-manual 地图定位既有组件
+                    （拼装零件；"谁依赖 X"查 relations.jsonl 边集）
   ↓ ③ 设计 spec    AI 写 spec（决策记录+影响范围+测试设计）→ 用户评审批准
   ↓ ④ 实施 plan    AI 拆 tasks（.swarm-yuan/tasks.md）
   ↓ ⑤ 编码        AI 实现；【若跳过了 spec】fail-gate-hook 直接拒绝写源码（spec-first 强制）

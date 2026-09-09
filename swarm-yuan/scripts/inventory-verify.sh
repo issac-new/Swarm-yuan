@@ -6,6 +6,7 @@
 # WP-Q1A（2026-08-19，三能力实操性复盘）新增两模式，堵"计数核验防漏不防伪"的洞：
 #   --path-check       抽 §4/§6/§9 表格数据行内反引号路径，逐行 test -f——不存在即 HALLUCINATION 行
 #                      （杀死"AI 幻觉组件凑数过 0.95"的最大漏洞；路径本就是五维必填字段）
+#                      R21-A 扩展：recipes.md（任务配方）表格行的组件路径同样核验（§A 功能编目/§B 复用件）
 #   --stability-audit  对 §4/§6/§9 标注"稳定|禁止改"的行算三机械信号：近 90 天 git churn /
 #                      fan-in 被引用数 / 同名测试文件存在性；与标注冲突 → STABILITY_WARN（advisory 不 fail）
 # 用法:
@@ -79,13 +80,15 @@ _enum_count() { # $1=CMD模板
 }
 
 # 数 reference-manual.md 对应表行数：定位 §<n> 标题到下一个同级/更高级 ## 之间，数表格数据行（| 开头非分隔/表头）
-_list_count() { # $1=RM文件 $2=锚 §<n> 或 §<n>.<sub>
+_list_count() { # $1=RM文件 $2=锚 §<n> 或 §<n>.<sub> 或字面节名（如 §测试案例——R21-C 起 anchors 允许中文节名）
   local rm="$1" anchor="$2"
   [[ -f "$rm" ]] || { echo 0; return; }
   local sec=${anchor%%.*}
-  # awk：进入 §<n> 段，到下一个 ## 退出；数 | 开头且非纯分隔/表头行
+  # 进入段判定用 index() 固定子串（BSD awk 多字节字符类按字节解析的坑，勿用正则字符类）：
+  # 标题 = "## <sec>" 后随空格 / 句点 / 全角（ / 行尾 四种形态之一（"## §测试案例（check §1）"形态由全角（命中）。
   awk -v sec="$sec" '
-    { if ($0 ~ "^## " sec "[ .]") { insec=1; next }
+    { h = $0
+      if (index(h, "## " sec " ") == 1 || index(h, "## " sec ".") == 1 || index(h, "## " sec "（") == 1 || h == "## " sec) { insec=1; next }
       if (insec && $0 ~ "^## ") { insec=0 }
       if (insec && /^\|/) {
         line=$0; gsub(/[ \t]/,"",line)
@@ -208,6 +211,32 @@ if [[ "$PATH_CHECK" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/refere
 "
     fi
   done <<< "$_paths"
+fi
+
+# R21-A：recipes.md（任务配方）表格行内反引号路径同样核验存在性——
+# 配方 §A 功能编目与 §B 复用件清单引用的组件必须是真实存在的（幻觉复用件在此被杀）。
+# 只抽表格行（| 开头）：门禁序列等散文行里的 `bash scripts/...` 命令不进（防误报）。
+if [[ "$PATH_CHECK" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/recipes.md" ]]; then
+  _rcp_paths=$(LC_ALL=C awk '
+    /^\|/ {
+      line=$0; squashed=line; gsub(/[ \t]/,"",squashed)
+      if (squashed ~ /^\|[-:|]+\|$/ || squashed ~ /^\|[-]+/) next
+      rest=line
+      while (match(rest, /`[^`]+`/)) {
+        tok=substr(rest, RSTART+1, RLENGTH-2)
+        rest=substr(rest, RSTART+RLENGTH)
+        if (tok ~ /\// && tok ~ /\.(vue|tsx?|jsx?|py|go|java|rs|sql|xml|ya?ml|json|kt|swift|cpp|cc|c|h|php|rb|sh|md)$/)
+          print tok
+      }
+    }
+  ' "$SKILL_DIR/references/recipes.md" 2>/dev/null | LC_ALL=C sort -u)
+  while IFS= read -r _p; do
+    [[ -n "$_p" ]] || continue
+    if [[ ! -f "$PROJ/$_p" ]]; then
+      hallus="${hallus}HALLUCINATION	配方引用路径不存在: ${_p}（recipes.md §A/§B；疑似幻觉复用件，回 §C+.6/§C+.7 核实）
+"
+    fi
+  done <<< "$_rcp_paths"
 fi
 
 # --stability-audit：稳定性标注机械信号审计（advisory，永不 fail）

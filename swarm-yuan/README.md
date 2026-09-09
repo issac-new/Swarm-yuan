@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.9.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.9.0)
+[![Release](https://img.shields.io/badge/release-v2.10.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.10.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -105,7 +105,7 @@ AI 的代码生成能力已经很强，但「项目认知」仍是被多数工�
 
 薄目标技能不是"少"，是"只装该装的"：
 
-- **地图**（认知的承接）：组件/接口/约束清单，两列表 `| 路径 | 说明与约束 |`——路径供机器执法，说明列写 AI 的理解与稳定性标注；会话中按需 grep，不全量预读。
+- **地图**（认知的承接）：组件/接口/约束清单，两列表 `| 路径 | 说明与约束 |`——路径供机器执法，说明列写 AI 的理解与稳定性标注；会话中按需 grep，不全量预读。地图带两条衍生索引（R21）：`references/recipes.md` 装配路线（§A 业务功能清单 + §B 任务配方五要素——"怎么拼"）与 `references/relations.jsonl` 机器可读依赖边集（"谁依赖谁"，--stable-diff 传播与探查消费）。
 - **条件**（行动的守卫）：precheck 门禁 + hooks 强制 + draft/active 状态门——做错就被拦，不占认知预算。
 - **演化链**（时间的承接）：项目变了技能跟着变——指纹感知 → 变化域局部重探查 → 单条更新 → 落新基线。
 
@@ -233,7 +233,9 @@ AI 的代码生成能力已经很强，但「项目认知」仍是被多数工�
 ├── SKILL.md          # ≤8KB 预算（FACT_SKILLMD_BYTES_BUDGET=8192，锚点=gen-e2e §7.6 对目标技能实测）
 ├── references/
 │   ├── reference-manual.md  # 项目地图载体：§4/§6/§9 两列 |路径|说明与约束|；32KiB 硬顶（FACT_MAP_BYTES_BUDGET，gen-e2e §7.7 锚）；stability 词在说明列
-│   ├── codebase.md / dev-guide.md / release.md / workflow.md  # 探查填充件（workflow=9 节点 × 4 要素：入口/参与方/门禁/产出物）
+│   ├── codebase.md / dev-guide.md / release.md / workflow.md  # 探查填充件（workflow=9 节点 × 4 要素：入口/参与方/门禁/产出物；dev-guide 含开发偏好固定节）
+│   ├── recipes.md  # 任务配方（R21：§A 业务功能清单 + §B 五要素配方；standard/compliance 档，lite 不生成）
+│   └── relations.jsonl  # 机器可读依赖边集（R21-D：机械 import 边 + AI 语义边，可选产物）
 │   └── （激活框架文档 + 任务路由命中的方法论文档，按需拷贝）
 ├── assets/spec-template.md  # 24 节模板（9 节核心必填：需求/决策记录/约束/测试/回滚/左移三节/合规；仪式节 --task-type full 展开）
 ├── scripts/          # precheck.sh + gates + gate-rules.sh + inventory-update + fingerprint + trace-log + state-machine（inventory-verify 是生成器侧核验，不进目标技能）
@@ -355,7 +357,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 - **自举**：swarm-yuan 用自身门禁检查自身（CI generator-self-gate 三档 RC=0）——只证明内部自洽。
 - **独立验证**：`verifier/v1`——79 fixture 双态、48 合规 gate-fixture、cli A/B 逐字节等价（HEAD↔工作区行为漂移检出）、golden 向量；外部有效性另由真实项目回归覆盖（见 6.7 证据链）。
-- **质量基线真值**（机器执法）：门禁 55/55 可达 · references 孤儿资产 0 · 19 测试脚本 + gen-e2e + self-check RC=0 · CI ubuntu/macos/windows 三平台 · 双重点栈（vue+element 前端、SpringBoot+MySQL 后端）九节点真实交付验证。
+- **质量基线真值**（机器执法）：门禁 55/55 可达 · references 孤儿资产 0 · 23 测试脚本（tests/ 22 + tests/scripts/ 1）+ gen-e2e + self-check RC=0 · CI ubuntu/macos/windows 三平台 · 双重点栈（vue+element 前端、SpringBoot+MySQL 后端）九节点真实交付验证。
 
 ---
 
@@ -363,6 +365,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 - **形态判定先行**（§C+.0）：backend/frontend/async/desktop/mobile/lib/common，维度适配由 `inventory-dimensions.conf` 承载；不预设项目类型。
 - **全量穷举 + 计数核验**：组件清单 ≥ 枚举计数 × 0.95；`--path-check` 杀幻觉路径（HALLUCINATION 阻断 mark-active）；`--stability-audit` 三机械信号（git churn/fan-in/测试存在性）与标注冲突 → STABILITY_WARN（advisory）。
   > **实证**：某真实项目初版地图只列 10 个组件，代码库实际有 99 .vue + 8 store + 12 adapter + 17 loop 模块——样本化填充仅 10% 覆盖。0.95 红线由此定：强制穷举 + 三层调用链（注册装配/模块依赖矩阵/组件挂载树）+ 编排约束 6 类（导入方向/注册顺序/路由挂载/文件落位/状态所有权/测试边界，每条须代码证据）+ 接口全量枚举禁通配符。
+- **业务功能盘点与配方提取（R21）**：§C+.6 从枚举产物+链路归纳业务功能清单（功能→组件→接口→数据→测试，recipes.md §A）；§C+.7 三源提取任务配方（既有实现/git 同类任务历史/开发者文档，五要素结构执法）。**行为观察（R21-B）**：mine-habits.sh 六维 git 统计初稿（提交前缀/分支/规模/共变对/热点/测试占比），AI 审读三去向（铁律引用/开发偏好节/注意事项）——统计事实≠规范。**关系边集（R21-D）**：relations-extract.sh 机械 import 边（TS/JS/Vue 相对解析、py 相对导入、go module、java 包映射）+ AI 语义边。
 - **两维表规范**：地图行 = `| 路径 | 说明与约束 |`。路径反引号包裹（path-check 校验存在性）；说明列写"它是什么+接口/约束+稳定性标注词"（"导出 add（禁止改）"——stability-audit 按行内字面词识别，与列位置无关）。维度/来源等纯记账列已退役。说明列执行**语义/动能两区纪律**（是/应当不混写）：说明列是表征区——只写"是什么"（组件/接口/依赖/稳定性标注词的引用）；"应当怎样"的规范执行体只落 rules.d/*.rules 与门禁，地图至多引用规范词、不承载执行逻辑（地图骨架自带该纪律说明，links.md 使用纪律第 3 条同口径）。
 - **特征卡**：P0 六项强制 / P1 十一项可增量（draft 期「（P1 待补）」允许，mark-active 前清零）；探查期产出，受检不自证。
 
@@ -456,6 +459,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 ### 4.8 演化机制（成长层）
 - **目标技能自成长链**：fingerprint 感知（SessionStart/手动 --diff）→ 变化目录 scope 报告（局部重探查，不整仓重扫）→ inventory-update 单条更新（replace/delete/append §4/§6/§9，原子替换 + 决策落痕）→ last-good 红线（文件数骤降 >50% 拒绝 --write，需 --force）→ `--commit-fp` 落新基线。局部重探查产出的新组件经 `inventory-update append` 入地图（AI 按自成长链操作显式入账，非隐式自动写——探查产出先给 AI 判稳，再登记，决策落痕）。
+- **问题驱动沉淀通道（R21-C）**：结构变化之外的第二条成长触发——使用中解决的新问题（新复用解法/新约束/新坑）三选一沉淀：`inventory-update` 入清单 / recipes.md 加配方或注意事项 / `gate-rules --persist` 入规则；每次沉淀 `trace-log --decision` 留痕（问题→方案→沉淀物，decisions.jsonl 可审计）。兑现"按具体问题及解决方案迭代成长"，不靠项目结构变化才触发。
 - **生成器成长通道**：外部概念的引入一律走"调研报告（docs/research/）→ 三问评审 → 落地为条件/路由/引导之一"（phase=absorption 留痕 decisions.jsonl）；上游重核从全量改为破坏性变更驱动（breaking/major 触发 + 季度例行）。
 - **生成器演进协议**（本体先行，见 §6.3 四问）：新机制/新概念先过四问——新实体进 objects.md、新关系进 links.md（必配机器锚）、新动作进 actions.md；再派生实现；收尾跑 self-check 类型对账 + ontology-verify 六锚。吸收三问（准入评审：要不要吸收）与本体四问（设计方法：怎么落地）串联——先三问、后四问。
 - **成长的预算约束**：成长 = 预算内替换（新知识进来必须有旧知识出去或税不增），否则只是膨胀。
@@ -498,7 +502,7 @@ swarm-yuan 独立运行（纯 bash+Markdown，不依赖任何宿主集群），�
 
 - **spec-template 9 节核心必填**：背景与目标 / 决策记录 / 复用·版本·安全三约束 / 测试策略 / 风险与回滚 / 左移三节（§19 测试设计/§20 变更影响/§21 可观测性） / 标准合规。其余节（详细设计/分层设计/参考/§14-18 认知仪式/运营）**默认折叠**——`--task-type full` 的复杂变更才展开。
 - **workflow 4 要素**：入口（顺序/并行）/ 参与方 / 质量门禁 / 产出物与追踪（含 trace-log 调用）；原 10 要素中分支/流程控制/状态控制并入产出物说明。
-- **生成后核对清单 12 项**：机器验证四件套（零占位符/path-check/计数覆盖/mark-active）+ P0 核心映射八项；历史 96 项细目在折叠区保留为方法论参考（非 mark-active 前置）。
+- **生成后核对清单 13 项**：机器验证四件套（零占位符/path-check/计数覆盖/mark-active）+ P0 核心映射九项（含任务配方结构）；历史 96 项细目在折叠区保留为方法论参考（非 mark-active 前置）。
 - **plan-template**：任务条目须含完成判据（test/命令/可观察结果/交付物——"Implement the thing"不算计划）。
 
 ## §5 使用
@@ -631,12 +635,12 @@ self-check 对账 18 个实存点；`ontology-verify.sh` 六锚健康检查。
 | 11 | 适配性：三档差异化 | gen-e2e 断言（lite 无 hooks.json / compliance 含 industry 注入） | gen-e2e |
 | 12 | 成长性：吸收落地率 | 100%（decisions.jsonl phase=absorption） | decision-audit 抽样 |
 
-**测试资产矩阵**（tests/ 19 脚本 + CI 三平台）：
+**测试资产矩阵**（tests/ 22 + tests/scripts/ 1 = 23 测试脚本 + CI 三平台）：
 
 | 类 | 测试 | 守护 |
 |----|------|------|
 | 核心机制 | test-gate-rules / test-fail-gate-hook / test-failure-detector / test-ai-judgment | 三值求值+审批沉淀 15 态/hook 拦截/deny 审计/AI 判断引导模式（含机械退役确认） |
-| 探查与自成长 | test-project-fingerprint / test-inventory-verify / test-inventory-update / test-detect-frameworks | 指纹+last-good 15 态/计数核验+path-check+stability 14 态/地图单条更新 9 态/框架检测 |
+| 探查与自成长 | test-project-fingerprint / test-inventory-verify / test-inventory-update / test-detect-frameworks / test-mine-habits / test-relations-extract | 指纹+last-good 15 态/计数核验+path-check+stability+tests 维度/地图单条更新 9 态/框架检测/行为挖掘六维（R21-B）/关系边集四态（R21-D） |
 | 生成与模板 | test-conf-render / test-cost-report / test-context-surface / test-compare-baseline | conf 渲染+industry 注入/成本汇总/上下文预算/基线对比 |
 | 门禁与规格 | test-framework-evidence / test-migrate-verify-blocks / test-signal-index / test-spec-task-type-gating / test-spec-template-gating | 框架证据台账/verify 块迁移/信号索引/任务类型门控/spec 模板门控 |
 | E2E | tests/e2e/run-gen-e2e.sh + run-e2e.sh | 生成产物质量回归（含三档差异化断言）+ 全流程 |
