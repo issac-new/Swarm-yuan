@@ -679,10 +679,10 @@ CI：Linux 全覆盖（generator-self-gate 自举三档 + fixture 双态 + verif
 
 | 材料 | 位置 | 内容 |
 |---|---|---|
-| 决策史 + 历史档案 | `docs/design-evolution.md` | 35 条决策全文 + A1-A16 施工档案（过程记录） |
+| 决策史 + 历史档案 | `docs/design-evolution.md` | 35 条决策全文 + A1-A17 施工档案（过程记录） |
 | 使用手册 + 术语 | `docs/usage-manual.md` | 特征卡/门禁/生成流程/FAQ/数字一览（操作层） |
 | 运行时基线登记 | `docs/upstream-baseline.md` | 16 运行时许可证/版本/drift 状态（供应链机器锚） |
-| 调研证据链 | `docs/research/` | 22 份调研报告（决策史引用的外部项目调研过程档案） |
+| 调研证据链 | `docs/research/` | 23 份调研报告（决策史引用的外部项目调研过程档案） |
 
 ## License
 

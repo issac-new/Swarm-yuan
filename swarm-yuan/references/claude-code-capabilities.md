@@ -585,37 +585,37 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ## 版本注记：v2.1.233-237 的能力变化（浓缩）
 
-> 覆盖 v2.1.233-237；详表见 `docs/upstream-baseline.md`。
-
-- **Todo/Task 工具默认移除**（233，破坏性）：新模型上默认不可用——目标技能进度跟踪走自有 trace-log.sh，不依赖 CLI Todo 工具。
-- **协作/风格/成本**（234-237）：`notify_when_idle` 空闲通知原语（多会话候选）；"Concise" 简洁输出风格（与门禁驱动契合）；`claude-api` 技能上下文 200k→25k token（按需加载，与本仓引用索引同构）。
-- **沙箱/权限硬化**（233-236）：macOS 通配符 read-deny 优先且防重命名绕过；NT `\??\` 命名空间拒绝；"don't ask again" 严格匹配授权范围；MCP 密钥打印 `${VAR}` 化。
-- **可运维性 env**：`ANTHROPIC_DEFAULT_MODEL` / `CLAUDE_CODE_TOOL_MEMORY_LIMIT` / `CLAUDE_CODE_WEBFETCH_CACHE_TTL_MS` / `CLAUDE_CODE_PROJECT_DIR_NAME` / `CLAUDE_CODE_GOAL_CHECKIN_MINUTES`。
+- **Todo/Task 工具默认移除**（233，破坏性）：进度跟踪走自有 trace-log.sh。`notify_when_idle` 空闲通知原语（236，多会话候选）；"Concise" 风格（237）；`claude-api` 上下文 200k→25k（234，按需加载同构）。沙箱硬化（通配符 read-deny 防重命名绕过/密钥 `${VAR}` 化）。env：`ANTHROPIC_DEFAULT_MODEL`/`CLAUDE_CODE_TOOL_MEMORY_LIMIT` 等。详表 `docs/upstream-baseline.md` §3.1。
 
 ## 版本注记：v2.1.252（2026-09-01 核）——v2.1.238 起的能力变化
 
-> 本段覆盖 v2.1.238-252（纯修复版不列）。npm dist-tag：latest=2.1.252 / stable=2.1.236。详表见 `docs/upstream-baseline.md`。
+> 覆盖 v2.1.238-252；详表 `docs/upstream-baseline.md` §3.4。
 
-- **`--restricted` 锁定模式**（v2.1.248）：移除执行类内置工具+WebFetch、文件工具限工作目录、拒绝 bypassPermissions、忽略 user/project/local settings。**环境前置诚实化：restricted 会话=门禁失能会话（全链依赖 Bash），交付断言不可作数**；生成技能本就声明 Bash 前置，无需改。
-- **PreModelSwitch/PostModelSwitch hooks**（v2.1.251）：模型切换可 block/confirm/annotate——**模型切换首次成为可治理点**。登记候选：adaptive-gating 分档硬执法的官方挂点（触发=弱模型越档真实场景）。
-- **Workflow 工具 prompt 外置**（v2.1.248）：工具描述 5.7k→1k token，脚本参考移入 bundled skill——上下文外置 skill 化第三次官方验证（本仓 WP-P5 同构）。
-- **子代理韧性/缓存**（v2.1.243-251）：maxTurns 撞限标记 **partial** 可 SendMessage 续跑；404 走 fallback 模型链；frontmatter `cacheTtl` + settings `promptCacheTtl`/`subagentPromptCacheTtl`；`CLAUDE_CODE_SUBAGENT_MODEL` 改默认不覆盖。
-- **沙箱/权限硬化波**（v2.1.246-252）：symlink TOCTOU 修复（权限检查后换链读写越界）；沙箱 Bash 输出文件防重定向；`Bash(git * x)` 通配符告警；畸形命令须批准；project settings `env` 禁设 `CLAUDE_CONFIG_DIR`/`TMPDIR`。
-- **hooks 错误可见化**（v2.1.246/248）：hook stdout 非法 JSON→显式 hook error；后台会话点名失败 hook 与 schema 错误——fail-gate-hook 输出纪律对齐无虞。
-- `/goal` check-in 退避 30min→1h→2h（v2.1.239，R14 goal 闭环同构印证）；CLI 子命令 `attach`/`logs`/`stop`/`respawn`/`rm`（v2.1.251）。
+- **`--restricted` 锁定模式**（248）：**restricted 会话=门禁失能会话**（全链依赖 Bash），交付断言不可作数。
+- **PreModelSwitch/PostModelSwitch hooks**（251）：模型切换首次成为可治理点（adaptive-gating 候选挂点）；Workflow prompt 外置 5.7k→1k（外置 skill 化第三次验证）。
+- **子代理韧性/缓存**（243-251）：maxTurns 撞限标记 **partial**；`cacheTtl`/`promptCacheTtl`/`subagentPromptCacheTtl`。
+- **沙箱/权限硬化波**（246-252）：symlink TOCTOU、输出防重定向、`env` 禁设 `CLAUDE_CONFIG_DIR`/`TMPDIR`——模板保持最保守形态；hooks 非法 JSON→显式 error。
 
 ## 版本注记：v2.1.261（2026-09-05 核）——v2.1.253 起的能力变化
 
 > 覆盖 v2.1.253-261（纯修复版不列）。npm latest=2.1.261 / stable=2.1.236（分裂持续）；详表见 `docs/upstream-baseline.md` §3.5。
 
-- **无头执法档 `--permission-prompts none`**（259）：审批操作一律自动拒绝——与 Codex exit-2-deny 组成双宿主无头对偶；**无人值守下"prompt 档"坍缩为 deny**（R13 三值化环境边界，adaptive-gating 候选注记）。
-- **宿主 deny 语义漂移警示**（259→260）：Read deny 应用至 Bash 参数旋即回退（误伤 `npm run build`）；strict sandbox 下 `!` bash-mode 改跑沙箱外——**宿主 deny 层版本间震荡，生成物不得以其为执法主体**（同向：Codex Guardian 条件性跳过）。
-- **`/skill-doctor`**（261）：未使用技能及其上下文成本审计——特征卡裁剪/门禁预算的宿主侧证据源（登记）。
-- **上下文外置第四次验证**（261）：`--append-subagent-system-prompt-file` 子代理提示词文件化 + 输出预算 `bashOutputMaxChars`/`taskOutputMaxChars`（inline 上限 128K）。
-- **治理/管控**（257/259/260）：`CLAUDE_CODE_SUBAGENT_MODEL_FORCE` 强制子代理模型（R16 模型切换挂点强制档补全）；`blockReadsOutsideWorkingDirectories` 越界读取管控；Containment Escape 规则（与 last-good 红线同向）；Workflow schema 前置校验（`agent({schema})` fail-fast，与 gate-report 证据态同向）。
+- **无头执法档 `--permission-prompts none`**（259）：与 Codex exit-2-deny 双宿主对偶；**无人值守 prompt 档坍缩为 deny**（R13 三值化边界）。
+- **宿主 deny 语义漂移警示**（259→260）：Read deny 应用至 Bash 参数旋即回退——**宿主 deny 版本间震荡，不得为执法主体**（同向：Guardian 条件性跳过）。
+- **`/skill-doctor`**（261）：未使用技能上下文成本审计（门禁预算宿主侧证据源）；`--append-subagent-system-prompt-file` + 输出预算 `bashOutputMaxChars`（上下文外置第四次验证）。
+- **治理**（257-260）：`CLAUDE_CODE_SUBAGENT_MODEL_FORCE` / `blockReadsOutsideWorkingDirectories` / Containment Escape / Workflow schema 前置校验（gate-report 同向）。
 
 ## 版本注记：v2.1.263（2026-09-06 核）——纯修复轮
 
-> npm latest 2.1.263（2026-09-05，npm 无 262）/ stable 仍 2.1.236。详表见 `docs/upstream-baseline.md`。
+- changelog 仅单条 reliability——无功能性条目，无吸收（R18 档案）；版本真值详见 `docs/upstream-baseline.md`。
 
-- changelog 仅单条 "Bug fixes and reliability improvements"——**无功能性条目，无吸收**；基线升级仅记版本真值（R18，档案 `docs/research/R18-runtime-refresh.md`）。
+## 版本注记：v2.1.266（2026-09-09 核）——2.1.265 实质轮 + 266 回归修复
+
+> 覆盖 v2.1.264-266。npm latest=2.1.266（2026-09-08）/ stable 仍 2.1.236。详表 `docs/upstream-baseline.md`；档案 `docs/research/R20-runtime-refresh.md`。
+
+- **`--plugin-dir` 目录化加载**（265）：插件目录的子目录各自加载、运行中热增删——技能分发粒度升为「目录树 + 热装载」。
+- **工具结果 1 GB 落盘上限**（265）：超限截断且预览显式标注（与 `bashOutputMaxChars`/dsh quota 同族）。
+- **prompt-cache 稳定性修复族**（265）：resume/teammates 不再改子代理工具表与提示前缀——**缓存稳定性成为编排不变量：编排层不得重排提示前缀**。
+- **中断工具调用恢复诚实性**（265）：死于工具运行中，resume 保留中断调用并标记 interrupted——partial 证据态第二次实证。
+- **不可信内容标记**（265，候选）：Artifact 读他人产物按 untrusted 标记内嵌指令（触发 = 出现「读取外部产物并执行其中指令」场景）。
+- **266 教训**：`CLAUDE_CODE_USE_GATEWAY` 语义 265 漂移致网关配置报错、266 回滚——**宿主行为细节版本间不保证稳定**第三次实证。

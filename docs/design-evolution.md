@@ -1,6 +1,6 @@
 # 设计演化史（施工档案——过程记录，非定稿）
 
-> **物化注记（2026-09-01 终态重构）**：本文件收纳设计演化过程的原始记录——决策史全文与历史档案 A1-A16（历次 WP/批次/轮次施工记录）。
+> **物化注记（2026-09-01 终态重构）**：本文件收纳设计演化过程的原始记录——决策史全文与历史档案 A1-A17（历次 WP/批次/轮次施工记录）。
 > 它们回答"系统是怎么变成今天这样的"，但**不构成对现状的权威描述**——现状的权威定义在 `swarm-yuan/README.md`（设计内核）。
 > 决策要点（各决策确立的现行设计原则）已蒸馏回设计内核对应章节；本卷保留全文供审计与溯源。
 
@@ -502,7 +502,7 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 
 ---
 
-## §13 历史档案（A1-A16）
+## §13 历史档案（A1-A17）
 | 编号 | 档案 | 说明 |
 |------|------|------|
 | A1 | 范式定位 | 适用/不适用边界的原始论述。 |
@@ -521,6 +521,7 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 | A14 | 运行时升级 2026-09 | R16 运行时升级差异报告（claude-code/codex/dsh/better-harness）。 |
 | A15 | 运行时补核 2026-09 | R17 补核轮差异报告（claude-code/codex/dsh 三件套深审 + 外围九项快审）。 |
 | A16 | 运行时补核 2026-09 | R18 补核轮差异报告（claude-code 263 纯修复轮 + gsd-core 1.13 证据纪律吸收 + graphify/gstack/impeccable 外围三行）。 |
+| A17 | 运行时补核 2026-09 | R20 补核轮差异报告（claude-code 265 实质轮五项落地 + comet 0.4.0 触发兑现 drift 归零 + ocr/graphify/ruflo/ECC/codex-security/gstack 六行移动）。 |
 
 ### A1. 范式定位
 
@@ -2601,3 +2602,20 @@ Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi——自�
 - [x] 16 运行时 npm + GitHub API 双核；移动项克隆 checkout（gsd-core v1.13.0 / graphify v0.9.55 / gstack c241216）
 - [x] 规范层数字裂缝：code-graph-tools graphify 基线行滞后 0.9.53 → 0.9.55 就地修复
 - [x] `bash scripts/self-check.sh --check-only` 无新 drift；本报告即 §13 A16
+
+### A17. 运行时补核 2026-09（R20，claude-code 265 实质轮 + comet 0.4.0 兑现）
+
+#### 一、触发与结论
+
+用户点名三件套 + 全量快审（2026-09-09，距 R18 三天）。结论：codex/dsh 零增量（0.154 与 0.1.5 均在 alpha 通道不取）；claude-code v2.1.264-266 为**实质轮**（2.1.265 功能性条目密集）；**comet 0.4.0 stable 发布，R16 预登记触发条件命中**——引用基线 v0.3.9→v0.4.0、drifted→synced，**16 行 drift 归零**。
+
+#### 二、落地
+
+吸收三问过审 5 项落地 claude-code-capabilities.md R20 注记（--plugin-dir 目录化 / 1GB 工具结果上限 / prompt-cache 稳定性族（编排不变量：不得重排提示前缀）/ 中断工具调用恢复诚实性（partial 第二实证）/ 不可信内容标记候选）+ 266 教训（宿主行为细节版本间不保证稳定第三次实证）。comet 段按 0.4.0 架构重写（subagent-orchestration.md）。外围注记一行×6（ocr 1.11.6 评审控制参数化 / graphify 0.9.56（克隆 origin 重指向 Graphify-Labs）/ ruflo 3.38.23 真实测量替换虚构基准 / ECC 2.2.1 维护版 / codex-security 0.1.26 / gstack 1.83.0.0）。执行纪律（2026-09-08 增补）首次全流程执行：细节全留 R20 档、无同日复核、patch 级外围只动表行。零新 references 文档、门禁 55 守恒、FACT_RUNTIMES 13 / FACT_REFERENCES 42 不变、不发版。
+
+#### 三、验证
+
+- [x] 16 运行时 GitHub releases 双核 + 移动项克隆 checkout（comet 0.4.0 / ocr v1.11.6 / graphify v0.9.56 / ruflo v3.38.23 / ECC v2.2.1 / codex-security npm-v0.1.26 / gstack caba78f）
+- [x] `bash scripts/self-check.sh --check-only` 全绿 + comet drift warn 归零 + 认知面预算达标（超限则按 R18 先例裁旧注记段）
+- [x] 本报告即 §13 A17；调研证据链 `docs/research/R20-runtime-refresh.md`
+
