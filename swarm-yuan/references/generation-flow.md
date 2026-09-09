@@ -72,7 +72,7 @@ AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特
 
 ## Step 7. AI 填充全部文件
 
-SKILL.md/codebase/dev-guide/release/reference-manual/workflow/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`。**reference-manual.md §4 构件表/§6 接口表/§9 store+类型表按形态动态填充（维度错配=未完成），§5 链路按形态选模型 + §5.1 约束注释，dev-guide.md §8 按形态选约束类别**
+SKILL.md/codebase/dev-guide/release/reference-manual/workflow/recipes/snippets/mcp-tools——**每个文件必须用探查到的真实内容替换占位符**。填充指引见 `references/template-spec.md`。**reference-manual.md §4 构件表/§6 接口表/§9 store+类型表按形态动态填充（维度错配=未完成），§5 链路按形态选模型 + §5.1 约束注释，dev-guide.md §8 按形态选约束类别；recipes.md（R21-A，standard/compliance 档）§A 业务功能清单从 §C+.1+§C+.2 归纳、§B 任务配方三源提取（§C+.6/§C+.7）**
 
 ### Step 7.1 gsd Wave + Worktree 分批（P1-6 接入 generation-flow）
 

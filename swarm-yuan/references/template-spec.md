@@ -306,7 +306,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | 8. 文档约定 | workflow.md 节点②③ + spec-template.md + plan-template.md | spec/plan 命名格式 |
 | 9. 测试体系 | reference-manual.md check §1 + precheck.sh --test | 测试案例 + 门禁 |
 | 10. 环境与外部资源 | env-setup.sh + codebase.md（DB/资源）+ mcp-tools.md | 环境检测 + 资源 + MCP |
-| 11. **可复用稳定单元** | reference-manual.md §4/5/6/9 + dev-guide.md §7（拼装式开发）+ spec-template.md（复用约束段）+ precheck.sh --reuse | 组件库 + 依赖链路 + 接口 + 拼装原则 + 复用标注 + 门禁 |
+| 11. **可复用稳定单元** | reference-manual.md §4/5/6/9 + dev-guide.md §7（拼装式开发）+ **recipes.md §A/§B（业务功能编目+任务配方，R21 配方层）** + spec-template.md（复用约束段）+ precheck.sh --reuse | 组件库 + 依赖链路 + 接口 + 拼装原则 + 配方路线 + 复用标注 + 门禁 |
 | 12. 数据规范 | reference-manual.md §8 + data-sample-template.md + precheck.sh --consistency | 数据字典 + 库表样例 + 勾稽门禁 |
 | 13. 五层认知基底 | reference-manual.md（认知映射表+六维动力学基线+逻辑谬误图谱+辩证映射表）+ spec-template.md（§14交付衰减/§15蓝图/§16偏差自检/§17辩证映射）+ precheck.sh --cognition | 认知映射 + 动力学基线 + 辩证映射 + 五层体检门禁 |
 | 14. 领域知识 | reference-manual.md（领域知识段：技术+业务领域规则）+ spec-template.md（§18领域知识约束）+ precheck.sh --domain | 领域识别 + 客观规律约束 + 违规检测门禁 |
@@ -321,6 +321,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | `dev-guide.md` | §7 组件库代码填充说明（部分）+ **§8 编排约束** | 改造分类详解 + 开发指南 + **拼装式开发原则（优先复用既有稳定单元）** + **编排调用关系及约束（导入方向/注册顺序/路由挂载/状态所有权/测试边界）** + 领域/实体对象域填充 + 接口参数填充 + 任务流程填充 |
 | `release.md` | §3 项目编译规则清单 | 编译规则表 + 构建命令 + 产物位置 + 失败排查 |
 | `reference-manual.md` | §2/4/5/6/7/8/9 + check §1/2/3/4 | 见下方 |
+| `recipes.md`（R21 配方层，standard/compliance 档；lite 不生成） | exploration-guide §C+.6/§C+.7 | §A 业务功能清单（功能→入口→复用组件→接口→数据→测试编目）+ §B 任务配方（每配方五要素：触发场景/前置查询/复用件/胶水/门禁与验证） |
 
 **reference-manual.md 必须包含的章节（按项目形态动态适配）：**
 
@@ -377,6 +378,11 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
  - 微服务约束：服务调用方向/共享DB禁止/trace透传/熔断降级/Saga补偿
  - 通用约束：改造分类与文件落位/版本锁定/可改vs只读边界
  - 每条约束须标注代码证据（文件:行 或 grep 命令）
+- **★任务配方（recipes.md 必须含，standard/compliance 档；从 exploration-guide §C+.6/§C+.7 承接，R21 配方层）**：
+ - §A 业务功能清单：从 §C+.1 枚举产物 + §C+.2 链路**归纳**（不是重新探查），每功能一行 `| 功能 | 入口路径 | 复用组件 | 接口 | 数据 | 测试 |`；组件路径反引号包裹（`--path-check` 校验）；无测试的功能显式标"无"
+ - §B 任务配方：三源提取（既有实现 / git 同类任务历史 / 开发者文档），每配方五要素齐全——触发场景/前置查询/复用件/胶水/门禁与验证（`--verify-completeness` 机器执法，缺要素即列 file:line）
+ - 复用件清单表格化（`| 复用件路径 | 用途 |`，反引号路径）——散文行的命令反引号不进 path-check（防误报）
+ - 配方只建高频形态（≥2 个起步，不凑数）；低频任务走九节点流；lite 档不生成 recipes.md（档位差异化）
 - **★版本锁定原则（dev-guide.md 必须含 + codebase.md 版本表必须记录基线）**：
  - 功能性开发过程中，**不允许随意升级或更换核心技术及基础组件及依赖的版本**
  - 例外条件（须满足之一）：(1) 用户主动要求；(2) 严重安全漏洞；(3) 严重性能隐患；(4) 功能缺失（当前版本无法实现需求且无替代方案）
@@ -587,7 +593,7 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 - [ ] 3. 计数覆盖：同上命令中各维度 ratio ≥ 0.95 或有 FAIL 告警已处理
 - [ ] 4. 状态门：`bash generate-skill.sh --mark-active <skill-dir>`（三关全过翻 active）
 
-**P0 核心映射八项（人工目检，每项一行判断）：**
+**P0 核心映射九项（人工目检，每项一行判断）：**
 - [ ] 5. SKILL.md description 任务触发式（做什么+何时用）
 - [ ] 6. 地图（reference-manual）条目含路径列且 stability 标注词在说明列
 - [ ] 7. precheck.conf 核心变量已填（PROJECT_DIR/WRITABLE/TEST_CMD/BUILD_CMD）
@@ -596,6 +602,7 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 - [ ] 10. 测试/构建命令真跑过一次
 - [ ] 11. 特征卡 P0 六项承接（项目类型/可改范围/技术栈/构建命令/分支规范/安全规则）
 - [ ] 12. AI 生成声明与决策记录（decisions.jsonl ≥1 条）
+- [ ] 13. 任务配方结构齐全（recipes.md §A 功能编目 + §B 每配方五要素；lite 档豁免）
 
 <details>
 <summary>历史 96 项细目（按需展开自查——方法论参考，非 mark-active 前置）</summary>
@@ -625,6 +632,7 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 **★拼装式开发核对：**
 · dev-guide.md §7 含拼装式开发原则（优先复用既有稳定单元；禁止重复造轮子/侵入式重构/破坏性改造）
 · reference-manual.md §4/5/6/9 含可复用稳定单元清单（API接口/组件/类/函数/方法/store/类型定义，每个含签名/路径/用途/复用方式/稳定性标注）
+· recipes.md §A 业务功能清单 + §B 任务配方五要素（standard/compliance 档；§C+.6/§C+.7 提取——拼装的"路线层"）
 · spec-template.md 含复用约束段（复用的既有单元表 + 新增胶水代码表 + 拼装合规声明）
 · precheck.sh 含 `--reuse` 子命令（检测重复造轮子 + 提示核对稳定单元清单）
 

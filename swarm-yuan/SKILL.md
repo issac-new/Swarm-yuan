@@ -81,7 +81,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95）；gitnexus/graphify 真图谱 |
 | ② | 特征卡 | 特征项写入认知缓冲（17 项 = P0 6 强制 + P1 11，承接表见 template-spec §3） |
 | ③ | 骨架 | `scripts/generate-skill.sh <name> <proj>`（UNIVERSAL_FILES 按档拷贝） |
-| ④ | 填充 | template-spec §1-§24 逐节填 + codebase/dev-guide/release/reference-manual/workflow 五文件 |
+| ④ | 填充 | template-spec §1-§24 逐节填 + codebase/dev-guide/release/reference-manual/workflow/recipes 六文件（recipes=任务配方，§C+.6/§C+.7） |
 | ④.5 | 框架深化 | `--inject-frameworks`（门禁片段注入 + framework-knowledge 实例化） |
 | ⑤ | conf | precheck.conf 三件套（conf-render 初稿 + AI 补 TODO:model） |
 | ⑤.5 | hooks/MCP | hooks.json（双宿主）+ settings + .mcp.json 按需 |

@@ -144,4 +144,40 @@ echo "$out" | grep -qE 'STABILITY_WARN.*src/in_ten.py.*fan-in' && bad "态9 §10
 # §4 行存在 + 真实路径 → 无 HALLUCINATION
 echo "$out" | grep -qF 'HALLUCINATION' && bad "态9 真实路径误报 HALLUCINATION" || ok "态9 真实路径通过"
 
+# --- 态 10：R21-A recipes.md 表格行路径 path-check（配方幻觉复用件检出 + 散文命令不误伤）---
+mkdir -p "$TMP/proj10/src" "$TMP/skill10/references" "$TMP/skill10/scripts"
+printf 'export function Table(): void {}\n' > "$TMP/proj10/src/Table.tsx"
+cat > "$TMP/skill10/references/recipes.md" <<'EOF'
+# recipes.md
+## §A 业务功能清单
+
+| 功能 | 入口路径 | 复用组件 | 接口 | 数据 | 测试 |
+|------|----------|----------|------|------|------|
+| 列表页 | `src/pages/List.tsx` | `src/Table.tsx` | GET /api/x | x 表 | `tests/list.spec.ts` |
+
+## §B 任务配方
+
+### 配方：新增页面
+
+- **触发场景**：新增列表页
+- **前置查询**：查 §4 组件清单
+- **复用件清单**：
+
+| 复用件路径 | 用途 |
+|------------|------|
+| `src/Phantom.vue` | 不存在（应被检出） |
+
+- **胶水步骤**：新页面 + 路由注册
+- **门禁与验证序列**：`bash scripts/precheck.sh --all` + TEST_CMD（散文命令反引号不进 path-check）
+EOF
+echo "PROJECT_FORM=frontend" > "$TMP/skill10/scripts/precheck.conf"
+out="$(bash "$SH" "$TMP/proj10" --skill-dir "$TMP/skill10" --form frontend --tsv --path-check 2>/dev/null)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态10 exit 0" || bad "态10 exit=$rc"
+# 三个不存在路径（List.tsx/Phantom.vue/list.spec.ts）应命中 recipes HALLUCINATION
+echo "$out" | grep -qF 'HALLUCINATION	配方引用路径不存在: src/Phantom.vue' && ok "态10 recipes 幻灵复用件命中" || bad "态10 未检出 Phantom.vue"
+echo "$out" | grep -qF '配方引用路径不存在: src/pages/List.tsx' && ok "态10 recipes §A 幽灵入口命中" || bad "态10 未检出 §A List.tsx"
+# 真实存在路径（Table.tsx）不误伤；散文行 precheck.sh 命令不进
+echo "$out" | grep -qF '配方引用路径不存在: src/Table.tsx' && bad "态10 误伤真实路径 Table.tsx" || ok "态10 真实复用件通过"
+echo "$out" | grep -qF 'precheck.sh' && bad "态10 散文命令被误纳" || ok "态10 散文命令不进 path-check"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-inventory-verify"; exit 0; } || { echo "FAIL test-inventory-verify" >&2; exit 1; }

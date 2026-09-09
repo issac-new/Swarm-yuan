@@ -120,7 +120,13 @@ UNIVERSAL_FILES=(
 )
 
 # 项目特定文件（upgrade 保留不覆盖、不备份）
-PROJECT_SPECIFIC_FILES=("SKILL.md" "references/workflow.md" "references/codebase.md" "references/dev-guide.md" "references/release.md" "references/reference-manual.md")
+# R21-A：+references/recipes.md（任务配方：§A 业务功能清单 + §B 五要素配方，生成器出骨架、AI 填充、成长链单条更新）
+PROJECT_SPECIFIC_FILES=("SKILL.md" "references/workflow.md" "references/codebase.md" "references/dev-guide.md" "references/release.md" "references/reference-manual.md" "references/recipes.md")
+
+# 用户可填充模板（随 UNIVERSAL_FILES 分发但 AI 会填入项目内容——Step 7 填充对象）
+# R21-A 缺陷修复：此类文件 upgrade 时若已非占位骨架（不含「（填入」标记）则跳过覆盖，
+# 防止 AI 填好的项目内容被模板覆盖丢失；仍是占位骨架则照常刷新（拿到模板改进）。
+USER_FILLABLE_FILES=("scripts/snippets.md" "scripts/mcp-tools.md")
 
 # 迁移 ACTIVE_FRAMEWORKS 里的旧 id 到母框架（原地修改全局 ACTIVE_FRAMEWORKS 数组）
 # 迁移后 warn 提示用户更新 conf 的 ACTIVE_FRAMEWORKS 行
@@ -696,6 +702,37 @@ verify_completeness() {
     ' "$wf" 2>/dev/null || true)
   fi
   hits=$(printf '%s\n%s\n' "$hits" "$trace_miss" | grep -v '^$' || true)
+  # R21-A：任务配方结构执法——recipes.md 存在（standard/compliance 档骨架）时：
+  #   ① §A 业务功能清单 / §B 任务配方 两节标题须存在；② 每个「### 配方」段须含五要素
+  #   （触发场景/前置查询/复用件/胶水/门禁与验证）——填完后丢要素在此被抓，不靠 AI 自觉。
+  # BSD awk 多字节安全：index() 固定子串匹配（同上 trace_miss 先例，不用字符类正则）。
+  local rcp="$skill_dir/references/recipes.md" recipes_miss=""
+  if [[ -f "$rcp" ]]; then
+    LC_ALL=C grep -q '业务功能清单' "$rcp" 2>/dev/null || recipes_miss="$rcp: 缺 §A 业务功能清单节（既有业务功能实现编目，R21 配方层）"
+    LC_ALL=C grep -q '任务配方' "$rcp" 2>/dev/null || recipes_miss="${recipes_miss}${recipes_miss:+
+}$rcp: 缺 §B 任务配方节（五要素配方，R21 配方层）"
+    local _rcp_out
+    _rcp_out=$(LC_ALL=C awk '
+      function chk() {
+        if (node == "") return
+        miss = ""
+        if (index(blk, "触发场景") == 0) miss = miss " 触发场景"
+        if (index(blk, "前置查询") == 0) miss = miss " 前置查询"
+        if (index(blk, "复用件") == 0) miss = miss " 复用件"
+        if (index(blk, "胶水") == 0) miss = miss " 胶水"
+        if (index(blk, "门禁与验证") == 0) miss = miss " 门禁与验证"
+        if (miss != "") print FILENAME":"line": 配方段缺五要素（"miss" ）: " node
+      }
+      /^## / { chk(); node=""; next }
+      /^### / && index($0, "配方") > 0 { chk(); node=$0; line=FNR; blk=""; next }
+      /^### / { chk(); node=""; next }
+      { if (node != "") blk = blk $0 "\n" }
+      END { chk() }
+    ' "$rcp" 2>/dev/null || true)
+    [[ -n "$_rcp_out" ]] && recipes_miss="${recipes_miss}${recipes_miss:+
+}$_rcp_out"
+  fi
+  hits=$(printf '%s\n%s\n' "$hits" "$recipes_miss" | grep -v '^$' || true)
   # G1：decisions.jsonl 校验（decisions_miss 并入 hits 统一裁决）
   # 检查 ① 每行 JSON 合法性 ② UserChallenge 行五要素非空（文件不存在不告警——draft 期允许空）
   local dec_file="$skill_dir/.swarm-yuan/decisions.jsonl" decisions_miss=""
@@ -1193,6 +1230,16 @@ copy_universal_templates() {
     [[ "$mode" == "resume" && -f "$dir/$dest" ]] && continue
     # precheck.conf 三件套：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
     [[ "$mode" == "upgrade" && ( "$dest" == "scripts/precheck.conf" || "$dest" == "scripts/precheck.arch.conf" || "$dest" == "scripts/precheck.compliance.conf" ) ]] && continue
+    # R21-A：用户可填充模板（snippets/mcp-tools）——upgrade 时已非占位骨架则跳过覆盖（防填充丢失）
+    if [[ "$mode" == "upgrade" && -f "$dir/$dest" ]]; then
+      local _uff
+      for _uff in ${USER_FILLABLE_FILES[@]+"${USER_FILLABLE_FILES[@]}"}; do
+        if [[ "$dest" == "$_uff" ]] && ! LC_ALL=C grep -q '（填入' "$dir/$dest" 2>/dev/null; then
+          echo "  ✓ 保留已填充模板: ${dest}（含项目内容，跳过覆盖；重置请删该文件再 upgrade）"
+          continue 2
+        fi
+      done
+    fi
     case "$kind" in
       # assets 类源文件统一平铺在 $ASSETS_DIR/（assets/precheck.sh 等）。
       # dest 形态：scripts/precheck.sh → 源 = assets/precheck.sh（取 basename，文件平铺在 assets/）。
@@ -1456,14 +1503,16 @@ fill_guide() {
   case "$1" in
     workflow.md) echo "九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP" ;;
     codebase.md) echo "目录结构+技术栈版本表+端口+配置" ;;
-    dev-guide.md) echo "改造分类+拼装式开发原则+安全编码规范" ;;
+    dev-guide.md) echo "改造分类+拼装式开发原则+安全编码规范+开发偏好" ;;
     release.md) echo "编译规则+构建命令+产物位置" ;;
     reference-manual.md) echo "安全+组件+接口+数据+认知映射+谬误图谱+领域知识" ;;
+    recipes.md) echo "§A 业务功能清单 + §B 任务配方（五要素：触发场景/前置查询/复用件/胶水/门禁与验证）" ;;
     *) echo "见 template-spec.md" ;;
   esac
 }
 # lite 档只生成 reference-manual.md 占位（特征卡+参考手册承载认知；其余段随升档补）
-_placeholder_refs="workflow.md codebase.md dev-guide.md release.md reference-manual.md"
+# R21-A：standard/compliance 增 recipes.md（任务配方——拼装式编排的产物层；lite 档不生成，差异化断言见 run-gen-e2e）
+_placeholder_refs="workflow.md codebase.md dev-guide.md release.md reference-manual.md recipes.md"
 [[ "$PROFILE" == "lite" ]] && _placeholder_refs="reference-manual.md"
 for f in $_placeholder_refs; do
   if [[ "$f" == "workflow.md" ]]; then
@@ -1690,6 +1739,40 @@ WFEOF
 
 （其余 §1/§2/§3/§5/§7/§8/§10/§11 节按 references/template-spec.md 维度注册表补齐—— lite 档精简到 §4/§6/§9 三节，standard/compliance 档补全）
 RMEOF
+    elif [[ "$f" == "recipes.md" ]]; then
+      # R21-A：任务配方骨架——§A 业务功能清单（既有实现编目）+ §B 五要素配方（拼装式编排的产物层）。
+      # 表格行组件路径反引号包裹：inventory-verify --path-check 扩展校验存在性（配方引用的复用件防幻觉）；
+      # 五要素结构由 verify-completeness 机器执法（### 配方 段缺要素即列 file:line）。
+      _write_if_absent "$SKILL_DIR/references/$f" <<'RCEOF'
+# recipes.md — 任务配方（组件库对应的拼装式编排路线）
+
+> 填充指引：§A 业务功能清单 + §B 任务配方。提取方法见生成器仓 references/exploration-guide.md §C+.6/§C+.7（既有实现 / git 同类任务历史 / 开发者文档三源）。
+> 表格行内组件路径用反引号包裹（--path-check 校验存在性，防幻觉复用件）；每配方五要素缺一不可（--verify-completeness 执法）。
+> 语义/动能两区纪律：本文件写"怎么拼装"的路线；硬约束的执行体仍只落 rules.d 与门禁，此处至多引用。
+
+## §A 业务功能清单（既有业务功能实现编目——每次成功拼装的实物记录）
+
+| 功能 | 入口路径 | 复用组件 | 接口 | 数据 | 测试 |
+|------|----------|----------|------|------|------|
+| （P1 待补）示例功能 | `src/pages/example/List.vue` | `src/components/Table.vue` | GET /api/example | example 表 | `tests/example.spec.ts` |
+
+## §B 任务配方（高频任务形态的拼装序列，每配方五要素）
+
+### 配方：新增页面（示例形态——按项目实际高频形态改写，低频形态不建配方）
+
+- **触发场景**：什么任务用本配方（如"新增列表页 + 查询条件"；可对齐任务类型路由 feature）。
+- **前置查询**：查 reference-manual §4 组件库清单选零件 → §6 接口清单查既有端点 → 本文件 §A 找同类功能先例。
+- **复用件清单**：
+
+| 复用件路径 | 用途 |
+|------------|------|
+| （P1 待补）`src/components/Table.vue` | 列表骨架（稳定） |
+
+- **胶水步骤**：最小新增（新页面文件 + 路由注册 + API 封装）；不改既有稳定单元。
+- **门禁与验证序列**：任务类型门禁集（assets/task-type-gates.conf）+ TEST_CMD / check_test；完成 `bash scripts/trace-log.sh --node "编码实现"` 留痕。
+
+（按项目实际高频形态追加配方——如"新增接口/新增消费者/新增字段迁移"；每配方五要素齐全，P1 待补标记须在 --mark-active 前替换为真实内容）
+RCEOF
     else
       _write_if_absent "$SKILL_DIR/references/$f" <<EOF
 # （待填充）$f
@@ -1806,7 +1889,7 @@ if [[ "$PROFILE" == "lite" ]]; then
 else
   _nav_design="改造分类+拼装原则+安全规范→references/dev-guide.md；左移 spec §19-21→assets/spec-template.md；决策纪律（Mechanical/Taste/UserChallenge）→decisions.jsonl"
   _nav_arch="项目认知=下方摘要表；六段式结构+框架规律→references/framework-knowledge.md（按 ACTIVE_FRAMEWORKS 生成）"
-  _nav_flow="执勤九节点（①需求→…→⑨发布）→references/workflow.md；守卫链=spec-first hook（无 spec 写码即拦）→状态机阶段守卫→门禁序列→拦截落 gate-deny.jsonl"
+  _nav_flow="执勤九节点（①需求→…→⑨发布）→references/workflow.md；任务配方→references/recipes.md（②探查先查）；守卫链=spec-first hook（无 spec 写码即拦）→状态机阶段守卫→门禁序列→拦截落 gate-deny.jsonl"
 fi
 cat > "$SKILL_DIR/SKILL.md" <<EOF
 ---
@@ -1843,7 +1926,7 @@ EOF
 if [[ "$PROFILE" != "lite" ]]; then
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] workflow: 九节点+每节点 4 要素（入口/参与方/门禁/产出物与调用追踪）+4-Phase SOP
-- [ ] reference: codebase/dev-guide/release/reference-manual + 方法论+认知 reference
+- [ ] reference: codebase/dev-guide/release/reference-manual/recipes（任务配方） + 方法论+认知 reference
 EOF
 else
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
@@ -1872,15 +1955,15 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 
 本技能的组件库清单/编排约束是生成时刻的快照。项目代码演进后按此链更新：
 
-1. **感知**（会话开始时手动跑，秒级——lite 档未装 SessionStart hook，AI 须在每个开发会话开始时主动跑一次）：`bash scripts/project-fingerprint.sh <项目根> --diff`；提示无基线时先 `--write` 落基线。若升级到 standard/compliance 档会自动装 SessionStart hook 实现自动感知。
-2. **判断**：输出「⚠ 项目源码已变化」→ 走更新链；「无变化」→ 继续正常开发。
-3. **更新链**（检测到变化后）：
-   - 工具链刷新：用生成器（路径见本目录 `.swarm-yuan-version` 的 `source_repo`）跑 `generate-skill.sh --refresh <本技能目录>` 看 dry-run 报告 → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留不动）
-   - 内容刷新（局部重探查）：`--diff` 报告的「变化目录（scope）」就是重探查范围——**只针对变化 scope** 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查（新增/消失/改名组件），更新 `references/reference-manual.md` 对应清单条目；未变 scope 的条目原样保留（SHA 未变即不重写）
+1. **感知**（会话开始时，秒级）：`bash scripts/project-fingerprint.sh <项目根> --diff`；无基线先 `--write`。lite 档无 SessionStart hook，AI 须每会话主动跑；升档到 standard/compliance 自动感知。
+2. **判断**：「⚠ 项目源码已变化」→ 走更新链；「无变化」→ 正常开发。
+3. **更新链**（检出变化后）：
+   - 工具链刷新：生成器（路径见 `.swarm-yuan-version` 的 source_repo）`--refresh` 看 dry-run → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留）
+   - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
    - 核验：生成器侧 `inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉）
-4. **落新基线**：更新完成后 `bash scripts/project-fingerprint.sh <项目根> --write`。
+4. **落新基线**：`bash scripts/project-fingerprint.sh <项目根> --write`。
 
-红线：① 指纹只感知结构变化（文件数/扩展名/骨架 cksum/目录 cksum）；语义变化（约束失效/接口语义变更）靠 AI 在编码流程中发现即更新清单，不等 refresh。② **清单更新先完整生成再原子替换，探查中途失败绝不覆盖上一份好清单**（last-good 保留：探查输出条目数骤降 >50% 视为失败，保留旧清单并告警）。
+红线：① 指纹只感知结构变化；语义变化（约束失效/接口语义变更）靠 AI 编码中发现即更新清单，不等 refresh。② 清单先完整生成再原子替换，条目骤降 >50% 视为失败保留旧清单（last-good）。
 EOF
 else
 cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
@@ -1889,15 +1972,15 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 
 本技能的组件库清单/编排约束是生成时刻的快照。项目代码演进后按此链更新：
 
-1. **感知**（会话开始时可跑，秒级）：`bash scripts/project-fingerprint.sh <项目根> --diff`；提示无基线时先 `--write` 落基线。Claude Code 的 SessionStart hook 已自动感知；其他运行时由 AI 在会话开始时主动跑本命令。
-2. **判断**：输出「⚠ 项目源码已变化」→ 走更新链；「无变化」→ 继续正常开发。
-3. **更新链**（检测到变化后）：
-   - 工具链刷新：用生成器（路径见本目录 `.swarm-yuan-version` 的 `source_repo`）跑 `generate-skill.sh --refresh <本技能目录>` 看 dry-run 报告 → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留不动）
-   - 内容刷新（局部重探查）：`--diff` 报告的「变化目录（scope）」就是重探查范围——**只针对变化 scope** 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查（新增/消失/改名组件），更新 `references/reference-manual.md` 对应清单条目；未变 scope 的条目原样保留（SHA 未变即不重写）
+1. **感知**（会话开始时，秒级）：`bash scripts/project-fingerprint.sh <项目根> --diff`；无基线先 `--write`。Claude Code 的 SessionStart hook 已自动感知；其他运行时 AI 主动跑。
+2. **判断**：「⚠ 项目源码已变化」→ 走更新链；「无变化」→ 正常开发。
+3. **更新链**（检出变化后）：
+   - 工具链刷新：生成器（路径见 `.swarm-yuan-version` 的 source_repo）`--refresh` 看 dry-run → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留）
+   - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
    - 核验：生成器侧 `inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉）
-4. **落新基线**：更新完成后 `bash scripts/project-fingerprint.sh <项目根> --write`。
+4. **落新基线**：`bash scripts/project-fingerprint.sh <项目根> --write`。
 
-红线：① 指纹只感知结构变化（文件数/扩展名/骨架 cksum/目录 cksum）；语义变化（约束失效/接口语义变更）靠 AI 在编码流程中发现即更新清单，不等 refresh。② **清单更新先完整生成再原子替换，探查中途失败绝不覆盖上一份好清单**（last-good 保留：探查输出条目数骤降 >50% 视为失败，保留旧清单并告警）。
+红线：① 指纹只感知结构变化；语义变化（约束失效/接口语义变更）靠 AI 编码中发现即更新清单，不等 refresh。② 清单先完整生成再原子替换，条目骤降 >50% 视为失败保留旧清单（last-good）。
 EOF
 fi
 # SKILL.md「按需读取」索引表自动生成（依据实际拷入的 UNIVERSAL_FILES 分级清单）
