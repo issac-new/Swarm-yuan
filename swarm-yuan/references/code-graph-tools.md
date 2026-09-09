@@ -312,3 +312,4 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | **`pascal` 可选 extra** | v0.9.7 | Delphi 提取（AST-quality） | Delphi 项目可引用 |
 | **大小写不敏感扩展名分发** | v0.9.7 | `App.PY`/`script.JS` 不再被跳过 | 跨平台文件名可引用 |
 | **`affected <Class>` 成员种子** | v0.9.7 | `affected` 从类的成员节点种子反向遍历 | 影响分析可引用 |
+- 版本注记：v0.9.56（2026-09-09 R20 核）——Rust trait 方法提取 + Node subpath imports 解析 + 无向 MCP 查询 + TS normalizer 去二次方扫描——覆盖面/性能修复族对账通过；克隆 origin 已重指向 Graphify-Labs。档案 `docs/research/R20-runtime-refresh.md`。

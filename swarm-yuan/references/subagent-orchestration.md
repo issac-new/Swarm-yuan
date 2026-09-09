@@ -156,9 +156,9 @@ implementer 回报**仅**短状态 + 提交 + 一行测试摘要 + concerns + re
 2. 在 plan-template.md 的 header 标注执行方式（subagent-driven 推荐 / inline 备选）
 3. 在 scripts/state-machine.sh 中实现阶段状态持久化（survive compaction）
 
-## superpowers v6 + comet v0.3 全量能力
+## superpowers v6 + comet v0.4 全量能力
 
-> 来自 superpowers v6.1.1 + comet v0.3.9 源码调研。
+> 来自 superpowers v6.1.1 + comet v0.3.9 源码调研；**comet 段已按 v0.4.0 stable 重写**（R20，2026-09-09——0.4 架构：`.mjs` launcher + 稳定 CLI，Bash 脚本族退役；`.comet/run-state.json`（机器态）与 `.comet.yaml`（用户可编辑）分离；阶段迁移写 `.comet/state-events.jsonl` 审计流）。
 
 ### superpowers 14 个 Skills
 
@@ -179,15 +179,15 @@ implementer 回报**仅**短状态 + 提交 + 一行测试摘要 + concerns + re
 | `writing-skills` | 编写新 skill 的元技能 | swarm-yuan 自身可引用 |
 | `using-superpowers` | 启动引导（SessionStart hook 注入） | 生成 skill 可引用 |
 
-### comet 5 阶段状态机
+### comet 5 阶段状态机（v0.4.0）
 
-| 阶段 | 命令 | 产出 | swarm-yuan 落点 |
+| 阶段 | 稳定 CLI（0.4） | 产出 | swarm-yuan 落点 |
 |------|------|------|----------------|
-| Open | `/comet-open` | proposal.md, design.md, tasks.md | workflow 节点②③可引用 |
-| Design | `/comet-design` | Design Doc, delta spec | 4-Phase SOP Phase 2 可引用 |
-| Build | `/comet-build` | 实现代码, commit | workflow 节点⑤可引用 |
-| Verify | `/comet-verify` | verification_report | check 段可引用 |
-| Archive | `/comet-archive` | delta spec 同步 + 归档 | workflow 节点⑦可引用 |
+| Open | `comet state`/`guard` 子命令族 | proposal.md, design.md, tasks.md | workflow 节点②③可引用 |
+| Design | 同上（阶段机统一入口） | Design Doc, delta spec | 4-Phase SOP Phase 2 可引用 |
+| Build | `comet guard`（写保护） | 实现代码, commit | workflow 节点⑤可引用 |
+| Verify | `comet guard --verify 语义` | verification_report | check 段可引用 |
+| Archive | `comet archive` | delta spec 同步 + 归档 | workflow 节点⑦可引用 |
 
 ## ECC v2.0 编排方法论（orch-* + worktree 生命周期 + 上下文经济学）
 
@@ -298,22 +298,19 @@ ECC 的 control pane 是**本地只读 observability server**：
 - 状态文件除 YAML 外，可同时写 JSON（供 control pane 消费）
 - precheck 门禁结果写入 `.swarm-yuan/precheck-report.json`，control pane 读取展示
 
-### comet 关键能力（swarm-yuan 可能没用到）
+### comet 关键能力（swarm-yuan 可能没用到；v0.4.0 重写）
 
 | 能力 | 描述 | 价值 |
 |------|------|------|
-| **PreToolUse 写保护 hook** | `comet-hook-guard.sh` 在 open/design/archive 阶段硬阻止文件写入 | 防阶段越界 |
-| **Phase-Entry 自洽检查** | 交叉检查 phase 字段 vs 产出物存在性（`phase: build` + 空 `design_doc` = 跳过设计 → 阻断） | 防非法跳阶 |
-| **Context compression handoff** | Design Doc + SHA256 hash 引用替代全量 Spec 摘录（25-30% token 节省，100% 测试通过，95% spec 覆盖） | token 优化 |
+| **阶段写保护** | `comet guard` 在 open/design/archive 阶段硬阻止文件写入（0.3 的 comet-hook-guard.sh → 0.4 稳定 CLI 化，机制不变） | 防阶段越界 |
+| **机器态/用户态分离** | `.comet/run-state.json`（机器检查点）与 `.comet.yaml`（用户可编辑）拆分 | 状态治理可引用 |
+| **阶段迁移审计流** | 每次迁移写 `.comet/state-events.jsonl` | 与 trace-log 同构 |
+| **isolation 漂移检测 + Phase-Entry 自洽** | build/verify/archive 入口拦截分支漂移（`state rebind`）；phase 字段 vs 产出物存在性交叉检查 | 防环境漂移/非法跳阶 |
+| **Context compression handoff** | Design Doc + SHA256 引用替代全量 Spec 摘录（25-30% token 节省） | token 优化 |
 | **Red Flags 反合理化清单** | 5 条 agent 自检（不能替用户决定/无大小例外/历史偏好≠当前确认/不反对≠同意/未验证≠通过） | 执行准则可引用 |
-| **Preset 升级标准** | hotfix/tweak 自动检测是否需升级为 full workflow（3+ 文件/架构变更/新公共 API） | 因地制宜可引用 |
-| **`build_pause: plan-ready`** | 计划生成后可恢复暂停（非 build_mode） | 4-Phase SOP 可引用 |
-| **Debug Gate 协议** | 失败时强制加载 `systematic-debugging` skill + 根因定位前不修源码 | check 段可引用 |
-| **Decision Point Protocol** | 9 个阻断节点 + "无大小例外"规则 | 疑虑确认可引用 |
-| **Dirty-worktree 协议** | 恢复时处理未提交变更 | 状态恢复可引用 |
-| **29 平台安装器** | 每平台目录映射 | 跨工具部署可引用 |
-| **`comet-state check --recover`** | 压缩后结构化恢复 + 重跑自洽检查 | 状态恢复可引用 |
-| **`comet-state scale`** | 确定 verify 阶段的验证级别（small/medium/large） | `--review` 分档可引用 |
+| **Preset 升级标准** | hotfix/tweak 自动检测是否需升级 full workflow（3+ 文件/架构变更/新公共 API） | 因地制宜可引用 |
+| **Debug Gate 协议** | 失败强制加载 systematic-debugging + 根因定位前不修源码 | check 段可引用 |
+| **verify 失败回 Build + 归档确认入机器态** | 失败自动回 3 条可执行发现 + 连续失败计数持久化 + CRITICAL 不可豁免；未确认归档被拒（防绕过确认） | 修复环/决策点可引用 |
 
 ## Ruflo v3.21 全量能力（agent meta-harness——swarm-yuan 须知道但可选引用）
 
@@ -520,3 +517,4 @@ swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input` 白名单字符集�
 - **ECC "skills over MCP"**（2.2.0）：默认 MCP 6→1 个，退役职责由 skill 包 CLI/REST 或宿主原生承接。登记候选单行。
 - **comet 0.4.0-rc.1 观望维持（裁决：不升基线）**：正式版未出；rc 阶段仍落地 117k 行新子系统（memory/knowledge/learning-loop #353）；升级破坏性大（:116-118 的 7 个 `.sh` 清单全失效变 `.mjs`+Hook Router），等 stable 一次做对。0.4 新增登记候选：Supervisor Change v2 多 session 子图分派 / Portable State / Agent Learning Loop。
 - **comet rc.2-rc.4（2026-09-05 R17 重核）**：11 commits 全稳定性修复，正式版仍未出——观望维持。
+- **R20（2026-09-09）**：comet **0.4.0 stable 兑现**（R16 预登记命中，本文件 comet 段已重写，drift 归零）；gstack v1.83.0.0（opt-in + 回执式召回桥）；ruflo v3.38.23（**真实冷启动测量替换虚构基准**）；ECC v2.2.1（维护版无新机制）。档案 `docs/research/R20-runtime-refresh.md`。
