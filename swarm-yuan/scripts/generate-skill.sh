@@ -1666,9 +1666,11 @@ for f in $_placeholder_refs; do
 
 **① 流程入口（顺序/并行）：** 前序=节点⑤
 
-**④ 质量门禁：** gstack/OCR 5 审查维度 + AUTO-FIX/ASK；★运维左移（验证 metrics/日志/trace 已埋点）；独立跑单元/集成测试 + `check_test` 门禁（0 用例检测 / 断言密度 / Mutation Check 测试有效性）
+**④ 质量门禁：** gstack/OCR 5 审查维度 + AUTO-FIX/ASK；★运维左移（验证 metrics/日志/trace 已埋点）；独立跑单元/集成测试 + `check_test` 门禁（0 用例检测 / 断言密度 / Mutation Check 测试有效性）。
 
-**⑥ 产出物与调用追踪：** 测试报告 + 测试有效性证据（mutation score）
+**★质量门禁序列（参考 quality:full 十步模式，fail-fast 串行——任一步 fail 即停不跑后续；项目按形态裁剪，门禁映射到 precheck 既有 flag，不新增 check_*）**：`--build` 构建过 → `check_test` 测试过（0 用例检出/断言密度）→ `--contract` 契约 → `--reuse` 复用合规（新增单元不与稳定单元重名）→ `--consistency` 业务/数据勾稽 → `--layer`/`--link-depth` 架构边界 → `--docs-pack` 文档齐备 → `--security` 安全 → `--deps` 版本锁定。串行顺序有讲究：构建/测试先行（跑不了代码谈什么都白搭），契约/一致性次之（逻辑对但破坏契约也不行），架构/文档/安全/版本殿后。执行入口：`bash scripts/precheck.sh --all-full`（标准 28 门禁已含上述全部）或按需单跑。
+
+**⑥ 产出物与调用追踪：** 测试报告 + 测试有效性证据（mutation score）+ 门禁序列各步 pass/fail 留痕（gate-runs.jsonl）
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "测试验证" --actor "tester" --tool "pytest/mutation"`
 
@@ -1678,7 +1680,7 @@ for f in $_placeholder_refs; do
 
 **① 流程入口（顺序/并行）：** 前序=节点⑥
 
-**④ 质量门禁：** 独立 code review（第三方 reviewer 视角，非 Step 7 自检）+ `check_review` 门禁（核验 `references/review-record.md` 留痕非空：5 维审查点 + findings 表）
+**④ 质量门禁：** 独立 code review（第三方 reviewer 视角，非 Step 7 自检）+ `check_review` 门禁（核验 `references/review-record.md` 留痕非空：5 维审查点 + findings 表）。审查范围含质量门禁序列运行证据——确认节点⑥的序列真实跑过而非声称跑过（gate-runs.jsonl 有当次 run 记录，"配置≠使用≠有效"）。
 
 **⑥ 产出物与调用追踪：** `references/review-record.md` 审查证据产物（从 review-record-template.md 填充）
 
@@ -1904,7 +1906,14 @@ _write_if_absent "$SKILL_DIR/commands/precheck.md" <<'CEOF'
 description: 运行门禁检查
 argument-hint: --all | --all-full | <gate>
 ---
+
 bash scripts/precheck.sh $ARGUMENTS
+
+**常用序列（quality:full 模式——fail-fast 串行，任一步 fail 即停；按项目形态裁剪）**：
+- 日常开发收口：`--all`（核心 10：branch/scope/build/test/sensitive/consistency/review/reuse/deps/security）
+- 结构变更：`--all-full`（标准 28：核心 10 + 架构 18）
+- 强监管交付：追加 `--compliance-suite`（合规 19）
+- 单点深挖：`--test` / `--reuse` / `--deps` / `--layer` / `--shift-left` 等单跑
 CEOF
 _write_if_absent "$SKILL_DIR/commands/explore.md" <<'CEOF'
 ---
