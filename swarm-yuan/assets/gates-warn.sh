@@ -14,6 +14,12 @@ check_scope() {
   # 在 PROJECT_DIR 下检查 git diff，看是否有改动落在只读目录
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     local changed; changed=$(_git_changed_files)
+    # R23 回归 D7：两类工具链自有路径不属项目只读语义（列只读即每轮自干扰永久红，回归实证）——
+    # ① 运行时账本 .swarm-yuan/**：门禁与 hook 自写（trace/审计/flag/指纹/记忆写回），
+    #    防篡改靠链式锚定与审计兜底，不靠 scope 门；
+    # ② 技能资产 .claude/skills/**（含 .codex/skills）：create/upgrade/--persist 的合法写入面，
+    #    防手改由 integrity-guard（deny/advisory）与升级机制守卫——分层执法，scope 不重复兜。
+    changed=$(printf '%s\n' "$changed" | grep -vE '^(\.claude/skills/|\.codex/skills/|\.swarm-yuan/)' || true)
     if [[ -n "$changed" ]]; then
       for rd in ${READONLY_DIRS[@]+"${READONLY_DIRS[@]}"}; do
         [[ -z "$rd" ]] && continue
@@ -202,7 +208,37 @@ check_stable_diff() {
   local found=0
 
   if [[ ${#STABLE_GLOBS[@]} -eq 0 ]]; then
-    warn "未配置 STABLE_GLOBS，跳过稳定单元篡改检查"
+    # R23 回归 D11：模板把 STABLE_GLOBS 标 deprecated、流程无填写指引——README 3.5 管束链
+    # 承诺的"稳定单元被改而未声明（失败）"出厂即休眠（回归实证）。reference-manual §4 是
+    # 组件库清单单一事实源，说明列稳定性标注词（与 --stability-audit 同一词库）可机械反推
+    # 稳定单元路径作兜底源；显式配置 STABLE_GLOBS 仍优先。
+    local _rm_file
+    _rm_file=$(_first_existing_file "${PROJECT_DIR:-.}/.claude/skills/*/references/reference-manual.md" "${PROJECT_DIR:-.}/.codex/skills/*/references/reference-manual.md")
+    if [[ -n "$_rm_file" ]]; then
+      local _p
+      STABLE_GLOBS=()
+      while IFS= read -r _p; do
+        [[ -z "$_p" ]] && continue
+        STABLE_GLOBS+=("$_p")
+      done < <(awk '
+        /^## .*§4/ {insec=1; next}
+        insec && /^## / {insec=0}
+        insec && /^\|/ {
+          line=$0
+          if (match(line, /`[^`]+`/)) {
+            p=substr(line, RSTART+1, RLENGTH-2)
+            rest=substr(line, RSTART+RLENGTH)
+            if (index(rest,"禁止改")>0 || index(rest,"稳定")>0) print p
+          }
+        }
+      ' "$_rm_file")
+      if [[ ${#STABLE_GLOBS[@]} -gt 0 ]]; then
+        echo "  ⓘ STABLE_GLOBS 未配置——从 reference-manual §4 稳定性标注反推 ${#STABLE_GLOBS[@]} 个稳定单元（显式配置可覆盖）"
+      fi
+    fi
+  fi
+  if [[ ${#STABLE_GLOBS[@]} -eq 0 ]]; then
+    warn "未配置 STABLE_GLOBS 且 reference-manual §4 无稳定性标注，跳过稳定单元篡改检查"
     return
   fi
   if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -238,17 +274,9 @@ check_stable_diff() {
   fi
 
   # ---- 2. 对每个被改的稳定文件，检查是否有 spec 声明 MODIFIED ----
-  # 找 spec 文档（含 §5.5 复用约束的 spec）
+  # 找 spec 文档（含 §5.5 复用约束的 spec）——R23 D6：统一走 _find_spec_file
   local spec_file
-  spec_file=$(_first_existing_file "specs/spec-template.md" "spec-template.md" "docs/spec-template.md")
-  if [[ -z "$spec_file" ]]; then
-    for dir in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
-      if [[ -d "$dir" ]]; then
-        local hit; hit=$(grep -rliE '复用约束|拼装合规声明|MODIFIED' "$dir" --include='*.md' 2>/dev/null | head -1 || true)
-        if [[ -n "$hit" ]]; then spec_file="$hit"; break; fi
-      fi
-    done
-  fi
+  spec_file=$(_find_spec_file '复用约束|拼装合规声明|MODIFIED')
 
   # 从 spec 提取声明为 MODIFIED 的文件路径
   local declared_modified=""
@@ -655,20 +683,9 @@ check_impact() {
   local found=0
 
   # ---- 1. 找 spec 文件（影响范围段应在此）----
+  # R23 回归 D6：发现逻辑统一走 _find_spec_file（SPEC_GLOB 优先；显式 IMPACT_SPEC_FILE 仍最高）。
   local spec_file="${IMPACT_SPEC_FILE:-$SPEC_FILE}"
-  if [[ -z "$spec_file" ]]; then
-    spec_file=$(_first_existing_file "specs/spec-template.md" "spec-template.md" "docs/spec-template.md")
-  fi
-  # WP-CogAudit：排除 *template* 模板文件--模板含"影响范围"标题会自证 pass（乞题谬误）
-  [[ -n "$spec_file" && "$(basename "$spec_file")" == *template* ]] && spec_file=""
-  if [[ -z "$spec_file" ]]; then
-    for dir in "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}" "${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}"; do
-      if [[ -d "$dir" ]]; then
-        local hit; hit=$(grep -rliE '影响范围|impact|消费方|stakeholder' "$dir" --include='*.md' 2>/dev/null | grep -vE 'template' | head -1 || true)
-        if [[ -n "$hit" ]]; then spec_file="$hit"; break; fi
-      fi
-    done
-  fi
+  [[ -z "$spec_file" ]] && spec_file=$(_find_spec_file '影响范围|impact|消费方|stakeholder')
 
   # ---- 2. spec 必须含"影响范围"段 ----
   if [[ -z "$spec_file" ]]; then

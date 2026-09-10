@@ -243,9 +243,12 @@ patch_skel='# precheck.patch.conf —— 用户覆盖层（F3 分层 patch）
 _emit_section "precheck.patch.conf" "$patch_skel"
 
 # TODO:model 清单汇总
-todo="# ===== # TODO:model 清单（须模型补实值）=====
-# LAYER_DEFS / SERVICE_DIRS / WRITABLE_DIRS / READONLY_DIRS / SCAN_DIRS / CONSISTENCY_DIRS
-# （STORE_DIR / COMPONENT_DIR 为单目录标量，保留模板 "" 形态不列入数组 TODO 清单——回归#18）"
+# R23 回归 D3：原文案写在双引号串里，字面 "" 被 shell 吞成两个空格；D4：SERVICE_DIRS 在
+# 渲染后 arch conf 已是 deprecated 注释行，列入清单会误导模型填废弃变量——移除。
+todo='# ===== # TODO:model 清单（须模型补实值）=====
+# LAYER_DEFS / WRITABLE_DIRS / READONLY_DIRS / SCAN_DIRS / CONSISTENCY_DIRS
+# （STORE_DIR / COMPONENT_DIR 为单目录标量，保留模板 "" 形态不列入数组 TODO 清单——回归#18）
+# （标注 deprecated 的变量不列本清单——恢复时手工解开 arch.conf 对应注释行）'
 if [[ -n "$OUT" ]]; then
   printf '%s\n' "$todo" > "$OUT/TODO-model.txt"
 else

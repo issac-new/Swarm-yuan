@@ -51,4 +51,13 @@ o1="$(bash "$SH" "$TMP/proj" --profile standard 2>/dev/null)"
 o2="$(bash "$SH" "$TMP/proj" --profile standard 2>/dev/null)"
 [[ "$o1" == "$o2" ]] && ok "确定性 byte-identical" || bad "两次不一致"
 
+# --- 态 6（R23 回归 D3/D4）：TODO-model 清单保真 + 不列 deprecated 变量 ---
+bash "$SH" "$TMP/proj" --profile standard --out "$TMP/out" >/dev/null 2>&1
+grep -q '保留模板 "" 形态' "$TMP/out/TODO-model.txt" \
+  && ok 'D3 TODO-model 文案字面 "" 保真（双引号串不被 shell 吞）' \
+  || bad 'D3 TODO-model 文案失真（"" 被吞）'
+grep -q 'SERVICE_DIRS' "$TMP/out/TODO-model.txt" \
+  && bad 'D4 TODO-model 不应列 deprecated 变量 SERVICE_DIRS' \
+  || ok 'D4 TODO-model 不列 deprecated 变量'
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-conf-render"; exit 0; } || { echo "FAIL test-conf-render" >&2; exit 1; }

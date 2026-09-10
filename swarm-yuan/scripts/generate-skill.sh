@@ -1482,10 +1482,16 @@ fi
 # 创建模式（draft 状态门 + 断点续传）
 # ============================================================
 # 已存在目录：draft 骨架 → 续传（幂等补齐缺失文件，不覆盖已有内容）；active/无 status → 报错走 --upgrade
+# R23 回归 D2：生成流程文档顺序是 Step 4 relations-extract（先建 skill 目录写
+# references/relations.jsonl）→ Step 6 create——机械草稿目录无 SKILL.md，原逻辑硬报错，
+# 首次生成按文档执行必撞。无 SKILL.md = 非既有技能（无从覆盖），按断点续传幂等补齐。
 RESUME=0
 if [[ -d "$SKILL_DIR" ]]; then
   if grep -q '^status: draft' "$SKILL_DIR/SKILL.md" 2>/dev/null; then
     echo "→ 检测到 draft 状态骨架，断点续传（幂等补齐缺失文件，不覆盖已有内容）"
+    RESUME=1
+  elif [[ ! -f "$SKILL_DIR/SKILL.md" ]]; then
+    echo "→ 目录已存在但无 SKILL.md（生成流程 Step 4 机械草稿先行，如 relations.jsonl）——按断点续传补齐，不覆盖已有内容"
     RESUME=1
   else
     echo "ERROR: 已存在: ${SKILL_DIR}（用 --upgrade 升级；draft 骨架自动续传）"; exit 1

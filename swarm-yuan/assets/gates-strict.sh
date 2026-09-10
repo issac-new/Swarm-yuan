@@ -251,24 +251,9 @@ check_reuse() {
   # 找到最近一份 spec（项目内 specs/ 或当前目录）。
   # 注意：排除 *-template.md 模板文件——模板的 §5.5 checkbox 本就该是 [ ] 待用户复制后勾选，
   # 把模板当具体 spec 检会误判 fail（范式自举检查发现的缺陷）。
+  # R23 回归 D6：发现逻辑统一走 _find_spec_file（SPEC_GLOB 优先，旧硬编码路径兜底）。
   local spec_file
-  spec_file=$(_first_existing_file "specs/spec.md" "specs/spec-template.md" "spec-template.md" "docs/spec-template.md")
-  # 兜底：在可改目录下找任意 *spec*.md 含 §5.5 标记，但排除 *-template.md / *template*.md。
-  # 要求文件同时含"拼装合规声明"和 checkbox 结构（- [ ] 或 - [x]），避免误命中 USAGE/README 等引用文档。
-  if [[ -z "$spec_file" ]] || [[ "$(basename "$spec_file")" == *template* ]]; then
-    spec_file=""
-    for dir in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
-      if [[ -d "$dir" ]]; then
-        local hit
-        hit=$(grep -rliE '拼装合规声明' "$dir" --include='*.md' 2>/dev/null \
-              | grep -vE 'template' \
-              | while read -r f; do
-                  grep -qE '^\s*-\s*\[[ x]\]' "$f" 2>/dev/null && echo "$f"
-                done | head -1 || true)
-        if [[ -n "$hit" ]]; then spec_file="$hit"; break; fi
-      fi
-    done
-  fi
+  spec_file=$(_find_spec_file '拼装合规声明')
 
   if [[ -z "$spec_file" ]]; then
     # 无 spec 文档（项目本身无具体变更 spec，如范式仓库自身/纯工具仓库）：跳过而非 fail。
@@ -1651,6 +1636,7 @@ check_review() {
   #     生成物目录须存在 references/review-record.md 且非空（含 5 维审查点 + findings 表，零 TBD），否则 fail
   local found=0
   local _review_executed=0  # 追踪是否真跑了审查（ocr 未装时 fallback 不假装完成）
+  local _ocr_ok=0           # R23 回归 D9：ocr 真正产出审查结论（区别于"装了"）
 
   if has_ocr; then
     pass "ocr 已安装"
@@ -1663,6 +1649,7 @@ check_review() {
       local diff_output; diff_output=$(ocr review --from "$base" --to "$head_ref" --audience agent --format text 2>&1 || true)
       if [[ -n "$diff_output" && "$diff_output" != *"Error"* ]]; then
         echo "$diff_output" | tail -30
+        _ocr_ok=1
         # 检查是否有 High 级问题
         if echo "$diff_output" | grep -qiE 'high|critical|严重'; then
           fail "ocr review 检测到 High/Critical 级问题（须修复）"
@@ -1689,17 +1676,36 @@ check_review() {
         fi
       else
         # --from/--to 失败时降级为 ocr scan
+        # R23 回归 D9：降级链须核真——scan 也失败（如 LLM endpoint 未配）时不得让外层
+        # 打"ocr 已执行，无 High/Critical"假 pass（回归实证：endpoint 错误后仍绿）。
+        # 判定用输出形态（非空且无 Error 头行），不用退出码——本文件宿主 set -euo pipefail，
+        # 管道失败须 || true 护栏，退出码取不到。
         warn "ocr review --from/--to 失败（可能无 diff 或参数不支持），降级 ocr scan"
         local scan_dirs=""; scan_dirs=$(printf '%s ' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}")
         if [[ -n "$scan_dirs" ]]; then
           trace_tool "ocr" "scan --path $scan_dirs"
-          ocr scan --path "$scan_dirs" --audience agent --format text 2>&1 | tail -30 || true
+          local _scan_out
+          _scan_out=$(ocr scan --path "$scan_dirs" --audience agent --format text 2>&1 | tail -30 || true)
+          if [[ -n "$_scan_out" ]] && ! printf '%s' "$_scan_out" | grep -q '^Error'; then
+            printf '%s\n' "$_scan_out"
+            _ocr_ok=1
+          else
+            [[ -n "$_scan_out" ]] && printf '%s\n' "$_scan_out"
+          fi
         fi
       fi
     else
       # 非 git 仓库：用 ocr scan
       trace_tool "ocr" "scan"
-      ocr scan --audience agent --format text 2>&1 | tail -30 || warn "ocr scan 返回非零"
+      local _scan_out
+      _scan_out=$(ocr scan --audience agent --format text 2>&1 | tail -30 || true)
+      if [[ -n "$_scan_out" ]] && ! printf '%s' "$_scan_out" | grep -q '^Error'; then
+        printf '%s\n' "$_scan_out"
+        _ocr_ok=1
+      else
+        [[ -n "$_scan_out" ]] && printf '%s\n' "$_scan_out"
+        warn "ocr scan 失败或无输出——审查未真正执行"
+      fi
     fi
   else
     warn "ocr 未安装，安装 ocr（npm i -g @alibaba-group/open-code-review）或由 AI 按 5 维度审查：正确性/安全/性能/可维护/测试覆盖"
@@ -1749,8 +1755,12 @@ check_review() {
     warn "审查未留痕（${_rr_dir}/$(date -u +%Y-%m-%d).md 不存在）——AI 审查后须落一行：日期/范围/结论三要素"
   fi
   # ocr 未装时走 AI fallback（found=0 但未真审查），不假装完成，诚实 warn。
-  if [[ $_review_executed -eq 1 ]]; then
+  # R23 回归 D9：_review_executed 只说明"装了 ocr"，不说明"审查真跑成"——
+  # review/scan 降级链全失败（如 LLM endpoint 未配）时不得打"无 High/Critical"假 pass。
+  if [[ $_ocr_ok -eq 1 ]]; then
     [[ $found -eq 0 ]] && pass "代码审查检查完成（ocr 已执行，无 High/Critical 级问题）"
+  elif [[ $_review_executed -eq 1 ]]; then
+    warn "ocr 已安装但审查未真正执行（review/scan 降级链失败，如 LLM endpoint 未配置）——本门禁不构成审查证据；AI 须按 5 维度自行审查并在 review-record 留痕"
   else
     warn "代码审查未执行（ocr 未装；AI 须自行按 5 维度审查：正确性/安全/性能/可维护/测试覆盖，本门禁未验证）"
   fi
@@ -1771,6 +1781,13 @@ check_review() {
   local _rr_path="$_rr"
   if [[ ! -f "$_rr_path" && -n "${SKILL_DIR:-}" && -f "${SKILL_DIR}/${_rr}" ]]; then
     _rr_path="${SKILL_DIR}/${_rr}"
+  fi
+  # R23 回归 D13：项目根直跑 precheck 时 SKILL_DIR 不存在——补技能标准落点 glob 探测
+  # （create 默认生成到 <项目根>/.claude/skills/<name>/，review-record ⑦ 交付物在其 references/ 下）
+  if [[ ! -f "$_rr_path" ]]; then
+    local _rr_hit
+    _rr_hit=$(_first_existing_file ".claude/skills/*/references/review-record.md" ".codex/skills/*/references/review-record.md")
+    [[ -n "$_rr_hit" ]] && _rr_path="$_rr_hit"
   fi
   if [[ ! -f "$_rr_path" ]]; then
     fail "gate_review_record_missing: 独立审查产物不存在：${_rr}（⑦独立审查节点须 cp review-record-template.md 并填充 5 维审查点 + findings 表，作为审查证据落盘；缺则 review 门禁 fail）"

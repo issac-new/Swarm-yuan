@@ -65,9 +65,16 @@ _resolve_path() {
 
 # ===== 内部公共辅助（门禁共用的探查/解析小函数；行为与原内联写法一致）=====
 
-# 变更基线探测：优先 main 分支，不存在则退回 HEAD~1（输出基线引用名）
+# 变更基线探测：BASE_BRANCH conf 优先 → main → master → HEAD~1（输出基线引用名）
+# R23 回归 D8：原实现硬编码 main，master 等基分支仓库静默退化 HEAD~1，
+# check_scope/check_stable_diff 等消费方的 delta 全错（清树也红的假阳性，回归实证）。
 _git_base() {
-  local base="main"
+  local base="${BASE_BRANCH:-}"
+  if [[ -z "$base" ]]; then
+    for base in main master; do
+      git rev-parse --verify "$base" >/dev/null 2>&1 && break
+    done
+  fi
   git rev-parse --verify "$base" >/dev/null 2>&1 || base="HEAD~1"
   printf '%s' "$base"
 }
@@ -96,6 +103,36 @@ _first_existing_file() {
     done
   done
   return 0
+}
+
+# R23 回归 D6：spec 文件发现统一口径（单一事实源）。
+# 此前 check_reuse / check_impact / fail-gate-hook(spec-first) 三处各自硬编码搜索路径：
+# 文档与 hook 约定 spec 放 docs/specs/*.md（SPEC_GLOB），reuse/impact 却只找 specs/spec.md
+# 等旧路径——按文档放 spec 后两门禁静默失效（2026-09-10 全量回归实证）。
+# 优先级：SPEC_GLOB（conf，默认 docs/specs/*.md）→ 旧硬编码路径（兼容既有项目）→ 内容反查。
+_find_spec_file() { # $1=可选：内容反查 ERE（如 '拼装合规声明'）→ stdout 命中路径或空
+  local _g="${SPEC_GLOB:-}" _f _hit=""
+  case "$_g" in '${SPEC_GLOB:-'*) _g="${_g#\$\{SPEC_GLOB:-}"; _g="${_g%\}}" ;; esac
+  _g="${_g:-docs/specs/*.md}"
+  local _root="${PROJECT_DIR:-.}"
+  for _f in "$_root"/${_g}; do
+    [[ -f "$_f" ]] || continue
+    case "$(basename "$_f")" in *template*) continue ;; esac
+    _hit="$_f"; break
+  done
+  if [[ -z "$_hit" ]]; then
+    _hit=$(_first_existing_file "specs/spec.md" "specs/spec-template.md" "spec-template.md" "docs/spec-template.md")
+    case "$(basename "${_hit:-}")" in *template*) _hit="" ;; esac
+  fi
+  if [[ -z "$_hit" && -n "${1:-}" ]]; then
+    local _dir _hit2
+    for _dir in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
+      [[ -d "$_dir" ]] || continue
+      _hit2=$(grep -rliE "$1" "$_dir" --include='*.md' 2>/dev/null | grep -vE 'template' | head -1 || true)
+      [[ -n "$_hit2" ]] && { _hit="$_hit2"; break; }
+    done
+  fi
+  printf '%s' "$_hit"
 }
 
 # 通用源码扫描：在目录中按 ERE 模式 grep（限定源码扩展名），并滤除 test/mock 等噪声行
@@ -160,6 +197,7 @@ _default_conf() {
   PROJECT_DIR="."
   BRANCH_REGEX='^(feat|fix|refactor)/.+'
   PROTECTED_BRANCHES=("main")
+  BASE_BRANCH=""  # R23 D8：空=自动探测 main→master→HEAD~1
   WRITABLE_DIRS=()
   READONLY_DIRS=()
   TEST_CMD=""
