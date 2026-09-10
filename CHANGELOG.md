@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.11.0] - 2026-09-10
+
+> 审计收账轮（决策 38）+ R22 运行时补核。按用户级 AGENTS.md 规则全面排查：代码与验证体系实测全绿，23+4 项裂缝全部集中在文档与口径层，本轮全修并为其中两类（版本口径、认知面预算）建立机器执法。
+
+### Added
+- **版本口径三面机器锚（决策 38 决定一）**：self-check 文档一致性段新增第 6 项断言——CHANGELOG 首行版本 = 根 README badge = 技能 README badge，漂移即 warn + FAIL；安装态（无 CHANGELOG.md）显式跳过。根治 v2.8.0 起四次发版漏改根 badge 的过程根因（旧 checklist 未指明哪份 README）；CONTRIBUTING 发版步骤同步指明两处 badge。
+- **认知面预算例外登记（决策 38 决定二）**：FACT_ARTIFACT_BYTES_BUDGET 262144→266336（+4KiB）。实测超 35B 的成因考证为修复两处静默失效的必要税（standards-map.conf 补随发、framework-globs.rules 补随发），非内容膨胀；例外不构成先例，下次超标仍须逐例登记。
+
+### Fixed
+- usage-manual 结构修复：尾部节号 8/9/10 双轮与层级混用消除（术语区无号化，§1-§9 连续）；§9 流程并入 §6 全旅程速查；§10 数字一览指针化到 README 附录 A（速览表单一事实源）；6 处悬空指针清零（决策史/设计内核/§5.1/map.md/调研范围/自指行）；头部过程性标记删除。
+- 手抄数字漂移五处：184 变量族（178→184 + 三件套分解）、门禁分层静态 17/22/16 + 有效 17/17/21（55 名单表三度漂移后删除，改 `--list-gates` 实查）、架构门禁表补 method-size/shift-left/framework 三行（17→18）、合规门禁表补 cert-audit/cwe-audit 两行（17→19）、precheck.sh 三处内注释 27(10+17)→28(10+18)。
+- 版本口径三面失同步：根 README badge v2.7.0→v2.10.1（四次漏改）；SECURITY.md v2.6.1 锚定改指 CHANGELOG/Releases（去版本号免再漂移）。
+- facts.conf 还账：FACT_SCRIPT_LOC 6291→6315（self-check warn 执法再次实证）；FACT_UNIVERSAL_FILES 注释考古链补段（5170a0a 61→65 改值未改链）。
+- 生成器模板去污染：`.claude/commands/swarm-yuan.md` 删 hermes-agent 项目特定路径，泛化为「只读上游快照区按 AGENTS.md 声明」；jest-vitest.md ncwk 契约条目改通用规律先行 + 实例锚点后置（五要素与 verify 块不变）。
+- 次口径：CLAUDE.md 生成器侧行数 ~68K→~74K；capabilities 版本注记头部同步至 v2.1.267；baseline「159 版」与 capabilities「223 版」表观矛盾消除（改指首行计数口径）；根 tests/ 空壳目录清理。
+
+### Changed
+- R22 运行时基线补核：claude-code v2.1.267（maxEffortLevel 治理原语 + prompt-cache 工具动态性族 + managed fail-closed 第四实证）、codex rust-v0.154.0（实验性 worktree 支持 + inline 追问 + plugin/skill 热刷新）、dsh 0.1.5-rc.1、openspec 1.13.0（delta parser 不再静默改写）等九行；档案 `docs/research/R22-runtime-refresh.md`。
+
 ## [v2.10.1] - 2026-09-09
 
 ### Added
