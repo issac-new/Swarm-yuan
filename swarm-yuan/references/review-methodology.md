@@ -468,3 +468,4 @@ ocr 新增 LLM provider 支持：
 
 - **impeccable skill-v4.2.1（2026-09-05）**：Windows 引擎时间戳签名 + 下载失败三态区分 + 非交互 Claude 会话技能发现——候选级维持（引用基线不升），engine-v0.1.2 线起。
 - **R20（2026-09-09）**：ocr **v1.11.6**——一等评审控制（effort / max_tokens_budget / llm_reasoning_effort + live progress）：**评审成本/深度可配置化**上游实证（与 `--review` 分档同向）。impeccable skill-v4.3.1 候选级观察维持。档案 `docs/research/R20-runtime-refresh.md`。
+- **R22（2026-09-10）**：openspec **v1.13.0**——**delta parser 不再静默改写/丢弃所写内容**（fence-aware 空行整理 + `*`/`+` bullet 识别 + 重复 ADDED 段全应用）+ apply 对无 delta specs 变更警告（双出路：写 specs 或 `skip_specs: true`）——「解析器不得静默改写」诚实性族新样本；「validate 拒绝的状态 apply 却放行」的口径统一值得本仓门禁对账参照。ocr **v1.11.7**（报告原子写入 + 二次信号立即退出，稳定性维护版）。档案 `docs/research/R22-runtime-refresh.md`。
