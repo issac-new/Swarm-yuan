@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-The latest release (currently [v2.6.1](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.6.1)) receives security fixes. Older versions are not actively maintained.
+The latest release (see [CHANGELOG.md](CHANGELOG.md) or [Releases](https://github.com/issac-new/Swarm-yuan/releases)) receives security fixes. Older versions are not actively maintained.
 
 ## Reporting a Vulnerability
 

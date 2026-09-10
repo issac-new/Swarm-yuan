@@ -100,7 +100,7 @@ bash verifier/v1/run-verifier.sh all
 
 1. **Feature freeze** on main (all planned changes merged, CI green)
 2. **Update CHANGELOG.md** (add new section following Keep a Changelog format)
-3. **Update README badge** version (if applicable)
+3. **Update release badges** — TWO files, both must equal the CHANGELOG head version: repo root `README.md` and `swarm-yuan/README.md`（决策 38 机器锚：self-check 文档一致性段断言三面一致，漂移即 fail）
 4. **Create annotated tag**: `git tag -a vX.Y.Z -m "swarm-yuan vX.Y.Z — summary"`
 5. **Create GitHub Release** with structured notes (痛点→设计→使用→验证矩阵)
 6. **Mark as Latest** (only one Latest at a time)
