@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.12.0] - 2026-09-10
+
+> R23 全量回归轮：对生成器跑完本地全量测试矩阵后，以真实使用路径（典型 Node/Express 项目生成技能 → 特征卡填充 → mark-active 激活 → spec 先行开发新功能）做端到端执勤回归，暴露 14 项缺陷并修复 11 项（P1×4 + P2×7；P3×3 记录观察不修）。核心发现：三类执法体在按文档执行的标准流程下静默失效或自干扰——spec 发现口径三分、scope 门基分支探测错误吞合法提交、审查工具降级链失败仍报"无问题"假 pass。修复全部带回归断言固化（单测用例 + gate-fixtures 双态 + gen-e2e 步骤）。
+
+### Added
+- **`_find_spec_file` 统一 spec 发现（D6，P1）**：precheck.sh 新增单一事实源助手——SPEC_GLOB（默认 `docs/specs/*.md`）优先，旧硬编码路径兜底，内容反查殿后；check_reuse / check_impact / check_stable_diff 三处消费方接入。gate-fixtures 新增 reuse/impact `compliant-spec-glob` 形态（spec 放文档规定位置、conf 零显式配置，旧代码下复用门静默跳过、影响门假 fail， forbidden-ids 判别新旧实现）。
+- **`BASE_BRANCH` 配置变量（D8，P1）**：变更基线不再硬编码 main——conf 显式配置优先，自动探测链 main→master→HEAD~1。此前 master 基分支仓库静默退化 HEAD~1，check_scope / check_stable_diff 等全部 delta 类门禁口径错误（清树也红的假阳性实证）。precheck.conf 模板带 MEASURE 元数据，FACT_CONF_VARS 184→185。
+- **check_stable_diff 标注反推兜底（D11，P2）**：STABLE_GLOBS 未配置时从 reference-manual §4 说明列稳定性标注词（与 --stability-audit 同词库）机械反推稳定单元路径——README 3.5 管束链"稳定单元被改而未声明（失败）"此前因模板把 STABLE_GLOBS 标 deprecated 而出厂即休眠。gate-fixtures 新增 stable-diff 标注反推双态（warn 档语义：篡改检出打 advisory 行，rc 不阻断）。
+- **gate-fixtures 新增 scope 技能资产形态（D7）**：feat 分支提交 .claude/skills 与 .swarm-yuan 变更（工具链合法写入面）→ 不再误判只读违规。
+
+### Fixed
+- **relations-extract 不认 CommonJS require()（D1，P1）**：提取正则要求引号紧跟 require/from/import，`require('../x')` 的左括号永不命中——CommonJS 项目 0 条 import 边（与文件头声称的支持范围不符，真实项目实测 0→5 边）。test-relations-extract 新增态 4b（require 相对导入边 + 裸包不成边）。
+- **check_scope 与 _git_base 自干扰（D7，P1）**：①工具链自有路径（.swarm-yuan 运行时账本、.claude/skills 与 .codex/skills 技能资产）从只读比对中豁免——此前门禁自己写的 trace.jsonl / .gate-fail-flag 每轮把 scope 门打红，合法的骨架引导/upgrade/--persist 提交永久红；分层执法归位（账本防篡改靠链式锚定与审计，技能资产防手改靠 integrity-guard 与升级机制）。②配套 D8 基分支探测修复。
+- **check_review ocr 降级链假绿（D9，P1）**：ocr review 失败降级 scan、scan 再失败（如 LLM endpoint 未配置）时，原实现仍打"✓ 已执行，无 High/Critical 级问题"假 pass——改为输出形态核真（非空且无 Error 头行才算审查成立），失败如实 warn"不构成审查证据"。
+- **create 撞生成流程自身顺序（D2，P2）**：文档顺序 Step 4 relations-extract 先建技能目录（写 relations.jsonl）→ Step 6 create 撞已存在目录硬报错；无 SKILL.md 的机械草稿目录现按断点续传幂等补齐。gen-e2e 新增该顺序回归步骤。
+- **维度枚举 node_modules 污染（D5，P2）**：inventory-dimensions.conf 六条 grep 枚举命令补 `--exclude-dir=node_modules/dist/.git`（与 find 族排除链对齐）——npm install 后枚举扫进第三方包致计数爆炸假 FAIL（真实项目实测：端点 23→6、controller 10→5，全部转 PASS）。test-inventory-verify 新增污染用例。
+- **TODO-model 清单两处失真（D3/D4，P3）**：双引号串内字面 `""` 被 shell 吞（文案失真）；deprecated 变量 SERVICE_DIRS 误列清单误导填充。test-conf-render 新增两断言。
+- **审查留痕文档-实现漂移（D10，P2）**：generation-flow Step 10.5"缺则 fail"与实现（默认 warn、REVIEW_RECORD_REQUIRED=1 后 fail）对齐；precheck.conf 模板补口径注记（spec 位置唯一约定 + review-record 落点与硬门开关）。
+- **rules.d 文档示例语义错误（D12，P2）**：generation-flow Step 8 示例误用文件路径 pattern（`src/generated/** → forbid`）——gate-rules 求值对象是命令首 token，照文档写即无效规则；示例改为命令语义并指明路径保护落 READONLY_DIRS/check_scope。
+- **review-record 路径解析（D13，P2）**：项目根直跑 precheck 时 SKILL_DIR 未导出，`references/review-record.md` 永远解析不到——补 `.claude/skills/*/references/review-record.md` 标准落点 glob 探测。
+- **audit-closure 决策账本口径分裂（D14，P2）**：mark-active 核验技能侧 `.swarm-yuan/decisions.jsonl`，audit-closure 只读项目侧——生成期决策对闭环审计不可见；现两处探测合并并披露来源。
+
+### 诚实边界
+- 本轮 P3 观察项不修：清单表头计数口径（含"说明"列的表头行计入清单数，方向偏宽松）、TODO-model.txt 激活后残留、BUILD_CMD AUTO:default 与无构建项目的错配提示。均有下层门禁或人工评审兜底，修复收益/误伤比不划算，记录待真实使用周期再裁决。
+- 本机环境披露：self-check 的 gstack 源码包时效重装在本机失败（v20260910-src tag 资产问题，main 上同现，非本轮引入）；CI 与其余检查全绿。
+
 ## [v2.11.0] - 2026-09-10
 
 > 审计收账轮（决策 38）+ R22 运行时补核。按用户级 AGENTS.md 规则全面排查：代码与验证体系实测全绿，23+4 项裂缝全部集中在文档与口径层，本轮全修并为其中两类（版本口径、认知面预算）建立机器执法。
