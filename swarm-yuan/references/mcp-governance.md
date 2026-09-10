@@ -18,7 +18,7 @@
 | claude-mem | 项目记忆持久化（`--knowledge` 门禁依赖） | Apache-2.0 |
 | gitnexus | 代码图谱增强（MCP tools + hooks） | **PolyForm Noncommercial 1.0.0 禁商用——仅非商用项目可选；商用项目默认集收缩为 graphify + claude-mem 两个** |
 
-注册方式参照 `references/claude-code-capabilities.md:480`（`claude mcp add`）；现状登记见 `README.md:224`「MCP 自动注册 gitnexus / claude-mem / graphify」。
+注册方式参照 `references/claude-code-capabilities.md:480`（`claude mcp add`）；现状登记见生成产物 `.mcp.json` 模板与 `references/claude-code-capabilities.md` 注册段（README 重构后原行号引文已失效）。
 
 上游对照：ECC v2.0 在 2026-06 审计后默认仅保留 chrome-devtools 一个 connector、其余六个转为 opt-in（见其 docs/MCP-CONNECTOR-POLICY.md）——**每多一个 connector 都是攻击面与 token 成本，默认最小、按需 opt-in**（R6 §1.7，访问 2026-07-20）。
 

@@ -1022,7 +1022,7 @@ check_complexity_budget() {
   # 门禁数预算
   local _gates_budget="${FACT_GATES_BUDGET:-55}"
   if [[ "$_gates_true" -gt "$_gates_budget" ]]; then
-    warn "门禁数 ${_gates_true} > 预算 ${_gates_budget}（决策 26）--超预算须等额删除旧门禁，或申请预算上调（README.md §12 决策史 决策 26 修订）"
+    warn "门禁数 ${_gates_true} > 预算 ${_gates_budget}（决策 26）--超预算须等额删除旧门禁，或申请预算上调（决策 26 修订，全文见 docs/design-evolution.md）"
     FAIL=1
   else
     echo "  ✓ 门禁数 ${_gates_true} ≤ 预算 ${_gates_budget}（决策 26，预留 $((_gates_budget - _gates_true)) 增长空间）"

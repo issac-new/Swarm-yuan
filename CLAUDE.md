@@ -7,25 +7,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **17-item feature card** （特征卡， the "legislation") and enforces them with **55 quality gates** （55 个质量门禁， the "enforcement"). It integrates 13 external runtimes by **invoking them, never reimplementing** —按接线深度分三层（深度接线/CLI 接线/方法论引用），每层有自带降级载体，未装不阻塞。运行时/门禁/变量/框架等口径数字详见 `swarm-yuan/README.md` `数字一览` 与 `swarm-yuan/assets/facts.conf`（单一事实源，self-check 机器执法做漂移检测）。
+`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **17-item feature card** （特征卡， the "legislation") and enforces them with **55 quality gates** （55 个质量门禁， the "enforcement"). It integrates 13 external runtimes by **invoking them, never reimplementing** —按接线深度分三层（深度接线/CLI 接线/方法论引用），每层有自带降级载体，未装不阻塞。运行时/门禁/变量/框架等口径数字详见 `swarm-yuan/assets/facts.conf`（单一事实源，self-check 机器执法做漂移检测）与 `docs/usage-manual.md` §10 数字一览。
 
 There is no compiled artifact and no conventional build — the product is a set of bash scripts, markdown templates/references, and shell gate fragments that get copied into a target skill directory.
 
 ## 范式定位（WP-P10 → R13 修正）
 
-swarm-yuan 现为**两体系统**（swarm-yuan/README.md §2.1）：生成器侧 ~68K 行自举仍在（一次性消费不算税），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` §2.1-§2.4 与 §6.6 A1（定位档案）。（2026-07 WP-P10 的"重量级范式，重量是设计选择"是历史定位，R13 起以上述两体系统为准。）
+swarm-yuan 现为**两体系统**（swarm-yuan/README.md 一章 What）：生成器侧 ~68K 行自举仍在（一次性消费不算税），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` 五章 When。（2026-07 WP-P10 的"重量级范式，重量是设计选择"是历史定位，R13 起以上述两体系统为准。）
 
 ## Repository layout (three top-level roles)
 
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
-  - `SKILL.md` — the AI entry point / operating manual (generation pipeline 唯一口径 = `references/generation-flow.md` Step 1–12；分工视图 ⓪-⑨ 为同一流程压缩标记（⑦=Step 10.5 独立审查），"Step 0-8 / 13 节点"是已退役旧口径（见 swarm-yuan/README.md §8.1）).
+  - `SKILL.md` — the AI entry point / operating manual (generation pipeline 唯一口径 = `references/generation-flow.md` Step 1–12；分工视图 ⓪-⑨ 为同一流程压缩标记（⑦=Step 10.5 独立审查），"Step 0-8 / 13 节点"是已退役旧口径（见 `docs/design-evolution.md` 决策史）).
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
   - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` + `gates-strict.sh` + `gates-warn.sh` + `gates-advisory.sh` (55 gates split across four files; LOC tracked by `facts.conf` `FACT_SCRIPT_LOC`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (config vars, WP-I split), `spec-template.md` (24-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (79 per-framework gate fragments).
   - `references/` — methodology docs + `references/frameworks/<fw>.md` (79 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).
 - **`verifier/`** — a self-contained acceptance harness that re-runs the whole suite (fixture double-state + id-level assertions) with golden-vector line-count reconciliation (`run-verifier.sh golden` does content comparison; `rebuild-golden` rebuilds the baseline after intentional gate changes).
-- **`swarm-yuan/README.md`** — the single documentation（五层递进 + §6.1 设计规格 / §6.3 决策史 / §6.4 上游基线 / §6.5 使用手册 / §6.6 历史档案；read §6.3 before "fixing" a gate）。`docs/research/` — 调研证据链 archive.
+- **`swarm-yuan/README.md`** — the single design document（What / Why / How / 实现 / When / 核心总结 + 附录；决策史在 `docs/design-evolution.md`，改门禁前先读相关决策）。`docs/research/` — 调研证据链 archive.
 
 ## Common commands
 
@@ -87,7 +87,7 @@ Gate fragments are **injected** into a generated skill's `precheck.sh` between t
 The generator's own scripts must run on **Windows/macOS/Linux**. **Bash is a hard prerequisite** (the 55 gates and generator are all bash scripts; native Windows cmd/PowerShell are not supported). On Windows, install Git for Windows (bundles Git Bash) or WSL first, then `.bat` wrappers locate Git Bash/WSL/MSYS2 to run the `.sh` scripts. In bash: **no `declare -A`** (use parallel arrays / strings), use `sed -i.bak` then `rm`, `grep -E`, `date -u`, `$(cd ... && pwd)` instead of `readlink -f`, and `${var}` quoting for C-locale safety. See `swarm-yuan/references/security-spec.md` §六.
 
 ### Gates are intentionally conservative
-Many gates "sleep" (match nothing) on purpose; `swarm-yuan/README.md` §6.3（决策史）documents cases where a naive fix would **wake a sleeping gate and flood real projects with false positives**. Before changing gate matching logic, check §6.3 and validate against a real project sample, not just the fixture.
+Many gates "sleep" (match nothing) on purpose; `docs/design-evolution.md`（决策史）documents cases where a naive fix would **wake a sleeping gate and flood real projects with false positives**. Before changing gate matching logic, check the decision history and validate against a real project sample, not just the fixture.
 
 ## Testing notes
 
