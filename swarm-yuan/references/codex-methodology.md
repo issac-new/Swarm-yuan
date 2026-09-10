@@ -106,7 +106,7 @@ Codex Skills 只常载 frontmatter（name/description），正文按触发注入
 
 ## 版本注记：v0.148（含 v0.147）
 
-> 基线 v0.146.0（2026-08-14 调研）→ 最新 stable v0.148.0（2026-08-18）+ v0.149.0-alpha.4（2026-08-20）预告。详见 README.md §6.4 上游运行时基线 §三 CLI 专题。
+> 基线 v0.146.0（2026-08-14 调研）→ 最新 stable v0.148.0（2026-08-18）+ v0.149.0-alpha.4（2026-08-20）预告。详见 docs/upstream-baseline.md（上游运行时基线登记）CLI 条目。
 
 ### hooks 异步命令 + MCP 工具调用（v0.148——重要机会）
 

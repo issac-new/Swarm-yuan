@@ -262,6 +262,10 @@ bash install.sh
 | ⑧ | AI 写回项目记忆（闭环） |
 | ⑨ | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**零占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
 
+#### 质量门禁序列（quality:full 模式，执勤期收口用）
+
+多门禁同跑时按序串行、fail-fast（任一步 fail 即停不跑后续），顺序与理由：build（构建能过）→ test（测试真过，0 用例检出）→ contract（契约不破）→ reuse（新增不与稳定单元重名）→ consistency（业务/数据勾稽）→ layer/link-depth（分层与依赖方向）→ docs-pack（文档齐备）→ security（安全）→ deps（版本锁定）。构建测试先行（跑不了代码谈什么都白搭），契约一致性次之，架构文档安全殿后。全部映射 precheck 既有 flag，不新增门禁；执行入口：`--all`（日常核心 10）/ `--all-full`（结构变更标准 28）/ 追加 `--compliance-suite`（强监管合规 19）。每步耗时与 pass/fail 落 `.swarm-yuan/gate-runs.jsonl`；节点⑦独立审查以此确认序列真实跑过。
+
 > **全链路追踪（每步必做，无需确认）**：每步开始先公告 `→ [Step N] 调用 <技能/工具> · <目的>`，节点级落盘 `.swarm-yuan/trace.jsonl`（`SWARM_YUAN_TRACE=verbose` 时含每次具体调用）。
 
 ---

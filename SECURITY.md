@@ -37,7 +37,7 @@ Please include:
 - **Path traversal / arbitrary file write** beyond declared boundaries
 
 ### Out of Scope
-- **Design decisions** (e.g., enforcement level choices, gate selection) — these are documented in README §6.3 (paradigm-decisions)
+- **Design decisions** (e.g., enforcement level choices, gate selection) — these are documented in docs/design-evolution.md (决策史全文)
 - **Performance issues** without security impact
 - **Non-security bugs** (use regular issue tracker)
 - **Vulnerabilities in third-party runtimes** (report them to the respective upstream projects)
@@ -52,4 +52,4 @@ swarm-yuan's security posture is enforced through:
 - **gate-deny logging**: All hook denials are logged to `gate-deny.jsonl` for audit
 - **spec §19-21 left-shift**: Security constraints embedded in spec/plan stages (not just post-hoc review)
 
-See [README.md §4.2 约束实现](swarm-yuan/README.md) for enforcement details.
+See [README.md 三章 How·3.4 执勤层（上）](swarm-yuan/README.md) for enforcement details.

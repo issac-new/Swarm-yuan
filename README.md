@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 [![CI](https://github.com/issac-new/Swarm-yuan/actions/workflows/ci.yml/badge.svg)](https://github.com/issac-new/Swarm-yuan/actions/workflows/ci.yml)
 
-**本仓库的完整文档只有一份：[`swarm-yuan/README.md`](swarm-yuan/README.md)**——按五层递进组织（理念 → 设计 → 架构 → 实现 → 使用 + 引用层收录设计规格/决策史/上游基线/使用手册全文），安装包 standalone 时亦随技能自包含。
+**本仓库的设计文档只有一份：[`swarm-yuan/README.md`](swarm-yuan/README.md)**——按 What / Why / How（六层）/ 实现 / When / 核心总结的故事线组织，附录收编数字口径、外部来源登记与决策溯源；操作命令在 `docs/usage-manual.md`，演化过程与决策史在 `docs/design-evolution.md`。安装包 standalone 时设计文档随技能自包含。
 
 快速上手：
 

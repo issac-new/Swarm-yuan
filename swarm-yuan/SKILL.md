@@ -9,7 +9,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **总闭环**（各层围绕它展开）：本 skill 探查项目→生成目标技能→目标技能在项目里执勤开发→项目演进产生变化→指纹感知→技能局部更新→继续执勤。五层依次回答：为什么这样做（理念）、原则是什么（设计）、结构长什么样（架构）、流程怎么转与机制落地（实现）、用户怎么进入（使用）——每层的每个概念都能在第四层的流程表里找到诞生步与消费方。
 
-> **口径权威源**：`assets/facts.conf`（数字单一事实源，self-check 机器执法）；全部设计/决策/上游基线见本目录 `README.md`（仓库内即 `swarm-yuan/README.md`，standalone 安装时随技能自包含；核心已内联到本文与 references/）。
+> **口径权威源**：`assets/facts.conf`（数字单一事实源，self-check 机器执法）；设计文档见本目录 `README.md`（仓库内即 `swarm-yuan/README.md`，standalone 安装时随技能自包含；核心已内联到本文与 references/）；决策史与上游基线已物化为 `docs/design-evolution.md` 与 `docs/upstream-baseline.md`。
 >
 > **路径注**：`trace-log.sh`/`state-machine.sh`/`memory-writeback.sh` 在生成器侧位于 `assets/`，在目标技能侧映射为 `scripts/`；执行生成流程（Step 1-12）时以 `assets/xxx.sh` 调用（`cost-report.sh`/`generate-skill.sh`/`self-check.sh` 位于 `scripts/` 不受影响）。
 
