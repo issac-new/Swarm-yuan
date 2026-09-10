@@ -1,6 +1,6 @@
 # 设计演化史（施工档案——过程记录，非定稿）
 
-> **物化注记（2026-09-01 终态重构）**：本文件收纳设计演化过程的原始记录——决策史全文与历史档案 A1-A17（历次 WP/批次/轮次施工记录）。
+> **物化注记（2026-09-01 终态重构）**：本文件收纳设计演化过程的原始记录——决策史全文与历史档案 A1-A18（历次 WP/批次/轮次施工记录）。
 > 它们回答"系统是怎么变成今天这样的"，但**不构成对现状的权威描述**——现状的权威定义在 `swarm-yuan/README.md`（设计内核）。
 > 决策要点（各决策确立的现行设计原则）已蒸馏回设计内核对应章节；本卷保留全文供审计与溯源。
 
@@ -522,7 +522,7 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 
 ---
 
-## §13 历史档案（A1-A17）
+## §13 历史档案（A1-A18）
 | 编号 | 档案 | 说明 |
 |------|------|------|
 | A1 | 范式定位 | 适用/不适用边界的原始论述。 |
@@ -542,6 +542,7 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 | A15 | 运行时补核 2026-09 | R17 补核轮差异报告（claude-code/codex/dsh 三件套深审 + 外围九项快审）。 |
 | A16 | 运行时补核 2026-09 | R18 补核轮差异报告（claude-code 263 纯修复轮 + gsd-core 1.13 证据纪律吸收 + graphify/gstack/impeccable 外围三行）。 |
 | A17 | 运行时补核 2026-09 | R20 补核轮差异报告（claude-code 265 实质轮五项落地 + comet 0.4.0 触发兑现 drift 归零 + ocr/graphify/ruflo/ECC/codex-security/gstack 六行移动）。 |
+| A18 | 运行时补核 2026-09 | R22 补核轮差异报告（codex 0.154.0 实质 minor 兑现 + dsh 0.1.5-rc.1 跨线 + claude-code 267 治理原语 + openspec/claude-mem/ocr/graphify/gstack/ruflo 六行移动）。 |
 
 ### A1. 范式定位
 
@@ -2638,4 +2639,20 @@ Claude Code / Codex / Cursor / Windsurf / OpenCode / Gemini CLI / Kimi——自�
 - [x] 16 运行时 GitHub releases 双核 + 移动项克隆 checkout（comet 0.4.0 / ocr v1.11.6 / graphify v0.9.56 / ruflo v3.38.23 / ECC v2.2.1 / codex-security npm-v0.1.26 / gstack caba78f）
 - [x] `bash scripts/self-check.sh --check-only` 全绿 + comet drift warn 归零 + 认知面预算达标（超限则按 R18 先例裁旧注记段）
 - [x] 本报告即 §13 A17；调研证据链 `docs/research/R20-runtime-refresh.md`
+
+### A18. 运行时补核 2026-09（R22，codex 0.154.0 实质轮 + dsh 0.1.5-rc.1 跨线）
+
+#### 一、触发与结论
+
+用户周期性点名三件套 + 全量快审（2026-09-10，距 R20 次日，非同日复核）。结论：**codex rust-v0.154.0 stable 兑现**（R20 收口后数小时——唯一 minor 实质轮）；**dsh dsh-v0.1.5-rc.1 出 rc**（R20 预告触发点命中，跨 0.1.3→0.1.5 两功能线，rc 作基线沿 R17 先例）；claude-code v2.1.267 为实质 patch（治理原语 + 缓存大族 + fail-closed）。16 行 drift 保持零。
+
+#### 二、落地
+
+三件套注记：claude-code-capabilities.md R22 段（`maxEffortLevel` effort 治理原语候选 / prompt-cache 工具动态性大族（缓存稳定性编排不变量第三波——工具面变更由宿主 deferred/replay 消解）/ managed allow-list fail-closed 第四实证 / `--system-prompt-snapshot` 快照-新鲜度权衡）；codex-methodology.md R22 段（worktree 隔离原语候选 / inline 追问 / plugin-skill 热刷新（技能热装载成双宿主标配）/ Guardian 授权时效性与上下文完整性 / `codex mcp-server` 移除破坏项对账零引用）；dsh-engineering-methodology.md §九（动态系统提示不破 KV Cache（缓存友好编排第三实证）/ 消息归属与顺序成编排不变量 / 暂停即终止用户独占恢复权）。外围注记：openspec 1.13.0（解析器不得静默改写——诚实性族新样本）/ claude-mem 13.24.5（npm 通道恢复）/ ocr 1.11.7 / graphify 0.9.57 / gstack 1.84.1.0（impeccable interop）/ ruflo 3.40.0（Cross-Host Federation + Claims，方法论级候选）。**跨档主题**：「保持不变量」清单扩展——claude 保缓存 / codex 保授权 / dsh 保消息归属；证据链的上下文完整性与证据本身同等重要。零新 references 文档、门禁 55 守恒、FACT_RUNTIMES 13 / FACT_REFERENCES 42 不变、不发版（补核轮）。
+
+#### 三、验证
+
+- [x] 16 运行时 GitHub releases 双核 + 移动项克隆 checkout（codex rust-v0.154.0 / dsh dsh-v0.1.5-rc.1 / openspec v1.13.0 / claude-mem v13.24.5 / ocr v1.11.7 / graphify v0.9.57 / ruflo v3.40.0 / gstack 71f6048）
+- [x] `bash scripts/self-check.sh --check-only` 全绿 + drift warn 保持零 + 认知面预算达标（超限则按 R18 先例裁旧注记段）
+- [x] 本报告即 §13 A18；调研证据链 `docs/research/R22-runtime-refresh.md`
 

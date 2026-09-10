@@ -158,3 +158,15 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **hooks 内置白名单三层信任**（v0.153.0，#42110）：allowlisted bundled cleanup hooks 标记 `builtin: true`，信任态直接 Trusted 且无视 per-hook enabled——hook 信任模型成三层（builtin/managed/user）。本仓用户级 PreToolUse 三能力接线零变化（`codex-rs/hooks/src/engine/discovery.rs` 各 events 文件仅测试结构体加字段，对账通过）。
 - **实验性 context management**（v0.153.0，#42385）：`features.context_management.experimental_mode`——token 预算上下文 + history notes + `new_context` 工具；仅 ChatGPT Plus/Pro/Pro Lite 且 Codex 后端，自定义 provider 禁用。与 v0.149 `[skills] max_context_tokens` 预算机制相邻，登记观望（experimental + 后端限定，等 GA）。
 - 其余：插件 CLI 远程 marketplace（#42150/#42149，源策略约束）；network requirements 增 `header_injections`（企业托管向）；权限变换感知 executor 路径上下文（`sandboxing/policy_transforms.rs` +416 行，观察项）。
+
+## 版本注记：v0.154（2026-09-10 核）——worktree 隔离原语 + 技能热装载成双宿主标配
+
+> 当前 stable：rust-v0.154.0（2026-09-09，R20 收口后数小时兑现；0.154 线 alpha.1-11 收敛后发布）。档案 `docs/research/R22-runtime-refresh.md`。
+
+- **实验性 worktree 支持**（v0.154.0，#42652/#43069）：`--worktree` / `/worktree` 为新会话或 fork 创建隔离检出、可浏览恢复——**会话与工作区隔离原语进宿主**，与 Claude Code v2.1.257 `permissions.blockReadsOutsideWorkingDirectories` 构成双宿主对偶。生成技能并行门禁（多 worktree 验证）的宿主原语候选登记（触发 = 并行 gate 执行真实需求）。
+- **inline 追问**（v0.154.0，#42891）：工作继续中用建议选项或自定义文本回答问题、不丢主草稿——`request_user_input_async`（0.153）的交互面强化，Interrupt 守护点候选第 2 号参照（打断→问答→续跑且用户草稿不丢）。
+- **plugin/skill 热刷新**（v0.154.0，#42284）：外部 plugin 升级/回滚后已有会话刷新 skills 与 hooks——与 Claude Code `--plugin-dir` 热装载（265）构成**双宿主同向：技能热装载成标配**；生成技能 `--upgrade` 后宿主侧不再要求重启会话。
+- **Guardian 授权治理强化**（v0.154.0，#42844/#43442）：审批上下文跨 compaction 保持、新用户指令或答案作废既有审批——**授权的时效性与上下文完整性成为审批系统一等语义**（与 0.151「过期分类不授权」连续）。对本仓：门禁产出的 PASS/FAIL 证据若被宿主审批引用，其有效期与作废条件须显式声明。
+- **信任边界与硬化**：信任建立前不运行 workspace 控制的 helpers（#42324）+ macOS 沙箱防终端输入注入——双宿主沙箱收紧波延续。
+- **`codex mcp-server` 入口移除**（v0.154.0，#42993，破坏项）：deprecated 入口删除。对账：本仓 `install.sh`/`self-check.sh`/`SKILL.md` 零引用，无暴露面。
+- 其余：GPT-6-Astra 进 model picker / Windows 共享后台 server + daemon 生命周期 / Vim `R` replace 模式 / `/copy` 富文本——运维便利，对账通过。

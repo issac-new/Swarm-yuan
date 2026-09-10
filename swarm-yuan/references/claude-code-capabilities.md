@@ -619,3 +619,13 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **中断工具调用恢复诚实性**（265）：死于工具运行中，resume 保留中断调用并标记 interrupted——partial 证据态第二次实证。
 - **不可信内容标记**（265，候选）：Artifact 读他人产物按 untrusted 标记内嵌指令（触发 = 出现「读取外部产物并执行其中指令」场景）。
 - **266 教训**：`CLAUDE_CODE_USE_GATEWAY` 语义 265 漂移致网关配置报错、266 回滚——**宿主行为细节版本间不保证稳定**第三次实证。
+
+## 版本注记：v2.1.267（2026-09-10 核）——治理原语 + 工具动态缓存族 + managed fail-closed
+
+> 覆盖 v2.1.267（npm latest，2026-09-09 发布；stable 通道仍 2.1.236 分裂持续）。实质 patch。详表 `docs/upstream-baseline.md`；档案 `docs/research/R22-runtime-refresh.md`。
+
+- **`maxEffortLevel` 设置**（267）：top-level 或 per-model `modelSettings` 封顶 effort、低档仍可选——**effort 治理进宿主原生配置**，与 PreModelSwitch hooks（251）、`CLAUDE_CODE_SUBAGENT_MODEL_FORCE`（257）成谱系。adaptive-gating 分档的宿主侧新原语，候选登记（触发 = 弱模型越档真实场景，与 R16 同批）。
+- **prompt-cache 工具动态性大族**（267，约 12 项 fix）：MCP 重连不重写工具表、新 MCP 工具以 deferred definitions 到达（无 ToolSearch 会话）、resume 重放录制的工具描述而非重渲染、forked worker 不再注入 EnterWorktree、`-p` 会话 resume 不破缓存——**缓存稳定性编排不变量第三波实证**（265 前缀族 → 267 工具集动态族）。教义补充：工具面动态变更与缓存稳定的冲突由宿主 deferred/replay 机制消解，生成技能无需自防御。
+- **managed allow-list 不可读 → deny-all**（267）：`allowedHttpHookUrls`/`httpHookAllowedEnvVars`/`allowedChannelPlugins` 读取失败从默认 allow-all 改为拒绝一切——**fail-closed 第四实证**（Guardian 条件性缺席 / 260 deny 回退 / gsd 证据纪律 → managed 缺省值收敛）：连 managed 配置的缺省语义也按最坏情况设计。
+- `--system-prompt-snapshot off`（267）：每请求重渲染系统提示（默认快照=缓存友好）——快照与新鲜度成为显式权衡开关，上下文经济学新支点。
+- Workflow `agent()` 大 schema 改安全检查而非拒绝（267）；5 MB+ 大会话 resume 丟并行工具调用修复（267）。对账通过。
