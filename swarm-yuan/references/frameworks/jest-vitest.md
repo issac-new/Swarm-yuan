@@ -198,8 +198,8 @@ expect: hits>0
 ```
 
 ### 规律：禁在只读 upstream 目录新增测试文件
-- **适用版本**: Vitest 3.x/4.x（ncwk 仓库契约）
-- **规律**: ncwk 仓库 `upstream/` 子目录全为只读第三方快照（element-web/hermes-agent/hermes-studio/research 等），其自带测试非 ncwk 违规。prune 掉 `upstream/<子包>/` 内容，仅保留对 `upstream/` 直属文件的检测，以捕获 ncwk 未来直接在 upstream 顶层新增测试的真实违规。此为 ncwk 仓库特有契约（非通用 Vitest 规律），迁移到其他仓库时须按该仓库的只读目录约定调整 prune 路径。
+- **适用版本**: Vitest 3.x/4.x（按仓库只读区声明实例化）
+- **规律**: 若仓库存在只读上游快照目录（以该项目 AGENTS.md/CLAUDE.md 声明为准），快照内自带测试不算本仓违规——检测须 prune 快照子包、仅查快照目录直属文件，以捕获未来直接在快照顶层新增测试的真实违规。**实例锚点（迁移须调整）**：本条按 ncwk 仓库契约实例化（`upstream/` 子目录全为只读第三方快照：element-web/hermes-agent/hermes-studio/research 等）；迁移到其他仓库时须按该仓库的只读目录约定调整 prune 路径，非通用 Vitest 规律。
 - **违反后果**: 在只读 upstream 新增测试 → 污染只读快照、与上游同步时冲突丢失。
 - **验证方法**: `VITEST_FORBIDDEN_UPSTREAM_TEST` 设正则后，`find . \( -path ./node_modules -o -path "./upstream/*" \) -prune -o -name "*.test.ts" -print | grep -E "$VITEST_FORBIDDEN_UPSTREAM_TEST"` 检出 upstream 直属测试文件 → fail。
 - **对应门禁**: fw_jest_no_upstream_test(fail)

@@ -1,7 +1,5 @@
 # 使用手册（USAGE）
 
-> **物化注记（2026-09-01 终态重构）**：操作层内容原在 `swarm-yuan/README.md` §10/§11，非设计主旨，移出为独立手册。
-
 > 命令级使用参考：生成/激活/升级/门禁/审计全命令行手册。
 
 > 对 AI 说"为这个项目生成 skill"，AI 全自动探查 → 生成 → 配置 → 验证，你拿到一套零占位符的项目专属开发技能。
@@ -12,21 +10,9 @@
 
 ---
 
-### 1. 核心设计理念
+### 1. 设计理念（速览）
 
-swarm-yuan 的设计基于三个关键理念：
-
-#### 理念一：先认识，再行动（认知递进）
-
-AI 写代码前必须先认识项目——概念→结构→空间→映射→规律→处理。不认识就写 = 盲动。swarm-yuan 生成的目标技能用 **17 项特征卡** 完成认知，用 **55 个质量门禁** 守护行动。
-
-#### 理念二：拼装式开发（复用优先）
-
-新功能 = 既有稳定单元的拼装 + 最小新增胶水代码。禁止重复造轮子、禁止侵入式重构、禁止破坏性改造。特征卡第 11 项盘点全部可复用单元，门禁 `--reuse` 验证复用合规。
-
-#### 理念三：呈现递进的关系，而非仅关注计算
-
-门禁不是"数 import 数"——每个计数背后指向一条关系规律。`--layer` 数 import 是为了验证"结构是否遵循依赖单向"；`--reuse` 数新增导出是为了验证"概念是否复用了既存稳定单元"。
+四条执政理念：**先认识再行动**（不探查不动手，特征卡完成认知）、**拼装式开发**（新功能 = 既有稳定单元拼装 + 最小新增胶水，`--reuse` 守卫）、**诚实降级**（外部运行时未装就显式披露，不假装满配）、**AI 全自动零手动**（生成与使用都靠对 AI 说话，bash 是排查与 CI 的备份通道）。完整推导见 `swarm-yuan/README.md` 二章 Why；本文余下只讲操作。
 
 ---
 
@@ -83,7 +69,7 @@ bash install.sh
 
 **特征卡 → 文件填充（Step 4）：** SKILL.md 的铁律来自第 2/6 项 → codebase.md 的技术栈来自第 4 项 → dev-guide.md 的改造分类来自第 3 项 → reference-manual.md 的组件库来自第 11 项 → release.md 的命令来自第 5 项……17 项特征卡是目标技能所有文件的「数据源」。
 
-**特征卡 → 门禁配置（Step 5）：** precheck.conf 三件套 178 个变量（core 18 + arch 112 + compliance 48）从特征卡推导：
+**特征卡 → 门禁配置（Step 5）：** precheck.conf 三件套合计 184 个变量（core 19 + arch 117 + compliance 48；真值 `assets/facts.conf` FACT_CONF_VARS 族），从特征卡推导：
 
 | 配置变量 | 来自特征卡第几项 |
 |---------|----------------|
@@ -140,18 +126,17 @@ bash install.sh
 
 #### 门禁分层（决策 19，横切维度）
 
-55 门禁按 `fail()` 调用能力分三档（strict 17 / warn 22 / advisory 16），与 core/standard/compliance 三档正交（一个门禁同时属于 core + strict，或 standard + advisory）：
+55 门禁按 `fail()` 调用能力分三档，与 core/standard/compliance 门禁家族正交（一个门禁同时属于 core + strict，或 standard + advisory）。计数真值在 `assets/facts.conf`（FACT_ENFORCE_* 族）：
 
-| 分层 | 数量 | fail() 能力 | 行为 | 门禁清单 |
-|------|------|------------|------|----------|
-| **strict** | 16 | ≥3 fail | 真 fail 阻断交付 | branch / layer / reuse / security / shift-left / compliance / sbom / release-sign / dengbao / pia / quality-model / test-evidence / review-record / sast-deep / oss-eval / loop-oracle |
-| **warn** | 23 | 1-2 fail | 能 fail 但触发窄，混合 warn | scope / build / test / sensitive / review / stable-diff / deps / adr / contract / impact / service / api / frontend / domain / knowledge / docs-pack / framework / metrics / privacy / authz / requirements / rtm / crypto |
-| **advisory** | 15 | 0 fail | 永不 fail，只 warn/pass（认知/观测类） | consistency / link-depth / consistency-cross / state / diagram / operate / decision-audit / cognition / cwe-audit / cert-audit / learnings / pr-quality / skill-supply-chain / state-phase / upstream-baseline |
+| 分层 | 静态计数 | 有效计数 | fail() 能力与行为 |
+|------|------|------|------------|
+| **strict** | 17 | 17 | ≥3 真实 fail()，真 fail 阻断交付 |
+| **warn** | 22 | 17 | 1-2 真实 fail()，能 fail 但触发窄，混合 warn |
+| **advisory** | 16 | 21 | 0 fail()，永不阻断（认知/观测类；子 shell 内重定义 `fail()`/`warn()` 为纯 echo，"不阻断"语义机器化） |
 
-- **advisory 机器化**：子 shell 内重定义 `fail()`/`warn()` 为纯 echo，永不进 FAIL_COUNT/WARN_COUNT——"advisory 是观测类，不阻断交付"语义机器化
-- **查看分层**：`bash scripts/precheck.sh --list-gates`（输出 flag / gate_fn / enforce / tier 四列）
-- **自动归类**：`bash scripts/gen-enforce-level.sh` 扫 precheck.sh fail() 数，重生成 `assets/gate-enforce-level.conf`（幂等）
-- **手动覆盖**：precheck.sh 顶部 `_ENFORCE_OVERRIDE_K`/`_ENFORCE_OVERRIDE_V` 数组（如 `check_review` 想从 warn 升 strict）
+- **有效 = 静态 + precheck.sh 顶部 `_ENFORCE_OVERRIDE`**（当前 5 项 warn→advisory：stable-diff / framework / knowledge / metrics / crypto，WP-Q2H 误报治理；名单以 precheck.sh 数组为准，不在此手抄）
+- **查实时名单**：`bash scripts/precheck.sh --list-gates`（输出 flag / gate_fn / enforce / tier 四列）——本节不手抄 55 个门禁名，手抄即漂移（agents-md-audit-round：旧名单表三度失同步后删除）
+- **自动归类**：`bash scripts/gen-enforce-level.sh` 扫 precheck.sh fail() 数，重生成 `assets/gate-enforce-level.conf`（幂等，可逐字节再生）
 - **自检**：`self-check.sh` 校验 conf 与 precheck.sh fail 数一致 + strict 门禁必含 ≥1 fail()（防 strict 声明空壳）
 
 **特征卡是立法，门禁是执法。**
@@ -181,12 +166,12 @@ bash install.sh
 | `--security` | 安全规范（OWASP Top 10） | 注入/eval/XSS/硬编码密钥/TLS 关闭 | 第 7 项 |
 | `--test` | 测试通过 | 测试失败 | 第 5/9 项 |
 
-#### 架构门禁（`--all-full` 额外跑 17 个，未配置则静默跳过）
+#### 架构门禁（`--all-full` 额外跑 18 个，未配置则静默跳过）
 
 | 门禁 | 检查什么 | 特征卡依据 |
 |------|---------|-----------|
 | `--layer` | DDD 分层边界（穿透/倒置/领域污染/聚合跨引用） | 第 3 项 |
-| `--stable-diff` | 稳定单元篡改（改稳定层须 spec MODIFIED 声明） | **第 11 项** |
+| `--stable-diff` | 稳定单元篡改（改稳定层须 spec MODIFIED 声明；下游 1 跳传播 warn，决策 28） | **第 11 项** |
 | `--link-depth` | 调用链深度（链路膨胀/纯转发堆叠） | 第 13 项 |
 | `--adr` | 架构决策记录（ADR + 技术债登记） | 第 8 项 |
 | `--contract` | 接口契约（version + ACL 防腐层） | 第 10 项 |
@@ -196,12 +181,15 @@ bash install.sh
 | `--api` | API 契约与幂等 | 第 10 项 |
 | `--state` | 前端状态管理（巨型 store/prop drilling） | **第 11 项** |
 | `--frontend` | 前端组件架构（层级/props/循环依赖/CSS 污染） | **第 11 项** |
+| `--method-size` | 方法粒度（单方法行数超 METHOD_MAX_LINES 默认 60 warn——语言无关启发式，只抓"物理太大"） | 第 3 项 |
 | `--cognition` | 认知递进体检（六阶+六维+五层总分） | 第 13 项 |
 | `--domain` | 领域知识违规检测 | **第 14 项** |
 | `--knowledge` | 项目知识复用（AGENTS.md/CLAUDE.md/记忆 → skill 引用） | — |
 | `--diagram` | 可视化（mermaid 结构图 + echarts/antv 数据图；`--mermaid` 为别名） | — |
+| `--shift-left` | 左移核验（spec §19 测试设计/§20 变更影响/§21 可观测性非占位） | 第 8 项 |
+| `--framework` | 框架适配门禁（按 ACTIVE_FRAMEWORKS 跑注入的 `_fw_<id>_check` 片段） | 第 4 项 |
 
-#### 合规门禁（17 个，独立 `--compliance-suite` 按需执行；未配置静默跳过或 WP-Z3 豁免留痕）
+#### 合规门禁（19 个，独立 `--compliance-suite` 按需执行；未配置静默跳过或 WP-Z3 豁免留痕）
 
 | 门禁 | 检查什么 | 特征卡依据 |
 |------|---------|-----------|
@@ -222,6 +210,8 @@ bash install.sh
 | `--test-evidence` | 测试证据留存（TEST_EVIDENCE_REQUIRED=1：每测试用例须有执行证据记录，启用后 fail-closed） | 第 5 项 |
 | `--review-record` | 评审记录留存（REVIEW_RECORD_REQUIRED=1：spec/code 合入须留评审记录，启用后 fail-closed） | 第 8 项 |
 | `--metrics` | 度量趋势（cognition-metrics.jsonl：认知层得分/门禁执行计数趋势，warn 为主，enforce=warn） | 第 13 项 |
+| `--cert-audit` | 安全认证合规聚合（等保/BCP/GB22240/PCI-DSS/ISO27001 认证 profile：组合调度既有安全门禁 + 人工核对项 warn；advisory 级不重复各门禁 fail 逻辑） | 第 7 项 |
+| `--cwe-audit` | CWE 元数据库对账（仓库内 CWE-NNN 标注须在 cwe-database.md 登记 + 检查点 + 严重度分级；对齐 ISO/IEC 5055 / GB/T 34943 / CWE Top 25） | 第 7 项 |
 
 #### 门禁工具优先级 + 降级策略
 
@@ -320,6 +310,31 @@ GATE_RUNS_DIR=.gate-runs bash scripts/precheck.sh --all-full
 # 证据落盘：gate-runs.jsonl（ts/门禁名/状态/fail id 数组/耗时）逐行写入 .gate-runs/
 ```
 
+#### 全旅程速查
+
+```
+首次：
+  bash install.sh --claude
+  对 AI 说 "为 /path/to/project 生成 skill"
+    → AI 探查 → 提取 17 项特征卡 → 填充文件 → 配置门禁 → 验证 → 零占位符
+
+日常：
+  对 AI 说 "开始新需求：xxx"
+    → AI 从特征卡第 11 项检索可复用单元 → 预填 §5.5
+    → 编码（拼装优先，查特征卡第 11 项组件库清单）
+      → 对 AI 说 "跑门禁"
+        ├→ 全 ✓ → 提交
+        ├→ 有 ✗ → 修复重跑
+        └→ 有 ⚠ → 评估
+
+架构审查：
+  对 AI 说 "跑全量门禁"（55 个门禁全跑）
+
+升级：
+  对 AI 说 "升级 skill"（AI 重新探查 → 更新特征卡 → 更新门禁配置）
+```
+```
+
 默认 text 模式输出与旧版逐字节一致；`--format json` 或 `GATE_RUNS_DIR` 仅在显式开启时生效。
 
 #### 趋势可视化与运行报告（gate-trends / gate-report）
@@ -403,47 +418,13 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ---
 
-### 9. 流程
+### 9. 数字与口径
 
-```
-首次：
-  bash install.sh --claude
-  对 AI 说 "为 /path/to/project 生成 skill"
-    → AI 探查 → 提取 17 项特征卡 → 填充文件 → 配置门禁 → 验证 → 零占位符
-
-日常：
-  对 AI 说 "开始新需求：xxx"
-    → AI 从特征卡第 11 项检索可复用单元 → 预填 §5.5
-    → 编码（拼装优先，查特征卡第 11 项组件库清单）
-      → 对 AI 说 "跑门禁"
-        ├→ 全 ✓ → 提交
-        ├→ 有 ✗ → 修复重跑
-        └→ 有 ⚠ → 评估
-
-架构审查：
-  对 AI 说 "跑全量门禁"（55 个门禁全跑）
-
-升级：
-  对 AI 说 "升级 skill"（AI 重新探查 → 更新特征卡 → 更新门禁配置）
-```
-
-### 10. 数字一览
-
-| 维度 | 数值 |
-|------|------|
-| **特征卡** | **17 项（驱动全部文件 + 184 个门禁变量 + 开发流程）** |
-| **质量门禁** | **55 个（核心 10 + 架构 18 + 合规 19 + FULL-only 2 + advisory-only 6，特征卡立法 + 门禁执法）** |
-| 运行时工具 | 13 |
-| spec 模板 | 24 整数节（§1-§24，不含 §5.5/5.6/5.7 三个子节） |
-| 领域知识 | 32 个领域 |
-| 认知框架 | 5 层 |
-| 兼容 AI 工具 | 7 个 |
-| 三平台 | macOS / Linux / Windows |
-| 零占位符 | ✅ |
+全部数字（特征卡 17 / 门禁 55 四族分层 / 运行时 13 / 领域 32 / 认知 5 层 / 兼容 7 工具 / 三平台）不在本文手抄——速览表见 `swarm-yuan/README.md` 附录 A，真值以 `swarm-yuan/assets/facts.conf` 为准（self-check 机器对账，手抄即漂移）。
 
 ### 框架规则引擎
 
-swarm-yuan 内置 79 个框架规则集（references/frameworks/*.md + assets/framework-gates/*.sh），覆盖 Java/Node/Python/Go/前端全栈。
+swarm-yuan 内置 79 个框架规则集（references/frameworks/*.md + assets/framework-gates/*.sh 1:1 配对），覆盖 Java/Node/Python/Go/前端全栈。
 
 #### 生成时激活
 
@@ -481,7 +462,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 | **生成器 vs 目标技能** | 生成器 = swarm-yuan 本身（造规则包的）；目标技能 = 生成物（某项目专属的规则包，"生成物"是同义通称，多用于税制/厚薄语境）。两者各有一份 `SKILL.md` 和 `scripts/`——生成器的 SKILL.md 是生成器的入口说明书；目标技能的 SKILL.md 是目标技能的入口说明书（≤8KB 预算管的是**后者**）。 |
 | **"自检"一词三义** | ①生成器自检 = 生成器仓库的 `scripts/self-check.sh`（生成流程 Step 1，检查生成器健康）；②目标技能门禁运行 = 目标技能的 `scripts/precheck.sh`（执法检查，日常"提交前自检"指的是它）；③conf 诊断 = 目标技能的 `precheck.sh --doctor`（配置 lint，不判门禁）。三者是三份不同脚本/模式，分属两体。 |
 | **.swarm-yuan/ 目录 vs swarm-yuan 仓库** | `.swarm-yuan/`（带点）是**目标技能在目标项目根**落下的运行时数据目录（四本账等）；`swarm-yuan/`（不带点）是生成器仓库/目录。同名是历史沿用，一指数据一指代码。 |
-| **门禁家族 vs 严格度 vs 执行序列** | 见 §5.1。家族=归哪个套餐管；严格度=会不会阻断；执行序列=怎么触发。三轴正交，互不推出。 |
+| **门禁家族 vs 严格度 vs 执行序列** | 见 §4「门禁分层」。家族=归哪个套餐管；严格度=会不会阻断；执行序列=怎么触发。三轴正交，互不推出。 |
 | **运行时三口径** | "13"=外部运行时**整合**总数（深度接线 4 + CLI 接线 4 + 纯方法论引用 5）；"11"=自检**可检测可安装**的工具数（codex-security 无独立包可装、impeccable 是纯方法论，不在 11 内）；"7"=**安装目标**（生成器可以装进哪几个 AI 助手——install.sh 装的是生成器，不是目标技能；目标技能是在目标项目里生成的，不经 install.sh）。三个数答三个不同问题。 |
 | **pass / fail / warn / skip** | pass=通过；fail=阻断（退出非零，必须修）；warn=警告（计数不阻断）；skip=未配置该规矩**明示跳过**——skip 不计入 warn 更不算 pass，防止"没配规矩"被当成"合规"。**fail-open** 是另一回事：指某机制失败时不阻塞主流程（只允许在有下层强制兜底的地方使用）。 |
 | **特征卡 vs conf vs spec** | 特征卡=17 项**探查清单**（项目是什么样）；conf=特征卡翻译成的**配置变量**（门禁读它执法）；spec=每个开发任务的**任务规格**（本次需求/决策/测试，24 节模板）。三者是"项目立法 → 执法配置 → 任务合同"。 |
@@ -493,7 +474,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 
 ---
 
-### 8. 术语词典（首次定义汇总，按拼音排序）
+### 术语词典（首次定义汇总，按拼音排序）
 
 - **本体（ontology）**：对系统全部概念的类型化声明（有什么东西、什么关系、什么动作），三份文件 objects/links/actions，是一切机制的上游。
 - **账本（ledger）**：目标项目根 `.swarm-yuan/` 下的 JSONL 留痕文件，四本：trace / decisions / gate-runs / gate-audit。
@@ -509,8 +490,8 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 - **闭环流 / 四本账链式锚定**：账本行间用校验和互相引用，上游篡改导致全链失效可检出。
 - **特征卡（feature card）**：17 项项目探查清单，立法产物。
 - **外部运行时（runtime）**：被整合的外部工具/方法论，13 个，分深度接线/CLI 接线/方法论引用三层，未装自动降级不阻塞。
-- **项目地图（map）**：生成物 references/map.md，两列"路径|说明与约束"，≤32KiB。
-- ** Oracle（预言机验证）**：AI 声称完成时由 hook 独立重跑验证命令的机制，"完成了"需经独立验证才算数。
+- **项目地图（map）**：目标技能 references/reference-manual.md 里的两列"路径|说明与约束"清单，≤32KiB。
+- **Oracle（预言机验证）**：AI 声称完成时由 hook 独立重跑验证命令的机制，"完成了"需经独立验证才算数。
 - **facts.conf**：全部招牌数字的唯一权威文件；self-check 用代码真值机械对账。
 - **FAIL-open / fail-closed**：失败时放行 / 失败时拒绝。权限边界一律 fail-closed；fail-open 只用于有下层兜底处。
 - **五层认知（cognition）**：`references/cognition-framework.md` 定义的五层框架（认知递进/思维语言/认知辩证/偏差防范/辩证认知），特征卡第 13 项的认知基底；属建议性体检（`--cognition` 出报告不判违规），不是门禁家族。
@@ -518,7 +499,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 
 ---
 
-### 9. 边界与诚实声明（它不做什么）
+### 边界与诚实声明（它不做什么）
 
 1. **不替代宿主**：AI 助手（Claude Code/Codex 等）管会话循环、沙箱、审批通道；本系统只管项目上下文、业务规则、操作边界。
 2. **Windows 硬前置 bash**：原生 cmd/PowerShell 不支持——Windows 用户须先装 Git for Windows（自带 Git Bash）或 WSL。
@@ -530,17 +511,16 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 
 ---
 
-### 10. 阅读地图（接下来读什么）
+### 阅读地图（接下来读什么）
 
 | 想深入了解 | 去读 |
 |-----------|------|
-| 全部设计规格（本体论/架构/验收/档案） | 本文第一部分 §1-§6（设计内核，定稿） |
+| 设计内核（What/Why/How/实现/When/总结+附录） | `swarm-yuan/README.md`（唯一设计文档） |
 | 每个数字的权威值 | `swarm-yuan/assets/facts.conf` |
-| 为什么门禁长这样（改动前必读） | 本文 §12 决策史（决策 1-35；1-17 见 §13 档案 A5） |
+| 为什么门禁长这样（改动前必读） | `docs/design-evolution.md` §12 决策史（决策 1-38；1-17 见其 §13 档案 A5） |
 | 生成流程逐步口径 | `swarm-yuan/references/generation-flow.md`（Step 1-12） |
 | 79 框架各自的规则 | `swarm-yuan/references/frameworks/` |
-| 使用手册（研发人员视角） | 本文 §10 使用手册详情 |
 | 验收体系怎么运作 | `verifier/README.md` 与 `verifier/v1/acceptance-criteria.md` |
-| 调研证据（方案怎么长出来的） | `docs/research/`（R1-R9、R11-R15，R10 无报告） |
+| 调研证据（方案怎么长出来的） | `docs/research/`（R1-R20，R10 无报告） |
 
-> 维护注记：本段是解释层，不承载规格——若与第一部分设计内核冲突以设计内核为准，并视为本段需要修订；发现歧义请按"术语词典"先对齐命名再讨论。
+> 维护注记：本段是解释层，不承载规格——若与设计文档（`swarm-yuan/README.md`）冲突以设计文档为准，并视为本段需要修订；发现歧义请按"术语词典"先对齐命名再讨论。

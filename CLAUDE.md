@@ -7,13 +7,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **17-item feature card** （特征卡， the "legislation") and enforces them with **55 quality gates** （55 个质量门禁， the "enforcement"). It integrates 13 external runtimes by **invoking them, never reimplementing** —按接线深度分三层（深度接线/CLI 接线/方法论引用），每层有自带降级载体，未装不阻塞。运行时/门禁/变量/框架等口径数字详见 `swarm-yuan/assets/facts.conf`（单一事实源，self-check 机器执法做漂移检测）与 `docs/usage-manual.md` §10 数字一览。
+`swarm-yuan` is a **meta-skill generator**: a bash-based tool that, pointed at any code repository, generates a project-specific development "skill" for AI coding assistants. The generated skill encodes a project's rules as a **17-item feature card** （特征卡， the "legislation") and enforces them with **55 quality gates** （55 个质量门禁， the "enforcement"). It integrates 13 external runtimes by **invoking them, never reimplementing** —按接线深度分三层（深度接线/CLI 接线/方法论引用），每层有自带降级载体，未装不阻塞。运行时/门禁/变量/框架等口径数字详见 `swarm-yuan/assets/facts.conf`（单一事实源，self-check 机器执法做漂移检测）与 `swarm-yuan/README.md` 附录 A（数字速览）。
 
 There is no compiled artifact and no conventional build — the product is a set of bash scripts, markdown templates/references, and shell gate fragments that get copied into a target skill directory.
 
 ## 范式定位（WP-P10 → R13 修正）
 
-swarm-yuan 现为**两体系统**（swarm-yuan/README.md 一章 What）：生成器侧 ~68K 行自举仍在（一次性消费不算税），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` 五章 When。（2026-07 WP-P10 的"重量级范式，重量是设计选择"是历史定位，R13 起以上述两体系统为准。）
+swarm-yuan 现为**两体系统**（swarm-yuan/README.md 一章 What）：生成器侧 ~74K 行自举仍在（一次性消费不算税，行数口径机械实测 2026-09-10，排除 tests/research/offline-cache），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` 五章 When。（2026-07 WP-P10 的"重量级范式，重量是设计选择"是历史定位，R13 起以上述两体系统为准。）
 
 ## Repository layout (three top-level roles)
 

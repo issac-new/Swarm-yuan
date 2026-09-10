@@ -725,6 +725,25 @@ check_doc_consistency() {
   if grep -qE '(^|[^0-9.])[0-9]+ ?个(质量)?门禁' "$base/SKILL.md" 2>/dev/null && ! grep -q 'FACT_GATES_TOTAL' "$base/SKILL.md" 2>/dev/null; then
     warn "SKILL.md 仍手抄门禁数字（R13 后应引用 facts.conf 或不写数字）"
   fi
+
+  # 6. 版本口径三面机器锚（决策 38：根 README badge = 技能 README badge = CHANGELOG 首行版本）
+  # 成因：v2.8.0 起四次发版漏改根 README badge（停在 v2.7.0）——发版 checklist 靠人记必然漏。
+  # 仓库根 = $base 上一级；安装态（~/.claude/skills/swarm-yuan）无 CHANGELOG.md 时显式跳过（同 _have_facts 守卫模式）。
+  local repo_root; repo_root="$(cd "$base/.." && pwd)"
+  local _cl_ver _root_badge _skill_badge
+  _cl_ver=$(grep -m1 -oE '^## \[v[0-9]+\.[0-9]+\.[0-9]+\]' "$repo_root/CHANGELOG.md" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+  _root_badge=$(grep -m1 -oE 'release-v[0-9]+\.[0-9]+\.[0-9]+' "$repo_root/README.md" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+  _skill_badge=$(grep -m1 -oE 'release-v[0-9]+\.[0-9]+\.[0-9]+' "$base/README.md" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+  if [[ -z "$_cl_ver" ]]; then
+    echo "  ℹ 版本口径锚跳过（${repo_root} 无 CHANGELOG.md——安装态/目标技能上下文）"
+  else
+    if [[ "$_root_badge" == "$_cl_ver" && "$_skill_badge" == "$_cl_ver" ]]; then
+      echo "  ✓ 版本口径三面一致（CHANGELOG 首行 = 根 README badge = 技能 README badge = ${_cl_ver}）"
+    else
+      warn "版本口径漂移：CHANGELOG=${_cl_ver:-?} 根README badge=${_root_badge:-无} 技能README badge=${_skill_badge:-无}——发版须三面同步（决策 38 机器锚）"
+      FAIL=1
+    fi
+  fi
 }
 check_doc_consistency
 

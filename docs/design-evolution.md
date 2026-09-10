@@ -518,7 +518,17 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 
 **追记（2026-09-09，同日 quality:full 吸收）**：用户提供 aifc 项目 quality-full.mjs（十步串行质量门禁，fail-fast + 每步耗时留痕）。处置：按决策 36 三态判——其十步与本仓既有门禁（build/test/contract/reuse/consistency/layer/docs-pack/security/deps 九旗）几乎全部重复，重复建 check_* 会撞 55 预算冻结且造第二事实源。落地形态=**用**（不并、不删）：把"十步串行 + fail-fast + 映射既有 flag"沉淀为 workflow.md 节点⑥⑦的质量门禁序列指引 + commands/precheck.md 常用序列建议，生成骨架自动携带；不新增门禁函数。吸收依据是真实缺陷——原节点⑥只列单门禁名，未给"多门禁按什么顺序跑、先跑构建还是安全"的执行面，quality:full 补上了这个排序与 fail-fast 纪律。
 
-**决策索引（R13 后）**：决策 1-17 见 §13 历史档案 A5 归档卷；决策 18-29 见本文前部；决策 30-32 自适应与压缩；决策 33-34 R13 重构与防复胖；决策 35 创造纪律（audit-claims-reality 轮）；决策 36 恰当应用（去教条化轮）；决策 37 R21 核心链条补强（复盘改进轮）。
+### 决策 38：审计收账轮——版本口径机器锚与认知面预算例外登记（2026-09-10，agents-md-audit-round）
+
+**背景**：按用户级 AGENTS.md 对 swarm-yuan 全面排查，得 23 项"声称-现实"裂缝。代码与验证体系全绿（79 fixtures / e2e / gen-e2e 本机实测），裂缝集中在文档层。其中两项需要治理决策而非单纯改字：
+
+**决定一：版本口径三面失同步的根治 = 机器锚**。根 README badge 停在 v2.7.0、SECURITY.md 停在 v2.6.1，而技能 README 已 v2.10.1——四次发版漏改。过程根因：发版 checklist 只写 "Update README badge (if applicable)"，未指明哪份文件。根治不是再改一次字，是把「根 README badge = 技能 README badge = CHANGELOG 首行版本」做成 self-check 文档一致性段的可执行断言（漂移即 warn + FAIL 置位），并同步修 CONTRIBUTING 发版步骤。与 FACT_SCRIPT_LOC 两度未随改随更同族教训：账实对账必须机器执法，靠人记必然漏。
+
+**决定二：认知面预算超标的处置 = 登记例外而非瘦身**。实测 262179B 超 262144B 预算 35B。超额成因核查（git -S 考古）：5170a0a 补随发 standards-map.conf（修复 compliance 核验静默失效）与 rules.d/framework-globs.rules（修复 G21 快照失锚）——两件都是修静默失效的必要税，非内容膨胀。裁定：FACT_ARTIFACT_BYTES_BUDGET 262144→266336（+4KiB ≈ 1.6%，冻结现状 + 显式余量），例外理由留 facts.conf 键注释。边界：不构成先例，下次超标仍须逐例登记（瘦身或例外二选一，禁静默）；R13「成长 = 预算内替换」纪律不变。
+
+**同轮修复清单**（纯文档层，无代码行为变更）：usage-manual 双节号/悬空指针 8 处、三理念 ↔ 四理念叙事分岔合一、数字速览二表收敛（手册 §10 改指 README 附录 A）、CONTRIBUTING 三处陈旧、生成器模板 hermes-agent/ncwk 项目沉积泛化、CLAUDE.md ~68K 行口径更新、capabilities 版本注记头同步。修复面验证 = self-check + e2e + fixtures + gen-e2e 全绿。
+
+**决策索引（R13 后）**：决策 1-17 见 §13 历史档案 A5 归档卷；决策 18-29 见本文前部；决策 30-32 自适应与压缩；决策 33-34 R13 重构与防复胖；决策 35 创造纪律（audit-claims-reality 轮）；决策 36 恰当应用（去教条化轮）；决策 37 R21 核心链条补强（复盘改进轮）；决策 38 审计收账轮（版本口径机器锚 + 认知面预算例外）。
 
 ---
 

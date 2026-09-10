@@ -31,7 +31,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/self-check.sh
 ### 3. 读取项目知识（最高优先级）
 读取项目的既有知识文件，提取规则：
 - P0：`AGENTS.md`（可改范围/只读区/改造分类/分支策略）、`CLAUDE.md`（项目概述/命令/端口/架构）
-- P0：如果项目含 `upstream/hermes-agent/`，读取 agent README + AGENTS.md + 工具清单 + 插件
+- P0：若项目存在只读上游快照区（如 `upstream/`、`vendor/`、`third_party/` 等，以 AGENTS.md 声明为准），读取其顶层 README/模块清单以了解可复用面——但**不深入读取其内部全部文件**（只读区非探查重点，违规检测交给 `--scope` 门禁）
 - P1：`.zcode/memories/`（全局规则/用户偏好/历史教训）、`.claude/`（claude-mem 记忆库）
 - P2：`CONTRIBUTING.md`、`README.md`、`.github/`
 - P3：`docs/`（specs/plans/ADR）

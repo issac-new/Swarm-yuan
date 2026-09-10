@@ -6,7 +6,7 @@ Thank you for your interest in contributing. This document describes the develop
 
 ```bash
 git clone https://github.com/issac-new/Swarm-yuan.git && cd Swarm-yuan
-bash install.sh        # Install the generator (auto-detects Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi)
+bash swarm-yuan/install.sh   # Install the generator (auto-detect Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi)
 ```
 
 ## Development Workflow
@@ -83,8 +83,8 @@ bash verifier/v1/run-verifier.sh all
 ### 5. Documentation Standards
 
 - **Single source of truth**: All counts/metrics go in `swarm-yuan/assets/facts.conf`; documentation must not hardcode numbers (self-check enforces this)
-- **README.md** is the single document (five-layer progression: 理念→设计→架构→实现→使用+引用); no separate docs/ except `docs/research/` (调研证据链)
-- **SKILL.md** (generator entry) follows the same five-layer structure; target-skill templates must not contain process/version content (terminal-state only)
+- **Document map** (2026-09 终态): `swarm-yuan/README.md` is the single design doc (What/Why/How/实现/When/总结+附录); operating commands live in `docs/usage-manual.md`, decision history in `docs/design-evolution.md`, runtime baselines in `docs/upstream-baseline.md`, research evidence in `docs/research/`
+- **SKILL.md** (generator entry) is the five-layer AI entry (理念/设计/架构/实现/使用+引用); target-skill templates must not contain process/version content (terminal-state only)
 - **Release notes** follow the format: 痛点→设计思路→使用指南→验证矩阵 (see [v2.6 release](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.6))
 
 ## Pull Request Process
@@ -100,7 +100,7 @@ bash verifier/v1/run-verifier.sh all
 
 1. **Feature freeze** on main (all planned changes merged, CI green)
 2. **Update CHANGELOG.md** (add new section following Keep a Changelog format)
-3. **Update README badge** version (if applicable)
+3. **Update release badges** — TWO files, both must equal the CHANGELOG head version: repo root `README.md` and `swarm-yuan/README.md`（决策 38 机器锚：self-check 文档一致性段断言三面一致，漂移即 fail）
 4. **Create annotated tag**: `git tag -a vX.Y.Z -m "swarm-yuan vX.Y.Z — summary"`
 5. **Create GitHub Release** with structured notes (痛点→设计→使用→验证矩阵)
 6. **Mark as Latest** (only one Latest at a time)
