@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.10.1-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.10.1)
+[![Release](https://img.shields.io/badge/release-v2.11.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.11.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -200,7 +200,7 @@
 | 特征卡 | 17 项（P0 六项强制，P1 十一项可增量） |
 | 框架规则集 | 79（规则文档与门禁片段 1:1 配对） |
 | 配置变量 / 上限 | 184 / 200 |
-| 目标技能税制 | SKILL.md ≤8KB、地图 ≤32KiB、认知面 ≤256KB、概念体系 ≤5 |
+| 目标技能税制 | SKILL.md ≤8KB、地图 ≤32KiB、认知面 ≤260KB（决策 38 例外上调自 256KB，理由留 facts.conf）、概念体系 ≤5 |
 | 外部运行时 | 13 个接线（深度 4 + CLI 4 + 方法论 5）；登记 16；自动检测 11 |
 | 类型目录 | 实体 17 / 关系 10 / 动作 11（assets/ontology/ 三份） |
 | 生成流程 | 12 步（唯一编号口径在 generation-flow.md）；目标技能工作流 9 节点 × 4 要素 |
@@ -244,6 +244,7 @@
 | 范式作为条件而非内容 / 落地优先（3.4、3.8） | 33 |
 | 吸收物处置三态（3.6、附录 B） | 36 |
 | 核心链条补强：配方、行为观察、关系边集、问题沉淀、质量门禁序列（3.1、3.2、3.4、3.5、3.6） | 37 |
+| 版本口径机器锚（附录 A 税制口径执法）+ 认知面预算例外登记（附录 A、3.6） | 38 |
 
 ## 附录 D：验收与复审
 
@@ -257,7 +258,7 @@
 | 4 | 门禁可达率 | 100% | 默认执行序列可触达 / facts.conf 对账 |
 | 5 | 地图预算 | 32KiB 硬顶 | self-check 断言 |
 | 6 | description ≤1024 字符 / SKILL.md 正文 ≤8KB | 达标 | gen-e2e 断言（锚定目标技能产物） |
-| 7 | 认知面体积（references 拷贝） | ≤256KB | self-check 断言 |
+| 7 | 认知面体积（references 拷贝） | ≤260KB（决策 38） | self-check 断言 |
 | 8 | 结构性：反向引用数 | 0 | self-check G19 |
 | 9 | 连接性：孤儿资产数 | 0 | self-check G18 |
 | 10 | 有效性：零拦截 / 沉睡门禁 | 零拦截入季度质疑，沉睡入候选清单 | gate-trends + adaptive-gating |
