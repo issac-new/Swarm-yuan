@@ -13,7 +13,7 @@ There is no compiled artifact and no conventional build — the product is a set
 
 ## 范式定位（WP-P10 → R13 修正）
 
-swarm-yuan 现为**两体系统**（swarm-yuan/README.md 一章 What）：生成器侧 ~68K 行自举仍在（一次性消费不算税），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` 五章 When。（2026-07 WP-P10 的"重量级范式，重量是设计选择"是历史定位，R13 起以上述两体系统为准。）
+swarm-yuan 现为**两体系统**（swarm-yuan/README.md 一章 What）：生成器侧 ~74K 行自举仍在（一次性消费不算税，行数口径机械实测 2026-09-10，排除 tests/research/offline-cache），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` 五章 When。（2026-07 WP-P10 的"重量级范式，重量是设计选择"是历史定位，R13 起以上述两体系统为准。）
 
 ## Repository layout (three top-level roles)
 

@@ -1,8 +1,8 @@
-> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.263，见文末版本注记）
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.266，见文末版本注记）
 
-# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.263（2026-09-06 R18 补核，见文末版本注记））
+# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.266（2026-09-09 R20 补核，见文末版本注记））
 
-> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.263 / stable=2.1.236（2026-09-06 实测，分裂持续）。
+> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.266 / stable=2.1.236（2026-09-08 实测，分裂持续）。
 > 生成目标技能时，AI 须把以下能力编织进 SKILL.md / workflow.md / reference-manual.md / hooks / commands / settings。
 
 ## 一、核心工具（Tools）

@@ -3,7 +3,7 @@
 # 对应材料 check 段 4 项：§1 测试 §2 业务规则 §3 数据勾稽(无多漏错重) §4 UI脱敏日志
 # 用法:
 #   bash precheck.sh                  # 核心 10 门禁（--all）
-#   bash precheck.sh --all-full       # 标准 27 门禁（核心 10 + 架构 17）
+#   bash precheck.sh --all-full       # 标准 28 门禁（核心 10 + 架构 18）
 #   bash precheck.sh --compliance-suite  # 合规 19 门禁套件（强监管交付按需；未配置静默跳过）
 #   bash precheck.sh --branch         # 分支规范
 #   bash precheck.sh --scope          # 改动范围（可改 vs 只读）
@@ -539,7 +539,7 @@ skip_if_unconfigured() {
 ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
 # 合规门禁（标准合规族 + P1 安全门禁族深化 + P3 长期清单 rtm/release-sign，仅 --compliance-suite/单门禁执行；未配置的静默跳过）
 ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_cert_audit check_cwe_audit)
-# 标准门禁（核心 10 + 架构 17 = 27）：--all-full 执行序列（合规 19 已拆出为 --compliance-suite 按需执行）
+# 标准门禁（核心 10 + 架构 18 = 28；facts.conf FACT_GATES_STANDARD/ARCH 对账，field-feedback +method_size 17→18 后注释同步）：--all-full 执行序列（合规 19 已拆出为 --compliance-suite 按需执行）
 ALL_GATES_STANDARD=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_method_size check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_test)
 # 全部门禁（含架构/认知/合规门禁，未配置的静默跳过；--fix-suggest 用）
 ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_method_size check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_cert_audit check_cwe_audit check_decision_audit check_state_phase check_test)
@@ -1642,7 +1642,7 @@ case "$MODE" in
     for _gate in "${ALL_GATES_CORE[@]}"; do _gate_exec "$_gate" 1; done
     ;;
   --all-full)
-    # 标准门禁 27（核心 10 + 架构 17）；合规 19 拆出为 --compliance-suite 按需执行
+    # 标准门禁 28（核心 10 + 架构 18）；合规 19 拆出为 --compliance-suite 按需执行
     for _gate in "${ALL_GATES_STANDARD[@]}"; do _gate_exec "$_gate" 1; done
     ;;
   --compliance-suite)
