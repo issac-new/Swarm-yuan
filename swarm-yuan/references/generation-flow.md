@@ -84,9 +84,9 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/recipes/snippets/m
 
 ## Step 8. AI 配置 precheck.conf
 
-**★脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/SERVICE_DIRS/STORE_DIR/WRITABLE_DIRS 等语义型变量，须从特征卡推导）+ 审 diff 是否符合特征卡意图——从「手写全部 conf 变量」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
+**★脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/WRITABLE_DIRS/READONLY_DIRS 等语义型变量，须从特征卡推导；标注 deprecated 的变量不填，恢复须手工解锁 arch.conf 注释行）+ 审 diff 是否符合特征卡意图——从「手写全部 conf 变量」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
 
-**★项目 rules.d 探查期生成（R21-C，②缺口收口）**：本 Step 从编排约束（§C+.3）与只读判定（特征卡 2 可改范围）推导项目特有三值规则初稿，写入产物 `rules.d/project.rules`——如 `src/generated/** → forbid # 生成代码禁手改，改生成器` / `src/core/** → prompt # 核心稳定层，改动须 spec` / `tests/** → allow`。求值器 `gate-rules.sh` 随发已可消费，零新机制；FORBID 行必须带替代方案（rules.d 行格式铁律）。
+**★项目 rules.d 探查期生成（R21-C，②缺口收口）**：本 Step 从编排约束（§C+.3）与只读判定（特征卡 2 可改范围）推导项目特有三值规则初稿，写入产物 `rules.d/project.rules`。**行语义 = 命令拦截**：`gate-rules.sh` 对命令首 token 做 glob 匹配（消费方是 fail-gate-hook/integrity-guard 的 PreToolUse(Bash)），**不是文件路径规则**——路径保护落 `READONLY_DIRS`（check_scope 执法），本文件写"哪些命令推进态要拦"（R23 回归 D12：原示例误用路径 pattern，照写即无效规则）。正确示例：`npm publish * → forbid # 发布不经门禁；替代：走 release 流程（门禁全绿 + tag）` / `git push * → prompt # 推进态；先跑 precheck --all` / `npm test * → allow`。FORBID 行必须带替代方案（rules.d 行格式铁律）。
 
 ## Step 8.5 review-methodology Mutation Check（P1-6 接入 generation-flow）
 
@@ -102,7 +102,7 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/recipes/snippets/m
 
 ## Step 10.5. AI 独立审查（review）
 
-**独立 code review（非自检）**：AI 以"第三方 reviewer"视角重新审视生成产物（SKILL.md / workflow / references / precheck.conf / scripts），不重复 Step 7 的填充自检，而是找 Step 7 之后仍残留的逻辑错误、占位符遗漏、门禁误配、组件库清单错漏等**低级错误**（用户原始痛点："swarm-yuan 没有测试和审查这个关键环节，错误太低级了"）。**★review 门禁（check_review）**：`check_review` 机械核验**审查留痕**——生成物目录存在 `references/review-record.md` 且非空（含 5 维审查点 + findings 表）即 fail。审查完须 `cp swarm-yuan/assets/review-record-template.md <skill>/references/review-record.md` 并填充 5 维审查点 + findings 表，作为独立审查证据产物落盘（review-record-template.md 路径：生成器侧与目标技能侧均为 `assets/`；填充产物落目标技能 `references/review-record.md`）。**审查留痕是 review 门的硬性交付物，缺则门禁 fail，不允口头"已审查"。**
+**独立 code review（非自检）**：AI 以"第三方 reviewer"视角重新审视生成产物（SKILL.md / workflow / references / precheck.conf / scripts），不重复 Step 7 的填充自检，而是找 Step 7 之后仍残留的逻辑错误、占位符遗漏、门禁误配、组件库清单错漏等**低级错误**（用户原始痛点："swarm-yuan 没有测试和审查这个关键环节，错误太低级了"）。**★review 门禁（check_review）**：`check_review` 机械核验**审查留痕**——生成物目录存在 `references/review-record.md` 且非空（含 5 维审查点 + findings 表）即 pass；默认档（REVIEW_RECORD_REQUIRED 未启用）只 warn 不 fail（诚实分层：CI 自举/工具仓库无生成物是常态），compliance 套配置 `REVIEW_RECORD_REQUIRED=1` 后缺留痕即 fail（R23 回归 D10：原文档"缺则 fail"与实现漂移，已对齐）。审查完须 `cp swarm-yuan/assets/review-record-template.md <skill>/references/review-record.md` 并填充 5 维审查点 + findings 表，作为独立审查证据产物落盘（review-record-template.md 路径：生成器侧与目标技能侧均为 `assets/`；填充产物落目标技能 `references/review-record.md`）。**目标技能 active 态建议在 conf 启用 REVIEW_RECORD_REQUIRED=1，让审查留痕成为硬门。**
 
 ## Step 11. AI 写回记忆
 

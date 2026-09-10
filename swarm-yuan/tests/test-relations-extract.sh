@@ -75,4 +75,14 @@ out="$(bash "$SH" "$TMP/java" --out "$TMP/java/relations.jsonl" 2>&1)"
 grep -qF '"from":"src/main/java/com/example/App.java","to":"src/main/java/com/example/pkg/Util.java"' "$TMP/java/relations.jsonl" \
   && ok "态4 Java 包路径映射边" || bad "态4 Java 边缺失: $(cat "$TMP/java/relations.jsonl" 2>/dev/null)"
 
+# --- 态 4b：CommonJS require() 相对导入（R23 回归 D1：原模式不容左括号，0 边） ---
+mkdir -p "$TMP/cjs/src/routes" "$TMP/cjs/src/services" "$TMP/cjs/src/models"
+printf 'const express = require("express");\nconst router = express.Router();\nrouter.get("/", (q,s) => s.json({}));\nmodule.exports = router;\n' > "$TMP/cjs/src/routes/tasks.js"
+printf "const { create } = require('../models/task');\nfunction add(p) { return create(p); }\nmodule.exports = { add };\n" > "$TMP/cjs/src/services/task-service.js"
+printf 'function create(p) { return p; }\nmodule.exports = { create };\n' > "$TMP/cjs/src/models/task.js"
+out="$(bash "$SH" "$TMP/cjs" --out "$TMP/cjs/relations.jsonl" 2>&1)"
+grep -qF '"from":"src/services/task-service.js","to":"src/models/task.js"' "$TMP/cjs/relations.jsonl" \
+  && ok "态4b CommonJS require('../') 相对导入边" || bad "态4b require 边缺失: $(cat "$TMP/cjs/relations.jsonl" 2>/dev/null)"
+_cjsn=$(grep -c . "$TMP/cjs/relations.jsonl"); [[ "$_cjsn" -eq 1 ]] && ok "态4b 边数=1（裸包 require 不计边）" || bad "态4b 边数=${_cjsn}（期望 1，express 裸包不应成边）"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-relations-extract"; exit 0; } || { echo "FAIL test-relations-extract" >&2; exit 1; }

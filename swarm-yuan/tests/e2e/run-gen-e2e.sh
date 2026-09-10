@@ -360,6 +360,19 @@ else
   bad "mark-active 前置 create 失败（见 /tmp/gene2e-ma-create.log）"
 fi
 
+# --- R23 回归 D2：生成流程 Step 4（relations-extract 先建 skill 目录）→ Step 6 create 撞目录 ---
+# 机械草稿目录（仅 references/relations.jsonl，无 SKILL.md）下 create 须按断点续传补齐而非报错。
+_d2tmp="$(mktemp -d /tmp/gene2e-d2.XXXXXX)"
+bash "${PARADIGM}/scripts/relations-extract.sh" "${DEMO}" --skill-dir "${_d2tmp}/.claude/skills/javatest" >/dev/null 2>&1
+if bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard javatest "${DEMO}" "${_d2tmp}/.claude/skills" >/tmp/gene2e-d2.log 2>&1; then
+  [[ -f "${_d2tmp}/.claude/skills/javatest/references/relations.jsonl" && -f "${_d2tmp}/.claude/skills/javatest/SKILL.md" ]] \
+    && ok "D2 机械草稿目录下 create 续传成功（relations.jsonl + SKILL.md 共存）" \
+    || bad "D2 create 成功但文件不齐（relations.jsonl 或 SKILL.md 缺失）"
+else
+  bad "D2 create 在机械草稿目录上报错（应续传；见 /tmp/gene2e-d2.log）"
+fi
+rm -rf "${_d2tmp}"
+
 # --- 结果 ---
 if [[ $FAIL -eq 0 ]]; then
   echo "GEN_E2E_RC 0"

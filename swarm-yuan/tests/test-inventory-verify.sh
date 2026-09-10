@@ -202,4 +202,26 @@ echo "$out" | grep -qF $'测试文件\t2\t' && echo "$out" | grep -F '测试文�
 out1="$(bash "$SH" "$TMP/proj" --skill-dir "$TMP/skill" --form backend --tsv 2>/dev/null)"
 echo "$out1" | grep -F '测试文件' | grep -qF 'FAIL' && bad "态11 零测试项目误报 FAIL" || ok "态11 零测试项目无 FAIL"
 
+# --- 态 12（R23 回归 D5）：node_modules 第三方包不污染枚举计数 ---
+mkdir -p "$TMP/proj12/src" "$TMP/proj12/node_modules/express/lib" "$TMP/skill12/references"
+cat > "$TMP/proj12/src/a.js" <<'EOF'
+router.get('/x', h1)
+EOF
+cat > "$TMP/proj12/node_modules/express/lib/express.js" <<'EOF'
+router.get('/fake', h)
+router.post('/fake', h)
+router.get('/fake2', h)
+EOF
+cat > "$TMP/skill12/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §6 接口端点
+| 路径 | 说明 |
+|------|------|
+| /x | GET |
+EOF
+out12="$(bash "$SH" "$TMP/proj12" --skill-dir "$TMP/skill12" --form backend --tsv 2>/dev/null)"
+echo "$out12" | grep -F '接口端点' | grep -qF $'接口端点\t1\t' \
+  && ok "态12 node_modules 不污染端点枚举（枚举=1，非 4）" \
+  || bad "态12 端点计数被污染: $(echo "$out12" | grep 接口端点)"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-inventory-verify"; exit 0; } || { echo "FAIL test-inventory-verify" >&2; exit 1; }

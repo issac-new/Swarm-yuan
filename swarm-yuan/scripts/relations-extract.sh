@@ -139,7 +139,9 @@ while IFS= read -r f_abs; do
         resolved=$(_resolve "$norm") || continue
         [[ "$resolved" == "$f_rel" ]] && continue
         _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
-      done < <(grep -nE "(from|require|import)[[:space:]]*[\"'][.][./][^\"']*[\"']" "$f_abs" 2>/dev/null || true)
+      # 回归 2026-09-10（R23 全量回归 D1）：原模式要求引号紧跟 require/from/import，
+      # CommonJS 的 require('./x') 带左括号永不命中——CommonJS 项目 0 边。加 \(? 容许括号。
+      done < <(grep -nE "(from|require|import)[[:space:]]*\(?[[:space:]]*[\"'][.][./][^\"']*[\"']" "$f_abs" 2>/dev/null || true)
       ;;
     *.py)
       # from .x import y / from ..x import y（相对导入机械可靠；绝对导入 best-effort 根解析）

@@ -18,7 +18,22 @@ done
 [[ -n "$PROJ" && -d "$PROJ" ]] || { echo "✗ PROJECT_DIR 缺失或不存在: ${PROJ:-（空）}" >&2; exit 1; }
 PROJ=$(cd "$PROJ" && pwd)
 DEC="$PROJ/.swarm-yuan/decisions.jsonl"
-[[ -f "$DEC" ]] || { echo "ℹ 无 decisions.jsonl——closure 审计跳过（无目标闭环数据）"; exit 0; }
+# R23 回归 D14：decisions.jsonl 有两本账——项目侧（执勤期决策，trace-log --persist 写）
+# 与技能侧（生成期决策，mark-active 核验的 <skill>/.swarm-yuan/）。原脚本只读项目侧，
+# 生成期决策对闭环审计不可见（回归实证：mark-active 已核验 ≥1 决策，audit-closure 仍报"无"）。
+# 两处都探测并合并（同 goal_id 以末条为准，文件序=项目侧在前技能侧在后）。
+_skill_dec=""
+for _cand in "$PROJ"/.claude/skills/*/.swarm-yuan/decisions.jsonl "$PROJ"/.codex/skills/*/.swarm-yuan/decisions.jsonl; do
+  [[ -f "$_cand" ]] && { _skill_dec="$_cand"; break; }
+done
+if [[ ! -f "$DEC" && -z "$_skill_dec" ]]; then
+  echo "ℹ 无 decisions.jsonl——closure 审计跳过（无目标闭环数据）"; exit 0
+fi
+_merged_dec="$(mktemp "${TMPDIR:-/tmp}"/audit-closure.XXXXXX)"
+{ [[ -f "$DEC" ]] && cat "$DEC"; [[ -n "$_skill_dec" ]] && cat "$_skill_dec"; } > "$_merged_dec" 2>/dev/null || true
+[[ -s "$_merged_dec" ]] || { rm -f "$_merged_dec"; echo "ℹ 无 decisions.jsonl——closure 审计跳过（无目标闭环数据）"; exit 0; }
+[[ -n "$_skill_dec" ]] && echo "  ⓘ 合并技能侧决策账本: ${_skill_dec#$PROJ/}"
+DEC="$_merged_dec"
 
 echo "## goal 闭环完备性（R15 审计即完成条件）"
 # goal_id 全集（非空 goal_id 的分布）
@@ -46,7 +61,9 @@ fi
 # no-op 验收：重跑本脚本两次输出应一致（幂等性，HarnessEval 验收条件）
 _out1=$(sed -n 's/.*"goal_id":"\([^"]*\)".*/\1/p' "$DEC" | grep -v '^$' | sort -u | cksum | awk '{print $1}')
 if [[ "$STRICT" -eq 1 && "$_open" -gt 0 ]]; then
+  rm -f "$_merged_dec"
   echo "✗ --strict：存在 open goal（${_open} 个）——审计未完成，不满足完成条件" >&2
   exit 2
 fi
+rm -f "$_merged_dec"
 exit 0
