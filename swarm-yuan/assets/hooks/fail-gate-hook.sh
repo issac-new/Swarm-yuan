@@ -169,8 +169,12 @@ for _cand in "${CLAUDE_PLUGIN_ROOT:-}/SKILL.md" "$ROOT/SKILL.md" "${_sm_self}/..
 done
 
 # 白名单读取（GATE_ENFORCE_DENY=check_security,check_sensitive 或 all）
+# R25-D3：对齐同文件 SPEC_REQUIRED 解析范式（cut 剥注释 → tr 剥空白 → sed 剥引号）。
+# 原缺陷：该行带 # MEASURE 行尾注释，sed 剥不到中间引号、注释全量混入 DENY_LIST；
+# 首版修复只加 cut 不调 tr 顺序仍残留引号（态 30 判别器抓到）——tr 必须在 sed 前，
+# 否则剥注释后的行尾空格让 s/"$// 锚不上。
 DENY_LIST=""
-[[ -f "$CONF" ]] && DENY_LIST=$(grep -m1 '^GATE_ENFORCE_DENY=' "$CONF" 2>/dev/null | sed 's/^GATE_ENFORCE_DENY=//;s/^"//;s/"$//' | tr -d '[:space:]' || printf '')
+[[ -f "$CONF" ]] && DENY_LIST=$(grep -m1 '^GATE_ENFORCE_DENY=' "$CONF" 2>/dev/null | cut -d'#' -f1 | tr -d '[:space:]' | sed 's/^GATE_ENFORCE_DENY=//;s/^"//;s/"$//' || printf '')
 
 _deny_log() { # $1=tool $2=target $3=gates
   local _dl_dir="$ROOT/.swarm-yuan"
@@ -352,7 +356,8 @@ EOF
       # WP-Enforce2：Bash 拦截需独立开关 GATE_ENFORCE_DENY_BASH（默认空=不拦，避免误伤）
       # 白名单：git push/commit/merge/release/deploy/install/publish；不拦只读（status/log/diff/ls/cat/grep）与测试命令（npm test/build/lint）——fail 后需要重跑诊断。
       _bash_deny=""
-      [[ -f "$CONF" ]] && _bash_deny=$(grep -m1 '^GATE_ENFORCE_DENY_BASH=' "$CONF" 2>/dev/null | sed 's/^GATE_ENFORCE_DENY_BASH=//;s/^"//;s/"$//' | tr -d '[:space:]' || printf '')
+      # R25-D3 同款：tr 在 sed 前（对齐 SPEC_REQUIRED 范式），行尾注释不再混入白名单匹配
+      [[ -f "$CONF" ]] && _bash_deny=$(grep -m1 '^GATE_ENFORCE_DENY_BASH=' "$CONF" 2>/dev/null | cut -d'#' -f1 | tr -d '[:space:]' | sed 's/^GATE_ENFORCE_DENY_BASH=//;s/^"//;s/"$//' || printf '')
       [[ -z "$_bash_deny" ]] && exit 0
       [[ ! -f "$FLAG" ]] && exit 0
       # 提取命令首个 token（git/npm/bash/sh 等）

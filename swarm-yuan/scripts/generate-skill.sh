@@ -1344,6 +1344,15 @@ copy_universal_templates() {
       if [[ -f "$ASSETS_DIR/$b.bat" ]]; then cp "$ASSETS_DIR/$b.bat" "$dir/assets/$b.bat" 2>/dev/null || true; fi
     done
   fi
+  # R25-D1：升级备份目录不入库——create/upgrade/resume 三路径都在 skill 目录幂等声明
+  # .gitignore 忽略 .upgrade-backup-*/（真实执勤暴露：备份目录被 git add -A 整体吸入版本库，
+  # 单次 upgrade 制造 1.8 万行垃圾提交）。用户自有条目不受影响（只追加不覆盖）。
+  if ! LC_ALL=C grep -qF '.upgrade-backup-' "$dir/.gitignore" 2>/dev/null; then
+    {
+      [[ -f "$dir/.gitignore" ]] || printf '# swarm-yuan 生成器维护区（机器覆盖安全；用户忽略规则请写项目根 .gitignore）\n'
+      printf '.upgrade-backup-*/\n'
+    } >> "$dir/.gitignore"
+  fi
 }
 
 # ============================================================

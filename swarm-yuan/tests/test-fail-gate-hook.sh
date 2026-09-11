@@ -259,4 +259,47 @@ mkdir -p "$TMP/proj28/docs/specs"; printf '# X\n## 决策记录\n- 方案 A\n' >
 out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/proj28/src/foo.py"},"cwd":"'$TMP'/proj28"}' | CLAUDE_PLUGIN_ROOT="$TMP/skill28" bash "$TMP/skill28/scripts/fail-gate-hook.sh" 2>&1)
 [[ -z "$out" ]] && ok "态29 双目录布局批准 spec 放行" || bad "态29 双目录误拦: $out"
 
+# 态 30-31：R25-D3 回归锚——conf 行尾注释（MEASURE 口径）污染 DENY 白名单。
+# 修复前：sed 只剥行首/行尾引号，注释文字与中间引号混入 DENY_LIST → PostToolUse 把污染值
+# 原样落进 .gate-fail-flag → PreToolUse deny JSON 嵌入后成非法 JSON（宿主解析失败=拦截失效）。
+# 断言走完整污染链：先 PostToolUse fail 让 hook 自己落 flag，再 PreToolUse 验输出——
+# 手工造干净 flag 测不到此缺陷（R25 判别器教训）。
+# 布局：出厂真实形态 = 值带引号 + 行尾 # MEASURE 注释。
+setup_comment_proj() {
+  mkdir -p "$1/scripts" "$1/.swarm-yuan"
+  cat > "$1/SKILL.md" <<EOF
+---
+status: active
+---
+EOF
+  cat > "$1/scripts/precheck.conf" <<EOF
+PROJECT_DIR="$1"
+GATE_ENFORCE_DENY="security"  # MEASURE: characteristic=可靠性 function=门禁失败硬拦截白名单 threshold=默认核心10门禁
+$2
+EOF
+}
+
+# 态30：注释 conf → PostToolUse 落的 flag 干净 → PreToolUse deny 输出合法 JSON
+setup_comment_proj "$TMP/p30" ""
+echo '{"hook_event_name":"PostToolUse","tool_name":"Bash","tool_input":{"command":"bash scripts/precheck.sh --all"},"tool_response":{"exit_code":1},"cwd":"'$TMP'/p30"}' | bash "$HOOK" >/dev/null 2>&1
+[[ -f "$TMP/p30/.swarm-yuan/.gate-fail-flag" ]] && ok "态30 precheck fail → flag 落盘" || bad "态30 flag 未落盘"
+[[ "$(cat "$TMP/p30/.swarm-yuan/.gate-fail-flag")" == "security" ]] && ok "态30 flag 内容干净（=security）" || bad "态30 flag 被注释污染: $(cat "$TMP/p30/.swarm-yuan/.gate-fail-flag" | head -c 60)"
+out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/p30/src/foo.py"},"cwd":"'$TMP'/p30"}' | bash "$HOOK" 2>&1)
+if command -v python3 >/dev/null 2>&1; then
+  printf '%s' "$out" | python3 -c 'import sys,json; json.load(sys.stdin)' 2>/dev/null \
+    && ok "态30 注释 conf 下 deny JSON 合法" || bad "态30 deny JSON 非法: $out"
+else
+  echo "$out" | grep -q 'MEASURE' || ok "态30 deny 输出不含注释文本（无 python3 降级）" || bad "态30 注释混入输出: $out"
+fi
+echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态30 注释 conf 拦截功能正常" || bad "态30 未 deny: $out"
+grep -q 'MEASURE' "$TMP/p30/.swarm-yuan/gate-deny.jsonl" 2>/dev/null && bad "态30 审计 gates 字段混入注释" || ok "态30 审计 gates 字段干净"
+
+# 态31：注释 conf 的 GATE_ENFORCE_DENY_BASH → 白名单解析干净，git push 仍拦、npm test 仍放行
+setup_comment_proj "$TMP/p31" 'GATE_ENFORCE_DENY_BASH="push,commit"  # MEASURE: 推进态命令拦截白名单'
+echo '{"hook_event_name":"PostToolUse","tool_name":"Bash","tool_input":{"command":"bash scripts/precheck.sh --all"},"tool_response":{"exit_code":1},"cwd":"'$TMP'/p31"}' | bash "$HOOK" >/dev/null 2>&1
+out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git push origin main"},"cwd":"'$TMP'/p31"}' | bash "$HOOK" 2>&1)
+echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态31 注释 BASH 白名单 git push 仍拦" || bad "态31 未 deny: $out"
+out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"npm test"},"cwd":"'$TMP'/p31"}' | bash "$HOOK" 2>&1)
+[[ -z "$out" ]] && ok "态31 注释 BASH 白名单 npm test 仍放行" || bad "态31 误拦测试: $out"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-fail-gate-hook"; exit 0; } || { echo "FAIL test-fail-gate-hook" >&2; exit 1; }
