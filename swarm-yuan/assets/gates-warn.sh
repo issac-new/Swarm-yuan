@@ -77,8 +77,11 @@ check_test() {
 ' "$_tout"
   # field-feedback 2026-08-26（反馈 3 补强）：0 用例检出——"测试通过"且输出明示 0 用例时
   # warn（空跑通过是逻辑错误的最弱兜底，不算真兜底）。各框架输出格式启发式匹配。
+  # R25-PF3（2026-09-12 Java 执勤实证）：原正则只认 jest/pytest 风格——Maven/Gradle surefire
+  # "Tests run: 0"、Node TAP "# tests 0"、pytest "no tests ran" 三种形态漏检，零用例假绿
+  # 穿透门禁打出"✓ 测试通过"。补齐三种主流 runner 形态。
   if [[ "$_trc" -eq 0 ]]; then
-    if printf '%s' "$_tout" | grep -qiE '0 (passed|tests?|examples?)|tests?: 0|0 个用例|0 tests? found'; then
+    if printf '%s' "$_tout" | grep -qiE '0 (passed|tests?|examples?)|tests?: 0|tests? run: 0|#[[:space:]]*(tests?|pass)[[:space:]]+0|no tests ran|0 个用例|0 tests? found'; then
       warn "测试命令退出码 0 但输出 0 用例——空跑通过不算兜底，须补真实用例"
     else
       pass "测试通过"

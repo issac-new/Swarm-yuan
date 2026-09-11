@@ -215,6 +215,8 @@ jobs:
           bash tests/test-project-fingerprint.sh
           bash tests/test-spec-task-type-gating.sh
           bash tests/test-upgrade-hygiene.sh
+          bash tests/test-check-test-zero-runs.sh
+          bash tests/test-mark-active-decisions-fallback.sh
           bash tests/scripts/test-memory-writeback.sh
           for p in finance medical gov automotive energy telecom industrial; do
             bash tests/run-industry-profile.sh "$p"

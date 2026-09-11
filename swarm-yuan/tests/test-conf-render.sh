@@ -60,4 +60,22 @@ grep -q 'SERVICE_DIRS' "$TMP/out/TODO-model.txt" \
   && bad 'D4 TODO-model 不应列 deprecated 变量 SERVICE_DIRS' \
   || ok 'D4 TODO-model 不列 deprecated 变量'
 
+# --- 态 7-8（R25-PF1 回归锚）：Python 裸锁文件项目命令默认值须与本机现实对齐 ---
+# 修复前：requirements.txt 只有 flask 也给 TEST_CMD=pytest / BUILD_CMD="python -m build"——
+# 两者是第三方包，未声明未安装时默认值不可执行（真实执勤 notes-api 门禁真跑翻车）。
+# 态 7：未声明 pytest → 标准库 unittest 兜底（default）+ BUILD_CMD 留空
+mkdir -p "$TMP/pyproj1"
+printf 'flask>=3.0\n' > "$TMP/pyproj1/requirements.txt"
+out="$(bash "$SH" "$TMP/pyproj1" --profile standard 2>/dev/null)"
+grep -qE "TEST_CMD='python3 -m unittest discover -s tests'" <<<"$out" \
+  && ok "态7 未声明 pytest → unittest 零依赖兜底" || bad "态7 TEST_CMD: $(grep TEST_CMD <<<"$out")"
+grep -qE "BUILD_CMD=''  # AUTO:default" <<<"$out" \
+  && ok "态7 纯 requirements.txt → BUILD_CMD 留空" || bad "态7 BUILD_CMD: $(grep BUILD_CMD <<<"$out")"
+# 态 8：声明了 pytest → pytest（detected）
+mkdir -p "$TMP/pyproj2"
+printf 'flask>=3.0\npytest>=8.0\n' > "$TMP/pyproj2/requirements.txt"
+out="$(bash "$SH" "$TMP/pyproj2" --profile standard 2>/dev/null)"
+grep -qE "TEST_CMD='pytest'  # AUTO:detected" <<<"$out" \
+  && ok "态8 声明 pytest → pytest detected" || bad "态8 TEST_CMD: $(grep TEST_CMD <<<"$out")"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-conf-render"; exit 0; } || { echo "FAIL test-conf-render" >&2; exit 1; }

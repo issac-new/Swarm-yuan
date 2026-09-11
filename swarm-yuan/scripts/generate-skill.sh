@@ -743,7 +743,19 @@ verify_completeness() {
   hits=$(printf '%s\n%s\n' "$hits" "$recipes_miss" | grep -v '^$' || true)
   # G1：decisions.jsonl 校验（decisions_miss 并入 hits 统一裁决）
   # 检查 ① 每行 JSON 合法性 ② UserChallenge 行五要素非空（文件不存在不告警——draft 期允许空）
+  # R25-PF2（2026-09-12 Python/Java 执勤实证）：决策账本有双账——trace-log --decision 与 SKILL.md
+  # 填充指引都写项目侧 .swarm-yuan/decisions.jsonl，本核验此前只认技能侧账本，按文档执行即死锁
+  # （R23-D14 已合并 audit-closure 一侧，此处是另一半）。技能侧缺账时回退项目侧/codex 技能侧；
+  # 项目根从 skill_dir 派生（.claude/skills/<name> 上三级），与调用时 cwd 无关。
   local dec_file="$skill_dir/.swarm-yuan/decisions.jsonl" decisions_miss=""
+  if [[ ! -s "$dec_file" ]]; then
+    local _dc _proj_root
+    _proj_root="$(cd "$skill_dir/../../.." 2>/dev/null && pwd)" && _proj_root="${_proj_root:-}"
+    for _dc in "${PROJECT_DIR:-$_proj_root}/.swarm-yuan/decisions.jsonl" \
+               "$_proj_root"/.codex/skills/*/.swarm-yuan/decisions.jsonl; do
+      [[ -s "$_dc" ]] && { dec_file="$_dc"; break; }
+    done
+  fi
   if [[ -f "$dec_file" ]]; then
     if command -v python3 >/dev/null 2>&1; then
       local py_out
