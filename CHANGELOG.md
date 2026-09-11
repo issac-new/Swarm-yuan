@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.13.0] - 2026-09-12
+
+> R25 全量回归轮：R23 口径复跑（本地全量测试矩阵 + 真实项目执勤端到端）。执勤路径全通（遗留分支收口 → --upgrade 升级 → spec 先行新功能 → 门禁全过 → 合并收口），暴露 2 项缺陷并全部修复（P1×1 + P2×1）。较 R23 的 14 项大幅收敛，验证 R23 大扫除后的生成器在真实使用路径上已稳定。
+
+### Fixed
+- **GATE_ENFORCE_DENY 解析被行尾注释污染 → deny 非法 JSON（D3，P1）**：出厂 precheck.conf 的 `GATE_ENFORCE_DENY="..." # MEASURE: ...` 带行尾注释，fail-gate-hook 的解析 sed 只剥行首/行尾引号——注释文字与中间引号混入 DENY_LIST，PostToolUse 把污染值原样落进 .gate-fail-flag，PreToolUse deny JSON 嵌入后成非法 JSON（宿主解析失败 = 门禁失败硬拦截在出厂配置下失效）。GATE_ENFORCE_DENY_BASH 同款。修复对齐同文件 SPEC_REQUIRED 解析范式（cut 剥注释 → tr 剥空白 → sed 剥引号，tr 必须在 sed 前——首版修复因顺序错误仍残留引号，被判别器态 30 抓住后二次修正）。test-fail-gate-hook 新增态 30-31（完整污染链：PostToolUse 落 flag → PreToolUse JSON 合法性断言；旧实现 3 处挂，新实现全过）。
+- **--upgrade 备份目录被 git add -A 吸入版本库（D1，P2）**：SKILL_DIR/.upgrade-backup-<stamp>/ 此前无任何忽略声明，真实执勤中单次 upgrade 制造 1.8 万行垃圾提交。修复：copy_universal_templates 三路径（create/upgrade/resume）幂等写 SKILL_DIR/.gitignore 声明 `.upgrade-backup-*/`（只追加不覆盖，用户自有条目保留）。新增 tests/test-upgrade-hygiene.sh：真实 create → git 入库 → upgrade 全链路，断言 git check-ignore 命中、git status 无备份路径、二次 upgrade 幂等、用户条目保留（旧实现 5 处挂，新实现全过）；已接线 CI 治理段。
+
+### 诚实边界
+- 本轮执勤样本为 R23 同款 Node/Express 单体（task-api），未覆盖 Python/Java 栈的真实项目执勤路径；框架门禁侧仍由 79 fixture 双态 + e2e 四框架注入覆盖。
+- integrity-guard 静默面（无 stdin 输入时 exit 0 无输出）为设计行为，易被误读为"没执行"；本轮实测 deny/advisory 双场景输出协议正常，未改动。
+
 ## [v2.12.0] - 2026-09-10
 
 > R23 全量回归轮：对生成器跑完本地全量测试矩阵后，以真实使用路径（典型 Node/Express 项目生成技能 → 特征卡填充 → mark-active 激活 → spec 先行开发新功能）做端到端执勤回归，暴露 14 项缺陷并修复 11 项（P1×4 + P2×7；P3×3 记录观察不修）。核心发现：三类执法体在按文档执行的标准流程下静默失效或自干扰——spec 发现口径三分、scope 门基分支探测错误吞合法提交、审查工具降级链失败仍报"无问题"假 pass。修复全部带回归断言固化（单测用例 + gate-fixtures 双态 + gen-e2e 步骤）。
