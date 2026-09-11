@@ -136,7 +136,7 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 
 其余增量（失败词表 `<domain>/<reason>` 单点声明、Agent Teams 孵化围栏、绞杀者模式 api 拆分）与本仓既有机制同族（gate ID 前缀、§五候选登记制），登记不展开。逐条细节留档 `docs/research/R17-runtime-refresh.md`。
 
-## 九、0.1.5 版本注记（当前 dsh-v0.1.5-rc.1）
+## 九、0.1.5 版本注记（当前 dsh-v0.1.5-rc.2）
 
 > 基线 0.1.2-rc.1 → 0.1.5-rc.1（2026-09-10，跨 0.1.3-alpha.1/2 + 0.1.5-alpha.1/2 两功能线；R20 预告触发点「0.1.5 rc」命中，rc 作基线沿 R17 先例）。三条有操作含量的原则：
 
@@ -145,3 +145,5 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 - **暂停即终止 + 用户独占恢复权**：Web 暂停目标立即终止当前模型轮次且模型不能自行恢复，恢复必须由用户触发——**用户控制权 fail-closed**（与 gsd「复核阻塞须确定性证据」的用户主权面向同族）。
 
 其余增量（DeepSeek-V41-Flash 默认模型 / Web 通用文件上传混排（模型按路径按需读取——输入经济学族）/ Sidebar 多标签产物预览 / 代理环境变量遵循 / 流式工具调用续传分片修复）对账通过，登记不展开。逐条细节留档 `docs/research/R22-runtime-refresh.md`。
+
+- **0.1.5-rc.2（2026-09-11 R24 核）**：web feedback + file refinements 回移 0.1.5 线（2 commits），无方法论新原语，基线随升。档案 `docs/research/R24-runtime-refresh.md`。

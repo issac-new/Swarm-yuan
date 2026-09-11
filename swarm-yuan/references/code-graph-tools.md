@@ -313,4 +313,5 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | **大小写不敏感扩展名分发** | v0.9.7 | `App.PY`/`script.JS` 不再被跳过 | 跨平台文件名可引用 |
 | **`affected <Class>` 成员种子** | v0.9.7 | `affected` 从类的成员节点种子反向遍历 | 影响分析可引用 |
 - 版本注记：v0.9.56（2026-09-09 R20 核）——Rust trait 方法提取 + Node subpath imports 解析 + 无向 MCP 查询 + TS normalizer 去二次方扫描——覆盖面/性能修复族对账通过；克隆 origin 已重指向 Graphify-Labs。档案 `docs/research/R20-runtime-refresh.md`。
+- 版本注记：v0.9.58（2026-09-11 R24 核）——**python/php/bash import 解析**（跨语言边扩展）+ 同文件源路径碰撞合并修复 + SQL 索引 + rust static/const 声明提取——图谱完整性族延续。档案 `docs/research/R24-runtime-refresh.md`。
 - 版本注记：v0.9.57（2026-09-10 R22 核）——**增量重建不再擦除跨文件项目 AST 节点**（重提取 `.csproj` 曾连带丢被引用项目的 package/framework 节点）+ 重复节点合并保**更富节点**为幸存者（非空字段折叠）+ C# 泛型调用点解析 + `this.X` 成员全形态捕获——图谱完整性修复族对账通过。档案 `docs/research/R22-runtime-refresh.md`。
