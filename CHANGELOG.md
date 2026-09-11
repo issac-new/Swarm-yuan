@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.13.1] - 2026-09-12
+
+> R25 回归轮补充：Python 与 Java 栈真实执勤（R25 诚实边界披露的缺口补齐）。两栈各构造零依赖可真跑的样本项目（Python/Flask 声明 + unittest、Java/mybatis 声明 + javac+main runner），走完整执勤流程（生成 → 填充激活 → spec 先行开发标签功能 → 门禁 → 合并）。三条路径全部走通，暴露 3 项缺陷并全部修复（P1×2 + P2×1），全部带判别器断言固化（旧实现必挂、新实现全过）。Node/Express 主执勤见 v2.13.0。
+
+### Fixed
+- **check_test 零用例假绿穿透多 runner 形态（PF3，P1）**：零用例检出正则只认 jest/pytest 风格——Java 执勤实证 `mvn test` 对无 JUnit 用例项目输出 `Tests run: 0` 且 exit 0，门禁打出"✓ 测试通过"（真测试 runner 是 main 方法，surefire 跑了 0 个用例）。补齐三种主流形态：Maven/Gradle surefire `Tests run: 0`、Node TAP `# tests 0`、pytest `no tests ran`。新增五形态检出断言 + 真用例不误报（旧实现 3 处挂）。
+- **--mark-active 决策账本单侧探测死锁（PF2，P1）**：trace-log `--decision` 与 SKILL.md 填充指引都把决策写到项目侧 `.swarm-yuan/decisions.jsonl`，C2 核验此前只认技能侧账本——按文档执行即死锁（Python 执勤第一步激活就撞上；R23-D14 已合并 audit-closure 一侧，此处是另一半）。修复：技能侧缺账时回退项目侧/codex 技能侧，项目根从 skill_dir 上三级派生（与调用 cwd 无关）。行为级 smoke 断言含反向对照（双侧无账仍拦，防拦截面被误删；旧实现 1 处挂）。
+- **Python 项目 AUTO 命令默认值不可执行（PF1，P2）**：裸 requirements.txt/pyproject.toml 项目此前默认 `TEST_CMD='pytest'` / `BUILD_CMD='python -m build'`——两者是第三方包，未声明未安装时默认值必炸（Python 执勤实证门禁真跑翻车），且 SKILL.md 认知表继承同值。修复：声明了 pytest 才用 pytest（detected），否则标准库 `python3 -m unittest discover` 零依赖兜底；纯 requirements.txt 应用仓 BUILD_CMD 留空（与 Node 样本口径一致）。conf-render 双态断言（旧实现翻车形态被锁定）。
+
+### 诚实边界
+- Java 栈 `mvn test`/`gradle test` 的 AUTO:detected 默认值未改（对真实 Maven 项目语义正确）；零依赖 runner 样本的零用例假绿由 PF3 修复后的 check_test 拦截兜底，TEST_CMD 修正仍属 AI 填充职责（conf 标 AUTO:detected）。
+- 两栈执勤样本为单包最小项目；多模块 monorepo（Python workspace / Maven 多 module）执勤路径未覆盖。
+
 ## [v2.13.0] - 2026-09-12
 
 > R25 全量回归轮：R23 口径复跑（本地全量测试矩阵 + 真实项目执勤端到端）。执勤路径全通（遗留分支收口 → --upgrade 升级 → spec 先行新功能 → 门禁全过 → 合并收口），暴露 2 项缺陷并全部修复（P1×1 + P2×1）。较 R23 的 14 项大幅收敛，验证 R23 大扫除后的生成器在真实使用路径上已稳定。

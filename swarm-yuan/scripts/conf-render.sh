@@ -52,7 +52,19 @@ elif [[ -f "$PROJ/pyproject.toml" ]] || [[ -f "$PROJ/requirements.txt" ]]; then
   _lang="python"; _pm="pip"
   if [[ -f "$PROJ/uv.lock" ]]; then _pm="uv"; _build="uv run build"; _test="uv run pytest"; _build_confirmed=1; _test_confirmed=1
   elif [[ -f "$PROJ/poetry.lock" ]]; then _pm="poetry"; _build="poetry build"; _test="poetry run pytest"; _build_confirmed=1; _test_confirmed=1
-  else _build="python -m build"; _test="pytest"; fi
+  else
+    # R25-PF1（2026-09-12 Python 执勤实证 notes-api）：裸锁文件项目此前默认 _test=pytest /
+    # _build="python -m build"——两者都是第三方包，未声明未安装时默认值不可执行（AUTO:default
+    # 语义=默认未动，翻车在门禁 check_test 真跑时）。改为：声明了 pytest 才用 pytest（confirmed），
+    # 否则标准库 unittest 零依赖兜底；无 pyproject.toml（纯 requirements.txt 应用仓）无构建语义
+    # 则 BUILD_CMD 留空（与 Node 样本 task-api 口径一致）。
+    if grep -qi 'pytest' "$PROJ"/requirements*.txt "$PROJ"/pyproject.toml 2>/dev/null; then
+      _test="pytest"; _test_confirmed=1
+    else
+      _test="python3 -m unittest discover -s tests"
+    fi
+    if [[ -f "$PROJ/pyproject.toml" ]]; then _build="python -m build"; else _build=""; fi
+  fi
 fi
 # monorepo 判定
 _monorepo=0
