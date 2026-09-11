@@ -439,3 +439,10 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 ### v13.22-13.24 补核（2026-09-05 R17）
 
 - **熔断器事件形状修正**（13.23.x，#3838）：判据与 SDK 真实消息形状不匹配——**触发判据必须绑定上游真实事件形状**。📖 对账：本仓门禁判据绑定真实退出码/产物，同向；R16 四规则语义不变。13.24.0 多宿主分发不吸收，watch 维持。
+
+### v13.24.10 补核（2026-09-11 R24）
+
+- **凭据泄漏路径关闭**（#3985）：安全修复，登记。
+- **配额熔断上浮可见**：熔断/冷却状态 surfaced 到 observer-health 与 session-start——熔断器四规则的**可观测性**补全（判据不变）。
+- **CJK/日文 substring 检索**：非拉丁语系查询通路修复——检索口径的多语种完备，登记。
+- 其余（sync 内容 flush 批次收缩 + hub push 超时上调、Windows ghost listener 端口探测有界化）为工程修复，对账通过。watch 维持。档案 `docs/research/R24-runtime-refresh.md`。
