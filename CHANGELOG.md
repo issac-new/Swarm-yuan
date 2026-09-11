@@ -18,6 +18,7 @@ Release notes per version are also available at [GitHub Releases](https://github
 ### 诚实边界
 - 本轮执勤样本为 R23 同款 Node/Express 单体（task-api），未覆盖 Python/Java 栈的真实项目执勤路径；框架门禁侧仍由 79 fixture 双态 + e2e 四框架注入覆盖。
 - integrity-guard 静默面（无 stdin 输入时 exit 0 无输出）为设计行为，易被误读为"没执行"；本轮实测 deny/advisory 双场景输出协议正常，未改动。
+- 认知面预算第二次例外登记（发版门追账）：self-check 实测 UNIVERSAL_FILES 认知面 269669B 超预算 266336B，成因是 R24 补核两轮运行时注记增量（+3902B；补核轮不发版故未过此断言）。FACT_ARTIFACT_BYTES_BUDGET 266336→270336，facts.conf 注释逐例留痕；非内容膨胀，不构成先例。
 
 ## [v2.12.0] - 2026-09-10
 
