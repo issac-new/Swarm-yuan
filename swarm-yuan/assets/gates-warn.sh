@@ -685,6 +685,23 @@ check_impact() {
   echo "=== 变更影响分析检查（TOGAF：变更须含影响范围段 + 消费方清单）==="
   local found=0
 
+  # ---- 0. 基线短路（R25-PR2，2026-09-12 实仓回归 flask/mybatis-3 实证）----
+  # 刚激活、无待审变更的存量项目基线跑 --all-full 即红"未找到 spec 文档"——TOGAF 语义
+  # "变更须做影响分析"前提是有变更。与 check_scope 同口径：HEAD 在基点且工作区 clean
+  # （无待审变更）→ 放行；有变更（工作区脏或领先基点）→ 维持原 fail 语义。
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    local _imp_base _imp_dirty _imp_ahead
+    _imp_base=$(_git_base)
+    # 技能/账本为工具链自有写入面（R23-D7 scope 豁免同口径）——create 未提交时不算待审变更；
+    # porcelain 对未跟踪目录整目录显示（?? .claude/），故模式须匹配目录形态本身
+    _imp_dirty=$(git status --porcelain 2>/dev/null | grep -vE '(\.claude|\.codex|\.swarm-yuan)(/|$)' | head -1)
+    _imp_ahead=$(git rev-list --count "${_imp_base}"..HEAD 2>/dev/null || echo 1)
+    if [[ -z "$_imp_dirty" && "${_imp_ahead:-1}" -eq 0 ]]; then
+      pass "基线无待审变更（HEAD 在 ${_imp_base} 且工作区 clean）——影响分析待执勤变更时生效"
+      return
+    fi
+  fi
+
   # ---- 1. 找 spec 文件（影响范围段应在此）----
   # R23 回归 D6：发现逻辑统一走 _find_spec_file（SPEC_GLOB 优先；显式 IMPACT_SPEC_FILE 仍最高）。
   local spec_file="${IMPACT_SPEC_FILE:-$SPEC_FILE}"

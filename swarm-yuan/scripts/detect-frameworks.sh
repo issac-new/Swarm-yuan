@@ -203,7 +203,7 @@ except Exception: pass
   fi
   _pkgjson_deps="${_pkgjson_deps}
 ${_deps}"
-done < <(find "$PROJ" -name package.json -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/vendor/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
+done < <(find "$PROJ" -name package.json -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/site-packages/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/vendor/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
 
 # --- pom.xml: 递归扫描子模块(排除 target),同时提取 groupId 和 artifactId ---
 # 关键: pom 信号 pattern 多为 groupId(org.apache.dubbo),须提取 <groupId> 才能命中
@@ -216,14 +216,14 @@ while IFS= read -r _pom; do
   _pom_deps="${_pom_deps}
 ${_a}
 ${_g}"
-done < <(find "$PROJ" -name pom.xml -not -path '*/target/*' -not -path '*/.git/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/vendor/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
+done < <(find "$PROJ" -name pom.xml -not -path '*/target/*' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/site-packages/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/vendor/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
 
 # --- go.mod: 只读根(Go 项目通常单 go.mod;多模块各自 go.mod 也递归) ---
 while IFS= read -r _gm; do
   _deps=$(grep -E '^[[:space:]]*[a-z]' "$_gm" 2>/dev/null | awk '{print $1}' || true)
   _gomod_deps="${_gomod_deps}
 ${_deps}"
-done < <(find "$PROJ" -name go.mod -not -path '*/.git/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/vendor/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
+done < <(find "$PROJ" -name go.mod -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/site-packages/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/vendor/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
 
 # --- requirements.txt: 递归(Python 多环境/子项目) ---
 # audit-claims-reality（A3）：\s 在 BSD sed(macOS) 是字面字母 s（requests→requet），

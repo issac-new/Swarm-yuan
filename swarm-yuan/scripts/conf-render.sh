@@ -206,6 +206,17 @@ if [[ -n "$INDUSTRY" ]]; then
   ')
 fi
 
+# R25-PR1b（2026-09-12 实仓回归实证）：lite 档无 arch.conf，探测到的 ACTIVE_FRAMEWORKS
+# 此前不落任何 conf（框架清单只在 stdout 提示）——框架门禁对 lite 档永远无法注入/生效。
+# 修复：lite 档把框架清单渲染进主 conf 尾部（standard/compliance 档仍归 arch.conf）。
+if [[ "$PROFILE" == "lite" && -n "$_frameworks" ]]; then
+  _fw_line="ACTIVE_FRAMEWORKS=("
+  for _f in $_frameworks; do _fw_line="${_fw_line}\"${_f}\" "; done
+  _fw_line="${_fw_line% })  # AUTO:detected"
+  core="${core}
+${_fw_line}"
+fi
+
 _emit_section "precheck.conf" "$core"
 
 if [[ "$PROFILE" == "standard" || "$PROFILE" == "compliance" ]]; then

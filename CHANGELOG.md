@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.13.2] - 2026-09-12
+
+> R25 回归轮第三段：GitHub 真实主流项目实仓回归（pallets/flask 236 文件 + mybatis/mybatis-3 2043 文件，均为企业级最主流技术栈本体仓）。全链路重放：框架探测 → create 生成 → 填充激活 → --all-full 门禁序列。发现并修复 3 项缺陷（P1×1 + P2×2），全部带判别器断言并在实仓端到端实证。同型教训再次确认：配置面（探测/激活）与执法面（门禁/注入）的每一处新接线都要在真实项目上验证，样本项目测不出依赖目录污染这类真实世界形态。
+
+### Fixed
+- **create 流程不注入框架门禁，配置与执法体脱节（PR1，P2）**：create 探测 ACTIVE_FRAMEWORKS 写入 conf，但不注入门禁片段（--inject-frameworks 是独立子命令，仅 upgrade 路径自动调）——激活后跑门禁即 advisory「框架已激活但无门禁实现」。修复：create/断点续传路径自动注入（与 upgrade 对齐），framework-knowledge.md 骨架随之生成。双档断言（lite/standard create 后 _fw_*_check 实存；旧实现 2 处挂）。
+- **框架探测被 .venv 内第三方包污染（PR3，P2）**：flask 实仓探测出 webpack——来源是 `.venv/lib/.../pyright/dist/package.json`（venv 内工具自带的 node 产物）被 pkgjson 扫描命中。与 R23-D5（门禁枚举的 node_modules 污染）同型，发生在框架探测层。修复：package.json/requirements.txt/pyproject.toml 三条 find 排除链补 `.venv/venv/site-packages`。实仓复测 flask 探测归净（flask/redis/celery）；判别断言（旧实现 venv 污染形态 1 处挂）。
+- **影响分析门在无变更基线上误红（PR2，P1）**：刚激活、无待审变更的存量项目跑 --all-full，check_impact 无条件要求 spec 文档即 fail——TOGAF「变更须做影响分析」前提是有变更，两实仓首次全量门禁均被此误红。修复：HEAD 在基点且工作区 clean（技能/账本自有写入面按 R23-D7 口径豁免）→ 放行；有变更（脏工作区或领先基点提交）→ 维持原 fail 语义。四态断言含实仓暴露的 porcelain 目录形态（旧实现 1 处挂）；实仓端到端复测：flask 与 mybatis-3 的 impact 门在基线态转放行。
+
+### 诚实边界
+- 两实仓的 `构建失败`（flask：uv build 需构建后端依赖；mybatis-3：maven-enforcer 拦截本机 JDK 版本）为环境性失败，门禁如实报告、非误报；`mvn test`/`gradle test` 的 AUTO:detected 默认值语义不变。
+- 实仓执勤开发（fork 后改上游代码）未覆盖，本轮实仓口径为生成 → 激活 → 门禁全序列；spec 先行开发面由 R25/R25b 样本执勤覆盖。
+
 ## [v2.13.1] - 2026-09-12
 
 > R25 回归轮补充：Python 与 Java 栈真实执勤（R25 诚实边界披露的缺口补齐）。两栈各构造零依赖可真跑的样本项目（Python/Flask 声明 + unittest、Java/mybatis 声明 + javac+main runner），走完整执勤流程（生成 → 填充激活 → spec 先行开发标签功能 → 门禁 → 合并）。三条路径全部走通，暴露 3 项缺陷并全部修复（P1×2 + P2×1），全部带判别器断言固化（旧实现必挂、新实现全过）。Node/Express 主执勤见 v2.13.0。
