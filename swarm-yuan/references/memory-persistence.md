@@ -446,3 +446,11 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 - **配额熔断上浮可见**：熔断/冷却状态 surfaced 到 observer-health 与 session-start——熔断器四规则的**可观测性**补全（判据不变）。
 - **CJK/日文 substring 检索**：非拉丁语系查询通路修复——检索口径的多语种完备，登记。
 - 其余（sync 内容 flush 批次收缩 + hub push 超时上调、Windows ghost listener 端口探测有界化）为工程修复，对账通过。watch 维持。档案 `docs/research/R24-runtime-refresh.md`。
+
+### v13.24.23 补核（2026-09-12 R26）
+
+- **健康探测按调用方剩余死线封顶**（#3575）：每个探测与重试睡眠吃调用方剩余预算，`waitForHealth(short)` 不再坐满 5s——**死线传播族**（子操作预算 = 调用方剩余死线）：超时不是各层自定，而是从入口一次性分配向下传播。与 claude-code WebFetch 300s 宿主死线、ocr `timeout_sec` 同族。
+- **worker 不可用 fail-loud 一次后 fail-open**（#4033）：同一场故障只阻塞第一个提示，后续 hook 放行——**降级三态**（可见一次 → 不重复打扰 → 降级运行），比持续 fail-closed 与静默 fail-open 都优。
+- **三处有界化**：sync_outbox 增长（云同步未配置时）、会话摘要输入按载荷尺寸、定时投影修复工作量——资源占用须有上限，未配置的外部依赖不得无限堆积本地状态。
+- **SDK 子进程 cwd 监禁**（#4054）+ **记忆卫生**（plugin cache 会话 #4042 / 空标题观测 #3176 不采集——**采集选择性**：不是所有会话都值得记忆，诚实口径延伸到采集侧）+ memory_session_id 幂等注册（#4027）。
+- 其余（项目名锚定 Claude 项目目录 #4055、localhost 归一化、chroma 解析崩溃不中止管线、Bun ENOENT fail-loud、冷启动误报修复、macOS 桌面捆绑 codex CLI 探测 #3445）为修复族，对账通过。watch 维持。档案 `docs/research/R26-runtime-refresh.md`。
