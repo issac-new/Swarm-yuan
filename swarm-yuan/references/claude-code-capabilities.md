@@ -630,6 +630,17 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - `--system-prompt-snapshot off`（267）：每请求重渲染系统提示（默认快照=缓存友好）——快照与新鲜度成为显式权衡开关，上下文经济学新支点。
 - Workflow `agent()` 大 schema 改安全检查而非拒绝（267）；5 MB+ 大会话 resume 丟并行工具调用修复（267）。对账通过。
 
+## 版本注记：v2.1.269（2026-09-12 核）——plugin eval 可复现评估 + 权限通道完备性 + 并发有界
+
+> 覆盖 v2.1.269（CHANGELOG latest；stable 通道分裂持续）。评估面 + 权限通道修复 patch。详表 `docs/upstream-baseline.md`；档案 `docs/research/R26-runtime-refresh.md`。
+
+- **`claude plugin eval`**（269）：跑插件评估套件，评分 + 可复现 JSON/HTML 报告——**评估可复现族**：能力声明须有可复现评估载体，与本项目判别器断言（旧实现必挂）同向。宿主面事实，登记不升门禁。
+- **`Bash(tee:*)` 绕过写路径检查修复**（269）：无害外观工具被用作写通道即可旁路写路径检查——**权限检查通道完备性族**（检查挂在「命令外观」而非「效果语义」即可被中间工具旁路；与 268 符号链接两连同谱系）。`!` 前缀规则过应用修复同族（规则作用域收窄）。本仓 scope 门字面前缀为已登记边界，维持。
+- **`CLAUDE_CODE_WORKFLOW_MAX_CONCURRENT_AGENTS`（1-256）**（269）：并发代理数上限进宿主 env——**并发有界**与死线族同向（资源主权）。
+- **attribution 不覆写 CLAUDE.md**（269）：归因规则不得凌驾项目显式指令——配置优先级契约注记。
+- **CJK 无空格语言建议丢失修复**（269，中/日/泰）：分词空格假设修复——CJK 处理面持续补齐（与 claude-mem CJK substring 检索同向）。
+- 其余（kitty/st/rxvt/WezTerm 终端键大族、prompt-cache 部分失效、`/btw` 捏造工具调用修复（诚实面）、gateway model discovery 超时 env（死线族又一员）、synced skills 改名 `anthropic-skills:<name>`（命名空间隔离））为环境事实级，登记不展开。
+
 ## 版本注记：v2.1.268（2026-09-11 核）——权限路径规范化两连 + 工具宿主死线 + 机密不落展示面
 
 > 覆盖 v2.1.268（npm latest；stable 通道仍 2.1.236 分裂持续）。修复主导实质 patch。详表 `docs/upstream-baseline.md`；档案 `docs/research/R24-runtime-refresh.md`。
