@@ -344,6 +344,12 @@ if bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard m-dev "${DEMO
   # workflow.md 删填充指引注释（> 开头的两行）
   grep -v '^> 填充指引\|^> 节点名对齐\|（流程图，标注' "${_mskill}/references/workflow.md" > "${_mskill}/references/workflow.md.tmp" \
     && mv "${_mskill}/references/workflow.md.tmp" "${_mskill}/references/workflow.md"
+  # framework-knowledge.md 骨架占位符清零（R25c-PR1 后 create 自动注入框架门禁并生成骨架；
+  # 占位符残留会被 --mark-active 状态门拒绝——v2.13.2 CI 红实证。无骨架时跳过）
+  if [[ -f "${_mskill}/references/framework-knowledge.md" ]]; then
+    sed -i.bak -e 's/：待填充（证据：待填充）/：E2E 样本规律（证据：E2E 样本）/' -e 's/待填充/E2E 样本/g' \
+      "${_mskill}/references/framework-knowledge.md" && rm -f "${_mskill}/references/framework-knowledge.md.bak"
+  fi
   # decisions.jsonl 填 1 条（--mark-active 须 ≥1 条，SKILL.md 契约）
   mkdir -p "${_mskill}/.swarm-yuan"
   printf '{"type":"Taste","decision":"E2E 样本决策","ts":"2026-08-04T00:00:00Z"}\n' > "${_mskill}/.swarm-yuan/decisions.jsonl"
