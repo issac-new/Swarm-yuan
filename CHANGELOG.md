@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.13.3] - 2026-09-12
+
+> R25c 收账轮：v2.13.2 系带病发布——发版时两项后台验收（verifier all / self-check）未确认结果即合并推送，CI 红（verifier all 与 gate-fixtures 两 job）直至本轮才发现。本轮补齐全量验收并修复 2 项缺陷：1 项产品级 P1（check_impact 干净基线一跑即崩）+ 2 处测试面（impact 门禁 fixture 未随 PR2 的 git 语义升级；gen-e2e mark-active 闭环未填 create 新生成的骨架占位符）。流程教训固化：stub 式单测（source 门禁文件、无 set -e）结构性测不出 set -euo pipefail 交互类缺陷，须有真实 precheck 集成判别态。
+
+### Fixed
+- **check_impact 基线短路在干净仓上杀死整个 precheck（P1，产品级）**：`_imp_dirty` 裸 grep 管道赋值在 porcelain 为空或全被豁免滤掉时退出 1，`set -euo pipefail` 下直接终止脚本——PR2 想放行的「干净基线」场景实际一跑 `--impact`/`--all-full` 即在 check_impact 崩溃截断、后续门禁全部不执行（v2.13.2 实证：flask 实仓与合成干净仓均复现即崩；当时的「基线放行」日志以现提交代码不可复现）。修复：补回 `|| true` 守卫——check_scope 同型语句本就有此守卫，PR2 抄范式时丢失。判别：test-check-impact-baseline 新增态 5 集成态（真实 precheck.sh + set -e 环境跑干净仓；旧代码红、新代码绿，双向实证）。
+- **impact 门禁 fixture 未随 PR2 git 语义升级（P2，测试面）**：check_impact 引入基线短路后，impact 三 fixture（compliant / compliant-spec-glob / violating）无运行时 git 仓，门禁探到外层 Swarm-yuan 仓（clean 且不领先）——violating 被误放行、compliant 断言不命中（且当时实际被上述崩溃截断掩盖）。修复：按 scope/branch/review/stable-diff 既定惯例补 setup.sh（运行时建仓 + feat 分支携带待审变更）与 teardown.sh，三场景恢复 spec 检查主路径语义（3/3 绿，修复前 3/3 红）。
+- **gen-e2e mark-active 闭环测试未填 framework-knowledge.md（P2，测试面）**：PR1 让 create 自动注入框架门禁并生成 framework-knowledge.md 骨架（含「待填充」占位符），--mark-active 状态门拒绝占位符残留；测试的 AI Step ④ 填充模拟没跟上该新文件，E2E Step ⑧ 闭环断言挂。修复：填充阶段清零该骨架占位符（与真实 AI 填充行为一致）。
+
+### 诚实边界
+- v2.13.2 的流程缺陷如实登记：验收未确认即发版。本轮全量验收（verifier all + self-check + 79 框架 fixture + 48 门禁 fixture 组 + e2e/gen-e2e + R25c 三锚测试）全绿后才发 v2.13.3。
+- flask / mybatis-3 的构建失败仍为环境性（同 v2.13.2 口径：uv build 构建后端依赖、maven-enforcer 拦截本机 JDK），门禁如实报告、非误报。
+
 ## [v2.13.2] - 2026-09-12
 
 > R25 回归轮第三段：GitHub 真实主流项目实仓回归（pallets/flask 236 文件 + mybatis/mybatis-3 2043 文件，均为企业级最主流技术栈本体仓）。全链路重放：框架探测 → create 生成 → 填充激活 → --all-full 门禁序列。发现并修复 3 项缺陷（P1×1 + P2×2），全部带判别器断言并在实仓端到端实证。同型教训再次确认：配置面（探测/激活）与执法面（门禁/注入）的每一处新接线都要在真实项目上验证，样本项目测不出依赖目录污染这类真实世界形态。

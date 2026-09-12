@@ -693,8 +693,10 @@ check_impact() {
     local _imp_base _imp_dirty _imp_ahead
     _imp_base=$(_git_base)
     # 技能/账本为工具链自有写入面（R23-D7 scope 豁免同口径）——create 未提交时不算待审变更；
-    # porcelain 对未跟踪目录整目录显示（?? .claude/），故模式须匹配目录形态本身
-    _imp_dirty=$(git status --porcelain 2>/dev/null | grep -vE '(\.claude|\.codex|\.swarm-yuan)(/|$)' | head -1)
+    # porcelain 对未跟踪目录整目录显示（?? .claude/），故模式须匹配目录形态本身。
+    # || true 与 check_scope 同口径：porcelain 为空或全被豁免滤掉时 grep 退出 1，
+    # set -euo pipefail 下裸赋值会杀整个 precheck（v2.13.2 实证：干净基线一跑 --impact 即崩）
+    _imp_dirty=$(git status --porcelain 2>/dev/null | grep -vE '(\.claude|\.codex|\.swarm-yuan)(/|$)' | head -1 || true)
     _imp_ahead=$(git rev-list --count "${_imp_base}"..HEAD 2>/dev/null || echo 1)
     if [[ -z "$_imp_dirty" && "${_imp_ahead:-1}" -eq 0 ]]; then
       pass "基线无待审变更（HEAD 在 ${_imp_base} 且工作区 clean）——影响分析待执勤变更时生效"

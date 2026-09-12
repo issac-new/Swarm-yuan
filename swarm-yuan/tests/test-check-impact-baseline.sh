@@ -14,6 +14,7 @@ bad() { echo "  ✗ $1" >&2; FAIL=1; }
 
 # stub 门禁输出函数 + check_impact 依赖（_git_base/_find_spec_file 与全局变量）
 GATES="$(cd "$(dirname "${0}")/.." && pwd)/assets/gates-warn.sh"
+ASSETS="$(cd "$(dirname "${0}")/.." && pwd)/assets"   # 态 5 用；须在 cd 舞步前定格（$0 相对路径此后失效）
 setup_stubs() {
   pass() { echo "PASS:$1" > "$TMP/out.txt"; }
   warn() { echo "WARN:$1" > "$TMP/out.txt"; }
@@ -62,5 +63,24 @@ mkdir -p "$PROJ2" && cd - >/dev/null
 (cd "$PROJ2" && setup_stubs && check_impact > /dev/null 2>&1)
 grep -q "FAIL:未找到 spec 文档" "$TMP/out.txt" 2>/dev/null \
   && ok "态4 非 git 目录维持原 fail" || bad "态4 非 git 目录误放行: $(cat "$TMP/out.txt" 2>/dev/null)"
+
+# --- 态 5：真实 precheck 集成——set -euo pipefail 环境下干净基线不得崩 ---
+# v2.13.2 回归实证：态 1-4 是 stub 形态（source gates-warn.sh，无 set -e），结构性测不出
+# _imp_dirty 裸 grep 赋值在 porcelain 为空/全被豁免滤掉时退出 1 → pipefail 杀整个 precheck。
+# 本态走真实 precheck.sh 端到端：干净仓 + --impact → 须 rc 0 且短路放行。
+PROJ3="$TMP/real-precheck"
+mkdir -p "$PROJ3/scripts" "$PROJ3/docs"
+printf '# spec\n## 影响范围\n- x\n' > "$PROJ3/docs/spec.md"
+for _f in precheck.sh gates-strict.sh gates-warn.sh gates-advisory.sh gate-enforce-level.conf; do
+  cp "$ASSETS/$_f" "$PROJ3/scripts/$_f"
+done
+printf 'PROJECT_DIR="%s"\nIMPACT_SPEC_FILE="docs/spec.md"\n' "$PROJ3" > "$PROJ3/scripts/precheck.conf"
+(cd "$PROJ3" && git init -q && git symbolic-ref HEAD refs/heads/main \
+  && git config user.email t@t.local && git config user.name t \
+  && git add -A && git commit -qm init)
+out3=$( cd "$PROJ3" && bash scripts/precheck.sh --impact 2>&1 ); rc3=$?
+[[ $rc3 -eq 0 ]] && printf '%s\n' "$out3" | grep -q '基线无待审变更' \
+  && ok "态5 真实 precheck 干净基线不崩且短路放行" \
+  || bad "态5 真实 precheck 崩溃或未放行（rc=${rc3}）: $(printf '%s\n' "$out3" | tail -3 | tr '\n' ' ')"
 
 [[ $FAIL -eq 0 ]] && { echo "PASS test-check-impact-baseline"; exit 0; } || { echo "FAIL test-check-impact-baseline" >&2; exit 1; }
