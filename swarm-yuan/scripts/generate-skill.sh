@@ -2124,6 +2124,15 @@ source_version=$SWARM_YUAN_SRC_VERSION
 mode=create
 EOF
 
+# R25-PR1（2026-09-12 实仓回归 flask/mybatis-3 实证）：create 探测 ACTIVE_FRAMEWORKS 写入 conf
+# 却不注入门禁片段——配置与执法体脱节，激活后跑门禁即 advisory "框架已激活但无门禁实现
+# （须运行 --inject-frameworks）"。create/resume 路径自动注入（与 upgrade 行为对齐）；
+# 无框架清单时注入为幂等空转（空区块）。
+if declare -F inject_frameworks >/dev/null && [[ -f "$SKILL_DIR/scripts/precheck.sh" && -f "$SKILL_DIR/scripts/precheck.conf" ]]; then
+  echo "=== 框架门禁注入（create 自动，与 --inject-frameworks 等价）==="
+  inject_frameworks "$SKILL_DIR" || echo "  ⚠ 门禁注入返回非 0（$?），请人工检查"
+fi
+
 echo "✓ 骨架已创建: $SKILL_DIR"
 echo ""
 find "$SKILL_DIR" -type f | sort
