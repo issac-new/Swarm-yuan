@@ -650,3 +650,9 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **WebFetch 300 秒宿主死线**（268）：服务端不结束的响应挂死改为 300s 后失败，`CLAUDE_CODE_WEBFETCH_DEADLINE_MS` 可覆盖（0 关闭）——联网验证类工具的死线成为宿主默认，生成技能**无须自设超时兜底**（环境事实登记）。
 - **机密不落展示面**（268）：plugin/marketplace git 源 URL 中的 token/password、MCP 配置 `${VAR}` 解析值不再出现在错误与列表输出——与符号链接修复同为本轮安全硬化主轴。
 - 修复族对账通过：第三方兼容端点 Artifact regex 400（**宿主行为版本间不保证稳定第四次实证**，265 起回归）、长空闲会话 CPU busy-loop、SDK `excludeDynamicSections` 缓存中途破断（缓存稳定性第四波）、respawned teammate 拾取未信任目录同名 agent 文件（信任边界）、compact `$` 序列与 resume 顺序稳定性。网关定价透传/`gatewayInternalNetworks`/self-hosted-runner `--remove-session-state`/plugin `--json` 与单机生成场景无交集，登记不展开。
+
+## 版本注记：v2.1.270（2026-09-13 核）——权限通道变更须带回归面
+
+> 覆盖 v2.1.270（npm latest；stable 通道仍 2.1.236 分裂持续）。单条回归修复。详表 `docs/upstream-baseline.md`；档案 `docs/research/R27-runtime-refresh.md`。
+
+- **只读 git 命令误要权限修复**（270，修复 269 引入的回归）：长会话中 read-only git 命令意外触发权限询问——269 的写路径检查收紧（tee 旁路修复族）反手误伤了只读路径的免询问。**权限通道变更须带回归面**：同域收紧须成对验证「堵住旁路」与「不误伤正路」，二者缺一即为回归源。与「宿主行为版本间不保证稳定」实证序列同向——**修复轮自身即回归源**，与本轮 graphify 0.9.60→0.9.61 连环修复（Python 3.12/3.13 断裂）构成跨宿主双样本。
