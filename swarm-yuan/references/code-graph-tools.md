@@ -17,7 +17,7 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 | 工具 | 许可证（事实登记，供使用方自查） | 能力定位 |
 |------|--------|----------|
 | **graphify** | Apache-2.0（2026-07-18 MIT→Apache 2.0） | 广谱知识图（代码+文档+媒体）、可提交 graph.json、Mermaid 导出；91.7k stars、活跃（2026-07-18） |
-| **GitNexus** | PolyForm Noncommercial 1.0.0（GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20） | 深度代码调用图、Tree-sitter 原生解析、LadybugDB 持久图、`--pdg` 污点分析、PreToolUse/PostToolUse hooks、多仓库 group query（v1.6.11 stable 已出；license-risk 登记不变） |
+| **GitNexus** | PolyForm Noncommercial 1.0.0（GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20；2026-09-14 R28 复核不变） | 深度代码调用图、Tree-sitter 原生解析、LadybugDB 持久图、`--pdg` 污点分析、PreToolUse/PostToolUse hooks、多仓库 group query（v1.6.12 stable 已出（2026-09-12 tag，rc 线收口）；license-risk 登记不变——v1.6.12 含诚实状态族样本（diverged/unknown 索引态显式报告 + foreign embedding fail-closed），license 解除前零接触） |
 
 两者**平权**，按项目需要选择或并用：
 - 侧重深度调用链分析、持久 DB、多仓库、 hooks 集成 → GitNexus
