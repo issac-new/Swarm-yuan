@@ -282,4 +282,35 @@ out13c="$(bash "$SH" "$TMP/proj13" --skill-dir "$TMP/skill13" --form backend --p
 echo "$out13c" | grep -qF 'ReportJobGone.java' \
   && ok "态13 §5 任务表幻觉路径检出（HALLUCINATION）" || bad "态13 §5 幻觉路径未检出: $(echo "$out13c" | grep -c HALLUCINATION)"
 
+
+# --- 态 14：DIM_ORM_SCHEMA 维度（schema/迁移资产 ↔ §8 数据字典清单核验，横向清剿轮） ---
+mkdir -p "$TMP/proj14/prisma" "$TMP/proj14/shop/migrations" "$TMP/proj14/db/migration" "$TMP/skill14/references"
+printf 'model User { id Int @id }\n' > "$TMP/proj14/prisma/schema.prisma"
+printf 'from django.db import migrations\nclass M(migrations.Migration):\n    dependencies = []\n' > "$TMP/proj14/shop/migrations/0001_initial.py"
+printf 'CREATE TABLE t_user (id INT);\n' > "$TMP/proj14/db/migration/V1__init.sql"
+printf 'CREATE TABLE t_old (id INT);\n' > "$TMP/proj14/target_copy_V9.sql" 2>/dev/null || true
+mkdir -p "$TMP/proj14/node_modules/fake/migrations" && printf 'x\n' > "$TMP/proj14/node_modules/fake/migrations/evil.py"
+cat > "$TMP/skill14/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §8 数据字典及数据规范
+| 构件 | 路径 | 说明 |
+|------|------|------|
+| prisma schema | `prisma/schema.prisma` | User 模型 |
+| Django 迁移 | `shop/migrations/0001_initial.py` | 初始 |
+| Flyway 迁移 | `db/migration/V1__init.sql` | V1 |
+EOF
+out14="$(bash "$SH" "$TMP/proj14" --skill-dir "$TMP/skill14" --form backend --tsv 2>/dev/null)"
+echo "$out14" | grep -F 'ORM schema' | grep -qF 'ORM schema / 迁移资产' && echo "$out14" | grep -F 'ORM schema' | grep -q 'PASS' \
+  && ok "态14 ORM schema 维度 枚举3/清单3 PASS（node_modules 与 target 排除）" || bad "态14 维度异常: $(echo "$out14" | grep 'ORM schema')"
+cat > "$TMP/skill14/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §8 数据字典及数据规范
+| 构件 | 路径 | 说明 |
+|------|------|------|
+| prisma schema | `prisma/schema.prisma` | User 模型 |
+EOF
+out14b="$(bash "$SH" "$TMP/proj14" --skill-dir "$TMP/skill14" --form backend --tsv 2>/dev/null)"
+echo "$out14b" | grep -F 'ORM schema' | grep -q 'FAIL' \
+  && ok "态14 迁移资产漏列 → FAIL（枚举3/清单1）" || bad "态14 漏列未检出: $(echo "$out14b" | grep 'ORM schema')"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-inventory-verify"; exit 0; } || { echo "FAIL test-inventory-verify" >&2; exit 1; }

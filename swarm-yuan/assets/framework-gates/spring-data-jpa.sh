@@ -1,5 +1,5 @@
 # ruleset: spring-data-jpa  requires_conf: SPRINGJPA_SRC_GLOBS
-# gates: fw_jpa_nplus1(warn) fw_jpa_eager_to_many(warn) fw_jpa_osiv(warn) fw_jpa_readonly(warn) fw_jpa_auditing(warn) fw_jpa_pessimistic_lock(warn) fw_jpa_optimistic_lock(warn) fw_jpa_save_merge(warn) fw_jpa_lazy_exception(warn) fw_jpa_modifying(warn) fw_jpa_equals_hashcode(warn) fw_jpa_enum_ordinal(fail) fw_jpa_pagination(warn)
+# gates: fw_jpa_nplus1(warn) fw_jpa_eager_to_many(warn) fw_jpa_osiv(warn) fw_jpa_readonly(warn) fw_jpa_auditing(warn) fw_jpa_pessimistic_lock(warn) fw_jpa_optimistic_lock(warn) fw_jpa_save_merge(warn) fw_jpa_lazy_exception(warn) fw_jpa_modifying(warn) fw_jpa_equals_hashcode(warn) fw_jpa_enum_ordinal(fail) fw_jpa_pagination(warn) fw_jpa_jpql_entity(warn)
 # harvested-from: P2（2026-07-17），规律源自 Spring Data JPA 3.4/4.x + Hibernate ORM 6.6/7.x 官方文档
 _fw_spring_data_jpa_check() {
   echo "  [spring-data-jpa] Spring Data JPA 3.4.x / 4.x + Hibernate 6.6/7.x 框架规律"
@@ -247,6 +247,31 @@ _fw_spring_data_jpa_check() {
     _fw_report warn fw_jpa_pagination "${pg_hits}" "Repository 派生查询返回 List 且无 Pageable（数据量增长即全量加载 OOM，须 Page/Slice + Pageable）" "派生查询均分页或无 List 返回"
   else
     pass "fw_jpa_pagination: 无 Java 源文件，跳过"
+  fi
+
+  # ====================================================================
+  # fw_jpa_jpql_entity(warn)：@Query JPQL 实体名字符串校验（横向清剿轮）
+  # JPQL "from X"/"join X" 的实体名是对 @Entity 类名的字符串引用——编译不查（容器启动才解析），
+  # 实体重命名后 @Query 内旧名静默漂移。X.java 在源码集不存在 → warn。
+  # ====================================================================
+  if [[ ${#javaarr[@]} -gt 0 ]]; then
+    local jq_bad="" _ent
+    while IFS= read -r jq_line; do
+      [[ -z "$jq_line" ]] && continue
+      _f=$(printf '%s' "$jq_line" | cut -d: -f1)
+      _l=$(printf '%s' "$jq_line" | cut -d: -f2)
+      while IFS= read -r _ent; do
+        [[ -z "$_ent" ]] && continue
+        if ! printf '%s\n' "${javaarr[@]}" | grep -qE "/${_ent}\.java$"; then
+          jq_bad="${jq_bad}${_f}:${_l} JPQL 实体 ${_ent} 无对应 ${_ent}.java（改实体名未同步 @Query 字符串？）
+"
+        fi
+      done < <(printf '%s\n' "${jq_line#*:*:}" \
+        | grep -oE '(from|FROM|join|JOIN)[[:space:]]+[A-Z][A-Za-z0-9_]*' | awk '{print $2}' | sort -u)
+    done < <(grep -rnE '@Query\(' "${javaarr[@]}" 2>/dev/null | grep -E '"[^"]*(from|FROM)[[:space:]]' || true)
+    _fw_report warn fw_jpa_jpql_entity "$jq_bad" "JPQL 实体名与源码实体类失配（字符串引用编译不校验，启动期才炸——改实体名必同步 @Query）" "JPQL 实体名均可定位（或无 @Query）"
+  else
+    pass "fw_jpa_jpql_entity: 无 Java 源文件，跳过"
   fi
 
 ### P1-4 AI 自查段（仅注释，不改动函数体）

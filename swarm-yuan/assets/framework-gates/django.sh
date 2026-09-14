@@ -1,5 +1,5 @@
 # ruleset: django  requires_conf: DJANGO_SRC_GLOBS
-# gates: fw_django_nplusone(warn) fw_django_atomic(warn) fw_django_csrf(warn) fw_django_migration_irreversible(warn) fw_django_settings_split(warn) fw_django_secret_key(fail) fw_django_debug(fail) fw_django_allowed_hosts(warn) fw_django_password_hasher(warn) fw_django_raw_sql(fail) fw_django_middleware_order(warn) fw_django_static_root(warn) fw_django_session_cookie(warn)
+# gates: fw_django_nplusone(warn) fw_django_atomic(warn) fw_django_csrf(warn) fw_django_migration_irreversible(warn) fw_django_settings_split(warn) fw_django_secret_key(fail) fw_django_debug(fail) fw_django_allowed_hosts(warn) fw_django_password_hasher(warn) fw_django_raw_sql(fail) fw_django_middleware_order(warn) fw_django_static_root(warn) fw_django_session_cookie(warn) fw_django_migration_drift(warn)
 # harvested-from: P4（2026-07-17），规律源自 Django 5.2 LTS / 6.0 官方文档（https://docs.djangoproject.com/）
 _fw_django_check() {
   echo "  [django] Django 5.2 LTS / 6.x 框架规律"
@@ -242,6 +242,21 @@ ${csrf_bad}"
     pass "fw_django_session_cookie: 安全 Cookie 已配置"
   else
     warn "fw_django_session_cookie: 未设 SESSION_COOKIE_SECURE/CSRF_COOKIE_SECURE（HTTPS 下 Cookie 明文传输风险）"
+  fi
+
+  # ====================================================================
+  # fw_django_migration_drift(warn)：模型↔迁移漂移（横向清剿轮——漏改字段的姊妹缺陷）
+  # models.py 含 models.Model 子类但全仓无迁移文件 = 漏 makemigrations 信号（表结构与
+  # 代码漂移，运行期才 OperationalError）。有迁移的项目提示跑 --check 复核增量漂移。
+  # ====================================================================
+  local model_cnt=0
+  model_cnt=$(grep -rlE 'class[[:space:]]+[A-Za-z_]+\(.*models\.Model\)' "${codearr[@]+"${codearr[@]}"}" 2>/dev/null | grep -c . || true)
+  if [[ "${model_cnt:-0}" -eq 0 ]]; then
+    pass "fw_django_migration_drift: 无 Django Model，跳过"
+  elif [[ ${#migarr[@]} -eq 0 ]]; then
+    warn "fw_django_migration_drift: 检出 ${model_cnt} 个 Model 文件但 0 迁移文件（漏 makemigrations：表结构与代码漂移，运行期 OperationalError；跑 python manage.py makemigrations --check 验证）"
+  else
+    pass "fw_django_migration_drift: ${model_cnt} Model 文件配 ${#migarr[@]} 迁移文件（改模型后跑 python manage.py makemigrations --check 复核增量）"
   fi
 
 ### P1-4 AI 自查段（仅注释，不改动函数体）

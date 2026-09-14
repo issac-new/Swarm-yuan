@@ -13,6 +13,9 @@
 #   MyBatis:   *Mapper.xml 的 namespace→Mapper 接口（mapper-binding 边）、
 #              resultMap type/resultType/parameterType→实体（data-mapping 边）——
 #              字符串耦合点编译不报错（漏改字段即静默缺陷），必须进边集供影响面反查
+#   Spring:    beans XML 的 <bean class="a.b.C">→Java 类（bean-wiring 边）
+#   JPA/Hib:   orm.xml <entity class=> / *.hbm.xml <class name=>→实体（data-mapping 边）
+#              ——同属 XML↔Java 字符串耦合，横向清剿轮补齐
 #
 # 用法:
 #   bash relations-extract.sh <PROJECT_DIR> [--skill-dir <dir>] [--out <file>] [--max-edges <N>]
@@ -272,6 +275,33 @@ while IFS= read -r x_abs; do
 done <<< "$_xml_files"
 rm -f "$_ALIAS_T"
 
+# Spring/JPA/Hibernate 声明式装配边（横向清剿轮：MyBatis 之外的 XML↔Java 字符串耦合）
+#   bean-wiring: Spring beans XML <bean class="a.b.C"> → src/main/java/a/b/C.java
+#   data-mapping: JPA orm.xml <entity class="a.b.C"> / hbm.xml <class name="a.b.C"> → 实体
+# 文件判据按根元素内容（文件名惯例不可靠）：含 <beans（Spring）/ <entity-mapping（JPA orm）/
+# <hibernate-mapping（hbm）。只解析含点号全限定名——短名机械不猜（AI 按 §C+.2.5 补）。
+while IFS= read -r x_abs; do
+  [[ -z "$x_abs" ]] && continue
+  x_rel="${x_abs#"$PROJ"/}"
+  _x_kind=""
+  if grep -q '<beans' "$x_abs" 2>/dev/null; then _x_kind="bean-wiring"; _x_ev="beanClass"
+  elif grep -q '<entity-mapping' "$x_abs" 2>/dev/null; then _x_kind="data-mapping"; _x_ev="entityClass"
+  elif grep -q '<hibernate-mapping' "$x_abs" 2>/dev/null; then _x_kind="data-mapping"; _x_ev="hbmClass"
+  else continue; fi
+  while IFS= read -r entry; do
+    [[ -z "$entry" ]] && continue
+    ln=$(printf '%s' "$entry" | cut -d' ' -f1)
+    fq=$(printf '%s' "$entry" | cut -d' ' -f2)
+    case "$fq" in *.*) ;; *) continue ;; esac
+    to=$(_fq_resolve "$fq") || continue
+    printf '{"from":"%s","to":"%s","kind":"%s","evidence":"%s@%s:%s"}\n' "$x_rel" "$to" "$_x_kind" "$_x_ev" "$x_rel" "$ln" >> "$TMPF"
+  done < <(grep -nE '(<bean[^>]* |<entity[^>]* |<class[^>]* )(class|name)="[a-z][a-zA-Z0-9]*(\.[a-zA-Z0-9]+)+"' "$x_abs" 2>/dev/null \
+    | sed -n -e 's/^\([0-9]*\):.*<bean[^>]* class="\([^"]*\)".*$/\1 \2/p' \
+             -e 's/^\([0-9]*\):.*<entity[^>]* class="\([^"]*\)".*$/\1 \2/p' \
+             -e 's/^\([0-9]*\):.*<class[^>]* name="\([^"]*\)".*$/\1 \2/p')
+done < <(grep -rlE '<beans\b|<entity-mapping|<hibernate-mapping' "$PROJ" --include='*.xml' 2>/dev/null \
+  | grep -vE '/target/|/node_modules/|/dist/|/\.git/|/\.swarm-yuan/' | LC_ALL=C sort | head -200)
+
 # 截断 + 确定性排序 + 落盘
 _n=$(LC_ALL=C grep -c . "$TMPF" 2>/dev/null || true); _n="${_n:-0}"
 if [[ "$_n" -gt "$MAXE" ]]; then
@@ -281,7 +311,8 @@ LC_ALL=C sort -t'"' -k4,4 -k8,8 "$TMPF" | LC_ALL=C awk -v max="$MAXE" 'NR <= max
 _n_final=$(LC_ALL=C grep -c . "$OUT" 2>/dev/null || true); _n_final="${_n_final:-0}"
 _n_dm=$(grep -c '"kind":"data-mapping"' "$OUT" 2>/dev/null || true); _n_dm="${_n_dm:-0}"
 _n_mb=$(grep -c '"kind":"mapper-binding"' "$OUT" 2>/dev/null || true); _n_mb="${_n_mb:-0}"
-_n_imp=$((_n_final - _n_dm - _n_mb))
-echo "✓ 关系边集已生成: ${OUT}（${_n_final} 条 = import ${_n_imp} + mapper-binding ${_n_mb} + data-mapping ${_n_dm}；语义边 call/route/message/ipc/export/job-flow 由 AI 补充，格式同款 kind 字段）"
+_n_bw=$(grep -c '"kind":"bean-wiring"' "$OUT" 2>/dev/null || true); _n_bw="${_n_bw:-0}"
+_n_imp=$((_n_final - _n_dm - _n_mb - _n_bw))
+echo "✓ 关系边集已生成: ${OUT}（${_n_final} 条 = import ${_n_imp} + mapper-binding ${_n_mb} + data-mapping ${_n_dm} + bean-wiring ${_n_bw}；语义边 call/route/message/ipc/export/job-flow 由 AI 补充，格式同款 kind 字段）"
 echo "  消费方：--stable-diff 1 跳传播优先读本边集（改实体字段时 data-mapping 边反查 mapper XML）；流B ②探查查边集替代读 mermaid"
 exit 0

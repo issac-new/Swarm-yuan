@@ -478,8 +478,8 @@ grep -nH "defineProps\|interface.*Props\|withDefaults\|defineEmits\|defineSlots"
 
 > 若某维度清单计数远小于枚举计数（如 10 vs 85），**禁止提交**，回到 Step 2 继续补全该维度。
 >
-> **数据映射三维度是机器执法面**：数据模型实体（DIM_DATA_MODEL→§9）、MyBatis mapper XML（DIM_MAPPER_XML→§9）、
-> 定时/批处理任务（DIM_SCHEDULE_JOB→§5）——`inventory-verify.sh` 按 `assets/inventory-dimensions.conf`
+> **数据映射四维度是机器执法面**：数据模型实体（DIM_DATA_MODEL→§9）、MyBatis mapper XML（DIM_MAPPER_XML→§9）、
+> 定时/批处理任务（DIM_SCHEDULE_JOB→§5）、ORM schema/迁移资产（DIM_ORM_SCHEMA→§8，横向清剿轮补）——`inventory-verify.sh` 按 `assets/inventory-dimensions.conf`
 > 自动核验这三类清单（漏列整维=FAIL；任务表路径进 --path-check）。字符串耦合层（XML/SQL 列）不进任何
 > Java import 边，这三张清单 + §C+.2-B Layer 5/§C+.2-J 链路产物就是"漏改字段"的唯一防线，禁止样本化。
 
@@ -593,13 +593,23 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
  MyBatis:  Mapper 接口方法 ↔ XML statement id（同名绑定）
            ↔ resultMap <result column property> / SQL 列清单
            ↔ 实体字段（getter/setter）↔ 表列（DDL/schema）
- ORM(JPA/GORM/Prisma): 实体字段注解 ↔ 表列（@Column/gorm tag/@map）
-产出三件套：
+ ORM 全家（逐栈选主线，同一条链换注解载体）：
+   JPA/Hibernate: 实体 @Column/@Table ↔ orm.xml/hbm.xml 映射 ↔ Flyway/Liquibase DDL 列
+   GORM(Go):     struct tag `gorm:"column:x"` ↔ AutoMigrate/迁移 SQL 列
+   Django ORM:   models.py 字段 ↔ migrations/ 迁移文件列（漏 makemigrations = 漂移）
+   SQLAlchemy:   Column() ↔ alembic/versions 迁移
+   Prisma/TypeORM/Sequelize: schema.prisma/@column ↔ migrations 目录
+产出四件套：
  ① reference-manual §9 模型与映射清单（实体表 + mapper XML 表两行组，机器计数核验 DIM_DATA_MODEL/DIM_MAPPER_XML）
  ② reference-manual §8 数据字典的字段级映射台账：实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单
- ③ relations.jsonl 的 data-mapping/mapper-binding 边（relations-extract.sh 机械层已产出，AI 只补漏）
+ ③ reference-manual §8 的 schema/迁移资产表（prisma/migrations/alembic/flyway/liquibase/orm.xml/hbm/schema.sql，
+   机器计数核验 DIM_ORM_SCHEMA）——改模型的"第五查"：迁移是否已生成（模型↔迁移漂移是漏改字段的姊妹缺陷）
+ ④ relations.jsonl 的 data-mapping/mapper-binding 边（relations-extract.sh 机械层已产出 MyBatis/JPA/hbm，
+   AI 只补漏）
 铁律：改实体字段的影响面反查必经此链——"谁引用了这个字段"在边集查 to=实体 的 from 集（mapper XML 清单），
       再叠加 SQL 列名字符串命中（grep 列名于 *.xml/*.java 内嵌 SQL）。禁止只查 Java import 边（XML 不在其中）。
+      JPA @Query("select o from Order o where o.status=?1") 的 JPQL 实体/字段名同为字符串引用——
+      台账须覆盖，改字段先 grep @Query 内嵌名。
 ```
 
 ---
@@ -614,6 +624,19 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
  → handler → service → 副作用（DB/通知/下游消息）
 ```
 记录：**队列拓扑**、**消费幂等键**、**重试/DLQ 策略**、**消息时序保证**、**背压/限流**。
+
+**消息拓扑配对表（横向清剿轮补：端点名是双边字符串——producer 写 "order-topic" 与 listener 听
+"order-topic" 互不知晓，改一边即静默断链，比漏改字段更隐蔽）**：
+```
+产出：reference-manual §5 消息拓扑配对表（每行：端点名 | 生产侧（file:line）| 消费侧（file:line）|
+      序列化格式 | 幂等策略）。提取方法：grep 双边端点名字符串——
+      Kafka:    send("X")/new ProducerRecord("X" ↔ @KafkaListener(topics="X")
+      RabbitMQ: convertAndSend(ex, rk) ↔ @RabbitListener(bindings=@QueueBinding(...key="rk"))
+      RocketMQ: topic="X" ↔ @RocketMQMessageListener(topic="X")
+      Celery:   beat_schedule 任务名 ↔ @shared_task(name="X")/delay("X")
+      单边端点（只有生产无消费/反之）显式标注"外部系统"或"孤儿端点"——改名前必查此表。
+门禁：kafka/rabbitmq 规则集的 endpoint 配对门禁（warn 级机械 diff 双边名字集，命中差集提示人工核对）。
+```
 
 ---
 

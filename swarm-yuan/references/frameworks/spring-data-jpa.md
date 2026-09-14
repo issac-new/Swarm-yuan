@@ -216,8 +216,21 @@ cmd:
 expect: always
 ```
 
+### 规律：@Query JPQL 实体名/字段名是字符串引用，改实体必同步（横向清剿轮）
+- **适用版本**: Spring Data JPA 3.x/4.x 全版本
+- **规律**: `@Query("select o from Order o where o.status = ?1")` 中的实体名（Order）与字段名（o.status）是对 @Entity 类与属性的字符串引用——JPQL 在容器启动创建 repository proxy 时才解析，编译期完全不校验。实体重命名后 @Query 内旧名漂移，IDE 重构也不跟进注解字符串。字段级引用（o.status）须入 §8 字段级映射台账。
+- **违反后果**: 启动期 IllegalArgumentException（org.hibernate.hql.internal.ast.QuerySyntaxException）或更隐蔽的运行期语义漂移；CI 不跑容器测试则上线才炸。
+- **验证方法**: 提取 @Query 值内 from/join 后的实体名词，逐一在源码集中定位 <Entity>.java，失配即 warn（字段级静态解析成本高，台账覆盖）。
+- **对应门禁**: fw_jpa_jpql_entity(warn)
+
+```verify
+id: spring-data-jpa-r14
+cmd: 
+expect: always
+```
+
 <!--
-共 13 条规律（≥12 门槛）。每条规律均挂门禁 id，无游离规律。
+共 14 条规律（≥12 门槛）。每条规律均挂门禁 id，无游离规律。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
@@ -238,6 +251,7 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 | fw_jpa_equals_hashcode | warn | @Entity + @Data/@EqualsAndHashCode（无 exclude/onlyExplicitlyIncluded）→ warn (n/a) | SPRINGJPA_SRC_GLOBS |
 | fw_jpa_enum_ordinal | fail | @Enumerated 未带 EnumType.STRING → fail（ORDINAL 重排错位）(n/a) | SPRINGJPA_SRC_GLOBS |
 | fw_jpa_pagination | warn | Repository 中 List<...> find/get/query/list/search 方法无 Pageable → warn (n/a) | SPRINGJPA_SRC_GLOBS |
+| fw_jpa_jpql_entity | warn | @Query JPQL from/join 实体名在源码集中定位，失配即 warn | SPRINGJPA_SRC_GLOBS | —（JPQL↔实体一致性） |
 
 <!--
 门禁 id 命名规范：fw_jpa_<rule>（rule 全小写下划线）。

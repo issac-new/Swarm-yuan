@@ -214,8 +214,21 @@ cmd:
 expect: always
 ```
 
+### 规律：topic 名是双边字符串，生产/消费两侧配对须核对（横向清剿轮）
+- **适用版本**: Kafka 全版本 / spring-kafka 全版本
+- **规律**: producer 的 `send("X")` 与 consumer 的 `@KafkaListener(topics = "X")` 是两处互不知晓的字符串——改一边（或 typo）编译通过、启动正常，消息静默流入黑洞或消费者空等。本服务内双边字面量配对完整是最低保障；单边 topic（外部系统生产/消费）须在 §5 消息拓扑配对表显式登记。
+- **违反后果**: 消息静默断链：无消费积压告警（没人监听）、无错误日志，业务数据丢失靠对账才发现。
+- **验证方法**: 机械提取生产侧字面量（.send("X")/new ProducerRecord("X")）与消费侧字面量（@KafkaListener topics）双向 diff，单边悬挂即 warn 人工核对（常量引用提不出字面量自然跳过）。
+- **对应门禁**: fw_kafka_topic_pair(warn)
+
+```verify
+id: kafka-r14
+cmd: 
+expect: always
+```
+
 <!--
-共 13 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。
+共 14 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
@@ -236,6 +249,7 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 | fw_kafka_order_partition | warn | ProducerRecord 两参构造（无 key）→ warn 乱序风险 | KAFKA_SRC_GLOBS | —（顺序契约） |
 | fw_kafka_schema_registry | warn | StringSerializer 且无 schema registry 痕迹 → warn | KAFKA_SRC_GLOBS | —（演进约束） |
 | fw_kafka_group_mgmt | warn | 多 listener 同 groupId 不同 topic → warn | KAFKA_SRC_GLOBS | —（订阅管理） |
+| fw_kafka_topic_pair | warn | 生产/消费 topic 字面量双向 diff，单边悬挂即 warn | KAFKA_SRC_GLOBS | —（拓扑配对一致性） |
 
 <!--
 门禁 id 命名规范：fw_kafka_<rule>（rule 全小写下划线）。

@@ -5,6 +5,7 @@
 # 态3: --stable-diff 消费接线（gates-warn 传播段读边集召回 1 跳下游）
 # 态4: Go/Java 解析（module 剥离 / 包路径映射）
 # 态5: MyBatis mapper XML 声明式边（mapper-binding/data-mapping——漏改字段防线）
+# 态6: Spring bean XML / JPA orm.xml / hbm.xml 装配边（横向清剿轮）
 set -uo pipefail
 cd "$(dirname "${0}")/.." || exit 1
 ROOT="$(pwd)"
@@ -135,5 +136,30 @@ cp "$TMP/mb/src/main/resources/mapper/UserMapper.xml" "$TMP/mb/target/classes/ma
 bash "$SH" "$TMP/mb" --out "$TMP/mb/relations3.jsonl" >/dev/null 2>&1
 _tgn=$(grep -c '"from":"target/' "$TMP/mb/relations3.jsonl"); [[ "$_tgn" -eq 0 ]] \
   && ok "态5 target/ 构建产物排除" || bad "态5 target/ 下 XML 误出 ${_tgn} 条边"
+
+
+# --- 态 6：Spring bean XML / JPA orm.xml / hbm.xml 声明式装配边（横向清剿轮） ---
+mkdir -p "$TMP/sx/src/main/resources" "$TMP/sx/src/main/java/com/demo" "$TMP/sx/src/main/resources/META-INF"
+printf 'package com.demo;\npublic class OrderService {}\n' > "$TMP/sx/src/main/java/com/demo/OrderService.java"
+printf 'package com.demo;\npublic class User {}\n' > "$TMP/sx/src/main/java/com/demo/User.java"
+cat > "$TMP/sx/src/main/resources/applicationContext.xml" <<'XEOF'
+<?xml version="1.0"?>
+<beans xmlns="http://www.springframework.org/schema/beans">
+  <bean id="svc" class="com.demo.OrderService"/>
+</beans>
+XEOF
+cat > "$TMP/sx/src/main/resources/META-INF/orm.xml" <<'XEOF'
+<?xml version="1.0"?>
+<entity-mappings xmlns="http://xmlns.jcp.org/xml/ns/persistence/orm">
+  <entity class="com.demo.User" name="User"/>
+</entity-mappings>
+XEOF
+out="$(bash "$SH" "$TMP/sx" --out "$TMP/sx/relations.jsonl" 2>&1)"
+E="$TMP/sx/relations.jsonl"
+grep -qF '"from":"src/main/resources/applicationContext.xml","to":"src/main/java/com/demo/OrderService.java","kind":"bean-wiring"' "$E" \
+  && ok "态6 Spring bean class→Java（bean-wiring 边）" || bad "态6 bean-wiring 边缺失: $(cat "$E" 2>/dev/null)"
+grep -qF '"from":"src/main/resources/META-INF/orm.xml","to":"src/main/java/com/demo/User.java","kind":"data-mapping"' "$E" \
+  && ok "态6 JPA orm.xml entity class→实体（data-mapping 边）" || bad "态6 orm.xml 边缺失: $(cat "$E" 2>/dev/null)"
+_e6=$(grep -c . "$E"); [[ "$_e6" -eq 2 ]] && ok "态6 边数=2" || bad "态6 边数=${_e6}（期望 2）"
 
 [[ $FAIL -eq 0 ]] && { echo "PASS test-relations-extract"; exit 0; } || { echo "FAIL test-relations-extract" >&2; exit 1; }

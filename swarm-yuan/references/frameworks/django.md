@@ -213,8 +213,21 @@ cmd:
 expect: always
 ```
 
+### 规律：模型↔迁移漂移——改模型必生成迁移（横向清剿轮）
+- **适用版本**: 全版本
+- **规律**: models.py 字段变更后不跑 `makemigrations`，表结构与代码即漂移：迁移文件不报错、测试库按迁移建表，生产运行期才 OperationalError（未知列/缺列）。这是"漏改字段"的姊妹缺陷——模型是代码侧字段声明，迁移是 schema 侧字符串化快照（CreateModel(fields=[...]) 内字段名同样是对模型字段的字符串引用）。
+- **违反后果**: 部署后运行期 OperationalError；多环境迁移状态不一致难排查。
+- **验证方法**: 检出 Model 文件但 0 迁移文件 → warn（漏 makemigrations 信号）；已有迁移的项目提示跑 `python manage.py makemigrations --check` 复核增量（静态无法判定漂移增量）。
+- **对应门禁**: fw_django_migration_drift(warn)
+
+```verify
+id: django-r14
+cmd: 
+expect: always
+```
+
 <!--
-共 13 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。
+共 14 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
@@ -235,6 +248,7 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 | fw_django_middleware_order | warn | MIDDLEWARE 首个中间件非 SecurityMiddleware → warn | DJANGO_SRC_GLOBS | — |
 | fw_django_static_root | warn | settings 无 STATIC_ROOT → warn | DJANGO_SRC_GLOBS | — |
 | fw_django_session_cookie | warn | settings 无 SESSION_COOKIE_SECURE/CSRF_COOKIE_SECURE → warn | DJANGO_SRC_GLOBS | CWE-614 |
+| fw_django_migration_drift | warn | Model 文件数 vs migrations/ 文件数：有模型零迁移即 warn；有迁移提示 --check 复核 | DJANGO_SRC_GLOBS | —（模型↔schema 一致性） |
 
 <!--
 门禁 id 命名规范：fw_django_<rule>（rule 全小写下划线）。
