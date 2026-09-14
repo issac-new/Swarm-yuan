@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # relations-extract.sh — 机器可读关系边集提取（R21-D：核心链条①"结构关系认知"的索引层）
-# 机械提取 import 依赖边 → <skill>/references/relations.jsonl（每行 {"from","to","kind","evidence"}），
-# AI 在此初稿上补语义边（kind: call/route/message/ipc/export——调用/路由/消息/IPC/库导出）。
+# 机械提取确定性依赖边 → <skill>/references/relations.jsonl（每行 {"from","to","kind","evidence"}），
+# AI 在此初稿上补语义边（kind: call/route/message/ipc/export/job-flow——调用/路由/消息/IPC/库导出/批处理装配）。
 # 消费方：--stable-diff 1 跳下游传播（gates-warn 优先读边集）、流B ②探查查边集替代读 mermaid 图。
 #
 # 提取范围（确定性 grep+相对路径解析，零外部依赖全平台可用——madge/graphify 深度层由 AI
@@ -10,6 +10,9 @@
 #   Python:    from .x / from ..x 相对导入（绝对导入按根目录+同目录 best-effort）
 #   Go:        go.mod module 前缀的工程内 import → 目录
 #   Java:      import a.b.C; → src/{main,test}/java/a/b/C.java
+#   MyBatis:   *Mapper.xml 的 namespace→Mapper 接口（mapper-binding 边）、
+#              resultMap type/resultType/parameterType→实体（data-mapping 边）——
+#              字符串耦合点编译不报错（漏改字段即静默缺陷），必须进边集供影响面反查
 #
 # 用法:
 #   bash relations-extract.sh <PROJECT_DIR> [--skill-dir <dir>] [--out <file>] [--max-edges <N>]
@@ -18,7 +21,7 @@
 #     --out        输出路径（缺省 <skill-dir>/references/relations.jsonl；无 --skill-dir 则报错）
 #     --max-edges  边数上限（默认 2000，超出截断并在 stderr 披露）
 # 输出: JSONL 边行（from/to 为项目相对路径，确定性排序）；--verify 输出 RELATION_MISS 行（advisory，exit 0 fail-open）。
-# 红线：机械层只出 import 边（证据=说明符原文+行号）；语义边（call/route/...）AI 补——机械不猜。
+# 红线：机械层只出确定性边（证据=说明符原文+行号）；短名映射多命中不出边、语义边（call/route/job-flow/...）AI 补——机械不猜。
 set -uo pipefail
 
 PROJ=""; SKILL_DIR=""; OUT=""; VERIFY=0; MAXE=2000
@@ -200,6 +203,75 @@ while IFS= read -r hit; do
 done < <(grep -RnE '^[[:space:]]*import[[:space:]]+[a-z][a-zA-Z0-9_.]*;' "$PROJ" --include='*.java' 2>/dev/null \
   | LC_ALL=C awk -F: -v proj="$PROJ" '{ f=substr($1, length(proj)+2); print f "|" $0 }' | LC_ALL=C sort -u | head -2000)
 
+# MyBatis mapper XML 声明式边（字符串耦合点编译不报错——漏改字段即静默缺陷，须进边集）
+#   mapper-binding: <mapper namespace="a.b.C">  → src/main/java/a/b/C.java（Mapper 接口）
+#   data-mapping:   resultMap type=/resultType=/parameterType="a.b.E" → src/main/java/a/b/E.java（实体）
+# 短名（typeAliases）解析：mybatis-config.xml <typeAlias alias> 映射优先；无映射按
+# src 下同名 .java 唯一命中（多命中不猜，AI 按 exploration-guide §C+.2.5 补）。
+# Spring Batch/Quartz job→数据资产依赖为语义耦合（reader SQL 列↔实体字段无确定性映射），
+# 机械层不猜——AI 补 kind=job-flow 边（exploration-guide §C+.2-J 链路模型）。
+_fq_resolve() { # $1=完全限定名 a.b.C → stdout 项目相对 .java 路径 或 空
+  local pkgpath="$1"; pkgpath=$(printf '%s' "$pkgpath" | tr '.' '/')
+  local root
+  for root in src/main/java src/test/java; do
+    if [[ -f "$PROJ/$root/$pkgpath.java" ]]; then printf '%s/%s.java' "$root" "$pkgpath"; return 0; fi
+  done
+  return 1
+}
+
+# typeAlias 映射表（alias<TAB>完全限定名），mybatis-config.xml 存在时构建
+_ALIAS_T=$(mktemp /tmp/relx.alias.XXXXXX)
+grep -RhoE '<typeAlias[^>]*alias="[^"]*"[^>]*type="[^"]*"' "$PROJ" --include='mybatis-config.xml' 2>/dev/null \
+  | sed -n 's/.*alias="\([^"]*\)".*type="\([^"]*\)".*/\1\t\2/p' > "$_ALIAS_T"
+
+_short_resolve() { # $1=短类名 → stdout 唯一命中的项目相对 .java 路径 或 空
+  local name="$1" fq hits
+  fq=$(awk -F'\t' -v n="$name" '$1 == n { print $2; exit }' "$_ALIAS_T")
+  if [[ -n "$fq" ]]; then _fq_resolve "$fq" && return 0 || return 1; fi
+  hits=$(find "$PROJ/src" -type f -name "${name}.java" -not -path '*/target/*' 2>/dev/null | LC_ALL=C sort | head -2)
+  [[ $(printf '%s' "$hits" | LC_ALL=C grep -c .) -eq 1 ]] || return 1
+  printf '%s' "$hits" | sed "s|^$PROJ/||"
+  return 0
+}
+
+_xml_files=$(find "$PROJ" -type f -name '*Mapper.xml' \
+  -not -path '*/target/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/.swarm-yuan/*' \
+  -print 2>/dev/null | LC_ALL=C sort | head -500)
+while IFS= read -r x_abs; do
+  [[ -z "$x_abs" ]] && continue
+  x_rel="${x_abs#"$PROJ"/}"
+  # namespace → Mapper 接口
+  while IFS= read -r entry; do
+    [[ -z "$entry" ]] && continue
+    ln="${entry%% *}"; ns="${entry#* }"
+    if to=$(_fq_resolve "$ns"); then
+      printf '{"from":"%s","to":"%s","kind":"mapper-binding","evidence":"namespace@%s:%s"}\n' "$x_rel" "$to" "$x_rel" "$ln" >> "$TMPF"
+    fi
+  done < <(grep -n '<mapper namespace=' "$x_abs" 2>/dev/null \
+    | sed -n 's/^\([0-9]*\):.*namespace="\([^"]*\)".*$/\1 \2/p')
+  # resultMap type= / resultType= / parameterType= → 实体（全限定名或短名）
+  while IFS= read -r entry; do
+    [[ -z "$entry" ]] && continue
+    ln=$(printf '%s' "$entry" | cut -d' ' -f1)
+    tag=$(printf '%s' "$entry" | cut -d' ' -f2)
+    typ=$(printf '%s' "$entry" | cut -d' ' -f3)
+    [[ -n "$typ" ]] || continue
+    case "$typ" in
+      map|hashmap|java.util.Map|java.util.HashMap|int|long|string|double|boolean|java.lang.*|java.math.*|java.util.Date) continue ;;
+    esac
+    case "$typ" in
+      *.*) to=$(_fq_resolve "$typ") || continue ;;
+      *)   to=$(_short_resolve "$typ") || continue ;;
+    esac
+    [[ -n "$to" ]] || continue
+    printf '{"from":"%s","to":"%s","kind":"data-mapping","evidence":"%s@%s:%s"}\n' "$x_rel" "$to" "$tag" "$x_rel" "$ln" >> "$TMPF"
+  done < <(grep -nE 'resultType=|parameterType=|<resultMap[^>]* type=' "$x_abs" 2>/dev/null \
+    | sed -n -e 's/^\([0-9]*\):.*<resultMap[^>]* type="\([^"]*\)".*$/\1 resultMap \2/p' \
+             -e 's/^\([0-9]*\):.*\(resultType\)="\([^"]*\)".*$/\1 resultType \3/p' \
+             -e 's/^\([0-9]*\):.*\(parameterType\)="\([^"]*\)".*$/\1 parameterType \3/p')
+done <<< "$_xml_files"
+rm -f "$_ALIAS_T"
+
 # 截断 + 确定性排序 + 落盘
 _n=$(LC_ALL=C grep -c . "$TMPF" 2>/dev/null || true); _n="${_n:-0}"
 if [[ "$_n" -gt "$MAXE" ]]; then
@@ -207,6 +279,9 @@ if [[ "$_n" -gt "$MAXE" ]]; then
 fi
 LC_ALL=C sort -t'"' -k4,4 -k8,8 "$TMPF" | LC_ALL=C awk -v max="$MAXE" 'NR <= max' > "$OUT"
 _n_final=$(LC_ALL=C grep -c . "$OUT" 2>/dev/null || true); _n_final="${_n_final:-0}"
-echo "✓ 关系边集已生成: ${OUT}（${_n_final} 条 import 边；语义边 call/route/message/ipc/export 由 AI 补充，格式同款 kind 字段）"
-echo "  消费方：--stable-diff 1 跳传播优先读本边集；流B ②探查查边集替代读 mermaid"
+_n_dm=$(grep -c '"kind":"data-mapping"' "$OUT" 2>/dev/null || true); _n_dm="${_n_dm:-0}"
+_n_mb=$(grep -c '"kind":"mapper-binding"' "$OUT" 2>/dev/null || true); _n_mb="${_n_mb:-0}"
+_n_imp=$((_n_final - _n_dm - _n_mb))
+echo "✓ 关系边集已生成: ${OUT}（${_n_final} 条 = import ${_n_imp} + mapper-binding ${_n_mb} + data-mapping ${_n_dm}；语义边 call/route/message/ipc/export/job-flow 由 AI 补充，格式同款 kind 字段）"
+echo "  消费方：--stable-diff 1 跳传播优先读本边集（改实体字段时 data-mapping 边反查 mapper XML）；流B ②探查查边集替代读 mermaid"
 exit 0

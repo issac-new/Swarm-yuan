@@ -4,6 +4,7 @@
 # 态2: --verify 抽样核验（全绿 + 断边检出）
 # 态3: --stable-diff 消费接线（gates-warn 传播段读边集召回 1 跳下游）
 # 态4: Go/Java 解析（module 剥离 / 包路径映射）
+# 态5: MyBatis mapper XML 声明式边（mapper-binding/data-mapping——漏改字段防线）
 set -uo pipefail
 cd "$(dirname "${0}")/.." || exit 1
 ROOT="$(pwd)"
@@ -84,5 +85,55 @@ out="$(bash "$SH" "$TMP/cjs" --out "$TMP/cjs/relations.jsonl" 2>&1)"
 grep -qF '"from":"src/services/task-service.js","to":"src/models/task.js"' "$TMP/cjs/relations.jsonl" \
   && ok "态4b CommonJS require('../') 相对导入边" || bad "态4b require 边缺失: $(cat "$TMP/cjs/relations.jsonl" 2>/dev/null)"
 _cjsn=$(grep -c . "$TMP/cjs/relations.jsonl"); [[ "$_cjsn" -eq 1 ]] && ok "态4b 边数=1（裸包 require 不计边）" || bad "态4b 边数=${_cjsn}（期望 1，express 裸包不应成边）"
+
+# --- 态 5：MyBatis mapper XML 声明式边（mapper-binding / data-mapping） ---
+mkdir -p "$TMP/mb/src/main/resources/mapper" "$TMP/mb/src/main/java/com/demo" "$TMP/mb/src/main/java/com/other" "$TMP/mb/src/main/java/com/demo2"
+printf 'package com.demo;\npublic interface UserMapper {}\n' > "$TMP/mb/src/main/java/com/demo/UserMapper.java"
+printf 'package com.demo;\npublic class User { private String userName; }\n' > "$TMP/mb/src/main/java/com/demo/User.java"
+printf 'package com.other;\npublic class Order {}\n' > "$TMP/mb/src/main/java/com/other/Order.java"
+printf 'package com.demo2;\npublic class Order {}\n' > "$TMP/mb/src/main/java/com/demo2/Order.java"
+cat > "$TMP/mb/src/main/resources/mapper/UserMapper.xml" <<'EOF'
+<?xml version="1.0"?>
+<mapper namespace="com.demo.UserMapper">
+  <resultMap id="BaseResultMap" type="com.demo.User">
+    <id column="id" property="id"/>
+  </resultMap>
+  <select id="countAll" resultType="long">SELECT COUNT(*) FROM t_user</select>
+  <insert id="insert" parameterType="com.demo.User">INSERT INTO t_user (user_name) VALUES (#{userName})</insert>
+</mapper>
+EOF
+cat > "$TMP/mb/src/main/resources/mapper/OrderMapper.xml" <<'EOF'
+<?xml version="1.0"?>
+<mapper namespace="com.demo.OrderMapper">
+  <select id="selectOrders" resultType="Order">SELECT * FROM t_order</select>
+</mapper>
+EOF
+cat > "$TMP/mb/src/main/resources/mybatis-config.xml" <<'EOF'
+<configuration><typeAliases>
+  <typeAlias alias="Order" type="com.other.Order"/>
+</typeAliases></configuration>
+EOF
+out="$(bash "$SH" "$TMP/mb" --out "$TMP/mb/relations.jsonl" 2>&1)"
+E="$TMP/mb/relations.jsonl"
+grep -qF '{"from":"src/main/resources/mapper/UserMapper.xml","to":"src/main/java/com/demo/UserMapper.java","kind":"mapper-binding"' "$E" \
+  && ok "态5 namespace→Mapper 接口（mapper-binding 边）" || bad "态5 mapper-binding 边缺失"
+grep -qF '"from":"src/main/resources/mapper/UserMapper.xml","to":"src/main/java/com/demo/User.java","kind":"data-mapping","evidence":"resultMap@' "$E" \
+  && ok "态5 resultMap type→实体（data-mapping 边）" || bad "态5 resultMap 边缺失"
+grep -qF '"evidence":"parameterType@' "$E" \
+  && ok "态5 parameterType→实体（data-mapping 边）" || bad "态5 parameterType 边缺失"
+grep -qF '"to":"src/main/java/com/other/Order.java"' "$E" \
+  && ok "态5 typeAlias 短名经别名映射解析（Order→com.other.Order）" || bad "态5 别名映射解析失败"
+grep -q 'resultType="long"' "$E" && bad "态5 基础类型误成边" || ok "态5 resultType=long 基础类型跳过"
+# 撤销别名映射 → 两个同名 Order.java → 短名多命中不猜（0 条短名边）
+rm "$TMP/mb/src/main/resources/mybatis-config.xml"
+bash "$SH" "$TMP/mb" --out "$TMP/mb/relations2.jsonl" >/dev/null 2>&1
+_om=$(grep -c '"to":"src/main/java/.*Order\.java"' "$TMP/mb/relations2.jsonl"); [[ "$_om" -eq 0 ]] \
+  && ok "态5 短名多命中不出边（机械不猜）" || bad "态5 短名多命中误出 ${_om} 条边"
+# target/ 下的复制 XML 不重复出边
+mkdir -p "$TMP/mb/target/classes/mapper"
+cp "$TMP/mb/src/main/resources/mapper/UserMapper.xml" "$TMP/mb/target/classes/mapper/UserMapper.xml"
+bash "$SH" "$TMP/mb" --out "$TMP/mb/relations3.jsonl" >/dev/null 2>&1
+_tgn=$(grep -c '"from":"target/' "$TMP/mb/relations3.jsonl"); [[ "$_tgn" -eq 0 ]] \
+  && ok "态5 target/ 构建产物排除" || bad "态5 target/ 下 XML 误出 ${_tgn} 条边"
 
 [[ $FAIL -eq 0 ]] && { echo "PASS test-relations-extract"; exit 0; } || { echo "FAIL test-relations-extract" >&2; exit 1; }
