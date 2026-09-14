@@ -354,3 +354,14 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 - **证据纪律三连**：复核阻塞须确定性证据（#4085）+ **no-op 报真实条件与已算值**（#4157，"缺失证据不显示为零"族）+ **不可读目录不得报为空**（#4163）——复核/上报/枚举三面全钉确定性。
 - **Review Dispositions Ledger 契约化**（#4345）：评审处置台账——与 gate-audit.jsonl 同构印证。
 - 同向：context-drift 前置门（#4147，与 fingerprint --diff 同向）。候选：dispatch.maxConcurrency 容量轴（#4162）/ quick-batch 可恢复 manifest / bracket-tolerant id（#2867）。
+
+## gsd-core v1.14.0 要点（2026-09-14 R28 补核）
+
+> 调研档案 `docs/research/R28-runtime-refresh.md`；实质 minor（178 commits / 604 文件）——遏制单点化轮，吸收全部为注记级。
+
+- **路径遏制单点化**（#4653/#4636）："containment ONE decision, resolved two ways"——全部遏制实现删除或路由经唯一 canonical predicate，存活包装器不得自行判定"是否受遏制"；**symlink 逃逸补洞**（lexical 检查可被符号链接绕过，failing-first 覆盖先行）——路径语义须在规范化空间比对（单一事实源族·安全边界精化；与 claude-code v2.1.268 deny/ask 真实路径绕过修复同谱系）。
+- **自建 lint + 违规清零**（#4654）：ESLint 规则 `no-unconfined-path-join`（426 行）+ allowlist + 全仓 drain to zero——架构不变量从 review 纪律升维为机器门禁；守门测试钉行为，lint 钉写法，双手段互补。
+- **already_present 诚实报告**（#4558）：restore 计划把与备份字节相同的目的地当缺失报 `eligible`，改报 `already_present`——「no-op 报真实条件」族（R18 #4157）计划侧延续。
+- **dispatch-identity 单一所有者**（#4594）：隔离守卫曾 regex 刨模型散文判定 run-scoped sentinel；改为发射格式与回读解析器同一所有者——**模型生成文本不是协议面**，判定依据须来自结构化字段。
+- **install-time 校验全注册表**（#3929）：安装时校验只看 candidate map 曾使非空 `requires` 永不可满足；改为 merged registry（第一方+已装+候选）——同一校验在不同时点必须同口径（「预览=执行口径」姊妹样本）。
+- 同向注记：分支真新验真（#4055，幂等创建族）/ 命名超时常量五批迁移（界要命名）/ WINDOWS.md 台账跨进程串行化（#3780，共享可变状态写串行化）。
