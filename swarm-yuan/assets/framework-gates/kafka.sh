@@ -1,5 +1,5 @@
 # ruleset: kafka  requires_conf: KAFKA_SRC_GLOBS
-# gates: fw_kafka_offset_semantics(fail) fw_kafka_acks(fail) fw_kafka_idempotent_consumer(warn) fw_kafka_consumer_le_partitions(warn) fw_kafka_idempotent_producer(warn) fw_kafka_transactional_producer(warn) fw_kafka_rebalance_cooperative(warn) fw_kafka_partitioner(warn) fw_kafka_dlq(warn) fw_kafka_lag_monitor(warn) fw_kafka_order_partition(warn) fw_kafka_schema_registry(warn) fw_kafka_group_mgmt(warn)
+# gates: fw_kafka_offset_semantics(fail) fw_kafka_acks(fail) fw_kafka_idempotent_consumer(warn) fw_kafka_consumer_le_partitions(warn) fw_kafka_idempotent_producer(warn) fw_kafka_transactional_producer(warn) fw_kafka_rebalance_cooperative(warn) fw_kafka_partitioner(warn) fw_kafka_dlq(warn) fw_kafka_lag_monitor(warn) fw_kafka_order_partition(warn) fw_kafka_schema_registry(warn) fw_kafka_group_mgmt(warn) fw_kafka_topic_pair(warn)
 # harvested-from: P3 深化（2026-07-17），规律源自 Apache Kafka 4.x（KRaft 终态）/ spring-kafka 3.x 官方文档
 _fw_kafka_check() {
   echo "  [kafka] Apache Kafka 4.x / spring-kafka 3.x 框架规律"
@@ -266,6 +266,31 @@ ${range_hit}"
     fi
   done <<< "$dup_groups"
   _fw_report warn fw_kafka_group_mgmt "$gm_bad" "不同业务 listener 复用同一 groupId（一 listener 一组，命名按业务域.用途.环境）" "无跨 topic 消费组复用"
+
+  # ====================================================================
+  # fw_kafka_topic_pair(warn)：topic 名双边字符串配对（横向清剿轮——端点名改一边即静默断链）
+  # 生产侧字面量（.send("X" / new ProducerRecord("X"）与消费侧字面量（@KafkaListener topics="X"）
+  # 双向 diff；常量引用（send(topicVar)）提不出字面量自然跳过；跨服务/外部系统属正常单边 → warn 人工核。
+  # ====================================================================
+  local prod_topics="" cons_topics="" pair_bad=""
+  prod_topics=$(grep -rhoE '\.send\([[:space:]]*"[^"]+"|new[[:space:]]+ProducerRecord\([[:space:]]*"[^"]+"' \
+    "${javaarr[@]+"${javaarr[@]}"}" 2>/dev/null | sed -E 's/.*"([^"]+)"/\1/' | sort -u || true)
+  cons_topics=$(grep -rhoE '@KafkaListener\([^)]*topics[[:space:]]*=[[:space:]]*(\{[^}]*\}|"[^"]+")' \
+    "${javaarr[@]+"${javaarr[@]}"}" 2>/dev/null | grep -oE '"[^"]+"' | sed -E 's/"([^"]+)"/\1/' | sort -u || true)
+  local _t
+  while IFS= read -r _t; do
+    [[ -z "$_t" ]] && continue
+    printf '%s\n' "$cons_topics" | grep -qxF "$_t" \
+      || pair_bad="${pair_bad}仅生产无消费: ${_t}（本服务内无 @KafkaListener 监听——外部系统消费或 typo 断链，核对 §5 消息拓扑配对表）
+"
+  done <<< "$prod_topics"
+  while IFS= read -r _t; do
+    [[ -z "$_t" ]] && continue
+    printf '%s\n' "$prod_topics" | grep -qxF "$_t" \
+      || pair_bad="${pair_bad}仅消费无生产: ${_t}（本服务内无 send/ProducerRecord——外部系统生产或 typo 断链，核对 §5 消息拓扑配对表）
+"
+  done <<< "$cons_topics"
+  _fw_report warn fw_kafka_topic_pair "$pair_bad" "topic 名单边悬挂（生产/消费两侧字符串互不知晓，改一边即静默断链）" "topic 生产/消费字面量配对完整（或无常量外单边）"
 
 ### P1-4 AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，

@@ -202,8 +202,21 @@ cmd:
 expect: always
 ```
 
+### 规律：队列/routingKey 名是双边字符串，生产/监听两侧配对须核对（横向清剿轮）
+- **适用版本**: spring-amqp 3.x 全版本
+- **规律**: `convertAndSend("Q", msg)` 与 `@RabbitListener(queues = "Q")` 是互不知晓的字符串——改一边即静默断链（消息进无人监听的队列，或监听空队列）。binding/routingKey 同理。单边队列（外部系统）须在 §5 消息拓扑配对表登记。
+- **违反后果**: 消息静默断链；TTL 队列消息过期丢弃更隐蔽。
+- **验证方法**: 机械提取生产侧首字面量与监听侧 queues 字面量双向 diff，单边悬挂即 warn（常量引用自然跳过）。
+- **对应门禁**: fw_rabbit_endpoint_pair(warn)
+
+```verify
+id: rabbitmq-r13
+cmd: 
+expect: always
+```
+
 <!--
-共 12 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。
+共 13 条规律（≥10 门槛）。每条规律均挂门禁 id，无游离规律。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
@@ -223,6 +236,7 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 | fw_rabbitmq_exchange_type | warn | 检出 HeadersExchange/ExchangeTypes.HEADERS/type: headers → warn | RABBITMQ_SRC_GLOBS | —（交换机选型） |
 | fw_rabbitmq_consumer_concurrency | warn | @RabbitListener 无 concurrency 显式配置 → warn | RABBITMQ_SRC_GLOBS | —（并发配置） |
 | fw_rabbitmq_auto_delete | warn | 检出 .autoDelete(/.exclusive(/auto-delete: true/exclusive: true → warn | RABBITMQ_SRC_GLOBS | —（临时队列风险） |
+| fw_rabbit_endpoint_pair | warn | 生产/监听队列名字面量双向 diff，单边悬挂即 warn | RABBITMQ_SRC_GLOBS | —（拓扑配对一致性） |
 
 <!--
 门禁 id 命名规范：fw_rabbitmq_<rule>（rule 全小写下划线）。

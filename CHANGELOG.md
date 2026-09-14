@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.14.1] - 2026-09-14
+
+> 声明式字符串耦合横向清剿轮：把 v2.14.0 在 MyBatis XML / Spring Batch 暴露的"字符串耦合分析缺失"模式横向排查到全部主流技术栈，确认并修复四类同型缺口。排查方法学：凡是"编译器不校验、import 依赖边不含、清单无维度"的三不管字符串引用，都是漏改字段的同型炸点。
+
+### 排查矩阵（六类声明式耦合 × 处置）
+- **映射文件↔代码**：MyBatis ✅（v2.14.0）；JPA orm.xml / hibernate hbm.xml ❌→✅ 本轮入边集；Prisma/GraphQL schema/proto 确定性不足机械提取 → 方法论台账覆盖。
+- **字段名字符串**：MapStruct @Mapping 经核实**编译期注解处理器已校验**（漏改即编译红，非静默缺陷）——不重复造门禁；JPA @Query JPQL 实体/字段名编译不查（容器启动才解析）→ 新门禁。
+- **拓扑名配对**：Kafka/RabbitMQ 端点名是**双边字符串**（生产者写一个名、监听器听另一个名，改一边编译过、启动正常、消息静默断链）→ 双栈新配对门禁 + 消息拓扑配对表方法论。
+- **模型↔迁移漂移**：Django 漏 makemigrations / GORM tag↔DDL / alembic/flyway/liquibase/prisma migrations 全家 → 新 DIM_ORM_SCHEMA 维度 + Django 漂移门禁 + Layer 5 链路泛化。
+- **模板绑定 / 配置装配**：Spring beans XML `<bean class=>`→Java 装配边入边集（bean-wiring）；yml↔@Value 由 Spring 启动 fail-fast 自兜底，不重复执法。
+- 调度信号补盲：DIM_SCHEDULE_JOB 增 @XxlJob/ElasticJob（国产调度栈）。
+
+### Added
+- **relations-extract.sh**：+Spring beans XML（`<bean class="a.b.C">`→Java，kind=`bean-wiring`）与 JPA orm.xml/`*.hbm.xml`（`<entity class=>`/`<class name=>`→实体，kind=`data-mapping`）声明式边；文件判据按 XML 根元素内容（含 `<beans`/`<entity-mapping`/`<hibernate-mapping`），只解析全限定名（短名机械不猜）。
+- **DIM_ORM_SCHEMA 维度**：prisma schema / Django migrations / alembic / flyway（`V*__*.sql`）/ liquibase changelog / orm.xml / hbm.xml / `schema*.sql` 全枚举 → §8 数据字典机器计数核验；`--path-check` 抽取面扩至 §8（迁移文件路径同样验真）。
+- **四个新门禁**：`fw_kafka_topic_pair`(warn，生产/消费 topic 字面量双向 diff)、`fw_rabbit_endpoint_pair`(warn，含原生 basicPublish)、`fw_jpa_jpql_entity`(warn，@Query JPQL from/join 实体名在源码集定位)、`fw_django_migration_drift`(warn，有模型零迁移=漏 makemigrations 信号；有迁移 pass 带 --check 提示)——四规则集规律各 +1（kafka-r14/rabbitmq-r13/django-r14/spring-data-jpa-r14）。
+- **方法论扩充**：exploration-guide §C+.2-B Layer 5 泛化到 ORM 全家（JPA/GORM/Django/SQLAlchemy/Prisma/TypeORM/Sequelize 逐栈主线 + 模型↔迁移漂移"第五查"）；§C+.2-A 新增**消息拓扑配对表**（端点名/生产侧/消费侧/序列化/幂等五列，单边端点显式登记）；template-spec §5/§8 对应章节要求同步。
+- **集中式双态测试** `tests/test-fw-declarative-gates.sh`：四门禁命中态 + 不误报态各一；test-relations-extract 态 6（Spring/JPA XML 边）；test-inventory-verify 态 14（DIM_ORM_SCHEMA 计数/漏列/排除链）。
+
+### 诚实边界
+- MQ 端点配对只比**字面量**——常量引用（`send(topicVar)`）与配置中心 topic 提不出字符串，天然跳过；跨服务/外部系统单边是正常形态，故 warn 级人工核对而非 fail。
+- JPQL 校验到实体名级；字段级（`o.status`）静态解析成本高，归 §8 字段级映射台账。
+- django 迁移漂移门禁只能判"零迁移"强信号与"有迁移"提示态，增量漂移（改模型没生成新迁移）静态不可判，提示 `makemigrations --check`。
+- MapStruct 字段字符串（@Mapping target/source）经核实由编译期 processor 校验，本轮不加门禁（避免重复执法面）；其静默面（新增目标字段漏映射）仍由 unmappedTargetPolicy=ERROR 规律覆盖。
+
 ## [v2.14.0] - 2026-09-14
 
 > 数据映射依赖分析补全轮（研发反馈驱动）：一线反馈用生成的目标技能做研发时**漏改了字段**——改实体字段后 mapper XML 与批处理任务没有同步。排查确认这不是门禁失职，而是**探查层结构性盲区**：mapper XML 的 resultMap property、SQL 列名、批处理 reader 的 SQL 列都是**字符串耦合点**——编译器不校验、import 依赖边不含 XML、组件清单没有数据模型维度，四道防线对同一类耦合集体失明。本轮在探查（边集+清单+链路模型）与执法（字段级门禁）两层补全，并把"改实体字段"这类高频任务固化为配方与场景回归。

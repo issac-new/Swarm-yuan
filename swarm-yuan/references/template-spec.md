@@ -311,7 +311,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | 13. 五层认知基底 | reference-manual.md（认知映射表+六维动力学基线+逻辑谬误图谱+辩证映射表）+ spec-template.md（§14交付衰减/§15蓝图/§16偏差自检/§17辩证映射）+ precheck.sh --cognition | 认知映射 + 动力学基线 + 辩证映射 + 五层体检门禁 |
 | 14. 领域知识 | reference-manual.md（领域知识段：技术+业务领域规则）+ spec-template.md（§18领域知识约束）+ precheck.sh --domain | 领域识别 + 客观规律约束 + 违规检测门禁 |
 | **15. 编排调用关系及约束** | **dev-guide.md §8（编排约束）+ reference-manual.md §5（链路图含约束注释）+ SKILL.md（改造分类表标注约束）+ precheck.sh --layer/--frontend** | **导入方向 + 注册顺序 + 路由挂载 + 改造分类 + 状态所有权 + 测试边界** |
-| **16. 详尽构件库清单（全量）** | **reference-manual.md §4（全量构件表）+ §6（全量接口端点表）+ §9（全量 store/类型/模型/mapper XML 表）+ exploration-guide §C+.0-C+.5（全量穷举+计数核验；数据映射三维度 DIM_DATA_MODEL/DIM_MAPPER_XML/DIM_SCHEDULE_JOB 机器执法）** | **按 §C+.0 形态判定 + §C+.1 按维度全量穷举，清单计数 ≥ 枚举计数 × 0.95** |
+| **16. 详尽构件库清单（全量）** | **reference-manual.md §4（全量构件表）+ §6（全量接口端点表）+ §9（全量 store/类型/模型/mapper XML 表）+ exploration-guide §C+.0-C+.5（全量穷举+计数核验；数据映射四维度 DIM_DATA_MODEL/DIM_MAPPER_XML/DIM_SCHEDULE_JOB/DIM_ORM_SCHEMA 机器执法）** | **按 §C+.0 形态判定 + §C+.1 按维度全量穷举，清单计数 ≥ 枚举计数 × 0.95** |
 
 **文件：** 多个，按主题拆分。
 
@@ -335,8 +335,9 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | §调用链路说明 | §5 | **按形态选链路模型**：前端(注册装配+模块矩阵+挂载树+store依赖) / 后端(请求处理管道+分层矩阵+数据流+外部依赖+**数据映射链路**) / 异步(消息流转) / 微服务(跨服务调用链) + §5.1 编排约束注释；**含定时/批处理信号时加调度任务表**（§C+.2-J 产物：任务/入口路径/触发方式/读数据资产/写数据资产/幂等策略；DIM_SCHEDULE_JOB 计数核验，路径进 --path-check） | 按形态动态 |
 | §应用接口清单（全量） | §6 | **按接口形态全量**：REST(每路由文件端点表) / GraphQL(Query/Mutation) / gRPC(service.method) / MQ(queue+handler) / 库(导出函数)。无通配符占位 | 按形态动态 |
 | §UI/UX设计资源清单 | §7 | 设计文档、主题、样式、品牌资源、i18n；含前端时按 `references/frontend-design-methodology.md` 三层权威分层（PRODUCT.md 产品真相 > DESIGN.md 视觉决策 > surface brief 单面策略）组织设计决策，含 design token（colors/typography/rounded/spacing/components）+ 品牌资源 + i18n | 仅含前端 |
-| §数据字典及数据规范 | §8 | schema 位置、数据流、业务规则、勾稽关系；**字段级映射台账（有数据访问层时必含，§C+.2-B Layer 5 产物）：核心实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单 ↔ 批处理 reader 列——改字段的影响面以此台账为唯一依据** | 通用（有数据层时） |
+| §数据字典及数据规范 | §8 | schema 位置、数据流、业务规则、勾稽关系；**字段级映射台账（有数据访问层时必含，§C+.2-B Layer 5 产物）：核心实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单 ↔ 批处理 reader 列——改字段的影响面以此台账为唯一依据；JPQL @Query 内嵌实体/字段名须入台账**；**schema/迁移资产表（横向清剿轮补，DIM_ORM_SCHEMA 计数核验）：prisma/migrations/alembic/flyway/liquibase/orm.xml/hbm/schema.sql 全枚举——改模型必核"迁移是否已生成"（模型↔迁移漂移 = 漏改字段的姊妹缺陷）** | 通用（有数据层时） |
 | §store/类型/模型全量清单 | §9 | 前端(store+类型) / 后端(ORM model+entity+DTO+**mapper XML 文件表：路径/namespace↔接口/resultMap 实体引用**——DIM_MAPPER_XML 计数核验，与实体同节共表) / 通用(类型定义) | 按形态动态 |
+| §消息拓扑配对表 | §5 | **含异步时必含（§C+.2-A 产物）**：每行=端点名/生产侧 file:line/消费侧 file:line/序列化格式/幂等策略；单边端点显式标"外部系统"或"孤儿端点"——端点名是双边字符串，改名前必查 | 按形态动态 |
 | §测试案例（check §1） | check §1 | 单测/接口/集成/回归/安全测试案例及数据 | 通用 |
 | §业务规则案例（check §2） | check §2 | 业务规则 + 案例数据 | 通用 |
 | §数据勾稽核对（check §3） | check §3 | 无多漏错重核对项 | 通用（有数据层时） |

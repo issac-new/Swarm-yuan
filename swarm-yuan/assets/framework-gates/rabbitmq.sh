@@ -1,5 +1,5 @@
 # ruleset: rabbitmq  requires_conf: RABBITMQ_SRC_GLOBS
-# gates: fw_rabbitmq_manual_ack(fail) fw_rabbitmq_idempotent_consumer(warn) fw_rabbitmq_dlq(warn) fw_rabbitmq_durable_persistent(warn) fw_rabbitmq_connection_reuse(warn) fw_rabbitmq_prefetch(warn) fw_rabbitmq_publisher_confirm(warn) fw_rabbitmq_delay(warn) fw_rabbitmq_quorum(warn) fw_rabbitmq_exchange_type(warn) fw_rabbitmq_consumer_concurrency(warn) fw_rabbitmq_auto_delete(warn)
+# gates: fw_rabbitmq_manual_ack(fail) fw_rabbitmq_idempotent_consumer(warn) fw_rabbitmq_dlq(warn) fw_rabbitmq_durable_persistent(warn) fw_rabbitmq_connection_reuse(warn) fw_rabbitmq_prefetch(warn) fw_rabbitmq_publisher_confirm(warn) fw_rabbitmq_delay(warn) fw_rabbitmq_quorum(warn) fw_rabbitmq_exchange_type(warn) fw_rabbitmq_consumer_concurrency(warn) fw_rabbitmq_auto_delete(warn) fw_rabbit_endpoint_pair(warn)
 # harvested-from: P3 深化（2026-07-17），规律源自 RabbitMQ 4.x（classic 废弃/quorum 默认）/ spring-amqp 3.x/4.x 官方文档
 _fw_rabbitmq_check() {
   echo "  [rabbitmq] RabbitMQ 4.x / spring-amqp 3.x/4.x 框架规律"
@@ -267,6 +267,32 @@ ${queue_decl}"
 "
   done
   _fw_report warn fw_rabbitmq_auto_delete "$ad_bad" "检出 autoDelete/exclusive 队列（消费者断连即删队列丢消息，仅限 RPC reply-to 等临时场景；quorum 不支持二者）" "未检出 autoDelete/exclusive 队列"
+
+  # ====================================================================
+  # fw_rabbit_endpoint_pair(warn)：队列/routingKey 名双边字符串配对（横向清剿轮）
+  # 生产侧 convertAndSend("Q"/原生 basicPublish("", "RK") 字面量集 ↔ 消费侧
+  # @RabbitListener(queues="X") 字面量集；双向 diff；常量引用提不出字面量自然跳过；
+  # 外部系统单边正常 → warn 人工核对拓扑配对表。
+  # ====================================================================
+  local rprod="" rcons="" rpair_bad="" _r
+  rprod=$( { grep -rhoE 'convertAndSend\([[:space:]]*"[^"]+"' "${javaarr[@]+"${javaarr[@]}"}" 2>/dev/null || true; \
+             grep -rhoE 'basicPublish\([^,]*,[[:space:]]*"[^"]+"' "${javaarr[@]+"${javaarr[@]}"}" 2>/dev/null || true; } \
+    | sed -E 's/.*"([^"]+)"/\1/' | sort -u || true)
+  rcons=$(grep -rhoE '@RabbitListener\([^)]*queues[[:space:]]*=[[:space:]]*(\{[^}]*\}|"[^"]+")' \
+    "${javaarr[@]+"${javaarr[@]}"}" 2>/dev/null | grep -oE '"[^"]+"' | sed -E 's/"([^"]+)"/\1/' | sort -u || true)
+  while IFS= read -r _r; do
+    [[ -z "$_r" ]] && continue
+    printf '%s\n' "$rcons" | grep -qxF "$_r" \
+      || rpair_bad="${rpair_bad}仅生产无监听: ${_r}（本服务无 @RabbitListener(queues=...)——外部系统消费或 typo 断链，核对 §5 拓扑配对表）
+"
+  done <<< "$rprod"
+  while IFS= read -r _r; do
+    [[ -z "$_r" ]] && continue
+    printf '%s\n' "$rprod" | grep -qxF "$_r" \
+      || rpair_bad="${rpair_bad}仅监听无生产: ${_r}（本服务无 convertAndSend——外部系统生产或 typo 断链，核对 §5 拓扑配对表）
+"
+  done <<< "$rcons"
+  _fw_report warn fw_rabbit_endpoint_pair "$rpair_bad" "队列名单边悬挂（生产/监听两侧字符串互不知晓，改一边即静默断链）" "队列名生产/监听字面量配对完整（或无常量外单边）"
 
 ### P1-4 AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，

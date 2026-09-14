@@ -78,7 +78,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | ⓪ | 自检 | `scripts/self-check.sh --check-only`（运行时/文档一致性） |
 | ⓪.5 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem search 提取规则 + mine-habits 行为初稿（习惯三去向） |
 | ① | 探查三路并行 | `references/exploration-guide.md` §C+（结构/规范/代码组织子代理各按其方法论） |
-| ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95，数据映射三维度 DIM 机器执法）；gitnexus/graphify 真图谱；`relations-extract.sh` 声明式边（mapper-binding/data-mapping——XML↔接口/实体的字符串耦合，编译不校验） |
+| ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95，数据映射四维度 DIM 机器执法）；gitnexus/graphify 真图谱；`relations-extract.sh` 声明式边（mapper-binding/data-mapping/bean-wiring——XML↔接口/实体/bean 装配的字符串耦合，编译不校验） |
 | ② | 特征卡 | 特征项写入认知缓冲（17 项 = P0 6 强制 + P1 11，承接表见 template-spec §3） |
 | ③ | 骨架 | `scripts/generate-skill.sh <name> <proj>`（UNIVERSAL_FILES 按档拷贝） |
 | ④ | 填充 | template-spec §1-§24 逐节填 + codebase/dev-guide/release/reference-manual/workflow/recipes 六文件（recipes=任务配方，§C+.6/§C+.7） |
@@ -101,7 +101,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | 任务配方/业务功能清单（理念·拼装式，R21） | ①.5 盘点+④ 填充（§C+.6/§C+.7） | 流B ②探查先查配方、⑤编码按配方拼装 | mark-active 五要素执法；问题沉淀追加配方 |
 | 开发偏好（设计，R21） | ⓪.5 行为观察（mine-habits 初稿） | 流B 全程（AI 遵开发者实际习惯） | memory-writeback 记忆闭环；节存在性执法 |
 | 关系边集（架构，R21） | ①.5 relations-extract 机械边 | --stable-diff 传播+流B ②探查查边集 | mark-active 抽样核验；断边→重建 |
-| 数据映射链/任务链（架构，漏改字段防线） | ①.5 声明式边+§C+.2-B Layer 5/§C+.2-J 链路（实体↔mapper XML↔表列；job→读写数据资产） | 流B ②探查影响面反查（改字段召回 XML/job）+ fw_mybatis_field_sync 执法 | DIM 三维度计数核验；边集 --verify 防失锚 |
+| 数据映射链/任务链/消息拓扑（架构，字符串耦合防线） | ①.5 声明式边+§C+.2-B Layer 5/§C+.2-J/§C+.2-A 配对表（实体↔mapper XML↔表列；job→读写数据资产；MQ 端点双边配对） | 流B ②探查影响面反查（改字段召回 XML/job/迁移）+ fw_mybatis_field_sync/fw_*_pair 执法 | DIM 四维度计数核验；边集 --verify 防失锚 |
 | 特征卡（理念） | ② 特征项提取 | ⑤ conf 三件套（门禁参数源） | mark-active 三关核验其真实性 |
 | 门禁四族（架构） | ⑤ conf+⑦.5 片段注入 | 流B 序列执勤+hook 强制 | 误报→调 conf 重跑；拦截落 gate-deny.jsonl |
 | rules.d 三值（设计/架构） | ③ 骨架随发+⑤ 探查期项目规则（R21） | 流B Bash/Edit 实时匹配 | 审批沉淀回写 rules.d（持久化闭环） |
