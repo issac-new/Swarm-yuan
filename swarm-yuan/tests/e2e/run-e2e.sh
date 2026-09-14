@@ -54,6 +54,28 @@ for gid in fw_mybatis_dollar fw_lombok_data_jpa fw_batch_step_scope fw_sharding_
   echo "$out" | grep -q "$gid" && echo "✓ 输出含 fail id: $gid" || { echo "✗ 输出缺 fail id: $gid"; echo "$out" | grep -E '✗|✓' | head -15; exit 1; }
 done
 
+# 3.1 数据映射防线 e2e（漏改字段防线三件套：声明式边 + 任务维度 + 字段同步门禁）
+#   relations-extract 出 mapper-binding/data-mapping 边（改实体字段的影响面反查依据）；
+#   DIM_SCHEDULE_JOB 枚举 job 入口（ReportJob/BatchJobConfig）；field_sync 对同步 resultMap pass。
+echo "== Step 2.1: 数据映射防线（mapper-binding/data-mapping 边 + 调度任务维度 + field_sync）=="
+REL_OUT="$(mktemp /tmp/rel.e2e.XXXXXX)"
+bash "${PARADIGM}/scripts/relations-extract.sh" "${DEMO}" --out "${REL_OUT}" >/dev/null 2>&1
+grep -qF '"from":"src/main/resources/mapper/UserMapper.xml","to":"src/main/java/com/demo/UserMapper.java","kind":"mapper-binding"' "${REL_OUT}" \
+  && echo "✓ mapper-binding 边（XML namespace → Mapper 接口）" \
+  || { echo "✗ mapper-binding 边缺失"; cat "${REL_OUT}"; exit 1; }
+grep -qF '"from":"src/main/resources/mapper/UserMapper.xml","to":"src/main/java/com/demo/User.java","kind":"data-mapping"' "${REL_OUT}" \
+  && echo "✓ data-mapping 边（resultMap type → 实体，改 User 字段反查 XML 的依据）" \
+  || { echo "✗ data-mapping 边缺失"; cat "${REL_OUT}"; exit 1; }
+_e=$(grep -c . "${REL_OUT}"); [[ "$_e" -eq 2 ]] && echo "✓ 边总数=2（target/ 构建产物不重复出边）" \
+  || { echo "✗ 边总数=${_e}（期望 2）"; cat "${REL_OUT}"; exit 1; }
+rm -f "${REL_OUT}"
+source "${PARADIGM}/assets/inventory-dimensions.conf"
+_jc=$(eval "${DIM_SCHEDULE_JOB_CMD//\$\{PROJECT_DIR\}/\"${DEMO}\"}" | grep -c .)
+[[ "$_jc" -eq 2 ]] && echo "✓ DIM_SCHEDULE_JOB 枚举 2（@Scheduled ReportJob + ItemReader BatchJobConfig）" \
+  || { echo "✗ 调度任务枚举=${_jc}（期望 2）"; exit 1; }
+echo "$out" | grep -q 'fw_mybatis_field_sync.*均可' && echo "✓ field_sync 同步 resultMap pass" \
+  || { echo "✗ field_sync 未报 pass（java-demo resultMap 应同步）"; echo "$out" | grep field_sync; exit 1; }
+
 # 3.5 核心门禁回归（实战暴露的 P0/P1/P2 缺陷防退化）：
 #   check_reuse 多文件 diff 不再 syntax error；_sec_scan 排除 dist/；SQL 注入 ERE 的
 #   TS 安全形态豁免 + sanitize 降 warn + 真阳性仍 fail。

@@ -477,6 +477,11 @@ grep -nH "defineProps\|interface.*Props\|withDefaults\|defineEmits\|defineSlots"
 ```
 
 > 若某维度清单计数远小于枚举计数（如 10 vs 85），**禁止提交**，回到 Step 2 继续补全该维度。
+>
+> **数据映射三维度是机器执法面**：数据模型实体（DIM_DATA_MODEL→§9）、MyBatis mapper XML（DIM_MAPPER_XML→§9）、
+> 定时/批处理任务（DIM_SCHEDULE_JOB→§5）——`inventory-verify.sh` 按 `assets/inventory-dimensions.conf`
+> 自动核验这三类清单（漏列整维=FAIL；任务表路径进 --path-check）。字符串耦合层（XML/SQL 列）不进任何
+> Java import 边，这三张清单 + §C+.2-B Layer 5/§C+.2-J 链路产物就是"漏改字段"的唯一防线，禁止样本化。
 
 #### C+.2 调用链路分析方法论（按项目形态选择链路模型）
 
@@ -487,8 +492,9 @@ grep -nH "defineProps\|interface.*Props\|withDefaults\|defineEmits\|defineSlots"
 | 项目形态 | 链路模型 | 追查重点 |
 |---------|---------|---------|
 | 含前端 | §C+.2-F 注册装配链路 + 组件挂载树 + store 依赖 | 注册顺序/feature-gate/静态vs动态路由/跨模块引用 |
-| 含后端 | §C+.2-B 请求处理管道 + 分层依赖 | 入口→中间件→路由→controller→service→repo→DB/外部 |
+| 含后端 | §C+.2-B 请求处理管道 + 分层依赖 + **数据映射链路（Layer 5）** | 入口→中间件→路由→controller→service→repo→DB/外部；**实体↔表列↔resultMap↔SQL 列** |
 | 含异步 | §C+.2-A 消息流转链路 | 生产者→队列→消费者→副作用+幂等 |
+| 含定时/批处理 | §C+.2-J 任务链路（信号驱动，非形态） | 触发器→job→reader/processor/writer→读写的表与实体 |
 | 微服务 | §C+.2-M 跨服务调用链 | 服务间同步/异步调用/共享DB/网关/trace透传 |
 | 桌面 | §C+.2-D IPC 链路 | 主进程↔preload↔渲染进程 IPC 通道 |
 | 库 | §C+.2-L 导出依赖图 | 公共API→内部模块依赖 |
@@ -581,6 +587,21 @@ Layer 4 外部依赖链路：
 → 记录：连接方式、事务边界、超时/重试策略、幂等性
 ```
 
+Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编译器不校验，漏改即静默缺陷）：
+```
+追查路径（按项目 ORM/SQL 映射技术选一条主线，逐层建立"字段级"对应关系）：
+ MyBatis:  Mapper 接口方法 ↔ XML statement id（同名绑定）
+           ↔ resultMap <result column property> / SQL 列清单
+           ↔ 实体字段（getter/setter）↔ 表列（DDL/schema）
+ ORM(JPA/GORM/Prisma): 实体字段注解 ↔ 表列（@Column/gorm tag/@map）
+产出三件套：
+ ① reference-manual §9 模型与映射清单（实体表 + mapper XML 表两行组，机器计数核验 DIM_DATA_MODEL/DIM_MAPPER_XML）
+ ② reference-manual §8 数据字典的字段级映射台账：实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单
+ ③ relations.jsonl 的 data-mapping/mapper-binding 边（relations-extract.sh 机械层已产出，AI 只补漏）
+铁律：改实体字段的影响面反查必经此链——"谁引用了这个字段"在边集查 to=实体 的 from 集（mapper XML 清单），
+      再叠加 SQL 列名字符串命中（grep 列名于 *.xml/*.java 内嵌 SQL）。禁止只查 Java import 边（XML 不在其中）。
+```
+
 ---
 
 **§C+.2-A 异步消息流转链路（仅含异步消费时）**
@@ -593,6 +614,28 @@ Layer 4 外部依赖链路：
  → handler → service → 副作用（DB/通知/下游消息）
 ```
 记录：**队列拓扑**、**消费幂等键**、**重试/DLQ 策略**、**消息时序保证**、**背压/限流**。
+
+---
+
+**§C+.2-J 定时/批处理任务链路（仅探查到调度/批处理信号时：@Scheduled/@EnableBatchProcessing/Quartz/ElasticJob/celery beat 等）**
+
+定时与批处理任务是"无入口请求的数据加工管道"——不经过 §C+.2-B 的请求处理管道，改数据模型时最易漏改的地方（研发漏改字段的高发区）：
+
+```
+追查路径：
+ 触发器（@Scheduled cron / Quartz CronTrigger / JobParameters / beat_schedule）
+ → 任务入口（job 类 / JobBuilder 装配 / tasklet）
+ → Step 三件套：ItemReader（SQL 列清单 / mapper 查询 / 文件字段）
+               ItemProcessor（实体字段读写 getXxx/setXxx）
+               ItemWriter（mapper 写方法 / 批量 SQL 列）
+ → 数据资产（读哪些表/实体、写哪些表/实体——读写方向必须记录）
+产出两件套：
+ ① reference-manual §5 的调度/批处理任务表（每行：任务名/入口路径/触发方式/读数据资产/写数据资产/幂等策略；
+   机器计数核验 DIM_SCHEDULE_JOB，路径进 --path-check）
+ ② relations.jsonl 的 job-flow 语义边（job 配置 → reader/writer 依赖的 mapper/实体；机械不猜，AI 按 Read/Write 源码逐条补）
+铁律：改实体字段/表结构前必查此表——"哪些任务读写了这个资产"决定回归面（job 不在请求管道里，import 边查不全
+      reader SQL 内嵌字符串列名的耦合）。
+```
 
 ---
 
@@ -616,9 +659,9 @@ Layer 4 外部依赖链路：
 bash scripts/relations-extract.sh <PROJECT_DIR> --skill-dir <目标技能目录>   # → references/relations.jsonl
 ```
 
-- **机械层**（脚本产出，确定性零依赖）：import 边——TS/JS/Vue 相对说明符、py 相对导入、go module 内、java 包路径映射；每边带 `evidence`（file:line）。
-- **AI 层**（探查时在此初稿上补充）：语义边——`call`（调用）/`route`（路由挂载）/`message`（消息流）/`ipc`/`export`（库导出），行格式同款（`{"from","to","kind","evidence"}`）；madge/graphify/gitnexus 可用时按工具矩阵富化后重建。
-- **消费方**：`--stable-diff` 1 跳下游传播优先读边集（import 边精确于 basename grep 启发式）；流B ②探查"谁依赖 X"直接查边集，替代读图；`--mark-active` 抽样核验断边（advisory）。
+- **机械层**（脚本产出，确定性零依赖）：import 边——TS/JS/Vue 相对说明符、py 相对导入、go module 内、java 包路径映射；**声明式映射边**——MyBatis `namespace`→Mapper 接口（`mapper-binding`）、`resultMap type`/`resultType`/`parameterType`→实体（`data-mapping`；字符串耦合点编译不校验，改实体字段的影响面反查靠它）；每边带 `evidence`（file:line）。
+- **AI 层**（探查时在此初稿上补充）：语义边——`call`（调用）/`route`（路由挂载）/`message`（消息流）/`ipc`/`export`（库导出）/`job-flow`（定时/批处理装配：job 配置→reader/writer 依赖的 mapper/实体，按 §C+.2-J 逐条补），行格式同款（`{"from","to","kind","evidence"}`）；madge/graphify/gitnexus 可用时按工具矩阵富化后重建。
+- **消费方**：`--stable-diff` 1 跳下游传播优先读边集（import 边精确于 basename grep 启发式；改实体字段时 data-mapping 边把 mapper XML 拉进 1 跳影响面）；流B ②探查"谁依赖 X"直接查边集，替代读图；`--mark-active` 抽样核验断边（advisory）。
 
 #### C+.3 编排调用关系及约束推导（从链路分析中提炼规则）
 

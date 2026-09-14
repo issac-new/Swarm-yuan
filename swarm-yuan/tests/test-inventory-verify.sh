@@ -224,4 +224,62 @@ echo "$out12" | grep -F '接口端点' | grep -qF $'接口端点\t1\t' \
   && ok "态12 node_modules 不污染端点枚举（枚举=1，非 4）" \
   || bad "态12 端点计数被污染: $(echo "$out12" | grep 接口端点)"
 
+# --- 态 13：数据映射三维度（实体/mapper XML/调度任务）枚举 ↔ 清单计数核验 ---
+mkdir -p "$TMP/proj13/src/main/java/com/demo/entity" "$TMP/proj13/src/main/java/com/demo/job" \
+         "$TMP/proj13/src/main/resources/mapper" "$TMP/proj13/target/classes/mapper" "$TMP/skill13/references"
+printf 'package com.demo.entity;\n@TableName("t_user")\npublic class User { }\n' > "$TMP/proj13/src/main/java/com/demo/entity/User.java"
+printf 'package com.demo.entity;\n@TableName("t_order")\npublic class Order { }\n' > "$TMP/proj13/src/main/java/com/demo/entity/Order.java"
+printf '<mapper namespace="com.demo.UserMapper"><select id="x" resultType="com.demo.entity.User">SELECT 1</select></mapper>\n' > "$TMP/proj13/src/main/resources/mapper/UserMapper.xml"
+printf '<mapper namespace="com.demo.OrderMapper"><select id="y" resultType="com.demo.entity.Order">SELECT 1</select></mapper>\n' > "$TMP/proj13/src/main/resources/mapper/OrderMapper.xml"
+cp "$TMP/proj13/src/main/resources/mapper/UserMapper.xml" "$TMP/proj13/target/classes/mapper/UserMapper.xml"
+printf 'package com.demo.job;\nimport org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;\n@EnableBatchProcessing\npublic class BatchJobConfig { }\n' > "$TMP/proj13/src/main/java/com/demo/job/BatchJobConfig.java"
+printf 'package com.demo.job;\nimport org.springframework.scheduling.annotation.Scheduled;\npublic class ReportJob { @Scheduled(cron="0 0 * * * *") void run() { } }\n' > "$TMP/proj13/src/main/java/com/demo/job/ReportJob.java"
+cat > "$TMP/skill13/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §5 调用链路说明
+### 调度/批处理任务表
+| 构件 | 入口 | 说明 |
+|------|------|------|
+| 批处理导入 | `src/main/java/com/demo/job/BatchJobConfig.java` | 每日导入 |
+| 小时报表 | `src/main/java/com/demo/job/ReportJob.java` | cron 小时 |
+## §9 模型与映射清单
+| 构件 | 路径 | 说明 |
+|-------------|------|------|
+| User 实体 | `src/main/java/com/demo/entity/User.java` | t_user |
+| Order 实体 | `src/main/java/com/demo/entity/Order.java` | t_order |
+| UserMapper SQL | `src/main/resources/mapper/UserMapper.xml` | →User |
+| OrderMapper SQL | `src/main/resources/mapper/OrderMapper.xml` | →Order |
+EOF
+out13="$(bash "$SH" "$TMP/proj13" --skill-dir "$TMP/skill13" --form backend --tsv 2>/dev/null)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态13 exit 0" || bad "态13 exit=$rc: $out13"
+echo "$out13" | grep -F '数据模型' | grep -qF $'数据模型 / ORM 实体\t2\t4\t1.00\tPASS' \
+  && ok "态13 实体维度 枚举2/清单4 PASS（§9 共表 ≥ 语义）" || bad "态13 实体维度异常: $(echo "$out13" | grep 数据模型)"
+echo "$out13" | grep -F 'mapper XML' | grep -qF $'MyBatis mapper XML（SQL 声明层）\t2\t4\t1.00\tPASS' \
+  && ok "态13 mapper XML 维度 枚举2/清单4 PASS（target/ 排除）" || bad "态13 XML 维度异常: $(echo "$out13" | grep mapper)"
+echo "$out13" | grep -F '定时 / 批处理任务' | grep -qF $'定时 / 批处理任务（job 入口）\t2\t2\t1.00\tPASS' \
+  && ok "态13 调度任务维度 2/2 PASS" || bad "态13 任务维度异常: $(echo "$out13" | grep 定时)"
+# 漏列场景：§9 删到只剩 1 行 → 枚举 2 清单 1 → 0.50 FAIL（数据模型维度整维缺失检出）
+cat > "$TMP/skill13/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §9 模型与映射清单
+| 构件 | 路径 | 说明 |
+|-------------|------|------|
+| User 实体 | `src/main/java/com/demo/entity/User.java` | t_user |
+EOF
+out13b="$(bash "$SH" "$TMP/proj13" --skill-dir "$TMP/skill13" --form backend --tsv 2>/dev/null)"
+echo "$out13b" | grep -F '数据模型' | grep -q 'FAIL' \
+  && ok "态13 §9 整维缩水 → 数据模型维度 FAIL" || bad "态13 缩水未检出: $(echo "$out13b" | grep 数据模型)"
+# path-check：§5 调度任务表路径不存在 → HALLUCINATION 检出（§5 自本维度起进 path-check 抽取面）
+cat > "$TMP/skill13/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §5 调用链路说明
+### 调度/批处理任务表
+| 构件 | 入口 | 说明 |
+|------|------|------|
+| 小时报表 | `src/main/java/com/demo/job/ReportJobGone.java` | cron 小时 |
+EOF
+out13c="$(bash "$SH" "$TMP/proj13" --skill-dir "$TMP/skill13" --form backend --path-check --tsv 2>/dev/null)"
+echo "$out13c" | grep -qF 'ReportJobGone.java' \
+  && ok "态13 §5 任务表幻觉路径检出（HALLUCINATION）" || bad "态13 §5 幻觉路径未检出: $(echo "$out13c" | grep -c HALLUCINATION)"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-inventory-verify"; exit 0; } || { echo "FAIL test-inventory-verify" >&2; exit 1; }

@@ -163,7 +163,7 @@ elif [[ "$FORM" == "frontend" ]]; then
   fi
 fi
 
-# ===== WP-Q1A：§4/§6/§9 表格行的 路径+稳定性标注 抽取（两模式共用）=====
+# ===== WP-Q1A：§4/§5/§6/§9 表格行的 路径+稳定性标注 抽取（两模式共用）=====
 # 输出每行 "<stab>\t<path>"：stab ∈ forbidden（行含"禁止改"）/ stable（含"稳定"且非"不稳定"）/ -（无标注）。
 # 路径 = 行内反引号 token，含 "/" 且以已知源码扩展名结尾（五维字段的路径列惯用反引号包裹）。
 _extract_rows_paths() { # $1=RM文件
@@ -172,8 +172,9 @@ _extract_rows_paths() { # $1=RM文件
   awk '
     BEGIN{ insec=0 }
     {
-      # 仅匹配 §4/§6/§9（§是 UTF-8 三字节 §-multi-byte）。§10/§11 不进——避免错纳
-      if ($0 ~ "^## §[469][ \\.]") { insec=1; next }
+      # 仅匹配 §4/§5/§6/§9（§是 UTF-8 三字节 §-multi-byte）。§10/§11 不进——避免错纳
+      # §5 自数据映射三维度起承载调度/批处理任务表（DIM_SCHEDULE_JOB 锚），路径同样核验
+      if ($0 ~ "^## §[4569][ \\.]") { insec=1; next }
       if (insec==1 && $0 ~ "^## ") { insec=0; next }
       if (insec==1 && /^\|/) {
         line=$0; squashed=line; gsub(/[ \t]/,"",squashed)
@@ -207,7 +208,7 @@ if [[ "$PATH_CHECK" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/refere
   while IFS= read -r _p; do
     [[ -n "$_p" ]] || continue
     if [[ ! -f "$PROJ/$_p" ]]; then
-      hallus="${hallus}HALLUCINATION	清单登记路径不存在: ${_p}（reference-manual §4/§6/§9；疑似 AI 幻觉组件，回 Step 4 核实）
+      hallus="${hallus}HALLUCINATION	清单登记路径不存在: ${_p}（reference-manual §4/§5/§6/§9；疑似 AI 幻觉组件，回 Step 4 核实）
 "
     fi
   done <<< "$_paths"

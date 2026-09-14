@@ -282,8 +282,21 @@ cmd:
 expect: always
 ```
 
+### 规律：resultMap property 与实体字段必须同步（字符串耦合，编译/启动零校验）
+- **适用版本**: mybatis 3.5.x 全版本
+- **规律**: `resultMap` 的 `property="x"` 是对实体字段的**字符串引用**——实体改字段名后 XML 不同步，编译不报错、启动不报错，运行期该列静默丢值（column 映射不上 → 字段 null）。改实体字段的完整同步面 = resultMap property + SQL 列清单 + 批处理 reader SQL 列 + `@TableField` + DDL 迁移；影响面反查必须查 `relations.jsonl` 的 `data-mapping`/`mapper-binding` 边（Java import 边查不到 XML）。判定宽松：property 词在实体（含一层父类）任意出现即算同步——重命名后旧词完全消失才 fail。
+- **违反后果**: 运行期静默数据丢失（字段恒 null / 更新漏列），无异常栈，靠业务对账才能发现。
+- **验证方法**: 对每个 `<resultMap type="X">` 提取全部 `property=`，逐一在 X.java（及其 extends 父类）词边界 grep；实体无法唯一定位（同名类多文件）时跳过（机械不猜）。
+- **对应门禁**: fw_mybatis_field_sync(fail)
+
+```verify
+id: mybatis-r19
+cmd: 
+expect: always
+```
+
 <!--
-共 18 条规律（≥15 门槛）。每条规律均挂门禁 id 或人工检查，无游离规律。
+共 19 条规律（≥15 门槛）。每条规律均挂门禁 id 或人工检查，无游离规律。
 verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁/人工检查"关键字，缺失则 NOGATE 报错。
 -->
 
@@ -308,13 +321,14 @@ verify-framework-ruleset.sh 会扫描每个"### 规律"小节体内"对应门禁
 | fw_mybatis_mapper_locations | warn | 配置缺 `mybatis.mapper-locations` 且有 Mapper.xml → warn | MYBATIS_MAPPER_DIRS | —（装配完整性） |
 | fw_mybatis_multi_ds_isolation | warn | 多 DataSource 共用 SqlSessionFactory → warn | MYBATIS_SRC_GLOBS | —（隔离配置） |
 | fw_mybatis_typehandler | warn | 自定义 TypeHandler 类存在但未注册 → warn | MYBATIS_SRC_GLOBS | —（注册完整性） |
+| fw_mybatis_field_sync | fail | resultMap `property=` 词在 `type` 实体（含一层父类）词边界零出现 → fail（漏改字段：改实体字段名未同步 XML） | MYBATIS_MAPPER_DIRS MYBATIS_SRC_GLOBS | —（字段级映射一致性，漏改字段防线） |
 
 <!--
 门禁 id 命名规范：fw_mybatis_<rule>（rule 全小写下划线）。
-本表 17 条 id 须在 assets/framework-gates/mybatis.sh 中有同名实现痕迹（grep 命中）。
+本表 18 条 id 须在 assets/framework-gates/mybatis.sh 中有同名实现痕迹（grep 命中）。
 片段头注释 `# gates: fw_mybatis_<rule>(fail|warn) ...` 与本表 id 集合应一致。
 依赖变量在片段头注释 `# ruleset: mybatis  requires_conf: VAR1 VAR2` 声明。
-fixture 验证覆盖 dollar/binding/select_dup_result 三 fail（violating：${col} 未白名单 + 2 Mapper 接口 vs 1 XML namespace + resultType/resultMap 并存；expected-fail-ids 3/3 已登记）；compliant 全 pass（空 SRC_GLOBS 走 binding 守卫跳过，避免 mcnt=0/xcnt=1 误 fail）。
+fixture 验证覆盖 dollar/binding/select_dup_result/field_sync 四 fail（violating：${col} 未白名单 + 接口数≠namespace 数 + resultType/resultMap 并存 + resultMap property 引用实体已改名旧字段；expected-fail-ids 4/4 已登记）；compliant 全 pass（实体+接口+resultMap 全同步正路径，含一层父类解析）。
 CWE/GB 映射列说明（P1-1 补录，2026-07-20）：
 - CWE 编号依据 MITRE CWE 词典与 CWE Top 25:2025（R8 §⑨）；「—」为工程一致性/性能契约类规律，无对应 CWE 弱点类，归 ISO/IEC 5055:2021 性能/可靠性度量面（138 弱点经 CWE 对齐，见 standards-compliance.md §E.1）。
 - GB/T 34944-2017（Java，9 大类 44 种）/ GB/T 34946-2017（C#）总则 §5 要求 SAST 扫描 + 人工复核 + 测试四件套；本表作用于源码的门禁即该流程的词法层 SAST 面（R8 §⑥）。

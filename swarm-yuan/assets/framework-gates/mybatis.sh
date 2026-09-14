@@ -1,5 +1,5 @@
 # ruleset: mybatis  requires_conf: MYBATIS_MAPPER_DIRS MYBATIS_SRC_GLOBS SQL_INJECTION_WHITELIST
-# gates: fw_mybatis_dollar(fail) fw_mybatis_binding(fail) fw_mybatis_foreach(warn) fw_mybatis_plus_page(warn) fw_mybatis_plus_dbtype(warn) fw_mybatis_nplus1(warn) fw_mybatis_resultmap_id(warn) fw_mybatis_ognl_empty(warn) fw_mybatis_generatedkeys(warn) fw_mybatis_select_dup_result(fail) fw_mybatis_jdbc_type(warn) fw_mybatis_cache_dirty(warn) fw_mybatis_logic_delete(warn) fw_mybatis_wrapper_injection(warn) fw_mybatis_mapper_locations(warn) fw_mybatis_multi_ds_isolation(warn) fw_mybatis_typehandler(warn)
+# gates: fw_mybatis_dollar(fail) fw_mybatis_binding(fail) fw_mybatis_foreach(warn) fw_mybatis_plus_page(warn) fw_mybatis_plus_dbtype(warn) fw_mybatis_nplus1(warn) fw_mybatis_resultmap_id(warn) fw_mybatis_ognl_empty(warn) fw_mybatis_generatedkeys(warn) fw_mybatis_select_dup_result(fail) fw_mybatis_jdbc_type(warn) fw_mybatis_cache_dirty(warn) fw_mybatis_logic_delete(warn) fw_mybatis_wrapper_injection(warn) fw_mybatis_mapper_locations(warn) fw_mybatis_multi_ds_isolation(warn) fw_mybatis_typehandler(warn) fw_mybatis_field_sync(fail)
 # harvested-from: T6 P1 范例（2026-07-17），规律源自 mybatis 3.5.19 / mybatis-plus 3.5.17 官方文档
 _fw_mybatis_check() {
   echo "  [mybatis] MyBatis 3.5.x + MyBatis-Plus 3.5.x 框架规律"
@@ -270,6 +270,59 @@ ${th_unreg}"
     fi
   else
     pass "fw_mybatis_typehandler: 无 Java 源文件，跳过"
+  fi
+
+  # ---------- fw_mybatis_field_sync(fail)：resultMap property ↔ 实体字段一致性（漏改字段防线） ----------
+  # 字符串耦合点：实体改字段名后 XML property 不同步——编译/启动均不报错，运行期该列静默丢值。
+  # 判定：resultMap 每个 property= 须在 type 指向实体（含一层 extends 父类）中以词边界出现
+  #（含字段声明/getter/Lombok 注解任意出现即算同步——重命名后旧词完全消失才 fail，宽松防误报）。
+  # 实体文件无法唯一定位（同名类多文件/未配 SRC_GLOBS）时跳过该 resultMap（机械不猜，fail-open）。
+  if [[ ${#srcarr[@]} -eq 0 ]]; then
+    pass "fw_mybatis_field_sync: 无 Java 源文件（MYBATIS_SRC_GLOBS），跳过字段一致性核验"
+  else
+    local fs_bad="" rfile
+    for rfile in "${xmlarr[@]}"; do
+      local fs_rows
+      fs_rows=$(awk '
+        function basename_cls(fq,   a, n) { n = split(fq, a, "."); return a[n] }
+        /<resultMap/ {
+          intag = 1
+          t = ""
+          if (match($0, /type="[^"]*"/)) { t = basename_cls(substr($0, RSTART+6, RLENGTH-7)) }
+        }
+        intag && match($0, /property="[^"]*"/) {
+          print t "\t" substr($0, RSTART+10, RLENGTH-11) "\t" FNR
+        }
+        /<\/resultMap>/ { intag = 0 }
+      ' "$rfile" 2>/dev/null || true)
+      [[ -z "$fs_rows" ]] && continue
+      while IFS=$'\t' read -r tcls prop fln; do
+        [[ -n "$tcls" && -n "$prop" ]] || continue
+        # 实体定位：srcarr 中文件名 == 类名；多命中不猜（跳过）
+        local e_hits e_file=""
+        e_hits=$(printf '%s\n' "${srcarr[@]}" | grep -E "/${tcls}\.java$" || true)
+        local e_n; e_n=$(printf '%s\n' "$e_hits" | grep -c .)
+        [[ "$e_n" -eq 1 ]] || continue
+        e_file=$(printf '%s\n' "$e_hits")
+        # 查域 = 实体 + 一层父类（extends 父类文件的字段声明也算同步）
+        local grep_files="$e_file"
+        local parent
+        parent=$(grep -oE 'extends[[:space:]]+[A-Za-z_][A-Za-z0-9_]*' "$e_file" 2>/dev/null | head -1 | awk '{print $2}')
+        if [[ -n "$parent" ]]; then
+          local p_hits
+          p_hits=$(printf '%s\n' "${srcarr[@]}" | grep -E "/${parent}\.java$" || true)
+          if [[ $(printf '%s\n' "$p_hits" | grep -c .) -eq 1 ]]; then
+            grep_files="$grep_files
+$(printf '%s\n' "$p_hits")"
+          fi
+        fi
+        if ! grep -qw "$prop" $grep_files 2>/dev/null; then
+          fs_bad="${fs_bad}${rfile}:${fln} property=${prop} → 实体 ${tcls}（$(printf '%s' "$e_file" | xargs basename)）未含该字段（疑似漏改：改字段名未同步 resultMap）
+"
+        fi
+      done <<< "$fs_rows"
+    done
+    _fw_report fail fw_mybatis_field_sync "$fs_bad" "resultMap property 与实体字段失同步（改实体字段必须同步 resultMap/SQL 列/reader 列，前置查询查 data-mapping 边集）" "resultMap property 均可在实体中定位（或无 resultMap/未配实体源）"
   fi
 
 ### P1-4 AI 自查段（仅注释，不改动函数体）
