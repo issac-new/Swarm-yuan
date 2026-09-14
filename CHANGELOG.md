@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.14.0] - 2026-09-14
+
+> 数据映射依赖分析补全轮（研发反馈驱动）：一线反馈用生成的目标技能做研发时**漏改了字段**——改实体字段后 mapper XML 与批处理任务没有同步。排查确认这不是门禁失职，而是**探查层结构性盲区**：mapper XML 的 resultMap property、SQL 列名、批处理 reader 的 SQL 列都是**字符串耦合点**——编译器不校验、import 依赖边不含 XML、组件清单没有数据模型维度，四道防线对同一类耦合集体失明。本轮在探查（边集+清单+链路模型）与执法（字段级门禁）两层补全，并把"改实体字段"这类高频任务固化为配方与场景回归。
+
+### 痛点与根因
+- **字符串耦合点零边集**：`relations-extract.sh` 只提代码 import 边；MyBatis XML 的 `namespace`→Mapper 接口、`resultMap type`→实体完全不在边集里。流B 探查"改 X 影响谁"时查不到 XML——而 XML 恰恰是漏改后编译不报错、运行期静默丢值的地方。
+- **清单维度缺失**：`inventory-dimensions.conf` 8 个维度无一覆盖数据模型实体、mapper XML、定时/批处理任务——机器计数核验不约束，AI 填清单可整维跳过。
+- **链路模型缺口**：后端链路最深追到 repository→ORM→DB，没有"实体↔表列↔resultMap↔SQL 列"的数据映射链，也没有"job→reader/processor/writer→读写数据资产"的任务链——批处理不在请求管道里，import 边查不全它的数据依赖。
+- **门禁粒度不够**：mybatis 门禁只有"接口数=namespace 数"的数量级检查，没有字段级一致性——漏改字段后门禁全绿。
+
+### Added
+- **声明式映射边（探查层）**：`relations-extract.sh` 新增 MyBatis 边提取——`mapper-binding`（namespace→Mapper 接口）与 `data-mapping`（resultMap/resultType/parameterType→实体）；`mybatis-config.xml` 的 `<typeAlias>` 别名映射优先解析，短名按全工程唯一同名类命中，多命中不出边（机械不猜）；`target/` 构建产物排除。改实体字段时 `--stable-diff` 与流B 探查都能把 mapper XML 拉进影响面。
+- **数据映射三维度（清单层）**：`DIM_DATA_MODEL`（ORM 实体→§9）、`DIM_MAPPER_XML`（SQL 声明层→§9）、`DIM_SCHEDULE_JOB`（@Scheduled/Quartz/Spring Batch/celery beat 任务入口→§5）进 `inventory-dimensions.conf` 机器计数核验；`--path-check` 路径验真面扩展到 §5 任务表。
+- **数据映射链路与任务链路（方法论层）**：exploration-guide §C+.2-B 新增 Layer 5 数据映射链路（Mapper 接口↔XML↔实体字段↔表列，产出字段级映射台账）；新增 §C+.2-J 定时/批处理任务链路（触发器→job→reader SQL 列/processor 字段访问/writer mapper 方法→读写数据资产表）；语义边 kind 扩展 `mapper-binding`/`data-mapping`/`job-flow`；template-spec §5/§8/§9 填充要求与 recipes"数据模型变更配方"三查要素（查边集/查台账/查任务表）同步落地。
+- **字段级门禁 `fw_mybatis_field_sync`（执法层）**：resultMap 的每个 `property` 必须能在 `type` 指向实体（含一层 extends 父类）中以词边界找到——判定宽松防误报（实体中任意出现即算同步，重命名后旧词完全消失才 fail）。漏改字段从"运行期静默丢值"前移为"门禁期拦截"。mybatis 规则集规律第 19 条 + 门禁清单第 18 条同步。
+
+### 使用指南
+- **生成侧**：无需新参数——探查到 MyBatis/调度信号时边集与三维度核验自动生效；生成的 reference-manual 会多出 §5 调度任务表与 §9 模型映射表。
+- **研发侧（改实体字段）**：先查 `relations.jsonl` 中 `to=实体` 的 `data-mapping` 边反查全部 mapper XML，再查 §8 字段级映射台账定位 property/SQL 列，最后查 §5 任务表定位读写该数据资产的 job——三查齐了再动手，改完跑 `--framework` 让 `fw_mybatis_field_sync` 兜底。
+- **验证资产**：新增 `tests/e2e/run-fieldchange-e2e.sh` 场景回归（生成目标技能→改实体字段漏改被拦→同步修复闭环→新增定时任务清单执法），把本轮修复的完整事故链固化为可复跑回归。
+
+### 诚实边界
+- `fw_mybatis_field_sync` 判定是词边界宽松匹配——实体注释中出现旧字段名会算作同步（宽松设计换低误报，极端场景靠 §8 台账人工核对）；实体类多文件同名时跳过该 resultMap（机械不猜，AI 按 §C+.2-B 补）。
+- Spring Batch/Quartz 的 job→数据资产边是语义边（reader SQL 内嵌列名无确定性映射），机械层只出 MyBatis XML 边；job-flow 边由 AI 按 §C+.2-J 链路模型逐条补。
+- 认知面预算第四次例外登记 274432→278528B（本轮功能性增量 3818B，逐例登记）；FACT_SCRIPT_LOC 补记 R25c 欠账 6387→6409。
+
 ## [v2.13.3] - 2026-09-12
 
 > R25c 收账轮：v2.13.2 系带病发布——发版时两项后台验收（verifier all / self-check）未确认结果即合并推送，CI 红（verifier all 与 gate-fixtures 两 job）直至本轮才发现。本轮补齐全量验收并修复 2 项缺陷：1 项产品级 P1（check_impact 干净基线一跑即崩）+ 2 处测试面（impact 门禁 fixture 未随 PR2 的 git 语义升级；gen-e2e mark-active 闭环未填 create 新生成的骨架占位符）。流程教训固化：stub 式单测（source 门禁文件、无 set -e）结构性测不出 set -euo pipefail 交互类缺陷，须有真实 precheck 集成判别态。
