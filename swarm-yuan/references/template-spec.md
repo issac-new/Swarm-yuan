@@ -457,6 +457,8 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | `data-sample-template.md` | §6 库表及数据结构、样例数据 | 库表 schema 模版 + 样例数据格式 |
 | `state-machine.sh` | ★comet 风格阶段状态机 | 阶段状态持久化（init/get/set/transition/guard），survive compaction |
 
+**规模与工作量估算（spec §25，NESMA 功能点法）**：feature 档推荐选填、其余任务类型豁免；无门禁执法（守门禁 55 预算），AI 按 `references/cost-estimation-methodology.md` 识别五类组件（ILF/EIF 数据功能从 relations 边集确认维护方；EI/EO/EQ 事务从 recipes §A 业务功能清单取操作）→ 估算法公式 UFP=10×ILF+7×EIF+4×EI+5×EO+4×EQ → 重用（高⅓/中⅔/低1，拼装式开发的度量表达）×修改系数调整 → 因子乘积 → 工作量人月（2024 基准 13.62 人时/FP ÷174）；基准数据跨年须更新、人月费率项目自填；估算与 plan 任务拆分偏离 2 倍以上须回查计数或任务粒度。
+
 **填充规则：**
 - `env-setup.sh` 必须检测：开发环境（node/python/go 版本）、外部资源连通性（DB/缓存/MQ，按项目实际）、工具权限（git/gh/docker）。检测项按项目探查结果定制，无对应资源的项跳过
 - spec/plan 模板采用 OpenSpec 格式：spec-template = proposal.md（Why/What/Capabilities/Impact）+ delta spec（ADDED/MODIFIED/REMOVED/RENAMED + SHALL/MUST + Scenario WHEN/THEN）；plan-template = tasks.md（`- [ ] X.Y` checkbox，apply 阶段解析进度）

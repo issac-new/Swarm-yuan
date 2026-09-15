@@ -26,7 +26,7 @@
 
 | PDCA | swarm-yuan 环节 |
 |---|---|
-| Plan（策划） | ⓪/⓪.5 自检+读知识（Step 1-2）→ ①-①.5 探查（Step 3-4）→ ② 17 特征卡（Step 5）→ ④ spec/plan 填写（Step 7，spec §1-§24） |
+| Plan（策划） | ⓪/⓪.5 自检+读知识（Step 1-2）→ ①-①.5 探查（Step 3-4）→ ② 17 特征卡（Step 5）→ ④ spec/plan 填写（Step 7，spec §1-§25） |
 | Do（实施） | ③-⑤ 骨架/填充/conf/hooks 生成（Step 6-9）+ spec §5.5 复用约束（④ 填充期内落 spec） |
 | Check（检查） | ⑥/⑦.5 门禁（55 门禁三档 enforce_level，Step 10-11）+ ⑦ 独立审查 + verifier/v1 验收 + self-check |
 | Act（处置） | gate-fixture 双态回归 + profile 动态升档 + ⑧ 记忆写回（memory-persistence 经验沉淀，Step 11） |
