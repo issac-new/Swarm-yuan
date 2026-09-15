@@ -89,6 +89,9 @@ UNIVERSAL_FILES=(
   # 无需回生成器侧。两脚本零外部依赖（inventory-verify 仅读随发的 assets/inventory-dimensions.conf）。
   "scripts/relations-extract.sh|gen|lite"
   "scripts/inventory-verify.sh|gen|lite"
+  # v2.14.3 排查 A3：边集反查工具随发——执勤侧改实体字段/类名时按字段/实体/XML 反查影响面
+  #（消费 relations-extract 出的 relations.jsonl，fail-open 只读不重建）。
+  "scripts/relations-query.sh|gen|lite"
   # 规则即数据——三值求值器 + 默认规则集随生成物分发（conf 收缩的载体：门禁阈值/白名单类参数迁入规则数据）
   "scripts/gate-rules.sh|gen|lite"
   "scripts/gate-plan.sh|gen|lite"      # R15 HarnessEval P4：选择即证据（启用/跳过理由，负空间可审计）
@@ -1630,6 +1633,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：**
 - 探查覆盖度（组件库清单全量穷举，非代表性样本）
+- 改实体字段/数据模型时：影响面反查须走边集三查（v2.14.3 补）——`bash scripts/relations-query.sh <skill> <proj> --field <字段名>`/`--entity <类名>`（field-mapping/data-mapping 边反查声明式映射引用，grep 源码查不全 XML/SQL 字符串耦合）+ §8 字段级映射台账 + §5 调度任务表（改实体字段必查批处理 job）；边集缺失先跑 `scripts/relations-extract.sh` 重建
 
 
 

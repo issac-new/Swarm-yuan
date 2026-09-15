@@ -34,8 +34,8 @@ bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard demo-java "${PRO
 bash "${PARADIGM}/scripts/relations-extract.sh" "${PROJ}" --skill-dir "${SKILL}" >/dev/null 2>&1
 E="${SKILL}/references/relations.jsonl"
 [[ -f "$E" ]] && ok "A2 relations.jsonl 边集落盘" || bad "A2 边集未生成"
-_ec=$(grep -c . "$E"); [[ "$_ec" -eq 2 ]] \
-  && ok "A2 边数=2（mapper-binding + data-mapping）" || bad "A2 边数=${_ec}（期望 2）: $(cat "$E")"
+_ec=$(grep -c . "$E"); [[ "$_ec" -eq 4 ]] \
+  && ok "A2 边数=4（mapper-binding + data-mapping + field-mapping×2）" || bad "A2 边数=${_ec}（期望 4）: $(cat "$E")"
 
 # AI 填充模拟：按 template-spec §5/§9 章节要求，用机械提取的真实数据写数据映射三件套。
 # 先清 create 模板自带示例行（（P1 待补）标记；真实流A ④填充时 AI 替换、--verify-completeness 执法）

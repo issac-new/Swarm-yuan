@@ -389,6 +389,12 @@
 |--------------|-------------------|---------------------------|-------------|
 | （列出本次变更的文件/模块） | （grep 反查消费方） | （Breaking/Compatible/Internal） | （须回归的用例） |
 
+> **改实体字段/数据模型时（v2.14.3 补）**：消费方反查别只靠 grep 源码——**声明式映射（mapper XML resultMap/resultType、batch reader SQL 列、JPQL @Query）是字符串耦合，grep 源码查不全**。
+> ① 查边集：`bash scripts/relations-query.sh <skill> <proj> --field <字段名>`（field-mapping 边反查引用该字段的 resultMap 行）/`--entity <实体类名>`（data-mapping/mapper-binding 边反查引用该实体的 XML）；边集缺失先跑 `scripts/relations-extract.sh` 重建（v2.14.2 起随发）。
+> ② 查 §8 字段级映射台账（实体字段↔表列↔resultMap property↔SQL 列↔reader 列）。
+> ③ 查 §5 调度任务表（读写该数据资产的 job——reader SQL 内嵌列名不在 import 边里）。
+> 三查齐后才可声明影响面；漏掉声明式耦合点 = 漏改字段的静默缺陷（编译不报错）。
+
 ### 20.2 回滚预案
 - **回滚方式**：git revert / 功能开关关闭 / 数据库回滚迁移 / 蓝绿切换
 - **回滚验证**：回滚后如何确认（健康检查/冒烟测试/监控指标）
