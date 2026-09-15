@@ -66,8 +66,8 @@ grep -qF '"from":"src/main/resources/mapper/UserMapper.xml","to":"src/main/java/
 grep -qF '"from":"src/main/resources/mapper/UserMapper.xml","to":"src/main/java/com/demo/User.java","kind":"data-mapping"' "${REL_OUT}" \
   && echo "✓ data-mapping 边（resultMap type → 实体，改 User 字段反查 XML 的依据）" \
   || { echo "✗ data-mapping 边缺失"; cat "${REL_OUT}"; exit 1; }
-_e=$(grep -c . "${REL_OUT}"); [[ "$_e" -eq 2 ]] && echo "✓ 边总数=2（target/ 构建产物不重复出边）" \
-  || { echo "✗ 边总数=${_e}（期望 2）"; cat "${REL_OUT}"; exit 1; }
+_e=$(grep -c . "${REL_OUT}"); [[ "$_e" -eq 4 ]] && echo "✓ 边总数=4（mapper-binding + data-mapping + field-mapping×2，target/ 构建产物不重复出边）" \
+  || { echo "✗ 边总数=${_e}（期望 4）"; cat "${REL_OUT}"; exit 1; }
 rm -f "${REL_OUT}"
 source "${PARADIGM}/assets/inventory-dimensions.conf"
 _jc=$(eval "${DIM_SCHEDULE_JOB_CMD//\$\{PROJECT_DIR\}/\"${DEMO}\"}" | grep -c .)

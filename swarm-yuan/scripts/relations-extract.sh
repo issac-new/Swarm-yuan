@@ -11,7 +11,9 @@
 #   Go:        go.mod module 前缀的工程内 import → 目录
 #   Java:      import a.b.C; → src/{main,test}/java/a/b/C.java
 #   MyBatis:   *Mapper.xml 的 namespace→Mapper 接口（mapper-binding 边）、
-#              resultMap type/resultType/parameterType→实体（data-mapping 边）——
+#              resultMap type/resultType/parameterType→实体（data-mapping 边）、
+#              resultMap 内 <result column= property=→实体字段明细（field-mapping 边，
+#              evidence 带 column=property 与行号——改字段的影响面反查定位到行）——
 #              字符串耦合点编译不报错（漏改字段即静默缺陷），必须进边集供影响面反查
 #   Spring:    beans XML 的 <bean class="a.b.C">→Java 类（bean-wiring 边）
 #   JPA/Hib:   orm.xml <entity class=> / *.hbm.xml <class name=>→实体（data-mapping 边）
@@ -272,6 +274,35 @@ while IFS= read -r x_abs; do
     | sed -n -e 's/^\([0-9]*\):.*<resultMap[^>]* type="\([^"]*\)".*$/\1 resultMap \2/p' \
              -e 's/^\([0-9]*\):.*\(resultType\)="\([^"]*\)".*$/\1 resultType \3/p' \
              -e 's/^\([0-9]*\):.*\(parameterType\)="\([^"]*\)".*$/\1 parameterType \3/p')
+  # 字段级明细边（v2.14.3 排查 A1：resultMap <result column property> → 实体字段的字符串耦合明细）
+  # 出 kind=field-mapping 边：evidence 带 column/property/行号——改实体字段的影响面反查可定位到
+  # 具体字段行（不再只到 XML 文件级）。from/to 沿用 resultMap type→实体（字段挂在实体上）。
+  while IFS= read -r fentry; do
+    [[ -z "$fentry" ]] && continue
+    fln=$(printf '%s' "$fentry" | cut -d' ' -f1)
+    fcol=$(printf '%s' "$fentry" | cut -d' ' -f2)
+    fprop=$(printf '%s' "$fentry" | cut -d' ' -f3)
+    fent=$(printf '%s' "$fentry" | cut -d' ' -f4)
+    [[ -n "$fprop" && -n "$fent" ]] || continue
+    case "$fent" in
+      *.*) fto=$(_fq_resolve "$fent") || continue ;;
+      *)   fto=$(_short_resolve "$fent") || continue ;;
+    esac
+    [[ -n "$fto" ]] || continue
+    printf '{"from":"%s","to":"%s","kind":"field-mapping","evidence":"%s=%s@%s:%s","column":"%s","property":"%s"}\n' \
+      "$x_rel" "$fto" "$fcol" "$fprop" "$x_rel" "$fln" "$fcol" "$fprop" >> "$TMPF"
+  done < <(awk '
+    # 状态机：进 <resultMap type="X"> 记实体，出 </resultMap> 清；result/id 行取 column/property
+    /<resultMap[^>]* type="/ {
+      match($0, /type="[^"]*"/); ent=substr($0, RSTART+6, RLENGTH-7)
+    }
+    /<\/resultMap>/ { ent="" }
+    ent != "" && /<result |<id / && /column="/ && /property="/ {
+      match($0, /column="[^"]*"/); col=substr($0, RSTART+8, RLENGTH-9)
+      match($0, /property="[^"]*"/); prop=substr($0, RSTART+10, RLENGTH-11)
+      print FNR " " col " " prop " " ent
+    }
+  ' "$x_abs" 2>/dev/null)
 done <<< "$_xml_files"
 rm -f "$_ALIAS_T"
 
@@ -312,7 +343,8 @@ _n_final=$(LC_ALL=C grep -c . "$OUT" 2>/dev/null || true); _n_final="${_n_final:
 _n_dm=$(grep -c '"kind":"data-mapping"' "$OUT" 2>/dev/null || true); _n_dm="${_n_dm:-0}"
 _n_mb=$(grep -c '"kind":"mapper-binding"' "$OUT" 2>/dev/null || true); _n_mb="${_n_mb:-0}"
 _n_bw=$(grep -c '"kind":"bean-wiring"' "$OUT" 2>/dev/null || true); _n_bw="${_n_bw:-0}"
-_n_imp=$((_n_final - _n_dm - _n_mb - _n_bw))
-echo "✓ 关系边集已生成: ${OUT}（${_n_final} 条 = import ${_n_imp} + mapper-binding ${_n_mb} + data-mapping ${_n_dm} + bean-wiring ${_n_bw}；语义边 call/route/message/ipc/export/job-flow 由 AI 补充，格式同款 kind 字段）"
+_n_fm=$(grep -c '"kind":"field-mapping"' "$OUT" 2>/dev/null || true); _n_fm="${_n_fm:-0}"
+_n_imp=$((_n_final - _n_dm - _n_mb - _n_bw - _n_fm))
+echo "✓ 关系边集已生成: ${OUT}（${_n_final} 条 = import ${_n_imp} + mapper-binding ${_n_mb} + data-mapping ${_n_dm} + bean-wiring ${_n_bw} + field-mapping ${_n_fm}；语义边 call/route/message/ipc/export/job-flow 由 AI 补充，格式同款 kind 字段）"
 echo "  消费方：--stable-diff 1 跳传播优先读本边集（改实体字段时 data-mapping 边反查 mapper XML）；流B ②探查查边集替代读 mermaid"
 exit 0

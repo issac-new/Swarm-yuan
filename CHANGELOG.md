@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.14.3] - 2026-09-15
+
+> 字段级边 + 文档证据源轮（排查补全驱动）：v2.14.2 发版后实测发现两个新缺口——边集只到文件级（改字段只能定位到 XML 文件，不能定位到具体字段行）；需求/设计文档作为证据源完全空白（无优先级规则、无冲突声明、无 PDF/Word 转换流程）。本轮补齐这两项，并修复 v2.14.2 发版时埋下的 CI 红（预算锚漏测骨架文案增量）。
+
+### Fixed
+- **CI verifier-all 红修复（预算锚追记）**：`FACT_SKILLMD_BYTES_BUDGET` 8320→8640——v2.14.2 登记时只实测了清单区 +160B，漏测自成长段"边集重建/核验"口径文案 +329B + relations-query.sh 入清单 +51B + 项目根绝对路径占位余量（gen-e2e 用绝对路径回填，本地 worktree 路径深 106 字符 vs CI ~70）。连续三次估算低估（忘测文案/字符宽度/路径占位）的教训固化：预算例外登记必须对产物全量实测，不拆维度估算。gen-e2e 与 verifier all 本地 RC=0 复验绿。
+
+### Added
+- **字段级边（`field-mapping`）**：relations-extract.sh 在 resultMap 内提取 `<result column="x" property="y">` 明细边——evidence 带 `column=property` + 行号，改实体字段的影响面反查从"定位到 XML 文件"细化为"定位到具体字段行"。统计行纳 field-mapping 计数。
+- **边集反查工具（`relations-query.sh`，随发）**：执勤侧按实体类/字段名/XML/文件四模式反查引用点——`--field userName` 出引用该字段的全部 resultMap 行（改字段必查）；`--entity User` 出引用该实体的全部 XML；fail-open 只读不重建。消费方：流B ②探查影响面、spec §20.1 变更影响段、数据模型变更配方三查。
+- **研发侧消费指引挂接**：spec-template §20.1 变更影响范围段补"改实体字段/数据模型时边集三查"指引（声明式耦合点 grep 源码查不全）；workflow.md 骨架节点②探查质量门禁补同条款。
+- **文档证据源优先级（B1）**：exploration-guide 新增"文档证据源优先级"表——代码为准/为主（当前真实行为）、设计文档为辅（架构决策意图/外部交互设计/数据契约）、需求文档仅需求分析参考；**冲突声明义务**（文档与代码不一致须在 spec 假设与约束段显式声明 + 以代码为准 + 建议文档更新）。template-spec §1.5 补"②.5 文档冲突声明"格式段。
+- **文档转换流程（B2）**：exploration-guide 新增"文档转换决策"——PDF→pdftotext/pdfplumber、Word→pandoc/python-docx、图片→OCR+mermaid、Excel→openpyxl 表格转 markdown，转换产物入 docs/converted/（入 git 可追溯）；提取去向 reference-manual §5.2 文档证据注记（架构决策意图）+ §6 外部交互契约（API/MQ/数据库/第三方）。
+
+### 诚实边界
+- 字段级边只覆盖 MyBatis resultMap 的 `<result column property>` 明细（`<id>`/`@TableField`/JPQL 字段引用未入 field-mapping，归 §8 字段级映射台账）。
+- 文档转换是探查期指引（AI 按流程执行），无门禁执法（转换质量靠 spec 评审 + reference-manual 注记复核）；docs/converted/ 是否入 git 由项目自行决定（建议入，可追溯）。
+- 上下文表面预算首次例外登记 180000→184000（B1/B2/A1/A2 方法论文档增量 +4628B，非注记膨胀）；UNIVERSAL_FILES 68→69（relations-query.sh 随发）。
+
 ## [v2.14.2] - 2026-09-15
 
 > 执勤侧自包含轮（实测定案驱动）：v2.14.1 发版后对生成产物实测发现——边集/清单的**重建与核验工具不随发**到目标技能。分析能覆盖 MyBatis XML（v2.14.0/2.14.1 已修），但项目演进后要在执勤侧重建边集/核验清单，必须回生成器侧跑 `relations-extract.sh` / `inventory-verify.sh`——闭环在执勤侧不自包含。本轮把三个工具随发，执勤侧拿到完整重建/核验能力，无需回生成器。
