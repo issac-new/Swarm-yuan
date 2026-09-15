@@ -30,3 +30,7 @@ node_modules/
 swarm-yuan/research/
 swarm-yuan/offline-cache/
 verifier/v2/report.md
+
+# ---- 构建产物（fixture target 等）----
+target/
+*.jar
