@@ -111,7 +111,7 @@ _notice_rm_missing() {
   fi
 }
 
-rows=""; mismatches=""
+rows=""; mismatches=""; enum_zero=""
 # shellcheck disable=SC2154  # title/ref/dfs/cmd 经 eval 间接赋值，shellcheck 静态分析识别不到
 for d in $_dims; do
   eval "title=\${DIM_${d}_TITLE:-}"
@@ -139,6 +139,14 @@ for d in $_dims; do
   fi
   rows="${rows}${title}	${enum}	${list}	${ratio}	${st}
 "
+  # R30-D4（2026-09-16 Node/Prisma 栈执勤实证）：枚举 0 + 清单非空时比率防除零给 1.00 PASS，
+  # 枚举器自身漏报（不认识该技术栈形态）完全静默假绿——Prisma schema 3 模型枚举 0 实证
+  # （同 R28 缺 SQLAlchemy 的根因模式）。此处不改 PASS 判定（比率语义是清单覆盖枚举），
+  # 独立披露行提示人工复核：维度真为空 or 枚举器漏报，两条路都该被看见。
+  if [[ "$enum" -eq 0 && "$list" -gt 0 ]]; then
+    enum_zero="${enum_zero}ENUM_ZERO_DIM	${title}	枚举 0 命中但清单 ${list} 行——枚举器可能漏报该技术栈形态（同 R28 SQLAlchemy 先例）或维度真为空，人工复核
+"
+  fi
 done
 
 # 维度错配 lint：声明 backend 但检出前端 UI 组件 / 声明 frontend 但检出后端 controller → DIM_MISMATCH
@@ -295,5 +303,8 @@ if [[ -n "$hallus" ]]; then
 fi
 if [[ -n "$stabwarns" ]]; then
   printf '%s' "$stabwarns" | LC_ALL=C sort
+fi
+if [[ -n "$enum_zero" ]]; then
+  printf '%s' "$enum_zero" | LC_ALL=C sort
 fi
 exit 0
