@@ -64,3 +64,8 @@
 - [ ] mcp-tools.md 按项目实际填充；无外部 MCP 资源时写明「本项目无外部 MCP 资源」
 - [ ] 任何 MCP 配置落盘前过六类 redaction 规则，原始 secret 零落盘
 - [ ] `--knowledge`/`--security` 自跑通过；self-check 无重复 MCP key 告警
+
+## ruflo v3.42.0：MCP 治理 opt-in 与调用者身份绑定（2026-09-16 R29）
+
+- **opt-in MCP 治理策略执行**（#3138）：MCP 工具调用可挂治理策略，但显式 opt-in 才生效。治理面越强、误伤面越大，开关归用户——同意面族（与 3.41.2 `autoStart:false` 被尊重同谱系）：治理与易用性的权衡显式化，不替用户做主。
+- **ADR-377 调用者身份验证绑定**（#3102）：工具调用携带调用者身份并验证。跨边界调用须有可验证身份；无身份绑定的调用与 Sybil 假票（#3290 hive-mind 共识修复同版）一样不可信——身份唯一性是共识与审计的共同前件。与 gstack v1.87「verified audits」互证（`review-methodology.md` R29 段）。
