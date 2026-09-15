@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.15.0] - 2026-09-15
+
+> 支付行业 profile + 领域知识镜像 + 跨平台门禁轮（R26 批次收口）：行业档从七传统行业扩到第八档"支付"（业务机理+技术实现融合，与 finance 立法视角正交互补）；支付领域知识实体（《支付之门》/规范全文/冲突裁决库）镜像入仓，迁移机器后引用可达；新增跨平台可移植性门禁（G24），把 Windows Git Bash/麒麟老 bash 的兼容性从散文纪律升级为机器执法。
+
+### Added
+- **支付行业 profile（`industry-profile-payment.md` + `payment.conf`，第八档）**：吸收 hermes pay-team 四人格（清算结算/支付基础设施/监管合规/路由）知识内核——清算vs结算/RTGS·DNS/央行四系统（HVPS/BEPS/超网/CIPS）/三方对账五类差错/复式记账 + 通道对接/快捷支付四要素/账户分账/幂等冲正 + 牌照/备付金/AML/数据合规/数字人民币。`--industry payment` 真实加载（conf-render 枚举+断言集同步）；`payment.conf` 覆盖包承接支付特有敏感字段（卡号/CVV2/磁道/交易密码）+ 国密 + PIA + 授权 + SBOM + 发布签名 + 对账勾稽。FACT_REFERENCES 42→43。
+- **领域知识镜像（`vendor-knowledge/`）**：支付知识库实体 24M/300 文件镜像入仓——顶层自研内核（索引/内核框架/监管梳理/known-conflicts 冲突裁决）走普通 git；`standards/`(20M)/`books/`(2.1M)/`fulltext/`(1.8M) 版权材料走 git LFS（学习研究用途）。`_shared/` 裁剪四论四问/语言规范/输出契约三文件。源头嵌套 .git 已剥除（gitlink 修正）。
+- **镜像同步脚本（`scripts/sync-vendor-knowledge.sh`）**：`sync` 从 `~/.hermes` 拉取 + `--check` 完整性校验；跨平台（bash 3.2+/Git Bash/WSL/麒麟/macOS），rsync 缺失降级 cp -R，源头嵌套 .git 自动剥除。
+- **跨平台可移植性门禁（G24）**：self-check 新增机械检查——裸 mktemp（补 `${TMPDIR:-/tmp}` 模板）/ GNU-only 命令（tac·grep -P·`sed -i` 无后缀·`readlink -f`）/ bash4 特性（declare -A·mapfile·`${var,,}`）；检查器文件整文件豁免防自报误报，文件级预筛 0.015s。与 G20 多字节/G22 sed 方言同范式。
+
+### Fixed
+- **跨平台兼容性 14 处**：13 处裸 `mktemp`/`mktemp -d` 补 `${TMPDIR:-/tmp}` 模板（防 BSD 无模板崩溃/CWD 污染）；`precheck.sh` `tac` → awk 倒序缓冲（GNU/BSD 双兼容）；`verifier/v1/run-verifier.sh` 裸 `mktemp -d`（G24 门禁实证抓到）。
+- **payment/finance 重叠清冗**：payment.md §1.3 数据合规原重述 finance 立法条款（JR/T 0171 分级/个保法/PIA/密评），改为指向 finance 的落地指针；finance.md §0 加边界交叉引用——立法条款归 finance、支付业务机理归 payment，双向路由防双源漂移。
+- **卫生**：移出误入的 mapstruct fixture `target/` 构建产物，`.gitignore` 补 `target/`/`*.jar` 规则。
+
+### 诚实边界
+- 麒麟/Windows 真机未实测：兼容性靠"静态扫描 + macOS BSD/bash 3.2 实证 + G24 门禁机械化"三层间接保证；真机回归须在对应机器跑 `self-check --check-only` 与 `install.sh --list`。
+- vendor-knowledge 版权实体（书籍/专栏/规范全文）为 LFS 管理、学习研究用途：克隆机须 `git lfs pull` 取回实体，公开仓分发时指针降级为知识地图（详见 `vendor-knowledge/MANIFEST.md`）。
+- 本轮 vendor 束（gstack/superpowers/ECC 源码）无变更，不发 src 包（v2.8.0 起口径）。
+
 ## [v2.14.3] - 2026-09-15
 
 > 字段级边 + 文档证据源轮（排查补全驱动）：v2.14.2 发版后实测发现两个新缺口——边集只到文件级（改字段只能定位到 XML 文件，不能定位到具体字段行）；需求/设计文档作为证据源完全空白（无优先级规则、无冲突声明、无 PDF/Word 转换流程）。本轮补齐这两项，并修复 v2.14.2 发版时埋下的 CI 红（预算锚漏测骨架文案增量）。

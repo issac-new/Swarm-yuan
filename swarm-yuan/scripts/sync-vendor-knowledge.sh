@@ -65,7 +65,7 @@ fi
 # ===== sync：从 hermes 运行时镜像 =====
 log "=== vendor-knowledge 镜像同步（学习研究用途）==="
 log "源：$SRC"
-[[ -d "$SRC" ]] || fail "hermes 运行时根不存在：$SRC（设 SRC=<path> 自定义）"
+[[ -d "$SRC" ]] || fail "hermes 运行时根不存在：${SRC}（设 SRC=<path> 自定义）"
 
 # git LFS 跟踪规则（大文件/版权材料入 LFS）
 if command -v git-lfs >/dev/null 2>&1 || git lfs version >/dev/null 2>&1; then
