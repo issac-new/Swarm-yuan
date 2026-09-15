@@ -81,7 +81,11 @@ check_test() {
   # "Tests run: 0"、Node TAP "# tests 0"、pytest "no tests ran" 三种形态漏检，零用例假绿
   # 穿透门禁打出"✓ 测试通过"。补齐三种主流 runner 形态。
   if [[ "$_trc" -eq 0 ]]; then
-    if printf '%s' "$_tout" | grep -qiE '0 (passed|tests?|examples?)|tests?: 0|tests? run: 0|#[[:space:]]*(tests?|pass)[[:space:]]+0|no tests ran|0 个用例|0 tests? found'; then
+    # R30-D3（2026-09-16 Node 栈执勤实证）：首分支加左边界约束——npm run 横幅
+  # "> shop-api@0.1.0 test" 的版本号尾 0 与脚本名构成 "0 test" 子串，无边界正则
+  # 对一切版本号以 0 结尾的 npm 项目假报空跑。0 须位于行首或空白后；
+  # ".0 test"（版本号内）不再命中，"Tests: 0 passed"/"Ran 0 tests" 照常命中。
+  if printf '%s' "$_tout" | grep -qiE '(^|[[:space:]])0 (passed|tests?|examples?)|tests?: 0|tests? run: 0|#[[:space:]]*(tests?|pass)[[:space:]]+0|no tests ran|0 个用例|0 tests? found'; then
       warn "测试命令退出码 0 但输出 0 用例——空跑通过不算兜底，须补真实用例"
     else
       pass "测试通过"

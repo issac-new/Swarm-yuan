@@ -1592,7 +1592,7 @@ for f in $_placeholder_refs; do
     _write_if_absent "$SKILL_DIR/references/$f" <<'WFEOF'
 # workflow.md — 九节点全流程（4 要素/节点：入口/参与方/门禁/产出物与调用追踪）
 
-> 填充指引：九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP。
+> 填充规范：九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP。
 > 节点名对齐生成器仓 references/template-spec.md §2 标准 9 节点（template-spec 不随发生成物）（⑥测试验证 + ⑦独立审查独立拆分，审查留痕 review-record 落盘）；按项目实际裁剪。
 
 ## 流程总览
@@ -1784,7 +1784,7 @@ WFEOF
       _write_if_absent "$SKILL_DIR/references/$f" <<'RMEOF'
 # reference-manual.md — 项目参考手册（组件库清单 / 接口约束 / 数据勾稽）
 
-> 填充指引：按 exploration-guide §C+ 探查后填充。§4/§6/§9 表格行两列：`| 路径 | 说明与约束 |`；
+> 填充规范：按 exploration-guide §C+ 探查后填充。§4/§6/§9 表格行两列：`| 路径 | 说明与约束 |`；
 > 路径用反引号包裹（--path-check 校验存在性）；稳定性标注词写进说明列（如"导出 add（禁止改）"）——
 > --stability-audit 按行内字面词识别（与列位置无关）。说明列 = AI 读代码后的理解，不是填表。
 >
@@ -1819,7 +1819,7 @@ RMEOF
       _write_if_absent "$SKILL_DIR/references/$f" <<'RCEOF'
 # recipes.md — 任务配方（组件库对应的拼装式编排路线）
 
-> 填充指引：§A 业务功能清单 + §B 任务配方。提取方法见生成器仓 references/exploration-guide.md §C+.6/§C+.7（既有实现 / git 同类任务历史 / 开发者文档三源）。
+> 填充规范：§A 业务功能清单 + §B 任务配方。提取方法见生成器仓 references/exploration-guide.md §C+.6/§C+.7（既有实现 / git 同类任务历史 / 开发者文档三源）。
 > 表格行内组件路径用反引号包裹（--path-check 校验存在性，防幻觉复用件）；每配方五要素缺一不可（--verify-completeness 执法）。
 > 语义/动能两区纪律：本文件写"怎么拼装"的路线；硬约束的执行体仍只落 rules.d 与门禁，此处至多引用。
 
@@ -1852,7 +1852,7 @@ RCEOF
       # 无来源时显式写「暂无已记录偏好」（诚实降级）——不允许留占位符到 active。
       _write_if_absent "$SKILL_DIR/references/$f" <<'DGEOF'
 # （待填充）dev-guide.md
-> 填充指引：改造分类+拼装式开发原则+安全编码规范+开发偏好
+> 填充规范：改造分类+拼装式开发原则+安全编码规范+开发偏好
 
 ## 开发偏好（开发者实际研发流程与习惯——R21-B 固定节）
 
@@ -1866,7 +1866,7 @@ DGEOF
     else
       _write_if_absent "$SKILL_DIR/references/$f" <<EOF
 # （待填充）$f
-> 填充指引：$(fill_guide "$f")
+> 填充规范：$(fill_guide "$f")
 EOF
     fi
   fi
@@ -1980,7 +1980,7 @@ fi  # PROFILE != lite
 if [[ "$RESUME" -eq 0 || ! -f "$SKILL_DIR/SKILL.md" ]]; then
 # 五层导航档位感知指针（lite 精简档无 dev-guide/workflow/framework-knowledge——指向实存载体，防导航断环）
 if [[ "$PROFILE" == "lite" ]]; then
-  _nav_design="改造分类与拼装原则内嵌于下方填充指引与 reference-manual（lite 精简档）；安全规范依据 security-spec"
+  _nav_design="改造分类与拼装原则内嵌于 reference-manual 与本文件 meta 段（lite 精简档）；安全规范依据 security-spec"
   _nav_arch="项目认知=下方摘要表；六段式精简为 meta/reference/check/scripts（lite）"
   _nav_flow="执勤=precheck --all（core 门禁序列）+ state-machine 阶段守卫（六阶段↔九节点对照见 scripts/state-machine.sh 头注）；lite 不含 workflow.md，九节点详解不随发"
 else
@@ -2017,6 +2017,7 @@ status: draft
 > 项目类型与改造分类（A/B）由 AI 探查判定（§C+.0 语义判断）；生成器只做机械嗅探（命令/框架清单）。
 
 ## 填充指引
+<!-- 交接清单：本区是生成器→AI 的待办交接，逐项完成后整区删除（含本行与标题）再 --mark-active -->
 - [ ] meta: 核心理念+改造分类+流程总览+命令速查+门禁+反借口表（借口/反驳两列表，从门禁步骤逐条反推，见 template-spec §1.5）+假设清单（需求/架构/范围三维度+"现在纠正我"，见 template-spec §1.5）
 EOF
 # checklist 按档裁剪（lite 无 workflow/commands/hooks 条目）

@@ -179,4 +179,20 @@ grep -qF '"from":"src/main/resources/META-INF/orm.xml","to":"src/main/java/com/d
   && ok "态6 JPA orm.xml entity class→实体（data-mapping 边）" || bad "态6 orm.xml 边缺失: $(cat "$E" 2>/dev/null)"
 _e6=$(grep -c . "$E"); [[ "$_e6" -eq 2 ]] && ok "态6 边数=2" || bad "态6 边数=${_e6}（期望 2）"
 
+# --- 态 4d（R30-D5）：单层 ../ 相对导入的 to 键归一（tests/ 目录主流形态）---
+# 真实执勤实证（2026-09-16 Node 栈 shop-api）：tests/x.test.ts `from '../src/y'` 的边
+# to 落成 "./src/y"——_norm_rel 单层 ../ 时 dir=dirname(base)="." 直接拼进输出，
+# 与 src/ 下同目标边的干净路径键失配（--stable-diff 反查/查边集按 to 对账断链）。
+mkdir -p "$TMP/d5/tests" "$TMP/d5/src/services"
+printf 'import { S } from "../src/services/svc";\n' > "$TMP/d5/tests/a.test.ts"
+printf 'import { S } from "../src/services/svc";\n' > "$TMP/d5/tests/b.test.ts"
+printf 'export const S = 1;\n' > "$TMP/d5/src/services/svc.ts"
+out="$(bash "$SH" "$TMP/d5" --out "$TMP/d5/relations.jsonl" 2>&1)"
+E="$TMP/d5/relations.jsonl"
+grep -qF '"to":"src/services/svc.ts"' "$E" \
+  && ok "态4d 单层 ../ 边 to 键归一为干净相对路径" || bad "态4d to 键仍带 ./ 前缀: $(cat "$E" 2>/dev/null)"
+_cnt=$(grep -cF '"to":"src/services/svc.ts"' "$E"); [[ "$_cnt" -eq 2 ]] \
+  && ok "态4d 两条 tests→src 边都归一（计数=${_cnt}）" || bad "态4d 边数异常: $(cat "$E" 2>/dev/null)"
+grep -qF '"to":"./src/' "$E" && bad "态4d 残留 ./ 前缀边: $(cat "$E")" || ok "态4d 无任何 ./ 前缀残留"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-relations-extract"; exit 0; } || { echo "FAIL test-relations-extract" >&2; exit 1; }

@@ -83,15 +83,25 @@ trace_tool() {  # $1=工具名 $2=操作
 
 init_state() {
   local change="${1:-}"
-  [[ -z "$change" ]] && { echo "Usage: state-machine.sh init <change-name>"; exit 1; }
+  [[ -z "$change" ]] && { echo "Usage: state-machine.sh init <change-name> [--force]"; exit 1; }
   # A 方向：change name 经白名单消毒（防路径穿越/命令注入）
   change=$(sanitize_input "$change")
   [[ -z "$change" ]] && { echo "ERROR: change name 全被过滤（含非法字符），请重命名"; exit 1; }
+  # R30-D8（2026-09-16 Node 栈执勤实证 shop-api）：覆盖确认原为交互 read——
+  # AI/CI 非交互场景 stdin EOF → confirm 空 → exit 0 静默无效：rc=0 但状态未重置，
+  # 调用方（自动化执勤正是主战场）误信 init 成功，后续 transition 全落在旧 change 上。
+  # 非交互环境改须显式 --force（rc 语义明确）；交互终端保留确认。
+  local _sm_force=0
+  [[ "${2:-}" == "--force" ]] && _sm_force=1
   mkdir -p "$STATE_DIR"
-  if [[ -f "$STATE_FILE" ]]; then
-    echo "WARN: 状态文件已存在: $STATE_FILE"
-    read -rp "覆盖? (y/N) " confirm
-    [[ "$confirm" != "y" ]] && exit 0
+  if [[ -f "$STATE_FILE" && $_sm_force -eq 0 ]]; then
+    echo "WARN: 状态文件已存在: ${STATE_FILE}（当前 change=$(get_field change) @ phase=$(get_field phase)）"
+    if [[ -t 0 ]]; then
+      read -rp "覆盖? (y/N) " confirm
+      [[ "$confirm" != "y" ]] && exit 0
+    else
+      echo "ERROR: 非交互环境不覆盖——确认作废旧 change 后用 init ${change} --force"; exit 1
+    fi
   fi
   cat > "$STATE_FILE" <<EOF
 change: $change
@@ -336,6 +346,16 @@ transition_phase() {
     echo "ERROR: 不能回退到 ${target}（当前 ${current}）"
     exit 1
   fi
+  # R30-D7（2026-09-16 Node 栈执勤实证 shop-api）：原实现只拦回退不拦跳级——
+  # open 一路 transition verify 直达（verify 准入 tasks.md 缺省降级跳过），
+  # design 的 proposal / build 的 spec 批准（SPEC_REQUIRED=1 spec-first 硬防线）
+  # 被单次跳跃整体绕过，阶段守卫形同虚设。逐级准入即门禁：前跳限一阶，
+  # 跨级报出被跳过的阶段并提示逐级推进。
+  if [[ $((tgt_idx - cur_idx)) -gt 1 ]]; then
+    local _skipped="${PHASES[$((cur_idx + 1))]}"
+    echo "ERROR: 不能从 ${current} 跳到 ${target}（跨过 ${_skipped}）——逐级推进，每级准入即门禁（${current} → ${_skipped} → ${target}）"
+    exit 1
+  fi
   # 门禁
   guard_phase "$target" || exit 1
   set_field phase "$target"
@@ -573,7 +593,7 @@ restore_phase() {
 }
 
 case "${1:-}" in
-  init) init_state "${2:-}" ;;
+  init) init_state "${2:-}" "${3:-}" ;;   # R30-D8：--force 透传
   get) get_field "${2:-}" ;;
   set) set_field "${2:-}" "${3:-}" ;;
   transition) transition_phase "${2:-}" ;;

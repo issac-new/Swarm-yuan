@@ -5,6 +5,10 @@
 # --all-full 即红"未找到 spec 文档"——TOGAF"变更须做影响分析"前提是有变更。
 # 修复：HEAD 在基点（_git_base）且工作区 clean → 放行；有变更 → 维持原 fail 语义。
 set -uo pipefail
+# GATES/ASSETS 须在 cd 舞步前定格：$0 为相对路径（cd tests 后裸文件名调用）时，
+# cd 之后再解析 dirname 会在新 cwd 下失效（R30-D1：./.. 连升两级落到仓库根）
+GATES="$(cd "$(dirname "${0}")/.." && pwd)/assets/gates-warn.sh"
+ASSETS="$(cd "$(dirname "${0}")/.." && pwd)/assets"   # 态 5 用
 cd "$(dirname "${0}")/.." || exit 1
 TMP="$(mktemp -d /tmp/imp.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT
@@ -13,8 +17,6 @@ ok()  { echo "  ✓ $1"; }
 bad() { echo "  ✗ $1" >&2; FAIL=1; }
 
 # stub 门禁输出函数 + check_impact 依赖（_git_base/_find_spec_file 与全局变量）
-GATES="$(cd "$(dirname "${0}")/.." && pwd)/assets/gates-warn.sh"
-ASSETS="$(cd "$(dirname "${0}")/.." && pwd)/assets"   # 态 5 用；须在 cd 舞步前定格（$0 相对路径此后失效）
 setup_stubs() {
   pass() { echo "PASS:$1" > "$TMP/out.txt"; }
   warn() { echo "WARN:$1" > "$TMP/out.txt"; }

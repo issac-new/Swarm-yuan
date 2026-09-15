@@ -316,18 +316,28 @@ check_reuse() {
 
   if [[ -n "$spec_file" && -n "$ref_file" ]]; then
     # 从 spec §5.5 "新增胶水代码" 表提取首列单元名（跳过表头/分隔行/空行）
-    local new_names; new_names=$(awk '
+    # R30-D9（2026-09-16 Node 栈执勤实证 shop-api）：原提取用默认空白分字段取 $2——
+    # 既不是表格列语义，又把"胶水落在既有文件内"（首列=文件路径，模板口径）与
+    # §4/5/6 首列路径对比，重名必判——而"在既有单元内加最小胶水"正是拼装式开发
+    # 的推荐形态，检测语义拧反，任何正常 spec 必被拦。修复：
+    #   ① -F'|' 按表格列取首列单元格；
+    #   ② 路径形态（含 /）的单元格 = 在既有文件内加胶水，不参与重名对比
+    #     （路径已在稳定清单=合法拼装；不在=新文件，新文件无从与既有路径重名）；
+    #   ③ 仅非路径单元格（单元名形态）参与重名检测（保留原拦截意图）。
+    local new_names; new_names=$(awk -F'|' '
       /^### .*新增胶水代码/ {in_tbl=1; next}
       /^### / && in_tbl {in_tbl=0}
-      in_tbl && /^\|/ && !/^\|[-: ]+\|/ && !/文件|单元名/ {
+      in_tbl && /^[[:space:]]*\|/ && !/^[[:space:]]*\|[-: ]+\|/ && !/文件|单元名/ {
         cell=$2; gsub(/[ `]/,"",cell); if(cell!="") print cell
       }
-    ' "$spec_file" 2>/dev/null | sort -u)
-    # 从 reference-manual.md §4/§5/§6 表格首列提取稳定单元名
-    local stable_names; stable_names=$(awk '
+    ' "$spec_file" 2>/dev/null | awk '
+      !/\// {print}   # 路径形态跳过；单元名形态参与重名对比
+    ' | sort -u)
+    # 从 reference-manual.md §4/§5/§6 表格首列提取稳定单元名（-F'|' 表格列语义，同上）
+    local stable_names; stable_names=$(awk -F'|' '
       /^#+ .*[§4-6].*(组件|依赖链路|接口)/ {in_sec=1}
       /^#+ / && !/[§4-6].*(组件|依赖链路|接口)/ {if(in_sec) in_sec=0}
-      in_sec && /^\|/ && !/^\|[-: ]+\|/ {
+      in_sec && /^[[:space:]]*\|/ && !/^[[:space:]]*\|[-: ]+\|/ {
         cell=$2; gsub(/[ `]/,"",cell); if(cell!="" && cell !~ /^</) print cell
       }
     ' "$ref_file" 2>/dev/null | sort -u)

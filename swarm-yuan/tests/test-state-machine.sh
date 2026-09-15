@@ -45,4 +45,33 @@ printf '# proposal\n演示用开放阶段产出。\n' > .swarm-yuan/proposal.md
 out="$(bash "$SH" transition design 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] && ok "态3 合法转换 open→design 通过" || bad "态3 exit=$rc: $out"
 
+# 态 4（R30-D7 回归锚）：跳级拦截——open 一路 transition verify 原可直达
+# （verify 准入 tasks.md 缺省降级跳过），design proposal / build spec 批准被整体绕过。
+# 显式回 open 起测（态 3 已把 phase 推进到 design）。
+sed -i.bak 's/^phase: design/phase: open/' .swarm-yuan/state.yaml && rm -f .swarm-yuan/state.yaml.bak
+out="$(bash "$SH" transition verify 2>&1)"; rc=$?
+[[ $rc -eq 1 ]] && ok "态4 open→verify 跳级被拦 exit 1" || bad "态4 exit=$rc: $out"
+grep -q '不能从 open 跳到 verify（跨过 design）' <<<"$out" && ok "态4 报跳级并列出被跨阶段" || bad "态4 话术异常: $out"
+grep -q '逐级推进' <<<"$out" && ok "态4 提示逐级推进路径" || bad "态4 缺逐级提示: $out"
+
+# 态 5：逐级合法路径不误伤——open→design（proposal 已在）→build（spec 批准）→verify
+out="$(bash "$SH" transition design 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态5 逐级 open→design 通过" || bad "态5 open→design exit=$rc: $out"
+mkdir -p docs/specs
+printf '# spec\n## 决策记录\n- D1：演示决策\n' > docs/specs/demo-spec.md
+out="$(bash "$SH" transition build 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态5 逐级 design→build 通过（spec 批准准入）" || bad "态5 exit=$rc: $out"
+out="$(bash "$SH" transition verify 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态5 逐级 build→verify 通过（tasks 缺省降级）" || bad "态5 exit=$rc: $out"
+
+# 态 6（R30-D8 回归锚）：非交互环境 init 覆盖确认——原交互 read 在 AI/CI stdin EOF 下
+# exit 0 静默无效（rc=0 但状态未重置）。非交互无 --force 须 exit 1；--force 覆盖 rc 0。
+out="$(bash "$SH" init second-change 2>&1)"; rc=$?
+[[ $rc -eq 1 ]] && ok "态6 非交互覆盖无 --force → exit 1（rc 语义明确）" || bad "态6 exit=$rc: $out"
+grep -q 'init second-change --force' <<<"$out" && ok "态6 报错给出 --force 用法" || bad "态6 话术异常: $out"
+grep -q 'phase: open' .swarm-yuan/state.yaml && old_change=$(grep '^change:' .swarm-yuan/state.yaml) || old_change=""
+out="$(bash "$SH" init second-change --force 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态6 --force 覆盖 rc 0" || bad "态6 --force exit=$rc: $out"
+grep -q '^change: second-change' .swarm-yuan/state.yaml && ok "态6 状态文件确实重置" || bad "态6 覆盖未生效: $(cat .swarm-yuan/state.yaml)"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-state-machine"; exit 0; } || { echo "FAIL test-state-machine" >&2; exit 1; }

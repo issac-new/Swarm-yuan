@@ -56,4 +56,15 @@ fixture real 'Tests run: 5, Failures: 0, Errors: 0, Skipped: 0\n'
 out=$(run_check_test "$TMP/fx-real.txt")
 grep -q "PASS:测试通过" <<<"$out" && ok "态6 真用例 5 → pass 不误报" || bad "态6 误报: $out"
 
+# 态 7（R30-D3 回归锚）：npm 横幅版本号尾 0 + 脚本名构成 "0 test" 子串——无边界正则
+# 对一切版本号以 0 结尾的 npm 项目假报空跑（shop-api@0.1.0 实证）。修复后不误报。
+fixture npm '> shop-api@0.1.0 test\n> jest --runInBand\n\nPASS tests/product-service.test.ts\nTests: 1 passed, 1 total\n'
+out=$(run_check_test "$TMP/fx-npm.txt")
+grep -q "PASS:测试通过" <<<"$out" && ok "态7 npm 横幅 '@0.1.0 test' 版本号子串 → pass 不误报" || bad "态7 版本号子串假报空跑: $out"
+
+# 态 8（R30-D3 防修复过头）：行首 0 用例形态仍须命中（修复加了左边界不得漏检）
+fixture linestart '0 passed, 3 failed\n'
+out=$(run_check_test "$TMP/fx-linestart.txt")
+grep -q "WARN:.*0 用例" <<<"$out" && ok "态8 行首 '0 passed' → warn（左边界行首分支）" || bad "态8 修复过头漏检: $out"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-check-test-zero-runs"; exit 0; } || { echo "FAIL test-check-test-zero-runs" >&2; exit 1; }

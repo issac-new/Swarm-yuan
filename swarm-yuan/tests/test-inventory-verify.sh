@@ -337,4 +337,39 @@ out14b="$(bash "$SH" "$TMP/proj14" --skill-dir "$TMP/skill14" --form backend --t
 echo "$out14b" | grep -F 'ORM schema' | grep -q 'FAIL' \
   && ok "态14 迁移资产漏列 → FAIL（枚举3/清单1）" || bad "态14 漏列未检出: $(echo "$out14b" | grep 'ORM schema')"
 
+# --- 态 15（R30-D4）：Prisma schema 进数据模型枚举 + express 大写 Router 端点形态 ---
+# 真实执勤实证（2026-09-16 Node 栈 shop-api）：schema.prisma 3 模型枚举 0（特征表
+# 缺 Prisma，--include 无 *.prisma）；productsRouter.get( 大写 R 形态 5 端点只中
+# app.get 1 个（字面小写 router. 不认 <name>Router.）。同 R28 缺 SQLAlchemy 根因模式。
+mkdir -p "$TMP/proj15/prisma" "$TMP/proj15/src/routes" "$TMP/skill15/references"
+cat > "$TMP/proj15/prisma/schema.prisma" <<'EOF'
+model Product { id Int @id }
+model Order { id Int @id }
+EOF
+cat > "$TMP/proj15/src/routes/products.ts" <<'EOF'
+productsRouter.post('/', h1)
+productsRouter.get('/', h2)
+productsRouter.get('/:id', h3)
+productsRouter.post('/:id/stock', h4)
+EOF
+cat > "$TMP/proj15/src/app.ts" <<'EOF'
+app.get('/health', h5)
+EOF
+cat > "$TMP/skill15/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §9 模型与映射清单
+| 构件 | 路径 | 说明 |
+|------|------|------|
+| prisma schema | `prisma/schema.prisma` | Product/Order |
+EOF
+out15="$(bash "$SH" "$TMP/proj15" --skill-dir "$TMP/skill15" --form backend --tsv 2>/dev/null)"
+echo "$out15" | grep -F '数据模型' | grep -qF $'数据模型 / ORM 实体\t1\t' \
+  && ok "态15 Prisma schema 进数据模型枚举（枚举=1 非 0）" || bad "态15 Prisma 漏报: $(echo "$out15" | grep 数据模型)"
+echo "$out15" | grep -F '接口端点' | grep -qF $'接口端点\t5\t' \
+  && ok "态15 <name>Router. 大写形态端点全检出（4 router + 1 app = 5）" || bad "态15 端点漏报: $(echo "$out15" | grep 接口端点)"
+# 态 15b：枚举 0 + 清单非空 → ENUM_ZERO_DIM 披露（store 维度 Prisma 项目必零命中）
+out15b="$(bash "$SH" "$TMP/proj15" --skill-dir "$TMP/skill15" --form backend 2>/dev/null)"
+echo "$out15b" | grep -qF 'ENUM_ZERO_DIM' \
+  && ok "态15b 枚举零命中维度披露 ENUM_ZERO_DIM（防假绿静默）" || bad "态15b 无披露: $out15b"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-inventory-verify"; exit 0; } || { echo "FAIL test-inventory-verify" >&2; exit 1; }
