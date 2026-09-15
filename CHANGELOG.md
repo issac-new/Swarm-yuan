@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.15.1] - 2026-09-16
+
+> R28 全量回归轮：完整链路实战回归（基线全绿后，在 FastAPI+SQLAlchemy+pytest 真实场景项目上生成目标技能，并走完门禁执勤、失败注入、fingerprint 感知、自成长升级、清单核验、关系边集、状态机、mark-active 全链），确认 6 处缺陷全修。共性根因：R25-PF1/PF2 修复的"相邻路径"未覆盖——探查层只认一种形态、机械层只做了半程实现。
+
+### Fixed
+- **Python 测试命令形态（执勤实证 taskflow-api）**：纯 requirements.txt 项目（无 pytest.ini/pyproject）探查产出 `TEST_CMD='pytest'`，裸 pytest 不把 cwd 注入 sys.path，check_test 收集 `from app.main import app` 必 ModuleNotFoundError——生成的门禁在主流形态项目上必 fail。改为 `python3 -m pytest`（`-m` 语义注入 cwd，对有配置项目等价；与同函数 unittest 兜底的 `python3 -m` 口径一致）。根因是 R25-PF1 只验证了"已声明 pytest→可执行"，未验证"可执行→可收集"的相邻路径（conf-render.sh + test-conf-render 态 8 同步）。
+- **inventory 数据模型维度缺 SQLAlchemy**：DIM_DATA_MODEL_CMD 覆盖 JPA/MyBatis-Plus/Mongo/Prisma/mongoose/sequelize，唯独缺 SQLAlchemy 声明式强特征 `__tablename__=`——Python 生态最主流 ORM 在 fastapi+sqlalchemy 项目必漏报 0（inventory-dimensions.conf + test-inventory-verify 态 13d 守门）。
+- **关系边集 Python 绝对导入恒 0**：relations-extract 原实现只认相对导入（`from .x import y`），注释声称"绝对导入 best-effort 根解析"但无对应分支——FastAPI/Django 等绝对导入主流项目（PEP 8 推荐）import 边恒 0。补绝对导入提取（包路径转目录试探，与 Go module 前缀剥离同构；子模块符号用 `find -name` 精确命中，防 macOS 大小写不敏感 FS 误命中并 emit 失真路径）。实测演练项目 0 边 → 26 条（relations-extract.sh + test-relations-extract 态 4c 守门）。
+- **状态机未知阶段名误导报错**：`transition implement`（合法为 build）先打「阶段转换」横幅再报「不能回退」——横幅+回退话术双重误导。阶段名合法性前置校验，未知名直接报「未知阶段」并列出合法值；phase 字段写坏同样显式报错（state-machine.sh + 新增 test-state-machine.sh 守门）。
+- **状态机 conf 接线消费占位符**：骨架模板 precheck.conf 的 `PROJECT_DIR="<项目根绝对路径>"` 在 draft 未回填期被 `_sm_conf_val` 当真实值消费，状态文件落进 cwd 下字面量垃圾目录。占位符形态（`<...>`）视为未配置，回退默认（state-machine.sh + test-state-machine 态 0 守门）。
+- **mark-active 分离存放形态决策双账失效**：技能与项目分离存放（CI 产物目录）时，decisions.jsonl 双账回退链两路皆空——PROJECT_DIR 未导出、skill_dir 上三级不再是项目根。从 conf 提前读出 PROJECT_DIR（占位符不导出）导出后即闭环，实机验证分离副本 draft→active 通过（generate-skill.sh）。
+
+### 验证
+- 全量 28 单元测试 + 3 e2e（gen/e2e/fieldchange）+ 79 规则集/fixture 双态 + gate-fixtures 全组 + bash -n 全语法面，修复后复跑零失败；修复点典型场景重演（新生成产物 TEST_CMD/边集 26 条/数据模型枚举 3）逐项断言通过。
+
 ## [v2.15.0] - 2026-09-15
 
 > 支付行业 profile + 领域知识镜像 + 跨平台门禁轮（R26 批次收口）：行业档从七传统行业扩到第八档"支付"（业务机理+技术实现融合，与 finance 立法视角正交互补）；支付领域知识实体（《支付之门》/规范全文/冲突裁决库）镜像入仓，迁移机器后引用可达；新增跨平台可移植性门禁（G24），把 Windows Git Bash/麒麟老 bash 的兼容性从散文纪律升级为机器执法。

@@ -282,6 +282,30 @@ out13c="$(bash "$SH" "$TMP/proj13" --skill-dir "$TMP/skill13" --form backend --p
 echo "$out13c" | grep -qF 'ReportJobGone.java' \
   && ok "态13 §5 任务表幻觉路径检出（HALLUCINATION）" || bad "态13 §5 幻觉路径未检出: $(echo "$out13c" | grep -c HALLUCINATION)"
 
+# --- 态 13d（R28-DF2 回归锚）：SQLAlchemy 声明式实体须进数据模型维度枚举 ---
+# 修复前 DIM_DATA_MODEL_CMD 只认 JPA/MyBatis-Plus/Mongo/Prisma/mongoose/sequelize 形态，
+# __tablename__=（SQLAlchemy DeclarativeBase 强特征）未覆盖 → fastapi+sqlalchemy 项目实体漏报 0。
+mkdir -p "$TMP/proj13d/app/models" "$TMP/skill13d/references"
+cat > "$TMP/proj13d/app/models/user.py" <<'EOF'
+from sqlalchemy import Column, Integer, String
+from app.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+EOF
+cat > "$TMP/skill13d/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §9 模型与映射清单
+| 构件 | 路径 | 说明 |
+|------|------|------|
+| User 实体 | `app/models/user.py` | users 表 |
+EOF
+out13d="$(bash "$SH" "$TMP/proj13d" --skill-dir "$TMP/skill13d" --form backend --tsv 2>/dev/null)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态13d exit 0" || bad "态13d exit=$rc: $out13d"
+echo "$out13d" | grep -F '数据模型' | grep -qF $'数据模型 / ORM 实体\t1\t1\t1.00\tPASS' \
+  && ok "态13d SQLAlchemy __tablename__ 实体 枚举1/清单1 PASS" || bad "态13d 实体维度异常: $(echo "$out13d" | grep 数据模型)"
+
 
 # --- 态 14：DIM_ORM_SCHEMA 维度（schema/迁移资产 ↔ §8 数据字典清单核验，横向清剿轮） ---
 mkdir -p "$TMP/proj14/prisma" "$TMP/proj14/shop/migrations" "$TMP/proj14/db/migration" "$TMP/skill14/references"

@@ -152,7 +152,7 @@ while IFS= read -r f_abs; do
       done < <(grep -nE "(from|require|import)[[:space:]]*\(?[[:space:]]*[\"'][.][./][^\"']*[\"']" "$f_abs" 2>/dev/null || true)
       ;;
     *.py)
-      # from .x import y / from ..x import y（相对导入机械可靠；绝对导入 best-effort 根解析）
+      # from .x import y / from ..x import y（相对导入机械可靠；绝对导入见下方 R28-DF3 分支）
       while IFS= read -r hit; do
         [[ -z "$hit" ]] && continue
         ln="${hit%%:*}"; stmt="${hit#*:}"
@@ -170,6 +170,40 @@ while IFS= read -r f_abs; do
         [[ "$resolved" == "$f_rel" ]] && continue
         _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
       done < <(grep -nE '^[[:space:]]*from[[:space:]]+\.[.A-Za-z_][.A-Za-z_0-9]*[[:space:]]+import' "$f_abs" 2>/dev/null || true)
+      # R28-DF3（2026-09-16 FastAPI 执勤实证 taskflow-api）：绝对导入提取。
+      # 原实现只认相对导入（原注释声称「绝对导入 best-effort 根解析」但无对应分支）——
+      # FastAPI/Django 等绝对导入主流项目（PEP 8 推荐）import 边恒 0。
+      # 机械可靠版与 Go module 前缀剥离同构：包路径 a.b → a/b，_resolve 试探
+      # a/b.py 与 a/b/__init__.py，存在即边；项目外顶层包（标准库/第三方）自然 miss 不误报。
+      while IFS= read -r hit; do
+        [[ -z "$hit" ]] && continue
+        ln="${hit%%:*}"; stmt="${hit#*:}"
+        spec=$(printf '%s' "$stmt" | sed -n 's/^[[:space:]]*from[[:space:]][[:space:]]*\([A-Za-z_][A-Za-z_0-9.]*\)[[:space:]][[:space:]]*import.*/\1/p')
+        if [[ -n "$spec" ]]; then
+          # from X.Y import A：候选 X/Y（模块本身）与 X/Y/A（A 为子模块时）
+          modpath=$(printf '%s' "$spec" | tr '.' '/')
+          resolved=$(_resolve "$modpath") || resolved=""
+          if [[ -n "$resolved" && "$resolved" != "$f_rel" ]]; then
+            _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
+          fi
+          first=$(printf '%s' "$stmt" | sed -n 's/^[[:space:]]*from[[:space:]][[:space:]]*[A-Za-z_][A-Za-z_0-9.]*[[:space:]][[:space:]]*import[[:space:]][[:space:]]*\([A-Za-z_][A-Za-z_0-9]*\).*/\1/p')
+          # 子模块候选须磁盘精确名命中（find -name 大小写敏感，不吃 FS case-insensitive 红利）——
+          # macOS/APFS 下 `from app.models import User` 不得误命中 user.py 并 emit 失真大写路径。
+          if [[ -n "$first" && "$first" != "*" && -d "$PROJ/$modpath" ]]; then
+            resolved=$(LC_ALL=C find "$PROJ/$modpath" -maxdepth 1 -name "$first.py" 2>/dev/null | head -1)
+            resolved="${resolved#"$PROJ"/}"
+            [[ -n "$resolved" && "$resolved" != "$f_rel" ]] && _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
+          fi
+        else
+          # import X.Y[.Z]（无 from）
+          spec=$(printf '%s' "$stmt" | sed -n 's/^[[:space:]]*import[[:space:]][[:space:]]*\([A-Za-z_][A-Za-z_0-9.]*\).*/\1/p')
+          [[ -z "$spec" ]] && continue
+          modpath=$(printf '%s' "$spec" | tr '.' '/')
+          resolved=$(_resolve "$modpath") || continue
+          [[ "$resolved" == "$f_rel" ]] && continue
+          _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
+        fi
+      done < <(grep -nE '^[[:space:]]*(from[[:space:]]+[A-Za-z_][A-Za-z_0-9.]*[[:space:]]+import|import[[:space:]]+[A-Za-z_])' "$f_abs" 2>/dev/null || true)
       ;;
   esac
 done <<< "$_src_files"

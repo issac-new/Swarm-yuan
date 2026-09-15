@@ -850,6 +850,18 @@ if [[ "${1:-}" == "--mark-active" ]]; then
   [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --mark-active <skill-dir>"; exit 1; }
   _ma_dir="$2"
   [[ -f "$_ma_dir/SKILL.md" ]] || { echo "✗ SKILL.md 不存在: $_ma_dir" >&2; exit 1; }
+  # R28-DF7（2026-09-16 执勤实证）：技能与项目分离存放（CI 产物目录）时，decisions 双账
+  # 回退链（verify_completeness 内 ${PROJECT_DIR:-skill_dir 上三级}）两路皆空——PROJECT_DIR
+  # 未导出、skill_dir 上三级不再是项目根。conf 里明明有真值，提前读出导出即闭环。
+  # 占位符形态（draft 未回填 <项目根绝对路径>）不导出，保持原回退链。
+  if [[ -z "${PROJECT_DIR:-}" && -f "$_ma_dir/scripts/precheck.conf" ]]; then
+    _ma_pd=$(grep -m1 '^PROJECT_DIR=' "$_ma_dir/scripts/precheck.conf" 2>/dev/null \
+      | cut -d'#' -f1 | sed 's/^PROJECT_DIR=//;s/^"//;s/"$//;s/[[:space:]]*$//' || true)
+    case "$_ma_pd" in
+      "<"*">") : ;;
+      ?*) [[ -d "$_ma_pd" ]] && export PROJECT_DIR="$_ma_pd" ;;
+    esac
+  fi
   if ! grep -q '^status: draft' "$_ma_dir/SKILL.md"; then
     echo "ℹ 非 draft 状态（已是 active 或无 status 字段），无需标记"
     exit 0
