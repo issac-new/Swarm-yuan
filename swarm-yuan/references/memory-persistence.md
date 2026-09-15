@@ -454,3 +454,10 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 - **三处有界化**：sync_outbox 增长（云同步未配置时）、会话摘要输入按载荷尺寸、定时投影修复工作量——资源占用须有上限，未配置的外部依赖不得无限堆积本地状态。
 - **SDK 子进程 cwd 监禁**（#4054）+ **记忆卫生**（plugin cache 会话 #4042 / 空标题观测 #3176 不采集——**采集选择性**：不是所有会话都值得记忆，诚实口径延伸到采集侧）+ memory_session_id 幂等注册（#4027）。
 - 其余（项目名锚定 Claude 项目目录 #4055、localhost 归一化、chroma 解析崩溃不中止管线、Bun ENOENT fail-loud、冷启动误报修复、macOS 桌面捆绑 codex CLI 探测 #3445）为修复族，对账通过。watch 维持。档案 `docs/research/R26-runtime-refresh.md`。
+
+## ruflo v3.42.0：有界性第三形态与证据可信度传播（2026-09-16 R29）
+
+- **maxToolCallsPerTurn 滑动窗口重置**（#3151）：有界性族第三波——固定计数上限（3.40 前）→ 预算分配（3.41.2 Seraphina 封顶）→ 时间窗速率（3.42 滑动窗口）。三种有界形态对应三种失效模式：超总量、超预算、突发速率。
+- **findSimilar 置信度按来源可靠性门控**（#3301）：结论置信度不得高于其证据来源的可靠性上限——不信任单点聚合放大（证据可信度传播族）。
+- **LearningBridge.consolidate() reward-blind**（#3159）：记忆固化判据与激励信号解耦——防 reward hacking 写入长期记忆。
+- 近重复 embedding 检测接线 MemoryCore（#3231）：入库侧去重，防记忆池同义膨胀。MCP 治理 opt-in 与 ADR-377 身份绑定见 `mcp-governance.md` R29 段。

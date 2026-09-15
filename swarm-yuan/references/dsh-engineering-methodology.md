@@ -147,3 +147,5 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 其余增量（DeepSeek-V41-Flash 默认模型 / Web 通用文件上传混排（模型按路径按需读取——输入经济学族）/ Sidebar 多标签产物预览 / 代理环境变量遵循 / 流式工具调用续传分片修复）对账通过，登记不展开。逐条细节留档 `docs/research/R22-runtime-refresh.md`。
 
 - **0.1.5-rc.2（2026-09-11 R24 核）**：web feedback + file refinements 回移 0.1.5 线（2 commits），无方法论新原语，基线随升。档案 `docs/research/R24-runtime-refresh.md`。
+
+- **0.1.6 预发布线恢复切割（2026-09-16 R29 核）**：R28 预警兑现——**dsh-v0.1.6-alpha.1** 出现，rc.2 以来 **800 commits** 大切割，主题为 pkg/运行时解析重构（runtime host 迁入 asar、内置 loader 升 0.1.6、addon 管理原生缓存、ESM default resolver 对齐、boot 解析边界连环加固）。alpha 不取，维持 rc.2 基线；**下轮口径**：0.1.6 已入 alpha，rc.3/0.1.6 stable 出线即深读（分发工程面为主，暂无方法论新原语）。生态信号：comet 0.4.1 #406 已把 dsh 注册为受支持 hook 平台（`docs/upstream-baseline.md` comet 行）。档案 `docs/research/R29-runtime-refresh.md`。
