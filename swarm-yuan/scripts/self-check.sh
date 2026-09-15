@@ -101,7 +101,7 @@ install_from_src_release(){
   local name="$1" zip="$2" dest="$3" setup="${4:-}"
   local tag="${SRC_RELEASE_TAG}"
   local url="https://github.com/${SRC_RELEASE_REPO}/releases/download/${tag}/${zip}"
-  local tmp; tmp="$(mktemp -d)"
+  local tmp; tmp="$(mktemp -d "${TMPDIR:-/tmp}/swarm-yuan.XXXXXX")"
   echo "  → [$name] 下载源码包: $url"
   if ! (cd "$tmp" && curl -fsSL -o "$zip" "$url"); then
     # 当天 tag 不存在（404）→ 降级到最近可用 -src tag 重试
@@ -1684,6 +1684,74 @@ check_sed_regex_dialect() {
   fi
 }
 check_sed_regex_dialect
+
+# ===== G24：跨平台可移植性机械检查（麒麟老 bash 3.2 / Git Bash / BSD macOS，portability 轮固化）=====
+# 三类坑散文纪律不防复发，机器扫描才占有解法：
+#   ① 裸 mktemp（无模板）：BSD mktemp 无模板崩、GNU 在 CWD 创建污染目录——统一 ${TMPDIR:-/tmp} 模板；
+#   ② GNU-only 命令：tac（BSD 无）、grep -P（PCRE）、sed -i 无备份后缀（GNU）、readlink -f（BSD 无）；
+#   ③ bash 4+ 特性：declare -A/关联数组、mapfile、${var,,}/${var^^}（麒麟老 bash 3.2 崩）。
+# 范围与 G22 同。违规即 fail（清零后严格成立）。
+check_portability() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  echo "▶ 跨平台可移植性铁律（G24：mktemp 带 TMPDIR 模板 / GNU-only 命令 / bash4 特性）"
+  local hits=0 f line trimmed
+  # 性能：行内逐条 grep 会 spawn O(行数×模式) 子进程（190 文件全量实测 2min+ 不可接受）。
+  # 先一次 grep -lE 文件级预筛出含嫌疑词的文件，仅对它们进逐行循环（绝大多数文件零嫌疑词被跳过）。
+  local _suspect_re='mktemp|(^|[|;&(]) *tac( |$)|grep -P|sed -i|readlink -f|(declare|local) -A|mapfile|readarray|\$\{[A-Za-z_][A-Za-z0-9_]*(,,|\^\^)'
+  local files
+  files="$(grep -lE "$_suspect_re" "$base"/scripts/*.sh "$base"/assets/*.sh "$base"/assets/hooks/*.sh \
+           "$base"/assets/framework-gates/*.sh "$base"/tests/*.sh "$base"/tests/e2e/*.sh \
+           "$base"/../verifier/v1/*.sh "$base"/../verifier/v2/*.sh 2>/dev/null)"
+  for f in $files; do
+    [[ -f "$f" ]] || continue
+    # 检查器/lint 文件整文件豁免：它们以字面量引用 declare -A/readlink -f/mktemp 等做拦截，
+    # 是"检测规则"而非"违规使用"（self-check.sh 的 check_portability 函数体、
+    # verify-framework-ruleset.sh 的片段检查器、cost-report/detect-frameworks 等的兼容注释）。
+    case "$f" in
+      */scripts/self-check.sh|*/scripts/verify-framework-ruleset.sh) continue ;;
+    esac
+    while IFS= read -r line; do
+      trimmed="$(printf '%s' "$line" | sed 's/^[[:space:]]*//')"
+      [[ "$trimmed" == \#* ]] && continue
+      # ① 裸 mktemp（mktemp 或 mktemp -d 后无模板参数；含 TMPDIR 的合规）
+      if printf '%s' "$line" | grep -qE 'mktemp( -d)? *["'"'"']? *[\);&|]' \
+         && ! printf '%s' "$line" | grep -q 'TMPDIR'; then
+        echo "  ✗ $(basename "$f"): 裸 mktemp（补 \${TMPDIR:-/tmp} 模板）: $line" >&2
+        hits=$((hits+1)); continue
+      fi
+      # ② GNU-only 命令：tac / grep -P / sed -i 无后缀 / readlink -f
+      if printf '%s' "$line" | grep -qE '(^|[|;&(]) *tac( |$)'; then
+        echo "  ✗ $(basename "$f"): GNU-only tac（改 awk 倒序缓冲）: $line" >&2; hits=$((hits+1)); continue
+      fi
+      if printf '%s' "$line" | grep -q 'grep -P'; then
+        echo "  ✗ $(basename "$f"): grep -P（PCRE，BSD/老 grep 无；改 grep -E）: $line" >&2; hits=$((hits+1)); continue
+      fi
+      if printf '%s' "$line" | grep -qE "sed -i( |'|\")" && ! printf '%s' "$line" | grep -q 'sed -i\.bak'; then
+        echo "  ✗ $(basename "$f"): sed -i 无备份后缀（GNU 写法；改 sed -i.bak+rm）: $line" >&2; hits=$((hits+1)); continue
+      fi
+      if printf '%s' "$line" | grep -q 'readlink -f'; then
+        echo "  ✗ $(basename "$f"): readlink -f（BSD 无；改 \$(cd+pwd) 替代）: $line" >&2; hits=$((hits+1)); continue
+      fi
+      # ③ bash 4+ 特性：declare -A / local -A / mapfile / ${var,,} / ${var^^}
+      if printf '%s' "$line" | grep -qE '\b(declare|local) -A\b'; then
+        echo "  ✗ $(basename "$f"): declare -A（bash3.2 崩；用平行数组）: $line" >&2; hits=$((hits+1)); continue
+      fi
+      if printf '%s' "$line" | grep -qE '\b(mapfile|readarray)\b'; then
+        echo "  ✗ $(basename "$f"): mapfile/readarray（bash4+；改 while read）: $line" >&2; hits=$((hits+1)); continue
+      fi
+      if printf '%s' "$line" | grep -qE '\$\{[A-Za-z_][A-Za-z0-9_]*(,,|\^\^)'; then
+        echo "  ✗ $(basename "$f"): \${var,,}/\${var^^}（bash4+；改 tr）: $line" >&2; hits=$((hits+1)); continue
+      fi
+    done < "$f"
+  done
+  if [[ "$hits" -gt 0 ]]; then
+    warn "跨平台可移植性违规 ${hits} 处——麒麟老 bash/Git Bash/BSD macOS 兼容性风险（SKILL.md 三平台铁律）"
+    FAIL=1
+  else
+    echo "  ✓ 无跨平台可移植性违规（mktemp 模板 / GNU-only / bash4 特性）"
+  fi
+}
+check_portability
 
 # ===== 决策 35 创造锚：gate-enforce-level.conf 再生能力断言（audit-claims-reality F1）=====
 # 入库产物 + 生成器不被运行 = 占有产物但无法证明仍保有创造能力（费曼第一条）。

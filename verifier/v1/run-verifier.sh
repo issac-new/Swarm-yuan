@@ -180,7 +180,7 @@ bootstrap_self_gate() {
   local conf="$SY/ci/self-precheck.conf"
   [ -f "$conf" ] || { echo "BOOTSTRAP_SELF_GATE ABSENT（ci/self-precheck.conf 不存在，安装态跳过）"; return 0; }
   echo "=== C9 自举闭环（生成器对自身跑 precheck --all）==="
-  local tmpdir; tmpdir="$(mktemp -d)"
+  local tmpdir; tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/swarm-yuan-verifier.XXXXXX")"
   # 拷贝四件套（precheck.sh + gates-*.sh，与 CI generator-self-gate Job 同款）
   cp "$SY/assets/precheck.sh" "$SY/assets/gates-strict.sh" "$SY/assets/gates-warn.sh" "$SY/assets/gates-advisory.sh" "$tmpdir/" 2>/dev/null || true
   # 占位符替换：__REPO_ROOT__ → 仓库根

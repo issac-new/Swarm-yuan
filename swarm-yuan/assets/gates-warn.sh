@@ -99,7 +99,7 @@ _check_sensitive_gitleaks() {
   local found=0 dir report hits files f rc
   for dir in ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
     [[ -d "$dir" ]] || continue
-    report=$(mktemp)
+    report=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan.XXXXXX")
     # --no-git 按文件系统扫描（与内置路径同口径）；--exit-code 0 统一由报告计数判定，不靠工具退出码
     rc=0
     gitleaks detect --no-git -s "$dir" --report-format json --report-path "$report" --exit-code 0 >/dev/null 2>&1 || rc=$?
