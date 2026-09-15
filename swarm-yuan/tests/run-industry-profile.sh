@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # run-industry-profile.sh —— 行业 profile 覆盖断言：profile 追加到 precheck.conf 后关键变量生效
-# 用法: bash tests/run-industry-profile.sh <profile-id>（finance/medical/gov/automotive/energy/telecom/industrial）
+# 用法: bash tests/run-industry-profile.sh <profile-id>（finance/medical/gov/automotive/energy/telecom/industrial/payment）
 set -u
 BASE="$(cd "$(dirname "$0")/.." && pwd)"
 P="${1:?用法: run-industry-profile.sh <profile-id>}"
@@ -32,6 +32,12 @@ cat "$CONF_SRC" >> "$TMP/precheck.conf"
       check DOCS_PACK_PROFILE gbt8567
       ;;
     finance) check CRYPTO_PROFILE gm; check SBOM_REQUIRED 1 ;;
+    payment)
+      check CRYPTO_PROFILE gm
+      check PIA_REQUIRED 1
+      check SBOM_REQUIRED 1
+      check RELEASE_SIGN_REQUIRED 1
+      ;;
     medical) check PRIVACY_SCAN_DIRS "" ;;
     automotive)
       check SBOM_REQUIRED 1
