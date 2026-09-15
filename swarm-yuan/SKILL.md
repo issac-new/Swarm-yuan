@@ -100,7 +100,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | 组件库清单/地图（理念/设计） | ①.5 穷举+计数核验 | 流B ⑤编码拼装（零件目录） | 变化后反馈回路更新（reference-manual） |
 | 任务配方/业务功能清单（理念·拼装式，R21） | ①.5 盘点+④ 填充（§C+.6/§C+.7） | 流B ②探查先查配方、⑤编码按配方拼装 | mark-active 五要素执法；问题沉淀追加配方 |
 | 开发偏好（设计，R21） | ⓪.5 行为观察（mine-habits 初稿） | 流B 全程（AI 遵开发者实际习惯） | memory-writeback 记忆闭环；节存在性执法 |
-| 关系边集（架构，R21） | ①.5 relations-extract 机械边 | --stable-diff 传播+流B ②探查查边集 | mark-active 抽样核验；断边→重建 |
+| 关系边集（架构，R21） | ①.5 relations-extract 机械边 | --stable-diff 传播+流B ②探查查边集 | mark-active 抽样核验；断边→重建（relations-extract/inventory-verify 随发，v2.14.2 起执勤侧自包含重跑） |
 | 数据映射链/任务链/消息拓扑（架构，字符串耦合防线） | ①.5 声明式边+§C+.2-B Layer 5/§C+.2-J/§C+.2-A 配对表（实体↔mapper XML↔表列；job→读写数据资产；MQ 端点双边配对） | 流B ②探查影响面反查（改字段召回 XML/job/迁移）+ fw_mybatis_field_sync/fw_*_pair 执法 | DIM 四维度计数核验；边集 --verify 防失锚 |
 | 特征卡（理念） | ② 特征项提取 | ⑤ conf 三件套（门禁参数源） | mark-active 三关核验其真实性 |
 | 门禁四族（架构） | ⑤ conf+⑦.5 片段注入 | 流B 序列执勤+hook 强制 | 误报→调 conf 重跑；拦截落 gate-deny.jsonl |

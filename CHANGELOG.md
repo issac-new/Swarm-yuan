@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.14.2] - 2026-09-15
+
+> 执勤侧自包含轮（实测定案驱动）：v2.14.1 发版后对生成产物实测发现——边集/清单的**重建与核验工具不随发**到目标技能。分析能覆盖 MyBatis XML（v2.14.0/2.14.1 已修），但项目演进后要在执勤侧重建边集/核验清单，必须回生成器侧跑 `relations-extract.sh` / `inventory-verify.sh`——闭环在执勤侧不自包含。本轮把三个工具随发，执勤侧拿到完整重建/核验能力，无需回生成器。
+
+### 痛点与根因
+- `relations-extract.sh`（边集重建/--verify 断边）与 `inventory-verify.sh`（清单计数核验/path-check）只存在生成器仓，**不在 `UNIVERSAL_FILES` 随发清单里**——`mark-active` 的抽样核验读的是生成器侧副本（路径通），但生成完成后目标技能目录里没有这两个脚本；项目演进后想重建边集/核验清单，执勤侧无工具可用。
+- 维度注册表 `inventory-dimensions.conf` 是 inventory-verify 的数据源，同样不随发——即使拷来脚本也缺配置。
+
+### Fixed
+- **三工具随发（自包含执勤）**：`scripts/relations-extract.sh`、`scripts/inventory-verify.sh`、`assets/inventory-dimensions.conf` 入 `UNIVERSAL_FILES`（lite 档起随发）。两脚本零外部依赖、自洽（inventory-verify 仅读随发的 `assets/inventory-dimensions.conf`；relations-extract 无外部引用）。实测：生成产物内对样本项目实跑边集重建（mapper-binding/data-mapping 出边）、清单核验（消费随发维度注册表）、断边核验（`--verify` 抽样）全链路通过。
+- **骨架口径同步**：自成长段的"核验：生成器侧 inventory-verify.sh"更新为本地自包含表述（脚本已随发，无需回生成器）；新增"边集重建"条目。
+
+### 口径与预算登记
+- `FACT_UNIVERSAL_FILES` 65→68、`FACT_UNIVERSAL_FILES_CORE` 37→40（+3 工具随发，机械计数同步）。
+- `FACT_SKILLMD_BYTES_BUDGET` 首次例外登记 8192→8320：实测产物 8234B 超 42B，成因=三工具入随发清单后骨架文件清单区如实新增 3 行（+160B，生成物文件清单=执勤手册的功能信息增量，非叙事膨胀）。对齐 FACT_ARTIFACT_BYTES_BUDGET 逐例登记先例，不构成先例。
+
+### 诚实边界
+- 随发的是**工具脚本**，执勤侧重跑时的**方法论指引**（exploration-guide §C+）仍回生成器仓读（既定设计：方法论不随发，防目标技能膨胀）。
+- `relations-extract.sh --verify` 在执勤侧是 advisory（fail-open），断边提示重建不阻断执勤。
+
 ## [v2.14.1] - 2026-09-14
 
 > 声明式字符串耦合横向清剿轮：把 v2.14.0 在 MyBatis XML / Spring Batch 暴露的"字符串耦合分析缺失"模式横向排查到全部主流技术栈，确认并修复四类同型缺口。排查方法学：凡是"编译器不校验、import 依赖边不含、清单无维度"的三不管字符串引用，都是漏改字段的同型炸点。
