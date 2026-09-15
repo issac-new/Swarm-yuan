@@ -7,7 +7,7 @@
 #   bash conf-render.sh <PROJECT_DIR> [--feature-card <f>] [--profile <lite|standard|compliance>] [--industry <name>] [--out <dir>]
 #     --feature-card  特征卡 md（解析结构化字段补实值，可选）
 #     --profile       lite(只 core) / standard(core+arch) / compliance(三件套)，默认 standard
-#     --industry      行业 profile（finance|gov|medical|telecom|automotive|energy|industrial）
+#     --industry      行业 profile（finance|gov|medical|telecom|automotive|energy|industrial|payment）
 #                     真实加载 assets/industry-profiles/<name>.conf 并渲染为 precheck.industry.conf
 #                     追加到 precheck.conf 尾部 source 链（替代"手工 cat >>"伪激活）
 #     --out           落盘目录（不给则 stdout 合并三件套）
@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --feature-card) CARD="${2:?--feature-card 需要路径}"; shift 2 ;;
     --profile) PROFILE="${2:?--profile 需要 lite|standard|compliance}"; shift 2 ;;
-    --industry) INDUSTRY="${2:?--industry 需要 finance|gov|medical|telecom|automotive|energy|industrial}"; shift 2 ;;
+    --industry) INDUSTRY="${2:?--industry 需要 finance|gov|medical|telecom|automotive|energy|industrial|payment}"; shift 2 ;;
     --out) OUT="${2:?--out 需要目录}"; shift 2 ;;
     -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) [[ -z "$PROJ" ]] && PROJ="$1" || { echo "未知参数: $1" >&2; exit 1; }; shift ;;
@@ -190,7 +190,7 @@ fi
 if [[ -n "$INDUSTRY" ]]; then
   _ip_src="$BASE/assets/industry-profiles/${INDUSTRY}.conf"
   if [[ ! -f "$_ip_src" ]]; then
-    echo "✗ 未知行业 profile: ${INDUSTRY}（可选：finance|gov|medical|telecom|automotive|energy|industrial）" >&2
+    echo "✗ 未知行业 profile: ${INDUSTRY}（可选：finance|gov|medical|telecom|automotive|energy|industrial|payment）" >&2
     exit 1
   fi
   # 行业层头部改写：原"手工 cat >>"用法注释替换为"本文件由 conf-render --industry 生成"溯源

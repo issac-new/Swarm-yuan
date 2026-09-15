@@ -209,7 +209,7 @@
 | 外部运行时 | 13 个接线（深度 4 + CLI 4 + 方法论 5）；登记 16；自动检测 11 |
 | 类型目录 | 实体 17 / 关系 10 / 动作 11（assets/ontology/ 三份） |
 | 生成流程 | 12 步（唯一编号口径在 generation-flow.md）；目标技能工作流 9 节点 × 4 要素 |
-| 领域知识库 / 行业档 | 32 / 7 |
+| 领域知识库 / 行业档 | 32 / 8 |
 
 ## 附录 B：外部来源与方法论吸收登记
 
@@ -221,7 +221,7 @@
 | CLI 四件（OpenSpec / comet / gsd-core / codex-security） | 按需调用 CLI，降级自带载体 | references/ 各 methodology |
 | 方法论五件（superpowers / gstack / Ruflo / ECC / impeccable） | AI 按工作流节点引用模式 | references/subagent-orchestration.md |
 | 外部方法论文档 11 份（codex / dsh / cordis / mea-loop / agent-skills / four-theories 等） | 蒸馏为 references 方法论，全带"何时读我"路由头 | references/ 同名文件 |
-| 行业法规映射 7 档 | conf + 法规依据文档配对，真实加载 | assets/industry-profiles/ + references/industry-profile-*.md |
+| 行业法规映射 8 档 | conf + 法规依据文档配对，真实加载 | assets/industry-profiles/ + references/industry-profile-*.md |
 | 标准族（OWASP / STRIDE / CWE / GB/T / ISO 42001 / ISO 29148 / EARS） | 门禁条款机器可读映射 + spec 句式对齐 | assets/standards-map.conf + references/standards-compliance.md |
 | Palantir 本体论工程 | 标记沿调用链传播的设计借鉴 | docs/design-evolution.md 决策 28 |
 | 上游运行时基线（16 项供应链登记） | 版本 / 许可证 / drift 机器锚 | docs/upstream-baseline.md |
