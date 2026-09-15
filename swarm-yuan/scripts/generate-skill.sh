@@ -53,6 +53,7 @@ UNIVERSAL_FILES=(
   # 所有引用指向 scripts/（SKILL.md:64/74/86），assets/ 副本无人加载。
   "assets/task-type-gates.conf|assets|lite"
   "assets/profile-thresholds.conf|assets|lite"
+  "assets/inventory-dimensions.conf|assets|lite"  # 维度注册表随发：inventory-verify.sh 执勤侧自洽消费（v2.14.2 自包含修复）
   "scripts/precheck.sh|assets|lite"
   "scripts/gates-strict.sh|assets|lite"
   "scripts/gates-warn.sh|assets|lite"
@@ -80,9 +81,14 @@ UNIVERSAL_FILES=(
   "scripts/setup-loop.sh|hook|standard"
   "scripts/loop-hook.sh|hook|standard"
   "scripts/project-fingerprint.sh|gen|lite"
-  # inventory-update.sh 给目标 skill 的 AI 用（编码中发现语义变化 → 局部更新清单单条目），
-  # 与 inventory-verify.sh 的"生成器侧核验"角色区分——本脚本必须拷到目标 skill 的 scripts/ 下。
+  # inventory-update.sh 给目标 skill 的 AI 用（编码中发现语义变化 → 局部更新清单单条目）；
+  # v2.14.2 起核验工具（inventory-verify）与边集工具（relations-extract）同样随发（自包含执勤）。
   "scripts/inventory-update.sh|gen|lite"
+  # v2.14.2 自包含修复：边集/清单的重建与核验工具随发——执勤侧项目演进后可本地重跑
+  # relations-extract（--verify 断边/重建）与 inventory-verify（计数核验/path-check），
+  # 无需回生成器侧。两脚本零外部依赖（inventory-verify 仅读随发的 assets/inventory-dimensions.conf）。
+  "scripts/relations-extract.sh|gen|lite"
+  "scripts/inventory-verify.sh|gen|lite"
   # 规则即数据——三值求值器 + 默认规则集随生成物分发（conf 收缩的载体：门禁阈值/白名单类参数迁入规则数据）
   "scripts/gate-rules.sh|gen|lite"
   "scripts/gate-plan.sh|gen|lite"      # R15 HarnessEval P4：选择即证据（启用/跳过理由，负空间可审计）
@@ -2034,7 +2040,8 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 3. **更新链**（检出变化后）：
    - 工具链刷新：生成器（路径见 `.swarm-yuan-version` 的 source_repo）`--refresh` 看 dry-run → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留）
    - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
-   - 核验：生成器侧 `inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉）
+   - 核验：本地 `scripts/inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉；v2.14.2 起随发自包含，生成器侧亦可）
+   - 边集重建：本地 `scripts/relations-extract.sh` 重跑出 `references/relations.jsonl`（断边/项目演进后；v2.14.2 起随发自包含）
 4. **落新基线**：`bash scripts/project-fingerprint.sh <项目根> --write`。
 5. **问题沉淀**（使用中随时，不等项目变化）：解决的新问题（新复用解法/新约束/新坑）三选一沉淀——`inventory-update` 入清单 / recipes.md 加配方或注意事项 / `gate-rules.sh --persist` 入规则——并 `bash scripts/trace-log.sh --decision` 留痕（问题→方案→沉淀物）。
 
@@ -2052,7 +2059,8 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 3. **更新链**（检出变化后）：
    - 工具链刷新：生成器（路径见 `.swarm-yuan-version` 的 source_repo）`--refresh` 看 dry-run → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留）
    - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
-   - 核验：生成器侧 `inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉）
+   - 核验：本地 `scripts/inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉；v2.14.2 起随发自包含，生成器侧亦可）
+   - 边集重建：本地 `scripts/relations-extract.sh` 重跑出 `references/relations.jsonl`（断边/项目演进后；v2.14.2 起随发自包含）
 4. **落新基线**：`bash scripts/project-fingerprint.sh <项目根> --write`。
 5. **问题沉淀**（使用中随时，不等项目变化）：解决的新问题（新复用解法/新约束/新坑）三选一沉淀——`inventory-update` 入清单 / recipes.md 加配方或注意事项 / `gate-rules.sh --persist` 入规则——并 `bash scripts/trace-log.sh --decision` 留痕（问题→方案→沉淀物）。
 

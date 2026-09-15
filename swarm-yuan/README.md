@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.14.1-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.14.1)
+[![Release](https://img.shields.io/badge/release-v2.14.2-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.14.2)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -134,7 +134,7 @@
 | 概念 | 诞生 | 消费方 | 检查兜底 | 回流 |
 |---|---|---|---|---|
 | 地图（组件库） | 3.1 探查穷举 | 编码时按图复用 | 计数核验 + 路径验真 + 稳定性审计 | 指纹变化后局部更新 |
-| 关系边集 | 3.1 机械提取 + AI 补语义 | 探查"谁依赖某件"；稳定单元下游传播 | 抽样核验断边 | 变化后重建 |
+| 关系边集 | 3.1 机械提取 + AI 补语义 | 探查"谁依赖某件"；稳定单元下游传播 | 抽样核验断边 | 变化后重建（重建工具随发，执勤侧自包含） |
 | 数据映射链/任务链/消息拓扑 | 3.1 声明式边提取 + 链路模型（实体↔mapper XML↔表列；job→数据资产；MQ 端点双边配对） | 改字段影响面反查；批处理回归面定位；改名断链预警 | 四维度计数核验 + 字段同步/端点配对门禁 | 边集 --verify 防失锚 |
 | 业务功能清单 | 3.1 归纳 | 同类任务的先例库 | 配方结构执法 | 问题沉淀追加 |
 | 任务配方 | 3.1 三源提取 | 探查先查配方，编码按配方拼装 | 五要素结构执法 + 引用路径验真 | 问题沉淀追加新配方 |
