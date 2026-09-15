@@ -336,6 +336,16 @@ transition_phase() {
     echo "ERROR: 不能回退到 ${target}（当前 ${current}）"
     exit 1
   fi
+  # R30-D7（2026-09-16 Node 栈执勤实证 shop-api）：原实现只拦回退不拦跳级——
+  # open 一路 transition verify 直达（verify 准入 tasks.md 缺省降级跳过），
+  # design 的 proposal / build 的 spec 批准（SPEC_REQUIRED=1 spec-first 硬防线）
+  # 被单次跳跃整体绕过，阶段守卫形同虚设。逐级准入即门禁：前跳限一阶，
+  # 跨级报出被跳过的阶段并提示逐级推进。
+  if [[ $((tgt_idx - cur_idx)) -gt 1 ]]; then
+    local _skipped="${PHASES[$((cur_idx + 1))]}"
+    echo "ERROR: 不能从 ${current} 跳到 ${target}（跨过 ${_skipped}）——逐级推进，每级准入即门禁（${current} → ${_skipped} → ${target}）"
+    exit 1
+  fi
   # 门禁
   guard_phase "$target" || exit 1
   set_field phase "$target"
