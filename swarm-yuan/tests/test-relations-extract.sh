@@ -87,6 +87,23 @@ grep -qF '"from":"src/services/task-service.js","to":"src/models/task.js"' "$TMP
   && ok "态4b CommonJS require('../') 相对导入边" || bad "态4b require 边缺失: $(cat "$TMP/cjs/relations.jsonl" 2>/dev/null)"
 _cjsn=$(grep -c . "$TMP/cjs/relations.jsonl"); [[ "$_cjsn" -eq 1 ]] && ok "态4b 边数=1（裸包 require 不计边）" || bad "态4b 边数=${_cjsn}（期望 1，express 裸包不应成边）"
 
+# --- 态 4c：Python 绝对导入（R28-DF3：原实现只认相对导入，绝对导入主流项目 0 边） ---
+mkdir -p "$TMP/absimp/app/services" "$TMP/absimp/app/models"
+printf 'from app.models.user import User\n' > "$TMP/absimp/app/models/__init__.py"
+printf 'from sqlalchemy import Column\n' > "$TMP/absimp/app/models/user.py"
+printf 'from app.models import User\nfrom app.services import task_service\nimport app.database\n\ndef run():\n    return task_service.add({})\n' > "$TMP/absimp/app/main.py"
+printf 'def add(p): return p\n' > "$TMP/absimp/app/services/task_service.py"
+printf 'SessionLocal = object\n' > "$TMP/absimp/app/database.py"
+out="$(bash "$SH" "$TMP/absimp" --out "$TMP/absimp/relations.jsonl" 2>&1)"
+grep -qF '"from":"app/main.py","to":"app/services/task_service.py"' "$TMP/absimp/relations.jsonl" \
+  && ok "态4c from app.services import X → 子模块绝对导入边" || bad "态4c 子模块边缺失: $(cat "$TMP/absimp/relations.jsonl" 2>/dev/null)"
+grep -qF '"from":"app/main.py","to":"app/models/__init__.py"' "$TMP/absimp/relations.jsonl" \
+  && ok "态4c from app.models import User → 包 __init__ 边" || bad "态4c 包边缺失: $(cat "$TMP/absimp/relations.jsonl" 2>/dev/null)"
+grep -qF '"from":"app/main.py","to":"app/database.py"' "$TMP/absimp/relations.jsonl" \
+  && ok "态4c import app.database 纯 import 边" || bad "态4c import 边缺失: $(cat "$TMP/absimp/relations.jsonl" 2>/dev/null)"
+grep -qF 'sqlalchemy' "$TMP/absimp/relations.jsonl" \
+  && bad "态4c 第三方包 sqlalchemy 误报成边" || ok "态4c 第三方包不成边（项目外自然 miss）"
+
 # --- 态 5：MyBatis mapper XML 声明式边（mapper-binding / data-mapping） ---
 mkdir -p "$TMP/mb/src/main/resources/mapper" "$TMP/mb/src/main/java/com/demo" "$TMP/mb/src/main/java/com/other" "$TMP/mb/src/main/java/com/demo2"
 printf 'package com.demo;\npublic interface UserMapper {}\n' > "$TMP/mb/src/main/java/com/demo/UserMapper.java"

@@ -58,8 +58,12 @@ elif [[ -f "$PROJ/pyproject.toml" ]] || [[ -f "$PROJ/requirements.txt" ]]; then
     # 语义=默认未动，翻车在门禁 check_test 真跑时）。改为：声明了 pytest 才用 pytest（confirmed），
     # 否则标准库 unittest 零依赖兜底；无 pyproject.toml（纯 requirements.txt 应用仓）无构建语义
     # 则 BUILD_CMD 留空（与 Node 样本 task-api 口径一致）。
+    # R28-DF1（2026-09-16 FastAPI 执勤实证 taskflow-api）：pytest 形态用 `python3 -m pytest`
+    # 而非裸 pytest——无 pytest.ini/pyproject[tool.pytest] 的项目（纯 requirements.txt 应用仓
+    # 主流形态）裸 pytest 不把 cwd 注入 sys.path，收集 `from app.main import app` 必 ModuleNotFoundError；
+    # `-m` 语义注入 cwd，对有配置项目等价（与同函数 unittest 兜底的 python3 -m 口径一致）。
     if grep -qi 'pytest' "$PROJ"/requirements*.txt "$PROJ"/pyproject.toml 2>/dev/null; then
-      _test="pytest"; _test_confirmed=1
+      _test="python3 -m pytest"; _test_confirmed=1
     else
       _test="python3 -m unittest discover -s tests"
     fi
