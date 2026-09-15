@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.15.2] - 2026-09-16
+
+> R30 全量回归轮：基线全绿后，在 Express+TypeScript+Prisma+Jest 真实场景项目（shop-api）上生成目标技能，走完门禁执勤、spec-first 研发全流程（低库存端点：proposal→spec→状态机逐级推进→TDD→失败注入）、fingerprint 感知、自成长升级、清单核验、关系边集、mark-active 分离存放全链，识别并修复 7 处缺陷。共性根因延续 R28：探查/检测层"只认一种形态"（Prisma schema、大写 Router、版本号子串），另有门禁语义拧反（check_reuse 拦正常拼装）与状态机跳级穿透两处深 latent。
+
+### Fixed
+- **test-check-impact-baseline 相对路径调用必红（R30-D1）**：GATES/ASSETS 定格写在 cd 舞步之后，`cd tests` 后裸文件名调用时 `$0` 相对路径在错误 cwd 下解析（`./..` 连升两级落到仓库根），态 1-5 全红。CI（`working-directory: swarm-yuan` + `bash tests/...`）相对路径恰好自洽故绿——本地最自然的调用形态必红，再次印证 CI 绿≠流程可用。同族扫描 31 测试仅此一处（test-check-impact-baseline.sh）。
+- **模板永久文案自缚占位符检测（R30-D2）**：verify-completeness 占位符词表（待填充/（待填充）/<占位符>/填充指引）把生成器 heredoc 写进目标技能的永久说明 blockquote（reference-manual 两区纪律口径等 5 处）一并命中——`--mark-active` 永久死锁，AI 按报错删行的最小动作连带丢失方法论口径。5 处永久说明改词「填充规范」；真占位符（frontmatter description/标题）保留检测；`_nav_design` 行改指激活后仍存在的位置；交接清单区加显式整区删除指引（generate-skill.sh + 新增 test-template-lexical-consistency：静态 4 断言 + 端到端真生成零误伤）。
+- **check_test 零用例正则无左边界（R30-D3）**：npm run 横幅 `> shop-api@0.1.0 test` 的版本号尾 0 与脚本名构成 `0 test` 子串即命中——一切版本号以 0 结尾的 npm 项目每次执勤假报「空跑通过不算兜底」，warn 噪声淹没真信号。首分支加左边界 `(^|[[:space:]])`；版本号内不再命中，行首/空白后形态照常（gates-warn.sh + test-check-test-zero-runs 补态 7/8）。
+- **inventory 探查缺 Prisma 与大写 Router 形态（R30-D4）**：DIM_DATA_MODEL_CMD 缺 Prisma 声明式强特征（`^model` + `*.prisma` include）——schema.prisma 3 模型项目枚举恒 0（R28 修 SQLAlchemy 的同构相邻形态，且 R28 条目"覆盖 Prisma"实为未覆盖）；DIM_API_ENDPOINT_CMD 只认字面小写 `router.`——express 生态主流 `<name>Router.get(` 全漏，5 端点只中 1。另：枚举 0 + 清单非空时比率防除零给 1.00 PASS、枚举器自身漏报完全静默——新增 ENUM_ZERO_DIM advisory 披露行（inventory-dimensions.conf + inventory-verify.sh + test-inventory-verify 补态 15/15b）。
+- **关系边集单层 ../ 的 to 键残留 ./ 前缀（R30-D5）**：`_norm_rel` 的 `../*` 分支单层场景 dir=`dirname(base)`="." 直接拼进输出——tests/ 目录 `from '../src/x'`（主流测试形态）的边 to 落成 `./src/x`，与 src/ 侧同目标边的干净路径键失配（--stable-diff 反查/查边集按 to 对账断链）。base/dir 更新同源，顶层"."不进输出前缀（relations-extract.sh + test-relations-extract 补态 4d）。
+- **状态机 transition 只拦回退不拦跳级（R30-D7）**：open 直达 `transition verify` 实证成功（verify 准入 tasks.md 缺省降级跳过）——design 的 proposal 准入与 build 的 spec 批准（SPEC_REQUIRED=1 spec-first 硬防线）被单次跳跃整体绕过，六阶段守卫形同虚设。前跳限一阶，跨级报出被跳过阶段并提示逐级推进路径；逐级合法转换不误伤（state-machine.sh + test-state-machine 补态 4/5）。
+- **init 覆盖确认非交互场景 exit 0 静默无效（R30-D8）**：交互 read 在 AI/CI stdin 下立即 EOF → confirm 空 → exit 0——rc=0 但状态未重置，调用方（自动化执勤正是主战场）误信 init 成功，后续 transition 全落在旧 change 上（本轮演练实证）。非交互环境无 --force 时 ERROR exit 1（rc 语义明确）；`init <name> --force` 显式覆盖；交互终端保留 y/N 确认；附带分发透传 `${3}`（--force 原传不到函数）（state-machine.sh + test-state-machine 补态 6）。
+- **check_reuse 重名检测语义拧反（R30-D9）**：awk 默认空白分字段取 `$2` 非表格列语义，且 spec-template §5.5「新增胶水代码」表首列口径就是文件路径——胶水落在既有文件内正是拼装式开发的推荐形态，路径对比恒重名，任何正常 spec 必 fail；该门禁此前零守门测试。`-F'|'` 按表格列取首列；路径形态单元格不参与重名对比；单元名形态保留拦截（gates-strict.sh + 新增 test-reuse-gate：真实 precheck.sh --reuse 入口三态，不 stub 内部函数）。
+
 ## [v2.15.1] - 2026-09-16
 
 > R28 全量回归轮：完整链路实战回归（基线全绿后，在 FastAPI+SQLAlchemy+pytest 真实场景项目上生成目标技能，并走完门禁执勤、失败注入、fingerprint 感知、自成长升级、清单核验、关系边集、状态机、mark-active 全链），确认 6 处缺陷全修。共性根因：R25-PF1/PF2 修复的"相邻路径"未覆盖——探查层只认一种形态、机械层只做了半程实现。
