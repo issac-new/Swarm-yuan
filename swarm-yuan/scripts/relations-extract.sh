@@ -94,11 +94,15 @@ _norm_rel() { # $1=基准目录(相对根) $2=说明符 → stdout 相对路径�
   while [[ "$rest" == .* ]]; do
     case "$rest" in
       ./*)  rest="${rest#./}" ;;
-      ../*) dir=$(dirname "$base"); base="$dir"; rest="${rest#../}" ;;
+      ../*) base=$(dirname "$base"); dir="$base"; rest="${rest#../}" ;;
       *)    break ;;
     esac
   done
-  printf '%s/%s' "$dir" "$rest"
+  # R30-D5（2026-09-16 Node 栈执勤实证 shop-api）：单层 ../ 场景 dir 归为 "."，
+  # 原输出拼成 "./src/x"——与 src/ 下同目标边的 to 键失配（stable-diff 反查/查边集
+  # 按路径对账时断链）。顶层前缀不进输出；多级 ../ 语义不变。
+  [[ "$dir" == "." ]] && dir=""
+  printf '%s' "${dir:+$dir/}${rest}"
 }
 
 # 相对说明符解析：尝试扩展名/index 候选，存在即输出首个命中（相对项目根的规范串）
