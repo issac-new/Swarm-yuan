@@ -81,7 +81,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95，数据映射四维度 DIM 机器执法）；gitnexus/graphify 真图谱；`relations-extract.sh` 声明式边（mapper-binding/data-mapping/bean-wiring——XML↔接口/实体/bean 装配的字符串耦合，编译不校验） |
 | ② | 特征卡 | 特征项写入认知缓冲（17 项 = P0 6 强制 + P1 11，承接表见 template-spec §3） |
 | ③ | 骨架 | `scripts/generate-skill.sh <name> <proj>`（UNIVERSAL_FILES 按档拷贝） |
-| ④ | 填充 | template-spec §1-§24 逐节填 + codebase/dev-guide/release/reference-manual/workflow/recipes 六文件（recipes=任务配方，§C+.6/§C+.7） |
+| ④ | 填充 | template-spec §1-§25 逐节填 + codebase/dev-guide/release/reference-manual/workflow/recipes 六文件（recipes=任务配方，§C+.6/§C+.7） |
 | ④.5 | 框架深化 | `--inject-frameworks`（门禁片段注入 + framework-knowledge 实例化） |
 | ⑤ | conf | precheck.conf 三件套（conf-render 初稿 + AI 补 TODO:model） |
 | ⑤.5 | hooks/MCP | hooks.json（双宿主）+ settings + .mcp.json 按需 |
@@ -109,6 +109,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | hooks 双宿主（架构） | ⑤.5 hooks.json | 流B 每次 Write/Edit/Bash | deny→AI 修正→重试→放行 |
 | 三层接线（架构） | ⓪ 自检探测 | ①.5 探查+⑥验证真子进程 | 未装→降级链披露（诚实理念兑现） |
 | spec §19-21 左移（设计） | ④ template-spec 填写 | 流B ③spec 评审+--shift-left | 违缺→fail-gate 拦截→补齐 |
+| 规模与工作量估算（设计，功能点法 NESMA） | ④ template-spec 填写（spec §25 选填节+方法论随发） | 流B ③spec 填 §25、④plan 任务拆分校验（偏离 2 倍回查） | 实战"估算 vs 实际"偏差回填校准（methodology §9） |
 | 决策留痕（设计） | 全程 trace-log --decision | 流B 复盘+audit-closure 闭环检查 | open goal→阻断收口 |
 | 问题沉淀通道（演化链，R21） | 流B 使用中随时（问题→方案→沉淀物） | 三载体：清单/配方/规则 | decisions.jsonl 留痕审计（自成长第⑤环） |
 | 项目指纹（演化链） | ⑧ 写回基线 | 反馈回路 --diff 感知 | 变化→局部更新→新基线 |
@@ -148,4 +149,4 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 > 本段各 reference 本身是流A ③骨架随发的产物（知识库自举）：生成器用它们生成目标技能，目标技能执勤时又按路由读它们——文档即流程产物，流程即文档消费者。
 
-探查→exploration-guide（含 §C+.0.6 四层架构视角）；填充→template-spec（spec §24 架构映射）；生成流程详解→generation-flow；认知→cognition-framework 等；方法论→各 *-methodology.md（cordis-composability / mea-loop / agent-skills / dsh-engineering / togaf-metamodel / four-theories 等）+ context-engineering-layering；合规→standards-compliance + 行业 profile（`--industry` 真实加载；finance/gov/medical/telecom/automotive/energy/industrial/payment 八档）；安全→security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读；编排→subagent-orchestration。
+探查→exploration-guide（含 §C+.0.6 四层架构视角）；填充→template-spec（spec §24 架构映射 / §25 功能点估算）；生成流程详解→generation-flow；认知→cognition-framework 等；方法论→各 *-methodology.md（cordis-composability / mea-loop / agent-skills / dsh-engineering / togaf-metamodel / four-theories / cost-estimation 等）+ context-engineering-layering；合规→standards-compliance + 行业 profile（`--industry` 真实加载；finance/gov/medical/telecom/automotive/energy/industrial/payment 八档）；安全→security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读；编排→subagent-orchestration。

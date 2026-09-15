@@ -122,6 +122,7 @@ UNIVERSAL_FILES=(
   "references/logic-razor.md|ref|standard"
   "references/cognitive-bias.md|ref|standard"
   "references/domain-knowledge.md|ref"
+  "references/cost-estimation-methodology.md|ref"  # 功能点估算方法论（GB/T 42588-2023 NESMA，2026-09-15 吸收）随发——spec §25 执勤侧识别规则/因子表/算例单一事实源
   "references/claude-code-capabilities.md|ref"
   "references/standards-compliance.md|ref|compliance"
   "references/cwe-database.md|ref|compliance"  # cwe_audit 门禁数据参照（standards-compliance.md 引用，防拷贝后死链）
@@ -1659,11 +1660,11 @@ for f in $_placeholder_refs; do
 
 **③ 前序依赖检查（准入）：** 节点②探查完成（特征卡+组件库清单就绪；架构设计/演进类变更还须四层架构枚举——探查侧 §C+.0.6，生成器侧 exploration-guide）
 
-**④ 质量门禁：** ★测试左移（spec §19 测试设计）+ ★运维左移（spec §21 可观测性约束）+ SPEC_REQUIRED 前置门（fail-gate-hook 拦无 spec 写码）+ 架构类变更须填 spec §24 架构映射（TOGAF BDAT 四层+纵向链验证，非架构变更可豁免）
+**④ 质量门禁：** ★测试左移（spec §19 测试设计）+ ★运维左移（spec §21 可观测性约束）+ SPEC_REQUIRED 前置门（fail-gate-hook 拦无 spec 写码）+ 架构类变更须填 spec §24 架构映射（TOGAF BDAT 四层+纵向链验证，非架构变更可豁免）+ 规模与工作量估算（spec §25 功能点法，feature 档推荐选填、无门禁执法——识别规则与因子表查 references/cost-estimation-methodology.md）
 
 
 
-**⑥ 产出物与调用追踪：** 持久化：references/spec.md
+**⑥ 产出物与调用追踪：** 持久化：references/spec.md（feature 档推荐含 §25 估算：五类组件计数 → 调整后功能点 → 工作量人月）
 
 
 
