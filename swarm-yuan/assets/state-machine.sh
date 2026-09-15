@@ -32,6 +32,12 @@ _sm_conf_val() {  # $1=变量名 → conf 末行赋值（剥引号/行内注释/
     case "$_v" in
       "\${$1:-"*'}') _v="${_v#\$\{$1:-}"; _v="${_v%\}}" ;;
     esac
+    # R28-DF8（2026-09-16 执勤实证）：骨架模板 conf 的 <项目根绝对路径> 占位符不得当真实值消费——
+    # 生成器仓 assets/precheck.conf 与 state-machine.sh 同目录，draft 未回填期 PROJECT_DIR=占位符
+    # 会让 STATE_DIR 落进字面量「<项目根绝对路径>/.swarm-yuan」垃圾目录。占位符形态视为未配置。
+    case "$_v" in
+      "<"*">") _v="" ;;
+    esac
   fi
   printf '%s' "$_v"
   return 0
@@ -306,7 +312,19 @@ guard_phase() {
 transition_phase() {
   local target="${1:-}"
   [[ -z "$target" ]] && { echo "Usage: state-machine.sh transition <phase>"; exit 1; }
+  # R28-DF5（2026-09-16 执勤实证）：未知阶段名（如 implement，合法为 build）原先落到
+  # tgt_idx=-1 走「不能回退」分支，且在「阶段转换」横幅之后才报——横幅+回退话术双重误导。
+  # 阶段名合法性前置校验，未知名直接报错并列出合法阶段，不打横幅。
+  local _t_ok=0 _c_ok=0 _p
+  for _p in "${PHASES[@]}"; do
+    [[ "$_p" == "$target" ]] && _t_ok=1
+  done
+  [[ $_t_ok -eq 1 ]] || { echo "ERROR: 未知阶段: ${target}（合法阶段: ${PHASES[*]}）"; exit 1; }
   local current; current=$(get_field phase)
+  for _p in "${PHASES[@]}"; do
+    [[ "$_p" == "$current" ]] && _c_ok=1
+  done
+  [[ $_c_ok -eq 1 ]] || { echo "ERROR: 状态文件 phase 字段异常: ${current}（合法阶段: ${PHASES[*]}）"; exit 1; }
   echo "=== 阶段转换: $current → $target ==="
   # 检查顺序
   local cur_idx=-1 tgt_idx=-1

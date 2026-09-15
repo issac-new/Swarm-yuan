@@ -71,11 +71,11 @@ grep -qE "TEST_CMD='python3 -m unittest discover -s tests'" <<<"$out" \
   && ok "态7 未声明 pytest → unittest 零依赖兜底" || bad "态7 TEST_CMD: $(grep TEST_CMD <<<"$out")"
 grep -qE "BUILD_CMD=''  # AUTO:default" <<<"$out" \
   && ok "态7 纯 requirements.txt → BUILD_CMD 留空" || bad "态7 BUILD_CMD: $(grep BUILD_CMD <<<"$out")"
-# 态 8：声明了 pytest → pytest（detected）
+# 态 8：声明了 pytest → python3 -m pytest（detected；R28-DF1 裸 pytest 无 ini 项目收集失败）
 mkdir -p "$TMP/pyproj2"
 printf 'flask>=3.0\npytest>=8.0\n' > "$TMP/pyproj2/requirements.txt"
 out="$(bash "$SH" "$TMP/pyproj2" --profile standard 2>/dev/null)"
-grep -qE "TEST_CMD='pytest'  # AUTO:detected" <<<"$out" \
-  && ok "态8 声明 pytest → pytest detected" || bad "态8 TEST_CMD: $(grep TEST_CMD <<<"$out")"
+grep -qE "TEST_CMD='python3 -m pytest'  # AUTO:detected" <<<"$out" \
+  && ok "态8 声明 pytest → python3 -m pytest detected" || bad "态8 TEST_CMD: $(grep TEST_CMD <<<"$out")"
 
 [[ $FAIL -eq 0 ]] && { echo "PASS test-conf-render"; exit 0; } || { echo "FAIL test-conf-render" >&2; exit 1; }
