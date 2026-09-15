@@ -83,15 +83,25 @@ trace_tool() {  # $1=工具名 $2=操作
 
 init_state() {
   local change="${1:-}"
-  [[ -z "$change" ]] && { echo "Usage: state-machine.sh init <change-name>"; exit 1; }
+  [[ -z "$change" ]] && { echo "Usage: state-machine.sh init <change-name> [--force]"; exit 1; }
   # A 方向：change name 经白名单消毒（防路径穿越/命令注入）
   change=$(sanitize_input "$change")
   [[ -z "$change" ]] && { echo "ERROR: change name 全被过滤（含非法字符），请重命名"; exit 1; }
+  # R30-D8（2026-09-16 Node 栈执勤实证 shop-api）：覆盖确认原为交互 read——
+  # AI/CI 非交互场景 stdin EOF → confirm 空 → exit 0 静默无效：rc=0 但状态未重置，
+  # 调用方（自动化执勤正是主战场）误信 init 成功，后续 transition 全落在旧 change 上。
+  # 非交互环境改须显式 --force（rc 语义明确）；交互终端保留确认。
+  local _sm_force=0
+  [[ "${2:-}" == "--force" ]] && _sm_force=1
   mkdir -p "$STATE_DIR"
-  if [[ -f "$STATE_FILE" ]]; then
-    echo "WARN: 状态文件已存在: $STATE_FILE"
-    read -rp "覆盖? (y/N) " confirm
-    [[ "$confirm" != "y" ]] && exit 0
+  if [[ -f "$STATE_FILE" && $_sm_force -eq 0 ]]; then
+    echo "WARN: 状态文件已存在: ${STATE_FILE}（当前 change=$(get_field change) @ phase=$(get_field phase)）"
+    if [[ -t 0 ]]; then
+      read -rp "覆盖? (y/N) " confirm
+      [[ "$confirm" != "y" ]] && exit 0
+    else
+      echo "ERROR: 非交互环境不覆盖——确认作废旧 change 后用 init ${change} --force"; exit 1
+    fi
   fi
   cat > "$STATE_FILE" <<EOF
 change: $change
@@ -583,7 +593,7 @@ restore_phase() {
 }
 
 case "${1:-}" in
-  init) init_state "${2:-}" ;;
+  init) init_state "${2:-}" "${3:-}" ;;   # R30-D8：--force 透传
   get) get_field "${2:-}" ;;
   set) set_field "${2:-}" "${3:-}" ;;
   transition) transition_phase "${2:-}" ;;

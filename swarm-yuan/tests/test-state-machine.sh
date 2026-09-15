@@ -64,4 +64,14 @@ out="$(bash "$SH" transition build 2>&1)"; rc=$?
 out="$(bash "$SH" transition verify 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] && ok "态5 逐级 build→verify 通过（tasks 缺省降级）" || bad "态5 exit=$rc: $out"
 
+# 态 6（R30-D8 回归锚）：非交互环境 init 覆盖确认——原交互 read 在 AI/CI stdin EOF 下
+# exit 0 静默无效（rc=0 但状态未重置）。非交互无 --force 须 exit 1；--force 覆盖 rc 0。
+out="$(bash "$SH" init second-change 2>&1)"; rc=$?
+[[ $rc -eq 1 ]] && ok "态6 非交互覆盖无 --force → exit 1（rc 语义明确）" || bad "态6 exit=$rc: $out"
+grep -q 'init second-change --force' <<<"$out" && ok "态6 报错给出 --force 用法" || bad "态6 话术异常: $out"
+grep -q 'phase: open' .swarm-yuan/state.yaml && old_change=$(grep '^change:' .swarm-yuan/state.yaml) || old_change=""
+out="$(bash "$SH" init second-change --force 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] && ok "态6 --force 覆盖 rc 0" || bad "态6 --force exit=$rc: $out"
+grep -q '^change: second-change' .swarm-yuan/state.yaml && ok "态6 状态文件确实重置" || bad "态6 覆盖未生效: $(cat .swarm-yuan/state.yaml)"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-state-machine"; exit 0; } || { echo "FAIL test-state-machine" >&2; exit 1; }
