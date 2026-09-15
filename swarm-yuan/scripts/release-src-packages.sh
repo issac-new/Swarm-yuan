@@ -12,7 +12,7 @@ set -euo pipefail
 REPO="issac-new/Swarm-yuan"
 VERSION="${1:-$(date -u +%Y%m%d)}"
 TAG="v${VERSION}-src"
-TMP="$(mktemp -d)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/swarm-yuan.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 
 # 上游仓库（与 self-check.sh install_from_src_release 的 zip 名一致）

@@ -111,7 +111,7 @@ if [[ "$WRITE" -eq 1 ]]; then
 fi
 
 # 默认/--diff 都先算一遍当前指纹到临时，再与已有指纹对比
-_curr=$(mktemp)
+_curr=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan.XXXXXX")
 trap 'rm -f "$_curr"' EXIT
 _compute_fp "$PROJ" > "$_curr"
 
@@ -179,7 +179,7 @@ if [[ "${_ext_a}" != "${_ext_b}" ]]; then
   # 把 ext[.ts]=1 这种字符串解析成 key=.ts count=1，写临时文件再用 awk 对比
   _ext_a_norm=$(echo "${_ext_a}" | LC_ALL=C tr ' ' '\n' | LC_ALL=C grep -E '^ext\[' | LC_ALL=C sort -u)
   _ext_b_norm=$(echo "${_ext_b}" | LC_ALL=C tr ' ' '\n' | LC_ALL=C grep -E '^ext\[' | LC_ALL=C sort -u)
-  _a_t=$(mktemp); _b_t=$(mktemp)
+  _a_t=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-a.XXXXXX"); _b_t=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-b.XXXXXX")
   printf '%s\n' "$_ext_a_norm" | LC_ALL=C awk -F= '{ k=$1; sub(/^ext\[/, "", k); sub(/\]$/, "", k); print k, $2 }' > "$_a_t"
   printf '%s\n' "$_ext_b_norm" | LC_ALL=C awk -F= '{ k=$1; sub(/^ext\[/, "", k); sub(/\]$/, "", k); print k, $2 }' > "$_b_t"
   # 行格式 "key count"
@@ -205,7 +205,7 @@ if [[ "${_dc_a}" != "${_dc_b}" ]]; then
   echo "  变化目录（scope——AI 自成长只重探查这些目录的组件/接口/约束）:"
   _dc_a_norm=$(echo "${_dc_a}" | LC_ALL=C tr ' ' '\n' | LC_ALL=C grep -E '^dir_cksum\[' | LC_ALL=C sort -u)
   _dc_b_norm=$(echo "${_dc_b}" | LC_ALL=C tr ' ' '\n' | LC_ALL=C grep -E '^dir_cksum\[' | LC_ALL=C sort -u)
-  _da_t=$(mktemp); _db_t=$(mktemp)
+  _da_t=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-da.XXXXXX"); _db_t=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-db.XXXXXX")
   printf '%s\n' "$_dc_a_norm" | LC_ALL=C awk -F= '{ k=$1; sub(/^dir_cksum\[/, "", k); sub(/\]$/, "", k); print k, $2 }' > "$_da_t"
   printf '%s\n' "$_dc_b_norm" | LC_ALL=C awk -F= '{ k=$1; sub(/^dir_cksum\[/, "", k); sub(/\]$/, "", k); print k, $2 }' > "$_db_t"
   # 消失：a 有 b 没有

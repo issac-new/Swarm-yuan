@@ -928,7 +928,7 @@ fi
 if [[ "$MODE" == "--dump-conf" ]]; then
   echo "=== conf 合成视图（加载顺序: core → arch → compliance → patch）==="
   _dc_layer=""; _dc_var=""; _dc_line=""; _dc_map=""; _dc_val=""
-  _dc_map="$(mktemp)"
+  _dc_map="$(mktemp "${TMPDIR:-/tmp}/swarm-yuan.XXXXXX")"
   # 1) 逐层扫描 ^VAR= 定义，记录每变量最后定义层（后见胜出 = 覆盖语义）
   for _dc_layer in precheck.conf precheck.arch.conf precheck.compliance.conf precheck.patch.conf; do
     [[ -f "${_CONF_DIR}/$_dc_layer" ]] || continue
@@ -978,7 +978,9 @@ if [[ "$MODE" == "--gate-stats" ]]; then
     # 安全类 NEVER_GATE 跳过
     echo "$_never_gate" | grep -q " ${_g#check_} " && continue
     # 从尾部向前连续计数 had_finding=false（status=pass 且 ids 空 []）
-    _streak=$(grep "\"gate\":\"$_g\"" "$_stats_file" 2>/dev/null | tac | \
+    # 倒序用 awk 缓冲（跨平台：GNU tac 在 BSD/macOS 缺失、BSD tail -r 在 GNU 缺失）
+    _streak=$(grep "\"gate\":\"$_g\"" "$_stats_file" 2>/dev/null | \
+      awk '{lines[NR]=$0} END{for(i=NR;i>=1;i--) print lines[i]}' | \
       awk -F'"status":"' '{split($2,a,"\""); s=a[1]}
            /"ids":\[\]/{if(s=="pass") c++; else exit}
            /"ids":\[.\]/{exit}

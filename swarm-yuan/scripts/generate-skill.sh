@@ -285,7 +285,7 @@ sync_framework_vars() {
   local target cf_tmp
   for target in "$arch_conf" "$conf"; do
     [[ -f "$target" ]] || continue
-    cf_tmp="$(mktemp)"
+    cf_tmp="$(mktemp "${TMPDIR:-/tmp}/swarm-yuan.XXXXXX")"
     awk -v vars="$dead_vars" '
       BEGIN { n = split(vars, arr, " "); for (i = 1; i <= n; i++) if (arr[i] != "") dead[arr[i]] = 1 }
       { name = $0; sub(/=.*/, "", name); if (dead[name] == 1 && /^[A-Z_][A-Z0-9_]*=/) print "# deprecated（框架已移出 ACTIVE_FRAMEWORKS，可恢复）" $0; else print }

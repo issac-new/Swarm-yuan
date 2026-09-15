@@ -68,7 +68,7 @@ check_layer() {
 
   # 临时映射文件（兼容 bash 3.2，不用 declare -A）
   local tmp_file2layer tmp_layer2idx tmp_layer_files
-  tmp_file2layer=$(mktemp); tmp_layer2idx=$(mktemp); tmp_layer_files=$(mktemp)
+  tmp_file2layer=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-f2l.XXXXXX"); tmp_layer2idx=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-l2i.XXXXXX"); tmp_layer_files=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan-lf.XXXXXX")
   # RETURN trap 会随外层函数（如 _gate_exec）返回二次触发——双引号定义期烘焙路径使其自包含，
   # 避免 set -u 下单引号延迟求值引用已销毁的局部变量；二次触发对已删文件 rm -f 为无害 no-op。
   # shellcheck disable=SC2064  # 有意用双引号在定义期烘焙 $tmp_* 路径（见上行注释），非延迟求值
@@ -411,7 +411,7 @@ _check_security_semgrep() {
   done
   [[ ${#targets[@]} -eq 0 ]] && return 2
   local out rc=0 err_hits
-  out=$(mktemp)
+  out=$(mktemp "${TMPDIR:-/tmp}/swarm-yuan.XXXXXX")
   # --error：有命中（任意级）时退出码 1；0=无命中；≥2=执行错误（降级内置）
   # --exclude-rule ifs-tampering：该 registry 规则对 bash 黄金 idiom `while IFS= read -r`
   #   （防词切分读行）系统性误报——生成器数十处规范写法全命中且命中点随 registry 版本漂移
