@@ -234,3 +234,5 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 - 版本注记：npm-v0.1.26（2026-09-09 R20 核）——GitLab MR 验证补丁通道 + **安全修复验证须显式请求**（fail-closed 同向）+ confirmed finding 匹配提速。方法论无新增落地单元。档案 `docs/research/R20-runtime-refresh.md`。——patch 号下功能增量：**跨扫描发现关系保留**（findings 生命周期跨扫描延续：new/persisting/resolved 关系不因重扫丢失）+ sealed 扫描目录去重 + 去重评审阶段对齐加固。方法论无新增落地单元（发现生命周期管理与本仓 gate-trends 趋势对账同向，工程设施对账通过）。
 
 - 版本注记：npm-v0.1.27（2026-09-11 R24 核）——patch/validation **复用 scan 认证**（认证态一致性）+ SDK pipeline 去重并发可配 + **「文档尺寸上限」从 scan-contract 删除**（不存在的能力不写进契约——诚实口径族）+ UTF-8 BOM 容错。方法论无新增落地单元。档案 `docs/research/R24-runtime-refresh.md`。
+
+- 版本注记：npm-v0.1.28（2026-09-16 R32 核）——**fix(skills) fix-finding 限于安全漏洞**（#923）：扫描/评审技能的产出职责收敛，发现面不得越出其威胁模型承诺（scope fail-closed 族——与「文档尺寸上限从契约删除」的诚实口径互补：一收一放都在契约诚实性谱系）+ **cost 上下文感知估算区间**（#926）：估算给区间不给点值（诚实报告族）+ CLI 接受任意扩展名 KB 文本（#924，输入宽容化）。方法论无新增落地单元。档案 `docs/research/R32-runtime-refresh.md`。
