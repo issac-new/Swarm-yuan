@@ -36,7 +36,10 @@ _compute_fp() {
   local p="$1"
   {
     # 排除 .git/node_modules/dist/build/.next/.cache + 元数据（.swarm-yuan/.claude/.vscode/.idea）
-    local find_args=( -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/build/*' -not -path '*/.next/*' -not -path '*/.cache/*' -not -path '*/__pycache__/*' -not -path '*/.swarm-yuan/*' -not -path '*/.claude/*' -not -path '*/.vscode/*' -not -path '*/.idea/*' )
+    # R33-D6（2026-09-17 Java 栈执勤实证）：排除链缺 Maven target/（25 个 .class/.jar/.lst 计入基线
+    # → 每次 mvn build 后 --diff 误报「项目已变化」，自成长链被构建噪音误触发）。顺带补 Gradle/venv。
+    # inventory-dimensions.conf DIM_DATA_MODEL 排除链同源（--exclude-dir=target），两处口径一致。
+    local find_args=( -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/build/*' -not -path '*/target/*' -not -path '*/.gradle/*' -not -path '*/venv/*' -not -path '*/.venv/*' -not -path '*/.next/*' -not -path '*/.cache/*' -not -path '*/__pycache__/*' -not -path '*/.swarm-yuan/*' -not -path '*/.claude/*' -not -path '*/.vscode/*' -not -path '*/.idea/*' )
     # 总文件数
     local total
     total=$(find "$p" "${find_args[@]}" 2>/dev/null | LC_ALL=C grep -c .)

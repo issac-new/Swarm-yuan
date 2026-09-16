@@ -866,6 +866,33 @@ if [[ "${1:-}" == "--mark-active" ]]; then
     echo "ℹ 非 draft 状态（已是 active 或无 status 字段），无需标记"
     exit 0
   fi
+  # R33-F1（2026-09-17 Java 栈执勤实证）：框架门禁静默空转防线——ACTIVE_FRAMEWORKS 已注入但
+  # 框架 glob 全空（TODO(framework-gates) 未填充）时，_fw_* 门禁因 _fw_resolve_globs 拿不到文件
+  # 全部空转，mark-active 却照常放行。填充 AI 只看 SKILL.md 填充指引不知道要填 conf glob。
+  # 机器执法：对每个检出框架（连字符去除后大写 = 变量前缀），两份 conf（主+arch，WP-I 三分）
+  # 中至少一个 <FW>_ 开头的 glob/目录/文件变量已填非空值。
+  # 注意 set -o pipefail：grep 无命中的管道必须 || true 兜底（赋值语句静默 exit 1 教训，本行实测踩）。
+  _ma_af=""
+  for _ma_c in "$_ma_dir/scripts/precheck.conf" "$_ma_dir/scripts/precheck.arch.conf"; do
+    [[ -f "$_ma_c" ]] || continue
+    _ma_line=$(grep -m1 '^ACTIVE_FRAMEWORKS=' "$_ma_c" 2>/dev/null | cut -d'#' -f1 | sed 's/^ACTIVE_FRAMEWORKS=//;s/[()"]//g' || true)
+    if [[ -n "$_ma_line" ]]; then
+      _ma_af="$_ma_af $_ma_line"
+    fi
+  done
+  _ma_af="$(echo "${_ma_af}" | tr '[:space:]' '\n' | LC_ALL=C sort -u | tr -d '-' | tr '[:lower:]' '[:upper:]' | sed '/^$/d' || true)"
+  _ma_missing=""
+  for _ma_fw in ${_ma_af}; do
+    _ma_hit=$(cat "$_ma_dir/scripts/precheck.conf" "$_ma_dir/scripts/precheck.arch.conf" 2>/dev/null \
+      | grep -cE "^${_ma_fw}[A-Z0-9_]*(SRC_GLOBS|MAPPER_DIRS|CONFIG_FILES|SQL_GLOBS|SCHEMA_GLOBS|JOB_DIRS|KEY_COLUMNS|SHARD_KEY|GLOBS)=\(\"[^\"]" || true)
+    if [[ "${_ma_hit:-0}" -eq 0 ]]; then
+      _ma_missing="${_ma_missing} ${_ma_fw}"
+    fi
+  done
+  if [[ -n "$_ma_missing" ]]; then
+    echo "✗ 框架 glob 全空（TODO(framework-gates) 未填充）：${_ma_missing} 无任何已填变量——框架门禁将空转。填充 precheck.conf / precheck.arch.conf 对应 <FW>_SRC_GLOBS 等变量后重跑 --mark-active" >&2
+    exit 1
+  fi
   # ① 零占位符核验
   if ! verify_completeness "$_ma_dir" --strict; then
     echo "✗ ①占位符未清零，保持 draft（--all-full/--compliance-suite 仍禁用）" >&2
@@ -2029,6 +2056,14 @@ EOF
 else
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] reference: reference-manual（特征卡 P0 六项 + 全量构件库清单）
+EOF
+fi
+# R33-F1：检测到框架时显式交接 conf 框架 glob 填充（否则 TODO(framework-gates) 注释是唯一线索，
+# 填充 AI 漏填 → 框架门禁空转；mark-active 侧 R33-F1 机器执法兜底，两侧同源）。
+_fw_detected=$(bash "$SRC_SCRIPTS/detect-frameworks.sh" "$PROJECT_DIR" 2>/dev/null | grep -E '^ACTIVE_FRAMEWORKS=' | sed 's/^ACTIVE_FRAMEWORKS=//;s/[()"]//g' | tr -d '[:space:]' || true)
+if [[ -n "$_fw_detected" ]]; then
+cat >> "$SKILL_DIR/SKILL.md" <<EOF
+- [ ] conf: 填充 \`scripts/precheck.conf\` 的 TODO(framework-gates) 框架 glob（空数组=框架门禁空转，mark-active 会拦）
 EOF
 fi
 # checklist assets 行档位感知（lite 无 branch/env/data；§14-§18 仅 compliance 保留；state-machine 在 scripts/ 段）

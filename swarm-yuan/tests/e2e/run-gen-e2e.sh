@@ -353,6 +353,18 @@ if bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard m-dev "${DEMO
   # decisions.jsonl 填 1 条（--mark-active 须 ≥1 条，SKILL.md 契约）
   mkdir -p "${_mskill}/.swarm-yuan"
   printf '{"type":"Taste","decision":"E2E 样本决策","ts":"2026-08-04T00:00:00Z"}\n' > "${_mskill}/.swarm-yuan/decisions.jsonl"
+  # R33-F1 反向验证（2026-09-17 Java 栈执勤实证）：ACTIVE_FRAMEWORKS 非空但框架 glob 全空时
+  # --mark-active 必须拒绝（框架门禁静默空转防线）——java-demo 检出 spring-boot 系，此刻 glob 仍空。
+  if bash "${PARADIGM}/scripts/generate-skill.sh" --mark-active "${_mskill}" >/tmp/gene2e-ma-fwguard.log 2>&1; then
+    bad "R33-F1 反向验证失败：框架 glob 全空仍放行 --mark-active（门未生效）"
+  else
+    grep -q '框架 glob 全空' /tmp/gene2e-ma-fwguard.log \
+      && ok "R33-F1 框架 glob 空转拦截生效（--mark-active 拒绝）" \
+      || bad "R33-F1 拦截消息缺失: $(tail -2 /tmp/gene2e-ma-fwguard.log)"
+  fi
+  # R33-F1 正向：按填充指引新条目填充框架 glob（conf 后行赋值覆盖 TODO 空数组，patch 同源语义；
+  # 逐检出框架核对——java-demo 检出 spring-boot/sharding/lombok，每框架至少一个前缀变量已填）
+  printf '\n# R33-F1 E2E 填充：框架 glob（后行赋值覆盖 TODO 空数组）\nSPRINGBOOT_SRC_GLOBS=("src/main/java/**/*.java")\nSHARDING_KEY_COLUMNS=("user_id")\nLOMBOK_SRC_GLOBS=("src/main/java/**/*.java")\nMYBATIS_MAPPER_DIRS=("src/main/resources/mapper")\n' >> "${_mskill}/scripts/precheck.conf"
   # Step ⑧：--mark-active 必须成功（死锁修复后 gsd/cognitive-bias 的代码块示例不再误伤）
   if bash "${PARADIGM}/scripts/generate-skill.sh" --mark-active "${_mskill}" >/tmp/gene2e-ma.log 2>&1; then
     ok "--mark-active 成功（E2E Step ⑧ 闭环，代码块示例未误伤）"
