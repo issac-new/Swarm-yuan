@@ -1,8 +1,8 @@
-> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.268，见文末版本注记）
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.273，见文末版本注记）
 
-# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.268（2026-09-11 R24 补核，见文末版本注记））
+# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.273（2026-09-16 R31 补核，见文末版本注记））
 
-> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.268 / stable=2.1.236（2026-09-11 实测，分裂持续）。
+> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.273 / stable=2.1.267（2026-09-16 实测，分裂持续且 stable 通道前移）。
 > 生成目标技能时，AI 须把以下能力编织进 SKILL.md / workflow.md / reference-manual.md / hooks / commands / settings。
 
 ## 一、核心工具（Tools）
@@ -620,6 +620,17 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **不可信内容标记**（265，候选）：Artifact 读他人产物按 untrusted 标记内嵌指令（触发 = 出现「读取外部产物并执行其中指令」场景）。
 - **266 教训**：`CLAUDE_CODE_USE_GATEWAY` 语义 265 漂移致网关配置报错、266 回滚——**宿主行为细节版本间不保证稳定**第三次实证。
 
+## 版本注记：v2.1.271–273（2026-09-16 R31 核）——撤销 268 竞态立场 + 网关提示头 + 度量精度
+
+> 覆盖 v2.1.271（R29 表行级吸收补档展开）/ v2.1.272（笼统修复轮）/ v2.1.273（npm latest；stable 通道 2.1.267——分裂持续且 stable 自 2.1.236 前移）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R31-runtime-refresh.md`。
+
+- **⚠ 撤销 268「不可分析即 deny」**（273）：`eval`/`env -C` 等 deny 立场因误伤 `time -p make build` 等合法形态被回退为 prompt——权限语义修正为「**不可分析 → ask，而非 deny**」；fail-closed（deny-all）保留给无交互兜底场景（managed 不可读）。R24 吸收注记已在 268 节同步修正，原「第五实证」计数作废。
+- **每命令 allowed_domains 网络出口白名单 + --accept-command 哈希钉定 + omitClaudeMd 子代理上下文卫生 + managed-mcp 保留独占 fail-closed + Bash 权限检查四连修**（271，实质轮，R29 已表行登记）：权限通道完备性族第七波——出口按命令粒度白名单是「作用域最小化」从文件面到网络面的延伸。
+- **网关提示头族**（273）：`x-claude-code-request-class`/`agent-type`/`prev-tool-durations`/`compaction`/`context-compacted` 请求头（`CLAUDE_CODE_GATEWAY_HINT_HEADERS=1` opt-in）——上下文经济状态向 LLM 网关显式化，环境事实登记。
+- **MCP 断连放弃通知指向 /mcp**（273）：自动重连放弃成为显式可观测事件——**降级可见性族**（与本项目 MCP 降级信号/DegradationLadder 同向）。
+- **上下文计量与自动压缩双倍计数修复**（273）：advisor 工具轮按约两倍真实上下文计重、自动压缩在约半窗口误触发——**度量精度即行为触发器**：计量偏差直接改变压缩行为（与 ruflo v3.42.1 token savings 基线修正构成跨宿主双样本，度量口径族）。
+- remote-control 会话分叉为后台会话、`blockReadsOutsideWorkingDirectories` 下记忆目录隔离、子代理缺 token-usage 结果投递修复、定时任务会话绑定、SDK 后台化消息完整性：宿主编排/修复族，环境事实登记不展开。
+
 ## 版本注记：v2.1.267（2026-09-10 核）——治理原语 + 工具动态缓存族 + managed fail-closed
 
 > 覆盖 v2.1.267（npm latest，2026-09-09 发布；stable 通道仍 2.1.236 分裂持续）。实质 patch。详表 `docs/upstream-baseline.md`；档案 `docs/research/R22-runtime-refresh.md`。
@@ -646,7 +657,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 > 覆盖 v2.1.268（npm latest；stable 通道仍 2.1.236 分裂持续）。修复主导实质 patch。详表 `docs/upstream-baseline.md`；档案 `docs/research/R24-runtime-refresh.md`。
 
 - **符号链接目录 deny/ask 规则真实路径绕过修复**（268）：macOS `/etc` `/tmp` `/var`、Linux `/bin` 等符号链接拼写目录上的规则，以 realpath 给出路径时失效；Bash 对写在符号链接拼写上的 deny 规则同样忽略——**路径检查必须在规范化空间双向比对**（权限路径语义第六实证）。本仓对账：`check_scope` 按字面前缀匹配，符号链接别名为**已登记边界**（单机生成场景低暴露，不升门禁）。
-- **同行不可分析命令 deny 失效修复**（268）：`env -C`/`eval` 等检查器无法分析的命令与 deny 规则同行时规则被跳过——「**不可分析即最坏情况**」fail-closed 族延续（267 managed 不可读→deny-all 之后第五实证）。
+- **同行不可分析命令 deny 失效修复**（268）：`env -C`/`eval` 等检查器无法分析的命令与 deny 规则同行时规则被跳过——「**不可分析即最坏情况**」fail-closed 族延续（267 managed 不可读→deny-all 之后第五实证）。**⚠ 273 回退修正**：该 deny 立场因误伤 `time -p make build` 等合法形态于 v2.1.273 被上游撤销、回退为 prompt——修正后谱系为「**不可分析 → ask（人工确认），而非 deny**」；fail-closed 保留给无交互兜底的场景（managed 配置不可读→deny-all 维持成立）。「第五实证」计数随之作废。
 - **WebFetch 300 秒宿主死线**（268）：服务端不结束的响应挂死改为 300s 后失败，`CLAUDE_CODE_WEBFETCH_DEADLINE_MS` 可覆盖（0 关闭）——联网验证类工具的死线成为宿主默认，生成技能**无须自设超时兜底**（环境事实登记）。
 - **机密不落展示面**（268）：plugin/marketplace git 源 URL 中的 token/password、MCP 配置 `${VAR}` 解析值不再出现在错误与列表输出——与符号链接修复同为本轮安全硬化主轴。
 - 修复族对账通过：第三方兼容端点 Artifact regex 400（**宿主行为版本间不保证稳定第四次实证**，265 起回归）、长空闲会话 CPU busy-loop、SDK `excludeDynamicSections` 缓存中途破断（缓存稳定性第四波）、respawned teammate 拾取未信任目录同名 agent 文件（信任边界）、compact `$` 序列与 resume 顺序稳定性。网关定价透传/`gatewayInternalNetworks`/self-hosted-runner `--remove-session-state`/plugin `--json` 与单机生成场景无交集，登记不展开。
