@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.15.3] - 2026-09-17
+
+> R33 全量回归轮：基线排查（self-check 揭税制超标与 LOC 漂移两处追账）后，轮换到 Java 栈（R28 Python→R30 Node→本轮 Spring Boot 3.2.5 + MyBatis XML + Lombok + JUnit5/Maven，JDK 25 工具链）真实场景项目（r33-drill-inventory-api）生成目标技能，走完填充、mark-active 三道关、库存预警需求研发全链（proposal→spec→状态机逐级推进→TDD→门禁→独立审查→archive）、清单核验、关系边集、指纹自成长，识别并修复 7 处缺陷 + 1 处引导缺口。共性根因第三次复现（R28"相邻路径"、R30"只认一种形态"）：Java 生态形态在维度枚举器与机械信号里系统性缺位。
+
+### Fixed
+- **清单计数把骨架标准表头计成数据行（R33-D1）**：A7 修复把表头关键词锚定在"首格任意位置"，而模板自家两列表头 `| 路径 | 说明与约束 |` 的"说明"在第二格——表头行被计入清单（每表 +1 虚高，实测 §6 双表 6 行计成 8），叠加枚举侧膨胀放大成假 FAIL。改为关键词首格开头锚定（数据行以反引号路径开头，判别可靠）；同族正则在 `_list_count` 与 `_extract_rows_paths` 两处同改（inventory-verify.sh + test-inventory-verify 补态 16）。
+- **controller 维度枚举正则无边界（R33-D2）**：`@(Get|Post|...|RequestMapping|Controller)` 前缀匹配把 Lombok `@Getter` 误作端点（`@PostConstruct` 同理），类级 `@RequestMapping`/`@RestController` 非端点也计数——Java 枚举虚高 50%（实测 12 命中 vs 8 真实端点）。改精确注解名 `@(GetMapping|PostMapping|...)`；类级注解承载的项目会低估，低估方向安全（capped 1.0 PASS + ENUM_ZERO_DIM 披露兜底）优于高估假 FAIL（inventory-dimensions.conf + test-inventory-verify 态 17）。
+- **接口端点维度 Java 分支是死正则（R33-D3）**：`@(Get|Post|...)\\(` 要求注解名后紧跟括号，而 Spring 实际形态是 `@GetMapping(...)`（Get 后面是 Mapping）——该分支在任何 Spring 项目恒 0 命中，Java REST 项目端点维度整体失效（全靠 ENUM_ZERO_DIM 披露兜底）。同 D2 改精确注解名，裸注解（路径继承类级）也命中（inventory-dimensions.conf + test-inventory-verify 态 17）。演练项目实测 0 → 9 端点全检出。
+- **数据模型维度缺纯 MyBatis 实体形态（R33-D4）**：plain MyBatis 实体无任何注解标记（@Entity/@TableName/BaseMapper< 全不命中）恒 0 枚举。补包约定形态（`package ….(domain|entity|entities|model|po|pojo);`，dto/mapper/service 包天然排除）；XML `resultMap type=` 反查因文件计数粒度错配不采纳，以披露兜底（inventory-dimensions.conf + test-inventory-verify 态 17）。演练项目实测 0 → 3 实体。
+- **ORM schema 维度在 lite 档恒 NO_LIST（R33-D5）**：`DIM_ORM_SCHEMA_RM_REF='§8'` 单锚，而 lite 档 reference-manual 精简为 §4/§6/§9 三节——模型↔迁移漂移防线（漏改字段防线的姊妹缺陷）在 lite 档无处核验。RM_REF 支持空格分隔多锚（'§8 §9'，合计行数）：standard/compliance 登 §8 数据字典、lite 自然落 §9 数据勾稽，两档皆核验（inventory-dimensions.conf + inventory-verify.sh _list_count 多锚 + test-inventory-verify 补态 18）。
+- **指纹排除链缺 Maven target/（R33-D6）**：.git/node_modules/dist/build 都排了，Java 主流构建目录 target/ 没排——25 个 .class/.jar/.lst 计入基线，每次 mvn build 后 `--diff` 误报「项目已变化」，自成长链被构建噪音反复误触发。补 target/.gradle/venv/.venv（与 DIM_DATA_MODEL 排除链同源对齐；project-fingerprint.sh + test-project-fingerprint 补态 16：构建产物新增后 --diff 不误报）。
+- **稳定性审计两处形态盲区（R33-D7）**：①controller 等入口层由路由引用而非 import，fan-in 恒 0 是框架常态——恒吃「标注稳定但 fan-in=0」warn（入口层信号豁免）；②greenfield 仓库 forbid 标注文件的"出生提交"即 1 次变更——恒吃「禁止改但变更」warn（阈值 >1，出生后又被改才算）。演练项目 warn 26 → 22，残留为"无同名测试"类真信号（inventory-verify.sh + test-inventory-verify 补态 19/20）。
+- **框架 glob 填充交接缺口（R33-F1，引导+执法双修）**：--inject-frameworks 注入 ACTIVE_FRAMEWORKS 后 conf 里留一组空的 `<FW>_SRC_GLOBS` TODO，但 SKILL.md 填充指引不提、mark-active 不核验——填充 AI 漏填时框架门禁全部静默空转（扫不到文件），门禁形同虚设。双修：填充指引新增 conf 条目（检测到框架才出现）；mark-active 增逐检出框架核对（`<FW>` 前缀变量两份 conf 至少一个已填非空值，缺即拦）。实现侧两踩 set -euo pipefail 雷区：grep 无命中管道赋值静默 exit 1（|| true 兜底）、`[[ ]] && cmd` 条件假即杀（改 if）——本轮各实测踩中一次（generate-skill.sh + run-gen-e2e 补 R33-F1 正反断言）。
+
+### 基线追账（self-check 揭示，随本轮修复）
+- **FACT_ARTIFACT_BYTES_BUDGET 298544→303104**：实测 299581B 超 1037B，成因=R31/R32 运行时补核注记增量（补核轮不发版故未过断言，发版门补追账——R26 同源先例）。
+- **FACT_SCRIPT_LOC 6411→6425**：R30 两修（check_reuse 语义修正 + check_test 零用例左边界）改 gates-*.sh +14 行未同步。
+- **FACT_SKILLMD_BYTES_BUDGET 8704→9216**：R33-F1 填充指引 conf 条目的功能性引导增量。
+
+### 验证
+- 全量 30 单元测试 + gen-e2e + 79 规则集/fixture 双态 + self-check 全绿；修复版工具对演练项目复验：接口端点 0→9、数据模型 0→3、controller 假 FAIL→PASS、迁移资产 §9 登记可核验、构建产物指纹噪音归零。
+
 ## [v2.15.2] - 2026-09-16
 
 > R30 全量回归轮：基线全绿后，在 Express+TypeScript+Prisma+Jest 真实场景项目（shop-api）上生成目标技能，走完门禁执勤、spec-first 研发全流程（低库存端点：proposal→spec→状态机逐级推进→TDD→失败注入）、fingerprint 感知、自成长升级、清单核验、关系边集、mark-active 分离存放全链，识别并修复 7 处缺陷。共性根因延续 R28：探查/检测层"只认一种形态"（Prisma schema、大写 Router、版本号子串），另有门禁语义拧反（check_reuse 拦正常拼装）与状态机跳级穿透两处深 latent。

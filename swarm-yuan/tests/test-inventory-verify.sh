@@ -372,4 +372,123 @@ out15b="$(bash "$SH" "$TMP/proj15" --skill-dir "$TMP/skill15" --form backend 2>/
 echo "$out15b" | grep -qF 'ENUM_ZERO_DIM' \
   && ok "态15b 枚举零命中维度披露 ENUM_ZERO_DIM（防假绿静默）" || bad "态15b 无披露: $out15b"
 
+# --- 态 16（R33-D1 回归锚）：两列表头「| 路径 | 说明与约束 |」不得计入清单行数 ---
+# 修复前 A7 后态正则只认首格关键词，说明在第二格的骨架标准表头被计成数据行（每表 +1 虚高）→ 假 FAIL。
+mkdir -p "$TMP/proj16/src" "$TMP/skill16/references"
+printf "router.get('/x', h)\nrouter.get('/y', h)\nrouter.get('/z', h)\n" > "$TMP/proj16/src/a.ts"
+cat > "$TMP/skill16/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §6 接口清单
+
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/a.ts` | GET /x（稳定） |
+| `src/a.ts` | GET /y（稳定） |
+| `src/a.ts` | GET /z（稳定） |
+EOF
+out16="$(bash "$SH" "$TMP/proj16" --skill-dir "$TMP/skill16" --form backend --tsv 2>/dev/null)"
+echo "$out16" | grep -qE '后端 controller	3	3	1\.00	PASS' \
+  && ok "态16 骨架两列表头不计入清单行（3/3 PASS）" || bad "态16 表头被误计: $(echo "$out16" | grep controller)"
+
+# --- 态 17（R33-D2/D3/D4 回归锚）：Java 形态三连——@Getter 前缀不膨胀 / @GetMapping 端点检出 / domain 包实体入数据模型 ---
+mkdir -p "$TMP/proj17/src/main/java/com/x/controller" "$TMP/proj17/src/main/java/com/x/domain" "$TMP/skill17/references"
+cat > "$TMP/proj17/src/main/java/com/x/controller/ProductController.java" <<'EOF'
+package com.x.controller;
+import lombok.Getter;
+@RestController
+@RequestMapping("/api/products")
+public class ProductController {
+    @GetMapping("/{id}")
+    public Object get() { return null; }
+    @GetMapping
+    public Object list() { return null; }
+    @PostMapping
+    public Object create() { return null; }
+}
+@Getter
+class BusinessException {}
+EOF
+cat > "$TMP/proj17/src/main/java/com/x/domain/Product.java" <<'EOF'
+package com.x.domain;
+public class Product {
+    public Long id;
+}
+EOF
+cat > "$TMP/skill17/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §6 接口清单
+
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/main/java/com/x/controller/ProductController.java` | GET /{id}（稳定） |
+| `src/main/java/com/x/controller/ProductController.java` | GET 列表（稳定） |
+| `src/main/java/com/x/controller/ProductController.java` | POST 创建（稳定） |
+
+## §9 数据勾稽
+
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/main/java/com/x/domain/Product.java` | 实体 Product（稳定） |
+EOF
+out17="$(bash "$SH" "$TMP/proj17" --skill-dir "$TMP/skill17" --form backend --tsv 2>/dev/null)"
+echo "$out17" | grep -qE '后端 controller	3	3	1\.00	PASS' \
+  && ok "态17 Java controller 枚举=3（@Getter/@RequestMapping/@RestController 不膨胀）" || bad "态17 controller 膨胀: $(echo "$out17" | grep controller)"
+echo "$out17" | grep -qF $'接口端点	3\t' \
+  && ok "态17 @GetMapping 端点全检出（旧死正则恒 0）" || bad "态17 端点漏报: $(echo "$out17" | grep 接口端点)"
+echo "$out17" | grep -qF $'数据模型 / ORM 实体	1\t' \
+  && ok "态17 纯 MyBatis domain 包实体进数据模型（包约定形态）" || bad "态17 实体漏报: $(echo "$out17" | grep 数据模型)"
+
+# --- 态 18（R33-D5 回归锚）：ORM schema 多锚 §8 §9——迁移资产登记在 §9（lite 档形态）也核验 ---
+mkdir -p "$TMP/proj18/db/migration" "$TMP/skill18/references"
+printf 'CREATE TABLE t (id INT);\n' > "$TMP/proj18/db/migration/V1__init.sql"
+cat > "$TMP/skill18/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §9 数据勾稽
+
+| 路径 | 说明与约束 |
+|------|--------------|
+| `db/migration/V1__init.sql` | 迁移基线（稳定） |
+EOF
+out18="$(bash "$SH" "$TMP/proj18" --skill-dir "$TMP/skill18" --form backend --tsv 2>/dev/null)"
+echo "$out18" | grep -qE 'ORM schema / 迁移资产	1	1	1\.00	PASS' \
+  && ok "态18 迁移资产 §9 登记可核验（RM_REF 多锚，lite 档形态）" || bad "态18 NO_LIST: $(echo "$out18" | grep 迁移资产)"
+
+# --- 态 19（R33-D7a 回归锚）：入口层文件豁免 fan-in=0 warn ---
+mkdir -p "$TMP/proj19/src" "$TMP/skill19/references"
+cat > "$TMP/proj19/src/AlertController.java" <<'EOF'
+@RestController
+public class AlertController {
+}
+EOF
+cd "$TMP/proj19" && git init -q 2>/dev/null && git add -A && git -c user.email=t@t -c user.name=t commit -qm "init" >/dev/null 2>&1
+cd "$ROOT" || exit 1
+cat > "$TMP/skill19/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §4 组件清单
+
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/AlertController.java` | 入口层（稳定） |
+EOF
+out19="$(bash "$SH" "$TMP/proj19" --skill-dir "$TMP/skill19" --form backend --tsv --stability-audit 2>/dev/null)"
+echo "$out19" | grep -qF 'AlertController.java 标注稳定但 fan-in=0' \
+  && bad "态19 入口层 fan-in=0 误报未豁免: $out19" || ok "态19 入口层 fan-in=0 豁免（路由引用非 import）"
+
+# --- 态 20（R33-D7b 回归锚）：forbid 标注 churn=1（出生提交）不 warn ---
+mkdir -p "$TMP/proj20/src" "$TMP/skill20/references"
+printf 'x\n' > "$TMP/proj20/src/core.py"
+cd "$TMP/proj20" && git init -q 2>/dev/null && git add -A && git -c user.email=t@t -c user.name=t commit -qm "init core.py" >/dev/null 2>&1
+cd "$ROOT" || exit 1
+cat > "$TMP/skill20/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §4 组件清单
+
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/core.py` | 核心逻辑（禁止改） |
+EOF
+out20="$(bash "$SH" "$TMP/proj20" --skill-dir "$TMP/skill20" --form backend --tsv --stability-audit 2>/dev/null)"
+echo "$out20" | grep -qF 'core.py 标注禁止改但近 90 天变更' \
+  && bad "态20 出生提交误报 churn: $out20" || ok "态20 forbid 出生提交（churn=1）不 warn"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-inventory-verify"; exit 0; } || { echo "FAIL test-inventory-verify" >&2; exit 1; }

@@ -186,4 +186,18 @@ rm "$TMP/proj15/docs"/f1.ts "$TMP/proj15/docs"/f2.ts "$TMP/proj15/docs"/f3.ts
 out=$(bash "$SH" "$TMP/proj15" --write 2>&1); rc=$?
 [[ $rc -eq 0 ]] && ok "态15 -30% 不触发红线（--write 直通）" || bad "态15 -30% 误拦: $out"
 
+# --- 态 16（R33-D6 回归锚）：Maven target/ 构建产物不进指纹（排除链补 target/.gradle/venv）---
+mkdir -p "$TMP/proj16/src" "$TMP/proj16/target/classes"
+printf 'x\n' > "$TMP/proj16/src/Main.java"
+for i in 1 2 3 4 5; do printf 'class C%s{}\n' "$i" > "$TMP/proj16/target/classes/C$i.class"; done
+printf 'z\n' > "$TMP/proj16/target/inventory.jar"
+out=$(bash "$SH" "$TMP/proj16" --write 2>&1); rc=$?
+[[ $rc -eq 0 ]] && ok "态16 --write exit 0" || bad "态16 exit=$rc: $out"
+grep -q '^total=1' "$TMP/proj16/.swarm-yuan/project-fingerprint" \
+  && ok "态16 target/ 构建产物不计入指纹（total=1 仅 src/Main.java）" || bad "态16 构建产物漏排: $(head -1 "$TMP/proj16/.swarm-yuan/project-fingerprint")"
+# 模拟 mvn build 后 --diff 不误报
+printf 'class C9{}\n' > "$TMP/proj16/target/classes/C9.class"
+out=$(bash "$SH" "$TMP/proj16" --diff 2>&1)
+echo "$out" | grep -q '无变化' && ok "态16 构建产物新增后 --diff 不误报" || bad "态16 构建噪音误报: $out"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-project-fingerprint"; exit 0; } || { echo "FAIL test-project-fingerprint" >&2; exit 1; }

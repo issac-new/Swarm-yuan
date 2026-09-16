@@ -8,7 +8,9 @@
 #                      （杀死"AI 幻觉组件凑数过 0.95"的最大漏洞；路径本就是五维必填字段）
 #                      R21-A 扩展：recipes.md（任务配方）表格行的组件路径同样核验（§A 功能编目/§B 复用件）
 #   --stability-audit  对 §4/§6/§9 标注"稳定|禁止改"的行算三机械信号：近 90 天 git churn /
-#                      fan-in 被引用数 / 同名测试文件存在性；与标注冲突 → STABILITY_WARN（advisory 不 fail）
+#                      fan-in 被引用数 / 同名测试文件存在性；与标注冲突 → STABILITY_WARN（advisory 不 fail）。
+#                      R33-D7：入口层文件（controller/消费者/定时任务，由路由引用非 import）豁免 fan-in=0 warn；
+#                      forbid 标注 churn 阈值 >1（greenfield 出生提交不算变更）。
 # 用法:
 #   bash inventory-verify.sh <PROJECT_DIR> [--skill-dir <dir>] [--form <形态>] [--tsv] [--path-check] [--stability-audit]
 #     --skill-dir  目标 skill 根（含 references/reference-manual.md）；不给则只做枚举不核验清单
@@ -80,26 +82,34 @@ _enum_count() { # $1=CMD模板
 }
 
 # 数 reference-manual.md 对应表行数：定位 §<n> 标题到下一个同级/更高级 ## 之间，数表格数据行（| 开头非分隔/表头）
-_list_count() { # $1=RM文件 $2=锚 §<n> 或 §<n>.<sub> 或字面节名（如 §测试案例——R21-C 起 anchors 允许中文节名）
+# R33-D5（2026-09-17 Java 栈执勤实证）：锚支持空格分隔多锚（'§8 §9'）——同维度在不同档位落不同节
+# （ORM schema standard/compliance 在 §8 数据字典、lite 精简档自然落 §9 数据勾稽），合计行数。
+_list_count() { # $1=RM文件 $2=锚（§<n>[.<sub>]，空格分隔多锚）
   local rm="$1" anchor="$2"
   [[ -f "$rm" ]] || { echo 0; return; }
-  local sec=${anchor%%.*}
-  # 进入段判定用 index() 固定子串（BSD awk 多字节字符类按字节解析的坑，勿用正则字符类）：
-  # 标题 = "## <sec>" 后随空格 / 句点 / 全角（ / 行尾 四种形态之一（"## §测试案例（check §1）"形态由全角（命中）。
-  awk -v sec="$sec" '
-    { h = $0
-      if (index(h, "## " sec " ") == 1 || index(h, "## " sec ".") == 1 || index(h, "## " sec "（") == 1 || h == "## " sec) { insec=1; next }
-      if (insec && $0 ~ "^## ") { insec=0 }
-      if (insec && /^\|/) {
-        line=$0; gsub(/[ \t]/,"",line)
-        # audit-claims-reality（A7）：表头判定改首列锚定分组写法（与 _extract_rows_paths 同款）——
-        # 旧正则 /^\|.*维度|端点|构件|方法|说明.*\|$/ 的 | 是 ERE 交替符，含"端点"等字样的
-        # 数据行被整行剔除，§6 接口清单计数系统性偏低 → 假 FAIL。
-        if (line !~ /^\|[-:|]+\|$/ && line !~ /^\|[^|]*(维度|端点|构件|方法|说明)[^|]*\|/ && line !~ /^\|[-]+/) c++
+  local _a sec _c _total=0
+  for _a in $anchor; do
+    sec=${_a%%.*}
+    _c=$(awk -v sec="$sec" '
+      { h = $0
+        if (index(h, "## " sec " ") == 1 || index(h, "## " sec ".") == 1 || index(h, "## " sec "（") == 1 || h == "## " sec) { insec=1; next }
+        if (insec && $0 ~ "^## ") { insec=0 }
+        if (insec && /^\|/) {
+          line=$0; gsub(/[ \t]/,"",line)
+          # 表头行判定（R33-D1 重修）：关键词须为首格开头（^\|关键词）。旧式 /^\|[^|]*关键词[^|]*\|/
+          # 把「关键词在任意格」都当表头（A7 前态）与「只在首格任意位置」（A7 后态）都会误判——
+          # A7 后态漏排除模板自家两列表头「| 路径 | 说明与约束 |」（说明在第二格）→ 表头被计成
+          # 数据行 → 清单计数虚高（每表 +1，实测 §6 双表 6 行计成 8）。
+          # 数据行以反引号路径开头，不会以关键词开头——首格开头锚定是数据行/表头的可靠判别。
+          if (line !~ /^\|[-:|]+\|$/ && line !~ /^\|[-]+/ && line !~ /^\|(维度|端点|构件|方法|说明|路径|业务名|单元名|文件)/) c++
+        }
       }
-    }
-    END { print c+0 }
-  ' "$rm"
+      END { print c+0 }
+    ' "$rm")
+    _c="${_c:-0}"
+    _total=$((_total + _c))
+  done
+  echo "$_total"
 }
 
 # fail-open 提示：给了 --skill-dir 但缺 reference-manual.md（只提示一次，stderr，不影响 exit 0）
@@ -185,10 +195,13 @@ _extract_rows_paths() { # $1=RM文件
       # §8 自横向清剿轮起承载 ORM schema/迁移资产表（DIM_ORM_SCHEMA 锚）——路径同样核验
       if ($0 ~ "^## §[45689][ \\.]") { insec=1; next }
       if (insec==1 && $0 ~ "^## ") { insec=0; next }
-      if (insec==1 && /^\|/) {
-        line=$0; squashed=line; gsub(/[ \t]/,"",squashed)
-        if (squashed ~ /^\|[-:|]+\|$/ || squashed ~ /^\|[-]+/) next
-        if (line ~ /^\|[^|]*(维度|端点|构件|方法|说明|业务名)[^|]*\|/) next
+        if (insec==1 && /^\|/) {
+          line=$0; squashed=line; gsub(/[ \t]/,"",squashed)
+          if (squashed ~ /^\|[-:|]+\|$/ || squashed ~ /^\|[-]+/) next
+          # R33-D1 同族修复：表头判定与 _list_count 同款（关键词首格开头锚定）——旧式「关键词在
+          # 首格任意位置」漏排除「| 路径 | 说明与约束 |」两列表头（说明在第二格）；表头行无反引号
+          # 路径故对本函数无实害，但两处口径必须一致（同族漂移防线）。
+          if (squashed ~ /^\|(维度|端点|构件|方法|说明|路径|业务名|单元名|文件)/) next
         stab="-"
         if (index(line,"禁止改")>0) stab="forbidden"
         else if (index(line,"不稳定")>0) stab="-"
@@ -271,14 +284,20 @@ if [[ "$STAB_AUDIT" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/refere
     _fanin="${_fanin:-0}"
     _has_test=0
     [[ -n "$(find "$PROJ" -path '*/node_modules' -prune -o -path '*/.git' -prune -o -type f -iname "*${_base}*" \( -iname "*test*" -o -iname "*spec*" \) -print -quit 2>/dev/null)" ]] && _has_test=1
-    if [[ "$_stab" == "forbidden" && "$_churn" != "-" && "${_churn:-0}" -gt 0 ]]; then
+    # R33-D7（2026-09-17 Java 栈执勤实证）：入口层文件（controller/route handler/定时任务/消费者）
+    # 被 import 的 fan-in 恒 0 是框架常态（由路由/容器引用，非 import 引用）——对其豁免 fan-in=0 warn。
+    # 信号清单跨语言有界集（Java 注解族 + Node router/app + Python route/celery + Go http）。
+    _entry=0
+    grep -qE '@(Rest)?Controller|@ControllerAdvice|@(Kafka|Rabbit)Listener|@Scheduled|@MessageMapping|@(Get|Post|Put|Delete|Patch)Mapping|router\.[a-z]+|app\.(get|post|use|listen)\(|@app\.route|APIRouter|@celery\.task|http\.HandleFunc|func main\(\)' "$PROJ/$_p" 2>/dev/null && _entry=1
+    # R33-D7b：greenfield 仓库 forbid 标注文件的「出生提交」即 1 次变更——churn>1（出生后又被改）才 warn。
+    if [[ "$_stab" == "forbidden" && "$_churn" != "-" && "${_churn:-0}" -gt 1 ]]; then
       stabwarns="${stabwarns}STABILITY_WARN	$_p 标注禁止改但近 90 天变更 ${_churn} 次（fan-in ${_fanin}，test $([[ $_has_test -eq 1 ]] && echo 有 || echo 无)）
 "
     elif [[ "$_stab" == "stable" ]]; then
       [[ "$_churn" != "-" && "${_churn:-0}" -gt 5 ]] && \
         stabwarns="${stabwarns}STABILITY_WARN	$_p 标注稳定但近 90 天变更 ${_churn} 次（>5；fan-in ${_fanin}，test $([[ $_has_test -eq 1 ]] && echo 有 || echo 无)）
 "
-      [[ "${_fanin:-0}" -eq 0 ]] && \
+      [[ "${_fanin:-0}" -eq 0 && "$_entry" -eq 0 ]] && \
         stabwarns="${stabwarns}STABILITY_WARN	$_p 标注稳定但 fan-in=0（无被引用；churn ${_churn}，test $([[ $_has_test -eq 1 ]] && echo 有 || echo 无)）
 "
       [[ "$_has_test" -eq 0 ]] && \
