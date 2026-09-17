@@ -34,6 +34,16 @@ out=$(bash "$SH" "$TMP/rules.d" "rm -rf /tmp/x" --quiet 2>/dev/null); rc=$?
 out=$(bash "$SH" "$TMP/rules.d" "npm publish" --quiet 2>/dev/null); rc=$?
 [[ "$out" == "forbid" && $rc -eq 2 ]] && ok "态4 尾 * 可缺省命中" || bad "态4: $out rc=$rc"
 
+# 态4b R36-D9：3+ token pattern 的"尾 * 可缺省"（原实现只覆盖两 token，
+# "docker compose down -v *" 对裸命令静默降级 prompt）
+cat > "$TMP/rules.d/t4b.rules" <<'REOF'
+docker compose down -v * → forbid # 会清库；替代：docker compose stop
+REOF
+out=$(bash "$SH" "$TMP/rules.d" "docker compose down -v" --quiet 2>/dev/null); rc=$?
+[[ "$out" == "forbid" && $rc -eq 2 ]] && ok "态4b 3+token 裸命令命中" || bad "态4b: $out rc=$rc"
+out=$(bash "$SH" "$TMP/rules.d" "docker compose down -v --remove-orphans" --quiet 2>/dev/null); rc=$?
+[[ "$out" == "forbid" && $rc -eq 2 ]] && ok "态4b 3+token 带尾参命中" || bad "态4b 带参: $out rc=$rc"
+
 # 态5 未命中 → prompt 兜底
 out=$(bash "$SH" "$TMP/rules.d" "make build" --quiet 2>/dev/null); rc=$?
 [[ "$out" == "prompt" && $rc -eq 3 ]] && ok "态5 未命中兜底 prompt" || bad "态5: $out rc=$rc"

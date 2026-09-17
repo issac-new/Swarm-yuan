@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.15.4] - 2026-09-18
+
+> R36 全量回归轮：栈轮换第四棒到 Go（gin + gorm + go-redis + MySQL，Go 1.27 真实工具链编译/vet/测试通过），真实场景项目（r36-drill-order-api 订单服务）生成目标技能，走完流A 全流程（探查→清单→填充→conf→hooks→门禁→独立审查→写回→mark-active 三道关）与流B 典型研发任务执勤（订单取消需求全链 proposal→spec→状态机逐级推进→TDD→28 门禁→独立审查→verify 证据→archive；取消原因字段变更三件套；指纹自成长感知→重探查→清单更新→边集重建→落新基线；spec-first hook 与 rules.d 三值拦截正反实测），识别并修复 10 处缺陷 + 1 处基线追账。共性根因第四次复现（R28"相邻路径"、R30"只认一种形态"、R33"生态系统性缺位"）：本轮 D2-D4 为 Go 生态形态在探测表与维度枚举器缺位，D1 为 G24 同款性能问题在四个同族循环漏修——修一个不扫同族。
+
+### Fixed
+- **self-check --check-only fork 风暴 11min35s→40s（R36-D1）**：G20 多字节/G22 sed 方言/G10 版本 oracle/R13 层间引用/G24 内层共五处逐行 `printf|grep` 循环改为单 awk 向量化。全角标点用字面量交替（awk 正则字节级，字符类 `[）。，…]` 会误匹配任意 CJK 第二三字节）；`\b` 无 awk 支持改词边界等价式。G24 注释自证"逐条 grep 190 文件实测 2min+ 不可接受"并已修自身，同族四循环漏修。输出与修前逐字节一致，五处均过违规注入变异验证（保持检出力）。
+- **框架探测 gomod 信号 Go 生态零覆盖（R36-D2）**：detect-frameworks 框架表 gomod 行仅 kratos/gin/gorm/terraform 四族，go.mod 含 `github.com/redis/go-redis/v9`、`gorm.io/driver/mysql` 双双漏报（Java/Py/Node 的 redis/mysql 各有 pom/pyreq 行）。补 redis（go-redis/redigo）与 mysql（gorm driver/go-sql-driver）四行，执勤项目实测 gin+gorm → gin+gorm+redis+mysql。
+- **维度枚举缺 gin 大写动词形态（R36-D3）**：后端 controller/接口端点两维度正则只认 JS 小写 `router.get` 与 Java 注解，gin `v1.GET(...)` 全漏（实测 6 路由/6 端点枚举全 0，仅靠 ENUM_ZERO_DIM 披露兜底），而 `references/frameworks/gin.md` §2 自带正确正则——仓内两处矛盾。补 `\.(GET|POST|PUT|DELETE|PATCH)\(`；并补测试文件排除（httptest 测试路由注册计入端点，实测 7 生产路由+1 测试注册=8 vs 清单 7 → 0.875 假 FAIL，R36-D3b——端点是生产面维度）。修后 7/7、7/7 真实对账。
+- **数据模型维度 Go 形态恒 0（R36-D4）**：R33-D4 补的包约定形态是 Java 点分语法 `package x.model;`，对 Go 单标识符 `package model`（无点无分号）恒 0——`--include='*.go'` 是死配置；gorm struct tag `gorm:"` 强特征亦缺位。补单标识符包声明与 gorm tag 两形态，实测 0→4 文件。
+- **check_reuse skip 态叠加假 pass（R36-D5）**：无 spec 时 skip_if_unconfigured 落账后函数不返回，继续走 AI 自查指引并打印「✓ 复用合规检查通过」——汇总=skip 对、门禁输出与 trace=done 错，三处呈现分裂。skip 后 `return 0`；非证据模式 trace 状态推导补 skip 态（与证据模式五态 fail>skip>warn>pass 对齐）。
+- **check_deps/check_knowledge 自定义 target-dir 失明（R36-D6）**：基线 codebase.md 与 spec 探测硬编码 `$PROJECT_DIR/.claude/skills` 默认安装位，target-dir 生成的技能自带 references/codebase.md 不可见（warn 误导补配）。补技能自身 references/ 兜底（precheck 启动期解析的 `_CONF_DIR` 绝对路径——运行期 BASH_SOURCE 相对路径在 `cd $PROJECT_DIR` 后失效）与项目 SPEC_GLOB 约定位兜底，共三处。
+- **stability-audit fan-in 对 Go 包导入恒 0（R36-D7）**：fan-in 以文件基名字符串找引用方，Go 导入的是包路径（`internal/repository`）不含基名 `order_repo`——实测 internal/ 下全部文件误报 fan-in=0。对含斜杠路径补父目录字符串代理信号，误报 14→9（余量全为真实"无同名测试/禁改却变更"披露）。
+- **relations-extract 重建清空 AI 语义边（R36-D8）**：边集重建整文件覆盖，AI 按流程补充的 route/call 等语义边在每次自成长重建时丢失（执勤实测 17 行→11 行）。重建保留非机械 kind 边（exact 去重幂等），摘要行新增"AI 语义边保留 N"。
+- **gate-rules"尾 \* 可省"语义对 3+ token 失效（R36-D9）**：行格式注释称 `npm publish *` 命中裸命令，实现只对首两 token 生效——`docker compose down -v *` 对裸命令四路 case 全不中，FORBID 静默降级 prompt。补 CMD 对 `_pat_base` 的前缀匹配（裸命令与带任意尾参均命中）；test-gate-rules 补态 4b（3+ token 裸/带参两断言）。
+- **conf 自洽性：READONLY_DIRS 覆盖 SPEC_GLOB 无告警（R36-D10）**：docs 设为只读而 spec 约定落 docs/specs/ 时，spec-first 流程每次写 spec 即触发 check_scope fail（流程自我打架，执勤真实踩中）。conf 加载后 warn 提示调整（不阻断，配置意图因项目而异）。
+- **基线追账**：FACT_SCRIPT_LOC 6425→6468（本轮 D5/D6/D10 改四门禁脚本 +43 行，self-check 机械计数复核后登记）；守门测试 test-gate-rules 态 4b。
+
 ## [v2.15.3] - 2026-09-17
 
 > R33 全量回归轮：基线排查（self-check 揭税制超标与 LOC 漂移两处追账）后，轮换到 Java 栈（R28 Python→R30 Node→本轮 Spring Boot 3.2.5 + MyBatis XML + Lombok + JUnit5/Maven，JDK 25 工具链）真实场景项目（r33-drill-inventory-api）生成目标技能，走完填充、mark-active 三道关、库存预警需求研发全链（proposal→spec→状态机逐级推进→TDD→门禁→独立审查→archive）、清单核验、关系边集、指纹自成长，识别并修复 7 处缺陷 + 1 处引导缺口。共性根因第三次复现（R28"相邻路径"、R30"只认一种形态"）：Java 生态形态在维度枚举器与机械信号里系统性缺位。

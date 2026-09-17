@@ -460,6 +460,15 @@ check_deps() {
     local cand
     cand=$(find "$PROJECT_DIR/.claude/skills" -name codebase.md -path '*/references/*' 2>/dev/null | head -n 1 || true)
     [[ -n "$cand" ]] && baseline_file="$cand"
+    # R36-D6（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：自定义 target-dir 生成的技能不在
+    # 默认安装位 .claude/skills/ 下，find 失明致 warn——技能自带 references/codebase.md 即基线
+    # （生成物自包含）。技能根绝对路径用 _CONF_DIR（precheck.sh:338 启动期解析，cd $PROJECT_DIR
+    # 后仍有效；BASH_SOURCE 相对路径此时已失效）。
+    if [[ -z "$baseline_file" ]]; then
+      local _self_dir
+      _self_dir="${_CONF_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)}"
+      [[ -f "$_self_dir/../references/codebase.md" ]] && baseline_file="$_self_dir/../references/codebase.md"
+    fi
   fi
   if [[ -z "$baseline_file" ]]; then
     warn "未找到 codebase.md 版本基线（设置 CODEBASE_REF 或确保 .claude/skills/<skill>/references/codebase.md 存在）"
@@ -474,6 +483,13 @@ check_deps() {
     local cand2
     cand2=$(find "$PROJECT_DIR/.claude/skills" -type f -name '*.md' 2>/dev/null | grep -iE 'spec' | head -n 1 || true)
     [[ -n "$cand2" ]] && spec_file="$cand2"
+    # R36-D6 同源兜底：自定义 target-dir 失明时走项目 SPEC_GLOB 约定位（版本约束声明在 spec §5.6）
+    if [[ -z "$spec_file" ]]; then
+      local _sf
+      for _sf in "${PROJECT_DIR}"/${SPEC_GLOB:-docs/specs/*.md}; do
+        [[ -f "$_sf" ]] && { spec_file="$_sf"; break; }
+      done
+    fi
   fi
 
   # 从 codebase.md 技术栈版本表提取 name<TAB>version 基线对（跨平台 awk，按 | 分列）
@@ -1224,7 +1240,11 @@ check_knowledge() {
 
   # ---- 2. 检查生成的 SKILL.md 是否引用了知识来源 ----
   local skill_file
-  skill_file=$(_first_existing_file "$PROJECT_DIR/.claude/skills/*/SKILL.md" ".claude/skills/*/SKILL.md" "SKILL.md")
+  # R36-D6 同源兜底：候选末位加本技能自身 SKILL.md（技能根取 _CONF_DIR 绝对路径）——
+  # 自定义 target-dir 生成时前三级（默认安装位/相对 cwd）在项目根 cwd 下全部失明。
+  local _self_skill_md
+  _self_skill_md="${_CONF_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)}/SKILL.md"
+  skill_file=$(_first_existing_file "$PROJECT_DIR/.claude/skills/*/SKILL.md" ".claude/skills/*/SKILL.md" "SKILL.md" "$_self_skill_md")
   if [[ -z "$skill_file" ]]; then
     skip_if_unconfigured "未找到生成的 SKILL.md，知识复用检查跳过"
     return

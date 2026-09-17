@@ -282,6 +282,15 @@ if [[ "$STAB_AUDIT" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/refere
     fi
     _fanin=$(grep -rlF --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.py' --include='*.go' --include='*.java' --include='*.vue' "$_base" "$PROJ" 2>/dev/null | grep -vF "$_p" | LC_ALL=C grep -c . || true)
     _fanin="${_fanin:-0}"
+    # R36-D7（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：Go 导入的是包（目录）不是文件——
+    # 引用方 import 路径串 ".../internal/repository" 不含文件基名 order_repo，基名信号恒 0 误报
+    # （实测 internal/ 下全部文件 fan-in=0 warn）。对相对路径含斜杠的文件补父目录字符串信号
+    # （包导入形态代理）；根目录单段路径保持原行为（目录名公共词误报面大）。
+    if [[ "$_p" == */* ]]; then
+      _fanin2=$(grep -rlF --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.py' --include='*.go' --include='*.java' --include='*.vue' "${_p%/*}" "$PROJ" 2>/dev/null | grep -vF "$_p" | LC_ALL=C grep -c . || true)
+      _fanin2="${_fanin2:-0}"
+      [[ "$_fanin2" -gt "$_fanin" ]] && _fanin="$_fanin2"
+    fi
     _has_test=0
     [[ -n "$(find "$PROJ" -path '*/node_modules' -prune -o -path '*/.git' -prune -o -type f -iname "*${_base}*" \( -iname "*test*" -o -iname "*spec*" \) -print -quit 2>/dev/null)" ]] && _has_test=1
     # R33-D7（2026-09-17 Java 栈执勤实证）：入口层文件（controller/route handler/定时任务/消费者）
