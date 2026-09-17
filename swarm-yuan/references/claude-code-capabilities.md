@@ -670,13 +670,13 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ## 版本注记：v2.1.274（2026-09-17 R34 核）——无界重试的终结与等待的预算化
 
-> 修复主导批（npm latest；stable 通道 2.1.267 不动，分裂持续）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R34-runtime-refresh.md`。
+> 修复主导批（npm latest；stable 2.1.267 分裂持续）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R34-runtime-refresh.md`。
 
-- **损坏 transcript 自愈替代无界重试**：会话卡死在 "unexpected tool_use_id" 400 无限重试——现在能自愈则自愈，否则明确错误 + `/rewind` 指引终止循环。「**无界重试 → 有界 + 明确错误**」族宿主侧新样本：重试是等待的另一种形态，等待必须有界（与 DeadlineBudget/剩余死线封顶谱系同向）。
+- **损坏 transcript 自愈替代无界重试**：会话卡死在 "unexpected tool_use_id" 400 无限重试——现在能自愈则自愈，否则明确错误 + `/rewind` 指引终止循环。「**无界重试 → 有界 + 明确错误**」族宿主侧新样本（重试是等待的另一种形态，等待必须有界）。
 - **MCP 启动等待有界化**：`CLAUDE_CODE_MCP_STARTUP_WAIT_MS`（0 = 不等）——首个非交互 turn 对 MCP 连接的等待成为显式预算；**Streamable HTTP 按 server timeout 生效**（~5 分钟硬顶修复）——死线语义以配置为准。
 - **/goal 稳定性两修**：compact 后 resume 不丢活动 goal + hook-driven goal 上下文再溢出改 compact 而非报错——R14 goal_id/closure 闭环谱系的宿主侧补强（goal 是长跑承诺，compaction 不得吞承诺）。
-- **错误语义诚实化两例**：403 insufficient_scope 不再谎报为过期登录（指向 /mcp 重认证）；`claude agents` 自动更新重启不再丢 CLI flags（恢复完整性）。
+- **错误语义诚实化两例**：403 insufficient_scope 不再谎报为过期登录（指向 /mcp 重认证）；`claude agents` 自动更新重启不再丢 CLI flags。
 - **恢复原子性**：resume 的后台代理不再保留被中断 tool batch 的一半——半态不是可运行态。
-- **输出经济学**：Stop hook 重复 block 以 500 字符条件标签替代全量 prompt 重发——重复内容短标签化。
+- **输出经济学**：Stop hook 重复 block 以 500 字符条件标签替代全量重发。
 - **供应链细节**：无自身 git 仓的 plugin/marketplace 目录不再误取外层 git 仓版本——版本归属。
-- 本仓对账：gates-strict/precheck 无 until/无限循环重试点位（已核对），无门禁增量；「无界重试→有界」登记为动态面族样本，供生成技能的死线设计参照。
+- 本仓对账：gates-strict/precheck 无无限循环重试点位，无门禁增量；「无界重试→有界」登记为动态面族样本，供生成技能的死线设计参照。
