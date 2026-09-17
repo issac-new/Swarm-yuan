@@ -259,6 +259,10 @@ check_reuse() {
     # 无 spec 文档（项目本身无具体变更 spec，如范式仓库自身/纯工具仓库）：跳过而非 fail。
     # --all-full 静默跳过；显式 --reuse 时 warn 提示（拼装式开发项目应配 spec）。
     skip_if_unconfigured "未找到含 §5.5 复用约束段的 spec 文档（拼装式开发项目应在 specs/ 下配 spec；纯工具/范式仓库可跳过）"
+    # R36-D5（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：skip 后必须 return——
+    # skip_if_unconfigured 不终止函数，原实现继续走下方 AI 自查指引并打印「✓ 复用合规检查通过」，
+    # skip 态叠加假 pass 信号（trace 记 done），三处呈现分裂（汇总=skip 对、输出与 trace=done 错）。
+    return 0
   else
     # 校验 §5.5 拼装合规声明 4 个 checkbox 已勾选
     local decl; decl=$(awk '/复用约束|拼装合规声明/,/^## [0-9]/' "$spec_file" 2>/dev/null)

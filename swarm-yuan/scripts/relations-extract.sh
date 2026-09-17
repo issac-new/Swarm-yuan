@@ -372,17 +372,27 @@ done < <(grep -rlE '<beans\b|<entity-mapping|<hibernate-mapping' "$PROJ" --inclu
   | grep -vE '/target/|/node_modules/|/dist/|/\.git/|/\.swarm-yuan/' | LC_ALL=C sort | head -200)
 
 # 截断 + 确定性排序 + 落盘
+# R36-D8（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：重建时保留既有文件里 AI 补充的
+# 语义边（kind 不属机械五类的行：call/route/message/ipc/export/job-flow 等）——原实现整文件
+# 覆盖，AI 语义增量在每次重探查/自成长重建时被清空，补边永不持久（执勤实测 17 行→11 行）。
+_n_semantic_kept=0
+if [[ -f "$OUT" ]]; then
+  LC_ALL=C grep -v '"kind":"\(import\|mapper-binding\|data-mapping\|bean-wiring\|field-mapping\)"' "$OUT" 2>/dev/null > "${TMPF}.semantic" || true
+  _n_semantic_kept=$(LC_ALL=C grep -c . "${TMPF}.semantic" 2>/dev/null || true); _n_semantic_kept="${_n_semantic_kept:-0}"
+  [[ "$_n_semantic_kept" -gt 0 ]] && cat "${TMPF}.semantic" >> "$TMPF"
+  rm -f "${TMPF}.semantic"
+fi
 _n=$(LC_ALL=C grep -c . "$TMPF" 2>/dev/null || true); _n="${_n:-0}"
 if [[ "$_n" -gt "$MAXE" ]]; then
   echo "⚠ 边数 ${_n} 超上限 ${MAXE}，截断（大仓库建议分段提取或提高 --max-edges）" >&2
 fi
-LC_ALL=C sort -t'"' -k4,4 -k8,8 "$TMPF" | LC_ALL=C awk -v max="$MAXE" 'NR <= max' > "$OUT"
+LC_ALL=C sort -t'"' -k4,4 -k8,8 "$TMPF" | LC_ALL=C awk '!seen[$0]++' | LC_ALL=C awk -v max="$MAXE" 'NR <= max' > "$OUT"
 _n_final=$(LC_ALL=C grep -c . "$OUT" 2>/dev/null || true); _n_final="${_n_final:-0}"
 _n_dm=$(grep -c '"kind":"data-mapping"' "$OUT" 2>/dev/null || true); _n_dm="${_n_dm:-0}"
 _n_mb=$(grep -c '"kind":"mapper-binding"' "$OUT" 2>/dev/null || true); _n_mb="${_n_mb:-0}"
 _n_bw=$(grep -c '"kind":"bean-wiring"' "$OUT" 2>/dev/null || true); _n_bw="${_n_bw:-0}"
 _n_fm=$(grep -c '"kind":"field-mapping"' "$OUT" 2>/dev/null || true); _n_fm="${_n_fm:-0}"
-_n_imp=$((_n_final - _n_dm - _n_mb - _n_bw - _n_fm))
-echo "✓ 关系边集已生成: ${OUT}（${_n_final} 条 = import ${_n_imp} + mapper-binding ${_n_mb} + data-mapping ${_n_dm} + bean-wiring ${_n_bw} + field-mapping ${_n_fm}；语义边 call/route/message/ipc/export/job-flow 由 AI 补充，格式同款 kind 字段）"
+_n_imp=$((_n_final - _n_dm - _n_mb - _n_bw - _n_fm - _n_semantic_kept))
+echo "✓ 关系边集已生成: ${OUT}（${_n_final} 条 = import ${_n_imp} + mapper-binding ${_n_mb} + data-mapping ${_n_dm} + bean-wiring ${_n_bw} + field-mapping ${_n_fm} + AI 语义边保留 ${_n_semantic_kept}；语义边 call/route/message/ipc/export/job-flow 由 AI 补充，重建时自动保留，格式同款 kind 字段）"
 echo "  消费方：--stable-diff 1 跳传播优先读本边集（改实体字段时 data-mapping 边反查 mapper XML）；流B ②探查查边集替代读 mermaid"
 exit 0

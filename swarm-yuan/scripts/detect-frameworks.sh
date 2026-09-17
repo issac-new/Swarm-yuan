@@ -104,6 +104,13 @@ kratos|github.com/go-kratos|gomod
 gin|github.com/gin-gonic|gomod
 gorm|gorm.io/gorm|gomod
 gorm|github.com/jinzhu/gorm|gomod
+# R36-D2（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：Go 生态中间件信号缺位——
+# go.mod 含 github.com/redis/go-redis/v9、gorm.io/driver/mysql 均漏报（gomod 行此前只有
+# kratos/gin/gorm/terraform 四族；Java/Py/Node 的 redis/mysql 各有 pom/pyreq 行，Go 零覆盖）。
+redis|github.com/redis/go-redis|gomod
+redis|github.com/gomodule/redigo|gomod
+mysql|gorm.io/driver/mysql|gomod
+mysql|github.com/go-sql-driver/mysql|gomod
 prisma|@prisma/client|pkgjson
 prisma|prisma|pkgjson
 typeorm|typeorm|pkgjson

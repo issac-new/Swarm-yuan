@@ -1315,19 +1315,18 @@ check_version_oracle_single_source() {
   for _script in "${_scan_scripts[@]}"; do
     [[ -f "$_script" ]] || continue
     _scanned=$((_scanned+1))
-    # 逐行匹配，跳过注释行（#开头）和含"非选版本"豁免词的行
+    # R36-D1：逐行 echo|grep 双 fork 循环向量化为单 awk（行级命中通常为 0，命中行的
+    # 消息格式化留在 bash 侧——与原语义逐字节一致）
     while IFS= read -r _ln; do
-      [[ "$_ln" =~ ^[[:space:]]*# ]] && continue
-      # 豁免：日志时间戳/调试输出/非选版本语境
-      if echo "$_ln" | grep -qE 'log|debug|echo|printf|trace'; then
-        continue
-      fi
-      if echo "$_ln" | grep -qE "$_mtime_patterns"; then
-        local _sname; _sname="$(basename "$_script")"
-        warn "$_sname: 疑似按 mtime 选候选（行: $(echo "$_ln" | head -c 80)...）--选版本/候选须用 version > capability > lexical 全序，禁用 mtime（claude-mem v13.12.1 教训）"
-        _suspect=$((_suspect+1))
-      fi
-    done < "$_script"
+      [[ -z "$_ln" ]] && continue
+      local _sname; _sname="$(basename "$_script")"
+      warn "$_sname: 疑似按 mtime 选候选（行: $(printf '%s' "$_ln" | head -c 80)...）--选版本/候选须用 version > capability > lexical 全序，禁用 mtime（claude-mem v13.12.1 教训）"
+      _suspect=$((_suspect+1))
+    done < <(awk -v pat="$_mtime_patterns" '
+      $0 ~ /^[[:space:]]*#/ { next }
+      $0 ~ /log|debug|echo|printf|trace/ { next }
+      $0 ~ pat { print }
+    ' "$_script")
   done
   if [[ $_suspect -eq 0 ]]; then
     echo "  ✓ 版本 oracle 单源真值扫描通过（扫描 ${_scanned} 个脚本，无按 mtime 选候选的可疑路径）"
@@ -1615,20 +1614,31 @@ check_stable_propagate_wiring() {
 check_multibyte_var_adjacency() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   echo "▶ 多字节相邻变量铁律（G20，security-spec §6.1：\$var 紧跟全角标点须 \${var}）"
-  local hits=0 f line
-  for f in "$base"/scripts/*.sh "$base"/assets/*.sh "$base"/assets/hooks/*.sh \
-           "$base"/tests/*.sh "$base"/tests/e2e/*.sh \
-           "$base"/../verifier/v1/*.sh "$base"/../verifier/v2/*.sh; do
-    [[ -f "$f" ]] || continue
-    while IFS= read -r line; do
-      local trimmed; trimmed="$(printf '%s' "$line" | sed 's/^[[:space:]]*//')"
-      [[ "$trimmed" == \#* ]] && continue
-      if printf '%s' "$line" | grep -qE '\$[A-Za-z_][A-Za-z0-9_]*[）。，：；（！？·]'; then
-        echo "  ✗ $(basename "$f"): $line" >&2
-        hits=$((hits+1))
-      fi
-    done < "$f"
+  local hits=0
+  # R36-D1（2026-09-18 Go 栈回归实测）：原逐行 printf|grep fork 循环扫 22.7k 行耗 11min35s
+  # （fork 风暴；G24 check_portability 已有同款问题先例与预筛解法）。向量化为单 awk 进程/检查。
+  # 注意 awk 正则是字节级的：全角标点字符类 [）。，…] 会按字节误匹配任意 CJK 第二三字节，
+  # 必须写成全角字面量交替（（）|。|，…）保持与 grep -E 字符类等价的语义。
+  # 先按存在性收敛文件清单（生成物侧 self-check 无 ../verifier，glob 原样传给 awk 会 fatal）。
+  local _g20_files=( ) _g
+  for _g in "$base"/scripts/*.sh "$base"/assets/*.sh "$base"/assets/hooks/*.sh \
+            "$base"/tests/*.sh "$base"/tests/e2e/*.sh \
+            "$base"/../verifier/v1/*.sh "$base"/../verifier/v2/*.sh; do
+    [[ -f "$_g" ]] && _g20_files+=( "$_g" )
   done
+  if [[ ${#_g20_files[@]} -eq 0 ]]; then
+    echo "  ✓ 无 \$var 紧跟多字节标点违规（无可扫描脚本）"
+    return
+  fi
+  hits=$(awk '
+    FNR == 1 { bn = FILENAME; sub(/.*\//, "", bn) }
+    /^[[:space:]]*#/ { next }
+    $0 ~ /\$[A-Za-z_][A-Za-z0-9_]*(）|。|，|：|；|（|！|？|·)/ {
+      printf "  ✗ %s: %s\n", bn, $0 > "/dev/stderr"; c++
+    }
+    END { print c + 0 }
+  ' "${_g20_files[@]}")
+  hits="${hits:-0}"
   if [[ "$hits" -gt 0 ]]; then
     warn "多字节相邻变量违规 ${hits} 处——\$var 后紧跟全角标点须改 \${var} 形式（C-locale 下 unbound 崩溃）"
     FAIL=1
@@ -1648,34 +1658,37 @@ check_multibyte_var_adjacency
 check_sed_regex_dialect() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   echo "▶ sed 正则方言铁律（G22，security-spec §6.1：BSD 不认 GNU 扩展，POSIX 类 + sed -E 唯一合法）"
-  local hits=0 f line trimmed
-  for f in "$base"/scripts/*.sh "$base"/assets/*.sh "$base"/assets/hooks/*.sh \
-           "$base"/assets/framework-gates/*.sh \
-           "$base"/tests/*.sh "$base"/tests/e2e/*.sh \
-           "$base"/../verifier/v1/*.sh "$base"/../verifier/v2/*.sh; do
-    [[ -f "$f" ]] || continue
-    while IFS= read -r line; do
-      trimmed="$(printf '%s' "$line" | sed 's/^[[:space:]]*//')"
-      [[ "$trimmed" == \#* ]] && continue
-      case "$line" in
-        *sed*) : ;;
-        *) continue ;;
-      esac
-      # R1：sed 表达式（ERE/BRE 不论）含 \s \b \w → 违规（BSD 当字面字母）
-      if printf '%s' "$line" | grep -qE "sed[^|;]*'[^']*\\\\[sbw]" \
-         || printf '%s' "$line" | grep -qE 'sed[^|;]*"[^"]*\\\\[sbw]'; then
-        echo "  ✗ $(basename "$f"): $line" >&2
-        hits=$((hits+1)); continue
-      fi
-      # R2：BRE sed（无 -E）含 \? \+ → 违规（BSD BRE 不支持）
-      if ! printf '%s' "$line" | grep -q 'sed -E'; then
-        if printf '%s' "$line" | grep -qE "sed[^|;]*'[^']*\\\\[?+]"; then
-          echo "  ✗ $(basename "$f"): $line" >&2
-          hits=$((hits+1))
-        fi
-      fi
-    done < "$f"
+  local hits=0
+  # R36-D1：向量化（同 G20 注；单 awk 多文件，动态正则经 -v 传引号字符）
+  local _g22_files=( ) _g
+  for _g in "$base"/scripts/*.sh "$base"/assets/*.sh "$base"/assets/hooks/*.sh \
+            "$base"/assets/framework-gates/*.sh \
+            "$base"/tests/*.sh "$base"/tests/e2e/*.sh \
+            "$base"/../verifier/v1/*.sh "$base"/../verifier/v2/*.sh; do
+    [[ -f "$_g" ]] && _g22_files+=( "$_g" )
   done
+  if [[ ${#_g22_files[@]} -eq 0 ]]; then
+    echo "  ✓ 无 sed 正则方言违规（无可扫描脚本）"
+    return
+  fi
+  hits=$(awk -v q1="'" -v q2='"' '
+    FNR == 1 { bn = FILENAME; sub(/.*\//, "", bn) }
+    /^[[:space:]]*#/ { next }
+    $0 !~ /sed/ { next }
+    {
+      r1a = "sed[^|;]*" q1 "[^" q1 "]*\\\\[sbw]"
+      r1b = "sed[^|;]*" q2 "[^" q2 "]*\\\\[sbw]"
+      if ($0 ~ r1a || $0 ~ r1b) {
+        printf "  ✗ %s: %s\n", bn, $0 > "/dev/stderr"; c++; next
+      }
+      if ($0 !~ /sed -E/) {
+        r2 = "sed[^|;]*" q1 "[^" q1 "]*\\\\[?+]"
+        if ($0 ~ r2) { printf "  ✗ %s: %s\n", bn, $0 > "/dev/stderr"; c++ }
+      }
+    }
+    END { print c + 0 }
+  ' "${_g22_files[@]}")
+  hits="${hits:-0}"
   if [[ "$hits" -gt 0 ]]; then
     warn "sed 正则方言违规 ${hits} 处——BSD 不认 \\s/\\b/\\w 与 BRE \\?/\\+，改 POSIX 类 + sed -E（security-spec §6.1）"
     FAIL=1
@@ -1694,7 +1707,8 @@ check_sed_regex_dialect
 check_portability() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   echo "▶ 跨平台可移植性铁律（G24：mktemp 带 TMPDIR 模板 / GNU-only 命令 / bash4 特性）"
-  local hits=0 f line trimmed
+  local hits=0 f
+  local _g24_files=( )
   # 性能：行内逐条 grep 会 spawn O(行数×模式) 子进程（190 文件全量实测 2min+ 不可接受）。
   # 先一次 grep -lE 文件级预筛出含嫌疑词的文件，仅对它们进逐行循环（绝大多数文件零嫌疑词被跳过）。
   local _suspect_re='mktemp|(^|[|;&(]) *tac( |$)|grep -P|sed -i|readlink -f|(declare|local) -A|mapfile|readarray|\$\{[A-Za-z_][A-Za-z0-9_]*(,,|\^\^)'
@@ -1710,40 +1724,46 @@ check_portability() {
     case "$f" in
       */scripts/self-check.sh|*/scripts/verify-framework-ruleset.sh) continue ;;
     esac
-    while IFS= read -r line; do
-      trimmed="$(printf '%s' "$line" | sed 's/^[[:space:]]*//')"
-      [[ "$trimmed" == \#* ]] && continue
-      # ① 裸 mktemp（mktemp 或 mktemp -d 后无模板参数；含 TMPDIR 的合规）
-      if printf '%s' "$line" | grep -qE 'mktemp( -d)? *["'"'"']? *[\);&|]' \
-         && ! printf '%s' "$line" | grep -q 'TMPDIR'; then
-        echo "  ✗ $(basename "$f"): 裸 mktemp（补 \${TMPDIR:-/tmp} 模板）: $line" >&2
-        hits=$((hits+1)); continue
-      fi
-      # ② GNU-only 命令：tac / grep -P / sed -i 无后缀 / readlink -f
-      if printf '%s' "$line" | grep -qE '(^|[|;&(]) *tac( |$)'; then
-        echo "  ✗ $(basename "$f"): GNU-only tac（改 awk 倒序缓冲）: $line" >&2; hits=$((hits+1)); continue
-      fi
-      if printf '%s' "$line" | grep -q 'grep -P'; then
-        echo "  ✗ $(basename "$f"): grep -P（PCRE，BSD/老 grep 无；改 grep -E）: $line" >&2; hits=$((hits+1)); continue
-      fi
-      if printf '%s' "$line" | grep -qE "sed -i( |'|\")" && ! printf '%s' "$line" | grep -q 'sed -i\.bak'; then
-        echo "  ✗ $(basename "$f"): sed -i 无备份后缀（GNU 写法；改 sed -i.bak+rm）: $line" >&2; hits=$((hits+1)); continue
-      fi
-      if printf '%s' "$line" | grep -q 'readlink -f'; then
-        echo "  ✗ $(basename "$f"): readlink -f（BSD 无；改 \$(cd+pwd) 替代）: $line" >&2; hits=$((hits+1)); continue
-      fi
-      # ③ bash 4+ 特性：declare -A / local -A / mapfile / ${var,,} / ${var^^}
-      if printf '%s' "$line" | grep -qE '\b(declare|local) -A\b'; then
-        echo "  ✗ $(basename "$f"): declare -A（bash3.2 崩；用平行数组）: $line" >&2; hits=$((hits+1)); continue
-      fi
-      if printf '%s' "$line" | grep -qE '\b(mapfile|readarray)\b'; then
-        echo "  ✗ $(basename "$f"): mapfile/readarray（bash4+；改 while read）: $line" >&2; hits=$((hits+1)); continue
-      fi
-      if printf '%s' "$line" | grep -qE '\$\{[A-Za-z_][A-Za-z0-9_]*(,,|\^\^)'; then
-        echo "  ✗ $(basename "$f"): \${var,,}/\${var^^}（bash4+；改 tr）: $line" >&2; hits=$((hits+1)); continue
-      fi
-    done < "$f"
+    _g24_files+=( "$f" )
   done
+  if [[ ${#_g24_files[@]} -eq 0 ]]; then
+    hits=0
+  else
+  # R36-D1：内层逐行 fork 循环向量化为单 awk（\b 在 awk 无支持，改词边界等价式
+  # (^|[^A-Za-z0-9_])word([^A-Za-z0-9_]|$)；引号字符经 -v 传入动态正则）
+  hits=$(awk -v q1="'" -v q2='"' '
+    FNR == 1 { bn = FILENAME; sub(/.*\//, "", bn) }
+    /^[[:space:]]*#/ { next }
+    {
+      if ($0 ~ ("mktemp( -d)? *[" q1 q2 "]? *[\\);&|]") && $0 !~ /TMPDIR/) {
+        printf "  ✗ %s: 裸 mktemp（补 ${TMPDIR:-/tmp} 模板）: %s\n", bn, $0 > "/dev/stderr"; c++; next
+      }
+      if ($0 ~ /(^|[|;&(]) *tac( |$)/) {
+        printf "  ✗ %s: GNU-only tac（改 awk 倒序缓冲）: %s\n", bn, $0 > "/dev/stderr"; c++; next
+      }
+      if ($0 ~ /grep -P/) {
+        printf "  ✗ %s: grep -P（PCRE，BSD/老 grep 无；改 grep -E）: %s\n", bn, $0 > "/dev/stderr"; c++; next
+      }
+      if ($0 ~ ("sed -i( |" q1 "|" q2 ")") && $0 !~ /sed -i\.bak/) {
+        printf "  ✗ %s: sed -i 无备份后缀（GNU 写法；改 sed -i.bak+rm）: %s\n", bn, $0 > "/dev/stderr"; c++; next
+      }
+      if ($0 ~ /readlink -f/) {
+        printf "  ✗ %s: readlink -f（BSD 无；改 $(cd+pwd) 替代）: %s\n", bn, $0 > "/dev/stderr"; c++; next
+      }
+      if ($0 ~ /(^|[^A-Za-z0-9_])(declare|local) -A([^A-Za-z0-9_]|$)/) {
+        printf "  ✗ %s: declare -A（bash3.2 崩；用平行数组）: %s\n", bn, $0 > "/dev/stderr"; c++; next
+      }
+      if ($0 ~ /(^|[^A-Za-z0-9_])(mapfile|readarray)([^A-Za-z0-9_]|$)/) {
+        printf "  ✗ %s: mapfile/readarray（bash4+；改 while read）: %s\n", bn, $0 > "/dev/stderr"; c++; next
+      }
+      if ($0 ~ /\$\{[A-Za-z_][A-Za-z0-9_]*(,,|\^\^)/) {
+        printf "  ✗ %s: ${var,,}/${var^^}（bash4+；改 tr）: %s\n", bn, $0 > "/dev/stderr"; c++; next
+      }
+    }
+    END { print c + 0 }
+  ' "${_g24_files[@]}")
+  fi
+  hits="${hits:-0}"
   if [[ "$hits" -gt 0 ]]; then
     warn "跨平台可移植性违规 ${hits} 处——麒麟老 bash/Git Bash/BSD macOS 兼容性风险（SKILL.md 三平台铁律）"
     FAIL=1
@@ -1952,23 +1972,36 @@ check_r13_orphan_assets() {
 check_r13_layer_references() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local hits=0
-  for f in "$base"/references/*.md; do
-    [[ -f "$f" ]] || continue
-    # 只抓"正文 prose 里的裸调用"（真依赖）：表格行/标题/引用块/代码围栏/行内代码均为指引性提及（合法指针）
-    local in_fence=0 line stripped
-    while IFS= read -r line; do
-      case "$line" in
-        '```'*) in_fence=$((1-in_fence)); continue ;;
-        \|*|'#'*|'>'*) continue ;;
-      esac
-      [[ "$in_fence" -eq 1 ]] && continue
-      stripped="$(printf '%s' "$line" | sed 's/`[^`]*`//g')"
-      if printf '%s' "$stripped" | grep -qE 'bash +scripts/|source +scripts/'; then
-        warn "层间反向引用：references/$(basename "$f") 含对 scripts/ 的调用依赖（地图不应依赖约束层）：${line:0:80}"
-        hits=$((hits+1))
-      fi
-    done < "$f"
+  local _r13_files=( ) _f
+  for _f in "$base"/references/*.md; do
+    [[ -f "$_f" ]] && _r13_files+=( "$_f" )
   done
+  if [[ ${#_r13_files[@]} -eq 0 ]]; then
+    echo "  ✓ 层间反向引用：0（无可扫描 references）"
+    return
+  fi
+  # R36-D1：逐行 printf|sed + printf|grep 双 fork 循环向量化为单 awk（fence 状态机在 awk 内维护）
+  while IFS= read -r _hit; do
+    [[ -z "$_hit" ]] && continue
+    warn "层间反向引用：$_hit"
+    hits=$((hits+1))
+  done < <(awk '
+    FNR == 1 { bn = FILENAME; sub(/.*\//, "", bn); infence = 0 }
+    /^```/ { infence = 1 - infence; next }
+    /^\|/ || /^#/ || /^>/ { next }
+    infence { next }
+    {
+      stripped = $0
+      while (match(stripped, /`[^`]*`/)) {
+        stripped = substr(stripped, 1, RSTART - 1) substr(stripped, RSTART + RLENGTH)
+      }
+      if (stripped ~ /bash +scripts\/|source +scripts\//) {
+        line = $0
+        if (length(line) > 80) line = substr(line, 1, 80)
+        printf "references/%s 含对 scripts/ 的调用依赖（地图不应依赖约束层）：%s\n", bn, line
+      }
+    }
+  ' "${_r13_files[@]}")
   [[ "$hits" -eq 0 ]] && echo "  ✓ 层间反向引用：0（references 不依赖 scripts——R13 §4.5.1 结构性）"
 }
 check_r13_orphan_assets

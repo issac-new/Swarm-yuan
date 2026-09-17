@@ -358,6 +358,22 @@ elif [[ -f "$_CONF_DIR/precheck.conf" ]]; then
     # set -e 下会使 precheck.sh 在此退出（所有门禁静默失效）。|| true 兜底，conf 内容已 source 生效。
     source "$_CONF_DIR/precheck.conf" || true
     set -u
+    # R36-D10（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：conf 自洽性告警——READONLY_DIRS
+    # 覆盖 SPEC_GLOB 所在目录时 spec-first 流程自相矛盾（AI 按 SPEC_GLOB 约定写 spec，
+    # check_scope 即报"只读目录有改动"fail，流程自我打架）。warn 不阻断：配置意图因项目而异。
+    _r36d10_warn=""
+    if [[ -n "${READONLY_DIRS[*]+x}" && -n "${SPEC_GLOB:-}" ]]; then
+      for _r36d10_rd in "${READONLY_DIRS[@]}"; do
+        case "$SPEC_GLOB" in
+          "$_r36d10_rd"/*|*/"$_r36d10_rd"/*|*/"$_r36d10_rd")
+            _r36d10_warn="⚠ conf 自洽性：READONLY_DIRS 含 '${_r36d10_rd}' 而 SPEC_GLOB='${SPEC_GLOB}' 落其下——按约定写 spec 将触发 check_scope fail（R36-D10；调整 READONLY_DIRS 或 SPEC_GLOB）"
+            echo "$_r36d10_warn" >&2
+            ;;
+        esac
+      done
+      unset _r36d10_rd
+    fi
+    unset _r36d10_warn
   else
     # conf 语法错误（P1-4 前置守卫）：原行为是 source 直接崩（exit 2 且报错文本随 bash 版本漂移）。
     # --doctor 是 conf lint，须能带病启动（走内置默认值，由 doctor ⑤ 报 fail）；
@@ -1176,7 +1192,7 @@ _gate_exec() {
   if [[ -f "${TRACE_LOG_SH:-}" ]]; then
     bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status started >&2 2>/dev/null || true
   fi
-  local _trace_bf=$FAIL_COUNT _trace_bw=$WARN_COUNT
+  local _trace_bf=$FAIL_COUNT _trace_bw=$WARN_COUNT _trace_bs=$SKIP_COUNT
   # WP-Q1（决策 19）：门禁分层 enforce_level 分流——advisory 门禁永不 fail/warn 计数。
   # 在子 shell 内重定义 fail()/warn()/pass() 为纯 echo，advisory 门禁的 fail/warn 调用变成纯输出行，
   # 不进 FAIL_COUNT/WARN_COUNT——"advisory 是观测类门禁，不阻断交付"语义机器化。
@@ -1257,10 +1273,13 @@ _gate_exec() {
   # 非证据模式：与原分发语句逐语句等价（含 set -e 传播语义）
   if [[ "$_EVIDENCE_ON" -eq 0 ]]; then
     if [[ "$2" == "1" ]]; then "$1" || true; else "$1"; fi
-    # 门禁级 trace-log done/fail/warn（按计数器增量判定）
+    # 门禁级 trace-log done/fail/skip/warn（按计数器增量判定；R36-D5：非证据模式补 skip 态——
+    # 原实现只看 fail/warn 增量，skip 门禁（如无 spec 的 check_reuse）trace 记 done，与
+    # 汇总的 SKIP_LIST 分裂、与证据模式五态（fail>skip>warn>pass）不一致）
     if [[ -f "${TRACE_LOG_SH:-}" ]]; then
       local _tst="done"
       [[ $FAIL_COUNT -gt $_trace_bf ]] && _tst="fail"
+      [[ "$_tst" == "done" && $SKIP_COUNT -gt $_trace_bs ]] && _tst="skip"
       [[ "$_tst" == "done" && $WARN_COUNT -gt $_trace_bw ]] && _tst="warn"
       bash "$TRACE_LOG_SH" --node "门禁" --tool "$1" --status "$_tst" >&2 2>/dev/null || true
     fi

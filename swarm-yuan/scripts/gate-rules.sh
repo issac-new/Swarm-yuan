@@ -109,6 +109,11 @@ for _rf in "${_rule_files[@]}"; do
     [[ "$_matched" -eq 0 ]] && case "$_first_one" in $_pat_base) _matched=1 ;; esac
     [[ "$_matched" -eq 0 ]] && case "$_first_two" in $_pat_base) _matched=1 ;; esac
     [[ "$_matched" -eq 0 ]] && case "$CMD" in $_pat) _matched=1 ;; esac
+    # R36-D9（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：3+ token pattern 的"尾 * 可省"失守——
+    # "可有可无的尾参"只靠 _first_two 覆盖两 token（npm publish *），四 token 如
+    # "docker compose down -v *"对裸命令不命中（CMD 全串 vs 含 * glob 差尾参），静默降级 prompt。
+    # 补 CMD 前缀匹配 _pat_base*：裸命令与带任意尾参均命中，与行格式注释语义一致。
+    [[ "$_matched" -eq 0 ]] && case "$CMD" in $_pat_base*) _matched=1 ;; esac
     [[ "$_matched" -eq 0 ]] && continue
     # 取最严
     if [[ $( _rank "$_dec") -ge $( _rank "${_decision:-allow}") || -z "$_decision" ]]; then
