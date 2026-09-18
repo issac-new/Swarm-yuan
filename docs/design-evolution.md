@@ -528,7 +528,19 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 
 **同轮修复清单**（纯文档层，无代码行为变更）：usage-manual 双节号/悬空指针 8 处、三理念 ↔ 四理念叙事分岔合一、数字速览二表收敛（手册 §10 改指 README 附录 A）、CONTRIBUTING 三处陈旧、生成器模板 hermes-agent/ncwk 项目沉积泛化、CLAUDE.md ~68K 行口径更新、capabilities 版本注记头同步。修复面验证 = self-check + e2e + fixtures + gen-e2e 全绿。
 
-**决策索引（R13 后）**：决策 1-17 见 §13 历史档案 A5 归档卷；决策 18-29 见本文前部；决策 30-32 自适应与压缩；决策 33-34 R13 重构与防复胖；决策 35 创造纪律（audit-claims-reality 轮）；决策 36 恰当应用（去教条化轮）；决策 37 R21 核心链条补强（复盘改进轮）；决策 38 审计收账轮（版本口径机器锚 + 认知面预算例外）。
+**决策索引（R13 后）**：决策 1-17 见 §13 历史档案 A5 归档卷；决策 18-29 见本文前部；决策 30-32 自适应与压缩；决策 33-34 R13 重构与防复胖；决策 35 创造纪律（audit-claims-reality 轮）；决策 36 恰当应用（去教条化轮）；决策 37 R21 核心链条补强（复盘改进轮）；决策 38 审计收账轮（版本口径机器锚 + 认知面预算例外）；决策 39 Harness 实践吸收（证据分级 + 吸收边界 + 四新对象登记）。
+
+---
+
+### 决策 39：Harness 实践吸收轮——证据分级口径与吸收边界（2026-09-18，r37-harness-practice-absorption）
+
+**背景**：用户指令深度调研行者明灵《Harness实践：OpenSpec + Superpowers + CodeGraph + Ponytail + Caveman + RTK》上下篇并吸收。文章披露四新上游对象，指针与数字全部经 GitHub API/本仓 comet 克隆源码重核后才登记（文章"Shape→Build→Verify→Archive"相名在 comet 0.4.1 克隆不存在——A 级证实的是非 full 流程 Open 直进 Build 的仪式裁剪；官方评测数字在克隆 README 直查升 B 级）。收口后用户两轮追加指令（"去除脚手架相关内容"、"整合下"），沉淀两条治理原则。
+
+**决定一：吸收证据分级口径 = A/B/C 三级**。A=本机实测（API/源码/命令输出）、B=官方一手（上游 README/release 直查）、C=二手转述（文章/媒体）。媒体报道的仓库指针/版本/性能数字默认 C 级，未经核实不得写入引用基线列。口径固化进 upstream-baseline 头注，调研轮断言全程标注。本轮实践即四仓指针全重核：codegraph 71,356★/MIT、ponytail 141,551★/MIT、caveman 106,373★/混合许可（Proxy=BSL-1.1 零接触）、rtk 80,864★/Apache-2.0。
+
+**决定二：脚手架/装配内容不吸收（用户裁决）**。上游的安装器/骨架装配行为描述（自动写宿主配置、init 接入实录、插件安装行为、生命周期 hooks 安装面罗列）一律不进载体——吸收机制、不吸收装配叙事；机制句保留（"装完≠激活/trusted_hash"、供应链三引擎审查）。已落载体者移除（add2c34），原则入方法论吸收口径。
+
+**同轮能力登记**：①懒生成七层阶梯随发（DietrichGebert/ponytail 蒸馏——⑤编码先查再写决策程序化；懒≠偷工四不砍与门禁下限同向）；②codegraph 进图谱第三选型 + 基线表第 17 行（watch 未接线，升级前提=本机跑通索引+查询；不进 FACT_RUNTIMES 13 计数——选型备选非接线运行时，与 dsh 同处理）；③评测双口径 pass^3（连三绿=稳定收敛）/pass@3（能力上界）+ 裁判运动员四重分离（judge 独立 agent/模型/baseUrl/凭证）——verifier 评测作业口径；④comet 实操层七机制（Native 仪式裁剪/resume-probe 四值/allow_paths/doctor/eval 分离等，克隆 A 级直查）；⑤三漏输出经济学/三种熵/工具面三原则分落各 methodology 载体。认知面预算第七次登记 303104→317440B（实测 313499B，功能性增量逐例登记）。整合轮（8f90e09）补衔接：SKILL.md 追踪表行、generate-skill 节点⑤骨架消费接线、锚点修正、残留口径清理——大吸收轮收口后必跑衔接审计入惯例。
 
 ---
 
