@@ -1730,9 +1730,9 @@ for f in $_placeholder_refs; do
 
 ## 节点⑤：编码实现
 
-**① 流程入口（顺序/并行）：** 前序=节点④；复杂变更（>3 文件/跨模块）用 Dynamic Workflows 并行扇出
+**① 流程入口（顺序/并行）：** 前序=节点④；复杂变更（>3 文件/跨模块）用 Dynamic Workflows 并行扇出；写码前按 `references/lazy-generation-methodology.md` 七层阶梯先查再写（层 2 查 recipes/reference-manual，层 7 才新增）
 
-**④ 质量门禁：** ★测试左移（每个 task 先写/更新测试再实现，TDD/BDD；precheck `--shift-left` 校验 test 与 impl 同分支提交）
+**④ 质量门禁：** ★测试左移（每个 task 先写/更新测试再实现，TDD/BDD；precheck \`--shift-left\` 校验 test 与 impl 同分支提交）
 
 **⑥ 产出物与调用追踪：** 代码提交 + 测试提交
 

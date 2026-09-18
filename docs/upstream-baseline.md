@@ -8,7 +8,7 @@
 > 用途：登记 swarm-yuan 引用/吸收的 **17 个上游运行时**的许可证与版本基线，支撑供应链可审计性（ISO/IEC 5230 OpenChain 方向）与文档漂移治理。
 > 数据来源：GitHub REST API + npm/PyPI registry **2026-08-21 实测**（本轮 R4 全量重核）；历史实测轮次见 `docs/research/R6-upstream-web.md` §0（2026-07-20）/ §13 历史档案 A10（原 runtime-update-2026-07，2026-07-26）/ 2026-08-14 轮。
 > **证据分级口径（R37，2026-09-18 增补）**：登记表与调研轮断言按三级标注——**A**=本机实测复现（API/源码/命令输出）；**B**=官方一手（上游 README/release/changelog 直查）；**C**=二手转述（文章/媒体报道，须源码核实后才可升级）。媒体报道的仓库指针/版本/数字默认 C 级，未经核实不得写进"引用基线"列。首轮实践：R37（《Harness实践》上下篇转述的四仓指针全部 API 重核后才登记）。
-> **重核节奏（R13 批次3，§4.5.5）**：从"每轮全量重核 16 个"改为**破坏性变更驱动**——上游 GitHub release 标 breaking/major 时触发重核 + 季度例行一次。重核是维护不是成长，砍全量形态给成长腾带宽。
+> **重核节奏（R13 批次3，§4.5.5）**：从"每轮全量重核"改为**破坏性变更驱动**——上游 GitHub release 标 breaking/major 时触发重核 + 季度例行一次。重核是维护不是成长，砍全量形态给成长腾带宽。
 > **执行纪律（2026-09-08 增补，教训：R16→R18 六天三轮全量/补核 + R17 收口后数小时"同日复核"，均偏离上条节奏）**：①patch 级移动与零增量只更新表行版本号/日期，不开调研轮、不写口径注；②同日复核废止——一轮收口即封盘，新版本等下一触发点；③确需重核时细节一律留 `docs/research/`-runtime-refresh 档，本文件只记一行结论。
 > 机器可读契约：每个 drifted 条目所在行必须含字面漂移标记（行尾「机器标记」列，格式 baseline_status=状态值）；self-check 的轻量基线忠告仅 grep 漂移标记所在行并 warn（不联网）。
 > 状态取值：`synced`（基线≈最新）｜`drifted`（基线落后，需重核）｜`watch`（迭代极快，持续观察 / 登记未接线）｜`license-risk`（许可证合规风险）。
@@ -58,7 +58,7 @@
 2. **版本漂移（0 项 drifted，2026-09-11 R24 重核后）**：R24（2026-09-11）轻量补核——claude-code v2.1.268 修复主导实质 patch + dsh rc.2 + 五行外围升基线，codex 零 stable 增量（`docs/research/R24-runtime-refresh.md`）；R22（2026-09-10）补核——**codex rust-v0.154.0 实质 minor**（R20 后数小时 stable 兑现）+ dsh dsh-v0.1.5-rc.1（R20 预告触发点命中）+ claude-code v2.1.267 + openspec/claude-mem/ocr/graphify/gstack/ruflo 六行升级（§13 历史档案 A18 + `docs/research/R22-runtime-refresh.md`）；R20（2026-09-09，comet 0.4.0 兑现 drift 归零）/R18/R17 明细见各条目吸收注记与对应档案。**R22 跨档主题**：三件套同信号三面——「保持不变量」清单扩展（claude 保缓存/codex 保授权/dsh 保消息归属），证据链的上下文完整性与证据本身同等重要。**R24 跨档主题**：fail-closed/诚实口径家族跨宿主第三次会师——claude 符号链接路径规范化比对 + ruflo 截断≠结论 + codex-security 契约不写不存在的能力。
 3. **watch（1 项）**：claude-mem 迭代极快（13.15.3→13.24.0，15 天 9 个 minor），持续观察；**npm 通道异常已澄清（2026-09-01）**：npm `latest` dist-tag 被人为回钉 12.4.7，官方分发主通道切 Claude Code 插件市场（`/plugin install claude-mem@thedotmack`）+ cmem.ai，npm 为遗留/SDK 通道——版本 oracle 一律以 GitHub tag 为准，npm 引用须显式钉版本。
 4. **org 迁移**：graphify 仓库已迁至 Graphify-Labs/graphify，引用一律用新 URL；npm `graphifyy` 0.10.0 仍是 2026-06-06 异源旧分支（与 v1.0.0 同族），**跟踪线以 GitHub v8 分支为准（v0.9.53，持续活跃）**。
-5. **存续风险**：16 个运行时中个人/小团队项目占比高（comet/GitNexus/claude-mem/gsd-core），上游存续监测纳入审计例程；GSD v1 上游（gsd-build/get-shit-done）已于 2026-06-26 归档，引用 open-gsd/gsd-core 为既定应对；GitNexus 2026-09 恢复活跃（v1.6.11 stable 已出）但 license-risk 不变。
+5. **存续风险**：17 个运行时中个人/小团队项目占比高（comet/GitNexus/claude-mem/gsd-core/codegraph），上游存续监测纳入审计例程；GSD v1 上游（gsd-build/get-shit-done）已于 2026-06-26 归档，引用 open-gsd/gsd-core 为既定应对；GitNexus 2026-09 恢复活跃（v1.6.11 stable 已出）但 license-risk 不变。
 6. **gstack 版本递增节奏**：v1.60.1.0（2026-08-14 基线）→ v1.68.2.0（08-20）→ v1.77.0.0（08-31）18 天 17 个 minor；本仓引用为 vendor 离线包，离线包内容不升级（vendor 决策见 §13 历史档案 A8），只升引用基线。
 
 ### 三、CLI 侧版本差异专题（2026-08-21 R4 补核：Claude Code + Codex）
