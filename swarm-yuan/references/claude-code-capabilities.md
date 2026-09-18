@@ -680,3 +680,18 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **输出经济学**：Stop hook 重复 block 以 500 字符条件标签替代全量重发。
 - **供应链细节**：无自身 git 仓的 plugin/marketplace 目录不再误取外层 git 仓版本——版本归属。
 - 本仓对账：gates-strict/precheck 无无限循环重试点位，无门禁增量；「无界重试→有界」登记为动态面族样本，供生成技能的死线设计参照。
+
+## 版本注记：v2.1.275–276（2026-09-18 R38 核）——技能跨端同源与排队消息语义
+
+> 覆盖 v2.1.275（实质批）+ v2.1.276（单回归修复）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R38-runtime-refresh.md`。
+
+- **claude.ai 技能/插件同步进终端会话**（`syncClaudeAiSkills/Plugins: false` 可关）——技能单一事实源跨端同源：云端与终端不维护两份启用态。
+- **排队消息 send-now 语义**：ctrl+enter 打断当前轮并立即冲刷全部排队消息；已发送与排队中在模型接收前以灰色区分——排队是可撤回的暂存态，冲刷是显式动作。
+- **静默失效可观测**：otelHeadersHelper 配置失败启动即告警（此前静默零遥测导出）——诚实族：导不出≠导出了。
+- **缓存稳定性第五波**：resume/compaction 后 memory 文件 age 注记漂移致 prompt cache miss 已修——缓存前缀内不得有时间性易变文案。
+- **子代理消息传播完整性**：`--forward-subagent-text` 对 context: fork 技能及其嵌套 fork 丢消息已修——与 codex 0.155「fork 会话 hook 可区分」同族：派生会话的消息归属与传播是一等语义。
+- **机密脱敏延续**（R24 同族第三波）：plugin/marketplace 消息、日志与 list 输出不再回显 git/ssh/marketplace URL 内嵌的密码与 token。
+- **损坏 transcript 容错批**（R34 自愈族延续）：resume/选择器预览/后台代理/转录视图对 malformed 条目容错，损坏不再炸全会话。
+- **有界族两例**：Read 大文件解码失败报错而非挂死；Grep/Glob/@建议 20MB 输出上限。
+- **沙箱退出码语义**：Linux 沙箱 zsh 下失败命令误报 exit 0 已修——退出码是门禁的输入，语义不许漂。
+- **276 单回归**：自定义网关每请求 400（275 引入）——修复轮自身即回归源再添一例（270 同款），权限/网关变更须带回归面。

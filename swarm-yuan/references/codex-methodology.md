@@ -180,3 +180,15 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **timeout 语义**：默认 600s；SessionEnd 硬预算 1s（上限 3s）——短事件面挂重检查会静默丢失，Stop/SessionEnd 只放轻断言。
 - **`[features] hooks = false`**：会话级一键关停——诚实披露面：宿主可整体禁 hooks，门禁证据在 hooks-off 会话不可作数（与 restricted 会话同口径）。
 - **`$` 执行 / `@` 引用**：AGENTS.md 里 `$cmd` 把命令输出注入上下文、`@file` 引用文件——项目指令的动态上下文原语，目标技能 AGENTS.md 注记登记（慎用：动态注入破坏缓存前缀稳定性，见 §1.3）。
+
+## 版本注记：rust-v0.155.0（2026-09-18 R38 核）——Guardian 治理深化与遥测最小化
+
+> 219 commits 大版本（stable 线 0.154.0→0.155.0）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R38-runtime-refresh.md`。
+
+- **Guardian 授权治理深化**（R22 第一波的方法论收束）：审批评审绑定发起执行（网络审批不得脱离原上下文裁决）+ 评审消费捕获时的 action settings（评审所见=执行所用）+ 授权证据保全至请求预算化 + 完整动作保全于评审记录——**审批的完整性、归属、时效三轴**在单一治理对象内闭环。
+- **遥测最小化**：skill analytics 移除 repo_url、Guardian 评审分析移除路径字段——分析事件不得携带仓库身份与文件路径；**可观测性与隐私的边界画在字段级**。
+- **认证属主绑定**：认证属主变更即重置 WebSocket 缓存态 + 远程控制会话绑定认证属主——凭证换手后旧派生态必须失效。
+- **压缩失败保全输入**：pre-turn compaction 失败不丢 incoming prompts——压缩是优化不是门槛，fail-safe 方向为保用户输入。
+- **错误语义分化**：HTTP 配额错误与限流分开报告 + MCP status 快照披露 OAuth 失败——错误分类驱动不同处置，不许合并糊报。
+- **分域有界化**：MCP 描述与 Guardian action JSON 分别限界（一处超界不拖垮另一域）+ app-server stdio 有界关闭 + SIGTERM 优雅退出。
+- 登记不吸收：会话隔离与子代理归属解耦（#44521，无单机落地面）、Windows 沙箱修复批、voice alpha 排练（alpha 面）。
