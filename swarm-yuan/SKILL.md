@@ -50,7 +50,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **门禁四族**（计数真值见 `assets/facts.conf`，全部有真实触发路径——序列/hooks/loop-hook）：核心（随 `--all`）/ 架构（随 `--all-full`）/ 合规（随 `--compliance-suite`）/ advisory。规则数据在 `rules.d/*.rules`（三值 allow/prompt/forbid 取最严，FORBID 消息带替代方案）；审批可沉淀为持久规则。enforce 分层（strict/warn/advisory）是实现细节，模型只选执行序列。
 
-**三层接线**（13 运行时，调用不重实现）：深度（GitNexus/graphify/claude-mem/ocr，门禁内真实子进程）/ CLI（OpenSpec/comet/gsd-core/codex-security，按需 CLI）/ 方法论（superpowers/gstack/ECC/Ruflo/impeccable，AI 按节点引用）——代码图谱平权选型可并用。清单与降级链详见 `references/subagent-orchestration.md`。
+**三层接线**（13 运行时，调用不重实现）：深度（GitNexus/graphify/claude-mem/ocr，门禁内真实子进程）/ CLI（OpenSpec/comet/gsd-core/codex-security，按需 CLI）/ 方法论（superpowers/gstack/ECC/Ruflo/impeccable，AI 按节点引用）——代码图谱平权选型可并用（第三备选 codegraph 见 `references/code-graph-tools.md`，watch 未接线）。清单与降级链详见 `references/subagent-orchestration.md`。
 
 **结构→流程对应**（每个结构元素在流程中的位置）：六段式模板=流A ③骨架产物；门禁四族=⑤ conf 声明+⑦.5 片段注入+流B 按序列执勤；rules.d 三值=流B hook 实时消费；三层接线=①.5 探查（gitnexus/graphify 真图谱）与⑥验证（真子进程）时调用。全部追踪见第四层表格。
 
@@ -110,6 +110,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | 三层接线（架构） | ⓪ 自检探测 | ①.5 探查+⑥验证真子进程 | 未装→降级链披露（诚实理念兑现） |
 | spec §19-21 左移（设计） | ④ template-spec 填写 | 流B ③spec 评审+--shift-left | 违缺→fail-gate 拦截→补齐 |
 | 规模与工作量估算（设计，功能点法 NESMA） | ④ template-spec 填写（spec §25 选填节+方法论随发） | 流B ③spec 填 §25、④plan 任务拆分校验（偏离 2 倍回查） | 实战"估算 vs 实际"偏差回填校准（methodology §9） |
+| 懒生成阶梯（理念·拼装具体化，R37） | ①.5 清单盘点（层 2 零件目录）+ 随发 reference | 流B ②探查先查零件、⑤编码七层下探（层 7 才新增） | check_reuse 复用合规；造轮子拦截 hook 候选（未实施） |
 | 决策留痕（设计） | 全程 trace-log --decision | 流B 复盘+audit-closure 闭环检查 | open goal→阻断收口 |
 | 问题沉淀通道（演化链，R21） | 流B 使用中随时（问题→方案→沉淀物） | 三载体：清单/配方/规则 | decisions.jsonl 留痕审计（自成长第⑤环） |
 | 项目指纹（演化链） | ⑧ 写回基线 | 反馈回路 --diff 感知 | 变化→局部更新→新基线 |
@@ -133,7 +134,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
                     （拼装零件；"谁依赖 X"查 relations.jsonl 边集）
   ↓ ③ 设计 spec    AI 写 spec（决策记录+影响范围+测试设计）→ 用户评审批准
   ↓ ④ 实施 plan    AI 拆 tasks（.swarm-yuan/tasks.md）
-  ↓ ⑤ 编码        AI 实现；【若跳过了 spec】fail-gate-hook 直接拒绝写源码（spec-first 强制）
+  ↓ ⑤ 编码        AI 实现（先查再写：按 lazy-generation 七层下探复用，层 7 才新增代码）；【若跳过了 spec】fail-gate-hook 直接拒绝写源码（spec-first 强制）
                     【若违反 rules.d 禁令】hook deny + 替代方案提示
                     【若改动敏感路径】门禁 fail 拦下并给出修复建议
   ↓ ⑥ 测试验证     门禁序列执行（--all/--all-full 按变更面）；全绿进下一步

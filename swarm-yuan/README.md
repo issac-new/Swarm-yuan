@@ -217,7 +217,7 @@
 
 | 来源 | 吸收形式 | 落点 |
 |---|---|---|
-| 深度接线四件（GitNexus / graphify / claude-mem / ocr） | 门禁内真实子进程 + 多级降级链 | references/code-graph-tools.md 等 |
+| 深度接线四件（GitNexus / graphify / claude-mem / ocr） | 门禁内真实子进程 + 多级降级链 | references/code-graph-tools.md 等（图谱第三备选 codegraph 同文件，watch 未接线） |
 | CLI 四件（OpenSpec / comet / gsd-core / codex-security） | 按需调用 CLI，降级自带载体 | references/ 各 methodology |
 | 方法论五件（superpowers / gstack / Ruflo / ECC / impeccable） | AI 按工作流节点引用模式 | references/subagent-orchestration.md |
 | 外部方法论文档 13 份（codex / dsh / cordis / mea-loop / agent-skills / four-theories / cost-estimation / lazy-generation 等） | 蒸馏为 references 方法论，全带"何时读我"路由头 | references/ 同名文件 |

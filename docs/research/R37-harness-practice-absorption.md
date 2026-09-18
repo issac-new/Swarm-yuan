@@ -52,7 +52,7 @@
 - **Ponytail 六 skills / 20 宿主插件形态**：不 vendor 上游 skill（superpowers 不 vendor 决策 A8 同构），只蒸馏方法论。
 - **Comet Native 四相直接改造目标技能 workflow 模板**：登记候选（见 §五），不做行为面大改。
 - **文章五问框架/分层原则叙事**：纯叙事框架，机制已逐项落载体，不另立文档。
-- **装配/安装器类内容**（用户裁决，2026-09-18 收口后追加指令"去除脚手架相关内容"）：吸收机制、不吸收装配叙事——已从载体移除 codegraph"自动为 9 类 Agent 写 MCP 配置"（选型表/对比表/基线行三处）、comet init 接入语境（Superpowers 附记改为纯机制句）、Codex 插件安装行为、Ponytail 生命周期 hooks 安装面（SessionStart/SubagentStart/UserPromptSubmit 罗列，保留"装完≠激活"机制句）。原则回写 [[methodology-absorption-policy]]：上游的安装器/骨架装配行为描述属脚手架内容，一律不进载体。
+- **装配/安装器类内容**（用户裁决，2026-09-18 收口后追加指令"去除脚手架相关内容"）：吸收机制、不吸收装配叙事——已从载体移除 codegraph"自动为 9 类 Agent 写 MCP 配置"（选型表/对比表/基线行三处）、comet init 接入语境（Superpowers 附记改为纯机制句）、Codex 插件安装行为、Ponytail 生命周期 hooks 安装面（SessionStart/SubagentStart/UserPromptSubmit 罗列，保留"装完≠激活"机制句）。原则回写本仓方法论吸收口径：上游的安装器/骨架装配行为描述属脚手架内容，一律不进载体。
 
 ## 五、候选登记（已登记未实施）
 
