@@ -168,7 +168,36 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 ---
 
-## 十一、版本与来源
+## 十一、上下文三漏与输出经济学（R37 增补，2026-09-18）
+
+> 来源：行者明灵《Harness实践》上下篇（2026-09-16/17）+ rtk-ai/rtk 0.49.0（Apache-2.0，80,864★）+ JuliusBrussee/caveman v2.3.1（106,373★；Skill=MIT，Proxy=BSL-1.1）。三漏回答本文前面各节未显式回答的问题：**token 从哪三个通道漏进窗口**——读（agent 找信息）、拿（工具结果回灌）、说（模型输出）。
+
+### 11.1 三漏 × swarm-yuan 既有落点
+
+| 漏点 | 上游治法 | swarm-yuan 对应（既有，非新增） |
+|------|---------|-------------------------------|
+| **读**：逐文件 grep + 读全文 | 图谱查询替代遍历（CodeGraph/graphify query） | ①.5 gitnexus/graphify 真图谱 + relations.jsonl 边集反查；framework-signals.md 索引替代重复 grep |
+| **拿**：工具输出全量回灌 | RTK 压缩四招（过滤无关行/分组计数/截断中间/去重） | precheck `--format json` + to-sarif 结构化输出；ENUM_ZERO_DIM 披露替代长 dump |
+| **说**：模型叙事膨胀 | Caveman 电报体（任务级 −65%） | 门禁驱动开发天然简洁（跑门禁-看结果-修复）；本节吸收的是其**边界纪律**而非话术 |
+
+### 11.2 拿通道的两条机器纪律（RTK 机制吸收）
+
+- **改写胜过说教**：输出压缩不靠提示词求模型"少贴点"，靠 PreToolUse 钩子把 `git status` 机械改写为 `rtk git status`——规则下沉到机器层。swarm-yuan 同构：fail-gate-hook 拦 Bash 推进态 + rules.d FORBID 消息带替代方案，都是"机器改写/拦截"而非说教。
+- **tee 底牌**：压缩工具失败时全量输出落盘、摘要里带落盘路径——**压缩不丢证据**。目标技能的 gate-runs.jsonl / trace-log 同族；新增输出裁剪时照此配底牌。
+- 诚实稀释声明（上游原话精神）：bash 输出 ≠ 账单 token，压缩率是对 bash 字节数的估算（bytes/4 一阶近似），不当作计量断言。
+
+### 11.3 说通道的不可压缩物清单（Caveman 边界纪律）
+
+电报体只压**对话层**，以下持久产物**永不压缩**（可读性是一等属性）：proposal / design doc / spec / tasks / 实施计划 / 验证报告 / 归档注记 / commit message / PR description。目标技能同口径：`.swarm-yuan/` 落盘产物全保真，对话层才允许短。上游诚实警告一并登记：简洁任务上电报体净收益可能为负（每轮多消耗规则 token）——swarm-yuan 不引入话术层，只吸收边界清单。
+
+### 11.4 不引用部分
+
+- RTK 的代理接线与命令改写路由表（宿主层工具，目标技能不接线；crates.io 同名包陷阱已在 R37 档案登记）
+- Caveman Proxy/Engine（BSL-1.1 非 OSI 开源，零接触；与 GitNexus PolyForm 处置同构）
+
+---
+
+## 十二、版本与来源
 
 - 来源：[Vibe编码 公众号《Opus 4.8 删掉了73%的提示词，Opus 5 为何又新增了 82%》](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（2026-07-27，作者 VibeCoder）+ Anthropic Context Engineering 文档
 - 许可证：文章内容版权归原作者，swarm-yuan 只引用方法论模式与证据视角，不复制原文
@@ -176,3 +205,4 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 - 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
 - 自检断言：G14 `check_context_engineering_layering`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 接线 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_REFERENCES=33`（本文档 +1）
+- R37 增补来源：行者明灵《Harness实践》上下篇（2026-09-16/17）+ rtk-ai/rtk（Apache-2.0）+ JuliusBrussee/caveman（Skill=MIT/Proxy=BSL-1.1）——§十一 三漏与输出经济学；档案 `docs/research/R37-harness-practice-absorption.md`

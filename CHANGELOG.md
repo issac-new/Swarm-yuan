@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.16.0] - 2026-09-18
+
+> R37 Harness 实践吸收轮：行者明灵《Harness实践：OpenSpec + Superpowers + CodeGraph + Ponytail + Caveman + RTK》上下篇深度调研。四新上游对象全部 API 实测核验后才登记（codegraph 71,356★/MIT、ponytail 141,551★/MIT、caveman 106,373★/混合许可、rtk 80,864★/Apache-2.0）；文章转述经源码核实修正/升级两处（comet "Shape"相名为文章用语——A 级证实的是非 full 流程 Open 直进 Build 的仪式裁剪机制；官方评测数字与 allow_paths 语义在克隆 README 直查升 B/A 级后才写入载体）。机制吸收 10 项落 9 载体，同构对照 6 项不重复吸收，候选登记 5 项带触发条件，不吸收 5 项显式登记（RTK 代理接线/Caveman BSL-1.1 Proxy/Ponytail 插件形态等）。档案 `docs/research/R37-harness-practice-absorption.md`。
+
+### Added
+- **懒生成方法论随发执勤侧**（references/lazy-generation-methodology.md 新建，UNIVERSAL_FILES 71）：七层复用阶梯（需要存在→代码库→标准库→平台原生→已装依赖→一行→最小实现）把⑤编码"先查再写"从理念一句话变成机械下探决策程序；懒≠偷工四不砍（验证/错误处理/安全校验/无障碍——门禁下限不随任务小而豁免）；上游 issue #126 基线伪影教训（单例峰值≠总体均值）与"装完≠激活"（trusted_hash）诚实登记。
+- **codegraph 进图谱选型与基线表**（第 17 行，watch 登记未接线）：GitNexus（license-risk 零接触）之外的深度图 MIT 备选——单 MCP 工具 `codegraph_explore` + `explore/affected` CLI（覆盖子代理 MCP 描述盲区）+ 100% 本地 SQLite/FTS5 + 索引随代码自动同步；+80% 上下文残留官方诚实声明一并登记；升级接线前提=本机跑通一次索引+查询（A 级）。
+- **评测双口径判据与裁判运动员分离**（review-methodology R37 条目）：pass^3（连三绿=稳定性）/pass@3（三内一过=能力上界）——单次全绿只是准入不是收敛判据；comet eval 的 judge 与 execution 四重分离（独立 agent/模型/baseUrl/凭证，被评对象不得自证）；独立只读 Verifier（Verify 相无写权限独立验收）——三权分立的上游第二实证。
+- **comet 实操层七机制**（subagent-orchestration R37 增量段，research/comet 克隆 0.4.1 A 级直查）：Native 仪式裁剪（非 full 流程 Open 直进 Build）/resume-probe 四值恢复探测（auto_resume/ask_user/out_of_scope/none）/hook.allow_paths 白名单语义（默认空+前缀继承+保护名单+fail closed）/doctor"恰好一个受管 Router Hook"判据/官方评测数字（README L57 直查：token −76.8%/轮次 −57.4%/耗时 −47.4%/pass^3 87.5%）+ Superpowers 三引擎安全审查附记。
+- **工具面设计三原则**（mcp-governance）：单强工具 vs 多窄工具（codegraph 单工具 vs GitNexus 17 工具选型对照，不设唯一答案）/CLI 形态覆盖子代理盲区（子代理上下文看不到 MCP 工具描述，关键能力须双形态）/生效=多前提同时就位（装了 CLI≠建了索引≠注册了 MCP）。
+- **Codex hooks 事件面与信任机制**（codex-methodology R37 注记，C 级）：11 类事件切面/matcher 按工具名正则（`Edit|Write` 拦 apply_patch）/trusted_hash 内容锚定（改动未复审即失效）/多来源全加载并发（注入须幂等）/SessionEnd 1s 硬预算（短事件只放轻断言）/`[features] hooks=false` 会话门禁证据不可作数/`$`执行 `@`引用语义/插件安装不覆盖既有 skill。
+- **上下文三漏与输出经济学**（context-engineering-layering §十一）：读/拿/说三通道漏点各对既有落点（图谱/结构化输出/门禁消息）；改写胜过说教（PreToolUse 机械改写优于提示词恳求）+ tee 底牌（压缩不丢证据，失败全量落盘）+ bytes÷4 诚实稀释（bash 字节≠账单 token）；不可压缩物清单（proposal/spec/tasks/验证报告/commit message/PR description 等落盘产物永不压缩）。
+- **三种熵分类学**（four-theories-methodology 信息论篇）：流程熵（范围蔓延/跳阶/漂移→状态机+路由）/代码熵（过度工程/造轮子→拼装+懒阶梯）/上下文熵（过期信息滞留→指纹感知+交接压缩）——三治面正交，失控先命名熵类再选治法。
+- **A/B/C 证据分级口径**（upstream-baseline 口径注）：A=本机实测/B=官方一手直查/C=二手转述；媒体报道指针默认 C 级，未经核实不得写入引用基线列——本轮四仓指针全部重核后才登记。
+
+### Changed
+- 认知面预算第七次逐例登记 303104→317440B（实测 313499B，功能性增量非注记膨胀：懒生成 4.0KB 随发 + code-graph-tools 三选型扩容 4.3KB + comet 七机制 2.5KB + mcp-governance 1.6KB + review 1.1KB 等，不构成先例）；基线表 16→17 行（口径注/表题/行数同步，FACT_RUNTIMES=13 不变——codegraph 是图谱平权选型非接线运行时）；FACT_REFERENCES 44→45、FACT_UNIVERSAL_FILES 70→71；README 外部方法论 12→13 份；门禁 55 不增（决策 26/27），零新 check_*。
+
 ## [v2.15.4] - 2026-09-18
 
 > R36 全量回归轮：栈轮换第四棒到 Go（gin + gorm + go-redis + MySQL，Go 1.27 真实工具链编译/vet/测试通过），真实场景项目（r36-drill-order-api 订单服务）生成目标技能，走完流A 全流程（探查→清单→填充→conf→hooks→门禁→独立审查→写回→mark-active 三道关）与流B 典型研发任务执勤（订单取消需求全链 proposal→spec→状态机逐级推进→TDD→28 门禁→独立审查→verify 证据→archive；取消原因字段变更三件套；指纹自成长感知→重探查→清单更新→边集重建→落新基线；spec-first hook 与 rules.d 三值拦截正反实测），识别并修复 10 处缺陷 + 1 处基线追账。共性根因第四次复现（R28"相邻路径"、R30"只认一种形态"、R33"生态系统性缺位"）：本轮 D2-D4 为 Go 生态形态在探测表与维度枚举器缺位，D1 为 G24 同款性能问题在四个同族循环漏修——修一个不扫同族。

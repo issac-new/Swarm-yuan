@@ -2,7 +2,7 @@
 
 # 代码图谱工具引用 (Code-Graph Tools Reference)
 
-> 本文件指导目标技能如何**引用调用** [GitNexus](https://github.com/abhigyanpatwari/GitNexus) 与 [graphify](https://github.com/Graphify-Labs/graphify) 构建代码知识图谱。
+> 本文件指导目标技能如何**引用调用** [GitNexus](https://github.com/abhigyanpatwari/GitNexus)、[graphify](https://github.com/Graphify-Labs/graphify) 与 [codegraph](https://github.com/colbymchenry/codegraph) 构建代码知识图谱。
 > **铁律：只引用调用工具命令，不复制其源码，不重新实现其功能。**
 
 ## 为什么用代码图谱
@@ -11,23 +11,26 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 
 ## 选型（按技术能力）
 
-> 数据实测 2026-07-20（见 `docs/research/R6-upstream-web.md` §0/§1.3/§1.4）。
+> 数据实测 2026-07-20（见 `docs/research/R6-upstream-web.md` §0/§1.3/§1.4）；codegraph 行 2026-09-18 R37 增（API 核验 + 文章转述，未本机跑通——选型参考级）。
 > **选型方针（决策 18，2026-07-21 起）：范式层面按技术能力选型，不因开源组件商业授权条款降级或调整优先级。** 授权合规评估是使用方组织自身的责任（登记见下表「许可证」列，仅供使用方自查），不进入 swarm-yuan 的工具默认/降级决策。
 
 | 工具 | 许可证（事实登记，供使用方自查） | 能力定位 |
 |------|--------|----------|
 | **graphify** | Apache-2.0（2026-07-18 MIT→Apache 2.0） | 广谱知识图（代码+文档+媒体）、可提交 graph.json、Mermaid 导出；91.7k stars、活跃（2026-07-18） |
 | **GitNexus** | PolyForm Noncommercial 1.0.0（GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20；2026-09-14 R28 复核不变） | 深度代码调用图、Tree-sitter 原生解析、LadybugDB 持久图、`--pdg` 污点分析、PreToolUse/PostToolUse hooks、多仓库 group query（v1.6.12 stable 已出（2026-09-12 tag，rc 线收口）；license-risk 登记不变——v1.6.12 含诚实状态族样本（diverged/unknown 索引态显式报告 + foreign embedding fail-closed），license 解除前零接触） |
+| **codegraph** | MIT（GitHub API 2026-09-18 R37 实测；71,356★、2026-01 创建、活跃） | 预索引代码知识图 + 代码变更自动同步；**单 MCP 工具** `codegraph_explore`（自然语言任务描述，自主决定检索深度）+ `codegraph explore/affected` CLI；100% 本地（SQLite + FTS5，无 LLM API）；代码变更时索引自动更新；自动为 9 类 Agent 写 MCP 配置 |
 
-两者**平权**，按项目需要选择或并用：
+三者**平权**，按项目需要选择或并用：
 - 侧重深度调用链分析、持久 DB、多仓库、 hooks 集成 → GitNexus
 - 侧重广谱（代码+文档+媒体）、可提交的图、Mermaid 可视化 → graphify
-- 大型项目可并用：GitNexus 做深度调用图，graphify 做广谱知识图 + Mermaid 可视化
+- 侧重零配置本地索引、单工具自主检索、子代理 CLI 通道、索引随代码自动同步 → codegraph
+- 大型项目可并用：如 codegraph/GitNexus 做深度调用图，graphify 做广谱知识图 + Mermaid 可视化
 
 补充说明：
 
 - **graphify 仓库已迁移**：org URL 由 `safishamsi/graphify` 迁至 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)（GitHub API 2026-07-20 实测），引用一律用新 URL。
 - **graphify 引用基线：v0.9.x（GitHub v8 线，当前 v0.9.55）**（能力清单基于 v0.9.5 调研 + 0.9.6-19 release notes；后续 patch 不补段——0.9.54/0.9.55 为幂等写入与图谱完整性修复族，对账通过）。npm `graphifyy` 0.10.0/v1.0.0 为异源旧分支**不取**（R16 裁决沿用，登记见 `docs/upstream-baseline.md`）。
+- **codegraph 证据与边界（R37）**：官方基准（B 级）工具调用 −88% / token −62% / 成本 −44%、文件读取归零（7 仓库×4 次）；**上下文残留 +80%**（官方诚实声明——索引驻留上下文的代价）；Swift 27k 文件约 100s、Linux 内核 70k 文件约 12min（文章转述 C 级）。选型对照：GitNexus 给 17 个确定性 MCP 查询工具，codegraph 押单工具+模型自主检索（工具面哲学对照见 `mcp-governance.md` 工具面设计三原则）。本机未实测安装与索引（npm/cargo 安装形态未核）——**接线前置条件：本机跑通一次索引+查询再进目标技能默认推荐**。
 
 ## GitNexus（Node 生态，深度代码调用图）
 
@@ -195,22 +198,23 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 5. `graphify export callflow-html` 生成 Mermaid 调用流（用于 reference-manual.md 的"组件依赖链路"段）
 6. `graphify hook install` 保持图谱新鲜
 
-## 两者对比与选择
+## 三者对比与选择
 
-| 维度 | GitNexus | graphify |
-|------|----------|---------|
-| 运行时 | Node.js / TypeScript | Python 3.10+ |
-| 安装 | `npm i -g gitnexus` | `uv tool install graphifyy` |
-| 解析 | Tree-sitter 原生 | Tree-sitter（代码离线）+ LLM（文档/媒体） |
-| 存储 | LadybugDB（持久本地图） | `graphify-out/graph.json`（可提交） |
-| Agent 接口 | MCP server（stdio）+ HTTP 桥 + Web UI | MCP server + `query/path/explain` CLI + IDE skill |
-| 依赖链查询 | MCP 图工具；`gitnexus group query`（多仓库） | `graphify path A B`、`graphify explain X`、MCP `shortest_path` |
-| 主要输出 | 知识图 + MCP 工具 + wiki + AGENTS/CLAUDE.md | `graph.html` + `GRAPH_REPORT.md` + `graph.json` + Mermaid |
+| 维度 | GitNexus | graphify | codegraph |
+|------|----------|---------|-----------|
+| 运行时 | Node.js / TypeScript | Python 3.10+ | 本地索引引擎（SQLite + FTS5，无 LLM API） |
+| 安装 | `npm i -g gitnexus` | `uv tool install graphifyy` | 未本机核验（R37：接线前先跑通） |
+| 解析 | Tree-sitter 原生 | Tree-sitter（代码离线）+ LLM（文档/媒体） | 预索引 + 代码变更自动同步 |
+| 存储 | LadybugDB（持久本地图） | `graphify-out/graph.json`（可提交） | 本地索引（100% 本地） |
+| Agent 接口 | MCP server（stdio）+ HTTP 桥 + Web UI | MCP server + `query/path/explain` CLI + IDE skill | **单 MCP 工具** `codegraph_explore` + `explore/affected` CLI + 9 类 Agent 自动配置 |
+| 依赖链查询 | MCP 图工具；`gitnexus group query`（多仓库） | `graphify path A B`、`graphify explain X`、MCP `shortest_path` | `codegraph explore <task>`（自然语言）/ `codegraph affected <file>` |
+| 主要输出 | 知识图 + MCP 工具 + wiki + AGENTS/CLAUDE.md | `graph.html` + `GRAPH_REPORT.md` + `graph.json` + Mermaid | 检索结果（上下文残留 +80% 为其已知代价） |
 
 **选择建议（按技术能力，决策 18：不做授权驱动的降级）：**
 - 侧重深度调用图、持久 DB、多仓库 → GitNexus
 - 侧重广谱（代码+文档+媒体）、需可提交的图、Mermaid 导出 → graphify
-- 两者可并用：GitNexus 做深度调用图，graphify 做广谱知识图 + Mermaid 可视化
+- 侧重零配置、单工具自主检索、子代理 CLI 通道、索引自动同步 → codegraph
+- 可并用：深度图 + 广谱图组合（如 codegraph/GitNexus + graphify）
 
 ## 在目标技能中的落地
 

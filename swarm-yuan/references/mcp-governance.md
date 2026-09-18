@@ -69,3 +69,11 @@
 
 - **opt-in MCP 治理策略执行**（#3138）：MCP 工具调用可挂治理策略，但显式 opt-in 才生效。治理面越强、误伤面越大，开关归用户——同意面族（与 3.41.2 `autoStart:false` 被尊重同谱系）：治理与易用性的权衡显式化，不替用户做主。
 - **ADR-377 调用者身份验证绑定**（#3102）：工具调用携带调用者身份并验证。跨边界调用须有可验证身份；无身份绑定的调用与 Sybil 假票（#3290 hive-mind 共识修复同版）一样不可信——身份唯一性是共识与审计的共同前件。与 gstack v1.87「verified audits」互证（`review-methodology.md` R29 段）。
+
+## 工具面设计三原则（R37，2026-09-18 吸收自《Harness实践》× colbymchenry/codegraph）
+
+> 证据分级：codegraph 仓库元数据 A 级（MIT，71,356★，2026-09-18 API 核验）；"单工具优于多工具"论断为文章作者观点 + codegraph 官方基准 B 级（−88% 工具调用 / −62% token / −44% 成本，7 仓库×4 次）。
+
+1. **单强工具优于多窄工具**：一个高内聚工具（codegraph 只暴露单个 `codegraph_explore` MCP 工具，接受自然语言任务描述自主决定检索深度）胜过一堆窄工具——工具越多，选择开销与误用面越大；描述被截断时窄工具直接失效。与 GitNexus 17 个 MCP 工具形成选型对照（见 `code-graph-tools.md`）：前者赌模型自主检索能力，后者给确定性查询面——目标技能按项目规模与模型档选择，不设唯一答案。
+2. **CLI 形态覆盖子代理盲区**：子代理的上下文里**看不到 MCP 工具描述**（工具表不随 dispatch 下发），只认 CLI——给关键能力同时提供 MCP 与 CLI 双形态（codegraph：MCP 工具 + `codegraph explore <task>` / `codegraph affected <file>` CLI）。目标技能的编排契约（subagent-orchestration 状态回报）同理：子代理可调用的能力必须有 CLI 通道。
+3. **生效=多前提同时就位**："装了 CLI ≠ 索引建好 ≠ MCP 注册生效"——comet doctor 把"CodeGraph effective for X"判为三者同时就位（见 subagent-orchestration comet R37 段）。self-check 探测外部运行时同口径：二进制、索引/配置、宿主注册三面齐查，缺一披露降级。

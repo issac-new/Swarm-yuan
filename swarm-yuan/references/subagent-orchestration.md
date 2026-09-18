@@ -312,6 +312,20 @@ ECC 的 control pane 是**本地只读 observability server**：
 | **Debug Gate 协议** | 失败强制加载 systematic-debugging + 根因定位前不修源码 | check 段可引用 |
 | **verify 失败回 Build + 归档确认入机器态** | 失败自动回 3 条可执行发现 + 连续失败计数持久化 + CRITICAL 不可豁免；未确认归档被拒（防绕过确认） | 修复环/决策点可引用 |
 
+### comet R37 增量（0.4.0 实操层七机制；本仓 research/comet 克隆（0.4.1 tag）源码/README A 级直查核验 + 《Harness实践》文章 C 级补充）
+
+| 机制 | 语义 | 与 swarm-yuan 的关系 |
+|------|------|---------------------|
+| **Native 四相流程** | 压缩仪式：非 full 流程 Open 直进 Build（克隆 classic 状态机 `workflow!=="full"` 分支 A 级证实；"Shape→Build→Verify→Archive"相名为文章用语） | 与任务路由"避免全任务全仪式"同构；登记候选：目标技能 workflow 按模型/任务档提供轻流程变体 |
+| **独立只读 Verifier** | Verify 相由无写权限独立 agent 验收（详见 review-methodology R37③） | 三权分立司法权的上游组织形态 |
+| **resume-probe 四值恢复探测** | 会话中断后只读探测，返回 auto_resume / ask_user / out_of_scope / none 四值再决策（克隆 `app/commands/resume-probe.ts` + 测试族 A 级） | 登记候选：state-machine.sh 增恢复探测子命令（现状：状态守卫有、恢复探测无） |
+| **hook.allow_paths 白名单语义** | 前缀匹配 + 子目录继承 + 默认空；README L208 直查："cannot bypass protection for `.comet` or workflow artifacts" + 模糊即 deny（fail closed） | 与 fail-gate-hook scope 门同族；"保护名单"（治理产物自身不可被写通道触碰）是本仓 scope 门的增量样本 |
+| **comet doctor 判据** | 修复以"恰好一个受管 Router Hook 存在"为准（多装/漏装都不算修好，克隆 `app/commands/doctor.ts` A 级）；"CodeGraph effective" = CLI + 索引 + MCP 注册三者同时就位 | 与 self-check"装了≠生效"同构；"组件生效=多前提同时就位"判据登记候选 |
+| **comet eval 裁判分离** | judge 与 execution 四重分离（详见 review-methodology R37②） | verifier 评测作业配置依据 |
+| **官方评测数字**（B 级，克隆 README L57 直查） | 0.4.0-beta.7：Token −76.8% / 轮次 −57.4% / 耗时 −47.4% / pass^3 87.5%（+12.5pp）/ pass@3 100%（16 任务×48 运行、41 对双过样本） | 基线表 comet 行注记级登记 |
+
+> Superpowers 附记（R37）：comet init 会将 Superpowers 经 Gen/Socket/Snyk 三引擎安全审查（14 skills 全绿）才接入——skill 供应链三方扫描的上游实证，与 skill-supply-chain 门禁同向。
+
 ## Ruflo v3.21 全量能力（agent meta-harness——swarm-yuan 须知道但可选引用）
 
 > 来自 Ruflo（原 Claude Flow）v3.21.1 源码调研。323 MCP 工具 + 45 CLI 命令 + 33 插件 + witness 验证 + federation 跨机器协作。

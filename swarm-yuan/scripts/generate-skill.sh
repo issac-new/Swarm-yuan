@@ -123,6 +123,7 @@ UNIVERSAL_FILES=(
   "references/cognitive-bias.md|ref|standard"
   "references/domain-knowledge.md|ref"
   "references/cost-estimation-methodology.md|ref"  # 功能点估算方法论（GB/T 42588-2023 NESMA，2026-09-15 吸收）随发——spec §25 执勤侧识别规则/因子表/算例单一事实源
+  "references/lazy-generation-methodology.md|ref"  # 懒生成方法论（七层复用阶梯+懒≠偷工，R37 2026-09-18 吸收自 DietrichGebert/ponytail）随发——⑤编码先查再写决策程序执勤侧单一事实源
   "references/claude-code-capabilities.md|ref"
   "references/standards-compliance.md|ref|compliance"
   "references/cwe-database.md|ref|compliance"  # cwe_audit 门禁数据参照（standards-compliance.md 引用，防拷贝后死链）
