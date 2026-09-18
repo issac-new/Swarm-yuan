@@ -90,9 +90,11 @@ out=$(bash "$SH" "$TMP/skill" --section §5 --match "x" --delete 2>&1); rc=$?
 out=$(bash "$SH" "$TMP/skill" --section §4 --match "nonexistent" --delete 2>&1); rc=$?
 [[ $rc -eq 1 ]] && echo "$out" | grep -q '无命中' && ok "态7 无命中报错" || bad "态7 未报错: exit=$rc $out"
 
-# --- 态 8：新行格式错（<5 列）拒绝 ---
-out=$(bash "$SH" "$TMP/skill" --section §4 --match "x" --replace "| 只两列 | x |" 2>&1); rc=$?
-[[ $rc -eq 1 ]] && echo "$out" | grep -q '至少 5 列' && ok "态8 新行格式错拒绝" || bad "态8 未拒绝: exit=$rc $out"
+# --- 态 8：新行格式校验（R39-D9：契约对齐模板两列口径——单列拒绝，两列放行）---
+out=$(bash "$SH" "$TMP/skill" --section §4 --match "x" --replace "| 单列 |" 2>&1); rc=$?
+[[ $rc -eq 1 ]] && echo "$out" | grep -q '至少 2 列' && ok "态8a 单列行拒绝" || bad "态8a 未拒绝: exit=$rc $out"
+out=$(bash "$SH" "$TMP/skill" --section §4 --match "util.ts" --replace "| a.ts | 两列行（模板口径） |" 2>&1); rc=$?
+[[ $rc -eq 0 ]] && ok "态8b 两列行放行（模板契约）" || bad "态8b 两列行被误拒: exit=$rc $out"
 
 # --- 态 9：decisions.jsonl 落痕（G1 决策治理）---
 [[ -f "$TMP/proj/.swarm-yuan/decisions.jsonl" ]] && ok "态9 decisions.jsonl 落盘" || bad "态9 未落盘"
