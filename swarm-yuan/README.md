@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.15.4-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.15.4)
+[![Release](https://img.shields.io/badge/release-v2.16.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.16.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -220,8 +220,9 @@
 | 深度接线四件（GitNexus / graphify / claude-mem / ocr） | 门禁内真实子进程 + 多级降级链 | references/code-graph-tools.md 等 |
 | CLI 四件（OpenSpec / comet / gsd-core / codex-security） | 按需调用 CLI，降级自带载体 | references/ 各 methodology |
 | 方法论五件（superpowers / gstack / Ruflo / ECC / impeccable） | AI 按工作流节点引用模式 | references/subagent-orchestration.md |
-| 外部方法论文档 12 份（codex / dsh / cordis / mea-loop / agent-skills / four-theories / cost-estimation 等） | 蒸馏为 references 方法论，全带"何时读我"路由头 | references/ 同名文件 |
+| 外部方法论文档 13 份（codex / dsh / cordis / mea-loop / agent-skills / four-theories / cost-estimation / lazy-generation 等） | 蒸馏为 references 方法论，全带"何时读我"路由头 | references/ 同名文件 |
 | 功能点估算（NESMA GB/T 42588-2023，人民银行科技司 2025-07 培训吸收） | spec §25 选填节（feature 档推荐）+ 方法论随发执勤侧 | references/cost-estimation-methodology.md + assets/spec-template.md §25 |
+| 懒生成（七层复用阶梯 + 懒≠偷工，R37 吸收自 DietrichGebert/ponytail） | ⑤编码"先查再写"下探决策程序 + 方法论随发执勤侧 | references/lazy-generation-methodology.md |
 | 行业法规映射 8 档 | conf + 法规依据文档配对，真实加载 | assets/industry-profiles/ + references/industry-profile-*.md |
 | 标准族（OWASP / STRIDE / CWE / GB/T / ISO 42001 / ISO 29148 / EARS） | 门禁条款机器可读映射 + spec 句式对齐 | assets/standards-map.conf + references/standards-compliance.md |
 | Palantir 本体论工程 | 标记沿调用链传播的设计借鉴 | docs/design-evolution.md 决策 28 |

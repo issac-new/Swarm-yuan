@@ -170,3 +170,14 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **信任边界与硬化**：信任建立前不运行 workspace 控制的 helpers（#42324）+ macOS 沙箱防终端输入注入——双宿主沙箱收紧波延续。
 - **`codex mcp-server` 入口移除**（v0.154.0，#42993，破坏项）：deprecated 入口删除。对账：本仓 `install.sh`/`self-check.sh`/`SKILL.md` 零引用，无暴露面。
 - 其余：GPT-6-Astra 进 model picker / Windows 共享后台 server + daemon 生命周期 / Vim `R` replace 模式 / `/copy` 富文本——运维便利，对账通过。
+
+## 版本注记：Codex hooks 事件面与信任机制（R37，2026-09-18 吸收自《Harness实践》下篇实测，C 级；宿主基线 rust-v0.154.0）
+
+- **hooks 事件切面**：文档口径 11 类（SessionStart/SessionEnd/UserPromptSubmit/AgentTurnStart/AgentTurnEnd/Interrupt/PreToolUse/PostToolUse/PreCompact/Stop/Notification；CLI 界面另列 12——多出项即 Interrupt 的界面呈现差异）。与 Claude Code hooks 双宿主对照面：swarm-yuan 双宿主 hooks.json 现覆盖 Write/Edit/Bash 面，Interrupt/PreCompact 面为 Codex 侧登记候选。
+- **matcher 按工具名正则**：`matcher = "Edit|Write"` 可拦 apply_patch 类写操作（Codex 的文件修改原语）；hook 经 stdin 收 JSON、stdout 回 JSON 协议，`permissionDecision: "deny"` 即拦截——与 Claude Code hook 协议同构，双宿主适配按此对齐。
+- **trusted_hash 信任门禁**：hooks 配置带内容哈希，改动未复审即失效——与 Ponytail"装完≠激活"（lazy-generation-methodology §三）同族：**信任锚定内容而非位置**。
+- **多来源全加载**：全局/项目/插件 hooks 全量加载并发执行（不互斥）——生成技能向 Codex 宿主注入 hooks 时须幂等（重复注册去重，同 self-check MCP 重复注册检测口径）。
+- **timeout 语义**：默认 600s；SessionEnd 硬预算 1s（上限 3s）——短事件面挂重检查会静默丢失，Stop/SessionEnd 只放轻断言。
+- **`[features] hooks = false`**：会话级一键关停——诚实披露面：宿主可整体禁 hooks，门禁证据在 hooks-off 会话不可作数（与 restricted 会话同口径）。
+- **`$` 执行 / `@` 引用**：AGENTS.md 里 `$cmd` 把命令输出注入上下文、`@file` 引用文件——项目指令的动态上下文原语，目标技能 AGENTS.md 注记登记（慎用：动态注入破坏缓存前缀稳定性，见 §1.3）。
+- **插件安装不覆盖既有**：Codex 装插件不覆盖 `.agents/skills/` 已有同名 skill（命名空间并存）——多技能共存机制与 Claude `--plugin-dir` 差异点，install.sh 多宿主安装对账通过（本仓走实体复制非插件面）。
