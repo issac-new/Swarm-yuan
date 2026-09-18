@@ -21,7 +21,7 @@ Release notes per version are also available at [GitHub Releases](https://github
 - **fw_cargo_unwrap_expect 的 tests/ 豁免修复相对路径**（D6，P1）：_fw_resolve_globs 解出相对路径 `tests/xxx.rs` 时不命中 `*/tests/*` case 模式（缺 `tests/*` 分支），tests/ 豁免整体失效（fixture 绝对路径下测不出的形态盲区）。
 - **check_shift_left spec 发现统一走 _find_spec_file + Rust 测试文件形态**（D7a/b，P1）：原 _first_existing_file 硬编码文件名发现不走 SPEC_GLOB——spec-first 拦它写码、左移检查却不认它的 spec（同一 conf 语义两套发现逻辑，R23 D6 统一只落了 check_reuse 一处）；测试文件正则 `.test.|.spec.|__tests__` 不认 Rust `tests/*.rs`，TDD 实做了仍报"无 test 文件提交"。
 - **relations-extract.sh 补 Rust use 语句解析**（D8，P1）：import 边提取无 Rust 形态（`use crate::/super::/self::`），实测 0 边、影响面反查空转。补 crate::（src/ 前缀 + .rs/.mod.rs 双候选）与 super::/self::（同目录兄弟）解析；嵌套 use 不展开（机械初稿低估不虚报，AI 语义边兜底）。
-- **inventory-update.sh 列数契约对齐模板**（D9，P2）：原执法"≥5 列（五维字段）"与 reference-manual.md 模板"§4/§6/§9 表格行两列"矛盾——按模板格式写的清单无法用指定工具追加/替换，单条更新通道对两列清单整体不可用。放宽为 ≥2 列，五维字段保留为 DIM 台账风格建议形态。
+- **inventory-update.sh 列数契约对齐模板**（D9，P2）：原执法"≥5 列（五维字段）"与 reference-manual.md 模板"§4/§6/§9 表格行两列"矛盾——按模板格式写的清单无法用指定工具追加/替换，单条更新通道对两列清单整体不可用。放宽为 ≥2 列，五维字段保留为 DIM 台账风格建议形态；test-inventory-update 态8 断言随契约同步（8a 单列拒绝 / 8b 两列放行）。
 
 ### Changed
 - 认知面预算无增量（SKILL.md 零改动）；FACT_SCRIPT_LOC 6468→6489 第八次登记（D2/D7 两修：gates-warn.sh cargo 聚合分支 + gates-strict.sh spec 发现与 Rust 测试形态）；GOLDEN_VECTOR 80 行逐行一致（9 修零 fixture 位移）；verifier 全套 exit=0（79 fixture 双态 + e2e + shellcheck 0 error + bootstrap 自举 + metrics）。
