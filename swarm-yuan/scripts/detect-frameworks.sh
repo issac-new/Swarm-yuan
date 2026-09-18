@@ -40,11 +40,11 @@ done
 # 用 framework-gates 头部的 # ruleset: 行 + 文件名匹配
 _tmpfile="$(mktemp /tmp/dfw.XXXXXX)"
 
-# 简化的框架→依赖信号映射（覆盖 79 框架的主要识别模式；cargo/dockerfile/kubernetes/flutter 须手配，见下方注释）
+# 简化的框架→依赖信号映射（覆盖 79 框架的主要识别模式；R39-D1b 起 cargo/dockerfile 走 file_exists 自动探测，kubernetes/flutter 等仍须手配，见下方注释）
 # 按依赖文件类型组织
 cat > "$_tmpfile" <<'SIGNALS'
 # format: framework_id|pattern|file_type
-# file_type: pkgjson(package.json deps) / pom(pom.xml artifactId) / gomod(go.mod require) / pyreq(requirements.txt) / pyproject(pyproject.toml)
+# file_type: pkgjson(package.json deps) / pom(pom.xml artifactId) / gomod(go.mod require) / pyreq(requirements.txt) / pyproject(pyproject.toml) / file_exists(文件存在型，signal=项目根相对路径)
 spring-boot|org.springframework.boot|pom
 spring-cloud|org.springframework.cloud|pom
 spring-data-jpa|org.springframework.data|pom
@@ -158,10 +158,13 @@ opentelemetry|opentelemetry-sdk|pyproject
 opentelemetry|opentelemetry|pyreq
 opentelemetry|go.opentelemetry.io/otel|gomod
 opentelemetry|io.opentelemetry|pom
-# WP-U：cargo（Rust 生态）——detect-frameworks.sh 不支持 file 类型探测
-# （Cargo.toml 文件存在即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("cargo")
-# WP-U：dockerfile（IaC 容器镜像）——detect-frameworks.sh 不支持 file 类型探测
-# （Dockerfile 文件存在即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("dockerfile")
+# R39-D1b（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：file_exists 型信号——
+# 原实现只做依赖字符串匹配，"Cargo.toml 文件存在即激活"的 cargo 规则集激活语义无法表达，
+# Rust 项目 ACTIVE_FRAMEWORKS 恒空、10 条 cargo 门禁不会自动注入（违反零手动配置）。
+# signal 字段=项目根相对文件路径，存在即命中（高置信：Cargo.toml 是 Cargo 工程清单）。
+cargo|Cargo.toml|file_exists
+# WP-U：dockerfile（IaC 容器镜像）——文件存在型，同 file_exists 通道（v2.16.1 起可自动探测）
+dockerfile|Dockerfile|file_exists
 # WP-U：kubernetes（IaC 容器编排）——detect-frameworks.sh 不支持 file 类型探测
 # （K8s 清单 *.yaml/*.yml 含 apiVersion/kind 即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("kubernetes")
 # WP-V：react-native（移动端跨平台 JS/TS）——package.json dependencies 含 react-native 即激活
@@ -270,10 +273,14 @@ while IFS='|' read -r fw pattern ftype; do
     gomod)     _bucket="$_gomod_deps" ;;
     pyreq)     _bucket="$_pyreq_deps" ;;
     pyproject) _bucket="$_pyproject_deps" ;;
+    file_exists) _bucket="" ;;  # R39-D1b：文件存在型，不走依赖桶
     *)         continue ;;
   esac
   _hit=0
-  if [[ "$ftype" == "pkgjson" ]]; then
+  if [[ "$ftype" == "file_exists" ]]; then
+    # R39-D1b：signal=项目根相对文件路径，存在即命中（cfg 高置信：清单/入口文件）
+    [[ -f "$PROJ/$pattern" ]] && _hit=1
+  elif [[ "$ftype" == "pkgjson" ]]; then
     # pkgjson: 单词边界匹配,消除子串误报(next→i18next / vue→vuepress 等)
     # 边界: 行首 或 / 或 @ 之后,且 pattern 后跟 行尾 或 - / @ . _
     # pattern 可能含正则元字符(如 @ant-design 的 @),用 grep -E 需转义;这里 pattern

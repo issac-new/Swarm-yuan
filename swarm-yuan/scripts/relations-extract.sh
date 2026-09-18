@@ -228,6 +228,41 @@ if [[ -n "$GO_MODULE" ]]; then
   done < <(find "$PROJ" -type f -name '*.go' -not -path '*/.git/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
 fi
 
+# R39-D8（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：Rust use 语句 → 工程内模块路径。
+# 原实现只覆盖 TS/JS-Vue/Python/Go/Java 四族——Rust 项目实测 0 边，影响面反查空转。
+# 解析（机械初稿，低估方向安全，未解析形态留给 AI 语义边）：
+#   crate::a::b::C → src/a/b.rs 或 src/a/b/mod.rs（lib.rs 是 crate 根）
+#   super::x       → 当前文件所在模块目录的同名兄弟（src/api/tasks.rs 的 super::conn → src/api/conn.rs）
+#   self::x        → 同目录
+#   crate::{a,b} / 嵌套 use 不展开（低估不虚报）
+while IFS= read -r f_abs; do
+  [[ -z "$f_abs" ]] && continue
+  f_rel="${f_abs#"$PROJ"/}"
+  f_dir="${f_rel%/*}"
+  while IFS= read -r hit; do
+    [[ -z "$hit" ]] && continue
+    ln="${hit%%:*}"; stmt="${hit#*:}"
+    # G22 铁律：BSD sed BRE 不认 \|交替——一律 sed -E + (crate|super|self)
+    use_path=$(printf '%s' "$stmt" | sed -E -n 's/^[[:space:]]*use[[:space:]][[:space:]]*(crate|super|self)::([A-Za-z_][A-Za-z_0-9:]*).*/\1|\2/p')
+    [[ -z "$use_path" ]] && continue
+    use_kind="${use_path%%|*}"
+    use_mod="${use_path#*|}"
+    use_mod="${use_mod%%::*}"        # 首段模块（a::b::C → a）
+    [[ -z "$use_mod" ]] && continue
+    case "$use_kind" in
+      crate) cands="src/${use_mod}.rs src/${use_mod}/mod.rs" ;;
+      super) cands="${f_dir}/${use_mod}.rs ${f_dir}/${use_mod}/mod.rs" ;;
+      self)  cands="${f_dir}/${use_mod}.rs ${f_dir}/${use_mod}/mod.rs" ;;
+    esac
+    for cand in $cands; do
+      [[ -f "$PROJ/$cand" ]] || continue
+      [[ "$cand" == "$f_rel" ]] && break
+      _emit "$f_rel" "$cand" "import@${f_rel}:${ln}"
+      break
+    done
+  done < <(grep -nE '^[[:space:]]*use[[:space:]][[:space:]]*(crate|super|self)::' "$f_abs" 2>/dev/null || true)
+done < <(find "$PROJ" -type f -name '*.rs' -not -path '*/.git/*' -not -path '*/target/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
+
 # Java 包路径映射 import（src/{main,test}/java/<pkg>/<Class>.java 存在即边）
 while IFS= read -r hit; do
   [[ -z "$hit" ]] && continue

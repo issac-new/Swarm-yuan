@@ -832,8 +832,23 @@ for i, line in enumerate(sys.stdin, 1):
 }
 
 if [[ "${1:-}" == "--verify-completeness" ]]; then
-  [[ $# -ge 2 ]] || { echo "Usage: bash generate-skill.sh --verify-completeness <skill-dir>"; exit 1; }
-  verify_completeness "$2"
+  # R39-D3（2026-09-19 执勤实证）：SKILL.md 流A 表记载写法为 `--verify-completeness --strict <dir>`
+  # （标志前置），实现只认 `<dir> --strict`（后置）——照权威文档写法报"目录不存在: --strict"。
+  # 与主解析器"标志须前置"的约定也互相矛盾。修复：--strict 双序兼容（任意位置剥离，取首个目录参数）。
+  ___vc_dir="" ; ___vc_strict=0
+  shift
+  for ___a in "$@"; do
+    case "$___a" in
+      --strict) ___vc_strict=1 ;;
+      *) [[ -z "$___vc_dir" ]] && ___vc_dir="$___a" ;;
+    esac
+  done
+  [[ -n "$___vc_dir" ]] || { echo "Usage: bash generate-skill.sh --verify-completeness <skill-dir> [--strict]"; exit 1; }
+  if [[ "$___vc_strict" -eq 1 ]]; then
+    verify_completeness "$___vc_dir" --strict
+  else
+    verify_completeness "$___vc_dir"
+  fi
   exit $?
 fi
 

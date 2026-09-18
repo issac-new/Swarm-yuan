@@ -636,8 +636,12 @@ check_shift_left() {
   local found=0
 
   # ---- 定位 spec 文件 ----
+  # R39-D7b（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：本门禁原用 _first_existing_file
+  # 硬编码文件名发现——不走 SPEC_GLOB（fail-gate-hook/check_reuse 均走 _find_spec_file），
+  # docs/specs/*.md 约定位的具体 spec 对本门禁不可见（spec-first 拦它写码，左移检查却不认它
+  # 的 spec——同一 conf 语义两套发现逻辑）。统一走 _find_spec_file（SPEC_GLOB 优先）。
   local spec_file="${SPEC_FILE:-}"
-  [[ -z "$spec_file" ]] && spec_file=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
+  [[ -z "$spec_file" ]] && spec_file=$(_find_spec_file '测试设计|测试左移|测试策略|可观测性')
   # WP-CogAudit：排除 *template* 模板文件--模板的 §19/§20/§21 标题本就该存在，把模板当具体 spec 检会自证 pass（乞题谬误）
   [[ -n "$spec_file" && "$(basename "$spec_file")" == *template* ]] && spec_file=""
   local test_design_file="${TEST_DESIGN_FILE:-$spec_file}"
@@ -674,7 +678,10 @@ check_shift_left() {
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     local base; base=$(_git_base)
     local test_commits impl_commits
-    test_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -E '\.test\.|\.spec\.|__tests__' | sort -u | wc -l | tr -d ' ' || true)
+    # R39-D7a（2026-09-19 Rust 栈执勤实证）：测试文件形态补 Rust——原正则只认 .test./.spec./
+    # __tests__（JS 中心），Rust 集成测试约定 tests/*.rs 与 test_*.rs 全漏（TDD 实做了
+    # tests/ 先提交仍报"无 test 文件提交"）。低误报：tests/ 目录内 .rs 或 test_ 前缀。
+    test_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -E '\.test\.|\.spec\.|__tests__|(^|/)tests/[^/]*\.rs$|(^|/)test_[^/]*\.rs$' | sort -u | wc -l | tr -d ' ' || true)
     impl_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -vE '\.test\.|\.spec\.|__tests__|\.md$|\.json$|\.lock$' | grep -E '\.(ts|js|py|go|java|rs)$' | sort -u | wc -l | tr -d ' ' || true)
     # 防御：若值非纯数字（git log 异常输出多行），强制归 0
     test_commits=$(_norm_int "${test_commits:-0}")

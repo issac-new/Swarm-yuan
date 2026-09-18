@@ -69,6 +69,13 @@ elif [[ -f "$PROJ/pyproject.toml" ]] || [[ -f "$PROJ/requirements.txt" ]]; then
     fi
     if [[ -f "$PROJ/pyproject.toml" ]]; then _build="python -m build"; else _build=""; fi
   fi
+elif [[ -f "$PROJ/Cargo.toml" ]]; then
+  # R39-D1（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：嗅探表此前无 Cargo.toml 分支——
+  # Rust 项目 BUILD_CMD/TEST_CMD 落 AUTO:default 空值，check_build/check_test 无命令可跑
+  # （"零手动配置"卖点对整个 Rust 生态失效）。cargo 官方语义即构建/测试入口，无需确认探测：
+  # Cargo.toml 存在即 confirmed（workspace 根与单 crate 同样成立）。
+  _lang="rust"; _pm="cargo"; _build="cargo build"; _test="cargo test"
+  _build_confirmed=1; _test_confirmed=1
 fi
 # monorepo 判定
 _monorepo=0

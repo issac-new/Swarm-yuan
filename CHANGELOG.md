@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.16.1] - 2026-09-19
+
+> R39 全量回归轮：栈轮换第五棒到 Rust（axum 0.8 + tokio + rusqlite 0.37，Rust 1.98 真实工具链编译/测试/clippy 全绿），真实场景项目（r39-drill-taskflow 任务工单 API）生成目标技能，走完流A 全流程（⓪-⑨：自检→mine-habits→探查→清单→特征卡→骨架→填充→框架深化→conf→hooks→门禁→独立审查→记忆写回→verify-completeness→mark-active）与流B 典型研发任务执勤（CSV 导出端点九节点全链 proposal→spec→plan→TDD→28 门禁→独立审查→verify 证据→archive；priority 字段变更五件套；指纹自成长链 --write→结构演进→--diff 检出 scope→单条更新→新基线；spec-first hook 无 spec deny/有 spec 放行正反实测；rules.d 三值 forbid/prompt 匹配；failure-detector L1 升级+SPINNING 同签名去重；fail-gate-hook --report 审计四段）。识别并修复 9 处缺陷（D1-D9）。共性根因第五次复现（R28"相邻路径"、R30"只认一种形态"、R33"生态系统性缺位"、R36"同族漏修"）：本轮 D1/D1b/D4/D7a/D8 为 Rust 生态形态在嗅探表/维度枚举器/测试文件正则/import 解析五处缺位——新栈执勤必须穷举"探测→清单→门禁→反查"全链路的语言形态假设。
+
+### Fixed
+- **conf-render.sh 嗅探表补 Cargo.toml 分支**（D1，P1）：Rust 项目 BUILD_CMD/TEST_CMD 此前落 AUTO:default 空值，check_build/check_test 无命令可跑——"零手动配置"对整个 Rust 生态失效。现 `cargo build`/`cargo test` 以 AUTO:detected 渲染（Cargo.toml 存在即 confirmed，workspace 根与单 crate 同样成立）。
+- **detect-frameworks.sh 支持 file_exists 型信号**（D1b，P1）：原实现只做依赖字符串匹配，"Cargo.toml 文件存在即激活"的 cargo 规则集激活语义无法表达，ACTIVE_FRAMEWORKS 恒空、10 条 cargo 门禁不会自动注入。新增 file_exists 通道（signal=项目根相对路径），cargo 与 dockerfile 两框架转自动探测；cargo.md §1 时代注记同步废止（三体一致）。
+- **check_test 零用例检出补 cargo 多 suite 聚合分支**（D2，P1）：cargo unittests/集成/doc-tests 各打一行 test result，空 suite 合法打印 "running 0 tests"——原通用正则单行命中即 warn，8 用例全过仍误报"输出 0 用例"且 tail -20 窗口敏感形态不稳。现聚合全部 test result 行 passed 求和，总和 0 才 warn。
+- **--verify-completeness 的 --strict 双序兼容**（D3，P2）：SKILL.md 流A 表记载写法 `--verify-completeness --strict <dir>`（标志前置）与实现（`<dir> --strict` 后置）矛盾，照权威文档写法报"目录不存在： --strict"，且与主解析器"标志须前置"约定互斥。现任意位置剥离 --strict，取首个目录参数。
+- **inventory-dimensions.conf 补 Rust 维度枚举**（D4，P1）：接口端点/后端 controller/类型定义/测试文件四维此前对 .rs 恒 0（ENUM_ZERO_DIM 全家桶）。补 axum `.route(`（多动词链按注册点计，低估方向安全同 R33-D2 教义）、`^pub (struct|enum|trait)`、`tests/*.rs` 与 `test_*.rs`（含 */target/* 排除）；数据模型维暂留披露（Rust 无声明式 ORM 标记，机械枚举高误报面，诚实降级优于虚报）。
+- **fw_cargo_license_check/fw_cargo_audit 扫描面对齐规则集口径**（D5，P1）：原只在 CARGO_GLOBS 文件集内找 deny.toml/cargo-audit 引用——deny.toml 不在默认 globs、README 写明 `cargo audit` 的合规项目双误报。现按 ruleset cargo.md §3 规律 9/10 口径：全仓 find deny.toml/audit.toml + README*/docs/.github 引用兜底。
+- **fw_cargo_unwrap_expect 的 tests/ 豁免修复相对路径**（D6，P1）：_fw_resolve_globs 解出相对路径 `tests/xxx.rs` 时不命中 `*/tests/*` case 模式（缺 `tests/*` 分支），tests/ 豁免整体失效（fixture 绝对路径下测不出的形态盲区）。
+- **check_shift_left spec 发现统一走 _find_spec_file + Rust 测试文件形态**（D7a/b，P1）：原 _first_existing_file 硬编码文件名发现不走 SPEC_GLOB——spec-first 拦它写码、左移检查却不认它的 spec（同一 conf 语义两套发现逻辑，R23 D6 统一只落了 check_reuse 一处）；测试文件正则 `.test.|.spec.|__tests__` 不认 Rust `tests/*.rs`，TDD 实做了仍报"无 test 文件提交"。
+- **relations-extract.sh 补 Rust use 语句解析**（D8，P1）：import 边提取无 Rust 形态（`use crate::/super::/self::`），实测 0 边、影响面反查空转。补 crate::（src/ 前缀 + .rs/.mod.rs 双候选）与 super::/self::（同目录兄弟）解析；嵌套 use 不展开（机械初稿低估不虚报，AI 语义边兜底）。
+- **inventory-update.sh 列数契约对齐模板**（D9，P2）：原执法"≥5 列（五维字段）"与 reference-manual.md 模板"§4/§6/§9 表格行两列"矛盾——按模板格式写的清单无法用指定工具追加/替换，单条更新通道对两列清单整体不可用。放宽为 ≥2 列，五维字段保留为 DIM 台账风格建议形态。
+
+### Changed
+- 认知面预算无增量（SKILL.md 零改动）；FACT_SCRIPT_LOC 6468→6489 第八次登记（D2/D7 两修：gates-warn.sh cargo 聚合分支 + gates-strict.sh spec 发现与 Rust 测试形态）；GOLDEN_VECTOR 80 行逐行一致（9 修零 fixture 位移）；verifier 全套 exit=0（79 fixture 双态 + e2e + shellcheck 0 error + bootstrap 自举 + metrics）。
+
 ## [v2.16.0] - 2026-09-18
 
 > R37 Harness 实践吸收轮：行者明灵《Harness实践：OpenSpec + Superpowers + CodeGraph + Ponytail + Caveman + RTK》上下篇深度调研。四新上游对象全部 API 实测核验后才登记（codegraph 71,356★/MIT、ponytail 141,551★/MIT、caveman 106,373★/混合许可、rtk 80,864★/Apache-2.0）；文章转述经源码核实修正/升级两处（comet "Shape"相名为文章用语——A 级证实的是非 full 流程 Open 直进 Build 的仪式裁剪机制；官方评测数字与 allow_paths 语义在克隆 README 直查升 B/A 级后才写入载体）。机制吸收 10 项落 9 载体，同构对照 6 项不重复吸收，候选登记 5 项带触发条件，不吸收 5 项显式登记（RTK 代理接线/Caveman BSL-1.1 Proxy/Ponytail 插件形态等）。档案 `docs/research/R37-harness-practice-absorption.md`。
