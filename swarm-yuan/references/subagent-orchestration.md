@@ -324,7 +324,7 @@ ECC 的 control pane 是**本地只读 observability server**：
 | **comet eval 裁判分离** | judge 与 execution 四重分离（详见 review-methodology R37②） | verifier 评测作业配置依据 |
 | **官方评测数字**（B 级，克隆 README L57 直查） | 0.4.0-beta.7：Token −76.8% / 轮次 −57.4% / 耗时 −47.4% / pass^3 87.5%（+12.5pp）/ pass@3 100%（16 任务×48 运行、41 对双过样本） | 基线表 comet 行注记级登记 |
 
-> Superpowers 附记（R37）：comet init 会将 Superpowers 经 Gen/Socket/Snyk 三引擎安全审查（14 skills 全绿）才接入——skill 供应链三方扫描的上游实证，与 skill-supply-chain 门禁同向。
+> Superpowers 附记（R37）：Superpowers 接入前经 Gen/Socket/Snyk 三引擎安全审查（14 skills 全绿）——skill 供应链三方扫描的上游实证，与 skill-supply-chain 门禁同向。
 
 ## Ruflo v3.21 全量能力（agent meta-harness——swarm-yuan 须知道但可选引用）
 

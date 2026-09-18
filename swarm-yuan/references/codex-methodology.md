@@ -180,4 +180,3 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **timeout 语义**：默认 600s；SessionEnd 硬预算 1s（上限 3s）——短事件面挂重检查会静默丢失，Stop/SessionEnd 只放轻断言。
 - **`[features] hooks = false`**：会话级一键关停——诚实披露面：宿主可整体禁 hooks，门禁证据在 hooks-off 会话不可作数（与 restricted 会话同口径）。
 - **`$` 执行 / `@` 引用**：AGENTS.md 里 `$cmd` 把命令输出注入上下文、`@file` 引用文件——项目指令的动态上下文原语，目标技能 AGENTS.md 注记登记（慎用：动态注入破坏缓存前缀稳定性，见 §1.3）。
-- **插件安装不覆盖既有**：Codex 装插件不覆盖 `.agents/skills/` 已有同名 skill（命名空间并存）——多技能共存机制与 Claude `--plugin-dir` 差异点，install.sh 多宿主安装对账通过（本仓走实体复制非插件面）。
