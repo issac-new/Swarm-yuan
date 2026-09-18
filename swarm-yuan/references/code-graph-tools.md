@@ -18,7 +18,7 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 |------|--------|----------|
 | **graphify** | Apache-2.0（2026-07-18 MIT→Apache 2.0） | 广谱知识图（代码+文档+媒体）、可提交 graph.json、Mermaid 导出；91.7k stars、活跃（2026-07-18） |
 | **GitNexus** | PolyForm Noncommercial 1.0.0（GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20；2026-09-14 R28 复核不变） | 深度代码调用图、Tree-sitter 原生解析、LadybugDB 持久图、`--pdg` 污点分析、PreToolUse/PostToolUse hooks、多仓库 group query（v1.6.12 stable 已出（2026-09-12 tag，rc 线收口）；license-risk 登记不变——v1.6.12 含诚实状态族样本（diverged/unknown 索引态显式报告 + foreign embedding fail-closed），license 解除前零接触） |
-| **codegraph** | MIT（GitHub API 2026-09-18 R37 实测；71,356★、2026-01 创建、活跃） | 预索引代码知识图 + 代码变更自动同步；**单 MCP 工具** `codegraph_explore`（自然语言任务描述，自主决定检索深度）+ `codegraph explore/affected` CLI；100% 本地（SQLite + FTS5，无 LLM API）；代码变更时索引自动更新；自动为 9 类 Agent 写 MCP 配置 |
+| **codegraph** | MIT（GitHub API 2026-09-18 R37 实测；71,356★、2026-01 创建、活跃） | 预索引代码知识图 + 代码变更自动同步；**单 MCP 工具** `codegraph_explore`（自然语言任务描述，自主决定检索深度）+ `codegraph explore/affected` CLI；100% 本地（SQLite + FTS5，无 LLM API）；代码变更时索引自动更新 |
 
 三者**平权**，按项目需要选择或并用：
 - 侧重深度调用链分析、持久 DB、多仓库、 hooks 集成 → GitNexus
@@ -206,7 +206,7 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | 安装 | `npm i -g gitnexus` | `uv tool install graphifyy` | 未本机核验（R37：接线前先跑通） |
 | 解析 | Tree-sitter 原生 | Tree-sitter（代码离线）+ LLM（文档/媒体） | 预索引 + 代码变更自动同步 |
 | 存储 | LadybugDB（持久本地图） | `graphify-out/graph.json`（可提交） | 本地索引（100% 本地） |
-| Agent 接口 | MCP server（stdio）+ HTTP 桥 + Web UI | MCP server + `query/path/explain` CLI + IDE skill | **单 MCP 工具** `codegraph_explore` + `explore/affected` CLI + 9 类 Agent 自动配置 |
+| Agent 接口 | MCP server（stdio）+ HTTP 桥 + Web UI | MCP server + `query/path/explain` CLI + IDE skill | **单 MCP 工具** `codegraph_explore` + `explore/affected` CLI |
 | 依赖链查询 | MCP 图工具；`gitnexus group query`（多仓库） | `graphify path A B`、`graphify explain X`、MCP `shortest_path` | `codegraph explore <task>`（自然语言）/ `codegraph affected <file>` |
 | 主要输出 | 知识图 + MCP 工具 + wiki + AGENTS/CLAUDE.md | `graph.html` + `GRAPH_REPORT.md` + `graph.json` + Mermaid | 检索结果（上下文残留 +80% 为其已知代价） |
 

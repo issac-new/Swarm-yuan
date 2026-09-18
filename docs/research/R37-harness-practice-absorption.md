@@ -28,7 +28,7 @@
 | 3 | pass^3/pass@3 双口径评测判据 + 裁判运动员四重分离 + 独立只读 Verifier + 评测集纪律 | comet eval（README 直查） | `review-methodology.md` R37 条目 |
 | 4 | comet 实操层七机制（Native 四相 / Verifier / resume-probe 四值 / allow_paths / doctor 判据 / eval 分离 / 官方数字）+ Superpowers 三引擎安全审查附记 | comet + 文章 | `subagent-orchestration.md` comet R37 增量段 |
 | 5 | 工具面设计三原则（单强工具 / CLI 覆盖子代理盲区 / 生效=多前提同时就位） | CodeGraph + 文章 | `mcp-governance.md` 工具面三原则节 |
-| 6 | Codex hooks 事件面（11 类）/ matcher 正则 / trusted_hash / 多来源并发 / timeout 语义 / hooks=false 披露 / $@语义 / 插件不覆盖 | 文章下篇实测（C 级，宿主基线 0.154.0） | `codex-methodology.md` R37 版本注记 |
+| 6 | Codex hooks 事件面（11 类）/ matcher 正则 / trusted_hash / 多来源并发 / timeout 语义 / hooks=false 披露 / $@语义 | 文章下篇实测（C 级，宿主基线 0.154.0） | `codex-methodology.md` R37 版本注记 |
 | 7 | 三种熵分类学（流程熵/代码熵/上下文熵——正交治理面） | 文章上篇 | `four-theories-methodology.md` 信息论篇 |
 | 8 | CodeGraph 第三图谱选型（含 +80% 上下文残留官方诚实声明、未本机实测披露） | CodeGraph | `code-graph-tools.md` 选型表 + 三者对比表 |
 | 9 | 流程档位×代码引入档位正交声明 | 本轮综合 | `task-methodology-router.md` 路由决策准则 #5 |
@@ -52,6 +52,7 @@
 - **Ponytail 六 skills / 20 宿主插件形态**：不 vendor 上游 skill（superpowers 不 vendor 决策 A8 同构），只蒸馏方法论。
 - **Comet Native 四相直接改造目标技能 workflow 模板**：登记候选（见 §五），不做行为面大改。
 - **文章五问框架/分层原则叙事**：纯叙事框架，机制已逐项落载体，不另立文档。
+- **装配/安装器类内容**（用户裁决，2026-09-18 收口后追加指令"去除脚手架相关内容"）：吸收机制、不吸收装配叙事——已从载体移除 codegraph"自动为 9 类 Agent 写 MCP 配置"（选型表/对比表/基线行三处）、comet init 接入语境（Superpowers 附记改为纯机制句）、Codex 插件安装行为、Ponytail 生命周期 hooks 安装面（SessionStart/SubagentStart/UserPromptSubmit 罗列，保留"装完≠激活"机制句）。原则回写 [[methodology-absorption-policy]]：上游的安装器/骨架装配行为描述属脚手架内容，一律不进载体。
 
 ## 五、候选登记（已登记未实施）
 
