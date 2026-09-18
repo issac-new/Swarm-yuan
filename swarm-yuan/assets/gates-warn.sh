@@ -81,11 +81,25 @@ check_test() {
   # "Tests run: 0"、Node TAP "# tests 0"、pytest "no tests ran" 三种形态漏检，零用例假绿
   # 穿透门禁打出"✓ 测试通过"。补齐三种主流 runner 形态。
   if [[ "$_trc" -eq 0 ]]; then
+    # R39-D2（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：cargo 多 suite 形态——
+    # unittests/各集成测试/doc-tests 各打一行 "test result: ok. N passed; ..."，且空 suite
+    # （无 doc-tests 的项目）合法打印 "running 0 tests"。原通用正则对 "0 tests" 单行即 warn，
+    # 8 用例全过仍误报"输出 0 用例"（且 tail -20 窗口敏感：用例多时窗口滑过又不报，形态不稳）。
+    # cargo 分支：聚合全部 test result 行的 passed 求和，总和 0 才 warn；失败套件不在此判
+    # （test result: FAILED 时 cargo 退出码非 0，已走上方 fail 分支）。
+    if printf '%s' "$_tout" | grep -q '^test result:'; then
+      local _cargo_passed
+      _cargo_passed=$(printf '%s' "$_tout" | sed -n 's/^test result: [^.]*\. \([0-9][0-9]*\) passed.*/\1/p' | awk '{s+=$1} END {print s+0}')
+      if [[ "$_cargo_passed" -eq 0 ]]; then
+        warn "cargo 全部 suite 共 0 用例通过——空跑通过不算兜底，须补真实用例"
+      else
+        pass "测试通过（cargo ${_cargo_passed} 用例，多 suite 聚合）"
+      fi
     # R30-D3（2026-09-16 Node 栈执勤实证）：首分支加左边界约束——npm run 横幅
   # "> shop-api@0.1.0 test" 的版本号尾 0 与脚本名构成 "0 test" 子串，无边界正则
   # 对一切版本号以 0 结尾的 npm 项目假报空跑。0 须位于行首或空白后；
   # ".0 test"（版本号内）不再命中，"Tests: 0 passed"/"Ran 0 tests" 照常命中。
-  if printf '%s' "$_tout" | grep -qiE '(^|[[:space:]])0 (passed|tests?|examples?)|tests?: 0|tests? run: 0|#[[:space:]]*(tests?|pass)[[:space:]]+0|no tests ran|0 个用例|0 tests? found'; then
+    elif printf '%s' "$_tout" | grep -qiE '(^|[[:space:]])0 (passed|tests?|examples?)|tests?: 0|tests? run: 0|#[[:space:]]*(tests?|pass)[[:space:]]+0|no tests ran|0 个用例|0 tests? found'; then
       warn "测试命令退出码 0 但输出 0 用例——空跑通过不算兜底，须补真实用例"
     else
       pass "测试通过"

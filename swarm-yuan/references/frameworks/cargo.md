@@ -27,10 +27,9 @@ TOML 解析用 grep 匹配字段（非 TOML 解析器，口径在「验证方法
 
 <!--
 信号汇总由 gen-framework-index.sh 扫描本表组装入 exploration-guide.md §C+.0.5 区块。
-detect 信号：Cargo.toml 文件存在即激活（detect-frameworks.sh 不支持 file 类型探测，
-需手动配置 ACTIVE_FRAMEWORKS=("cargo") 或经 --inject-frameworks 补占位——见 §1 备注）。
-detect-frameworks.sh 当前仅扫描 package.json/pom.xml/go.mod/pyproject/requirements，
-Cargo.toml 与 .rs 文件不在其扫描范围，故 cargo 框架须手动配置 ACTIVE_FRAMEWORKS。
+detect 信号：Cargo.toml 文件存在即激活（R39-D1b 起 detect-frameworks.sh 支持 file_exists
+型信号，Cargo.toml 存在即自动探测激活；此前仅依赖字符串匹配，Rust 项目 ACTIVE_FRAMEWORKS
+恒空须手动配置——已废止）。
 -->
 
 ## §2 特定构件枚举（命令 + 计数核验方式）
