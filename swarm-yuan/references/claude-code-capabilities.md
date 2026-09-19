@@ -1,8 +1,8 @@
-> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.273，见文末版本注记）
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.278（2026-09-19 R40 补核），见文末版本注记）
 
-# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.274（2026-09-17 R34 补核，见文末版本注记））
+# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.278（2026-09-19 R40 补核，见文末版本注记））
 
-> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.273 / stable=2.1.267（2026-09-16 实测，分裂持续且 stable 通道前移）。
+> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.278（2026-09-19 R40 实测）/ stable=2.1.267（分裂持续且 stable 通道前移）。
 > 生成目标技能时，AI 须把以下能力编织进 SKILL.md / workflow.md / reference-manual.md / hooks / commands / settings。
 
 ## 一、核心工具（Tools）
@@ -695,3 +695,14 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **有界族两例**：Read 大文件解码失败报错而非挂死；Grep/Glob/@建议 20MB 输出上限。
 - **沙箱退出码语义**：Linux 沙箱 zsh 下失败命令误报 exit 0 已修——退出码是门禁的输入，语义不许漂。
 - **276 单回归**：自定义网关每请求 400（275 引入）——修复轮自身即回归源再添一例（270 同款），权限/网关变更须带回归面。
+
+## 版本注记：v2.1.277-278（2026-09-19 R40 补核）——AGENTS.md 跨宿主收敛与子代理输出防伪
+
+- **AGENTS.md 进宿主**（277）：无 CLAUDE.md 的项目改读 AGENTS.md（/config Project instructions 可切；Bedrock/Vertex/Foundry 暂缺）——项目指令文件向 codex 惯例收敛，多宿主部署的指令面可单一事实源。
+- **子代理输出防伪**（277）：子代理结果以 header 标记为 subagent output 并缩进——子代理文本不得冒充会话自身指令（prompt injection 防线）；workflow 脚本计算的 agent() prompt 以 script-authored 框架呈现给安全分类器（Bedrock/Vertex/Foundry）。
+- **TaskOutput 工具移除**：deprecated 工具删除，后台任务输出改 Read 输出文件；taskOutputMaxChars/TASK_MAX_OUTPUT_LENGTH 失效——淘汰即移除，不留长期并存面。
+- **诚实错误族三例**：Grep/Glob 资源耗尽（进程/内存/句柄）报错而非「无匹配」——「没找到」≠「没能力找」；claude -p/SDK 内部错误报错 exit 1 而非无果挂死；Write 目标为已存在目录报清晰错误（此前静默按 declined permission 收场）。
+- **沙箱豁免复合命令全匹配**（277）：sandbox.excludedCommands 部分匹配不再豁免整条复合命令——豁免判定 fail-closed（268 realpath 同谱系）。
+- **auto mode 服务端分类器默认**（278）：API/Enterprise/Bedrock/Vertex/Foundry/gateway 默认 server-side classifier（不收分类器开销费，CLAUDE_CODE_AUTO_MODE_SERVER=0 退出）+ /status 增 Auto mode server 行——effort 治理（maxEffortLevel 谱系）成本面收敛。
+- **网关面两例**：CLAUDE_GATEWAY_PROXY_IS_EGRESS_BOUNDARY（出口域名交代理解析，本机不解析）+ gateway upstream 静态 headers map。
+- 登记不吸收：malformed state 容错批（~/.claude.json 各字段）与 plugin 稳定性修复批（质量面无方法论原语）、PDF Windows 长路径、VSCode 面更新。

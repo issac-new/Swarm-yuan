@@ -192,3 +192,9 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **错误语义分化**：HTTP 配额错误与限流分开报告 + MCP status 快照披露 OAuth 失败——错误分类驱动不同处置，不许合并糊报。
 - **分域有界化**：MCP 描述与 Guardian action JSON 分别限界（一处超界不拖垮另一域）+ app-server stdio 有界关闭 + SIGTERM 优雅退出。
 - 登记不吸收：会话隔离与子代理归属解耦（#44521，无单机落地面）、Windows 沙箱修复批、voice alpha 排练（alpha 面）。
+
+## 版本注记：rust-v0.155.1（2026-09-19 R40 核）——默认值回归回滚
+
+> hotfix 单主题（stable 线 0.155.0→0.155.1，2 commits）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R40-runtime-refresh.md`。
+
+- **恢复 TUI reasoning summary 默认 none**：0.155.0 变更默认值引发回归，0.155.1 回滚——默认值变更与行为变更同权入回归面（修复轮即回归源族第三例：claude 270/276 同族）。

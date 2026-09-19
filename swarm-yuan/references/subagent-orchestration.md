@@ -537,3 +537,5 @@ swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input` 白名单字符集�
 - **R27（2026-09-13）**：ruflo **v3.41.2**——**内存索引保护**（修复 daemon/memory 销毁用户索引——破坏性操作守卫族：重建/清理类写操作必须先辨「我的产物 vs 用户的资产」）+ **autoStart:false 被尊重**（同意面：显式否决语义必须生效，与 fail-closed 族互补——默认安全管缺省、同意面管显式拒绝）+ **Seraphina 预算封顶替代 ad-hoc 计数**（x-gateway 0.6.1——有界性族精化：界从「计数上限」走向「预算分配」，与 claude-mem #3575 剩余死线封顶同族）+ 默认频道声明（安静频道仍可发现——零活动 ≠ 不存在）。档案 `docs/research/R27-runtime-refresh.md`。
 
 - **R38（2026-09-18）**：ruflo **v3.42.4**——**smart search 结果保检索相关性**（#3340/#3327）：其他排序键不得覆盖相关性评分——「结果按相关性排序」是检索接口的语义承诺，次级排序只能在同分内生效（排序语义显式化族）。档案 `docs/research/R38-runtime-refresh.md`。
+
+- **R40（2026-09-19）**：superpowers **v6.3.0→v6.4.1**（80 文件）——①新技能 **diagnosing-superpowers**：技能系统自身的根因诊断（session-discovery/skill-timeline/stumbles/repeated-work/scrub-audit 十 prompt 族 + redaction-policy + context-safety）——「技能要有诊断自身效能的元技能」，与本仓 24h review 轮同构（复盘要复盘方法本身）；②executing-plans 增 task-start/task-done 原子标记脚本（计划执行推进可观测）；③OpenCode 2.0 + Muse 宿主支持（宿主面加宽）；④codex plugin hooks 自动发现兜底修复：**关闭一个行为只有唯一显式形态**（hooks:{} 才生效；缺席/[]/空列表都回退 fallback——配置语义显式化族：「缺席 ≠ 关闭」）。档案 `docs/research/R40-runtime-refresh.md`。
