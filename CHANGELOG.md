@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.16.2] - 2026-09-23
+
+> R44 全量回归轮：栈轮换第六棒到 .NET/C#（ASP.NET Core 10 Web API + EF Core 10 + SQLite + xUnit 2.9，.NET SDK 10.0.401 真实工具链 build/test/ef 全绿），真实场景项目（r44-drill-inventory 仓储库存 API，9 端点/2 实体/2 迁移/12 用例）生成目标技能，走完流A 全流程（⓪-⑨ + mark-active + --all 绿 + --all-full fail=0）与流B 典型研发执勤（低库存端点 TDD 全链 proposal→spec→hook 正反→状态机五段→红绿→28 门禁→gate-runs 证据→archive；UnitCost 字段变更四件套；指纹自成长 --write→--diff 检出→单条更新→新基线；rules.d forbid/prompt/未覆盖三值实测；fail-gate-hook --report 审计四段；failure-detector L1 升级+SPINNING 同签名去重）。识别并修复 8 处缺陷（D1-D8）。共性根因第六次复现（R28"相邻路径"、R30"只认一种形态"、R33"生态系统性缺位"、R36"同族漏修"、R39"五处缺位"）：本轮 D1-D5 为 .NET 生态形态在构建嗅探/框架探测/用例计数/维度枚举/nullable 扫描面五层缺位或死分支——新栈执勤必须穷举"探测→清单→门禁→反查"全链路的语言形态假设。
+
+### Fixed
+- **conf-render.sh 嗅探表补 .NET 工程文件分支**（D1，P1）：原表无 .csproj/.fsproj/.sln/.slnx 分支（同 R39-D1 Rust 形态缺位家族）——.NET 项目 BUILD_CMD/TEST_CMD 落 AUTO:default 空值，check_build/check_test 无命令可跑，"零手动配置"对整个 .NET 生态失效。现 `dotnet build`/`dotnet test` 以 AUTO:detected 渲染（任一 .NET 工程文件存在即 confirmed；find 全工程排除 bin/obj，单解决方案目录免参可发现）。
+- **detect-frameworks.sh 新增 file_glob 信号通道**（D2，P1）：framework-signals.md 本就记载 dotnet 三条文件信号，但检测器只有依赖字符串/file_exists 两类通道可表达——ACTIVE_FRAMEWORKS 恒空、10 条 fw_dotnet_* 门禁不自动注入（"规则集在册≠链路可达"）。新增 file_glob 通道（signal=文件名 glob，全工程 find 命中即激活），dotnet 经 *.csproj/*.fsproj 转自动探测（实测演练项目 ACTIVE_FRAMEWORKS=() → ("dotnet")）。
+- **check_test 零用例检出补 dotnet 单行聚合分支 + 探测清单镜像**（D3，P1）：xUnit/VSTest 每 assembly 打一行 "Passed!  - Failed: 0, Passed: 12, ..."——原通用正则对其零用例形态（Total 为 0）零命中，零用例假绿静默 pass，且用例数不进口径。补 dotnet 聚合分支（全部行 Passed 求和，总和 0 才 warn，与 R39-D2 cargo 分支同哲学）；TEST_CMD 未配置的测试探测清单同步补 *Tests.cs/*Test.cs + bin/obj 排除（与 DIM_TESTFILES 镜像纪律）。
+- **inventory-dimensions.conf 补六维 C# 形态**（D4，P1）：接口端点/后端 controller/类型定义/测试文件/定时任务/ORM schema 六维此前对 .cs 恒 0（ENUM_ZERO_DIM 全家桶，实测八维全 0）。补 `[Http(Get|Post|Put|Delete|Patch)` 特性（每方法一特性，不过冲）、`: ControllerBase` 继承声明、public/internal 类型声明行、*Tests.cs 命名约定、IHostedService/BackgroundService、Migrations 目录 .cs；数据模型维补 DbSet< 命中 DbContext 文件，EF 纯 POCO 实体暂留披露（同 R39 Rust 先例：机械枚举高误报面，诚实降级优于虚报）。
+- **fw_dotnet_nullable 的 csproj 死分支修复**（D5，P1）：原循环内 .cs 后缀 continue 守卫在 csproj 检查之前——.csproj 根本进不了循环体，`<Nullable>enable</Nullable>`（SDK 现代项目主流启用方式）永不可见，门禁对标准启用的项目恒误报。修：csproj 走独立全工程 find 兜底（排除 bin/obj，不依赖 DOTNET_GLOBS 收录），.cs 保留 #nullable 指令路径。dotnet fixture compliant 侧改 csproj 启用形态；runner 新增 expected-pass-ids 负向断言（advisory 门禁退出码恒 0，rc 断言锁不住死分支；变异实测：回退修复后 fixture 红、恢复后绿）。
+- **check_build/check_test 命令缺失诚实化 + 退出码显式捕获**（D6，P2）：原 check_build `if eval ... | tail` 判的是管道尾命令（tail）的退出码，正确性依赖外层 pipefail 间接传导；且命令不存在与构建失败同词——实测 dotnet 不在 PATH 时汇总只说"构建失败"，排障方向不明。拆分捕获：命令缺失单列 fail 并指向工具链/conf 安装路径。
+- **project-fingerprint.sh 排除链补 bin/ obj/**（D7，P2）：.NET 构建产物（实测基线 552 个 .dll/.pdb/.deps.json 混入 685 总文件）随 SDK/包版本或 clean 重建改变文件集 → --diff 误报"项目已变化"（R33-D6 Maven target/ 同族）。补两目录排除，inventory-dimensions 各维排除链同步（两处口径一致纪律）。
+- **failure-detector.sh 结果字段双兼容**（D8，P1）：Claude Code PostToolUse payload 结果字段为 tool_response，原实现只读 tool_result——现代宿主下 exit_code 恒取 0，失败计数/L 级升级/SPINNING 同签名去重整链死代码（回归#20b"字段错位→机制整体失效"同型；实测 tool_response 键三连发计数恒 0，tool_result 键正常 L1→SPINNING）。改为双字段兼容取值。
+
+### Changed
+- FACT_SCRIPT_LOC 6489→6516 第十次登记（D3/D6 两修改 gates-warn.sh）；gate-enforce-level.conf 按再生器同步（决策 35 逐字节再生锚）；dotnet fixture 加固（violating 补 nullable/logging/auth/https/di 五断言 + compliant 侧 expected-pass-ids 十门禁负向断言）；认知面预算无超标（本轮零注记膨胀）。
+
 ## [v2.16.1] - 2026-09-19
 
 > R39 全量回归轮：栈轮换第五棒到 Rust（axum 0.8 + tokio + rusqlite 0.37，Rust 1.98 真实工具链编译/测试/clippy 全绿），真实场景项目（r39-drill-taskflow 任务工单 API）生成目标技能，走完流A 全流程（⓪-⑨：自检→mine-habits→探查→清单→特征卡→骨架→填充→框架深化→conf→hooks→门禁→独立审查→记忆写回→verify-completeness→mark-active）与流B 典型研发任务执勤（CSV 导出端点九节点全链 proposal→spec→plan→TDD→28 门禁→独立审查→verify 证据→archive；priority 字段变更五件套；指纹自成长链 --write→结构演进→--diff 检出 scope→单条更新→新基线；spec-first hook 无 spec deny/有 spec 放行正反实测；rules.d 三值 forbid/prompt 匹配；failure-detector L1 升级+SPINNING 同签名去重；fail-gate-hook --report 审计四段）。识别并修复 9 处缺陷（D1-D9）。共性根因第五次复现（R28"相邻路径"、R30"只认一种形态"、R33"生态系统性缺位"、R36"同族漏修"）：本轮 D1/D1b/D4/D7a/D8 为 Rust 生态形态在嗅探表/维度枚举器/测试文件正则/import 解析五处缺位——新栈执勤必须穷举"探测→清单→门禁→反查"全链路的语言形态假设。

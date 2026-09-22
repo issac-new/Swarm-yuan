@@ -39,7 +39,11 @@ _compute_fp() {
     # R33-D6（2026-09-17 Java 栈执勤实证）：排除链缺 Maven target/（25 个 .class/.jar/.lst 计入基线
     # → 每次 mvn build 后 --diff 误报「项目已变化」，自成长链被构建噪音误触发）。顺带补 Gradle/venv。
     # inventory-dimensions.conf DIM_DATA_MODEL 排除链同源（--exclude-dir=target），两处口径一致。
-    local find_args=( -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/build/*' -not -path '*/target/*' -not -path '*/.gradle/*' -not -path '*/venv/*' -not -path '*/.venv/*' -not -path '*/.next/*' -not -path '*/.cache/*' -not -path '*/__pycache__/*' -not -path '*/.swarm-yuan/*' -not -path '*/.claude/*' -not -path '*/.vscode/*' -not -path '*/.idea/*' )
+    # R44-D11（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：排除链缺 bin/ obj/——.NET 构建
+    # 产物（实测基线 552 个 .dll/.pdb/.deps.json 混入 685 总文件）随 SDK/包版本或 clean 重建
+    # 改变文件集 → --diff 误报。补两目录（与 target/dist 同族通用产物名；inventory-dimensions
+    # 各维 --exclude-dir=bin/obj 已同步）。
+    local find_args=( -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/build/*' -not -path '*/target/*' -not -path '*/bin/*' -not -path '*/obj/*' -not -path '*/.gradle/*' -not -path '*/venv/*' -not -path '*/.venv/*' -not -path '*/.next/*' -not -path '*/.cache/*' -not -path '*/__pycache__/*' -not -path '*/.swarm-yuan/*' -not -path '*/.claude/*' -not -path '*/.vscode/*' -not -path '*/.idea/*' )
     # 总文件数
     local total
     total=$(find "$p" "${find_args[@]}" 2>/dev/null | LC_ALL=C grep -c .)

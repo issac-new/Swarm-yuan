@@ -76,6 +76,13 @@ elif [[ -f "$PROJ/Cargo.toml" ]]; then
   # Cargo.toml 存在即 confirmed（workspace 根与单 crate 同样成立）。
   _lang="rust"; _pm="cargo"; _build="cargo build"; _test="cargo test"
   _build_confirmed=1; _test_confirmed=1
+elif [[ -n "$(find "$PROJ" -maxdepth 3 \( -name '*.csproj' -o -name '*.fsproj' -o -name '*.sln' -o -name '*.slnx' \) -not -path '*/bin/*' -not -path '*/obj/*' -print -quit 2>/dev/null)" ]]; then
+  # R44-D1（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：嗅探表此前无 csproj/sln/slnx 分支
+  # （同 R39-D1 Rust 形态缺位家族第六例）——.NET 项目 BUILD_CMD/TEST_CMD 落 AUTO:default 空值。
+  # dotnet CLI 在工程/解决方案目录下免参即可发现唯一 sln/slnx/csproj（多解决方案目录才需显式
+  # 指定，属少数形态，AI 填 conf 时按特征卡修正）；存在任一 .NET 工程文件即 confirmed。
+  _lang="csharp"; _pm="dotnet"; _build="dotnet build"; _test="dotnet test"
+  _build_confirmed=1; _test_confirmed=1
 fi
 # monorepo 判定
 _monorepo=0

@@ -48,8 +48,17 @@ check_build() {
     echo "  (跳过：未配置 BUILD_CMD)"
     return
   fi
-  if eval "$BUILD_CMD" 2>&1 | tail -10; then
+  # R44-D8（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：显式捕获退出码——原实现
+  # `if eval "$BUILD_CMD" | tail` 判的是管道尾命令（tail）的退出码，正确性依赖外层
+  # pipefail 的间接传导；且命令不存在（127）与构建失败同词"构建失败"，排障方向不明。
+  # 拆分捕获：127 单列（命令缺失→指向工具链/conf），其余才报"构建失败"。
+  local _bout _brc
+  _bout=$(eval "$BUILD_CMD" 2>&1 | tail -10) && _brc=0 || _brc=1
+  printf '%s\n' "$_bout"
+  if [[ "$_brc" -eq 0 ]]; then
     pass "构建通过"
+  elif printf '%s\n' "$_bout" | grep -qiE 'command not found|未找到命令'; then
+    fail "构建命令不可执行（command not found）：$BUILD_CMD——安装对应工具链或回生成流程 Step 8 修 conf（命令缺失≠构建失败，排障方向不同）"
   else
     fail "构建失败"
   fi
@@ -62,8 +71,8 @@ check_test() {
     # 测试体系存在而无运行通道=验证能力缺口，"配置≠使用≠有效"三段论第一段就不过）。
     # 检测模式与 assets/inventory-dimensions.conf 的 DIM_TESTFILES_CMD 镜像（两处注释互指，改一处须同步另一处）。
     local _tf=""
-    _tf=$(find "${PROJECT_DIR:-.}" -type f \( -name '*test*.py' -o -name '*.test.ts' -o -name '*.test.tsx' -o -name '*.test.js' -o -name '*.spec.ts' -o -name '*.spec.tsx' -o -name '*.spec.js' -o -name '*Test.java' -o -name '*_test.go' \) \
-      -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -print -quit 2>/dev/null || true)
+    _tf=$(find "${PROJECT_DIR:-.}" -type f \( -name '*test*.py' -o -name '*.test.ts' -o -name '*.test.tsx' -o -name '*.test.js' -o -name '*.spec.ts' -o -name '*.spec.tsx' -o -name '*.spec.js' -o -name '*Test.java' -o -name '*_test.go' -o -name '*Tests.cs' -o -name '*Test.cs' \) \
+      -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/bin/*' -not -path '*/obj/*' -print -quit 2>/dev/null || true)
     if [[ -n "${_tf}" ]]; then
       warn "测试体系存在（${_tf}）但 TEST_CMD 未配置——探查漏项，回生成流程 Step 8 补 conf（无运行通道=零验证能力）"
     else
@@ -71,10 +80,15 @@ check_test() {
     fi
     return
   fi
-  local _tout
+  local _tout _trc
   _tout=$(eval "$TEST_CMD" 2>&1 | tail -20) && _trc=0 || _trc=1
   printf '%s
 ' "$_tout"
+  if [[ "$_trc" -ne 0 ]] && printf '%s' "$_tout" | grep -qiE 'command not found|未找到命令'; then
+    # R44-D3 同源（D8 排障方向区分）：测试命令缺失≠测试失败——命令不可执行指向工具链/conf
+    fail "测试命令不可执行（command not found）：$TEST_CMD——安装对应工具链或回生成流程 Step 8 修 conf（命令缺失≠测试失败，排障方向不同）"
+    return
+  fi
   # field-feedback 2026-08-26（反馈 3 补强）：0 用例检出——"测试通过"且输出明示 0 用例时
   # warn（空跑通过是逻辑错误的最弱兜底，不算真兜底）。各框架输出格式启发式匹配。
   # R25-PF3（2026-09-12 Java 执勤实证）：原正则只认 jest/pytest 风格——Maven/Gradle surefire
@@ -94,6 +108,19 @@ check_test() {
         warn "cargo 全部 suite 共 0 用例通过——空跑通过不算兜底，须补真实用例"
       else
         pass "测试通过（cargo ${_cargo_passed} 用例，多 suite 聚合）"
+      fi
+    # R44-D3（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：dotnet test 单行聚合形态——
+    # xUnit/VSTest 各 assembly 打一行 "Passed!  - Failed: 0, Passed: 12, Skipped: 0, Total: 12"。
+    # 原通用正则对其零用例形态（"Total: 0"）无一条命中 → 零用例假绿静默 pass；多 target/
+    # 多 assembly 时 Passed 数也不进汇总口径。dotnet 分支：聚合全部行的 Passed 求和，总和 0
+    # 才 warn（失败行 Failed! 时 dotnet 退出码非 0，已走上方 fail 分支，与 cargo 分支同哲学）。
+    elif printf '%s' "$_tout" | grep -qE '^[A-Za-z]+![[:space:]]*-[[:space:]]*Failed:[[:space:]]*[0-9]+,[[:space:]]*Passed:'; then
+      local _dotnet_passed
+      _dotnet_passed=$(printf '%s' "$_tout" | sed -n 's/^[A-Za-z]*![[:space:]]*-[[:space:]]*Failed:[[:space:]]*[0-9][0-9]*,[[:space:]]*Passed:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | awk '{s+=$1} END {print s+0}')
+      if [[ "$_dotnet_passed" -eq 0 ]]; then
+        warn "dotnet test 全部 assembly 共 0 用例通过——空跑通过不算兜底，须补真实用例"
+      else
+        pass "测试通过（dotnet ${_dotnet_passed} 用例，聚合）"
       fi
     # R30-D3（2026-09-16 Node 栈执勤实证）：首分支加左边界约束——npm run 横幅
   # "> shop-api@0.1.0 test" 的版本号尾 0 与脚本名构成 "0 test" 子串，无边界正则
