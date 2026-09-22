@@ -72,13 +72,22 @@ _fw_dotnet_check() {
   _fw_report warn fw_dotnet_logging "$bad" "Console.WriteLine 生产代码（CWE-209）" "未检出 Console.WriteLine"
 
   # fw_dotnet_nullable(warn)
+  # R44-D6（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：原循环内 `.cs$` continue 守卫
+  # 在 csproj 检查之前——.csproj 文件根本进不了循环体，`<Nullable>enable</Nullable>`（SDK
+  # 现代项目的主流启用方式）是死代码，门禁对标准启用的项目恒误报。修：csproj 走独立 find
+  # 兜底（全工程，排除 bin/obj；不依赖 DOTNET_GLOBS 是否收录 .csproj——扫描面与 R39-D5
+  # deny.toml 兜底同哲学），.cs 文件保留 #nullable enable 指令路径。
   bad=""
   local has_nullable=0
   for f in "${srcarr[@]}"; do
     echo "$f" | grep -qE '\.cs$' || continue
     _fw_strip_comments_c "$f" 2>/dev/null | grep -qE '#nullable enable' && has_nullable=1
-    echo "$f" | grep -qE '\.csproj$' && grep -qE '<Nullable>enable</Nullable>' "$f" 2>/dev/null && has_nullable=1
   done
+  if [[ $has_nullable -eq 0 ]]; then
+    while IFS= read -r _csproj; do
+      [[ -n "$_csproj" ]] && grep -qE '<Nullable>enable</Nullable>' "$_csproj" 2>/dev/null && { has_nullable=1; break; }
+    done <<< "$(find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null)"
+  fi
   [[ $has_nullable -eq 0 ]] && warn "fw_dotnet_nullable: 未启用 nullable 引用类型（CWE-476）" || pass "fw_dotnet_nullable: nullable 引用类型已启用"
 
   # fw_dotnet_auth(warn) + fw_dotnet_ef_migration(warn) - simplified

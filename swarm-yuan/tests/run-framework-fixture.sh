@@ -45,6 +45,20 @@ run_one() {  # $1=violating|compliant  $2=expect fail|pass
       fi
     done < "$FX/$mode/expected-fail-ids"
   fi
+  # expected-pass-ids 可选负向断言（R44-D6 变异锁）：compliant 侧列出的门禁 id 不得出现
+  # 任何 warn/fail 行——防"rc 恒 0 的 advisory 门禁悄悄失明"（advisory 语义下 rc 断言弱，
+  # 须配负向断言才锁得住死分支类缺陷：修复前 nullable 恒 warn、rc 仍 0，rc 断言抓不到）。
+  if [[ -f "$FX/$mode/expected-pass-ids" ]]; then
+    local pid
+    while IFS= read -r pid || [[ -n "$pid" ]]; do
+      [[ -z "$pid" ]] && continue
+      case "$pid" in \#*) continue;; esac
+      if printf '%s\n' "$out" | grep -qE "(⚠|✗).*${pid}"; then
+        echo "  ✗ expected-pass-ids 违规：${pid} 在合规侧告警（门禁存在误报/死分支回归）"
+        return 1
+      fi
+    done < "$FX/$mode/expected-pass-ids"
+  fi
   return 0
 }
 run_one violating fail && echo "✓ violating → 检出（符合预期）" || { echo "✗ violating 未检出（无 advisory/fail 发现行）"; exit 1; }

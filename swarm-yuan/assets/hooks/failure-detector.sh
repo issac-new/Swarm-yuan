@@ -44,7 +44,11 @@ if command -v python3 >/dev/null 2>&1; then
 import sys, json
 try:
     d = json.load(sys.stdin)
-    tr = d.get("tool_result", {})
+    # R44-D12（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：Claude Code PostToolUse
+    # payload 的结果字段是 tool_response（旧版/部分宿主为 tool_result）——原实现只读
+    # tool_result，现代宿主下 exit_code 恒取 0，失败计数/L 级升级/SPINNING 同签名去重
+    # 整链死代码（回归#20b「字段错位→机制整体失效」同型）。双字段兼容取值。
+    tr = d.get("tool_response", d.get("tool_result", {}))
     if not isinstance(tr, dict):
         tr = {}
     # content 可能是 str 或 dict，统一转 str 并截断到 2000 字符

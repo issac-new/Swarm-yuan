@@ -165,6 +165,14 @@ opentelemetry|io.opentelemetry|pom
 cargo|Cargo.toml|file_exists
 # WP-U：dockerfile（IaC 容器镜像）——文件存在型，同 file_exists 通道（v2.16.1 起可自动探测）
 dockerfile|Dockerfile|file_exists
+# R44-D2（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：file_glob 型信号——
+# framework-signals.md §C+.0.5 本就记载 dotnet 三条文件信号（*.csproj 含 Sdk / Program.cs /
+# using Microsoft.AspNetCore），但检测器无对应通道，ACTIVE_FRAMEWORKS 恒空、10 条 fw_dotnet_*
+# 门禁不自动注入（"规则集在册≠链路可达"，同 R39-D1b cargo 家族）。新增 file_glob 通道：
+# signal=文件名 glob（全工程 find，排除 bin/obj/node_modules/.git），命中即激活。
+# csproj/fsproj 全覆盖（sln/slnx 非必需文件不作信号）。
+dotnet|*.csproj|file_glob
+dotnet|*.fsproj|file_glob
 # WP-U：kubernetes（IaC 容器编排）——detect-frameworks.sh 不支持 file 类型探测
 # （K8s 清单 *.yaml/*.yml 含 apiVersion/kind 即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("kubernetes")
 # WP-V：react-native（移动端跨平台 JS/TS）——package.json dependencies 含 react-native 即激活
@@ -274,12 +282,18 @@ while IFS='|' read -r fw pattern ftype; do
     pyreq)     _bucket="$_pyreq_deps" ;;
     pyproject) _bucket="$_pyproject_deps" ;;
     file_exists) _bucket="" ;;  # R39-D1b：文件存在型，不走依赖桶
+    file_glob) _bucket="" ;;    # R44-D2：文件名 glob 型，不走依赖桶
     *)         continue ;;
   esac
   _hit=0
   if [[ "$ftype" == "file_exists" ]]; then
     # R39-D1b：signal=项目根相对文件路径，存在即命中（cfg 高置信：清单/入口文件）
     [[ -f "$PROJ/$pattern" ]] && _hit=1
+  elif [[ "$ftype" == "file_glob" ]]; then
+    # R44-D2：signal=文件名 glob，全工程 find 命中即激活（排除构建产物与依赖目录防噪音）
+    find "$PROJ" -name "$pattern" -not -path '*/bin/*' -not -path '*/obj/*' \
+      -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null \
+      | grep -q . && _hit=1
   elif [[ "$ftype" == "pkgjson" ]]; then
     # pkgjson: 单词边界匹配,消除子串误报(next→i18next / vue→vuepress 等)
     # 边界: 行首 或 / 或 @ 之后,且 pattern 后跟 行尾 或 - / @ . _
