@@ -461,3 +461,4 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 - **findSimilar 置信度按来源可靠性门控**（#3301）：结论置信度不得高于其证据来源的可靠性上限——不信任单点聚合放大（证据可信度传播族）。
 - **LearningBridge.consolidate() reward-blind**（#3159）：记忆固化判据与激励信号解耦——防 reward hacking 写入长期记忆。
 - 近重复 embedding 检测接线 MemoryCore（#3231）：入库侧去重，防记忆池同义膨胀。MCP 治理 opt-in 与 ADR-377 身份绑定见 `mcp-governance.md` R29 段。
+- **R42（2026-09-22）**：claude-mem **v13.24.23→v13.25.3**（19 commits）——①**observer 会话 deny SendMessage/ListAgents**：只读角色的权限枚举必须排除动作面（观察者最小权限——「看」的角色不得获得「做」的工具）；②**健康但永不就绪的 worker 回收**：活性判据从「未崩溃」精确到「达到就绪」（就绪≠存活，活性定义族）；③**CLAUDE_CODE_PATH HTTP 写通道安全修复**：环境变量配置面暴露写通道须鉴权 + 遥测脱敏（配置写通道=攻击面）；④UTC 日界日志文件名重算（午夜翻页族第三实证）；⑤配置过滤器空匹配回退模式默认（fail-back：显式配置产生空集时回退安全默认而非空上下文）。watch 行迭代极快，薄轮不开档。
