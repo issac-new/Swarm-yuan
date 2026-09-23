@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.16.2-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.16.2)
+[![Release](https://img.shields.io/badge/release-v2.17.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.17.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -207,7 +207,7 @@
 | 框架规则集 | 79（规则文档与门禁片段 1:1 配对） |
 | 配置变量 / 上限 | 185 / 200 |
 | 目标技能税制 | SKILL.md ≤8KB、地图 ≤32KiB、认知面 ≤320KB（327680B；决策 38 起逐例登记例外链，当前第九次登记，理由留 facts.conf）、概念体系 ≤5 |
-| 外部运行时 | 13 个接线（深度 4 + CLI 4 + 方法论 5）；登记 17（含图谱备选 codegraph 与两宿主）；自动检测 11 |
+| 外部运行时 | 13 个接线（深度 4 + CLI 4 + 方法论 5）；登记 19（含图谱备选 codegraph、两宿主、机制源 pua/semantica）；自动检测 11 |
 | 类型目录 | 实体 17 / 关系 10 / 动作 11（assets/ontology/ 三份） |
 | 生成流程 | 12 步（唯一编号口径在 generation-flow.md）；目标技能工作流 9 节点 × 4 要素 |
 | 领域知识库 / 行业档 | 32 / 8 |
@@ -227,7 +227,7 @@
 | 行业法规映射 8 档 | conf + 法规依据文档配对，真实加载 | assets/industry-profiles/ + references/industry-profile-*.md |
 | 标准族（OWASP / STRIDE / CWE / GB/T / ISO 42001 / ISO 29148 / EARS） | 门禁条款机器可读映射 + spec 句式对齐 | assets/standards-map.conf + references/standards-compliance.md |
 | Palantir 本体论工程 | 标记沿调用链传播的设计借鉴 | docs/design-evolution.md 决策 28 |
-| 上游运行时基线（17 项供应链登记，A/B/C 分级口径） | 版本 / 许可证 / drift 机器锚 | docs/upstream-baseline.md |
+| 上游运行时基线（19 项供应链登记，A/B/C 分级口径） | 版本 / 许可证 / drift 机器锚 | docs/upstream-baseline.md |
 
 ## 附录 C：决策溯源表
 
@@ -284,7 +284,7 @@
 |---|---|---|
 | 决策史 + 历史档案 | `docs/design-evolution.md` | 决策全文 + A1-A18 施工档案（过程记录） |
 | 使用手册 + 术语 | `docs/usage-manual.md` | 安装、命令、特征卡、门禁、FAQ、数字一览（操作层） |
-| 运行时基线登记 | `docs/upstream-baseline.md` | 17 项运行时许可证 / 版本 / drift 状态（供应链机器锚） |
+| 运行时基线登记 | `docs/upstream-baseline.md` | 19 项运行时许可证 / 版本 / drift 状态（供应链机器锚） |
 | 调研证据链 | `docs/research/` | 各轮调研报告（决策史引用的外部项目调研过程档案） |
 | 对外汇报案例 | `references/case-studies/articulation-orchestration.md` | 关节编排汇报场景的论据映射 |
 
