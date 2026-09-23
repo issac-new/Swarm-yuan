@@ -11,6 +11,13 @@
 #   - SPINNING → 注入「换本质不同方案」指令；EXPLORING → 「保持方向」；MIXED → 「选最新错误方向提交」
 #   - 突破检测（COUNT≥3 且 PEAK≥2 后成功）→ 降压归零 + 方法论沉淀指令
 #
+# R45（2026-09-23，pua v3.5.1 runtime-contract 失败计数语义对齐，语义权威源
+# references/governance-agents.md §Z.2）：
+#   - 普通成功不清零失败计数（「ls 成功不是任务完成的证据」——Successful tools
+#     are silent；same_sig_count 照清因属 SPINNING 去重维度；突破检测保留为
+#     「验收通过」的机器近似降压出口）
+#   - grep/rg 无匹配（exit 1 且无 error-like 模式）豁免不计失败（信息非失败）
+#
 # 设计理念：swarm-yuan 生成流程中 AI 反复改 conf 占位符失败时，此前无机械检测——
 # AI 可能在原地打转 5 次才被发现。本 hook 把「失败模式」从 AI 自觉变成机械检测。
 #
@@ -56,15 +63,22 @@ try:
     if isinstance(content, dict):
         content = json.dumps(content)
     content = str(content)[:2000] if content else ""
+    # R45：命令文本（grep/rg 无匹配豁免需要——exit_code 分不清「无匹配」与「真错误」）
+    ti = d.get("tool_input", {})
+    if not isinstance(ti, dict):
+        ti = {}
+    command = ti.get("command", "") or ti.get("cmd", "")
     print(d.get("tool_name", ""))
     print(tr.get("exit_code", tr.get("exitCode", 0)))
     print(content)
     print(d.get("session_id", "unknown"))
+    print(str(command)[:500] if command else "")
 except Exception:
     print("")
     print(0)
     print("")
     print("unknown")
+    print("")
 ' 2>/dev/null)
   # 按行读回（IFS 保留首尾空行用 read -r 循环）
   _lines=()
@@ -73,6 +87,7 @@ except Exception:
   EXIT_CODE="${_lines[1]:-0}"
   TOOL_RESULT="${_lines[2]:-}"
   CURRENT_SESSION="${_lines[3]:-unknown}"
+  TOOL_COMMAND="${_lines[4]:-}"
 else
   # 降级：grep+sed 提取顶层字段（嵌套字段不可靠，exit_code 可能取不到→默认 0）
   TOOL_NAME=$(printf '%s' "$HOOK_INPUT" | grep -o '"tool_name":"[^"]*"' 2>/dev/null | head -1 | sed 's/"tool_name":"//;s/"$//' || printf '')
@@ -80,6 +95,7 @@ else
   [[ -z "$EXIT_CODE" ]] && EXIT_CODE=0
   TOOL_RESULT=$(printf '%s' "$HOOK_INPUT" | grep -o '"content":"[^"]*"' 2>/dev/null | head -1 | sed 's/"content":"//;s/"$//' || printf '')
   CURRENT_SESSION=$(printf '%s' "$HOOK_INPUT" | grep -o '"session_id":"[^"]*"' 2>/dev/null | head -1 | sed 's/"session_id":"//;s/"$//' || printf 'unknown')
+  TOOL_COMMAND=$(printf '%s' "$HOOK_INPUT" | grep -o '"command":"[^"]*"' 2>/dev/null | head -1 | sed 's/"command":"//;s/"$//' || printf '')
 fi
 
 [[ "$TOOL_NAME" != "Bash" ]] && exit 0
@@ -90,6 +106,16 @@ if [[ "$EXIT_CODE" != "0" && "$EXIT_CODE" != "" ]]; then
   IS_ERROR="true"
 elif echo "$TOOL_RESULT" | grep -qiE '^error:|^fatal:|^panic:|Traceback \(most recent|Exception:|command not found|No such file or directory|Permission denied'; then
   IS_ERROR="true"
+fi
+
+# R45：grep/rg 无匹配豁免（§Z.2「grep 无匹配/非预期版本=信息，按实验验收判定，不按退出码」）。
+# 判据：exit 1（grep 无匹配码；2 才是错误）+ 命令含 grep/rg + 输出无 error-like 模式 → 信息非失败。
+if [[ "$IS_ERROR" == "true" && "$EXIT_CODE" == "1" ]]; then
+  if printf '%s' "$TOOL_COMMAND" | grep -qE '(^|;|&&|\|\||\|) *(command +grep|grep|rg) ' 2>/dev/null; then
+    if ! echo "$TOOL_RESULT" | grep -qiE 'error|fatal|Traceback|Exception|panic|denied|No such file'; then
+      IS_ERROR="false"
+    fi
+  fi
 fi
 
 # ===== 会话隔离 =====
@@ -140,9 +166,14 @@ if [[ "$IS_ERROR" == "false" ]]; then
 EOF
     exit 0
   fi
-  # 普通成功：重置计数器，不重置峰值；同时清 same_sig_count（WP-Q2-lite 修复）
+  # R45：普通成功不清零 COUNT（「ls 成功不是任务完成的证据」，pua v3.5.1
+  # runtime-contract「Successful tools are silent」）；验证类命令成功（test/verify/
+  # check/build/lint 语义）=「子目标验收通过」的机器近似，清零。same_sig_count 照清
+  # （换新尝试即进入新签名周期，属 SPINNING 去重维度）；突破检测保留为大挣扎后的降压出口。
   if [[ "$COUNT" -gt 0 ]]; then
-    echo "0" > "$COUNTER_FILE"
+    if printf '%s' "$TOOL_COMMAND" | grep -qiE '(^|/|;|&&|\|\||\|) *(pytest|py\.test|cargo (test|build|check)|npm (test|run (test|check|lint|build))|yarn (test|build)|make (test|check)|go test|mvn (test|verify)|gradle (test|build)|dotnet (test|build)|precheck|self-check|verify|run-tests?|lint|tsc|eslint|ruff|flake8|shellcheck)( |$)' 2>/dev/null; then
+      echo "0" > "$COUNTER_FILE" 2>/dev/null || true
+    fi
     echo "0" > "${STATE_DIR}/.same_sig_count" 2>/dev/null || true
     rm -f "${STATE_DIR}/.last_sig_hash" 2>/dev/null || true
   fi

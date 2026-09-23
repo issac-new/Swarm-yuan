@@ -528,7 +528,7 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 
 **同轮修复清单**（纯文档层，无代码行为变更）：usage-manual 双节号/悬空指针 8 处、三理念 ↔ 四理念叙事分岔合一、数字速览二表收敛（手册 §10 改指 README 附录 A）、CONTRIBUTING 三处陈旧、生成器模板 hermes-agent/ncwk 项目沉积泛化、CLAUDE.md ~68K 行口径更新、capabilities 版本注记头同步。修复面验证 = self-check + e2e + fixtures + gen-e2e 全绿。
 
-**决策索引（R13 后）**：决策 1-17 见 §13 历史档案 A5 归档卷；决策 18-29 见本文前部；决策 30-32 自适应与压缩；决策 33-34 R13 重构与防复胖；决策 35 创造纪律（audit-claims-reality 轮）；决策 36 恰当应用（去教条化轮）；决策 37 R21 核心链条补强（复盘改进轮）；决策 38 审计收账轮（版本口径机器锚 + 认知面预算例外）；决策 39 Harness 实践吸收（证据分级 + 吸收边界 + 四新对象登记）。
+**决策索引（R13 后）**：决策 1-17 见 §13 历史档案 A5 归档卷；决策 18-29 见本文前部；决策 30-32 自适应与压缩；决策 33-34 R13 重构与防复胖；决策 35 创造纪律（audit-claims-reality 轮）；决策 36 恰当应用（去教条化轮）；决策 37 R21 核心链条补强（复盘改进轮）；决策 38 审计收账轮（版本口径机器锚 + 认知面预算例外）；决策 39 Harness 实践吸收（证据分级 + 吸收边界 + 四新对象登记）；决策 40 双运行时纳入（存量来源补登记 + 机制级吸收不引依赖）。
 
 ---
 
@@ -541,6 +541,18 @@ UserRepo (禁止改, 在 STABLE_GLOBS) ← UserService (无标注) ← UserContr
 **决定二：脚手架/装配内容不吸收（用户裁决）**。上游的安装器/骨架装配行为描述（自动写宿主配置、init 接入实录、插件安装行为、生命周期 hooks 安装面罗列）一律不进载体——吸收机制、不吸收装配叙事；机制句保留（"装完≠激活/trusted_hash"、供应链三引擎审查）。已落载体者移除（add2c34），原则入方法论吸收口径。
 
 **同轮能力登记**：①懒生成七层阶梯随发（DietrichGebert/ponytail 蒸馏——⑤编码先查再写决策程序化；懒≠偷工四不砍与门禁下限同向）；②codegraph 进图谱第三选型 + 基线表第 17 行（watch 未接线，升级前提=本机跑通索引+查询；不进 FACT_RUNTIMES 13 计数——选型备选非接线运行时，与 dsh 同处理）；③评测双口径 pass^3（连三绿=稳定收敛）/pass@3（能力上界）+ 裁判运动员四重分离（judge 独立 agent/模型/baseUrl/凭证）——verifier 评测作业口径；④comet 实操层七机制（Native 仪式裁剪/resume-probe 四值/allow_paths/doctor/eval 分离等，克隆 A 级直查）；⑤三漏输出经济学/三种熵/工具面三原则分落各 methodology 载体。认知面预算第七次登记 303104→317440B（实测 313499B，功能性增量逐例登记）。整合轮（8f90e09）补衔接：SKILL.md 追踪表行、generate-skill 节点⑤骨架消费接线、锚点修正、残留口径清理——大吸收轮收口后必跑衔接审计入惯例。
+
+---
+
+### 决策 40：双运行时纳入轮——存量来源补登记与机制级吸收边界（2026-09-23，R45 dual-runtime-absorption）
+
+**背景**：用户指令将 tanweai/pua 与 semantica-agi/semantica 两仓作为基础运行时纳入（后续持续更新），要求源码级调研、能力完善、完整回归、更新设计文档并发版。调研发现一处治理裂缝：pua 是 swarm-yuan 六项机制的既有来源（WP-loop 批：任务路由/四权分离/Oracle Gate/compaction 续传/失败检测/防作弊门，facts.conf 逐条注记），却从未登记进 upstream-baseline——吸收关系成立而供应链登记缺席。
+
+**决定一：存量来源必登记（登记漂移修复 + 防复发原则）**。凡机制被改写吸收的上游，必须同步进 upstream-baseline 登记表（机器锚 baseline_status=），无论其是否为"接线运行时"。理由：登记表是供应链可审计性的单一事实源（ISO/IEC 5230 方向），"吸收了但没登记"意味着依赖关系对审计不可见——与决策 38"账实对账必须机器执法"同族。防复发机制：本决策立后，吸收任何新上游机制时 checklist 增加一步"upstream-baseline 增行"（吸收落点与登记行必须同轮出现）。pua 以 v3.5.1 补登记（synced），机制源定位同 dsh 先例（不进 FACT_RUNTIMES 分层计数）。
+
+**决定二：机制级吸收不引依赖（semantica 裁决）**。semantica v0.7.0 是治理水准很高的企业数据/文档 KG 平台，但 22 个核心直接依赖（grpcio/protobuf/pyarrow/sklearn/scipy）对 skill 型项目不可接受，RepoIngestor 代码分析为正则级（仅 Python/JS-TS，无 AST/调用图）。裁决：**读源码借鉴设计优于引依赖**——只吸收数据模型层小而硬机制（溯源哈希链/冲突解决策略/双时态窗口），每项数百行以内可独立重写。这是 R37"吸收机制不吸收装配叙事"的延伸：机制也不一定以依赖形式吸收，能在本仓以等价实现复刻的机制以本仓实现为准（保留来源锚点与设计出处）。
+
+**同轮能力登记**：①pua v3.5.1 五协议（诊断先行/失败计数语义/信心门控六步/四状态交付/体面退出）落 governance-agents.md §Z；②failure-detector 计数语义精化（grep 无匹配豁免 + 普通成功不清零 + 验证类成功才清零；顺带修复 BASH_COMMAND 撞 shell 内建变量的真实缺陷——赋值被 shell 重置，同签名去重在真实宿主下失效面）；③semantica 溯源哈希链落 trace-log.sh --verify-chain（decisions.jsonl 决策行携带 seq+prev+checksum，篡改/删行/重编号三类破坏机器可检）；④冲突解决策略 + 双时态注记落 exploration-guide（多源矛盾裁决序：可信度加权→最新性→并存标注→人工裁决）。回归：test-failure-detector 扩至 19 态全绿；upstream-baseline 17→19 行。
 
 ---
 

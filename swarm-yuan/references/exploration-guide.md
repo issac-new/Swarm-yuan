@@ -83,6 +83,33 @@
 
 **冲突声明义务**：探查/设计时发现文档与代码不一致（架构/外部交互/数据模型/接口契约任一维度），必须在 spec 的"假设与约束"段显式写出冲突点 + 以代码为准 + 建议文档更新（不留"文档与代码 silently 不一致"的暗账）。
 
+### 多源探查矛盾裁决（R45 semantica conflicts 吸收）
+
+> 整合自 [semantica-agi/semantica](https://github.com/semantica-agi/semantica) v0.7.0 `conflicts/conflict_resolver.py` 的 7 种 ResolutionStrategy 与 `source_tracker.py` 来源可信度模型（机制级借鉴，不引依赖）。上文「文档证据源优先级」管**文档 vs 代码**一个维度；本节管**任意多源**矛盾时的通用裁决序。
+
+**矛盾从哪来**（探查期四类）：三路并行探查子代理对同一组件给出互斥结论；代码 vs 文档（上文优先级表）；图谱工具（gitnexus/graphify）边集 vs 静态扫描清单；项目记忆（mine-habits/claude-mem）vs 代码现状。
+
+**来源可信度基线**（credibility，semantica SourceTracker 思路）：
+
+| 可信度 | 来源 | 依据 |
+|-------|------|------|
+| 1（最高） | 代码实测（读源码/跑命令输出） | 直接证据 |
+| 2 | 配置文件/锁文件 | 声明即生效的机械事实 |
+| 3 | 设计文档/ADR | 意图，可能滞后 |
+| 4 | 需求文档 | 目标，可能未落地 |
+| 5（最低） | 项目记忆/历史习惯 | 时效未知，须与现状核对后才可用 |
+
+**裁决序**（按序取首个适用，semantica 7 策略的 swarm-yuan 映射）：
+
+1. **可信度加权**（CREDIBILITY_WEIGHTED）：按上表高可信度来源胜出——代码实测 > 一切转述。
+2. **最新性**（MOST_RECENT）：同可信度时，反映代码现状的胜出（记忆/旧文档描述的是历史）。
+3. **并存标注**（两源各有证据且不可判定）：双口径并存，reference-manual 注记「源 A 说 X，源 B 说 Y，未裁决」，列待验证项。
+4. **人工裁决**（MANUAL_REVIEW）：矛盾影响特征卡/门禁规则/形态判定 → 升级 UserChallenge 决策（`trace-log.sh --decision` 留痕，五要素齐备）。
+
+**裁决三纪律**：单源胜出时记录败方结论与证据（下次重探查可直接复核）；裁决过程落 trace（哪两源、各自锚点、为何胜出）；禁止「静默取其一」——没写裁决理由的取舍就是暗账。
+
+**双时态注记**（semantica `_temporal_support_projection.py` Window 语义借鉴）：清单条目/探查结论有两个时间轴——**valid time**（代码何时如此，锚 commit/项目指纹）与 **recorded time**（第 N 轮探查何时知道）。反馈回路的「单条更新」= 写一条新 recorded time 记录，不回头改写旧结论的历史有效性；last-good 红线（条目骤降 >50% 视为探查失败保留旧清单）防的正是「新一轮探查污染历史有效认知」。
+
 ```
 4. 写入特征卡对应项（不是复制原文，是提取结构化规则）
 5. 生成的目标技能的 SKILL.md 铁律段须引用来源（如"见 AGENTS.md"），不重复写死规则值

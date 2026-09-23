@@ -7,6 +7,7 @@
 #   --decision 模式（G1 决策治理）：落盘 .swarm-yuan/decisions.jsonl，对齐 ISO/IEC 42001 人工监督留痕。
 #   --reversibility（§2.4，gsd-core v1.8.0 吸收）：决策可逆性评级，缺省 reversible；one-way 应由 AI 在调用前升级 type=UserChallenge。
 #   --confidence（知识溯源三标，graphify v0.9.27 吸收）：决策依据的溯源置信度，缺省 inferred。
+#   bash trace-log.sh --verify-chain（R45 semantica 吸收）：校验 decisions.jsonl 哈希链完整性，exit 0=完整 / 1=断裂。
 # 行为（双通道，均无需用户确认）:
 #   1) stdout 打印一行结构化提示：→ [<节点>] 调用 <actor> · <tool>（<status>）— <note>
 #   2) 追加 JSON 行到 ${PROJECT_DIR:-$(pwd)}/.swarm-yuan/trace.jsonl（与 gate-runs.jsonl 同目录同构）
@@ -29,6 +30,8 @@ D_ALTERNATIVES=""; D_MISSING_CONTEXT=""; D_COST_IF_WRONG=""; D_PHASE=""
 D_REVERSIBILITY=""; D_CONFIDENCE=""; D_OUTCOME=""
 # --key-node 模式变量（WP-Q2-lite 关键节点化）
 KEY_NODE_MODE=0; KEY_NODE_NAME=""
+# --verify-chain 模式变量（R45 semantica 溯源哈希链吸收）
+VERIFY_CHAIN_MODE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --node)   NODE="${2:-}";   shift 2 ;;
@@ -37,6 +40,7 @@ while [[ $# -gt 0 ]]; do
     --status) STATUS="${2:-}"; shift 2 ;;
     --note)   NOTE="${2:-}";   shift 2 ;;
     --key-node) KEY_NODE_MODE=1; KEY_NODE_NAME="${2:-}"; shift 2 ;;
+    --verify-chain) VERIFY_CHAIN_MODE=1; shift ;;
     --decision)  DECISION_MODE=1; shift ;;
     --goal)      D_GOAL="${2:-}"; shift 2 ;;
     --closure)   D_CLOSURE="${2:-}"; shift 2 ;;
@@ -56,9 +60,61 @@ while [[ $# -gt 0 ]]; do
        echo "Usage: bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]" >&2
        echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--rationale <理由>] [--phase <阶段>] [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [--outcome <implemented|rejected|superseded|proposed>] [--alternatives <备选>] [--missing-context <缺失上下文>] [--cost-if-wrong <代价>]" >&2
        echo "       bash trace-log.sh --key-node <节点名> [--actor <谁>] [--status started|done|fail] [--note <说明>]  # WP-Q2-lite 关键节点化（九节点关键调用看板）" >&2
+       echo "       bash trace-log.sh --verify-chain  # R45 决策审计轨迹哈希链校验（exit 0=完整 / 1=断裂）" >&2
        exit 1 ;;
   esac
 done
+
+# --verify-chain 模式（R45 semantica 溯源哈希链吸收，provenance/schemas.py checksum+
+# sequence_id+previous_checksum 三件套改写）：校验 decisions.jsonl 的链完整性。
+#   ① 逐行重算 checksum（body 篡改可检出）
+#   ② previous_checksum 链（行删除后继失配可检出）
+#   ③ seq 连续（重编号/跳号可检出）
+# 旧格式行（无链字段，R45 前落盘）跳过不计——链从首个带链字段的行起算（诚实披露边界）。
+if [[ "$VERIFY_CHAIN_MODE" -eq 1 ]]; then
+  STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
+  DEC_FILE="$STATE_DIR/decisions.jsonl"
+  if [[ ! -f "$DEC_FILE" ]]; then
+    echo "verify-chain: $DEC_FILE 不存在——无决策留痕可校验（vacuously intact）"
+    exit 0
+  fi
+  _prev=""; _expect_seq=""; _checked=0; _broken=0; _legacy=0; _lineno=0
+  while IFS= read -r _row || [[ -n "$_row" ]]; do
+    _lineno=$((_lineno + 1))
+    if printf '%s' "$_row" | grep -q '"checksum":"'; then
+      : # 带链字段的行——进入下方链校验
+    else
+      _legacy=$((_legacy + 1)); _prev=""; _expect_seq=""; continue
+    fi
+    _seq=$(printf '%s' "$_row" | sed -n 's/.*"seq":\([0-9][0-9]*\).*/\1/p')
+    _stored_prev=$(printf '%s' "$_row" | sed -n 's/.*"previous_checksum":"\([^"]*\)".*/\1/p')
+    _stored_sum=$(printf '%s' "$_row" | sed -n 's/.*"checksum":"\([^"]*\)".*/\1/p')
+    # body = 行内容剔除三个链字段后重排（写侧与校侧同构：按写侧构造序 seq|prev|body）
+    _body=$(printf '%s' "$_row" | sed -e 's/,"seq":[0-9]*,"previous_checksum":"[^"]*","checksum":"[^"]*"//' )
+    _calc_sum=$(printf '%s' "${_seq}|${_stored_prev}|${_body}" | cksum | awk '{print $1}')
+    if [[ -z "$_expect_seq" ]]; then
+      : # 链起点（首个带链字段的行），seq 不要求为 1（前导 legacy 行合法）
+    else
+      if [[ "$_seq" != "$_expect_seq" || "$_stored_prev" != "$_prev" ]]; then
+        echo "verify-chain: 断裂于第 ${_lineno} 行——seq=${_seq:-?}（期望 ${_expect_seq}）/ previous_checksum 链失配" >&2
+        _broken=1; break
+      fi
+    fi
+    if [[ "$_calc_sum" != "$_stored_sum" ]]; then
+      echo "verify-chain: 第 ${_lineno} 行 checksum 失配（body 被篡改或跨工具重写）" >&2
+      _broken=1; break
+    fi
+    _checked=$((_checked + 1)); _prev="$_stored_sum"; _expect_seq=$((_seq + 1))
+  done < "$DEC_FILE"
+  if [[ "$_broken" -eq 1 ]]; then
+    echo "verify-chain: FAIL（decisions.jsonl 链断裂——按红线「不隐瞒失败」处理：勿改写历史行，续写修复决策并留痕）"
+    exit 1
+  fi
+  _legacy_note=""
+  [[ "$_legacy" -gt 0 ]] && _legacy_note="——R45 前旧格式，链自首个带链字段行起算"
+  echo "verify-chain: OK（链完整：${_checked} 行校验通过，${_legacy} 行 legacy 跳过${_legacy_note}）"
+  exit 0
+fi
 if [[ "$DECISION_MODE" -eq 0 && -z "$TOOL" && "$KEY_NODE_MODE" -eq 0 ]]; then
   echo "Usage: bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]" >&2
   echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [...]" >&2
@@ -147,11 +203,28 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
         _ref_trace_hash=$(printf '%s' "$_last_line" | cksum | awk '{print $1}')
       fi
     fi
-    _dec_line=$(printf '{"ts":"%s","phase":"%s","type":"%s","ai_suggestion":"%s","user_action":"%s","outcome":"%s","rationale":"%s","actor":"%s","alternatives":"%s","missing_context":"%s","cost_if_wrong":"%s","reversibility":"%s","confidence":"%s","goal_id":"%s","closure":"%s","repair_review":"%s","ref_trace_hash":"%s"}' \
+    _dec_line=$(printf '{"ts":"%s","phase":"%s","type":"%s","ai_suggestion":"%s","user_action":"%s","outcome":"%s","rationale":"%s","actor":"%s","alternatives":"%s","missing_context":"%s","cost_if_wrong":"%s","reversibility":"%s","confidence":"%s","goal_id":"%s","closure":"%s","repair_review":"%s","ref_trace_hash":"%s"' \
       "$ts" "$(_json_esc "$D_PHASE")" "$(_json_esc "$D_TYPE")" "$(_json_esc "$D_SUGGESTION")" \
       "$(_json_esc "$D_USER_ACTION")" "$(_json_esc "$D_OUTCOME")" "$(_json_esc "$D_RATIONALE")" "$(_json_esc "${ACTOR:-swarm-yuan/ai}")" \
       "$(_json_esc "$D_ALTERNATIVES")" "$(_json_esc "$D_MISSING_CONTEXT")" "$(_json_esc "$D_COST_IF_WRONG")" \
       "$(_json_esc "$D_REVERSIBILITY")" "$(_json_esc "$D_CONFIDENCE")" "$(_json_esc "$D_GOAL")" "$(_json_esc "$D_CLOSURE")" "$(_json_esc "$D_REPAIR_REVIEW")" "$_ref_trace_hash")
+    # R45（semantica 溯源哈希链吸收，provenance/schemas.py:102 三件套）：决策行追加
+    # seq + previous_checksum + checksum——body 篡改/行删除（后继 prev 失配）/重编号（seq 断档）
+    # 三类破坏均可由 --verify-chain 检出。checksum = cksum("seq|prev|body")，写读两侧同构。
+    _dec_seq=1; _dec_prev=""
+    if [[ -f "$STATE_DIR/decisions.jsonl" ]]; then
+      _dec_total=$(wc -l < "$STATE_DIR/decisions.jsonl" 2>/dev/null || printf '0')
+      _dec_seq=$(( _dec_total + 1 ))
+      _dec_last=$(tail -1 "$STATE_DIR/decisions.jsonl" 2>/dev/null || printf '')
+      if [[ -n "$_dec_last" ]]; then
+        _dec_prev=$(printf '%s' "$_dec_last" | sed -n 's/.*"checksum":"\([^"]*\)".*/\1/p')
+        [[ -z "$_dec_prev" ]] && _dec_prev=""   # 前行是 legacy 旧格式（无 checksum）→ 链自此行起算
+      fi
+    fi
+    # checksum 覆盖「完整 JSON body + seq + prev」——写读两侧同构：校侧剔除链字段后得到同一 body
+    _dec_sum=$(printf '%s' "${_dec_seq}|${_dec_prev}|${_dec_line}}" | cksum | awk '{print $1}')
+    _dec_line=$(printf '%s,"seq":%s,"previous_checksum":"%s","checksum":"%s"}' \
+      "$_dec_line" "$_dec_seq" "$_dec_prev" "$_dec_sum")
     if ! printf '%s\n' "$_dec_line" >> "$STATE_DIR/decisions.jsonl" 2>/dev/null; then
       echo "⚠ trace-log: decisions.jsonl 落盘失败（$STATE_DIR/decisions.jsonl 不可写），决策未留痕（不阻塞）" >&2
     else

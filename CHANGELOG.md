@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Release notes per version are also available at [GitHub Releases](https://github.com/issac-new/Swarm-yuan/releases).
 
+## [v2.17.0] - 2026-09-23
+
+> R45 双运行时纳入轮：tanweai/pua v3.5.1 与 semantica-agi/semantica v0.7.0 源码级调研后纳入基础运行时登记（17→19 行），并完成机制吸收与能力完善。pua 为存量来源补登记——六项机制（任务路由/四权分离/Oracle Gate/compaction 续传/失败检测/防作弊门）在 WP-loop 批已改写吸收却从未进供应链登记表（治理裂缝本轮补上，立决策 40"存量来源必登记"），同时吸收 v3.5.1 五协议增量；semantica 按"机制级吸收不引依赖"裁决（22 个核心依赖的企业数据 KG 平台不适配 skill 场景），只吸收数据模型层三个小而硬机制。调研细节 `docs/research/R45-dual-runtime-absorption.md`（A 级证据：两仓浅克隆源码精读 + 子代理独立深挖复核）。
+
+### Added
+- **governance-agents.md §Z 交付纪律协议**（pua v3.5.1 五协议改写）：诊断先行（改码前一行 `[SWARM-YUAN-DIAGNOSIS] 问题/证据/下一步` 外部承诺，防「分析正确但不行动」）；失败计数语义表（升压看已失败实验数非命令红绿——同一事件不重复计数/bug-existence test=复现证据非失败/权限缺失=有据阻塞非无限重试）；信心门控六步（列声明→找漏洞→修或披露→跑证据→循环判定→「事实上的 100%」）；四状态交付（未验证/局部已验证/已完成/有据阻塞，替代二值叙事；AI 自报与 verifier 机器结论冲突时以机器侧为准）；体面退出（穷尽后结构化失败报告：已验证事实+已排除+缩小范围+推荐下一步+交接信息）。
+- **trace-log.sh --verify-chain 决策审计哈希链**（semantica provenance `checksum+sequence_id+previous_checksum` 三件套吸收）：decisions.jsonl 决策行自动携带 seq/previous_checksum/checksum（写侧与校侧同构 cksum），三类破坏机器可检——body 篡改（checksum 失配）/整行删除（后继 prev 失配+seq 断档）/重编号（seq 连续性）；R45 前旧格式行 legacy 跳过（链自首个带链字段行起算，诚实披露边界）；文件不存在 vacuously intact。已入 governance-agents verifier 验证命令集与 facts.conf（FACT_TRACE_CHAIN=1）。
+- **exploration-guide §多源探查矛盾裁决**（semantica conflicts 七策略 + SourceTracker 可信度模型吸收）：来源可信度基线五级（代码实测>配置>设计文档>需求>记忆）；裁决序四级（可信度加权→最新性→并存标注→人工裁决 UserChallenge）；裁决三纪律（记录败方/落 trace/禁静默取其一）；双时态注记（valid time=代码何时如此 vs recorded time=第 N 轮探查何时知道——反馈回路单条更新不改写历史有效性，与 last-good 红线衔接）。
+- upstream-baseline 17→19 行（pua/semantica 双行 synced 登记，机制源定位同 dsh 先例）；facts.conf +FACT_TRACE_CHAIN；SKILL.md 第六层路由补 governance-agents/exploration-guide 新节指引；决策 40 入 design-evolution。
+
+### Fixed
+- **failure-detector.sh 计数语义两处偏差对齐 pua v3.5.1 runtime-contract**（P1）：①原任意 Bash 成功即清零失败计数——`ls` 成功就重置，L 级在「失败→探查→失败」节奏下永远升不起来，与「Successful tools are silent」语义相反；现为普通成功保持 COUNT、验证类命令成功（test/verify/check/build/lint 语义）才清零（「子目标验收通过」的机器近似），突破检测（COUNT≥3 且 PEAK≥2 后成功）保留。②原 grep/rg 无匹配（exit 1）计为失败——「无匹配=信息非失败」；新增豁免判定（exit 1+命令含 grep/rg+输出无 error 模式→不计），真错误（exit 2/输出含 error）仍计。
+- **failure-detector.sh BASH_COMMAND 变量撞 shell 内建**（P1，R45 执勤实证）：命令文本存入 `BASH_COMMAND` 后被 shell 重置为当前命令（内建特殊变量，每条简单命令前重赋值）——R45 新增的 grep 豁免与验证类清零判定在真实 hook 执行下取到错误值。改用 `TOOL_COMMAND`。该缺陷同时证明：R44-D8 修复的 tool_response 双兼容在此前无 e2e 覆盖，本轮补齐。
+- **trace-log.sh 决策行 JSON 合法性**（P2，写侧自查发现）：链字段追加实现初版丢失行尾闭合 `}`（写出非法 JSONL）；修复并使 checksum 覆盖「完整 JSON body + seq + prev」，写读两侧同构。
+
+### Changed
+- test-failure-detector.sh 扩至 19 态（+态 12-14 计数语义：grep 豁免/真错误仍计/普通成功保持+验证成功清零；+态 15-19 哈希链：链字段与 JSON 合法性/prev 衔接/篡改检出/删行检出/legacy 兼容/无文件 exit 0）。
+- README（根+技能双载体）badge v2.16.2→v2.17.0；技能 README 运行时口径 17→19 三处；upstream-baseline 表头与口径注同步。
+- 认知面预算：实测 327536B ≤ 预算 327680B（余 144B，无超标登记——trace-log/failure-detector 增量计入；governance-agents 属 compliance 档不计税）。
+
 ## [v2.16.2] - 2026-09-23
 
 > R44 全量回归轮：栈轮换第六棒到 .NET/C#（ASP.NET Core 10 Web API + EF Core 10 + SQLite + xUnit 2.9，.NET SDK 10.0.401 真实工具链 build/test/ef 全绿），真实场景项目（r44-drill-inventory 仓储库存 API，9 端点/2 实体/2 迁移/12 用例）生成目标技能，走完流A 全流程（⓪-⑨ + mark-active + --all 绿 + --all-full fail=0）与流B 典型研发执勤（低库存端点 TDD 全链 proposal→spec→hook 正反→状态机五段→红绿→28 门禁→gate-runs 证据→archive；UnitCost 字段变更四件套；指纹自成长 --write→--diff 检出→单条更新→新基线；rules.d forbid/prompt/未覆盖三值实测；fail-gate-hook --report 审计四段；failure-detector L1 升级+SPINNING 同签名去重）。识别并修复 8 处缺陷（D1-D8）。共性根因第六次复现（R28"相邻路径"、R30"只认一种形态"、R33"生态系统性缺位"、R36"同族漏修"、R39"五处缺位"）：本轮 D1-D5 为 .NET 生态形态在构建嗅探/框架探测/用例计数/维度枚举/nullable 扫描面五层缺位或死分支——新栈执勤必须穷举"探测→清单→门禁→反查"全链路的语言形态假设。
