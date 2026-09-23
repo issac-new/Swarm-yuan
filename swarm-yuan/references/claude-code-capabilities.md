@@ -1,8 +1,8 @@
-> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.278（2026-09-19 R40 补核），见文末版本注记）
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.280（2026-09-23 R44 补核），见文末版本注记）
 
-# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.278（2026-09-19 R40 补核，见文末版本注记））
+# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.280（2026-09-23 R44 补核，见文末版本注记））
 
-> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.278（2026-09-19 R40 实测）/ stable=2.1.267（分裂持续且 stable 通道前移）。
+> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.280（2026-09-23 R44 实测）/ stable=2.1.267（分裂持续且 stable 通道前移）。
 > 生成目标技能时，AI 须把以下能力编织进 SKILL.md / workflow.md / reference-manual.md / hooks / commands / settings。
 
 ## 一、核心工具（Tools）
@@ -706,3 +706,14 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **auto mode 服务端分类器默认**（278）：API/Enterprise/Bedrock/Vertex/Foundry/gateway 默认 server-side classifier（不收分类器开销费，CLAUDE_CODE_AUTO_MODE_SERVER=0 退出）+ /status 增 Auto mode server 行——effort 治理（maxEffortLevel 谱系）成本面收敛。
 - **网关面两例**：CLAUDE_GATEWAY_PROXY_IS_EGRESS_BOUNDARY（出口域名交代理解析，本机不解析）+ gateway upstream 静态 headers map。
 - 登记不吸收：malformed state 容错批（~/.claude.json 各字段）与 plugin 稳定性修复批（质量面无方法论原语）、PDF Windows 长路径、VSCode 面更新。
+
+## 版本注记：v2.1.279-280（2026-09-23 R44 补核）——Opus 5.5 顶档与写路径权限语义
+
+> patch 两版。详表 `docs/upstream-baseline.md`；档案 `docs/research/R44-runtime-refresh.md`。
+
+- **Claude Opus 5.5（`claude-opus-5-5`）成默认 Opus**：1M 上下文，$4/$20 per Mtok，缓存读 $0.20——顶档模型上下文与价格坐标前移（adaptive-gating 分档事实源更新；effort/能力档判定以模型目录为准，不硬编码）。
+- **符号链接写路径按真实落点判权限**：经 symlinked path 的写入按实际落点判读，prompt 明示落点；`acceptEdits`/allow 规则/auto mode 不再批准落在树外的写入——**权限路径语义第七实证**：R24 v2.1.268「规范化空间比对」谱系从读路径延到写路径。目标技能权限面（settings 模板）结论不变：deny 规则按规范化路径书写。
+- **auto mode 重试治理两连**：安全检查拒绝评审的动作**一次拒绝并明示重试无用**（不再反复重试同一动作）；安全检查无应答时**退避重试，连拒十次终止本轮**——「无界重试→有界+明确错误」族宿主侧新样本（与 v2.1.274 损坏 transcript 自愈替代无界重试同族）。
+- Write 工具参数宽容化：模型发 `path`/`file_text`/`file_content`/杂散 `description` 时映射到 `file_path`/`content` 而非校验失败——输入宽容化（与 codex-security R32「产出收敛」成双向口径的输入侧）。
+- `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH`：MCP 描述 2048 字符上限可调；hook 输出尺寸入 otel 事件——配置与可观测面。
+- 修复面（不吸收）：TUI 对话框交互批、skills/.trash 误移、插件 commit 追踪。

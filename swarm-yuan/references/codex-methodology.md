@@ -198,3 +198,16 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 > hotfix 单主题（stable 线 0.155.0→0.155.1，2 commits）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R40-runtime-refresh.md`。
 
 - **恢复 TUI reasoning summary 默认 none**：0.155.0 变更默认值引发回归，0.155.1 回滚——默认值变更与行为变更同权入回归面（修复轮即回归源族第三例：claude 270/276 同族）。
+
+## 版本注记：rust-v0.156.0/0.156.1（2026-09-23 R44 核）——证据资产化与多代理消息持久化
+
+> 实质 minor（0.155.1→0.156.1，527 commits；0.156.0 tag 2026-09-22 11:39 -0700 + 同日 0.156.1 hotfix）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R44-runtime-refresh.md`。
+
+- **`/tui` 全屏交互 transcript**（#46732/#46849）：搜索/鼠标选择进 TUI——**证据资产化族**：会话记录升为可检索一等产物，与本仓 trace.jsonl 同向。
+- **Agent message boards 进持久化多代理运行时**（#46959/#47029/#47042）：根线程删除连带删板 + **删除中损坏存储可恢复**——**消息持久化原语**（dsh R22 消息归属之后）：多代理消息先持久化再消费，删除=事务（连带、可恢复、失败不损既有）。
+- **失败/中断/子代理完成事件保留流式答案与计划**（#45549/#46867）——partial 语义宿主再实证：中途产物不因轮次失败而丢弃（与本仓「完成 ≠ 中途停」分级、gate-report partial 态同构）。
+- **worktree 支持默认启用**（#46839）+ 会话复用既有 daemon（#46498）——R22 隔离原语转默认。
+- **opt-in compaction after final responses**（#46541）——压缩时点显式化：应答完成后才压（不在轮中），上下文操作不打断用户可见流。
+- **reasoning effort 以模型显式支持为闸**（#46530）+ 0.156.1 回滚「新线程默认关 reasoning summary」——能力未声明不启用（诚实口径族）；默认值变更入回归面（R40 同族第四例）。
+- **Guardian 策略解析集中化**（#45957）——策略从多处判定收敛到 config+protocol 单点——**规则单一事实源族**宿主侧实证，与本仓「特征卡立法」同构。
+- 网络与沙箱面：系统代理回落登录 + 沙箱缺口三连修（Windows 入站/特权 socket/只读句柄写入）+ Unix socket 与受限命令隔离——不吸收（与本仓门禁面无新原语）。
