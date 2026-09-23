@@ -1,5 +1,26 @@
 # Changelog
 
+
+## [v2.18.0] - 2026-09-24
+
+> R46 三项目演练完成 + 修复路径别解析问题：完成 react-express/vue-fastapi/nextjs-blog 三个典型前后端项目的定制化技能生成与 TDD 全链演示，暴露并修复 inventory-verify.sh 对 Windows 反斜杠路径的处理问题（#2）。
+
+### Added
+- **R46 三个演练项目技能**：react-express、vue-fastapi、nextjs-blog，每个项目包含定制化 SKILL.md（含任务配方 recipes.md、组件清单 reference-manual.md、边界规则 rules.d）
+- **react-express 新增优先级过滤功能**：GET /api/tasks?priority=<level> 端点，支持按优先级筛选任务
+- **vue-fastapi 新增完成状态切换功能**：PATCH /api/cards/{card_id}/toggle 端点，支持切换卡片完成状态
+- **nextjs-blog 新增草稿箱功能**：GET /api/drafts 端点，返回所有未发布文章
+
+### Fixed
+- **inventory-verify.sh Windows 路径处理**（P2）：路径提取循环中添加反斜杠转正斜杠转换（`_p="${_p//\//}"`），解决 AI 生成 markdown 时使用 Windows 风格路径（`src\server.js`）导致的 HALLUCINATION 误报。修复后 `backend\server.js` 等路径可正确映射到 `backend/server.js`。
+- **备份仓库 git init 修复**：`git mv` 在 swarm-yuan 目录缺失时失败，改为复制+删除方案
+- **zsh 全局替换语法问题**：`$=var` 在 zsh 中触发全局替换语法，改为标准 `${var//\//}` 写法
+
+### Changed
+- README（根+技能双载体）badge v2.17.0→v2.18.0
+- 认知面预算：实测 327536B ≤ 预算 327680B
+
+
 All notable changes to swarm-yuan are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),

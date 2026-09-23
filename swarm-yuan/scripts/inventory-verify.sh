@@ -224,6 +224,7 @@ if [[ "$PATH_CHECK" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/refere
   _paths=""
   while IFS=$'\t' read -r _stab _p; do
     [[ -n "${_p:-}" ]] || continue
+    _p="${_p//\\//}"
     _paths="${_paths}${_p}
 "
   done <<< "$(_extract_rows_paths "$SKILL_DIR/references/reference-manual.md")"
@@ -255,6 +256,7 @@ if [[ "$PATH_CHECK" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/recipe
   ' "$SKILL_DIR/references/recipes.md" 2>/dev/null | LC_ALL=C sort -u)
   while IFS= read -r _p; do
     [[ -n "$_p" ]] || continue
+    _p="${_p//\\//}"
     if [[ ! -f "$PROJ/$_p" ]]; then
       hallus="${hallus}HALLUCINATION	配方引用路径不存在: ${_p}（recipes.md §A/§B；疑似幻觉复用件，回 §C+.6/§C+.7 核实）
 "
