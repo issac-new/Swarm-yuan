@@ -19,6 +19,8 @@
 
 族内档位互补关系在表中"触发"列可辨（如 memory-persistence 管跨会话记忆工具族 / knowledge-lifecycle 管项目知识四段协议 / context-engineering-layering 管规则放哪层——三者都关"知识"，粒度不同不重叠）。
 
+**正反对偶（R51）**：本表是正向索引（档→消费节点）；任务侧反向索引（任务类型→该读哪些档）在 `task-methodology-router.md` §方法论分派表——一个任务要读什么，从那边查；一个档被谁消费，从这里查。
+
 ## 二、references 接线总表（46 档，self-check G25 对账面）
 
 ### 族① 生成主干（流A）
@@ -111,3 +113,4 @@
 1. references/*.md（不含 frameworks/ 与本表自身）每个 basename 必须出现在本表——吸收必接线，孤儿零容忍；
 2. 本表提及的每个档名必须实存——台账不登记幽灵；
 3. SKILL.md 第六层必须引用本表——路由表与台账两级互指。
+4. 分派零落档（R51）：`*-methodology.md` 每档必须可从 task-methodology-router.md §方法论分派表到达（反向索引闭环：建档必接线、接线必可达）。
