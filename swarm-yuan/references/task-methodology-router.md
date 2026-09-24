@@ -17,6 +17,8 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 
 **路由表的价值**：避免「所有任务都跑全量 12 步」的浪费，聚焦关键路径。
 
+**路由三维度**（R51 整合轮）：节点序列（跑哪些步）+ 门禁聚焦（守哪些门）+ **方法论分派（读哪些档）**——第三维见下方分派表，是 46 档吸收层对任务的反向操作入口。
+
 ## 路由表
 
 | 任务类型 | 触发信号 | 关键节点序列 | 门禁聚焦 | profile 档 |
@@ -38,11 +40,36 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 3. **门禁聚焦取并集**（质量优先取更重档）：任务类型基础集 + 规模档叠加，两者取并集
 4. **Oracle Gate 是逃生舱**：常规路由搞不定时（self-check/precheck 持续 fail），启动无限迭代模式让 AI 自动修到通过
 
+## 方法论分派表（R51：任务类型 × 方法论档）
+
+> **反向索引**：capability-map 是正向索引（档 → 消费节点/触发），本表是反向索引（任务 → 该读哪些档）——吸收层的 46 档从这里被任务分派到达，"没整合成一个整体"的分派面由本表闭合。分派序按流B 消费节点序；【必】=该任务必读，【按】=命中条件才读。覆盖纪律：`*-methodology.md` 每档必须可从本表分派到达（self-check G25 守）。
+
+| 任务类型 | 触发信号 | 方法论档分派（按消费节点序） |
+|---------|---------|---------------------------|
+| **feature（新功能）** | 分支 feat/*、用户开发需求 | ②【必】knowledge-lifecycle（读法六步）→ ③【按】cost-estimation-methodology（§25 估算）→ ⑤【必】lazy-generation（先查再写）→ ⑦【必】review-methodology → ⑧ decision-governance（用户确认点）；复杂变更加 subagent-orchestration、长任务加 mea-loop-methodology；全程 ai-process-records |
+| **fix（缺陷修复）** | 分支 fix/*、报障 | ②【必】knowledge-lifecycle（影响面查法）→ ⑤【必】lazy-generation → ⑦【必】review-methodology（回归面=修复点+相邻路径）；全程 codex-methodology（执行纪律）+ ai-process-records |
+| **refactor（重构）** | 分支 refactor/* | ②【必】knowledge-lifecycle（影响面）→ ③【按·架构类】togaf-metamodel-methodology（§24）/ cordis-composability-methodology（可组合性）→ ⑤ lazy-generation → ⑦【必】review-methodology |
+| **test（测试）** | 分支 test/* | ⑦【必】review-methodology（测试有效性判定）+ 回归分级（template-spec §19）；长测试计划 mea-loop-methodology |
+| **docs（文档）** | 分支 docs/* | ②【必】knowledge-lifecycle（知识四段协议，文档即知识）→ ⑦ review-methodology（三方一致核对） |
+| **chore（杂务/依赖）** | 分支 chore/* | ⑤【必】codex-methodology（版本锁定例外四条件）；全程 ai-process-records |
+| **exp（实验）** | 分支 exp/* | 全程【必】ai-process-records（实验不入 main 须留痕）；长实验 mea-loop-methodology |
+| **架构设计/演进类** | 触服务划分/数据模型/选型 | ③【必】togaf-metamodel-methodology + four-theories-methodology（系统建模/划边界）→ ⑤ cordis-composability-methodology → ⑦【必】review-methodology |
+| **前端/UI 类** | 含页面/组件/交互 | ③【必】frontend-design-methodology（Modes/三层权威）→ ⑤ lazy-generation → ⑦ review-methodology |
+| **安全类** | 含认证/加密/权限/输入处理 | ③【必】codex-security-methodology（威胁建模五要素）→ ⑦ review-methodology |
+| **治理机制设计** | 改 swarm-yuan 自身门禁/hooks/流程 | ③【必】four-theories-methodology（门禁拦得住/拦太多评估）+ dsh-engineering-methodology（审计/状态韧性）+ agent-skills-methodology（Prove-It 自证）→ ⑦【必】review-methodology |
+| **发布/运维类** | 灰度/监控/runbook | ⑨【必】canary-monitoring（发布后基线对比）+ ai-process-records |
+| **验收/交付类** | 何时可宣称完成 | ⑦【必】agent-skills-methodology（Prove-It 五步/自治硬停）+ review-methodology |
+| **记忆/知识沉淀类** | 记忆写回/知识更新 | ⑧【必】memory-persistence（工具族/蒸馏）+ knowledge-lifecycle-methodology（过期三态） |
+
+**生成侧任务同样按本表分派**（叠加在上表"路由表"节点序列之上）：升级已有技能 → 加 knowledge-lifecycle（反馈回路三态）+ memory-persistence（记忆写回）；合规审计 → 加 four-theories-methodology（剪裁评估）+ quality-management-standards（认证资产映射）。
+
+**其余档按场景补充到达**：计划/状态管理 → gsd-patterns；方案对抗 → logic-razor + cognitive-bias（spec §16）；治理拓扑 → governance-agents；MCP 接入 → mcp-governance；图谱工具 → code-graph-tools；宿主原生能力 → claude-code-capabilities；规则分层 → context-engineering-layering；领域规律 → domain-knowledge。安全合规族（crypto-spec/cwe-database/security-certification-profiles/standards-compliance/行业八档）不走任务分派——由 `--security`/`--industry`/compliance 档门禁条件加载。
+
 ## 与 pua methodology-router 的差异
 
 | 维度 | pua | swarm-yuan |
 |------|-----|-----------|
-| 路由对象 | 大厂味道（旁白风格）+ 方法论（行为约束） | 生成流程节点序列 + 门禁聚焦 |
+| 路由对象 | 大厂味道（旁白风格）+ 方法论（行为约束） | 生成流程节点序列 + 门禁聚焦 + 方法论档分派（R51） |
 | 路由依据 | 失败模式（原地打转/放弃/质量差/没搜就猜/被动等待/空口完成/思维固化） | 任务类型（新项目/注入/升级/合规/修复） |
 | 切换信号 | PostToolUse hook 检测失败模式 → 切味道 | 命令参数 + 项目特征 → 选节点序列 |
 | 切换后果 | 换旁白风格 + 换方法论步骤 | 换跑哪些节点 + 聚焦哪些门禁 |
@@ -50,7 +77,8 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 
 ## 与现有机制的关系
 
-- **与 task-type-gates.conf 的关系**：task-type-gates.conf 是「任务类型 → 门禁命令映射」（feature→--all-full；fix→--all --reuse），本路由表是「任务类型 → 生成流程节点序列」，两者互补——前者管运行什么门禁，后者管跑哪些生成节点。
+- **与 task-type-gates.conf 的关系**：task-type-gates.conf 是「任务类型 → 门禁命令映射」（feature→--all-full；fix→--all --reuse），本路由表是「任务类型 → 生成流程节点序列 + 方法论档分派」，三者互补——门禁 conf 管运行什么门禁，节点表管跑哪些生成节点，分派表管读哪些方法论档。
+- **与 capability-map 的关系（R51 对偶）**：capability-map 是正向索引（档 → 消费节点/触发），本表方法论分派表是反向索引（任务 → 档）——两表互为对偶；`*-methodology.md` 每档必须可从本表分派到达（self-check G25 分派零落档断言守），吸收层由此闭环：建档必接线（正向）、接线必可达（反向）。
 - **与 profile 档的关系**：profile（auto/lite/standard/compliance）管生成什么文件集，路由表管跑哪些节点——compliance 档 + 合规审计任务 = 全节点 + 合规门禁聚焦。
 - **与 Oracle Gate（E1）的关系**：路由表是常规路径，Oracle Gate 是非常规逃生舱——常规路由持续 fail 时切到无限迭代模式。
 - **与四权分离拓扑（E3）的关系**：compliance 档 + 改治理资产任务 → 路由表指向 Step 7 强制走四权分离拓扑。

@@ -1885,6 +1885,8 @@ check_cordis_composability_wiring() {
 #   ① 孤儿零容忍：references/*.md（不含 frameworks/ 与 capability-map 自身）basename 必须出现在 map；
 #   ② 幽灵零容忍：map 接线表中首列为纯档名的行，其档必须实存（防登记不存在的档）；
 #   ③ 两级互指：SKILL.md 第六层必须引用 capability-map（路由表→台账）。
+#   ④ 分派零落档（R51）：references/*-methodology.md 每档必须可从 task-methodology-router.md
+#      方法论分派表到达（反向索引闭环：建档必接线、接线必可达）。
 check_capability_map_wiring() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local map="$base/references/capability-map.md"
@@ -1939,10 +1941,26 @@ check_capability_map_wiring() {
     _warn=$((_warn+1))
   fi
 
+  # ⑤ 分派零落档（R51 反向索引闭环）：*-methodology.md 每档必须可从分派表到达
+  local undispatched="" mf mb
+  for mf in "$base"/references/*-methodology.md; do
+    [[ -f "$mf" ]] || continue
+    mb="$(basename "$mf" .md)"
+    if ! grep -q -- "$mb" "$base/references/task-methodology-router.md" 2>/dev/null; then
+      undispatched="${undispatched}${undispatched:+ }$mb"
+    fi
+  done
+  if [[ -z "$undispatched" ]]; then
+    echo "  ✓ 分派零落档：全部 *-methodology.md 可从方法论分派表到达"
+  else
+    warn "G25 分派落档（方法论不可从任务分派到达，须补分派表行）：$undispatched"
+    _warn=$((_warn+1))
+  fi
+
   if [[ $_warn -gt 0 ]]; then
     echo "  ℹ 能力地图对账漂移 ${_warn} 项（warn-only，不阻断）"
   else
-    echo "  ✓ 能力地图双向对账一致（孤儿零 + 幽灵零 + 互指在）"
+    echo "  ✓ 能力地图双向对账一致（孤儿零 + 幽灵零 + 互指在 + 分派零落档）"
   fi
 }
 check_cordis_composability_wiring

@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [v2.23.0] - 2026-09-25
+
+> R51 整合轮（续 R50）：补上"整合成整体"缺失的**反向分派面**——R50 台账是正向索引（档→消费节点），但 task-methodology-router 名实不符（自称"任务类型 × 方法论路由表"实际不分派任何方法论档，13 篇 *-methodology.md 仅 2 篇被提及），任务→方法论的分派缺失。本轮 §方法论分派表成档（14 任务类型 × 方法论档，13 方法论全覆盖）+ G25 扩"分派零落档"断言——吸收层闭环定局：建档必接线（正向）、接线必可达（反向）。
+
+### Added
+- **task-methodology-router.md §方法论分派表（R51）**：反向索引（任务类型 → 该读哪些档，按流B 消费节点序，【必】/【按】分级）——流B 七类（feature/fix/refactor/chore/docs/test/exp，task-type-gates.conf 权威集）+ 七横切场景（架构/前端/安全/治理机制设计/发布运维/验收交付/记忆沉淀）共 14 行，13 篇 *-methodology.md 全部可分派到达；生成侧任务叠加分派注记（升级→knowledge-lifecycle+memory-persistence；合规审计→four-theories+quality-management-standards）；其余档（gsd-patterns/logic-razor/cognitive-bias/governance-agents/mcp-governance/code-graph-tools/claude-code-capabilities/context-engineering-layering/domain-knowledge）按场景补充到达；安全合规族声明不走任务分派（--security/--industry/compliance 档门禁条件加载）。
+- **self-check G25 ⑤ 分派零落档断言**：references/*-methodology.md 每档 basename 必须出现在 task-methodology-router.md（warn-only，不计入门禁 55）——反向索引闭环机器可检。
+
+### Changed
+- **task-methodology-router 三维度定局**：节点序列（跑哪些步）+ 门禁聚焦（守哪些门）+ 方法论分派（读哪些档）；pua 对比表"路由对象"行同步；与 task-type-gates.conf/capability-map 的关系补全（capability-map 正向索引 ↔ 分派表反向索引对偶）。
+- **template-spec 方法论整合行**：补分派单源指针（"方法论分派（任务类型→档）单源见 task-methodology-router.md §方法论分派表"）——不复刻清单，合一收敛。
+- **capability-map §一/§四**：补正反对偶说明 + 对账纪律第 4 条（分派零落档）。
+- **FACT_ARTIFACT_BYTES_BUDGET 327680→336896（第十次逐例登记）**：实测 332672B 超 4992B，成因=分派表+三维度+对偶行 +5136B（功能本体随发执勤侧），理由链留 facts.conf。三件套 187886B ≤ 188416B（余量内，无需登记）。
+
 ## [v2.22.0] - 2026-09-24
 
 > R50 整合轮：吸收层接线台账成档——46 档 references + 19 运行时首次有单一事实源对账（capability-map，五族整合视图 + 逐档 来源/证据/消费节点/触发）；SKILL.md 第六层从散文泛列举重写为五族路由表（46 档全部按名路由，兑现 46 个档头"路由表见 SKILL.md"承诺）；self-check G25 双向对账断言（孤儿零容忍/幽灵零容忍/两级互指），"吸收了但没接线"从此机器可检。
