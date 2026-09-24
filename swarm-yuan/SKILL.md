@@ -119,7 +119,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **流B 的守卫**（目标技能侧，本 skill 生成的实物在执勤）：spec-first hook（fail-gate-hook 拦"无 spec 写源码"，Claude deny/Codex exit 2 双宿主）→ 状态机阶段守卫（design 需 proposal、build 需批准 spec、verify 需 tasks 全勾、archive 需 verify pass+证据）→ 门禁四族按序列 → 拦截落 gate-deny.jsonl 可复盘。九节点×4 要素由目标技能 `references/workflow.md` 承载。
 
-**反馈回路**：SessionStart hook（lite 档 AI 主动）跑 `scripts/project-fingerprint.sh <proj> --diff` → 变化 scope → exploration-guide §C+ 局部重探查 → reference-manual 单条更新（骤降 >50% 拒写）→ 生成器 `--upgrade`（项目内容文件保留）→ 落新基线——自成长闭环。
+**反馈回路**：SessionStart hook（lite 档 AI 主动）跑 `scripts/project-fingerprint.sh <proj> --diff` → 变化 scope → exploration-guide §C+ 局部重探查 → reference-manual 单条更新（骤降 >50% 拒写；条目按过期三态处置：更新/降级标注/归档，见 knowledge-lifecycle-methodology §五）→ 生成器 `--upgrade`（项目内容文件保留）→ 落新基线——自成长闭环。
 
 ## 第五层 使用——一个需求的完整旅程
 
@@ -131,7 +131,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 用户："开始新需求：给订单列表加导出按钮"
   ↓ ① 需求理解    AI 复述需求+列影响面，用户确认或纠正（现在纠正我）
   ↓ ② 探查        AI 先查 recipes 配方与 §A 同类功能，再按 reference-manual 地图定位既有组件
-                    （拼装零件；"谁依赖 X"查 relations.jsonl 边集）
+                    （拼装零件；"谁依赖 X"查 relations.jsonl 边集；读法按 knowledge-lifecycle 六步协议：摘要优先→追链→分组注入）
   ↓ ③ 设计 spec    AI 写 spec（决策记录+影响范围+测试设计）→ 用户评审批准
   ↓ ④ 实施 plan    AI 拆 tasks（.swarm-yuan/tasks.md）
   ↓ ⑤ 编码        AI 实现（先查再写：按 lazy-generation 七层下探复用，层 7 才新增代码）；【若跳过了 spec】fail-gate-hook 直接拒绝写源码（spec-first 强制）
@@ -150,4 +150,4 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 > 本段各 reference 本身是流A ③骨架随发的产物（知识库自举）：生成器用它们生成目标技能，目标技能执勤时又按路由读它们——文档即流程产物，流程即文档消费者。
 
-探查→exploration-guide（含 §C+.0.6 四层架构视角 + §多源探查矛盾裁决：可信度基线/裁决序/双时态注记）；填充→template-spec（spec §24 架构映射 / §25 功能点估算）；生成流程详解→generation-flow；认知→cognition-framework 等；方法论→各 *-methodology.md（cordis-composability / mea-loop / agent-skills / dsh-engineering / togaf-metamodel / four-theories / cost-estimation / lazy-generation 等）+ context-engineering-layering；合规→standards-compliance + 行业 profile（`--industry` 真实加载；finance/gov/medical/telecom/automotive/energy/industrial/payment 八档）；安全→security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读；治理与交付纪律→governance-agents（四权分离拓扑 + §Z 五协议：诊断先行/失败计数语义/信心门控/四状态交付/体面退出）；编排→subagent-orchestration。
+探查→exploration-guide（含 §C+.0.6 四层架构视角 + §多源探查矛盾裁决：可信度基线/裁决序/双时态注记）；填充→template-spec（spec §24 架构映射 / §25 功能点估算）；生成流程详解→generation-flow；认知→cognition-framework 等；方法论→各 *-methodology.md（cordis-composability / mea-loop / agent-skills / dsh-engineering / togaf-metamodel / four-theories / cost-estimation / lazy-generation / knowledge-lifecycle 等）+ context-engineering-layering；合规→standards-compliance + 行业 profile（`--industry` 真实加载；finance/gov/medical/telecom/automotive/energy/industrial/payment 八档）；安全→security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读；治理与交付纪律→governance-agents（四权分离拓扑 + §Z 五协议：诊断先行/失败计数语义/信心门控/四状态交付/体面退出）；编排→subagent-orchestration。

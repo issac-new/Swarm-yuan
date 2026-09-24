@@ -267,7 +267,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 
 **详细节点说明：**
 1. 需求理解
-2. 设计 spec（采用 OpenSpec proposal 模式：proposal.md + delta spec + design.md + tasks.md）—— **★测试左移**：spec 须含"测试设计"段（测试策略/用例骨架/边界值/回归范围）；**★运维左移**：spec 须含"可观测性约束"段（日志结构/metrics 埋点/trace 透传/告警阈值/健康检查）
+2. 设计 spec（采用 OpenSpec proposal 模式：proposal.md + delta spec + design.md + tasks.md）—— **★测试左移**：spec 须含"测试设计"段（测试策略/用例骨架/边界值/回归范围——分级推导协议见下方左移要求）；**★运维左移**：spec 须含"可观测性约束"段（日志结构/metrics 埋点/trace 透传/告警阈值/健康检查）
 3. 实施 plan（采用 OpenSpec tasks checkbox 格式 + superpowers writing-plans bite-sized 步骤）—— **★变更左移**：plan 须含"变更影响范围"段（消费方反查/回滚预案/灰度策略/数据库迁移兼容窗口）
 4. 分支准备
 5. 编码实现（采用 superpowers subagent-driven：orchestrator + 每任务新 subagent + 两阶段审查；**复杂变更（>3 文件/跨模块）用 Dynamic Workflows 并行扇出 + 交叉验证**）—— **★测试左移**：每个 task 须先写/更新测试再实现（TDD/BDD），precheck `--shift-left` 校验 test 与 impl 同分支提交
@@ -408,7 +408,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 - **★三平台兼容（swarm-yuan 自身的 .sh 脚本必须遵守，非目标技能强制）**：不用 declare -A / sed -i.bak+rm / grep -E / date -u / cd+pwd 替代 readlink -f / wc|xargs / ${var} 防 C-locale。详见 `references/security-spec.md` §六
 
 **★左移要求（Shift-Left，dev-guide.md §9 必须含 + spec-template.md §19/§20/§21 + precheck.sh `--shift-left`）：**
-- **测试左移**：spec 阶段（节点②）写测试设计段（测试策略/用例骨架/边界值/回归范围/契约测试）；编码阶段（节点⑤）每个 task 先写/更新测试再实现（TDD/BDD），test 与 impl 同分支提交，禁止"先实现后补测试"。precheck `--shift-left` 校验：spec 含测试设计段 + git diff 中 test 文件先于或同时于 impl 文件提交
+- **测试左移**：spec 阶段（节点②）写测试设计段（测试策略/用例骨架/边界值/回归范围/契约测试）；编码阶段（节点⑤）每个 task 先写/更新测试再实现（TDD/BDD），test 与 impl 同分支提交，禁止"先实现后补测试"。precheck `--shift-left` 校验：spec 含测试设计段 + git diff 中 test 文件先于或同时于 impl 文件提交。**回归范围分级推导协议**（R49 知识生命周期吸收，AI 判断引导不新增 check_*）：以 relations.jsonl 边集为反查底座，四路由窄到宽——①直接命中（diff 文件即测试文件或其被测锚点）→必跑；②接口命中（改动暴露为接口/导出，反查引用方测试）→应跑；③数据面命中（改实体字段/表列，沿 data-mapping/mapper-binding 边把 mapper/消费方测试拉进）→应跑；④链路扩散（命中构件可归入某业务链/配方，整链测试）→建议跑。分级写进回归范围字段（`必跑:/应跑:/建议跑:` 三行），防"全量回归"与"漏隐蔽影响面"两头
 - **变更左移**：plan 阶段（节点③）写变更影响范围段（消费方反查/回归范围/回滚预案/灰度策略/数据库迁移兼容窗口）；合入 main 前（节点⑦）确认回滚预案存在 + 迁移向前兼容。precheck `--shift-left` 校验：plan 含变更影响段 + spec 含回滚预案声明
 - **运维监控左移**：spec 阶段（节点②）写可观测性约束段（日志结构化规范/metrics 埋点清单/trace 透传链/告警阈值/健康检查端点）；验证阶段（节点⑥）确认 metrics/日志/trace 已埋点且可通过健康检查端点访问；发布阶段（节点⑧）确认灰度策略 + 告警阈值已设 + runbook 已更新。precheck `--shift-left` 校验：spec 含可观测性段 + 代码中 metrics/日志/trace 埋点存在 + 健康检查端点可访问
 - **左移三项的关系**：测试左移防缺陷流入后段；变更左移防变更爆炸半径失控；运维左移防线上故障不可观测。三者配套——不可只做一项
