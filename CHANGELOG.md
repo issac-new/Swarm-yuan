@@ -1,6 +1,28 @@
 # Changelog
 
 
+## [v2.20.0] - 2026-09-24
+
+> R48 跨栈回归补齐轮：三族同仓缺陷横向审计（不再靠换栈演练碰运气）——探测表 12 规则集零信号补 10 个、Go/Rust 解析基准假设 PROJ 根（同仓边集为零）、conf-render 根级单点嗅探（同仓命令全空）；R47 三修复补变异锁，负向断言逼出 D3 残留半修（前缀伪造变量假阳性放行）。
+
+### Fixed
+- **detect-frameworks.sh 12 规则集探测零信号**（R48-G1）：kubernetes/flutter/harmonyos/c-cpp/android/ios-swiftui/hive/spark/tdengine/opengauss 十个补机械信号（file_exists/file_glob/pom/pyreq 四通道），ACTIVE_FRAMEWORKS 恒空、对应门禁永不注入的"规则集在册≠链路可达"缺口关闭；doris（客户端依赖形态杂）与 rag-pipeline（模式非依赖）设计上保持手动，表内注释披露。
+- **relations-extract.sh Go 双缺陷**（R48-G2）：go.mod 只读项目根 + import 解析基准假设 PROJ 根——前后端同仓时 go.mod 在 server/ 等子目录，GO_MODULE 恒空、Go 工程内边集全漏（实测 1 条边全是前端）。修：全仓发现 go.mod 清单（剪 node_modules/target/vendor 噪音），每个 go.mod 自带 module 前缀与基准目录；根级项目行为不变（r36 实测 11 条对齐）。
+- **relations-extract.sh Rust crate 根硬编码**（R48-G3）：`crate::` 解析基准固定 `src/`（项目根）——同仓时 src/ 在 backend/ 下，Rust 工程内边全漏。修：crate 根=文件自身路径的 src/ 前缀（backend/src/main.rs → backend/src），根级形态行为不变（r39 实测 9 条对齐）。
+- **conf-render.sh 命令嗅探根级单点**（R48-G4）：package.json/pom.xml/go.mod/pyproject/requirements/Cargo 全部只查项目根（.NET 分支已是 maxdepth 3）——前后端同仓四栈 BUILD/TEST_CMD 落 AUTO:default 空值（R47 实证）。修：无根清单时 depth≤3 发现各工程目录，按确定性优先级（pom>gradle>node>go>python>rust）合成子 shell 复合命令 `(cd <dir> && <cmd>) && ...`（段间无 cd 状态耦合、相对路径可移植、任一段失败整体失败）；node 子工程无 test/build 脚本不发对应段。根级单栈路径不变（四真实项目渲染逐字节对齐）。
+- **generate-skill.sh mark-active 前缀伪造变量假阳性**（R48-G5b，D3 残留半修）：注入区块已声明 requires_conf 时，id 前缀推导仍接受伪造变量（填 JESTVITEST_SRC_GLOBS 过执法，而 jest-vitest 门禁实际读 VITEST_*——放行了但门禁依旧空转）。修：声明在案 → 只认声明变量；未注入 ruleset 的框架保留前缀兜底。
+
+### Added
+- **tests/fixtures/monorepo-cross-stack/**：五栈前后端同仓最小形态 fixtures（goweb/rsfull/pyfull/nodeweb/javaweb），锚定解析基准/探测/命令合成三类同仓缺陷的回归面。
+- **tests/test-cross-stack-monorepo.sh**（13 断言，CI 接线）：五栈边集非零 + Go/Rust 边逐字锚 + javaweb mapper-binding/field-mapping ≥1 + element-ui 探测锁 + poly 复合命令锁 + 根级单栈不漂移负向锚。
+- **tests/test-framework-conf-consistency.sh**（6 断言，CI 接线）：79 片段 requires_conf 全量声明 + 每规则集 mark-active 可活性 + D3 变异锁正负空三态（正向 VITEST_TEST_GLOBS 放行/负向 JESTVITEST_* 拦截/空态拦截）——R47 修复从此有变异锁，重构回潮 CI 即红。
+- **generate-skill.sh --check-framework-globs <skill-dir> 子命令**：mark-active 框架空转防线抽函数可测化（check_framework_globs 单一事实源，子命令供测试与填充期自检直调）。
+- **test-detect-frameworks.sh 态5**：10 个新信号正负双态（正态 10 框架全中 + 空项目零误报）。
+
+### Changed
+- README（根+技能双载体）badge v2.19.0→v2.20.0
+
+
 ## [v2.19.0] - 2026-09-24
 
 > R47 典型前后端项目演练轮：Vue2+ElementUI / Spring Boot+MyBatis（前后端同仓）全栈执勤实证 3 缺陷全修——detect-frameworks 漏检 element-ui 包名、relations-extract 对前后端同仓形态 Java 边集整链为零、mark-active 框架 glob 执法 id↔变量前缀名实不符卡死激活。

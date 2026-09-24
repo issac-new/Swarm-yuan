@@ -63,6 +63,13 @@ sentinel|sentinel|pyreq
 sharding|org.apache.shardingsphere|pom
 elasticsearch|org.elasticsearch|pom
 elasticsearch|elasticsearch-java|pom
+# R48-G1（2026-09-24 跨栈回归补齐审计）：以下大数据/数据库规则集此前无任何探测信号，
+# ACTIVE_FRAMEWORKS 恒空、门禁永不注入（"规则集在册≠链路可达"同族，靠全量审计暴露而非换栈碰运气）
+hive|org.apache.hive|pom
+spark|org.apache.spark|pom
+tdengine|com.taosdata|pom
+tdengine|taospy|pyreq
+opengauss|org.opengauss|pom
 elasticsearch|elasticsearch|pyreq
 netty|io.netty|pom
 jackson|com.fasterxml.jackson|pom
@@ -174,8 +181,16 @@ dockerfile|Dockerfile|file_exists
 # csproj/fsproj 全覆盖（sln/slnx 非必需文件不作信号）。
 dotnet|*.csproj|file_glob
 dotnet|*.fsproj|file_glob
-# WP-U：kubernetes（IaC 容器编排）——detect-frameworks.sh 不支持 file 类型探测
-# （K8s 清单 *.yaml/*.yml 含 apiVersion/kind 即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("kubernetes")
+# R48-G1（2026-09-24 跨栈回归补齐审计）：12 个规则集探测表零信号 → 门禁链路不可达，
+# 其中 10 个有确定性机械信号，本轮补齐；doris/rag-pipeline 无干净信号保持手动（见下注）。
+kubernetes|deployment.yaml|file_glob
+flutter|pubspec.yaml|file_exists
+harmonyos|*.ets|file_glob
+c-cpp|CMakeLists.txt|file_exists
+android|app/src/main/AndroidManifest.xml|file_exists
+ios-swiftui|project.pbxproj|file_glob
+# doris：无干净机械信号（Doris 客户端依赖形态杂：flink-connector/jdbc-catalog 均非项目级强信号）——保持手动配置 ACTIVE_FRAMEWORKS=("doris")
+# rag-pipeline：RAG 模式规则集非依赖可探测（langchain 等组件有自己的 id）——设计上手动激活
 # WP-V：react-native（移动端跨平台 JS/TS）——package.json dependencies 含 react-native 即激活
 react-native|react-native|pkgjson
 # WP-V：flutter（移动端跨平台 Dart）——detect-frameworks.sh 不支持 file 类型探测

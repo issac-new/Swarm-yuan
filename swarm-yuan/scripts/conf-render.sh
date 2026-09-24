@@ -33,6 +33,18 @@ PROJ=$(cd "$PROJ" && pwd)
 [[ -n "$OUT" ]] && { mkdir -p "$OUT"; }
 
 # ===== 嗅探层 =====
+# R48-G4（跨栈同仓审计）：根级单点嗅探对前后端同仓（backend/+frontend/ 等）全空——
+# R47 实证构建/测试命令落 AUTO:default 空值。无根清单时 depth≤3 发现各工程目录
+# （剪构建产物与依赖目录），供下方 poly 分支合成复合命令。有根清单则维持原单栈路径。
+_mo_dirs=""
+if ! [[ -f "$PROJ/package.json" || -f "$PROJ/pom.xml" || -f "$PROJ/build.gradle" \
+     || -f "$PROJ/build.gradle.kts" || -f "$PROJ/go.mod" || -f "$PROJ/pyproject.toml" \
+     || -f "$PROJ/requirements.txt" || -f "$PROJ/Cargo.toml" ]]; then
+  _mo_dirs=$(find "$PROJ" -maxdepth 3 \( -type d \( -name node_modules -o -name target -o -name .git -o -name dist -o -name .swarm-yuan -o -name vendor \) -prune \) \
+    -o -type f \( -name pom.xml -o -name build.gradle -o -name build.gradle.kts -o -name package.json \
+       -o -name go.mod -o -name pyproject.toml -o -name requirements.txt -o -name Cargo.toml \) -print 2>/dev/null \
+    | sed "s|^$PROJ/||" | LC_ALL=C awk -F/ '{NF--; print}' OFS=/ | LC_ALL=C sort -u)
+fi
 _lang="unknown"; _pm="unknown"; _build=""; _test=""; _build_confirmed=0; _test_confirmed=0; _frameworks=""
 if [[ -f "$PROJ/package.json" ]]; then
   _lang="typescript"
@@ -76,6 +88,47 @@ elif [[ -f "$PROJ/Cargo.toml" ]]; then
   # Cargo.toml 存在即 confirmed（workspace 根与单 crate 同样成立）。
   _lang="rust"; _pm="cargo"; _build="cargo build"; _test="cargo test"
   _build_confirmed=1; _test_confirmed=1
+elif [[ -n "${_mo_dirs}" ]]; then
+  # R48-G4：多工程同仓——每目录按确定性优先级（pom>gradle>node>go>python>rust）取一套命令，
+  # 子 shell 段串联 `(cd <dir> && <cmd>) && ...`：段间无 cd 状态耦合、相对路径可移植、任一段失败整体失败。
+  # confirmed 语义：test 至少一段确证即 detected（docs 型子工程无测试不拖死整仓）。
+  _lang="poly"; _pm="multi"
+  _mo_test=""; _mo_build=""; _mo_any_confirmed=0
+  while IFS= read -r _d; do
+    [[ -z "$_d" ]] && continue
+    _t=""; _b=""; _tc=0
+    if [[ -f "$PROJ/$_d/pom.xml" ]]; then
+      _b="mvn -q package -DskipTests"; _t="mvn -q test"; _tc=1
+    elif [[ -f "$PROJ/$_d/build.gradle" || -f "$PROJ/$_d/build.gradle.kts" ]]; then
+      _b="gradle -q build"; _t="gradle -q test"; _tc=1
+    elif [[ -f "$PROJ/$_d/package.json" ]]; then
+      if [[ -f "$PROJ/$_d/yarn.lock" ]]; then _b="yarn build"; _t="yarn test"
+      elif [[ -f "$PROJ/$_d/pnpm-lock.yaml" ]]; then _b="pnpm build"; _t="pnpm test"
+      else _b="npm run build"; _t="npm test"; fi
+      grep -qE '"test"[[:space:]]*:' "$PROJ/$_d/package.json" 2>/dev/null && _tc=1
+      # 无 build 脚本的 node 子工程不发 build 段（与根级路径 confirmed 语义对称，防空跑失败）
+      grep -qE '"build"[[:space:]]*:' "$PROJ/$_d/package.json" 2>/dev/null || _b=""
+    elif [[ -f "$PROJ/$_d/go.mod" ]]; then
+      _b="go build ./..."; _t="go test ./..."; _tc=1
+    elif [[ -f "$PROJ/$_d/requirements.txt" || -f "$PROJ/$_d/pyproject.toml" ]]; then
+      if grep -qi 'pytest' "$PROJ/$_d/requirements.txt" "$PROJ/$_d/pyproject.toml" 2>/dev/null; then
+        _t="python3 -m pytest"
+      else
+        _t="python3 -m unittest discover -s tests"
+      fi
+      _tc=1; _b=""
+    elif [[ -f "$PROJ/$_d/Cargo.toml" ]]; then
+      _b="cargo build"; _t="cargo test"; _tc=1
+    else
+      continue
+    fi
+    [[ $_tc -eq 1 ]] && { _mo_test="${_mo_test:+$_mo_test && }(cd $_d && $_t)"; _mo_any_confirmed=1; }
+    [[ -n "$_b" ]] && _mo_build="${_mo_build:+$_mo_build && }(cd $_d && $_b)"
+  done <<< "$_mo_dirs"
+  _test="$_mo_test"; _build="$_mo_build"
+  _test_confirmed=$_mo_any_confirmed
+  _build_confirmed=0
+  [[ -n "$_build" ]] && _build_confirmed=1
 elif [[ -n "$(find "$PROJ" -maxdepth 3 \( -name '*.csproj' -o -name '*.fsproj' -o -name '*.sln' -o -name '*.slnx' \) -not -path '*/bin/*' -not -path '*/obj/*' -print -quit 2>/dev/null)" ]]; then
   # R44-D1（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：嗅探表此前无 csproj/sln/slnx 分支
   # （同 R39-D1 Rust 形态缺位家族第六例）——.NET 项目 BUILD_CMD/TEST_CMD 落 AUTO:default 空值。
@@ -88,6 +141,7 @@ fi
 _monorepo=0
 [[ -d "$PROJ/packages" && $(ls -1 "$PROJ/packages" 2>/dev/null | wc -l | tr -d ' ') -gt 1 ]] && _monorepo=1
 [[ -d "$PROJ/services" && $(ls -1 "$PROJ/services" 2>/dev/null | wc -l | tr -d ' ') -gt 1 ]] && _monorepo=1
+[[ -n "${_mo_dirs}" ]] && _monorepo=1
 # ACTIVE_FRAMEWORKS（调 detect-frameworks.sh；其行式解析器对紧凑单行 package.json 会漏探，fail-open 兜底补 pkgjson）
 # 回归发现#2（2026-08-27 RuoYi 双项目回归）：原解析 sed 's/.*"\([^"]*\)".*/\1/p' 贪婪匹配
 # 只捕获 ACTIVE_FRAMEWORKS=("vue" "element" "vite") 行的最后一个 "vite" → 骨架 conf 只落

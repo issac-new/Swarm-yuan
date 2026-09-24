@@ -853,6 +853,67 @@ if [[ "${1:-}" == "--verify-completeness" ]]; then
 fi
 
 # ============================================================
+# check_framework_globs <skill-dir> —— mark-active 的框架门禁空转防线（R48-G5 抽函数可测化）
+# 返回 0=每个 ACTIVE_FRAMEWORKS 框架至少一个 glob 族变量已填；1=有框架全空（stderr 报清单）。
+# R33-F1 立法（框架 glob 空转拦截）+ R47-D3 修（变量名以注入区块 requires_conf 声明为准，
+# id 前缀推导为补充）。独立成函数供 --check-framework-globs 子命令与测试直调（变异锁锚点）。
+check_framework_globs() {
+  local _cg_dir="$1"
+  local _cg_af="" _cg_c _cg_line _cg_ids _cg_id _cg_fw _cg_vars _cg_v _cg_pat _cg_hit _cg_missing=""
+  for _cg_c in "$_cg_dir/scripts/precheck.conf" "$_cg_dir/scripts/precheck.arch.conf"; do
+    [[ -f "$_cg_c" ]] || continue
+    _cg_line=$(grep -m1 '^ACTIVE_FRAMEWORKS=' "$_cg_c" 2>/dev/null | cut -d'#' -f1 | sed 's/^ACTIVE_FRAMEWORKS=//;s/[()"]//g' || true)
+    if [[ -n "$_cg_line" ]]; then
+      _cg_af="$_cg_af $_cg_line"
+    fi
+  done
+  _cg_ids="$(printf '%s' "${_cg_af}" | tr '[:space:]' '\n' | LC_ALL=C sort -u | sed '/^$/d' || true)"
+  for _cg_id in ${_cg_ids}; do
+    _cg_fw="$(printf '%s' "$_cg_id" | tr -d '-' | tr '[:lower:]' '[:upper:]')"
+    _cg_vars=""
+    if [[ -f "$_cg_dir/scripts/precheck.sh" ]]; then
+      _cg_vars=$(grep -m1 "^# ruleset: ${_cg_id}  *requires_conf:" "$_cg_dir/scripts/precheck.sh" 2>/dev/null | sed 's/.*requires_conf: *//' || true)
+    fi
+    # R48-G5b（变异锁负向断言逼出的 D3 残留半修）：注入区块已声明 requires_conf 时，
+    # 门禁实际只读声明变量——id 前缀猜测变量在此形态下是假阳性放行（填了 JESTVITEST_*
+    # 过执法但 jest-vitest 门禁读 VITEST_* 依旧空转）。收紧：声明在案 → 只认声明变量；
+    # 未注入 ruleset 的框架 → 保留 id 前缀推导兜底。
+    _cg_decl_glob=""
+    for _cg_v in ${_cg_vars}; do
+      case "$_cg_v" in
+        *SRC_GLOBS|*MAPPER_DIRS|*CONFIG_FILES|*SQL_GLOBS|*SCHEMA_GLOBS|*JOB_DIRS|*KEY_COLUMNS|*SHARD_KEY|*GLOBS)
+          _cg_decl_glob="${_cg_decl_glob}${_cg_decl_glob:+|}${_cg_v}" ;;
+      esac
+    done
+    if [[ -n "$_cg_decl_glob" ]]; then
+      _cg_pat="${_cg_decl_glob}"
+    else
+      _cg_pat="${_cg_fw}[A-Z0-9_]*(SRC_GLOBS|MAPPER_DIRS|CONFIG_FILES|SQL_GLOBS|SCHEMA_GLOBS|JOB_DIRS|KEY_COLUMNS|SHARD_KEY|GLOBS)"
+    fi
+    _cg_hit=$(cat "$_cg_dir/scripts/precheck.conf" "$_cg_dir/scripts/precheck.arch.conf" 2>/dev/null \
+      | grep -cE "^(${_cg_pat})=\(\"[^\"]" || true)
+    if [[ "${_cg_hit:-0}" -eq 0 ]]; then
+      _cg_missing="${_cg_missing} ${_cg_fw}"
+    fi
+  done
+  if [[ -n "$_cg_missing" ]]; then
+    echo "✗ 框架 glob 全空（TODO(framework-gates) 未填充）：${_cg_missing} 无任何已填变量——框架门禁将空转。填充 precheck.conf / precheck.arch.conf 对应 <FW>_SRC_GLOBS 等变量后重跑 --mark-active" >&2
+    return 1
+  fi
+  echo "✓ 框架 glob 检查通过（ACTIVE_FRAMEWORKS 每框架至少一个 glob 族变量已填）"
+  return 0
+}
+
+# --check-framework-globs <skill-dir>：单跑框架空转防线（R48-G5——供 test-framework-conf-consistency
+# 直调做变异锁：正向=requires_conf 变量可放行；负向=id 前缀伪造变量不放行）
+if [[ "${1:-}" == "--check-framework-globals" || "${1:-}" == "--check-framework-globs" ]]; then
+  _cgd="${2:-}"
+  [[ -n "$_cgd" && -f "$_cgd/SKILL.md" ]] || { echo "Usage: bash generate-skill.sh --check-framework-globs <skill-dir>"; exit 1; }
+  trace_tool "check-framework-globs" "$_cgd"
+  check_framework_globs "$_cgd"
+  exit $?
+fi
+
 # --mark-active 子命令（WP-H 状态门：draft → active；WP-Q1A 串联 inventory-verify --path-check）
 # 用法: bash generate-skill.sh --mark-active <skill-dir>
 # 三道关：
@@ -882,47 +943,8 @@ if [[ "${1:-}" == "--mark-active" ]]; then
     echo "ℹ 非 draft 状态（已是 active 或无 status 字段），无需标记"
     exit 0
   fi
-  # R33-F1（2026-09-17 Java 栈执勤实证）：框架门禁静默空转防线——ACTIVE_FRAMEWORKS 已注入但
-  # 框架 glob 全空（TODO(framework-gates) 未填充）时，_fw_* 门禁因 _fw_resolve_globs 拿不到文件
-  # 全部空转，mark-active 却照常放行。填充 AI 只看 SKILL.md 填充指引不知道要填 conf glob。
-  # 机器执法：对每个检出框架（连字符去除后大写 = 变量前缀），两份 conf（主+arch，WP-I 三分）
-  # 中至少一个 <FW>_ 开头的 glob/目录/文件变量已填非空值。
-  # 注意 set -o pipefail：grep 无命中的管道必须 || true 兜底（赋值语句静默 exit 1 教训，本行实测踩）。
-  _ma_af=""
-  for _ma_c in "$_ma_dir/scripts/precheck.conf" "$_ma_dir/scripts/precheck.arch.conf"; do
-    [[ -f "$_ma_c" ]] || continue
-    _ma_line=$(grep -m1 '^ACTIVE_FRAMEWORKS=' "$_ma_c" 2>/dev/null | cut -d'#' -f1 | sed 's/^ACTIVE_FRAMEWORKS=//;s/[()"]//g' || true)
-    if [[ -n "$_ma_line" ]]; then
-      _ma_af="$_ma_af $_ma_line"
-    fi
-  done
-  _ma_ids="$(printf '%s' "${_ma_af}" | tr '[:space:]' '\n' | LC_ALL=C sort -u | sed '/^$/d' || true)"
-  _ma_missing=""
-  for _ma_id in ${_ma_ids}; do
-    _ma_fw="$(printf '%s' "$_ma_id" | tr -d '-' | tr '[:lower:]' '[:upper:]')"
-    # R47-D3（2026-09-24 前后端同仓演练实证）：id↔变量前缀名实不符——jest-vitest 的 conf 变量
-    # 是 VITEST_*（ruleset requires_conf 声明为准），id 机械推导 JESTVITEST 永远查不到，
-    # 该框架检出的项目 mark-active 永久卡死。修：变量名优先取注入区块 requires_conf 声明，
-    # id 前缀推导保留为补充（未注入 ruleset 的框架仍可查）。
-    _ma_vars=""
-    if [[ -f "$_ma_dir/scripts/precheck.sh" ]]; then
-      _ma_vars=$(grep -m1 "^# ruleset: ${_ma_id}  *requires_conf:" "$_ma_dir/scripts/precheck.sh" 2>/dev/null | sed 's/.*requires_conf: *//' || true)
-    fi
-    _ma_pat="${_ma_fw}[A-Z0-9_]*(SRC_GLOBS|MAPPER_DIRS|CONFIG_FILES|SQL_GLOBS|SCHEMA_GLOBS|JOB_DIRS|KEY_COLUMNS|SHARD_KEY|GLOBS)"
-    for _ma_v in ${_ma_vars}; do
-      case "$_ma_v" in
-        *SRC_GLOBS|*MAPPER_DIRS|*CONFIG_FILES|*SQL_GLOBS|*SCHEMA_GLOBS|*JOB_DIRS|*KEY_COLUMNS|*SHARD_KEY|*GLOBS)
-          _ma_pat="${_ma_pat}|${_ma_v}" ;;
-      esac
-    done
-    _ma_hit=$(cat "$_ma_dir/scripts/precheck.conf" "$_ma_dir/scripts/precheck.arch.conf" 2>/dev/null \
-      | grep -cE "^(${_ma_pat})=\(\"[^\"]" || true)
-    if [[ "${_ma_hit:-0}" -eq 0 ]]; then
-      _ma_missing="${_ma_missing} ${_ma_fw}"
-    fi
-  done
-  if [[ -n "$_ma_missing" ]]; then
-    echo "✗ 框架 glob 全空（TODO(framework-gates) 未填充）：${_ma_missing} 无任何已填变量——框架门禁将空转。填充 precheck.conf / precheck.arch.conf 对应 <FW>_SRC_GLOBS 等变量后重跑 --mark-active" >&2
+  # R33-F1 框架空转防线（R48-G5 抽函数）：逻辑与可测锚点单一事实源化，见上方 check_framework_globs
+  if ! check_framework_globs "$_ma_dir"; then
     exit 1
   fi
   # ① 零占位符核验
