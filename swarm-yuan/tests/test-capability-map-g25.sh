@@ -82,5 +82,14 @@ out=$(run_g25)
 printf '%s' "$out" | grep -q 'WARNHIT|G25 随发缺口' \
   && ok "态4 随发缺口被拦（分派引用但目标技能无此档现形）" || bad "态4 随发缺口注入未拦：${out}"
 
+# --- 态5 扩面随发缺口（R55：⑥ 断言从 *-methodology.md 扩到全档名）---
+# 抹掉一个非 *-methodology 行为档（context-engineering-layering）的【生成器侧】标注 → 须 warn
+mk_base
+sed 's/context-engineering-layering（【生成器侧】）/context-engineering-layering/' \
+  "$TMP/base/references/task-methodology-router.md" > "$TMP/t" && mv "$TMP/t" "$TMP/base/references/task-methodology-router.md"
+out=$(run_g25)
+printf '%s' "$out" | grep -q 'WARNHIT|G25 随发缺口' \
+  && ok "态5 扩面被拦（非 *-methodology 档缺【生成器侧】标注现形）" || bad "态5 扩面注入未拦（⑥ 仍只查方法论档？）：${out}"
+
 echo "PASS test-capability-map-g25 (${pass} ok, ${fail} fail)"
 [[ $fail -eq 0 ]]
