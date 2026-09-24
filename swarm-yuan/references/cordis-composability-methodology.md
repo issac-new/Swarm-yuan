@@ -83,7 +83,7 @@ Cordis 的"响应式协效应"启示：可以给 conf 加一份**变量依赖图
 
 swarm-yuan 的 lite/standard/compliance 三档是**档位过滤**（UNIVERSAL_FILES 数组按档整体过滤）。dsh 用**分层 patch**（标准档可以只 patch 核心档的某几行，而非全量覆盖）。swarm-yuan 的 profile 机制已经支持 `--profile auto` 自适应判定，但**不支持"只改某几个门禁的行为而不全量切档"**——这是未来演进方向。
 
-## 五、AI 填充指引
+## 五、AI 填充指南
 
 目标技能 的 references/framework-knowledge.md 在 §"框架适配扩展机制"段引用本文：
 - 注入框架门禁时说明"标记区块是可逆效应的轻量实现——重跑 inject 会先清空再重建"

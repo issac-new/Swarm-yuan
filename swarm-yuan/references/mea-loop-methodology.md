@@ -103,7 +103,7 @@ Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 | O_NOFOLLOW/fcntl 文件加固全套 | Python os 层 API，bash 3.2 无等价物；swarm-yuan 无 worker 进程对抗面 | 不做 |
 | MEA 全循环运行时（Manager/Executor/Auditor 进程编排） | swarm-yuan 是元技能生成器非 agent 运行时；四权分离已覆盖等价拓扑 | 不做 |
 
-## 六、AI 填充指引
+## 六、AI 填充指南
 
 目标技能 遇到以下场景时引用本文：
 

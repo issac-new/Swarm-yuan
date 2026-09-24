@@ -43,6 +43,7 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 ## 方法论分派表（R51：任务类型 × 方法论档）
 
 > **反向索引**：capability-map 是正向索引（档 → 消费节点/触发），本表是反向索引（任务 → 该读哪些档）——吸收层的 46 档从这里被任务分派到达，"没整合成一个整体"的分派面由本表闭合。分派序按流B 消费节点序；【必】=该任务必读，【按】=命中条件才读。覆盖纪律：`*-methodology.md` 每档必须可从本表分派到达（self-check G25 守）。
+> **可及性（R52）**：流B/执勤行引用的档已随发（UNIVERSAL_FILES，目标技能 references/ 直接可读）；标【生成器侧】的档仅生成器仓内有（生成侧任务消费，目标侧引用即悬空故显式标注）。随发或声明由 self-check G25 守。
 
 | 任务类型 | 触发信号 | 方法论档分派（按消费节点序） |
 |---------|---------|---------------------------|
@@ -53,17 +54,17 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 | **docs（文档）** | 分支 docs/* | ②【必】knowledge-lifecycle（知识四段协议，文档即知识）→ ⑦ review-methodology（三方一致核对） |
 | **chore（杂务/依赖）** | 分支 chore/* | ⑤【必】codex-methodology（版本锁定例外四条件）；全程 ai-process-records |
 | **exp（实验）** | 分支 exp/* | 全程【必】ai-process-records（实验不入 main 须留痕）；长实验 mea-loop-methodology |
-| **架构设计/演进类** | 触服务划分/数据模型/选型 | ③【必】togaf-metamodel-methodology + four-theories-methodology（系统建模/划边界）→ ⑤ cordis-composability-methodology → ⑦【必】review-methodology |
+| **架构设计/演进类** | 触服务划分/数据模型/选型 | ③【必】togaf-metamodel-methodology + four-theories-methodology（【生成器侧】系统建模/划边界）→ ⑤ cordis-composability-methodology → ⑦【必】review-methodology |
 | **前端/UI 类** | 含页面/组件/交互 | ③【必】frontend-design-methodology（Modes/三层权威）→ ⑤ lazy-generation → ⑦ review-methodology |
 | **安全类** | 含认证/加密/权限/输入处理 | ③【必】codex-security-methodology（威胁建模五要素）→ ⑦ review-methodology |
-| **治理机制设计** | 改 swarm-yuan 自身门禁/hooks/流程 | ③【必】four-theories-methodology（门禁拦得住/拦太多评估）+ dsh-engineering-methodology（审计/状态韧性）+ agent-skills-methodology（Prove-It 自证）→ ⑦【必】review-methodology |
+| **治理机制设计** | 改 swarm-yuan 自身门禁/hooks/流程 | ③【必】four-theories-methodology（【生成器侧】门禁拦得住/拦太多评估）+ dsh-engineering-methodology（【生成器侧】审计/状态韧性）+ agent-skills-methodology（Prove-It 自证）→ ⑦【必】review-methodology |
 | **发布/运维类** | 灰度/监控/runbook | ⑨【必】canary-monitoring（发布后基线对比）+ ai-process-records |
 | **验收/交付类** | 何时可宣称完成 | ⑦【必】agent-skills-methodology（Prove-It 五步/自治硬停）+ review-methodology |
 | **记忆/知识沉淀类** | 记忆写回/知识更新 | ⑧【必】memory-persistence（工具族/蒸馏）+ knowledge-lifecycle-methodology（过期三态） |
 
 **生成侧任务同样按本表分派**（叠加在上表"路由表"节点序列之上）：升级已有技能 → 加 knowledge-lifecycle（反馈回路三态）+ memory-persistence（记忆写回）；合规审计 → 加 four-theories-methodology（剪裁评估）+ quality-management-standards（认证资产映射）。
 
-**其余档按场景补充到达**：计划/状态管理 → gsd-patterns；方案对抗 → logic-razor + cognitive-bias（spec §16）；治理拓扑 → governance-agents；MCP 接入 → mcp-governance；图谱工具 → code-graph-tools；宿主原生能力 → claude-code-capabilities；规则分层 → context-engineering-layering；领域规律 → domain-knowledge。安全合规族（crypto-spec/cwe-database/security-certification-profiles/standards-compliance/行业八档）不走任务分派——由 `--security`/`--industry`/compliance 档门禁条件加载。
+**其余档按场景补充到达**：计划/状态管理 → gsd-patterns；方案对抗 → logic-razor + cognitive-bias（spec §16）；治理拓扑 → governance-agents；MCP 接入 → mcp-governance；图谱工具 → code-graph-tools；宿主原生能力 → claude-code-capabilities；规则分层 → context-engineering-layering（【生成器侧】）；领域规律 → domain-knowledge。安全合规族（crypto-spec/cwe-database/security-certification-profiles/standards-compliance/行业八档）不走任务分派——由 `--security`/`--industry`/compliance 档门禁条件加载。
 
 ## 与 pua methodology-router 的差异
 

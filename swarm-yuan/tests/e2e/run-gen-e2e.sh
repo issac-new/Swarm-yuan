@@ -100,6 +100,9 @@ node_cnt=$(grep -c '^## 节点' "${wf}" 2>/dev/null || echo 0)
 [[ "${node_cnt}" -eq 9 ]] && ok "workflow.md 含 9 个节点标题" || bad "workflow.md 节点数=${node_cnt}（期望 9）"
 trace_cnt=$(grep -c '调用追踪' "${wf}" 2>/dev/null || echo 0)
 [[ "${trace_cnt}" -ge 9 ]] && ok "workflow.md 含调用追踪要素（${trace_cnt} 处）" || bad "workflow.md 调用追踪要素不足（${trace_cnt} 处，期望≥9）"
+# R52：每节点含「方法论引用」要素（⑩——对偶 task-methodology-router 分派表，verify-completeness 执法）
+meth_cnt=$(grep -c '方法论引用' "${wf}" 2>/dev/null || echo 0)
+[[ "${meth_cnt}" -ge 9 ]] && ok "workflow.md 含方法论引用要素（${meth_cnt} 处）" || bad "workflow.md 方法论引用要素不足（${meth_cnt} 处，期望≥9）"
 # quality-gate-chain：节点⑥含质量门禁序列（fail-fast 串行指引，映射既有 flag 不新增门禁）
 grep -q '质量门禁序列' "${wf}" 2>/dev/null \
   && ok "workflow.md 节点⑥含质量门禁序列（quality-gate-chain）" \

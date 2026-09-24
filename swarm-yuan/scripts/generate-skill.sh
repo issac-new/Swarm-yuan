@@ -128,6 +128,20 @@ UNIVERSAL_FILES=(
   "references/standards-compliance.md|ref|compliance"
   "references/cwe-database.md|ref|compliance"  # cwe_audit 门禁数据参照（standards-compliance.md 引用，防拷贝后死链）
   "references/security-certification-profiles.md|ref|compliance"  # cert_audit 门禁数据参照（F.1 #49 引用，同 cwe-database 口径）
+  # R52 随发补缺：分派表（task-methodology-router，已随发）引用的方法论/行为档此前仅 3/13 随发——
+  # 目标技能侧 feature/fix 等流B 行分派悬空。按流B 消费节点补 12 档随发（生成器侧档在分派表标【生成器侧】）。
+  "references/knowledge-lifecycle-methodology.md|ref|standard"  # ②读法六步/影响面/回归分级/过期三态（feature/fix/docs/沉淀行）
+  "references/decision-governance.md|ref|standard"  # ①⑧用户决策留痕（UserChallenge 五要素）
+  "references/ai-process-records.md|ref|standard"  # 全程留痕口径（GB/T 8566 过程信息项）
+  "references/agent-skills-methodology.md|ref|standard"  # 反借口/假设前置/Prove-It 验收（①⑦）
+  "references/codex-methodology.md|ref|standard"  # fix/chore 执行纪律（截断/压缩/版本锁定例外）
+  "references/mea-loop-methodology.md|ref|standard"  # 长任务拆解/审计证据引用（④）
+  "references/togaf-metamodel-methodology.md|ref|standard"  # 架构类 spec §24 BDAT（③）
+  "references/cordis-composability-methodology.md|ref|standard"  # 可组合性设计（refactor/架构行⑤）
+  "references/frontend-design-methodology.md|ref|standard"  # 前端 UI 类任务（③⑤）
+  "references/codex-security-methodology.md|ref|standard"  # 安全类任务威胁建模（③）
+  "references/mcp-governance.md|ref|standard"  # MCP 接入治理（目标侧 .mcp.json 配置）
+  "references/crypto-spec.md|ref|compliance"  # check_crypto 门禁判定依据（合规档同 cwe-database 口径）
 )
 
 # 项目特定文件（upgrade 保留不覆盖、不备份）
@@ -697,6 +711,8 @@ verify_completeness() {
   [[ -n "$p1_hits" ]] && p1_cnt=$(printf '%s\n' "$p1_hits" | grep -c . | tr -d ' \n' || echo 0)
   # 调用追踪要素机器执法（理念 2：全链路追踪落实到 workflow 模板）：
   # workflow.md 每个「## 节点…」段须含「调用追踪」字样（第 ⑨ 要素）。
+  # R52 补强：每节点段另须含「方法论引用」字样（第 ⑩ 要素——引用本节点消费的 references 档，
+  # 与 task-methodology-router §方法论分派表消费节点序对偶；节点级实载分派由本断言守）。
   # 骨架阶段（待填充）已被上方占位符检查拦截；此处针对已填充内容。
   # 无节点段（项目裁剪后无 workflow 节点）不查，放行。
   local wf="$skill_dir/references/workflow.md" trace_miss=""
@@ -707,10 +723,15 @@ verify_completeness() {
     trace_miss=$(awk '
       /^## / && index($0, "节点") > 0 && (index($0, "：") > 0 || index($0, ":") > 0) {
         if (node != "" && !has) print FILENAME":"line": 节点段缺追踪要素（R13 4 要素模型：⑥ 产出物与追踪段须含 trace-log.sh 调用）: " node
-        node=$0; line=FNR; has=0; next
+        if (node != "" && !meth) print FILENAME":"line": 节点段缺方法论引用要素（R52 补强：⑩ 方法论引用须含 references 档，对偶 task-methodology-router 分派表）: " node
+        node=$0; line=FNR; has=0; meth=0; next
       }
       /调用追踪|trace-log\.sh/ { has=1 }
-      END { if (node != "" && !has) print FILENAME":"line": 节点段缺追踪要素（R13 4 要素模型：⑥ 产出物与追踪段须含 trace-log.sh 调用）: " node }
+      /方法论引用/ { meth=1 }
+      END {
+        if (node != "" && !has) print FILENAME":"line": 节点段缺追踪要素（R13 4 要素模型：⑥ 产出物与追踪段须含 trace-log.sh 调用）: " node
+        if (node != "" && !meth) print FILENAME":"line": 节点段缺方法论引用要素（R52 补强：⑩ 方法论引用须含 references 档，对偶 task-methodology-router 分派表）: " node
+      }
     ' "$wf" 2>/dev/null || true)
   fi
   hits=$(printf '%s\n%s\n' "$hits" "$trace_miss" | grep -v '^$' || true)
@@ -1652,7 +1673,7 @@ fi
 
 fill_guide() {
   case "$1" in
-    workflow.md) echo "九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP" ;;
+    workflow.md) echo "九节点全流程，每节点 4 要素+⑨⑩机器校验（调用追踪/方法论引用），4-Phase SOP" ;;
     codebase.md) echo "目录结构+技术栈版本表+端口+配置" ;;
     dev-guide.md) echo "改造分类+拼装式开发原则+安全编码规范+开发偏好" ;;
     release.md) echo "编译规则+构建命令+产物位置" ;;
@@ -1671,9 +1692,9 @@ for f in $_placeholder_refs; do
     # 节点②探查的 ⑨ 调用追踪预填 trace-log 模板（具体化 SKILL.md:86 的 AI 自由动作）。
     # 节点名对齐 template-spec.md:198-207 标准 9 节点（⑥测试验证 + ⑦独立审查独立拆分，审查留痕 review-record 落盘）。
     _write_if_absent "$SKILL_DIR/references/$f" <<'WFEOF'
-# workflow.md — 九节点全流程（4 要素/节点：入口/参与方/门禁/产出物与调用追踪）
+# workflow.md — 九节点全流程（4 要素/节点：入口/参与方/门禁/产出物与调用追踪；⑨调用追踪/⑩方法论引用逐节点机器校验）
 
-> 填充规范：九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪），4-Phase SOP。
+> 填充规范：九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪）+ ⑨调用追踪/⑩方法论引用机器校验要素（verify-completeness 逐节点断言），4-Phase SOP。
 > 节点名对齐生成器仓 references/template-spec.md §2 标准 9 节点（template-spec 不随发生成物）（⑥测试验证 + ⑦独立审查独立拆分，审查留痕 review-record 落盘）；按项目实际裁剪。
 
 ## 流程总览
@@ -1709,6 +1730,8 @@ for f in $_placeholder_refs; do
 
 
 
+**⑩ 方法论引用：** `references/decision-governance.md`（用户确认五要素留痕）+ `references/agent-skills-methodology.md`（反借口/假设前置）+ `references/ai-process-records.md`（过程留痕口径）
+
 **调用追踪：**
 - 公告：进入本节点时 AI 输出一行结构化提示，格式 `→ [节点① 需求理解] 调用 <技能/子代理/工具> · <目的>`
 - 落盘：节点级默认——进入/完成本节点时执行 `bash scripts/trace-log.sh --node "需求理解" --actor "<技能/子代理>" --tool "<工具/命令>"`，追加到 `.swarm-yuan/trace.jsonl`
@@ -1739,6 +1762,8 @@ for f in $_placeholder_refs; do
 
 
 
+**⑩ 方法论引用：** `references/knowledge-lifecycle-methodology.md`（读法六步：摘要优先/追链/分组注入）+ `references/code-graph-tools.md`（图谱优先）
+
 **调用追踪：**
 - 公告：每路子代理启动/完成时输出 `→ [节点② 探查] 调用 结构子代理 · gitnexus context（started/done）`
 - 落盘：每路子代理启动前执行 `bash scripts/trace-log.sh --node "探查" --actor "结构子代理" --tool "gitnexus context" --status started`，完成后 `--status done`（规范/代码组织子代理同理）
@@ -1763,6 +1788,8 @@ for f in $_placeholder_refs; do
 
 
 
+**⑩ 方法论引用：** `references/cost-estimation-methodology.md`（§25 功能点估算）+ `references/cognitive-bias.md`（§16 偏差自检）+ `references/togaf-metamodel-methodology.md`（架构类 §24 BDAT）
+
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "设计 spec" --actor "<技能>" --tool "<工具>"`
 
 ---
@@ -1777,6 +1804,8 @@ for f in $_placeholder_refs; do
 
 **⑥ 产出物与调用追踪：** 持久化：references/plan.md（OpenSpec tasks checkbox 格式）
 
+**⑩ 方法论引用：** `references/mea-loop-methodology.md`（长任务拆解/审计证据）+ `references/knowledge-lifecycle-methodology.md`（回归范围分级）
+
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "实施 plan" --actor "<技能>" --tool "<工具>"`
 
 ---
@@ -1788,6 +1817,8 @@ for f in $_placeholder_refs; do
 **④ 质量门禁：** ★测试左移（每个 task 先写/更新测试再实现，TDD/BDD；precheck \`--shift-left\` 校验 test 与 impl 同分支提交）
 
 **⑥ 产出物与调用追踪：** 代码提交 + 测试提交
+
+**⑩ 方法论引用：** `references/lazy-generation-methodology.md`（七层下探先查再写）+ `references/subagent-orchestration.md`（复杂变更扇出）
 
 **⑨ 调用追踪：** 子代理派发时 `bash scripts/trace-log.sh --node "编码实现" --actor "implementer" --tool "<task>" --status started`
 
@@ -1803,6 +1834,8 @@ for f in $_placeholder_refs; do
 
 **⑥ 产出物与调用追踪：** 测试报告 + 测试有效性证据（mutation score）+ 门禁序列各步 pass/fail 留痕（gate-runs.jsonl）
 
+**⑩ 方法论引用：** `references/review-methodology.md`（5 维审查/测试有效性）+ `references/gsd-patterns.md`（goal-backward 对抗验证）
+
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "测试验证" --actor "tester" --tool "pytest/mutation"`
 
 ---
@@ -1814,6 +1847,8 @@ for f in $_placeholder_refs; do
 **④ 质量门禁：** 独立 code review（第三方 reviewer 视角，非 Step 7 自检）+ `check_review` 门禁（核验 `references/review-record.md` 留痕非空：5 维审查点 + findings 表）。审查范围含质量门禁序列运行证据——确认节点⑥的序列真实跑过而非声称跑过（gate-runs.jsonl 有当次 run 记录，"配置≠使用≠有效"）。
 
 **⑥ 产出物与调用追踪：** `references/review-record.md` 审查证据产物（从 review-record-template.md 填充）
+
+**⑩ 方法论引用：** `references/review-methodology.md`（rubric/P0-P3）+ `references/agent-skills-methodology.md`（Prove-It 自证）
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "独立审查" --actor "reviewer" --tool "review-record"`
 
@@ -1827,6 +1862,8 @@ for f in $_placeholder_refs; do
 
 **⑥ 产出物与调用追踪：** merge commit
 
+**⑩ 方法论引用：** `references/decision-governance.md`（合入确认决策留痕）
+
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "合入 main" --actor "<技能>" --tool "git merge"`
 
 ---
@@ -1838,6 +1875,8 @@ for f in $_placeholder_refs; do
 **④ 质量门禁：** ★运维左移（灰度/金丝雀策略 + 监控告警阈值 + 运维 runbook）
 
 **⑥ 产出物与调用追踪：** 发布产物 + release notes——发布规则/构建命令/产物位置填入并消费 \`references/release.md\`（六段式正式成员，本节点消费方）
+
+**⑩ 方法论引用：** `references/canary-monitoring.md`（发布后基线对比）+ `references/ai-process-records.md`（过程信息项）
 
 **⑨ 调用追踪：** `bash scripts/trace-log.sh --node "构建发布" --actor "<技能>" --tool "<构建命令>"`
 
@@ -2201,6 +2240,18 @@ _idx_desc() {  # $1=path $2=cat → 用途短语（≤10 字，防 8KB 预算爆
     task-type-gates.conf) echo "任务→门禁映射";;
     profile-thresholds.conf) echo "档位阈值";;
     ontology/objects.md|ontology/links.md|ontology/actions.md) echo "本体事实源";;
+    knowledge-lifecycle-methodology.md) echo "知识四段协议";;
+    decision-governance.md) echo "用户决策留痕制度";;
+    ai-process-records.md) echo "过程留痕口径";;
+    agent-skills-methodology.md) echo "反借口/Prove-It";;
+    codex-methodology.md) echo "执行纪律方法论";;
+    mea-loop-methodology.md) echo "长任务规划审计";;
+    togaf-metamodel-methodology.md) echo "BDAT 架构建模";;
+    cordis-composability-methodology.md) echo "时空可组合设计";;
+    frontend-design-methodology.md) echo "前端设计方法论";;
+    codex-security-methodology.md) echo "威胁建模扫描";;
+    mcp-governance.md) echo "MCP 接入治理";;
+    crypto-spec.md) echo "密码学应用规范";;
     *) case "$2" in
          ref) echo "方法论 reference";;
          onto) echo "本体事实源";;
