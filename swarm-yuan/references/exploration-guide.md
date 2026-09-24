@@ -110,6 +110,8 @@
 
 **双时态注记**（semantica `_temporal_support_projection.py` Window 语义借鉴）：清单条目/探查结论有两个时间轴——**valid time**（代码何时如此，锚 commit/项目指纹）与 **recorded time**（第 N 轮探查何时知道）。反馈回路的「单条更新」= 写一条新 recorded time 记录，不回头改写旧结论的历史有效性；last-good 红线（条目骤降 >50% 视为探查失败保留旧清单）防的正是「新一轮探查污染历史有效认知」。
 
+**悬置清单回填协议**（R49 知识生命周期吸收）：裁决序走到「并存标注」仍不能定的项、探查中 AI 拿不准的业务语义，集中落到 `notes/cognition.md` 悬置清单段（每项：问题/两源证据锚点/需要谁回填），不散落在各文档的「待验证」字样里自然蒸发。回填后按裁决序重新转正（升级 UserChallenge 的项走 trace-log --decision 留痕），转正即从清单销项——悬置清单长度是探查完成度的显式指标，mark-active 抽样核验时可对照。
+
 ```
 4. 写入特征卡对应项（不是复制原文，是提取结构化规则）
 5. 生成的目标技能的 SKILL.md 铁律段须引用来源（如"见 AGENTS.md"），不重复写死规则值
@@ -888,6 +890,7 @@ grep -nH "^export " <库入口文件>
 - 构建配置：vite.config / webpack.config / tsconfig / electron-builder.yml
 - 目录：src/ packages/ apps/ monorepo?
 - overlay-fork 类（可改层/只读层分离）：patch 机制（patch 清单文件 + inject 脚本?）、符号链接、alias 链
+- **页面知识三角**（R49 知识生命周期吸收，进 reference-manual 前端构件表）：每个路由级页面枚举三答——①操作：页面有哪些按钮/入口/弹窗；②调用：每个操作调哪些 API 及**真实入参**（在调用点反推，前端常只透传一个参数对象，光看 API 定义抽不出字段）；③权限：什么角色/条件可见可点、无权限时如何降级提示。微前端项目另须单独理清主子应用拆分与通信机制（ mounting 方式/通信通道/路由归属），这是 AI 最难自己拼出的部分。
 
 ### Python
 - pyproject.toml / setup.py / requirements.txt: 依赖、版本、entry points
