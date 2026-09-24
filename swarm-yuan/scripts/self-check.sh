@@ -1960,12 +1960,17 @@ check_capability_map_wiring() {
     _warn=$((_warn+1))
   fi
 
-  # ⑥ 随发或声明（R52）：*-methodology.md 必须随发（UNIVERSAL_FILES）或在分派表标【生成器侧】——
-  # 分派表随发而被分派的档不随发 = 目标技能侧分派悬空（R52 完成审计实锤：13 方法论仅 3 随发）。
+  # ⑥ 随发或声明（R52 立，R55 扩面全档名）：references/*.md（除 capability-map 自身）凡被分派表
+  # 引用，必须随发（UNIVERSAL_FILES）或在分派表标【生成器侧】——分派表随发而被分派的档不随发
+  # = 目标技能侧分派悬空（R52 实锤 13 方法论仅 3 随发；R55 扩面首跑抓出 generation-flow/
+  # template-spec/quality-management-standards 三处生成器侧引用未标注）。
   local unshipped="" sf sb
-  for sf in "$base"/references/*-methodology.md; do
+  for sf in "$base"/references/*.md; do
     [[ -f "$sf" ]] || continue
     sb="$(basename "$sf")"
+    [[ "$sb" == "capability-map.md" ]] && continue  # 台账自身不入分派面
+    # 只查被分派表引用的档（未引用的生成器侧文档无需标注——分派表是引用面的事实源）
+    grep -qF -- "${sb%.md}" "$base/references/task-methodology-router.md" 2>/dev/null || continue
     if sed -n '/^UNIVERSAL_FILES=(/,/^)/p' "$base/scripts/generate-skill.sh" 2>/dev/null | grep -qF "$sb"; then
       continue
     fi
@@ -1975,7 +1980,7 @@ check_capability_map_wiring() {
     unshipped="${unshipped}${unshipped:+ }$sb"
   done
   if [[ -z "$unshipped" ]]; then
-    echo "  ✓ 随发或声明：方法论档全部随发或标注【生成器侧】（分派目标侧可达）"
+    echo "  ✓ 随发或声明：分派表引用的档全部随发或标注【生成器侧】（分派目标侧可达）"
   else
     warn "G25 随发缺口（分派表引用但目标技能无此档，须随发或标【生成器侧】）：$unshipped"
     _warn=$((_warn+1))

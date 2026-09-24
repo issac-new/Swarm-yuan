@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [v2.25.2] - 2026-09-25
+
+> R55 扩面收口轮（续 R54）：把 R52 自曝的最后一条机器断言边界关闭——G25 ⑥「随发或声明」从 `*-methodology.md` 扩到**分派表引用的全部档名**。扩面预演即抓出三处生成器侧引用无标注（generation-flow/template-spec/quality-management-standards），补【生成器侧】标注；变异锁测试加态5（抹掉行为档标注必拦），13/13 PASS。
+
+### Fixed
+- **G25 ⑥ 扩面前的三处无标注引用**（扩面预演实锤）：task-methodology-router 中 generation-flow（12 步口径引用）、template-spec（test 行回归分级引用）、quality-management-standards（合规审计行引用）均为只在生成器仓存在的文档——三处引用补【生成器侧】标注，语义显式化。
+
+### Changed
+- **self-check G25 ⑥ 扩面**：检查对象从 `references/*-methodology.md` 扩为「分派表引用的所有 references/*.md」（capability-map 自身除外；未被分派表引用的生成器侧文档无需标注——分派表是引用面的事实源）。扩面后实测零缺口。
+- **tests/test-capability-map-g25.sh +态5**（12→13 断言）：抹掉 context-engineering-layering 的【生成器侧】标注 → 扩面断言必须拦——证明 ⑥ 对非 *-methodology 行为档同样执法。
+
+## [v2.25.1] - 2026-09-25
+
+
 ## [v2.25.1] - 2026-09-25
 
 > R54 全面排查轮：六面排查清单逐项打勾（36 测试全零退出/CI 三连绿/死链零/陈旧数字零/三表一致/lite 语义自洽披露），唯一实锤缺陷修复——**G25 六断言零变异锁**（违背 R44"warn 级断言须负向断言"先例）：补 test-capability-map-g25.sh 十二断言（正向六面存在性 + 孤儿/幽灵/分派落档/随发缺口四态注入必拦），CI 接线。

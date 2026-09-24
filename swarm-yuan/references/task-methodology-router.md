@@ -9,7 +9,7 @@
 
 ## 核心理念
 
-swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径见 generation-flow.md），但不同任务类型的关键节点不同：
+swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径见 generation-flow.md【生成器侧】），但不同任务类型的关键节点不同：
 - **新项目生成**：全 12 步 + compliance 档合规矩阵
 - **框架规则注入**：Step 3（探查框架）→ Step 7 内④.5（框架深化）→ ⑦.5（门禁注入）→ Step 11（记忆写回）+ framework-gates 四要素核验
 - **升级已有技能**：Step 4（项目形态重判）→ Step 7（填充，保留 PROJECT_SPECIFIC_FILES）→ Step 11（记忆写回）→ Step 12（最终检查）
@@ -50,7 +50,7 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 | **feature（新功能）** | 分支 feat/*、用户开发需求 | ②【必】knowledge-lifecycle（读法六步）→ ③【按】cost-estimation-methodology（§25 估算）→ ⑤【必】lazy-generation（先查再写）→ ⑦【必】review-methodology → ⑧ decision-governance（用户确认点）；复杂变更加 subagent-orchestration、长任务加 mea-loop-methodology；全程 ai-process-records |
 | **fix（缺陷修复）** | 分支 fix/*、报障 | ②【必】knowledge-lifecycle（影响面查法）→ ⑤【必】lazy-generation → ⑦【必】review-methodology（回归面=修复点+相邻路径）；全程 codex-methodology（执行纪律）+ ai-process-records |
 | **refactor（重构）** | 分支 refactor/* | ②【必】knowledge-lifecycle（影响面）→ ③【按·架构类】togaf-metamodel-methodology（§24）/ cordis-composability-methodology（可组合性）→ ⑤ lazy-generation → ⑦【必】review-methodology |
-| **test（测试）** | 分支 test/* | ⑦【必】review-methodology（测试有效性判定）+ 回归分级（template-spec §19）；长测试计划 mea-loop-methodology |
+| **test（测试）** | 分支 test/* | ⑦【必】review-methodology（测试有效性判定）+ 回归分级（template-spec §19【生成器侧】，执勤侧载体是 spec §19 本身）；长测试计划 mea-loop-methodology |
 | **docs（文档）** | 分支 docs/* | ②【必】knowledge-lifecycle（知识四段协议，文档即知识）→ ⑦ review-methodology（三方一致核对） |
 | **chore（杂务/依赖）** | 分支 chore/* | ⑤【必】codex-methodology（版本锁定例外四条件）；全程 ai-process-records |
 | **exp（实验）** | 分支 exp/* | 全程【必】ai-process-records（实验不入 main 须留痕）；长实验 mea-loop-methodology |
@@ -62,7 +62,7 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 | **验收/交付类** | 何时可宣称完成 | ⑦【必】agent-skills-methodology（Prove-It 五步/自治硬停）+ review-methodology |
 | **记忆/知识沉淀类** | 记忆写回/知识更新 | ⑧【必】memory-persistence（工具族/蒸馏）+ knowledge-lifecycle-methodology（过期三态） |
 
-**生成侧任务同样按本表分派**（叠加在上表"路由表"节点序列之上）：升级已有技能 → 加 knowledge-lifecycle（反馈回路三态）+ memory-persistence（记忆写回）；合规审计 → 加 four-theories-methodology（剪裁评估）+ quality-management-standards（认证资产映射）。
+**生成侧任务同样按本表分派**（叠加在上表"路由表"节点序列之上）：升级已有技能 → 加 knowledge-lifecycle（反馈回路三态）+ memory-persistence（记忆写回）；合规审计 → 加 four-theories-methodology（剪裁评估）+ quality-management-standards（【生成器侧】认证资产映射）。
 
 **其余档按场景补充到达**：计划/状态管理 → gsd-patterns；方案对抗 → logic-razor + cognitive-bias（spec §16）；治理拓扑 → governance-agents；MCP 接入 → mcp-governance；图谱工具 → code-graph-tools；宿主原生能力 → claude-code-capabilities；规则分层 → context-engineering-layering（【生成器侧】）；领域规律 → domain-knowledge。安全合规族（crypto-spec/cwe-database/security-certification-profiles/standards-compliance/行业八档）不走任务分派——由 `--security`/`--industry`/compliance 档门禁条件加载。
 
