@@ -150,4 +150,14 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 > 本段各 reference 本身是流A ③骨架随发的产物（知识库自举）：生成器用它们生成目标技能，目标技能执勤时又按路由读它们——文档即流程产物，流程即文档消费者。
 
-探查→exploration-guide（含 §C+.0.6 四层架构视角 + §多源探查矛盾裁决：可信度基线/裁决序/双时态注记）；填充→template-spec（spec §24 架构映射 / §25 功能点估算）；生成流程详解→generation-flow；认知→cognition-framework 等；方法论→各 *-methodology.md（cordis-composability / mea-loop / agent-skills / dsh-engineering / togaf-metamodel / four-theories / cost-estimation / lazy-generation / knowledge-lifecycle 等）+ context-engineering-layering；合规→standards-compliance + 行业 profile（`--industry` 真实加载；finance/gov/medical/telecom/automotive/energy/industrial/payment 八档）；安全→security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读；治理与交付纪律→governance-agents（四权分离拓扑 + §Z 五协议：诊断先行/失败计数语义/信心门控/四状态交付/体面退出）；编排→subagent-orchestration。
+按五族路由（吸收层接线台账与逐档 来源/证据/消费节点/触发 见 capability-map，self-check 双向对账孤儿零容忍）：
+
+| 族（闭环段） | 档 |
+|-------------|-----|
+| ① 生成主干（流A 探查/填充/生成） | exploration-guide（§C+.0.6 四层视角/矛盾裁决）、generation-flow、template-spec（§24/§25）、agent-skills-methodology、context-engineering-layering、task-methodology-router、cost-estimation-methodology、domain-knowledge、code-graph-tools、togaf-metamodel-methodology、frontend-design-methodology |
+| ② 拼装与知识消费（流B ②⑤） | lazy-generation-methodology、cordis-composability-methodology、knowledge-lifecycle-methodology、memory-persistence、cognition-framework、cognitive-bias、logic-razor、four-theories-methodology、mea-loop-methodology |
+| ③ 编排与治理（流B 全程纪律） | governance-agents（四权分离 + §Z 五协议）、subagent-orchestration、gsd-patterns、decision-governance、dsh-engineering-methodology、codex-methodology、claude-code-capabilities、mcp-governance、codex-security-methodology |
+| ④ 验证与过程资产（⑥⑦⑧⑨） | review-methodology、canary-monitoring、ai-process-records、quality-management-standards |
+| ⑤ 安全合规与行业立法（门禁） | security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读、crypto-spec、cwe-database、security-certification-profiles、standards-compliance、行业 profile 八档（`--industry` 真实加载：finance/gov/medical/telecom/automotive/energy/industrial/payment） |
+
+frameworks/ 规则库（79 集）随 ACTIVE_FRAMEWORKS 注入，不按名路由。

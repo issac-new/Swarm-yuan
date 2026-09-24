@@ -1,6 +1,19 @@
 # Changelog
 
 
+## [v2.22.0] - 2026-09-24
+
+> R50 整合轮：吸收层接线台账成档——46 档 references + 19 运行时首次有单一事实源对账（capability-map，五族整合视图 + 逐档 来源/证据/消费节点/触发）；SKILL.md 第六层从散文泛列举重写为五族路由表（46 档全部按名路由，兑现 46 个档头"路由表见 SKILL.md"承诺）；self-check G25 双向对账断言（孤儿零容忍/幽灵零容忍/两级互指），"吸收了但没接线"从此机器可检。
+
+### Added
+- **references/capability-map.md**（吸收层接线台账单一事实源，46→47）：§一 五族整合视图（生成主干/拼装与知识消费/编排与治理/验证与过程资产/安全合规与行业——吸收物按总闭环段归位）；§二 46 档逐档接线表（来源→证据分级→消费节点→触发）；§三 19 运行时消费侧映射（供给侧 upstream-baseline 之外的消费侧：接线深度/消费点/降级链）；§四 对账纪律。生成器侧台账，不入 UNIVERSAL_FILES 随发。
+- **self-check G25 能力地图双向对账断言**（warn-only，不计入 FACT_GATES_TOTAL=55）：①孤儿零容忍（references/*.md 每档必须被 map 收录）；②幽灵零容忍（map 表格首列档名必须实存——awk 机械解析）；③两级互指（SKILL.md 第六层必须引用 capability-map）。
+
+### Changed
+- **SKILL.md 第六层路由表化**（整合裂缝根治）：原散文段"方法论→各 *-methodology.md（…等）"泛列举下约三分之一档位（claude-code-capabilities/memory-persistence/review-methodology/gsd-patterns/行业八档等）不按名出现；重写为五族表格，46 档全部按名路由 + capability-map 互指。
+- **README 附录 B 吸收登记表**：方法论行 13 份→47 篇（陈旧计数修正）+ capability-map 台账指针；**附录 D 第 7 行**：认知面上限 310KB→320KiB/327680B（R37 期第七次登记后的陈旧数字，第八/九次登记后漂移未同步——同族残留修正）。
+- FACT_REFERENCES 46→47（新档登记，facts.conf 口径链同步）。
+
 ## [v2.21.0] - 2026-09-24
 
 > R49 知识生命周期吸收轮：京东海博 AI 知识库能力建设文章深调研——知识生产/消费/沉淀/防腐四段协议成档（knowledge-lifecycle-methodology，45→46），净增五机制接线：过期三态处置（更新/降级标注/归档）、回归范围分级推导（必跑/应跑/建议跑四路反查以边集为底座）、知识读取六步协议、前端页面知识三角、悬置清单回填协议；OKF 外部锚点官方一手核验（B 级），AB 实验数字按 C 级标注"文章自报"。
