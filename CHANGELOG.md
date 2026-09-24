@@ -1,6 +1,26 @@
 # Changelog
 
 
+## [v2.24.0] - 2026-09-25
+
+> R52 随发补缺轮（完成审计触发）：消除 R51 自曝弱覆盖——workflow.md 节点段「方法论引用」机器校验断言落地（verify-completeness 双要素契约 + 正负变异锁测试）；更深裂缝同轮修复：**分派表随发但 13 篇方法论仅 3 篇随发**（目标技能侧 feature 行分派的 knowledge-lifecycle 等 10 档根本不存在，分派是空心的）——12 档按流B 消费节点补随发 + 生成器侧档显式标【生成器侧】 + G25 ⑥「随发或声明」可达性断言。吸收层三向闭环定局：建档必接线（G25 ①）、接线必可达（G25 ⑤）、可达必随发（G25 ⑥）。
+
+### Added
+- **workflow.md 节点段「⑩ 方法论引用」机器校验**（verify-completeness，与 ⑨ 调用追踪同级双要素契约）：每个「## 节点…」段必须含方法论引用行（引用本节点消费的 references 档，对偶 task-methodology-router 分派表消费节点序），缺则列 file:line 并 exit 1。emit 九节点骨架逐节点预填具体档（①decision-governance/agent-skills/ai-process-records、②knowledge-lifecycle/code-graph-tools、③cost-estimation/cognitive-bias/togaf、④mea-loop/knowledge-lifecycle、⑤lazy-generation/subagent-orchestration、⑥review-methodology/gsd-patterns、⑦review-methodology/agent-skills、⑧decision-governance、⑨canary-monitoring/ai-process-records）。
+- **tests/test-workflow-methodology-ref.sh（正负变异锁，CI 接线）**：正向 3 节点全要素通过 + 负向①剥方法论引用被拦 + 负向②剥调用追踪被拦（既有契约防回潮）；run-gen-e2e 增「方法论引用 ≥9 处」正向断言。
+- **12 档随发补缺**（UNIVERSAL_FILES 71→83）：knowledge-lifecycle / decision-governance / ai-process-records / agent-skills-methodology + codex / mea-loop / togaf-metamodel / cordis-composability / frontend-design / codex-security / mcp-governance（standard）+ crypto-spec（compliance，check_crypto 判定依据同 cwe 口径）——按流B 消费节点补齐，目标技能侧分派不再悬空。
+- **self-check G25 ⑥ 随发或声明断言**：`*-methodology.md` 必须随发或在分派表标【生成器侧】（four-theories/dsh-engineering/context-engineering-layering 已标注）。
+
+### Fixed
+- **cordis/mea-loop「AI 填充指引」章节撞零占位符扫描词表**：两档章节标题含"填充指引"（骨架占位符扫描词），随发进目标技能即卡 mark-active（gen-e2e 实测死锁）——改名「AI 填充指南」（语义不变，扫描词表不动）。
+- **README 预算行三处陈旧数字**（R51 漏改同族残留 + R33 起漂移）：税制行/附录 D 的"320KB/327680B/第九次"→"472KiB/483328B/第十一次"；"SKILL.md ≤8KB"→"≤9728B（≈8KB 锚）"。
+
+### Changed
+- template-spec workflow 段 10 字段→11 字段（⑩ 方法论引用入详写块+填充规则+验收清单；⑨ 调用追踪编号不动，"第 ⑨ 要素"引用面零涟漪）。
+- FACT_UNIVERSAL_FILES 71→83；FACT_ARTIFACT_BYTES_BUDGET 336896→483328（第十一次逐例登记，实测 477979B，12 档随发 ≈+145KB 功能必要税）；FACT_SKILLMD_BYTES_BUDGET 9216→9728（第三次登记，gen-e2e 实测 9697B，索引表 +12 行）。
+- task-methodology-router 分派表补「可及性」契约（流B 行引用档随发；【生成器侧】显式标注）。
+
+
 ## [v2.23.0] - 2026-09-25
 
 > R51 整合轮（续 R50）：补上"整合成整体"缺失的**反向分派面**——R50 台账是正向索引（档→消费节点），但 task-methodology-router 名实不符（自称"任务类型 × 方法论路由表"实际不分派任何方法论档，13 篇 *-methodology.md 仅 2 篇被提及），任务→方法论的分派缺失。本轮 §方法论分派表成档（14 任务类型 × 方法论档，13 方法论全覆盖）+ G25 扩"分派零落档"断言——吸收层闭环定局：建档必接线（正向）、接线必可达（反向）。

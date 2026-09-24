@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.23.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.23.0)
+[![Release](https://img.shields.io/badge/release-v2.24.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.24.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -206,7 +206,7 @@
 | 特征卡 | 17 项（P0 六项强制，P1 十一项可增量） |
 | 框架规则集 | 79（规则文档与门禁片段 1:1 配对） |
 | 配置变量 / 上限 | 185 / 200 |
-| 目标技能税制 | SKILL.md ≤8KB、地图 ≤32KiB、认知面 ≤320KB（327680B；决策 38 起逐例登记例外链，当前第九次登记，理由留 facts.conf）、概念体系 ≤5 |
+| 目标技能税制 | SKILL.md ≤9728B（≈8KB 锚）、地图 ≤32KiB、认知面 ≤472KiB（483328B；决策 38 起逐例登记例外链，当前第十一次登记，理由留 facts.conf）、概念体系 ≤5 |
 | 外部运行时 | 13 个接线（深度 4 + CLI 4 + 方法论 5）；登记 19（含图谱备选 codegraph、两宿主、机制源 pua/semantica）；自动检测 11 |
 | 类型目录 | 实体 17 / 关系 10 / 动作 11（assets/ontology/ 三份） |
 | 生成流程 | 12 步（唯一编号口径在 generation-flow.md）；目标技能工作流 9 节点 × 4 要素 |
@@ -266,8 +266,8 @@
 | 3 | 冷启动到读项目代码动作数 | ≤3 步 | mark-active 后新会话到首个读码动作 |
 | 4 | 门禁可达率 | 100% | 默认执行序列可触达 / facts.conf 对账 |
 | 5 | 地图预算 | 32KiB 硬顶 | self-check 断言 |
-| 6 | description ≤1024 字符 / SKILL.md 正文 ≤8KB | 达标 | gen-e2e 断言（锚定目标技能产物） |
-| 7 | 认知面体积（references 拷贝） | ≤320KiB（327680B；决策 38 起逐例登记，当前第九次，理由链留 facts.conf） | self-check 断言 |
+| 6 | description ≤1024 字符 / SKILL.md 正文 ≤9728B（≈8KB 锚） | 达标 | gen-e2e 断言（锚定目标技能产物） |
+| 7 | 认知面体积（references 拷贝） | ≤472KiB（483328B；决策 38 起逐例登记，当前第十一次，理由链留 facts.conf） | self-check 断言 |
 | 8 | 结构性：反向引用数 | 0 | self-check G19 |
 | 9 | 连接性：孤儿资产数 | 0 | self-check G18 |
 | 10 | 有效性：零拦截 / 沉睡门禁 | 零拦截入季度质疑，沉睡入候选清单 | gate-trends + adaptive-gating |

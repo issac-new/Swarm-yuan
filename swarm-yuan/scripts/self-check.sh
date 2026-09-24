@@ -1881,12 +1881,15 @@ check_cordis_composability_wiring() {
 # 约三分之一档位不按名出现（claude-code-capabilities/memory-persistence/review-methodology 等），
 # 吸收物之间无接线台账（13 运行时/19 行 upstream-baseline/46 references 三者零对账）。
 # R50 修复：references/capability-map.md 为吸收层接线单一事实源 + SKILL.md 第六层五族路由表化。
-# 本断言（warn-only，对齐 G13-G17，不计入 FACT_GATES_TOTAL=55）守三面：
-#   ① 孤儿零容忍：references/*.md（不含 frameworks/ 与 capability-map 自身）basename 必须出现在 map；
-#   ② 幽灵零容忍：map 接线表中首列为纯档名的行，其档必须实存（防登记不存在的档）；
-#   ③ 两级互指：SKILL.md 第六层必须引用 capability-map（路由表→台账）。
-#   ④ 分派零落档（R51）：references/*-methodology.md 每档必须可从 task-methodology-router.md
+# 本断言（warn-only，对齐 G13-G17，不计入 FACT_GATES_TOTAL=55）守六面（序号=代码内检查序）：
+#   ① 载体存在性：capability-map.md 存在且非空（台账本体）；
+#   ② 孤儿零容忍：references/*.md（不含 frameworks/ 与 capability-map 自身）basename 必须出现在 map；
+#   ③ 幽灵零容忍：map 接线表中首列为纯档名的行，其档必须实存（防登记不存在的档）；
+#   ④ 两级互指：SKILL.md 第六层必须引用 capability-map（路由表→台账）。
+#   ⑤ 分派零落档（R51）：references/*-methodology.md 每档必须可从 task-methodology-router.md
 #      方法论分派表到达（反向索引闭环：建档必接线、接线必可达）。
+#   ⑥ 随发或声明（R52）：*-methodology.md 必须随发（UNIVERSAL_FILES）或在分派表标【生成器侧】——
+#      分派目标侧可达（随发补缺前实测 13 方法论仅 3 随发，目标技能侧分派悬空）。
 check_capability_map_wiring() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local map="$base/references/capability-map.md"
@@ -1957,10 +1960,31 @@ check_capability_map_wiring() {
     _warn=$((_warn+1))
   fi
 
+  # ⑥ 随发或声明（R52）：*-methodology.md 必须随发（UNIVERSAL_FILES）或在分派表标【生成器侧】——
+  # 分派表随发而被分派的档不随发 = 目标技能侧分派悬空（R52 完成审计实锤：13 方法论仅 3 随发）。
+  local unshipped="" sf sb
+  for sf in "$base"/references/*-methodology.md; do
+    [[ -f "$sf" ]] || continue
+    sb="$(basename "$sf")"
+    if sed -n '/^UNIVERSAL_FILES=(/,/^)/p' "$base/scripts/generate-skill.sh" 2>/dev/null | grep -qF "$sb"; then
+      continue
+    fi
+    if grep -F -- "${sb%.md}" "$base/references/task-methodology-router.md" 2>/dev/null | grep -q '【生成器侧】'; then
+      continue
+    fi
+    unshipped="${unshipped}${unshipped:+ }$sb"
+  done
+  if [[ -z "$unshipped" ]]; then
+    echo "  ✓ 随发或声明：方法论档全部随发或标注【生成器侧】（分派目标侧可达）"
+  else
+    warn "G25 随发缺口（分派表引用但目标技能无此档，须随发或标【生成器侧】）：$unshipped"
+    _warn=$((_warn+1))
+  fi
+
   if [[ $_warn -gt 0 ]]; then
     echo "  ℹ 能力地图对账漂移 ${_warn} 项（warn-only，不阻断）"
   else
-    echo "  ✓ 能力地图双向对账一致（孤儿零 + 幽灵零 + 互指在 + 分派零落档）"
+    echo "  ✓ 能力地图双向对账一致（孤儿零 + 幽灵零 + 互指在 + 分派零落档 + 随发或声明）"
   fi
 }
 check_cordis_composability_wiring
