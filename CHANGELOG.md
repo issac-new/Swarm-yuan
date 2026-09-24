@@ -1,6 +1,23 @@
 # Changelog
 
 
+## [v2.19.0] - 2026-09-24
+
+> R47 典型前后端项目演练轮：Vue2+ElementUI / Spring Boot+MyBatis（前后端同仓）全栈执勤实证 3 缺陷全修——detect-frameworks 漏检 element-ui 包名、relations-extract 对前后端同仓形态 Java 边集整链为零、mark-active 框架 glob 执法 id↔变量前缀名实不符卡死激活。
+
+### Fixed
+- **detect-frameworks.sh element-ui 探测漏检**（R47-D1）：探测表只有 `element-plus`（Vue3 变体）映射 element 规则集，没有 `element-ui`（Vue2 包名）——Vue2+Element UI 这一最常见企业栈检出 7 框架独缺 element。补 `element|element-ui|pkgjson` 表行，本项目检出 7→8。
+- **relations-extract.sh 前后端同仓 Java 根失锚**（R47-D2）：Java import 解析、`_fq_resolve`（mapper-binding/data-mapping/bean-wiring 消费）、`_short_resolve`（typeAlias 短名）三处硬编码 `src/main/java`/`$PROJ/src` 前缀——Java 根在 `backend/` 等子目录的同仓形态下三链边集全为零（21 条边全是前端 import，0 条 mapper-binding）。修：启动时发现 `*/src/{main,test}/java` 源根清单（剪 node_modules/target 等噪音），三处统一消费；演练项目边集 21→80（import 62 + mapper-binding 2 + data-mapping 4 + field-mapping 12）。
+- **generate-skill.sh --mark-active 框架 glob 执法名实不符**（R47-D3）：按检出框架 id 机械推导变量前缀（jest-vitest→`JESTVITEST_*`），而 conf 实际变量是规则集 requires_conf 声明的 `VITEST_*`——jest-vitest 检出的项目框架门禁空转检查永查不到变量，mark-active 永久卡死。修：变量名优先取注入区块 `# ruleset: <id> requires_conf:` 声明（过滤 GLOBS/DIRS/FILES 后缀族），id 前缀推导保留为补充。
+
+### Changed
+- README（根+技能双载体）badge v2.18.0→v2.19.0
+
+### 演练档案
+- 项目 `lab/r47-drill-vue-spring`（52 文件，git 两提交）：后端 Spring Boot 2.7.18（Spring Framework 5.3）+ MyBatis XML + MySQL，23→31 测试（JUnit5 三件：Mockito/MockMvc/H2 MySQL 模式集成）；前端 Vue 2.7.16 + Element UI 2.15.14 + vuex/vue-router/axios + Vite 5 + Vitest，10→13 测试；`vite build` 产物构建实证。
+- 目标技能 `lab/r47-drill-skills/vue-spring-demo`（standard 档）：流A ⓪-⑨ 全链（framework-knowledge 8 框架 97 条规律全实证、conf 三件套、precheck --all 10/10、verify-completeness --strict 零占位符、mark-active 激活）；流B user-status-toggle（PATCH /api/users/{id}/status）九节点 TDD 闭环（先红后绿 11 新测试、状态机 open→design→build→verify→archive 守卫三次真实拦截、spec §5.5 复用声明、合入 main、指纹 --diff 感知→边集重建→新基线自成长链）。
+
+
 ## [v2.18.0] - 2026-09-24
 
 > R46 三项目演练完成 + 修复路径别解析问题：完成 react-express/vue-fastapi/nextjs-blog 三个典型前后端项目的定制化技能生成与 TDD 全链演示，暴露并修复 inventory-verify.sh 对 Windows 反斜杠路径的处理问题（#2）。
