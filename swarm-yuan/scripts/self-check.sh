@@ -1875,7 +1875,78 @@ check_cordis_composability_wiring() {
     echo "  ✓ Cordis absorb 三载体一致（references + SKILL.md + facts.conf）"
   fi
 }
+
+# ===== G25：能力地图双向对账断言（R50 整合轮——吸收层接线台账孤儿零容忍）=====
+# 裂缝背景：46+ 档 references 各自带"路由表见 SKILL.md"头，但第六层长期散文泛列举——
+# 约三分之一档位不按名出现（claude-code-capabilities/memory-persistence/review-methodology 等），
+# 吸收物之间无接线台账（13 运行时/19 行 upstream-baseline/46 references 三者零对账）。
+# R50 修复：references/capability-map.md 为吸收层接线单一事实源 + SKILL.md 第六层五族路由表化。
+# 本断言（warn-only，对齐 G13-G17，不计入 FACT_GATES_TOTAL=55）守三面：
+#   ① 孤儿零容忍：references/*.md（不含 frameworks/ 与 capability-map 自身）basename 必须出现在 map；
+#   ② 幽灵零容忍：map 接线表中首列为纯档名的行，其档必须实存（防登记不存在的档）；
+#   ③ 两级互指：SKILL.md 第六层必须引用 capability-map（路由表→台账）。
+check_capability_map_wiring() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local map="$base/references/capability-map.md"
+  echo "▶ 能力地图双向对账断言（G25，R50 整合轮）"
+  local _warn=0
+
+  # ① 载体存在性（台账本体）
+  if [[ -f "$map" ]] && [[ -s "$map" ]]; then
+    echo "  ✓ references/capability-map.md 存在且非空"
+  else
+    warn "references/capability-map.md 缺失或为空（G25 接线台账载体）"
+    echo "  ⊘ 跳过 G25 对账"
+    return 0
+  fi
+
+  # ② 孤儿零容忍：每个实存档必须被台账收录
+  local orphans="" f b
+  for f in "$base"/references/*.md; do
+    [[ -f "$f" ]] || continue
+    b="$(basename "$f" .md)"
+    [[ "$b" == "capability-map" ]] && continue  # 台账自身不入台账
+    if ! grep -q -- "$b" "$map" 2>/dev/null; then
+      orphans="${orphans}${orphans:+ }$b"
+    fi
+  done
+  if [[ -z "$orphans" ]]; then
+    echo "  ✓ 孤儿零容忍：全部 references 档被 capability-map 收录"
+  else
+    warn "G25 孤儿档（吸收未接线，须补 map 行或归档）：$orphans"
+    _warn=$((_warn+1))
+  fi
+
+  # ③ 幽灵零容忍：台账表格首列纯档名行 → 档必须实存
+  local ghosts="" tok
+  for tok in $(awk -F'|' '/^\| [a-z0-9][a-z0-9-]* +\|/ { gsub(/ /, "", $2); if ($2 != "") print $2 }' "$map" 2>/dev/null); do
+    if [[ ! -f "$base/references/$tok.md" ]]; then
+      ghosts="${ghosts}${ghosts:+ }$tok"
+    fi
+  done
+  if [[ -z "$ghosts" ]]; then
+    echo "  ✓ 幽灵零容忍：台账登记档全部实存"
+  else
+    warn "G25 幽灵档（台账登记了不存在的档）：$ghosts"
+    _warn=$((_warn+1))
+  fi
+
+  # ④ 两级互指：SKILL.md 第六层引用 capability-map
+  if grep -q 'capability-map' "$base/SKILL.md" 2>/dev/null; then
+    echo "  ✓ SKILL.md 引用 capability-map（路由表↔台账两级互指）"
+  else
+    warn "SKILL.md 缺 capability-map 引用（G25 两级互指断链）"
+    _warn=$((_warn+1))
+  fi
+
+  if [[ $_warn -gt 0 ]]; then
+    echo "  ℹ 能力地图对账漂移 ${_warn} 项（warn-only，不阻断）"
+  else
+    echo "  ✓ 能力地图双向对账一致（孤儿零 + 幽灵零 + 互指在）"
+  fi
+}
 check_cordis_composability_wiring
+check_capability_map_wiring
 
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
