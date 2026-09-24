@@ -49,4 +49,28 @@ EOF
 out=$(bash "$SH" "$TMP/p3" 2>/dev/null)
 echo "$out" | grep -qF '"koa"' && ok "态3 项目自身 package.json 仍命中" || bad "态3 自身探测被误伤: $out"
 
+# 态 5（R48-G1 跨栈补齐锚）：12 规则集零信号 → 10 个补机械信号的正负双态
+# 正态：文件型（flutter/harmonyos/c-cpp/android/ios-swiftui/kubernetes）+ pom/pyreq 型（hive/spark/tdengine/opengauss）
+mkdir -p "$TMP/p5/app/src/main" "$TMP/p5/hm" "$TMP/p5/ios/xx.xcodeproj" "$TMP/p5/deploy"
+touch "$TMP/p5/pubspec.yaml" "$TMP/p5/CMakeLists.txt" "$TMP/p5/app/src/main/AndroidManifest.xml" \
+      "$TMP/p5/hm/Page.ets" "$TMP/p5/ios/xx.xcodeproj/project.pbxproj" "$TMP/p5/deploy/deployment.yaml"
+cat > "$TMP/p5/pom.xml" <<'POMEOF'
+<project><dependencies>
+<dependency><groupId>org.apache.hive</groupId><artifactId>hive-exec</artifactId></dependency>
+<dependency><groupId>com.taosdata.jdbc</groupId><artifactId>taos-jdbcdriver</artifactId></dependency>
+<dependency><groupId>org.opengauss</groupId><artifactId>opengauss-jdbc</artifactId></dependency>
+<dependency><groupId>org.apache.spark</groupId><artifactId>spark-core_2.12</artifactId></dependency>
+</dependencies></project>
+POMEOF
+out=$(bash "$SH" "$TMP/p5" 2>/dev/null)
+for fw in kubernetes flutter harmonyos c-cpp android ios-swiftui hive spark tdengine opengauss; do
+  echo "$out" | grep -qF "\"$fw\"" && ok "态5 命中 $fw" || bad "态5 未命中 $fw: $out"
+done
+# 负态：空目录不误报（file_glob 全工程扫描的噪音风险）
+mkdir -p "$TMP/p5n"
+out=$(bash "$SH" "$TMP/p5n" 2>/dev/null)
+echo "$out" | grep -qF 'ACTIVE_FRAMEWORKS=()' && ok "态5 负态空项目零命中" || bad "态5 负态误报: $out"
+
+
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-detect-frameworks"; exit 0; } || { echo "FAIL test-detect-frameworks" >&2; exit 1; }

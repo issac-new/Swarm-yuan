@@ -119,11 +119,21 @@ _emit() { # $1=from $2=to $3=evidence → 追加到 TMPF
   printf '{"from":"%s","to":"%s","kind":"import","evidence":"%s"}\n' "$1" "$2" "$3" >> "$TMPF"
 }
 
-# Go module 名（若有）
-GO_MODULE=""
-if [[ -f "$PROJ/go.mod" ]]; then
-  GO_MODULE=$(sed -n 's/^module[[:space:]][[:space:]]*\([^[:space:]][^[:space:]]*\).*/\1/p' "$PROJ/go.mod" | head -1)
-fi
+# Go module 清单（R48-G2：前后端同仓形态 go.mod 在 server/ 等子目录，原单点 "$PROJ/go.mod"
+# 发现让 GO_MODULE 恒空、Go 工程内边全漏——与 R47-D2 Java 源根同族「解析基准假设 PROJ 根」。
+# 多 go.mod 各自带 module 名与基准目录（go.mod 所在目录），确定性排序逐个匹配）
+_GOMODS_T=$(mktemp /tmp/relx.gomods.XXXXXX)
+find "$PROJ" \( -type d \( -name node_modules -o -name target -o -name .git -o -name dist -o -name vendor -o -name .swarm-yuan \) -prune \) -o -type f -name go.mod -print 2>/dev/null \
+  | LC_ALL=C sort > "${_GOMODS_T}.abs"
+while IFS= read -r _gm; do
+  [[ -z "$_gm" ]] && continue
+  _mod=$(sed -n 's/^module[[:space:]][[:space:]]*\([^[:space:]][^[:space:]]*\).*/\1/p' "$_gm" | head -1)
+  [[ -z "$_mod" ]] && continue
+  _base="${_gm#"$PROJ"/}"
+  _base="${_base%go.mod}"; _base="${_base%/}"   # 根级 go.mod 剥后为空串；子目录为 server
+      printf '%s %s\n' "$_mod" "$_base" >> "$_GOMODS_T"   # 空格分隔：module 名/路径均不含空格，read -r 双字段安全拆
+done < "${_GOMODS_T}.abs"
+rm -f "${_GOMODS_T}.abs"
 
 # --- 逐文件提取（bash 循环 + grep；上限保护由 find | head 承担）---
 _src_files=$(find "$PROJ" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.vue' -o -name '*.py' \) \
@@ -212,19 +222,24 @@ while IFS= read -r f_abs; do
   esac
 done <<< "$_src_files"
 
-# Go 工程内 import（module 前缀剥离 → 目录存在即边）
-if [[ -n "$GO_MODULE" ]]; then
+# Go 工程内 import（module 前缀剥离 → go.mod 基准目录下目录存在即边；R48-G2 多模块遍历）
+if [[ -s "$_GOMODS_T" ]]; then
   while IFS= read -r f_abs; do
     [[ -z "$f_abs" ]] && continue
     f_rel="${f_abs#"$PROJ"/}"
-    while IFS= read -r hit; do
-      [[ -z "$hit" ]] && continue
-      ln="${hit%%:*}"; stmt="${hit#*:}"
-      spec=$(printf '%s' "$stmt" | sed -n "s|.*\"${GO_MODULE}/\([^\"]*\)\".*|\\1|p")
-      [[ -z "$spec" ]] && continue
-      [[ -d "$PROJ/$spec" ]] || continue
-      _emit "$f_rel" "$spec" "import@${f_rel}:${ln}"
-    done < <(grep -nF "\"${GO_MODULE}/" "$f_abs" 2>/dev/null || true)
+    while read -r _mod _base; do   # 双字段拆分读取——不可置空 IFS（IFS= 会禁用字段的空格拆分）
+      [[ -z "${_mod:-}" ]] && continue
+      while IFS= read -r hit; do
+        [[ -z "$hit" ]] && continue
+        ln="${hit%%:*}"; stmt="${hit#*:}"
+        spec=$(printf '%s' "$stmt" | sed -n "s|.*\"${_mod}/\([^\"]*\)\".*|\\1|p")
+        [[ -z "$spec" ]] && continue
+        target="${_base:+${_base}/}${spec}"
+        [[ -d "$PROJ/$target" ]] || continue
+        [[ "$target" == "$f_rel" ]] && continue
+        _emit "$f_rel" "$target" "import@${f_rel}:${ln}"
+      done < <(grep -nF "\"${_mod}/" "$f_abs" 2>/dev/null || true)
+    done < "$_GOMODS_T"
   done < <(find "$PROJ" -type f -name '*.go' -not -path '*/.git/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
 fi
 
@@ -249,8 +264,15 @@ while IFS= read -r f_abs; do
     use_mod="${use_path#*|}"
     use_mod="${use_mod%%::*}"        # 首段模块（a::b::C → a）
     [[ -z "$use_mod" ]] && continue
+    # R48-G3（跨栈同仓审计）：crate 根=文件所在 src/ 目录（backend/src/main.rs → backend/src）——
+    # 原硬编码 PROJ 根 src/ 使同仓形态 Rust 边全漏（与 R47-D2 Java/R48-G2 Go 同族）。
+    # 根级形态（src/ 直接在项目根）保持原行为。
+    case "$f_rel" in
+      */src/*) _crate_src="${f_rel%%/src/*}/src" ;;
+      *)       _crate_src="src" ;;
+    esac
     case "$use_kind" in
-      crate) cands="src/${use_mod}.rs src/${use_mod}/mod.rs" ;;
+      crate) cands="${_crate_src}/${use_mod}.rs ${_crate_src}/${use_mod}/mod.rs" ;;
       super) cands="${f_dir}/${use_mod}.rs ${f_dir}/${use_mod}/mod.rs" ;;
       self)  cands="${f_dir}/${use_mod}.rs ${f_dir}/${use_mod}/mod.rs" ;;
     esac

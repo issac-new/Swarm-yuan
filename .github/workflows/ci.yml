@@ -199,6 +199,8 @@ jobs:
           bash tests/test-migrate-verify-blocks.sh
           bash tests/test-framework-evidence.sh
           bash tests/test-conf-render.sh
+          bash tests/test-cross-stack-monorepo.sh
+          bash tests/test-framework-conf-consistency.sh
           bash tests/test-spec-template-gating.sh
           bash tests/test-compare-baseline.sh
           bash tests/test-gate-trends.sh
