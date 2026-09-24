@@ -78,6 +78,7 @@ vue|pinia|pkgjson
 react|react|pkgjson
 angular|@angular/core|pkgjson
 element|element-plus|pkgjson
+element|element-ui|pkgjson
 naiveui|naive-ui|pkgjson
 nextjs|next|pkgjson
 nuxt|nuxt|pkgjson

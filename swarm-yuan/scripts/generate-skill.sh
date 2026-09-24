@@ -896,11 +896,27 @@ if [[ "${1:-}" == "--mark-active" ]]; then
       _ma_af="$_ma_af $_ma_line"
     fi
   done
-  _ma_af="$(echo "${_ma_af}" | tr '[:space:]' '\n' | LC_ALL=C sort -u | tr -d '-' | tr '[:lower:]' '[:upper:]' | sed '/^$/d' || true)"
+  _ma_ids="$(printf '%s' "${_ma_af}" | tr '[:space:]' '\n' | LC_ALL=C sort -u | sed '/^$/d' || true)"
   _ma_missing=""
-  for _ma_fw in ${_ma_af}; do
+  for _ma_id in ${_ma_ids}; do
+    _ma_fw="$(printf '%s' "$_ma_id" | tr -d '-' | tr '[:lower:]' '[:upper:]')"
+    # R47-D3（2026-09-24 前后端同仓演练实证）：id↔变量前缀名实不符——jest-vitest 的 conf 变量
+    # 是 VITEST_*（ruleset requires_conf 声明为准），id 机械推导 JESTVITEST 永远查不到，
+    # 该框架检出的项目 mark-active 永久卡死。修：变量名优先取注入区块 requires_conf 声明，
+    # id 前缀推导保留为补充（未注入 ruleset 的框架仍可查）。
+    _ma_vars=""
+    if [[ -f "$_ma_dir/scripts/precheck.sh" ]]; then
+      _ma_vars=$(grep -m1 "^# ruleset: ${_ma_id}  *requires_conf:" "$_ma_dir/scripts/precheck.sh" 2>/dev/null | sed 's/.*requires_conf: *//' || true)
+    fi
+    _ma_pat="${_ma_fw}[A-Z0-9_]*(SRC_GLOBS|MAPPER_DIRS|CONFIG_FILES|SQL_GLOBS|SCHEMA_GLOBS|JOB_DIRS|KEY_COLUMNS|SHARD_KEY|GLOBS)"
+    for _ma_v in ${_ma_vars}; do
+      case "$_ma_v" in
+        *SRC_GLOBS|*MAPPER_DIRS|*CONFIG_FILES|*SQL_GLOBS|*SCHEMA_GLOBS|*JOB_DIRS|*KEY_COLUMNS|*SHARD_KEY|*GLOBS)
+          _ma_pat="${_ma_pat}|${_ma_v}" ;;
+      esac
+    done
     _ma_hit=$(cat "$_ma_dir/scripts/precheck.conf" "$_ma_dir/scripts/precheck.arch.conf" 2>/dev/null \
-      | grep -cE "^${_ma_fw}[A-Z0-9_]*(SRC_GLOBS|MAPPER_DIRS|CONFIG_FILES|SQL_GLOBS|SCHEMA_GLOBS|JOB_DIRS|KEY_COLUMNS|SHARD_KEY|GLOBS)=\(\"[^\"]" || true)
+      | grep -cE "^(${_ma_pat})=\(\"[^\"]" || true)
     if [[ "${_ma_hit:-0}" -eq 0 ]]; then
       _ma_missing="${_ma_missing} ${_ma_fw}"
     fi

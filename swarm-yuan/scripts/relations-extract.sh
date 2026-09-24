@@ -263,7 +263,15 @@ while IFS= read -r f_abs; do
   done < <(grep -nE '^[[:space:]]*use[[:space:]][[:space:]]*(crate|super|self)::' "$f_abs" 2>/dev/null || true)
 done < <(find "$PROJ" -type f -name '*.rs' -not -path '*/.git/*' -not -path '*/target/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
 
-# Java 包路径映射 import（src/{main,test}/java/<pkg>/<Class>.java 存在即边）
+# Java 源根发现（R47-D2：前后端同仓形态下 Java 根在 backend/ 等子目录，
+# 硬编码 src/main/java 会让 Java import/mapper-binding/data-mapping 全链边集为零）。
+# 发现规则：*/src/{main,test}/java 目录，剪掉 node_modules/target/.git/dist/venv/.venv/build 噪音，
+# 相对路径确定性排序——首个命中即用（FQCN 已全限定，无猜测成分）。
+_JAVA_ROOTS_T=$(mktemp /tmp/relx.jroots.XXXXXX)
+find "$PROJ" \( -type d \( -name node_modules -o -name target -o -name .git -o -name dist -o -name venv -o -name .venv -o -name build -o -name .swarm-yuan \) -prune \) -o -type d -path '*/src/*/java' -print 2>/dev/null \
+  | LC_ALL=C sort | sed "s|^$PROJ/||" > "$_JAVA_ROOTS_T"
+
+# Java 包路径映射 import（任一 Java 源根下 <pkg>/<Class>.java 存在即边）
 while IFS= read -r hit; do
   [[ -z "$hit" ]] && continue
   f_rel="${hit%%|*}"
@@ -272,12 +280,13 @@ while IFS= read -r hit; do
   imp=$(printf '%s' "$rest" | sed -n 's/.*import[[:space:]][[:space:]]*\([a-z][a-zA-Z0-9_.]*\);.*/\1/p')
   [[ -z "$imp" ]] && continue
   pkgpath=$(printf '%s' "$imp" | tr '.' '/')
-  for root in src/main/java src/test/java; do
+  while IFS= read -r root; do
+    [[ -z "$root" ]] && continue
     if [[ -f "$PROJ/$root/$pkgpath.java" ]]; then
       _emit "$f_rel" "$root/$pkgpath.java" "import@${f_rel}:${ln}"
       break
     fi
-  done
+  done < "$_JAVA_ROOTS_T"
 done < <(grep -RnE '^[[:space:]]*import[[:space:]]+[a-z][a-zA-Z0-9_.]*;' "$PROJ" --include='*.java' 2>/dev/null \
   | LC_ALL=C awk -F: -v proj="$PROJ" '{ f=substr($1, length(proj)+2); print f "|" $0 }' | LC_ALL=C sort -u | head -2000)
 
@@ -288,12 +297,13 @@ done < <(grep -RnE '^[[:space:]]*import[[:space:]]+[a-z][a-zA-Z0-9_.]*;' "$PROJ"
 # src 下同名 .java 唯一命中（多命中不猜，AI 按 exploration-guide §C+.2.5 补）。
 # Spring Batch/Quartz job→数据资产依赖为语义耦合（reader SQL 列↔实体字段无确定性映射），
 # 机械层不猜——AI 补 kind=job-flow 边（exploration-guide §C+.2-J 链路模型）。
-_fq_resolve() { # $1=完全限定名 a.b.C → stdout 项目相对 .java 路径 或 空
+_fq_resolve() { # $1=完全限定名 a.b.C → stdout 项目相对 .java 路径 或 空（R47-D2：遍历发现的 Java 源根）
   local pkgpath="$1"; pkgpath=$(printf '%s' "$pkgpath" | tr '.' '/')
   local root
-  for root in src/main/java src/test/java; do
+  while IFS= read -r root; do
+    [[ -z "$root" ]] && continue
     if [[ -f "$PROJ/$root/$pkgpath.java" ]]; then printf '%s/%s.java' "$root" "$pkgpath"; return 0; fi
-  done
+  done < "$_JAVA_ROOTS_T"
   return 1
 }
 
@@ -302,11 +312,17 @@ _ALIAS_T=$(mktemp /tmp/relx.alias.XXXXXX)
 grep -RhoE '<typeAlias[^>]*alias="[^"]*"[^>]*type="[^"]*"' "$PROJ" --include='mybatis-config.xml' 2>/dev/null \
   | sed -n 's/.*alias="\([^"]*\)".*type="\([^"]*\)".*/\1\t\2/p' > "$_ALIAS_T"
 
-_short_resolve() { # $1=短类名 → stdout 唯一命中的项目相对 .java 路径 或 空
+_SHORT_T=$(mktemp /tmp/relx.short.XXXXXX)
+
+_short_resolve() { # $1=短类名 → stdout 唯一命中的项目相对 .java 路径 或 空（R47-D2：全源根扫，非仅根 src/）
   local name="$1" fq hits
   fq=$(awk -F'\t' -v n="$name" '$1 == n { print $2; exit }' "$_ALIAS_T")
   if [[ -n "$fq" ]]; then _fq_resolve "$fq" && return 0 || return 1; fi
-  hits=$(find "$PROJ/src" -type f -name "${name}.java" -not -path '*/target/*' 2>/dev/null | LC_ALL=C sort | head -2)
+  while IFS= read -r root; do
+    [[ -z "$root" ]] && continue
+    find "$PROJ/$root" -type f -name "${name}.java" -not -path '*/target/*' 2>/dev/null
+  done < "$_JAVA_ROOTS_T" | LC_ALL=C sort -u > "$_SHORT_T"
+  hits=$(head -2 "$_SHORT_T")
   [[ $(printf '%s' "$hits" | LC_ALL=C grep -c .) -eq 1 ]] || return 1
   printf '%s' "$hits" | sed "s|^$PROJ/||"
   return 0
