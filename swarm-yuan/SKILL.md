@@ -7,7 +7,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 元技能（生成器）：针对任意代码仓库，按六段式模板生成项目专属开发技能（下称"目标技能"）。跨项目复用，不依赖任何具体项目内容。
 
-**总闭环**（各层围绕它展开）：本 skill 探查项目→生成目标技能→目标技能在项目里执勤开发→项目演进产生变化→指纹感知→技能局部更新→继续执勤。五层依次回答：为什么这样做（理念）、原则是什么（设计）、结构长什么样（架构）、流程怎么转与机制落地（实现）、用户怎么进入（使用）——每层的每个概念都能在第四层的流程表里找到诞生步与消费方。
+**总闭环**（各层围绕它展开）：本 skill 探查项目→生成目标技能→目标技能在项目里执勤开发→项目演进产生变化→指纹感知→技能局部更新→继续执勤。两条主流程：**流A**=生成器的 12 步生成流程；**流B**=目标技能的九节点执勤工作流。五层依次回答：为什么这样做（理念）、原则是什么（设计）、结构长什么样（架构）、流程怎么转与机制落地（实现）、用户怎么进入（使用）——每层的每个概念都能在第四层的流程表里找到诞生步与消费方。
 
 > **口径权威源**：`assets/facts.conf`（数字单一事实源，self-check 机器执法）；设计文档见本目录 `README.md`（仓库内即 `swarm-yuan/README.md`，standalone 安装时随技能自包含；核心已内联到本文与 references/）；决策史与上游基线已物化为 `docs/design-evolution.md` 与 `docs/upstream-baseline.md`。
 >
@@ -119,7 +119,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **流B 的守卫**（目标技能侧，本 skill 生成的实物在执勤）：spec-first hook（fail-gate-hook 拦"无 spec 写源码"，Claude deny/Codex exit 2 双宿主）→ 状态机阶段守卫（design 需 proposal、build 需批准 spec、verify 需 tasks 全勾、archive 需 verify pass+证据）→ 门禁四族按序列 → 拦截落 gate-deny.jsonl 可复盘。九节点×4 要素由目标技能 `references/workflow.md` 承载。
 
-**反馈回路**：SessionStart hook（lite 档 AI 主动）跑 `scripts/project-fingerprint.sh <proj> --diff` → 变化 scope → exploration-guide §C+ 局部重探查 → reference-manual 单条更新（骤降 >50% 拒写；条目按过期三态处置：更新/降级标注/归档，见 knowledge-lifecycle-methodology §五）→ 生成器 `--upgrade`（项目内容文件保留）→ 落新基线——自成长闭环。
+**反馈回路**：SessionStart hook（lite 档 AI 主动）跑 `scripts/project-fingerprint.sh <proj> --diff` → 变化 scope → exploration-guide §C+ 局部重探查 → reference-manual 单条更新（骤降 >50% 拒写；条目过期三态处置见 knowledge-lifecycle-methodology §五）→ 生成器 `--upgrade`（项目内容文件保留）→ 落新基线——自成长闭环。
 
 ## 第五层 使用——一个需求的完整旅程
 
@@ -131,7 +131,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 用户："开始新需求：给订单列表加导出按钮"
   ↓ ① 需求理解    AI 复述需求+列影响面，用户确认或纠正（现在纠正我）
   ↓ ② 探查        AI 先查 recipes 配方与 §A 同类功能，再按 reference-manual 地图定位既有组件
-                    （拼装零件；"谁依赖 X"查 relations.jsonl 边集；读法按 knowledge-lifecycle 六步协议：摘要优先→追链→分组注入）
+                    （拼装零件；"谁依赖 X"查 relations.jsonl 边集；读法见 knowledge-lifecycle 六步协议）
   ↓ ③ 设计 spec    AI 写 spec（决策记录+影响范围+测试设计）→ 用户评审批准
   ↓ ④ 实施 plan    AI 拆 tasks（.swarm-yuan/tasks.md）
   ↓ ⑤ 编码        AI 实现（先查再写：按 lazy-generation 七层下探复用，层 7 才新增代码）；【若跳过了 spec】fail-gate-hook 直接拒绝写源码（spec-first 强制）

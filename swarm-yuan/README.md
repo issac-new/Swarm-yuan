@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.24.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.24.0)
+[![Release](https://img.shields.io/badge/release-v2.25.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.25.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -13,7 +13,7 @@
 
 读法：第一、二章给判断依据（要不要用、为什么需要）；第三章是躯干（每层机制与检查）；第四章把机制映射到文件；第五章给适用边界；第六章收口。数字、来源、验收明细统一收在附录，正文不罗列。
 
-术语只消歧三条（其余见使用手册术语表）：**生成物**与**目标技能**是同一实体的双名，生成视角叫生成物，交付使用后叫目标技能；**门禁**是 precheck 的词法结构检查，**验证**是测试与审查的语义核验，两者不是一回事（第三章 3.4/3.5 推导）；正文中的**组件库、地图、零件目录**同指目标技能里的 reference-manual 清单。
+术语只消歧三条（其余见使用手册术语表）：**生成物**与**目标技能**是同一实体的双名，生成视角叫生成物，交付使用后叫目标技能；**门禁**是 precheck 的词法结构检查，**验证**是测试与审查的语义核验，两者不是一回事（第三章 3.4/3.5 推导）；正文中的**组件库、地图、零件目录**同指目标技能里的 reference-manual 清单。流A/流B、档、随发、能力地图、分派表、G25、三件套、认知面、税制等整合术语的完整释义同在使用手册术语词典。
 
 # 一、What：它是什么
 

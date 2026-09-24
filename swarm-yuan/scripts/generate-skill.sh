@@ -1695,7 +1695,7 @@ for f in $_placeholder_refs; do
 # workflow.md — 九节点全流程（4 要素/节点：入口/参与方/门禁/产出物与调用追踪；⑨调用追踪/⑩方法论引用逐节点机器校验）
 
 > 填充规范：九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪）+ ⑨调用追踪/⑩方法论引用机器校验要素（verify-completeness 逐节点断言），4-Phase SOP。
-> 节点名对齐生成器仓 references/template-spec.md §2 标准 9 节点（template-spec 不随发生成物）（⑥测试验证 + ⑦独立审查独立拆分，审查留痕 review-record 落盘）；按项目实际裁剪。
+> 节点的标准结构定义在生成器仓 references/template-spec.md §2（该文件不随技能分发）；⑥测试验证与⑦独立审查是两个独立节点（审查记录落 review-record）；整个流程可按项目实际裁剪。
 
 ## 流程总览
 
