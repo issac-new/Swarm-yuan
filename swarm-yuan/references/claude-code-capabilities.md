@@ -717,3 +717,11 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - Write 工具参数宽容化：模型发 `path`/`file_text`/`file_content`/杂散 `description` 时映射到 `file_path`/`content` 而非校验失败——输入宽容化（与 codex-security R32「产出收敛」成双向口径的输入侧）。
 - `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH`：MCP 描述 2048 字符上限可调；hook 输出尺寸入 otel 事件——配置与可观测面。
 - 修复面（不吸收）：TUI 对话框交互批、skills/.trash 误移、插件 commit 追踪。
+
+## 版本注记：v2.1.281-282（2026-09-25 R57 补核）——权限堵旁路与静默失效可观测
+
+> patch 两版（npm 实测 2.1.282）；闭源二进制，**仅发布说明级证据，内部实现未验证**。
+
+- **权限堵旁路**：命令替换里的递归 `rm` 此前绕过 Bash 允许规则、现强制提示；NUL 字节规则误展开为通配已修；**managed 布尔锁键打错值不再被忽略**、嵌套非法值使整块失效；`allowed-tools` 自我预授权被封堵→**坏配置宁可停机报错，不静默按宽松缺省运行**。
+- **等待与重试有界化**：危险 `rm` 提示 2 分钟后自动 deny；无限重试无视 `--max-turns` 已修；compaction 摘要被拒转 fallback 模型；磁盘配额错误不再伪装「Exit code 1」。
+- **静默失效可观测**：启动与 `/status`/`claude doctor` **显式列出被忽略的遥测变量**。

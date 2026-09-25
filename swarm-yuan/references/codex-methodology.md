@@ -211,3 +211,12 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **reasoning effort 以模型显式支持为闸**（#46530）+ 0.156.1 回滚「新线程默认关 reasoning summary」——能力未声明不启用（诚实口径族）；默认值变更入回归面（R40 同族第四例）。
 - **Guardian 策略解析集中化**（#45957）——策略从多处判定收敛到 config+protocol 单点——**规则单一事实源族**宿主侧实证，与本仓「特征卡立法」同构。
 - 网络与沙箱面：系统代理回落登录 + 沙箱缺口三连修（Windows 入站/特权 socket/只读句柄写入）+ Unix socket 与受限命令隔离——不吸收（与本仓门禁面无新原语）。
+
+## 版本注记：rust-v0.157.0（2026-09-25 R57 核）——可撤销许可与检查点元数据
+
+> 实质 minor；证据锚点 `docs/research/R57-runtime-refresh.md`。
+
+- **门禁升级为「可撤销许可」**：redirect/响应体/WebSocket 都持 permit，策略收紧即取消在途，**deny 不可重试且不记成功**，策略加载失败即断网→给工具调用发带生命周期的许可，策略变更作废在途。
+- **检查点自带恢复元数据**：`resume_metadata` 记版本/起始 turn/设置，与压缩检查点同写→`state.yaml` 与 compact 绑定写恢复状态。
+- **派发原子性 + 孤儿清理**：子代理取消即拆存储态、关 spawn edge，**驱逐与排队消息互斥**→provisional 任务失败即回收。
+- **产出带来源归属且跨状态持久**：provenance 跨 compaction/resume 存续→产物打 actor 标记进 `trace.jsonl`。
