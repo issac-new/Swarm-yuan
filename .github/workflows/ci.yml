@@ -204,6 +204,7 @@ jobs:
           bash tests/test-spec-template-gating.sh
           bash tests/test-workflow-methodology-ref.sh
           bash tests/test-capability-map-g25.sh
+          bash tests/test-r58-knowledge-drill-locks.sh
           bash tests/test-compare-baseline.sh
           bash tests/test-gate-trends.sh
       - name: 治理/hook/账本/指纹/记忆写回/行业 profile 测试（audit-claims-reality 接线）

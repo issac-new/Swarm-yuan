@@ -103,6 +103,13 @@ trace_cnt=$(grep -c '调用追踪' "${wf}" 2>/dev/null || echo 0)
 # R52：每节点含「方法论引用」要素（⑩——对偶 task-methodology-router 分派表，verify-completeness 执法）
 meth_cnt=$(grep -c '方法论引用' "${wf}" 2>/dev/null || echo 0)
 [[ "${meth_cnt}" -ge 9 ]] && ok "workflow.md 含方法论引用要素（${meth_cnt} 处）" || bad "workflow.md 方法论引用要素不足（${meth_cnt} 处，期望≥9）"
+# R58-D1 同族锁：emit 骨架不得硬编码语言特异测试名（Java/Vue 项目骨架曾写死 pytest/mutation——
+# 修一处必 grep 同族：pytest|vitest|jest|mocha|junit|go test|cargo test 全族禁入生成物骨架）
+if grep -qE 'pytest|vitest|jest|mocha|junit|go test|cargo test' "${wf}" 2>/dev/null; then
+  bad "workflow.md 含语言特异硬编码测试名（应为 <测试命令> 占位）：$(grep -oE 'pytest|vitest|jest|mocha|junit|go test|cargo test' "${wf}" | sort -u | tr '\n' ' ')"
+else
+  ok "workflow.md 零语言特异硬编码（<测试命令> 占位）"
+fi
 # quality-gate-chain：节点⑥含质量门禁序列（fail-fast 串行指引，映射既有 flag 不新增门禁）
 grep -q '质量门禁序列' "${wf}" 2>/dev/null \
   && ok "workflow.md 节点⑥含质量门禁序列（quality-gate-chain）" \

@@ -1,6 +1,27 @@
 # Changelog
 
 
+## [v2.27.0] - 2026-09-25
+
+> R58 知识库真机演练轮：R49 吸收的四段知识协议首次真机验证（六步读法/回归分级/过期三态/悬置清单/页面三角在 r47-drill-vue-spring 真实前后端同仓项目实弹）——**8 处生成器/协议缺陷全修**（D1-D6/D8-D9），其中 D9（框架空转检查器双挑食：声明变量名非 glob 族不认 + 标量填值不认——vite 永远过不了 mark-active）由 mark-active 卡壳逼出。修复全部带变异锁（test-r58-knowledge-drill-locks 8 断言）。
+
+### Fixed
+- **D1 契约面缺失（同族漏修第九形态）**：数据模型变更配方三查→四查——字段暴露于 API JSON 时反查前端调用点/契约测试/fixtures（此前 username 改名推导出的回归集漏前端两 spec，种子实证漏改 XML 6 红对照）；§19 ②接口命中注明"字段改名暴露于 API JSON 即属之"；knowledge-lifecycle §六同族补。
+- **D2 relations-query 空结果语义二义**：无边命中提示改三支判别（字段不存在/不在 resultMap/知识缺漏），不再混写一个括号。
+- **D3 稳定性标注误聚合**：「禁止改语义」说明词被 index 直查聚合为文件级禁止改 → 与变更信号对撞假告警；gsub 剔除后判（mark-active 实证：假告警消失、真告警保留）。
+- **D4 emit 语言特异硬编码**：workflow 节点⑥ 调用追踪行写死 `pytest/mutation`（Java/Vue 项目骨架）→ `<测试命令>` 占位 + run-gen-e2e 同族锁（pytest|vitest|jest|mocha|junit|go test|cargo test 全族禁入骨架）。
+- **D5 页面三角零落点**：exploration-guide 前端探查要点的产出无模板承载位 → template-spec §3 增前端页面表承载行（`| 页面 | 操作 | 调用+真实入参 | 权限与降级 |`）。
+- **D6 悬置清单零落点**：R49 协议纯叙事无接线 → template-spec 填充规则增 ★悬置清单（notes/cognition.md 集中落点）；演练内销项实演（db 只读矛盾回填转正）。
+- **D8 过期三态触发盲区**：指纹只看结构，文件内容演化不触发三态处置 → SKILL.md 反馈回路注明触发双路（结构走指纹 --diff，内容演化走 git diff/--stable-diff）。
+- **D9 框架空转检查器双挑食**：check_framework_globs 只认 glob 族变量名（vite 声明 VITE_CONFIG_FILE 等被全滤）+ 填值正则只认数组形态（标量 `="…"` 假阴性）→ R48-G5b 语义补全：声明在案认全部声明变量、填值双形态；mark-active 由拦转通实证。
+
+### Added
+- **tests/test-r58-knowledge-drill-locks.sh（8 断言，CI 接线）**：D1-D9 可机化修复面的变异锁（文本在位×4 + 行为锁×3 + 源码锁×1）。
+- 演练证据：kb58-vue-spring 目标技能（fill 由子代理完成：六文件零占位符+99 条框架规律+5 条决策账，mvn 31/31+npm 13/13 实测）；`.swarm-yuan/notes/cognition.md` 悬置清单销项实录。
+
+### Changed
+- FACT_CONTEXT_SURFACE_BUDGET 188416→190464（第三次登记，实测 189570B，四处协议产品化 +1010B）；FACT_ARTIFACT_BYTES_BUDGET 483328→487424（第十二次登记，实测 483421B，knowledge-lifecycle 同族补）。
+
 ## [v2.26.1] - 2026-09-25
 
 > R57 运行时刷新轮：19 行台账全覆盖（6 移动 + 10 零移动 + 2 无稳定 tag + 1 顺延）。实质 minor 两件（ruflo 3.42.5→3.45.0 / codex rust-v0.156.1→rust-v0.157.0）+ patch 四件（claude-code 2.1.282 / openspec 1.13.2 / codex-security 0.1.31 / graphify 0.9.67）；四条横切机制吸收（机制级不整包）；graphify v1.0.0 异源 tag **第四次**诱取以四重证据驳回（台账执法实录）。证据链 `docs/research/R57-runtime-refresh.md`（18KB 源码级锚点）。
