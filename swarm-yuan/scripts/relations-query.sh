@@ -51,7 +51,8 @@ case "$MODE" in
       || echo "ℹ 无边命中实体 ${ENTITY}（无 data-mapping/mapper-binding 边指向它；或是语义边/未被 XML 引用）"
     ;;
   field)
-    # field-mapping 边按 property 精确反查（改字段的影响面：哪些 resultMap 引用了该字段）
+    # field-mapping 边按 property 精确反查（改字段的影响面：哪些 resultMap 引用了该字段；
+    # API JSON 暴露字段的契约面=前端调用点/契约测试——spec 四查④，R59 清剿）
     hits=$(grep "\"property\":\"${FIELD}\"" "$E" 2>/dev/null || true)
     [[ -n "$hits" ]] && { echo "▶ 字段 ${FIELD} 被以下 resultMap 引用（改该字段须同步这些行）："; printf '%s\n' "$hits" | _pretty; } \
       || echo "ℹ 无边命中字段 ${FIELD}——三支判别（R58-D2）：①字段不在实体/schema（拼写？）②字段不在 resultMap（property 列名差异？）③知识缺漏（该 mapper 未提取/边集旧）——先 grep 实体确认字段存在再判缺漏"

@@ -2,6 +2,7 @@
 # relations-extract.sh — 机器可读关系边集提取（R21-D：核心链条①"结构关系认知"的索引层）
 # 机械提取确定性依赖边 → <skill>/references/relations.jsonl（每行 {"from","to","kind","evidence"}），
 # AI 在此初稿上补语义边（kind: call/route/message/ipc/export/job-flow——调用/路由/消息/IPC/库导出/批处理装配）。
+# 注意（R59 清剿）：HTTP/JSON 契约面不在机械提取面——字段改名的契约面反查见 spec 四查④（前端调用点/契约测试）。
 # 消费方：--stable-diff 1 跳下游传播（gates-warn 优先读边集）、流B ②探查查边集替代读 mermaid 图。
 #
 # 提取范围（确定性 grep+相对路径解析，零外部依赖全平台可用——madge/graphify 深度层由 AI
