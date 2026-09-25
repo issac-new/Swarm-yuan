@@ -301,7 +301,9 @@ if [[ "$STAB_AUDIT" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/refere
       [[ "$_fanin2" -gt "$_fanin" ]] && _fanin="$_fanin2"
     fi
     _has_test=0
-    [[ -n "$(find "$PROJ" -path '*/node_modules' -prune -o -path '*/.git' -prune -o -type f -iname "*${_base}*" \( -iname "*test*" -o -iname "*spec*" \) -print -quit 2>/dev/null)" ]] && _has_test=1
+    # R60-A10：同名测试匹配补 Python 惯例族（test_<base> 前缀/测试目录路径/<base>_test）——原式只认
+    # "名字互含 + test|spec"，Python 的 tests/test_utils.py 靠目录承载测试语义时漏配 → 假告警
+    [[ -n "$(find "$PROJ" -path '*/node_modules' -prune -o -path '*/.git' -prune -o -type f \( \( -ipath '*test*' -o -ipath '*spec*' \) -iname "*${_base}*" -o -iname "test_${_base}*" -o -iname "*${_base}*_test*" -o -iname "*${_base}*test*" -o -iname "*${_base}*spec*" \) -print -quit 2>/dev/null)" ]] && _has_test=1
     # R33-D7（2026-09-17 Java 栈执勤实证）：入口层文件（controller/route handler/定时任务/消费者）
     # 被 import 的 fan-in 恒 0 是框架常态（由路由/容器引用，非 import 引用）——对其豁免 fan-in=0 warn。
     # 信号清单跨语言有界集（Java 注解族 + Node router/app + Python route/celery + Go http）。

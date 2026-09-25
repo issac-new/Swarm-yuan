@@ -286,3 +286,29 @@ fixture 验证覆盖：violating 含 N+1 查询 + SECRET_KEY 硬编码 + DEBUG=T
 <!--
 记录已知版本陷阱（deprecation / breaking change / 行为差异），生成时按 ACTIVE_FRAMEWORKS 提取的版本号匹配本表，落在受影响区间的项目须额外提示。
 -->
+
+
+## 字符串耦合面清单（R60 执勤实弹十六类——机械提取盲区，改名/改格式必查）
+
+Django 生态的"编译不校验"字符串耦合面（对照 MyBatis XML 家族；relations-extract 只提 Python import 边，以下靠本清单人工反查）：
+
+| # | 耦合面 | 典型锚点 |
+|---|--------|---------|
+| 1 | 模板名字符串 | `render("todo/*.html")` vs templates/ 实存 |
+| 2 | URL 路由名 | 模板 `{% url 'name' %}` / `reverse()` ↔ urls.py `name=` |
+| 3 | 模板字段引用 | `{{ obj.field }}` ↔ models 字段（改名即运行时坏） |
+| 4 | POST 参数名 | `request.POST['k']` ↔ 模板 `name="k"` |
+| 5 | view context 键 | `render(..., {"k": v})` ↔ 模板 `{{ k }}` |
+| 6 | 手写表单 input | include 模板手写 input ↔ view 读点 |
+| 7 | CSV 列头 | importer 列头 ↔ 样例 CSV ↔ README |
+| 8 | 工厂/夹具字段 | factory-boy/hopper 命令 ↔ 模型 |
+| 9 | admin 注册字符串 | `list_display/search_fields` ↔ 模型字段 |
+| 10 | settings 键 | defaults.py ↔ README ↔ `{% settings_value %}` |
+| 11 | 邮件线程 ID 格式 | 生成侧 ↔ 解析侧正则（双边字符串） |
+| 12 | 迁移字段名 ↔ models | 双源（makemigrations --check 未接线，A8） |
+| 13 | `{% static %}` 路径 | 指向实存静态文件 |
+| 14 | related_name 字符串 | 反向访问器名 ↔ 用点 |
+| 15 | upload_to 路径模板 | 存储路径 ↔ 下载/清理逻辑 |
+| 16 | unique_together | ↔ upsert/去重逻辑 |
+
+用法：spec 四查①（字段/数据变更前置查询）在 Django 项目按本清单逐面反查；其他栈的等价清单见对应 frameworks/<id>.md（若无，按本表形态为该栈建立）。

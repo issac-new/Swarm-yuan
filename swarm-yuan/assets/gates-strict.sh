@@ -189,7 +189,7 @@ check_layer() {
         [[ -z "$df" ]] && continue
         local ffi
         for ffi in "${DOMAIN_FORBIDDEN_IMPORTS[@]}"; do
-          if grep -qE "from ['\"]${ffi}|import ['\"]${ffi}|require\(['\"]${ffi}" "$df" 2>/dev/null; then
+          if grep -qE "from ['\"]?${ffi}|import ['\"]?${ffi}|require\(['\"]${ffi}" "$df" 2>/dev/null; then
             fail "领域层污染：$df import 了框架/ORM/IO 模块 '$ffi'（领域层应保持纯业务，不依赖框架）"
             found=1
           fi
