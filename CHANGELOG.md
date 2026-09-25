@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [v2.26.1] - 2026-09-25
+
+> R57 运行时刷新轮：19 行台账全覆盖（6 移动 + 10 零移动 + 2 无稳定 tag + 1 顺延）。实质 minor 两件（ruflo 3.42.5→3.45.0 / codex rust-v0.156.1→rust-v0.157.0）+ patch 四件（claude-code 2.1.282 / openspec 1.13.2 / codex-security 0.1.31 / graphify 0.9.67）；四条横切机制吸收（机制级不整包）；graphify v1.0.0 异源 tag **第四次**诱取以四重证据驳回（台账执法实录）。证据链 `docs/research/R57-runtime-refresh.md`（18KB 源码级锚点）。
+
+### Changed
+- **台账六行更新**（`docs/upstream-baseline.md`，均 `baseline_status=synced`）：claude-code 2.1.282（闭源仅发布说明级，内部机制标注「未验证」）/ codex rust-v0.157.0 / ruflo 3.45.0 / openspec 1.13.2 / codex-security 0.1.31 / graphify 0.9.67（行内注记「v1.0.0 异源 tag 第四次诱取已拒」）。
+- **四条横切机制吸收**（落 references/ 注记，不整包）：①未跑的检查必须记 `Not verified`、验证按操作语义分区判定（ADDED 查存在/REMOVED 查消失/RENAMED 不查旧名）；②归因必须附证据链并允许弃权（三态 identified/abstained/error + `evidence[]`/`limitations[]`）、硬失败只认显式标记；③门禁升级为「可撤销许可」（策略变更作废在途、deny 不可重试）+ 检查点自带恢复元数据 + 派发原子性与孤儿清理；④新能力默认关、可拔除、可测量 + 冻结语料 AND 门禁决定默认切换（首测准确率 +10.6 点但 p95 +485% 故不切换——诚实记录不采用）+ 失败面显式化（`embeddingError`/「Learning degraded」）。
+- **骨架级两模式**（agent-skills-methodology）：破坏性操作「atomic rename 认领→读→比对确认才删」；导出/重生成必须幂等（write-atomic-if-changed）。
+
 ## [v2.26.0] - 2026-09-25
 
 > R56 全量回归轮：栈轮换第七棒到**纯前端**（React 19 + TypeScript strict + Vite 7 + Vitest 3 + Testing Library，真实工具链 build/test 全绿），真实场景项目（r56-drill-kanban 三列看板，localStorage 持久化，25 用例/4 测试文件）生成目标技能，走完流A 全流程（⓪-⑨ + --inject-frameworks + 零占位符 --strict + mark-active）与流B 典型研发执勤（dueDate 字段变更 TDD 红→绿全链 spec/plan/tasks/拼装合规声明 4/4；状态机六阶段 open→design→build→verify→archive 含 verify 未全勾/verify_result 两处负向拦截；fail-gate-hook spec-first 正反实测 + --report 审计；rules.d 三值 forbid/allow；指纹自成长 --write→--diff 检出 scope→清单单条更新→新基线）。识别并修复 5 处缺陷（D1-D5），全部带变异锁（回退即红实测）。共性根因第七次复现（R28「相邻路径」、R30「只认一种形态」、R33「生态系统性缺位」、R36「同族漏修」、R39「五处缺位」、R44「生态形态穷举」）：本轮 D1/D2/D4/D5 均为「同族漏修」——范式迁移（R23-D5 排除链、R25-D3 剥注释、R33 文件级计数）只落到了同族的个别成员，React/TS colocated 形态首执勤即在漏网成员上炸出。
