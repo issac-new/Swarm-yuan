@@ -47,6 +47,7 @@ FIXTURE nuxt OK (v=0 c=0 ids=0)
 FIXTURE opengauss OK (v=0 c=0 ids=0)
 FIXTURE opentelemetry OK (v=0 c=0 ids=0)
 FIXTURE paimon OK (v=0 c=0 ids=0)
+FIXTURE php OK (v=0 c=0 ids=0)
 FIXTURE postgresql OK (v=0 c=0 ids=0)
 FIXTURE prisma OK (v=0 c=0 ids=0)
 FIXTURE pytest OK (v=0 c=0 ids=0)
@@ -77,4 +78,4 @@ FIXTURE vite OK (v=0 c=0 ids=0)
 FIXTURE vue OK (v=0 c=0 ids=0)
 FIXTURE webpack OK (v=0 c=0 ids=0)
 FIXTURE xxl-job OK (v=0 c=0 ids=0)
-FIXTURES_TOTAL 79 FAILS 0
+FIXTURES_TOTAL 80 FAILS 0

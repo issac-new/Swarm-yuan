@@ -1,5 +1,5 @@
 <!-- 由 scripts/gen-framework-index.sh 生成（WP-P1 数据化外迁），手改会被覆盖 -->
-# 框架信号索引（79 个框架）
+# 框架信号索引（80 个框架）
 
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
@@ -239,6 +239,11 @@
 | paimon | 配置项 | `merge-engine` / `changelog-producer` / `bucket` / `snapshot.time-retained` / `scan.mode` | 高 |
 | paimon | 代码/SQL | `CREATE TABLE ... WITH ('connector'='paimon')` / `MERGE INTO`（paimon spark）/ `sys.compact` 过程调用 | 高 |
 | paimon | CDC | flink-cdc YAML `sink: connector: paimon` / `PaimonPipeline` | 高 |
+| php | 依赖 | composer.json require 含 `laravel/framework` / `symfony/http-foundation` / `phpunit/phpunit` / `guzzlehttp/guzzle` / `monolog/monolog` | 高 |
+| php | 文件 | `composer.json` / `composer.lock` / `artisan` / `**/*.php` / `**/*.blade.php` | 高 |
+| php | 注解/属性 | `#[Route(` / `->name(` / `->middleware(` / `#[Entity]` | 中 |
+| php | 配置 | `.env.example` / `config/*.php` / `phpunit.xml` / composer.json `autoload.psr-4` | 中 |
+| php | 脚本调用 | `composer install` / `composer update` / `php artisan` / `vendor/bin/phpunit` | 中 |
 | postgresql | 依赖 | `org.postgresql:postgresql` / `github.com/lib/pq` / `pg`(npm) / `psycopg2` / `asyncpg` | 高 |
 | postgresql | 文件 | `**/postgresql.conf` / `**/pg_hba.conf` / DDL 内含 `GENERATED ... AS IDENTITY` / `PARTITION BY` | 高 |
 | postgresql | 配置 | `jdbc:postgresql://` / `postgres://` / `postgresql://` 数据源 URL | 高 |

@@ -28,7 +28,7 @@ if [[ ! -d "$PROJ" ]]; then
   exit 1
 fi
 
-# 79 个已知框架 ID（来自 assets/framework-gates/*.sh 文件名；与 facts.conf FACT_FRAMEWORKS=79 对齐）
+# 80 个已知框架 ID（来自 assets/framework-gates/*.sh 文件名；与 facts.conf FACT_FRAMEWORKS=80 对齐）
 KNOWN_FWS=""
 for f in "$BASE"/assets/framework-gates/*.sh; do
   [[ -f "$f" ]] || continue
@@ -40,7 +40,7 @@ done
 # 用 framework-gates 头部的 # ruleset: 行 + 文件名匹配
 _tmpfile="$(mktemp /tmp/dfw.XXXXXX)"
 
-# 简化的框架→依赖信号映射（覆盖 79 框架的主要识别模式；R39-D1b 起 cargo/dockerfile 走 file_exists 自动探测，kubernetes/flutter 等仍须手配，见下方注释）
+# 简化的框架→依赖信号映射（覆盖 80 框架的主要识别模式；R39-D1b 起 cargo/dockerfile 走 file_exists 自动探测，kubernetes/flutter 等仍须手配，见下方注释）
 # 按依赖文件类型组织
 cat > "$_tmpfile" <<'SIGNALS'
 # format: framework_id|pattern|file_type
@@ -189,6 +189,14 @@ harmonyos|*.ets|file_glob
 c-cpp|CMakeLists.txt|file_exists
 android|app/src/main/AndroidManifest.xml|file_exists
 ios-swiftui|project.pbxproj|file_glob
+# R62（2026-09-25 第九棒换栈演练补缺）：PHP+composer 生态此前 79 规则集零覆盖、探测零信号——
+# composer.json 是 PHP 工程清单（file_exists 高置信），composer.lock/artisan 为补充信号，
+# *.php 文件存在型兜底（无 composer 的 legacy PHP 项目）。composer.json 依赖字符串匹配
+# （laravel/framework 等）留待子规则集按需增行，本行级只定 php 生态激活。
+php|composer.json|file_exists
+php|composer.lock|file_exists
+php|artisan|file_exists
+php|*.php|file_glob
 # doris：无干净机械信号（Doris 客户端依赖形态杂：flink-connector/jdbc-catalog 均非项目级强信号）——保持手动配置 ACTIVE_FRAMEWORKS=("doris")
 # rag-pipeline：RAG 模式规则集非依赖可探测（langchain 等组件有自己的 id）——设计上手动激活
 # WP-V：react-native（移动端跨平台 JS/TS）——package.json dependencies 含 react-native 即激活

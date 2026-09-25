@@ -137,8 +137,8 @@ done < "${_GOMODS_T}.abs"
 rm -f "${_GOMODS_T}.abs"
 
 # --- 逐文件提取（bash 循环 + grep；上限保护由 find | head 承担）---
-_src_files=$(find "$PROJ" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.vue' -o -name '*.py' \) \
-  -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/.swarm-yuan/*' \
+_src_files=$(find "$PROJ" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.vue' -o -name '*.py' -o -name '*.php' \) \
+  -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/vendor/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/.swarm-yuan/*' \
   -print 2>/dev/null | LC_ALL=C sort | head -3000)
 
 while IFS= read -r f_abs; do
@@ -220,6 +220,46 @@ while IFS= read -r f_abs; do
         fi
       done < <(grep -nE '^[[:space:]]*(from[[:space:]]+[A-Za-z_][A-Za-z_0-9.]*[[:space:]]+import|import[[:space:]]+[A-Za-z_])' "$f_abs" 2>/dev/null || true)
       ;;
+    *.php)
+      # R62-D2（PHP 生态首执勤实证 r62-drill-phpdotenv）：PHP 提取缺位——require/include 相对
+      # 引用与 use 命名空间是 PHP 的 import 等价物。机械可靠子集两支（诚实留白不猜）：
+      # ① require|require_once|include|include_once 的相对/__DIR__ 路径 → 文件解析；
+      # ② use Foo\Bar\ClassName; → 全项目 ClassName.php 唯一命中才发边（PSR-4 类名=文件名语义；
+      #    重名/不可解不发边）；变量拼接/绝对路径/流包装不解析。
+      while IFS= read -r hit; do
+        [[ -z "$hit" ]] && continue
+        ln="${hit%%:*}"; stmt="${hit#*:}"
+        spec=$(printf '%s' "$stmt" | sed -n "s/.*['\"]\([^'\"]*\.php\)['\"].*/\1/p")
+        [[ -z "$spec" ]] && continue
+        case "$spec" in
+          \$*) continue ;;
+        esac
+        # PHP 语义：`__DIR__ . '/x.php'` 的前导 / 是相对本目录拼接段，先剥再判绝对路径
+        case "$stmt" in *__DIR__*) spec="${spec#/}" ;; esac
+        case "$spec" in
+          /*) continue ;;
+        esac
+        spec="${spec#./}"
+        norm=$(_norm_rel "$f_dir" "$spec")
+        resolved=$(_resolve "$norm") || continue
+        [[ "$resolved" == "$f_rel" ]] && continue
+        _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
+      done < <(grep -nE "(require|require_once|include|include_once)[^;]*[\"'][^\"']*\.php[\"']" "$f_abs" 2>/dev/null || true)
+      while IFS= read -r hit; do
+        [[ -z "$hit" ]] && continue
+        ln="${hit%%:*}"; stmt="${hit#*:}"
+        ns=$(printf '%s' "$stmt" | sed -n 's/^[[:space:]]*use[[:space:]][[:space:]]*\([A-Za-z_][A-Za-z_0-9\\]*\);.*/\1/p')
+        [[ -z "$ns" ]] && continue
+        cls="${ns##*\\}"
+        [[ -z "$cls" ]] && continue
+        cand=$(LC_ALL=C find "$PROJ" -type f -name "${cls}.php" -not -path '*/vendor/*' -not -path '*/.git/*' 2>/dev/null)
+        cnt=$(printf '%s\n' "$cand" | grep -c . || true)
+        [[ "$cnt" == "1" ]] || continue
+        resolved="${cand#"$PROJ"/}"
+        [[ "$resolved" == "$f_rel" || -z "$resolved" ]] && continue
+        _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
+      done < <(grep -nE '^[[:space:]]*use[[:space:]]+[A-Za-z_]' "$f_abs" 2>/dev/null || true)
+      ;;
   esac
 done <<< "$_src_files"
 
@@ -241,7 +281,7 @@ if [[ -s "$_GOMODS_T" ]]; then
         _emit "$f_rel" "$target" "import@${f_rel}:${ln}"
       done < <(grep -nF "\"${_mod}/" "$f_abs" 2>/dev/null || true)
     done < "$_GOMODS_T"
-  done < <(find "$PROJ" -type f -name '*.go' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
+  done < <(find "$PROJ" -type f -name '*.go' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/vendor/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
 fi
 
 # R39-D8（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：Rust use 语句 → 工程内模块路径。
@@ -284,7 +324,7 @@ while IFS= read -r f_abs; do
       break
     done
   done < <(grep -nE '^[[:space:]]*use[[:space:]][[:space:]]*(crate|super|self)::' "$f_abs" 2>/dev/null || true)
-done < <(find "$PROJ" -type f -name '*.rs' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/target/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
+done < <(find "$PROJ" -type f -name '*.rs' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/vendor/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/target/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
 
 # Java 源根发现（R47-D2：前后端同仓形态下 Java 根在 backend/ 等子目录，
 # 硬编码 src/main/java 会让 Java import/mapper-binding/data-mapping 全链边集为零）。
@@ -352,7 +392,7 @@ _short_resolve() { # $1=短类名 → stdout 唯一命中的项目相对 .java �
 }
 
 _xml_files=$(find "$PROJ" -type f -name '*Mapper.xml' \
-  -not -path '*/target/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/.swarm-yuan/*' \
+  -not -path '*/target/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/vendor/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/.swarm-yuan/*' \
   -print 2>/dev/null | LC_ALL=C sort | head -500)
 while IFS= read -r x_abs; do
   [[ -z "$x_abs" ]] && continue
