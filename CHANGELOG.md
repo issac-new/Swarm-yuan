@@ -1,6 +1,22 @@
 # Changelog
 
 
+## [v2.26.0] - 2026-09-25
+
+> R56 全量回归轮：栈轮换第七棒到**纯前端**（React 19 + TypeScript strict + Vite 7 + Vitest 3 + Testing Library，真实工具链 build/test 全绿），真实场景项目（r56-drill-kanban 三列看板，localStorage 持久化，25 用例/4 测试文件）生成目标技能，走完流A 全流程（⓪-⑨ + --inject-frameworks + 零占位符 --strict + mark-active）与流B 典型研发执勤（dueDate 字段变更 TDD 红→绿全链 spec/plan/tasks/拼装合规声明 4/4；状态机六阶段 open→design→build→verify→archive 含 verify 未全勾/verify_result 两处负向拦截；fail-gate-hook spec-first 正反实测 + --report 审计；rules.d 三值 forbid/allow；指纹自成长 --write→--diff 检出 scope→清单单条更新→新基线）。识别并修复 5 处缺陷（D1-D5），全部带变异锁（回退即红实测）。共性根因第七次复现（R28「相邻路径」、R30「只认一种形态」、R33「生态系统性缺位」、R36「同族漏修」、R39「五处缺位」、R44「生态形态穷举」）：本轮 D1/D2/D4/D5 均为「同族漏修」——范式迁移（R23-D5 排除链、R25-D3 剥注释、R33 文件级计数）只落到了同族的个别成员，React/TS colocated 形态首执勤即在漏网成员上炸出。
+
+### Fixed
+- **fail-gate-hook spec-first 整链静默失效**（D5，P0）：WRITABLE_DIRS 提取是同文件三个 conf 解析器中唯一未走 R25-D3「cut 剥注释」范式的——旧式 `sed 's/)$//'` 行尾锚，conf 行带行尾注释（模板自身惯用 `WRITABLE_DIRS=()  # TODO:model` 写法）时剥不掉括号，提取出 `src)  # ...` 垃圾串 → 可写区匹配恒 false → 无 spec 写源码全程放行。修：迁移到「末行生效 + cut 剥注释 + rtrim 后剥括号」范式；变异锁 4 态（注释形态必拦/批准 spec 放行/空数组+注释放行/多元素数组第二目录命中），回退实测态32/35 转红。
+- **前端 UI 组件维把测试文件计为组件**（D1）：DIM_FRONTEND_UI_CMD 数所有 `*.tsx/*.jsx/*.vue/*.svelte`，React colocated 形态下 `*.test.tsx` 与 DIM_TESTFILES 双计数（r56-drill 实测枚举 10 = 7 源 + 3 测试）。修：排除 `*.test.*`/`*.spec.*`/`__tests__/`（与 DIM_TESTFILES 检测面互斥，两处注释互指）；变异锁态21（2 源+2 测试 → 枚举必须 2）。
+- **库导出维行粒度错配假 FAIL**（D2）：DIM_LIB_EXPORT_CMD 用 `grep -rhE` 数 export **行**（一文件多导出即 N 行），而清单行是**文件**粒度——TS/JS 多导出文件是常态（实测枚举 17 行 vs 清单 10 行 → 0.59 FAIL），此前只在无 `^export` 语言上跑过恒 0 从未真实执勤。修：`grep -rl` 文件级计数（对齐头注契约与 DIM_TYPEDEF 教义）+ RM_REF 扩 `§4 §6 §9` 多锚（导出单元横跨组件/接口/数据节）+ 补 `*.tsx/*.jsx` 计入与 `*.test.*` 排除；变异锁态22（6 导出单文件 + .tsx + 测试导出 → 枚举精确 2）。
+- **fan-in 信号被第三方包灌水**（D4）：stability-audit 两处 fan-in grep 缺排除链（R23-D5 纪律只落到维度枚举面，同族漏修）——npm install 后扫进 node_modules，实测 id.ts fan-in 1758（真实边集 32 条）。修：grep 类 `--exclude-dir` 六项对齐 DIM_* 族（node_modules/dist/.git + 跨栈 target/bin/obj）；变异锁态23（100 个 node_modules 引用 → fan-in 必须 0）。
+- **master 基分支仓库保护分支零覆盖**（D3）：PROTECTED_BRANCHES 模板默认仅 `("main")`——git init 默认 master 形态的仓库保护名单为空（R23-D8 已认 BASE_BRANCH 同族缺口）；check_branch 提示语硬编码 main。修：默认 `("main" "master")` 双名（护不存在的名字无害）+ 提示语泛化 master；变异锁两处（gate-fixture violating-on-master 必拦 + 生成物 conf 默认断言）。
+
+### Changed
+- **tests/test-fail-gate-hook.sh** 态 32-35（31→35 断言）：WRITABLE_DIRS 注释形态四态注入。
+- **tests/test-inventory-verify.sh** 态 21-23（20→23 断言）：UI 双计数/库导出粒度/风扇灌水三态注入。
+- **tests/test-upgrade-hygiene.sh** +态7 生成物 conf 保护分支双名断言；**tests/gate-fixtures/branch/violating-on-master/** 新 fixture（master 形态）。
+
 ## [v2.25.2] - 2026-09-25
 
 > R55 扩面收口轮（续 R54）：把 R52 自曝的最后一条机器断言边界关闭——G25 ⑥「随发或声明」从 `*-methodology.md` 扩到**分派表引用的全部档名**。扩面预演即抓出三处生成器侧引用无标注（generation-flow/template-spec/quality-management-standards），补【生成器侧】标注；变异锁测试加态5（抹掉行为档标注必拦），13/13 PASS。

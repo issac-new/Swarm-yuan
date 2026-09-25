@@ -295,7 +295,10 @@ if [[ "$EVENT" == "PreToolUse" ]]; then
       if [[ "$_spec_req" == "1" ]]; then
         _in_src=0
         _wd=""
-        [[ -f "$CONF" ]] && _wd=$(grep -m1 '^WRITABLE_DIRS=' "$CONF" 2>/dev/null | sed 's/^WRITABLE_DIRS=(//;s/)$//;s/"//g' || printf '')
+        # R56-D5：WRITABLE_DIRS 迁移到 #20b/R25-D3 注释安全范式（末行生效 + cut 剥注释 + rtrim 后剥括号）。
+        # 旧式 sed 's/)$//' 行尾锚——conf 行带行尾注释（模板惯例 WRITABLE_DIRS=()  # TODO:model）时
+        # 剥不掉括号，提取出 `src)  # ...` 垃圾串 → 可写区匹配恒 false → spec-first 整链静默失效。
+        [[ -f "$CONF" ]] && _wd=$(grep '^WRITABLE_DIRS=' "$CONF" 2>/dev/null | tail -1 | cut -d'#' -f1 | sed -e 's/^WRITABLE_DIRS=(//' -e 's/[[:space:]]*)[[:space:]]*$//' -e 's/"//g' || printf '')
         _norm_p=$(printf '%s' "$FILE_PATH" | tr '\\' '/')
         for _d in $_wd; do
           case "$_norm_p" in *"/${_d}/"*|"${PROJECT_DIR:-}/${_d}/"*) _in_src=1; break;; esac

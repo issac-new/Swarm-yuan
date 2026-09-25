@@ -302,4 +302,39 @@ echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态31 注释 BASH 白
 out=$(echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"npm test"},"cwd":"'$TMP'/p31"}' | bash "$HOOK" 2>&1)
 [[ -z "$out" ]] && ok "态31 注释 BASH 白名单 npm test 仍放行" || bad "态31 误拦测试: $out"
 
+# 态 32-35：WRITABLE_DIRS 行尾注释形态（R56-D5 变异锁，2026-09-25 r56-drill-kanban 实锤）——
+# conf 模板自身惯用 `WRITABLE_DIRS=(...)  # 注释` 写法，旧式 sed 's/)$//' 行尾锚剥不掉注释 →
+# 提取垃圾串 → 可写区匹配恒 false → spec-first 整链静默失效（态 24-29 无注释形态测不出）。
+setup_wd_comment_proj() {
+  mkdir -p "$1/scripts" "$1/.swarm-yuan" "$1/src" "$1/app" "$1/docs/specs"
+  cat > "$1/SKILL.md" <<EOF
+---
+status: active
+---
+EOF
+  cat > "$1/scripts/precheck.conf" <<EOF
+PROJECT_DIR="$1"
+$2
+SPEC_REQUIRED="1"
+GATE_ENFORCE_DENY=""
+EOF
+  cp "$HOOK" "$1/scripts/fail-gate-hook.sh"
+}
+# 态32：WRITABLE_DIRS 带行尾注释 + 无 spec 写 src/ → 必须 deny（D5 回归锁）
+setup_wd_comment_proj "$TMP/p32" 'WRITABLE_DIRS=("src")  # MEASURE: characteristic=维护性 function=目录存在性 threshold=非空'
+out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/p32/src/foo.py"},"cwd":"'$TMP'/p32"}' | bash "$TMP/p32/scripts/fail-gate-hook.sh" 2>&1)
+echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态32 WRITABLE_DIRS 行尾注释仍拦（D5 锁）" || bad "态32 注释形态 spec-first 静默失效: $out"
+# 态33：同 conf 注释形态 + 已批准 spec → 放行（注释形态不误报）
+printf '# 需求 X\n## 决策记录\n- 方案 A\n' > "$TMP/p32/docs/specs/001.md"
+out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/p32/src/foo.py"},"cwd":"'$TMP'/p32"}' | bash "$TMP/p32/scripts/fail-gate-hook.sh" 2>&1)
+[[ -z "$out" ]] && ok "态33 注释形态批准 spec 放行" || bad "态33 误拦: $out"
+# 态34：WRITABLE_DIRS 空数组带注释（模板未配形态）→ 放行（不阻碍诊断语义保留）
+setup_wd_comment_proj "$TMP/p34" 'WRITABLE_DIRS=()  # TODO:model'
+out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/p34/src/foo.py"},"cwd":"'$TMP'/p34"}' | bash "$TMP/p34/scripts/fail-gate-hook.sh" 2>&1)
+[[ -z "$out" ]] && ok "态34 空数组+注释放行（未配语义保留）" || bad "态34 未配误拦: $out"
+# 态35：多元素数组带注释——第二目录 app/ 也必须命中（剥引号+拆词不被注释污染）
+setup_wd_comment_proj "$TMP/p35" 'WRITABLE_DIRS=("src" "app")  # MEASURE: 双目录'
+out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/p35/app/foo.py"},"cwd":"'$TMP'/p35"}' | bash "$TMP/p35/scripts/fail-gate-hook.sh" 2>&1)
+echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态35 多元素数组+注释第二目录命中" || bad "态35 app/ 未命中: $out"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-fail-gate-hook"; exit 0; } || { echo "FAIL test-fail-gate-hook" >&2; exit 1; }

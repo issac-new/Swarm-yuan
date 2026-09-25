@@ -28,8 +28,8 @@ check_branch() {
   done
   if [[ "$branch" =~ $BRANCH_REGEX ]]; then
     pass "分支规范: ${branch}"
-  elif [[ "$branch" == "main" ]]; then
-    fail "当前在 main，应切到 feature 分支开发"
+  elif [[ "$branch" == "main" || "$branch" == "master" ]]; then
+    fail "当前在 ${branch}，应切到 feature 分支开发"
   else
     fail "分支名不规范: $branch (应为 $BRANCH_REGEX)"
   fi
