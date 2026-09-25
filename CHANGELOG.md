@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [v2.29.0] - 2026-09-26
+
+> R61 补缺轮（"直至全部完成"清单直至全部完成"清单①②③）：R60 留档待办清账——A8 迁移增量判别真接线（提示≠实跑：原 warn 只提示"跑 makemigrations --check"却从不实跑，现 manage.py 形态实跑 --check --dry-run 判增量、可复用 app 形态诚实降级披露）、A6 DIM 枚举器 Django 形态补全（path()/re_path()/as_view() 入口 + models.py ORM 面）、A9/A11 悬置销项（S1 README 死键/S2 双型模板上下文——裁决回填转正，项目级语义正式收口）。变异锁 9/9→11/11（L9/L10）。
+
+### Fixed
+- **A8 fw_django_migration_drift 提示≠实跑**：有迁移时实跑 `makemigrations --check --dry-run`（rc=1 报增量漂移、rc 其他诚实降级"未覆盖"）；可复用 app（无 manage.py）维持计数启发式 + 显式披露"增量判别未覆盖"。
+- **A6 枚举器 Django 盲区**：DIM_BACKEND_CONTROLLER 补 `path(/re_path(/as_view(` 入口形态；DIM_ORM_SCHEMA 补 `models.py` 面。
+- **A9/A11 悬置销项**：S1（README 死键 TODO_ALLOWED_FILE_ATTACHMENTS）裁决"以代码为准、不改上游文档、记冲突表"；S2（双型模板上下文）裁决"接受为上游设计现状、记已知语义边界"——悬置清单销项闭环（转正销项记录入 notes/cognition.md）。
+
+### Changed
+- tests/test-r60-django-drill-locks.sh +L9/L10（11 断言）；全量 sweep 零失败；self-check 全绿。
+
 ## [v2.28.0] - 2026-09-25
 
 > R60 Django 换栈演练轮：栈轮换第八棒到 **Python/Django**（真实开源 django-todo：Django 6.1.1 + pytest 43/43 实测，venv 全链真实可跑）——流A 生成 + mark-active 全流程 + 审计产出 **16 类字符串耦合机械全盲面 + 11 条生成器缺陷（A1-A11）**；七条机器可修全修（A1-A7/A10）+ 十六类耦合面产品化进 frameworks/django.md 清单，9 断言变异锁。核心发现：字符串耦合防线是 Java/MyBatis 中心的——Django 生态的模板字段/URL 名/POST 参数/admin 注册/CSV 列头/迁移双源等全在机械提取面之外。
