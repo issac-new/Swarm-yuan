@@ -62,7 +62,10 @@ elif [[ -f "$PROJ/go.mod" ]]; then
   _lang="go"; _pm="go"; _build="go build ./..."; _test="go test ./..."; _build_confirmed=1; _test_confirmed=1
 elif [[ -f "$PROJ/pyproject.toml" ]] || [[ -f "$PROJ/requirements.txt" ]]; then
   _lang="python"; _pm="pip"
-  if [[ -f "$PROJ/uv.lock" ]]; then _pm="uv"; _build="uv run build"; _test="uv run pytest"; _build_confirmed=1; _test_confirmed=1
+  # R60-A2：uv 分支原 `uv run build` 双缺陷——build 脚本未必存在（实跑 Failed to spawn: build），
+  # 且 uv run 默认按 uv.lock 改写 venv（实测 Django 6.1.1 被静默降 6.1，违反版本锁定铁律）。
+  # 改非改写口径：build=stdlib compileall（零依赖零改写）；test 加 --no-sync 禁环境改写。
+  if [[ -f "$PROJ/uv.lock" ]]; then _pm="uv"; _build="python3 -m compileall -q ."; _test="uv run --no-sync python3 -m pytest"; _build_confirmed=1; _test_confirmed=1
   elif [[ -f "$PROJ/poetry.lock" ]]; then _pm="poetry"; _build="poetry build"; _test="poetry run pytest"; _build_confirmed=1; _test_confirmed=1
   else
     # R25-PF1（2026-09-12 Python 执勤实证 notes-api）：裸锁文件项目此前默认 _test=pytest /

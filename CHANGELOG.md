@@ -1,6 +1,23 @@
 # Changelog
 
 
+## [v2.28.0] - 2026-09-25
+
+> R60 Django 换栈演练轮：栈轮换第八棒到 **Python/Django**（真实开源 django-todo：Django 6.1.1 + pytest 43/43 实测，venv 全链真实可跑）——流A 生成 + mark-active 全流程 + 审计产出 **16 类字符串耦合机械全盲面 + 11 条生成器缺陷（A1-A11）**；七条机器可修全修（A1-A7/A10）+ 十六类耦合面产品化进 frameworks/django.md 清单，9 断言变异锁。核心发现：字符串耦合防线是 Java/MyBatis 中心的——Django 生态的模板字段/URL 名/POST 参数/admin 注册/CSV 列头/迁移双源等全在机械提取面之外。
+
+### Fixed
+- **A1 同族漏修再现**：relations-extract 排除链只护了部分成员——Java 发现链有 .venv 排除、Python import 链没有（实测 1962 边 96% 是 .venv 里 _pytest 内部噪声）。全链清剿补 .venv/venv/__pycache__/.tox。
+- **A7 枚举器双缺陷**：DIM 注册表排除链漏 .venv 族（DIM_TESTFILES 24 命中 18 个在 venv）+ controller 正则无词尾边界（`router.allow` 命中 `router.all` 分支，45/47 假阳性）——mark-active 报的 FAIL 全是假象；补排除链 + `([^a-zA-Z0-9_]|$)` 边界。
+- **A3 分层门禁 Python 空转**：check_layer/领域污染的 import 提取只认引号形态（`import ['"]x`），Python 无引号 import 全漏——引号改可选。
+- **A2 嗅探命令违反版本锁定**：uv 分支默认 `uv run build` 双缺陷——build 脚本未必存在（实跑 Failed to spawn）+ uv run 按 uv.lock 改写 venv（实测 Django 6.1.1 被静默降 6.1）；改非改写口径（compileall + `uv run --no-sync`）。
+- **A4/A5 django 门禁两修**：secret_key 查补测试夹具豁免（test_settings 硬编码是测试标配，对齐 debug 查口径）；DEBUG 查补元组形态 `DEBUG = (True,)`。
+- **A10 稳定性同名测试匹配补 Python 惯例族**：test_<base> 前缀/测试目录路径/<base>_test——原式只认名字互含，tests/test_utils.py 靠目录承载测试语义时假告警。
+
+### Added
+- **frameworks/django.md §字符串耦合面清单**：十六类机械盲区表格化（模板名/URL 路由名/模板字段/POST 参数/context 键/手写 input/CSV 列头/工厂字段/admin 注册/settings 键/邮件线程 ID/迁移双源/静态路径/related_name/upload_to/unique_together），spec 四查① 与探查 Python 节补指针——按栈建立等价清单自此有范式。
+- **tests/test-r60-django-drill-locks.sh（9 断言，CI 接线）**：L1 行为锁（.venv 噪音边排除）+ L2-L8 源码/文本锁。
+- 演练证据：kb60-django-todo 目标技能（47 构件/20 接口/8 页面三角/21 行字段映射台账，悬置清单 6 项）；A8（makemigrations --check 未接线）与 A9/A11（项目级语义）留档待办。
+
 ## [v2.27.1] - 2026-09-25
 
 > R59 契约面同族清剿轮（R58 D1 修复的"修一处必 grep 同族"收尾）：全仓清剿"字段变更/影响面/回归"家族 15 个候选文件，锁定 6 处同族漏网全补契约面语义——要害是 **assets/spec-template.md（随发的 spec 模板本体）字段变更块还是旧三查**（AI 填 spec 时看的载体比 guide 层更要害），"三查齐后"→"四查齐后"。D9 同族（形态挑食过滤器）复查零残留。变异锁 +7（L8 清剿面断言，15/15）。

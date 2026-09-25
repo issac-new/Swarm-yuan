@@ -124,7 +124,7 @@ _emit() { # $1=from $2=to $3=evidence → 追加到 TMPF
 # 发现让 GO_MODULE 恒空、Go 工程内边全漏——与 R47-D2 Java 源根同族「解析基准假设 PROJ 根」。
 # 多 go.mod 各自带 module 名与基准目录（go.mod 所在目录），确定性排序逐个匹配）
 _GOMODS_T=$(mktemp /tmp/relx.gomods.XXXXXX)
-find "$PROJ" \( -type d \( -name node_modules -o -name target -o -name .git -o -name dist -o -name vendor -o -name .swarm-yuan \) -prune \) -o -type f -name go.mod -print 2>/dev/null \
+find "$PROJ" \( -type d \( -name node_modules -o -name target -o -name .git -o -name dist -o -name .venv -o -name venv -o -name __pycache__ -o -name .tox -o -name vendor -o -name .swarm-yuan \) -prune \) -o -type f -name go.mod -print 2>/dev/null \
   | LC_ALL=C sort > "${_GOMODS_T}.abs"
 while IFS= read -r _gm; do
   [[ -z "$_gm" ]] && continue
@@ -138,7 +138,7 @@ rm -f "${_GOMODS_T}.abs"
 
 # --- 逐文件提取（bash 循环 + grep；上限保护由 find | head 承担）---
 _src_files=$(find "$PROJ" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.vue' -o -name '*.py' \) \
-  -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/.swarm-yuan/*' \
+  -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/.swarm-yuan/*' \
   -print 2>/dev/null | LC_ALL=C sort | head -3000)
 
 while IFS= read -r f_abs; do
@@ -241,7 +241,7 @@ if [[ -s "$_GOMODS_T" ]]; then
         _emit "$f_rel" "$target" "import@${f_rel}:${ln}"
       done < <(grep -nF "\"${_mod}/" "$f_abs" 2>/dev/null || true)
     done < "$_GOMODS_T"
-  done < <(find "$PROJ" -type f -name '*.go' -not -path '*/.git/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
+  done < <(find "$PROJ" -type f -name '*.go' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
 fi
 
 # R39-D8（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：Rust use 语句 → 工程内模块路径。
@@ -284,14 +284,14 @@ while IFS= read -r f_abs; do
       break
     done
   done < <(grep -nE '^[[:space:]]*use[[:space:]][[:space:]]*(crate|super|self)::' "$f_abs" 2>/dev/null || true)
-done < <(find "$PROJ" -type f -name '*.rs' -not -path '*/.git/*' -not -path '*/target/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
+done < <(find "$PROJ" -type f -name '*.rs' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/target/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
 
 # Java 源根发现（R47-D2：前后端同仓形态下 Java 根在 backend/ 等子目录，
 # 硬编码 src/main/java 会让 Java import/mapper-binding/data-mapping 全链边集为零）。
 # 发现规则：*/src/{main,test}/java 目录，剪掉 node_modules/target/.git/dist/venv/.venv/build 噪音，
 # 相对路径确定性排序——首个命中即用（FQCN 已全限定，无猜测成分）。
 _JAVA_ROOTS_T=$(mktemp /tmp/relx.jroots.XXXXXX)
-find "$PROJ" \( -type d \( -name node_modules -o -name target -o -name .git -o -name dist -o -name venv -o -name .venv -o -name build -o -name .swarm-yuan \) -prune \) -o -type d -path '*/src/*/java' -print 2>/dev/null \
+find "$PROJ" \( -type d \( -name node_modules -o -name target -o -name .git -o -name dist -o -name .venv -o -name venv -o -name __pycache__ -o -name .tox -o -name venv -o -name .venv -o -name build -o -name .swarm-yuan \) -prune \) -o -type d -path '*/src/*/java' -print 2>/dev/null \
   | LC_ALL=C sort | sed "s|^$PROJ/||" > "$_JAVA_ROOTS_T"
 
 # Java 包路径映射 import（任一 Java 源根下 <pkg>/<Class>.java 存在即边）
@@ -352,7 +352,7 @@ _short_resolve() { # $1=短类名 → stdout 唯一命中的项目相对 .java �
 }
 
 _xml_files=$(find "$PROJ" -type f -name '*Mapper.xml' \
-  -not -path '*/target/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/.swarm-yuan/*' \
+  -not -path '*/target/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/.swarm-yuan/*' \
   -print 2>/dev/null | LC_ALL=C sort | head -500)
 while IFS= read -r x_abs; do
   [[ -z "$x_abs" ]] && continue

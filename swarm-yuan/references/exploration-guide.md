@@ -893,6 +893,8 @@ grep -nH "^export " <库入口文件>
 - **页面知识三角**（R49 知识生命周期吸收，进 reference-manual 前端构件表）：每个路由级页面枚举三答——①操作：页面有哪些按钮/入口/弹窗；②调用：每个操作调哪些 API 及**真实入参**（在调用点反推，前端常只透传一个参数对象，光看 API 定义抽不出字段）；③权限：什么角色/条件可见可点、无权限时如何降级提示。微前端项目另须单独理清主子应用拆分与通信机制（ mounting 方式/通信通道/路由归属），这是 AI 最难自己拼出的部分。
 
 ### Python
+
+> **R60-Django 执勤补**：Python/Django 生态的字符串耦合面（模板字段/URL 名/POST 参数/admin 注册/CSV 列头/工厂字段/settings 键/迁移双源等十六类，机械提取只覆盖 import 边）——探查必按 `references/frameworks/django.md` §字符串耦合面清单逐面枚举，字段变更走 spec 四查。
 - pyproject.toml / setup.py / requirements.txt: 依赖、版本、entry points
 - 构建：poetry / pip / setup.py / Makefile
 - 目录：src/ pkg/ tests/ scripts/

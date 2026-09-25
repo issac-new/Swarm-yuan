@@ -390,7 +390,7 @@
 | （列出本次变更的文件/模块） | （grep 反查消费方） | （Breaking/Compatible/Internal） | （须回归的用例） |
 
 > **改实体字段/数据模型时（v2.14.3 补）**：消费方反查别只靠 grep 源码——**声明式映射（mapper XML resultMap/resultType、batch reader SQL 列、JPQL @Query）是字符串耦合，grep 源码查不全**。
-> ① 查边集：`bash scripts/relations-query.sh <skill> <proj> --field <字段名>`（field-mapping 边反查引用该字段的 resultMap 行）/`--entity <实体类名>`（data-mapping/mapper-binding 边反查引用该实体的 XML）；边集缺失先跑 `scripts/relations-extract.sh` 重建（v2.14.2 起随发）。
+> ① 查边集 + **该栈等价耦合面清单**（`references/frameworks/<id>.md`——Django 等生态的模板字段/URL 名/admin 注册/CSV 列头等字符串耦合不在机械边里，R60）：`bash scripts/relations-query.sh <skill> <proj> --field <字段名>`（field-mapping 边反查引用该字段的 resultMap 行）/`--entity <实体类名>`（data-mapping/mapper-binding 边反查引用该实体的 XML）；边集缺失先跑 `scripts/relations-extract.sh` 重建（v2.14.2 起随发）。
 > ② 查 §8 字段级映射台账（实体字段↔表列↔resultMap property↔SQL 列↔reader 列）。
 > ③ 查 §5 调度任务表（读写该数据资产的 job——reader SQL 内嵌列名不在 import 边里）。
 > ④ 查**对外契约面**（R58-R59 契约面清剿）：字段若暴露于 API JSON（响应体/请求体 DTO）——反查前端调用点、契约测试与 fixtures/mock 同名字段（对应回归②接口命中路）。

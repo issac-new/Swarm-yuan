@@ -127,6 +127,8 @@ ${csrf_bad}"
   # ====================================================================
   local sk_bad=""
   for f in "${srcarr[@]}"; do
+    # R60-A4：测试夹具豁免（test_settings.py 硬编码 SECRET_KEY 是测试标配，对齐 fw_django_debug 豁免口径）
+    case "$f" in *test*.py|*/tests/*|*/test/*) continue ;; esac
     local ln
     ln=$(_fw_strip_comments_hash "$f" | grep -nE 'SECRET_KEY[[:space:]]*=[[:space:]]*["'"'"']' 2>/dev/null \
        | grep -vE 'os\.environ|getenv|env\(|config\(' || true)
@@ -143,7 +145,7 @@ ${csrf_bad}"
     case "$(basename "$f")" in
       *dev*.py|*local*.py|*test*.py) continue ;;
     esac
-    if _fw_strip_comments_hash "$f" | grep -qE '^DEBUG[[:space:]]*=[[:space:]]*True'; then
+    if _fw_strip_comments_hash "$f" | grep -qE '^DEBUG[[:space:]]*=[[:space:]]*\(?[[:space:]]*True'; then
       dbg_bad="${dbg_bad}${f}: DEBUG = True 硬编码
 "
     fi
