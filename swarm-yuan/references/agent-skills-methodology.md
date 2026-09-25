@@ -151,3 +151,10 @@ Bug report arrives
 - 仓库：addyosmani/agent-skills（MIT，HEAD df1edb2，2026-08-14；24 技能 7208 行 SKILL.md，最大 499 行）
 - 一手材料（2026-08-16 浅克隆实测）：`docs/skill-anatomy.md`（模板纪律）/ `skills/spec-driven-development` 等 24 个 SKILL.md（Rationalizations 22/24 覆盖）/ `commands/build.toml`（三类硬停）/ `agents/`（Composition 三件套）/ `docs/agents.md`（三层架构与反模式）
 - 关键数字复核：153 条借口条目（22 技能平均 7 条）；description 上限 1024 字符；技能行数 178-499
+
+## 骨架级模式两条（R57 吸收，2026-09-25）
+
+> 来源 openspec `f2812f6` / graphify `3454890`；证据锚点 `docs/research/R57-runtime-refresh.md`。
+
+- **破坏性操作「atomic rename 认领」后再读、比对确认才删**：竞态写入要么被比对还原、要么成新文件永不被删。
+- **导出/重生成必须幂等**：同内容不写盘，孤儿产物末尾统一清扫→避免 diff 噪音淹没真实改动。
