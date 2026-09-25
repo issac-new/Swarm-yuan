@@ -87,5 +87,19 @@ else
   bad "L8 探查/spec 指针丢失（R60 回归）"
 fi
 
+# --- L9 A6 枚举器 Django 形态在位（R61 补缺）---
+if grep -qF "path\\\\(|re_path\\\\(" assets/inventory-dimensions.conf && grep -q "models.py" assets/inventory-dimensions.conf; then
+  ok "L9 A6 DIM 枚举器 Django 形态在位"
+else
+  bad "L9 inventory-dimensions 缺 Django 形态（A6 回归）"
+fi
+
+# --- L10 A8 makemigrations --check 真接线（R61 补缺：提示≠实跑）---
+if grep -q "makemigrations --check --dry-run" assets/framework-gates/django.sh && grep -q "R60-A8 接线" assets/framework-gates/django.sh; then
+  ok "L10 A8 迁移增量判别已实跑接线"
+else
+  bad "L10 django.sh 退回只提示不实跑（A8 回归）"
+fi
+
 echo "PASS test-r60-django-drill-locks (${pass} ok, ${fail} fail)"
 [[ $fail -eq 0 ]]

@@ -258,7 +258,23 @@ ${csrf_bad}"
   elif [[ ${#migarr[@]} -eq 0 ]]; then
     warn "fw_django_migration_drift: 检出 ${model_cnt} 个 Model 文件但 0 迁移文件（漏 makemigrations：表结构与代码漂移，运行期 OperationalError；跑 python manage.py makemigrations --check 验证）"
   else
-    pass "fw_django_migration_drift: ${model_cnt} Model 文件配 ${#migarr[@]} 迁移文件（改模型后跑 python manage.py makemigrations --check 复核增量）"
+    # R60-A8 接线：增量漂移真判——实跑 makemigrations --check --dry-run（不产文件）。
+    # manage.py 形态可实跑；可复用 app 形态（无 manage.py）依赖 DJANGO_SETTINGS_MODULE，
+    # 不实跑仅诚实提示（fail-open，同框架门禁降级口径）。
+    local _mig_root="${PROJECT_DIR:-.}" _mig_out=""
+    if [[ -f "$_mig_root/manage.py" ]] && command -v python3 >/dev/null 2>&1; then
+      _mig_out=$(cd "$_mig_root" && python3 manage.py makemigrations --check --dry-run 2>&1)
+      local _mig_rc=$?
+      if [[ $_mig_rc -eq 0 ]]; then
+        pass "fw_django_migration_drift: ${model_cnt} Model / ${#migarr[@]} 迁移，makemigrations --check 实跑无增量漂移"
+      elif [[ $_mig_rc -eq 1 ]]; then
+        warn "fw_django_migration_drift: makemigrations --check 实跑报模型↔迁移增量漂移（模型改了没跑迁移——先跑 makemigrations 再提交）：$(printf '%s' "$_mig_out" | tail -2 | tr '\n' ' ')"
+      else
+        warn "fw_django_migration_drift: makemigrations --check 未能实跑（rc=$_mig_rc，环境/设置不可用）——${model_cnt} Model / ${#migarr[@]} 迁移计数通过，增量判别未覆盖"
+      fi
+    else
+      pass "fw_django_migration_drift: ${model_cnt} Model 文件配 ${#migarr[@]} 迁移文件（无可实跑 manage.py——可复用 app 形态，增量判别未覆盖：改模型后手工跑 makemigrations --check）"
+    fi
   fi
 
 ### P1-4 AI 自查段（仅注释，不改动函数体）
