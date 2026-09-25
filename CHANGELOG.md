@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [v2.27.1] - 2026-09-25
+
+> R59 契约面同族清剿轮（R58 D1 修复的"修一处必 grep 同族"收尾）：全仓清剿"字段变更/影响面/回归"家族 15 个候选文件，锁定 6 处同族漏网全补契约面语义——要害是 **assets/spec-template.md（随发的 spec 模板本体）字段变更块还是旧三查**（AI 填 spec 时看的载体比 guide 层更要害），"三查齐后"→"四查齐后"。D9 同族（形态挑食过滤器）复查零残留。变异锁 +7（L8 清剿面断言，15/15）。
+
+### Fixed（同族清剿 6 处）
+- **assets/spec-template.md §20**：字段变更块三查→四查（+④对外契约面：API JSON 暴露字段→前端调用点/契约测试/fixtures）；"三查齐后才可声明影响面"→"四查齐后"。
+- **references/frameworks/spring-data-jpa.md**：JPQL 字段级引用规律补契约面（JPA 栈同族——字段暴露 API JSON 同查）。
+- **SKILL.md 弧线表**：数据映射链行召回清单补"契约面"（改字段召回 XML/job/迁移/**契约面**）。
+- **assets/framework-gates/mybatis.sh**：fw_mybatis_field_sync 提示语补范围诚实声明（JSON 契约面不在本门禁面——见 spec 四查）。
+- **scripts/relations-extract.sh**：头注补非覆盖披露（HTTP/JSON 契约面不在机械提取面——语义边 route/call 补，反查见 spec 四查④）。
+- **scripts/relations-query.sh**：field 反查注释补契约面指针。
+
+### Changed
+- tests/test-r58-knowledge-drill-locks.sh +L8 清剿面锁（6 文件契约面在位 + spec 四查语义）→ 15 断言；全量 sweep 零失败；预算在 R58 登记限内（无需新登记）。
+
 ## [v2.27.0] - 2026-09-25
 
 > R58 知识库真机演练轮：R49 吸收的四段知识协议首次真机验证（六步读法/回归分级/过期三态/悬置清单/页面三角在 r47-drill-vue-spring 真实前后端同仓项目实弹）——**8 处生成器/协议缺陷全修**（D1-D6/D8-D9），其中 D9（框架空转检查器双挑食：声明变量名非 glob 族不认 + 标量填值不认——vite 永远过不了 mark-active）由 mark-active 卡壳逼出。修复全部带变异锁（test-r58-knowledge-drill-locks 8 断言）。

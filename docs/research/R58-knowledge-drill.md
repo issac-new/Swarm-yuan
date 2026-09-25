@@ -39,3 +39,8 @@ README 双处失真（缺 PATCH 端点/测试数 23 vs 实测 44）、schema 双
 - [x] test-r58-knowledge-drill-locks 8/8 PASS（含 L7 双行为锁）
 - [x] 全量 sweep 37 测试零失败；self-check 全绿（版本三面 v2.27.0、双预算登记后达标）
 - [x] 种子对照实证（漏改 XML 6 红 ⊆ 必跑集）；D3 行为实证
+
+
+## 五、R59 同族清剿收尾（2026-09-25，v2.27.1）
+
+D1 修复的"修一处必 grep 同族"全仓执行：家族 15 文件清剿出 6 处同族漏网（spec-template 模板本体/spring-data-jpa 规律/SKILL.md 弧线表/mybatis 门禁提示/relations-extract 头注/relations-query 注释），全部补契约面语义；D9 形态挑食同族复查零残留；L8 清剿面锁 7 断言入变异锁（15/15 PASS）。教训：**修复落点的清单要分层清剿——guide 层（template-spec）与 artifact 层（spec-template 模板本体）是两处，模板本体漏了 guide 修了等于没修**。

@@ -61,5 +61,13 @@ else
   ok "L7b 未声明变量被拦（行为锁）"
 fi
 
+# --- L8 契约面同族清剿面锁（R59）：清剿到的家族成员必须带契约面语义（修一处必 grep 同族）---
+for _f in assets/spec-template.md references/frameworks/spring-data-jpa.md SKILL.md assets/framework-gates/mybatis.sh scripts/relations-extract.sh scripts/relations-query.sh; do
+  grep -q '契约面' "$_f" \
+    && ok "L8 清剿面在位: ${_f}" || bad "L8 清剿面丢失: ${_f}（R59 回归）"
+done
+grep -q '四查齐后才可声明影响面' assets/spec-template.md && grep -q '④ 查\*\*对外契约面\*\*' assets/spec-template.md \
+  && ok "L8 四查语义在位（spec 模板本体）" || bad "L8 spec-template 四查被改回三查（R59 回归）"
+
 echo "PASS test-r58-knowledge-drill-locks (${pass} ok, ${fail} fail)"
 [[ $fail -eq 0 ]]

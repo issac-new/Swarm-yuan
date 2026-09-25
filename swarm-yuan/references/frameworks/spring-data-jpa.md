@@ -218,7 +218,7 @@ expect: always
 
 ### 规律：@Query JPQL 实体名/字段名是字符串引用，改实体必同步（横向清剿轮）
 - **适用版本**: Spring Data JPA 3.x/4.x 全版本
-- **规律**: `@Query("select o from Order o where o.status = ?1")` 中的实体名（Order）与字段名（o.status）是对 @Entity 类与属性的字符串引用——JPQL 在容器启动创建 repository proxy 时才解析，编译期完全不校验。实体重命名后 @Query 内旧名漂移，IDE 重构也不跟进注解字符串。字段级引用（o.status）须入 §8 字段级映射台账。
+- **规律**: `@Query("select o from Order o where o.status = ?1")` 中的实体名（Order）与字段名（o.status）是对 @Entity 类与属性的字符串引用——JPQL 在容器启动创建 repository proxy 时才解析，编译期完全不校验。实体重命名后 @Query 内旧名漂移，IDE 重构也不跟进注解字符串。字段级引用（o.status）须入 §8 字段级映射台账；字段暴露于 API JSON 时同查契约面（前端调用点/契约测试/fixtures，spec 四查④——R59 清剿）。
 - **违反后果**: 启动期 IllegalArgumentException（org.hibernate.hql.internal.ast.QuerySyntaxException）或更隐蔽的运行期语义漂移；CI 不跑容器测试则上线才炸。
 - **验证方法**: 提取 @Query 值内 from/join 后的实体名词，逐一在源码集中定位 <Entity>.java，失配即 warn（字段级静态解析成本高，台账覆盖）。
 - **对应门禁**: fw_jpa_jpql_entity(warn)

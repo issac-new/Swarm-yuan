@@ -322,7 +322,7 @@ $(printf '%s\n' "$p_hits")"
         fi
       done <<< "$fs_rows"
     done
-    _fw_report fail fw_mybatis_field_sync "$fs_bad" "resultMap property 与实体字段失同步（改实体字段必须同步 resultMap/SQL 列/reader 列，前置查询查 data-mapping 边集）" "resultMap property 均可在实体中定位（或无 resultMap/未配实体源）"
+    _fw_report fail fw_mybatis_field_sync "$fs_bad" "resultMap property 与实体字段失同步（改实体字段必须同步 resultMap/SQL 列/reader 列，前置查询查 data-mapping 边集；JSON 契约面不在本门禁面——见 spec 四查）" "resultMap property 均可在实体中定位（或无 resultMap/未配实体源）"
   fi
 
 ### P1-4 AI 自查段（仅注释，不改动函数体）
