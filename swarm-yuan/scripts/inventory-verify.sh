@@ -203,7 +203,10 @@ _extract_rows_paths() { # $1=RM文件
           # 路径故对本函数无实害，但两处口径必须一致（同族漂移防线）。
           if (squashed ~ /^\|(维度|端点|构件|方法|说明|路径|业务名|单元名|文件)/) next
         stab="-"
-        if (index(line,"禁止改")>0) stab="forbidden"
+        # R58-D3：说明性词"禁止改语义"（描述字段语义不可变）不是稳定性标注词——剔除后再判
+        # （原 index 直查把说明词聚合为文件级 forbidden，与近 90 天变更信号对撞产生假告警）
+        t=line; gsub(/禁止改语义/,"",t)
+        if (index(t,"禁止改")>0) stab="forbidden"
         else if (index(line,"不稳定")>0) stab="-"
         else if (index(line,"稳定")>0) stab="stable"
         rest=line

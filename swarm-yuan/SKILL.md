@@ -119,7 +119,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **流B 的守卫**（目标技能侧，本 skill 生成的实物在执勤）：spec-first hook（fail-gate-hook 拦"无 spec 写源码"，Claude deny/Codex exit 2 双宿主）→ 状态机阶段守卫（design 需 proposal、build 需批准 spec、verify 需 tasks 全勾、archive 需 verify pass+证据）→ 门禁四族按序列 → 拦截落 gate-deny.jsonl 可复盘。九节点×4 要素由目标技能 `references/workflow.md` 承载。
 
-**反馈回路**：SessionStart hook（lite 档 AI 主动）跑 `scripts/project-fingerprint.sh <proj> --diff` → 变化 scope → exploration-guide §C+ 局部重探查 → reference-manual 单条更新（骤降 >50% 拒写；条目过期三态处置见 knowledge-lifecycle-methodology §五）→ 生成器 `--upgrade`（项目内容文件保留）→ 落新基线——自成长闭环。
+**反馈回路**：SessionStart hook（lite 档 AI 主动）跑 `scripts/project-fingerprint.sh <proj> --diff` → 变化 scope → exploration-guide §C+ 局部重探查 → reference-manual 单条更新（骤降 >50% 拒写；条目过期三态处置见 knowledge-lifecycle-methodology §五；三态触发双路：结构变化走指纹 --diff，**内容演化走 git diff/--stable-diff**——指纹只看结构，R58 补）→ 生成器 `--upgrade`（项目内容文件保留）→ 落新基线——自成长闭环。
 
 ## 第五层 使用——一个需求的完整旅程
 

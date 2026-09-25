@@ -901,18 +901,20 @@ check_framework_globs() {
     # 未注入 ruleset 的框架 → 保留 id 前缀推导兜底。
     _cg_decl_glob=""
     for _cg_v in ${_cg_vars}; do
-      case "$_cg_v" in
-        *SRC_GLOBS|*MAPPER_DIRS|*CONFIG_FILES|*SQL_GLOBS|*SCHEMA_GLOBS|*JOB_DIRS|*KEY_COLUMNS|*SHARD_KEY|*GLOBS)
-          _cg_decl_glob="${_cg_decl_glob}${_cg_decl_glob:+|}${_cg_v}" ;;
-      esac
+      # R58-D9：声明在案 → 认**全部**声明变量、不挑名字形态（原 case 只留 glob 族名，
+      # vite 声明的 VITE_CONFIG_FILE/VITE_INJECT_SCRIPT 等被全滤掉 → 永远 missing 假阳性）。
+      # requires_conf 的语义就是"该规则集的输入变量"，非 glob 名同样是门禁的已填输入。
+      _cg_decl_glob="${_cg_decl_glob}${_cg_decl_glob:+|}${_cg_v}"
     done
     if [[ -n "$_cg_decl_glob" ]]; then
       _cg_pat="${_cg_decl_glob}"
     else
       _cg_pat="${_cg_fw}[A-Z0-9_]*(SRC_GLOBS|MAPPER_DIRS|CONFIG_FILES|SQL_GLOBS|SCHEMA_GLOBS|JOB_DIRS|KEY_COLUMNS|SHARD_KEY|GLOBS)"
     fi
+    # R58-D9b：填值形态双认——数组 `VAR=("x` 与标量 `VAR="x`（vite 声明标量变量，
+    # 原正则只认数组形态 → 标量永远假阴性）
     _cg_hit=$(cat "$_cg_dir/scripts/precheck.conf" "$_cg_dir/scripts/precheck.arch.conf" 2>/dev/null \
-      | grep -cE "^(${_cg_pat})=\(\"[^\"]" || true)
+      | grep -cE "^(${_cg_pat})=(\"|\(\")[^\"]" || true)
     if [[ "${_cg_hit:-0}" -eq 0 ]]; then
       _cg_missing="${_cg_missing} ${_cg_fw}"
     fi
@@ -921,7 +923,7 @@ check_framework_globs() {
     echo "✗ 框架 glob 全空（TODO(framework-gates) 未填充）：${_cg_missing} 无任何已填变量——框架门禁将空转。填充 precheck.conf / precheck.arch.conf 对应 <FW>_SRC_GLOBS 等变量后重跑 --mark-active" >&2
     return 1
   fi
-  echo "✓ 框架 glob 检查通过（ACTIVE_FRAMEWORKS 每框架至少一个 glob 族变量已填）"
+  echo "✓ 框架 glob 检查通过（ACTIVE_FRAMEWORKS 每框架至少一个声明变量已填）"
   return 0
 }
 
@@ -1836,7 +1838,7 @@ for f in $_placeholder_refs; do
 
 **⑩ 方法论引用：** `references/review-methodology.md`（5 维审查/测试有效性）+ `references/gsd-patterns.md`（goal-backward 对抗验证）
 
-**⑨ 调用追踪：** `bash scripts/trace-log.sh --node "测试验证" --actor "tester" --tool "pytest/mutation"`
+**⑨ 调用追踪：** `bash scripts/trace-log.sh --node "测试验证" --actor "tester" --tool "<测试命令>"`
 
 ---
 

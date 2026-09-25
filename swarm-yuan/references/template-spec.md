@@ -306,6 +306,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 
 > **铁律：特征卡 17 项必须全部承接进目标技能的文件中，不得遗漏。** 下表是 17 项特征卡 → 目标技能文件的完整映射。
 > **P0/P1 分级**：P0 六项（1/4/5/11/15/16，表中加粗行）= 生成完成强制门槛 + 计数核验仅 P0 维度强制；P1 十一项 draft 期可「（P1 待补）」占位，`--mark-active` 前清零。
+> **前端页面表（R58-D5 承载位）**：前端形态项目的 reference-manual 须含**页面三角表**（`| 页面 | 操作 | 调用+真实入参 | 权限与降级 |`）——每路由级页面一行，真实入参在调用点反推；来源是 exploration-guide 前端探查要点的产出落点，页面数入 §4 计数核验口径。
 
 | 特征卡项 | 承接的目标技能文件 | 承接章节 |
 |---------|-------------------|---------|
@@ -398,8 +399,9 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 - **★任务配方（recipes.md 必须含，standard/compliance 档；从 exploration-guide §C+.6/§C+.7 承接，R21 配方层）**：
  - §A 业务功能清单：从 §C+.1 枚举产物 + §C+.2 链路**归纳**（不是重新探查），每功能一行 `| 功能 | 入口路径 | 复用组件 | 接口 | 数据 | 测试 |`；组件路径反引号包裹（`--path-check` 校验）；无测试的功能显式标"无"
  - §B 任务配方：三源提取（既有实现 / git 同类任务历史 / 开发者文档），每配方五要素齐全——触发场景/前置查询/复用件/胶水/门禁与验证（`--verify-completeness` 机器执法，缺要素即列 file:line）
- - **数据模型变更配方（有数据访问层时必须建**，漏改字段高发任务）：触发场景=改/加/删实体字段或表列；**前置查询必须含三查**——①查 relations.jsonl `data-mapping`/`mapper-binding` 边反查该实体的全部 mapper XML；②查 §8 字段级映射台账定位 property/SQL 列；③查 §5 调度任务表定位读写该数据资产的 job（reader SQL 内嵌列名不在 import 边里）；胶水=同步点清单（resultMap property/SQL 列/reader SQL/@TableField/DDL 迁移）；门禁与验证=`fw_mybatis_field_sync` + job 回归
+ - **数据模型变更配方（有数据访问层时必须建**，漏改字段高发任务）：触发场景=改/加/删实体字段或表列；**前置查询必须含四查**——①查 relations.jsonl `data-mapping`/`mapper-binding` 边反查该实体的全部 mapper XML；②查 §8 字段级映射台账定位 property/SQL 列；③查 §5 调度任务表定位读写该数据资产的 job（reader SQL 内嵌列名不在 import 边里）；④查**对外契约面**（R58 补）——字段若暴露于 API JSON（响应体/请求体 DTO），反查前端调用点与契约测试，前端 fixtures/mock 同名字段一并改（对应回归②接口命中路）；胶水=同步点清单（resultMap property/SQL 列/reader SQL/@TableField/DDL 迁移/JSON 契约字段）；门禁与验证=`fw_mybatis_field_sync` + job 回归 + 契约消费方测试
  - 复用件清单表格化（`| 复用件路径 | 用途 |`，反引号路径）——散文行的命令反引号不进 path-check（防误报）
+ - **★悬置清单（R58-D6 接线）**：探查中拿不准的业务语义**集中**落 `.swarm-yuan/notes/cognition.md` 悬置清单段（每项：问题/两源证据锚点/需谁回填），回填后按裁决序转正销项——不许散落各文档的"待验证"字样里自然蒸发（对偶 exploration-guide 悬置清单回填协议）
  - 配方只建高频形态（≥2 个起步，不凑数）；低频任务走九节点流；lite 档不生成 recipes.md（档位差异化）
 - **★版本锁定原则（dev-guide.md 必须含 + codebase.md 版本表必须记录基线）**：
  - 功能性开发过程中，**不允许随意升级或更换核心技术及基础组件及依赖的版本**
@@ -412,7 +414,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 - **★三平台兼容（swarm-yuan 自身的 .sh 脚本必须遵守，非目标技能强制）**：不用 declare -A / sed -i.bak+rm / grep -E / date -u / cd+pwd 替代 readlink -f / wc|xargs / ${var} 防 C-locale。详见 `references/security-spec.md` §六
 
 **★左移要求（Shift-Left，dev-guide.md §9 必须含 + spec-template.md §19/§20/§21 + precheck.sh `--shift-left`）：**
-- **测试左移**：spec 阶段（节点②）写测试设计段（测试策略/用例骨架/边界值/回归范围/契约测试）；编码阶段（节点⑤）每个 task 先写/更新测试再实现（TDD/BDD），test 与 impl 同分支提交，禁止"先实现后补测试"。precheck `--shift-left` 校验：spec 含测试设计段 + git diff 中 test 文件先于或同时于 impl 文件提交。**回归范围分级推导协议**（R49 知识生命周期吸收，AI 判断引导不新增 check_*）：以 relations.jsonl 边集为反查底座，四路由窄到宽——①直接命中（diff 文件即测试文件或其被测锚点）→必跑；②接口命中（改动暴露为接口/导出，反查引用方测试）→应跑；③数据面命中（改实体字段/表列，沿 data-mapping/mapper-binding 边把 mapper/消费方测试拉进）→应跑；④链路扩散（命中构件可归入某业务链/配方，整链测试）→建议跑。分级写进回归范围字段（`必跑:/应跑:/建议跑:` 三行），防"全量回归"与"漏隐蔽影响面"两头
+- **测试左移**：spec 阶段（节点②）写测试设计段（测试策略/用例骨架/边界值/回归范围/契约测试）；编码阶段（节点⑤）每个 task 先写/更新测试再实现（TDD/BDD），test 与 impl 同分支提交，禁止"先实现后补测试"。precheck `--shift-left` 校验：spec 含测试设计段 + git diff 中 test 文件先于或同时于 impl 文件提交。**回归范围分级推导协议**（R49 知识生命周期吸收，AI 判断引导不新增 check_*）：以 relations.jsonl 边集为反查底座，四路由窄到宽——①直接命中（diff 文件即测试文件或其被测锚点）→必跑；②接口命中（改动暴露为接口/导出——**实体字段改名若暴露于 API JSON 即属之**（R58 补），反查引用方测试含前端调用点/fixtures）→应跑；③数据面命中（改实体字段/表列，沿 data-mapping/mapper-binding 边把 mapper/消费方测试拉进）→应跑；④链路扩散（命中构件可归入某业务链/配方，整链测试）→建议跑。分级写进回归范围字段（`必跑:/应跑:/建议跑:` 三行），防"全量回归"与"漏隐蔽影响面"两头
 - **变更左移**：plan 阶段（节点③）写变更影响范围段（消费方反查/回归范围/回滚预案/灰度策略/数据库迁移兼容窗口）；合入 main 前（节点⑦）确认回滚预案存在 + 迁移向前兼容。precheck `--shift-left` 校验：plan 含变更影响段 + spec 含回滚预案声明
 - **运维监控左移**：spec 阶段（节点②）写可观测性约束段（日志结构化规范/metrics 埋点清单/trace 透传链/告警阈值/健康检查端点）；验证阶段（节点⑥）确认 metrics/日志/trace 已埋点且可通过健康检查端点访问；发布阶段（节点⑧）确认灰度策略 + 告警阈值已设 + runbook 已更新。precheck `--shift-left` 校验：spec 含可观测性段 + 代码中 metrics/日志/trace 埋点存在 + 健康检查端点可访问
 - **左移三项的关系**：测试左移防缺陷流入后段；变更左移防变更爆炸半径失控；运维左移防线上故障不可观测。三者配套——不可只做一项
