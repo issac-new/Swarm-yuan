@@ -1,6 +1,24 @@
 # Changelog
 
 
+## [v2.30.0] - 2026-09-26
+
+> R62 PHP 换栈演练轮（第九棒）：真实开源 **vlucas/phpdotenv**（Composer 2.10.3 + PHPUnit 280/280 实测）首执勤——打出 **PHP 生态五面全盲**（规则集/探测/提取/命令嗅探/枚举器全无，"连在册都没有"形态），全补齐：**php 规则集三件套**（php.md 12 条五要素规律 + php.sh 5 门禁 + 双态夹具 5/5 检出 5/5 放行 + 探测信号 4 通道，FACT_FRAMEWORKS 79→80）+ 工具链四修（PHP 提取/composer 嗅探/DIM 形态/机制修）。真实项目行为实测：phpdotenv 提取出 87 条 PHP import 边（use PSR-4 唯一命中 + require/include 相对解析），conf-render 出 composer 命令族。
+
+### Added
+- **php 规则集三件套**（子代理按框架三件套模式建成，golden-vector 重建对账 81 行零漂移）：references/frameworks/php.md（§1-§6，5 条机械门禁规律 + 7 条人工检查）、assets/framework-gates/php.sh（fw_php_hardcoded_secret(fail)/composer_lock/env_key_drift/route_name/view_var，requires_conf 声明四变量）、tests/fixtures/php 双态夹具（expected-fail-ids/expected-pass-ids 变异锁）、detect-frameworks 四信号行 + framework-signals 索引重生成。
+- **relations-extract PHP 提取分支**（D2）：use 命名空间→PSR-4 类名唯一命中（重名不发边）+ require/include 相对/__DIR__ 引用解析；vendor/ 排除链补齐（PHP 的 .venv 等价物）。
+- **conf-render composer 命令族**（D3）：BUILD=`composer install`（按 lock 确定性安装，R60-A2 非改写纪律）/TEST=`vendor/bin/phpunit`；composer.lock 存在才置 confirmed（不实跑不语义确认）。
+- **tests/test-r62-php-drill-locks.sh（6 断言，CI 接线）**：L1/L2 行为锁（PSR-4 边+require 边+vendor 零）/L3 行为锁（命令族）/L4-L6 源码锁。
+
+### Fixed
+- **D4 DIM 枚举器 PHP 形态**：controller 正则补 Route::/->get( 入口、测试面补 *Test.php、文件类型补 *.php。
+- **机制修（子代理审计发现#1）**：test-framework-conf-consistency 期望值改读 FACT_FRAMEWORKS 单一事实源——原常量写死，每新增规则集须手改测试否则 CI 红（手抄数字同族）。
+- 两处 G20 多字节违规自踩自清（${var} 纪律；G20 扫描面已含 tests/）。
+
+### 已知边界（留档）
+- SIGNALS 表七通道无 composer 依赖字符串匹配（php 只能 file_exists/file_glob 激活；laravel/symfony 子规则集细分需新通道）；golden-vector 重建仍是手工步骤（流程已文档化）。
+
 ## [v2.29.0] - 2026-09-26
 
 > R61 补缺轮（"直至全部完成"清单直至全部完成"清单①②③）：R60 留档待办清账——A8 迁移增量判别真接线（提示≠实跑：原 warn 只提示"跑 makemigrations --check"却从不实跑，现 manage.py 形态实跑 --check --dry-run 判增量、可复用 app 形态诚实降级披露）、A6 DIM 枚举器 Django 形态补全（path()/re_path()/as_view() 入口 + models.py ORM 面）、A9/A11 悬置销项（S1 README 死键/S2 双型模板上下文——裁决回填转正，项目级语义正式收口）。变异锁 9/9→11/11（L9/L10）。

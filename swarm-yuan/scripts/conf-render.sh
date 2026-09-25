@@ -38,11 +38,11 @@ PROJ=$(cd "$PROJ" && pwd)
 # （剪构建产物与依赖目录），供下方 poly 分支合成复合命令。有根清单则维持原单栈路径。
 _mo_dirs=""
 if ! [[ -f "$PROJ/package.json" || -f "$PROJ/pom.xml" || -f "$PROJ/build.gradle" \
-     || -f "$PROJ/build.gradle.kts" || -f "$PROJ/go.mod" || -f "$PROJ/pyproject.toml" \
+     || -f "$PROJ/build.gradle.kts" || -f "$PROJ/go.mod" || -f "$PROJ/pyproject.toml" || -f "$PROJ/composer.json" \
      || -f "$PROJ/requirements.txt" || -f "$PROJ/Cargo.toml" ]]; then
   _mo_dirs=$(find "$PROJ" -maxdepth 3 \( -type d \( -name node_modules -o -name target -o -name .git -o -name dist -o -name .swarm-yuan -o -name vendor \) -prune \) \
     -o -type f \( -name pom.xml -o -name build.gradle -o -name build.gradle.kts -o -name package.json \
-       -o -name go.mod -o -name pyproject.toml -o -name requirements.txt -o -name Cargo.toml \) -print 2>/dev/null \
+       -o -name go.mod -o -name pyproject.toml -o -name requirements.txt -o -name Cargo.toml -o -name composer.json \) -print 2>/dev/null \
     | sed "s|^$PROJ/||" | LC_ALL=C awk -F/ '{NF--; print}' OFS=/ | LC_ALL=C sort -u)
 fi
 _lang="unknown"; _pm="unknown"; _build=""; _test=""; _build_confirmed=0; _test_confirmed=0; _frameworks=""
@@ -60,6 +60,12 @@ elif [[ -f "$PROJ/build.gradle" ]] || [[ -f "$PROJ/build.gradle.kts" ]]; then
   _lang="java"; _pm="gradle"; _build="gradle build"; _test="gradle test"; _build_confirmed=1; _test_confirmed=1
 elif [[ -f "$PROJ/go.mod" ]]; then
   _lang="go"; _pm="go"; _build="go build ./..."; _test="go test ./..."; _build_confirmed=1; _test_confirmed=1
+elif [[ -f "$PROJ/composer.json" ]]; then
+  # R62-D3（php 生态首执勤）：composer 命令族。BUILD=composer install（按 lock 确定性安装，
+  # 不改写既有版本——对齐 R60-A2 非改写纪律）；TEST=vendor/bin/phpunit（生态主流，其他
+  # runner 人工修正）。不实跑不语义确认：confirmed 仅 composer.lock 存在时置位（锁=自证）。
+  _lang="php"; _pm="composer"; _build="composer install"; _test="vendor/bin/phpunit"
+  if [[ -f "$PROJ/composer.lock" ]]; then _build_confirmed=1; _test_confirmed=1; fi
 elif [[ -f "$PROJ/pyproject.toml" ]] || [[ -f "$PROJ/requirements.txt" ]]; then
   _lang="python"; _pm="pip"
   # R60-A2：uv 分支原 `uv run build` 双缺陷——build 脚本未必存在（实跑 Failed to spawn: build），

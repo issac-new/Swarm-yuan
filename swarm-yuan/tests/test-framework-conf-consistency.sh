@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-framework-conf-consistency.sh — R48 框架配置一致性回归锁
 # 三组断言（把 R47/R48 审计从一次性人肉扫描固化为 CI 机械执法）：
-#   ① 全量声明：79 个 assets/framework-gates/*.sh 片段逐个声明 requires_conf（权威变量命名源，
+#   ① 全量声明：FACT_FRAMEWORKS 个（读 facts.conf）assets/framework-gates/*.sh 片段逐个声明 requires_conf（权威变量命名源，
 #      generate-skill --upgrade/conf 清理与 mark-active 执法都消费它——缺声明=执法失锚）
 #   ② 可活性：每个规则集 id，requires_conf 的 glob 族变量 ∪ id 前缀可匹配的 arch.conf 变量 非空
 #      （否则该框架检出的项目无论怎么填 conf 都过不了 mark-active——R47-D3 jest-vitest 卡死形态）
@@ -18,16 +18,20 @@ GATES="$BASE/assets/framework-gates"
 ARCH="$BASE/assets/precheck.arch.conf"
 SUFFIX_RE='(SRC_GLOBS|MAPPER_DIRS|CONFIG_FILES|SQL_GLOBS|SCHEMA_GLOBS|JOB_DIRS|KEY_COLUMNS|SHARD_KEY|GLOBS)'
 
-echo "=== ① 79 片段 requires_conf 全量声明 ==="
+# R62 机制修（子代理审计发现#1）：期望值改读 assets/facts.conf 单一事实源——
+# 原先把期望值写死成常量，每新增规则集须手改本测试否则 CI 红（手抄数字三坑同族）。
+_fw_expected=$(sed -n 's/^FACT_FRAMEWORKS=\([0-9][0-9]*\).*/\1/p' assets/facts.conf)
+[[ -n "$_fw_expected" ]] || { echo "无法从 assets/facts.conf 读 FACT_FRAMEWORKS"; exit 1; }
+echo "=== ① ${_fw_expected} 片段 requires_conf 全量声明 ==="
 _total=0; _missing=""
 for f in "$GATES"/*.sh; do
   rid="$(basename "$f" .sh)"
   _total=$((_total+1))
   grep -q "^# ruleset: ${rid}  *requires_conf:" "$f" 2>/dev/null || _missing="$_missing $rid"
 done
-[[ "$_total" -eq 79 ]] && ok "片段总数 $_total=79" || bad "片段总数 $_total≠79"
+[[ "$_total" -eq "$_fw_expected" ]] && ok "片段总数 $_total=FACT_FRAMEWORKS $_fw_expected" || bad "片段总数 $_total≠${_fw_expected}（framework-gates/ 与 facts.conf 漂移）"
 if [[ -z "$_missing" ]]; then
-  ok "79/79 片段全部声明 requires_conf"
+  ok "${_fw_expected}/${_fw_expected} 片段全部声明 requires_conf"
 else
   bad "缺 requires_conf 声明:$_missing"
 fi
