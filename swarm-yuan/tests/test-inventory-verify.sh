@@ -491,4 +491,72 @@ out20="$(bash "$SH" "$TMP/proj20" --skill-dir "$TMP/skill20" --form backend --ts
 echo "$out20" | grep -qF 'core.py 标注禁止改但近 90 天变更' \
   && bad "态20 出生提交误报 churn: $out20" || ok "态20 forbid 出生提交（churn=1）不 warn"
 
+# --- 态 21（R56-D1 变异锁）：React colocated 测试不计入「前端 UI 组件」枚举 ---
+# 2 源 .tsx + 2 *.test.tsx（DIM_TESTFILES 单列）→ UI 维必须 2/2 PASS；旧式全数 → 4/2 假 FAIL。
+mkdir -p "$TMP/proj21/src" "$TMP/skill21/references"
+printf 'export function App() {}\n' > "$TMP/proj21/src/App.tsx"
+printf 'export function Board() {}\n' > "$TMP/proj21/src/Board.tsx"
+printf 'test\n' > "$TMP/proj21/src/App.test.tsx"
+printf 'test\n' > "$TMP/proj21/src/Board.test.tsx"
+cat > "$TMP/skill21/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §4 组件库清单
+
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/App.tsx` | 导出 App（稳定） |
+| `src/Board.tsx` | 导出 Board（稳定） |
+EOF
+out21="$(bash "$SH" "$TMP/proj21" --skill-dir "$TMP/skill21" --form frontend --tsv 2>/dev/null)"
+echo "$out21" | grep -qE '前端 UI 组件	2	2	1\.00	PASS' \
+  && ok "态21 测试文件不计 UI 组件（2/2 PASS，D1 锁）" \
+  || bad "态21 UI 维计数被测试文件污染: $(echo "$out21" | grep 前端)"
+
+# --- 态 22（R56-D2 变异锁）：库导出按文件计数（非 export 行）+ §4 §6 §9 多锚 ---
+# 1 文件 6 个 ^export 行 → 枚举必须=1（文件级）；旧式行计数 → 6/1 假 FAIL。
+# 追加 .tsx 导出（React 组件库形态须计入）+ *.test.ts 导出（测试面须排除）→ 枚举精确=2。
+mkdir -p "$TMP/proj22/src" "$TMP/skill22/references"
+cat > "$TMP/proj22/src/lib.ts" <<'EOF'
+export const a = 1
+export const b = 2
+export const c = 3
+export const d = 4
+export const e = 5
+export const f = 6
+EOF
+printf 'export function Widget() {}\n' > "$TMP/proj22/src/Widget.tsx"
+printf 'export const helper = 1\n' > "$TMP/proj22/src/helper.test.ts"
+cat > "$TMP/skill22/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §4 组件库清单
+
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/lib.ts` | 导出 a-f（稳定） |
+| `src/Widget.tsx` | 导出 Widget（稳定） |
+EOF
+out22="$(bash "$SH" "$TMP/proj22" --skill-dir "$TMP/skill22" --form lib --tsv 2>/dev/null)"
+echo "$out22" | grep -qE '库导出	2	2	1\.00	PASS' \
+  && ok "态22 库导出文件级+tsx+排除测试（枚举精确 2，D2 锁）" \
+  || bad "态22 库导出粒度/覆盖错配: $(echo "$out22" | grep 库导出)"
+
+# --- 态 23（R56-D4 变异锁）：fan-in 排除 node_modules（否则第三方包灌水信号失真）---
+# src/lonely.ts 无同名测试、项目内零引用；node_modules 下 100 个文件含 "lonely"——
+# 排除链生效 → fan-in=0 warn（fan-in=0 分支）；旧式全扫 → fan-in≥100 且走"无同名测试"分支。
+mkdir -p "$TMP/proj23/src" "$TMP/proj23/node_modules/dep" "$TMP/skill23/references"
+printf 'export function lonely() {}\n' > "$TMP/proj23/src/lonely.ts"
+i=1; while [ "$i" -le 100 ]; do printf '// lonely ref %s\n' "$i" > "$TMP/proj23/node_modules/dep/f$i.js"; i=$((i+1)); done
+cat > "$TMP/skill23/references/reference-manual.md" <<'EOF'
+# reference-manual
+## §4 组件库清单
+
+| 路径 | 说明与约束 |
+|------|--------------|
+| `src/lonely.ts` | 导出 lonely（稳定） |
+EOF
+out23="$(bash "$SH" "$TMP/proj23" --skill-dir "$TMP/skill23" --form lib --tsv --stability-audit 2>/dev/null)"
+echo "$out23" | grep -qE 'lonely\.ts 标注稳定但 fan-in=0' \
+  && ok "态23 fan-in 排除 node_modules（=0，D4 锁）" \
+  || bad "态23 fan-in 被第三方包灌水: $(echo "$out23" | grep lonely)"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-inventory-verify"; exit 0; } || { echo "FAIL test-inventory-verify" >&2; exit 1; }

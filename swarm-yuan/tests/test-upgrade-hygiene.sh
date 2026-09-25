@@ -89,4 +89,10 @@ grep -q '_fw_flask_check()' "$PYPROJ2/.claude/skills/demo-flask-std/scripts/prec
   && ok "态6 standard create 后 _fw_flask_check 已注入" \
   || bad "态6 standard create 未自动注入"
 
+# --- 态7（R56-D3 变异锁）：生成物 conf 的 PROTECTED_BRANCHES 默认须覆盖 main+master 双形态 ---
+# master 基分支仓库（git init 默认）旧默认仅 ("main") → 零保护；模板默认双名（护不存在的名字无害）。
+grep -qE '^PROTECTED_BRANCHES=\("main" "master"\)' "$PYPROJ2/.claude/skills/demo-flask-std/scripts/precheck.conf" \
+  && ok "态7 生成物 PROTECTED_BRANCHES 双名默认（D3 锁）" \
+  || bad "态7 保护分支默认漏 master 形态: $(grep '^PROTECTED_BRANCHES=' "$PYPROJ2/.claude/skills/demo-flask-std/scripts/precheck.conf")"
+
 [[ $FAIL -eq 0 ]] && { echo "PASS test-upgrade-hygiene"; exit 0; } || { echo "FAIL test-upgrade-hygiene" >&2; exit 1; }

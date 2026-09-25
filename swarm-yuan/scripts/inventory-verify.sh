@@ -282,14 +282,18 @@ if [[ "$STAB_AUDIT" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/refere
       _churn=$(git -C "$PROJ" log --since="90 days ago" --format=%H -- "$_p" 2>/dev/null | LC_ALL=C grep -c . || true)
       _churn="${_churn:-0}"
     fi
-    _fanin=$(grep -rlF --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.py' --include='*.go' --include='*.java' --include='*.vue' "$_base" "$PROJ" 2>/dev/null | grep -vF "$_p" | LC_ALL=C grep -c . || true)
+    # R56-D4（2026-09-25 React+TS 首执勤实证 r56-drill-kanban）：fan-in 两处 grep 原缺排除链（R23-D5
+    # 纪律只落到了维度枚举面，同族漏修）——npm install 后扫进 node_modules 实测 id.ts fan-in 1758
+    # （真实边集仅 32 条），信号完全失真。修：grep 类 --exclude-dir 六项对齐 DIM_* 族
+    # （node_modules/dist/.git + 跨栈 target/bin/obj——.NET obj/ 复制 .cs 先例）。
+    _fanin=$(grep -rlF --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.py' --include='*.go' --include='*.java' --include='*.vue' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=target --exclude-dir=bin --exclude-dir=obj "$_base" "$PROJ" 2>/dev/null | grep -vF "$_p" | LC_ALL=C grep -c . || true)
     _fanin="${_fanin:-0}"
     # R36-D7（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：Go 导入的是包（目录）不是文件——
     # 引用方 import 路径串 ".../internal/repository" 不含文件基名 order_repo，基名信号恒 0 误报
     # （实测 internal/ 下全部文件 fan-in=0 warn）。对相对路径含斜杠的文件补父目录字符串信号
     # （包导入形态代理）；根目录单段路径保持原行为（目录名公共词误报面大）。
     if [[ "$_p" == */* ]]; then
-      _fanin2=$(grep -rlF --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.py' --include='*.go' --include='*.java' --include='*.vue' "${_p%/*}" "$PROJ" 2>/dev/null | grep -vF "$_p" | LC_ALL=C grep -c . || true)
+      _fanin2=$(grep -rlF --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.py' --include='*.go' --include='*.java' --include='*.vue' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=target --exclude-dir=bin --exclude-dir=obj "${_p%/*}" "$PROJ" 2>/dev/null | grep -vF "$_p" | LC_ALL=C grep -c . || true)
       _fanin2="${_fanin2:-0}"
       [[ "$_fanin2" -gt "$_fanin" ]] && _fanin="$_fanin2"
     fi
