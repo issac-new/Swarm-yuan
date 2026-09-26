@@ -94,7 +94,7 @@ check_layer() {
       # base 可能含 * 通配（如 overlay/custom/client/*/components），[[ -d ]] 不展开 glob 会 false。
       # 用 compgen -d 展开 glob 为实际目录列表，逐个 find（兼容 bash 3.2）。
       if [[ -d "$base" ]]; then
-        m=$(find "$base" -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.java' \) 2>/dev/null || true)
+        m=$(find "$base" -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.java' -o -name '*.vue' \) 2>/dev/null || true)
       else
         # base 含 glob 字符，展开后逐个 find
         local expanded

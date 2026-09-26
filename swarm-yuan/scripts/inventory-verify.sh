@@ -207,7 +207,7 @@ _extract_rows_paths() { # $1=RM文件
         # （原 index 直查把说明词聚合为文件级 forbidden，与近 90 天变更信号对撞产生假告警）
         t=line; gsub(/禁止改语义/,"",t)
         if (index(t,"禁止改")>0) stab="forbidden"
-        else if (index(line,"不稳定")>0) stab="-"
+        else if (index(line,"不稳定")>0 || index(line,"勿标稳定")>0 || index(line,"不再稳定")>0 || index(line,"无稳定性")>0) stab="-"
         else if (index(line,"稳定")>0) stab="stable"
         rest=line
         while (match(rest, /`[^`]+`/)) {

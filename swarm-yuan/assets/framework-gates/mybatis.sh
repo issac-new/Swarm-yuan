@@ -209,11 +209,11 @@ _fw_mybatis_check() {
   if [[ -n "$pd" && -d "$pd" ]]; then
     while IFS= read -r cfg; do
       [[ -z "$cfg" ]] && continue
-      if ! grep -qE 'mybatis.*mapper-locations|mapperLocations' "$cfg" 2>/dev/null; then
+      if ! grep -qE 'mapper-locations|mapperLocations' "$cfg" 2>/dev/null; then
         cfg_hit="${cfg_hit}${cfg}
 "
       fi
-    done < <(find "$pd" -maxdepth 4 -type f \( -name 'application*.yml' -o -name 'application*.yaml' -o -name 'application*.properties' \) 2>/dev/null)
+    done < <(find "$pd" -maxdepth 6 -not -path "*/target/*" -type f \( -name 'application*.yml' -o -name 'application*.yaml' -o -name 'application*.properties' \) 2>/dev/null)
   fi
   if [[ -z "$pd" || ! -d "$pd" ]]; then
     pass "fw_mybatis_mapper_locations: PROJECT_DIR 未配置，跳过"
