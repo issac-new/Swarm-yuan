@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# test-r66-react-express-regression.sh — R66 React+Express 全链回归修复的变异锁
+# test-r66-react-express-regression.sh — R66 React+Express 全链回归修复的变异回归断言
 #   L1 A1 P1 待补独立 grep（不再依赖四词前置）——行为锁
 #   L2 A2 BUILD_CMD 自指防 fork bomb（scripts.build 含 npm run build → 留空）——行为锁
 #   L3 A5 check_layer import 提取含 CommonJS require（源码锁）
 #   L4 A4 JSON 契约面列族承载位（源码锁）
-#   L5 A6 悬置清单用途行 + A7 git 降级披露（源码锁）
+#   L5 A6 待确认事项清单用途行 + A7 git 降级披露（源码锁）
 #
 # 用法: bash tests/test-r66-react-express-regression.sh
 set -u
@@ -43,10 +43,10 @@ grep -q 'require' assets/gates-strict.sh \
 grep -q 'JSON 契约面列族' references/template-spec.md \
   && ok "L4 JSON 契约面承载位在位" || bad "L4 template-spec 缺 JSON 契约面列族（A4 回归）"
 
-# --- L5 源码锁：悬置清单用途 + git 降级 ---
-grep -q '悬置清单（拿不准语义集中落此）' scripts/generate-skill.sh \
+# --- L5 源码锁：待确认事项清单用途 + git 降级 ---
+grep -q '待确认事项清单（拿不准语义集中落此）' scripts/generate-skill.sh \
   && grep -q 'R66-A7' assets/gates-warn.sh \
-  && ok "L5 悬置清单用途行 + git 降级披露在位" \
+  && ok "L5 待确认事项清单用途行 + git 降级披露在位" \
   || bad "L5 A6/A7 缺失（回归）"
 
 echo "PASS test-r66-react-express-regression (${pass} ok, ${fail} fail)"

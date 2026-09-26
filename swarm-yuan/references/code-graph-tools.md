@@ -30,7 +30,7 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 
 - **graphify 仓库已迁移**：org URL 由 `safishamsi/graphify` 迁至 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)（GitHub API 2026-07-20 实测），引用一律用新 URL。
 - **graphify 引用基线：v0.9.x（GitHub v8 线，当前 v0.9.55）**（能力清单基于 v0.9.5 调研 + 0.9.6-19 release notes；后续 patch 不补段——0.9.54/0.9.55 为幂等写入与图谱完整性修复族，对账通过）。npm `graphifyy` 0.10.0/v1.0.0 为异源旧分支**不取**（R16 裁决沿用，登记见 `docs/upstream-baseline.md`）。
-- **codegraph 证据与边界（R37）**：官方基准（B 级）工具调用 −88% / token −62% / 成本 −44%、文件读取归零（7 仓库×4 次）；**上下文残留 +80%**（官方诚实声明——索引驻留上下文的代价）；Swift 27k 文件约 100s、Linux 内核 70k 文件约 12min（文章转述 C 级）。选型对照：GitNexus 给 17 个确定性 MCP 查询工具，codegraph 押单工具+模型自主检索（工具面哲学对照见 `mcp-governance.md` 工具面设计三原则）。本机未实测安装与索引（npm/cargo 安装形态未核）——**接线前置条件：本机跑通一次索引+查询再进目标技能默认推荐**。
+- **codegraph 证据与边界（R37）**：官方基准（B 级）工具调用 −88% / token −62% / 成本 −44%、文件读取归零（7 仓库×4 次）；**上下文残留 +80%**（官方诚实声明——索引驻留上下文的代价）；Swift 27k 文件约 100s、Linux 内核 70k 文件约 12min（文章转述 C 级）。选型对照：GitNexus 给 17 个确定性 MCP 查询工具，codegraph 押单工具+模型自主检索（工具面哲学对照见 `mcp-governance.md` 工具面设计三原则）。本机未实测安装与索引（npm/cargo 安装形态未核）——**整合前置条件：本机跑通一次索引+查询再进目标技能默认推荐**。
 
 ## GitNexus（Node 生态，深度代码调用图）
 
@@ -203,7 +203,7 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | 维度 | GitNexus | graphify | codegraph |
 |------|----------|---------|-----------|
 | 运行时 | Node.js / TypeScript | Python 3.10+ | 本地索引引擎（SQLite + FTS5，无 LLM API） |
-| 安装 | `npm i -g gitnexus` | `uv tool install graphifyy` | 未本机核验（R37：接线前先跑通） |
+| 安装 | `npm i -g gitnexus` | `uv tool install graphifyy` | 未本机核验（R37：整合前先跑通） |
 | 解析 | Tree-sitter 原生 | Tree-sitter（代码离线）+ LLM（文档/媒体） | 预索引 + 代码变更自动同步 |
 | 存储 | LadybugDB（持久本地图） | `graphify-out/graph.json`（可提交） | 本地索引（100% 本地） |
 | Agent 接口 | MCP server（stdio）+ HTTP 桥 + Web UI | MCP server + `query/path/explain` CLI + IDE skill | **单 MCP 工具** `codegraph_explore` + `explore/affected` CLI |

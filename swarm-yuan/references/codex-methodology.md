@@ -1,11 +1,11 @@
-> **何时读我**：优化执行纪律（截断/压缩/缓存/rubric/测试哲学）时。OpenAI Codex CLI 吸收——省 token 三件套/review rubric/测试哲学。
+> **何时读我**：优化执行纪律（截断/压缩/缓存/rubric/测试哲学）时。OpenAI Codex CLI 吸收——省 token 生成期必读文件/review rubric/测试哲学。
 
 # Codex 执行纪律方法论（OpenAI Codex CLI——省 token / 高效 / 质量三线）
 
 > 来源：[openai/codex](https://github.com/openai/codex)（Rust 实现的本地编码 agent，Apache-2.0，2026-08 调研，基于官方文档 + `codex-rs` 源码实证：`compact.rs`/`compact_token_budget.rs`/`truncation.rs`/`prompts/templates/compact/*`/`review/rubric.md`/`protocol/src/prompts/base_instructions`）；版本核至 rust-v0.153.4（2026-09-05 R17 补核，见文末版本注记）。
-> 纪律：**非运行时接线**——Codex 虽是 swarm-yuan 的 7 个安装目标之一（install.sh 检测），本文不调用 codex CLI，只吸收其「为什么省 token、效率高、质量高」的执行纪律，供生成目标技能的 AI 遵守 + 编织进目标技能的 workflow/执行 prompt。对齐决策 27 吸收模式（cordis/context-engineering-layering 先例），不新增门禁（守决策 26）。
+> 纪律：**非运行时整合**——Codex 虽是 swarm-yuan 的 7 个安装目标之一（install.sh 检测），本文不调用 codex CLI，只吸收其「为什么省 token、效率高、质量高」的执行纪律，供生成目标技能的 AI 遵守 + 编织进目标技能的 workflow/执行 prompt。对齐决策 27 吸收模式（cordis/context-engineering-layering 先例），不新增门禁（守决策 26）。
 
-## 一、省 token 三件套（截断—压缩—缓存，全部是硬机制非玄学）
+## 一、省 token 生成期必读文件（截断—压缩—缓存，全部是硬机制非玄学）
 
 Codex 官方 `--json` 实测：`input_tokens: 24763, cached_input_tokens: 24448`——**98.7% 缓存命中**。三条机制叠加达成：
 
@@ -131,7 +131,7 @@ Codex hooks 现在支持**异步执行命令**并**调用 MCP 工具**。这意�
 
 ### skill-creator validation 拒绝 TODO 占位符（v0.148）
 
-Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--verify-completeness`（零占位符检测，P0/P1 分级）同构，方向验证。
+Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--verify-completeness`（无占位符检测，P0/P1 分级）同构，方向验证。
 
 ### 破坏性变更（两处）
 
@@ -155,7 +155,7 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 
 - **Guardian 条件性兜底**（v0.153.0，#42147/#42256）：Full Access 与 User approval 模式跳过 Guardian 评分/评审（含活动中途切换）；computer-use 评分尊重模型要求（v0.153.1，#42424）。**执法确定性论证必须落在自持门禁：Guardian 复核只是条件性兜底，宿主审批层不保证在场**——与 Claude Code v2.1.260 宿主 deny 回退（Read deny 应用至 Bash 参数后即回退）构成双宿主同向证据：R13"hooks fail-open 须下层门禁兜底"教义升级为"宿主治理层整体视为条件性"。
 - **回合中结构化问答原语**（v0.153.0，#42178）：`request_user_input_async`（替换 `send_user_message_async`）带建议答案的结构化问题、回合继续执行、按模型可用性限定——人机协作点首次进入协议层 schema。R16 登记的 Interrupt hook 半成品守护点自此有了正式参照（打断→问答→续跑）；登记候选不落地（本仓交互面走宿主审批通道已够）。
-- **hooks 内置白名单三层信任**（v0.153.0，#42110）：allowlisted bundled cleanup hooks 标记 `builtin: true`，信任态直接 Trusted 且无视 per-hook enabled——hook 信任模型成三层（builtin/managed/user）。本仓用户级 PreToolUse 三能力接线零变化（`codex-rs/hooks/src/engine/discovery.rs` 各 events 文件仅测试结构体加字段，对账通过）。
+- **hooks 内置白名单三层信任**（v0.153.0，#42110）：allowlisted bundled cleanup hooks 标记 `builtin: true`，信任态直接 Trusted 且无视 per-hook enabled——hook 信任模型成三层（builtin/managed/user）。本仓用户级 PreToolUse 三能力整合零变化（`codex-rs/hooks/src/engine/discovery.rs` 各 events 文件仅测试结构体加字段，对账通过）。
 - **实验性 context management**（v0.153.0，#42385）：`features.context_management.experimental_mode`——token 预算上下文 + history notes + `new_context` 工具；仅 ChatGPT Plus/Pro/Pro Lite 且 Codex 后端，自定义 provider 禁用。与 v0.149 `[skills] max_context_tokens` 预算机制相邻，登记观望（experimental + 后端限定，等 GA）。
 - 其余：插件 CLI 远程 marketplace（#42150/#42149，源策略约束）；network requirements 增 `header_injections`（企业托管向）；权限变换感知 executor 路径上下文（`sandboxing/policy_transforms.rs` +416 行，观察项）。
 
@@ -163,7 +163,7 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 
 > 当前 stable：rust-v0.154.0（2026-09-09，R20 收口后数小时兑现；0.154 线 alpha.1-11 收敛后发布）。档案 `docs/research/R22-runtime-refresh.md`。
 
-- **实验性 worktree 支持**（v0.154.0，#42652/#43069）：`--worktree` / `/worktree` 为新会话或 fork 创建隔离检出、可浏览恢复——**会话与工作区隔离原语进宿主**，与 Claude Code v2.1.257 `permissions.blockReadsOutsideWorkingDirectories` 构成双宿主对偶。生成技能并行门禁（多 worktree 验证）的宿主原语候选登记（触发 = 并行 gate 执行真实需求）。
+- **实验性 worktree 支持**（v0.154.0，#42652/#43069）：`--worktree` / `/worktree` 为新会话或 fork 创建隔离检出、可浏览恢复——**会话与工作区隔离原语进宿主**，与 Claude Code v2.1.257 `permissions.blockReadsOutsideWorkingDirectories` 构成双宿主互为正反。生成技能并行门禁（多 worktree 验证）的宿主原语候选登记（触发 = 并行 gate 执行真实需求）。
 - **inline 追问**（v0.154.0，#42891）：工作继续中用建议选项或自定义文本回答问题、不丢主草稿——`request_user_input_async`（0.153）的交互面强化，Interrupt 守护点候选第 2 号参照（打断→问答→续跑且用户草稿不丢）。
 - **plugin/skill 热刷新**（v0.154.0，#42284）：外部 plugin 升级/回滚后已有会话刷新 skills 与 hooks——与 Claude Code `--plugin-dir` 热装载（265）构成**双宿主同向：技能热装载成标配**；生成技能 `--upgrade` 后宿主侧不再要求重启会话。
 - **Guardian 授权治理强化**（v0.154.0，#42844/#43442）：审批上下文跨 compaction 保持、新用户指令或答案作废既有审批——**授权的时效性与上下文完整性成为审批系统一等语义**（与 0.151「过期分类不授权」连续）。对本仓：门禁产出的 PASS/FAIL 证据若被宿主审批引用，其有效期与作废条件须显式声明。

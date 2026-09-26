@@ -20,7 +20,7 @@
 | 过程方法（PDCA） | 生成流程 12 步（Step 1-12）+ workflow 9 节点 + state-machine 阶段管理（活动相互关联作为过程管理） |
 | 改进 | verifier/v1 验收回路 + self-check 文档一致性对账 + profile 动态升档（lite→standard→compliance） |
 | 循证决策 | 17 特征卡探查（先探查后生成）+ 门禁计数与指向关系的规律化治理（facts.conf 权威口径） |
-| 关系管理 | 13 运行时整合（分层接线 + 诚实降级，外部供方能力显式登记） |
+| 关系管理 | 13 运行时整合（分层整合 + 诚实降级，外部供方能力显式登记） |
 
 ### 1.2 过程方法（PDCA）× 生成流程映射
 
@@ -29,7 +29,7 @@
 | Plan（策划） | ⓪/⓪.5 自检+读知识（Step 1-2）→ ①-①.5 探查（Step 3-4）→ ② 17 特征卡（Step 5）→ ④ spec/plan 填写（Step 7，spec §1-§25） |
 | Do（实施） | ③-⑤ 骨架/填充/conf/hooks 生成（Step 6-9）+ spec §5.5 复用约束（④ 填充期内落 spec） |
 | Check（检查） | ⑥/⑦.5 门禁（55 门禁三档 enforce_level，Step 10-11）+ ⑦ 独立审查 + verifier/v1 验收 + self-check |
-| Act（处置） | gate-fixture 双态回归 + profile 动态升档 + ⑧ 记忆写回（memory-persistence 经验沉淀，Step 11） |
+| Act（处置） | gate-fixture 正反例回归 + profile 动态升档 + ⑧ 记忆写回（memory-persistence 经验沉淀，Step 11） |
 
 ---
 
@@ -37,7 +37,7 @@
 
 ### 2.1 成熟度定位：≈ L3 已定义级
 
-swarm-yuan 具备 L3 的两个核心特征：**组织级过程资产**（六段式模板 + 80 框架规则集 + 32 领域知识）与**验证规程**（55 门禁 + verifier/v1 + gate-fixture 双态）。L4（量化管理）/L5（优化）**不具备**——R3 §6.2 已确认"缺真值度量则量化管理无从谈起"，此处显式声明而非假装覆盖。
+swarm-yuan 具备 L3 的两个核心特征：**组织级过程资产**（六段式模板 + 80 框架规则集 + 32 领域知识）与**验证规程**（55 门禁 + verifier/v1 + gate-fixture 正反例）。L4（量化管理）/L5（优化）**不具备**——R3 §6.2 已确认"缺真值度量则量化管理无从谈起"，此处显式声明而非假装覆盖。
 
 ### 2.2 过程域 × 机制映射（含缺口声明）
 
@@ -48,7 +48,7 @@ swarm-yuan 具备 L3 的两个核心特征：**组织级过程资产**（六段�
 | REQM 需求管理 | `--requirements` + `--rtm`（ISO/IEC/IEEE 29148，REQ- 唯一编号 + 追溯矩阵） | — |
 | CM 配置管理 | `--deps` 版本锁定 + git worktree 隔离 | 版本基线单一 |
 | PPQA 过程与产品质量保证 | 55 门禁 + enforce_level 三档 + 豁免 5 字段留痕 | — |
-| VER 验证 | verifier/v1 + gate-fixture 双态回归 | — |
+| VER 验证 | verifier/v1 + gate-fixture 正反例回归 | — |
 | VAL 确认 | spec §1.2 价值声明 + 验收回路 | 确认判据靠人工 |
 | MA 度量分析 | gate-runs.jsonl + adaptive gating 信号 | **缺真值度量**（认知分数是关键词启发式，非校准真值） |
 | CAR 因果分析与解决 | — | **缺**（无缺陷根因归类与预防措施闭环） |

@@ -49,7 +49,7 @@ check_gsd_core(){
 }
 check_claude_mem(){
   if command -v claude-mem &>/dev/null; then pass "claude-mem: $(claude-mem --version 2>&1|head -1)"
-  elif [[ -d ~/.claude-mem ]]; then warn "claude-mem: 数据目录存在但 CLI 未装（~/.claude-mem 存在，command -v claude-mem 失败）--深度接线需 CLI，建议 npm i -g claude-mem"
+  elif [[ -d ~/.claude-mem ]]; then warn "claude-mem: 数据目录存在但 CLI 未装（~/.claude-mem 存在，command -v claude-mem 失败）--深度整合需 CLI，建议 npm i -g claude-mem"
   else miss "claude-mem"; fi
 }
 check_ocr(){
@@ -343,16 +343,16 @@ echo ""
 if [[ ${#MISSING[@]} -eq 0 ]]; then
   echo "✓ 全部 11 个项目运行时已安装"
 fi
-# 运行时接线分层标注（WP1.4）：让用户清楚每个运行时的真实接线程度，不假装全深接
+# 运行时整合分层标注（WP1.4）：让用户清楚每个运行时的真实整合程度，不假装全深接
 # WP-CogAudit：计数从 facts.conf 动态读取（原硬编码 4/3/4，林迪效应失效--不随实现演变）
 _runtime_base="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ -z "${FACT_RUNTIMES_DEEP:-}" && -f "$_runtime_base/assets/facts.conf" ]]; then
   set +u; # shellcheck disable=SC1090
   source "$_runtime_base/assets/facts.conf"; set -u
 fi
-echo "  接线分层："
-echo "    深度接线(${FACT_RUNTIMES_DEEP:-4},precheck.sh 真实命令调用)：gitnexus / graphify / claude-mem / ocr"
-echo "    CLI 接线(${FACT_RUNTIMES_CLI:-4},门禁/状态机按需调用 CLI)：openspec / comet / gsd-core / codex-security"
+echo "  整合分层："
+echo "    深度整合(${FACT_RUNTIMES_DEEP:-4},precheck.sh 真实命令调用)：gitnexus / graphify / claude-mem / ocr"
+echo "    CLI 整合(${FACT_RUNTIMES_CLI:-4},门禁/状态机按需调用 CLI)：openspec / comet / gsd-core / codex-security"
 echo "    方法论引用(${FACT_RUNTIMES_METHOD:-5},AI 按节点引用模式)：superpowers / gstack / ruflo / ECC / impeccable"
 echo "  （每层有自带降级载体，未装不阻塞--详见 SKILL.md「它整合的方法论」分层表）"
 unset _runtime_base
@@ -475,7 +475,7 @@ fw_freshness_check() {
 }
 fw_freshness_check
 
-# ===== 框架规则集核验（74 规则集四要素机械核验）=====
+# ===== 框架规则集核验（74 规则集四要素自动核验）=====
 fw_ruleset_verify() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local vfy="$base/scripts/verify-framework-ruleset.sh"
@@ -505,7 +505,7 @@ fw_ruleset_verify() {
 fw_ruleset_verify
 
 # ===== 文档一致性检查（防文档-实现漂移）=====
-# 从 shell 文件机械解析数组赋值的元素个数（支持跨行数组；数组未定义时输出 0）
+# 从 shell 文件自动解析数组赋值的元素个数（支持跨行数组；数组未定义时输出 0）
 _count_gate_array() {
   awk -v name="$1" '
     $0 ~ "^" name "=\\(" { inarr=1 }
@@ -570,7 +570,7 @@ _count_check_fns() {
 }
 
 check_doc_consistency() {
-  echo "▶ 文档一致性检查（真值对账 + 税制断言；文档不手抄数字，无手抄即无漂移）"
+  echo "▶ 文档一致性检查（真值对账 + 预算断言；文档不手抄数字，无手抄即无漂移）"
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local facts_conf="$base/assets/facts.conf"
   local _have_facts=1
@@ -578,7 +578,7 @@ check_doc_consistency() {
     set +u; # shellcheck disable=SC1090
     source "$facts_conf"; set -u
   else
-    _have_facts=0   # global-consistency-r2：目标技能上下文（facts.conf 不随发）——FACT_ 断言走 :-0 假默认必误报，整段跳过
+    _have_facts=0   # global-consistency-r2：目标技能上下文（facts.conf 不随技能分发）——FACT_ 断言走 :-0 假默认必误报，整段跳过
   fi
 
   # 1. 框架规则文件数 == 门禁片段数（真值对账）
@@ -604,7 +604,7 @@ check_doc_consistency() {
   fi
 
   # 2b. 门禁子族计数六键等值断言（audit-claims-reality C1：复活 _count_gate_array/
-  # _count_advisory_only——这组函数本为守子族计数而生，定义后从未接线（死代码），
+  # _count_advisory_only——这组函数本为守子族计数而生，定义后从未整合（死代码），
   # 致 COMPLIANCE 17→19 / ADVISORY_ONLY 10→6 漂移漏网。fail 级，与 FACT_GATES_TOTAL 同级）
   local _psh="$base/assets/precheck.sh"
   local _c_core _c_std _c_comp _c_full _c_adv _c_arch
@@ -628,7 +628,7 @@ check_doc_consistency() {
   fi
 
   # 2c. conf 变量四键等值断言（audit-claims-reality C2：此前仅 ≤200 预算断言，等值漂移
-  # 漏网——PROMO 174/14 即实证。USERFACE 是"约 20"估算值非机械可数，不设等值断言）
+  # 漏网——PROMO 174/14 即实证。USERFACE 是"约 20"估算值非自动可数，不设等值断言）
   local _v_core _v_arch _v_comp _v_total
   _v_core=$(_count_conf_vars "$base" "precheck.conf")
   _v_arch=$(_count_conf_vars "$base" "precheck.arch.conf")
@@ -638,7 +638,7 @@ check_doc_consistency() {
   [[ "${FACT_CONF_VARS_CORE:-0}" == "$_v_core" ]] || { warn "FACT_CONF_VARS_CORE(${FACT_CONF_VARS_CORE:-?}) != 真值($_v_core)——更新 facts.conf"; _varfail=1; }
   [[ "${FACT_CONF_VARS_ARCH:-0}" == "$_v_arch" ]] || { warn "FACT_CONF_VARS_ARCH(${FACT_CONF_VARS_ARCH:-?}) != 真值($_v_arch)——更新 facts.conf"; _varfail=1; }
   [[ "${FACT_CONF_VARS_COMPLIANCE:-0}" == "$_v_comp" ]] || { warn "FACT_CONF_VARS_COMPLIANCE(${FACT_CONF_VARS_COMPLIANCE:-?}) != 真值($_v_comp)——更新 facts.conf"; _varfail=1; }
-  [[ "${FACT_CONF_VARS:-0}" == "$_v_total" ]] || { warn "FACT_CONF_VARS(${FACT_CONF_VARS:-?}) != 三件套合计真值($_v_total)——更新 facts.conf"; _varfail=1; }
+  [[ "${FACT_CONF_VARS:-0}" == "$_v_total" ]] || { warn "FACT_CONF_VARS(${FACT_CONF_VARS:-?}) != 生成期必读文件合计真值($_v_total)——更新 facts.conf"; _varfail=1; }
   if [[ "$_varfail" -eq 0 ]]; then
     echo "  ✓ conf 变量四键一致（CORE ${_v_core} + ARCH ${_v_arch} + COMPLIANCE ${_v_comp} = ${_v_total}）"
   else
@@ -647,8 +647,8 @@ check_doc_consistency() {
 
   # 2d. FACT_COGNITION_LAYERS 对齐（audit-claims-reality C3：facts.conf 声称的 G-cognition
   # 扫描此前不存在——空头执法。窄域实现：①定义源表（cognition-framework.md 五层总览表）
-  # 层数行机械计数对账；②计数型表述扫描（"N层认知框架/基底"），非 5/五 即漂移——
-  # 限定"框架/基底"搭配，避开"第三层认知辩证"等单层引用与"3 层接线"等异轴表述）
+  # 层数行自动计数对账；②计数型表述扫描（"N层认知框架/基底"），非 5/五 即漂移——
+  # 限定"框架/基底"搭配，避开"第三层认知辩证"等单层引用与"3 层整合"等异轴表述）
   local _cog_file="$base/references/cognition-framework.md"
   local _cog_def=0 _cog_bad=""
   if [[ -f "$_cog_file" ]]; then
@@ -698,11 +698,11 @@ check_doc_consistency() {
     FAIL=1
   fi
   else
-    echo "  ℹ 非生成器仓（无 assets/facts.conf）——#2/#2b/#2c/#2d/#3 FACT_ 真值断言跳过（防 :-0 假默认误报）；#1 结构对账与 #4 税制断言仍执行"
+    echo "  ℹ 非生成器仓（无 assets/facts.conf）——#2/#2b/#2c/#2d/#3 FACT_ 真值断言跳过（防 :-0 假默认误报）；#1 结构对账与 #4 预算断言仍执行"
   fi
 
-  # 4. R13 税制断言（§6#1/#7）——口径修正：生成物"每会话固定税"（SKILL.md+hooks.json+settings+conf ≤8KB）+
-  # "认知面 references 拷贝"（≤256KB）——脚本是按需调用工具不算税（Codex"正文选中才注入"同构：工具不占预读认知）。
+  # 4. R13 预算断言（§6#1/#7）——口径修正：生成物"每会话固定税"（SKILL.md+hooks.json+settings+conf ≤8KB）+
+  # "上下文预算 references 拷贝"（≤256KB）——脚本是按需调用工具不算税（Codex"正文选中才注入"同构：工具不占预读认知）。
   local uf_budget="${FACT_ARTIFACT_BYTES_BUDGET:-262144}"
   local uf_bytes=0 _entry
   while IFS='|' read -r _dest _cat _tier; do
@@ -715,9 +715,9 @@ check_doc_consistency() {
       references/*) [[ -f "$base/$_dest" ]] && uf_bytes=$((uf_bytes + $(wc -c < "$base/$_dest" 2>/dev/null | tr -d ' '))) ;;
     esac
   done < <(awk '/^UNIVERSAL_FILES=\(/{f=1;next} f&&/^\)/{f=0} f' "$base/scripts/generate-skill.sh" | grep -oE '"[^"]+\|[^"]+"' | tr -d '"')
-  echo "  ℹ UNIVERSAL_FILES 认知面体积 ≈ ${uf_bytes}B（预算 ${uf_budget}B，超标 fail）"
+  echo "  ℹ UNIVERSAL_FILES 上下文预算体积 ≈ ${uf_bytes}B（预算 ${uf_budget}B，超标 fail）"
   if [[ "$uf_bytes" -gt "$uf_budget" ]]; then
-    warn "生成物认知面（references 拷贝）${uf_bytes}B > 预算 ${uf_budget}B（R13 税制断言）——references 按需拷贝收窄或瘦身"
+    warn "生成物上下文预算（references 拷贝）${uf_bytes}B > 预算 ${uf_budget}B（R13 预算断言）——references 按需拷贝收窄或瘦身"
     FAIL=1
   fi
 
@@ -864,7 +864,7 @@ check_never_gate_consistency() {
 }
 check_never_gate_consistency
 
-# ===== WP-CogAudit：运行时接线分层对账断言（林迪效应防治--标注须随实现演变）=====
+# ===== WP-CogAudit：运行时整合分层对账断言（林迪效应防治--标注须随实现演变）=====
 # 从 precheck.sh 的 has_* 守卫函数存在性派生 tier，对账 facts.conf 的 FACT_RUNTIMES_* 权威计数
 check_runtime_tier() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
@@ -875,14 +875,14 @@ check_runtime_tier() {
     set +u; # shellcheck disable=SC1090
     source "$base/assets/facts.conf"; set -u
   fi
-  echo "▶ 运行时接线分层对账（WP-CogAudit）"
+  echo "▶ 运行时整合分层对账（WP-CogAudit）"
   # 派生 deep 集合：precheck.sh 中 has_gitnexus/has_graphify/has_ocr/has_claude_mem 函数定义存在
   local deep_cnt=0 cli_cnt=0
   for fn in has_gitnexus has_graphify has_ocr has_claude_mem; do
     grep -qE "^${fn}\(\)" "$precheck" 2>/dev/null && deep_cnt=$((deep_cnt+1))
   done
   # 派生 cli 集合：has_openspec/has_comet/has_gsd_tools/has_codex_security
-  # codex-security 是 CLI 接线层第 4 对象（2026-07-30 吸收），但其 has_ 守卫在 gates-warn.sh 的
+  # codex-security 是 CLI 整合层第 4 对象（2026-07-30 吸收），但其 has_ 守卫在 gates-warn.sh 的
   # check_sast_deep 内联判定（command -v npx + OPENAI_API_KEY），不是 precheck.sh 的顶层 has_ 函数。
   # 此处对账 precheck.sh 顶层 has_ 函数（3 个：openspec/comet/gsd_tools），codex-security 的 has_
   # 守卫在 check_sast_deep 内联——所以 cli_cnt 期望值要扣除 codex-security（它不进顶层 has_ 计数）。
@@ -895,12 +895,12 @@ check_runtime_tier() {
   local method_cnt=$(( ${FACT_RUNTIMES:-13} - deep_cnt - ${FACT_RUNTIMES_CLI:-4} ))
   local exp_deep="${FACT_RUNTIMES_DEEP:-4}" exp_cli="${FACT_RUNTIMES_CLI:-4}" exp_method="${FACT_RUNTIMES_METHOD:-5}"
   if [[ "$deep_cnt" == "$exp_deep" && "$cli_cnt" == "$((exp_cli - 1))" && "$method_cnt" == "$exp_method" ]]; then
-    echo "  ✓ 接线分层与 facts.conf 一致（deep=${deep_cnt} cli顶层has_=${cli_cnt}（+codex-security内联守卫1=CLI ${exp_cli}） method=${method_cnt}）"
+    echo "  ✓ 整合分层与 facts.conf 一致（deep=${deep_cnt} cli顶层has_=${cli_cnt}（+codex-security内联守卫1=CLI ${exp_cli}） method=${method_cnt}）"
   else
-    [[ "$deep_cnt" == "$exp_deep" ]] || { warn "deep 接线 has_* 函数数=${deep_cnt} ≠ facts.conf FACT_RUNTIMES_DEEP=${exp_deep}"; FAIL=1; }
+    [[ "$deep_cnt" == "$exp_deep" ]] || { warn "deep 整合 has_* 函数数=${deep_cnt} ≠ facts.conf FACT_RUNTIMES_DEEP=${exp_deep}"; FAIL=1; }
     # cli 顶层 has_ 期望 = FACT_RUNTIMES_CLI - 1（codex-security 守卫在 check_sast_deep 内联，不在顶层 has_）
-    [[ "$cli_cnt" == "$((exp_cli - 1))" ]] || { warn "cli 接线 顶层 has_* 函数数=${cli_cnt} ≠ 期望 $((exp_cli - 1))（FACT_RUNTIMES_CLI=${exp_cli} 含 codex-security 内联守卫1，不进顶层 has_ 计数）"; FAIL=1; }
-    [[ "$method_cnt" == "$exp_method" ]] || { warn "method 接线派生数=${method_cnt} ≠ facts.conf FACT_RUNTIMES_METHOD=${exp_method}"; FAIL=1; }
+    [[ "$cli_cnt" == "$((exp_cli - 1))" ]] || { warn "cli 整合 顶层 has_* 函数数=${cli_cnt} ≠ 期望 $((exp_cli - 1))（FACT_RUNTIMES_CLI=${exp_cli} 含 codex-security 内联守卫1，不进顶层 has_ 计数）"; FAIL=1; }
+    [[ "$method_cnt" == "$exp_method" ]] || { warn "method 整合派生数=${method_cnt} ≠ facts.conf FACT_RUNTIMES_METHOD=${exp_method}"; FAIL=1; }
   fi
 }
 check_runtime_tier
@@ -944,7 +944,7 @@ check_golden_vector() {
 check_golden_vector
 
 # ===== S12 修复：框架规则集 vs fixture 配对断言（G12）=====
-# 守"4-element coupling"的第 3 元素（fixture 双态）：references/frameworks/*.md 数须 == tests/fixtures/ 目录数。
+# 守"4-element coupling"的第 3 元素（fixture 正反例）：references/frameworks/*.md 数须 == tests/fixtures/ 目录数。
 # 此前 self-check 只断言 rules.md vs gate.sh 配对（要素 2），fixture 配对（要素 3）无守。
 # S12 已把 verify-framework-ruleset.sh 的 fixture 缺失从 warn 升 fail；本断言在 self-check 层补全覆盖。
 check_framework_fixture_pairing() {
@@ -967,7 +967,7 @@ check_framework_fixture_pairing() {
     fi
   done
   if [[ -n "$_missing" ]]; then
-    warn "框架缺 fixture 配对：${_missing}（S12 后全 79 框架强制双态覆盖）"
+    warn "框架缺 fixture 配对：${_missing}（S12 后全 79 框架强制正反例覆盖）"
     FAIL=1
   elif [[ "$_rules" -ne "$_fx" ]]; then
     warn "框架规则集数 ${_rules} ≠ fixture 目录数 ${_fx}（S12 配对断言）"
@@ -1043,7 +1043,7 @@ check_complexity_budget() {
     source "$facts"; set -u
   fi
   echo "▶ 复杂度负向预算断言（G9，决策 26）"
-  # 复用 check_doc_consistency 的真值派生逻辑（机械计数，不写死）
+  # 复用 check_doc_consistency 的真值派生逻辑（自动计数，不写死）
   local _gates_true _vars_true _v_core _v_arch _v_comp
   _gates_true=$(_count_check_fns "$base")
   _v_core=$(_count_conf_vars "$base" "precheck.conf")
@@ -1081,7 +1081,7 @@ check_complexity_budget() {
     fi
   fi
   # 上下文表面预算（决策 32，warn-only 渐进式，对齐 MEASURE 模式）
-  # context-surface.sh --gen 计量生成期必读三件套（SKILL.md + exploration-guide + template-spec）字节。
+  # context-surface.sh --gen 计量生成期必读生成期必读文件（SKILL.md + exploration-guide + template-spec）字节。
   # 超预算只 warn 不 fail——避免压缩工作被回涨悄悄侵蚀，但给减重留过渡期（warn-only → 达标后可翻 fail）。
   local _ctx_budget="${FACT_CONTEXT_SURFACE_BUDGET:-180000}"
   local _ctx_script="$base/scripts/context-surface.sh"
@@ -1090,7 +1090,7 @@ check_complexity_budget() {
     _ctx_total=$(bash "$_ctx_script" --gen 2>/dev/null | awk -F'\t' '$3=="TOTAL" {print $1}' | head -1)
     _ctx_total="${_ctx_total:-0}"
     if [[ "$_ctx_total" -gt "$_ctx_budget" ]]; then
-      warn "上下文表面 ${_ctx_total}B > 预算 ${_ctx_budget}B（决策 32）--生成期必读三件套超预算，须压缩 SKILL.md/exploration-guide/template-spec 或申请预算上调"
+      warn "上下文表面 ${_ctx_total}B > 预算 ${_ctx_budget}B（决策 32）--生成期必读生成期必读文件超预算，须压缩 SKILL.md/exploration-guide/template-spec 或申请预算上调"
     else
       echo "  ✓ 上下文表面 ${_ctx_total}B ≤ 预算 ${_ctx_budget}B（决策 32，预留 $((_ctx_budget - _ctx_total)) 增长空间）"
     fi
@@ -1176,7 +1176,7 @@ check_enforce_facts() {
 }
 check_enforce_facts
 
-# 决策 22 第二触发点（audit-2026-08-25 补接线）：profile 漂移自检（warn 不 fail）。
+# 决策 22 第二触发点（audit-2026-08-25 补整合）：profile 漂移自检（warn 不 fail）。
 # 第一触发点=precheck --all/--all-full 启动（本批已对决策收窄触发面）；此处为自检面：
 # 载体存在 + 阈值单一来源（profile-thresholds.conf，防 auto_detect_profile 漂移副本）。
 check_profile_drift() {
@@ -1196,7 +1196,7 @@ check_profile_drift
 
 # ===== C1 修复：UNIVERSAL_FILES 计数断言（G11）=====
 # facts.conf FACT_UNIVERSAL_FILES 声明值须与 generate-skill.sh UNIVERSAL_FILES 数组条目数一致。
-# 此前该 FACT 无断言守，曾长期漂移（声明 29，实际 39）。本断言机械计数对齐。
+# 此前该 FACT 无断言守，曾长期漂移（声明 29，实际 39）。本断言自动计数对齐。
 check_universal_files_count() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local facts="$base/assets/facts.conf"
@@ -1217,7 +1217,7 @@ check_universal_files_count() {
     echo "  ✓ UNIVERSAL_FILES ${_true} 条 = FACT_UNIVERSAL_FILES ${_declared}（C1 对齐）"
   fi
   # WP-Audit2026-07-27: lite 档条目数断言（FACT_UNIVERSAL_FILES_CORE）——此前该 FACT 无断言守，
-  # 曾长期漂移（声明 21，真值 20）。机械计数 UNIVERSAL_FILES 中第三段为 lite 的条目。
+  # 曾长期漂移（声明 21，真值 20）。自动计数 UNIVERSAL_FILES 中第三段为 lite 的条目。
   # audit-2026-08-25：计数模式去行尾锚——带尾注释的 lite 条目（gate-plan/audit-closure/ontology-verify/objects.md）
   # 曾被 `\|lite"$` 漏数 4 条（读数 30 ≠ 真值 34，断言假绿）。模式与 generate-skill.sh 解析语义对齐。
   local _core_declared="${FACT_UNIVERSAL_FILES_CORE:-37}"
@@ -1398,7 +1398,7 @@ check_frontend_design_methodology() {
     warn "facts.conf FACT_RUNTIMES=${FACT_RUNTIMES:-（未设）} ≠ 13（impeccable + codex-security 加入后应同步运行时总数为 13）"
     _warn=$((_warn+1))
   else
-    echo "  ✓ facts.conf FACT_RUNTIMES=13（13 个外部运行时，含 codex-security CLI 接线）"
+    echo "  ✓ facts.conf FACT_RUNTIMES=13（13 个外部运行时，含 codex-security CLI 整合）"
   fi
 
   if [[ $_missing -gt 0 ]]; then
@@ -1454,7 +1454,7 @@ check_context_engineering_layering() {
 
   # ③ facts.conf 口径同步（warn-only，对齐 G13 风格）
   # references 数随方法论吸收递增（context-engineering-layering/codex-security-methodology/
-  # generation-flow/cordis-composability-methodology 等）。真值由机械计数得出，FACT_REFERENCES 跟随同步。
+  # generation-flow/cordis-composability-methodology 等）。真值由自动计数得出，FACT_REFERENCES 跟随同步。
   # 六轮复盘改进：不再硬编码期望值（原写死 35），改为与实际 ls 计数对比——加 reference 时无需改此处。
   local _ref_true; _ref_true=$(ls "$base"/references/*.md 2>/dev/null | grep -v '/frameworks/' | wc -l | tr -d ' ')
   if [[ "${FACT_REFERENCES:-0}" -ne "$_ref_true" ]]; then
@@ -1474,10 +1474,10 @@ check_context_engineering_layering() {
 }
 check_context_engineering_layering
 
-# ===== codex-security CLI 接线存在性断言（G15，openai/codex-security v0.1.4 吸收）=====
-# codex-security v0.1.4 作为 CLI 接线层第 4 对象（决策 27 吸收）：
+# ===== codex-security CLI 整合存在性断言（G15，openai/codex-security v0.1.4 吸收）=====
+# codex-security v0.1.4 作为 CLI 整合层第 4 对象（决策 27 吸收）：
 #   - references/codex-security-methodology.md 必须存在且非空（absorb 载体 ① references 文档）
-#   - SKILL.md CLI 接线表须含 codex-security（absorb 载体 ② SKILL.md 叙事）
+#   - SKILL.md CLI 整合表须含 codex-security（absorb 载体 ② SKILL.md 叙事）
 #   - facts.conf FACT_RUNTIMES=13 / FACT_RUNTIMES_CLI=4（口径同步硬约束）
 # 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=55（决策 27 第 4 条：G<N> 是合规扩展点）。
 # 风格：对齐 G13/G14 warn-only——文件缺失才 fail，叙事/口径漂移只 warn。
@@ -1489,7 +1489,7 @@ check_codex_security_cli_wiring() {
     set +u; # shellcheck disable=SC1090
     source "$facts"; set -u
   fi
-  echo "▶ codex-security CLI 接线存在性断言（G15，openai/codex-security v0.1.4 吸收）"
+  echo "▶ codex-security CLI 整合存在性断言（G15，openai/codex-security v0.1.4 吸收）"
   local _missing=0 _warn=0
 
   # ① references/codex-security-methodology.md 存在且非空
@@ -1504,21 +1504,21 @@ check_codex_security_cli_wiring() {
     echo "  ✓ references/codex-security-methodology.md 存在且非空"
   fi
 
-  # ② SKILL.md CLI 接线表含 codex-security
+  # ② SKILL.md CLI 整合表含 codex-security
   local _skill="$base/SKILL.md"
   if [[ -f "$_skill" ]] && grep -q "codex-security" "$_skill"; then
-    echo "  ✓ SKILL.md 含 codex-security 引用（CLI 接线层第 4 对象）"
+    echo "  ✓ SKILL.md 含 codex-security 引用（CLI 整合层第 4 对象）"
   else
-    warn "SKILL.md 未含 codex-security 引用（codex-security 吸收载体 ②，应在 CLI 接线表加第 4 行）"
+    warn "SKILL.md 未含 codex-security 引用（codex-security 吸收载体 ②，应在 CLI 整合表加第 4 行）"
     _warn=$((_warn+1))
   fi
 
   # ③ facts.conf 口径同步（warn-only，对齐 G13/G14 风格）
   if [[ "${FACT_RUNTIMES_CLI:-0}" -ne 4 ]]; then
-    warn "facts.conf FACT_RUNTIMES_CLI=${FACT_RUNTIMES_CLI:-（未设）} ≠ 4（codex-security 加入 CLI 接线层应同步为 4）"
+    warn "facts.conf FACT_RUNTIMES_CLI=${FACT_RUNTIMES_CLI:-（未设）} ≠ 4（codex-security 加入 CLI 整合层应同步为 4）"
     _warn=$((_warn+1))
   else
-    echo "  ✓ facts.conf FACT_RUNTIMES_CLI=4（CLI 接线层 4 对象）"
+    echo "  ✓ facts.conf FACT_RUNTIMES_CLI=4（CLI 整合层 4 对象）"
   fi
   if [[ "${FACT_RUNTIMES:-0}" -ne 13 ]]; then
     warn "facts.conf FACT_RUNTIMES=${FACT_RUNTIMES:-（未设）} ≠ 13（codex-security 加入应同步运行时总数为 13）"
@@ -1617,7 +1617,7 @@ check_stable_propagate_wiring() {
   fi
 }
 
-# ===== G20：多字节相邻变量铁律机械检查（security-spec §6.1，第 20 轮复盘固化）=====
+# ===== G20：多字节相邻变量铁律自动检查（security-spec §6.1，第 20 轮复盘固化）=====
 # 铁律：`$var中文` 须 `${var}`——bash 3.2 C-locale 下 $var 紧跟多字节字符会把其字节吞进
 # 变量名，报 "<var><乱码>: unbound variable"。本会话三次真实踩中（F2 warn 行 / v2 run 脚本
 # CORPUS 行 / F4 --remove echo 行——后者是潜伏雷，正常 locale 不炸、C-locale 必炸）。
@@ -1661,7 +1661,7 @@ check_multibyte_var_adjacency() {
 check_stable_propagate_wiring
 check_multibyte_var_adjacency
 
-# ===== G22：sed 正则方言铁律机械检查（audit-claims-reality F2，决策 35 解法占有锚）=====
+# ===== G22：sed 正则方言铁律自动检查（audit-claims-reality F2，决策 35 解法占有锚）=====
 # BSD sed（macOS）不认 GNU 扩展：\s/\b/\w 被当字面字母（requests→requet 实证），
 # BRE 的 \?/\+ 不支持。该类已被修三次（WP-R Bug#3、A3/A9、spring-batch F2）——
 # 散文纪律（security-spec §6.1）不防复发，机器扫描才占有解法。
@@ -1710,7 +1710,7 @@ check_sed_regex_dialect() {
 }
 check_sed_regex_dialect
 
-# ===== G24：跨平台可移植性机械检查（麒麟老 bash 3.2 / Git Bash / BSD macOS，portability 轮固化）=====
+# ===== G24：跨平台可移植性自动检查（麒麟老 bash 3.2 / Git Bash / BSD macOS，portability 轮固化）=====
 # 三类坑散文纪律不防复发，机器扫描才占有解法：
 #   ① 裸 mktemp（无模板）：BSD mktemp 无模板崩、GNU 在 CWD 创建污染目录——统一 ${TMPDIR:-/tmp} 模板；
 #   ② GNU-only 命令：tac（BSD 无）、grep -P（PCRE）、sed -i 无备份后缀（GNU）、readlink -f（BSD 无）；
@@ -1864,11 +1864,11 @@ check_cordis_composability_wiring() {
     _warn=$((_warn+1))
   fi
 
-  # ② SKILL.md 含 cordis 引用（方法论引用层接线）
+  # ② SKILL.md 含 cordis 引用（方法论引用层整合）
   if grep -q 'cordis' "$base/SKILL.md" 2>/dev/null; then
     echo "  ✓ SKILL.md 含 cordis 引用（方法论引用层）"
   else
-    warn "SKILL.md 缺 cordis 引用（G17 接线，应补 references 清单）"
+    warn "SKILL.md 缺 cordis 引用（G17 整合，应补 references 清单）"
     _warn=$((_warn+1))
   fi
 
@@ -1888,53 +1888,53 @@ check_cordis_composability_wiring() {
   fi
 }
 
-# ===== G25：能力地图双向对账断言（R50 整合轮——吸收层接线台账孤儿零容忍）=====
+# ===== G25：文档索引双向一致性校验断言（R50 整合轮——吸收层整合清单未登记文档检查）=====
 # 裂缝背景：46+ 档 references 各自带"路由表见 SKILL.md"头，但第六层长期散文泛列举——
 # 约三分之一档位不按名出现（claude-code-capabilities/memory-persistence/review-methodology 等），
-# 吸收物之间无接线台账（13 运行时/19 行 upstream-baseline/46 references 三者零对账）。
-# R50 修复：references/capability-map.md 为吸收层接线单一事实源 + SKILL.md 第六层五族路由表化。
+# 吸收物之间无整合清单（13 运行时/19 行 upstream-baseline/46 references 三者零对账）。
+# R50 修复：references/capability-map.md 为吸收层整合单一事实源 + SKILL.md 第六层五类路由表化。
 # 本断言（warn-only，对齐 G13-G17，不计入 FACT_GATES_TOTAL=55）守六面（序号=代码内检查序）：
-#   ① 载体存在性：capability-map.md 存在且非空（台账本体）；
-#   ② 孤儿零容忍：references/*.md（不含 frameworks/ 与 capability-map 自身）basename 必须出现在 map；
-#   ③ 幽灵零容忍：map 接线表中首列为纯档名的行，其档必须实存（防登记不存在的档）；
-#   ④ 两级互指：SKILL.md 第六层必须引用 capability-map（路由表→台账）。
-#   ⑤ 分派零落档（R51）：references/*-methodology.md 每档必须可从 task-methodology-router.md
-#      方法论分派表到达（反向索引闭环：建档必接线、接线必可达）。
-#   ⑥ 随发或声明（R52）：*-methodology.md 必须随发（UNIVERSAL_FILES）或在分派表标【生成器侧】——
-#      分派目标侧可达（随发补缺前实测 13 方法论仅 3 随发，目标技能侧分派悬空）。
+#   ① 载体存在性：capability-map.md 存在且非空（清单本体）；
+#   ② 未登记文档检查：references/*.md（不含 frameworks/ 与 capability-map 自身）basename 必须出现在 map；
+#   ③ 失效引用检查：map 整合表中首列为纯档名的行，其档必须实存（防登记不存在的档）；
+#   ④ 两级互指：SKILL.md 第六层必须引用 capability-map（路由表→清单）。
+#   ⑤ 文档路由覆盖（R51）：references/*-methodology.md 每档必须可从 task-methodology-router.md
+#      文档路由表到达（反向索引闭环：建档必整合、整合必可达）。
+#   ⑥ 分发范围（R52）：*-methodology.md 必须随技能分发（UNIVERSAL_FILES）或在路由表标【生成器侧】——
+#      分派目标侧可达（随技能分发补缺前实测 13 方法论仅 3 随技能分发，目标技能侧分派悬空）。
 check_capability_map_wiring() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local map="$base/references/capability-map.md"
-  echo "▶ 能力地图双向对账断言（G25，R50 整合轮）"
+  echo "▶ 文档索引双向一致性校验断言（G25，R50 整合轮）"
   local _warn=0
 
-  # ① 载体存在性（台账本体）
+  # ① 载体存在性（清单本体）
   if [[ -f "$map" ]] && [[ -s "$map" ]]; then
     echo "  ✓ references/capability-map.md 存在且非空"
   else
-    warn "references/capability-map.md 缺失或为空（G25 接线台账载体）"
+    warn "references/capability-map.md 缺失或为空（G25 整合清单载体）"
     echo "  ⊘ 跳过 G25 对账"
     return 0
   fi
 
-  # ② 孤儿零容忍：每个实存档必须被台账收录
+  # ② 未登记文档检查：每个实存档必须被清单收录
   local orphans="" f b
   for f in "$base"/references/*.md; do
     [[ -f "$f" ]] || continue
     b="$(basename "$f" .md)"
-    [[ "$b" == "capability-map" ]] && continue  # 台账自身不入台账
+    [[ "$b" == "capability-map" ]] && continue  # 清单自身不入清单
     if ! grep -q -- "$b" "$map" 2>/dev/null; then
       orphans="${orphans}${orphans:+ }$b"
     fi
   done
   if [[ -z "$orphans" ]]; then
-    echo "  ✓ 孤儿零容忍：全部 references 档被 capability-map 收录"
+    echo "  ✓ 未登记文档检查：全部 references 档被 capability-map 收录"
   else
-    warn "G25 孤儿档（吸收未接线，须补 map 行或归档）：$orphans"
+    warn "G25 孤儿档（吸收未整合，须补 map 行或归档）：$orphans"
     _warn=$((_warn+1))
   fi
 
-  # ③ 幽灵零容忍：台账表格首列纯档名行 → 档必须实存
+  # ③ 失效引用检查：清单表格首列纯档名行 → 档必须实存
   local ghosts="" tok
   for tok in $(awk -F'|' '/^\| [a-z0-9][a-z0-9-]* +\|/ { gsub(/ /, "", $2); if ($2 != "") print $2 }' "$map" 2>/dev/null); do
     if [[ ! -f "$base/references/$tok.md" ]]; then
@@ -1942,21 +1942,21 @@ check_capability_map_wiring() {
     fi
   done
   if [[ -z "$ghosts" ]]; then
-    echo "  ✓ 幽灵零容忍：台账登记档全部实存"
+    echo "  ✓ 失效引用检查：清单登记档全部实存"
   else
-    warn "G25 幽灵档（台账登记了不存在的档）：$ghosts"
+    warn "G25 幽灵档（清单登记了不存在的档）：$ghosts"
     _warn=$((_warn+1))
   fi
 
   # ④ 两级互指：SKILL.md 第六层引用 capability-map
   if grep -q 'capability-map' "$base/SKILL.md" 2>/dev/null; then
-    echo "  ✓ SKILL.md 引用 capability-map（路由表↔台账两级互指）"
+    echo "  ✓ SKILL.md 引用 capability-map（路由表↔清单两级互指）"
   else
     warn "SKILL.md 缺 capability-map 引用（G25 两级互指断链）"
     _warn=$((_warn+1))
   fi
 
-  # ⑤ 分派零落档（R51 反向索引闭环）：*-methodology.md 每档必须可从分派表到达
+  # ⑤ 文档路由覆盖（R51 反向索引闭环）：*-methodology.md 每档必须可从路由表到达
   local undispatched="" mf mb
   for mf in "$base"/references/*-methodology.md; do
     [[ -f "$mf" ]] || continue
@@ -1966,22 +1966,22 @@ check_capability_map_wiring() {
     fi
   done
   if [[ -z "$undispatched" ]]; then
-    echo "  ✓ 分派零落档：全部 *-methodology.md 可从方法论分派表到达"
+    echo "  ✓ 文档路由覆盖：全部 *-methodology.md 可从文档路由表到达"
   else
-    warn "G25 分派落档（方法论不可从任务分派到达，须补分派表行）：$undispatched"
+    warn "G25 分派落档（方法论不可从任务分派到达，须补路由表行）：$undispatched"
     _warn=$((_warn+1))
   fi
 
-  # ⑥ 随发或声明（R52 立，R55 扩面全档名）：references/*.md（除 capability-map 自身）凡被分派表
-  # 引用，必须随发（UNIVERSAL_FILES）或在分派表标【生成器侧】——分派表随发而被分派的档不随发
-  # = 目标技能侧分派悬空（R52 实锤 13 方法论仅 3 随发；R55 扩面首跑抓出 generation-flow/
+  # ⑥ 分发范围（R52 立，R55 扩面全档名）：references/*.md（除 capability-map 自身）凡被路由表
+  # 引用，必须随技能分发（UNIVERSAL_FILES）或在路由表标【生成器侧】——路由表随技能分发而被分派的档不随技能分发
+  # = 目标技能侧分派悬空（R52 实锤 13 方法论仅 3 随技能分发；R55 扩面首跑抓出 generation-flow/
   # template-spec/quality-management-standards 三处生成器侧引用未标注）。
   local unshipped="" sf sb
   for sf in "$base"/references/*.md; do
     [[ -f "$sf" ]] || continue
     sb="$(basename "$sf")"
-    [[ "$sb" == "capability-map.md" ]] && continue  # 台账自身不入分派面
-    # 只查被分派表引用的档（未引用的生成器侧文档无需标注——分派表是引用面的事实源）
+    [[ "$sb" == "capability-map.md" ]] && continue  # 清单自身不入分派面
+    # 只查被路由表引用的档（未引用的生成器侧文档无需标注——路由表是引用面的事实源）
     grep -qF -- "${sb%.md}" "$base/references/task-methodology-router.md" 2>/dev/null || continue
     if sed -n '/^UNIVERSAL_FILES=(/,/^)/p' "$base/scripts/generate-skill.sh" 2>/dev/null | grep -qF "$sb"; then
       continue
@@ -1992,16 +1992,16 @@ check_capability_map_wiring() {
     unshipped="${unshipped}${unshipped:+ }$sb"
   done
   if [[ -z "$unshipped" ]]; then
-    echo "  ✓ 随发或声明：分派表引用的档全部随发或标注【生成器侧】（分派目标侧可达）"
+    echo "  ✓ 分发范围：路由表引用的档全部随技能分发或标注【生成器侧】（分派目标侧可达）"
   else
-    warn "G25 随发缺口（分派表引用但目标技能无此档，须随发或标【生成器侧】）：$unshipped"
+    warn "G25 随技能分发缺口（路由表引用但目标技能无此档，须随技能分发或标【生成器侧】）：$unshipped"
     _warn=$((_warn+1))
   fi
 
   if [[ $_warn -gt 0 ]]; then
-    echo "  ℹ 能力地图对账漂移 ${_warn} 项（warn-only，不阻断）"
+    echo "  ℹ 文档索引对账漂移 ${_warn} 项（warn-only，不阻断）"
   else
-    echo "  ✓ 能力地图双向对账一致（孤儿零 + 幽灵零 + 互指在 + 分派零落档 + 随发或声明）"
+    echo "  ✓ 文档索引双向一致性校验通过（孤儿零 + 幽灵零 + 互指在 + 文档路由覆盖 + 分发范围）"
   fi
 }
 check_cordis_composability_wiring
@@ -2010,7 +2010,7 @@ check_capability_map_wiring
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
 # ===== R16-A：本体层类型对账（objects/links/actions 三目录 vs 实现存证）=====
-# 类型目录是承诺清单——每个类型声明了"实现存证"列；本断言抽可机械验证的存证点逐一对账。
+# 类型目录是承诺清单——每个类型声明了"实现存证"列；本断言抽可自动验证的存证点逐一对账。
 # 类型与实现漂移（如 Fingerprint 脚本改名/四本账少一本）→ warn（advisory，本体层是口径不是门禁）。
 check_ontology_types() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"

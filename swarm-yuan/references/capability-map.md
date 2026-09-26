@@ -1,64 +1,64 @@
-> **何时读我**：任何"该读哪个档 / 这能力从哪来 / 这运行时在哪被消费"的路由与对账问题。首行：# 能力地图（Capability Map）
+> **何时读我**：任何"该读哪个档 / 这能力从哪来 / 这运行时在哪被消费"的路由与对账问题。首行：# 文档索引（Capability Map）
 
-# 能力地图（Capability Map）——references 吸收层整合清单
+# 文档索引（Capability Map）——references 吸收层整合清单
 
-> **定位**：本表是吸收内容（46 份参考文档 + 19 个上游运行时）的**整合总清单**：每份文档登记 来源→证据分级→消费环节→何时读，由生成器自检的 G25 断言双向对账（每份实存文档必须入账、账上不登记不存在的文档）。分工：SKILL.md 第四层的"理念→兑现追踪表"（内部俗称追踪表（追踪表（弧线表）））登记**核心概念**的诞生步/消费方/回流点；本表登记**吸收来的文档**从哪来、在哪被用——粒度互补，纪律同一条：无悬空（谁都有消费方）。**本表只在生成器仓维护，不随目标技能分发**（目标技能只收到 UNIVERSAL_FILES 清单里的子集）。
+> **定位**：本表是吸收内容（46 份参考文档 + 19 个上游运行时）的**整合总清单**：每份文档登记 来源→证据分级→消费环节→何时读，由生成器自检的 G25 断言双向一致性校验（每份实存文档必须入账、账上不登记不存在的文档）。分工：SKILL.md 第四层的"理念→兑现追踪表"（内部俗称追踪表（追踪表（概念追踪表）））登记**核心概念**的诞生步/消费方/回流点；本表登记**吸收来的文档**从哪来、在哪被用——粒度互补，纪律同一条：无悬空（谁都有消费方）。**本表只在生成器仓维护，不随目标技能分发**（目标技能只收到 UNIVERSAL_FILES 清单里的子集）。
 > **证据分级**（R37 口径）：A=本机实测；B=官方一手直查；C=二手转述（未核验不进基线）。
 
 ## 一、整合视图：吸收物如何构成一个整体
 
-吸收不是收藏——每档能力都归位在总闭环（探查→生成→执勤→指纹反馈）的某一环，缺了它那一环就弱。五族即五个闭环段：
+吸收不是收藏——每档能力都归位在总闭环（探查→生成→执勤→指纹反馈）的某一环，缺了它那一环就弱。五类即五个闭环段：
 
 | 族 | 回答的问题 | 闭环段 |
 |----|-----------|--------|
-| ① 生成主干 | 流A 怎么把仓库变成技能 | 探查/填充/生成（流A ⓪-⑫） |
-| ② 拼装与知识消费 | 流B ②⑤怎么先查再写、知识怎么读 | 执勤生产段 |
+| ① 生成主干 | 生成流程 怎么把仓库变成技能 | 探查/填充/生成（生成流程 ⓪-⑫） |
+| ② 拼装与知识消费 | 开发工作流 ②⑤怎么先查再写、知识怎么读 | 执勤生产段 |
 | ③ 编排与治理 | 多 agent 怎么协作、纪律怎么守 | 执勤全程 + hooks |
 | ④ 验证与过程资产 | ⑥⑦怎么证、审计留什么痕 | 验证司法段 |
 | ⑤ 安全合规与行业 | 门禁依据什么标准、行业怎么立法 | 门禁执法段 |
 
-族内文档的互补关系在"触发"列可辨（如 memory-persistence 管跨会话记忆工具族 / knowledge-lifecycle 管项目知识四段协议 / context-engineering-layering 管规则放哪层——三者都关"知识"，粒度不同不重叠）。
+族内文档的互补关系在"触发"列可辨（如 memory-persistence 管跨会话记忆工具族 / knowledge-lifecycle 管项目知识四阶段协议 / context-engineering-layering 管规则放哪层——三者都关"知识"，粒度不同不重叠）。
 
-**配套查询**：本表从**文档**查"它被谁用"；`task-methodology-router.md` §方法论分派表从**任务**查"开工读什么"——一个任务要读什么，从那边查；一份文档被谁消费，从这里查。
+**配套查询**：本表从**文档**查"它被谁用"；`task-methodology-router.md` §文档路由表从**任务**查"开工读什么"——一个任务要读什么，从那边查；一份文档被谁消费，从这里查。
 
 ## 二、references 整合总表（46 档，self-check G25 对账面）
 
-### 族① 生成主干（流A）
+### 族① 生成主干（生成流程）
 
 | 档 | 来源（证据） | 消费节点 | 触发 |
 |----|-------------|---------|------|
-| exploration-guide | 内生 + semantica/graphify 借鉴（A） | 流A ⓪.5/①.5 探查（含 §C+.0.6/矛盾裁决） | 执行任何探查 |
-| generation-flow | 内生（决策 32 折叠） | 流A Step 1-12 详解 | 生成流程逐步执行 |
-| template-spec | 内生 + agent-skills 联动（A） | 流A ④ 填充六文件 | 填 spec/六文件 |
-| agent-skills-methodology | addyosmani/agent-skills（B） | 流A ④ + 流B ⑤ | 反借口/假设前置/Prove-It |
+| exploration-guide | 内生 + semantica/graphify 借鉴（A） | 生成流程 ⓪.5/①.5 探查（含 §C+.0.6/矛盾裁决） | 执行任何探查 |
+| generation-flow | 内生（决策 32 折叠） | 生成流程 Step 1-12 详解 | 生成流程逐步执行 |
+| template-spec | 内生 + agent-skills 联动（A） | 生成流程 ④ 填充六文件 | 填 spec/六文件 |
+| agent-skills-methodology | addyosmani/agent-skills（B） | 生成流程 ④ + 开发工作流 ⑤ | 反借口/假设前置/Prove-It |
 | context-engineering-layering | Vibe编码文章 + Anthropic 文档（B/C） | 生成器自身配置分层 | 决定规则放哪层 |
-| task-methodology-router | tanweai/pua 改写（A） | 流B 任务类型路由 | 任务类型判定 |
+| task-methodology-router | tanweai/pua 改写（A） | 开发工作流 任务类型路由 | 任务类型判定 |
 | cost-estimation-methodology | 人行科技司培训 + GB/T 42588（B） | spec §25 填充 | 规模/工作量估算 |
-| domain-knowledge | 内生速查（A） | 流A ①.5 + --domain 门禁 | 领域规律推导 |
-| code-graph-tools | GitNexus/graphify/codegraph 调研（A） | 流A ① 图谱优先 | 图谱工具选型 |
+| domain-knowledge | 内生速查（A） | 生成流程 ①.5 + --domain 门禁 | 领域规律推导 |
+| code-graph-tools | GitNexus/graphify/codegraph 调研（A） | 生成流程 ① 图谱优先 | 图谱工具选型 |
 | togaf-metamodel-methodology | TOGAF BDAT（B） | §C+.0.6 四层视角 | 架构类变更探查 |
-| frontend-design-methodology | pbakaus/impeccable（B） | 流A ④ + 流B ⑤ 前端 | 前端设计任务 |
+| frontend-design-methodology | pbakaus/impeccable（B） | 生成流程 ④ + 开发工作流 ⑤ 前端 | 前端设计任务 |
 
-### 族② 拼装与知识消费（流B ②⑤）
+### 族② 拼装与知识消费（开发工作流 ②⑤）
 
 | 档 | 来源（证据） | 消费节点 | 触发 |
 |----|-------------|---------|------|
-| lazy-generation-methodology | ponytail 蒸馏 + 行者明灵文章（B） | 流B ⑤ 编码七层下探 | 写新代码前找零件 |
+| lazy-generation-methodology | ponytail 蒸馏 + 行者明灵文章（B） | 开发工作流 ⑤ 编码七层下探 | 写新代码前找零件 |
 | cordis-composability-methodology | DeepSeek Harness（B） | 机制设计参考 | 设计可组合机制 |
-| knowledge-lifecycle-methodology | 京东海博文章 + OKF 核验（B） | 流B ② 读法 + 反馈回路三态 | 知识读取/更新处置 |
+| knowledge-lifecycle-methodology | 京东海博文章 + OKF 核验（B） | 开发工作流 ② 读法 + 反馈回路三态 | 知识读取/更新处置 |
 | memory-persistence | claude-mem/ruflo/ECC 工具族（A） | ⑧ 记忆写回 + 溯源标记 | 跨会话记忆/蒸馏 |
-| cognition-framework | 内生五层认知（A） | 流A ① 认知六阶链 | 探查建模 |
+| cognition-framework | 内生五层认知（A） | 生成流程 ① 认知六阶链 | 探查建模 |
 | cognitive-bias | 内生 + Kahneman 框架（B） | spec §16 自检 | 方案偏差自检 |
 | logic-razor | 内生（A） | 方案删冗余假设 | 思维语言推演 |
-| four-theories-methodology | 工程控制论等四源（B） | 生成器自身设计决策 | 划边界/评估门禁/认知面 |
+| four-theories-methodology | 工程控制论等四源（B） | 生成器自身设计决策 | 划边界/评估门禁/上下文预算 |
 | mea-loop-methodology | AMAP LongHorizon-Harness（B） | 长任务规划 + 审计引用 | 长任务拆解 |
 
-### 族③ 编排与治理（流B 全程）
+### 族③ 编排与治理（开发工作流 全程）
 
 | 档 | 来源（证据） | 消费节点 | 触发 |
 |----|-------------|---------|------|
 | governance-agents | pua 四权分离 + §Z 五协议（A） | hooks/loop 治理拓扑 | 治理架构/交付纪律 |
-| subagent-orchestration | superpowers/comet（A/B） | 流B ⑤ 复杂变更扇出 | subagent 编排 |
+| subagent-orchestration | superpowers/comet（A/B） | 开发工作流 ⑤ 复杂变更扇出 | subagent 编排 |
 | gsd-patterns | gsd-core（A） | 计划验证/状态戳 | 计划/状态管理 |
 | decision-governance | gsd-core + gstack（A/B） | UserChallenge 决策留痕 | 用户决策点 |
 | dsh-engineering-methodology | DeepSeek Harness rc.8（B） | 审计/状态韧性设计 | 机制设计参考 |
@@ -67,7 +67,7 @@
 | mcp-governance | 内生（A） | .mcp.json 配置审计 | MCP 服务接入 |
 | codex-security-methodology | openai/codex-security（A） | 安全扫描门禁整合 | 威胁建模/安全扫描 |
 
-### 族④ 验证与过程资产（流B ⑥⑦⑧）
+### 族④ 验证与过程资产（开发工作流 ⑥⑦⑧）
 
 | 档 | 来源（证据） | 消费节点 | 触发 |
 |----|-------------|---------|------|
@@ -110,7 +110,7 @@
 
 ## 四、对账纪律（self-check G25 机器执法）
 
-1. references/*.md（不含 frameworks/ 与本表自身）每个 basename 必须出现在本表——吸收必整合，孤儿零容忍；
+1. references/*.md（不含 frameworks/ 与本表自身）每个 basename 必须出现在本表——吸收必整合，未登记文档检查；
 2. 本表提及的每个档名必须实存——清单不登记幽灵；
 3. SKILL.md 第六层必须引用本表——路由表与清单两级互指。
-4. 分派零落档（R51）：`*-methodology.md` 每档必须可从 task-methodology-router.md §方法论分派表到达（反向索引闭环：建档必整合、整合必可达）。
+4. 文档路由覆盖（R51）：`*-methodology.md` 每档必须可从 task-methodology-router.md §文档路由表到达（反向索引闭环：建档必整合、整合必可达）。

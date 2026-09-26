@@ -55,7 +55,7 @@ description: <项目名> 的需求交付全流程技能。当用户...都应使�
 （真实命令 + 端口约定）
 
 ## 质量门禁
-（核心门禁清单，对应 check 段；含机械/AI 审边界一句：strict 档信号可信机械执行，
+（核心门禁清单，对应 check 段；含自动/AI 审边界一句：strict 档信号可信自动执行，
 warn/advisory 输出由 AI 判断采纳不必全修；GATE_AI_JUDGMENT=1 时 advisory 档 5 个质量门禁
 转 AI 自觉判断，见 scripts/precheck.conf——-3）
 
@@ -241,7 +241,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 - 落盘：节点级默认——进入/完成本节点时执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令>`，追加到 `.swarm-yuan/trace.jsonl`；调用级细节（每次具体调用）仅在 `SWARM_YUAN_TRACE=verbose` 时落盘
 
 **⑩ 方法论引用（机器校验）：**
-- 本节点消费的 references 档（对偶 task-methodology-router 分派表消费节点序，可裁剪增删）
+- 本节点消费的 references 档（互为正反 task-methodology-router 路由表消费节点序，可裁剪增删）
 
 （其他节点同结构）
 
@@ -281,7 +281,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 10. 发布后运营 —— **★运维左移运行态验证（D 方向）**：发布后验证健康检查端点可访问 + 告警阈值已设 + runbook 已更新 + 灰度观察期无异常（precheck `--operate`，warn 级 advisory）
 
 > 项目可能有额外节点（如"代码审查"、"部署验证"），或无发布环节。按项目实际裁剪。
-> **方法论整合：** 节点②③用 OpenSpec 的 proposal→spec(delta)→design→tasks 模式（specs as source of truth）；节点⑤用 superpowers 的 subagent 编排（见 subagent-orchestration.md）；节点间状态用 comet 风格脚本背书（state-machine.sh，非 prompt-only）；节点⑥含 gstack/OCR 审查维度（见 review-methodology.md）。**方法论分派（任务类型→档）单源见 task-methodology-router.md §方法论分派表（R51）**。
+> **方法论整合：** 节点②③用 OpenSpec 的 proposal→spec(delta)→design→tasks 模式（specs as source of truth）；节点⑤用 superpowers 的 subagent 编排（见 subagent-orchestration.md）；节点间状态用 comet 风格脚本背书（state-machine.sh，非 prompt-only）；节点⑥含 gstack/OCR 审查维度（见 review-methodology.md）。**方法论分派（任务类型→档）单源见 task-methodology-router.md §文档路由表（R51）**。
 > **★调用追踪（设计理念 2 落地）：** 每个节点必须含第 ⑨ 要素——进入节点先公告（`→ [节点X] 调用 …`），节点级落盘 `.swarm-yuan/trace.jsonl`（`SWARM_YUAN_TRACE=verbose` 含每次具体调用）。机器执法：`generate-skill.sh --verify-completeness` 校验每节点段含「调用追踪」字样，缺则 exit 1。
 > **★左移原则（Shift-Left）：测试、变更影响、运维监控不等到节点⑥⑦⑧才考虑，须在节点②③⑤就嵌入约束**——spec 阶段写测试设计+可观测性约束，plan 阶段写变更影响+回滚预案，编码阶段先测试后实现，合入前确认回滚+迁移兼容，发布前确认灰度+告警+runbook。precheck `--shift-left` 门禁校验各阶段左移产出物存在。
 
@@ -295,7 +295,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 7. **流程控制** — 标注可否暂停/恢复/重启及恢复方式
 8. **状态控制** — 状态载体（git 分支/文件/对话上下文）与恢复方式
 9. **调用追踪** — 每节点写清：进入节点时的公告格式（`→ [节点X] 调用 <技能/工具> · <目的>`）+ 本节点会调用哪些技能/工具（须与节点工具表一致）+ trace-log.sh 落盘命令
-10. **方法论引用** — 每节点写明消费的 references 档（对偶分派表）；机器执法：`generate-skill.sh --verify-completeness` 逐节点校验「方法论引用」，缺则列 file:line 并 exit 1
+10. **方法论引用** — 每节点写明消费的 references 档（互为正反路由表）；机器执法：`generate-skill.sh --verify-completeness` 逐节点校验「方法论引用」，缺则列 file:line 并 exit 1
 11. **完成检查表** — workflow.md 末尾，汇总所有节点门禁
 
 **标注需要用户确认的节点**（通常是合入 main、发布）。
@@ -336,7 +336,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | `release.md` | §3 项目编译规则清单 | 编译规则表 + 构建命令 + 产物位置 + 失败排查 |
 | `reference-manual.md` | §2/4/5/6/7/8/9 + check §1/2/3/4 | 见下方 |
 | `recipes.md`（R21 配方层，standard/compliance 档；lite 不生成） | exploration-guide §C+.6/§C+.7 | §A 业务功能清单（功能→入口→复用组件→接口→数据→测试编目）+ §B 任务配方（每配方五要素：触发场景/前置查询/复用件/胶水/门禁与验证） |
-| `relations.jsonl`（R21-D 关系边集，可选产物；探查期生成） | exploration-guide §C+.2.5 | 机器可读依赖边 `{"from","to","kind","evidence"}`：机械 import 边（relations-extract.sh）+ AI 语义边（call/route/message/ipc/export）；--stable-diff 传播与流B 探查消费 |
+| `relations.jsonl`（R21-D 关系边集，可选产物；探查期生成） | exploration-guide §C+.2.5 | 机器可读依赖边 `{"from","to","kind","evidence"}`：自动 import 边（relations-extract.sh）+ AI 语义边（call/route/message/ipc/export）；--stable-diff 传播与开发工作流 探查消费 |
 
 **reference-manual.md 必须包含的章节（按项目形态动态适配）：**
 
@@ -349,7 +349,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | §调用链路说明 | §5 | **按形态选链路模型**：前端(注册装配+模块矩阵+挂载树+store依赖) / 后端(请求处理管道+分层矩阵+数据流+外部依赖+**数据映射链路**) / 异步(消息流转) / 微服务(跨服务调用链) + §5.1 编排约束注释；**含定时/批处理信号时加调度任务表**（§C+.2-J 产物：任务/入口路径/触发方式/读数据资产/写数据资产/幂等策略；DIM_SCHEDULE_JOB 计数核验，路径进 --path-check） | 按形态动态 |
 | §应用接口清单（全量） | §6 | **按接口形态全量**：REST(每路由文件端点表) / GraphQL(Query/Mutation) / gRPC(service.method) / MQ(queue+handler) / 库(导出函数)。无通配符占位 | 按形态动态 |
 | §UI/UX设计资源清单 | §7 | 设计文档、主题、样式、品牌资源、i18n；含前端时按 `references/frontend-design-methodology.md` 三层权威分层（PRODUCT.md 产品真相 > DESIGN.md 视觉决策 > surface brief 单面策略）组织设计决策，含 design token（colors/typography/rounded/spacing/components）+ 品牌资源 + i18n | 仅含前端 |
-| §数据字典及数据规范 | §8 | schema 位置、数据流、业务规则、勾稽关系；**字段级映射台账（有数据访问层时必含，§C+.2-B Layer 5 产物）：核心实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单 ↔ 批处理 reader 列——改字段的影响面以此台账为唯一依据；**纯 REST JSON 项目（无数据访问层）用 JSON 契约面列族：JSON 字段 ↔ 前端调用点 ↔ 测试锚点**（R66 承载位补，同四查①语义）；JPQL @Query 内嵌实体/字段名须入台账**；**schema/迁移资产表（横向清剿轮补，DIM_ORM_SCHEMA 计数核验）：prisma/migrations/alembic/flyway/liquibase/orm.xml/hbm/schema.sql 全枚举——改模型必核"迁移是否已生成"（模型↔迁移漂移 = 漏改字段的姊妹缺陷）** | 通用（有数据层时） |
+| §数据字典及数据规范 | §8 | schema 位置、数据流、业务规则、勾稽关系；**字段级映射清单（有数据访问层时必含，§C+.2-B Layer 5 产物）：核心实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单 ↔ 批处理 reader 列——改字段的影响面以此清单为唯一依据；**纯 REST JSON 项目（无数据访问层）用 JSON 契约面列族：JSON 字段 ↔ 前端调用点 ↔ 测试锚点**（R66 承载位补，同四查①语义）；JPQL @Query 内嵌实体/字段名须入清单**；**schema/迁移资产表（横向清剿轮补，DIM_ORM_SCHEMA 计数核验）：prisma/migrations/alembic/flyway/liquibase/orm.xml/hbm/schema.sql 全枚举——改模型必核"迁移是否已生成"（模型↔迁移漂移 = 漏改字段的姊妹缺陷）** | 通用（有数据层时） |
 | §store/类型/模型全量清单 | §9 | 前端(store+类型) / 后端(ORM model+entity+DTO+**mapper XML 文件表：路径/namespace↔接口/resultMap 实体引用**——DIM_MAPPER_XML 计数核验，与实体同节共表) / 通用(类型定义) | 按形态动态 |
 | §消息拓扑配对表 | §5 | **含异步时必含（§C+.2-A 产物）**：每行=端点名/生产侧 file:line/消费侧 file:line/序列化格式/幂等策略；单边端点显式标"外部系统"或"孤儿端点"——端点名是双边字符串，改名前必查 | 按形态动态 |
 | §测试案例（check §1） | check §1 | 单测/接口/集成/回归/安全测试案例及数据 | 通用 |
@@ -399,9 +399,9 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 - **★任务配方（recipes.md 必须含，standard/compliance 档；从 exploration-guide §C+.6/§C+.7 承接，R21 配方层）**：
  - §A 业务功能清单：从 §C+.1 枚举产物 + §C+.2 链路**归纳**（不是重新探查），每功能一行 `| 功能 | 入口路径 | 复用组件 | 接口 | 数据 | 测试 |`；组件路径反引号包裹（`--path-check` 校验）；无测试的功能显式标"无"
  - §B 任务配方：三源提取（既有实现 / git 同类任务历史 / 开发者文档），每配方五要素齐全——触发场景/前置查询/复用件/胶水/门禁与验证（`--verify-completeness` 机器执法，缺要素即列 file:line）
- - **数据模型变更配方（有数据访问层时必须建**，漏改字段高发任务）：触发场景=改/加/删实体字段或表列；**前置查询必须含四查**——①查 relations.jsonl `data-mapping`/`mapper-binding` 边反查该实体的全部 mapper XML；②查 §8 字段级映射台账定位 property/SQL 列；③查 §5 调度任务表定位读写该数据资产的 job（reader SQL 内嵌列名不在 import 边里）；④查**对外契约面**（R58 补）——字段若暴露于 API JSON（响应体/请求体 DTO），反查前端调用点与契约测试，前端 fixtures/mock 同名字段一并改（对应回归②接口命中路）；胶水=同步点清单（resultMap property/SQL 列/reader SQL/@TableField/DDL 迁移/JSON 契约字段）；门禁与验证=`fw_mybatis_field_sync` + job 回归 + 契约消费方测试
+ - **数据模型变更配方（有数据访问层时必须建**，漏改字段高发任务）：触发场景=改/加/删实体字段或表列；**前置查询必须含四查**——①查 relations.jsonl `data-mapping`/`mapper-binding` 边反查该实体的全部 mapper XML；②查 §8 字段级映射清单定位 property/SQL 列；③查 §5 调度任务表定位读写该数据资产的 job（reader SQL 内嵌列名不在 import 边里）；④查**对外契约面**（R58 补）——字段若暴露于 API JSON（响应体/请求体 DTO），反查前端调用点与契约测试，前端 fixtures/mock 同名字段一并改（对应回归②接口命中路）；胶水=同步点清单（resultMap property/SQL 列/reader SQL/@TableField/DDL 迁移/JSON 契约字段）；门禁与验证=`fw_mybatis_field_sync` + job 回归 + 契约消费方测试
  - 复用件清单表格化（`| 复用件路径 | 用途 |`，反引号路径）——散文行的命令反引号不进 path-check（防误报）
- - **★悬置清单（R58-D6 接线）**：探查中拿不准的业务语义**集中**落 `.swarm-yuan/notes/cognition.md` 悬置清单段（每项：问题/两源证据锚点/需谁回填），回填后按裁决序转正销项——不许散落各文档的"待验证"字样里自然蒸发（对偶 exploration-guide 悬置清单回填协议）
+ - **★待确认事项清单（R58-D6 生成承载）**：探查中拿不准的业务语义**集中**落 `.swarm-yuan/notes/cognition.md` 待确认事项清单段（每项：问题/两源证据锚点/需谁回填），回填后按裁决序转正销项——不许散落各文档的"待验证"字样里自然蒸发（互为正反 exploration-guide 待确认事项清单回填协议）
  - 配方只建高频形态（≥2 个起步，不凑数）；低频任务走九节点流；lite 档不生成 recipes.md（档位差异化）
 - **★版本锁定原则（dev-guide.md 必须含 + codebase.md 版本表必须记录基线）**：
  - 功能性开发过程中，**不允许随意升级或更换核心技术及基础组件及依赖的版本**
@@ -434,10 +434,10 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 **骨架生成**：由 AI 在生成流程 **Step 4.5 框架深化阶段**依据 `references/frameworks/<fw>.md` §3（领域规律）+ §4（门禁清单）构建骨架——对 ACTIVE_FRAMEWORKS 中每个 `<fw>`，将该规则文件的 §3 规律段与 §4 门禁清单按项目实际激活情况拷贝/拼接到 `framework-knowledge.md` 形成骨架（保留 frontmatter 与六段结构标记），未激活的框架不出现。**脚本不自动生成骨架**（`generate-skill.sh --inject-frameworks` 只负责门禁片段注入 precheck.sh 标记区块，不读写 `framework-knowledge.md`）——避免未经验证的规律种子直接落产物，违反"残留未实例化种子零容忍"（设计文档 §5.1 Step 4.5 明确规定 AI 实例化后填充）。
 
 **AI 实例化铁律（逐条规律处理）：**
-- **成立 → 附证据**：用项目代码验证该规律确实成立（按 §3 每条规律的"验证方法"给出的 `grep`/`read` 命令实跑），在规律行末附"证据: `<file>:<line>` 或 `<grep 命令输出摘要>`"。证据须可机械复现，不允许"应当""想必"等臆测语
+- **成立 → 附证据**：用项目代码验证该规律确实成立（按 §3 每条规律的"验证方法"给出的 `grep`/`read` 命令实跑），在规律行末附"证据: `<file>:<line>` 或 `<grep 命令输出摘要>`"。证据须可自动复现，不允许"应当""想必"等臆测语
 - **不成立 → 剔除并记录原因**：项目代码反例该规律（如规律要求"@Transactional 不可自调用"而项目存在自调用且业务上无法避免），将该规律从 `framework-knowledge.md` 剔除，在文件末尾"剔除记录"段标注：剔除规律标题 + 原因 + 反例代码位置 + 是否需 spec 声明豁免
 - **版本区间外 → 标"待验证"**：规律适用版本与项目探查到的版本不匹配（如规律适用 `Spring Boot 2.x`，项目实际为 `3.x`），保留该规律但行首标"⚠ 待验证（项目版本 X，规律适用区间 Y，需人工复核或升/降级规则集）"
-- **零占位符容忍**：骨架中的 `<规律标题>`/`<验证方法>`/`<对应门禁>` 等种子字段必须全部被实例化或剔除——残留种子 = 占位符 = 未完成。**填充指引而非占位符**：允许写"逐条按 §3 验证方法 grep 项目代码后填写证据字段"作为引导语，但不允许 `<...>` 形式的占位符残留到最终产物
+- **无占位符容忍**：骨架中的 `<规律标题>`/`<验证方法>`/`<对应门禁>` 等种子字段必须全部被实例化或剔除——残留种子 = 占位符 = 未完成。**填充指引而非占位符**：允许写"逐条按 §3 验证方法 grep 项目代码后填写证据字段"作为引导语，但不允许 `<...>` 形式的占位符残留到最终产物
 
 **核对（每规律五要素齐全）：**
 - 适用版本区间（与 §1 探查信号匹配的版本号）
@@ -485,7 +485,7 @@ spec §4 的 Requirement/Scenario 写法须按 EARS（Easy Approach to Requireme
 | 可选式（Optional） | WHERE <feature is present>, the <system> shall <response> | 按形态动态填充段（"本项目无此维度"标注 + feature-gate 条件） |
 | 复合式（Complex） | WHILE/WHERE + WHEN 组合 | Scenario 组合条件（多条件并列时拆分为多条 Scenario，禁止单条 Scenario 语义混杂） |
 
-**对齐声明**：本模板的 Requirement（SHALL/MUST + 唯一命名 `### Requirement: <需求名>`）+ Scenario（WHEN/THEN）写法经 EARS 句式族与 **ISO/IEC/IEEE 29148:2018** 的需求质量特性对齐——无歧义（单一句式）、可验证（每 Requirement 至少 1 条 Scenario）、唯一标识（需求名唯一）、完整（ADDED/MODIFIED/REMOVED 显式枚举）。机器执法现状与方向见 references/standards-compliance.md §C 补充映射（零占位符机器执法 P0；需求 lint——TBD/唯一 ID/glossary 一致性——P1-9 门禁化；RTM 留 P2）。
+**对齐声明**：本模板的 Requirement（SHALL/MUST + 唯一命名 `### Requirement: <需求名>`）+ Scenario（WHEN/THEN）写法经 EARS 句式族与 **ISO/IEC/IEEE 29148:2018** 的需求质量特性对齐——无歧义（单一句式）、可验证（每 Requirement 至少 1 条 Scenario）、唯一标识（需求名唯一）、完整（ADDED/MODIFIED/REMOVED 显式枚举）。机器执法现状与方向见 references/standards-compliance.md §C 补充映射（无占位符机器执法 P0；需求 lint——TBD/唯一 ID/glossary 一致性——P1-9 门禁化；RTM 留 P2）。
 
 ---
 
@@ -610,7 +610,7 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 ## 生成后核对清单
 
 **机器验证四件套（跑命令即核，代替人工逐项）：**
-- [ ] 1. 零占位符：`bash generate-skill.sh --verify-completeness <skill-dir> --strict`
+- [ ] 1. 无占位符：`bash generate-skill.sh --verify-completeness <skill-dir> --strict`
 - [ ] 2. 清单可信：`bash inventory-verify.sh <项目根> --skill-dir <skill-dir> --tsv --path-check --stability-audit`（HALLUCINATION=0）
 - [ ] 3. 计数覆盖：同上命令中各维度 ratio ≥ 0.95 或有 FAIL 告警已处理
 - [ ] 4. 状态门：`bash generate-skill.sh --mark-active <skill-dir>`（三关全过翻 active）
@@ -619,7 +619,7 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 - [ ] 5. SKILL.md description 任务触发式（做什么+何时用）
 - [ ] 6. 地图（reference-manual）条目含路径列且 stability 标注词在说明列
 - [ ] 7. precheck.conf 核心变量已填（PROJECT_DIR/WRITABLE/TEST_CMD/BUILD_CMD）
-- [ ] 8. hooks.json 双宿主接线（fail-gate/integrity-guard）
+- [ ] 8. hooks.json 双宿主整合（fail-gate/integrity-guard）
 - [ ] 9. 编排约束含代码证据（dev-guide §8 或地图说明列）
 - [ ] 10. 测试/构建命令真跑过一次
 - [ ] 11. 特征卡 P0 六项承接（项目类型/可改范围/技术栈/构建命令/分支规范/安全规则）
@@ -728,7 +728,7 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 
 **材料要素覆盖：**
 · **meta**：铁律、改造分类、流程总览（含入口顺序）、命令速查、门禁、检查表、**自成长段**（骨架内置固定指引，保留未删——感知/更新链/落基线四环齐全）
-· **workflow 11 要素**：每节点都有 流程入口/参与方/准入/门禁/分支处理/产出物归档/流程控制/状态控制/★调用追踪（公告格式 + trace-log.sh 落盘命令）/★方法论引用（消费档对偶分派表）；末尾有完成检查表
+· **workflow 11 要素**：每节点都有 流程入口/参与方/准入/门禁/分支处理/产出物归档/流程控制/状态控制/★调用追踪（公告格式 + trace-log.sh 落盘命令）/★方法论引用（消费档互为正反路由表）；末尾有完成检查表
 · **reference 9 项**：目录结构/安全检查/编译规则/组件库(全量)/组件依赖链路(三层+约束)/接口清单(全量端点)/UI-UX资源/数据字典/store+类型(全量)
 · **assets 7 项**：环境加载/资源检测/分支拉取/任务配置模版/静态资源/库表样例/组件填充说明
 · **check 4 项**：单测接口集成回归安全/业务规则案例/数据勾稽(无多漏错重)/UI脱敏日志
@@ -760,9 +760,9 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 
 ---
 
-## §X Q2-heavy：机械门禁 vs AI 灵活性的边界
+## §X Q2-heavy：自动门禁 vs AI 灵活性的边界
 
-**背景**：Q2 报告（"机械门禁/脚本扫描破坏 AI 灵活性"）的深水区单独评审——55 门禁按"机械信号 vs AI 判断"二分。
+**背景**：Q2 报告（"自动门禁/脚本扫描破坏 AI 灵活性"）的深水区单独评审——55 门禁按"自动信号 vs AI 判断"二分。
 
 **分层结论（55 门禁）：**
 
@@ -774,11 +774,11 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 
 **生成流程边界：**
 
-机械脚本只做"出初稿"（模板/嗅探/枚举），AI 做"审 + 判断"。详见 references/generation-flow.md §H-C 表格。
+自动脚本只做"出初稿"（模板/嗅探/枚举），AI 做"审 + 判断"。详见 references/generation-flow.md §H-C 表格。
 
 **开关**：
-- `GATE_AI_JUDGMENT=1`——5 个 advisory 门禁转 AI 自觉判断（advisory 不机械跑，输出 _ai_hint）
-- 默认 0 保留机械，向后兼容
+- `GATE_AI_JUDGMENT=1`——5 个 advisory 门禁转 AI 自觉判断（advisory 不自动跑，输出 _ai_hint）
+- 默认 0 保留自动，向后兼容
 
 **关联文档**：
 - 评审报告：docs/design-evolution.md A9 档案（Q2 重量级审查，2026-08-19）

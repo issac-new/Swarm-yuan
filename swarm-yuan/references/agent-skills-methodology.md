@@ -124,7 +124,7 @@ Bug report arrives
 
 三层架构：**Skill = how**（带步骤与退出标准的 workflow）/ **Persona = who**（带视角与输出格式的角色）/ **Command = when**（用户入口，编排角色与技能）。
 
-每个角色 prompt 末尾必须带 Composition 三件套（自描述协议）：
+每个角色 prompt 末尾必须带 Composition 生成期必读文件（自描述协议）：
 
 ```text
 - Invoke directly when: <用户直接要求的场景>
@@ -149,7 +149,7 @@ Bug report arrives
 ## 八、来源溯源
 
 - 仓库：addyosmani/agent-skills（MIT，HEAD df1edb2，2026-08-14；24 技能 7208 行 SKILL.md，最大 499 行）
-- 一手材料（2026-08-16 浅克隆实测）：`docs/skill-anatomy.md`（模板纪律）/ `skills/spec-driven-development` 等 24 个 SKILL.md（Rationalizations 22/24 覆盖）/ `commands/build.toml`（三类硬停）/ `agents/`（Composition 三件套）/ `docs/agents.md`（三层架构与反模式）
+- 一手材料（2026-08-16 浅克隆实测）：`docs/skill-anatomy.md`（模板纪律）/ `skills/spec-driven-development` 等 24 个 SKILL.md（Rationalizations 22/24 覆盖）/ `commands/build.toml`（三类硬停）/ `agents/`（Composition 生成期必读文件）/ `docs/agents.md`（三层架构与反模式）
 - 关键数字复核：153 条借口条目（22 技能平均 7 条）；description 上限 1024 字符；技能行数 178-499
 
 ## 骨架级模式两条（R57 吸收，2026-09-25）

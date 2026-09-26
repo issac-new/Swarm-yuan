@@ -187,7 +187,7 @@ handoff_notes: <what self-reviewer/verifier should inspect>
 
 **审查清单**（swarm-yuan 语境）：
 1. **Intent drift**：diff 是否满足用户 intent，而非只是个容易的代理指标？
-2. **验收覆盖**：所有 acceptance criteria 是否直接覆盖？（swarm-yuan: 维度计数核验 / 框架四要素 / 零占位符）
+2. **验收覆盖**：所有 acceptance criteria 是否直接覆盖？（swarm-yuan: 维度计数核验 / 框架四要素 / 无占位符）
 3. **禁止行为**：executor 是否 hardcode / 绕过 / 隐藏 / 削弱控制？
 4. **验证证据**：命令是否新鲜、相关、充分？（跑过 vs 贴旧输出）
 5. **治理资产**：是否触碰 tests / scoring / verifier / CI / memory / secrets？
@@ -228,7 +228,7 @@ verifier_focus:
 
 **swarm-yuan 验证命令集**（verifier 可跑的公开命令）：
 - `bash scripts/self-check.sh --check-only`（数字漂移 + 运行时检测）
-- `bash scripts/generate-skill.sh --verify-completeness <skill_dir>`（零占位符机器执法）
+- `bash scripts/generate-skill.sh --verify-completeness <skill_dir>`（无占位符机器执法）
 - `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <形态>`（维度计数核验）
 - `bash scripts/precheck.sh --all-full`（标准 28 门禁）
 - `bash scripts/precheck.sh --compliance-suite`（合规 19，compliance 档）
@@ -267,7 +267,7 @@ final_status_owner: external_harness_or_human
 
 ## Composition 协议（角色互调禁止，agent-skills 吸收 2026-08-16）
 
-四权角色是「视角」，不是「编排器」。每个角色在报告末尾自声明组合关系，三件套：
+四权角色是「视角」，不是「编排器」。每个角色在报告末尾自声明组合关系，生成期必读文件：
 
 ```text
 - Invoke directly when: <用户直接要求的场景>
@@ -314,8 +314,8 @@ verifier 报告），无证据引用的完成结论标 untrusted，不得作为�
 ## 与现有机制的关系
 
 - **与 integrity-guard（E4）的关系**：policy-guardian 是 prompt 层审查，integrity-guard 是
- hook 层机械门。prompt 层先审，hook 层兜底——两层防御。integrity-guard `deny` 时
- policy-guardian 的 `allow` 无效（机械门权威）。
+ hook 层自动门。prompt 层先审，hook 层兜底——两层防御。integrity-guard `deny` 时
+ policy-guardian 的 `allow` 无效（自动门权威）。
 - **与决策治理（G1）的关系**：四权分离是权责维度，G1 三级分类（Mechanical/Taste/UserChallenge）
  是决策维度。改治理资产 = UserChallenge 类决策（须五要素 + 人工确认），同时走四权分离拓扑。
 - **与 verifier/v1 的关系**：verifier agent 是 prompt 层评分建议，verifier/v1 是脚本层
@@ -345,17 +345,17 @@ swarm-yuan 用「立法 / 执法 / 司法」三权分立（特征卡=立法 / �
 
 ---
 
-## §Y Q2-heavy 边界：机械门禁不破坏 AI 灵活性
+## §Y Q2-heavy 边界：自动门禁不破坏 AI 灵活性
 
-**背景**：Q2 报告指出机械门禁/脚本扫描破坏 AI 灵活性。Q2-heavy 评审（D1/D2/D4）单独评审后落地 H-A/B/C：
+**背景**：Q2 报告指出自动门禁/脚本扫描破坏 AI 灵活性。Q2-heavy 评审（D1/D2/D4）单独评审后落地 H-A/B/C：
 
-- **H-A**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）转 AI 自觉判断——`GATE_AI_JUDGMENT=1` 时机械脚本不跑，输出 _ai_hint 提示 AI 自查要点。
+- **H-A**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）转 AI 自觉判断——`GATE_AI_JUDGMENT=1` 时自动脚本不跑，输出 _ai_hint 提示 AI 自查要点。
 - **H-B**：warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）降级 advisory——误报高启发式强，不再 fail 打断主流程。
-- **H-C**：生成流程边界明确——机械脚本只做"出初稿"（骨架/conf-render/verify_completeness/mark-active/enforce_level），AI 做"审 + 判断"（特征卡填值/框架规律实例化/hooks 适用性/门禁警告采纳）。
+- **H-C**：生成流程边界明确——自动脚本只做"出初稿"（骨架/conf-render/verify_completeness/mark-active/enforce_level），AI 做"审 + 判断"（特征卡填值/框架规律实例化/hooks 适用性/门禁警告采纳）。
 
 **与三权分立的关系**：本边界不是放宽"执法侧/司法侧"的职责分工，而是让"司法侧"（自检/独立验收）聚焦在"信号可信"的门禁上（strict 档 17 个），不再让"假装可机器"的门禁（启发式/误报高）打断 AI 工作流。
 
-**verifier 侧调整**：verifier 跑独立验收时，严格档 16 个门禁 fail → block；warn/advisory 档只报不 block；advisory 档 5 个 AI 自觉判断由 verifier 人读判断（不跑机械脚本）。
+**verifier 侧调整**：verifier 跑独立验收时，严格档 16 个门禁 fail → block；warn/advisory 档只报不 block；advisory 档 5 个 AI 自觉判断由 verifier 人读判断（不跑自动脚本）。
 
 **关联**：评审报告见 docs/design-evolution.md A9 档案（Q2 重量级审查）；分层实现 `assets/precheck.sh` `_ENFORCE_OVERRIDE_K/V` + `assets/gates-advisory.sh` `_ai_hint`。
 
@@ -433,4 +433,4 @@ swarm-yuan 用「立法 / 执法 / 司法」三权分立（特征卡=立法 / �
 - **与 failure-detector（hook 层）**：Z.2 是计数语义权威源；hook 实现同签名去重与 L 级升压，语义表对齐两者。
 - **与 verifier/v1（司法层）**：Z.3/Z.4 是 AI 侧交付口径，verifier 是独立验收；AI 自报不改变机器结论。
 - **与 decisions.jsonl**：诊断先行与有据阻塞交接均可落决策审计轨迹（`trace-log.sh --decision`）。
-- **与 §Y 边界**：信心门控六步是 AI 自觉判断模式在交付环节的延伸——机械脚本出信号，AI 按检查单自查并留痕。
+- **与 §Y 边界**：信心门控六步是 AI 自觉判断模式在交付环节的延伸——自动脚本出信号，AI 按检查单自查并留痕。

@@ -23,7 +23,7 @@ swarm-yuan 当前 17 项特征卡 / 55 门禁 / 80 框架规则集回答了「�
 
 **关键证据解读**：4.8→5 的 System 增长 82.12%，但 System+Tools 只增长 4.14%——围绕提示词长短争论很容易忽略真正占上下文的大块接口层。
 
-**对本系统的价值**：swarm-yuan 的 SKILL.md / references / precheck.conf 三件套 / 55 门禁 / hooks.json / .mcp.json 本身就是一套分层上下文，但分层原则此前是隐性的（散落在各 WP 决策里）。本文把"分层放置规则"的方法论显式化，给 swarm-yuan 一个可引用的元决策框架。
+**对本系统的价值**：swarm-yuan 的 SKILL.md / references / precheck.conf 生成期必读文件 / 55 门禁 / hooks.json / .mcp.json 本身就是一套分层上下文，但分层原则此前是隐性的（散落在各 WP 决策里）。本文把"分层放置规则"的方法论显式化，给 swarm-yuan 一个可引用的元决策框架。
 
 ---
 
@@ -73,7 +73,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 | 模型能力变化后旧约束诱发过度检查 | 门禁分层 strict/warn/advisory（决策 19），advisory 永不 fail |
 | Bash 9,821 字符教程式描述 | precheck.sh flag 接口压成 `--branch`/`--scope`/`--reuse`，用法在 `--list-gates` |
 
-**接线动作**：生成目标技能时，若 AI 发现自己在 SKILL.md 写超过 3 段的「如何做 X」教程式内容，应触发本层判断——大概率该挪进 reference 或压成 flag 接口。
+**整合动作**：生成目标技能时，若 AI 发现自己在 SKILL.md 写超过 3 段的「如何做 X」教程式内容，应触发本层判断——大概率该挪进 reference 或压成 flag 接口。
 
 ---
 
@@ -103,7 +103,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 |--------------|----------------|
 | 范围漂移 | `--scope` 门禁（git diff 触碰只读目录 fail）+ 特征卡第 2 项可改范围 |
 | 澄清过载 | `references/task-methodology-router.md` 任务类型×方法论路由，避免一上来全量澄清 |
-| 过早宣布完成 | `generate-skill.sh --verify-completeness` 零占位符机器执法 |
+| 过早宣布完成 | `generate-skill.sh --verify-completeness` 无占位符机器执法 |
 | 单点阻塞 | `references/governance-agents.md` 四权分离——先完成不依赖答案的部分 |
 | 授权边界 | `references/decision-governance.md` 三级分类（Mechanical/Taste/UserChallenge），UserChallenge 才交还用户 |
 
@@ -116,7 +116,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 | 不让长篇道歉挤占注意力 | `--format json` + `to-sarif.sh` 结构化输出，不堆叙事 |
 | 先判断其他 Agent 的反馈，不自动升级子 Agent 输出为事实 | `references/subagent-orchestration.md` 两阶段审查 + `references/review-methodology.md` 5 维度交叉验证 |
 
-**接线动作**：swarm-yuan 治理回路（governance-agents / failure-detector / integrity-guard / loop-oracle / compaction-state）的产品形态，可引用本文作为"为何要做这些 hook"的理论依据——它们都是把 System 层无法稳定承载的治理逻辑下沉到 hooks/门禁层。
+**整合动作**：swarm-yuan 治理回路（governance-agents / failure-detector / integrity-guard / loop-oracle / compaction-state）的产品形态，可引用本文作为"为何要做这些 hook"的理论依据——它们都是把 System 层无法稳定承载的治理逻辑下沉到 hooks/门禁层。
 
 ---
 
@@ -145,9 +145,9 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 ---
 
-## 九、与 swarm-yuan 既有触点的接线声明
+## 九、与 swarm-yuan 既有触点的整合声明
 
-| 文章概念 | swarm-yuan 既有触点 | 接线方式 |
+| 文章概念 | swarm-yuan 既有触点 | 整合方式 |
 |---------|---------------------|---------|
 | 六层上下文模型 | SKILL.md / references / precheck.conf / hooks.json / .mcp.json / memory-writeback | 本文显式化分层原则，AI 生成目标技能 时引用本文做「规则放哪层」决策 |
 | minimal ≠ short | `--profile auto`（按规模自适应披露）+ advisory 门禁分层 | 引用本文支撑「advisory 永不 fail」的合理性——最小充分不等于最短 |
@@ -182,7 +182,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 ### 11.2 拿通道的两条机器纪律（RTK 机制吸收）
 
-- **改写胜过说教**：输出压缩不靠提示词求模型"少贴点"，靠 PreToolUse 钩子把 `git status` 机械改写为 `rtk git status`——规则下沉到机器层。swarm-yuan 同构：fail-gate-hook 拦 Bash 推进态 + rules.d FORBID 消息带替代方案，都是"机器改写/拦截"而非说教。
+- **改写胜过说教**：输出压缩不靠提示词求模型"少贴点"，靠 PreToolUse 钩子把 `git status` 自动改写为 `rtk git status`——规则下沉到机器层。swarm-yuan 同构：fail-gate-hook 拦 Bash 推进态 + rules.d FORBID 消息带替代方案，都是"机器改写/拦截"而非说教。
 - **tee 底牌**：压缩工具失败时全量输出落盘、摘要里带落盘路径——**压缩不丢证据**。目标技能的 gate-runs.jsonl / trace-log 同族；新增输出裁剪时照此配底牌。
 - 诚实稀释声明（上游原话精神）：bash 输出 ≠ 账单 token，压缩率是对 bash 字节数的估算（bytes/4 一阶近似），不当作计量断言。
 
@@ -192,7 +192,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 ### 11.4 不引用部分
 
-- RTK 的代理接线与命令改写路由表（宿主层工具，目标技能不接线；crates.io 同名包陷阱已在 R37 档案登记）
+- RTK 的代理整合与命令改写路由表（宿主层工具，目标技能不整合；crates.io 同名包陷阱已在 R37 档案登记）
 - Caveman Proxy/Engine（BSL-1.1 非 OSI 开源，零接触；与 GitNexus PolyForm 处置同构）
 
 ---
@@ -203,6 +203,6 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 - 许可证：文章内容版权归原作者，swarm-yuan 只引用方法论模式与证据视角，不复制原文
 - 上游文章：[Vibe编码 公众号原文](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（可按需存档到 `swarm-yuan/research/context-engineering/` 供 AI 阅读，本地 gitignored，不入 git）
 - 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
-- 自检断言：G14 `check_context_engineering_layering`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 接线 + facts.conf 口径）
+- 自检断言：G14 `check_context_engineering_layering`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 整合 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_REFERENCES=33`（本文档 +1）
 - R37 增补来源：行者明灵《Harness实践》上下篇（2026-09-16/17）+ rtk-ai/rtk（Apache-2.0）+ JuliusBrussee/caveman（Skill=MIT/Proxy=BSL-1.1）——§十一 三漏与输出经济学；档案 `docs/research/R37-harness-practice-absorption.md`

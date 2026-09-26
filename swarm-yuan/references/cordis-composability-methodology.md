@@ -92,7 +92,7 @@ swarm-yuan 的 lite/standard/compliance 三档是**档位过滤**（UNIVERSAL_FI
 
 ## 六、自检断言（G17）
 
-- `self-check.sh` 守本文档存在性 + SKILL.md 接线 + facts.conf 口径（warn-only，与 G13/G14/G15 同构）
+- `self-check.sh` 守本文档存在性 + SKILL.md 整合 + facts.conf 口径（warn-only，与 G13/G14/G15 同构）
 - `FACT_REFERENCES` 同步 35→36
 - `FACT_RUNTIMES_METHOD` 不变（Cordis 非运行时，纯方法论吸收，与 context-engineering-layering 同档）
 

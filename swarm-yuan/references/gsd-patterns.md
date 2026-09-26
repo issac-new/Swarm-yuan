@@ -4,7 +4,7 @@
 
 > 整合自 [gsd-core](https://github.com/open-gsd/gsd-core) 的方法论模式与运行时工具。
 > **安装 gsd-core 并引用其命令（gsd-tools / /gsd-* / capability），不复制其源码。**
-> **gsd-core v1.9-1.10 要点**：① **effort surface axis**（v1.9.0 #2481）——negotiated 努力程度轴 + 调用时 effort 参数，与 swarm-yuan `task-scale.sh`（任务规模判定）同向：按任务复杂度协商投入；② **deferred-items.md 里程碑暴露**（v1.10.0 #2646）——milestone 关闭时 surface 未解决的 deferred items，与 swarm-yuan `--mark-active` 零占位符核验同向（关门前查遗留，不让 deferred 债务悄悄进 milestone）。
+> **gsd-core v1.9-1.10 要点**：① **effort surface axis**（v1.9.0 #2481）——negotiated 努力程度轴 + 调用时 effort 参数，与 swarm-yuan `task-scale.sh`（任务规模判定）同向：按任务复杂度协商投入；② **deferred-items.md 里程碑暴露**（v1.10.0 #2646）——milestone 关闭时 surface 未解决的 deferred items，与 swarm-yuan `--mark-active` 无占位符核验同向（关门前查遗留，不让 deferred 债务悄悄进 milestone）。
 
 ## gsd-core 安装与运行时调用（工具引用）
 
@@ -93,7 +93,7 @@ Discuss → Plan → Execute → Verify → Ship
 
 ### 与 `--shift-left` 门禁的关系
 
-左移三件套（测试/变更/运维监控左移）是 4-Phase SOP 出口准则的**机械执法层**：
+左移生成期必读文件（测试/变更/运维监控左移）是 4-Phase SOP 出口准则的**自动执法层**：
 
 - Phase 2（= spec 阶段）出口"含 §19 测试设计 + §21 可观测性约束"由 `precheck --shift-left` 校验；
 - Phase 3（= plan 阶段）出口"含 §20 变更影响 + 回滚预案"由 `precheck --shift-left` 校验；
@@ -161,19 +161,19 @@ Discuss → Plan → Execute → Verify → Ship
 - workflow 每节点的"质量门禁"要素标注门禁类型（pre-flight/revision/escalation/abort）
 - state-machine.sh 的 `guard` 命令实现 pre-flight 门禁；revision 用迭代上限+停滞检测
 
-## 破窗台账（Broken Windows Ledger）
+## 破窗清单（Broken Windows Ledger）
 
 > 理念来源：gsd-core v1.8.0 `feat(#1950): broken-windows ledger - cross-phase defect register gating ship`（commit d16a6647）。gsd-core 的 `WINDOWS.md` 工件跨阶段累积 stubs/TODOs/skipped tests/unrun verifies/unmet truths，`/gsd-ship` 在有 open 条目时阻断（`ship:pre` 门禁，`artifact-frontmatter-equals` 谓词 on `open_count == 0`），配 `gsd-tools windows status|append|waive|fixed` 子命令 + waive 机制。
 
-**核心问题**：跨阶段累积的技术债（stub 函数、`// TODO`、跳过的测试、未跑的 verify、未满足的 truth）若不在 ship 前清账，会随版本沉淀为"看似交付实有暗坑"。破窗台账让这些债**显式可见、可追踪、可清账**。
+**核心问题**：跨阶段累积的技术债（stub 函数、`// TODO`、跳过的测试、未跑的 verify、未满足的 truth）若不在 ship 前清账，会随版本沉淀为"看似交付实有暗坑"。破窗清单让这些债**显式可见、可追踪、可清账**。
 
-**台账格式**（`.swarm-yuan/WINDOWS.md`）：
+**清单格式**（`.swarm-yuan/WINDOWS.md`）：
 
 ```markdown
 ---
 open_count: 2
 ---
-# 破窗台账
+# 破窗清单
 
 - [ ] stub: payment-service（design 阶段遗留，verify 前须补实现）
 - [ ] skipped-test: auth-edge-case（build 阶段跳过，ship 前须补跑）
@@ -193,7 +193,7 @@ open_count: 2
 - `fixed`：条目完成后改为 `- [x] done: <说明>`，并更新 frontmatter `open_count`。
 - `waive`：经决策（记 `decisions.jsonl`，type=UserChallenge，因 waive 是方向性决策）后豁免，改为 `- [x] waived: <理由>`（对齐 gsd-core `windows.enforce` 分离 tracking 与 enforcement 的设计）。
 
-**与 Goal-Backward 的关系**：Goal-Backward（§Goal-Backward 对抗验证）要求"先定义完成标准再动手"；破窗台账是完成标准的**跨阶段持久化**--每个阶段产生的"未完成项"都进台账，ship 前的完成标准 = 台账 open_count==0。两者互补：Goal-Backward 防目标漂移，破窗台账防债沉淀。
+**与 Goal-Backward 的关系**：Goal-Backward（§Goal-Backward 对抗验证）要求"先定义完成标准再动手"；破窗清单是完成标准的**跨阶段持久化**--每个阶段产生的"未完成项"都进清单，ship 前的完成标准 = 清单 open_count==0。两者互补：Goal-Backward 防目标漂移，破窗清单防债沉淀。
 
 ## Wave 并行执行 + Worktree 隔离
 
@@ -352,7 +352,7 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 > 调研档案 `docs/research/R18-runtime-refresh.md`；minor 级、无破坏性变更。
 
 - **证据纪律三连**：复核阻塞须确定性证据（#4085）+ **no-op 报真实条件与已算值**（#4157，"缺失证据不显示为零"族）+ **不可读目录不得报为空**（#4163）——复核/上报/枚举三面全钉确定性。
-- **Review Dispositions Ledger 契约化**（#4345）：评审处置台账——与 gate-audit.jsonl 同构印证。
+- **Review Dispositions Ledger 契约化**（#4345）：评审处置清单——与 gate-audit.jsonl 同构印证。
 - 同向：context-drift 前置门（#4147，与 fingerprint --diff 同向）。候选：dispatch.maxConcurrency 容量轴（#4162）/ quick-batch 可恢复 manifest / bracket-tolerant id（#2867）。
 
 ## gsd-core v1.14.0 要点（2026-09-14 R28 补核）
@@ -364,4 +364,4 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 - **already_present 诚实报告**（#4558）：restore 计划把与备份字节相同的目的地当缺失报 `eligible`，改报 `already_present`——「no-op 报真实条件」族（R18 #4157）计划侧延续。
 - **dispatch-identity 单一所有者**（#4594）：隔离守卫曾 regex 刨模型散文判定 run-scoped sentinel；改为发射格式与回读解析器同一所有者——**模型生成文本不是协议面**，判定依据须来自结构化字段。
 - **install-time 校验全注册表**（#3929）：安装时校验只看 candidate map 曾使非空 `requires` 永不可满足；改为 merged registry（第一方+已装+候选）——同一校验在不同时点必须同口径（「预览=执行口径」姊妹样本）。
-- 同向注记：分支真新验真（#4055，幂等创建族）/ 命名超时常量五批迁移（界要命名）/ WINDOWS.md 台账跨进程串行化（#3780，共享可变状态写串行化）。
+- 同向注记：分支真新验真（#4055，幂等创建族）/ 命名超时常量五批迁移（界要命名）/ WINDOWS.md 清单跨进程串行化（#3780，共享可变状态写串行化）。

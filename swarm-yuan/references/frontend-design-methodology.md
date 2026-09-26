@@ -12,7 +12,7 @@
 
 ## 一、定位：填补 swarm-yuan 的视觉设计空白
 
-swarm-yuan 当前 17 项特征卡 / 55 门禁 / 80 框架规则集覆盖前端的「机械维度」（组件枚举/调用链/状态管理/props/循环依赖/CSS 污染/框架代码模式），但**零视觉设计规则**——不回答「这个 UI 是否在视觉上合格」。
+swarm-yuan 当前 17 项特征卡 / 55 门禁 / 80 框架规则集覆盖前端的「自动维度」（组件枚举/调用链/状态管理/props/循环依赖/CSS 污染/框架代码模式），但**零视觉设计规则**——不回答「这个 UI 是否在视觉上合格」。
 
 impeccable 补的正是这条空白：
 
@@ -151,7 +151,7 @@ impeccable detector 引擎含 59 条反模式规则，分 slop/layout/type 三 c
 - **layout 类**：`text-overflow` / `clipped-overflow-container` / `body-text-viewport-edge` / `broken-image` 等
 - **type 类**：`low-contrast` / 字号阶梯缺失 / tracking 越界等
 
-**执行方式**：AI 在 `--frontend` 门禁跑完后（机械循环依赖/嵌套深度/props 数），按此清单做人工视觉审查，发现反模式在审查报告中列 ID + file:line + 修复建议。**不 fail 阻塞主流程**（advisory 风格，对齐 G8/G10）。
+**执行方式**：AI 在 `--frontend` 门禁跑完后（自动循环依赖/嵌套深度/props 数），按此清单做人工视觉审查，发现反模式在审查报告中列 ID + file:line + 修复建议。**不 fail 阻塞主流程**（advisory 风格，对齐 G8/G10）。
 
 ---
 
@@ -198,11 +198,11 @@ impeccable shipped 的 `finish_reviewer` 子代理做完工审查，三段式：
 
 ---
 
-## 十、与 swarm-yuan 既有触点的接线声明
+## 十、与 swarm-yuan 既有触点的整合声明
 
 本文档**只指向**，不重复定义既有触点：
 
-| 既有触点 | 文件:行 | 接线方式 |
+| 既有触点 | 文件:行 | 整合方式 |
 |---------|--------|---------|
 | 项目形态判定 | `exploration-guide.md` §C+.0（L228-243） | 加「视觉成熟度」探查子维度（见 §十一） |
 | 前端组件枚举 | `exploration-guide.md` §C+.1-F（L290-304） | 不重复，impeccable 专注设计质量不枚举组件 |
@@ -254,5 +254,5 @@ impeccable shipped 的 `finish_reviewer` 子代理做完工审查，三段式：
 - 许可证：Apache License 2.0
 - 上游仓库：[pbakaus/impeccable](https://github.com/pbakaus/impeccable) v4.0.2（可按需 `git clone` 到 `swarm-yuan/research/impeccable/` 供 AI 阅读源码，本地 gitignored，不入 git）
 - 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
-- 自检断言：G13 `check_frontend_design_methodology`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 接线 + facts.conf 口径）
+- 自检断言：G13 `check_frontend_design_methodology`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 整合 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_RUNTIMES=12` / `FACT_RUNTIMES_METHOD=5` / `FACT_REFERENCES=30`

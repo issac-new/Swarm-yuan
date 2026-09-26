@@ -41,7 +41,7 @@ dsh `user-approval`：审批审计写不进去时**宁可拒绝也不返回未�
 
 dsh `packages/goal`：每次状态迁移追加**完整事后快照**事件（含单调 revision），fold = last-wins；变更携 `{id, revision}` CAS，stale 修订直接拒绝；独立伴生校验器在事件**入日志前**校验形状/revision 连续性/合法迁移表/时间戳单调性，第一条损坏事件即停游标。
 
-bash 映射（候选，见 §五已登记未实施）：`state-machine.sh` 的 `state.yaml` 迁移为 `state.jsonl` 整快照追加 + revision CAS。**触发条件**：真实出现并发写 state.yaml 损坏/竞态事故再机械化；当前单 AI 会话串行写，YAML 覆写够用。
+bash 映射（候选，见 §五已登记未实施）：`state-machine.sh` 的 `state.yaml` 迁移为 `state.jsonl` 整快照追加 + revision CAS。**触发条件**：真实出现并发写 state.yaml 损坏/竞态事故再自动化；当前单 AI 会话串行写，YAML 覆写够用。
 
 ### 2.2 持久态与进程本地"激活权"分离
 
@@ -79,7 +79,7 @@ bash 映射（部分落地 -C）：`project-fingerprint.sh` 增路径级 digest 
 
 dsh `skill-filesystem`：frontmatter 解析失败**整个条目带警告剔除**（坏数据不出现在禁用面）；发现过程 I/O 失败时快照标 `complete: false`、不缓存、消费者继续用 last-good。
 
-bash 映射（红线已入骨架 SKILL.md 自成长段，-C 机械化）：清单更新**先完整生成到临时文件再原子替换**（`mv` 同目录原子性），探查中途失败绝不覆盖上一份好清单；探查输出本身畸形（条目数骤降 >50%）视为失败，保留 last-good 并告警。
+bash 映射（红线已入骨架 SKILL.md 自成长段，-C 自动化）：清单更新**先完整生成到临时文件再原子替换**（`mv` 同目录原子性），探查中途失败绝不覆盖上一份好清单；探查输出本身畸形（条目数骤降 >50%）视为失败，保留 last-good 并告警。
 
 ## 四、工程纪律（簇 D）
 
@@ -96,9 +96,9 @@ bash 映射（红线已入骨架 SKILL.md 自成长段，-C 机械化）：清�
 
 ### 4.2 解释性空实现契约（dsh `runtime-diagnostics/invariants`）
 
-每包必须发布 `./invariant` 伴生模块；没有可检查关系的包必须写**以 `No runtime invariant:` 开头的注释解释为什么**；机械脚本 `verify-package-invariants` 拒绝无解释的空实现。断言只针对**可观察的事件关系/可变数据关系**，绝不断言服务/方法存在性（那是类型系统的事）。
+每包必须发布 `./invariant` 伴生模块；没有可检查关系的包必须写**以 `No runtime invariant:` 开头的注释解释为什么**；自动脚本 `verify-package-invariants` 拒绝无解释的空实现。断言只针对**可观察的事件关系/可变数据关系**，绝不断言服务/方法存在性（那是类型系统的事）。
 
-bash 映射：swarm-yuan 已有同构——门禁 `skip_if_unconfigured` 必须带原因（SKIP 披露而非静默），Q2-heavy "机械只在信号可信处"同源于"只断言可观察关系"。强化点：self-check.sh 的每类检查若整类不适用，须输出 `No <check>: <原因>` 而非静默跳过。
+bash 映射：swarm-yuan 已有同构——门禁 `skip_if_unconfigured` 必须带原因（SKIP 披露而非静默），Q2-heavy "自动只在信号可信处"同源于"只断言可观察关系"。强化点：self-check.sh 的每类检查若整类不适用，须输出 `No <check>: <原因>` 而非静默跳过。
 
 ### 4.3 Agent Notes 生命周期
 
@@ -114,9 +114,9 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 
 | 候选 | 内容 | 触发条件 |
 |------|------|---------|
-| state.jsonl 事件溯源化 | state-machine.sh 的 state.yaml → 整快照 JSONL 追加 + revision CAS + 追加前校验器（§2.1/2.2 机械化） | 真实出现并发写损坏/竞态事故；或多 AI 并行操作同一项目状态成为常态 |
+| state.jsonl 事件溯源化 | state-machine.sh 的 state.yaml → 整快照 JSONL 追加 + revision CAS + 追加前校验器（§2.1/2.2 自动化） | 真实出现并发写损坏/竞态事故；或多 AI 并行操作同一项目状态成为常态 |
 | gate-audit 拦截率阈值告警 | `--report` 输出拦截率异常（如 7 天内 deny 率 >80% = 门禁可能过严/误伤）时 warn | gate-audit.jsonl 积累 ≥2 周真实数据后再定阈值（当前无数据无真相） |
-| hook 输出 schema 机械校验 | self-check 增断言：本仓 hook 输出的 deny JSON 的 hookEventName 与注册事件逐字一致（§1.3 机械化） | 出现一次因事件名写错导致宿主丢决策的真实事故 |
+| hook 输出 schema 自动校验 | self-check 增断言：本仓 hook 输出的 deny JSON 的 hookEventName 与注册事件逐字一致（§1.3 自动化） | 出现一次因事件名写错导致宿主丢决策的真实事故 |
 | 二版本模式（规范形 vs 派生投影） | 报告/账本类产物：落盘存 canonical 结构，渲染视图为派生缓存，派生层坏了从 canonical 重算（§七 0.1.1 印证） | 出现一次"渲染层损坏导致账本不可信"的真实事故（当前账本本身就是 canonical，无独立渲染层） |
 
 ## 六、与上轮吸收（cordis 框架层）的关系
@@ -125,13 +125,13 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 
 ## 七、0.1.1 版本注记（基线 rc.8 → 0.1.1-rc.2；当前版本见 §八）
 
-> 基线 rc.8（2026-08-19）→ 0.1.1-rc.2（2026-08-21，207 commits，功能线无 breaking；goal/decision 审计核心无演进）。无新增落地单元，增量全部登记候选（§五）或留档：凭据 seam 三件套（本仓若引入凭据注入，按"键空间按所有者划界 / flow 拥有写入"划界）；二版本模式（历史存 canonical、传输派生投影，§五已登记）；坏态整 log 重建（§2.1/2.2 同语义对账通过）；发布纪律样本"合而复撤"（回退优先于带病修复，与 §4.1 同簇）。逐条细节留档 `docs/research/R16-runtime-refresh.md`，本节不再展开。
+> 基线 rc.8（2026-08-19）→ 0.1.1-rc.2（2026-08-21，207 commits，功能线无 breaking；goal/decision 审计核心无演进）。无新增落地单元，增量全部登记候选（§五）或留档：凭据 seam 生成期必读文件（本仓若引入凭据注入，按"键空间按所有者划界 / flow 拥有写入"划界）；二版本模式（历史存 canonical、传输派生投影，§五已登记）；坏态整 log 重建（§2.1/2.2 同语义对账通过）；发布纪律样本"合而复撤"（回退优先于带病修复，与 §4.1 同簇）。逐条细节留档 `docs/research/R16-runtime-refresh.md`，本节不再展开。
 
 ## 八、0.1.2 版本注记（当前 dsh-v0.1.2-rc.1）
 
 > 基线 0.1.1-rc.2 → 0.1.2-rc.1（2026-09-03，1735 commits / 8 breaking）。两条有操作含量的原则：
 
-- **两种格式迁移谱系分开对待**：缓存格式演代用"声明兼容（按域声明旧版可读、写恒盖当前版）+ 坏记录备份跳过、域照常打开 + 真实盘面归档夹具回归"；权威格式删后端用"显式切断 + 旧构建导出口"。本仓 inventory-update 原子替换 + last-good 红线属前者；机械化触发条件不变（§五：state/账本出 v2 时）。
+- **两种格式迁移谱系分开对待**：缓存格式演代用"声明兼容（按域声明旧版可读、写恒盖当前版）+ 坏记录备份跳过、域照常打开 + 真实盘面归档夹具回归"；权威格式删后端用"显式切断 + 旧构建导出口"。本仓 inventory-update 原子替换 + last-good 红线属前者；自动化触发条件不变（§五：state/账本出 v2 时）。
 - **删后端纪律三段式**：不迁（拒绝为无消费者的格式养平行迁移协议）/ 出口（需要内容者用旧构建导出后再升级）/ 守门（派生投影降格为可弃、测试改锚权威源）。"无真实部署的第二权威格式，删优于养"——与决策 26 复杂度负向预算同族。
 
 其余增量（失败词表 `<domain>/<reason>` 单点声明、Agent Teams 孵化围栏、绞杀者模式 api 拆分）与本仓既有机制同族（gate ID 前缀、§五候选登记制），登记不展开。逐条细节留档 `docs/research/R17-runtime-refresh.md`。

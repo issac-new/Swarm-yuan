@@ -123,7 +123,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | ② 提取 17 项特征卡 | 6.4 技术过程组 | 需求定义（质量需求按特性陈述，对齐 GB/T 25000.10） | codebase.md 特征卡（17 项具体值） |
 | ③ create 骨架 | 6.4 技术过程组 | 设计/实现启动（合成） | generate-skill.sh 输出 + 骨架文件树 |
 | ④ AI 填充全部文件 + ④.5 框架深化 | 6.4 技术过程组 | 实现过程（文档/门禁实现） | 六段式文件全量内容（零占位标记） |
-| ⑤ AI 配置 precheck.conf | 6.3 技术管理过程组 | 质量保证策划 + 配置管理（测度元素实例化） | precheck.conf 三件套（173 变量真实值） |
+| ⑤ AI 配置 precheck.conf | 6.3 技术管理过程组 | 质量保证策划 + 配置管理（测度元素实例化） | precheck.conf 生成期必读文件（173 变量真实值） |
 | ⑤.5 AI 生成 hooks/commands/MCP 集成 | 6.2 组织的项目使能 | 工具链/过程支撑环境 | hooks.json/commands/settings.local.json/.mcp.json |
 | ⑥ AI 运行门禁验证（--all → --all-full） | 6.4 技术过程组·验证过程 | built-right 证据 | precheck 输出 + fail 修复重跑记录 |
 | ⑦.5 门禁注入（--inject-frameworks） | 6.3 技术管理过程组 | 配置管理（受控变更，幂等+哈希裁决） | precheck.sh 标记区块 + 注入日志 |
@@ -162,7 +162,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 |---|---|---|---|---|---|
 | 需求包 | GB/T 8567 §7.1/7.7/7.8/7.11/7.12；ISO/IEC/IEEE 29148:2018 | 产品说明（可用性/功能陈述） | —（9386 不要求需求包） | 可行性分析报告 FAR / 软件需求规格说明 SRS /（按需）系统需求 SSS / 接口需求 IRS / 数据需求 DRD | 由 DOCS_PACK_REQUIRED 逐项声明 |
 | 设计包 | GB/T 8567 §7.9/7.10/7.13/7.14 | 产品说明（架构/接口陈述） | — | 系统设计 SSDD / 软件设计 SDD / 接口设计 IDD / 数据库设计 DBDD | 同上 |
-| 测试包 | GB/T 9386 §4–§11；GB/T 15532；GB/T 25000.51 §6 | 测试计划 + 测试说明 + 测试报告（RUSP 测试文档集三件套） | 测试计划（§4）+ 测试设计说明（§5）/测试用例说明（§6）/测试规程说明（§7）+ 测试项传递报告（§8）/测试日志（§9）/测试事件报告（§10）/测试总结报告（§11） | 软件测试计划 STP / 软件测试说明 STD / 软件测试报告 STR | 同上 |
+| 测试包 | GB/T 9386 §4–§11；GB/T 15532；GB/T 25000.51 §6 | 测试计划 + 测试说明 + 测试报告（RUSP 测试文档集生成期必读文件） | 测试计划（§4）+ 测试设计说明（§5）/测试用例说明（§6）/测试规程说明（§7）+ 测试项传递报告（§8）/测试日志（§9）/测试事件报告（§10）/测试总结报告（§11） | 软件测试计划 STP / 软件测试说明 STD / 软件测试报告 STR | 同上 |
 | 部署包 | GB/T 8567 §7.4/7.22/7.23；行业归档惯例 | 产品说明（安装/部署要求陈述） | — | 软件安装计划 SIP / 软件移交计划 STrP / 软件版本说明 SVD / 软件产品规格说明 SPS | 同上 |
 | 运维包 | GB/T 8567 §7.23–7.25；GB/T 32424-2015 | 用户文档集（用户手册/操作手册，§5.2） | — | 软件用户手册 SUM / 计算机操作手册 COM / 计算机编程手册 CPM | 同上 |
 | 管理包 | GB/T 8567 §7.2/7.17/7.18/7.19/7.20 | 符合性评价报告（§7.5，可挂 verifier 报告） | — | 软件开发计划 SDP / 软件配置管理计划 SCMP / 软件质量保证计划 SQAP / 开发进度月报 DPMR / 项目开发总结报告 PDSR | 同上 |
@@ -171,7 +171,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 
 - **GB/T 15532-2008 准入**：受控基线 + 编译通过 + 文档齐 ↔ `--build`/`--test`（未配置 fail-open，🟡 → P1 conf lint）。
 - **GB/T 15532-2008 准出**：文档齐全、问题有处理、**失效须可见** ↔ SILENT 跳过计数器（P0：`--all-full` 末次汇总打印「调用 N / 跳过 S（清单）/ fail F / warn W」，退出码与既有输出行不改）+ sensitive warn 修复 + 安全门禁 fail-closed（差距矩阵 ❌ 行）。
-- **ISO/IEC/IEEE 29148:2018**：无占位标记/唯一 ID/可验证/RTM ↔ 零占位符机器执法（P0，`generate-skill.sh --verify-completeness`）+ `--requirements` 需求 lint（P1-9 已落地：TBD/唯一 REQ- ID 严格模式 fail-closed，EARS 覆盖率 warn-only）+ `--rtm` 追溯（P3 已落地：REQ- ↔ 测试目录/矩阵双向追溯，矩阵强制可 fail-closed，Q-11）。
+- **ISO/IEC/IEEE 29148:2018**：无占位标记/唯一 ID/可验证/RTM ↔ 无占位符机器执法（P0，`generate-skill.sh --verify-completeness`）+ `--requirements` 需求 lint（P1-9 已落地：TBD/唯一 REQ- ID 严格模式 fail-closed，EARS 覆盖率 warn-only）+ `--rtm` 追溯（P3 已落地：REQ- ↔ 测试目录/矩阵双向追溯，矩阵强制可 fail-closed，Q-11）。
 
 ---
 
@@ -296,7 +296,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | IEC 62304（医疗器械软件生存周期） | 医疗软件 A/B/C 安全分级 | 不覆盖；涉医疗时须外审 + 补充 SOUP/遗留软件评估 | ❌ 占位（P2 行业 profile） |
 | IEC 61508 / IEC 62443（工控功能安全/信息安全） | 工控系统 SIL 分级 | 不覆盖；涉工控时须外审 | ❌ 占位（P2 行业 profile） |
 
-> **行业 profile 落地（P3）**：金融/医疗行业立法文档与配套配置包已入库——生成器仓 `references/industry-profile-{finance,medical}.md` + `assets/industry-profiles/{finance,medical}.conf`（md 方法论不随发；conf 由 --industry 实际加载）（用法：conf 追加到目标技能 `precheck.conf` 末尾后按项目裁剪，追加后 `--doctor` 自检）。医疗 profile 覆盖医疗机构信息系统（HIS/EMR/LIS/PACS/互联网医院平台）研发交付；上表医疗器械注册申报（IEC 62304/YY/T 0664 SaMD/SiMD）场景仍维持外审占位，profile 与门禁输出**不构成注册合规证据**。
+> **行业 profile 落地（P3）**：金融/医疗行业立法文档与配套配置包已入库——生成器仓 `references/industry-profile-{finance,medical}.md` + `assets/industry-profiles/{finance,medical}.conf`（md 方法论不随技能分发；conf 由 --industry 实际加载）（用法：conf 追加到目标技能 `precheck.conf` 末尾后按项目裁剪，追加后 `--doctor` 自检）。医疗 profile 覆盖医疗机构信息系统（HIS/EMR/LIS/PACS/互联网医院平台）研发交付；上表医疗器械注册申报（IEC 62304/YY/T 0664 SaMD/SiMD）场景仍维持外审占位，profile 与门禁输出**不构成注册合规证据**。
 
 ---
 
@@ -355,9 +355,9 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | 45 | `--operate` / check_operate | advisory-only（0 fail） | 不在三档执行序列，显式单门禁调用；发布后运营观测（日志/告警/灰度清单），warn/pass |
 | 46 | `--decision-audit` / check_decision_audit | advisory-only（0 fail） | 同上；decisions.jsonl 决策留痕完整性观测 |
 | 47 | `--canary` / check_canary | advisory-only（0 fail） | 同上；灰度/金丝雀发布配置观测 |
-| 48 | `--cwe-audit` / check_cwe_audit | advisory-only（0 fail） | 同上；机械读取 references/cwe-database.md（60 条目）做 CWE 覆盖观测 |
-| 49 | `--cert-audit` / check_cert_audit | advisory-only（0 fail） | 同上；机械读取 references/security-certification-profiles.md（6 认证 profile）做认证准备度观测 |
-| 50 | `--learnings` / check_learnings | advisory-only（0 fail） | 同上；经验沉淀（learnings 台账）观测 |
+| 48 | `--cwe-audit` / check_cwe_audit | advisory-only（0 fail） | 同上；自动读取 references/cwe-database.md（60 条目）做 CWE 覆盖观测 |
+| 49 | `--cert-audit` / check_cert_audit | advisory-only（0 fail） | 同上；自动读取 references/security-certification-profiles.md（6 认证 profile）做认证准备度观测 |
+| 50 | `--learnings` / check_learnings | advisory-only（0 fail） | 同上；经验沉淀（learnings 清单）观测 |
 | 51 | `--pr-quality` / check_pr_quality | advisory-only（0 fail） | 同上；PR 质量信号观测 |
 | 52 | `--skill-supply-chain` / check_skill_supply_chain | advisory-only（0 fail） | 同上；技能供应链（来源/签名/版本）观测 |
 | 53 | `--state-phase` / check_state_phase | advisory-only（0 fail） | 同上；状态机阶段流转一致性观测 |

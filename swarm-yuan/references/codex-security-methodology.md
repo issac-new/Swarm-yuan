@@ -1,12 +1,12 @@
-> **何时读我**：安全扫描门禁接线与威胁建模时。codex-security——约束推理扫描/source-sink/威胁模型五要素。
+> **何时读我**：安全扫描门禁整合与威胁建模时。codex-security——约束推理扫描/source-sink/威胁模型五要素。
 
-# codex-security 安全扫描方法论（OpenAI Codex Security CLI 接线）
+# codex-security 安全扫描方法论（OpenAI Codex Security CLI 整合）
 
-> 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.11（Apache-2.0，**完全开源免费**），CLI 接线层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。
+> 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.11（Apache-2.0，**完全开源免费**），CLI 整合层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。
 > **v0.1.11 要点**：① 嵌套 Git 仓库 scan snapshots（#116）——含 submodule 的项目可整仓扫描，remediation checkout 保留嵌套仓库；② protected multi-architecture 容器镜像（x64/arm64）+ AppArmor 受限主机自动降级到 legacy sandbox——Docker 沙箱在受限 Ubuntu/容器环境不再硬崩。这两项让 codex-security 在真实项目（常含 submodule）+ 受限 CI 环境更可靠。
-> 纪律：CLI 接线层允许真实命令调用（`npx @openai/codex-security scan`），不重新实现、不复制源码（上游 clone 在 `swarm-yuan/research/codex-security/`，仅供 AI 阅读引用，gitignored）。
+> 纪律：CLI 整合层允许真实命令调用（`npx @openai/codex-security scan`），不重新实现、不复制源码（上游 clone 在 `swarm-yuan/research/codex-security/`，仅供 AI 阅读引用，gitignored）。
 > 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；守决策 26：复杂度预算不增。
-> 适用场景：目标项目需要**AI 驱动的语义级安全扫描**（非传统 SAST 的模式匹配）时，`--sast-deep` 门禁的 `SAST_DEEP_TOOL=codex-security` 显式调用 codex-security CLI，产出 SARIF + findings.json + coverage.json 三件套。也用于 AI 在 spec/审查节点引用本文的静态评估七元组 + 威胁模型五要素 + 攻击路径分析方法论。
+> 适用场景：目标项目需要**AI 驱动的语义级安全扫描**（非传统 SAST 的模式匹配）时，`--sast-deep` 门禁的 `SAST_DEEP_TOOL=codex-security` 显式调用 codex-security CLI，产出 SARIF + findings.json + coverage.json 生成期必读文件。也用于 AI 在 spec/审查节点引用本文的静态评估七元组 + 威胁模型五要素 + 攻击路径分析方法论。
 
 ---
 
@@ -20,14 +20,14 @@ codex-security 与 swarm-yuan 既有安全能力是**正交互补**关系：
 |------|------------------------------------------|---------------------|
 | 设计哲学 | 规则匹配 + AST 模式 + 降级链 | AI 约束推理 + 攻击路径验证（官方明确「不包含 SAST 报告」） |
 | 扫描层 | AST/词法层（规则匹配） | **语义层**（source→sink 数据流 + 攻击路径推演 + 威胁模型） |
-| 输出 | JSON（severity + 规则 ID） | **三件套**：scan-manifest.json + findings.json + coverage.json + SARIF |
+| 输出 | JSON（severity + 规则 ID） | **生成期必读文件**：scan-manifest.json + findings.json + coverage.json + SARIF |
 | 威胁模型 | 无（门禁不建威胁模型） | **repository-scoped 威胁模型**（assets/trust boundaries/attacker inputs/invariants） |
 | 误报控制 | 豁免登记（5 字段） | **validate 阶段 + attack-path-analysis 阶段双重去误报**（counterevidence 必查） |
 | 修复建议 | 无 | **patch 命令**（bundled fix-finding skill 产出修复补丁） |
 | 扫描模式 | 全量/目录 | **standard/deep/diff/working-tree 四模式** + bulk-scan 多仓库 |
 | 知识库 | 无 | `--knowledge-base` 注入架构文档/威胁模型/安全策略 |
 
-**接线形态**：codex-security 是 `--sast-deep` 门禁的**可选独立载体**（`SAST_DEEP_TOOL=codex-security` 显式调用），**不参与** `auto` 降级链——`auto` 时降级链不变（semgrep→opengrep→builtin），codex-security 只在用户显式选择时启用。两者可并行使用（SAST 找模式命中 + codex-security 找语义漏洞）。
+**整合形态**：codex-security 是 `--sast-deep` 门禁的**可选独立载体**（`SAST_DEEP_TOOL=codex-security` 显式调用），**不参与** `auto` 降级链——`auto` 时降级链不变（semgrep→opengrep→builtin），codex-security 只在用户显式选择时启用。两者可并行使用（SAST 找模式命中 + codex-security 找语义漏洞）。
 
 ### 开源与许可（纠偏：非付费门槛）
 
@@ -37,7 +37,7 @@ codex-security 与 swarm-yuan 既有安全能力是**正交互补**关系：
 
 ---
 
-## 二、CLI 接线方式（门禁内显式调用，非降级链一环）
+## 二、CLI 整合方式（门禁内显式调用，非降级链一环）
 
 `check_sast_deep` 门禁在 `SAST_DEEP_TOOL=codex-security` 时的调用方式（显式选择，不参与 `auto` 降级链）：
 
@@ -53,7 +53,7 @@ npx @openai/codex-security scan "${SECURITY_SCAN_DIRS[@]}" \
 npx @openai/codex-security export "$SCAN_ROOT/results" --export-format sarif --output "$SCAN_ROOT/results.sarif"
 ```
 
-**接线形态（非降级链）**：
+**整合形态（非降级链）**：
 ```
 SAST_DEEP_TOOL=auto（默认）→ SAST 降级链：semgrep → opengrep → 内置词法
 SAST_DEEP_TOOL=codex-security → 显式选 codex-security（AI 约束推理，非 SAST；失败时降级回 SAST 链）
@@ -116,7 +116,7 @@ codex-security 的 `skills/attack-path-analysis` 定义了从 finding 到攻击�
 
 **反证据必查铁律**（codex-security 原文）：在最终确定范围或可报告性驱动事实之前，**必须**识别针对关键字段的最强仓库反证据，并解释它为何击败或不击败该 finding。这防止 semgrep 式规则匹配的误报被升级为真 finding。
 
-**与 swarm-yuan `--reuse` 门禁的接线**：`--reuse` 检测新增单元与既有重名——codex-security 的反证据检查可复用 `--reuse` 的既有稳定单元盘点结果，判断"看似危险的 sink 是否已被既有守卫覆盖"。
+**与 swarm-yuan `--reuse` 门禁的整合**：`--reuse` 检测新增单元与既有重名——codex-security 的反证据检查可复用 `--reuse` 的既有稳定单元盘点结果，判断"看似危险的 sink 是否已被既有守卫覆盖"。
 
 ---
 
@@ -135,9 +135,9 @@ swarm-yuan AI 在生成目标技能 的 `security-spec.md`（§2 安全规范）
 
 ---
 
-## 七、scan contract 三件套（manifest + findings + coverage）
+## 七、scan contract 生成期必读文件（manifest + findings + coverage）
 
-codex-security 的 `references/scan-contract.md` 定义了完成扫描的三件套机器可读文档：
+codex-security 的 `references/scan-contract.md` 定义了完成扫描的生成期必读文件机器可读文档：
 
 | 文档 | 职责 | 大小上限 |
 |------|------|---------|
@@ -163,7 +163,7 @@ codex-security 的 `_bundled_plugin/skills/` 含 14 个 skill，swarm-yuan AI �
 | skill | 何时引用 | swarm-yuan 触点 |
 |-------|---------|----------------|
 | `threat-model` | spec §19 测试设计 | 威胁模型五要素（本文 §四） |
-| `security-scan` | `--sast-deep` 全量扫描 | CLI 接线（本文 §二） |
+| `security-scan` | `--sast-deep` 全量扫描 | CLI 整合（本文 §二） |
 | `deep-security-scan` | `--sast-deep --mode deep` 多轮发现 | AI 约束推理深度模式（非 SAST 补充，正交） |
 | `security-diff-scan` | `--scope` + `--sast-deep` diff 扫描 | `--scope` 门禁的 git diff 触碰只读 |
 | `finding-discovery` | `--sast-deep` 候选发现 | 静态评估七元组（本文 §三） |
@@ -195,16 +195,16 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 
 ---
 
-## 十、与 swarm-yuan 既有触点的接线声明
+## 十、与 swarm-yuan 既有触点的整合声明
 
-| codex-security 概念 | swarm-yuan 既有触点 | 接线方式 |
+| codex-security 概念 | swarm-yuan 既有触点 | 整合方式 |
 |---------------------|---------------------|---------|
 | CLI scan 命令 | `check_sast_deep` 门禁（gates-warn.sh） | `SAST_DEEP_TOOL=codex-security` 时显式调用（非降级链一环，codex-security 非 SAST；失败时降级回 SAST 链 semgrep→opengrep→builtin） |
 | 静态评估七元组 | `--security` / `--sast-deep` / `--authz` 门禁的误报复核 | AI 引用本文 §三 做七元组核对 |
 | 威胁模型五要素 | spec §19 测试设计 + `--shift-left` | AI 引用本文 §四 建仓库级威胁模型 |
 | 攻击路径分析 | `--reuse` 门禁的既有稳定单元盘点 | 复用 `--reuse` 结果做反证据检查 |
 | SECURITY.md 策略合并 | 目标技能 的 security-spec.md（§2） | AI 引用本文 §六 的 root→leaf 合并 |
-| scan contract 三件套 | `to-sarif.sh` SARIF 管线 | codex-security SARIF 与门禁级 SARIF 并行消费 |
+| scan contract 生成期必读文件 | `to-sarif.sh` SARIF 管线 | codex-security SARIF 与门禁级 SARIF 并行消费 |
 | 14 bundled skills | swarm-yuan 12 步生成流程（Step 1-12） | AI 按 workflow 节点引用对应 skill 模式（本文 §八） |
 | Docker 沙箱 | `--sbom` / `--release-sign` 门禁的 CI 配置 | AI 引用本文 §九 做目标技能 CI 沙箱设计 |
 
@@ -212,11 +212,11 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 
 ## 十一、不引用的部分（守纪律声明）
 
-以下 codex-security 能力**不引用**，守 CLI 接线层「不重新实现、不复制源码」铁律：
+以下 codex-security 能力**不引用**，守 CLI 整合层「不重新实现、不复制源码」铁律：
 
 - `_bundled_plugin/scripts/` 的 Python 脚本实现（resolve_security_md.py / finalize_scan_contract.py 等）——只引用模式，不复制脚本
 - `_bundled_plugin/skills/*/` 的 skill 源码——只引用 skill 的方法论模式（本文 §八），不注册为 swarm-yuan skill
-- `src/` 的 TypeScript SDK 实现（api.ts / runtime.ts / cli.ts 等 66k+ 行）——CLI 接线层只调 `npx @openai/codex-security` 命令，不重新实现 SDK
+- `src/` 的 TypeScript SDK 实现（api.ts / runtime.ts / cli.ts 等 66k+ 行）——CLI 整合层只调 `npx @openai/codex-security` 命令，不重新实现 SDK
 - `docker/` 的 seccomp profile + entrypoint.sh——只引用沙箱范式（本文 §九），不复制 Docker 配置
 - codex-security 的 MCP server（`.mcp.json`）——swarm-yuan 已有 MCP 治理（`references/mcp-governance.md`），不重复注册 codex-security MCP
 
@@ -228,7 +228,7 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 - 许可证：Apache License 2.0
 - 上游 clone 位置：`swarm-yuan/research/codex-security/`（本地参考，gitignored，不入 git）
 - 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
-- 自检断言：G15 `check_codex_security_cli_wiring`（`self-check.sh`，warn-only，守 CLI 接线 + facts.conf 口径）
+- 自检断言：G15 `check_codex_security_cli_wiring`（`self-check.sh`，warn-only，守 CLI 整合 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_RUNTIMES=13` / `FACT_RUNTIMES_CLI=4` / `FACT_REFERENCES=41`（2026-09-05 R17 同步；原值 34 为 v0.1.4 吸收时点数）
 - 版本注记：npm-v0.1.25（2026-09-05 R17 核）
 - 版本注记：npm-v0.1.26（2026-09-09 R20 核）——GitLab MR 验证补丁通道 + **安全修复验证须显式请求**（fail-closed 同向）+ confirmed finding 匹配提速。方法论无新增落地单元。档案 `docs/research/R20-runtime-refresh.md`。——patch 号下功能增量：**跨扫描发现关系保留**（findings 生命周期跨扫描延续：new/persisting/resolved 关系不因重扫丢失）+ sealed 扫描目录去重 + 去重评审阶段对齐加固。方法论无新增落地单元（发现生命周期管理与本仓 gate-trends 趋势对账同向，工程设施对账通过）。

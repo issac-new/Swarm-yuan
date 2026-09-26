@@ -539,7 +539,7 @@ swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input` 白名单字符集�
 - **R38（2026-09-18）**：ruflo **v3.42.4**——**smart search 结果保检索相关性**（#3340/#3327）：其他排序键不得覆盖相关性评分——「结果按相关性排序」是检索接口的语义承诺，次级排序只能在同分内生效（排序语义显式化族）。档案 `docs/research/R38-runtime-refresh.md`。
 
 - **R40（2026-09-19）**：superpowers **v6.3.0→v6.4.1**（80 文件）——①新技能 **diagnosing-superpowers**：技能系统自身的根因诊断（session-discovery/skill-timeline/stumbles/repeated-work/scrub-audit 十 prompt 族 + redaction-policy + context-safety）——「技能要有诊断自身效能的元技能」，与本仓 24h review 轮同构（复盘要复盘方法本身）；②executing-plans 增 task-start/task-done 原子标记脚本（计划执行推进可观测）；③OpenCode 2.0 + Muse 宿主支持（宿主面加宽）；④codex plugin hooks 自动发现兜底修复：**关闭一个行为只有唯一显式形态**（hooks:{} 才生效；缺席/[]/空列表都回退 fallback——配置语义显式化族：「缺席 ≠ 关闭」）。档案 `docs/research/R40-runtime-refresh.md`。
-- **R42（2026-09-22）**：薄轮三注——①ruflo **3.42.5**：reasoningBank **接真 embedder 激活**（登记在案的能力必须真实接线——死配置激活族，承诺兑现）；②comet **0.4.2**：prepareNativeSkillInstallTarget 全局作用域放行（CLI 不假设项目内安装目标），无新原语；③gstack **1.87.5.0**：测试与 CI 规划移除空闲等待（等待即浪费——测试时间预算族）。
+- **R42（2026-09-22）**：薄轮三注——①ruflo **3.42.5**：reasoningBank **接真 embedder 激活**（登记在案的能力必须真实整合——死配置激活族，承诺兑现）；②comet **0.4.2**：prepareNativeSkillInstallTarget 全局作用域放行（CLI 不假设项目内安装目标），无新原语；③gstack **1.87.5.0**：测试与 CI 规划移除空闲等待（等待即浪费——测试时间预算族）。
 - **R43（2026-09-22）**：comet **0.4.2→0.4.3**（#450 项目记忆与 workflow 运行时批）——①**project-knowledge 索引重建可恢复**：重建失败不得损毁既有索引（破坏性操作守卫族：重建=事务性操作，失败回原状）；②workflow CLI 检查优化 + Windows 守护任务挂起修复且**保留加速路径**（修复不得回退既有性能——修复轮成对验证族）；③skill 项目记忆完成指引恢复（指导丢失即恢复）+ manifest 与原生技能预算对齐（发布面一致性）。
 
 ## ruflo v3.43–v3.45 路由智能化与可观测诚实化（2026-09-25 R57 核）

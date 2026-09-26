@@ -11,39 +11,39 @@
 
 ---
 
-## H-C：机械 vs AI 审 边界（Q2-heavy D4 落地）
+## H-C：自动 vs AI 审 边界（Q2-heavy D4 落地）
 
-**核心原则**：脚本只做"机械出初稿"（模板/嗅探/枚举），AI 做"审 + 判断"。机械脚本不要假装能判断质量，AI 不要重复跑机械流程。
+**核心原则**：脚本只做"自动出初稿"（模板/嗅探/枚举），AI 做"审 + 判断"。自动脚本不要假装能判断质量，AI 不要重复跑自动流程。
 
-**各环节分工（分工视图 ⓪-⑨——同一流程的机械/AI 边界压缩标记，与详解号一一对应：⓪=Step 1、⓪.5=2、①=3、①.5=4、②=5、③=6、④=7、⑤=8、⑤.5=9、⑥=10、⑦=10.5、⑧=11、⑨=12；④.5/⑦.5/⑩.5 为插入子阶段）：**
+**各环节分工（分工视图 ⓪-⑨——同一流程的自动/AI 边界压缩标记，与详解号一一对应：⓪=Step 1、⓪.5=2、①=3、①.5=4、②=5、③=6、④=7、⑤=8、⑤.5=9、⑥=10、⑦=10.5、⑧=11、⑨=12；④.5/⑦.5/⑩.5 为插入子阶段）：**
 
-| Step | 机械（脚本做） | AI 审（AI 做） |
+| Step | 自动（脚本做） | AI 审（AI 做） |
 |------|----------------|-----------------|
-| ⓪ 自检 | self-check.sh 11 运行时工具检测（13 为含方法论引用的接线口径） | — |
+| ⓪ 自检 | self-check.sh 11 运行时工具检测（13 为含方法论引用的整合口径） | — |
 | ⓪.5 读项目知识 | trace-log 调用记录 + **mine-habits.sh 行为统计初稿**（R21-B：提交前缀/分支/规模/共变对/热点/测试占比六维 → notes/habits.md） | AI 读 AGENTS.md/CLAUDE.md/记忆，**自行提取规则**（extract-feature-cards.sh 只输出模板）；**审读 habits.md 三去向**（铁律引用/开发偏好节/注意事项+配方佐证） |
 | ① 探查仓库 | 三路并行扇出 + 图谱工具调用 | AI 读探查结果，**自行判断结构/规范/代码组织** |
 | ①.5 形态判定+组件库+调用链 | inventory-verify 计数核验 | AI 判断维度适用性（§C+.0 形态判定是 AI 判断，不是脚本） |
 | ② 特征卡 | extract-feature-cards.sh 输出 17 项骨架 | AI **逐特征填具体值**，不靠脚本猜 |
 | ③ create 骨架 | generate-skill.sh 拷 UNIVERSAL_FILES | — |
 | ④ AI 填充全部文件 | — | AI **用真实探查内容替换占位符** |
-| ④.5 框架深化 | framework-evidence.sh 机械 grep 证据 | AI 判断"该框架规律是否适用于本项目"，证据由 AI 写 |
+| ④.5 框架深化 | framework-evidence.sh 自动 grep 证据 | AI 判断"该框架规律是否适用于本项目"，证据由 AI 写 |
 | ⑤ AI 配置 precheck.conf | conf-render.sh 嗅探+渲染初稿 | AI 审 + 补 `# TODO:model` 清单（语义型变量） |
 | ⑤.5 hooks/commands/MCP | generate-skill.sh 生成 hooks.json/commands/ 模板 | AI **审 hooks 是否适用**（不适用就删对应 hook） |
-| ⑥ 编码验证（测试） | precheck.sh 机械跑 check_test 门禁 | AI 看 fail/warn 输出，**判断是否要修**（不是所有 warn 都要修）；独立跑单元/集成测试 |
-| ⑦ 独立审查（review） | check_review 门禁机械核验 review-record 留痕 | AI 做**独立** code review（非自检），填 references/review-record.md 产物 |
+| ⑥ 编码验证（测试） | precheck.sh 自动跑 check_test 门禁 | AI 看 fail/warn 输出，**判断是否要修**（不是所有 warn 都要修）；独立跑单元/集成测试 |
+| ⑦ 独立审查（review） | check_review 门禁自动核验 review-record 留痕 | AI 做**独立** code review（非自检），填 references/review-record.md 产物 |
 | ⑦.5 门禁注入 | generate-skill.sh --inject-frameworks | — |
 | ⑧ 写回项目记忆 | memory-writeback.sh 落盘 | AI 判断哪些经验值得沉淀 |
 | ⑨ 最终检查 | verify_completeness / inventory-verify | AI 终审：清单是否覆盖项目真实形态 |
 
-**红线**：机械脚本只在"信号可信误报少"的领域跑（骨架创建 / conf-render / verify_completeness / mark-active / enforce_level 加载）；其余环节（特征卡填值 / 框架规律实例化 / hooks 适用性 / 门禁警告采纳）必须 AI 判断。
+**红线**：自动脚本只在"信号可信误报少"的领域跑（骨架创建 / conf-render / verify_completeness / mark-active / enforce_level 加载）；其余环节（特征卡填值 / 框架规律实例化 / hooks 适用性 / 门禁警告采纳）必须 AI 判断。
 
-**对应 H-A/B**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）+ warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）已转 AI 自觉判断 / advisory——机械脚本不再跑这些，AI 自行判断是否参考。
+**对应 H-A/B**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）+ warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）已转 AI 自觉判断 / advisory——自动脚本不再跑这些，AI 自行判断是否参考。
 
 ---
 
 ## Step 1. 自检
 
-`bash scripts/self-check.sh`（11 个运行时工具检测+自动安装；13 为含方法论引用的接线口径）
+`bash scripts/self-check.sh`（11 个运行时工具检测+自动安装；13 为含方法论引用的整合口径）
 
 ## Step 2. 读取项目知识
 
@@ -57,10 +57,10 @@ AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特
 ## Step 4. ★项目形态判定 + 详尽组件库清单 + 调用链路分析（探查的深化，不可跳过）
 
 - **项目形态判定（§C+.0）**：探查文件类型/框架特征 → 判定含哪些维度（前端UI/后端API/异步消费/桌面IPC/移动端/库导出）→ 后续只枚举存在的维度
-- **全量穷举（§C+.1 按维度动态）**：按判定结果选择的维度（C+.1-F前端/C+.1-B后端/C+.1-A异步/C+.1-D桌面移动/C+.1-L库/C+.1-T通用）做 `find`+`grep` 机械枚举 → 提取导出签名 → 每维度独立计数核验
+- **全量穷举（§C+.1 按维度动态）**：按判定结果选择的维度（C+.1-F前端/C+.1-B后端/C+.1-A异步/C+.1-D桌面移动/C+.1-L库/C+.1-T通用）做 `find`+`grep` 自动枚举 → 提取导出签名 → 每维度独立计数核验
 - **调用链路分析（§C+.2 按形态选模型）**：前端(注册装配+模块矩阵+挂载树+store依赖) / 后端(请求处理管道+分层矩阵+数据流+外部依赖) / 异步(消息流转) / 微服务(跨服务调用链) / 桌面(IPC链路) / 库(导出依赖图)
 - **编排约束推导（§C+.3 按形态选约束类别）**：前端约束 / 后端约束 / 异步约束 / 微服务约束 / 通用约束，每条标注代码证据
-- **关系边集（§C+.2.5，R21-D）**：`bash scripts/relations-extract.sh <项目根> --skill-dir <目标技能目录>` 机械出 import 边初稿 → AI 补语义边（call/route/message/ipc/export）→ references/relations.jsonl（--stable-diff 传播与流B 探查消费）
+- **关系边集（§C+.2.5，R21-D）**：`bash scripts/relations-extract.sh <项目根> --skill-dir <目标技能目录>` 自动出 import 边初稿 → AI 补语义边（call/route/message/ipc/export）→ references/relations.jsonl（--stable-diff 传播与开发工作流 探查消费）
 - **接口全量枚举（§C+.4 按接口形态适配）**：REST(逐端点) / GraphQL(逐resolver) / gRPC(逐method) / MQ(逐queue+handler) / 库(逐导出)，无通配符占位
 - 优先用 `gitnexus context/trace` 或 `graphify path/explain` 系统性提取签名与依赖链，而非随机 grep
 
@@ -70,7 +70,7 @@ AGENTS.md/CLAUDE.md/记忆/agent 运行时（若有） → 提取规则写入特
 
 ## Step 6. 创建骨架
 
-`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ + precheck.conf）。`--profile auto|lite|standard|compliance` 四档，**默认 auto 项目级自适应**（合规关键词 → compliance；文件数 <80 → lite；其余 standard；**偏置修正：信号明确才升档，模糊走默认 standard**，auto 会打印判定依据供用户评估）：**lite**（认知档）= 特征卡 + reference-manual + 核心门禁脚本最小集（无 hooks/commands/settings/.mcp.json）；**standard** = 全量骨架；**compliance** = standard + 标准合规矩阵参考（references/standards-compliance.md）。**零占位符铁律适用范围 = 当前 profile 的文件集**（profile 是显式声明不启用，与"未配置静默跳过"本质不同）。默认生成到 `<project-dir>/.claude/skills/`（"为目标项目生成"名副其实）；可用第 3 参数 `target-dir` 显式指定其他目录，如 `--upgrade <name> <project-dir> <target-dir>`。全局安装到 `~/.claude/skills/` 等运行时目录走 `install.sh`。
+`bash scripts/generate-skill.sh <name> <project-dir>`（含 hooks/ + commands/ + precheck.conf）。`--profile auto|lite|standard|compliance` 四档，**默认 auto 项目级自适应**（合规关键词 → compliance；文件数 <80 → lite；其余 standard；**偏置修正：信号明确才升档，模糊走默认 standard**，auto 会打印判定依据供用户评估）：**lite**（认知档）= 特征卡 + reference-manual + 核心门禁脚本最小集（无 hooks/commands/settings/.mcp.json）；**standard** = 全量骨架；**compliance** = standard + 标准合规矩阵参考（references/standards-compliance.md）。**无占位符铁律适用范围 = 当前 profile 的文件集**（profile 是显式声明不启用，与"未配置静默跳过"本质不同）。默认生成到 `<project-dir>/.claude/skills/`（"为目标项目生成"名副其实）；可用第 3 参数 `target-dir` 显式指定其他目录，如 `--upgrade <name> <project-dir> <target-dir>`。全局安装到 `~/.claude/skills/` 等运行时目录走 `install.sh`。
 
 ## Step 7. AI 填充全部文件
 
@@ -84,7 +84,7 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/recipes/snippets/m
 
 ## Step 8. AI 配置 precheck.conf
 
-**★脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染三件套初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/WRITABLE_DIRS/READONLY_DIRS 等语义型变量，须从特征卡推导；标注 deprecated 的变量不填，恢复须手工解锁 arch.conf 注释行）+ 审 diff 是否符合特征卡意图——从「手写全部 conf 变量」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
+**★脚本化初稿**——`generate-skill.sh create` 已调 `scripts/conf-render.sh` 渲染生成期必读文件初稿（每变量带 `# AUTO:detected`（嗅探所得）/ `# AUTO:default`（默认值）/ `# TODO:model`（语义型须人工）溯源注释）。模型只处理 `# TODO:model` 清单（LAYER_DEFS/WRITABLE_DIRS/READONLY_DIRS 等语义型变量，须从特征卡推导；标注 deprecated 的变量不填，恢复须手工解锁 arch.conf 注释行）+ 审 diff 是否符合特征卡意图——从「手写全部 conf 变量」变成「审 + 补少数」。审完后所有 `<占位符>`/`TODO:model` 必须替换为真实值
 
 **★项目 rules.d 探查期生成（R21-C，②缺口收口）**：本 Step 从编排约束（§C+.3）与只读判定（特征卡 2 可改范围）推导项目特有三值规则初稿，写入产物 `rules.d/project.rules`。**行语义 = 命令拦截**：`gate-rules.sh` 对命令首 token 做 glob 匹配（消费方是 fail-gate-hook/integrity-guard 的 PreToolUse(Bash)），**不是文件路径规则**——路径保护落 `READONLY_DIRS`（check_scope 执法），本文件写"哪些命令推进态要拦"（R23 回归 D12：原示例误用路径 pattern，照写即无效规则）。正确示例：`npm publish * → forbid # 发布不经门禁；替代：走 release 流程（门禁全绿 + tag）` / `git push * → prompt # 推进态；先跑 precheck --all` / `npm test * → allow`。FORBID 行必须带替代方案（rules.d 行格式铁律）。
 
@@ -94,15 +94,15 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/recipes/snippets/m
 
 ## Step 9. AI 集成 Claude Code
 
-定制 generate-skill.sh 已生成的 hooks/hooks.json + commands/ + settings.local.json + .mcp.json 模板（脚本骨架已建，AI 补项目特定配置）+ workflow.md 节点标注。hooks 含 PostToolUse(Bash) failure-detector（失败模式机械检测：SPINNING/EXPLORING/MIXED 三态 + L1-L4 压力升级，借鉴 tanweai/pua 改写）+ PreToolUse 防作弊门（integrity-guard：受保护治理资产 deny/advisory 两档，借鉴 tanweai/pua 改写为 swarm-yuan 资产清单）。详见 `references/claude-code-capabilities.md`
+定制 generate-skill.sh 已生成的 hooks/hooks.json + commands/ + settings.local.json + .mcp.json 模板（脚本骨架已建，AI 补项目特定配置）+ workflow.md 节点标注。hooks 含 PostToolUse(Bash) failure-detector（失败模式自动检测：SPINNING/EXPLORING/MIXED 三态 + L1-L4 压力升级，借鉴 tanweai/pua 改写）+ PreToolUse 防作弊门（integrity-guard：受保护治理资产 deny/advisory 两档，借鉴 tanweai/pua 改写为 swarm-yuan 资产清单）。详见 `references/claude-code-capabilities.md`
 
 ## Step 10. AI 编码验证（测试）
 
-`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--mark-active` 翻 active 后 `--all-full`（标准 28：核心 10+架构 18）；强监管交付按需追加 `--compliance-suite`（合规 19）。**★测试门禁（check_test）**：独立承载单元/集成测试验证——脚本机械跑项目测试套件，`check_test` 门禁核验 0 用例检测（无测试即 fail）、断言密度等硬指标；**测试有效性**引用 P1-6 已接入的 **Mutation Check**（变异测试：注入故障后测试套件必须捕获，捕获率不达标 fail，防止"假绿"测试）。**★compliance 档 / 改治理资产 / 发布链路：强制走四权分离 agent 拓扑**（policy-guardian → action-executor → self-reviewer → verifier，借鉴 tanweai/pua 改写为立法/执法/司法三权隐喻，详见 `references/governance-agents.md`）——action-executor 只给 candidate_pass，最终 verifier_status 由 external harness/hook/human 定，防「自己改自己验收」。**★compaction 状态续传（借鉴 tanweai/pua builder-journal）**：PreCompact hook 自动 `bash scripts/state-machine.sh dump-journal` 把 phase/failure_count/peak_level dump 到 `.swarm-yuan/builder-journal.md`；SessionStart 自动 `restore-journal` 检测 <2h 的 journal 并恢复压力状态——压力不因 compaction 重置
+`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--mark-active` 翻 active 后 `--all-full`（标准 28：核心 10+架构 18）；强监管交付按需追加 `--compliance-suite`（合规 19）。**★测试门禁（check_test）**：独立承载单元/集成测试验证——脚本自动跑项目测试套件，`check_test` 门禁核验 0 用例检测（无测试即 fail）、断言密度等硬指标；**测试有效性**引用 P1-6 已接入的 **Mutation Check**（变异测试：注入故障后测试套件必须捕获，捕获率不达标 fail，防止"假绿"测试）。**★compliance 档 / 改治理资产 / 发布链路：强制走四权分离 agent 拓扑**（policy-guardian → action-executor → self-reviewer → verifier，借鉴 tanweai/pua 改写为立法/执法/司法三权隐喻，详见 `references/governance-agents.md`）——action-executor 只给 candidate_pass，最终 verifier_status 由 external harness/hook/human 定，防「自己改自己验收」。**★compaction 状态续传（借鉴 tanweai/pua builder-journal）**：PreCompact hook 自动 `bash scripts/state-machine.sh dump-journal` 把 phase/failure_count/peak_level dump 到 `.swarm-yuan/builder-journal.md`；SessionStart 自动 `restore-journal` 检测 <2h 的 journal 并恢复压力状态——压力不因 compaction 重置
 
 ## Step 10.5. AI 独立审查（review）
 
-**独立 code review（非自检）**：AI 以"第三方 reviewer"视角重新审视生成产物（SKILL.md / workflow / references / precheck.conf / scripts），不重复 Step 7 的填充自检，而是找 Step 7 之后仍残留的逻辑错误、占位符遗漏、门禁误配、组件库清单错漏等**低级错误**（用户原始痛点："swarm-yuan 没有测试和审查这个关键环节，错误太低级了"）。**★review 门禁（check_review）**：`check_review` 机械核验**审查留痕**——生成物目录存在 `references/review-record.md` 且非空（含 5 维审查点 + findings 表）即 pass；默认档（REVIEW_RECORD_REQUIRED 未启用）只 warn 不 fail（诚实分层：CI 自举/工具仓库无生成物是常态），compliance 套配置 `REVIEW_RECORD_REQUIRED=1` 后缺留痕即 fail（R23 回归 D10：原文档"缺则 fail"与实现漂移，已对齐）。审查完须 `cp swarm-yuan/assets/review-record-template.md <skill>/references/review-record.md` 并填充 5 维审查点 + findings 表，作为独立审查证据产物落盘（review-record-template.md 路径：生成器侧与目标技能侧均为 `assets/`；填充产物落目标技能 `references/review-record.md`）。**目标技能 active 态建议在 conf 启用 REVIEW_RECORD_REQUIRED=1，让审查留痕成为硬门。**
+**独立 code review（非自检）**：AI 以"第三方 reviewer"视角重新审视生成产物（SKILL.md / workflow / references / precheck.conf / scripts），不重复 Step 7 的填充自检，而是找 Step 7 之后仍残留的逻辑错误、占位符遗漏、门禁误配、组件库清单错漏等**低级错误**（用户原始痛点："swarm-yuan 没有测试和审查这个关键环节，错误太低级了"）。**★review 门禁（check_review）**：`check_review` 自动核验**审查留痕**——生成物目录存在 `references/review-record.md` 且非空（含 5 维审查点 + findings 表）即 pass；默认档（REVIEW_RECORD_REQUIRED 未启用）只 warn 不 fail（诚实分层：CI 自举/工具仓库无生成物是常态），compliance 套配置 `REVIEW_RECORD_REQUIRED=1` 后缺留痕即 fail（R23 回归 D10：原文档"缺则 fail"与实现漂移，已对齐）。审查完须 `cp swarm-yuan/assets/review-record-template.md <skill>/references/review-record.md` 并填充 5 维审查点 + findings 表，作为独立审查证据产物落盘（review-record-template.md 路径：生成器侧与目标技能侧均为 `assets/`；填充产物落目标技能 `references/review-record.md`）。**目标技能 active 态建议在 conf 启用 REVIEW_RECORD_REQUIRED=1，让审查留痕成为硬门。**
 
 ## Step 11. AI 写回记忆
 
@@ -110,4 +110,4 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/recipes/snippets/m
 
 ## Step 12. AI 最终检查
 
-运行 `bash scripts/generate-skill.sh --verify-completeness <skill_dir>` 做零占位符 + workflow 调用追踪要素机器执法（active 态或 --strict：命中即列 file:line 并 exit 1；draft 态默许残留仅列清单 return 0——断点续传设计；零命中打印「✓ 零占位符确认」），确认零"待填充"/零"填充指引"/零"<占位符>"残留；**维度计数核验**：跑 `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <§C+.0形态>`，全 PASS → 直接引用报告结论；FAIL（清单计数 < 枚举计数 × 0.95）→ 只针对失败维度回 Step 4 补漏；DIM_MISMATCH（声明形态与枚举结果矛盾）→ 回 §C+.0 重判形态。维度注册表见 `assets/inventory-dimensions.conf`（数据驱动，新增维度改注册表不改脚本）；**框架适配四要素核验**：对 ACTIVE_FRAMEWORKS 每个框架——① 构件枚举计数 ≥ 实际 × 0.95（依 `references/frameworks/<fw>.md` §2 的计数基准）② `framework-knowledge.md` 规律数 ≥ 规则文件声明的深度门槛且 100% 含"证据:"字段 ③ `precheck.sh` 含 `_fw_<id>_check` 动态分发器且 `--framework <id>` 实跑 exit 0（门禁片段位于 `assets/framework-gates/<fw>.sh`，已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块）④ `dev-guide.md` §10 含该框架约束段 ≥ 3 条。任一不过 → 回 Step 4.5。**★Oracle Gate 循环（可选，借鉴 autoresearch + tanweai/pua pua-loop）**：self-check/precheck 持续 fail 时，用户可 `bash assets/hooks/setup-loop.sh "修复任务" --verify 'bash scripts/self-check.sh --check-only'` 启动无限迭代模式——AI 输出 `<promise>SWARM_YUAN_DONE</promise>` 后，Stop hook 独立跑 verify_command，拒绝则 loop 继续 + 错误输出喂回，Stall Detection（5+ 次拒绝强制退回需求本身）。详见 `assets/hooks/setup-loop.sh --help`。**如有残留，回到 Step 7 继续填充，直到零残留。**
+运行 `bash scripts/generate-skill.sh --verify-completeness <skill_dir>` 做无占位符 + workflow 调用追踪要素机器执法（active 态或 --strict：命中即列 file:line 并 exit 1；draft 态默许残留仅列清单 return 0——断点续传设计；零命中打印「✓ 无占位符确认」），确认零"待填充"/零"填充指引"/零"<占位符>"残留；**维度计数核验**：跑 `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <§C+.0形态>`，全 PASS → 直接引用报告结论；FAIL（清单计数 < 枚举计数 × 0.95）→ 只针对失败维度回 Step 4 补漏；DIM_MISMATCH（声明形态与枚举结果矛盾）→ 回 §C+.0 重判形态。维度注册表见 `assets/inventory-dimensions.conf`（数据驱动，新增维度改注册表不改脚本）；**框架适配四要素核验**：对 ACTIVE_FRAMEWORKS 每个框架——① 构件枚举计数 ≥ 实际 × 0.95（依 `references/frameworks/<fw>.md` §2 的计数基准）② `framework-knowledge.md` 规律数 ≥ 规则文件声明的深度门槛且 100% 含"证据:"字段 ③ `precheck.sh` 含 `_fw_<id>_check` 动态分发器且 `--framework <id>` 实跑 exit 0（门禁片段位于 `assets/framework-gates/<fw>.sh`，已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块）④ `dev-guide.md` §10 含该框架约束段 ≥ 3 条。任一不过 → 回 Step 4.5。**★Oracle Gate 循环（可选，借鉴 autoresearch + tanweai/pua pua-loop）**：self-check/precheck 持续 fail 时，用户可 `bash assets/hooks/setup-loop.sh "修复任务" --verify 'bash scripts/self-check.sh --check-only'` 启动无限迭代模式——AI 输出 `<promise>SWARM_YUAN_DONE</promise>` 后，Stop hook 独立跑 verify_command，拒绝则 loop 继续 + 错误输出喂回，Stall Detection（5+ 次拒绝强制退回需求本身）。详见 `assets/hooks/setup-loop.sh --help`。**如有残留，回到 Step 7 继续填充，直到零残留。**

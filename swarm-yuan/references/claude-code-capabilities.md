@@ -600,7 +600,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 > 覆盖 v2.1.253-261（纯修复版不列）。npm latest=2.1.261 / stable=2.1.236（分裂持续）；详表见 `docs/upstream-baseline.md` §3.5。
 
-- **无头执法档 `--permission-prompts none`**（259）：与 Codex exit-2-deny 双宿主对偶；**无人值守 prompt 档坍缩为 deny**（R13 三值化边界）。
+- **无头执法档 `--permission-prompts none`**（259）：与 Codex exit-2-deny 双宿主互为正反；**无人值守 prompt 档坍缩为 deny**（R13 三值化边界）。
 - **宿主 deny 语义漂移警示**（259→260）：Read deny 应用至 Bash 参数旋即回退——**宿主 deny 版本间震荡，不得为执法主体**（同向：Guardian 条件性跳过）。
 - **`/skill-doctor`**（261）：未使用技能上下文成本审计（门禁预算宿主侧证据源）；`--append-subagent-system-prompt-file` + 输出预算 `bashOutputMaxChars`（上下文外置第四次验证）。
 - **治理**（257-260）：`CLAUDE_CODE_SUBAGENT_MODEL_FORCE` / `blockReadsOutsideWorkingDirectories` / Containment Escape / Workflow schema 前置校验（gate-report 同向）。

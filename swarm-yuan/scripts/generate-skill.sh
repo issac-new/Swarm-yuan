@@ -3,7 +3,7 @@
 # 用法:
 #   bash generate-skill.sh <skill-name> <project-dir> [target-dir]       # 创建新技能骨架
 #   bash generate-skill.sh --upgrade <skill-name> <project-dir> [target-dir]  # 升级已存在技能
-#   bash generate-skill.sh --verify-completeness <skill-dir>   # 零占位符机器执法（骨架填充完成度校验）
+#   bash generate-skill.sh --verify-completeness <skill-dir>   # 无占位符机器执法（骨架填充完成度校验）
 #   bash generate-skill.sh --render-tools <skill-dir> [project-root] [tool]   # 派生各 AI 工具原生规则文件（幂等）
 # 可选环境变量:
 #   SKILLS_PATH_REWRITE — sed 表达式，复制通用文件后逐文件应用（create/upgrade 均生效；
@@ -53,7 +53,7 @@ UNIVERSAL_FILES=(
   # 所有引用指向 scripts/（SKILL.md:64/74/86），assets/ 副本无人加载。
   "assets/task-type-gates.conf|assets|lite"
   "assets/profile-thresholds.conf|assets|lite"
-  "assets/inventory-dimensions.conf|assets|lite"  # 维度注册表随发：inventory-verify.sh 执勤侧自洽消费（v2.14.2 自包含修复）
+  "assets/inventory-dimensions.conf|assets|lite"  # 维度注册表随技能分发：inventory-verify.sh 执勤侧自洽消费（v2.14.2 自包含修复）
   "scripts/precheck.sh|assets|lite"
   "scripts/gates-strict.sh|assets|lite"
   "scripts/gates-warn.sh|assets|lite"
@@ -62,7 +62,7 @@ UNIVERSAL_FILES=(
   "scripts/precheck.conf|assets|lite"
   "scripts/precheck.arch.conf|assets"
   "scripts/precheck.compliance.conf|assets|compliance"
-  "assets/standards-map.conf|assets|compliance"  # WP-S1 标准映射表随发（gates-strict 默认探测 <skill>/assets/standards-map.conf，未随发则该核验在生成物中恒静默跳过）
+  "assets/standards-map.conf|assets|compliance"  # WP-S1 标准映射表随技能分发（gates-strict 默认探测 <skill>/assets/standards-map.conf，未随技能分发则该核验在生成物中恒静默跳过）
   "scripts/snippets.md|assets"
   "scripts/mcp-tools.md|assets"
   "scripts/state-machine.sh|assets|lite"
@@ -82,14 +82,14 @@ UNIVERSAL_FILES=(
   "scripts/loop-hook.sh|hook|standard"
   "scripts/project-fingerprint.sh|gen|lite"
   # inventory-update.sh 给目标 skill 的 AI 用（编码中发现语义变化 → 局部更新清单单条目）；
-  # v2.14.2 起核验工具（inventory-verify）与边集工具（relations-extract）同样随发（自包含执勤）。
+  # v2.14.2 起核验工具（inventory-verify）与边集工具（relations-extract）同样随技能分发（自包含执勤）。
   "scripts/inventory-update.sh|gen|lite"
-  # v2.14.2 自包含修复：边集/清单的重建与核验工具随发——执勤侧项目演进后可本地重跑
+  # v2.14.2 自包含修复：边集/清单的重建与核验工具随技能分发——执勤侧项目演进后可本地重跑
   # relations-extract（--verify 断边/重建）与 inventory-verify（计数核验/path-check），
-  # 无需回生成器侧。两脚本零外部依赖（inventory-verify 仅读随发的 assets/inventory-dimensions.conf）。
+  # 无需回生成器侧。两脚本零外部依赖（inventory-verify 仅读随技能分发的 assets/inventory-dimensions.conf）。
   "scripts/relations-extract.sh|gen|lite"
   "scripts/inventory-verify.sh|gen|lite"
-  # v2.14.3 排查 A3：边集反查工具随发——执勤侧改实体字段/类名时按字段/实体/XML 反查影响面
+  # v2.14.3 排查 A3：边集反查工具随技能分发——执勤侧改实体字段/类名时按字段/实体/XML 反查影响面
   #（消费 relations-extract 出的 relations.jsonl，fail-open 只读不重建）。
   "scripts/relations-query.sh|gen|lite"
   # 规则即数据——三值求值器 + 默认规则集随生成物分发（conf 收缩的载体：门禁阈值/白名单类参数迁入规则数据）
@@ -102,7 +102,7 @@ UNIVERSAL_FILES=(
   "references/ontology/actions.md|onto|lite"
   "rules.d/bash-advance.rules|rules|lite"
   "rules.d/readonly-safe.rules|rules|lite"
-  "rules.d/framework-globs.rules|rules"  # G21 对账锚随发（目标侧 self-check framework-globs 快照对账，未随发则恒 warn"快照失锚"）
+  "rules.d/framework-globs.rules|rules"  # G21 对账锚随技能分发（目标侧 self-check framework-globs 快照对账，未随技能分发则恒 warn"快照失锚"）
   "scripts/self-check.sh|gen|lite"
   "scripts/detect-frameworks.sh|gen|lite"
   "scripts/cost-report.sh|gen|lite"
@@ -122,14 +122,14 @@ UNIVERSAL_FILES=(
   "references/logic-razor.md|ref|standard"
   "references/cognitive-bias.md|ref|standard"
   "references/domain-knowledge.md|ref"
-  "references/cost-estimation-methodology.md|ref"  # 功能点估算方法论（GB/T 42588-2023 NESMA，2026-09-15 吸收）随发——spec §25 执勤侧识别规则/因子表/算例单一事实源
-  "references/lazy-generation-methodology.md|ref"  # 懒生成方法论（七层复用阶梯+懒≠偷工，R37 2026-09-18 吸收自 DietrichGebert/ponytail）随发——⑤编码先查再写决策程序执勤侧单一事实源
+  "references/cost-estimation-methodology.md|ref"  # 功能点估算方法论（GB/T 42588-2023 NESMA，2026-09-15 吸收）随技能分发——spec §25 执勤侧识别规则/因子表/算例单一事实源
+  "references/lazy-generation-methodology.md|ref"  # 懒生成方法论（七层复用阶梯+懒≠偷工，R37 2026-09-18 吸收自 DietrichGebert/ponytail）随技能分发——⑤编码先查再写决策程序执勤侧单一事实源
   "references/claude-code-capabilities.md|ref"
   "references/standards-compliance.md|ref|compliance"
   "references/cwe-database.md|ref|compliance"  # cwe_audit 门禁数据参照（standards-compliance.md 引用，防拷贝后死链）
   "references/security-certification-profiles.md|ref|compliance"  # cert_audit 门禁数据参照（F.1 #49 引用，同 cwe-database 口径）
-  # R52 随发补缺：分派表（task-methodology-router，已随发）引用的方法论/行为档此前仅 3/13 随发——
-  # 目标技能侧 feature/fix 等流B 行分派悬空。按流B 消费节点补 12 档随发（生成器侧档在分派表标【生成器侧】）。
+  # R52 随技能分发补缺：路由表（task-methodology-router，已随技能分发）引用的方法论/行为档此前仅 3/13 随技能分发——
+  # 目标技能侧 feature/fix 等开发工作流 行分派悬空。按开发工作流 消费节点补 12 档随技能分发（生成器侧档在路由表标【生成器侧】）。
   "references/knowledge-lifecycle-methodology.md|ref|standard"  # ②读法六步/影响面/回归分级/过期三态（feature/fix/docs/沉淀行）
   "references/decision-governance.md|ref|standard"  # ①⑧用户决策留痕（UserChallenge 五要素）
   "references/ai-process-records.md|ref|standard"  # 全程留痕口径（GB/T 8566 过程信息项）
@@ -146,7 +146,7 @@ UNIVERSAL_FILES=(
 
 # 项目特定文件（upgrade 保留不覆盖、不备份）
 # R21-A：+references/recipes.md（任务配方：§A 业务功能清单 + §B 五要素配方，生成器出骨架、AI 填充、成长链单条更新）
-# R21-D：+references/relations.jsonl（机器可读关系边集：relations-extract.sh 机械 import 边 + AI 语义边）
+# R21-D：+references/relations.jsonl（机器可读关系边集：relations-extract.sh 自动 import 边 + AI 语义边）
 PROJECT_SPECIFIC_FILES=("SKILL.md" "references/workflow.md" "references/codebase.md" "references/dev-guide.md" "references/release.md" "references/reference-manual.md" "references/recipes.md" "references/relations.jsonl")
 
 # 用户可填充模板（随 UNIVERSAL_FILES 分发但 AI 会填入项目内容——Step 7 填充对象）
@@ -247,7 +247,7 @@ merge_precheck_conf() {
 # F1（dsh/cordis 吸收·协效应定向失效）：框架移出 ACTIVE_FRAMEWORKS 后的 conf 死变量注释。
 # 补齐 merge_precheck_conf 只有"缺失补占位"没有"多余回收"的半边——对齐 cordis 的
 # 服务表收缩（论文 Def 23：set 之逆即 unset）：依赖集合变化 → conf 定向失效。
-# 死变量判定（机械、保守，三者同时满足）：
+# 死变量判定（自动、保守，三者同时满足）：
 #   ① v 不在已注入区块 requires_conf 并集（活跃框架都不需要）
 #   ② v 出现在某个【未注入】框架源文件的 requires_conf 中（证明它是框架专属变量）
 #   ③ v 不被 skill 四脚本正文直接引用（排通用白名单如 SQL_INJECTION_WHITELIST/
@@ -355,7 +355,7 @@ inject_frameworks() {
     fi
   fi
 
-  # F4（dsh 吸收·注入前快照，配对逆的根基）：任何落盘修改之前备份 $sh + conf 三件套到
+  # F4（dsh 吸收·注入前快照，配对逆的根基）：任何落盘修改之前备份 $sh + conf 生成期必读文件到
   # .swarm-yuan/effects/<UTC时间戳>/，保留最近 1 份（更旧的清理）——--rollback-frameworks
   # 据此整体撤销本次注入效果（对齐 cordis "注册即效果、卸载可 unwind"；此前此路径无备份
   # 注释自认不可恢复）。
@@ -500,9 +500,9 @@ inject_frameworks() {
     echo "⚠ 框架 '${fw}' 无对应门禁片段（references/frameworks/${fw}.md 缺失）——列入未覆盖清单"
   done
 
-  # 4.5) framework-knowledge.md 骨架（DESIGN §4.1 声称的机械产出；audit-2026-08-25 落地——
+  # 4.5) framework-knowledge.md 骨架（DESIGN §4.1 声称的自动产出；audit-2026-08-25 落地——
   # 此前该文件完全依赖 AI 从零手写）。已存在不覆盖（AI 可能已实例化）；按 ACTIVE_FRAMEWORKS
-  # 逐框架生成节，规律行数=该框架规则文件声明的"深度门槛"（机械节点只出骨架，实例化是 AI 审的活）。
+  # 逐框架生成节，规律行数=该框架规则文件声明的"深度门槛"（自动节点只出骨架，实例化是 AI 审的活）。
   local fk="$skill_dir/references/framework-knowledge.md"
   if [[ ! -f "$fk" && ${#ACTIVE_FRAMEWORKS[@]} -gt 0 ]]; then
     mkdir -p "$(dirname "$fk")" 2>/dev/null || true
@@ -552,7 +552,7 @@ inject_frameworks() {
 }
 
 # F4（dsh 吸收·可逆效应补全）：整体撤销最近一次 --inject-frameworks 的效果。
-# 依据：.swarm-yuan/effects/<ts>/ 快照（注入前原态）恢复 precheck.sh + conf 三件套，
+# 依据：.swarm-yuan/effects/<ts>/ 快照（注入前原态）恢复 precheck.sh + conf 生成期必读文件，
 # 并清 .swarm-yuan-version 的 framework_gates_* 记账。对齐 cordis "卸载即 unwind"
 # （论文 Def 23：set 之逆 unset）——此前注入路径无备份、不可恢复。
 rollback_frameworks() {
@@ -632,7 +632,7 @@ fi
 # ============================================================
 # --verify-completeness 子命令（独立于 create/upgrade，单独拦截）
 # 用法: bash generate-skill.sh --verify-completeness <skill-dir>
-# 零占位符机器执法：扫描目标 skill 的 SKILL.md / references/*.md /
+# 无占位符机器执法：扫描目标 skill 的 SKILL.md / references/*.md /
 # scripts/precheck.conf / hooks/hooks.json（存在才查），命中占位符模式
 # 或未勾 checkbox（- [ ]）则打印 file:line 清单并 exit 1；零命中 exit 0。
 # 调用追踪机器执法（设计理念 2）：references/workflow.md 每个节点段
@@ -657,13 +657,13 @@ verify_completeness() {
   # WP-R P3-3: precheck.arch.conf 也含 --inject-frameworks 注入的 TODO 占位符,须纳入扫描
   [[ -f "$skill_dir/scripts/precheck.arch.conf" ]] && targets+=("$skill_dir/scripts/precheck.arch.conf")
   [[ -f "$skill_dir/hooks/hooks.json" ]] && targets+=("$skill_dir/hooks/hooks.json")
-  # commands/*.md 骨架模板内嵌数字可能漂移（G6），纳入零占位符扫描
+  # commands/*.md 骨架模板内嵌数字可能漂移（G6），纳入无占位符扫描
   for f in "$skill_dir"/commands/*.md; do
     [[ -f "$f" ]] && targets+=("$f")
   done
   if [[ ${#targets[@]} -eq 0 ]]; then
     echo "⚠ 未找到可检查文件（SKILL.md / references/*.md / precheck.conf / hooks.json 均不存在）"
-    echo "✓ 零占位符确认"
+    echo "✓ 无占位符确认"
     return 0
   fi
   # grep -F 固定串多模式（-e 叠加），三平台兼容；输出 file:line:内容 清单
@@ -696,8 +696,8 @@ verify_completeness() {
       /^#+ .*(检查表|检查清单|自检|审查清单|裁决条款|清单（)/ { intable=1; next }
       /^#+ / { intable=0 }
       # 九轮复盘：排除 ``` 代码块——gsd-patterns.md/cognitive-bias.md 等 UNIVERSAL_FILES
-      # 模板里的 ```markdown 示例（破窗台账格式演示）含 - [ ]，是正确的方法论示例，
-      # 非待清零占位符。原未排除代码块，导致 --mark-active 永远拒绝（E2E Step ⑧ 死锁）。
+      # 模板里的 ```markdown 示例（破窗清单格式演示）含 - [ ]，是正确的方法论示例，
+      # 非待清无占位符。原未排除代码块，导致 --mark-active 永远拒绝（E2E Step ⑧ 死锁）。
       # /^```/ 行首匹配 fence 边界，toggle 翻转；完整配对 fence 正确，
       # 未闭合 fence 把块内全判为 incode（保守不误报，可接受）。
       /^```/ { incode=!incode; next }
@@ -719,7 +719,7 @@ verify_completeness() {
   # 调用追踪要素机器执法（理念 2：全链路追踪落实到 workflow 模板）：
   # workflow.md 每个「## 节点…」段须含「调用追踪」字样（第 ⑨ 要素）。
   # R52 补强：每节点段另须含「方法论引用」字样（第 ⑩ 要素——引用本节点消费的 references 档，
-  # 与 task-methodology-router §方法论分派表消费节点序对偶；节点级实载分派由本断言守）。
+  # 与 task-methodology-router §文档路由表消费节点序互为正反；节点级实载分派由本断言守）。
   # 骨架阶段（待填充）已被上方占位符检查拦截；此处针对已填充内容。
   # 无节点段（项目裁剪后无 workflow 节点）不查，放行。
   local wf="$skill_dir/references/workflow.md" trace_miss=""
@@ -730,14 +730,14 @@ verify_completeness() {
     trace_miss=$(awk '
       /^## / && index($0, "节点") > 0 && (index($0, "：") > 0 || index($0, ":") > 0) {
         if (node != "" && !has) print FILENAME":"line": 节点段缺追踪要素（R13 4 要素模型：⑥ 产出物与追踪段须含 trace-log.sh 调用）: " node
-        if (node != "" && !meth) print FILENAME":"line": 节点段缺方法论引用要素（R52 补强：⑩ 方法论引用须含 references 档，对偶 task-methodology-router 分派表）: " node
+        if (node != "" && !meth) print FILENAME":"line": 节点段缺方法论引用要素（R52 补强：⑩ 方法论引用须含 references 档，互为正反 task-methodology-router 路由表）: " node
         node=$0; line=FNR; has=0; meth=0; next
       }
       /调用追踪|trace-log\.sh/ { has=1 }
       /方法论引用/ { meth=1 }
       END {
         if (node != "" && !has) print FILENAME":"line": 节点段缺追踪要素（R13 4 要素模型：⑥ 产出物与追踪段须含 trace-log.sh 调用）: " node
-        if (node != "" && !meth) print FILENAME":"line": 节点段缺方法论引用要素（R52 补强：⑩ 方法论引用须含 references 档，对偶 task-methodology-router 分派表）: " node
+        if (node != "" && !meth) print FILENAME":"line": 节点段缺方法论引用要素（R52 补强：⑩ 方法论引用须含 references 档，互为正反 task-methodology-router 路由表）: " node
       }
     ' "$wf" 2>/dev/null || true)
   fi
@@ -855,12 +855,12 @@ for i, line in enumerate(sys.stdin, 1):
     echo "⚠ 发现 ${p1_cnt} 处 P1 占位符（P1 分级，draft 期允许，--mark-active 前须清零）:"
     printf '%s\n' "$p1_hits"
   fi
-  echo "✓ 零占位符确认"
+  echo "✓ 无占位符确认"
   return 0
 }
 
 if [[ "${1:-}" == "--verify-completeness" ]]; then
-  # R39-D3（2026-09-19 执勤实证）：SKILL.md 流A 表记载写法为 `--verify-completeness --strict <dir>`
+  # R39-D3（2026-09-19 执勤实证）：SKILL.md 生成流程 表记载写法为 `--verify-completeness --strict <dir>`
   # （标志前置），实现只认 `<dir> --strict`（后置）——照权威文档写法报"目录不存在: --strict"。
   # 与主解析器"标志须前置"的约定也互相矛盾。修复：--strict 双序兼容（任意位置剥离，取首个目录参数）。
   ___vc_dir="" ; ___vc_strict=0
@@ -884,7 +884,7 @@ fi
 # check_framework_globs <skill-dir> —— mark-active 的框架门禁空转防线（R48-G5 抽函数可测化）
 # 返回 0=每个 ACTIVE_FRAMEWORKS 框架至少一个 glob 族变量已填；1=有框架全空（stderr 报清单）。
 # R33-F1 立法（框架 glob 空转拦截）+ R47-D3 修（变量名以注入区块 requires_conf 声明为准，
-# id 前缀推导为补充）。独立成函数供 --check-framework-globs 子命令与测试直调（变异锁锚点）。
+# id 前缀推导为补充）。独立成函数供 --check-framework-globs 子命令与测试直调（变异回归锚点）。
 check_framework_globs() {
   local _cg_dir="$1"
   local _cg_af="" _cg_c _cg_line _cg_ids _cg_id _cg_fw _cg_vars _cg_v _cg_pat _cg_hit _cg_missing=""
@@ -902,7 +902,7 @@ check_framework_globs() {
     if [[ -f "$_cg_dir/scripts/precheck.sh" ]]; then
       _cg_vars=$(grep -m1 "^# ruleset: ${_cg_id}  *requires_conf:" "$_cg_dir/scripts/precheck.sh" 2>/dev/null | sed 's/.*requires_conf: *//' || true)
     fi
-    # R48-G5b（变异锁负向断言逼出的 D3 残留半修）：注入区块已声明 requires_conf 时，
+    # R48-G5b（变异回归断言负向断言逼出的 D3 残留半修）：注入区块已声明 requires_conf 时，
     # 门禁实际只读声明变量——id 前缀猜测变量在此形态下是假阳性放行（填了 JESTVITEST_*
     # 过执法但 jest-vitest 门禁读 VITEST_* 依旧空转）。收紧：声明在案 → 只认声明变量；
     # 未注入 ruleset 的框架 → 保留 id 前缀推导兜底。
@@ -952,7 +952,7 @@ check_framework_globs() {
 }
 
 # --check-framework-globs <skill-dir>：单跑框架空转防线（R48-G5——供 test-framework-conf-consistency
-# 直调做变异锁：正向=requires_conf 变量可放行；负向=id 前缀伪造变量不放行）
+# 直调做变异回归断言：正向=requires_conf 变量可放行；负向=id 前缀伪造变量不放行）
 if [[ "${1:-}" == "--check-framework-globals" || "${1:-}" == "--check-framework-globs" ]]; then
   _cgd="${2:-}"
   [[ -n "$_cgd" && -f "$_cgd/SKILL.md" ]] || { echo "Usage: bash generate-skill.sh --check-framework-globs <skill-dir>"; exit 1; }
@@ -994,13 +994,13 @@ if [[ "${1:-}" == "--mark-active" ]]; then
   if ! check_framework_globs "$_ma_dir"; then
     exit 1
   fi
-  # ① 零占位符核验
+  # ① 无占位符核验
   if ! verify_completeness "$_ma_dir" --strict; then
     echo "✗ ①占位符未清零，保持 draft（--all-full/--compliance-suite 仍禁用）" >&2
     exit 1
   fi
   # ②③ inventory-verify 路径校验（HALLUCINATION 阻断；FAIL 维度作为告警不阻断——fail-open）
-  # 补串 --stability-audit（WP-Q1A 时漏串，仅文档化）——稳定性标注与三机械信号
+  # 补串 --stability-audit（WP-Q1A 时漏串，仅文档化）——稳定性标注与三自动信号
   # （近 90 天 git churn / fan-in / 同名测试）冲突时 STABILITY_WARN（advisory，不阻断）。
   _ma_iv="$(cd "$(dirname "$0")" && pwd)/inventory-verify.sh"
   if [[ -x "$_ma_iv" || -f "$_ma_iv" ]]; then
@@ -1026,7 +1026,7 @@ if [[ "${1:-}" == "--mark-active" ]]; then
         echo "⚠ inventory-verify FAIL 维度 ${_iv_fail} 个（advisory：清单覆盖度 < 0.95；不阻断 mark-active，但建议补漏）" >&2
         printf '%s\n' "$_iv_out" | grep -E '\bFAIL\b' >&2 || true
       fi
-      # STABILITY_WARN 也作为告警（不阻断——advisory 级；标注与机械信号冲突须人工复核）
+      # STABILITY_WARN 也作为告警（不阻断——advisory 级；标注与自动信号冲突须人工复核）
       _iv_stab=$(printf '%s\n' "$_iv_out" | grep -c '^STABILITY_WARN' || true)
       if [[ "${_iv_stab:-0}" -gt 0 ]]; then
         echo "⚠ inventory-verify STABILITY_WARN ${_iv_stab} 条（advisory：稳定性标注与 git churn/fan-in/测试存在性信号冲突；不阻断 mark-active，但建议复核标注）" >&2
@@ -1416,7 +1416,7 @@ copy_universal_templates() {
     [[ $(_profile_rank "$minprof") -gt $(_profile_rank "$PROFILE") ]] && continue
     # resume：断点续传只补缺失文件，已有一律不覆盖（WP-H）
     [[ "$mode" == "resume" && -f "$dir/$dest" ]] && continue
-    # precheck.conf 三件套：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
+    # precheck.conf 生成期必读文件：create 模式覆盖模板；upgrade 模式保留用户配置（由 merge_precheck_conf 增量补缺失变量）
     [[ "$mode" == "upgrade" && ( "$dest" == "scripts/precheck.conf" || "$dest" == "scripts/precheck.arch.conf" || "$dest" == "scripts/precheck.compliance.conf" ) ]] && continue
     # R21-A：用户可填充模板（snippets/mcp-tools）——upgrade 时已非占位骨架则跳过覆盖（防填充丢失）
     if [[ "$mode" == "upgrade" && -f "$dir/$dest" ]]; then
@@ -1659,7 +1659,7 @@ fi
 # ============================================================
 # 已存在目录：draft 骨架 → 续传（幂等补齐缺失文件，不覆盖已有内容）；active/无 status → 报错走 --upgrade
 # R23 回归 D2：生成流程文档顺序是 Step 4 relations-extract（先建 skill 目录写
-# references/relations.jsonl）→ Step 6 create——机械草稿目录无 SKILL.md，原逻辑硬报错，
+# references/relations.jsonl）→ Step 6 create——自动草稿目录无 SKILL.md，原逻辑硬报错，
 # 首次生成按文档执行必撞。无 SKILL.md = 非既有技能（无从覆盖），按断点续传幂等补齐。
 RESUME=0
 if [[ -d "$SKILL_DIR" ]]; then
@@ -1667,7 +1667,7 @@ if [[ -d "$SKILL_DIR" ]]; then
     echo "→ 检测到 draft 状态骨架，断点续传（幂等补齐缺失文件，不覆盖已有内容）"
     RESUME=1
   elif [[ ! -f "$SKILL_DIR/SKILL.md" ]]; then
-    echo "→ 目录已存在但无 SKILL.md（生成流程 Step 4 机械草稿先行，如 relations.jsonl）——按断点续传补齐，不覆盖已有内容"
+    echo "→ 目录已存在但无 SKILL.md（生成流程 Step 4 自动草稿先行，如 relations.jsonl）——按断点续传补齐，不覆盖已有内容"
     RESUME=1
   else
     echo "ERROR: 已存在: ${SKILL_DIR}（用 --upgrade 升级；draft 骨架自动续传）"; exit 1
@@ -1692,7 +1692,7 @@ if [[ "$RESUME" -eq 1 ]]; then
 else
   copy_universal_templates "$SKILL_DIR"
 fi
-# create 模式 precheck.conf 三件套由 conf-render.sh 渲染初稿（嗅探+溯源注释），覆盖模板拷贝
+# create 模式 precheck.conf 生成期必读文件由 conf-render.sh 渲染初稿（嗅探+溯源注释），覆盖模板拷贝
 # 仅新建（RESUME=0）时渲染；续传保留既有 conf 不覆盖。upgrade 模式在上文独立分支（merge_precheck_conf 保留用户配置）。
 if [[ "$RESUME" -eq 0 ]]; then
   if bash "$SRC_SCRIPTS/conf-render.sh" "$PROJECT_DIR" --profile "$PROFILE" --out "$SKILL_DIR/scripts" >/dev/null 2>&1; then
@@ -1781,7 +1781,7 @@ for f in $_placeholder_refs; do
 
 **④ 质量门禁：**
 - 探查覆盖度（组件库清单全量穷举，非代表性样本）
-- 改实体字段/数据模型时：影响面反查须走边集三查（v2.14.3 补）——`bash scripts/relations-query.sh <skill> <proj> --field <字段名>`/`--entity <类名>`（field-mapping/data-mapping 边反查声明式映射引用，grep 源码查不全 XML/SQL 字符串耦合）+ §8 字段级映射台账 + §5 调度任务表（改实体字段必查批处理 job）；边集缺失先跑 `scripts/relations-extract.sh` 重建
+- 改实体字段/数据模型时：影响面反查须走边集三查（v2.14.3 补）——`bash scripts/relations-query.sh <skill> <proj> --field <字段名>`/`--entity <类名>`（field-mapping/data-mapping 边反查声明式映射引用，grep 源码查不全 XML/SQL 字符串耦合）+ §8 字段级映射清单 + §5 调度任务表（改实体字段必查批处理 job）；边集缺失先跑 `scripts/relations-extract.sh` 重建
 
 
 
@@ -2123,7 +2123,7 @@ description: 探查项目结构
 
 用 gitnexus/graphify/claude-mem 探查项目，更新特征卡。
 
-探查方法论与降级链：生成器仓 `references/exploration-guide.md`（不随发，回生成器仓读；§C+.0 形态判定 → §C+.0.5 框架激活 → §C+.0.6 四层架构枚举 → §C+.1 全量穷举）；随发工具速查 `references/code-graph-tools.md`。
+探查方法论与降级链：生成器仓 `references/exploration-guide.md`（不随技能分发，回生成器仓读；§C+.0 形态判定 → §C+.0.5 框架激活 → §C+.0.6 四层架构枚举 → §C+.1 全量穷举）；随技能分发工具速查 `references/code-graph-tools.md`。
 CEOF
 fi  # PROFILE != lite
 
@@ -2133,7 +2133,7 @@ if [[ "$RESUME" -eq 0 || ! -f "$SKILL_DIR/SKILL.md" ]]; then
 if [[ "$PROFILE" == "lite" ]]; then
   _nav_design="改造分类与拼装原则内嵌于 reference-manual 与本文件 meta 段（lite 精简档）；安全规范依据 security-spec"
   _nav_arch="项目认知=下方摘要表；六段式精简为 meta/reference/check/scripts（lite）"
-  _nav_flow="执勤=precheck --all（core 门禁序列）+ state-machine 阶段守卫（六阶段↔九节点对照见 scripts/state-machine.sh 头注）；lite 不含 workflow.md，九节点详解不随发"
+  _nav_flow="执勤=precheck --all（core 门禁序列）+ state-machine 阶段守卫（六阶段↔九节点对照见 scripts/state-machine.sh 头注）；lite 不含 workflow.md，九节点详解不随技能分发"
 else
   _nav_design="改造分类+拼装原则+安全规范→references/dev-guide.md；左移 spec §19-21→assets/spec-template.md；决策纪律（Mechanical/Taste/UserChallenge）→decisions.jsonl"
   _nav_arch="项目认知=下方摘要表；六段式结构+框架规律→references/framework-knowledge.md（按 ACTIVE_FRAMEWORKS 生成）"
@@ -2165,7 +2165,7 @@ status: draft
 | 测试命令 | $(grep -m1 '^TEST_CMD=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null | sed "s/^TEST_CMD=//;s/'//g;s| *#.*||" || echo "（AI 探查填充）") |
 | 检测框架 | $(bash "$SRC_SCRIPTS/detect-frameworks.sh" "$PROJECT_DIR" 2>/dev/null | grep -E '^ACTIVE_FRAMEWORKS=' | sed 's/^ACTIVE_FRAMEWORKS=//;s/[()"]//g' || echo "（无已知框架）") |
 
-> 项目类型与改造分类（A/B）由 AI 探查判定（§C+.0 语义判断）；生成器只做机械嗅探（命令/框架清单）。
+> 项目类型与改造分类（A/B）由 AI 探查判定（§C+.0 语义判断）；生成器只做自动嗅探（命令/框架清单）。
 
 ## 填充指引
 <!-- 交接清单：本区是生成器→AI 的待办交接，逐项完成后整区删除（含本行与标题）再 --mark-active -->
@@ -2217,8 +2217,8 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 3. **更新链**（检出变化后）：
    - 工具链刷新：生成器（路径见 `.swarm-yuan-version` 的 source_repo）`--refresh` 看 dry-run → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留）
    - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
-   - 核验：本地 `scripts/inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉；v2.14.2 起随发自包含，生成器侧亦可）
-   - 边集重建：本地 `scripts/relations-extract.sh` 重跑出 `references/relations.jsonl`（断边/项目演进后；v2.14.2 起随发自包含）
+   - 核验：本地 `scripts/inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉；v2.14.2 起随技能分发自包含，生成器侧亦可）
+   - 边集重建：本地 `scripts/relations-extract.sh` 重跑出 `references/relations.jsonl`（断边/项目演进后；v2.14.2 起随技能分发自包含）
 4. **落新基线**：`bash scripts/project-fingerprint.sh <项目根> --write`。
 5. **问题沉淀**（使用中随时，不等项目变化）：解决的新问题（新复用解法/新约束/新坑）三选一沉淀——`inventory-update` 入清单 / recipes.md 加配方或注意事项 / `gate-rules.sh --persist` 入规则——并 `bash scripts/trace-log.sh --decision` 留痕（问题→方案→沉淀物）。
 
@@ -2236,8 +2236,8 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 3. **更新链**（检出变化后）：
    - 工具链刷新：生成器（路径见 `.swarm-yuan-version` 的 source_repo）`--refresh` 看 dry-run → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留）
    - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
-   - 核验：本地 `scripts/inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉；v2.14.2 起随发自包含，生成器侧亦可）
-   - 边集重建：本地 `scripts/relations-extract.sh` 重跑出 `references/relations.jsonl`（断边/项目演进后；v2.14.2 起随发自包含）
+   - 核验：本地 `scripts/inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉；v2.14.2 起随技能分发自包含，生成器侧亦可）
+   - 边集重建：本地 `scripts/relations-extract.sh` 重跑出 `references/relations.jsonl`（断边/项目演进后；v2.14.2 起随技能分发自包含）
 4. **落新基线**：`bash scripts/project-fingerprint.sh <项目根> --write`。
 5. **问题沉淀**（使用中随时，不等项目变化）：解决的新问题（新复用解法/新约束/新坑）三选一沉淀——`inventory-update` 入清单 / recipes.md 加配方或注意事项 / `gate-rules.sh --persist` 入规则——并 `bash scripts/trace-log.sh --decision` 留痕（问题→方案→沉淀物）。
 
@@ -2268,11 +2268,11 @@ _idx_desc() {  # $1=path $2=cat → 用途短语（≤10 字，防 8KB 预算爆
     plan-template.md) echo "plan 模板";;
     review-record-template.md) echo "审查留痕模板";;
     reference-manual.md) echo "项目地图/零件目录";;
-    cognition.md) echo "悬置清单（拿不准语义集中落此）";;
+    cognition.md) echo "待确认事项清单（拿不准语义集中落此）";;
     task-type-gates.conf) echo "任务→门禁映射";;
     profile-thresholds.conf) echo "档位阈值";;
     ontology/objects.md|ontology/links.md|ontology/actions.md) echo "本体事实源";;
-    knowledge-lifecycle-methodology.md) echo "知识四段协议";;
+    knowledge-lifecycle-methodology.md) echo "知识四阶段协议";;
     decision-governance.md) echo "用户决策留痕制度";;
     ai-process-records.md) echo "过程留痕口径";;
     agent-skills-methodology.md) echo "反借口/Prove-It";;

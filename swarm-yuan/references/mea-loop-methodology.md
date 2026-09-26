@@ -3,7 +3,7 @@
 # MEA 循环方法论（Manage-Execute-Audit，长程执行的任务状态管理）
 
 > 来源：[AMAP-ML/LongHorizon-Harness](https://github.com/AMAP-ML/LongHorizon-Harness)（阿里，v0.1.5，2026-08-14 源码实测），论文 arXiv:2608.01964；中文报道《DeepSeek Harness 刚开源，阿里长程 Harness 也来了》（PaperAgent，2026-08）。
-> 纪律：只引用方法论模式与实现视角，不调上游 CLI（LHH 是 Python agent 运行时，swarm-yuan 不做运行时接线）；不复制源码（上游可浅克隆到 `swarm-yuan/research/` 供 AI 阅读，gitignored 不入 git）。
+> 纪律：只引用方法论模式与实现视角，不调上游 CLI（LHH 是 Python agent 运行时，swarm-yuan 不做运行时整合）；不复制源码（上游可浅克隆到 `swarm-yuan/research/` 供 AI 阅读，gitignored 不入 git）。
 > 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；非运行时纯方法论吸收，不进 13/5 运行时计数（与 dsh/Codex 同口径）。
 > 适用场景：目标技能 的**验证/收口/多轮长任务治理**设计——AI 在设计 verify 阶段准入、archive 收口、任务契约、verifier 报告协议时，引用本文决定「完成」由谁说了算、凭什么证据说了算。
 
@@ -97,7 +97,7 @@ Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 
 | 候选 | 评估 | 决定 |
 |------|------|------|
-| 验收约束机械反查（--backcheck 模式：解析 spec 验收标准为清单，逐条关联 verify_command + 证据，未覆盖非零退出） | 价值高，但需稳定解析 spec 模板的验收段落格式（跨任务类型矩阵），单独立项 | 登记，条件=出现「验收标准写了但没逐条验证」的真实逃逸案例时立项 |
+| 验收约束自动反查（--backcheck 模式：解析 spec 验收标准为清单，逐条关联 verify_command + 证据，未覆盖非零退出） | 价值高，但需稳定解析 spec 模板的验收段落格式（跨任务类型矩阵），单独立项 | 登记，条件=出现「验收标准写了但没逐条验证」的真实逃逸案例时立项 |
 | Auditor 工作区快照 diff（verifier 运行前后 `find + sha256` 两快照，diff 非空判 invalid，fail-closed） | bash 3.2 可实现（sha256sum/shasum 双探测 + 排除 trace/gate-runs 自身写盘），但大仓库耗时 | 登记，条件=目标项目出现「verifier 顺手改了被测物」案例时立项 |
 | rounds.jsonl 全量轮次回放账本 | swarm-yuan 已有 trace + decisions + gate-runs 三账本，再加冗余 | 不做 |
 | O_NOFOLLOW/fcntl 文件加固全套 | Python os 层 API，bash 3.2 无等价物；swarm-yuan 无 worker 进程对抗面 | 不做 |

@@ -16,13 +16,13 @@ swarm-yuan 的「AI 主导 + 用户决策」原则（SKILL.md）列了 7 条"AI 
 
 | 分类 | 语义 | AI 行为 | 留痕要求 |
 |------|------|---------|---------|
-| **Mechanical** | 有唯一正确答案，从特征卡/代码可机械推导，无多方案 | 直接做，不停下问 | type=Mechanical, user_action=approved |
+| **Mechanical** | 有唯一正确答案，从特征卡/代码可自动推导，无多方案 | 直接做，不停下问 | type=Mechanical, user_action=approved |
 | **Taste** | 有判断空间但无方向性冲突 | 给方案+推荐，用户评估 | type=Taste, user_action=approved/revised |
 | **UserChallenge** | 涉及方向性改变（依赖升级/安全冲突/删稳定单元/多方案/改只读/架构变更/不确定意图） | **必须停下输出五要素，永不自动决定** | type=UserChallenge + 五要素必填 |
 
 ### 2.1 分类规则
 
-- **Mechanical**：探查事实无歧义（如特征卡第 4 项技术栈=探查结果）、配置机械推导（如 WRITABLE_DIRS 从特征卡第 2 项推导）。
+- **Mechanical**：探查事实无歧义（如特征卡第 4 项技术栈=探查结果）、配置自动推导（如 WRITABLE_DIRS 从特征卡第 2 项推导）。
 - **Taste**：填充有判断空间（如 spec §5.5 复用约束选哪些单元）、诊断有判断空间（如门禁 fail 修复路径）。
 - **UserChallenge**：天然需用户决策（如多方案选择）、或触发条件命中（依赖升级/安全冲突/删稳定单元/改只读/架构变更/不确定意图）。
 
@@ -153,6 +153,6 @@ claude-mem timeline <observation-id>
 - **共识门证据加权**（gsd #2398）：孤立 HIGH 按证据加权——存在性断言须 source-grounded 或有旁证；**多数决不是治理，证据才是**。
 - **缺失≠VERIFIED**（gsd #2951）：缺失既不能证实也不能证伪，唯一路径是阳性证伪尝试——无证据行不得判 implemented。
 - **fail-closed 机制自身会 fail-open**（gstack 1.77）：GitHub run-step 默认无 pipefail，`tee` 吞退出码，改 `PIPESTATUS[0]` 并钉 wiring 测试；跑 PR 代码的 job 不持评论写 token。**声明 fail-closed 不算数，wiring 测试钉住才算**（本仓 fail-gate-hook deny+CI 断言已是此形态）。
-- **简化 lens + 捷径台账**（gstack 1.75 ponytail）：第八 lens 封闭五标签 advisory-only；接受的捷径留 `gstack-shortcut(dec-<id>)` 由 /retro 采成债务台账——**捷径不是污点，未记账的捷径才是**。
+- **简化 lens + 捷径清单**（gstack 1.75 ponytail）：第八 lens 封闭五标签 advisory-only；接受的捷径留 `gstack-shortcut(dec-<id>)` 由 /retro 采成债务清单——**捷径不是污点，未记账的捷径才是**。
 - **证据纪律三连（gsd 1.13，R18 补强）**：复核阻塞须确定性证据（#4085）+ no-op 报真实条件与已算值（#4157）+ 不可读目录不得报为空（#4163）——"缺失≠VERIFIED"（#2951）族的三条操作化样本：复核、上报、枚举三个面全钉确定性。
 - **派发不搁浅（gstack 1.79，R18 补强）**：ship subagent dispatches 不再搁浅整轮运行（#2772/#2440 族）——子代理失败面爆炸半径收敛，与 failure-detector SPINNING 检测同向；1.80 hooks 共享单一状态根 + setup 对失败 Chromium 安装存活（wiring 层韧性）。

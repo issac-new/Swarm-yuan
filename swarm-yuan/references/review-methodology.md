@@ -43,7 +43,7 @@
 
 每个审查发现的处置决策：
 
-> **若修复是机械的、资深工程师会不加讨论地应用 → AUTO-FIX（自动修复）**
+> **若修复是自动的、资深工程师会不加讨论地应用 → AUTO-FIX（自动修复）**
 > **若合理的工程师可能意见不一 → ASK（询问用户）**
 
 | 发现类型 | 处置 |
@@ -144,7 +144,7 @@ openspec update <change-id>
 > **openspec v1.7-1.9 能力**：
 > - **原生支持 ZCode**（v1.7.0）：`openspec init --tools` 现覆盖 ZCode（与 swarm-yuan 多 AI 运行时定位一致）+ vendor-neutral `agents`（`.agents/skills/`，AGENTS.md-aware）。
 > - **`skip_specs: true`**（v1.7.0）：纯重构/文档 change 可声明跳过 spec，直接走 validate/archive——与 swarm-yuan 任务类型门控（refactor/docs/exp）呼应。
-> - **`openspec validate --archived`**（v1.9.0）：opt-in 检查归档 changes 的 tasks.md 是否全勾选，未完成则非零退出——适合 pre-commit/CI，与 swarm-yuan `--mark-active` 零占位符核验同向（关门前查遗留）。
+> - **`openspec validate --archived`**（v1.9.0）：opt-in 检查归档 changes 的 tasks.md 是否全勾选，未完成则非零退出——适合 pre-commit/CI，与 swarm-yuan `--mark-active` 无占位符核验同向（关门前查遗留）。
 > - **honest root resolution**（v1.9.0）：非 OpenSpec 根目录下 `list`/`validate --all` 明确报错（非静默空），与 swarm-yuan 诚实化哲学一致。
 
 **行为：**
@@ -314,7 +314,7 @@ ECC 的 stale PR 抢救流程（治理模式）：
 
 **在目标技能中的落地：**
 - 若项目有大量陈旧 PR，可在 check 段加 `--salvage` 子命令：扫描陈旧 PR 并生成 salvage ledger
-- 规则：**绝不盲 cherry-pick 生成的 churn**（机械生成的变更须人工审查）
+- 规则：**绝不盲 cherry-pick 生成的 churn**（自动生成的变更须人工审查）
 
 ### ocr v1.7.8–v1.7.12 + gsd-core v1.7.0 审查能力扩展
 
@@ -443,7 +443,7 @@ ocr 新增 LLM provider 支持：
 - pre-emit 引用门（§pre-emit 引用门）的"未验证 finding 不进主报告"原则同样适用于测试审查--未做 mutation check 的测试质量断言降级 warn。
 - **不新增 check_* 门禁**（守决策 26 预算）；本纪律是 AI 审查的结构化指引，由 `--review` 的代码质量维度承载。
 
-**对脚本/技能/prompt 测试的特殊提醒**：swarm-yuan 自身的脚本（precheck.sh/state-machine.sh/trace-log.sh）和生成的技能 prompt 不宜用 grep 式测试（string-presence trap）。可观察的是行为（exit code / 输出结构 / 副作用），不是文本存在性。fixture 双态测试（violating/compliant）是行为测试的正解--它断言门禁在违规项目 fail、在合规项目 pass，而非断言脚本"含有某段代码"。
+**对脚本/技能/prompt 测试的特殊提醒**：swarm-yuan 自身的脚本（precheck.sh/state-machine.sh/trace-log.sh）和生成的技能 prompt 不宜用 grep 式测试（string-presence trap）。可观察的是行为（exit code / 输出结构 / 副作用），不是文本存在性。fixture 正反例测试（violating/compliant）是行为测试的正解--它断言门禁在违规项目 fail、在合规项目 pass，而非断言脚本"含有某段代码"。
 
 ## ocr / codex-security / ruflo / impeccable 要点（2026-09 核）
 

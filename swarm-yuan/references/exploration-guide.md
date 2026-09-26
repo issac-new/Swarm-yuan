@@ -94,7 +94,7 @@
 | 可信度 | 来源 | 依据 |
 |-------|------|------|
 | 1（最高） | 代码实测（读源码/跑命令输出） | 直接证据 |
-| 2 | 配置文件/锁文件 | 声明即生效的机械事实 |
+| 2 | 配置文件/锁文件 | 声明即生效的自动事实 |
 | 3 | 设计文档/ADR | 意图，可能滞后 |
 | 4 | 需求文档 | 目标，可能未落地 |
 | 5（最低） | 项目记忆/历史习惯 | 时效未知，须与现状核对后才可用 |
@@ -110,7 +110,7 @@
 
 **双时态注记**（semantica `_temporal_support_projection.py` Window 语义借鉴）：清单条目/探查结论有两个时间轴——**valid time**（代码何时如此，锚 commit/项目指纹）与 **recorded time**（第 N 轮探查何时知道）。反馈回路的「单条更新」= 写一条新 recorded time 记录，不回头改写旧结论的历史有效性；last-good 红线（条目骤降 >50% 视为探查失败保留旧清单）防的正是「新一轮探查污染历史有效认知」。
 
-**悬置清单回填协议**（R49 知识生命周期吸收）：裁决序走到「并存标注」仍不能定的项、探查中 AI 拿不准的业务语义，集中落到 `notes/cognition.md` 悬置清单段（每项：问题/两源证据锚点/需要谁回填），不散落在各文档的「待验证」字样里自然蒸发。回填后按裁决序重新转正（升级 UserChallenge 的项走 trace-log --decision 留痕），转正即从清单销项——悬置清单长度是探查完成度的显式指标，mark-active 抽样核验时可对照。
+**待确认事项清单回填协议**（R49 知识生命周期吸收）：裁决序走到「并存标注」仍不能定的项、探查中 AI 拿不准的业务语义，集中落到 `notes/cognition.md` 待确认事项清单段（每项：问题/两源证据锚点/需要谁回填），不散落在各文档的「待验证」字样里自然蒸发。回填后按裁决序重新转正（升级 UserChallenge 的项走 trace-log --decision 留痕），转正即从清单销项——待确认事项清单长度是探查完成度的显式指标，mark-active 抽样核验时可对照。
 
 ```
 4. 写入特征卡对应项（不是复制原文，是提取结构化规则）
@@ -131,13 +131,13 @@
 
 ### 行为观察（R21-B：读"已写下的"之外，再挖"实际做的"）
 
-上面读的是开发者**已写下的**规则；实际研发习惯还藏在 git 历史里。机械挖掘出初稿，AI 审读采纳：
+上面读的是开发者**已写下的**规则；实际研发习惯还藏在 git 历史里。自动挖掘出初稿，AI 审读采纳：
 
 ```bash
 bash scripts/mine-habits.sh <PROJECT_DIR>            # → .swarm-yuan/notes/habits.md 六维统计初稿
 ```
 
-**AI 审读三去向**（机械/AI 边界——脚本只统计，采纳判断归 AI）：
+**AI 审读三去向**（自动/AI 边界——脚本只统计，采纳判断归 AI）：
 
 | 信号 | 去向 | 说明 |
 |------|------|------|
@@ -205,7 +205,7 @@ graphify export callflow-html # 调用流导出（组件依赖链路段可视化
 | 13 | 五层认知基底 | graphify `explain "god nodes"` + claude-mem `search "cognition baseline"` | 手动盘点（Read + Grep） |
 | 14 | 领域知识 | gitnexus `query "domain entities"` + claude-mem `search "domain knowledge"` + WebSearch 行业标准 | Read 领域模型 + Grep 业务关键词 |
 | 15 | 编排调用关系及约束 | **graphify `path "ModuleA" "ModuleB"`**（最短依赖路径）+ **gitnexus `trace <entry> <register>`**（调用链） | Grep "^import.*from" + madge 循环检测 |
-| 16 | 详尽组件库清单（全量） | **gitnexus `analyze` + `gitnexus mcp`**（全量符号索引）+ **graphify `.`**（全量知识图） | `find` + `grep export` 机械枚举 + 计数核验 |
+| 16 | 详尽组件库清单（全量） | **gitnexus `analyze` + `gitnexus mcp`**（全量符号索引）+ **graphify `.`**（全量知识图） | `find` + `grep export` 自动枚举 + 计数核验 |
 | 17 | 合规与质量特性基线 | Read 现有合规文档/等保备案/密评报告/PIA + Grep 质量特性声明 | Read spec §22 标准合规段 + Grep 标准关键词 |
 
 > **Dynamic Workflows 场景**：如果项目大型（>100 文件），探查阶段可用 Dynamic Workflow 并行扇出三路子代理（结构/规范/代码组织），每路用不同的运行时工具，最后交叉验证特征卡。降级：传统 Task(subagent) 三路并行。
@@ -388,7 +388,7 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 
 #### C+.1 全量穷举方法论（按维度动态适配，确保一个不漏）
 
-**Step 1：按项目形态机械枚举（根据 C+.0 判定结果选择维度）**
+**Step 1：按项目形态自动枚举（根据 C+.0 判定结果选择维度）**
 
 **C+.1-F 前端 UI 维度（仅当 C+.0 判定含前端时）**
 ```bash
@@ -665,15 +665,15 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
    Prisma/TypeORM/Sequelize: schema.prisma/@column ↔ migrations 目录
 产出四件套：
  ① reference-manual §9 模型与映射清单（实体表 + mapper XML 表两行组，机器计数核验 DIM_DATA_MODEL/DIM_MAPPER_XML）
- ② reference-manual §8 数据字典的字段级映射台账：实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单
+ ② reference-manual §8 数据字典的字段级映射清单：实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单
  ③ reference-manual §8 的 schema/迁移资产表（prisma/migrations/alembic/flyway/liquibase/orm.xml/hbm/schema.sql，
    机器计数核验 DIM_ORM_SCHEMA）——改模型的"第五查"：迁移是否已生成（模型↔迁移漂移是漏改字段的姊妹缺陷）
- ④ relations.jsonl 的 data-mapping/mapper-binding 边（relations-extract.sh 机械层已产出 MyBatis/JPA/hbm，
+ ④ relations.jsonl 的 data-mapping/mapper-binding 边（relations-extract.sh 自动层已产出 MyBatis/JPA/hbm，
    AI 只补漏）
 铁律：改实体字段的影响面反查必经此链——"谁引用了这个字段"在边集查 to=实体 的 from 集（mapper XML 清单），
       再叠加 SQL 列名字符串命中（grep 列名于 *.xml/*.java 内嵌 SQL）。禁止只查 Java import 边（XML 不在其中）。
       JPA @Query("select o from Order o where o.status=?1") 的 JPQL 实体/字段名同为字符串引用——
-      台账须覆盖，改字段先 grep @Query 内嵌名。
+      清单须覆盖，改字段先 grep @Query 内嵌名。
 ```
 
 ---
@@ -699,7 +699,7 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
       RocketMQ: topic="X" ↔ @RocketMQMessageListener(topic="X")
       Celery:   beat_schedule 任务名 ↔ @shared_task(name="X")/delay("X")
       单边端点（只有生产无消费/反之）显式标注"外部系统"或"孤儿端点"——改名前必查此表。
-门禁：kafka/rabbitmq 规则集的 endpoint 配对门禁（warn 级机械 diff 双边名字集，命中差集提示人工核对）。
+门禁：kafka/rabbitmq 规则集的 endpoint 配对门禁（warn 级自动 diff 双边名字集，命中差集提示人工核对）。
 ```
 
 ---
@@ -712,14 +712,14 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
 追查路径：
  触发器（@Scheduled cron / Quartz CronTrigger / JobParameters / beat_schedule）
  → 任务入口（job 类 / JobBuilder 装配 / tasklet）
- → Step 三件套：ItemReader（SQL 列清单 / mapper 查询 / 文件字段）
+ → Step 生成期必读文件：ItemReader（SQL 列清单 / mapper 查询 / 文件字段）
                ItemProcessor（实体字段读写 getXxx/setXxx）
                ItemWriter（mapper 写方法 / 批量 SQL 列）
  → 数据资产（读哪些表/实体、写哪些表/实体——读写方向必须记录）
 产出两件套：
  ① reference-manual §5 的调度/批处理任务表（每行：任务名/入口路径/触发方式/读数据资产/写数据资产/幂等策略；
    机器计数核验 DIM_SCHEDULE_JOB，路径进 --path-check）
- ② relations.jsonl 的 job-flow 语义边（job 配置 → reader/writer 依赖的 mapper/实体；机械不猜，AI 按 Read/Write 源码逐条补）
+ ② relations.jsonl 的 job-flow 语义边（job 配置 → reader/writer 依赖的 mapper/实体；自动不猜，AI 按 Read/Write 源码逐条补）
 铁律：改实体字段/表结构前必查此表——"哪些任务读写了这个资产"决定回归面（job 不在请求管道里，import 边查不全
       reader SQL 内嵌字符串列名的耦合）。
 ```
@@ -746,9 +746,9 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
 bash scripts/relations-extract.sh <PROJECT_DIR> --skill-dir <目标技能目录>   # → references/relations.jsonl
 ```
 
-- **机械层**（脚本产出，确定性零依赖）：import 边——TS/JS/Vue 相对说明符、py 相对导入、go module 内、java 包路径映射；**声明式映射边**——MyBatis `namespace`→Mapper 接口（`mapper-binding`）、`resultMap type`/`resultType`/`parameterType`→实体（`data-mapping`；字符串耦合点编译不校验，改实体字段的影响面反查靠它）；每边带 `evidence`（file:line）。
+- **自动层**（脚本产出，确定性零依赖）：import 边——TS/JS/Vue 相对说明符、py 相对导入、go module 内、java 包路径映射；**声明式映射边**——MyBatis `namespace`→Mapper 接口（`mapper-binding`）、`resultMap type`/`resultType`/`parameterType`→实体（`data-mapping`；字符串耦合点编译不校验，改实体字段的影响面反查靠它）；每边带 `evidence`（file:line）。
 - **AI 层**（探查时在此初稿上补充）：语义边——`call`（调用）/`route`（路由挂载）/`message`（消息流）/`ipc`/`export`（库导出）/`job-flow`（定时/批处理装配：job 配置→reader/writer 依赖的 mapper/实体，按 §C+.2-J 逐条补），行格式同款（`{"from","to","kind","evidence"}`）；madge/graphify/gitnexus 可用时按工具矩阵富化后重建。
-- **消费方**：`--stable-diff` 1 跳下游传播优先读边集（import 边精确于 basename grep 启发式；改实体字段时 data-mapping 边把 mapper XML 拉进 1 跳影响面）；流B ②探查"谁依赖 X"直接查边集，替代读图；`--mark-active` 抽样核验断边（advisory）。
+- **消费方**：`--stable-diff` 1 跳下游传播优先读边集（import 边精确于 basename grep 启发式；改实体字段时 data-mapping 边把 mapper XML 拉进 1 跳影响面）；开发工作流 ②探查"谁依赖 X"直接查边集，替代读图；`--mark-active` 抽样核验断边（advisory）。
 
 #### C+.3 编排调用关系及约束推导（从链路分析中提炼规则）
 
@@ -856,7 +856,7 @@ grep -nH "^export " <库入口文件>
 
 #### C+.6 业务功能盘点（既有业务功能实现编目 → recipes.md §A）
 
-> 配方层的地基：先编目"项目已有哪些业务功能、各由哪些组件拼成"——每次成功拼装的实物记录。任务配方（§C+.7）与流B ②探查的复用决策都从这张表出发，不从零 grep。
+> 配方层的地基：先编目"项目已有哪些业务功能、各由哪些组件拼成"——每次成功拼装的实物记录。任务配方（§C+.7）与开发工作流 ②探查的复用决策都从这张表出发，不从零 grep。
 
 从 §C+.1 枚举产物与 §C+.2 链路归纳（**不是重新探查**）：
 - **功能识别**（按形态选入口）：前端=路由表/菜单项（页面功能）；后端=端点表按业务域聚合（接口功能）；异步=队列+handler（消费功能）；桌面=窗口/菜单项；库=导出 API 分组。每功能一行。
@@ -878,7 +878,7 @@ grep -nH "^export " <库入口文件>
 - **触发场景**：什么任务用本配方（对齐 7 类任务路由 feature/fix/refactor/chore/docs/test/exp 与项目高频形态，如"新增页面/新增接口/新增消费者"）
 - **前置查询**：查 reference-manual 哪些表（§4 组件/§6 接口/§9 数据）+ recipes §A 同类功能先例
 - **复用件清单**：引用的组件库条目（反引号路径表格，`--path-check` 校验存在性）
-- **胶水步骤**：最小新增（新文件 + 注册/接线点），不改既有稳定单元
+- **胶水步骤**：最小新增（新文件 + 注册/整合点），不改既有稳定单元
 - **门禁与验证序列**：task-type-gates 对应门禁集 + TEST_CMD / check_test + trace-log 留痕
 
 配方数量按项目实际（高频形态 ≥2 个即可起步，不凑数）；低频形态不建配方（直接走九节点流）。成长期新配方经问题沉淀通道追加（SKILL.md 自成长段）。
@@ -894,7 +894,7 @@ grep -nH "^export " <库入口文件>
 
 ### Python
 
-> **R60-Django 执勤补**：Python/Django 生态的字符串耦合面（模板字段/URL 名/POST 参数/admin 注册/CSV 列头/工厂字段/settings 键/迁移双源等十六类，机械提取只覆盖 import 边）——探查必按 `references/frameworks/django.md` §字符串耦合面清单逐面枚举，字段变更走 spec 四查。
+> **R60-Django 执勤补**：Python/Django 生态的字符串耦合面（模板字段/URL 名/POST 参数/admin 注册/CSV 列头/工厂字段/settings 键/迁移双源等十六类，自动提取只覆盖 import 边）——探查必按 `references/frameworks/django.md` §字符串耦合面清单逐面枚举，字段变更走 spec 四查。
 - pyproject.toml / setup.py / requirements.txt: 依赖、版本、entry points
 - 构建：poetry / pip / setup.py / Makefile
 - 目录：src/ pkg/ tests/ scripts/
@@ -1024,7 +1024,7 @@ git --version; gh --version; docker --version
 
 > 这是拼装式开发的关键。研发人员基于既有稳定单元（接口/组件/类/函数/方法）进行拼装，而非重复造轮子或侵入式重构。
 >
-> **★铁律：本项不允许用"代表性样本"填充。必须按 §C+.1 全量穷举方法论做机械枚举 + 签名提取 + 计数核验，确保一个不漏。清单计数 ≥ 枚举计数 × 0.95。** 探查指南见上方 §C+.1-C+.5。特征卡填好后供目标技能的 dev-guide.md 和 spec-template.md 引用。
+> **★铁律：本项不允许用"代表性样本"填充。必须按 §C+.1 全量穷举方法论做自动枚举 + 签名提取 + 计数核验，确保一个不漏。清单计数 ≥ 枚举计数 × 0.95。** 探查指南见上方 §C+.1-C+.5。特征卡填好后供目标技能的 dev-guide.md 和 spec-template.md 引用。
 > **★铁律：本项必须配套产出"编排调用关系及约束"（见 §C+.3），写入特征卡第 15 项与目标技能 dev-guide.md。** 只列清单不推约束 = 未完成。
 
 #### 11a. 可复用 API 接口
