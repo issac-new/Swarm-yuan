@@ -58,6 +58,7 @@ FIXTURE react OK (v=0 c=0 ids=0)
 FIXTURE react-native OK (v=0 c=0 ids=0)
 FIXTURE redis OK (v=0 c=0 ids=0)
 FIXTURE rocketmq OK (v=0 c=0 ids=0)
+FIXTURE ruby OK (v=0 c=0 ids=0)
 FIXTURE seata OK (v=0 c=0 ids=0)
 FIXTURE sentinel OK (v=0 c=0 ids=0)
 FIXTURE sharding OK (v=0 c=0 ids=0)
@@ -78,4 +79,4 @@ FIXTURE vite OK (v=0 c=0 ids=0)
 FIXTURE vue OK (v=0 c=0 ids=0)
 FIXTURE webpack OK (v=0 c=0 ids=0)
 FIXTURE xxl-job OK (v=0 c=0 ids=0)
-FIXTURES_TOTAL 80 FAILS 0
+FIXTURES_TOTAL 81 FAILS 0

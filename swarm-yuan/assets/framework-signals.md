@@ -1,5 +1,5 @@
 <!-- 由 scripts/gen-framework-index.sh 生成（WP-P1 数据化外迁），手改会被覆盖 -->
-# 框架信号索引（80 个框架）
+# 框架信号索引（81 个框架）
 
 | ruleset_id | 信号类型 | 模式 | 置信度 |
 |------------|---------|------|-------|
@@ -292,6 +292,11 @@
 | rocketmq | 配置 | `rocketmq.name-server` / `rocketmq.producer.*` / `rocketmq.consumer.*` | 高 |
 | rocketmq | 代码 | `RocketMQTemplate` / `DefaultMQProducer` / `DefaultMQPushConsumer` / `TransactionListener` / `MessageListenerOrderly` | 高 |
 | rocketmq | 文件 | `**/rocketmq*.yml` / `**/rocketmq*.properties` | 中（需排除仅文件名巧合） |
+| ruby | 依赖 | Gemfile `gem "rails"` / `gem "sinatra"` / `gem "rspec"` / `gem "puma"` / `gem "rake"` | 高 |
+| ruby | 文件 | `Gemfile` / `Gemfile.lock` / `Rakefile` / `*.gemspec` / `**/*.rb` / `**/*.erb` | 高 |
+| ruby | 配置 | `.env.example` / `config/*.rb` / `.rspec` / `bin/*` binstubs | 中 |
+| ruby | 脚本调用 | `bundle install` / `bundle exec rake` / `bundle exec rspec` / `rackup` / `rails ` | 中 |
+| ruby | DSL | `task :` / `desc "`（Rakefile）/ `get "/..." do`（Sinatra）/ `ActiveRecord::` | 中 |
 | seata | 依赖 | `io.seata:seata-spring-boot-starter` / `org.apache.seata:seata-spring-boot-starter` / `seata-all` / `seata-saga` | 高 |
 | seata | 注解 | `@GlobalTransactional` / `@GlobalLock` / `@TwoPhaseBusinessAction` / `@LocalTCC` | 高 |
 | seata | 文件 | `**/undo_log.sql` / `**/seata.conf` / `**/registry.conf` / `**/file.conf` / `**/*statemachine*.json` | 中（需排除他用） |

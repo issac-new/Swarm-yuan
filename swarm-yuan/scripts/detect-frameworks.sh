@@ -198,6 +198,13 @@ php|php|composer
 php|composer.lock|file_exists
 php|artisan|file_exists
 php|*.php|file_glob
+# R64（2026-09-26 第十棒换栈演练补缺）：Ruby+Bundler 生态此前 80 规则集零覆盖、探测零信号——
+# Gemfile 是 Ruby 工程清单（file_exists 高置信），Rakefile 为任务入口补充信号，
+# *.gemspec 存在即 gem 开发场景（file_glob 兜底）。Gemfile.lock 不作独立信号（与 Gemfile
+# 同现无增量信息）；rails/sinatra 等 gem 名字符串匹配留待子规则集按需增行，本行级只定 ruby 生态激活。
+ruby|Gemfile|file_exists
+ruby|Rakefile|file_exists
+ruby|*.gemspec|file_glob
 # doris：无干净机械信号（Doris 客户端依赖形态杂：flink-connector/jdbc-catalog 均非项目级强信号）——保持手动配置 ACTIVE_FRAMEWORKS=("doris")
 # rag-pipeline：RAG 模式规则集非依赖可探测（langchain 等组件有自己的 id）——设计上手动激活
 # WP-V：react-native（移动端跨平台 JS/TS）——package.json dependencies 含 react-native 即激活
