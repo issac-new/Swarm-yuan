@@ -924,8 +924,20 @@ check_golden_vector() {
   exp_lines=$(( ${FACT_FRAMEWORKS:-79} + 1 ))
   if [[ "$golden_lines" == "$exp_lines" ]]; then
     echo "  ✓ golden-vector.txt ${golden_lines} 行（${FACT_FRAMEWORKS:-79} fixture + 1 尾行）与 facts.conf 一致"
+  elif [[ "${SWARM_YUAN_GOLDEN_REBUILD:-0}" == "1" ]]; then
+    # R63 边界披露②：显式一键重建（opt-in，不自动跟随漂移——保基线独立性）。
+    # 用法：SWARM_YUAN_GOLDEN_REBUILD=1 bash scripts/self-check.sh（重建后本轮即对账）
+    echo "  ℹ SWARM_YUAN_GOLDEN_REBUILD=1：执行 verifier 官方重建……"
+    bash "$base/../verifier/v1/run-verifier.sh" rebuild-golden >/dev/null 2>&1 || true
+    golden_lines=$(wc -l < "$golden" | tr -d ' ')
+    if [[ "$golden_lines" == "$exp_lines" ]]; then
+      echo "  ✓ golden-vector 已重建 ${golden_lines} 行并与 facts.conf 一致（请审 git diff 后提交）"
+    else
+      warn "golden-vector 重建后 ${golden_lines} 行仍 ≠ ${exp_lines} 行（fixture 数与 FACT_FRAMEWORKS 漂移，另查）"
+      FAIL=1
+    fi
   else
-    warn "golden-vector.txt ${golden_lines} 行 ≠ 期望 ${exp_lines} 行（FACT_FRAMEWORKS=${FACT_FRAMEWORKS:-79} + 1）--新增框架后需重跑 run-verifier.sh rebuild-golden 重建基线"
+    warn "golden-vector.txt ${golden_lines} 行 ≠ 期望 ${exp_lines} 行（FACT_FRAMEWORKS=${FACT_FRAMEWORKS:-79} + 1）--故意新增框架后：SWARM_YUAN_GOLDEN_REBUILD=1 bash scripts/self-check.sh 一键重建基线（重建后审 git diff）"
     FAIL=1
   fi
 }

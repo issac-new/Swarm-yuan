@@ -44,7 +44,7 @@ _tmpfile="$(mktemp /tmp/dfw.XXXXXX)"
 # 按依赖文件类型组织
 cat > "$_tmpfile" <<'SIGNALS'
 # format: framework_id|pattern|file_type
-# file_type: pkgjson(package.json deps) / pom(pom.xml artifactId) / gomod(go.mod require) / pyreq(requirements.txt) / pyproject(pyproject.toml) / file_exists(文件存在型，signal=项目根相对路径)
+# file_type: pkgjson(package.json deps) / composer(composer.json require) / pom(pom.xml artifactId) / gomod(go.mod require) / pyreq(requirements.txt) / pyproject(pyproject.toml) / file_exists(文件存在型，signal=项目根相对路径)
 spring-boot|org.springframework.boot|pom
 spring-cloud|org.springframework.cloud|pom
 spring-data-jpa|org.springframework.data|pom
@@ -194,6 +194,7 @@ ios-swiftui|project.pbxproj|file_glob
 # *.php 文件存在型兜底（无 composer 的 legacy PHP 项目）。composer.json 依赖字符串匹配
 # （laravel/framework 等）留待子规则集按需增行，本行级只定 php 生态激活。
 php|composer.json|file_exists
+php|php|composer
 php|composer.lock|file_exists
 php|artisan|file_exists
 php|*.php|file_glob
@@ -223,6 +224,7 @@ _pkgjson_deps=""
 _gomod_deps=""
 _pyreq_deps=""
 _pyproject_deps=""
+_composer_deps=""
 
 # --- package.json: 递归扫描(前端 monorepo),排除 node_modules ---
 # 提取 dependencies + devDependencies 的 key(pkg 名)
@@ -290,6 +292,22 @@ ${_deps}
 ${_arr_deps}"
 done < <(find "$PROJ" -name pyproject.toml -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/vendor/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
 
+# --- composer.json require/require-dev（R63 边界披露①：composer 通道——PHP 生态依赖字符串
+# 匹配通道，laravel/symfony 等子规则集细分的前置；PHP 信号此前只能 file_exists/file_glob 激活）---
+# awk 状态机只取 require / require-dev 段内的键（vendor/name 与 php/ext-*），跳过其余 JSON 键防误报
+while IFS= read -r _cj; do
+  _deps=$(LC_ALL=C awk '
+    /"(require|require-dev)"[[:space:]]*:/ { inreq=1; next }
+    inreq && /^([[:space:]]*}|[[:space:]]*"\}/) { inreq=0 }
+    inreq {
+      if (match($0, /"[^"]+"[[:space:]]*:/)) {
+        k=substr($0, RSTART, RLENGTH); gsub(/"[[:space:]]*:$/, "", k); gsub(/^"/, "", k); print k
+      }
+    }' "$_cj" 2>/dev/null || true)
+  _composer_deps="${_composer_deps}
+${_deps}"
+done < <(find "$PROJ" -name composer.json -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/vendor/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
+
 # 匹配信号表,输出命中的框架 ID
 # WP-R Bug#3 ②: 强制使用 file_type 分桶匹配,消除跨语言误匹配
 # WP-R Bug#3 ③: pkgjson 短词加单词边界,消除 next→i18next 子串误报
@@ -305,6 +323,7 @@ while IFS='|' read -r fw pattern ftype; do
     gomod)     _bucket="$_gomod_deps" ;;
     pyreq)     _bucket="$_pyreq_deps" ;;
     pyproject) _bucket="$_pyproject_deps" ;;
+    composer)  _bucket="$_composer_deps" ;;
     file_exists) _bucket="" ;;  # R39-D1b：文件存在型，不走依赖桶
     file_glob) _bucket="" ;;    # R44-D2：文件名 glob 型，不走依赖桶
     *)         continue ;;
@@ -318,7 +337,7 @@ while IFS='|' read -r fw pattern ftype; do
     find "$PROJ" -name "$pattern" -not -path '*/bin/*' -not -path '*/obj/*' \
       -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null \
       | grep -q . && _hit=1
-  elif [[ "$ftype" == "pkgjson" ]]; then
+  elif [[ "$ftype" == "pkgjson" || "$ftype" == "composer" ]]; then
     # pkgjson: 单词边界匹配,消除子串误报(next→i18next / vue→vuepress 等)
     # 边界: 行首 或 / 或 @ 之后,且 pattern 后跟 行尾 或 - / @ . _
     # pattern 可能含正则元字符(如 @ant-design 的 @),用 grep -E 需转义;这里 pattern

@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [v2.31.0] - 2026-09-26
+
+> R63 边界披露清账轮（"继续（边界披露）"）：三条披露边界的①②清账——SIGNALS 探测新增 **composer 通道**（composer.json require/require-dev 依赖字符串匹配，awk 状态机只取依赖段键防误报，匹配语义复用 pkgjson 词边界口径；php 信号行挂新通道，实测 require "php" 即命中）；golden-vector 新增**显式一键重建**（`SWARM_YUAN_GOLDEN_REBUILD=1 bash scripts/self-check.sh`，opt-in 不自动跟随漂移——保验证器基线独立性；非 opt-in 漂移仍 FAIL）。③Ruby 第十棒后续轮。
+
+### Added
+- **detect-frameworks composer 通道**（边界①）：桶构建（require/require-dev 段内键，含 vendor/name 与 php/ext-*）+ case 分派 + 词边界/精确匹配复用 pkgjson 分支 + `php|php|composer` 信号行 + framework-signals 索引重生成（80 框架）。实测：`{"require":{"php":"^8.1"}}` → 探出 php；require-dev 段键同进桶；非依赖段 JSON 键零误报。laravel/symfony 子规则集细分自此有通道（无需再开新通道）。
+- **golden 显式一键重建**（边界②）：环境变量 opt-in 走 verifier 官方 `rebuild-golden` → 重建后本轮即对账 → 提示审 git diff；漂移分支保留 FAIL（不自动跟随——基线独立性）。
+- **tests/test-r63-boundary-clearance.sh（5 断言，CI 接线）**：L1/L2 行为锁 + L3-L5 源码锁。
+
 ## [v2.30.0] - 2026-09-26
 
 > R62 PHP 换栈演练轮（第九棒）：真实开源 **vlucas/phpdotenv**（Composer 2.10.3 + PHPUnit 280/280 实测）首执勤——打出 **PHP 生态五面全盲**（规则集/探测/提取/命令嗅探/枚举器全无，"连在册都没有"形态），全补齐：**php 规则集三件套**（php.md 12 条五要素规律 + php.sh 5 门禁 + 双态夹具 5/5 检出 5/5 放行 + 探测信号 4 通道，FACT_FRAMEWORKS 79→80）+ 工具链四修（PHP 提取/composer 嗅探/DIM 形态/机制修）。真实项目行为实测：phpdotenv 提取出 87 条 PHP import 边（use PSR-4 唯一命中 + require/include 相对解析），conf-render 出 composer 命令族。
