@@ -490,6 +490,11 @@ _extract_deps() {
 _norm_ver() { echo "$1" | sed -E 's/^[~^><=]+//; s/[[:space:],;].*$//'; }
 
 check_deps() {
+  # R66-A7：非 git 仓库时依赖类门禁依赖 git 历史——诚实降级披露（fail-open 但须可见）
+  if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    warn "check_deps: 非 git 仓库（--deps/--stable-diff 依赖 git 历史，本仓失能——人工核对依赖与稳定标注）"
+    return 0
+  fi
   echo "=== 依赖版本锁定检查（铁律：未经确认不得升级/更换核心依赖）==="
   local found=0
 

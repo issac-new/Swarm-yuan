@@ -50,7 +50,16 @@ if [[ -f "$PROJ/package.json" ]]; then
   _lang="typescript"
   if [[ -f "$PROJ/yarn.lock" ]]; then _pm="yarn"; _build="yarn build"; _test="yarn test"; _build_confirmed=1; _test_confirmed=1
   elif [[ -f "$PROJ/pnpm-lock.yaml" ]]; then _pm="pnpm"; _build="pnpm build"; _test="pnpm test"; _build_confirmed=1; _test_confirmed=1
-  else _pm="npm"; _build="npm run build"; _test="npm test"; fi
+  else _pm="npm"
+  # R66-A2：BUILD_CMD 自指防 fork bomb——scripts.build 内再调 npm run build（如 "cd frontend
+  # && npm run build" 而 frontend 无独立 package.json）会向上寻包自递归（实测 820 进程）。
+  # 自指形态 → BUILD_CMD 留空（AUTO:default 空值语义），人工修正。
+  _bt=$(grep -oE '"build"[[:space:]]*:[[:space:]]*"[^"]*"' "$PROJ/package.json" 2>/dev/null | head -1)
+  case "$_bt" in
+    *"run build"*|*"run \"build\""*|*"yarn build"*) _build="" ;;
+    *) _build="npm run build" ;;
+  esac
+  _test="npm test"; fi
   # 仅当 package.json 确证含 build/test 脚本时才标 detected（裸 package.json 无脚本 → 默认值 # AUTO:default）
   if grep -qE '"build"[[:space:]]*:' "$PROJ/package.json" 2>/dev/null; then _build_confirmed=1; fi
   if grep -qE '"test"[[:space:]]*:' "$PROJ/package.json" 2>/dev/null; then _test_confirmed=1; fi
