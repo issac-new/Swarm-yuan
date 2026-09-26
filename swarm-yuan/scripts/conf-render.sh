@@ -55,7 +55,7 @@ if [[ -f "$PROJ/package.json" ]]; then
   if grep -qE '"build"[[:space:]]*:' "$PROJ/package.json" 2>/dev/null; then _build_confirmed=1; fi
   if grep -qE '"test"[[:space:]]*:' "$PROJ/package.json" 2>/dev/null; then _test_confirmed=1; fi
 elif [[ -f "$PROJ/pom.xml" ]]; then
-  _lang="java"; _pm="maven"; _build="mvn package"; _test="mvn test"; _build_confirmed=1; _test_confirmed=1
+  _lang="java"; _pm="maven"; _build="mvn package"; _test="mvn clean test"; _build_confirmed=1; _test_confirmed=1
 elif [[ -f "$PROJ/build.gradle" ]] || [[ -f "$PROJ/build.gradle.kts" ]]; then
   _lang="java"; _pm="gradle"; _build="gradle build"; _test="gradle test"; _build_confirmed=1; _test_confirmed=1
 elif [[ -f "$PROJ/go.mod" ]]; then

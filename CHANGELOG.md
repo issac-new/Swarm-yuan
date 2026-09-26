@@ -1,6 +1,27 @@
 # Changelog
 
 
+## [v2.33.0] - 2026-09-26
+
+> R65 前后端全链回归轮（Vue2+ElementUI + Spring Boot+MyBatis，43→44 测试实测绿）：流A 生成→mark-active 全通→审计 10 条发现（生成器侧 5 条修复 + 项目级留档）。核心修复：fw_mybatis_mapper_locations **双缺陷假阳性**（扁平 grep 不匹配嵌套 YAML + maxdepth 4 漏 Maven 标准布局 depth 5 且反抓 target 拷贝——**同项目永远假阳性**）、mvn TEST_CMD 补 clean（**stale target 毒化**——target/classes 旧 XML mtime 比 src 新，Maven resources 跳过覆盖，`mvn test` 不带 clean 即可复现 6 个集成测试假错）、stability-audit **否定词族盲区**（"勿标稳定"被当 stable 标注）、check_layer **不含 .vue**（前端层恒空）。
+
+### Fixed
+- **D1 fw_mybatis_mapper_locations 假阳性**（R65 审计#1）：grep 只认扁平键 `mybatis.*mapper-locations`（嵌套 YAML `mybatis:` 换行 `mapper-locations:` 永不命中）+ find `-maxdepth 4` 漏 `backend/src/main/resources/application.yml`（depth 5）却抓到 `target/classes/application.yml`（depth 4）。修：模式去 `mybatis.` 前缀依赖（裸键 `mapper-locations`）+ 深度→6 + 排除 `*/target/*`。
+- **D2 mvn TEST_CMD 缺 clean**（R65 审计#3）：stale target 毒化——`target/classes/mapper/*.xml` 为上次编译残留且 mtime 比 src 新，Maven resources 插件跳过覆盖 → `mvn test` 报"no setter for property"假错（本项目实锤 6 个集成测试），`mvn clean test` 即愈。修：conf-render mvn 分支 `_test` 补 `clean`。
+- **D4 stability-audit 否定词族盲区**（R65 审计#5）：仅排除"不稳定"——"勿标稳定/不再稳定/无稳定性"均被当 stable 标注触发假告警。修：否定词族四词全入排除。
+- **D5 check_layer 不含 .vue**（R65 审计#6）：前端 view/component 层在 find 扩展名清单外恒空层。修：find 补 `*.vue`。
+
+### Added
+- **tests/test-r65-fullstack-regression.sh（5 断言，CI 接线）**：L1 行为锁（嵌套 YAML 命中）+ L2-L5 源码锁。
+- 演练证据：kb65-vue-spring 目标技能（fill 子代理交付：6 文件+framework-knowledge 111 条规律+26 个框架变量全填+悬置清单 5 项+decisions 3 条链完整，mark-active 全通）。
+
+### 留档（审计发现 #2/#7-#10，未修如实披露）
+- **#2 框架门禁版本盲**：vue 段硬编码 Vue 3.5、element 段硬编码 Element Plus 2.x——本项目实为 Vue 2.7 + Element UI 2.15（`element-ui` 非 `element-plus`）。detect-frameworks 只报"vue"/"element"不分 2/3。**后续轮需做版本感知门禁**（VUE_VERSION conf 变量分流两套规律）。
+- **#7 DIM 枚举缺口**：Vuex 3 `new Vuex.Store` 不识别；DIM_TYPEDEF 无 .ts 即 0；跨节喂行与维度真空混一行。
+- **#8 check_framework_globs 只验 ≥1 不验全部**：26 个 requires_conf 声明变量填 1 个即过（"全部填入"是超门禁自我要求）。本技能已全填并注明空值理由。
+- **#9 decisions.jsonl PROJECT_DIR 双语义**：trace-log.sh 的 PROJECT_DIR 是落盘根（须指 skill 目录），precheck.conf 的是项目根——同名双语义。
+- **#10 mark-active 吞维度 TSV**：12 维度 PASS 证据面不展示。
+
 ## [v2.32.0] - 2026-09-26
 
 > R64 Ruby 换栈演练轮（第十棒）：真实开源 **rack v2.2.9**（Bundler + minitest 1152 runs/4078 assertions/20 failures/0 errors 实测，见下方勘误）首执勤——Ruby 生态五面全盲（规则集/探测/提取/命令嗅探/枚举器），全补齐：**ruby 规则集三件套**（ruby.md 11 条五要素规律 + ruby.sh 4 门禁 + 双态夹具 4/4+4/4 + 探测三信号，FACT_FRAMEWORKS 80→81，golden 82 行零漂移）+ 工具链四修（Ruby 提取/composer→Bundler 嗅探/DIM Ruby 形态/探测）。真实项目实测：rack 提取 **74 条 Ruby import 边**（require_relative 裸名+前缀双形态/gem require 零泄漏），conf-render 出 `bundle install`/`bundle exec rake`。
