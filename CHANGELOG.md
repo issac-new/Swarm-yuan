@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [v2.32.0] - 2026-09-26
+
+> R64 Ruby 换栈演练轮（第十棒）：真实开源 **rack v2.2.9**（Bundler + minitest 1152 runs/4126 assertions/0 failures 实测）首执勤——Ruby 生态五面全盲（规则集/探测/提取/命令嗅探/枚举器），全补齐：**ruby 规则集三件套**（ruby.md 11 条五要素规律 + ruby.sh 4 门禁 + 双态夹具 4/4+4/4 + 探测三信号，FACT_FRAMEWORKS 80→81，golden 82 行零漂移）+ 工具链四修（Ruby 提取/composer→Bundler 嗅探/DIM Ruby 形态/探测）。真实项目实测：rack 提取 **74 条 Ruby import 边**（require_relative 裸名+前缀双形态/gem require 零泄漏），conf-render 出 `bundle install`/`bundle exec rake`。
+
+### Added
+- **ruby 规则集三件套**（子代理按 php 模式建成）：references/frameworks/ruby.md（4 条机械门禁规律：Gemfile↔lock 漂移双判/硬编码密钥/ENV 键双源/erb @ivar 双向 + 7 条人工检查）；assets/framework-gates/ruby.sh（fw_ruby_hardcoded_secret(fail)/gemfile_lock/env_key_drift/view_var，requires_conf 三变量）；tests/fixtures/ruby/ 双态夹具（expected-fail-ids 4 id/expected-pass-ids 4 id）+ 探测三信号行（Gemfile/Rakefile/file_exists + *.gemspec/file_glob）+ 索引重生成（81 框架）。
+- **relations-extract Ruby 提取分支**：require_relative 裸名（'helper' 无前缀——Ruby 最常见形态）+ './x' 前缀双形态 → .rb 或 /basename.rb 解析（目录约定）；gem require 不发边；vendor/bundle 排除。
+- **conf-render Gemfile 命令族**：BUILD=`bundle install` / TEST=`bundle exec rake`（lock 存在才 confirmed，非改写纪律同 composer）。
+- **tests/test-r64-ruby-drill-locks.sh（5 断言，CI 接线）**：L1-L3 行为锁 + L4-L5 源码锁。
+
+### Fixed
+- **DIM Ruby 形态**：controller 正则补 Sinatra 路由 `get/post/put/delete/patch +./`（用 `.` 通配引号——conf 内字面单引号截断 grep 模式串致 bash 语法错）；TESTFILES 补 *_spec.rb/test_*.rb/*_test.rb；--include='*.rb'。
+- G20/引号坑：Sinatra 路由模式的引号字面量问题在 conf 文件中以 `.` 通配符解（config 双引号包裹 grep 单引号串——字面 ' 不可入，与 shell 变量转义不同族）。
+
 ## [v2.31.0] - 2026-09-26
 
 > R63 边界披露清账轮（"继续（边界披露）"）：三条披露边界的①②清账——SIGNALS 探测新增 **composer 通道**（composer.json require/require-dev 依赖字符串匹配，awk 状态机只取依赖段键防误报，匹配语义复用 pkgjson 词边界口径；php 信号行挂新通道，实测 require "php" 即命中）；golden-vector 新增**显式一键重建**（`SWARM_YUAN_GOLDEN_REBUILD=1 bash scripts/self-check.sh`，opt-in 不自动跟随漂移——保验证器基线独立性；非 opt-in 漂移仍 FAIL）。③Ruby 第十棒后续轮。

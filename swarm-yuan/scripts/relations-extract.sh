@@ -137,7 +137,7 @@ done < "${_GOMODS_T}.abs"
 rm -f "${_GOMODS_T}.abs"
 
 # --- 逐文件提取（bash 循环 + grep；上限保护由 find | head 承担）---
-_src_files=$(find "$PROJ" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.vue' -o -name '*.py' -o -name '*.php' \) \
+_src_files=$(find "$PROJ" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.vue' -o -name '*.py' -o -name '*.php' -o -name '*.rb' \) \
   -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/vendor/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/.swarm-yuan/*' \
   -print 2>/dev/null | LC_ALL=C sort | head -3000)
 
@@ -259,6 +259,59 @@ while IFS= read -r f_abs; do
         [[ "$resolved" == "$f_rel" || -z "$resolved" ]] && continue
         _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
       done < <(grep -nE '^[[:space:]]*use[[:space:]]+[A-Za-z_]' "$f_abs" 2>/dev/null || true)
+      ;;
+    *.rb)
+      # R64-D2（ruby 生态首执勤实证 r64-drill-rack）：Ruby 提取缺位——require_relative 与
+      # require './x' 是 Ruby 的相对引用等价物（镜像 PHP 分支语义）。绝对 gem require（如
+      # require 'rack'）是第三方依赖不发边；vendor/（bundle install --path）已由排除链剪掉。
+      # require_relative 无扩展名语义：'x' → x.rb 或 x/x.rb（Ruby autoload 目录约定）
+      while IFS= read -r hit; do
+        [[ -z "$hit" ]] && continue
+        ln="${hit%%:*}"; stmt="${hit#*:}"
+        spec=$(printf '%s' "$stmt" | sed -n "s/.*['\"]\([^'\"]*\)['\"].*/\1/p")
+        [[ -z "$spec" ]] && continue
+        case "$spec" in
+          ./*|../*) ;;
+          *) continue ;;
+        esac
+        resolved=""
+        norm=$(_norm_rel "$f_dir" "$spec")
+        resolved=$(_resolve "$norm") || resolved=""
+        if [[ -z "$resolved" ]]; then
+          # Ruby 无扩展名：试 <norm>.rb 与 <norm>/<basename>.rb（目录约定）
+          if [[ -f "$PROJ/$norm.rb" ]]; then
+            resolved="$norm.rb"
+          elif [[ -d "$PROJ/$norm" ]]; then
+            _rb_base=$(basename "$norm")
+            if [[ -f "$PROJ/$norm/$_rb_base.rb" ]]; then
+              resolved="$norm/$_rb_base.rb"
+            fi
+          fi
+        fi
+        [[ -z "$resolved" || "$resolved" == "$f_rel" ]] && continue
+        _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
+      done < <(grep -nE "(require_relative|require)[[:space:]]*\(?[[:space:]]*[\"'][.][./][^\"']*[\"']" "$f_abs" 2>/dev/null || true)
+      # require_relative 裸名（'helper' 无 ./ 前缀）是 Ruby 最常见形态——单独提桶
+      while IFS= read -r hit; do
+        [[ -z "$hit" ]] && continue
+        ln="${hit%%:*}"; stmt="${hit#*:}"
+        spec=$(printf '%s' "$stmt" | sed -n "s/.*['\"']\([^'\"]*\)['\"'].*/\1/p")
+        [[ -z "$spec" ]] && continue
+        case "$spec" in
+          ./*|../*|/*|*) ;;
+        esac
+        # 裸名=相对当前文件目录（require_relative 语义）
+        norm=$(_norm_rel "$f_dir" "$spec")
+        resolved=""
+        if [[ -f "$PROJ/$norm.rb" ]]; then
+          resolved="$norm.rb"
+        elif [[ -d "$PROJ/$norm" ]]; then
+          _rb_b=$(basename "$norm")
+          if [[ -f "$PROJ/$norm/$_rb_b.rb" ]]; then resolved="$norm/$_rb_b.rb"; fi
+        fi
+        [[ -z "$resolved" || "$resolved" == "$f_rel" ]] && continue
+        _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
+      done < <(grep -nE "require_relative[[:space:]]*[[:space:]]*[\"'][A-Za-z_][^\"']*[\"']" "$f_abs" 2>/dev/null | grep -v '\./' || true)
       ;;
   esac
 done <<< "$_src_files"
