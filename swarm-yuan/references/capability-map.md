@@ -1,8 +1,8 @@
 > **何时读我**：任何"该读哪个档 / 这能力从哪来 / 这运行时在哪被消费"的路由与对账问题。首行：# 能力地图（Capability Map）
 
-# 能力地图（Capability Map）——references 吸收层接线台账
+# 能力地图（Capability Map）——references 吸收层整合清单
 
-> **定位**：本表是吸收内容（46 份参考文档 + 19 个上游运行时）的**接线总台账**：每份文档登记 来源→证据分级→消费环节→何时读，由生成器自检的 G25 断言双向对账（每份实存文档必须入账、账上不登记不存在的文档）。分工：SKILL.md 第四层的"理念→兑现追踪表"（内部俗称弧线表）登记**核心概念**的诞生步/消费方/回流点；本表登记**吸收来的文档**从哪来、在哪被用——粒度互补，纪律同一条：无悬空（谁都有消费方）。**本表只在生成器仓维护，不随目标技能分发**（目标技能只收到 UNIVERSAL_FILES 清单里的子集）。
+> **定位**：本表是吸收内容（46 份参考文档 + 19 个上游运行时）的**整合总清单**：每份文档登记 来源→证据分级→消费环节→何时读，由生成器自检的 G25 断言双向对账（每份实存文档必须入账、账上不登记不存在的文档）。分工：SKILL.md 第四层的"理念→兑现追踪表"（内部俗称追踪表（追踪表（弧线表）））登记**核心概念**的诞生步/消费方/回流点；本表登记**吸收来的文档**从哪来、在哪被用——粒度互补，纪律同一条：无悬空（谁都有消费方）。**本表只在生成器仓维护，不随目标技能分发**（目标技能只收到 UNIVERSAL_FILES 清单里的子集）。
 > **证据分级**（R37 口径）：A=本机实测；B=官方一手直查；C=二手转述（未核验不进基线）。
 
 ## 一、整合视图：吸收物如何构成一个整体
@@ -21,7 +21,7 @@
 
 **配套查询**：本表从**文档**查"它被谁用"；`task-methodology-router.md` §方法论分派表从**任务**查"开工读什么"——一个任务要读什么，从那边查；一份文档被谁消费，从这里查。
 
-## 二、references 接线总表（46 档，self-check G25 对账面）
+## 二、references 整合总表（46 档，self-check G25 对账面）
 
 ### 族① 生成主干（流A）
 
@@ -65,7 +65,7 @@
 | codex-methodology | openai/codex（B） | 执行纪律（缓存/截断） | 省 token/执行纪律 |
 | claude-code-capabilities | claude-code releases 全量（B） | 宿主能力选型 | 查宿主原生能力 |
 | mcp-governance | 内生（A） | .mcp.json 配置审计 | MCP 服务接入 |
-| codex-security-methodology | openai/codex-security（A） | 安全扫描门禁接线 | 威胁建模/安全扫描 |
+| codex-security-methodology | openai/codex-security（A） | 安全扫描门禁整合 | 威胁建模/安全扫描 |
 
 ### 族④ 验证与过程资产（流B ⑥⑦⑧）
 
@@ -94,9 +94,9 @@
 | industry-profile-industrial | 工控法规调研（B） | --industry 真实加载 | 工控项目立法 |
 | industry-profile-payment | 支付法规 + hermes pay-team（B/A） | --industry 真实加载 | 支付项目立法 |
 
-## 三、运行时接线表（供给侧见 upstream-baseline 19 行；此为消费侧）
+## 三、运行时整合表（供给侧见 upstream-baseline 19 行；此为消费侧）
 
-| 接线深度 | 运行时 | 消费点 | 降级链 |
+| 整合深度 | 运行时 | 消费点 | 降级链 |
 |---------|--------|--------|--------|
 | 深度×4 | GitNexus / graphify | 探查图谱优先（code-graph-tools 三选型，codegraph 为 watch 备选） | 未装→静态扫描清单 |
 | 深度×4 | claude-mem | ⑧ 记忆写回 sink 之一 | 未装→.zcode/project-knowledge 本地落盘 |
@@ -110,7 +110,7 @@
 
 ## 四、对账纪律（self-check G25 机器执法）
 
-1. references/*.md（不含 frameworks/ 与本表自身）每个 basename 必须出现在本表——吸收必接线，孤儿零容忍；
-2. 本表提及的每个档名必须实存——台账不登记幽灵；
-3. SKILL.md 第六层必须引用本表——路由表与台账两级互指。
-4. 分派零落档（R51）：`*-methodology.md` 每档必须可从 task-methodology-router.md §方法论分派表到达（反向索引闭环：建档必接线、接线必可达）。
+1. references/*.md（不含 frameworks/ 与本表自身）每个 basename 必须出现在本表——吸收必整合，孤儿零容忍；
+2. 本表提及的每个档名必须实存——清单不登记幽灵；
+3. SKILL.md 第六层必须引用本表——路由表与清单两级互指。
+4. 分派零落档（R51）：`*-methodology.md` 每档必须可从 task-methodology-router.md §方法论分派表到达（反向索引闭环：建档必整合、整合必可达）。

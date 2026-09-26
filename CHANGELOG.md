@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [v2.36.0] - 2026-09-26
+
+> R68 黑话清零轮（"有很多接线、链接、机械式之类的描述……全面排查分析"）：R50-R67 十七轮高密度吸收把"接线/机械/执法/台账/弧线表/税制"等自造词塞满用户面——SKILL.md 56 处"接线"、75 处"机械"、64 处"执法"、29 处"台账"。全部清零或降入词典（"执法"仅剩三权分立隐喻 8 处——有意设计保留）。机器锚（变量名/gate id/文件名）字面不动。
+
+### Changed
+- **SKILL.md + README.md + capability-map.md 叙事层平实化**：接线→整合（56→0）、机械→自动化（75→0）、执法→检查/拦截（64→8，8 处为"立法/执法/司法"三权隐喻保留）、台账→清单（29→0）、弧线表→追踪表、税制→预算。
+- **docs/usage-manual.md 术语词典同步**：旧词标注"原 XX"防混淆。
+- 三权分立隐喻（特征卡立法、门禁执法、验证器司法）保留——这是有意设计的核心概念，首现有完整解释。
+
 ## [v2.35.0] - 2026-09-26
 
 > R67 彻底修复轮（"彻底修复存在的问题"——R65+R66 两轮留档 8 条全清账，不留尾巴）：**版本感知门禁**（R65#2+R66#3 两轮累计留档的最大欠账——react/vue/element 三规则集各加版本检测头：React 18 项目自动标注"规则主口径 19.x，18.x 区间外"、Vue 2 项目标注"Options API 勿填 VUE_REQUIRE_SCRIPT_SETUP"、Element UI 2.x 标注"非 Plus，i18n/虚拟滚动不适用"）+ express x-powered-by 补 helmet hidePoweredBy 形态 + jest-vitest 纯 Jest 项目 guard（jest.fn 是正确 API，不适用该门禁不再误报）+ check_framework_globs **全变量核验**（≥1 只保不空转——空值变量现 warn 不阻塞）+ DIM Vuex 3 + PROJECT_DIR 双语义头注 + mark-active 维度 TSV 展示。变异锁 7 断言。

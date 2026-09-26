@@ -9,7 +9,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **总闭环**（各层围绕它展开）：本 skill 探查项目→生成目标技能→目标技能在项目里执勤开发→项目演进产生变化→指纹感知→技能局部更新→继续执勤。两条主流程：**流A**=生成器的 12 步生成流程；**流B**=目标技能的九节点执勤工作流。五层依次回答：为什么这样做（理念）、原则是什么（设计）、结构长什么样（架构）、流程怎么转与机制落地（实现）、用户怎么进入（使用）——每层的每个概念都能在第四层的流程表里找到诞生步与消费方。
 
-> **口径权威源**：`assets/facts.conf`（数字单一事实源，self-check 机器执法）；设计文档见本目录 `README.md`（仓库内即 `swarm-yuan/README.md`，standalone 安装时随技能自包含；核心已内联到本文与 references/）；决策史与上游基线已物化为 `docs/design-evolution.md` 与 `docs/upstream-baseline.md`。
+> **口径权威源**：`assets/facts.conf`（数字单一事实源，self-check 自动检查）；设计文档见本目录 `README.md`（仓库内即 `swarm-yuan/README.md`，standalone 安装时随技能自包含；核心已内联到本文与 references/）；决策史与上游基线已物化为 `docs/design-evolution.md` 与 `docs/upstream-baseline.md`。
 >
 > **路径注**：`trace-log.sh`/`state-machine.sh`/`memory-writeback.sh` 在生成器侧位于 `assets/`，在目标技能侧映射为 `scripts/`；执行生成流程（Step 1-12）时以 `assets/xxx.sh` 调用（`cost-report.sh`/`generate-skill.sh`/`self-check.sh` 位于 `scripts/` 不受影响）。
 
@@ -22,7 +22,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 - **诚实降级**：运行时未装不阻塞但显式披露；权限边界一律 fail-closed。
 - **AI 全自动、零手动配置**：生成为 AI 一键完成；使用时用户对 AI 说话。
 
-**何时使用**：用户说"为某项目生成开发技能"/"create a dev skill"/"六段式 skill"、给了仓库要研发 skill、或要为「关节编排」类汇报准备机器执法论据（案例映射见 `references/case-studies/articulation-orchestration.md`）。
+**何时使用**：用户说"为某项目生成开发技能"/"create a dev skill"/"六段式 skill"、给了仓库要研发 skill、或要为「关节编排」类汇报准备自动检查证据（案例映射见 `references/case-studies/articulation-orchestration.md`）。
 
 **不适用**：个人脚本/一次性原型（AI 裸写即可）；typo 级小改（不走 spec）；纯人工开发（范式为 AI 驱动）；用户只是要在某项目里做开发任务（那用该项目的目标技能）。替代：单文件 precheck.sh 只做门禁，或传统 lint/test 工具链。
 
@@ -40,7 +40,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **三条铁律**：①版本锁定——不随意升级核心依赖（`--deps` 检测）；②安全规范——目标技能遵守 OWASP Top 10 / STRIDE / CWE（`--security`，依据 `references/security-spec.md`）；③三平台兼容——bash 硬前置（Windows 走 Git Bash/WSL + .bat），脚本约束：不用 `declare -A`、`sed -i.bak+rm`、`${var}` 防多字节、`$(cd+pwd)` 替代 `readlink -f`。
 
-**AI 判断边界**：质量类门禁（cognition/diagram/pr_quality/consistency/link_depth）为 AI 判断引导模式——机械脚本不假装能判断质量，AI 按检查单自查并留痕 `notes/`。
+**AI 判断边界**：质量类门禁（cognition/diagram/pr_quality/consistency/link_depth）为 AI 判断引导模式——自动化脚本不假装能判断质量，AI 按检查单自查并留痕 `notes/`。
 
 以上原则的**实物载体**在第三层成为结构（conf/模板/hooks），在第四层工作流程中被逐步调用——思考框架的留痕（decisions.jsonl/notes）由流A ⑧记忆写回持久化、流B 执勤时消费；左移约束由流A ④ template-spec 承载、流B ③spec 评审时检查。
 
@@ -50,9 +50,9 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 **门禁四族**（计数真值见 `assets/facts.conf`，全部有真实触发路径——序列/hooks/loop-hook）：核心（随 `--all`）/ 架构（随 `--all-full`）/ 合规（随 `--compliance-suite`）/ advisory。规则数据在 `rules.d/*.rules`（三值 allow/prompt/forbid 取最严，FORBID 消息带替代方案）；审批可沉淀为持久规则。enforce 分层（strict/warn/advisory）是实现细节，模型只选执行序列。
 
-**三层接线**（13 运行时，调用不重实现）：深度（GitNexus/graphify/claude-mem/ocr，门禁内真实子进程）/ CLI（OpenSpec/comet/gsd-core/codex-security，按需 CLI）/ 方法论（superpowers/gstack/ECC/Ruflo/impeccable，AI 按节点引用）——代码图谱平权选型可并用（第三备选 codegraph 见 `references/code-graph-tools.md`，watch 未接线）。清单与降级链详见 `references/subagent-orchestration.md`。
+**三层整合**（13 运行时，调用不重实现）：深度（GitNexus/graphify/claude-mem/ocr，门禁内真实子进程）/ CLI（OpenSpec/comet/gsd-core/codex-security，按需 CLI）/ 方法论（superpowers/gstack/ECC/Ruflo/impeccable，AI 按节点引用）——代码图谱平权选型可并用（第三备选 codegraph 见 `references/code-graph-tools.md`，watch 未整合）。清单与降级链详见 `references/subagent-orchestration.md`。
 
-**结构→流程对应**（每个结构元素在流程中的位置）：六段式模板=流A ③骨架产物；门禁四族=⑤ conf 声明+⑦.5 片段注入+流B 按序列执勤；rules.d 三值=流B hook 实时消费；三层接线=①.5 探查（gitnexus/graphify 真图谱）与⑥验证（真子进程）时调用。全部追踪见第四层表格。
+**结构→流程对应**（每个结构元素在流程中的位置）：六段式模板=流A ③骨架产物；门禁四族=⑤ conf 声明+⑦.5 片段注入+流B 按序列执勤；rules.d 三值=流B hook 实时消费；三层整合=①.5 探查（gitnexus/graphify 真图谱）与⑥验证（真子进程）时调用。全部追踪见第四层表格。
 
 ## 第四层 实现（工作流程双流闭环）
 
@@ -78,7 +78,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | ⓪ | 自检 | `scripts/self-check.sh --check-only`（运行时/文档一致性） |
 | ⓪.5 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem search 提取规则 + mine-habits 行为初稿（习惯三去向） |
 | ① | 探查三路并行 | `references/exploration-guide.md` §C+（结构/规范/代码组织子代理各按其方法论） |
-| ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95，数据映射四维度 DIM 机器执法）；gitnexus/graphify 真图谱；`relations-extract.sh` 声明式边（mapper-binding/data-mapping/bean-wiring——XML↔接口/实体/bean 装配的字符串耦合，编译不校验） |
+| ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95，数据映射四维度 DIM 自动检查）；gitnexus/graphify 真图谱；`relations-extract.sh` 声明式边（mapper-binding/data-mapping/bean-wiring——XML↔接口/实体/bean 装配的字符串耦合，编译不校验） |
 | ② | 特征卡 | 特征项写入认知缓冲（17 项 = P0 6 强制 + P1 11，承接表见 template-spec §3） |
 | ③ | 骨架 | `scripts/generate-skill.sh <name> <proj>`（UNIVERSAL_FILES 按档拷贝） |
 | ④ | 填充 | template-spec §1-§25 逐节填 + codebase/dev-guide/release/reference-manual/workflow/recipes 六文件（recipes=任务配方，§C+.6/§C+.7） |
@@ -98,16 +98,16 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | 概念（出处层） | 诞生（流A 步） | 消费方 | 闭环点 |
 |----------------|----------------|--------|--------|
 | 组件库清单/地图（理念/设计） | ①.5 穷举+计数核验 | 流B ⑤编码拼装（零件目录） | 变化后反馈回路更新（reference-manual） |
-| 任务配方/业务功能清单（理念·拼装式，R21） | ①.5 盘点+④ 填充（§C+.6/§C+.7） | 流B ②探查先查配方、⑤编码按配方拼装 | mark-active 五要素执法；问题沉淀追加配方 |
-| 开发偏好（设计，R21） | ⓪.5 行为观察（mine-habits 初稿） | 流B 全程（AI 遵开发者实际习惯） | memory-writeback 记忆闭环；节存在性执法 |
-| 关系边集（架构，R21） | ①.5 relations-extract 机械边（import+声明式映射+字段明细） | --stable-diff 传播+流B ②探查查边集（relations-query.sh 按字段/实体/XML 反查） | mark-active 抽样核验；断边→重建（relations-extract/inventory-verify 随发，v2.14.2 起执勤侧自包含重跑） |
+| 任务配方/业务功能清单（理念·拼装式，R21） | ①.5 盘点+④ 填充（§C+.6/§C+.7） | 流B ②探查先查配方、⑤编码按配方拼装 | mark-active 五要素检查；问题沉淀追加配方 |
+| 开发偏好（设计，R21） | ⓪.5 行为观察（mine-habits 初稿） | 流B 全程（AI 遵开发者实际习惯） | memory-writeback 记忆闭环；节存在性检查 |
+| 关系边集（架构，R21） | ①.5 relations-extract 自动提取的边（import+声明式映射+字段明细） | --stable-diff 传播+流B ②探查查边集（relations-query.sh 按字段/实体/XML 反查） | mark-active 抽样核验；断边→重建（relations-extract/inventory-verify 随发，v2.14.2 起执勤侧自包含重跑） |
 | 文档证据源分级（设计，v2.14.3） | ⓪.5 探查期提取（docs/ 设计文档+需求文档） | 研发期参考架构/外部交互/数据契约（以代码为准，冲突声明） | spec §假设与约束段冲突声明；PDF/Word 转 markdown 入 docs/converted/ |
-| 数据映射链/任务链/消息拓扑（架构，字符串耦合防线） | ①.5 声明式边+§C+.2-B Layer 5/§C+.2-J/§C+.2-A 配对表（实体↔mapper XML↔表列；job→读写数据资产；MQ 端点双边配对） | 流B ②探查影响面反查（改字段召回 XML/job/迁移/契约面）+ fw_mybatis_field_sync/fw_*_pair 执法 | DIM 四维度计数核验；边集 --verify 防失锚 |
+| 数据映射链/任务链/消息拓扑（架构，字符串耦合防线） | ①.5 声明式边+§C+.2-B Layer 5/§C+.2-J/§C+.2-A 配对表（实体↔mapper XML↔表列；job→读写数据资产；MQ 端点双边配对） | 流B ②探查影响面反查（改字段召回 XML/job/迁移/契约面）+ fw_mybatis_field_sync/fw_*_pair 拦截 | DIM 四维度计数核验；边集 --verify 防失锚 |
 | 特征卡（理念） | ② 特征项提取 | ⑤ conf 三件套（门禁参数源） | mark-active 三关核验其真实性 |
 | 门禁四族（架构） | ⑤ conf+⑦.5 片段注入 | 流B 序列执勤+hook 强制 | 误报→调 conf 重跑；拦截落 gate-deny.jsonl |
 | rules.d 三值（设计/架构） | ③ 骨架随发+⑤ 探查期项目规则（R21） | 流B Bash/Edit 实时匹配 | 审批沉淀回写 rules.d（持久化闭环） |
 | hooks 双宿主（架构） | ⑤.5 hooks.json | 流B 每次 Write/Edit/Bash | deny→AI 修正→重试→放行 |
-| 三层接线（架构） | ⓪ 自检探测 | ①.5 探查+⑥验证真子进程 | 未装→降级链披露（诚实理念兑现） |
+| 三层整合（架构） | ⓪ 自检探测 | ①.5 探查+⑥验证真子进程 | 未装→降级链披露（诚实理念兑现） |
 | spec §19-21 左移（设计） | ④ template-spec 填写 | 流B ③spec 评审+--shift-left | 违缺→fail-gate 拦截→补齐 |
 | 规模与工作量估算（设计，功能点法 NESMA） | ④ template-spec 填写（spec §25 选填节+方法论随发） | 流B ③spec 填 §25、④plan 任务拆分校验（偏离 2 倍回查） | 实战"估算 vs 实际"偏差回填校准（methodology §9） |
 | 懒生成阶梯（理念·拼装具体化，R37） | ①.5 清单盘点（层 2 零件目录）+ 随发 reference | 流B ②探查先查零件、⑤编码七层下探（层 7 才新增） | check_reuse 复用合规；造轮子拦截 hook 候选（未实施） |
@@ -139,7 +139,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
                     【若改动敏感路径】门禁 fail 拦下并给出修复建议
   ↓ ⑥ 测试验证     门禁序列执行（--all/--all-full 按变更面）；全绿进下一步
   ↓ ⑦ 独立审查     review 门禁 + review-record 落盘；发现问题回 ⑤ 修复环
-  ↓ ⑧ 合入        状态机核验 verify pass + 证据引用；断环台账无 open 项
+  ↓ ⑧ 合入        状态机核验 verify pass + 证据引用；断环清单无 open 项
   ↓ ⑨ 发布        构建+发布门禁（release-sign 等）→ 完成
 任何一步被拦：提示给出原因+解除路径（补 spec/调 conf/留痕豁免），修复后重跑该步即可。
 ```
@@ -150,7 +150,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 
 > 本段各 reference 本身是流A ③骨架随发的产物（知识库自举）：生成器用它们生成目标技能，目标技能执勤时又按路由读它们——文档即流程产物，流程即文档消费者。
 
-按五族路由（吸收层接线台账与逐档 来源/证据/消费节点/触发 见 capability-map，self-check 双向对账孤儿零容忍）：
+按五族路由（吸收层整合清单与逐档 来源/证据/消费节点/触发 见 capability-map，self-check 双向对账孤儿零容忍）：
 
 | 族（闭环段） | 档 |
 |-------------|-----|
