@@ -3,7 +3,9 @@
 
 ## [v2.32.0] - 2026-09-26
 
-> R64 Ruby 换栈演练轮（第十棒）：真实开源 **rack v2.2.9**（Bundler + minitest 1152 runs/4126 assertions/0 failures 实测）首执勤——Ruby 生态五面全盲（规则集/探测/提取/命令嗅探/枚举器），全补齐：**ruby 规则集三件套**（ruby.md 11 条五要素规律 + ruby.sh 4 门禁 + 双态夹具 4/4+4/4 + 探测三信号，FACT_FRAMEWORKS 80→81，golden 82 行零漂移）+ 工具链四修（Ruby 提取/composer→Bundler 嗅探/DIM Ruby 形态/探测）。真实项目实测：rack 提取 **74 条 Ruby import 边**（require_relative 裸名+前缀双形态/gem require 零泄漏），conf-render 出 `bundle install`/`bundle exec rake`。
+> R64 Ruby 换栈演练轮（第十棒）：真实开源 **rack v2.2.9**（Bundler + minitest 1152 runs/4078 assertions/20 failures/0 errors 实测，见下方勘误）首执勤——Ruby 生态五面全盲（规则集/探测/提取/命令嗅探/枚举器），全补齐：**ruby 规则集三件套**（ruby.md 11 条五要素规律 + ruby.sh 4 门禁 + 双态夹具 4/4+4/4 + 探测三信号，FACT_FRAMEWORKS 80→81，golden 82 行零漂移）+ 工具链四修（Ruby 提取/composer→Bundler 嗅探/DIM Ruby 形态/探测）。真实项目实测：rack 提取 **74 条 Ruby import 边**（require_relative 裸名+前缀双形态/gem require 零泄漏），conf-render 出 `bundle install`/`bundle exec rake`。
+>
+> **勘误（2026-09-26 独立验收）**：本节原记"4126 assertions/0 failures"有误——复跑两次一致为 **1152 runs/4078 assertions/20 failures/0 errors/2 skips**（ruby 4.0.7 工具链）。20 个失败全部集中 Rack::Session::Cookie/Pool 规格断言，根因是 Ruby 4.0 起 `Hash#inspect` 输出 `=>` 两侧加空格的格式漂移（rack 2.2.9 早于 Ruby 4.0 的环境差异，非本轮回归，rack 源码零改动可证）。已同步勘误 GitHub Release 正文。
 
 ### Added
 - **ruby 规则集三件套**（子代理按 php 模式建成）：references/frameworks/ruby.md（4 条机械门禁规律：Gemfile↔lock 漂移双判/硬编码密钥/ENV 键双源/erb @ivar 双向 + 7 条人工检查）；assets/framework-gates/ruby.sh（fw_ruby_hardcoded_secret(fail)/gemfile_lock/env_key_drift/view_var，requires_conf 三变量）；tests/fixtures/ruby/ 双态夹具（expected-fail-ids 4 id/expected-pass-ids 4 id）+ 探测三信号行（Gemfile/Rakefile/file_exists + *.gemspec/file_glob）+ 索引重生成（81 框架）。
