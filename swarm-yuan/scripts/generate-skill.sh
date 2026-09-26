@@ -930,6 +930,23 @@ check_framework_globs() {
     echo "✗ 框架 glob 全空（TODO(framework-gates) 未填充）：${_cg_missing} 无任何已填变量——框架门禁将空转。填充 precheck.conf / precheck.arch.conf 对应 <FW>_SRC_GLOBS 等变量后重跑 --mark-active" >&2
     return 1
   fi
+  # R67-F4：全变量核验（≥1 只保"不空转"——空值变量无机器拦截，R65 #8 留档根因）
+  local _cg_empty="" _cg_evar
+  for _cg_id2 in ${_cg_ids}; do
+    _cg_fw2="$(printf '%s' "$_cg_id2" | tr -d '-' | tr '[:lower:]' '[:upper:]')"
+    _cg_vars2=""
+    if [[ -f "$_cg_dir/scripts/precheck.sh" ]]; then
+      _cg_vars2=$(grep -m1 "^# ruleset: ${_cg_id2}  *requires_conf:" "$_cg_dir/scripts/precheck.sh" 2>/dev/null | sed 's/.*requires_conf: *//' || true)
+    fi
+    for _cg_evar in ${_cg_vars2}; do
+      if ! grep -qE "^${_cg_evar}=.+[^ ]" "$_cg_dir/scripts/precheck.conf" "$_cg_dir/scripts/precheck.arch.conf" 2>/dev/null; then
+        _cg_empty="${_cg_empty} ${_cg_fw2}.${_cg_evar}"
+      fi
+    done
+  done
+  if [[ -n "$_cg_empty" ]]; then
+    echo "  ⚠ 框架声明变量有未填项（不阻塞激活但框架门禁可能不完全生效）：${_cg_empty}"
+  fi
   echo "✓ 框架 glob 检查通过（ACTIVE_FRAMEWORKS 每框架至少一个声明变量已填）"
   return 0
 }
@@ -991,6 +1008,11 @@ if [[ "${1:-}" == "--mark-active" ]]; then
     _ma_proj=$(cd "$_ma_proj" 2>/dev/null && pwd)
     if [[ -n "$_ma_proj" && -d "$_ma_proj" && -f "$_ma_dir/references/reference-manual.md" ]]; then
       _iv_out=$(bash "$_ma_iv" "$_ma_proj" --skill-dir "$_ma_dir" --tsv --path-check --stability-audit 2>&1) || true
+  # R67-F7：维度 TSV 证据面展示（此前只回显异常——12 维度 PASS 吞掉，不可见）
+  if [[ -n ${_iv_out:-} ]]; then
+    printf '%s
+' $_iv_out | grep -E '^(DIM_|PASS|FAIL)' | head -20
+  fi
       _iv_hallus=$(printf '%s\n' "$_iv_out" | grep -c '^HALLUCINATION' || true)
       if [[ "${_iv_hallus:-0}" -gt 0 ]]; then
         echo "✗ ②③ inventory-verify 检测到 ${_iv_hallus} 个 HALLUCINATION 路径（清单登记 vs 仓库实存不符）" >&2

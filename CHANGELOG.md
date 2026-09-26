@@ -1,6 +1,22 @@
 # Changelog
 
 
+## [v2.35.0] - 2026-09-26
+
+> R67 彻底修复轮（"彻底修复存在的问题"——R65+R66 两轮留档 8 条全清账，不留尾巴）：**版本感知门禁**（R65#2+R66#3 两轮累计留档的最大欠账——react/vue/element 三规则集各加版本检测头：React 18 项目自动标注"规则主口径 19.x，18.x 区间外"、Vue 2 项目标注"Options API 勿填 VUE_REQUIRE_SCRIPT_SETUP"、Element UI 2.x 标注"非 Plus，i18n/虚拟滚动不适用"）+ express x-powered-by 补 helmet hidePoweredBy 形态 + jest-vitest 纯 Jest 项目 guard（jest.fn 是正确 API，不适用该门禁不再误报）+ check_framework_globs **全变量核验**（≥1 只保不空转——空值变量现 warn 不阻塞）+ DIM Vuex 3 + PROJECT_DIR 双语义头注 + mark-active 维度 TSV 展示。变异锁 7 断言。
+
+### Fixed（R65 留档 #2/#7/#8/#9/#10 + R66 留档 #3 全清）
+- **F1 fw_express_x_powered_by 补 helmet**：只检 `app.disable()` 不识 `helmet({hidePoweredBy:true})`——用 helmet 的项目必误报 warn。修：正则补 hidePoweredBy 形态。
+- **F2 fw_jest_jest_fn_to_vi 纯 Jest 项目**：合并规则集对纯 Jest 29 项目错位——jest.fn 判 warn（但它是正确 API）、VITEST_* conf 命名对纯 Jest 语义错位。修：guard 检测（package.json 无 vitest 依赖且无 vitest.config → pass 跳过）。
+- **F3 react/vue/element 版本感知头**：三规则集各加 `fw_*_version_aware` 版本检测——从 package.json 检实际版本，主口径版本区间的项目自动标注"部分规律区间外"诚实提示（React 18/19、Vue 2/3、Element UI/Plus）。
+- **F4 check_framework_globs 全变量核验**：此前只验"≥1 声明变量非空"——空值变量无拦截。修：遍历全部 requires_conf 声明变量，空值项列名 warn（不阻塞激活但可见）。
+- **F5 DIM Vuex 3**：`new Vuex.Store` 不入 DIM_STORE 正则——Vue 2 项目 store 计数 0。修正则补。
+- **F6 PROJECT_DIR 双语义头注**：trace-log.sh 的 PROJECT_DIR（落盘根）与 precheck.conf 的 PROJECT_DIR（项目源码根）同名不同义——头注显式声明。
+- **F7 mark-active 维度 TSV 展示**：12 维度 PASS 证据面此前被吞。修：_iv_out 中 DIM_/PASS/FAIL 行展示。
+
+### Added
+- tests/test-r67-thorough-fix.sh（7 断言，CI 接线）；FACT_SCRIPT_LOC 6516→6521。
+
 ## [v2.34.0] - 2026-09-26
 
 > R66 React+Express 全链回归轮（真实项目 r46-drill-react-express，修复项目两处真实 bug 后 jest 5/5 绿）：流A 生成→mark-active 全通→审计 7 条发现。**生成器侧 6 条全修**：A1「（P1 待补）」零执法（清零承诺无机器拦截——骨架 emit 的 P1 行不含占位符四词则 p0/p1 双不命中）、A2 BUILD_CMD **fork bomb**（scripts.build 自指 `cd frontend && npm run build` 而子目录无 package.json → npm 向上寻包自递归，实测 820 进程）、A5 CommonJS require 不入分层边（R65 D5 同族漏修）、A4 JSON 契约面无承载位、A6 悬置清单无生成承载位、A7 git 依赖门禁静默失能。变异锁 5 断言。

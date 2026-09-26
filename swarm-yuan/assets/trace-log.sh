@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# ⚠ R67-F6：本脚本的 PROJECT_DIR 与 precheck.conf 的 PROJECT_DIR 同名不同义——
+# 此处指落盘根（decisions/trace 写入哪个 .swarm-yuan/），precheck 侧指项目源码根。
+# 调用者须显式传 --project-dir 指向目标技能目录（而非项目源码目录）。
 # trace-log.sh — 全链路调用追踪（swarm-yuan 设计理念 2：每一步具体调用都有信息提示）
 # 用法:
 #   bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]

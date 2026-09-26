@@ -18,6 +18,13 @@ _fw_react_check() {
 
   # 代码正文过滤：调公共库 _fw_strip_comments_c（C 系，去单行注释与块注释行，避免注释误报）
 
+  # R67-F3：版本感知——package.json 检 react 版本（18 vs 19 口径分流标注）
+  local _react_ver=""
+  _react_ver=$(grep -oE '"react"[[:space:]]*:[[:space:]]*"[^"]*"' "${PROJECT_DIR:-.}/package.json" 2>/dev/null | grep -oE '[0-9]+' | head -1)
+  if [[ -n "$_react_ver" && "$_react_ver" != "19" ]]; then
+    pass "fw_react_version_aware: React ${_react_ver}.x 项目——规则集主口径 19.x，18.x 项目部分规律版本区间外（标注待验证条目以 §3 规律表 ⚠ 为准）"
+  fi
+
   # ====================================================================
   # fw_react_hooks_top_level(fail)：Hook 须顶层调用，禁条件/循环/嵌套函数
   # ====================================================================
