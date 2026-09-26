@@ -61,6 +61,13 @@ _fw_vue_check() {
     warn "fw_vue_reactivity_threshold: reactive 用量 $rc 处（阈值 ${VUE_REACTIVE_WARN_THRESHOLD}），建议优先 ref/computed"
   fi
 
+  # R67-F3：版本感知——package.json 检 vue 版本（2 vs 3 口径分流标注）
+  local _vue_ver=""
+  _vue_ver=$(grep -oE '"vue"[[:space:]]*:[[:space:]]*"[^"]*"' "${PROJECT_DIR:-.}/package.json" 2>/dev/null | grep -oE '^[0-9]+' | head -1)
+  if [[ -n "$_vue_ver" && "$_vue_ver" != "3" ]]; then
+    pass "fw_vue_version_aware: Vue ${_vue_ver}.x 项目——规则集主口径 3.5.x，${_vue_ver}.x 项目部分规律版本区间外（VUE_REQUIRE_SCRIPT_SETUP 等不适用——Options API 项目请勿填该 conf 变量）"
+  fi
+
   # ====================================================================
   # fw_vue_pinia_definestore(warn)：Pinia store 须用 defineStore 定义
   # （合并自原 pinia.sh，门禁 id 由 fw_pinia_definestore 改名以遵循 fw_vue_<rule> 命名规范）

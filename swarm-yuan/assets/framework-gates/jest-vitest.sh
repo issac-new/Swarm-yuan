@@ -112,6 +112,17 @@ ${loc_bad}"
 
   # ====================================================================
   # fw_jest_jest_fn_to_vi(warn)：禁残留 Jest API（jest.fn/jest.mock）
+  # R67-F2：纯 Jest 项目（无 vitest 依赖/配置）jest.fn 是正确 API——此门禁不适用，诚实跳过。
+  # 判据：package.json devDependencies 无 vitist/vitest && 无 vitest.config.* && 无 vite.config.* 含 test 段
+  # R67-F2：纯 Jest 项目（无 vitest 依赖/config）jest.fn 是正确 API——guard 跳过检测
+  local _vitest_present=0
+  if grep -q '"vitest"' "${PROJECT_DIR:-.}/package.json" 2>/dev/null \
+     || find "${PROJECT_DIR:-.}" -maxdepth 2 \( -name 'vitest.config.*' -o -name 'vitest.setup.*' \) 2>/dev/null | grep -q .; then
+    _vitest_present=1
+  fi
+  if [[ "$_vitest_present" -eq 0 ]]; then
+    pass "fw_jest_jest_fn_to_vi: 纯 Jest 项目（无 vitest）——jest.fn/jest.mock 为正确 API，此门禁不适用"
+  elif true; then  # R67-F2 guard（非 else——保持后续门禁流不变）
   # ====================================================================
   local jest_bad=""
   for f in "${testarr[@]+"${testarr[@]}"}"; do
@@ -121,6 +132,7 @@ ${loc_bad}"
 "
   done
   _fw_report warn fw_jest_jest_fn_to_vi "$jest_bad" "检出残留 Jest API（Vitest 须用 vi.fn/vi.mock，Jest API 仅兼容模式可用）" "未检出残留 Jest API（已用 vi.*）"
+  fi  # R67-F2 guard 关口
 
   # ====================================================================
   # fw_jest_environment(warn)：须显式配置 environment（jsdom/happy-dom/node）

@@ -16,6 +16,11 @@ _fw_element_check() {
     return
   fi
 
+  # R67-F3：版本感知——package.json 检 element-ui vs element-plus（两代 API 不同）
+  if grep -q '"element-ui"' "${PROJECT_DIR:-.}/package.json" 2>/dev/null; then
+    pass "fw_element_version_aware: Element UI 2.x 项目（非 Element Plus）——规则集主口径 Plus 2.x，element-ui 项目 i18n/虚拟滚动等规律不适用（import 按 element-ui 包名）"
+  fi
+
   # ====================================================================
   # fw_element_on_demand_import(warn)：检出全量 import 'element-plus'
   # ====================================================================

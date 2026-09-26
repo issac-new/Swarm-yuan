@@ -84,7 +84,8 @@ _fw_express_check() {
   # fw_express_x_powered_by(warn)：app.disable('x-powered-by')
   # ====================================================================
   local xpb_hit
-  xpb_hit=$(grep -rlE "disable\(['\"]x-powered-by['\"]\)" "${jsarr[@]+"${jsarr[@]}"}" 2>/dev/null || true)
+  # R67-F1：helmet({hidePoweredBy:true}) 或 helmet.hidePoweredBy() 同样禁 x-powered-by——单检 disable() 误报
+  xpb_hit=$(grep -rlE "disable\(['\"]x-powered-by['\"]\)|hidePoweredBy" "${jsarr[@]+"${jsarr[@]}"}" 2>/dev/null || true)
   if [[ -n "$xpb_hit" ]]; then
     pass "fw_express_x_powered_by: x-powered-by 已禁用"
   else
