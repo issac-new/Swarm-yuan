@@ -151,7 +151,7 @@ check_layer() {
     local src_idx; src_idx=$(_idx_of "$src_layer")
     src_idx=${src_idx:-0}
     local imports
-    imports=$(grep -hoE "(import|from)\s+['\"][^'\"]+['\"]|import\s+[a-zA-Z0-9_./]+" "$f" 2>/dev/null \
+    imports=$(grep -hoE "(import|from)\s+['\"][^'\"]+['\"]|import\s+[a-zA-Z0-9_./]+|require\(['\"][^'\"]+['\"]\)" "$f" 2>/dev/null \
       | grep -oE "['\"][^'\"]+['\"]" | sed "s/['\"]//g" | sort -u || true)
     [[ -z "$imports" ]] && continue
     while IFS= read -r imp; do

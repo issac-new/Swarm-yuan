@@ -677,6 +677,13 @@ verify_completeness() {
     ${targets[@]+"${targets[@]}"} 2>/dev/null | grep -vE 'P1[[:space:]]*待补' || true)
   p1_hits=$(grep -Fn -e '待填充' -e '（待填充）' -e '<占位符>' -e '填充指引' \
     ${targets[@]+"${targets[@]}"} 2>/dev/null | grep -E 'P1[[:space:]]*待补' || true)
+  # R66-A1（kb66 演练实证）：「（P1 待补）」独立于四词——骨架 emit 的 P1 行不含四词则 p0/p1 双不命中，
+  # template-spec「--mark-active 前清零」成空承诺。修：P1 标记独立 grep 兜底合并。
+  if [[ -n "${targets[@]+x}" ]]; then
+    p1_hits=$(printf '%s
+%s
+' "$p1_hits" "$(grep -Fn -e 'P1 待补' -e '（P1 待补）' ${targets[@]+"${targets[@]}"} 2>/dev/null || true)" | grep -v '^$' || true)
+  fi
   hits="$p0_hits"
   # 未勾 checkbox（- [ ]）：仅骨架"填充指引"清单算占位；
   # 目标 skill 的"完成检查表/流程完成检查表"段是给使用者运行中勾选的，剔除该段防误伤。
@@ -2239,6 +2246,7 @@ _idx_desc() {  # $1=path $2=cat → 用途短语（≤10 字，防 8KB 预算爆
     plan-template.md) echo "plan 模板";;
     review-record-template.md) echo "审查留痕模板";;
     reference-manual.md) echo "项目地图/零件目录";;
+    cognition.md) echo "悬置清单（拿不准语义集中落此）";;
     task-type-gates.conf) echo "任务→门禁映射";;
     profile-thresholds.conf) echo "档位阈值";;
     ontology/objects.md|ontology/links.md|ontology/actions.md) echo "本体事实源";;

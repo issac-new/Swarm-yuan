@@ -1,6 +1,25 @@
 # Changelog
 
 
+## [v2.34.0] - 2026-09-26
+
+> R66 React+Express 全链回归轮（真实项目 r46-drill-react-express，修复项目两处真实 bug 后 jest 5/5 绿）：流A 生成→mark-active 全通→审计 7 条发现。**生成器侧 6 条全修**：A1「（P1 待补）」零执法（清零承诺无机器拦截——骨架 emit 的 P1 行不含占位符四词则 p0/p1 双不命中）、A2 BUILD_CMD **fork bomb**（scripts.build 自指 `cd frontend && npm run build` 而子目录无 package.json → npm 向上寻包自递归，实测 820 进程）、A5 CommonJS require 不入分层边（R65 D5 同族漏修）、A4 JSON 契约面无承载位、A6 悬置清单无生成承载位、A7 git 依赖门禁静默失能。变异锁 5 断言。
+
+### Fixed
+- **A1 P1 待补零执法**：verify-completeness 的 P1 分级原依赖占位符四词前置 grep——骨架 emit 的「（P1 待补）」行不含四词则 p0/p1 双不命中，template-spec「--mark-active 前清零」成空承诺。修：P1 标记独立 grep 兜底合并（--strict 时进 hits）。
+- **A2 BUILD_CMD fork bomb**：package.json scripts.build 内再调 `npm run build`（如 `cd frontend && npm run build` 而 frontend 无独立 package.json）→ npm 向上寻包自递归（实测 820 进程后 pkill）。修：conf-render node 分支自指检测——命中则 BUILD_CMD 留空（AUTO:default 空值语义），人工修正。
+- **A5 check_layer CommonJS require 漏边**：import 提取只覆盖 ESM `import/from`——全 require 项目层方向断言空转（R65 D5 只补了 .vue 没补 require，同族漏修二现）。修：`require('./x')` 形态入提取正则。
+- **A4 JSON 契约面承载位**：四查①要求反查前端调用点，但 §8 台账列定义绑定数据访问层——纯 REST JSON 项目无承载位。修：§8 补 JSON 契约面列族（JSON 字段↔前端调用点↔测试锚点）。
+- **A6 悬置清单承载位**：gates-advisory 期望 `.swarm-yuan/notes/cognition.md` 但骨架不生成/清单不列——_idx_desc 补 cognition.md 用途行。
+- **A7 git 依赖门禁静默失能**：非 git 仓库时 --deps/--stable-diff 依赖 git 历史失能——check_deps 补诚实降级披露（fail-open 但可见）。
+
+### Added
+- **tests/test-r66-react-express-regression.sh（5 断言，CI 接线）**：L1/L2 行为锁（P1 独立检出/自指 build 留空）+ L3-L5 源码锁。
+- 演练证据：kb66-react-express 目标技能（6 文件+39 条规律+页面三角+JSON 契约面台账 7 字段，mark-active 全通）；项目级两处真实 bug 修复史（循环依赖 src/store.js 单一事实源 + routes/tasks.js uuid 漏引——修后 jest 4 failed→5/5 绿）入知识库。
+
+### 留档（审计 #3 主体，如实披露）
+- **框架门禁版本盲（同 R65 #2 同族大题）**：react 规则集主口径 19.x vs 项目 React 18.3.1（版本区间外待验证）；fw_express_x_powered_by 不识 helmet 隐式 hidePoweredBy（本项目必误报 warn）；jest-vitest 合并集对纯 Jest 29 错位（jest.fn 判 warn、VITEST_* 命名对纯 Jest 语义错位）。后续轮需**版本感知门禁**统一解。
+
 ## [v2.33.0] - 2026-09-26
 
 > R65 前后端全链回归轮（Vue2+ElementUI + Spring Boot+MyBatis，43→44 测试实测绿）：流A 生成→mark-active 全通→审计 10 条发现（生成器侧 5 条修复 + 项目级留档）。核心修复：fw_mybatis_mapper_locations **双缺陷假阳性**（扁平 grep 不匹配嵌套 YAML + maxdepth 4 漏 Maven 标准布局 depth 5 且反抓 target 拷贝——**同项目永远假阳性**）、mvn TEST_CMD 补 clean（**stale target 毒化**——target/classes 旧 XML mtime 比 src 新，Maven resources 跳过覆盖，`mvn test` 不带 clean 即可复现 6 个集成测试假错）、stability-audit **否定词族盲区**（"勿标稳定"被当 stable 标注）、check_layer **不含 .vue**（前端层恒空）。
