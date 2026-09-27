@@ -11,7 +11,7 @@ ok() { echo "  ✓ $1"; pass=$((pass+1)); }
 bad() { echo "  ✗ $1"; fail=$((fail+1)); }
 
 # 禁用自造词清单（标准术语见 docs/usage-manual.md 术语词典）
-BANNED="接线|机械执法|机械式|税制|弧线表|认知面|三件套|变异锁|悬置清单|能力地图|零占位符|双态夹具|流A|流B|随发|分派零落档|随发或声明"
+BANNED="接线|机械执法|机械式|税制|弧线表|认知面|三件套|变异锁|悬置清单|能力地图|零占位符|双态夹具|流A|流B|随发|分派零落档|随发或声明|假绿|假红|失锚|空转|承载位"
 
 hits=$(grep -rEn "$BANNED" SKILL.md README.md references/*.md 2>/dev/null | grep -v '原.*"' | head -10)
 if [[ -z "$hits" ]]; then

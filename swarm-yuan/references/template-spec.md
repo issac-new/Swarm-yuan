@@ -306,7 +306,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 
 > **铁律：特征卡 17 项必须全部承接进目标技能的文件中，不得遗漏。** 下表是 17 项特征卡 → 目标技能文件的完整映射。
 > **P0/P1 分级**：P0 六项（1/4/5/11/15/16，表中加粗行）= 生成完成强制门槛 + 计数核验仅 P0 维度强制；P1 十一项 draft 期可「（P1 待补）」占位，`--mark-active` 前清零。
-> **前端页面表（R58-D5 承载位）**：前端形态项目的 reference-manual 须含**页面三角表**（`| 页面 | 操作 | 调用+真实入参 | 权限与降级 |`）——每路由级页面一行，真实入参在调用点反推；来源是 exploration-guide 前端探查要点的产出落点，页面数入 §4 计数核验口径。
+> **前端页面表（R58-D5 存放位置）**：前端形态项目的 reference-manual 须含**页面三角表**（`| 页面 | 操作 | 调用+真实入参 | 权限与降级 |`）——每路由级页面一行，真实入参在调用点反推；来源是 exploration-guide 前端探查要点的产出落点，页面数入 §4 计数核验口径。
 
 | 特征卡项 | 承接的目标技能文件 | 承接章节 |
 |---------|-------------------|---------|
@@ -349,7 +349,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | §调用链路说明 | §5 | **按形态选链路模型**：前端(注册装配+模块矩阵+挂载树+store依赖) / 后端(请求处理管道+分层矩阵+数据流+外部依赖+**数据映射链路**) / 异步(消息流转) / 微服务(跨服务调用链) + §5.1 编排约束注释；**含定时/批处理信号时加调度任务表**（§C+.2-J 产物：任务/入口路径/触发方式/读数据资产/写数据资产/幂等策略；DIM_SCHEDULE_JOB 计数核验，路径进 --path-check） | 按形态动态 |
 | §应用接口清单（全量） | §6 | **按接口形态全量**：REST(每路由文件端点表) / GraphQL(Query/Mutation) / gRPC(service.method) / MQ(queue+handler) / 库(导出函数)。无通配符占位 | 按形态动态 |
 | §UI/UX设计资源清单 | §7 | 设计文档、主题、样式、品牌资源、i18n；含前端时按 `references/frontend-design-methodology.md` 三层权威分层（PRODUCT.md 产品真相 > DESIGN.md 视觉决策 > surface brief 单面策略）组织设计决策，含 design token（colors/typography/rounded/spacing/components）+ 品牌资源 + i18n | 仅含前端 |
-| §数据字典及数据规范 | §8 | schema 位置、数据流、业务规则、勾稽关系；**字段级映射清单（有数据访问层时必含，§C+.2-B Layer 5 产物）：核心实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单 ↔ 批处理 reader 列——改字段的影响面以此清单为唯一依据；**纯 REST JSON 项目（无数据访问层）用 JSON 契约面列族：JSON 字段 ↔ 前端调用点 ↔ 测试锚点**（R66 承载位补，同四查①语义）；JPQL @Query 内嵌实体/字段名须入清单**；**schema/迁移资产表（横向清剿轮补，DIM_ORM_SCHEMA 计数核验）：prisma/migrations/alembic/flyway/liquibase/orm.xml/hbm/schema.sql 全枚举——改模型必核"迁移是否已生成"（模型↔迁移漂移 = 漏改字段的姊妹缺陷）** | 通用（有数据层时） |
+| §数据字典及数据规范 | §8 | schema 位置、数据流、业务规则、勾稽关系；**字段级映射清单（有数据访问层时必含，§C+.2-B Layer 5 产物）：核心实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单 ↔ 批处理 reader 列——改字段的影响面以此清单为唯一依据；**纯 REST JSON 项目（无数据访问层）用 JSON 契约面列族：JSON 字段 ↔ 前端调用点 ↔ 测试锚点**（R66 存放位置补，同四查①语义）；JPQL @Query 内嵌实体/字段名须入清单**；**schema/迁移资产表（横向清剿轮补，DIM_ORM_SCHEMA 计数核验）：prisma/migrations/alembic/flyway/liquibase/orm.xml/hbm/schema.sql 全枚举——改模型必核"迁移是否已生成"（模型↔迁移漂移 = 漏改字段的姊妹缺陷）** | 通用（有数据层时） |
 | §store/类型/模型全量清单 | §9 | 前端(store+类型) / 后端(ORM model+entity+DTO+**mapper XML 文件表：路径/namespace↔接口/resultMap 实体引用**——DIM_MAPPER_XML 计数核验，与实体同节共表) / 通用(类型定义) | 按形态动态 |
 | §消息拓扑配对表 | §5 | **含异步时必含（§C+.2-A 产物）**：每行=端点名/生产侧 file:line/消费侧 file:line/序列化格式/幂等策略；单边端点显式标"外部系统"或"孤儿端点"——端点名是双边字符串，改名前必查 | 按形态动态 |
 | §测试案例（check §1） | check §1 | 单测/接口/集成/回归/安全测试案例及数据 | 通用 |
