@@ -20,8 +20,10 @@ SUFFIX_RE='(SRC_GLOBS|MAPPER_DIRS|CONFIG_FILES|SQL_GLOBS|SCHEMA_GLOBS|JOB_DIRS|K
 
 # R62 机制修（子代理审计发现#1）：期望值改读 assets/facts.conf 单一事实源——
 # 原先把期望值写死成常量，每新增规则集须手改本测试否则 CI 红（手抄数字三坑同族）。
-_fw_expected=$(sed -n 's/^FACT_FRAMEWORKS=\([0-9][0-9]*\).*/\1/p' assets/facts.conf)
-[[ -n "$_fw_expected" ]] || { echo "无法从 assets/facts.conf 读 FACT_FRAMEWORKS"; exit 1; }
+# R70：路径挂 $BASE 自锚（原相对路径依赖 CWD=swarm-yuan，CI working-directory 掩盖，
+# 从仓库根或统一 sweep 入口跑即炸——与 GATES/ARCH 的 $BASE 惯形对齐）。
+_fw_expected=$(sed -n 's/^FACT_FRAMEWORKS=\([0-9][0-9]*\).*/\1/p' "$BASE/assets/facts.conf")
+[[ -n "$_fw_expected" ]] || { echo "无法从 $BASE/assets/facts.conf 读 FACT_FRAMEWORKS"; exit 1; }
 echo "=== ① ${_fw_expected} 片段 requires_conf 全量声明 ==="
 _total=0; _missing=""
 for f in "$GATES"/*.sh; do

@@ -679,7 +679,9 @@ verify_completeness() {
     ${targets[@]+"${targets[@]}"} 2>/dev/null | grep -E 'P1[[:space:]]*待补' || true)
   # R66-A1（kb66 演练实证）：「（P1 待补）」独立于四词——骨架 emit 的 P1 行不含四词则 p0/p1 双不命中，
   # template-spec「--mark-active 前清零」成空承诺。修：P1 标记独立 grep 兜底合并。
-  if [[ -n "${targets[@]+x}" ]]; then
+  # R70 修复：数组成员测试改用 ${#targets[@]} 计数（[[ ]] 内写数组成员展开触发 SC2199 error，
+  # CI shellcheck 红实证；本函数 :668 已用同款计数惯形）。targets 恒为数组，计数取值 set -u 安全。
+  if [[ ${#targets[@]} -gt 0 ]]; then
     p1_hits=$(printf '%s
 %s
 ' "$p1_hits" "$(grep -Fn -e 'P1 待补' -e '（P1 待补）' ${targets[@]+"${targets[@]}"} 2>/dev/null || true)" | grep -v '^$' || true)
@@ -1008,10 +1010,14 @@ if [[ "${1:-}" == "--mark-active" ]]; then
     _ma_proj=$(cd "$_ma_proj" 2>/dev/null && pwd)
     if [[ -n "$_ma_proj" && -d "$_ma_proj" && -f "$_ma_dir/references/reference-manual.md" ]]; then
       _iv_out=$(bash "$_ma_iv" "$_ma_proj" --skill-dir "$_ma_dir" --tsv --path-check --stability-audit 2>&1) || true
-  # R67-F7：维度 TSV 证据面展示（此前只回显异常——12 维度 PASS 吞掉，不可见）
-  if [[ -n ${_iv_out:-} ]]; then
-    printf '%s
-' $_iv_out | grep -E '^(DIM_|PASS|FAIL)' | head -20
+  # R67-F7：维度 TSV 证据面展示（此前只回显异常——12 维度 PASS 吞掉，不可见）。
+  # R70 修复两处：① $_iv_out 必须带引号（无引号展开被分词打散行结构）；
+  # ② 匹配模式改行尾状态列（inventory-verify --tsv 行形态 = 标签\t枚举\t登记\t比率\t状态，
+  #    状态词表 PASS/FAIL/NO_LIST——原 ^(DIM_|PASS|FAIL) 对行首永不命中，功能空转）；
+  # ③ grep 无匹配 exit 1 在 set -o pipefail 下炸整条管道（同 WP-R Bug#1 SIGPIPE 族，
+  #    generate-skill.sh:17 set -euo pipefail）——|| true 兜底，对齐 :1020 既有范式。
+  if [[ -n "${_iv_out:-}" ]]; then
+    printf '%s\n' "${_iv_out}" | grep -E '(PASS|FAIL|NO_LIST)$' | head -20 || true
   fi
       _iv_hallus=$(printf '%s\n' "$_iv_out" | grep -c '^HALLUCINATION' || true)
       if [[ "${_iv_hallus:-0}" -gt 0 ]]; then
