@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [v2.37.2] - 2026-09-28
+
+> R70 运行时刷新（用户 /goal 三目标②）：19 行台账全覆盖——ruflo v3.47.0（2 minor）/graphify v0.9.71/claude-code 2.1.283/superpowers v6.4.2 移动；codex 0.158 全 alpha 不物化（线内 ~277 提交记档）；dsh alpha 顺延（657 提交记档）。
+
+### Changed
+- references/codex-methodology.md +版本注记（结构化中断错误/Guardian 历史跨压缩/MCP 单服发现/预热/Windows 沙箱族）。
+- references/dsh-engineering-methodology.md +§十一（插件束兼容性治理/遥测双通道/动态工具投影/归档三态）。
+- references/claude-code-capabilities.md +v2.1.283 注记（模型治理三原语/prompt-audit/网关归因头/OTel 工具内容/插件校验硬化）。
+- research/ 19 仓稳定 tag 物化对齐（口径同 R57）；本地提交存档后清位。
+
+
 ## [v2.37.1] - 2026-09-26
 
 > R69 补遗：独立复审发现 5 个漏网自造词（假绿/假红/失锚/空转/承载位，共 8 处）——全清并扩锁至 31 禁用词。
