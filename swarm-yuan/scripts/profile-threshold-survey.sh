@@ -58,7 +58,7 @@ while IFS= read -r repo; do
   fi
   _p="$_tmpdir/$(basename "$repo")"
   # 文件数（排除 .git/node_modules/dist/build）
-  _fc=$(find "$_p" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/build/*' 2>/dev/null | wc -l | tr -d ' ')
+  _fc=$(find "$_p" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/build/*' -not -path "*/.venv/*" -not -path "*/venv/*" -not -path "*/site-packages/*" -not -path "*/__pycache__/*" -not -path "*/.tox/*" 2>/dev/null | wc -l | tr -d ' ')
   # 依赖数（package.json dependencies + devDependencies 子键数）
   _dc=0
   if [[ -f "$_p/package.json" ]]; then
@@ -66,7 +66,7 @@ while IFS= read -r repo; do
     _dc=$((_dc + $(grep -A 9999 '"devDependencies"' "$_p/package.json" 2>/dev/null | grep -cE '^\s+"[^"]+":\s' || echo 0)))
   fi
   # 目录深度
-  _dd=$(find "$_p" -type d -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null | wc -l | tr -d ' ')
+  _dd=$(find "$_p" -type d -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/site-packages/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' 2>/dev/null | wc -l | tr -d ' ')
   # 主语言
   _ml=$(gh api "repos/$repo" --jq .language 2>/dev/null || echo "?")
   echo "$_fc files, $_dc deps, $_dd dirs, $_ml"

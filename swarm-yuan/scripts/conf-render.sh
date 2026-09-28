@@ -97,10 +97,20 @@ elif [[ -f "$PROJ/pyproject.toml" ]] || [[ -f "$PROJ/requirements.txt" ]]; then
     # 而非裸 pytest——无 pytest.ini/pyproject[tool.pytest] 的项目（纯 requirements.txt 应用仓
     # 主流形态）裸 pytest 不把 cwd 注入 sys.path，收集 `from app.main import app` 必 ModuleNotFoundError；
     # `-m` 语义注入 cwd，对有配置项目等价（与同函数 unittest 兜底的 python3 -m 口径一致）。
+    # R72-D3（2026-09-29 FastAPI 执勤实证 r72-drill-library-api）：项目 .venv 存在时解释器
+    # 必须取 .venv/bin/python——系统 python3 的 user site-packages 与项目依赖无关（实测碰巧
+    # 装了 fastapi 才假绿；无全局包机器上 check_test 必炸 ModuleNotFoundError，测的还是
+    # 错误环境）。precheck.sh 门禁在 cd "$PROJECT_DIR" 后 eval TEST_CMD，相对路径成立。
+    _py="python3"
+    if [[ -x "$PROJ/.venv/bin/python" ]]; then
+      _py=".venv/bin/python"
+    elif [[ -x "$PROJ/venv/bin/python" ]]; then
+      _py="venv/bin/python"
+    fi
     if grep -qi 'pytest' "$PROJ"/requirements*.txt "$PROJ"/pyproject.toml 2>/dev/null; then
-      _test="python3 -m pytest"; _test_confirmed=1
+      _test="$_py -m pytest"; _test_confirmed=1
     else
-      _test="python3 -m unittest discover -s tests"
+      _test="$_py -m unittest discover -s tests"
     fi
     if [[ -f "$PROJ/pyproject.toml" ]]; then _build="python -m build"; else _build=""; fi
   fi

@@ -69,6 +69,7 @@ if [[ -n "$sig" ]]; then
 else
   # 规模信号：文件数（head 截断加速，≥${_lite_max} 即 standard；统计失败按 standard——升档偏置）
   n=$(find "$PROJECT_DIR" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' \
+      -not -path "*/.venv/*" -not -path "*/venv/*" -not -path "*/site-packages/*" -not -path "*/__pycache__/*" -not -path "*/.tox/*" \
       2>/dev/null | head -$((_lite_max+1)) | wc -l | tr -d ' ')
   n="${n:-$((_lite_max+1))}"
   [[ "$n" =~ ^[0-9]+$ ]] || n=$((_lite_max+1))
