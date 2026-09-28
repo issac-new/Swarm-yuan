@@ -1,6 +1,22 @@
 # Changelog
 
 
+## [v2.38.0] - 2026-09-29
+
+> R72 全量回归轮（FastAPI+SQLAlchemy 典型场景执勤）：生成器为真实可跑的 FastAPI 0.141 + SQLAlchemy 2.1 + Alembic + pytest 项目（22 tests）生成目标技能并执勤三项典型研发工作（新增功能九节点全流程 / 修 bug 实测 spec-first hook 拦截 / 结构变更实测指纹反馈回路全链），识别 8 项生成器缺陷全修。核心是**扫描排除链家族第三现的根治**（R23-D5 → R56-D4 → 本轮）与 **TEST_CMD 环境错配的假绿隐患**。轮次台账：`docs/research/R72-full-regression.md`。
+
+### Fixed
+- **F1 扫描排除链家族（D2a/D2b/D2c/D2d，同族四形态一次清剿）**：Python `.venv`/`site-packages` 全量入扫描面——特征卡 backend_files 1510 vs 真实 17、rest 端点 47 vs 10、units 3326（extract-feature-cards 六计数器）；STABILITY fan-in 896 vs 真实 8（inventory-verify 两处 grep，R56-D4 注释自证同族先例）；DIM_TESTFILES 枚举 42 vs 真实 3（inventory-dimensions.conf find 族四命令）；`_scan_src`（precheck 扫描总咽喉，无目录参数即扫项目根）/`_sec_scan`（gates-strict）/gates-warn 敏感扫描循环同病；detect-profile-drift/profile-threshold-survey 文件计数升档偏置。修：FIND_PRUNE/GREP_EXCLUDES 数组化排除链（`.venv/venv/site-packages/__pycache__/.tox/dist/build/target/vendor`）接入全部九处扫描点。
+- **F2 TEST_CMD 环境错配（D3）**：conf-render Python 分支硬编码 `python3 -m pytest`——本轮碰巧系统 user site 装了 fastapi 才"假绿"，无全局包机器 check_test 必炸 ModuleNotFoundError 且测的是错误环境。修：嗅探三级解释器 `.venv/bin/python` → `venv/bin/python` → `python3`（门禁在 cd PROJECT_DIR 后 eval，相对路径成立）。
+- **F3 mine-habits.sh 引用悬空（D6）**：dev-guide 模板/exploration-guide §Step-1/template-spec §8 三处引用 `scripts/mine-habits.sh`，但 UNIVERSAL_FILES 未分发（生成器侧独有）——目标技能习惯初稿步骤不可执行。修：随技能分发（v2.14.2 自包含先例对齐）；--upgrade 实证到位。
+
+### Added
+- **`generate-skill.sh --help`（D1）**：此前误传旗标落到 `${2:?}` 以 bash 原生 `line N: 2:` 前缀吐报错，不指引用法；加 `-h/--help` 分支。
+- **tests/test-r72-full-regression.sh（19 断言防复发锁）**：4 行为锁（fixture 实跑：特征卡计数/DIM 枚举/conf-render 渲染/--help）+ 9 源码锚 + 4 DIM 剪枝锁 + 分发清单锁——排除链家族任一形态回潮即红。
+
+### Chore
+- 预算四键登记：FACT_SKILLMD_BYTES_BUDGET 9728→10240（第四次，成因=索引表 +1 行随发条目）、FACT_UNIVERSAL_FILES 83→84、FACT_UNIVERSAL_FILES_CORE 41→42、FACT_SCRIPT_LOC 6516→6526（排除链三修增量）；README 两处同步。
+
 ## [v2.37.4] - 2026-09-29
 
 > R70 CI 连续四轮红修复轮（独立验收发现）：**R66 起主线 CI 连红五轮（R66/R67/R68/R69/v2.37.1）未被察觉**——每轮仍自称"全量 sweep 零失败"。根因两处 + 流程洞一处，全修并落防复发锁与统一 sweep 入口。（版本号注：原拟 v2.37.2，与并行 R70/R71 运行时刷新撞号，顺延 v2.37.4。）
