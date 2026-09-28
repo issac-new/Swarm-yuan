@@ -220,3 +220,13 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **检查点自带恢复元数据**：`resume_metadata` 记版本/起始 turn/设置，与压缩检查点同写→`state.yaml` 与 compact 绑定写恢复状态。
 - **派发原子性 + 孤儿清理**：子代理取消即拆存储态、关 spawn edge，**驱逐与排队消息互斥**→provisional 任务失败即回收。
 - **产出带来源归属且跨状态持久**：provenance 跨 compaction/resume 存续→产物打 actor 标记进 `trace.jsonl`。
+
+## 版本注记：rust-v0.157.0 后线内 ~277 提交（2026-09-28 R70 核；0.158 全线 alpha 不物化）
+
+> 稳定 tag 停在 0.157.0（R57 物化位不变）；证据锚点 `docs/research/R70-runtime-refresh.md`。
+
+- **中断错误结构化**：Guardian circuit-breaker 中断改 opt-in 结构化错误（错误为一等公民带类型，非字符串匹配）→ 吸收点：本技能 rules.d 的 forbid 条款已带替代方案，错误面同样应可机读可分支。
+- **Guardian 历史跨压缩独立保留**：评审证据不再被父会话 compaction 冲掉→治理证据的生命周期与会话压缩解耦（对照 R57「provenance 跨 compaction 存续」同族纪律）。
+- **MCP 单服发现 + 线程级连接复用**：status discovery 从全量扫描改单服按需 + 连接复用→大型 MCP 编排下的探测经济学。
+- **历史感知预热**：空闲线程按使用历史预热（预热是有依据的预测，不是全量常驻）。
+- **Windows 沙箱加固族**：ETXTBSY 竞态集中创建可执行 fixture、受限启动器回退 embedded 模式、pip 子进程无控制台窗→Windows 面的「进程卫生」清单可并入 cross-platform 纪律。

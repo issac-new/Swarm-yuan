@@ -725,3 +725,13 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **权限堵旁路**：命令替换里的递归 `rm` 此前绕过 Bash 允许规则、现强制提示；NUL 字节规则误展开为通配已修；**managed 布尔锁键打错值不再被忽略**、嵌套非法值使整块失效；`allowed-tools` 自我预授权被封堵→**坏配置宁可停机报错，不静默按宽松缺省运行**。
 - **等待与重试有界化**：危险 `rm` 提示 2 分钟后自动 deny；无限重试无视 `--max-turns` 已修；compaction 摘要被拒转 fallback 模型；磁盘配额错误不再伪装「Exit code 1」。
 - **静默失效可观测**：启动与 `/status`/`claude doctor` **显式列出被忽略的遥测变量**。
+
+## 版本注记：v2.1.283（2026-09-28 R70 核）
+
+> npm dist-tag latest=2.1.283（R70 实测）；证据锚点 `docs/research/R70-runtime-refresh.md`。
+
+- **模型治理三原语**：`availableModelsMatch: "exact"`（白名单精确匹配，新型号默认封锁直到显式列出）+ `deniedModels`（独立黑名单，白名单允许也可拒）→ 管理面从「允许清单」进化为「允许语义 + 拒绝清单」双层。
+- **`/doctor prompt-audit`**：审计 CLAUDE.md/skills/agents/commands 中「为旧模型写的提示模式」→ 提示资产纳入版本健康检查（提示语也有过时一说）。
+- **网关归因头**：`x-claude-code-prompt-id`（`CLAUDE_CODE_GATEWAY_HINT_HEADERS=1`）让网关按用户 prompt 分组请求→多代理共享网关的计费/归因面。
+- **OTel `tool.output` span**（`OTEL_LOG_TOOL_CONTENT=1`）：MCP/WebFetch/WebSearch 产出进遥测→可观测与内容审计的接缝（对照 codex R57「遥测最小化」：开的是通道，边界由 env 把守）。
+- **插件校验硬化**：validate 拒绝不可安装名/逃逸路径；`installed_plugins.json` 坏记录不再静默丢档（点名 + 恢复路径）→ 生态资产的可恢复性纪律。

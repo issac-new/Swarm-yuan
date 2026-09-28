@@ -149,3 +149,12 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 - **0.1.5-rc.2（2026-09-11 R24 核）**：web feedback + file refinements 回移 0.1.5 线（2 commits），无方法论新原语，基线随升。档案 `docs/research/R24-runtime-refresh.md`。
 
 - **0.1.6 预发布线恢复切割（2026-09-16 R29 核）**：R28 预警兑现——**dsh-v0.1.6-alpha.1** 出现，rc.2 以来 **800 commits** 大切割，主题为 pkg/运行时解析重构（runtime host 迁入 asar、内置 loader 升 0.1.6、addon 管理原生缓存、ESM default resolver 对齐、boot 解析边界连环加固）。alpha 不取，维持 rc.2 基线；**下轮口径**：0.1.6 已入 alpha，rc.3/0.1.6 stable 出线即深读（分发工程面为主，暂无方法论新原语）。生态信号：comet 0.4.1 #406 已把 dsh 注册为受支持 hook 平台（`docs/upstream-baseline.md` comet 行）。档案 `docs/research/R29-runtime-refresh.md`。
+
+## 十一、v0.1.7-rc.2+155 版本注记（2026-09-28 R70 核；无稳定 tag，alpha 顺延惯例）
+
+> 657 提交（09-22→09-27）全量记档；证据锚点 `docs/research/R70-runtime-refresh.md`。
+
+- **插件束（bundle）兼容性治理**：束自带行集合，行开关随束联动（单切被拒、有 typed refusal）；**DSH 对等兼容性强制 + 精确豁免**——插件生态的版本协商从「文档约定」升为「安装时门禁 + 类型化拒绝」。吸收点：本技能三层整合的深度/CLI 层版本协商可引用此模式（拒绝要带机器可读的原因与豁免清单）。
+- **遥测双通道**：OTLP 字节有界会话日志上传 + 桌面端 OTel 产品分析——「有界」是关键词（上传量与隐私面先画边界再开通道）。
+- **动态工具更新按路由投影**：LLM 侧动态工具更新（toolset 变更）按路由投影到各消费面——工具面变更的传播纪律。
+- **会话归档三态化**：显式三向菜单（全部/仅归档/未归档）替代隐式过滤——列表状态机的「显式优于隐式」。
