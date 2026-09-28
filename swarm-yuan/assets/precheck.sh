@@ -128,7 +128,7 @@ _find_spec_file() { # $1=可选：内容反查 ERE（如 '拼装合规声明'）
     local _dir _hit2
     for _dir in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
       [[ -d "$_dir" ]] || continue
-      _hit2=$(grep -rliE "$1" "$_dir" --include='*.md' 2>/dev/null | grep -vE 'template' | head -1 || true)
+      _hit2=$(grep -rliE "$1" "$_dir" --include='*.md' --exclude-dir=.venv --exclude-dir=venv --exclude-dir=site-packages --exclude-dir=node_modules --exclude-dir=.git 2>/dev/null | grep -vE 'template' | head -1 || true)
       [[ -n "$_hit2" ]] && { _hit="$_hit2"; break; }
     done
   fi
@@ -145,12 +145,15 @@ _scan_src() {
   for e in "${_exts[@]}"; do
     [[ -n "$e" ]] && inc_args+=("--include=*.$e")
   done
+  # R72-D2c：排除链补 Python 虚拟环境族——无目录参数时扫 CWD=PROJECT_DIR，
+  # .venv 的 site-packages 全量进扫描面（与 R23-D5/R56-D4 同族，本轮第三形态）。
+  local _ex_args=(--exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=venv --exclude-dir=site-packages --exclude-dir=__pycache__ --exclude-dir=.tox --exclude-dir=dist --exclude-dir=build --exclude-dir=target --exclude-dir=vendor)
   if [[ $# -eq 0 ]]; then
-    grep -rnE "$pat" "${inc_args[@]}" 2>/dev/null | grep -v -i "$excl" || true
+    grep -rnE "$pat" "${inc_args[@]}" "${_ex_args[@]}" 2>/dev/null | grep -v -i "$excl" || true
     return
   fi
   for d in "$@"; do
-    grep -rnE "$pat" "$d" "${inc_args[@]}" 2>/dev/null | grep -v -i "$excl" || true
+    grep -rnE "$pat" "$d" "${inc_args[@]}" "${_ex_args[@]}" 2>/dev/null | grep -v -i "$excl" || true
   done
 }
 

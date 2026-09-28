@@ -408,7 +408,8 @@ _sec_scan() {
     if [[ ${#MYBATIS_MAPPER_DIRS[@]} -gt 0 ]]; then
       includes="$includes --include=*.xml"
     fi
-    grep -rnE "$pattern" "$d" $includes 2>/dev/null \
+    # R72-D2c：--exclude-dir 排除链补齐（$d 可能配成项目根，.venv/node_modules 不入生产面）
+    grep -rnE "$pattern" "$d" $includes --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=venv --exclude-dir=site-packages --exclude-dir=__pycache__ --exclude-dir=.tox --exclude-dir=dist --exclude-dir=build --exclude-dir=target --exclude-dir=vendor 2>/dev/null \
       | grep -viE 'test|mock|node_modules|\.patch|__fixtures__|__mocks__|\.spec\.|\.d\.ts|/dist/|/\.tmp/|/out/|/build/|/\.next/|/coverage/' || true
   done
 }

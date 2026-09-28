@@ -22,11 +22,19 @@ done
 
 BASE="$(cd "$(dirname "${0}")/.." && pwd)"
 
+# ---- 0. 扫描排除链（本脚本全部计数器共用；bash 3.2 数组，免 eval）----
+# R72-D2a（2026-09-29 FastAPI 执勤实证 r72-drill-library-api）：原排除只有 node_modules——
+# 项目 .venv 的 site-packages 1493 个 .py 全部计入（backend_files 1510 vs 真实 17、
+# rest 端点 47 vs 真实 10、units 3326），特征卡→conf 阈值链整链污染。
+# R23-D5 排除链纪律的 Python 形态补齐（R56-D4 node_modules 同族漏修先例，本轮第三现）。
+FIND_PRUNE=(-not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/site-packages/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/dist/*' -not -path '*/build/*' -not -path '*/target/*' -not -path '*/vendor/*')
+GREP_EXCLUDES=(--exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=venv --exclude-dir=site-packages --exclude-dir=__pycache__ --exclude-dir=.tox --exclude-dir=dist --exclude-dir=build --exclude-dir=target --exclude-dir=vendor)
+
 # ---- 1. 项目类型判定（文件类型分布）----
-vue_files=$(find "$PROJ" -type f -name "*.vue" -not -path '*/node_modules/*' 2>/dev/null | wc -l | xargs)
-react_files=$(find "$PROJ" -type f \( -name "*.jsx" -o -name "*.tsx" \) -not -path '*/node_modules/*' 2>/dev/null | wc -l | xargs)
-backend_files=$(find "$PROJ" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" \) -not -path '*/node_modules/*' 2>/dev/null | wc -l | xargs)
-mobile_files=$(find "$PROJ" -type d \( -name "android" -o -name "ios" \) -not -path '*/node_modules/*' 2>/dev/null | wc -l | xargs)
+vue_files=$(find "$PROJ" -type f -name "*.vue" "${FIND_PRUNE[@]}" 2>/dev/null | wc -l | xargs)
+react_files=$(find "$PROJ" -type f \( -name "*.jsx" -o -name "*.tsx" \) "${FIND_PRUNE[@]}" 2>/dev/null | wc -l | xargs)
+backend_files=$(find "$PROJ" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" \) "${FIND_PRUNE[@]}" 2>/dev/null | wc -l | xargs)
+mobile_files=$(find "$PROJ" -type d \( -name "android" -o -name "ios" \) "${FIND_PRUNE[@]}" 2>/dev/null | wc -l | xargs)
 
 project_type="unknown"
 if [[ "$vue_files" -gt 0 && "$backend_files" -gt 0 ]]; then
@@ -52,23 +60,23 @@ fi
 # ---- 5. 接口端点数 ----
 # REST: @GetMapping/@PostMapping/@RequestMapping/router.get/router.post
 rest_endpoints=$(grep -rnE '@GetMapping|@PostMapping|@PutMapping|@DeleteMapping|@RequestMapping|router\.(get|post|put|delete)|app\.(get|post|put|delete)' "$PROJ" \
-  --include='*.java' --include='*.kt' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' 2>/dev/null \
+  --include='*.java' --include='*.kt' --include='*.ts' --include='*.js' --include='*.py' --include='*.go' "${GREP_EXCLUDES[@]}" 2>/dev/null \
   | grep -viE 'example|mock|node_modules|test|Test' | wc -l | xargs || true)
 # GraphQL: type Query/Mutation
-graphql_ops=$(grep -rnE 'type Query|type Mutation' "$PROJ" --include='*.graphql' --include='*.ts' --include='*.js' 2>/dev/null | wc -l | xargs || true)
+graphql_ops=$(grep -rnE 'type Query|type Mutation' "$PROJ" --include='*.graphql' --include='*.ts' --include='*.js' "${GREP_EXCLUDES[@]}" 2>/dev/null | wc -l | xargs || true)
 # gRPC: rpc 方法
-grpc_methods=$(grep -rnE '^[[:space:]]*rpc[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\(' "$PROJ" --include='*.proto' 2>/dev/null | wc -l | xargs || true)
+grpc_methods=$(grep -rnE '^[[:space:]]*rpc[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\(' "$PROJ" --include='*.proto' "${GREP_EXCLUDES[@]}" 2>/dev/null | wc -l | xargs || true)
 # MQ: queue/topic 消费
-mq_consumers=$(grep -rnE '@KafkaListener|@RabbitListener|@RocketMQMessageListener|@JmsListener|@SqsListener' "$PROJ" --include='*.java' --include='*.kt' 2>/dev/null | wc -l | xargs || true)
+mq_consumers=$(grep -rnE '@KafkaListener|@RabbitListener|@RocketMQMessageListener|@JmsListener|@SqsListener' "$PROJ" --include='*.java' --include='*.kt' "${GREP_EXCLUDES[@]}" 2>/dev/null | wc -l | xargs || true)
 total_endpoints=$((rest_endpoints + graphql_ops + grpc_methods + mq_consumers))
 
 # ---- 11. 可复用稳定单元（导出函数/类/组件计数）----
 # 前端组件：export default / export const / export function（.vue/.jsx/.tsx）
 frontend_components=$(grep -rnE '^export[[:space:]]+(default[[:space:]]+)?(const|function|class|let)' "$PROJ" \
-  --include='*.vue' --include='*.jsx' --include='*.tsx' 2>/dev/null | wc -l | xargs || true)
+  --include='*.vue' --include='*.jsx' --include='*.tsx' "${GREP_EXCLUDES[@]}" 2>/dev/null | wc -l | xargs || true)
 # 后端服务/工具：export class/function/def/func（.py/.java/.go）
 backend_units=$(grep -rnE '^export[[:space:]]+(class|function|def|func)|^public[[:space:]]+(class|interface)|^def[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*|^func[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$PROJ" \
-  --include='*.py' --include='*.java' --include='*.go' --include='*.ts' --include='*.js' 2>/dev/null \
+  --include='*.py' --include='*.java' --include='*.go' --include='*.ts' --include='*.js' "${GREP_EXCLUDES[@]}" 2>/dev/null \
   | grep -viE 'example|mock|node_modules|test|Test' | wc -l | xargs || true)
 total_units=$((frontend_components + backend_units))
 

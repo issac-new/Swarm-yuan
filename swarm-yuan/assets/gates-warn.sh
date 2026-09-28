@@ -239,7 +239,8 @@ check_sensitive() {
       matches=$(grep -rnE "$pattern" "$dir" \
         --include='*.ts' --include='*.vue' --include='*.svelte' --include='*.js' --include='*.mjs' \
         --include='*.patch' --include='*.py' --include='*.go' --include='*.rs' \
-        --include='*.scss' --include='*.java' 2>/dev/null \
+        --include='*.scss' --include='*.java' \
+        --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=venv --exclude-dir=site-packages --exclude-dir=__pycache__ --exclude-dir=.tox --exclude-dir=dist --exclude-dir=build --exclude-dir=target --exclude-dir=vendor 2>/dev/null \
         | grep -viE 'example|placeholder|test|mock|dummy|<.*>' || true)
       if [[ -n "$matches" ]]; then
         fail "疑似敏感信息 ($dir):"

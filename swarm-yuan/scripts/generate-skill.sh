@@ -54,6 +54,10 @@ UNIVERSAL_FILES=(
   "assets/task-type-gates.conf|assets|lite"
   "assets/profile-thresholds.conf|assets|lite"
   "assets/inventory-dimensions.conf|assets|lite"  # 维度注册表随技能分发：inventory-verify.sh 执勤侧自洽消费（v2.14.2 自包含修复）
+  # R72-D6（2026-09-29 FastAPI 执勤实证）：mine-habits.sh 此前生成器侧独有，但 dev-guide 模板
+  # /exploration-guide §Step-1/template-spec §8 三处都引用 `scripts/mine-habits.sh`——目标技能里
+  # 引用悬空（习惯初稿步骤在执勤侧不可执行）。对齐 v2.14.2 自包含先例随技能分发。
+  "scripts/mine-habits.sh|gen|lite"
   "scripts/precheck.sh|assets|lite"
   "scripts/gates-strict.sh|assets|lite"
   "scripts/gates-warn.sh|assets|lite"
@@ -952,6 +956,13 @@ check_framework_globs() {
   echo "✓ 框架 glob 检查通过（ACTIVE_FRAMEWORKS 每框架至少一个声明变量已填）"
   return 0
 }
+
+# --help（R72-D1：此前无 help 分支——误传旗标时落到 ${2:?} 参数缺失报错，
+# 以 bash 原生 `line N: 2:` 前缀吐 usage，不指引正确用法）
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+  exit 0
+fi
 
 # --check-framework-globs <skill-dir>：单跑框架空转防线（R48-G5——供 test-framework-conf-consistency
 # 直调做变异回归断言：正向=requires_conf 变量可放行；负向=id 前缀伪造变量不放行）
