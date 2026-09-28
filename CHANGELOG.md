@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [v2.37.3] - 2026-09-28
+
+> R71 运行时刷新（用户 /goal 三目标②）：19 行台账全覆盖——codex rust-v0.157.0→**rust-v0.158.0** 物化（R70 时全 alpha，本轮稳定 tag 出线，207 提交）/ruflo v3.47.0→**v3.47.1**（hive-mind 任务派发修复）/dsh 跟随 tip（0.2.0-rc.1 切版在 tip，rc.2 起再进 106 提交，无 stable 记档不物化）。
+
+### Changed
+- references/codex-methodology.md +rust-v0.158.0 版本注记八条（治理证据完整性三连/exec-server WebSocket 令牌鉴权+MCP OAuth 预注册/子进程启动器归一/审批重试语义+分级降噪/限流 Retry-After 协作/TUI prompt_suggestions+Markdown 保真复制/沙箱修复族/日志卫生与语音对齐）。
+- references/dsh-engineering-methodology.md +§十二（0.2.0-rc.1 切版锚定/遥测传输隔离/Windows 几何净空纪律族/设置面组合缓存/任务管理器关闭竞态/agent-preset 经验技能跨模式共享/0.2 预览声明强制确认）。
+- research/ 三克隆物化（codex rust-v0.158.0、ruflo v3.47.1、dsh master tip `4878cdab`）；部署副本 ~/.cc-switch 同步（R70 后首次，含文本面 rsync）。
+- graphify v1.0.0 异源 tag 第六轮直防（merge-base 实证不在 main）；codex-security +20 无 tag 记档；claude-code npm 2.1.283 零变化。
+- 台账 `docs/research/R71-runtime-refresh.md`（1 minor + 1 patch 移动 + 17 零移动/记档）。
+
 ## [v2.37.2] - 2026-09-28
 
 > R70 运行时刷新（用户 /goal 三目标②）：19 行台账全覆盖——ruflo v3.47.0（2 minor）/graphify v0.9.71/claude-code 2.1.283/superpowers v6.4.2 移动；codex 0.158 全 alpha 不物化（线内 ~277 提交记档）；dsh alpha 顺延（657 提交记档）。
