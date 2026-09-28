@@ -61,6 +61,11 @@ bash swarm-yuan/scripts/verify-framework-ruleset.sh <framework-id>
 
 # --- Run the FULL acceptance suite (fixtures + e2e + shellcheck + metrics) ---
 bash verifier/v1/run-verifier.sh all       # or: fixtures | e2e | shellcheck | metrics
+
+# --- Local full regression in ONE command (locks + 3 e2e + verifier all + self-check) ---
+# 收口前必跑：任何"验证通过"的声称以本命令 EXIT=0 为准（R70 流程修复——临时 for 循环
+# sweep 不含 verifier，是 R66-R69 连续四轮 CI 红未被察觉的流程根因）。
+bash swarm-yuan/tests/run-sweep.sh
 ```
 
 **Run the full loop for one framework** when changing its gate/rule:

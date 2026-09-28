@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.37.3-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.37.3)
+[![Release](https://img.shields.io/badge/release-v2.37.4-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.37.4)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -204,9 +204,9 @@
 | 门禁总数 / 预算上限 | 55 / 55（冻结，新增须等额删除） |
 | 门禁分层 | 核心 10 + 架构 18 + 合规 19 + 专项 8；执行序列 `--all` / `--all-full` / `--compliance-suite` |
 | 特征卡 | 17 项（P0 六项强制，P1 十一项可增量） |
-| 框架规则集 | 79（规则文档与门禁片段 1:1 配对） |
+| 框架规则集 | 81（规则文档与门禁片段 1:1 配对） |
 | 配置变量 / 上限 | 185 / 200 |
-| 目标技能预算 | SKILL.md ≤9728B（≈8KB 锚）、地图 ≤32KiB、上下文预算 ≤472KiB（483328B；决策 38 起逐例登记例外链，当前第十一次登记，理由留 facts.conf）、概念体系 ≤5 |
+| 目标技能预算 | SKILL.md ≤9728B（≈8KB 锚）、地图 ≤32KiB、上下文预算 ≤480KiB（491520B；决策 38 起逐例登记例外链，当前第十三次登记，理由留 facts.conf）、概念体系 ≤5 |
 | 外部运行时 | 13 个整合（深度 4 + CLI 4 + 方法论 5）；登记 19（含图谱备选 codegraph、两宿主、机制源 pua/semantica）；自动检测 11 |
 | 类型目录 | 实体 17 / 关系 10 / 动作 11（assets/ontology/ 三份） |
 | 生成流程 | 12 步（唯一编号口径在 generation-flow.md）；目标技能工作流 9 节点 × 4 要素 |

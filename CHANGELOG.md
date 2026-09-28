@@ -1,6 +1,19 @@
 # Changelog
 
 
+## [v2.37.4] - 2026-09-29
+
+> R70 CI 连续四轮红修复轮（独立验收发现）：**R66 起主线 CI 连红五轮（R66/R67/R68/R69/v2.37.1）未被察觉**——每轮仍自称"全量 sweep 零失败"。根因两处 + 流程洞一处，全修并落防复发锁与统一 sweep 入口。（版本号注：原拟 v2.37.2，与并行 R70/R71 运行时刷新撞号，顺延 v2.37.4。）
+
+### Fixed
+- **F1 SC2199（R66-A1 引入）**：verify_completeness 的数组成员测试在 `[[ ]]` 内写 `${targets[@]+x}` 触发 shellcheck error 级 SC2199——修为 `${#targets[@]} -gt 0` 计数惯形（同函数 :668 已有先例）。
+- **F2 R67-F7 mark-active 静默死亡（双重缺陷）**：维度 TSV 展示的 `printf '%s\n' $_iv_out` 无引号展开被分词打散行结构，且 `grep` 无匹配 exit 1 在 `set -euo pipefail`（generate-skill.sh:17）下炸整条管道——gen-e2e 的 --mark-active 环节无声死、status 永卡 draft（同 WP-R Bug#1 SIGPIPE 族，:1250 前科复发）。修：带引号展开 + 匹配模式改行尾状态列 `(PASS|FAIL|NO_LIST)$`（原 `^(DIM_|PASS|FAIL)` 对 TSV 行首永不命中，功能本就空转）+ `|| true` 兜底。修复后 gen-e2e 12/12 全绿、status 正常翻 active。
+
+### Added
+- **tests/run-sweep.sh（本地全量回归统一入口）**：锁测试全量 + 三条 e2e + verifier all + self-check，失败聚合非零退出。此前各轮"全量 sweep"是临时 for 循环、只跑 tests/test-*.sh 不含 verifier——流程根因固化修复。
+- **tests/test-r70-ci-red-fix.sh（5 断言，CI 接线）**：L1 shellcheck 零 error 行为锁 + L2/L2b F7 引号形态源码锁 + L3/L3b SC2199 源头形态禁入锁。
+- **test-framework-conf-consistency facts.conf 路径自锚**：原相对路径依赖 CWD=swarm-yuan（CI working-directory 掩盖），统一 sweep 入口从仓库根跑即炸——挂 $BASE 修复（sweep 首跑即抓的真问题）。
+
 ## [v2.37.3] - 2026-09-28
 
 > R71 运行时刷新（用户 /goal 三目标②）：19 行台账全覆盖——codex rust-v0.157.0→**rust-v0.158.0** 物化（R70 时全 alpha，本轮稳定 tag 出线，207 提交）/ruflo v3.47.0→**v3.47.1**（hive-mind 任务派发修复）/dsh 跟随 tip（0.2.0-rc.1 切版在 tip，rc.2 起再进 106 提交，无 stable 记档不物化）。
@@ -21,7 +34,6 @@
 - references/dsh-engineering-methodology.md +§十一（插件束兼容性治理/遥测双通道/动态工具投影/归档三态）。
 - references/claude-code-capabilities.md +v2.1.283 注记（模型治理三原语/prompt-audit/网关归因头/OTel 工具内容/插件校验硬化）。
 - research/ 19 仓稳定 tag 物化对齐（口径同 R57）；本地提交存档后清位。
-
 
 ## [v2.37.1] - 2026-09-26
 
