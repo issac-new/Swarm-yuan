@@ -891,6 +891,30 @@ fi
 # 返回 0=每个 ACTIVE_FRAMEWORKS 框架至少一个 glob 族变量已填；1=有框架全空（stderr 报清单）。
 # R33-F1 立法（框架 glob 空转拦截）+ R47-D3 修（变量名以注入区块 requires_conf 声明为准，
 # id 前缀推导为补充）。独立成函数供 --check-framework-globs 子命令与测试直调（变异回归锚点）。
+# check_spec_first_wiring <skill-dir> —— mark-active 的 spec-first 联动防线（R75-D3）
+# 缺陷（2026-09-29 NestJS 执勤实证）：骨架 conf 的 WRITABLE_DIRS=()  # TODO:model 若 AI 填充时漏配，
+# spec-first 前置门（fail-gate-hook）在 WRITABLE_DIRS 未配时按设计"放行（不阻碍诊断）"——
+# active 技能上 spec 门整链静默空转（SPEC_REQUIRED=1 的字面承诺无机器保证），mark-active 六关原不校验。
+# 判据：SPEC_REQUIRED 解析为 1 且 WRITABLE_DIRS 解析为空 → fail（对齐 #20b 注释安全解析范式）。
+check_spec_first_wiring() {
+  local _sf_dir="$1"
+  local _sf_conf="$_sf_dir/scripts/precheck.conf"
+  [[ -f "$_sf_conf" ]] || return 0   # 无 conf 非生成物形态，跳过
+  local _spec_req _wd
+  _spec_req=$(grep '^SPEC_REQUIRED=' "$_sf_conf" 2>/dev/null | tail -1 | cut -d'#' -f1 | tr -d '[:space:]' | sed 's/^SPEC_REQUIRED=//;s/^"//;s/"$//' || printf '')
+  case "$_spec_req" in
+    '${SPEC_REQUIRED:-'*) _spec_req="${_spec_req#\$\{SPEC_REQUIRED:-}"; _spec_req="${_spec_req%\}}" ;;
+  esac
+  [[ "$_spec_req" == "1" ]] || return 0   # SPEC_REQUIRED≠1 = 门未启用，无需可写区
+  _wd=$(grep '^WRITABLE_DIRS=' "$_sf_conf" 2>/dev/null | tail -1 | cut -d'#' -f1 | sed -e 's/^WRITABLE_DIRS=(//' -e 's/[[:space:]]*)[[:space:]]*$//' -e 's/"//g' || printf '')
+  if [[ -z "$_wd" ]]; then
+    echo "✗ spec-first 联动检查失败：SPEC_REQUIRED=1 但 WRITABLE_DIRS 为空——spec-first 前置门在运行时将静默放行（整链空转）。填充 scripts/precheck.conf 的 WRITABLE_DIRS（如 ("src")），或显式置 SPEC_REQUIRED=0 并落 decisions.jsonl 留痕后重跑 --mark-active" >&2
+    return 1
+  fi
+  echo "  ✓ spec-first 联动检查通过（SPEC_REQUIRED=1 + WRITABLE_DIRS=($_wd) 非空）"
+  return 0
+}
+
 check_framework_globs() {
   local _cg_dir="$1"
   local _cg_af="" _cg_c _cg_line _cg_ids _cg_id _cg_fw _cg_vars _cg_v _cg_pat _cg_hit _cg_missing=""
@@ -1005,6 +1029,10 @@ if [[ "${1:-}" == "--mark-active" ]]; then
   fi
   # R33-F1 框架空转防线（R48-G5 抽函数）：逻辑与可测锚点单一事实源化，见上方 check_framework_globs
   if ! check_framework_globs "$_ma_dir"; then
+    exit 1
+  fi
+  # R75-D3 spec-first 联动防线（抽函数可测化，同 R48-G5 范式）
+  if ! check_spec_first_wiring "$_ma_dir"; then
     exit 1
   fi
   # ① 无占位符核验

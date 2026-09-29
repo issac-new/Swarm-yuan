@@ -374,7 +374,9 @@ if bash "${PARADIGM}/scripts/generate-skill.sh" --profile standard m-dev "${DEMO
   fi
   # R33-F1 正向：按填充指引新条目填充框架 glob（conf 后行赋值覆盖 TODO 空数组，patch 同源语义；
   # 逐检出框架核对——java-demo 检出 spring-boot/sharding/lombok，每框架至少一个前缀变量已填）
-  printf '\n# R33-F1 E2E 填充：框架 glob（后行赋值覆盖 TODO 空数组）\nSPRINGBOOT_SRC_GLOBS=("src/main/java/**/*.java")\nSHARDING_KEY_COLUMNS=("user_id")\nLOMBOK_SRC_GLOBS=("src/main/java/**/*.java")\nMYBATIS_MAPPER_DIRS=("src/main/resources/mapper")\n' >> "${_mskill}/scripts/precheck.conf"
+  # R75-D3 契约共存：同一填充步补 WRITABLE_DIRS（SPEC_REQUIRED=1 默认开，空可写区 = spec-first
+  # 前置门静默放行，--mark-active 第七关 check_spec_first_wiring 会拦；真实执勤填充步本就含此项）
+  printf '\n# R33-F1 E2E 填充：框架 glob（后行赋值覆盖 TODO 空数组）\nSPRINGBOOT_SRC_GLOBS=("src/main/java/**/*.java")\nSHARDING_KEY_COLUMNS=("user_id")\nLOMBOK_SRC_GLOBS=("src/main/java/**/*.java")\nMYBATIS_MAPPER_DIRS=("src/main/resources/mapper")\n# R75-D3 E2E 填充：spec-first 联动可写区\nWRITABLE_DIRS=("src")\n' >> "${_mskill}/scripts/precheck.conf"
   # Step ⑧：--mark-active 必须成功（死锁修复后 gsd/cognitive-bias 的代码块示例不再误伤）
   if bash "${PARADIGM}/scripts/generate-skill.sh" --mark-active "${_mskill}" >/tmp/gene2e-ma.log 2>&1; then
     ok "--mark-active 成功（E2E Step ⑧ 闭环，代码块示例未误伤）"

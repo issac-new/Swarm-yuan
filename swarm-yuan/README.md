@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.38.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.38.0)
+[![Release](https://img.shields.io/badge/release-v2.39.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.39.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -206,7 +206,7 @@
 | 特征卡 | 17 项（P0 六项强制，P1 十一项可增量） |
 | 框架规则集 | 81（规则文档与门禁片段 1:1 配对） |
 | 配置变量 / 上限 | 185 / 200 |
-| 目标技能预算 | SKILL.md ≤10240B（≈8KB 锚，R72 第四次登记）、地图 ≤32KiB、上下文预算 ≤480KiB（491520B；决策 38 起逐例登记例外链，当前第十三次登记，理由留 facts.conf）、概念体系 ≤5 |
+| 目标技能预算 | SKILL.md ≤10240B（≈8KB 锚，R72 第四次登记）、地图 ≤32KiB、上下文预算 ≤484KiB（495616B；决策 38 起逐例登记例外链，当前第十四次登记，理由留 facts.conf）、概念体系 ≤5 |
 | 外部运行时 | 13 个整合（深度 4 + CLI 4 + 方法论 5）；登记 19（含图谱备选 codegraph、两宿主、机制源 pua/semantica）；自动检测 11 |
 | 类型目录 | 实体 17 / 关系 10 / 动作 11（assets/ontology/ 三份） |
 | 生成流程 | 12 步（唯一编号口径在 generation-flow.md）；目标技能工作流 9 节点 × 4 要素 |
