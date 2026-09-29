@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [v2.38.1] - 2026-09-29
+
+> R73 运行时刷新轮（用户 /goal 三目标②触发）：4 移动物化（codex rust-v0.159.0 / ruflo v3.48.0 / claude-code 2.1.284 / codex-security 0.1.32）+ gstack tip 快进 + **登记表欠账根治**（R58-R71 未回写表行，11 行一次性回填至 R73 态）+ codex tag 世系甄别（release 分支切流实证）。轮次台账：`docs/research/R73-runtime-refresh.md`。
+
+### Changed
+- 运行时台账：19 行全覆盖；research 克隆区 fetch+checkout 对齐（含五仓欠账 checkout 修正）。
+- 登记表 `docs/upstream-baseline.md`：11 行回填 + 顶部 R73 口径注；此后每轮刷新必回写表行。
+- `references/codex-methodology.md`：0.159 版本注记八条（Guardian 证据链跨压缩/历史感知预热/MCP 连接复用/沙箱五连/渲染保真族/技能目录稳定性）。
+
 ## [v2.38.0] - 2026-09-29
 
 > R72 全量回归轮（FastAPI+SQLAlchemy 典型场景执勤）：生成器为真实可跑的 FastAPI 0.141 + SQLAlchemy 2.1 + Alembic + pytest 项目（22 tests）生成目标技能并执勤三项典型研发工作（新增功能九节点全流程 / 修 bug 实测 spec-first hook 拦截 / 结构变更实测指纹反馈回路全链），识别 8 项生成器缺陷全修。核心是**扫描排除链家族第三现的根治**（R23-D5 → R56-D4 → 本轮）与 **TEST_CMD 环境错配的假绿隐患**。轮次台账：`docs/research/R72-full-regression.md`。
