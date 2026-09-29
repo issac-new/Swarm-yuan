@@ -488,7 +488,12 @@ _extract_deps() {
   esac
 }
 
-_norm_ver() { echo "$1" | sed -E 's/^[~^><=]+//; s/[[:space:],;].*$//'; }
+_norm_ver() {
+  # R75-D2（2026-09-29 NestJS 执勤实证）：原实现只剥 range 前缀后做字面字符串比较，
+  # semver 等价写法 ^5.7 vs ^5.7.0 被判"变更"（假阳性 fail——数字段缺省不参与比较）。
+  # 修：数字段补齐三段后再比较（5.7 → 5.7.0）；非纯数字段（如 2.1.4.RELEASE）NF>3 原样保留。
+  printf '%s' "$1" | sed -E 's/^[~^><=]+//; s/[[:space:],;].*$//' | awk -F. -v OFS=. '{while(NF<3)$(NF+1)=0; print}'
+}
 
 check_deps() {
   # R66-A7：非 git 仓库时依赖类门禁依赖 git 历史——诚实降级披露（fail-open 但须可见）

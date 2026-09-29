@@ -79,7 +79,7 @@ xxl-job|com.xuxueli|pom
 elasticjob|org.apache.shardingsphere.elasticjob|pom
 quartz|org.quartz-scheduler|pom
 antd|antd|pkgjson
-antd|@ant-design|pkgjson
+antd|@ant-design/icons|pkgjson
 vue|vue|pkgjson
 vue|pinia|pkgjson
 react|react|pkgjson
@@ -95,7 +95,7 @@ tailwind|tailwindcss|pkgjson
 koa|koa|pkgjson
 express|express|pkgjson
 fastify|fastify|pkgjson
-nestjs|@nestjs|pkgjson
+nestjs|@nestjs/core|pkgjson
 django|Django|pyreq
 django|django|pyproject
 fastapi|fastapi|pyreq
@@ -349,7 +349,15 @@ while IFS='|' read -r fw pattern ftype; do
     # 边界: 行首 或 / 或 @ 之后,且 pattern 后跟 行尾 或 - / @ . _
     # pattern 可能含正则元字符(如 @ant-design 的 @),用 grep -E 需转义;这里 pattern
     # 多为简单标识符,对含特殊字符的用 grep -qF 兜底(无边界但精确)
-    if [[ "$pattern" == *@* || "$pattern" == *.* ]]; then
+    if [[ "$pattern" =~ ^@[^/]+$ ]]; then
+      # R75-D1（2026-09-29 NestJS 执勤实证 r75-drill-tasks-api）：scope 前缀形态（@xxx 不含 /）
+      # 信号此前落入下方 grep -qxF 整行精确匹配——依赖桶里是 @nestjs/common 等完整包名，
+      # 裸 @nestjs 永不命中（死信号，同族 @ant-design 共 2 条；"规则集在册≠链路可达"第九现）。
+      # 修：scope 前缀走 ^@xxx/ 前缀匹配（@nestjs → @nestjs/ 前缀即命中）；
+      # 信号表两条死信号已改完整包名（@nestjs/core、@ant-design/icons，对齐 @angular/core 惯例），
+      # 本分支是造表防御——未来再写前缀形态也能命中。
+      printf '%s\n' "$_bucket" | grep -qE "^${pattern}/" && _hit=1
+    elif [[ "$pattern" == *@* || "$pattern" == *.* ]]; then
       # scoped 包(@xxx/yyy)或含点的,固定字符串精确匹配(自带边界)
       printf '%s\n' "$_bucket" | grep -qxF "$pattern" && _hit=1
     else

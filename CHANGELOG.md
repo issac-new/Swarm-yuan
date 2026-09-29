@@ -1,6 +1,28 @@
 # Changelog
 
 
+## [v2.39.0] - 2026-09-30
+
+> R75 全量回归轮（NestJS 典型场景执勤）：为真实可跑的 NestJS 11 + TypeORM 0.3 + better-sqlite3 + jest 项目（r75-drill-tasks-api，9 tests）生成目标技能并执勤三项典型研发工作（分派功能九节点全流程 v0.2.0 / done 锁定对称性修复 v0.2.1 / statistics 模块结构变更自成长实测 v0.3.0），识别 9 项缺陷全修（执勤 5 + 收口验收 4）。核心是 **detect-frameworks 死信号（"规则集在册≠链路可达"第九现）**——nestjs/antd 8 条门禁自建表以来从未被注入过任何项目。轮次编号注：执勤由并行会话 2026-09-29 完成（原拟 R73），与已发布的 R73/R74 运行时刷新轮撞号，收口时顺延 R75。轮次台账：`docs/research/R75-full-regression.md`。
+
+### Fixed
+- **F1 detect-frameworks scope 前缀死信号（D1，P0）**：`nestjs|@nestjs|pkgjson` 与 `antd|@ant-design|pkgjson` 是 scope 前缀形态（含 `@` 不含 `/`），落入 scoped 包 `grep -qxF` **整行精确匹配**分支——依赖桶里是 `@nestjs/common`、`@ant-design/icons` 等完整包名，裸前缀永不命中（对照组 `angular|@angular/core` 用完整包名所以能命中）。实测：NestJS 项目探测出 express/typeorm/validation/jest-vitest 四框架唯独漏 nestjs——ACTIVE_FRAMEWORKS 错配 express（误注入）、8 条 NestJS 门禁与 NEST_SRC_GLOBS 懒补全缺席、framework-knowledge 缺 nestjs 节，五环全断。修：两条死信号改完整包名（`@nestjs/core`、`@ant-design/icons`，对齐 `@angular/core` 惯例）+ 匹配逻辑加 scope 前缀防御分支（`@xxx` 无 `/` → `^@xxx/` 前缀匹配，防再造表踩同坑）。修后同项目探测 5 框架含 nestjs。
+- **F2 check_deps 版本对比假阳性（D2）**：`_norm_ver` 剥 range 前缀后做**字面字符串比较**，semver 等价写法 `^5.7` vs `^5.7.0` 被判"变更"假阳性 fail（数字段缺省不参与比较；执勤实测 typescript 基线误报）。修：数字段补齐三段后比较（5.7 → 5.7.0；`-v OFS=.` 显式设置防 BSD awk 字段重建用空格连接），非纯数字段（2.1.4.RELEASE）原样保留，真差异（0.3 vs 0.3.20）仍报。
+- **F3 mark-active spec-first 联动校验（D3）**：骨架 conf 的 `WRITABLE_DIRS=()  # TODO:model` 若 AI 填充时漏配，spec-first 前置门（fail-gate-hook）按"WRITABLE_DIRS 未配 → 放行（不阻碍诊断）"设计**整链静默空转**（SPEC_REQUIRED=1 的字面承诺无机器保证），mark-active 六关原不校验。修：新增 `check_spec_first_wiring`（抽函数可测化，同 R48-G5 范式）串入 mark-active——SPEC_REQUIRED=1 且 WRITABLE_DIRS 解析为空即 fail 并指引（填充或显式置 0 + decisions.jsonl 留痕）。
+- **F4 DIM 枚举器 NestJS 形态缺位（D4）**：接口端点恒 0（正则只认 Spring `@GetMapping` 族，NestJS 裸动词 `@Get(/@Post(/@Put(/@Delete(/@Patch(` + `@All/@Head/@Options` 全缺——实测 8 端点枚举 0，ENUM_ZERO_DIM 兜底披露但勾稽失效）、后端 controller 恒 0（`@Controller(` 缺）、异步消费者恒 0（NestJS 微服务 `@EventPattern(/@MessagePattern(` 缺）。修：三维度补 NestJS 形态（alternation Spring 在前 + 单词边界防 `@GetMapping` 二次命中）。修后实测：端点枚举 8=清单 8（1.00 PASS）、controller 枚举 2。
+- **F5 根 README badge 滞留（D0，流程缺陷）**：R72 发版时根 README badge 滞留 v2.37.4（CHANGELOG/技能 README 已 v2.38.0）——决策 38 版本口径机器锚在基线 self-check 自己抓到（三面漂移告警），但发版收口五件套无 badge 同步强制面。修：本轮三面统一 v2.39.0；防复发锁 L10 把三面一致性升格为机器断言（发版门自证）。
+- **F6 防复发锁自带 G20 违规（D5，收口验收轮发现）**：`test-r75-full-regression.sh` L4 断言行 `b=$b）` 紧跟全角右括号（多字节相邻变量铁律违规，G20 家族第九踩），C-locale + `set -u` 下 unbound 崩溃风险；self-check G20 静态扫描在全量 sweep 中当场抓到。修：`${a}/${b}` 花括号形态。
+- **F7 新门禁遮蔽既有契约（D6，收口验收轮发现）**：F3 的 `check_spec_first_wiring` 无条件先于决策账本检查执行，两个既有契约测试 fixture 未满足新前置——decisions-fallback 反向对照拿不到"缺少决策记录"拦截行、gen-e2e Step ⑧ mark-active 被 spec-first 拦截卡死（E2E 死锁回归）；全量 sweep 46/5 暴露（执勤提交未跑全量 sweep 即搁置）。修：两处 fixture 填充步补 `WRITABLE_DIRS=("src")`（对齐真实执勤填充形态），D3 拦空可写区与填充后放行两契约共存。教训同 R48-G5 族：新增 mark-active 关卡必须同步审计全部 mark-active fixture。
+- **F8 main 侧禁用词残留（D7，收口验收轮发现）**：`references/review-methodology.md:501`"发布面三件套再会师"——R74 运行时刷新轮写入的"三件套"命中 r68 禁用清单（docs-only 轮不跑全量 sweep 的流程盲区，R70"CI 连红五轮"同族）。修："三项门禁"。
+- **F9 生成物预算锚未追账（D8，收口验收轮发现，D7 同根盲区）**：self-check 预算断言 fail（实测 492144B > 预算 491520B，超 624B）——R73/R74 两轮运行时刷新向 references/ 物化注记未登记 FACT_ARTIFACT_BYTES_BUDGET（R70 第十三次登记实测 488608B，两轮净增 3536B）。修：第十四次登记 491520→495616（+4KiB 沿决策 38 冻结现状+显式余量形态；补核轮不发版故未过此断言，发版门补追账——R26/R33 同源先例），facts.conf 注记链 + README 预算行两处同步。
+
+### Added
+- **tests/test-r75-full-regression.sh（16 断言防复发锁）**：L1/L1b 行为锁（fixture 实跑：`@nestjs/core`/`@ant-design/icons` 命中）+ L2 信号表 scope 前缀死形态禁入锁 + L3 防御分支在位锁 + L4/L4b `_norm_ver` 等价归一与真差异保留行为锁 + L5/L5b 修复锚/OFS 形态锁 + L6/L6b 联动校验源码锁 + L7 行为锁（mark-active 拦 WRITABLE_DIRS 空 fixture）+ L8/L8b/L8c DIM 三维度 NestJS 形态源码锁 + L9 行为锁（DIM 端点枚举对 NestJS fixture > 0）+ L10 发版三面 badge 同步机器断言。
+- **docs/research/R75-full-regression.md**：本轮执勤台账（三项执勤工作、九缺陷根因与修法、NestJS 生态形态清单、收口验收补遗）。
+
+### Chore
+- 预算登记：FACT_SCRIPT_LOC 6526→6531（`_norm_ver` 单行函数体展开为注释+多行归一实现，净 +5 行）；README 面无版本注记增量（SKILL.md/UNIVERSAL_FILES/CORE/ARTIFACT 四锚零变动——本轮无随发档与 SKILL.md 内容变化）。
+
 ## [v2.38.2] - 2026-09-29
 
 > R74 运行时刷新轮（用户 /goal 三目标③触发）：轻量轮——ocr v1.12.11（Jinja allowlist 模板化+上游规则保留）+ gstack tip 快进（自述 v1.91.7.0：surface-aware QA 门禁+发布前文档检查+发布 fail-closed）+ dsh master tip +187（rc.2 入 master 线）；codex-security npm 通道断流异常记档（git tag 0.1.32 在而 registry 无）。轮次台账：`docs/research/R74-runtime-refresh.md`。

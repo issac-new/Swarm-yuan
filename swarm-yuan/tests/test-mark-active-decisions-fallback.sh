@@ -27,6 +27,10 @@ printf '{"ts":"2026-09-12T00:00:00Z","type":"Mechanical","ai_suggestion":"t","us
   > "$PROJ/.swarm-yuan/decisions.jsonl"
 [[ ! -s "$SKILL_DIR/.swarm-yuan/decisions.jsonl" ]] && ok "技能侧账本为空（回退前置条件）" || bad "技能侧账本非空，前提不成立"
 
+# R75-D3 契约共存：本测试只管决策账本回退语义，spec-first 联动（SPEC_REQUIRED=1 默认开 +
+# WRITABLE_DIRS 空 → mark-active 第七关拦截）须先满足才能走到被测拦截面——填充可写区
+printf '\n# R75-D3 测试前置：spec-first 联动可写区\nWRITABLE_DIRS=("src")\n' >> "$SKILL_DIR/scripts/precheck.conf"
+
 out=$(bash "$GEN" --mark-active "$SKILL_DIR" 2>&1)
 grep -q '缺少决策记录' <<<"$out" \
   && bad "PF2 回归：项目侧有账仍被拦（死锁未解）: $(grep '缺少决策记录' <<<"$out")" \

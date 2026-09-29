@@ -498,4 +498,4 @@ ocr 新增 LLM provider 支持：
 
 - **规则生成物不得覆写基线**（ocr 1.12.11 #1056）：allowlist 规则可经 Jinja 模板批量生成，模板展开结果与上游规则冲突时**上游基线优先**（「preserve upstream rules after Jinja conflict resolution」）——配置合并语义：生成/派生层与人工基线冲突，输的一律是生成层；与本仓「投影不得改写真身」I4 不变量同构。
 - **diff 基线显式化**（ocr 1.12.11 #1544）：IDEA 插件列举 merge commit 文件改为对 **first parent**——比较基线必须显式钉定（与 gsd-core #5008 merge-base 钉定同族），否则「改了什么」本身失真。
-- **发布面三件套再会师**（gstack tip v1.91.7.0）：surface-aware 探索式 QA 门禁（QA setup 权威在主流程集成后保留——委托权威不被集成吞没）+ 发布前文档检查门禁（原子写入+归因）+ **发布点 fail-closed**。QA 证据、文档门禁、发布 fail-closed 三件在第三方 harness 与本仓交付门禁族同向收敛。
+- **发布面三项门禁再会师**（gstack tip v1.91.7.0）：surface-aware 探索式 QA 门禁（QA setup 权威在主流程集成后保留——委托权威不被集成吞没）+ 发布前文档检查门禁（原子写入+归因）+ **发布点 fail-closed**。QA 证据、文档门禁、发布 fail-closed 三项在第三方 harness 与本仓交付门禁族同向收敛。
