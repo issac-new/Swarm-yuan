@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [v2.38.2] - 2026-09-29
+
+> R74 运行时刷新轮（用户 /goal 三目标③触发）：轻量轮——ocr v1.12.11（Jinja allowlist 模板化+上游规则保留）+ gstack tip 快进（自述 v1.91.7.0：surface-aware QA 门禁+发布前文档检查+发布 fail-closed）+ dsh master tip +187（rc.2 入 master 线）；codex-security npm 通道断流异常记档（git tag 0.1.32 在而 registry 无）。轮次台账：`docs/research/R74-runtime-refresh.md`。
+
+### Changed
+- 运行时台账 19 行全覆盖：ocr 表行升 1.12.11；gstack/dsh tip 行前移；codex 最新版列补齐 R73 滞后（0.157→0.159）；codex-security 行增 npm 通道异常注记。
+- `references/review-methodology.md`：R74 吸收段（规则生成物不得覆写基线/diff 基线显式化/发布面三件套再会师）。
+- research 克隆区物化三仓：ocr→v1.12.11、gstack→dcaea52、dsh→639ed01539。
+
 ## [v2.38.1] - 2026-09-29
 
 > R73 运行时刷新轮（用户 /goal 三目标②触发）：4 移动物化（codex rust-v0.159.0 / ruflo v3.48.0 / claude-code 2.1.284 / codex-security 0.1.32）+ gstack tip 快进 + **登记表欠账根治**（R58-R71 未回写表行，11 行一次性回填至 R73 态）+ codex tag 世系甄别（release 分支切流实证）。轮次台账：`docs/research/R73-runtime-refresh.md`。

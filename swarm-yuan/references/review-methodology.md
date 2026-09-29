@@ -491,3 +491,11 @@ ocr 新增 LLM provider 支持：
 - **验证按操作语义分区判定**：ADDED 查存在、REMOVED **反向查**（查不到才正确、行为仍在才 critical）、RENAMED 不查旧名。此前一律当「查实现」，**正确删除的需求被判 CRITICAL 并建议补实现**。
 - **对外部契约做诚实性测试**：prompt 引用的字段都要与真实 CLI 输出对账 + 守门测试。
 - **破坏性操作「atomic rename 认领」后再读、比对确认才删**：竞态写入要么被比对还原、要么成新文件**永不被删**。
+
+## allowlist 模板化与上游基线保留 + 发布面 QA/文档门禁（R74 核，2026-09-29）
+
+> 证据锚点 `docs/research/R74-runtime-refresh.md`。
+
+- **规则生成物不得覆写基线**（ocr 1.12.11 #1056）：allowlist 规则可经 Jinja 模板批量生成，模板展开结果与上游规则冲突时**上游基线优先**（「preserve upstream rules after Jinja conflict resolution」）——配置合并语义：生成/派生层与人工基线冲突，输的一律是生成层；与本仓「投影不得改写真身」I4 不变量同构。
+- **diff 基线显式化**（ocr 1.12.11 #1544）：IDEA 插件列举 merge commit 文件改为对 **first parent**——比较基线必须显式钉定（与 gsd-core #5008 merge-base 钉定同族），否则「改了什么」本身失真。
+- **发布面三件套再会师**（gstack tip v1.91.7.0）：surface-aware 探索式 QA 门禁（QA setup 权威在主流程集成后保留——委托权威不被集成吞没）+ 发布前文档检查门禁（原子写入+归因）+ **发布点 fail-closed**。QA 证据、文档门禁、发布 fail-closed 三件在第三方 harness 与本仓交付门禁族同向收敛。
