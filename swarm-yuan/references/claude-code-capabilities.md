@@ -735,3 +735,13 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **网关归因头**：`x-claude-code-prompt-id`（`CLAUDE_CODE_GATEWAY_HINT_HEADERS=1`）让网关按用户 prompt 分组请求→多代理共享网关的计费/归因面。
 - **OTel `tool.output` span**（`OTEL_LOG_TOOL_CONTENT=1`）：MCP/WebFetch/WebSearch 产出进遥测→可观测与内容审计的接缝（对照 codex R57「遥测最小化」：开的是通道，边界由 env 把守）。
 - **插件校验硬化**：validate 拒绝不可安装名/逃逸路径；`installed_plugins.json` 坏记录不再静默丢档（点名 + 恢复路径）→ 生态资产的可恢复性纪律。
+
+## 版本注记：v2.1.284 → v2.1.285（2026-09-30 R79 核）
+
+> npm dist-tag latest=2.1.285（R79 实测，R73 升 2.1.284 无 changelog 故无注记）；本版恢复 changelog 发布（外部 checkout `upstream/claude-code` CHANGELOG 首段 2.1.285 实测）；证据锚点 `docs/research/R79-runtime-refresh.md`。
+
+- **fork 子代理权限模式继承封闭**：fork 子代理运行在父会话权限模式下且**不能退出 plan mode**（修复此前 fork 不保留会话 plan/dontAsk 模式）——「委托不提权」：子代理的权限边界继承自会话，无权自行升格。吸收点：`references/subagent-orchestration.md` 分派规范可对照——分派产生的子任务权限边界应显式声明继承来源，不留自行提权口子。
+- **managed settings 分级 fail-open**：OS 拒读 managed settings 文件时**warn-and-start**（无策略启动），其余读错误与不可解析文件才全停——治理面按「权限性拒绝降级 / 内容性损坏停止」分级，一刀切 fail-closed 会把权限配置问题放大成不可用。吸收点：本仓降级载体「未装不阻塞」同族——降级与致命的边界按失败原因分级，不是按失败发生。
+- **安装面 id 归一化混淆拒绝**：`plugin install` 对仅差 `.`/`-`/`@`/大小写（macOS/Windows）的 id 拒绝装入他者缓存目录——身份比较先归一化，混淆 id 视为不同实体处置。吸收点：技能名/框架 id 的匹配边界可对照（`_fw_<id>_check` 分发键的精确匹配是既有防线）。
+- **沙箱 auto-allow 误报修复**：内联脚本（`python3 -c`/`node -e`）含 `=` 即逐次询问的误报修复——保守判定的误报面也要养（门禁误报训练用户橡皮图章，与漏报同罪）。
+- **产品面修复卷**（不吸收记档）：`CLAUDE_CODE_DISABLE_WEB_FETCH` 工具开关、`claude --desktop`、`plugin configure`/`--config` 安装时配置、`allowedProviders` 供应商白名单、URL 密码脱敏、MCP 名称注入终端转义序列清洗、`-p` 后台子代理权限请求直达 prompt tool 等约 30 项。
