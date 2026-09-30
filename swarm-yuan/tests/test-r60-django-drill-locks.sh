@@ -94,9 +94,9 @@ else
   bad "L9 inventory-dimensions 缺 Django 形态（A6 回归）"
 fi
 
-# --- L10 A8 makemigrations --check 真接线（R61 补缺：提示≠实跑）---
-if grep -q "makemigrations --check --dry-run" assets/framework-gates/django.sh && grep -q "R60-A8 接线" assets/framework-gates/django.sh; then
-  ok "L10 A8 迁移增量判别已实跑接线"
+# --- L10 A8 makemigrations --check 真整合（R61 补缺：提示≠实跑；锚词随 R78 黑话替换联改）---
+if grep -q "makemigrations --check --dry-run" assets/framework-gates/django.sh && grep -q "R60-A8 整合" assets/framework-gates/django.sh; then
+  ok "L10 A8 迁移增量判别已实跑整合"
 else
   bad "L10 django.sh 退回只提示不实跑（A8 回归）"
 fi

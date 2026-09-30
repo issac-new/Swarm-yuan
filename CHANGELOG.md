@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [v2.41.1] - 2026-09-30
+
+> R78 黑话统一清剿轮（用户指令：R77 边缘发现统一修复）：r68 禁用词执法面扩容到随发资产面（assets/）——目标技能侧用户直接可见的模板/门禁脚本/conf/ontology/hooks 此前漏在执法面外，42 处黑话按术语词典标准词替换（接线→整合、随发→随技能分发、空转→不生效、假绿→假阳性通过、零占位符→无占位符、失锚→校验失效、三件套→按语境分译）。轮次台账：`docs/research/R78-jargon-outreach.md`。
+
+### Fixed
+- **42 处精确语境替换（python 逐条登记 old→new 非全局盲替）**：spec-template.md"随技能分发"（R60 遗留，R77 复盘边缘发现）+ generate-skill/install 垫片头注 + precheck.conf/arch.conf/compliance.conf"整合" + state-machine/gates-strict/gates-warn/precheck/memory-writeback/trace-log/loop-hook 脚本注释与输出文本 + ontology 两档 + framework-gates（django/kafka）。含 3 处门禁 warn/echo 运行时输出文本（用户直接可见）。
+- **豁免边界成文**（r68 测试头注+台账）：assets/facts.conf=数字登记账本（历史成因链原文，等同 CHANGELOG 历史条目）；scripts/ 生成器侧（维护者面不分发，r68 既有边界）；tests/CHANGELOG/docs 历史档案。
+
+### Changed
+- **test-r68-jargon-free 执法面扩容**：新增 assets/ 递归扫描（排除 facts.conf），禁用词在随发资产面回潮即红；机器锚五锚不动（实测全绿）。
+
 ## [v2.41.0] - 2026-09-30
 
 > R77 吸收判据制度化轮（用户指令：记住 R76 教训，全面复盘历史吸收并修正）：46 档消费证据逐档核查——**无一档需回退**（历史吸收各有真实消费形态：机制代码化/分发行+任务分派/门禁依据/--industry 加载/G14 存在锁/维护者参考/认证资产），R76 是唯一无消费设计例外，根因=吸收判据从未成文。本轮将判据制度化为决策 46，并把文章方法中过判据的三条以"技术选型三问"机制化进 spec §2。轮次台账：`docs/research/R77-absorption-criteria-round.md`。

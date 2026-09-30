@@ -69,7 +69,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # --verify-chain 模式（R45 semantica 溯源哈希链吸收，provenance/schemas.py checksum+
-# sequence_id+previous_checksum 三件套改写）：校验 decisions.jsonl 的链完整性。
+# sequence_id+previous_checksum 三字段改写）：校验 decisions.jsonl 的链完整性。
 #   ① 逐行重算 checksum（body 篡改可检出）
 #   ② previous_checksum 链（行删除后继失配可检出）
 #   ③ seq 连续（重编号/跳号可检出）
@@ -211,7 +211,7 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
       "$(_json_esc "$D_USER_ACTION")" "$(_json_esc "$D_OUTCOME")" "$(_json_esc "$D_RATIONALE")" "$(_json_esc "${ACTOR:-swarm-yuan/ai}")" \
       "$(_json_esc "$D_ALTERNATIVES")" "$(_json_esc "$D_MISSING_CONTEXT")" "$(_json_esc "$D_COST_IF_WRONG")" \
       "$(_json_esc "$D_REVERSIBILITY")" "$(_json_esc "$D_CONFIDENCE")" "$(_json_esc "$D_GOAL")" "$(_json_esc "$D_CLOSURE")" "$(_json_esc "$D_REPAIR_REVIEW")" "$_ref_trace_hash")
-    # R45（semantica 溯源哈希链吸收，provenance/schemas.py:102 三件套）：决策行追加
+    # R45（semantica 溯源哈希链吸收，provenance/schemas.py:102 三字段）：决策行追加
     # seq + previous_checksum + checksum——body 篡改/行删除（后继 prev 失配）/重编号（seq 断档）
     # 三类破坏均可由 --verify-chain 检出。checksum = cksum("seq|prev|body")，写读两侧同构。
     _dec_seq=1; _dec_prev=""

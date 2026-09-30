@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # generate-skill.sh（生成物垫片）— 回归发现#25（2026-08-27 R11 双宿主整合）
-# 生成物不随发生成器本体（三体纪律：install.sh 装生成器；本文件只是转发垫片）——
+# 生成物不随技能分发生成器本体（三体纪律：install.sh 装生成器；本文件只是转发垫片）——
 # settings.local.json 白名单（bash scripts/generate-skill.sh）与 generate-skill.bat
 # （Windows 包装器找同伴 .sh）原先都是死引用：生成物 scripts/ 从未有 generate-skill.sh。
 # 本垫片按 .swarm-yuan-version 的 source_repo 转发到真实生成器；自举场景（生成器仓自身

@@ -4,6 +4,10 @@
 # 目标"消除黑话，必须使用标准术语"的机器执法：禁用自造词在用户面零出现。
 # 禁用清单 = 已被标准术语替换的自造词；机器锚（文件名/变量名/占位词/【生成器侧】）不受此锁。
 # 新增文档写作时若引入禁用词，本测试即红——防复发。
+# R78 执法面扩容：assets/（随技能分发的模板/脚本/conf——目标技能侧用户直接可见）纳入扫描；
+# 豁免边界（历史账本/维护者面，改写=篡改登记史，不用标准词替换）：
+#   - assets/facts.conf —— 数字登记账本（各键值的历史成因链原文，等同 CHANGELOG 历史条目）
+#   - scripts/（生成器侧，不分发）、tests/（锁定义自身含禁用词表）、CHANGELOG.md/docs/（历史档案）
 set -u
 cd "$(dirname "${0}")/.." || exit 1
 pass=0; fail=0
@@ -19,6 +23,15 @@ if [[ -z "$hits" ]]; then
 else
   bad "禁用自造词残留（用标准术语）："
   printf '%s\n' "$hits"
+fi
+
+# R78：随发资产面（目标技能侧用户直接可见：模板/门禁脚本/conf/ontology/hooks）
+asset_hits=$(grep -rEn "$BANNED" assets/ 2>/dev/null | grep -v 'facts\.conf' | grep -v '\.bak' | head -10)
+if [[ -z "$asset_hits" ]]; then
+  ok "随发资产面（assets/，facts.conf 登记账本豁免）禁用自造词零出现"
+else
+  bad "随发资产面禁用自造词残留（按 docs/usage-manual.md 术语词典替换）："
+  printf '%s\n' "$asset_hits"
 fi
 
 # 机器锚必须在位（防误伤——改叙事不得动机器锚）
