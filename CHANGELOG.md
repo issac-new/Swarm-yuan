@@ -1,6 +1,16 @@
 # Changelog
 
 
+## [v2.40.1] - 2026-09-30
+
+> R76 吸收回退轮（用户裁决）：v2.40.0 将文章领域知识内容物化进 domain-knowledge/payment 两档，经复核属"拼凑/硬粘合"——吸收对象错置（抄文章内容而非学文章方法），多数内容块无目标技能消费面。全量回退知识入库内容；文章论证方法六条记入轮台账（过程记录，不入知识库）。轮次台账：`docs/research/R76-flow-orchestration-absorption.md`（已改写为回退教训档）。
+
+### Removed
+- **v2.40.0 全部知识入库内容回退至 v2.39.0 形态**：domain-knowledge"流程编排（长事务）"十维表、industry-profile-payment §3.5 流程编排与 §5-① 细化三查、tests/test-r76-flow-orchestration.sh（28 断言锁，锁对象已不存在）。错误根因与消费面复判详见台账 §二：吸收判据应为"哪个环节缺这个、谁在什么场景消费它"，两问答不上即不入库；执行纪律全绿（sweep 52/52/防复发锁/三面一致）只证明过程干净，不证明该做。
+
+### Changed
+- `docs/research/R76-flow-orchestration-absorption.md` 改写为回退教训档：失败过程、根因（内容层≠方法层）、回退清单、**文章论证方法六条提炼**（击穿划界/体感先行/场景化痛点×机理解/两份实物对比+缺席清单/高手反例=本质清单/相反决策同逻辑——记档供未来轮次参考，不物化进 references）、未来吸收轮三教训。
+
 ## [v2.40.0] - 2026-09-30
 
 > R76 支付 Flow 编排吸收轮：调研金墨数客《支付系统为什么必然走向 Flow 编排》（2026-09-21）并物化吸收——domain-knowledge 新增"流程编排（长事务）"领域速查（通用十维，随发档）+ industry-profile-payment 新增 §3.5 流程编排（pay-orchestrator 内核，支付特化与选型知识）。轮次台账：`docs/research/R76-flow-orchestration-absorption.md`。
