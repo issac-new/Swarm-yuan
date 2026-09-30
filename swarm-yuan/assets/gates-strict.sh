@@ -1169,7 +1169,7 @@ check_authz() {
 check_requirements() {
   echo "=== 需求质量检查（ISO/IEC/IEEE 29148：无 TBD / 唯一 ID / EARS）==="
   local found=0 hits l
-  # —— 0. OpenSpec CLI 接线（WP1.1）：若装了 openspec 且配置了 OPENSPEC_SPEC_DIR，
+  # —— 0. OpenSpec CLI 整合（WP1.1）：若装了 openspec 且配置了 OPENSPEC_SPEC_DIR，
   #     跑 `openspec validate --all --strict` 校验 delta spec 合法性；未装/未配置则降级（下方文档检查已覆盖）。
   #     语义：openspec validate 退出码不稳定（部分版本 failed 时仍 rc=0），故靠输出判断——
   #     输出含 "failed" 且 "passed" 项为 0 → spec 非法 → fail。独立于 SPEC_FILE，openspec 有自己的 spec 目录。
@@ -1746,7 +1746,7 @@ check_review() {
     echo "  gstack 扩展审查可用：/cso（安全 OWASP+STRIDE）/ /investigate（根因调试）/ /codex（跨模型第二意见）/ /benchmark（性能）"
   fi
 
-  # 附加：gsd-tools CLI 接线（WP1.3）：若装了 gsd-tools 且项目用了 gsd-core（有 .planning/ 或 .gsd/），
+  # 附加：gsd-tools CLI 整合（WP1.3）：若装了 gsd-tools 且项目用了 gsd-core（有 .planning/ 或 .gsd/），
   # 跑 `gsd-tools validate health` 检查项目一致性健康度。status!=healthy → warn（项目配置问题，非代码缺陷，不 fail）。
   # 未装/项目未用 gsd-core 时降级（本函数上方 ocr/手动清单已覆盖代码审查）。
   if has_gsd_tools; then

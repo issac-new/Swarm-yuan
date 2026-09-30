@@ -92,7 +92,7 @@ check_test() {
   # field-feedback 2026-08-26（反馈 3 补强）：0 用例检出——"测试通过"且输出明示 0 用例时
   # warn（空跑通过是逻辑错误的最弱兜底，不算真兜底）。各框架输出格式启发式匹配。
   # R25-PF3（2026-09-12 Java 执勤实证）：原正则只认 jest/pytest 风格——Maven/Gradle surefire
-  # "Tests run: 0"、Node TAP "# tests 0"、pytest "no tests ran" 三种形态漏检，零用例假绿
+  # "Tests run: 0"、Node TAP "# tests 0"、pytest "no tests ran" 三种形态漏检，零用例假阳性通过
   # 穿透门禁打出"✓ 测试通过"。补齐三种主流 runner 形态。
   if [[ "$_trc" -eq 0 ]]; then
     # R39-D2（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：cargo 多 suite 形态——
@@ -111,7 +111,7 @@ check_test() {
       fi
     # R44-D3（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：dotnet test 单行聚合形态——
     # xUnit/VSTest 各 assembly 打一行 "Passed!  - Failed: 0, Passed: 12, Skipped: 0, Total: 12"。
-    # 原通用正则对其零用例形态（"Total: 0"）无一条命中 → 零用例假绿静默 pass；多 target/
+    # 原通用正则对其零用例形态（"Total: 0"）无一条命中 → 零用例假阳性通过静默 pass；多 target/
     # 多 assembly 时 Passed 数也不进汇总口径。dotnet 分支：聚合全部行的 Passed 求和，总和 0
     # 才 warn（失败行 Failed! 时 dotnet 退出码非 0，已走上方 fail 分支，与 cargo 分支同哲学）。
     elif printf '%s' "$_tout" | grep -qE '^[A-Za-z]+![[:space:]]*-[[:space:]]*Failed:[[:space:]]*[0-9]+,[[:space:]]*Passed:'; then
@@ -794,7 +794,7 @@ check_impact() {
 
   # ---- 3. 变更影响分析：优先用 gitnexus impact/detect_changes，降级 grep ----
   # P0-5：消费前确保已构建（gitnexus_ensure_indexed/graphify_ensure_built），未构建则触发构建提示/降级
-  # 回归发现#22（2026-08-27 深度接线抽检）：graphify god-nodes 原挂在 gitnexus 分支的 elif 上——
+  # 回归发现#22（2026-08-27 深度整合抽检）：graphify god-nodes 原挂在 gitnexus 分支的 elif 上——
   # 两工具同装时 graphify 永不执行，与 SKILL.md「代码图谱平权选型可并用」声称不符。两者检测面
   # 不同（gitnexus=受影响进程 / graphify=God Node 枢纽），正交应并行；grep 降级仍兜底在最后。
   if has_gitnexus && gitnexus_ensure_indexed; then
@@ -1516,7 +1516,7 @@ check_sast_deep() {
     # codex-security AI 约束推理（source→sink 数据流 + 攻击路径推演，非 SAST 模式匹配）
     # 需求：Node.js 22.13+ / 24.x / 26.x + Python 3.10+ + OPENAI_API_KEY 或 CODEX_API_KEY
     # 开源 Apache-2.0，API 按 token 计费（--max-cost 可设上限），Trusted Access 非付费门槛
-    # 详见 references/codex-security-methodology.md §二 CLI 接线方式
+    # 详见 references/codex-security-methodology.md §二 CLI 整合方式
     if command -v npx >/dev/null 2>&1 && [[ -n "${OPENAI_API_KEY:-${CODEX_API_KEY:-}}" ]]; then
       bin="codex-security"
     else
@@ -1538,8 +1538,8 @@ check_sast_deep() {
       found=1
     fi
   elif [[ "$bin" == "codex-security" ]]; then
-    # codex-security 语义层（source→sink 数据流 + 攻击路径推演 + 威胁模型 + scan contract 三件套）
-    # 详见 references/codex-security-methodology.md §二 CLI 接线方式
+    # codex-security 语义层（source→sink 数据流 + 攻击路径推演 + 威胁模型 + scan contract 等能力）
+    # 详见 references/codex-security-methodology.md §二 CLI 整合方式
     echo "  ⓘ SAST 载体：codex-security（语义层：source→sink 数据流 + 攻击路径推演）"
     trace_tool "sast-deep" "codex-security"
     local _cs_scan_root; _cs_scan_root="$(mktemp -d "${TMPDIR:-/tmp}/codex-security.XXXXXX")"
@@ -1817,7 +1817,7 @@ check_framework() {
   for fw in ${_run_list[@]+"${_run_list[@]}"}; do
     fn="_fw_$(echo "$fw" | tr '-' '_')_check"
     if declare -f "$fn" >/dev/null 2>&1; then
-      # F2（dsh/cordis 吸收·满足判定显式化）：requires_conf 变量全空 → 门禁空转。
+      # F2（dsh/cordis 吸收·满足判定显式化）：requires_conf 变量全空 → 门禁不生效。
       # requires_conf 声明随 --inject-frameworks 保留在标记区块头部，从本脚本自身 grep。
       # 对应论文 Def 25 的满足判定 σ ⊧ d 显式化——PENDING 态给可执行修复指令而非静默。
       local _rc_line _rc_vars _rv _all_empty=1
@@ -1828,7 +1828,7 @@ check_framework() {
           # 未声明或空数组/空串都算未配置（启动兜底循环已把未声明的补成空数组）
           if eval "[[ -n \"\${${_rv}[@]:-}\" ]]"; then _all_empty=0; break; fi
         done
-        [[ "$_all_empty" -eq 1 ]] && warn "框架 '$fw' 的 requires_conf 全空（${_rc_vars}）——门禁将空转跳过。请在 precheck.arch.conf 配置，或跑 bash generate-skill.sh --inject-frameworks <skill_dir> 重同步占位"
+        [[ "$_all_empty" -eq 1 ]] && warn "框架 '$fw' 的 requires_conf 全空（${_rc_vars}）——门禁将不生效跳过。请在 precheck.arch.conf 配置，或跑 bash generate-skill.sh --inject-frameworks <skill_dir> 重同步占位"
       fi
       # || true 兜底：单个框架函数内若有命令返回非 0（如 grep 无匹配），
       # set -e 会触发整个 check_framework 退出，导致后续框架无法执行。

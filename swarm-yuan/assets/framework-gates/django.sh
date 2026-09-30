@@ -258,7 +258,7 @@ ${csrf_bad}"
   elif [[ ${#migarr[@]} -eq 0 ]]; then
     warn "fw_django_migration_drift: 检出 ${model_cnt} 个 Model 文件但 0 迁移文件（漏 makemigrations：表结构与代码漂移，运行期 OperationalError；跑 python manage.py makemigrations --check 验证）"
   else
-    # R60-A8 接线：增量漂移真判——实跑 makemigrations --check --dry-run（不产文件）。
+    # R60-A8 整合：增量漂移真判——实跑 makemigrations --check --dry-run（不产文件）。
     # manage.py 形态可实跑；可复用 app 形态（无 manage.py）依赖 DJANGO_SETTINGS_MODULE，
     # 不实跑仅诚实提示（fail-open，同框架门禁降级口径）。
     local _mig_root="${PROJECT_DIR:-.}" _mig_out=""

@@ -19,7 +19,7 @@
 
 set -euo pipefail
 
-# ===== 回归发现#20（2026-08-27 第八轮回归）：conf 接线断裂修复 =====
+# ===== 回归发现#20（2026-08-27 第八轮回归）：conf 整合断裂修复 =====
 # 守卫错误提示一直教用户"可在 precheck.conf 配 PROPOSAL_FILE/TASKS_FILE/SPEC_*"，但本脚本
 # 从未读取该 conf——用户照提示配置不生效（断裂指引）。对齐 fail-gate-hook 的 grep 读取惯例
 # （不 source、无副作用、路径含 # 与空格的边界不放宽）；调用方 export 的环境变量优先，
@@ -63,7 +63,7 @@ sanitize_input() {
   printf '%s' "$1" | tr -cd 'a-zA-Z0-9._-'
 }
 
-# CLI 接线层运行时守卫（WP1.2）：comet CLI 真实接线
+# CLI 整合层运行时守卫（WP1.2）：comet CLI 真实整合
 # comet 提供 `comet guard`（检查 Classic workflow phase guard）/ `comet state`（读写状态）。
 # 项目用 comet 时（有 .comet/ 或 active change），guard_phase 调 comet guard 做状态一致性补充校验；
 # 未装/项目未用 comet 时降级到本脚本自带的文件检查 guard_phase 逻辑。
@@ -165,14 +165,14 @@ guard_phase() {
       # WP-C1：实装产出物检查（替换原占位 pass）。检查 open 阶段产出 proposal.md 存在。
       # 可配 PROPOSAL_FILE（默认 $PROJECT_DIR/.swarm-yuan/proposal.md 或 $SPEC_FILE）。
       local proposal="${PROPOSAL_FILE:-}"
-      [[ -z "$proposal" ]] && proposal="$(_sm_conf_val PROPOSAL_FILE)"   # #20：conf 接线
+      [[ -z "$proposal" ]] && proposal="$(_sm_conf_val PROPOSAL_FILE)"   # #20：conf 整合
       [[ -z "$proposal" ]] && proposal="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/proposal.md"
       if [[ -f "$proposal" ]]; then
         pass "design 准入: open 阶段产出存在（${proposal}）"
       else
         # 降级：未配置 PROPOSAL_FILE 且默认路径无文件时，检查 SPEC_FILE（项目可能用 spec.md 替代 proposal）
         local spec_f="${SPEC_FILE:-}"
-        [[ -z "$spec_f" ]] && spec_f="$(_sm_conf_val SPEC_FILE)"           # #20：conf 接线
+        [[ -z "$spec_f" ]] && spec_f="$(_sm_conf_val SPEC_FILE)"           # #20：conf 整合
         if [[ -n "$spec_f" && -f "$spec_f" ]]; then
           pass "design 准入: spec 存在（${spec_f}，作为 proposal 等价物）"
         else
@@ -203,7 +203,7 @@ guard_phase() {
       [[ -z "$iso" ]] && { fail "isolation 未设置"; ok=0; }
       [[ $ok -eq 1 ]] && pass "build 准入: build_mode=$bm, isolation=$iso"
       local _sm_sr="${SPEC_REQUIRED:-}"
-      [[ -z "$_sm_sr" ]] && _sm_sr="$(_sm_conf_val SPEC_REQUIRED)"        # #20：conf 接线
+      [[ -z "$_sm_sr" ]] && _sm_sr="$(_sm_conf_val SPEC_REQUIRED)"        # #20：conf 整合
       if [[ "$_sm_sr" == "1" ]]; then
         local _sg="${SPEC_GLOB:-docs/specs/*.md}" _sf _approved=""
         [[ "$_sg" == "docs/specs/*.md" ]] && { local _sgc; _sgc="$(_sm_conf_val SPEC_GLOB)"; [[ -n "$_sgc" ]] && _sg="$_sgc"; }
@@ -227,7 +227,7 @@ guard_phase() {
       # WP-C1：实装产出物检查（替换原占位 pass）。检查 tasks.md 全部 - [x]（所有任务完成）。
       # 可配 TASKS_FILE（默认 $PROJECT_DIR/.swarm-yuan/tasks.md）。未配置/不存在时降级 skip（不阻塞）。
       local tasks_f="${TASKS_FILE:-}"
-      [[ -z "$tasks_f" ]] && tasks_f="$(_sm_conf_val TASKS_FILE)"         # #20：conf 接线
+      [[ -z "$tasks_f" ]] && tasks_f="$(_sm_conf_val TASKS_FILE)"         # #20：conf 整合
       [[ -z "$tasks_f" ]] && tasks_f="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/tasks.md"
       if [[ -f "$tasks_f" ]]; then
         local unchecked
@@ -300,7 +300,7 @@ guard_phase() {
       fail "未知阶段: $phase"; ok=0
       ;;
   esac
-  # comet CLI 接线（WP1.2）：项目用 comet 时，跑 `comet guard` 做状态一致性补充校验。
+  # comet CLI 整合（WP1.2）：项目用 comet 时，跑 `comet guard` 做状态一致性补充校验。
   # comet guard 无 active change 时 rc=0 不报错；有 change 时校验 phase guard 一致性，失败 → fail。
   if has_comet; then
     local comet_root="${PROJECT_DIR:-$(pwd)}"

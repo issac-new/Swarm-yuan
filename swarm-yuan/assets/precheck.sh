@@ -514,7 +514,7 @@ STRICT_SKIP=${STRICT_SKIP:-0}
 # ===== WP-H 状态门：所属 skill 为 draft（骨架填充未完成）时禁用全量门禁集 =====
 # draft = 生成器产出的未填充骨架（SKILL.md frontmatter `status: draft`）。
 # 半填充产物跑全量门禁会给"接近可用"的错觉——禁用 --all-full/--compliance-suite；
-# 单门禁与 --all 不受影响（填充中段仍需局部自检）。--mark-active 核验零占位符后解锁。
+# 单门禁与 --all 不受影响（填充中段仍需局部自检）。--mark-active 核验无占位符后解锁。
 # 位置：须在 cd "$PROJECT_DIR" 之前（draft 骨架 conf 含占位路径，cd 会先失败掩盖本提示）。
 _skill_md="${_CONF_DIR}/../SKILL.md"
 if [[ -f "$_skill_md" ]] && grep -q '^status: draft' "$_skill_md" 2>/dev/null; then
@@ -684,14 +684,14 @@ fi
 
 # ===== precheck 启动挂 upstream-baseline（advisory warn）=====
 # 原为 advisory-only（不在任何执行序列，须显式 --upstream-baseline 才跑——五轮病理的"僵尸门禁"）。
-# 接线语义：每次 precheck 启动时顺带跑一次（fail-open warn，README.md 中 upstream-baseline 段不存在
+# 整合语义：每次 precheck 启动时顺带跑一次（fail-open warn，README.md 中 upstream-baseline 段不存在
 # 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 教义。
 # 段头降级（impl-conformance）：启动期输出的 "=== " 段头改写为 "··· "——"=== X ===" 命名空间
 # 只属于门禁执行段（cli-ab CORE10_SEQUENCE 断言按 '^=== ' 提取执行序列，启动 advisory
 # 不得混入；显式 --upstream-baseline 单跑时仍保留原段头）。
 # 位置约束（audit-claims-reality 修复）：必须在上方 source 守卫之后——check_upstream_baseline
 # 定义于 gates-advisory.sh；此前置于 source 前（452 行附近），函数未定义 exit 127 被 || true
-# 吞掉，接线从未真实执行（僵尸复生失败）。移回 source 后才是真正接线。
+# 吞掉，整合从未真实执行（僵尸复生失败）。移回 source 后才是真正整合。
 check_upstream_baseline 2>/dev/null | sed 's/^=== /··· /' || true
 
 # Usage 文本由 GATE_FLAGS 生成
@@ -1322,7 +1322,7 @@ has_gitnexus() { command -v gitnexus >/dev/null 2>&1; }
 has_graphify() { command -v graphify >/dev/null 2>&1; }
 has_ocr() { command -v ocr >/dev/null 2>&1; }
 has_claude_mem() { command -v claude-mem >/dev/null 2>&1; }
-# CLI 接线层运行时守卫（WP1：OpenSpec/comet/gsd-core 半接线→真接线）
+# CLI 整合层运行时守卫（WP1：OpenSpec/comet/gsd-core 半整合→真整合）
 has_openspec() { command -v openspec >/dev/null 2>&1; }
 has_comet() { command -v comet >/dev/null 2>&1; }
 has_gsd_tools() { command -v gsd-tools >/dev/null 2>&1; }
@@ -1358,7 +1358,7 @@ gitnexus_indexed() {
 # graphify 已构建图谱？（检查 graphify-out/graph.json）
 graphify_built() { [[ -f "$PROJECT_DIR/graphify-out/graph.json" ]]; }
 
-# ===== P0-5：4 深度接线全量触发——构建触发助手（消费前确保已构建）=====
+# ===== P0-5：4 深度整合全量触发——构建触发助手（消费前确保已构建）=====
 # 策略：构建是重型操作（分钟级），门禁不自动跑构建。采用「检测未构建 → 提示用户构建」fail-closed 或 opt-in 构建。
 # 消费门禁（check_impact/check_layer/check_link_depth）在 has_* + indexed/built 双守卫后调用：
 #   - 已构建 → 消费（detect_changes/query/god-nodes 等真实调用）
@@ -1827,7 +1827,7 @@ if [[ $FAIL -eq 0 ]]; then
   fi
   # 五轮复盘：draft 期"✓ 通过"语义诚实化。
   # draft = 骨架未填充，SCAN_DIRS/WRITABLE_DIRS 等语义型变量仍是 # TODO:model 空值，
-  # 依赖它们的门禁（--sensitive 敏感信息扫描 / --scope 范围检查 / --stable-diff）实际在空转。
+  # 依赖它们的门禁（--sensitive 敏感信息扫描 / --scope 范围检查 / --stable-diff）实际不生效。
   # 此时输出无保留的"✓ 门禁检查通过"会让用户以为门禁背书了代码质量——技术上没说错但会被误读。
   # 追加披露行撤回背书（不改既有"✓"行，保 cli-ab 逐字节等价；不改 rc，保 Step ⑥ 生成流程不阻断），
   # 与上方 "⊘ 跳过 N 个门禁" 披露同模式（绿≠合规的既有诚实化传统）。
@@ -1835,7 +1835,7 @@ if [[ $FAIL -eq 0 ]]; then
     echo "⚠ 注意：所属 skill 仍为 draft（骨架填充未完成）——语义型 conf 变量（SCAN_DIRS/WRITABLE_DIRS/READONLY_DIRS 等）"
     echo "  可能仍是 # TODO:model 空值，依赖它们的门禁（敏感信息扫描/范围检查/稳定层保护）未实际执行。"
     echo "  上方「通过」仅代表已配置门禁通过，不等于代码质量已被完整校验。"
-    echo "  填充完成后运行: bash generate-skill.sh --mark-active <skill_dir>（零占位符核验后解锁全量门禁）"
+    echo "  填充完成后运行: bash generate-skill.sh --mark-active <skill_dir>（无占位符核验后解锁全量门禁）"
   fi
 else
   echo "✗ 门禁检查未通过，请修复上述问题"

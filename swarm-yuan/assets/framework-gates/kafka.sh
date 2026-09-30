@@ -126,7 +126,7 @@ ${idem_bad}"
       done
     fi
     if [[ "$conc_hit" -eq 0 ]]; then
-      warn "fw_kafka_consumer_le_partitions: @KafkaListener 未显式配置 concurrency（人工核对：实例数×concurrency ≤ 分区数，超额消费者永远空转）"
+      warn "fw_kafka_consumer_le_partitions: @KafkaListener 未显式配置 concurrency（人工核对：实例数×concurrency ≤ 分区数，超额消费者永远不生效）"
     else
       pass "fw_kafka_consumer_le_partitions: 已显式配置 concurrency"
     fi

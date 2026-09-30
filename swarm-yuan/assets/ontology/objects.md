@@ -37,7 +37,7 @@
 
 ### 类依赖持续体（generically dependent continuant——可多承载拷贝）
 
-| 类型 ID | 名称 | 拷贝实例（bearer 可多个） | 失锚检测 |
+| 类型 ID | 名称 | 拷贝实例（bearer 可多个） | 校验失效检测 |
 |---------|------|--------------------------|----------|
 | `Methodology` | 方法论知识 | 生成器 references/ 的每份拷贝 | `.swarm-yuan-version` 版本戳 + `--upgrade` 机制 |
 | `FrameworkRule` | 框架规则 | 每个激活框架的 md+sh 对 | `--inject-frameworks` 区块 sha + framework-evidence 台账 |

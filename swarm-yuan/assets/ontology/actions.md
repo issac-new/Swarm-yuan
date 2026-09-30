@@ -10,7 +10,7 @@
 | 动作 ID | 变换什么状态 | 治理载体（准入条件） | 留痕载体 |
 |---------|-------------|---------------------|----------|
 | `generate_skill` | 无 → 新 Skill（draft 态） | 生成器命令 + profile 档位 | trace.jsonl 生成节点行 |
-| `mark_active` | Skill.status: draft → active | 三关状态门（零占位符 + path-check HALLUCINATION=0 + audit-closure advisory） | SKILL.md status 字段翻转 + 决策留痕 |
+| `mark_active` | Skill.status: draft → active | 三关状态门（无占位符 + path-check HALLUCINATION=0 + audit-closure advisory） | SKILL.md status 字段翻转 + 决策留痕 |
 | `update_map_entry` | 地图行内容（replace/delete/append） | inventory-update 的 §4/§6/§9 域限定 + 五列格式校验 + 多义命中拒绝 | decisions.jsonl（phase=self-growth） |
 | `write_fingerprint` | 无/旧 → 新 Fingerprint | last-good 红线（骤降 >50% 拒绝，需 --force 显式覆盖 + 决策留痕） | fingerprint 文件 + 决策行 |
 | `run_gates` | 无 → GateExecution 记录 | precheck 执行序列（--all/--all-full/--compliance-suite） | gate-runs.jsonl 行 |
