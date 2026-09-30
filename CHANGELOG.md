@@ -1,12 +1,19 @@
 # Changelog
 
 
-## [v2.42.0] - 2026-10-01
+## [v2.43.0] - 2026-10-01
 
-> R79 运行时刷新轮（例行轮，并行会话 2026-09-30 收口）+ R80 全量回归轮（2026-10-01，同版聚合）：R79 完成 4 移动物化——**codex rust-v0.159.2**（2 patch，Windows 控制台窗抑制 #49385+GPT-6.1 Sol Bedrock catalogs #49342，release 分支 backport 线）+ **claude-code npm 2.1.285**（1 patch，本版恢复 changelog）+ **graphify v0.9.72**（20 提交）+ **gstack tip +2 → 96764e8**（v1.91.8.0 测试真实性大扫除+v1.91.9.0 test value bar）；吸收三条过决策 46 两问落 review-methodology R79 段；**dsh 外部对照甄别**（ncwk/upstream checkout 21638c5631 落后本仓 293 提交，ls-remote 直证 GitHub master=639ed01539 零移动，防误降级记档）；codex-security npm 断流异常持续记档。R80 为 Flask+SQLAlchemy+Vue3 monorepo 典型场景全量回归执勤（三项典型研发工作：标签功能九节点全流程+spec-first 三态实测 / archived 查询参数语义 TDD 修复 / routes 拆包指纹自成长链），识别 1 项生成器缺陷全修+变异锁。轮次台账：`docs/research/R79-runtime-refresh.md` + `docs/research/R80-full-regression.md`。
+> R80 全量回归轮（Flask+SQLAlchemy+Vue3 monorepo 典型场景执勤，v2.42.0 tag 撞号顺延——并行会话已将 v2.42.0 钉在 R79 merge，本版顺延先例第二次实证）：真实可跑演练项目（Flask 3.14+Flask-SQLAlchemy+SQLite 后端 + Vue 3.5+Vite 6 前端同仓，pytest 7→13 用例全绿+vite build 过）执勤三项典型研发工作——标签功能九节点全流程（spec-first 三态实测：无 spec deny+双审计落痕/合格放行/占位符继续拦；门禁真执法 §5.5+§19+拼装勾选三段拦截）+ archived 查询参数语义 TDD 修复 + routes 拆包指纹自成长链（--diff 感知 scope 精准定位→清单同步→核验→落新基线全通）。识别 1 项生成器缺陷全修+变异锁。轮次台账：`docs/research/R80-full-regression.md`。
 
 ### Fixed
-- **R80-D1（P1，R72-D3 同族漏修）：conf-render monorepo poly 分支 Python 段硬编码裸 python3**——R72-D3 的 venv 三级嗅探只落根级 Python 分支，前后端同仓形态（<dir>/requirements.txt + 另一 node 子目录）走 poly 分支漏嗅探：依赖装在 <dir>/.venv 时生成的 TEST_CMD 初值在无全局包机器上 check_test 必炸 ModuleNotFoundError（r80-drill-notes-hub 实测：系统 python3 连 flask_sqlalchemy 都 import 不了，AUTO:detected 标签整条假）。修：poly Python 段同款三级嗅探（<dir>/.venv → <dir>/venv → python3）；同族清剿 uv/poetry/根级分支全部环境管理闭环无第四形态；变异锁 test-r80-full-regression.sh 6 断言（行为锁 2+源码锁 2，变异验证 stash 修复后 3 红）+ 真机复证。
+- **R80-D1（P1，R72-D3 同族漏修）：conf-render monorepo poly 分支 Python 段硬编码裸 python3**——R72-D3 的 venv 三级嗅探只落根级 Python 分支，前后端同仓形态（<dir>/requirements.txt + 另一 node 子目录）走 poly 分支漏嗅探：依赖装在 <dir>/.venv 时生成的 TEST_CMD 初值在无全局包机器上 check_test 必炸 ModuleNotFoundError（r80-drill-notes-hub 实测：系统 python3 连 flask_sqlalchemy 都 import 不了，AUTO:detected 标签整条假）。修：poly Python 段同款三级嗅探（<dir>/.venv → <dir>/venv → python3，相对路径与 (cd $_d && ...) 组装语义对齐）；同族清剿 uv/poetry/根级分支全部环境管理闭环无第四形态；变异锁 test-r80-full-regression.sh 6 断言（行为锁 2+源码锁 2，变异验证 stash 修复后 3 红 EXIT=1）+ 真机复证渲染 .venv 形态。
+
+### Chore
+- 收口序列：全量 sweep 53/0 全绿（52 基线+R80 新锁）；部署副本 rsync 对齐；v2.42.0 GitHub release 缺失按 R70 先例连带补发。
+
+## [v2.42.0] - 2026-09-30
+
+> R79 运行时刷新轮（例行轮）：4 移动物化——**codex rust-v0.159.2**（2 patch，Windows 控制台窗抑制 #49385+GPT-6.1 Sol Bedrock catalogs #49342，release 分支 backport 线）+ **claude-code npm 2.1.285**（1 patch，本版恢复 changelog）+ **graphify v0.9.72**（20 提交）+ **gstack tip +2 → 96764e8**（v1.91.8.0 测试真实性大扫除+v1.91.9.0 test value bar）；吸收三条过决策 46 两问落 review-methodology R79 段；**dsh 外部对照甄别**（ncwk/upstream checkout 21638c5631 落后本仓 293 提交，ls-remote 直证 GitHub master=639ed01539 零移动，防误降级记档）；codex-security npm 断流异常持续记档。轮次台账：`docs/research/R79-runtime-refresh.md`。
 
 ### Changed
 - 运行时台账 19 行全覆盖：codex/claude-code/graphify 表行升级 + gstack tip 行前移；登记表 `docs/upstream-baseline.md` 4 行回写 + 顶部 R79 口径注（每轮刷新必回写纪律延续）。
