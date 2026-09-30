@@ -144,10 +144,23 @@ elif [[ -n "${_mo_dirs}" ]]; then
     elif [[ -f "$PROJ/$_d/go.mod" ]]; then
       _b="go build ./..."; _t="go test ./..."; _tc=1
     elif [[ -f "$PROJ/$_d/requirements.txt" || -f "$PROJ/$_d/pyproject.toml" ]]; then
+      # R80-D1（2026-10-01 Flask+Vue3 monorepo 执勤实证 r80-drill-notes-hub）：poly 分支 Python 段
+      # 此前硬编码裸 python3——R72-D3 的 venv 三级嗅探只落了根级 Python 分支（上方同函数），
+      # 前后端同仓形态（<dir>/requirements.txt + 另一 node 子目录）走 poly 分支漏嗅探，依赖装在
+      # <dir>/.venv 时生成的 TEST_CMD 在无全局包机器上 check_test 必炸 ModuleNotFoundError
+      # （实测：系统 python3 连 flask_sqlalchemy 都 import 不了，AUTO:detected 初值整条假）。
+      # 修：子目录内同名三级嗅探——相对路径形态（.venv/bin/python）配合测试段已有的
+      # `(cd $_d && ...)` 组装（下方 :158）语义成立，与门禁侧 cd PROJECT_DIR→eval 同构。
+      _py="python3"
+      if [[ -x "$PROJ/$_d/.venv/bin/python" ]]; then
+        _py=".venv/bin/python"
+      elif [[ -x "$PROJ/$_d/venv/bin/python" ]]; then
+        _py="venv/bin/python"
+      fi
       if grep -qi 'pytest' "$PROJ/$_d/requirements.txt" "$PROJ/$_d/pyproject.toml" 2>/dev/null; then
-        _t="python3 -m pytest"
+        _t="$_py -m pytest"
       else
-        _t="python3 -m unittest discover -s tests"
+        _t="$_py -m unittest discover -s tests"
       fi
       _tc=1; _b=""
     elif [[ -f "$PROJ/$_d/Cargo.toml" ]]; then
