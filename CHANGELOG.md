@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [v2.40.0] - 2026-09-30
+
+> R76 支付 Flow 编排吸收轮：调研金墨数客《支付系统为什么必然走向 Flow 编排》（2026-09-21）并物化吸收——domain-knowledge 新增"流程编排（长事务）"领域速查（通用十维，随发档）+ industry-profile-payment 新增 §3.5 流程编排（pay-orchestrator 内核，支付特化与选型知识）。轮次台账：`docs/research/R76-flow-orchestration-absorption.md`。
+
+### Added
+- **`references/domain-knowledge.md` 流程编排（长事务）节**（`--domain` 门禁消费面）：十维验证表——编排形态五级链（硬编码顺序调用→DB 状态字段→状态机→流程引擎→持久执行，形态与业务规模错配=事故源）/时间缝隙（长链路复杂度不在步骤多，而在步骤间不可控时间缝隙）/逻辑割裂（同一业务流转规则散落主流程/回调/定时任务三文件=反模式）/幂等（超时=未知状态最危险）/补偿（Saga 栈：每成功一步注册回滚、失败逆序执行；补偿多处重复手写=资损隐患）/悬空状态（UNKNOWN 态须有兜底出口）/执行历史（每步入参出参耗时异常可查）/断点恢复（上下文持久化+事件唤醒续跑）/无引擎等效（Stripe atomic phases：原子阶段+恢复点+同事务落库 outbox+幂等键四件手工补齐）/重放确定性（Workflow as Code 红线：副作用入 Activity、禁本地时间随机数、禁本地多线程）。
+- **`references/industry-profile-payment.md` §3.5 流程编排**（`--industry payment` 按需加载）：跨境 B2B 出款 12 步链路体感（4 步跨天异步等待+3 步可能挂起等人工——引擎本质是管理时间缝隙）/无引擎反模式四特征（逻辑割裂/补偿靠记忆/悬空状态/无执行历史，排查 20-40 分钟依赖经验 vs 看板 10-30 秒新人可查）/Stripe atomic phases 等效方案/三大阵营九维度选型表（BPMN 引擎/微服务编排/轻量 SDK）+一句话建议/Coinbase 弃自研 Saga 选 Temporal 与 Netflix Maestro 反向选自研的相反决策同逻辑（选型先回答"瓶颈在哪"）/Workflow as Code 开发纪律（确定性三红线/Activity 绝对幂等/补偿栈引擎保证无部分回滚/Worker 版本路由/payload 只传引用+敏感数据 Worker 端加密+按业务线拆 Task Queue）/自研轻量 Flow 六模块完备性清单/探查关注点（生成流程 ①.5 消费：割裂信号识别须附代码证据）/门禁联动（§5-① 幂等人工核对细化三查：幂等键设计/补偿单一来源/悬空状态出口）。框架版本事实不写死（以官方 releases 为准）；流程引擎类依赖（temporal/liteflow/camunda 等）不进 `ACTIVE_FRAMEWORKS_HINT`——无规则集的框架写进 HINT=依赖桶永不命中=死信号（R75-F1 同族防御，规则集补建后可解除）。
+- **`tests/test-r76-flow-orchestration.sh`（28 断言防复发锁）**：L1/L1b/L2 DK 节与五级链+十维锚×6 + L3/L3b PAY §3.5 与支付特化锚×6 + L4/L4b/L4c Coinbase/Netflix/outbox 案例锚 + L5/L5b 交叉引用双向锁（DK↔PAY 防单边删除留悬空指针）+ L6 吸收来源 URL 可溯源锁 + L7 §5-① 三查细化锁 + L8 HINT 死信号条件锁（流程引擎规则集不存在时 HINT 提及即红；未来建集自动转向合规判定）+ L9 禁用词×5（r68 清单子集）。
+
+### Chore
+- 预算零登记：UNIVERSAL_FILES references 实测 494859B < 预算 495616B（domain-knowledge +2715B 落在 R75 登记后的余量内，本轮免登记）；SKILL.md 四锚零变动（payment 档不在 UNIVERSAL_FILES，DK 内容扩充不改变路由结构与文档口径）。
+
 ## [v2.39.0] - 2026-09-30
 
 > R75 全量回归轮（NestJS 典型场景执勤）：为真实可跑的 NestJS 11 + TypeORM 0.3 + better-sqlite3 + jest 项目（r75-drill-tasks-api，9 tests）生成目标技能并执勤三项典型研发工作（分派功能九节点全流程 v0.2.0 / done 锁定对称性修复 v0.2.1 / statistics 模块结构变更自成长实测 v0.3.0），识别 9 项缺陷全修（执勤 5 + 收口验收 4）。核心是 **detect-frameworks 死信号（"规则集在册≠链路可达"第九现）**——nestjs/antd 8 条门禁自建表以来从未被注入过任何项目。轮次编号注：执勤由并行会话 2026-09-29 完成（原拟 R73），与已发布的 R73/R74 运行时刷新轮撞号，收口时顺延 R75。轮次台账：`docs/research/R75-full-regression.md`。
