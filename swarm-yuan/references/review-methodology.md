@@ -499,3 +499,12 @@ ocr 新增 LLM provider 支持：
 - **规则生成物不得覆写基线**（ocr 1.12.11 #1056）：allowlist 规则可经 Jinja 模板批量生成，模板展开结果与上游规则冲突时**上游基线优先**（「preserve upstream rules after Jinja conflict resolution」）——配置合并语义：生成/派生层与人工基线冲突，输的一律是生成层；与本仓「投影不得改写真身」I4 不变量同构。
 - **diff 基线显式化**（ocr 1.12.11 #1544）：IDEA 插件列举 merge commit 文件改为对 **first parent**——比较基线必须显式钉定（与 gsd-core #5008 merge-base 钉定同族），否则「改了什么」本身失真。
 - **发布面三项门禁再会师**（gstack tip v1.91.7.0）：surface-aware 探索式 QA 门禁（QA setup 权威在主流程集成后保留——委托权威不被集成吞没）+ 发布前文档检查门禁（原子写入+归因）+ **发布点 fail-closed**。QA 证据、文档门禁、发布 fail-closed 三项在第三方 harness 与本仓交付门禁族同向收敛。
+
+## 测试真实性会师与派生制品发布序（R79 核，2026-09-30）
+
+> 证据锚点 `docs/research/R79-runtime-refresh.md`。吸收判据两问（决策 46）逐条过：落点本档=分发行，审查执勤触达。
+
+- **测试真实性三连**（gstack v1.91.8.0 #2994）：① 行为测试不得伪造产品内部——inline mirror server 换成 ephemeral 端口跑真 `serve()`、源码 grep 断言换成行为断言（/internal/grant+revoke 真 token 矩阵）；② 无消费方的死评价资产退役——oracle 无 paid caller 即连同 52 个孤儿 fixture 一起删，不留「看起来在守护」的不生效资产；③ **never-green 退役**——断言为空或必不能有意义的测试删除而非容忍，永红的测试训练团队忽视红。与本仓 Mutation Check（绿≠有效）、R70「CI 连红五轮无人察觉」流程根因、test-upgrade-hygiene「断言 git 视角真实效果非文件存在表面断言」四面会师。吸收点：审查生成物测试面时核对——行为断言不得钉实现文本（防复发锁除外，锁的本职就是钉文本，R78 豁免边界先例）；退役资产连注册表行一起清（touchfile/清单残留=新死信号）。
+- **测试价值条常态化**（gstack v1.91.9.0 #2998）：test value bar 进 plan-eng-review/review/qa/ship 四流程 + 独立 /test-audit 命令——测试资产本身是被评审对象，价值维度在交付链每个节点在场而非事后专项。与本仓 Step 10 Mutation Check 会师；本仓审查清单已含测试有效性维度，无新增落地单元（记档）。
+- **派生制品按依赖序原子发布**（graphify 0.9.72 #3853）：label sidecar 先于 signature 发布、整体原子写——中断的重建不得留下「为已不存在的聚类而写的悬空标签」。多文件派生状态的发布须定安全顺序：**被依赖者先写**，中断在任意点都不产生悬空引用。吸收点：生成物多文件写回（hooks+commands+settings 三族）与 memory-writeback 的写序审查可对照——先写引用方后写被引用方=中断即悬空。
+- **可选依赖缺失 warn-once**（graphify 0.9.72 #3702）：pypdf 缺失时从「静默零产出」改为一次性显式告警——工具在跑、exit 0、输出为空是最隐蔽的死信号形态。与 R75-F1「规则集在册≠链路可达」同族补全：**依赖在册≠能力可用**。吸收点：降级载体「未装不阻塞」维持设计，但降级发生须可见（一次性提示），审查生成物降级路径时核对降级是否无声。

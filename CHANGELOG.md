@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [v2.42.0] - 2026-09-30
+
+> R79 运行时刷新轮（例行轮）：4 移动物化——**codex rust-v0.159.2**（2 patch，Windows 控制台窗抑制 #49385+GPT-6.1 Sol Bedrock catalogs #49342，release 分支 backport 线）+ **claude-code npm 2.1.285**（1 patch，本版恢复 changelog）+ **graphify v0.9.72**（20 提交）+ **gstack tip +2 → 96764e8**（v1.91.8.0 测试真实性大扫除+v1.91.9.0 test value bar）；吸收三条过决策 46 两问落 review-methodology R79 段；**dsh 外部对照甄别**（ncwk/upstream checkout 21638c5631 落后本仓 293 提交，ls-remote 直证 GitHub master=639ed01539 零移动，防误降级记档）；codex-security npm 断流异常持续记档。轮次台账：`docs/research/R79-runtime-refresh.md`。
+
+### Changed
+- 运行时台账 19 行全覆盖：codex/claude-code/graphify 表行升级 + gstack tip 行前移；登记表 `docs/upstream-baseline.md` 4 行回写 + 顶部 R79 口径注（每轮刷新必回写纪律延续）。
+- `references/review-methodology.md` R79 吸收段四条（每条注明来源运行时+版本）：① gstack v1.91.8.0 测试真实性三连——行为测试不得伪造产品内部（mirror server→真 serve()、源码 grep→行为断言）+ 无消费方死评价退役 + never-green 退役（与 Mutation Check/R70 连红根因/test-upgrade-hygiene 四面会师）；② gstack v1.91.9.0 测试价值条常态化（会师记档，无新增落地单元）；③ graphify 0.9.72 派生制品按依赖序原子发布——被依赖者先写，中断不留悬空引用（#3853）；④ graphify 0.9.72 可选依赖缺失 warn-once——「依赖在册≠能力可用」死信号防御下半句（#3702，R75-F1 同族）。
+- `references/claude-code-capabilities.md` 2.1.285 版本注记五条：fork 子代理权限模式继承封闭（委托不提权）/ managed settings 分级 fail-open（按失败原因分级降级）/ 安装面 id 归一化混淆拒绝 / 沙箱 auto-allow 误报修复 / 产品面卷记档。
+- `references/codex-methodology.md` 0.159.2 版本注记两条（Windows 控制台窗抑制补全 #48483 清单收口 / 目录面与功能面解耦发布）；0.160/0.161 全 alpha 不物化，main +127 记档。
+- research 克隆区物化三仓：codex→rust-v0.159.2、graphify→v0.9.72、gstack→96764e8。
+
+### Chore
+- 预算追账：FACT_ARTIFACT_BYTES_BUDGET 第十五次登记 495616→499712（484KiB→488KiB，+4KiB 沿决策 38 形态）：实测 497697B 超 2081B，全为本轮注记增量 +5553B（R76-R78 三轮 git archive 实测对账均 492144B 零增量）；README 两面 badge 同步 v2.42.0。
+
 ## [v2.41.1] - 2026-09-30
 
 > R78 黑话统一清剿轮（用户指令：R77 边缘发现统一修复）：r68 禁用词执法面扩容到随发资产面（assets/）——目标技能侧用户直接可见的模板/门禁脚本/conf/ontology/hooks 此前漏在执法面外，42 处黑话按术语词典标准词替换（接线→整合、随发→随技能分发、空转→不生效、假绿→假阳性通过、零占位符→无占位符、失锚→校验失效、三件套→按语境分译）。轮次台账：`docs/research/R78-jargon-outreach.md`。
