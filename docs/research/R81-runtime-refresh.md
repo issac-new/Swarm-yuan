@@ -64,6 +64,8 @@ fetch 执行面：18 克隆 `git fetch --tags --prune origin` 全部 exit 0（20
 - **git commit hook**（0a31c08）：每次提交后自动重建图——图基建进开发回路而非一次性产物。
 - **基准规模条件化**（154919b）：撤回"小语料¹"脚注，改为实测数字表——6 文件 ~1x（上下文窗口装得下，价值是结构清晰不是压缩）、52 文件 71.5x；每个 worked/ 含原始输入与真实输出（GRAPH_REPORT.md+graph.json）可自行复验。
 
+**graphify v1.0.0 许可态三处不一致（供应链发现）**：v1.0.0 树丢失 LICENSE 与 LICENSE-MIT 文件（v0.9.72 两文件俱在，`git ls-tree` 实测），pyproject.toml 仍声明 `license = { text = "MIT" }`，而 git 历史 relicense Apache-2.0（ba7f9ea）——文件/声明/历史三处不一致。登记口径维持 Apache-2.0（锚 ba7f9ea），记档待上游澄清；AIShips 侧 V7 守门以 license_note 披露豁免承接（工具面本轮增量）。
+
 ### openspec 1.13.2 → 1.14.0（minor，42 提交）
 
 台账记档为主（锚 `git -C research/openspec log v1.13.2..v1.14.0`）：grok（skills-only）/warp（project skills）/easycode（project skills+commands）/GSD skills 四兼容面 + code studio agent 支持；`.zshrc` 卸载时字节级还原（cd4f9e4）与 store-backed edit roots 含声明仓（cf2859a）为回滚/多仓边界纪律正例，不单独立档（消费面在 openspec 自身，两问第二问不过）。
