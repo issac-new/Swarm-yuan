@@ -790,14 +790,29 @@ verify_completeness() {
   # 检查 ① 每行 JSON 合法性 ② UserChallenge 行五要素非空（文件不存在不告警——draft 期允许空）
   # R25-PF2（2026-09-12 Python/Java 执勤实证）：决策账本有双账——trace-log --decision 与 SKILL.md
   # 填充指引都写项目侧 .swarm-yuan/decisions.jsonl，本核验此前只认技能侧账本，按文档执行即死锁
-  # （R23-D14 已合并 audit-closure 一侧，此处是另一半）。技能侧缺账时回退项目侧/codex 技能侧；
-  # 项目根从 skill_dir 派生（.claude/skills/<name> 上三级），与调用时 cwd 无关。
+  # （R23-D14 已合并 audit-closure 一侧，此处是另一半）。技能侧缺账时回退项目侧/codex 技能侧。
+  # R82-D2（2026-10-01 NestJS 执勤实证 r81-drill-taskboard，自定义 target-dir 形态）：
+  # 项目根原从 skill_dir 上三级派生（.claude/skills/<name> 布局假设）——自定义 target-dir
+  # 生成的技能（rNN-drill-skills/ 同级目录先例）上三级不是项目根，回退失明 → --strict 误报
+  # 「缺少决策记录」死锁。修法对齐 detect-profile-drift.sh:39 同族三级解析（R36-D6 先例）：
+  # ① 环境 PROJECT_DIR ② 技能自身 precheck.conf 的 PROJECT_DIR= ③ 旧布局推导兜底。
   local dec_file="$skill_dir/.swarm-yuan/decisions.jsonl" decisions_miss=""
   if [[ ! -s "$dec_file" ]]; then
     local _dc _proj_root
-    _proj_root="$(cd "$skill_dir/../../.." 2>/dev/null && pwd)" && _proj_root="${_proj_root:-}"
-    for _dc in "${PROJECT_DIR:-$_proj_root}/.swarm-yuan/decisions.jsonl" \
-               "$_proj_root"/.codex/skills/*/.swarm-yuan/decisions.jsonl; do
+    _proj_root="${PROJECT_DIR:-}"
+    if [[ -z "$_proj_root" && -f "$skill_dir/scripts/precheck.conf" ]]; then
+      # R28-DF7 同款剥法（cut 去 # 尾注 + 去引号去尾空格）——conf 行带 `# AUTO:detected`
+      # 溯源注释是 conf-render 固定形态，不剥则路径拼接失明（R82-D2 实测）。
+      _proj_root=$(grep -m1 '^PROJECT_DIR=' "$skill_dir/scripts/precheck.conf" 2>/dev/null \
+        | cut -d'#' -f1 | sed 's/^PROJECT_DIR=//;s/^"//;s/"$//;s/[[:space:]]*$//' || true)
+      # 占位符形态（draft 未回填 <项目根绝对路径>）不当真值消费（R28-DF7 同判据）
+      case "$_proj_root" in "<"*">") _proj_root="" ;; esac
+    fi
+    if [[ -z "$_proj_root" ]]; then
+      _proj_root="$(cd "$skill_dir/../../.." 2>/dev/null && pwd)" && _proj_root="${_proj_root:-}"
+    fi
+    for _dc in "${_proj_root:-X}/.swarm-yuan/decisions.jsonl" \
+               "${_proj_root:-X}"/.codex/skills/*/.swarm-yuan/decisions.jsonl; do
       [[ -s "$_dc" ]] && { dec_file="$_dc"; break; }
     done
   fi
@@ -1750,7 +1765,7 @@ fi
 fill_guide() {
   case "$1" in
     workflow.md) echo "九节点全流程，每节点 4 要素+⑨⑩机器校验（调用追踪/方法论引用），4-Phase SOP" ;;
-    codebase.md) echo "目录结构+技术栈版本表+端口+配置" ;;
+    codebase.md) echo "目录结构+技术栈版本表+端口+配置（版本表记 manifest 声明值、range 原样如 ^12.0.0；lock 实装版本写说明列——check_deps 基线与 manifest 两侧同语义，R82-D1）" ;;
     dev-guide.md) echo "改造分类+拼装式开发原则+安全编码规范+开发偏好" ;;
     release.md) echo "编译规则+构建命令+产物位置" ;;
     reference-manual.md) echo "安全+组件+接口+数据+认知映射+谬误图谱+领域知识" ;;
