@@ -262,3 +262,9 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 
 - **Windows 控制台窗抑制**（`#49385`，0.159.2）：启动后台进程与沙箱命令不再闪烁控制台窗——0.157「piped 子进程不弹控制台窗」（`#48483`）的补全（覆盖非 piped 的后台启动路径），Windows 进程卫生清单收口。
 - **模型目录 backport**（`#49342`，0.159.1）：GPT-6.1 Sol Bedrock catalogs 进 0.159 稳定线——目录面（provider catalog）与功能面解耦发布，patch 线也可承载目录增量。方法论无新增落地单元。
+
+## 版本注记：rust-v0.159.2 → rust-v0.159.3（2026-10-01 R81 物化；2 提交，1 patch）
+
+> 0.159 patch 线第三条 backport；origin/main 领先 187 提交（记档不追）；0.160/0.161 全 alpha 不物化。release 分支切流口径（R73 甄别）维持；证据锚点 `docs/research/R81-runtime-refresh.md`。
+
+- **账户安全设置提醒 backport**（`#49744`，#49715 的不变 cherry-pick）：本地 ChatGPT 会话可选展示账户安全设置提醒——**服务端持有资格与灰度、通知不可用不出横幅**。平台面（提醒的展示通道），无方法论吸收；「服务端权威+不可用静默」与 0.159.2 的口径一致，patch 线质量纪律（exact-backport、稳定 patch ID）延续。
