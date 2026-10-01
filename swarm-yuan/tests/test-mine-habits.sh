@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # test-mine-habits.sh — mine-habits.sh 双态测试（R21-B）
 # 态1: 固定 fixture 仓六维统计值断言；态2: 非 git 仓 fail-open；态3: 确定性（剥时间戳行后 byte-identical）
+# --since 用绝对锚点（R81 根治）：fixture 日期钉死 2026-09-01..05，相对窗口"30 days ago"
+# 随日历漂移，2026-10-01 起最早提交掉窗（feat=2→1 等四断言连红）——时间炸弹测试。
 set -uo pipefail
 cd "$(dirname "${0}")/.." || exit 1
 ROOT="$(pwd)"
@@ -44,7 +46,7 @@ make_fixture() {  # $1=目录
 # --- 态 1：六维统计值断言 ---
 mkdir -p "$TMP/proj"
 make_fixture "$TMP/proj"
-out="$(bash "$SH" "$TMP/proj" --since "30 days ago" 2>&1)"; rc=$?
+out="$(bash "$SH" "$TMP/proj" --since "2026-08-31" 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] && ok "态1 exit 0" || bad "态1 exit=$rc: $out"
 HAB="$TMP/proj/.swarm-yuan/notes/habits.md"
 [[ -f "$HAB" ]] && ok "态1 初稿落盘 habits.md" || bad "态1 habits.md 未生成"
@@ -62,7 +64,7 @@ out="$(bash "$SH" "$TMP/plain" 2>&1)"; rc=$?
 
 # --- 态 3：确定性（剥时间戳行后两次 byte-identical）---
 o1=$(grep -v '生成时间' "$HAB")
-bash "$SH" "$TMP/proj" --since "30 days ago" >/dev/null 2>&1
+bash "$SH" "$TMP/proj" --since "2026-08-31" >/dev/null 2>&1
 o2=$(grep -v '生成时间' "$HAB")
 [[ "$o1" == "$o2" ]] && ok "态3 确定性 byte-identical（剥时间戳）" || bad "态3 两次输出不一致"
 

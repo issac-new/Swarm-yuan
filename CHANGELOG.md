@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [v2.44.0] - 2026-10-01
+
+> R81 运行时刷新轮（例行轮）：6 移动物化——**codex rust-v0.159.3**（1 patch，账户安全设置提醒 backport #49744，服务端持资格+不可用静默）+ **claude-code npm 2.1.286**（11 提交，changelog 随版）+ **graphify v1.0.0**（major 34 提交，世系核验真 tag——R44 异源诱取坑后复核）+ **openspec 1.14.0**（grok/warp/easycode/GSD 四兼容面+.zshrc 字节级卸载还原）+ **ruflo v3.49.0** + **ECC v2.2.2**（373 提交跨度首次出 tag）；吸收四条过决策 46 两问；codex-security npm 通道占位态 0.0.2 第三轮记档（git tag 口径维持）。轮次台账：`docs/research/R81-runtime-refresh.md`。
+
+### Changed
+- 运行时台账 19 行全覆盖：codex/claude-code/graphify/openspec/ruflo/ECC 六表行升级；登记表 `docs/upstream-baseline.md` 6 行回写 + 顶部 R81 口径注。
+- `references/review-methodology.md` R81 吸收段三条（每条注明来源运行时+版本）：① **评测宣称必须带规模条件与复验入口**（graphify 154919b 撤"小语料¹"脚注改实测数字表+worked/ 可复验、ruflo 撤未复验 150x/12,500x 加速宣称——双源同周实证）；② **路由弃权诚实**（ruflo #3567 无匹配不得报最高置信度——弃权不得伪装成置信，两级路由同款风险面）；③ **检查面收敛到使用面**（ECC #2838 MCP 健康检查收敛到 MCP 工具——装饰性绿灯双向清）。
+- `references/code-graph-tools.md` graphify 选型行升 v1.0.0（--watch 确定性/语义分流：代码变更 AST-only 零 LLM 即时重建+文档/图片仅通知/--wiki agent 可爬取知识库导出/git commit hook；**git 真线 tag v1.0.0 与 npm graphifyy 异源 v1.0.0 消歧注**）+ 核心命令块补 --watch/--wiki/--update 三行。
+- `references/claude-code-capabilities.md` v2.1.286 注记：同档回退重试（降级阶梯保档位）/关停排队不丢（退出窗口消息不得假确认）/凭证脱敏边界族（零宽字符键名+URL 密码标点+百分号编码 Bearer 部分掩蔽）/权限队列计数（"2 of 5" 位置感）。
+- `references/codex-methodology.md` 0.159.3 版本注记（backport 平台面，无方法论吸收）。
+
 ## [v2.43.0] - 2026-10-01
 
 > R80 全量回归轮（Flask+SQLAlchemy+Vue3 monorepo 典型场景执勤，v2.42.0 tag 撞号顺延——并行会话已将 v2.42.0 钉在 R79 merge，本版顺延先例第二次实证）：真实可跑演练项目（Flask 3.14+Flask-SQLAlchemy+SQLite 后端 + Vue 3.5+Vite 6 前端同仓，pytest 7→13 用例全绿+vite build 过）执勤三项典型研发工作——标签功能九节点全流程（spec-first 三态实测：无 spec deny+双审计落痕/合格放行/占位符继续拦；门禁真执法 §5.5+§19+拼装勾选三段拦截）+ archived 查询参数语义 TDD 修复 + routes 拆包指纹自成长链（--diff 感知 scope 精准定位→清单同步→核验→落新基线全通）。识别 1 项生成器缺陷全修+变异锁。轮次台账：`docs/research/R80-full-regression.md`。

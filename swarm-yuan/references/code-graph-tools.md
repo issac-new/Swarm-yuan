@@ -16,7 +16,7 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 
 | 工具 | 许可证（事实登记，供使用方自查） | 能力定位 |
 |------|--------|----------|
-| **graphify** | Apache-2.0（2026-07-18 MIT→Apache 2.0） | 广谱知识图（代码+文档+媒体）、可提交 graph.json、Mermaid 导出；91.7k stars、活跃（2026-07-18） |
+| **graphify** | Apache-2.0（2026-07-18 MIT→Apache 2.0） | 广谱知识图（代码+文档+媒体）、可提交 graph.json、Mermaid 导出；**v1.0.0（2026-10-01 R81 物化）：--watch 自动同步（代码变更免 LLM 即时重建+文档/图片仅通知）+git commit hook+--wiki agent 可爬取知识库导出**；91.7k stars、活跃（2026-10-01 R81 核） |
 | **GitNexus** | PolyForm Noncommercial 1.0.0（GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20；2026-09-14 R28 复核不变） | 深度代码调用图、Tree-sitter 原生解析、LadybugDB 持久图、`--pdg` 污点分析、PreToolUse/PostToolUse hooks、多仓库 group query（v1.6.12 stable 已出（2026-09-12 tag，rc 线收口）；license-risk 登记不变——v1.6.12 含诚实状态族样本（diverged/unknown 索引态显式报告 + foreign embedding fail-closed），license 解除前零接触） |
 | **codegraph** | MIT（GitHub API 2026-09-18 R37 实测；71,356★、2026-01 创建、活跃） | 预索引代码知识图 + 代码变更自动同步；**单 MCP 工具** `codegraph_explore`（自然语言任务描述，自主决定检索深度）+ `codegraph explore/affected` CLI；100% 本地（SQLite + FTS5，无 LLM API）；代码变更时索引自动更新 |
 
@@ -29,7 +29,7 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 补充说明：
 
 - **graphify 仓库已迁移**：org URL 由 `safishamsi/graphify` 迁至 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)（GitHub API 2026-07-20 实测），引用一律用新 URL。
-- **graphify 引用基线：v0.9.x（GitHub v8 线，当前 v0.9.55）**（能力清单基于 v0.9.5 调研 + 0.9.6-19 release notes；后续 patch 不补段——0.9.54/0.9.55 为幂等写入与图谱完整性修复族，对账通过）。npm `graphifyy` 0.10.0/v1.0.0 为异源旧分支**不取**（R16 裁决沿用，登记见 `docs/upstream-baseline.md`）。
+- **graphify 引用基线：v1.0.0（2026-10-01 R81 升级，GitHub 真线 major）**——世系核验：v0.9.72（1cd9a36c）= merge-base，v1.0.0 为其严格后代、Safi 本人线（**消歧**：此为 GitHub Graphify-Labs/graphify 的 git tag v1.0.0；npm `graphifyy` 通道的 0.10.0/v1.0.0 仍是异源旧分支**不取**，R16 裁决沿用以 git tag 为准）。1.0.0 增量三件与选型相关：--watch 后台自动同步（代码保存触发 AST-only 即时重建零 LLM、文档/图片变更仅通知跑 --update 做 LLM 复扫——确定性/语义分流）+ post-commit git hook（每次提交自动重建，无后台进程）+ --wiki 导出（每社区/god node 一篇 Wikipedia 式 markdown+index.md 入口，agent 读文件即可导航知识库，不必解析 JSON）；基准表规模条件化（6 文件 ~1x——小语料价值是结构清晰非压缩、52 文件 71.5x，worked/ 目录含原始输入+真实输出可自行复验）。
 - **codegraph 证据与边界（R37）**：官方基准（B 级）工具调用 −88% / token −62% / 成本 −44%、文件读取归零（7 仓库×4 次）；**上下文残留 +80%**（官方诚实声明——索引驻留上下文的代价）；Swift 27k 文件约 100s、Linux 内核 70k 文件约 12min（文章转述 C 级）。选型对照：GitNexus 给 17 个确定性 MCP 查询工具，codegraph 押单工具+模型自主检索（工具面哲学对照见 `mcp-governance.md` 工具面设计三原则）。本机未实测安装与索引（npm/cargo 安装形态未核）——**整合前置条件：本机跑通一次索引+查询再进目标技能默认推荐**。
 
 ## GitNexus（Node 生态，深度代码调用图）
@@ -90,6 +90,9 @@ graphify install # 注册 skill 到 AI 助手（默认 Claude Code）
 graphify install --platform agents # 注册到 .agents/skills/（跨框架）
 graphify install --project # 安装到当前仓库而非用户 profile
 graphify . # 构建图谱（当前文件夹）
+graphify . --watch # 后台自动同步：代码保存即时重建（AST-only 零 LLM）；文档/图片变更仅通知跑 --update
+graphify . --wiki # 导出 agent 可爬取知识库（index.md + 每社区/god node 一篇 markdown）
+graphify . --update # 增量 LLM 复扫（--watch 通知后续接）
 graphify extract ./docs --backend claude # 无头提取（非代码需 API key）
 graphify query "什么连接了 auth 和数据库？" # 自然语言查询 graph.json
 graphify path "ComponentA" "ComponentB" # 依赖链/最短路径

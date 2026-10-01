@@ -745,3 +745,13 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **安装面 id 归一化混淆拒绝**：`plugin install` 对仅差 `.`/`-`/`@`/大小写（macOS/Windows）的 id 拒绝装入他者缓存目录——身份比较先归一化，混淆 id 视为不同实体处置。吸收点：技能名/框架 id 的匹配边界可对照（`_fw_<id>_check` 分发键的精确匹配是既有防线）。
 - **沙箱 auto-allow 误报修复**：内联脚本（`python3 -c`/`node -e`）含 `=` 即逐次询问的误报修复——保守判定的误报面也要养（门禁误报训练用户橡皮图章，与漏报同罪）。
 - **产品面修复卷**（不吸收记档）：`CLAUDE_CODE_DISABLE_WEB_FETCH` 工具开关、`claude --desktop`、`plugin configure`/`--config` 安装时配置、`allowedProviders` 供应商白名单、URL 密码脱敏、MCP 名称注入终端转义序列清洗、`-p` 后台子代理权限请求直达 prompt tool 等约 30 项。
+
+## 版本注记：v2.1.285 → v2.1.286（2026-10-01 R81 核）
+
+> npm 2026-09-30T17:14Z 发版、R81 实测 latest=2.1.286；v2.1.286 tag changelog 随版（11 提交）；证据锚点 `docs/research/R81-runtime-refresh.md`。
+
+- **同档回退重试**：默认模型/别名解析被 API 拒绝（400）时，按**上一模型同档**重试一次——降级阶梯保档位，不是跨档乱降。吸收点：降级链设计（模型/工具双通道）对照——降级目标按档位对齐而非就近可得，保住能力下界。
+- **关停排队不丢**：Claude Code 退出中到达的 Remote Control 消息不再被误标已送达，保持排队待下次运行应答——**关停窗口内的消息不得丢也不得假确认**。吸收点：trace-log/事件账本的退出路径对照——冲刷窗口内的事件落盘语义（fs.watch 尾随冲刷双修同族）。
+- **凭证脱敏边界族**：键名含不可见字符（零宽空格）的 secret、URL 密码含 `)`/引号/`]`/`&`/第二个 `@`/`[::1]` 括号主机、百分号编码 Bearer 的部分掩蔽——脱敏实现必须对抗**边界形态**（不可见字符/编码/标点闭合），朴素正则会漏。吸收点：memory-writeback/trace-log 落盘前的脱敏面同族核对。
+- **权限队列计数**：权限请求堆叠时提示加 "2 of 5" 计数——排队中的请求给位置感。吸收点：审批队列/门禁打回堆积时的用户面对照（可见的队列位置优于不可见的黑盒等待）。
+- **产品面修复卷**（不吸收记档）：云会话大历史容器加载中停止致永不唤醒、apps gateway 缓存写 1h/5min 计价纠偏、MCP 握手降级后工具列表陈旧一天、`/feedback` zip 内 transcript redaction 后 JSON 行损坏、Remote Control 策略关闭即断连等约 15 项。
