@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [v2.45.0] - 2026-10-01
+
+> R82 全量回归轮（NestJS 11+TypeORM+better-sqlite3 典型场景首执勤——Node/TS 企业后端第一形态，装饰器+模块 DI+ORM 声明式字符串耦合+jest/supertest 双测试面；v2.44.0 已被并行会话钉在 R81 运行时刷新轮，本版顺延——R75/R80 先例）：真实可跑演练项目（nest build 绿+单元 3/3+e2e 9/9，git 三 tag）走通生成流程 12 步（mark-active active）+ 三项典型研发工作（九节点全流程含 spec-first 三态与状态机六阶段/预埋分页缺陷 TDD 红→绿/结构重构指纹自成长链）。识别 2 项生成器缺陷全修+变异锁 8 断言；同根因时间炸弹与并行 R81 撞号（其绝对锚点修法生效）。轮次台账：`docs/research/R82-full-regression.md`。
+
+### Fixed
+- **决策账本回退盲区（P1，R36-D6 同族第三现）**：自定义 target-dir 生成的技能（`rNN-drill-skills/` 先例形态），按文档把决策写进项目侧 `.swarm-yuan/decisions.jsonl` 后，独立调用 `generate-skill.sh --verify-completeness <skill> --strict` 仍误报「缺少决策记录」死锁——技能 conf 里有 `PROJECT_DIR` 真值却不读，回退链从 `skill_dir` 上三级推导项目根（只对默认安装位 `.claude/skills/<name>` 成立）。修：回退补三级解析（环境变量 → 技能 conf（R28-DF7 剥法：# 尾注剥除+占位符守卫）→ 旧布局兜底）；`detect-profile-drift.sh` ②级同款尾注盲区一并修（原带 `# AUTO:detected` 注释的 conf 值路径拼接失明→静默跳过检测）。
+- **版本表语义未钉死（P2，check_deps 假阳性复发面）**：codebase.md 技术栈版本表记录 lock 实装版本（诚实填充）而 manifest 声明 range（如 `^12.0.0`）时，`--deps` 基线比较假阳性 fail。修：`generate-skill.sh` 填充行与 `template-spec` ★版本锁定原则双触点钉死单一语义——**版本表一律记 manifest 声明值、range 原样保留；lock 实装/实测版本写说明列**。
+
+### Added
+- `tests/test-r82-full-regression.sh` 变异锁 8 断言：真生成器造自定义 target-dir fixture（conf 带溯源尾注+项目侧账本）行为锁 3（回退命中/无账本如实报缺/骨架填充行带版本语义）+源码锁 5（注记+剥法+语义句在位）。变异验证三方向全红→恢复全绿。
+
+### 验证
+- 全量 sweep **54/0** 全绿（53 基线含并行 R81 修复+R82 新锁）；UNIVERSAL_FILES 预算实测 503214B ≤ 503808B 零增量（增量全在 scripts 与生成器侧 references，按「脚本不计税」口径免登记）。
+
 ## [v2.44.0] - 2026-10-01
 
 > R81 运行时刷新轮（例行轮）：6 移动物化——**codex rust-v0.159.3**（1 patch，账户安全设置提醒 backport #49744，服务端持资格+不可用静默）+ **claude-code npm 2.1.286**（11 提交，changelog 随版）+ **graphify v1.0.0**（major 34 提交，世系核验真 tag——R44 异源诱取坑后复核）+ **openspec 1.14.0**（grok/warp/easycode/GSD 四兼容面+.zshrc 字节级卸载还原）+ **ruflo v3.49.0** + **ECC v2.2.2**（373 提交跨度首次出 tag）；吸收四条过决策 46 两问；codex-security npm 通道占位态 0.0.2 第三轮记档（git tag 口径维持）。轮次台账：`docs/research/R81-runtime-refresh.md`。
