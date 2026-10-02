@@ -1265,6 +1265,19 @@ case "$PROFILE" in
 esac
 _profile_rank() { case "$1" in lite) echo 1;; compliance) echo 3;; *) echo 2;; esac; }
 
+# R83-D1（2026-10-02 Angular 栈执勤实证 r83-drill-kanban）：未识别 flag 守卫。
+# 此前任何不存在的 flag（如照旧文档对 generate-skill.sh 调 --review）会静默落入
+# skill-name 位置——技能名成了 "--review"、目标技能目录被当项目根，在其内部嵌套生成
+# .claude/skills/--review/ 垃圾骨架（污染交付物）。已知子命令均在上方独立拦截并 exit，
+# 走到这里的参数只应是 <skill-name> <project-dir> [target-dir]——首参以 -- 开头即参数
+# 错误，fail-closed 列出支持的旗标。
+if [[ "${1:-}" == --* ]]; then
+  echo "ERROR: 未知旗标 '$1'（generate-skill.sh 主模式只接受 <skill-name> <project-dir> [target-dir]）。" >&2
+  echo "       支持的子命令/旗标：--upgrade / --profile <auto|lite|standard|compliance> / --inject-frameworks <dir> / --rollback-frameworks <dir> / --verify-completeness <dir> / --mark-active <dir>。" >&2
+  echo "       注意：审查入口是 precheck.sh --review（generate-skill.sh 无 --review 旗标）。" >&2
+  exit 1
+fi
+
 # WP-N1 项目级自适应判定：合规信号（等保/密评/个保法/金融/医疗关键词）→ compliance；
 # 规模信号（文件数 <80）→ lite；其余 standard。
 # WP-Q2 偏置方向修正（决策 18 修订）：
