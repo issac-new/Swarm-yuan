@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [v2.46.0] - 2026-10-02
+
+> R83 全量回归轮（Angular 21+vitest+pnpm 典型场景首执勤——三大前端框架最后一块盲区，zoneless+signals+standalone+组件选择器字符串耦合+pnpm 工具链+vitest 真身）：真实可跑演练项目（ng build 绿+vitest 22/22，git 三 tag v0.1.0→v0.3.0）走通生成流程 12 步（mark-active active，R82 双修复面复验生效）+ 三项典型研发工作（九节点全流程含 spec-first 三态与状态机六阶段/预埋字典序排序缺陷 TDD 红→绿/TaskCard 提取重构指纹自成长链）。识别 2 项生成器缺陷全修+变异锁 11 断言。轮次台账：`docs/research/R83-full-regression.md`。
+
+### Fixed
+- **generate-skill.sh 未知旗标静默落位+SKILL.md ⑦ 行幽灵入口（P1）**：照 SKILL.md 生成流程表 ⑦ 行原文对 generate-skill.sh 调 `--review <skill_dir>` → `--review` 被当技能名、目标技能目录被当项目根，在交付技能内部嵌套生成 `.claude/skills/--review/` 109 文件垃圾骨架（污染交付物；审查旗标真身是 `precheck.sh --review`，generate-skill.sh 从未实现）。修：① 主位置参数路径加未知旗标守卫（首参 `--` 开头即 fail-closed，报错列出支持旗标并指明审查入口真身）；② SKILL.md ⑦ 行钉死脚本归属。同族清剿：全仓 `--review` 宣称面五档均指实存旗标零幽灵残留；其它脚本位置参数已有守卫先例无同族。
+- **check_reuse §5.5 勾选核验 awk 区间自塌（P1）**：spec 按 spec-template.md 自身标题形态（`## 5.5 ★复用约束`）填写、4 勾齐全，仍恒报「0/4 已勾」假拦——区间提取 `/复用约束/,/^## [0-9]/` 的终止模式与模板标题同行命中起止两模式 → awk 区间自塌为单标题行（R82 靠 `## §5.5` 形态碰巧绕过，模板形态从未走通）。且终止只认数字标题 → 非数字标题不终止、区间吞到文件尾，后续段落 checkbox 误计入本段（假拦/假放行双向面）。修：区间改「标题含关键词进、任意其它 ## 标题出」，两种标题形态均正确解析+计数面收紧到本段。
+
+### Added
+- `tests/test-r83-full-regression.sh` 变异锁 11 断言：D1 行为锁 5（未知旗标非零退出+报错指引+零污染+家族面+合法 create 不回归——真生成器 fixture）+D2 行为锁 2（模板形态 spec 4 勾通过+勾选不足仍拦，fixture 含非数字标题段未勾箱锁误计面）+源码锁 4（双注记+区间形态+⑦ 行归属句）。变异验证三方向 7 红→恢复全绿。
+
+### 验证
+- 全量 sweep **55/0** 全绿（54 基线+R83 新锁）；UNIVERSAL_FILES 预算实测 503214B ≤ 503808B 零增量（增量全在 scripts 侧，按「脚本不计税」口径免登记）；G9 三断言过（门禁 55≤55/变量 185≤200/上下文 191391B≤194560B）。pnpm 工具链 conf-render 实证无盲区（TEST_CMD='pnpm test' 正确识别）。
+
 ## [v2.45.0] - 2026-10-01
 
 > R82 全量回归轮（NestJS 11+TypeORM+better-sqlite3 典型场景首执勤——Node/TS 企业后端第一形态，装饰器+模块 DI+ORM 声明式字符串耦合+jest/supertest 双测试面；v2.44.0 已被并行会话钉在 R81 运行时刷新轮，本版顺延——R75/R80 先例）：真实可跑演练项目（nest build 绿+单元 3/3+e2e 9/9，git 三 tag）走通生成流程 12 步（mark-active active）+ 三项典型研发工作（九节点全流程含 spec-first 三态与状态机六阶段/预埋分页缺陷 TDD 红→绿/结构重构指纹自成长链）。识别 2 项生成器缺陷全修+变异锁 8 断言；同根因时间炸弹与并行 R81 撞号（其绝对锚点修法生效）。轮次台账：`docs/research/R82-full-regression.md`。

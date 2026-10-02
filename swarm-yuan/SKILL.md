@@ -86,7 +86,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | ⑤ | conf | precheck.conf 生成期必读文件（conf-render 初稿 + AI 补 TODO:model） |
 | ⑤.5 | hooks/MCP | hooks.json（双宿主）+ settings + .mcp.json 按需 |
 | ⑥ | 编码验证 | `bash scripts/precheck.sh --all`（目标技能侧 core 门禁） |
-| ⑦ | 独立审查 | `--review`（ocr 5 维度或 AI 清单）+ review-record 落盘 |
+| ⑦ | 独立审查 | AI 第三方视角审查 + `bash scripts/precheck.sh --review`（check_review 核验留痕）+ review-record 落盘（ocr 有 endpoint 用 5 维，否则诚实降级 AI 清单——R83-D1：generate-skill.sh 无 --review 旗标，勿对它调用） |
 | ⑦.5 | 门禁注入 | 框架门禁片段（④.5 产物）挂入 precheck 区块 |
 | ⑧ | 记忆写回 | `assets/memory-writeback.sh`（三路） |
 | ⑨ | 终检 | `--verify-completeness --strict`（无占位符）→ `--mark-active`（+路径存在+决策留痕） |
