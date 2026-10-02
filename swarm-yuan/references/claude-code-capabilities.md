@@ -755,3 +755,12 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **凭证脱敏边界族**：键名含不可见字符（零宽空格）的 secret、URL 密码含 `)`/引号/`]`/`&`/第二个 `@`/`[::1]` 括号主机、百分号编码 Bearer 的部分掩蔽——脱敏实现必须对抗**边界形态**（不可见字符/编码/标点闭合），朴素正则会漏。吸收点：memory-writeback/trace-log 落盘前的脱敏面同族核对。
 - **权限队列计数**：权限请求堆叠时提示加 "2 of 5" 计数——排队中的请求给位置感。吸收点：审批队列/门禁打回堆积时的用户面对照（可见的队列位置优于不可见的黑盒等待）。
 - **产品面修复卷**（不吸收记档）：云会话大历史容器加载中停止致永不唤醒、apps gateway 缓存写 1h/5min 计价纠偏、MCP 握手降级后工具列表陈旧一天、`/feedback` zip 内 transcript redaction 后 JSON 行损坏、Remote Control 策略关闭即断连等约 15 项。
+
+## 版本注记：v2.1.286 → v2.1.287（2026-10-02 R84 核）
+
+> npm latest 实测=2.1.287（2026-10-02 registry 查）；changelog 随版；证据锚点 `docs/research/R84-runtime-refresh.md`。
+
+- **安全闸回归锁**：危险 `rm` 命令在演化中失去 always-ask 保护（本版修复）——防护语义会被后续改动静默卸除。吸收点：本仓规则闸（rules.d deny 族）与审批闸每个 deny/ask 语义至少一条 Mutation Check（变异测试）防复发断言在位（R82 防复发断言同族）；演化触碰命令分类面时先跑闸的负例。
+- **恢复路径幂等**：恢复会话后 CLAUDE.md 重复附加（本版修复）——恢复/前情注入必须是幂等重放，重放 N 次与一次等价。吸收点：前情注入重启、memory-writeback 恢复面的幂等性核对（追加前查重/以清单驱动而非裸 append）。
+- **有界重试与钩子自激抑制**（记档一行）：Remote Control 重连 30 秒上限后放弃；asyncRewake 钩子反复唤醒修复——重试与钩子都要有上界与防自激，与「活性等待有界」判据族同向。
+- **产品面卷**（不吸收记档）：Claude Mods 深层行为修改插件族、agents 视图 `n:` 过滤、OTel prompt_text 字段（遥测加正文=隐私面扩大，反向警示）、alwaysLoad:false MCP 工具延后至工具搜索、Windows Bash/PowerShell 双拒警告、自托管 runner 内置 gh api（仅 REST）等。

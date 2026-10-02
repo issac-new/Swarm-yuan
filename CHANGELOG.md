@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [v2.47.0] - 2026-10-02
+
+> R84 运行时刷新轮（例行轮；R83 已由并行会话以 v2.46.0 收口——Angular 21 全量回归，本轮按 R75/R80/R82 撞号先例顺延为 R84/v2.47.0）：3 移动物化——**ruflo v3.49.0→v3.51.0**（跨两 minor，ADR-406 任务契约+durable storage+headless 观测+统一 /ruflo console）+ **ECC v2.2.2→v2.2.3**（patch 纯命名退休零方法论）+ **claude-code npm 2.1.286→2.1.287**（安全闸回归修复领衔）；吸收注记两档（review-methodology R84 段两条+claude-code-capabilities 2.1.287 注记三条，全过决策 46 两问）；codex-security npm registry 占位态第五轮记档（0.1.31↔0.0.2 反复，git tag npm-v0.1.32 口径维持）。轮次台账：`docs/research/R84-runtime-refresh.md`。
+
+### Changed
+- `references/review-methodology.md` 新增 R84 段：**任务态持久观测**（控制态须进程外持久+观测面 headless 可达——UI 关掉不丢任务真相，审查多代理产物任务态承载的底线双件）与**测试断言自述**（测试名/失败输出须陈述被验行为本身，与 R79 测试真实性三连会师第四面）。
+- `references/claude-code-capabilities.md` 新增 2.1.287 注记：**安全闸回归锁**（危险 rm 失 always-ask 被修复——闸须随负例 Mutation Check（变异测试）防复发断言，R82 同族）、**恢复路径幂等**（恢复会话 CLAUDE.md 重复附加被修复——前情注入=幂等重放）、有界重试与钩子自激抑制（记档行）。
+
+### 验证
+- 物化实测 ruflo/ECC `git describe` 达新 tag；全量 sweep 54/0（R83 基线 55 中本轮无新增锁）；预算第 17 次登记 503808→507904（实测 505903B），见 R84 执行面记档。
+
+
 ## [v2.46.0] - 2026-10-02
 
 > R83 全量回归轮（Angular 21+vitest+pnpm 典型场景首执勤——三大前端框架最后一块盲区，zoneless+signals+standalone+组件选择器字符串耦合+pnpm 工具链+vitest 真身）：真实可跑演练项目（ng build 绿+vitest 22/22，git 三 tag v0.1.0→v0.3.0）走通生成流程 12 步（mark-active active，R82 双修复面复验生效）+ 三项典型研发工作（九节点全流程含 spec-first 三态与状态机六阶段/预埋字典序排序缺陷 TDD 红→绿/TaskCard 提取重构指纹自成长链）。识别 2 项生成器缺陷全修+变异锁 11 断言。轮次台账：`docs/research/R83-full-regression.md`。
