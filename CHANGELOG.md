@@ -1,5 +1,17 @@
 # Changelog
 
+## [v2.48.0] - 2026-10-03
+
+> R85 运行时刷新轮（例行轮 + R82-R84 表行欠账回填）：5 移动物化——**claude-code npm 2.1.288**（实质轮：中断恢复续跑/零用量自动压缩/结构化输出可关）+ **claude-mem v13.29.0**（work-state 持久工作态+sync 楔死修复族）+ **ruflo v3.51.1**（3.51.0 R84 欠账并补：ADR-406 任务契约+durable storage；.1 修复轮 MCP 目的地钉定+pre-bash 阻塞退出码）+ **comet 0.4.4**（薄轮零吸收）+ **ECC v2.2.3**（R84 欠账并补：命名退休零吸收）；gstack tip +4 快进 74512c2（v1.91.15.0）；codex rust 线 0.160/0.161 全 alpha + 0.162 至 alpha.10（基线维持 0.159.3）；dsh 0.2.1-alpha.1 前移注记；**R73「每轮刷新必回写表行」纪律恢复**（R82-R84 欠账全行对账，其余 14 行 fetch 零漂移实证）。吸收两档过决策 46 两问。轮次台账：`docs/research/R85-runtime-refresh.md`。
+
+### Changed
+- `docs/upstream-baseline.md`：6 行升基线（claude-code/claude-mem/ruflo/comet/ECC/gstack-tip）+ R85 重核口径注 + R84 欠账注记。
+- `references/review-methodology.md` 新增 R85 段：**永不可适用的操作不得楔死同步**（终态判定必须释放队列而非重新入队）与**拒绝须可被调用方感知**（静默跳过与显式拒绝在调用方看来必须是两种结果）——拒绝语义工程完整性两条。
+- `references/claude-code-capabilities.md` 新增 2.1.288 注记：中断恢复续跑（部分响应是资产不是废轮）/零用量自动压缩触发口径/结构化输出可关（网关兼容 fail-open）三条+记档行。
+
+### 验证
+- self-check 全绿（sweep 55/0，三面 badge v2.48.0 同步）；预算门见下。
+- 物化：comet 0.4.4 / claude-mem v13.29.0 / ruflo v3.51.1 checkout + gstack ff 74512c2。
 
 ## [v2.47.0] - 2026-10-02
 
