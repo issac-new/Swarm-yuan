@@ -2,7 +2,7 @@
 
 # 文档索引（Capability Map）——references 吸收层整合清单
 
-> **定位**：本表是吸收内容（46 份参考文档 + 19 个上游运行时）的**整合总清单**：每份文档登记 来源→证据分级→消费环节→何时读，由生成器自检的 G25 断言双向一致性校验（每份实存文档必须入账、账上不登记不存在的文档）。分工：SKILL.md 第四层的"理念→兑现追踪表"（内部俗称追踪表（追踪表（概念追踪表）））登记**核心概念**的诞生步/消费方/回流点；本表登记**吸收来的文档**从哪来、在哪被用——粒度互补，纪律同一条：无悬空（谁都有消费方）。**本表只在生成器仓维护，不随目标技能分发**（目标技能只收到 UNIVERSAL_FILES 清单里的子集）。
+> **定位**：本表是吸收内容（47 份参考文档 + 20 个上游运行时）的**整合总清单**：每份文档登记 来源→证据分级→消费环节→何时读，由生成器自检的 G25 断言双向一致性校验（每份实存文档必须入账、账上不登记不存在的文档）。分工：SKILL.md 第四层的"概念↔实物追踪表"（内部俗称追踪表）登记**核心概念**的诞生步/消费方/回流点；本表登记**吸收来的文档**从哪来、在哪被用——粒度互补，纪律同一条：无悬空（谁都有消费方）。**本表只在生成器仓维护，不随目标技能分发**（目标技能只收到 UNIVERSAL_FILES 清单里的子集）。
 > **证据分级**（R37 口径）：A=本机实测；B=官方一手直查；C=二手转述（未核验不进基线）。
 
 ## 一、整合视图：吸收物如何构成一个整体
@@ -21,7 +21,7 @@
 
 **配套查询**：本表从**文档**查"它被谁用"；`task-methodology-router.md` §文档路由表从**任务**查"开工读什么"——一个任务要读什么，从那边查；一份文档被谁消费，从这里查。
 
-## 二、references 整合总表（46 档，self-check G25 对账面）
+## 二、references 整合总表（47 档，self-check G25 对账面）
 
 ### 族① 生成主干（生成流程）
 
@@ -44,6 +44,7 @@
 | 档 | 来源（证据） | 消费节点 | 触发 |
 |----|-------------|---------|------|
 | lazy-generation-methodology | ponytail 蒸馏 + 行者明灵文章（B） | 开发工作流 ⑤ 编码七层下探 | 写新代码前找零件 |
+| mattpocock-skills-methodology | mattpocock/skills v1.2.3（A） | 开发工作流 ①②③ + fix 任务路由 | 模糊需求访谈/spec 测试缝/任务纵切/诊断回路 |
 | cordis-composability-methodology | DeepSeek Harness（B） | 机制设计参考 | 设计可组合机制 |
 | knowledge-lifecycle-methodology | 京东海博文章 + OKF 核验（B） | 开发工作流 ② 读法 + 反馈回路三态 | 知识读取/更新处置 |
 | memory-persistence | claude-mem/ruflo/ECC 工具族（A） | ⑧ 记忆写回 + 溯源标记 | 跨会话记忆/蒸馏 |
@@ -94,7 +95,7 @@
 | industry-profile-industrial | 工控法规调研（B） | --industry 真实加载 | 工控项目立法 |
 | industry-profile-payment | 支付法规 + hermes pay-team（B/A） | --industry 真实加载 | 支付项目立法 |
 
-## 三、运行时整合表（供给侧见 upstream-baseline 19 行；此为消费侧）
+## 三、运行时整合表（供给侧见 upstream-baseline 20 行；此为消费侧）
 
 | 整合深度 | 运行时 | 消费点 | 降级链 |
 |---------|--------|--------|--------|
@@ -106,7 +107,7 @@
 | CLI×4 | gsd-core | 计划验证/STATE 戳模式 | 未装→tasks.md checkbox |
 | CLI×4 | codex-security | 安全扫描门禁子进程 | 未装→grep 级安全模式 |
 | 方法论×5 | superpowers / gstack / ECC / Ruflo / impeccable | 编排/审查/记忆蒸馏/前端设计方法论引用 | 无运行时依赖（纯文档） |
-| 机制源×6 | dsh / pua / semantica / ponytail / codegraph / 文章源 | 已蒸馏为 references 各档（见上表来源列） | 同上 |
+| 机制源×7 | dsh / pua / semantica / ponytail / codegraph / mattpocock-skills / 文章源 | 已蒸馏为 references 各档（见上表来源列） | 同上 |
 
 ## 四、对账纪律（self-check G25 机器执法）
 

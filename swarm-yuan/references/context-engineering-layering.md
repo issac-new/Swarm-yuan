@@ -197,7 +197,17 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 ---
 
-## 十二、版本与来源
+## 十二、措辞三判据（R86 增补，2026-10-03）
+
+> 来源：mattpocock/skills v1.2.3 `skills/productivity/writing-for-agents/SKILL.md`。§三 六层模型回答"规则放哪一层"，本节回答"每一句写下去值不值"——三条可操作的判据，供生成器写 SKILL.md/references 与目标技能维护文档时自检。
+
+1. **no-op 判定**：一句指令若模型默认行为下本来就会这么做，它就是 no-op——白占窗口还什么都没改变。判据是"跑了这份文档，行为会不会变"，不是"读起来有没有道理"；两人对 no-op 有分歧，分歧在"默认行为是什么"，靠跑文档裁决，不靠辩论。失败即整句删除（不是削词）。判据也给领头词定级：压不过默认行为的弱词（模型本来就"仔细"时写"要仔细"）是 no-op，解法是换更强的词，不是换技巧。
+2. **否定句失败模式**：用禁止来转向会把被禁行为拉进上下文、反而更可及（"别想大象"——满脑子都是大象）。写**正向目标行为**（"写一行式注释"而非"别写长注释"）；只有无法正向表述的硬护栏才保留禁止句，且必须与正向目标成对出现。
+3. **领头词经济学**：优先用预训练里已有的紧凑概念（复用模型先验，一个词锚定一整片行为），自造词要花定义 token 买回先验免费给的东西。同一段形容在三个位置重复、一句手势指向一个概念——都是该收敛成单个词的位置。与 R53 术语词典咬合：词典管"新词先入册"，本判据管"造词之前先找现成词"。
+
+与 §十一 的分工：三漏管 token 从哪漏，本节管写下去的每一句买回了什么。
+
+## 十三、版本与来源
 
 - 来源：[Vibe编码 公众号《Opus 4.8 删掉了73%的提示词，Opus 5 为何又新增了 82%》](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（2026-07-27，作者 VibeCoder）+ Anthropic Context Engineering 文档
 - 许可证：文章内容版权归原作者，swarm-yuan 只引用方法论模式与证据视角，不复制原文
@@ -206,3 +216,4 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 - 自检断言：G14 `check_context_engineering_layering`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 整合 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_REFERENCES=33`（本文档 +1）
 - R37 增补来源：行者明灵《Harness实践》上下篇（2026-09-16/17）+ rtk-ai/rtk（Apache-2.0）+ JuliusBrussee/caveman（Skill=MIT/Proxy=BSL-1.1）——§十一 三漏与输出经济学；档案 `docs/research/R37-harness-practice-absorption.md`
+- R86 增补来源：mattpocock/skills v1.2.3（MIT）`writing-for-agents/SKILL.md`——§十二 措辞三判据；档案 `docs/research/R86-mattpocock-skills-absorption.md`

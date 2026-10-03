@@ -269,9 +269,9 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 > generate-skill.sh 的 workflow.md emit 按 9 节点骨架生成（S10 实装）。
 
 **详细节点说明：**
-1. 需求理解
-2. 设计 spec（采用 OpenSpec proposal 模式：proposal.md + delta spec + design.md + tasks.md）—— **★测试左移**：spec 须含"测试设计"段（测试策略/用例骨架/边界值/回归范围——分级推导协议见下方左移要求）；**★运维左移**：spec 须含"可观测性约束"段（日志结构/metrics 埋点/trace 透传/告警阈值/健康检查）
-3. 实施 plan（采用 OpenSpec tasks checkbox 格式 + superpowers writing-plans bite-sized 步骤）—— **★变更左移**：plan 须含"变更影响范围"段（消费方反查/回滚预案/灰度策略/数据库迁移兼容窗口）
+1. 需求理解（模糊需求走结构化访谈协议：设计树+前沿轮次+事实自查决策问人，见 `mattpocock-skills-methodology.md` §一）
+2. 设计 spec（采用 OpenSpec proposal 模式：proposal.md + delta spec + design.md + tasks.md）—— **★测试左移**：spec 须含"测试设计"段（测试策略/用例骨架/边界值/回归范围——分级推导协议见下方左移要求；测试缝先行：优先既有缝/用最高缝/缝越少越好，见 `mattpocock-skills-methodology.md` §二）；**★运维左移**：spec 须含"可观测性约束"段（日志结构/metrics 埋点/trace 透传/告警阈值/健康检查）；spec 正文不写文件路径与代码片段（防腐），原型决策片段除外
+3. 实施 plan（采用 OpenSpec tasks checkbox 格式 + superpowers writing-plans bite-sized 步骤；任务拆分走纵切纪律：每票纵切全层可独立验证+声明阻塞边+宽改造 expand-contract 例外，见 `mattpocock-skills-methodology.md` §三）—— **★变更左移**：plan 须含"变更影响范围"段（消费方反查/回滚预案/灰度策略/数据库迁移兼容窗口）
 4. 分支准备
 5. 编码实现（采用 superpowers subagent-driven：orchestrator + 每任务新 subagent + 两阶段审查；**复杂变更（>3 文件/跨模块）用 Dynamic Workflows 并行扇出 + 交叉验证**）—— **★测试左移**：每个 task 须先写/更新测试再实现（TDD/BDD），precheck `--shift-left` 校验 test 与 impl 同分支提交
 6. 测试验证（含 gstack/OCR 5 审查维度 + AUTO-FIX/ASK + 可选 `claude ultrareview` 云端多 agent 审查）—— **★运维左移**：验证阶段须确认 metrics/日志/trace 已埋点且可通过健康检查端点访问；独立跑单元/集成测试，`check_test` 门禁核验 0 用例检测 + 断言密度 + Mutation Check 测试有效性。**★质量门禁序列（quality:full 十步模式）**：多门禁按序执行、fail-fast（任一步 fail 即停不跑后续）、每步耗时留痕；序列=build→test→contract→reuse→consistency→layer/link-depth→docs-pack→security→deps，全部映射 precheck 既有 flag，不新增 check_*；执行入口 `--all-full`（标准 28 已含全部）或按需单跑。生成骨架 emit 该序列指引（workflow.md 节点⑥）。

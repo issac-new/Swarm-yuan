@@ -155,7 +155,7 @@ description: "元技能生成器：为任意代码仓库生成项目专属开发
 | 族（闭环段） | 档 |
 |-------------|-----|
 | ① 生成主干（生成流程 探查/填充/生成） | exploration-guide（§C+.0.6 四层视角/矛盾裁决）、generation-flow、template-spec（§24/§25）、agent-skills-methodology、context-engineering-layering、task-methodology-router、cost-estimation-methodology、domain-knowledge、code-graph-tools、togaf-metamodel-methodology、frontend-design-methodology |
-| ② 拼装与知识消费（开发工作流 ②⑤） | lazy-generation-methodology、cordis-composability-methodology、knowledge-lifecycle-methodology、memory-persistence、cognition-framework、cognitive-bias、logic-razor、four-theories-methodology、mea-loop-methodology |
+| ② 拼装与知识消费（开发工作流 ②⑤） | lazy-generation-methodology、cordis-composability-methodology、knowledge-lifecycle-methodology、mattpocock-skills-methodology（访谈协议/测试缝/纵切拆分/诊断回路，①②③+fix 消费）、memory-persistence、cognition-framework、cognitive-bias、logic-razor、four-theories-methodology、mea-loop-methodology |
 | ③ 编排与治理（开发工作流 全程纪律） | governance-agents（四权分离 + §Z 五协议）、subagent-orchestration、gsd-patterns、decision-governance、dsh-engineering-methodology、codex-methodology、claude-code-capabilities、mcp-governance、codex-security-methodology |
 | ④ 验证与过程资产（⑥⑦⑧⑨） | review-methodology、canary-monitoring、ai-process-records、quality-management-standards |
 | ⑤ 安全合规与行业立法（门禁） | security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读、crypto-spec、cwe-database、security-certification-profiles、standards-compliance、行业 profile 八档（`--industry` 真实加载：finance/gov/medical/telecom/automotive/energy/industrial/payment） |
