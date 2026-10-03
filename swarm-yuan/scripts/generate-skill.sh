@@ -135,6 +135,8 @@ UNIVERSAL_FILES=(
   # R52 随技能分发补缺：路由表（task-methodology-router，已随技能分发）引用的方法论/行为档此前仅 3/13 随技能分发——
   # 目标技能侧 feature/fix 等开发工作流 行分派悬空。按开发工作流 消费节点补 12 档随技能分发（生成器侧档在路由表标【生成器侧】）。
   "references/knowledge-lifecycle-methodology.md|ref|standard"  # ②读法六步/影响面/回归分级/过期三态（feature/fix/docs/沉淀行）
+  # R86：mattpocock-skills-methodology 随技能分发（feature/fix 行分派：访谈协议/spec 测试缝/纵切拆分/诊断回路）
+  "references/mattpocock-skills-methodology.md|ref|standard"
   "references/decision-governance.md|ref|standard"  # ①⑧用户决策留痕（UserChallenge 五要素）
   "references/ai-process-records.md|ref|standard"  # 全程留痕口径（GB/T 8566 过程信息项）
   "references/agent-skills-methodology.md|ref|standard"  # 反借口/假设前置/Prove-It 验收（①⑦）

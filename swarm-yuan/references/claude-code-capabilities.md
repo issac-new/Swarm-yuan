@@ -771,6 +771,6 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 > npm latest 实测=2.1.288（2026-10-03 registry 查）；changelog 随版（GitHub 正本）；证据锚点 `docs/research/R85-runtime-refresh.md`。
 
 - **中断恢复续跑**：mid-response API 超时不再判整轮失败——非交互会话与子代理从部分响应继续，仅思考（无正文）的响应才整段重试。部分响应是资产不是废轮（恢复语义按内容存续划分，不按进程边界）。
-- **零用量自动压缩触发口径**：长会话最后回复报 0 token 用量时，旧版抛 "Prompt is too long" 硬失败，本版改为触发自动压缩——上下文压力信号（用量计量）与压缩动作之间的因果接线修复；计量缺失不得变成硬拒绝。
+- **零用量自动压缩触发口径**：长会话最后回复报 0 token 用量时，旧版抛 "Prompt is too long" 硬失败，本版改为触发自动压缩——上下文压力信号（用量计量）与压缩动作之间的因果链路修复；计量缺失不得变成硬拒绝。
 - **结构化输出可关**（`CLAUDE_CODE_DISABLE_STRUCTURED_OUTPUTS`）：Mantle/网关拒结构化输出时标题、记忆召回、提示钩子回退到非结构化通道——对外部中间件的能力面须有降级路径（fail-open 兼容族，与 2.1.274 网关提示头族同谱系）。
 - 记档行：$.ui.selection() 选中回传（mods 通道）、Ctrl+C 清空后 Up 恢复草稿（草稿=持久资产）、MCP OAuth 增权中途重认证、--max-findings 可调评审发现数。

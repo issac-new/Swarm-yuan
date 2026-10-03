@@ -1,5 +1,30 @@
 # Changelog
 
+## [v2.49.0] - 2026-10-03
+
+> R86 新运行时纳入轮：mattpocock/skills v1.2.3（MIT，Matt Pocock 日常工程技能集，25 技能 user-invoked/model-invoked 双轴）源码级调研后纳入运行时登记（19→20 行，机制源定位同 pua/semantica/dsh 先例，FACT_RUNTIMES=13 不变）。全部候选过决策 46 两问：**四协议入新档** `references/mattpocock-skills-methodology.md`（FACT_REFERENCES 47→48，随技能分发 feature/fix 分派面）——结构化访谈协议（设计树+前沿轮次+事实自查决策问人，补节点①"复述+确认"无访谈结构缺口）/ spec 纪律三条（测试缝先行+防腐规则+综合不访谈）/ 任务拆分纵切纪律（tracer-bullet 四规则+阻塞边前沿+宽改造 expand-contract 例外，补节点③步幅纪律无切片拓扑缺口）/ 诊断回路六阶段（反馈回路先行+red-capable 四判据+3-5 排序可证伪假设+无正确缝=架构发现，深化 Prove-It 五步）；**三档增节**——subagent-orchestration「任务图并行实现协议」（main 线 implement-spec：前沿票为扇出单位+实现者/合并者分离+集成分支+上下文指针稀疏通信）/ memory-persistence「阶段边界五选树」（继续/清空/交接/子代理/压缩有序判定+一手源换二手源损耗）/ context-engineering-layering「措辞三判据」（no-op 判定跑文档裁决+否定句失败模式正向表述+领头词经济学）；**六同构不吸收**（两轴审查/单向门/handoff/retro/共享语言/调用分层——拓扑已存在防重复吸收）。main 线 d81f3a1（合 release/v1.3 未出 tag）三新技能一并评估。调研细节 `docs/research/R86-mattpocock-skills-absorption.md`（A 级：本机克隆精读）。
+
+### Added
+- `references/mattpocock-skills-methodology.md` 新档（10.1KB，随技能分发）：需求到任务链四协议 + 不吸收同构表 + 已登记未实施（wayfinder 多会话决策地图/wizard 人机步骤向导，触发条件登记）。
+- `references/subagent-orchestration.md` R86 段：任务图并行实现协议（workflow 节点⑤复杂变更并行扇出的执行形态——扇出单位=前沿票、合并走集成分支、与并行上限 ≤3 worktree 咬合）。
+- `references/memory-persistence.md` R86 段：阶段边界五选树（切换决策只在阶段边界做；中途只有继续或拆子代理）。
+- `references/context-engineering-layering.md` §十二 措辞三判据（原 §十二 版本与来源顺延为 §十三）。
+- `docs/upstream-baseline.md`：+mattpocock-skills 行（v1.2.3 tag 6acc160 基线 + main d81f3a1 注记，baseline_status=synced）+ R86 口径注。
+
+### Fixed
+- **R85 欠账并补**：`references/claude-code-capabilities.md:774` 2.1.288 注记含禁用自造词（"因果接线修复"），test-r68-jargon-free 在 main 上即红（上轮带病收口，本轮全量验证时现形）——换标准表述"因果链路修复"，锁恢复 7/7 绿。
+
+### Changed
+- `references/task-methodology-router.md`：feature 行 +①访谈协议/②测试缝/③纵切拆分三个【按】分派；fix 行 +诊断回路【按·硬 bug】分派（G25 ⑤ 反向索引闭环）。
+- `references/capability-map.md`：族② +mattpocock-skills-methodology 行（A 级）；机制源×6→×7；整合总表 46→47 档；运行时整合表 19→20 行；顺手修追踪表嵌套括号残迹（R68 替换产物）。
+- `references/template-spec.md`：节点①②③说明挂新档指针（访谈协议/测试缝防腐/纵切拆分），低字节指针不搬内容。
+- `scripts/generate-skill.sh`：UNIVERSAL_FILES +mattpocock-skills-methodology（|ref|standard，FACT_UNIVERSAL_FILES 84→85）。
+- `assets/facts.conf`：FACT_REFERENCES 47→48 / FACT_UNIVERSAL_FILES 84→85 / FACT_ARTIFACT_BYTES_BUDGET 第十九次登记 512000→526336（实测 522843B 超 10843B：新档 10.1KB+三档增节+路由扩容，功能本体非注记膨胀）。
+- SKILL.md 第六层族② +mattpocock-skills-methodology；README（技能侧）47→48 篇 + 20 运行时口径；README（根+技能双载体）badge v2.48.0→v2.49.0。
+- 认知面（生成期必读文件）实测 191999B ≤ 预算 194560B，无超标登记。
+
+### 验证
+
 ## [v2.48.0] - 2026-10-03
 
 > R85 运行时刷新轮（例行轮 + R82-R84 表行欠账回填）：5 移动物化——**claude-code npm 2.1.288**（实质轮：中断恢复续跑/零用量自动压缩/结构化输出可关）+ **claude-mem v13.29.0**（work-state 持久工作态+sync 楔死修复族）+ **ruflo v3.51.1**（3.51.0 R84 欠账并补：ADR-406 任务契约+durable storage；.1 修复轮 MCP 目的地钉定+pre-bash 阻塞退出码）+ **comet 0.4.4**（薄轮零吸收）+ **ECC v2.2.3**（R84 欠账并补：命名退休零吸收）；gstack tip +4 快进 74512c2（v1.91.15.0）；codex rust 线 0.160/0.161 全 alpha + 0.162 至 alpha.10（基线维持 0.159.3）；dsh 0.2.1-alpha.1 前移注记；**R73「每轮刷新必回写表行」纪律恢复**（R82-R84 欠账全行对账，其余 14 行 fetch 零漂移实证）。吸收两档过决策 46 两问。轮次台账：`docs/research/R85-runtime-refresh.md`。

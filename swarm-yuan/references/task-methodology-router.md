@@ -47,8 +47,8 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 
 | 任务类型 | 触发信号 | 该读的参考文档（按执勤工作流节点序） |
 |---------|---------|---------------------------|
-| **feature（新功能）** | 分支 feat/*、用户开发需求 | ②【必】knowledge-lifecycle（读法六步）→ ③【按】cost-estimation-methodology（§25 估算）→ ⑤【必】lazy-generation（先查再写）→ ⑦【必】review-methodology → ⑧ decision-governance（用户确认点）；复杂变更加 subagent-orchestration、长任务加 mea-loop-methodology；全程 ai-process-records |
-| **fix（缺陷修复）** | 分支 fix/*、报障 | ②【必】knowledge-lifecycle（影响面查法）→ ⑤【必】lazy-generation → ⑦【必】review-methodology（回归面=修复点+相邻路径）；全程 codex-methodology（执行纪律）+ ai-process-records |
+| **feature（新功能）** | 分支 feat/*、用户开发需求 | ①【按·需求模糊】mattpocock-skills-methodology（访谈协议 §一）→ ②【必】knowledge-lifecycle（读法六步）+【按】mattpocock-skills-methodology（spec 测试缝/防腐 §二）→ ③【按】mattpocock-skills-methodology（纵切拆分 §三）+ cost-estimation-methodology（§25 估算）→ ⑤【必】lazy-generation（先查再写）；复杂变更加 subagent-orchestration（任务图并行实现）、长任务加 mea-loop-methodology；⑦【必】review-methodology → ⑧ decision-governance（用户确认点）；全程 ai-process-records |
+| **fix（缺陷修复）** | 分支 fix/*、报障 | ②【必】knowledge-lifecycle（影响面查法）→ ⑤【必】lazy-generation +【按·硬 bug】mattpocock-skills-methodology（诊断回路 §四：反馈回路先行/red-capable/可证伪假设）→ ⑦【必】review-methodology（回归面=修复点+相邻路径）；全程 codex-methodology（执行纪律）+ ai-process-records |
 | **refactor（重构）** | 分支 refactor/* | ②【必】knowledge-lifecycle（影响面）→ ③【按·架构类】togaf-metamodel-methodology（§24）/ cordis-composability-methodology（可组合性）→ ⑤ lazy-generation → ⑦【必】review-methodology |
 | **test（测试）** | 分支 test/* | ⑦【必】review-methodology（测试有效性判定）+ 回归分级（template-spec §19【生成器侧】，执勤侧载体是 spec §19 本身）；长测试计划 mea-loop-methodology |
 | **docs（文档）** | 分支 docs/* | ②【必】knowledge-lifecycle（知识四阶段协议，文档即知识）→ ⑦ review-methodology（三方一致核对） |

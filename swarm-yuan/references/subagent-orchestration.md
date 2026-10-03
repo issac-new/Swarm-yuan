@@ -326,6 +326,19 @@ ECC 的 control pane 是**本地只读 observability server**：
 
 > Superpowers 附记（R37）：Superpowers 接入前经 Gen/Socket/Snyk 三引擎安全审查（14 skills 全绿）——skill 供应链三方扫描的上游实证，与 skill-supply-chain 门禁同向。
 
+## 任务图并行实现协议（R86 吸收，2026-10-03）
+
+> 来源：mattpocock/skills main 线 `skills/engineering/implement-spec/SKILL.md`（v1.3 未出 tag，2026-09-29 main d81f3a1 源码实测）。上游用一张 spec+tickets 任务图驱动多实现者并行；与上文 ECC worktree 生命周期（管"工作树状态与清理"）和 ruflo supervisor（管"一仓库一调度者"）互补——本节管**任务图怎么切成并行面**。
+
+四机制：
+
+1. **任务图而非步骤表**：tickets 是带阻塞关系的任务图——永远存在一个可抓取的**前沿**（阻塞全落地的票）。与 mattpocock-skills-methodology §一访谈前沿、§三拆分前沿同构：依赖图前沿是通用工作面。
+2. **实现者子代理各自 worktree**：每张前沿票一个实现者子代理，在基于**集成分支**的独立 worktree 独立分支上实现（开工前确认基于集成分支，不是则 reset 到它）；完成前把集成分支 tip 合回自己的分支再报告。TDD 在实现者内部驱动。
+3. **合并者子代理分离**：实现者报告完成后，由单独的合并者子代理把其分支合入集成分支——实现与合并两角色不混。前沿变化即补派新实现者，最大化并发；全部完成后整条集成分支过 code review，修复由单个实现者集中处理。
+4. **稀疏通信（上下文指针）**：子代理之间只传指针（spec 路径/票号/研究笔记/commit），不复制指针后面已有的内容——控制器与实现者的通信面压到最小。探索产物落仓库外共享目录，供后续子代理按需取，避免每个实现者重复探索。
+
+**swarm-yuan 落点**：workflow 节点⑤"复杂变更（>3 文件/跨模块）并行扇出"的执行形态——扇出单位=前沿票（非整块任务），合并走集成分支（非逐个向 main 合）；与并行上限 ≤3 worktree 的用户侧纪律咬合（前沿按上限分批取）。
+
 ## Ruflo v3.21 全量能力（agent meta-harness——swarm-yuan 须知道但可选引用）
 
 > 来自 Ruflo（原 Claude Flow）v3.21.1 源码调研。323 MCP 工具 + 45 CLI 命令 + 33 插件 + witness 验证 + federation 跨机器协作。
