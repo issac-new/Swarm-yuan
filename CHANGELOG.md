@@ -1,5 +1,23 @@
 # Changelog
 
+## [v2.50.0] - 2026-10-04
+
+> R87 全量回归轮（双栈）：**Vue2+ElementUI + SpringBoot+MyBatis+MySQL 前后端同仓**（用户点名栈，docker MySQL 8.4.11 真库全链）与 **Next.js 16 App Router + Prisma 7**（新形态首执勤）双项目真实可跑演练——流A×2（骨架→注入→填充→门禁→mark-active 解锁全量，两技能 --all-full fail=0）+ 流B 三类执勤（dueDate 需求 TDD 全链含红测先行/spec 歧义暴露/四件套同步/状态机五段/真库 ALTER；指纹自成长 --write→--diff 精准检出→单条更新；hook 三面 rules.d forbid/捕获/拦截+审计四段）。识别 1 真缺陷 D3 修复 + 2 误报澄清 + 2 观察项。探测面全对（fullstack 7 框架含同仓子目录复合命令嗅探；nextjs 4 框架含 Next/Prisma 规则集）。Prisma 7 破坏性变更五坑实录（schema url 移除/adapter 对象参数/导出名/pnpm 原生构建拦截/JDBC 编码名）。轮次台账 `docs/research/R87-full-regression.md`（A 级证据）。
+
+### Fixed
+- **D3（P1）：check_deps 版本归一化不剥尾注**——codebase.md 版本表列自然携带注记（"4.5.14（devDep）"）时 `_norm_ver` 只剥 range 前缀不剥括号注记，基线"4.5.14（devDep）" vs 当前"4.5.14"被判变更——假阳性 fail 且报错信息两侧显示相同版本（自相矛盾证据展示）。修复：`assets/gates-warn.sh` `_norm_ver` 从第一个括号（全角（/半角(）起截断尾注（版本号内括号不合法截断安全；`2.1.4.RELEASE` 无括号形态不受影响）。
+- 同族清剿：`_norm_ver` 单点（split-gates.sh 分发同源）；baseline 提取 awk 在 check_deps 内同修复覆盖。
+
+### Added
+- `tests/test-r87-full-regression.sh` 变异锁 7 向：D3 修复面×2（全角/半角尾注基线==纯版本当前）+负向不误放（真实版本差仍不等）+R75-D2 语义保持（^5.7==5.7.0）+RELEASE 语义保持+e2e（注记基线 mini 项目 check_deps 零误报）；变异验证红→绿实证（去修复①红，恢复 7/7 绿）。
+- `docs/research/R87-full-regression.md` 轮次台账（含 D1/D2 误报澄清与 F3 观察项、增强候选登记）。
+
+### Verified（演练面）
+- fullstack：后端 11 用例（H2 MODE=MySQL）+前端 12 用例+pnpm build 绿+真库冒烟三形态（stats/POST 带标签/dueDate echo）+状态机五段全通（跳级拦截/proposal 准入/verify_result 门）+指纹 28→29 检出+hook 三面 deny JSON+审计四段。
+- nextjs：6 用例+next build（含 tsc）绿；--all-full fail=0。
+- 预算：随发体积实测 522843B ≤ 526336B（余 3493B 无超标登记）；生成期必读文件 191999B ≤ 194560B。
+
+
 ## [v2.49.0] - 2026-10-03
 
 > R86 新运行时纳入轮：mattpocock/skills v1.2.3（MIT，Matt Pocock 日常工程技能集，25 技能 user-invoked/model-invoked 双轴）源码级调研后纳入运行时登记（19→20 行，机制源定位同 pua/semantica/dsh 先例，FACT_RUNTIMES=13 不变）。全部候选过决策 46 两问：**四协议入新档** `references/mattpocock-skills-methodology.md`（FACT_REFERENCES 47→48，随技能分发 feature/fix 分派面）——结构化访谈协议（设计树+前沿轮次+事实自查决策问人，补节点①"复述+确认"无访谈结构缺口）/ spec 纪律三条（测试缝先行+防腐规则+综合不访谈）/ 任务拆分纵切纪律（tracer-bullet 四规则+阻塞边前沿+宽改造 expand-contract 例外，补节点③步幅纪律无切片拓扑缺口）/ 诊断回路六阶段（反馈回路先行+red-capable 四判据+3-5 排序可证伪假设+无正确缝=架构发现，深化 Prove-It 五步）；**三档增节**——subagent-orchestration「任务图并行实现协议」（main 线 implement-spec：前沿票为扇出单位+实现者/合并者分离+集成分支+上下文指针稀疏通信）/ memory-persistence「阶段边界五选树」（继续/清空/交接/子代理/压缩有序判定+一手源换二手源损耗）/ context-engineering-layering「措辞三判据」（no-op 判定跑文档裁决+否定句失败模式正向表述+领头词经济学）；**六同构不吸收**（两轴审查/单向门/handoff/retro/共享语言/调用分层——拓扑已存在防重复吸收）。main 线 d81f3a1（合 release/v1.3 未出 tag）三新技能一并评估。调研细节 `docs/research/R86-mattpocock-skills-absorption.md`（A 级：本机克隆精读）。
