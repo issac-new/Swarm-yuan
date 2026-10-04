@@ -11,7 +11,7 @@
 - `references/mea-loop-methodology.md` §五：长程编排拓扑（三层嵌套表+三设计原则+四层评估+中断恢复两机制+消费指引；原 §五-§七 顺延 §六-§八）。
 - `references/subagent-orchestration.md` Pi codemode 段：沙箱脚本聚合形态（嵌套 tool call 不进主上下文，与 ECC compaction 方向互补；DSH code-runtime 同类面已移除的对照警示；记档不吸收）。
 - `docs/upstream-baseline.md`：+pi 行（7 公开包/严格顺序 loop/包管理器式扩展发现/JSONL 消息树/project trust/codemode）+ dsh 行刷新（0.2.1-alpha.1 深读注记，触发点顺延「dsh-v0.2.x stable/rc tag」）+ R88 口径注。
-- 路由接线：capability-map 族④ +rsi 行 +机制源×8；router 验收/交付行【按·改进型变更】+升级已有技能【生成器侧】；generate-skill.sh UNIVERSAL_FILES +rsi（85→86）。
+- 路由登记：capability-map 族④ +rsi 行 +机制源×8；router 验收/交付行【按·改进型变更】+升级已有技能【生成器侧】；generate-skill.sh UNIVERSAL_FILES +rsi（85→86）。
 
 ### Fixed（计数残留对账，R86 ef54b6b 先例）
 - SKILL.md「frameworks 规则库 79 集」→81（R63 php/R64 ruby 后漏改）；README.md 48→49 篇、R50 47→48 档+20→21 运行时；capability-map/router 头部 46→48 份（R86 后漏改）。
