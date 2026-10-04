@@ -788,3 +788,11 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **零用量自动压缩触发口径**：长会话最后回复报 0 token 用量时，旧版抛 "Prompt is too long" 硬失败，本版改为触发自动压缩——上下文压力信号（用量计量）与压缩动作之间的因果链路修复；计量缺失不得变成硬拒绝。
 - **结构化输出可关**（`CLAUDE_CODE_DISABLE_STRUCTURED_OUTPUTS`）：Mantle/网关拒结构化输出时标题、记忆召回、提示钩子回退到非结构化通道——对外部中间件的能力面须有降级路径（fail-open 兼容族，与 2.1.274 网关提示头族同谱系）。
 - 记档行：$.ui.selection() 选中回传（mods 通道）、Ctrl+C 清空后 Up 恢复草稿（草稿=持久资产）、MCP OAuth 增权中途重认证、--max-findings 可调评审发现数。
+
+## 版本注记：v2.1.288 → v2.1.289（2026-10-04 R89 核）
+
+> npm latest 实测=2.1.289（2026-10-04 registry 查）；changelog 随版（GitHub 正本）；证据锚点 `docs/research/R89-runtime-refresh.md`。
+
+- **权限通道完备性三连**：①复合 shell 命令嵌套段上的 deny/ask 规则不再被用户所装 mod 的批准压过（受管机器——**管理侧否决优先于用户侧授权**，fail-closed 层级执法）；②Read deny 规则经符号链接作用于 IDE @提及/变更/选中通道（路径规范化 268 谱系延到 IDE 通道——**同一文件的每一条进入路径都过同一权限检查**）；③Bash deny/ask 在沙箱 auto-allow 下不再漏检环境变量前缀展开值（`TZ="$HOME" rm -rf build`）与裸赋值后的命令——**auto-allow 是通道捷径不是豁免面**。
+- **插件元数据越权修复**：用户安装的插件不得改写组织管理的 MCP server 登录工具描述——元数据（描述=模型所见）也是权限面，越权描述可诱导模型走错端点。
+- 记档行：agent.spawn teammates + $.agent.list() idle/waiting 态（多代理状态面）、mods 渲染失败单区隔离（ui.fault——一个 mod 的 Client 失败只废它自己，不带崩全局渲染）。
