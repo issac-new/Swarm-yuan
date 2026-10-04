@@ -2,7 +2,7 @@
 
 # 文档索引（Capability Map）——references 吸收层整合清单
 
-> **定位**：本表是吸收内容（47 份参考文档 + 20 个上游运行时）的**整合总清单**：每份文档登记 来源→证据分级→消费环节→何时读，由生成器自检的 G25 断言双向一致性校验（每份实存文档必须入账、账上不登记不存在的文档）。分工：SKILL.md 第四层的"概念↔实物追踪表"（内部俗称追踪表）登记**核心概念**的诞生步/消费方/回流点；本表登记**吸收来的文档**从哪来、在哪被用——粒度互补，纪律同一条：无悬空（谁都有消费方）。**本表只在生成器仓维护，不随目标技能分发**（目标技能只收到 UNIVERSAL_FILES 清单里的子集）。
+> **定位**：本表是吸收内容（48 份参考文档 + 21 个上游运行时）的**整合总清单**：每份文档登记 来源→证据分级→消费环节→何时读，由生成器自检的 G25 断言双向一致性校验（每份实存文档必须入账、账上不登记不存在的文档）。分工：SKILL.md 第四层的"概念↔实物追踪表"（内部俗称追踪表）登记**核心概念**的诞生步/消费方/回流点；本表登记**吸收来的文档**从哪来、在哪被用——粒度互补，纪律同一条：无悬空（谁都有消费方）。**本表只在生成器仓维护，不随目标技能分发**（目标技能只收到 UNIVERSAL_FILES 清单里的子集）。
 > **证据分级**（R37 口径）：A=本机实测；B=官方一手直查；C=二手转述（未核验不进基线）。
 
 ## 一、整合视图：吸收物如何构成一个整体
@@ -21,7 +21,7 @@
 
 **配套查询**：本表从**文档**查"它被谁用"；`task-methodology-router.md` §文档路由表从**任务**查"开工读什么"——一个任务要读什么，从那边查；一份文档被谁消费，从这里查。
 
-## 二、references 整合总表（47 档，self-check G25 对账面）
+## 二、references 整合总表（48 档，self-check G25 对账面）
 
 ### 族① 生成主干（生成流程）
 
@@ -76,6 +76,7 @@
 | canary-monitoring | check_canary 降档保留（A） | ⑨ 发布后监控（setup-loop --verify） | 发布后基线对比 |
 | ai-process-records | GB/T 8566 扩展（B） | trace/decisions 留痕口径 | 审计/复盘/交接 |
 | quality-management-standards | ISO 9001/CMMI 映射（B） | 认证过程资产引用 | 组织级标准对齐 |
+| rsi-evidence-methodology | 清华 RSI 综述 + D2I-ai + 字节三论文（B，R88） | 生成侧吸收轮收口验收 + 目标技能自成长链证据纪律（⑤⑦） | 改进/自进化系统的验收证据分层、升级已有技能 |
 
 ### 族⑤ 安全合规与行业立法（门禁）
 
@@ -95,7 +96,7 @@
 | industry-profile-industrial | 工控法规调研（B） | --industry 真实加载 | 工控项目立法 |
 | industry-profile-payment | 支付法规 + hermes pay-team（B/A） | --industry 真实加载 | 支付项目立法 |
 
-## 三、运行时整合表（供给侧见 upstream-baseline 20 行；此为消费侧）
+## 三、运行时整合表（供给侧见 upstream-baseline 21 行；此为消费侧）
 
 | 整合深度 | 运行时 | 消费点 | 降级链 |
 |---------|--------|--------|--------|
@@ -107,7 +108,7 @@
 | CLI×4 | gsd-core | 计划验证/STATE 戳模式 | 未装→tasks.md checkbox |
 | CLI×4 | codex-security | 安全扫描门禁子进程 | 未装→grep 级安全模式 |
 | 方法论×5 | superpowers / gstack / ECC / Ruflo / impeccable | 编排/审查/记忆蒸馏/前端设计方法论引用 | 无运行时依赖（纯文档） |
-| 机制源×7 | dsh / pua / semantica / ponytail / codegraph / mattpocock-skills / 文章源 | 已蒸馏为 references 各档（见上表来源列） | 同上 |
+| 机制源×8 | dsh / pua / semantica / ponytail / codegraph / mattpocock-skills / pi / 文章源 | 已蒸馏为 references 各档（见上表来源列） | 同上 |
 
 ## 四、对账纪律（self-check G25 机器执法）
 

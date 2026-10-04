@@ -1,5 +1,22 @@
 # Changelog
 
+## [v2.51.0] - 2026-10-04
+
+> R88 调研吸收轮（编号顺延 R87 并行占用；版本顺延 v2.50.0 已被 R87 使用）：9 源调研（8 篇公众号文章 + DeepSeek Harness v0.2.1-alpha.1）机制级吸收。**+1 运行时登记——earendil-works/pi（原 badlogic/pi-mono）Pi 1.0**（20→21 行，机制源定位同 mattpocock/dsh 先例，FACT_RUNTIMES=13 不变；文章转述失真三处修正：daemon 不存在/A2A 无对应物/「No MCP」不实）。**DSH v0.2.1-alpha.1 兑现 R85 前移注记深读**（基线维持 0.1.5-rc.2 沿 R29「alpha 不作基线」先例）：Mods 兼容桥四机制（register 直包装/生命周期四映射/不可触发事件点名警告/权限时序差异——「同名事件跨运行时语义不同」陷阱正例）+ hooks 桥包记档修正（dsh-hooks-claude-code 7/30 事件，**0.1.2-rc.1 已有非 0.2.x 增量**，二手信息与源码树矛盾以源码为准）+ invariant 收敛进类型系统（「删优于养」第三实证）。**Claude Code Mods 机制节**（官方文档直查修正 R84「产品面卷不吸收」归类：mod=进程内事件处理器、事件面是 settings hooks 超集、**无独立 mods.json** 为转述失真、Mods aren't sandboxed 权限警示）。**RSI 证据学新档**（清华 404 篇综述+D2I-ai+字节三论文三源：三类证据分离（任务增益/能力保留/改进器增益）/四态保留/L1-L5 分级+五元组+DPEI/密封评测协议/字节五短板×既有防线映射，FACT_REFERENCES 48→49）。**mea-loop §五 编排拓扑**（Harness/Loop/Graph 三层嵌套+四层评估口径+副作用三态+checkpoint 协议）。同构不吸收：Agent Harness 十层演进叙事（48 档逐层已有专档）/EqualAI 治理（三层防线=门禁+hook+审计拓扑）/DSH workspace RFC（社区未落地提案）。调研细节 `docs/research/R88-rsi-absorption.md`。
+
+### Added
+- `references/rsi-evidence-methodology.md` 新档（9.8KB，随技能分发）：自改进系统验收证据学——S/I 双系统、三类证据分离表（含 swarm-yuan 对应物）、四态保留+载体映射、L1-L5+自身定位（L2→L3）、密封评测三件+修复双查+机制覆盖≠能力证据、字节五短板×既有防线映射表、已登记未实施两条（吸收轮候选自举化/改进器增益量化）。
+- `references/dsh-engineering-methodology.md` §十三：v0.2.1-alpha.1 版本注记（Mods 兼容桥/hooks 桥包记档修正/0.1.3→0.2.1 演进回填/workspace RFC 记档不吸收）。
+- `references/claude-code-capabilities.md` §八 Mods 机制节：五面表格（API/事件面/$ 命名空间/权限警示/版本生命周期）+与 settings hooks 关系+跨运行时信号。
+- `references/mea-loop-methodology.md` §五：长程编排拓扑（三层嵌套表+三设计原则+四层评估+中断恢复两机制+消费指引；原 §五-§七 顺延 §六-§八）。
+- `references/subagent-orchestration.md` Pi codemode 段：沙箱脚本聚合形态（嵌套 tool call 不进主上下文，与 ECC compaction 方向互补；DSH code-runtime 同类面已移除的对照警示；记档不吸收）。
+- `docs/upstream-baseline.md`：+pi 行（7 公开包/严格顺序 loop/包管理器式扩展发现/JSONL 消息树/project trust/codemode）+ dsh 行刷新（0.2.1-alpha.1 深读注记，触发点顺延「dsh-v0.2.x stable/rc tag」）+ R88 口径注。
+- 路由登记：capability-map 族④ +rsi 行 +机制源×8；router 验收/交付行【按·改进型变更】+升级已有技能【生成器侧】；generate-skill.sh UNIVERSAL_FILES +rsi（85→86）。
+
+### Fixed（计数残留对账，R86 ef54b6b 先例）
+- SKILL.md「frameworks 规则库 79 集」→81（R63 php/R64 ruby 后漏改）；README.md 48→49 篇、R50 47→48 档+20→21 运行时；capability-map/router 头部 46→48 份（R86 后漏改）。
+- FACT_SCRIPT_LOC 6531→6541 补记账（两轮欠账：R83 D1 precheck 旗标守卫 +6 与 R87 D3 gates-warn 归一化净 +4 收口均未登记；本轮 git show 逐 commit 实测对账补上）。
+
 ## [v2.50.0] - 2026-10-04
 
 > R87 全量回归轮（双栈）：**Vue2+ElementUI + SpringBoot+MyBatis+MySQL 前后端同仓**（用户点名栈，docker MySQL 8.4.11 真库全链）与 **Next.js 16 App Router + Prisma 7**（新形态首执勤）双项目真实可跑演练——流A×2（骨架→注入→填充→门禁→mark-active 解锁全量，两技能 --all-full fail=0）+ 流B 三类执勤（dueDate 需求 TDD 全链含红测先行/spec 歧义暴露/四件套同步/状态机五段/真库 ALTER；指纹自成长 --write→--diff 精准检出→单条更新；hook 三面 rules.d forbid/捕获/拦截+审计四段）。识别 1 真缺陷 D3 修复 + 2 误报澄清 + 2 观察项。探测面全对（fullstack 7 框架含同仓子目录复合命令嗅探；nextjs 4 框架含 Next/Prisma 规则集）。Prisma 7 破坏性变更五坑实录（schema url 移除/adapter 对象参数/导出名/pnpm 原生构建拦截/JDBC 编码名）。轮次台账 `docs/research/R87-full-regression.md`（A 级证据）。
