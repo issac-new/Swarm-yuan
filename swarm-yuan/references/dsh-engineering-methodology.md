@@ -170,3 +170,12 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 - **任务管理器详情关闭竞态修复**（`#5339`）：详情面板关闭与数据到达的竞态显式处理。
 - **agent-preset 经验技能与 creator mode 共享**（`8931fa2`）：预设面经验物跨模式复用——技能资产的单一事实源纪律。
 - **0.2 预览声明强制确认**（`#5356` 族）：预览版说明需显式确认——版本面文案与用户知情的门禁化。
+
+## 十三、v0.2.1-alpha.1 版本注记（2026-10-04 R88 核；release notes + 源码树 diff 直查）
+
+> tag `dsh-v0.2.1-alpha.1`（2026-10-03 发布，v0.2.0 仅 rc.1/rc.2 无正式版）。R85 前移注记「rc/stable 出线即深读」本轮兑现。证据锚点 `docs/research/R88-rsi-absorption.md`。
+
+- **Claude Code Mods 兼容桥**（`packages/experimental/claude-code-mods/`，v0.1.2-rc.1 树中不存在，本轮真增量）：`defineMod({name, version, root, register})` **直接包装 mod 的 `register(on)` 函数**、转为普通 Cordis 插件挂载——不解析 plugin.json/hooks.json 等清单；生命周期映射 `session.start`←`agent/created`（首轮前等待）、`prompt.submit`←`agent/pre-step`、`tool.call` 包裹 `tools/execute` 瀑布、`session.end`←`agent/disposed`；**不可触发事件点名警告**（`tool.check`/`ui.*`/`telemetry.*` 可注册但永不触发，加载时告知而非静默）；**权限时序差异**：DSH 的 `tool.call` 在 harness 权限判定**之后**运行（Claude Code 在之前），改写参数/换工具的钩子被跳过——「同一事件名跨运行时语义不同」的桥接陷阱正例；`$` 命名空间按需组合 harness 服务，未组合的以 `no implementation for <namespace>.<method>` 显式拒绝。官方定位：验证「Claude Code Mods API ⊂ DSH 插件能力」的 alpha 演示，非完整兼容（官方 mods/diff 等 4 个真实 mod 评估为不可运行）。吸收点：**子集验证式桥接**——不仿全集，先证包含关系，差异面（权限时序/不可触发事件）显式记档。
+- **`dsh-hooks-claude-code` / `dsh-hooks-codex` 桥包记档（R88 修正：0.1.2-rc.1 树已存在，非 0.2.x 增量）**：CC 30 个 hook 事件支持 7 个（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop/SubagentStart/SubagentStop → `agent/created`/`agent/pre-step`/`tools/pre|post-execute`/`agent/turn-stopping`/`subagent/start|end`），决策折叠 `deny > ask > allow`、串行执行、Stop 阻塞经 `steer()` 强制续轮；codex 桥 10 事件支持 5 个、payload 保持 Codex 方言。设计立场「兼容适配器而非强力工具」——与本技能 hooks 双宿主（Claude deny/Codex exit 2）同族：宿主差异显式化优于假装兼容。
+- **0.1.3→0.2.1 演进要点（回填 §九-§十二 间隙）**：`SessionHandle` 生命周期 + 会话锁（一进程一持有者）；插件管理页热启停 + 依赖运行时解析 + 运行时卸载；桌面端捆绑 `dsh` 命令免装 Node/pnpm；0.2.1 移除运行时 invariant 插件、`runtime-diagnostics` 包与子路径插件独立 `package.json`——**运行时自检收敛进类型系统与装载模型**（解释性空实现契约 §4.2 的延伸：invariant 从运行时插件降为构建期保证，「删优于养」§八第三实证）。
+- **同构不吸收**：社区 RFC workspace-scoped configuration（discussion #941，2026-08-14 开启、早于 0.1.2 基线、至今无官方回应未落地——workspace 运行时注册表/引用计数 Lease/作用域链设计记档待其落地再评）；「让 Agent 创建插件」入口、开发者工具组合包、`--public-url` 反代（产品面记档）。

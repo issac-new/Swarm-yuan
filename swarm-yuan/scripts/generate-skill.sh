@@ -141,7 +141,9 @@ UNIVERSAL_FILES=(
   "references/ai-process-records.md|ref|standard"  # 全程留痕口径（GB/T 8566 过程信息项）
   "references/agent-skills-methodology.md|ref|standard"  # 反借口/假设前置/Prove-It 验收（①⑦）
   "references/codex-methodology.md|ref|standard"  # fix/chore 执行纪律（截断/压缩/版本锁定例外）
-  "references/mea-loop-methodology.md|ref|standard"  # 长任务拆解/审计证据引用（④）
+  "references/mea-loop-methodology.md|ref|standard"  # 长任务拆解/审计证据引用（④）+编排拓扑三层嵌套（⑤扇出选型）
+  # R88：rsi-evidence-methodology 随技能分发（验收/交付行+升级已有技能：改进的三类证据对账）
+  "references/rsi-evidence-methodology.md|ref|standard"
   "references/togaf-metamodel-methodology.md|ref|standard"  # 架构类 spec §24 BDAT（③）
   "references/cordis-composability-methodology.md|ref|standard"  # 可组合性设计（refactor/架构行⑤）
   "references/frontend-design-methodology.md|ref|standard"  # 前端 UI 类任务（③⑤）

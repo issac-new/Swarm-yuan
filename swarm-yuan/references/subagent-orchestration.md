@@ -564,3 +564,13 @@ swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input` 白名单字符集�
 - **冻结语料 + AND 门禁决定默认切换**：197 条标注 prompt、sha256 固定，准确率与延迟双过才晋升（首测 +10.6 点但 p95 +485% **故不切换**）。
 - **失败面显式化而非静默降级**：`embeddingError`/`available+reason`/「Learning degraded」告警；**学习回执不再编造**。
 - **句柄空闲自释放 + 写盘原子重试**：WAL 句柄空闲释放（原残留致 `memory_store` 被守卫拒绝）；rename 有界退避→写失败会让**一次性审批可被复用**。
+
+## Pi codemode：沙箱脚本聚合形态（2026-10-04 R88 记档）
+
+> earendil-works/pi（原 badlogic/pi-mono 重定向）`packages/codemode`；Pi 机制源定位不进 FACT_RUNTIMES（同 dsh/pua/mattpocock 先例，登记 upstream-baseline 行）。证据：官方 README 直查（B+）。
+
+- **机制**：QuickJS/WASM 沙箱内让模型写 JS 编排其他工具——嵌套 tool call 在沙箱内完成，**只有脚本最终输出进入主上下文窗口**（中间调用与结果不进入）。
+- **定位**：子代理进程的替代形态——不开新子代理上下文，用沙箱脚本聚合多次工具调用。上下文成本模型对比：子代理=固定开新窗口+结果回流；codemode=零新窗口+只回流终值。
+- **与既有档咬合**：ECC 上下文经济学（compaction/蒸馏）同族但方向相反——那是"事后压缩已进入的"，codemode 是"事前阻止进入"；与 R86 任务图并行实现（子代理扇出）、 Mods `turn.step` 就地代答并列为编排形态第三选项。
+- **对照警示**：DSH 曾有 `code-runtime` 包（0.1.x 线）后在 0.2.1 收敛中移除——进程内代码执行面在大厂运行时也未站稳，形态选型时优先子代理扇出，codemode 记档备查。
+- **不吸收理由（当下）**：Claude Code 无进程内沙箱脚本面（Mods 非沙箱）；宿主出现等价面时再评估。

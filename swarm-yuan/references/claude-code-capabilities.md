@@ -256,6 +256,20 @@ enterprise → `~/.claude/settings.json` → project `.claude/settings.json` →
 | `archive` plugin source | zip over HTTPS 安装插件（不需 git/npm）+ 可选 SHA-256 pinning | v2.1.224 |
 | `command` plugin source | 本地命令（如 IDE）打印插件目录，每会话重解析，`mode: link` 原地用 | v2.1.229 |
 
+### Mods（v2.1.287+，R88 核——官方文档直查，修正 R84「产品面卷不吸收」归类）
+
+mod 不是独立格式，是**插件的子集**：官方定义 "A mod is a plugin whose code registers event handlers"——进程内 JS/TS 事件处理器，无需构建步骤；一个插件可同时打包 mod、skills 与 MCP servers。**无独立 mods.json**（二手转述常见失真）：结构仍是 `.claude-plugin/plugin.json` + `hooks/hooks.json`（其中 `modules: ["./register.js"]` 字段使插件成为 mod）+ `register.js` 导出 `register(on)`。
+
+| 面 | 要点 |
+|----|------|
+| API | `on(event, [matcher], async ($, e, next) => {})`，`next(e)` 放行；事件含 `tool.call`（可拒绝/改参数）、`tool.check`（返回 allow/ask/deny）、`prompt.submit`（改写提示词）、`turn.start/step/complete`（`turn.step` 可换模型或就地代答）、`session.*`、`command.run`、`skill.prompt`、`ui.render`（按组件 matcher 重绘 UI）、`classic.*`（桥接全部旧 settings hook 事件）、`*` 通配 |
+| `$` 引擎命名空间 | `$.ui`（status/toast/panes/tabs）、`$.fs`、`$.process`、`$.http`、`$.model`（complete/fork）、`$.prompt.submit`（**可冒充用户提交提示词**）、`$.session`、`$.store/env/settings/mcp`、`$.command`、`$.tool.register`、`$.agent.list` |
+| 权限警示 | 官方明言 **"Mods aren't sandboxed"**：以用户权限读写文件/起进程/发网络请求/读环境变量与 API key/预批 tool call；Sandbox 只隔离 Bash 命令，不隔离 mod 自启进程。装前 `claude plugin validate` 可查 `hooks:`/`calls:` 清单；组织侧 `allowManagedModsOnly` 管控，内置 mod `sec-default` 专防组织策略被用户插件篡改 |
+| 版本/生命周期 | v2.1.287 起（CHANGELOG "plugins may now modify deeper behavior"，同版内置 "You should know" mod）；市场安装（`/plugin install`），无 `~/.claude/mods` 目录；开发态 `claude --plugin-dir ./dir` **热重载**（文件变更即重跑 register），已安装 mod 按版本缓存无热重载；`--safe-mode`/`disableAllHooks` 禁用 |
+| 官方示例 | anthropics/claude-code-playground `claude-code/mods/`：replay-theater（会话回放）/ blast-radius（改动影响面）/ token-weather（token 消耗可视化）；4 个内置 mod 源码公开（sec-default/diff/telemetry/agents-md） |
+
+**与 settings hooks 的关系**：事件面是进程内超集（`classic.*` 桥接保证旧 hooks 可迁移），且能改参数/换模型/绘 UI——旧 hooks 的外部 shell 命令做不到。目标技能的 fail-gate-hook 形态选型（⑤.5）在 2.1.287+ 宿主可评估 mod 形态；`$.prompt.submit` 冒充提交与全权限运行是 mcp-governance 同族安全面。跨运行时信号：DSH v0.2.1-alpha.1 已建 Mods 兼容桥（`dsh-engineering-methodology.md` §十三，含权限时序差异陷阱）——Mods API 正成为跨运行时插件事件面的参照标准。
+
 ## 九、Worktree Isolation
 
 | 能力 | 描述 | 来源版本 |

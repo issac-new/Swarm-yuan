@@ -221,7 +221,7 @@
 | 深度整合四件（GitNexus / graphify / claude-mem / ocr） | 门禁内真实子进程 + 多级降级链 | references/code-graph-tools.md 等（图谱第三备选 codegraph 同文件，watch 未整合） |
 | CLI 四件（OpenSpec / comet / gsd-core / codex-security） | 按需调用 CLI，降级自带载体 | references/ 各 methodology |
 | 方法论五件（superpowers / gstack / Ruflo / ECC / impeccable） | AI 按工作流节点引用模式 | references/subagent-orchestration.md |
-| 外部方法论文档与能力档 48 篇（codex / dsh / cordis / mea-loop / agent-skills / mattpocock-skills / four-theories / cost-estimation / lazy-generation / knowledge-lifecycle 等） | 蒸馏为 references 方法论，全带"何时读我"路由头 | references/ 同名文件；**逐档整合清单见 references/capability-map.md（R50：47 档来源/证据分级/消费节点/触发 + 20 运行时消费侧映射，self-check G25 双向一致性校验未登记文档检查）** |
+| 外部方法论文档与能力档 49 篇（codex / dsh / cordis / mea-loop / agent-skills / mattpocock-skills / four-theories / cost-estimation / lazy-generation / knowledge-lifecycle / rsi-evidence 等） | 蒸馏为 references 方法论，全带"何时读我"路由头 | references/ 同名文件；**逐档整合清单见 references/capability-map.md（R50 建，现 48 档来源/证据分级/消费节点/触发 + 21 运行时消费侧映射，self-check G25 双向一致性校验未登记文档检查）** |
 | 功能点估算（NESMA GB/T 42588-2023，人民银行科技司 2025-07 培训吸收） | spec §25 选填节（feature 档推荐）+ 方法论随技能分发执勤侧 | references/cost-estimation-methodology.md + assets/spec-template.md §25 |
 | 懒生成（七层复用阶梯 + 懒≠偷工，R37 吸收自 DietrichGebert/ponytail） | ⑤编码"先查再写"下探决策程序 + 方法论随技能分发执勤侧 | references/lazy-generation-methodology.md |
 | 行业法规映射 8 档 | conf + 法规依据文档配对，真实加载 | assets/industry-profiles/ + references/industry-profile-*.md |

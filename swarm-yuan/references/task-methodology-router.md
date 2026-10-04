@@ -42,7 +42,7 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 
 ## 文档路由表（任务开工该读什么）
 
-> 本表与文档索引（capability-map.md，生成器仓维护）配套：那张表从**文档**查"它在哪里被使用"，本表从**任务**查"开工该读什么"——46 份吸收来的参考文档由此全部可达。表内序号（②⑤⑦…）是执勤工作流（开发工作流，目标技能 references/workflow.md）的节点号；【必】=该任务必读，【按】=命中条件才读。覆盖纪律：`*-methodology.md` 每份必须能从本表查到（生成器自检的 G25 断言把关）。
+> 本表与文档索引（capability-map.md，生成器仓维护）配套：那张表从**文档**查"它在哪里被使用"，本表从**任务**查"开工该读什么"——48 份吸收来的参考文档由此全部可达。表内序号（②⑤⑦…）是执勤工作流（开发工作流，目标技能 references/workflow.md）的节点号；【必】=该任务必读，【按】=命中条件才读。覆盖纪律：`*-methodology.md` 每份必须能从本表查到（生成器自检的 G25 断言把关）。
 > **可及性**：本表引用的文档都随目标技能分发（在生成器 UNIVERSAL_FILES 分发清单里，拷进目标技能 references/ 直接可读）；标【生成器侧】的文档只在生成器仓里存在——引用它的任务在生成器里做，不会进目标技能。同样由 G25 断言把关。
 
 | 任务类型 | 触发信号 | 该读的参考文档（按执勤工作流节点序） |
@@ -59,10 +59,10 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 | **安全类** | 含认证/加密/权限/输入处理 | ③【必】codex-security-methodology（威胁建模五要素）→ ⑦ review-methodology |
 | **治理机制设计** | 改 swarm-yuan 自身门禁/hooks/流程 | ③【必】four-theories-methodology（【生成器侧】门禁拦得住/拦太多评估）+ dsh-engineering-methodology（【生成器侧】审计/状态韧性）+ agent-skills-methodology（Prove-It 自证）→ ⑦【必】review-methodology |
 | **发布/运维类** | 灰度/监控/runbook | ⑨【必】canary-monitoring（发布后基线对比）+ ai-process-records |
-| **验收/交付类** | 何时可宣称完成 | ⑦【必】agent-skills-methodology（Prove-It 五步/自治硬停）+ review-methodology |
+| **验收/交付类** | 何时可宣称完成 | ⑦【必】agent-skills-methodology（Prove-It 五步/自治硬停）+ review-methodology +【按·改进型变更】rsi-evidence-methodology（三类证据分离：任务增益/能力保留/改进器增益各给一句） |
 | **记忆/知识沉淀类** | 记忆写回/知识更新 | ⑧【必】memory-persistence（工具族/蒸馏）+ knowledge-lifecycle-methodology（过期三态） |
 
-**生成侧任务同样按本表分派**（叠加在上表"路由表"节点序列之上）：升级已有技能 → 加 knowledge-lifecycle（反馈回路三态）+ memory-persistence（记忆写回）；合规审计 → 加 four-theories-methodology（剪裁评估）+ quality-management-standards（【生成器侧】认证资产映射）。
+**生成侧任务同样按本表分派**（叠加在上表"路由表"节点序列之上）：升级已有技能 → 加 knowledge-lifecycle（反馈回路三态）+ memory-persistence（记忆写回）+【生成器侧】rsi-evidence-methodology（吸收轮/升级收口的三类证据对账）；合规审计 → 加 four-theories-methodology（剪裁评估）+ quality-management-standards（【生成器侧】认证资产映射）。
 
 **其余档按场景补充到达**：计划/状态管理 → gsd-patterns；方案对抗 → logic-razor + cognitive-bias（spec §16）；治理拓扑 → governance-agents；MCP 接入 → mcp-governance；图谱工具 → code-graph-tools；宿主原生能力 → claude-code-capabilities；规则分层 → context-engineering-layering（【生成器侧】）；领域规律 → domain-knowledge。安全合规族（crypto-spec/cwe-database/security-certification-profiles/standards-compliance/行业八档）不走任务分派——由 `--security`/`--industry`/compliance 档门禁条件加载。
 

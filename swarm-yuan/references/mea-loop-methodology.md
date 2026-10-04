@@ -1,4 +1,4 @@
-> **何时读我**：长任务规划与审计证据引用时。阿里 LongHorizon-Harness 吸收——MEA 循环/verify_evidence 铁律。
+> **何时读我**：长任务规划与审计证据引用、多 agent/多阶段编排的形态选型与评估（Harness/Loop/Graph 三层嵌套，§五）时。阿里 LongHorizon-Harness 吸收——MEA 循环/verify_evidence 铁律。
 
 # MEA 循环方法论（Manage-Execute-Audit，长程执行的任务状态管理）
 
@@ -93,7 +93,27 @@ Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 - 收益最大的是**跨长轨迹相互依赖状态**的任务；单步能力瓶颈型任务收益小
 - 案例二则：① 交互卡死不再原地重试 400 步，而是把「已审计的进度」记入状态，从断点继续；② 假完成拦截——视觉上对了但违规走了 XML 直改底层，Auditor 查底层证据拆穿
 
-## 五、已登记未实施（评估后缓做/不做）
+## 五、长程编排拓扑：Harness / Loop / Graph 三层嵌套与评估（R88 增节）
+
+> 来源：《Harness、Loop Engineering、Graph Engineering：如何选择，如何评估》（B 级，2026-10 公众号文章，框架完整）。核心纠偏：**三层不是三选一的流派，是同一系统里嵌套的三个控制层**——比较"用哪个"从问题定义就偏了，该问"每层各自的证据在哪里"。
+
+三层各答一个问题：
+
+| 层 | 回答的问题 | 机制面 | swarm-yuan 实例 |
+|----|-----------|--------|----------------|
+| **Harness** | 模型/工具/权限/轨迹的**可信运行边界** | 权限判定、沙箱、hook、审计 | 门禁四族 + rules.d 三值 + fail-gate-hook + gate-deny.jsonl |
+| **Loop** | 单阶段内的**自我修复闭环** | 评估→修复→重评，收敛判据 | ⑥测试→fail→⑤修复环→重跑；误报→调 conf 重跑 |
+| **Graph** | 阶段间的**拓扑**（依赖/审批/发布） | DAG 编排、断点恢复 | 生成流程 ⓪-⑨ 与 开发工作流 九节点状态机（前序产出物守卫） |
+
+**三条设计原则**：trust boundary（非全局只读上下文，边界内才可见）/ 最小领域知识原则（用图返回的元信息路由，不猜全局状态）/ common format（trace 与 checkpoint 统一格式——跨层可审计的前提）。
+
+**四层评估口径**（编排系统的验收，不能用单一完成率代替）：结果质量（任务达成）/ 执行质量（副作用受控）/ 资源效率（预算遵守）/ 治理质量（决策可审计）。固定口径指标五件：重复副作用率、恢复成功率、人工接管率、路由违约率、预算停止准确率。
+
+**中断恢复两机制**（长程执行特有）：① checkpoint 七字段（id/timestamp/graph_ref/inputs_hash/outputs/next_action）+ `recovery_lease` 单写者（防并发恢复打架）；② **副作用三态** `confirmed_executed / confirmed_not_executed / unknown`——unknown 不是失败也不是成功，是必须显式留痕的第三态（与归因三态、过期三态同族：**不许把"不知道"静默折算成任一端**）。
+
+**消费指引**：目标技能遇到"多 agent/多阶段/可恢复"编排设计时（⑤复杂变更扇出、长任务），先按三层各自找证据位——harness 层有什么权限拦截、loop 层每阶段的收敛判据、graph 层断点恢复靠什么；三缺一就是该层的缺口，而不是"换个更强的 agent 框架"。
+
+## 六、已登记未实施（评估后缓做/不做）
 
 | 候选 | 评估 | 决定 |
 |------|------|------|
@@ -103,7 +123,7 @@ Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 | O_NOFOLLOW/fcntl 文件加固全套 | Python os 层 API，bash 3.2 无等价物；swarm-yuan 无 worker 进程对抗面 | 不做 |
 | MEA 全循环运行时（Manager/Executor/Auditor 进程编排） | swarm-yuan 是元技能生成器非 agent 运行时；四权分离已覆盖等价拓扑 | 不做 |
 
-## 六、AI 填充指南
+## 七、AI 填充指南
 
 目标技能 遇到以下场景时引用本文：
 
@@ -112,9 +132,10 @@ Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 - **verifier 报告设计**：结论三轴（结果/完整性/契约对齐），给 pass 前自查守卫降级链三条
 - **任务契约设计**：五字段之外补 state_carrier / persistence_boundary / contamination_watch 三问
 
-## 七、来源溯源
+## 八、来源溯源
 
 - 仓库：AMAP-ML/LongHorizon-Harness（MIT，Python ≥3.10，v0.1.5 = 2026-08-14）
 - 论文：arXiv:2608.01964；Website: lh-harness.pages.dev
 - 源码实测（2026-08-16，浅克隆 v0.1.5）：`manager.py` MEA 主循环 / `auditor_agent.py` 报告协议与机器守卫 / `prompt_texts.py` 契约规则 / `adapters/*` AgentAdapter（Claude Code/Codex/DeepSeek Harness 三后端）
 - 关键诚实披露：中文报道所称「Requirement/Artifact/Fact 三类记录」在代码中无对应 schema，实为 Manager 输出的四分类段落（口语化表述）；「Manager 2-8% token」为论文侧数据，仓库内无脚本可复算；auditor 的「只读 shell allowlist」仅存在于 prompt 文本，代码级靠工作区快照 diff 兜底
+- §五 增节来源（R88 2026-10-04）：《Harness、Loop Engineering、Graph Engineering：如何选择，如何评估》公众号文章（B 级转述，checkpoint 字段/指标五件为文中公式化内容，未核对原始论文）
