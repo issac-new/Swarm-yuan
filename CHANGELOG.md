@@ -1,5 +1,15 @@
 # Changelog
 
+## [v2.52.0] - 2026-10-04
+
+> R89 运行时刷新轮（例行轮+纠错）：**codex rust-v0.160.0**（0.160 线收口 stable，56 提交：Guardian 评审上下文完整性五连——加密消息保留/handoff-aware 根上下文/opt-in 历史检索/原生消息快照/diff 路径跳远程发现+技能预算先去重再计量 #49127+子代理派发保留 pending 环境+遥测只采已用字段+显式 provider 目录权威+断线重连恢复未发送输入）+ **graphify 纠错回 v8 线并升 v0.9.75**（**R81 曾误取异源 v1.0.0**——0a31c08 2026-04-05，`merge-base --is-ancestor v0.9.72 v1.0.0` 不成立=第五次诱取实录，克隆 HEAD 同步纠出；v8 线 76 提交：干净解析零符号警告/去重收缩须同意且计量分离/聚类写回保全边/按 node id 恢复社区；v8 线许可三处一致，R81「丢 LICENSE」注记属异源树随纠错失效）+ **mattpocock-skills v1.3.1**（tag 正式化 R86 已按 main 评估的三技能毕业+ask-matt 复盘路由）+ **claude-code npm 2.1.289**（权限通道完备性三连+插件元数据越权修复）+ claude-mem main 前移记档 + gstack tip 快进 4015c28（v1.91.18.0）。live CLI：claude 2.1.289（漂移归零）/codex 0.160.0（=新基线零滞后）。零移动 13 行注记（codex-security npm 断流第六轮/dsh 触发点未至等）。细节 `docs/research/R89-runtime-refresh.md`。
+
+### Added
+- `references/codex-methodology.md` R89 版本注记：技能预算先去重再计量（计量诚实族新形态）+子代理派发保留 pending 环境+遥测只采已用字段+显式目录权威+未发送输入恢复+Guardian 评审上下文完整性五连。
+- `references/claude-code-capabilities.md` 2.1.289 注记：权限通道完备性三连（管理侧否决优先/IDE 通道路径规范化/auto-allow 非豁免面）+插件元数据越权。
+- `references/code-graph-tools.md` R89 段：graphify v8 线五条 + R81 误取纠错实录（世系核验前移到升级动作执法）。
+- `docs/upstream-baseline.md`：R89 口径注 + codex/graphify/mattpocock/claude-code/gstack/claude-mem/codex-security 七行刷新（graphify 行整段重写纠错）。
+
 ## [v2.51.0] - 2026-10-04
 
 > R88 调研吸收轮（编号顺延 R87 并行占用；版本顺延 v2.50.0 已被 R87 使用）：9 源调研（8 篇公众号文章 + DeepSeek Harness v0.2.1-alpha.1）机制级吸收。**+1 运行时登记——earendil-works/pi（原 badlogic/pi-mono）Pi 1.0**（20→21 行，机制源定位同 mattpocock/dsh 先例，FACT_RUNTIMES=13 不变；文章转述失真三处修正：daemon 不存在/A2A 无对应物/「No MCP」不实）。**DSH v0.2.1-alpha.1 兑现 R85 前移注记深读**（基线维持 0.1.5-rc.2 沿 R29「alpha 不作基线」先例）：Mods 兼容桥四机制（register 直包装/生命周期四映射/不可触发事件点名警告/权限时序差异——「同名事件跨运行时语义不同」陷阱正例）+ hooks 桥包记档修正（dsh-hooks-claude-code 7/30 事件，**0.1.2-rc.1 已有非 0.2.x 增量**，二手信息与源码树矛盾以源码为准）+ invariant 收敛进类型系统（「删优于养」第三实证）。**Claude Code Mods 机制节**（官方文档直查修正 R84「产品面卷不吸收」归类：mod=进程内事件处理器、事件面是 settings hooks 超集、**无独立 mods.json** 为转述失真、Mods aren't sandboxed 权限警示）。**RSI 证据学新档**（清华 404 篇综述+D2I-ai+字节三论文三源：三类证据分离（任务增益/能力保留/改进器增益）/四态保留/L1-L5 分级+五元组+DPEI/密封评测协议/字节五短板×既有防线映射，FACT_REFERENCES 48→49）。**mea-loop §五 编排拓扑**（Harness/Loop/Graph 三层嵌套+四层评估口径+副作用三态+checkpoint 协议）。同构不吸收：Agent Harness 十层演进叙事（48 档逐层已有专档）/EqualAI 治理（三层防线=门禁+hook+审计拓扑）/DSH workspace RFC（社区未落地提案）。调研细节 `docs/research/R88-rsi-absorption.md`。
