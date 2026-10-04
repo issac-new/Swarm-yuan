@@ -15,7 +15,7 @@
 > **R43 全量扫描（2026-09-22，用户 /goal 触发）**：2 移动（comet 0.4.3/ocr 1.12.9，均薄轮，live CLI 零漂移）+ 15 零移动 + openspec npm registry 回归 0.0.0 异常观察；细节 `docs/research/R43-runtime-refresh.md`。
 > **R42 全量扫描（2026-09-22）**：5 移动（comet 0.4.2/ocr 1.12.8/ruflo 3.42.5/claude-mem 13.25.3/gstack 1.87.5.0，均薄轮）+ 2 alpha 前移注记（dsh 0.1.6-alpha.2/codex 0.156-alpha.17）+ 10 零移动；按执行纪律 patch 级只更新表行，本轮未开调研轮。
 
-> 用途：登记 swarm-yuan 引用/吸收的 **19 个上游运行时**的许可证与版本基线，支撑供应链可审计性（ISO/IEC 5230 OpenChain 方向）与文档漂移治理。
+> 用途：登记 swarm-yuan 引用/吸收的 **20 个上游运行时**的许可证与版本基线，支撑供应链可审计性（ISO/IEC 5230 OpenChain 方向）与文档漂移治理。
 > 数据来源：GitHub REST API + npm/PyPI registry **2026-08-21 实测**（本轮 R4 全量重核）；历史实测轮次见 `docs/research/R6-upstream-web.md` §0（2026-07-20）/ §13 历史档案 A10（原 runtime-update-2026-07，2026-07-26）/ 2026-08-14 轮。
 > **证据分级口径（R37，2026-09-18 增补）**：登记表与调研轮断言按三级标注——**A**=本机实测复现（API/源码/命令输出）；**B**=官方一手（上游 README/release/changelog 直查）；**C**=二手转述（文章/媒体报道，须源码核实后才可升级）。媒体报道的仓库指针/版本/数字默认 C 级，未经核实不得写进"引用基线"列。首轮实践：R37（《Harness实践》上下篇转述的四仓指针全部 API 重核后才登记）。
 > **重核节奏（R13 批次3，§4.5.5）**：从"每轮全量重核"改为**破坏性变更驱动**——上游 GitHub release 标 breaking/major 时触发重核 + 季度例行一次。重核是维护不是成长，砍全量形态给成长腾带宽。
@@ -25,7 +25,7 @@
 >
 > **本地缓存建议**：`swarm-yuan/research/` 下的上游 clone 仅供 AI 阅读源码（已 gitignored，不入 git），无需 commit 历史。建议用 `git clone --depth 1` 浅克隆——12 个 clone 的 `.git` 历史合计约 1.1GB，浅克隆可省 ~1GB 本地磁盘（ruflo/claude-mem/gsd-core/open-code-review 四个 `.git` 占比最高）。
 
-### 一、19 运行时登记表
+### 一、20 运行时登记表
 
 > **口径注（2026-08-21 R4；2026-09-18 R37 行数更新；2026-09-23 R45 增行）**：本表 19 行 = 供应链登记总口径（13 整合运行时 + dsh 纯方法论源 + codegraph 图谱选型备选（watch，未接线，R37 增行）+ claude-code/codex 两个核心安装目标 CLI + pua/semantica 两个机制源（R45 增行——pua 是六项已吸收机制的存量来源补登记，semantica 是数据模型机制源；两仓均改写吸收不整包依赖，同 dsh 定位）。SKILL.md 的"整合 13 个外部运行时"（`FACT_RUNTIMES=13`）是**接线分层口径**（深度 4 + CLI 4 + 方法论 5），两者语义不同：claude-code/codex 是 swarm-yuan 生成技能的**宿主**而非被整合对象，dsh/pua/semantica 是方法论或机制源而非运行时接线，codegraph 是图谱平权选型第三项（GitNexus/graphify/codegraph 三选或并用，见 `references/code-graph-tools.md`）而非接线运行时——六者不进 FACT_RUNTIMES 分层计数。
 > **重核口径注（2026-09-01 R16）**：全量重核 16 行至最新稳定版：11 行升基线、comet 仍 drifted、claude-mem 仍 watch、GitNexus 仍 license-risk。细节 `docs/research/R16-runtime-refresh.md`。
