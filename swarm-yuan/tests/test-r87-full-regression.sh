@@ -75,13 +75,22 @@ out=$(cd "$TMP/proj" && PROJECT_DIR="$TMP/proj" _CONF_DIR="$TMP/skill/scripts" \
 if ! grep -q 'check_deps()' "$TMP/skill/scripts/gates-warn.sh"; then
   echo "  ⊹ e2e 跳过（gates-warn 独立运行需 precheck 环境）"
 else
+  # 24h 审查（2026-10-04）：原断言只查「依赖版本被变更」缺席——source 失败/函数
+  # 未定义时输出为空，负向 grep 恒绿（空转守门；pass() 定义在 precheck.sh，
+  # 原 sed 从 gates-warn.sh 提取恒为空，成功行从未真正出现）。改为：先补
+  # pass/warn/fail 三垫片（gates-warn.sh 头注明示依赖 precheck 注入），再以
+  # check_deps 自产的横幅行作正向标记——没跑到检查本体=红。
   e2e_out=$(cd "$TMP/proj" && bash -c "
     PROJECT_DIR='$TMP/proj'
     source '$TMP/skill/scripts/gates-warn.sh' 2>/dev/null || true
     SPEC_GLOB='docs/specs/*.md'
-    $(sed -n '/^pass()/,/^}/p' '$TMP/skill/scripts/gates-warn.sh' 2>/dev/null; true)
+    pass() { echo \"PASS \$*\"; }
+    warn() { echo \"WARN \$*\"; }
+    fail() { echo \"FAIL \$*\"; }
     check_deps 2>&1" || true)
-  if printf '%s' "$e2e_out" | grep -q '依赖版本被变更'; then
+  if ! printf '%s' "$e2e_out" | grep -q '=== 依赖版本锁定检查'; then
+    bad "⑥ e2e check_deps 未真正运行（源载失败/函数缺席——原版此处空转放绿）"
+  elif printf '%s' "$e2e_out" | grep -q '依赖版本被变更'; then
     bad "⑥ e2e 注记基线仍报变更（check_deps 链路未吃到修复）"
   else
     ok "⑥ e2e check_deps 对注记基线零误报"
