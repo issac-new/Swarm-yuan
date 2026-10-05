@@ -1,5 +1,30 @@
 # Changelog
 
+## [v2.53.0] - 2026-10-05
+
+> R90 终态化清理轮（方案 C 全做）：用户面文档全面去历史包袱——skill 自身文档 453 处裸轮次标记、397 处版本注记、47 处半步编号清零；历史三重归位（决策全文=design-evolution、轮次账=CHANGELOG、调研档案=docs/research，均在册未删）；防复发锁从"自造词"扩到"历史包袱"四类禁项。SWARM-YUAN 从"历次推演叠加的过程记录"收敛为"干净完整的终态方案描述"。
+
+### Changed
+- **SKILL.md 终态重写**（20320B→12.4KB）：轮次标记（R21/R37/R58/R83-D1）、版本注记（v2.14.x）、三类评审答辩材料（理念→兑现追踪/结构→流程对应/概念↔实物追踪表）删除；编号统一采用 generation-flow.md Step 1-12 唯一口径（⓪-⑨ 符号链与 ⓪.5/①.5 半步废弃）；理念论证归位 README；Step 4 补"对外契约面"维度。
+- **claude-code-capabilities.md 结构瘦身**（69KB→40KB）：文末 21 节逐版"版本注记"巡检日志删除（详表在 docs/upstream-baseline.md §三 + docs/research 双重在册）；正文 160+ 处修复史注记（"v2.1.199 修复 X"式）改写为现状能力描述；目录型"来源版本"表格列保留；新增"版本基线与变化追踪"节为唯一指针。
+- **codex-methodology.md**：v0.148-0.160 十五节版本注记删除；v0.147/148 能力事实改写为"Codex 宿主能力速览"（现状表述，兼容性下限保留）；hooks 事件面与信任机制节保留为终态能力参考。
+- **review-methodology.md**：R17-R43 逐轮上游日志块删除（每条在 research 档+CHANGELOG 在册）；R57/R74/R79/R81/R84/R85 六段审查纪律去轮次化为主题节（内容保留，轮号/日期/"吸收判据两问"过程行删除）。
+- **memory-persistence.md**：claude-mem/ruflo 四节补核段合并为两个"治理要点"主题清单（版本号段落头、簿记句删除，蒸馏纪律全部保留）。
+- **references 其余 38 档**：行内轮次标记与工单注记（R58-D5/R21-B/R21-C 式）清零；"R8 §③"式轮次速记全部改为 `docs/research/R8-security-standards.md §③` 完整文件名引用；行业档法规编号（UNECE R155/R156）与 GB/JR/T/ISO 标准号原样保留；上游项目版本/PR 证据锚（如 gstack v1.91.8.0 #2994）保留；"版本注记日期戳"（YYYY-MM-DD 核）清除、证据分级的"核验"日期保留。
+- **README.md**：附录 A/B 登记次数注记（"R72 第四次登记""当前第十八次登记"）去过程化，数字真值指针保留；附录 C 决策溯源表保留为唯一决策索引。
+- **docs/usage-manual.md**：术语表"考古标签"条改为形态描述（终态正文不再出现裸标记）；禁用词清单标题去轮次；生成流程 Step 口径统一 1-12；§C+ 章节引用随 exploration-guide 改 §D。
+- **generation-flow/exploration-guide/资产脚本联动**：分工表与引用随新编号口径同步；exploration-guide §C+→§D、Step -1/Step 0 改命名节，全语料 14 个引用方同步改名；self-check 输出指针同步。
+- **install.sh 分发包瘦身**：research/（上游调研原料）、.swarm-yuan/（生成器运行留痕）、offline-cache/（历史缓存）不再随安装拷贝——假 HOME 试装验证：排除生效、保留项在位、产物 35M（原含 research 时 3.5G）；vendor-knowledge/（运行时引用）与 tests/（fixture 计数断言依赖）保留。
+
+### Added
+- **test-r68-jargon-free 扩终态纪律四锁**（防复发执法面扩容）：①裸轮次标记 R\d+ 零出现（docs/research 文件名锚与 UNECE R155/R156 法规号豁免）②半步编号零出现（编号唯一口径在 generation-flow.md）③轮次簿记句（补核/薄轮不开档/watch 维持/轮次台账）零出现④版本注记日期戳零出现（证据核验日期豁免）。扫描面含 SKILL.md/README/references/usage-manual/commands；决策编号不在禁类（README 附录 C 溯源表引用机制）。
+- claude-code-capabilities.md / codex-methodology.md 各设"版本基线与变化追踪"节：版本真值单一指针指向 docs/upstream-baseline.md 与 docs/research/。
+
+### Fixed
+- test-r58 锁：SKILL.md 终态重写后"契约面"概念回归（Step 4 穷举维度行），L8 清剿面检查恢复绿。
+- test-r77 / test-r82 锚字符串随终态措辞同步（"5. 消费节点真实性（R77，决策 46）"→"5. 消费节点真实性"、"版本语义单一约定（R82-D1）"→"版本语义单一约定"），锁意不变。
+- template-spec 残留半步编号"②.5 文档冲突声明"改命名节；code-graph-tools / codex-security / agent-skills 版本注记日期戳清除。
+
 ## [v2.52.0] - 2026-10-04
 
 > R89 运行时刷新轮（例行轮+纠错）：**codex rust-v0.160.0**（0.160 线收口 stable，56 提交：Guardian 评审上下文完整性五连——加密消息保留/handoff-aware 根上下文/opt-in 历史检索/原生消息快照/diff 路径跳远程发现+技能预算先去重再计量 #49127+子代理派发保留 pending 环境+遥测只采已用字段+显式 provider 目录权威+断线重连恢复未发送输入）+ **graphify 纠错回 v8 线并升 v0.9.75**（**R81 曾误取异源 v1.0.0**——0a31c08 2026-04-05，`merge-base --is-ancestor v0.9.72 v1.0.0` 不成立=第五次诱取实录，克隆 HEAD 同步纠出；v8 线 76 提交：干净解析零符号警告/去重收缩须同意且计量分离/聚类写回保全边/按 node id 恢复社区；v8 线许可三处一致，R81「丢 LICENSE」注记属异源树随纠错失效）+ **mattpocock-skills v1.3.1**（tag 正式化 R86 已按 main 评估的三技能毕业+ask-matt 复盘路由）+ **claude-code npm 2.1.289**（权限通道完备性三连+插件元数据越权修复）+ claude-mem main 前移记档 + gstack tip 快进 4015c28（v1.91.18.0）。live CLI：claude 2.1.289（漂移归零）/codex 0.160.0（=新基线零滞后）。零移动 13 行注记（codex-security npm 断流第六轮/dsh 触发点未至等）。细节 `docs/research/R89-runtime-refresh.md`。
