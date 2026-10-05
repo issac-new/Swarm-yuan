@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# memory-writeback.sh — Step 11 记忆写回（S9 实装：补全"记忆→生成→开发→记忆"闭环的写回半环）
+# memory-writeback.sh — Step 12 记忆写回（S9 实装：补全"记忆→生成→开发→记忆"闭环的写回半环）
 #
-# 理念来源：SKILL.md:100 Step 11 "claude-mem/.zcode/memories/.project-knowledge.md 三路写回"。
+# 理念来源：SKILL.md:100 Step 12 "claude-mem/.zcode/memories/.project-knowledge.md 三路写回"。
 # 此前该步纯 AI 自由动作、无脚本兜底（S9 审计发现）；本脚本提供机器兜底：
 # 把本次生成的项目知识摘要（特征卡 + 框架清单 + spec 摘要）写回三路 sink，幂等、best-effort、不阻塞主流程。
 #
@@ -114,7 +114,7 @@ _write_claude_mem() {
 }
 
 # ---- 三路写回（每路独立降级，不阻塞）----
-echo "=== 记忆写回（Step 11，三路 best-effort）==="
+echo "=== 记忆写回（Step 12，三路 best-effort）==="
 _ok=0
 _write_local   && _ok=$((_ok+1)) || echo "⚠ 本地写回失败（$STATE_DIR/project-knowledge.md 不可写）" >&2
 _write_zcode   && _ok=$((_ok+1)) || echo "⚠ .zcode 写回失败（目录存在但不可写）" >&2

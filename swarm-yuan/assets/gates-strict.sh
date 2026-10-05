@@ -1970,7 +1970,7 @@ $(printf '%s\n' "$_tbd" | head -5 | sed 's/^/    /')"
 }
 
 # --loop-oracle：Oracle Gate 循环状态完整性核验（WP-loop，strict 档）
-# 借鉴 tanweai/pua pua-loop + autoresearch Oracle Isolation，门禁化兜底：
+# 来源：tanweai/pua pua-loop + autoresearch Oracle Isolation。门禁化兜底：
 # 即使 AI 不主动跑 loop，门禁也会检查「是否有未完成的 loop」。
 # 检查内容：
 #   ① 若 .swarm-yuan/loop-*.md 存在（loop 活跃），断言最后一次 promise 被 Oracle 接受（history.jsonl 最后一条 status=complete）

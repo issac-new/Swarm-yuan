@@ -12,7 +12,7 @@
 
 ## 一、定位：非 SAST 的 AI 约束推理扫描（与 semgrep/opengrep 正交，非降级链一环）
 
-**关键纠偏**：codex-security **不是传统 SAST**，OpenAI 官方明确说明它不产出 SAST 报告、不依赖模式匹配 + 降级链那一套。它采用的是 **AI 驱动的约束推理 + 验证路径**——用大模型做 source→sink 数据流分析 + 攻击路径推演 + 威胁模型，而非规则引擎扫描。因此它**不进** swarm-yuan `--sast-deep` 的 `semgrep → opengrep → 内置词法` 降级链（降级链是 SAST 工具的降级，codex-security 非 SAST）。
+**关键区别**：codex-security **不是传统 SAST**，OpenAI 官方明确说明它不产出 SAST 报告、不依赖模式匹配 + 降级链。它采用的是 **AI 驱动的约束推理 + 验证路径**——用大模型做 source→sink 数据流分析 + 攻击路径推演 + 威胁模型，而非规则引擎扫描。因此它**不进** swarm-yuan `--sast-deep` 的 `semgrep → opengrep → 内置词法` 降级链（降级链是 SAST 工具的降级，codex-security 非 SAST）。
 
 codex-security 与 swarm-yuan 既有安全能力是**正交互补**关系：
 
@@ -29,7 +29,7 @@ codex-security 与 swarm-yuan 既有安全能力是**正交互补**关系：
 
 **整合形态**：codex-security 是 `--sast-deep` 门禁的**可选独立载体**（`SAST_DEEP_TOOL=codex-security` 显式调用），**不参与** `auto` 降级链——`auto` 时降级链不变（semgrep→opengrep→builtin），codex-security 只在用户显式选择时启用。两者可并行使用（SAST 找模式命中 + codex-security 找语义漏洞）。
 
-### 开源与许可（纠偏：非付费门槛）
+### 开源与许可（非付费门槛）
 
 - **完全开源**：Apache-2.0 许可证，代码公开，任何人可 clone/阅读/修改/分发。
 - **Trusted Access 非付费门槛**：README 原文是 `recommend`（推荐）非 `require`（必须）。Trusted Access 是 OpenAI 面向安全研究人员的**身份审核计划**（vetting），不是付费订阅层。有用户反馈完成验证后「API/Codex 模型中似乎什么也没解锁」。
@@ -67,6 +67,7 @@ codex-security 不进 `auto` 降级链——它不是 SAST 工具，没有"装�
 - `--fail-on-severity` 映射：`SAST_DEEP_SEVERITY=error` → `--fail-on-severity high`；`warning` → `--fail-on-severity medium`。
 - 扫描结果存 `SCAN_ROOT/results`（仓库外，`mktemp -d` 创建），**不污染工作区**。
 - SARIF 输出可被 swarm-yuan 既有 `to-sarif.sh` 管线消费，或直接上传 GitHub Code Scanning。
+- self-check.sh 的 G15 `check_codex_security_cli_wiring`（warn-only）校验 CLI 整合配置。
 
 ---
 
@@ -114,7 +115,7 @@ codex-security 的 `skills/attack-path-analysis` 定义了从 finding 到攻击�
 3. **identity + privilege + trust boundaries** — 确立路径相关的身份/权限/信任边界
 4. **reachability** — 判断真实攻击者能否从范围内攻击面到达并利用该问题
 
-**反证据必查铁律**（codex-security 原文）：在最终确定范围或可报告性驱动事实之前，**必须**识别针对关键字段的最强仓库反证据，并解释它为何击败或不击败该 finding。这防止 semgrep 式规则匹配的误报被升级为真 finding。
+**反证据必查铁律**（codex-security 原文）：在最终确定范围或可报告性驱动事实之前，**必须**识别针对关键字段的最强仓库反证据，并解释它为何击败或不击败该 finding。这防止 semgrep 式规则匹配的误报被当作真 finding。
 
 **与 swarm-yuan `--reuse` 门禁的整合**：`--reuse` 检测新增单元与既有重名——codex-security 的反证据检查可复用 `--reuse` 的既有稳定单元盘点结果，判断"看似危险的 sink 是否已被既有守卫覆盖"。
 
@@ -146,7 +147,7 @@ codex-security 的 `references/scan-contract.md` 定义了完成扫描的生成�
 | `coverage.json` | 结构化覆盖摘要 + 详细收据引用 | 32 MiB |
 
 **Finding 身份模型**（codex-security 原文）：
-- `ruleId` = 稳定漏洞族（如 `path-traversal.archive-extraction`），不含文件名/行号/扫描 ID
+- `ruleId` = 稳定漏洞类（如 `path-traversal.archive-extraction`），不含文件名/行号/扫描 ID
 - `identity.anchor` = 语义根控制锚点（lowercase slug，**不含行号**——抗行号漂移）
 - `identity.instance` = 独立可攻击的兄弟实例
 - `fingerprints.primary` = 从 target ID + rule ID + anchor + instance 派生
@@ -205,7 +206,7 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 | 攻击路径分析 | `--reuse` 门禁的既有稳定单元盘点 | 复用 `--reuse` 结果做反证据检查 |
 | SECURITY.md 策略合并 | 目标技能 的 security-spec.md（§2） | AI 引用本文 §六 的 root→leaf 合并 |
 | scan contract 生成期必读文件 | `to-sarif.sh` SARIF 管线 | codex-security SARIF 与门禁级 SARIF 并行消费 |
-| 14 bundled skills | swarm-yuan 12 步生成流程（Step 1-12） | AI 按 workflow 节点引用对应 skill 模式（本文 §八） |
+| 14 bundled skills | swarm-yuan 13 步生成流程（Step 1-13） | AI 按 workflow 节点引用对应 skill 模式（本文 §八） |
 | Docker 沙箱 | `--sbom` / `--release-sign` 门禁的 CI 配置 | AI 引用本文 §九 做目标技能 CI 沙箱设计 |
 
 ---
@@ -227,15 +228,11 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 - 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.4（Apache-2.0）
 - 许可证：Apache License 2.0
 - 上游 clone 位置：`swarm-yuan/research/codex-security/`（本地参考，gitignored，不入 git）
-- 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
-- 自检断言：G15 `check_codex_security_cli_wiring`（`self-check.sh`，warn-only，守 CLI 整合 + facts.conf 口径）
-- 口径同步：`facts.conf` `FACT_RUNTIMES=13` / `FACT_RUNTIMES_CLI=4` / `FACT_REFERENCES=41`
-- 版本注记：npm-v0.1.25
-- 版本注记：npm-v0.1.26——GitLab MR 验证补丁通道 + **安全修复验证须显式请求**（fail-closed 同向）+ confirmed finding 匹配提速。方法论无新增落地单元。档案 `docs/research/R20-runtime-refresh.md`。——patch 号下功能增量：**跨扫描发现关系保留**（findings 生命周期跨扫描延续：new/persisting/resolved 关系不因重扫丢失）+ sealed 扫描目录去重 + 去重评审阶段对齐加固。方法论无新增落地单元（发现生命周期管理与本仓 gate-trends 趋势对账同向，工程设施对账通过）。
 
-- 版本注记：npm-v0.1.27——patch/validation **复用 scan 认证**（认证态一致性）+ SDK pipeline 去重并发可配 + **「文档尺寸上限」从 scan-contract 删除**（不存在的能力不写进契约——诚实口径族）+ UTF-8 BOM 容错。方法论无新增落地单元。档案 `docs/research/R24-runtime-refresh.md`。
+npm v0.1.25-0.1.31 能力：
 
-- 版本注记：npm-v0.1.28——**fix(skills) fix-finding 限于安全漏洞**（#923）：扫描/评审技能的产出职责收敛，发现面不得越出其威胁模型承诺（scope fail-closed 族——与「文档尺寸上限从契约删除」的诚实口径互补：一收一放都在契约诚实性谱系）+ **cost 上下文感知估算区间**（#926）：估算给区间不给点值（诚实报告族）+ CLI 接受任意扩展名 KB 文本（#924，输入宽容化）。方法论无新增落地单元。档案 `docs/research/R32-runtime-refresh.md`。
-- 版本注记：npm-v0.1.29——**model refusals 后保留 undecided findings**（#960）：去重不得吞掉模型拒绝面的未决发现——「模型拒绝 ≠ 发现不存在」（诚实完整族，与 cost 估算区间同向）+ **失败扫描发结构化 JSON 错误**（#709：错误可机读，门禁可消费——错误语义可编程族）+ **Terraform 进 scan inventories**（#944：IaC 安全面扩展，与 graphify 0.9.64 同期加 Terraform——IaC 成图谱/安全双域趋势）+ **bound source preview reads**（#947，有界读取族）+ patch verified findings（#961）与 patching 进度显示（#931，修复验证面）+ policy discovery 容忍 malformed archived Git metadata（#935，容错族）。方法论无新增落地单元。档案 `docs/research/R40-runtime-refresh.md`。
-
-- 版本注记：npm-v0.1.30/0.1.31——**finding 归属人建议 + 证据链**（`status: identified / abstained / error` + `evidence[]` + `limitations[]`，**允许弃权并说明局限**）+ **CWE 映射进 finding 契约**（Ajv 2020 校验，测试含 `[" cwe-089 "]` 等脏输入）+ **审计门禁口径**（**只有显式标为 scan-fatal 的错误才终止**，通用 OS 错误走有界重试；扫描失败按 error 上报而非静默；**本地 Git hook 是 advisory、不可作信任根**）。
+- **v0.1.26**：GitLab MR 验证补丁通道；**安全修复验证须显式请求**（fail-closed）；confirmed finding 匹配提速；**跨扫描发现关系保留**（findings 生命周期跨扫描延续：new/persisting/resolved 关系不因重扫丢失）；sealed 扫描目录去重；去重评审阶段对齐加固（发现生命周期管理与本仓 gate-trends 的趋势记录一致）。来源：`docs/research/R20-runtime-refresh.md`。
+- **v0.1.27**：patch/validation **复用 scan 认证**（认证态一致性）；SDK pipeline 去重并发可配；scan-contract 不声明「文档尺寸上限」（不存在的能力不写进契约）；UTF-8 BOM 容错。来源：`docs/research/R24-runtime-refresh.md`。
+- **v0.1.28**：**fix-finding skill 限于安全漏洞**（#923）——扫描/评审技能的产出职责收敛，发现面不得越出其威胁模型承诺（scope fail-closed，与「契约只声明真实存在的能力」互补）；**cost 上下文感知估算区间**（#926，估算给区间不给点值）；CLI 接受任意扩展名 KB 文本（#924，输入宽容化）。来源：`docs/research/R32-runtime-refresh.md`。
+- **v0.1.29**：**model refusals 后保留 undecided findings**（#960，去重不得吞掉模型拒绝面的未决发现——「模型拒绝 ≠ 发现不存在」）；**失败扫描发结构化 JSON 错误**（#709，错误可机读、门禁可消费）；**Terraform 进 scan inventories**（#944，IaC 安全面扩展）；**bound source preview reads**（#947，有界读取）；patch verified findings（#961）与 patching 进度显示（#931，修复验证面）；policy discovery 容忍 malformed archived Git metadata（#935，容错）。来源：`docs/research/R40-runtime-refresh.md`。
+- **v0.1.30/0.1.31**：**finding 归属人建议 + 证据链**（`status: identified / abstained / error` + `evidence[]` + `limitations[]`，**允许弃权并说明局限**）；**CWE 映射进 finding 契约**（Ajv 2020 校验，测试含 `[" cwe-089 "]` 等脏输入）；**审计门禁语义**（**只有显式标为 scan-fatal 的错误才终止**，通用 OS 错误走有界重试；扫描失败按 error 上报而非静默；**本地 Git hook 是 advisory、不可作信任根**）。

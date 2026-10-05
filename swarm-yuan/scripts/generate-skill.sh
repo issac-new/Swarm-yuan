@@ -499,7 +499,7 @@ inject_frameworks() {
 
   # 3) 缺失 conf 变量：注入占位 + warn（不静默）——落 arch conf（框架变量组）
   for var in ${missing_conf[@]+"${missing_conf[@]}"}; do
-    printf '%s=()  # TODO(framework-gates): 由生成流程 ⑦.5 门禁注入阶段填充\n' "${var}" >> "$arch_conf"
+    printf '%s=()  # TODO(framework-gates): 由生成流程 Step 4 框架深化门禁注入填充\n' "${var}" >> "$arch_conf"
     echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
   done
 
@@ -1809,7 +1809,7 @@ for f in $_placeholder_refs; do
 
 （流程图，标注：①→②→③ 串行节点；并行节点用 └──┘ 标注）
 
-> **编号体系消歧**：本 workflow 的 ①-⑨ 是**开发工作流节点**；SKILL.md（生成器侧）流程图的 ⓪-⑨ 是**生成流程步骤**——两套编号独立，同名符号不同义。
+> **编号体系消歧**：本 workflow 的 ①-⑨ 是**开发工作流节点**；生成器侧 SKILL.md 的 Step 1-13 是**生成流程步骤**——两套编号独立，不同义。
 > **state-machine 六阶段 ↔ 九节点对照**（粗粒度状态桶 ↔ 细粒度执行流，`scripts/state-machine.sh` 按阶段守产出物）：
 > open=①需求理解+②探查 ｜ design=③设计 spec+④实施 plan ｜ build=⑤编码实现 ｜ verify=⑥测试验证+⑦独立审查 ｜ archive=⑧合入 main ｜ operate=⑨构建发布
 

@@ -353,7 +353,7 @@ check_stable_diff() {
     fi
   done
 
-  # ---- 3. ★标记沿调用链谱系传播（决策 28，Palantir markings-propagate 映射）----
+  # ---- 3. ★标记沿调用链传播（决策 28，Palantir markings-propagate 映射）----
   # 直接改稳定单元已由上面 §2 的 fail() 执法；本节补"下游传播 warn"：
   # 若本次变更触及"调用 STABLE_GLOBS 文件的下游文件"（1 跳邻域），不阻断，只 warn
   # "该文件依赖禁止改单元 X，改动可能破坏其契约，须在 spec §MODIFIED 声明"。

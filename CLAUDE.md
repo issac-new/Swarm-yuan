@@ -18,7 +18,7 @@ swarm-yuan 现为**两体系统**（swarm-yuan/README.md 一章 What）：生成
 ## Repository layout (three top-level roles)
 
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
-  - `SKILL.md` — the AI entry point / operating manual (generation pipeline 编号 = `references/generation-flow.md` Step 1–12，SKILL.md 总览表为同一口径）。
+  - `SKILL.md` — the AI entry point / operating manual (generation pipeline 编号 = `references/generation-flow.md` Step 1–13，SKILL.md 总览表为同一口径）。
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
   - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` + `gates-strict.sh` + `gates-warn.sh` + `gates-advisory.sh` (55 gates split across four files; LOC tracked by `facts.conf` `FACT_SCRIPT_LOC`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (config vars, core/arch/compliance 三文件拆分）, `spec-template.md` (25-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (81 per-framework gate fragments).
   - `references/` — methodology docs + `references/frameworks/<fw>.md` (81 framework rule sources).

@@ -239,17 +239,16 @@ bash install.sh
 | Step 1 | 自检（13 运行时整合口径 = 11 工具自动探测 + 2 方法论引用） |
 | Step 2 | 读取项目知识（AGENTS.md / CLAUDE.md / 记忆 / agent 运行时）+ **行为观察**（`mine-habits.sh` 六维统计初稿 → AI 审读三去向） |
 | Step 3 | 三路并行探查代码库（结构 / 规范 / 代码组织） |
-| Step 4 | **项目形态判定 + 详尽构件库清单 + 调用链路分析**（§D.0-§D.7，按形态选维度，全量穷举 + 计数核验 + **业务功能盘点与任务配方提取**→recipes.md + **关系边集**→relations.jsonl） |
+| Step 4 | **项目形态判定 + 详尽构件库清单 + 调用链路分析**（§D.0-§D.7，按形态选维度，全量穷举 + 计数核验 + **业务功能盘点与任务配方提取**→recipes.md + **关系边集**→relations.jsonl + **框架深化与门禁注入**（逐激活框架按 frameworks/<fw>.md §1-§6 枚举 + 规律实例化 + `generate-skill.sh --inject-frameworks` 门禁片段写入 precheck.sh 标记区块） |
 | Step 5 | **提取 17 项特征卡**（每项落到真实路径，不用占位符） |
 | Step 6 | 创建骨架（含 hooks / commands / precheck.conf） |
 | Step 7 | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
-| Step 4.5 | **框架深化与门禁注入**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + `generate-skill.sh --inject-frameworks` 把门禁片段写入 precheck.sh 标记区块（实例化在填充后做，注入须在 Step 12 前完成） |
 | Step 8 | AI 配置 precheck.conf——**185 个变量从特征卡推导** |
 | Step 9 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
 | Step 10 | AI 运行门禁（--all 核心 10 → --all-full 标准 28；合规 19 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
-| Step 10.5 | AI 独立审查——`precheck.sh --review`（ocr 5 维度或 AI 清单）+ review-record 落盘 |
-| Step 11 | AI 写回项目记忆（闭环） |
-| Step 12 | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**无占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
+| Step 11 | AI 独立审查——`precheck.sh --review`（ocr 5 维度或 AI 清单）+ review-record 落盘 |
+| Step 12 | AI 写回项目记忆（闭环） |
+| Step 13 | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**无占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
 
 #### 质量门禁序列（quality:full 模式，执勤期收口用）
 
@@ -497,7 +496,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 | 分派零落档 | 文档路由覆盖 |
 | 随发或声明 | 分发范围 |
 | 随发 | 随技能分发 |
-| 对偶 | 互为正反 |
+| 对偶 | 互为反查 |
 | 双向对账 | 双向一致性校验 |
 | 弧线表 | 概念追踪表 |
 | 五族 / 四段协议 | 五类 / 四阶段协议 |
@@ -529,13 +528,13 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 - **FAIL-open / fail-closed**：失败时放行 / 失败时拒绝。权限边界一律 fail-closed；fail-open 只用于有下层兜底处。
 - **五层认知（cognition）**：`references/cognition-framework.md` 定义的五层框架（认知递进/思维语言/认知辩证/偏差防范/辩证认知），特征卡第 13 项的认知基底；属建议性体检（`--cognition` 出报告不判违规），不是门禁家族。
 - **spec / spec 模板**：任务规格（每次开发任务的合同），模板 25 节按任务类型裁减（§25 功能点估算 feature 档选填）。
-- **生成流程**：生成器把一个仓库变成目标技能的 12 步流程（Step 1-12，逐步详解在 references/generation-flow.md）。
+- **生成流程**：生成器把一个仓库变成目标技能的 13 步流程（Step 1-13，逐步详解在 references/generation-flow.md）。
 - **开发工作流（执勤工作流）**：目标技能里的九节点开发工作流（①需求理解→②探查→③设计 spec→④实施 plan→⑤编码→⑥测试→⑦独立审查→⑧合入→⑨发布，载体是目标技能的 references/workflow.md）。
 - **档（参考文档）**：references/ 目录下按需阅读的参考文档的简称（"47 档"=47 个 .md 文件；每档开头有"何时读我"路由行）。
 - **随技能分发**：随目标技能一起安装分发——generate-skill.sh 的 UNIVERSAL_FILES 清单列出的文件会拷进每个目标技能；不在清单里的文档只存在于生成器仓，目标技能读不到。
 - **整合**：一项被吸收的能力"从哪来、在哪个环节被使用、用不了时怎么降级"的登记关系。
 - **文档索引（capability-map.md）**：吸收内容的总清单——每个参考文档的来源、证据分级、被使用的环节、何时读；生成器侧维护，不随技能分发。
-- **文档路由表**：references/task-methodology-router.md 里"任务类型 → 该读哪些参考文档"的反查表，随目标技能分发；与文档索引互为正反——地图从文档查用途，路由表从任务查文档。
+- **文档路由表**：references/task-methodology-router.md 里"任务类型 → 该读哪些参考文档"的反查表，随目标技能分发；与文档索引互为反查——地图从文档查用途，路由表从任务查文档。
 - **【生成器侧】**：路由表里的标注，表示该文档只在生成器仓里存在、不随目标技能分发（引用它的任务是在生成器里做的）。
 - **G 断言（G13-G25 等）**：生成器 self-check 里编号的自检断言；G25=文档索引双向一致性校验（每个参考文档都进清单、清单不记幽灵、路由表与清单互指、任务分派可达、被分派的文档随技能分发或在生成器侧）。
 - **生成期必读文件（生成期必读面）**：SKILL.md + exploration-guide.md + template-spec.md——跑生成流程前必读的三个文件，合计字节数有预算上限。
@@ -565,7 +564,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 | 设计内核（What/Why/How/实现/When/总结+附录） | `swarm-yuan/README.md`（唯一设计文档） |
 | 每个数字的权威值 | `swarm-yuan/assets/facts.conf` |
 | 为什么门禁长这样（改动前必读） | `docs/design-evolution.md` §12 决策史（决策 1-38；1-17 见其 §13 档案 A5） |
-| 生成流程逐步口径 | `swarm-yuan/references/generation-flow.md`（Step 1-12） |
+| 生成流程逐步口径 | `swarm-yuan/references/generation-flow.md`（Step 1-13） |
 | 79 框架各自的规则 | `swarm-yuan/references/frameworks/` |
 | 验收体系怎么运作 | `verifier/README.md` 与 `verifier/v1/acceptance-criteria.md` |
 | 调研证据（方案怎么长出来的） | `docs/research/`（各轮调研报告，文件名带轮次编号） |

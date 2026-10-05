@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.54.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.54.0)
+[![Release](https://img.shields.io/badge/release-v2.55.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.55.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -109,7 +109,7 @@
 
 门禁分 strict、warn、advisory 三级，这不是技术洁癖，是诚实分层：能给出稳定 fail 信号的才配阻断交付；信号有噪声的降级为提示，由 AI 判断采纳；判断不了的（例如"这次复用是否贴合场景"）不假装能判，门禁输出三问引导，AI 自查并留痕供审查回放。自动化只管信号可信处、判断留给 AI 并留痕，这条边界是全系统防自欺的总阀门。
 
-门禁自身的复杂度也被门禁管住：门禁总数冻结在预算上限内，新增须等额删除，配置变量与上下文预算同理。声称帮项目降复杂度的东西，自己不能失控。另有一条失败方向教义：权限边界 fail-closed，fail-open 只允许发生在还有下层强制兜底的地方（例如 hooks 失败不阻断，因为命令还要过门禁）。
+门禁自身的复杂度也被门禁管住：门禁总数冻结在预算上限内，新增须等额删除，配置变量与上下文预算同理。声称帮项目降复杂度的东西，自己不能失控。另有一条失败方向原则：权限边界 fail-closed，fail-open 只允许发生在还有下层强制兜底的地方（例如 hooks 失败不阻断，因为命令还要过门禁）。
 
 ## 3.5 执勤层（下）：验证管"想错逻辑"
 
@@ -209,12 +209,12 @@
 | 目标技能预算 | SKILL.md ≤10240B（≈8KB 锚）、地图 ≤32KiB、上下文预算 ≤500KiB（512000B；例外逐例登记于 facts.conf，理由链留档）、概念体系 ≤5 |
 | 外部运行时 | 13 个整合（深度 4 + CLI 4 + 方法论 5）；登记 19（含图谱备选 codegraph、两宿主、机制源 pua/semantica）；自动检测 11 |
 | 类型目录 | 实体 17 / 关系 10 / 动作 11（assets/ontology/ 三份） |
-| 生成流程 | 12 步（唯一编号口径在 generation-flow.md）；目标技能工作流 9 节点 × 4 要素 |
+| 生成流程 | 13 步（唯一编号口径在 generation-flow.md）；目标技能工作流 9 节点 × 4 要素 |
 | 领域知识库 / 行业档 | 32 / 8 |
 
 ## 附录 B：外部来源与方法论吸收登记
 
-正文不引用外部来源；全部吸收关系登记于此（每条一行：来源 → 吸收形式 → 落点）。原则：方法论引用不 vendor，运行时调用不重实现；登记断言按证据分级（A=本机实测、B=官方一手、C=二手转述，转述未经核验不进基线），安装器与装配行为不吸收。
+正文不引用外部来源；全部吸收关系登记于此（每条一行：来源 → 吸收形式 → 落点）。原则：方法论引用不 vendor，运行时调用不重实现；登记断言按证据分级（A=本机实测、B=官方一手、C=二手转述，转述未经核验不进基线），安装器与装配行为不纳入。
 
 | 来源 | 吸收形式 | 落点 |
 |---|---|---|
@@ -223,10 +223,10 @@
 | 方法论五件（superpowers / gstack / Ruflo / ECC / impeccable） | AI 按工作流节点引用模式 | references/subagent-orchestration.md |
 | 外部方法论文档与能力档 49 篇（codex / dsh / cordis / mea-loop / agent-skills / mattpocock-skills / four-theories / cost-estimation / lazy-generation / knowledge-lifecycle / rsi-evidence 等） | 蒸馏为 references 方法论，全带"何时读我"路由头 | references/ 同名文件；**逐档整合清单见 references/capability-map.md（48 档来源/证据分级/消费节点/触发 + 21 运行时消费侧映射，self-check G25 双向一致性校验含未登记文档检查）** |
 | 功能点估算（NESMA GB/T 42588-2023，人民银行科技司 2025-07 培训吸收） | spec §25 选填节（feature 档推荐）+ 方法论随技能分发执勤侧 | references/cost-estimation-methodology.md + assets/spec-template.md §25 |
-| 懒生成（七层复用阶梯 + 懒≠偷工；吸收自 DietrichGebert/ponytail） | ⑤编码"先查再写"下探决策程序 + 方法论随技能分发执勤侧 | references/lazy-generation-methodology.md |
+| 懒生成（七层复用阶梯 + 懒≠偷工；来源：DietrichGebert/ponytail） | ⑤编码"先查再写"下探决策程序 + 方法论随技能分发执勤侧 | references/lazy-generation-methodology.md |
 | 行业法规映射 8 档 | conf + 法规依据文档配对，真实加载 | assets/industry-profiles/ + references/industry-profile-*.md |
 | 标准族（OWASP / STRIDE / CWE / GB/T / ISO 42001 / ISO 29148 / EARS） | 门禁条款机器可读映射 + spec 句式对齐 | assets/standards-map.conf + references/standards-compliance.md |
-| Palantir 本体论工程 | 标记沿调用链传播的设计借鉴 | docs/design-evolution.md 决策 28 |
+| Palantir 本体论工程 | 标记沿调用链传播的设计参考 | docs/design-evolution.md 决策 28 |
 | 上游运行时基线（19 项供应链登记，A/B/C 分级口径） | 版本 / 许可证 / drift 机器锚 | docs/upstream-baseline.md |
 
 ## 附录 C：决策溯源表
@@ -253,7 +253,7 @@
 | 吸收物处置三态（3.6、附录 B） | 36 |
 | 核心链条补强：配方、行为观察、关系边集、问题沉淀、质量门禁序列（3.1、3.2、3.4、3.5、3.6） | 37 |
 | 版本口径机器锚（附录 A 预算口径执法）+ 上下文预算预算例外登记（附录 A、3.6） | 38 |
-| 证据分级 A/B/C + 吸收边界（装配不吸收）+ 懒生成决策程序 + 评测双口径（二章理念一、3.5、3.6、附录 B） | 39 |
+| 证据分级 A/B/C + 吸收边界（装配叙事不纳入）+ 懒生成决策程序 + 评测双口径（二章理念一、3.5、3.6、附录 B） | 39 |
 
 ## 附录 D：验收与复审
 

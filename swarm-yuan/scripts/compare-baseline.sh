@@ -99,7 +99,7 @@ _loc_diff() {
   echo ""
   echo "- WP-P1（信号索引数据化）: exploration-guide.md 瘦身 ~300 行（信号表外迁为 assets/framework-signals.md）"
   echo "- WP-P2（inventory-verify）: 新增脚本，不直接降上下文表面（核验工作脚本化，模型少跑 grep）"
-  echo "- WP-P3（framework-evidence）: Step 4.5 模型读台账而非逐条跑 grep（62 文件 × ~5 规律的 token 池，最大降幅点，脚本侧不可直接观测）"
+  echo "- framework-evidence（Step 4 框架深化）: 模型读台账而非逐条跑 grep（62 文件 × ~5 规律的 token 池，最大降幅点，脚本侧不可直接观测）"
   echo "- WP-P4（conf-render）: Step 8 模型只审 TODO:model 清单（从写 158 行变审+补少数，脚本侧不可直接观测）"
   echo "- WP-P5（上下文裁剪）: 目标 skill 加载面按 profile 分层（lite/standard 裁 §14-18 + 认知三件套），用 \`context-surface.sh --skill <lite-skill>\` 对比可见"
   echo "- 模型侧基线: 未自动采集（须手动跑一次生成落 baselines/pre-opt/model-side/，本报告如实披露未采集）"

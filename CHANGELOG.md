@@ -1,5 +1,17 @@
 # Changelog
 
+## [v2.55.0] - 2026-10-05
+
+> R92 叙事级历史包袱清理轮（用户二轮批评"终态文档看不懂在说啥"驱动）：R90 清掉的是词级痕迹（R 标记/日期戳/WP 标签），本轮清的是叙事级包袱——正文在讲"这份文档怎么被改出来的"五类过程叙事全面清除：①补丁式半步编号（Step 4.5/7.1/8.5/10.5、"…时"条件句、"须在 Step N 前/后做"排序注记）②逐版编年流水账（"版本注记：vX——…"标题、"方法论无新增落地单元/档案 docs/research/R##"簿记、"教训/回退修正"轮次叙事）③变迁叙事（"将 A 从 X 升级为 Y/X 退役/曾…改为"）④派生署名（"吸收自/借鉴 X 改写为 Y…不吸收 Z"）⑤维护者簿记（"自检断言/口径同步/对账通过/登记不展开/候选登记"）与推演黑话（双宿主/教义/谱系/三值化/互为正反/"X 族"式族标记/又一实证）。清理原则承 a37c6d6 验收边界：**能力事实与版本/PR 锚一条不丢，只删叙事外壳**，来源署名统一为「来源：X vN」一行式，设计结论（判据/不变量/边界）改平实表述保留。生成流程编号重整为连续 **Step 1-13**（4.5/7.1/8.5 并入父步命名子阶段并删排序注记，10.5 独立审查转正 Step 11、写回记忆→12、终检激活→13），全仓 80+ 处引用与机器/随发面同步。防复发：test-r68 终态纪律增⑥编年簿记/⑦变迁叙事/⑧派生过程句三锁，禁用自造词表扩 8 词（双宿主/教义/三值化/互为正反/收官/会师/又一实证/谱系）；FACT_FLOW_STEPS 补等值断言（此前零消费者，漂移只会静默失真）。验证：test-r68 15 项全绿、self-check --check-only EXIT=0（G25 双向对账零漂移）、tests/ 51 个全 PASS（含 test-r83 的 precheck --review 字面量锁、test-cost-report StepN 节点锁）、版本锚/PR 锚机械对账无丢失（下降项均为同条目重复版本名去重）。
+
+### Changed
+- **生成流程编号重整 Step 1-13**：SKILL.md 总览表 13 行（Step 4 含框架深化与门禁注入、Step 7 含多文件并行分批、Step 8 含审查口径 Mutation Check）；generation-flow.md 分工表与小节同构重排（"Step 7.1/8.5/10.5"节改为命名子阶段/转正 Step 11）；"Step 1-12"口径 28 处、"回 Step 4.5"式引用、usage-manual 步骤表镜像、standards-compliance PDCA 映射、quality-management-standards PDCA 表全量同步；机器面同步：facts.conf FACT_FLOW_STEPS=13 及注释去 ⓪-⑨ 废弃符号、generate-skill.sh 随发模板"编号体系消歧"注记（⓪-⑨→Step 1-13）、memory-writeback/precheck/inventory-verify/setup-loop/ontology 提示与注释、compare-baseline.sh 报告文本去 WP-P3 标签。
+- **references 叙事清理**：claude-code-capabilities 逐版小节改中性版本范围标题（"## v2.1.238-252 能力"式）并重排为版本升序（原按吸收顺序乱序），能力条目改平实陈述+完整版本锚（裸"（233）"式补为 v2.1.233），"⚠撤销/266 教训/教义补充/对账通过/环境事实登记/不吸收记档"簿记清除、设计边界句改"目标技能对照："保留；codex-methodology 12 节、dsh-engineering 5 节、code-graph-tools/memory-persistence/subagent-orchestration/review-methodology 等 20+ 档同类改写（"吸收自/引自 X。将 A 从 B 升级为 C"→"来源：X vN。采用 C"）；gsd-patterns/governance-agents/knowledge-lifecycle/mattpocock/mea-loop/exploration-guide/task-methodology-router/mcp-governance/security-spec/four-theories/industry-profile-payment/README 杂项派生署名与变迁叙事同批清理；code-graph-tools "v1.0.0 异源 tag 维持不取"七处重复收敛为首现声明+版本线纪律一条，0.9.57/0.9.58 条目归位版本序。
+- **随发资产面同步**：precheck.sh/gates-warn.sh/gates-strict.sh/inventory-dimensions.conf/generate-skill.sh/ontology/hooks（failure-detector/integrity-guard/loop-hook/setup-loop）/state-machine 的注释与提示中"教义/双宿主/借鉴 X 改写为…叙事/R 轮考古标签"清除（目标技能侧用户直接可见）。
+
+### Added
+- **test-r68 终态纪律三锁**：⑥编年簿记句（版本注记：/无新增落地单元/patch 号下/对账通过/登记不展开/候选登记/环境事实登记/记档行）⑦变迁叙事句（升级为/曾…改为/回退修正/被回退/不吸收）⑧派生过程句（吸收自/整合自 X/移植自/改写为 swarm-yuan/借鉴 X/吸收点：，扫用户面+随发面）；禁用自造词表扩 8 词；「谱系」以 [^图]谱系 排除式避开"图谱系统性"误伤。
+- **FACT_FLOW_STEPS 等值断言**（self-check check_doc_consistency 2d）：对账 generation-flow.md "^## Step" 主步骤标题机械计数，补上该键此前缺失的消费路径。
 ## [v2.54.0] - 2026-10-05
 
 > R91 运行时刷新轮（用户 /goal 三目标②触发）：5 移动物化——**claude-mem v13.31.0**（压缩保真观察上下文/本地优先 newest-N 冷启动/读路径覆盖索引）、**gsd-core v1.16.0**（检查动词全部收编为 gate 模块+计划工件写入 seam 单点化，实质 minor，gsd-patterns 增 v1.16.0 要点段）、**ruflo v3.52.0**（ADR-450 T2 状态文件形态校验）、**graphify v0.9.76**（修复轮）、**dsh 克隆对齐 0.2.1-alpha.1**（漂移归零）。research/ 五克隆 checkout 至新 tag；claude-code 2.1.289 / codex rust-v0.160.0 经核仍为最新稳定零移动。两问决策：四条方法论样本均为既有族（单点化/压缩保真/死线传播）正向补强，无边界修正。档案 `docs/research/R91-runtime-refresh.md`。

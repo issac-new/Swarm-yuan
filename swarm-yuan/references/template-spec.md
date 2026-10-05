@@ -241,7 +241,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 - 落盘：节点级默认——进入/完成本节点时执行 `bash scripts/trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令>`，追加到 `.swarm-yuan/trace.jsonl`；调用级细节（每次具体调用）仅在 `SWARM_YUAN_TRACE=verbose` 时落盘
 
 **⑩ 方法论引用（机器校验）：**
-- 本节点消费的 references 档（互为正反 task-methodology-router 路由表消费节点序，可裁剪增删）
+- 本节点消费的 references 档（互为反查 task-methodology-router 路由表消费节点序，可裁剪增删）
 
 （其他节点同结构）
 
@@ -295,7 +295,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 7. **流程控制** — 标注可否暂停/恢复/重启及恢复方式
 8. **状态控制** — 状态载体（git 分支/文件/对话上下文）与恢复方式
 9. **调用追踪** — 每节点写清：进入节点时的公告格式（`→ [节点X] 调用 <技能/工具> · <目的>`）+ 本节点会调用哪些技能/工具（须与节点工具表一致）+ trace-log.sh 落盘命令
-10. **方法论引用** — 每节点写明消费的 references 档（互为正反路由表）；机器执法：`generate-skill.sh --verify-completeness` 逐节点校验「方法论引用」，缺则列 file:line 并 exit 1
+10. **方法论引用** — 每节点写明消费的 references 档（互为反查路由表）；机器执法：`generate-skill.sh --verify-completeness` 逐节点校验「方法论引用」，缺则列 file:line 并 exit 1
 11. **完成检查表** — workflow.md 末尾，汇总所有节点门禁
 
 **标注需要用户确认的节点**（通常是合入 main、发布）。
@@ -401,7 +401,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
  - §B 任务配方：三源提取（既有实现 / git 同类任务历史 / 开发者文档），每配方五要素齐全——触发场景/前置查询/复用件/胶水/门禁与验证（`--verify-completeness` 机器执法，缺要素即列 file:line）
  - **数据模型变更配方（有数据访问层时必须建**，漏改字段高发任务）：触发场景=改/加/删实体字段或表列；**前置查询必须含四查**——①查 relations.jsonl `data-mapping`/`mapper-binding` 边反查该实体的全部 mapper XML；②查 §8 字段级映射清单定位 property/SQL 列；③查 §5 调度任务表定位读写该数据资产的 job（reader SQL 内嵌列名不在 import 边里）；④查**对外契约面**——字段若暴露于 API JSON（响应体/请求体 DTO），反查前端调用点与契约测试，前端 fixtures/mock 同名字段一并改（对应回归②接口命中路）；胶水=同步点清单（resultMap property/SQL 列/reader SQL/@TableField/DDL 迁移/JSON 契约字段）；门禁与验证=`fw_mybatis_field_sync` + job 回归 + 契约消费方测试
  - 复用件清单表格化（`| 复用件路径 | 用途 |`，反引号路径）——散文行的命令反引号不进 path-check（防误报）
- - **★待确认事项清单（生成承载）**：探查中拿不准的业务语义**集中**落 `.swarm-yuan/notes/cognition.md` 待确认事项清单段（每项：问题/两源证据锚点/需谁回填），回填后按裁决序转正销项——不许散落各文档的"待验证"字样里自然蒸发（互为正反 exploration-guide 待确认事项清单回填协议）
+ - **★待确认事项清单（生成承载）**：探查中拿不准的业务语义**集中**落 `.swarm-yuan/notes/cognition.md` 待确认事项清单段（每项：问题/两源证据锚点/需谁回填），回填后按裁决序转正销项——不许散落各文档的"待验证"字样里自然蒸发（互为反查 exploration-guide 待确认事项清单回填协议）
  - 配方只建高频形态（≥2 个起步，不凑数）；低频任务走九节点流；lite 档不生成 recipes.md（档位差异化）
 - **★版本锁定原则（dev-guide.md 必须含 + codebase.md 版本表必须记录基线）**：
  - 功能性开发过程中，**不允许随意升级或更换核心技术及基础组件及依赖的版本**
@@ -431,7 +431,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 
 **文件：** `<target-skill>/references/framework-knowledge.md`
 
-**骨架生成**：由 AI 在生成流程 **Step 4.5 框架深化阶段**依据 `references/frameworks/<fw>.md` §3（领域规律）+ §4（门禁清单）构建骨架——对 ACTIVE_FRAMEWORKS 中每个 `<fw>`，将该规则文件的 §3 规律段与 §4 门禁清单按项目实际激活情况拷贝/拼接到 `framework-knowledge.md` 形成骨架（保留 frontmatter 与六段结构标记），未激活的框架不出现。**脚本不自动生成骨架**（`generate-skill.sh --inject-frameworks` 只负责门禁片段注入 precheck.sh 标记区块，不读写 `framework-knowledge.md`）——避免未经验证的规律种子直接落产物，违反"残留未实例化种子零容忍"（设计文档 §5.1 Step 4.5 明确规定 AI 实例化后填充）。
+**骨架生成**：由 AI 在生成流程 **Step 4 框架深化与门禁注入**子阶段依据 `references/frameworks/<fw>.md` §3（领域规律）+ §4（门禁清单）构建骨架——对 ACTIVE_FRAMEWORKS 中每个 `<fw>`，将该规则文件的 §3 规律段与 §4 门禁清单按项目实际激活情况拷贝/拼接到 `framework-knowledge.md` 形成骨架（保留 frontmatter 与六段结构标记），未激活的框架不出现。**脚本不自动生成骨架**（`generate-skill.sh --inject-frameworks` 只负责门禁片段注入 precheck.sh 标记区块，不读写 `framework-knowledge.md`）——避免未经验证的规律种子直接落产物，违反"残留未实例化种子零容忍"（设计文档 §5.1 框架深化段明确规定 AI 实例化后填充）。
 
 **AI 实例化铁律（逐条规律处理）：**
 - **成立 → 附证据**：用项目代码验证该规律确实成立（按 §3 每条规律的"验证方法"给出的 `grep`/`read` 命令实跑），在规律行末附"证据: `<file>:<line>` 或 `<grep 命令输出摘要>`"。证据须可自动复现，不允许"应当""想必"等臆测语
@@ -446,7 +446,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 - 验证方法（具体 `grep`/`read` 命令，非"人工检查"泛词）
 - 对应门禁（`fw_<id>_<rule>` fail/warn 或"人工检查"显式标注）
 
-**四要素核验前置**：本文件填充完成后才能运行 Step 12 的"框架适配四要素核验"② 项（规律数 ≥ 门槛且 100% 含证据字段）——见本文件末"生成后核对清单 · 框架适配四要素"。
+**四要素核验前置**：本文件填充完成后才能运行 Step 13 的"框架适配四要素核验"② 项（规律数 ≥ 门槛且 100% 含证据字段）——见本文件末"生成后核对清单 · 框架适配四要素"。
 
 ---
 
@@ -619,7 +619,7 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 - [ ] 5. SKILL.md description 任务触发式（做什么+何时用）
 - [ ] 6. 地图（reference-manual）条目含路径列且 stability 标注词在说明列
 - [ ] 7. precheck.conf 核心变量已填（PROJECT_DIR/WRITABLE/TEST_CMD/BUILD_CMD）
-- [ ] 8. hooks.json 双宿主整合（fail-gate/integrity-guard）
+- [ ] 8. hooks.json 两宿主整合（Claude Code 与 Codex，fail-gate/integrity-guard）
 - [ ] 9. 编排约束含代码证据（dev-guide §8 或地图说明列）
 - [ ] 10. 测试/构建命令真跑过一次
 - [ ] 11. 特征卡 P0 六项承接（项目类型/可改范围/技术栈/构建命令/分支规范/安全规则）
@@ -720,15 +720,15 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 · precheck.conf LOG_CODE_PATTERNS 含 @Slf4j + log. 方法调用（Lombok 日志感知）
 · dev-guide.md §10 含框架特定约束（按 ACTIVE_FRAMEWORKS 推导）
 
-**★框架适配四要素核验（对应 SKILL.md Step 12 框架适配四要素核验）：**
-· ① 构件枚举计数 ≥ 实际 × 0.95——对 ACTIVE_FRAMEWORKS 每个框架，按 `references/frameworks/<fw>.md` §2 的 `find`/`grep` 命令实跑，对比 reference-manual.md §4 框架特定构件表行数，偏差 >5% 须回 Step 4.5 补全
-· ② framework-knowledge.md 规律数 ≥ 规则文件 frontmatter 声明的"深度门槛"且 100% 规律行含"证据:"字段（剔除的规律不计；"待验证"规律须有版本区间标注，缺失证据 → 回 Step 4.5）
+**★框架适配四要素核验（对应 SKILL.md Step 13 框架适配四要素核验）：**
+· ① 构件枚举计数 ≥ 实际 × 0.95——对 ACTIVE_FRAMEWORKS 每个框架，按 `references/frameworks/<fw>.md` §2 的 `find`/`grep` 命令实跑，对比 reference-manual.md §4 框架特定构件表行数，偏差 >5% 须回 Step 4 框架深化补全
+· ② framework-knowledge.md 规律数 ≥ 规则文件 frontmatter 声明的"深度门槛"且 100% 规律行含"证据:"字段（剔除的规律不计；"待验证"规律须有版本区间标注，缺失证据 → 回 Step 4 框架深化）
 · ③ precheck.sh 含 `_fw_<id>_check` 动态分发器（模板内置，`declare -f _fw_<id>_<rule>` 派发），门禁片段位于 `assets/framework-gates/<fw>.sh` 且已注入到 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块，`precheck.sh --framework <id>` 实跑 exit 0
-· ④ dev-guide.md §10 含该框架约束段 ≥ 3 条（每条含代码证据：文件:行 或 grep 命令），约束数 <3 → 回 Step 4.5 补全
+· ④ dev-guide.md §10 含该框架约束段 ≥ 3 条（每条含代码证据：文件:行 或 grep 命令），约束数 <3 → 回 Step 4 框架深化补全
 
 **材料要素覆盖：**
 · **meta**：铁律、改造分类、流程总览（含入口顺序）、命令速查、门禁、检查表、**自成长段**（骨架内置固定指引，保留未删——感知/更新链/落基线四环齐全）
-· **workflow 11 要素**：每节点都有 流程入口/参与方/准入/门禁/分支处理/产出物归档/流程控制/状态控制/★调用追踪（公告格式 + trace-log.sh 落盘命令）/★方法论引用（消费档互为正反路由表）；末尾有完成检查表
+· **workflow 11 要素**：每节点都有 流程入口/参与方/准入/门禁/分支处理/产出物归档/流程控制/状态控制/★调用追踪（公告格式 + trace-log.sh 落盘命令）/★方法论引用（消费档互为反查路由表）；末尾有完成检查表
 · **reference 9 项**：目录结构/安全检查/编译规则/组件库(全量)/组件依赖链路(三层+约束)/接口清单(全量端点)/UI-UX资源/数据字典/store+类型(全量)
 · **assets 7 项**：环境加载/资源检测/分支拉取/任务配置模版/静态资源/库表样例/组件填充说明
 · **check 4 项**：单测接口集成回归安全/业务规则案例/数据勾稽(无多漏错重)/UI脱敏日志

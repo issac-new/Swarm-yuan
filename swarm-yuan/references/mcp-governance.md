@@ -67,10 +67,10 @@
 
 ## ruflo v3.42.0：MCP 治理 opt-in 与调用者身份绑定
 
-- **opt-in MCP 治理策略执行**（#3138）：MCP 工具调用可挂治理策略，但显式 opt-in 才生效。治理面越强、误伤面越大，开关归用户——同意面族（与 3.41.2 `autoStart:false` 被尊重同谱系）：治理与易用性的权衡显式化，不替用户做主。
+- **opt-in MCP 治理策略执行**（#3138）：MCP 工具调用可挂治理策略，但显式 opt-in 才生效。治理面越强、误伤面越大，开关归用户——同一类同意边界（与 3.41.2 `autoStart:false` 被尊重一致）：治理与易用性的权衡显式化，不替用户做主。
 - **ADR-377 调用者身份验证绑定**（#3102）：工具调用携带调用者身份并验证。跨边界调用须有可验证身份；无身份绑定的调用与 Sybil 假票（#3290 hive-mind 共识修复同版）一样不可信——身份唯一性是共识与审计的共同前件。与 gstack v1.87「verified audits」互证（见 `references/review-methodology.md`）。
 
-## 工具面设计三原则（吸收自《Harness实践》× colbymchenry/codegraph）
+## 工具面设计三原则（来源：《Harness实践》× colbymchenry/codegraph）
 
 > 证据分级：codegraph 仓库元数据 A 级（MIT，71,356★，2026-09-18 API 核验）；"单工具优于多工具"论断为文章作者观点 + codegraph 官方基准 B 级（−88% 工具调用 / −62% token / −44% 成本，7 仓库×4 次）。
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # failure-detector.sh — PostToolUse(Bash) 失败模式检测器
 #
-# 借鉴 tanweai/pua failure-detector.sh 的三层设计（exit_code + 错误签名 MD5 +
-# SPINNING/EXPLORING/MIXED 三态模式分析），改写为 swarm-yuan 的叙事与纪律：
+# 来源：tanweai/pua failure-detector.sh 三层设计（exit_code + 错误签名 MD5 +
+# SPINNING/EXPLORING/MIXED 三态模式分析）。swarm-yuan 侧纪律：
 #   - 不用 PUA 话术，用门禁/特征卡/四要素术语
 #   - bash 3.2 兼容（无 declare -A，无关联数组）
 #   - 三平台兼容（macOS stat -f %m / Linux stat -c %Y 兜底）

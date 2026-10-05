@@ -1,13 +1,13 @@
 ---
 name: swarm-yuan
-description: "元技能生成器：为任意代码仓库生成项目专属开发技能（六段目录：SKILL.md + workflow + references + assets + 门禁配置 + scripts）。生成流程 Step 1-12：探查（组件清单 + 调用链 + 关系边集 + 任务配方）→ 特征卡 → 骨架 → 填充 → 门禁与 hooks → 验证审查 → 激活；目标技能执勤九节点开发工作流（需求 → 探查 → spec → plan → 编码 → 测试 → 审查 → 合入 → 发布）；项目变化由指纹感知并局部更新技能。何时用：用户说'为某项目生成开发技能'、'create a dev skill'。数字口径以 assets/facts.conf 为准。"
+description: "元技能生成器：为任意代码仓库生成项目专属开发技能（六段目录：SKILL.md + workflow + references + assets + 门禁配置 + scripts）。生成流程 Step 1-13：探查（组件清单 + 调用链 + 关系边集 + 任务配方）→ 特征卡 → 骨架 → 填充 → 门禁与 hooks → 验证审查 → 激活；目标技能执勤九节点开发工作流（需求 → 探查 → spec → plan → 编码 → 测试 → 审查 → 合入 → 发布）；项目变化由指纹感知并局部更新技能。何时用：用户说'为某项目生成开发技能'、'create a dev skill'。数字口径以 assets/facts.conf 为准。"
 ---
 
 # swarm-yuan — 项目开发技能生成器
 
 swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产出一个项目专属的开发技能（下称**目标技能**）；此后该项目的 AI 编码由目标技能执勤。本文件是生成器的操作手册：何时用、生成流程怎么跑、目标技能怎么执勤、技能怎么随项目更新。设计论证见同目录 [README.md](README.md)（唯一设计文档），操作命令与术语表见仓库 docs/usage-manual.md。
 
-**生命周期**：生成目标技能 → 目标技能执勤开发 → 项目演进 → 指纹感知变化 → 技能局部更新 → 继续执勤。两条流程：**生成流程**（Step 1-12，逐步详解见 [references/generation-flow.md](references/generation-flow.md)）与**开发工作流**（目标技能侧 9 节点，逐节点要素由目标技能 references/workflow.md 承载）。
+**生命周期**：生成目标技能 → 目标技能执勤开发 → 项目演进 → 指纹感知变化 → 技能局部更新 → 继续执勤。两条流程：**生成流程**（Step 1-13，逐步详解见 [references/generation-flow.md](references/generation-flow.md)）与**开发工作流**（目标技能侧 9 节点，逐节点要素由目标技能 references/workflow.md 承载）。
 
 ## 何时使用
 
@@ -31,7 +31,7 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 
 外部运行时按整合深度分三层，每层自带降级载体，未装不阻塞但披露：深度层 GitNexus/graphify/claude-mem/ocr（门禁内真实子进程）；CLI 层 OpenSpec/comet/gsd-core/codex-security（按需调用）；方法论层 superpowers/gstack/ECC/Ruflo/impeccable（AI 按节点引用）。清单与降级链见 references/subagent-orchestration.md，代码图谱备选选型见 references/code-graph-tools.md。
 
-## 生成流程总览（Step 1-12）
+## 生成流程总览（Step 1-13）
 
 逐步详解按步按需读取：[references/generation-flow.md](references/generation-flow.md)；探查方法论：references/exploration-guide.md；填充规范：references/template-spec.md。
 
@@ -40,19 +40,16 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 | 1 | 自检 | `bash scripts/self-check.sh --check-only`（运行时检测 + 文档一致性） |
 | 2 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem 提取规则；`scripts/mine-habits.sh` 行为统计初稿（AI 审读：铁律引用 / 开发偏好节 / 注意事项三去向） |
 | 3 | 探查仓库 | 三路并行子代理（结构/规范/代码组织，方法论见 exploration-guide），每路启动前 `assets/trace-log.sh` 公告并落盘 |
-| 4 | 形态判定 + 组件库清单 + 调用链 | 按 exploration-guide §D 穷举（组件/接口/数据/对外契约面等维度按形态选）+ 计数核验（≥ 枚举 × 0.95）；gitnexus/graphify 图谱；`scripts/relations-extract.sh` 提取声明式映射边（XML↔接口/实体/bean 装配等字符串耦合，编译不校验） |
-| 4.5 | 框架深化与门禁注入 | `scripts/framework-evidence.sh` 取证 + AI 判断实例化（每条规律须项目代码证据，无证据剔除并记录反例）→ `bash scripts/generate-skill.sh --inject-frameworks <skill-dir>` 把门禁片段挂入 precheck 标记区块（实例化在 Step 7 填充后做，注入须在 Step 12 前完成） |
+| 4 | 形态判定 + 组件库清单 + 调用链 + 框架深化与门禁注入 | 按 exploration-guide §D 穷举（组件/接口/数据/对外契约面等维度按形态选）+ 计数核验（≥ 枚举 × 0.95）；gitnexus/graphify 图谱；`scripts/relations-extract.sh` 提取声明式映射边（XML↔接口/实体/bean 装配等字符串耦合，编译不校验）；框架深化：`scripts/framework-evidence.sh` 取证 + AI 实例化规律（每条须项目代码证据，无证据剔除并记录反例）→ `bash scripts/generate-skill.sh --inject-frameworks <skill-dir>` 门禁片段挂入 precheck 标记区块 |
 | 5 | 特征卡 | 特征项写入认知缓冲（P0 强制项落具体值不用占位符；映射表见 template-spec §3） |
 | 6 | 创建骨架 | `bash scripts/generate-skill.sh <name> <project-dir>`（auto/lite/standard/compliance 四档，默认 auto 按项目自适应） |
-| 7 | AI 填充全部文件 | 按 template-spec 逐节填真实探查内容；recipes 任务配方五要素（提取源见 exploration-guide §D.6/§D.7） |
-| 7.1 | 多文件并行填充时 | gsd Wave 分批 + worktree 隔离（每 Wave 独立验收，前批全绿再进下批） |
-| 8 | 配置 precheck.conf | conf-render 已出初稿；AI 补 `# TODO:model` 语义项 + 从编排约束推导 rules.d/project.rules |
-| 8.5 | 配置审查口径时 | Mutation Check：变异门禁函数后重跑 fixture，变异后仍检出才证明断言有效 |
+| 7 | AI 填充全部文件 | 按 template-spec 逐节填真实探查内容；recipes 任务配方五要素（提取源见 exploration-guide §D.6/§D.7）；多文件并行时按 gsd Wave 分批 + worktree 隔离（每 Wave 独立验收，前批全绿再进下批） |
+| 8 | 配置 precheck.conf 与审查口径 | conf-render 已出初稿；AI 补 `# TODO:model` 语义项 + 从编排约束推导 rules.d/project.rules；审查口径 Mutation Check（变异门禁函数后重跑 fixture，变异后仍检出才证明断言有效） |
 | 9 | 集成宿主 | 定制 hooks.json + commands + settings + .mcp.json；workflow.md 节点标注 |
 | 10 | 编码验证 | `bash scripts/precheck.sh --all`，fail 修复重跑 |
-| 10.5 | 独立审查 | AI 第三方视角审查 + `bash scripts/precheck.sh --review` 核验留痕 + review-record 落盘（ocr 可用用 5 维审查点，否则 AI 清单诚实降级；`--review` 是 precheck.sh 的旗标，不要对 generate-skill.sh 调用） |
-| 11 | 写回记忆 | `bash assets/memory-writeback.sh`（项目知识 / 宿主记忆 / claude-mem 三路） |
-| 12 | 终检激活 | `--verify-completeness --strict` 确认无占位符残留 → `--mark-active`（路径验真 + 决策留痕） |
+| 11 | 独立审查 | AI 第三方视角审查 + `bash scripts/precheck.sh --review` 核验留痕 + review-record 落盘（ocr 可用用 5 维审查点，否则 AI 清单诚实降级；`--review` 是 precheck.sh 的旗标，不要对 generate-skill.sh 调用） |
+| 12 | 写回记忆 | `bash assets/memory-writeback.sh`（项目知识 / 宿主记忆 / claude-mem 三路） |
+| 13 | 终检激活 | `--verify-completeness --strict` 确认无占位符残留 → `--mark-active`（路径验真 + 决策留痕） |
 
 **路径约定**：trace-log.sh、state-machine.sh、memory-writeback.sh 在生成器侧位于 assets/，在目标技能侧映射为 scripts/。
 
@@ -62,7 +59,7 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 
 需求理解 → 探查 → spec → plan → 编码 → 测试 → 独立审查 → 合入 → 发布；六阶段状态机逐段守卫前序产出物（design 需 proposal、build 需批准的 spec、verify 需 tasks 全勾、archive 需 verify pass 与证据）。
 
-守卫实物：spec-first hook 拦"无 spec 写源码"（Claude deny / Codex exit 2 双宿主）；rules.d 三值规则（allow/prompt/forbid 取最严，forbid 必带替代方案）在每次 Bash/Edit 实时匹配；门禁按序列执勤，分核心/架构/合规/advisory 四族（执行序列与口径数字见 facts.conf）；拦截落 gate-deny.jsonl 可复盘。
+守卫实物：spec-first hook 拦"无 spec 写源码"（Claude Code deny / Codex exit 2 两类宿主同拦）；rules.d 三值规则（allow/prompt/forbid 取最严，forbid 必带替代方案）在每次 Bash/Edit 实时匹配；门禁按序列执勤，分核心/架构/合规/advisory 四族（执行序列与口径数字见 facts.conf）；拦截落 gate-deny.jsonl 可复盘。
 
 ## 反馈回路（技能随项目生长）
 
@@ -98,7 +95,7 @@ SessionStart hook（lite 档由 AI 主动）跑 `scripts/project-fingerprint.sh 
 
 | 族 | 文档 |
 |----|------|
-| 生成主干（Step 1-12 消费） | exploration-guide、generation-flow、template-spec、agent-skills-methodology、context-engineering-layering、task-methodology-router、cost-estimation-methodology、domain-knowledge、code-graph-tools、togaf-metamodel-methodology、frontend-design-methodology |
+| 生成主干（Step 1-13 消费） | exploration-guide、generation-flow、template-spec、agent-skills-methodology、context-engineering-layering、task-methodology-router、cost-estimation-methodology、domain-knowledge、code-graph-tools、togaf-metamodel-methodology、frontend-design-methodology |
 | 拼装与知识消费（探查与编码节点） | lazy-generation-methodology、cordis-composability-methodology、knowledge-lifecycle-methodology、mattpocock-skills-methodology、memory-persistence、cognition-framework、cognitive-bias、logic-razor、four-theories-methodology、mea-loop-methodology |
 | 编排与治理（全程纪律） | governance-agents、subagent-orchestration、gsd-patterns、decision-governance、dsh-engineering-methodology、codex-methodology、claude-code-capabilities、mcp-governance、codex-security-methodology |
 | 验证与过程资产 | review-methodology、canary-monitoring、ai-process-records、quality-management-standards、rsi-evidence-methodology |

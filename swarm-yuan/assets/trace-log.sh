@@ -194,10 +194,10 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
   STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
   if mkdir -p "$STATE_DIR" 2>/dev/null; then
     ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    # goal_id + closure（吸收自 better-harness）：审计单元从"运行/会话"升级为"目标闭环"
+    # goal_id + closure（来源：better-harness）：审计单元以"目标闭环"为单位（而非"运行/会话"）
     # （一个用户目标 + 一个验收边界；change set ↔ final validation set 链接才 closed）
     [[ -z "$D_CLOSURE" ]] && D_CLOSURE="open"
-    # digest 链式锚定（吸收自 HarnessEval）：decisions 记录引用同项目 trace.jsonl 末行 hash。
+    # digest 链式锚定（来源：HarnessEval）：decisions 记录引用同项目 trace.jsonl 末行 hash。
     # 下游 artifact（decisions）的 digest 含上游（trace 末行）：trace 被篡改 → ref_trace_hash 失配 → 全链 stale 可检出。
     _ref_trace_hash=""
     if [[ -f "$STATE_DIR/trace.jsonl" ]]; then

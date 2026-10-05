@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # integrity-guard.sh — PreToolUse 防作弊门（权责分离的机械兜底）
 #
-# 借鉴 tanweai/pua integrity-guard.sh 的设计，改写为 swarm-yuan 的受保护资产清单：
+# 来源：tanweai/pua integrity-guard.sh 的设计。swarm-yuan 受保护资产清单：
 #   - 不用 pua 的 tests/scoring/CI/memory/secrets 通用清单，用 swarm-yuan 自己的
 #     治理资产（facts.conf 数字单源 / framework-gates 注入区 / verifier/v1 司法层 /
 #     gate-enforce-level.conf 禁手改 / self-precheck.conf 自举门禁）

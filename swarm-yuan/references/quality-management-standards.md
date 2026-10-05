@@ -17,7 +17,7 @@
 | 以顾客为关注焦点 | 17 特征卡第 14 项（领域知识探查）+ spec §1.2 价值声明（交付物以用户价值为锚） |
 | 领导作用 | SKILL.md 铁律（红线前置声明）+ 决策分级 G1（重大事项须用户决策） |
 | 全员参与 | AI 主导 + 用户决策的协同模式（决策审计轨迹 decisions.jsonl 留痕） |
-| 过程方法（PDCA） | 生成流程 12 步（Step 1-12）+ workflow 9 节点 + state-machine 阶段管理（活动相互关联作为过程管理） |
+| 过程方法（PDCA） | 生成流程 13 步（Step 1-13）+ workflow 9 节点 + state-machine 阶段管理（活动相互关联作为过程管理） |
 | 改进 | verifier/v1 验收回路 + self-check 文档一致性对账 + profile 动态升档（lite→standard→compliance） |
 | 循证决策 | 17 特征卡探查（先探查后生成）+ 门禁计数与指向关系的规律化治理（facts.conf 权威口径） |
 | 关系管理 | 13 运行时整合（分层整合 + 诚实降级，外部供方能力显式登记） |
@@ -28,8 +28,8 @@
 |---|---|
 | Plan（策划） | Step 1-2 自检+读知识 → Step 3-4 探查 → Step 5 特征卡 → Step 7 spec/plan 填写（spec §1-§25） |
 | Do（实施） | Step 6-9 骨架/填充/conf/hooks 生成 + spec §5.5 复用约束（Step 7 填充期内落 spec） |
-| Check（检查） | Step 10-11 门禁（55 门禁三档 enforce_level）+ 独立审查 + verifier/v1 验收 + self-check |
-| Act（处置） | gate-fixture 正反例回归 + profile 动态升档 + Step 11 记忆写回（memory-persistence 经验沉淀） |
+| Check（检查） | Step 10 门禁（55 门禁三档 enforce_level）+ Step 11 独立审查 + verifier/v1 验收 + self-check |
+| Act（处置） | gate-fixture 正反例回归 + profile 动态升档 + Step 12 记忆写回（memory-persistence 经验沉淀） |
 
 ---
 

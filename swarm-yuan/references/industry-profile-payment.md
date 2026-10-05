@@ -5,7 +5,7 @@
 > 编制来源：hermes pay-team 人格知识内核。
 > 条款纪律：条款号仅采用已核验事实；不虚构条款号、不虚构 URL——法规统一指向国家法律法规数据库/政府公报，标准指向国家标准全文公开系统检索页或 ISO/IEC 官方页，访问日期均 2026-09-15。
 > 与 `industry-profile-finance.md` 的分工：**立法/合规门禁条款归 finance，业务机理与技术实现归本文件**。支付机构同时是持牌金融机构，合规基线以 finance 为准（§2 映射表仅列支付特有差额，不重复列举金融业通用条款）。
-> 业务机理知识基线：吸收自 hermes pay-team 四人格（pay-clearing / pay-infra / pay-fintech / pay-orchestrator 的 SOUL.md），知识库实物锚点见 §7，引用任何限额/阈值/费率前先查该库 `standards/known-conflicts.md` 的冲突裁决。
+> 业务机理知识基线来源：hermes pay-team 四人格（pay-clearing / pay-infra / pay-fintech / pay-orchestrator 的 SOUL.md）；知识库实物锚点见 §7，引用任何限额/阈值/费率前先查该库 `standards/known-conflicts.md` 的冲突裁决。
 
 ---
 

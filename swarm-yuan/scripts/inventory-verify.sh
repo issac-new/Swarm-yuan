@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # inventory-verify.sh — 维度计数核验 + 维度错配 lint（WP-P2/M1）
-# 把 Step 12 / exploration-guide §D 的手工枚举计数核验脚本化：
+# 把 Step 13 / exploration-guide §D 的手工枚举计数核验脚本化：
 #   对目标仓库按维度注册表跑 find/grep 枚举 → 数 reference-manual.md 对应表行数 → 去重 → 算比率（≥0.95 PASS）
 #   顺带维度错配 lint：声明纯后端却有 UI 组件文件 / 纯前端却有 controller → DIM_MISMATCH
 # WP-Q1A（2026-08-19，三能力实操性复盘）新增两模式，堵"计数核验防漏不防伪"的洞：

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# setup-loop.sh — 启动 swarm-yuan Oracle Gate 循环（借鉴 tanweai/pua pua-loop + autoresearch Oracle Isolation）
+# setup-loop.sh — 启动 swarm-yuan Oracle Gate 循环（来源：tanweai/pua pua-loop + autoresearch Oracle Isolation）
 #
-# 设计理念：swarm-yuan 生成流程跑完 Step 1-12 后，AI 说「已生成 skill」——但没独立验证。
+# 设计理念：swarm-yuan 生成流程跑完 Step 1-13 后，AI 说「已生成 skill」——但没独立验证。
 # 本脚本创建状态文件，loop-hook.sh 在 Stop 事件时独立跑 verify_command，
 # promise 被 Oracle 拒绝则 loop 继续，直到验证通过或 loop-abort。
 #
@@ -14,7 +14,7 @@
 #   audit-claims-reality A8 修复：旧默认 self-check+--all-full 永不通过。）
 #
 # 三平台兼容：bash 3.2 / 无 declare -A / date -u / md5sum→md5 降级。
-# 借鉴 Ralph Wiggum (Anthropic MIT) + tanweai/pua pua-loop，改写为 swarm-yuan 叙事。
+# 来源：Ralph Wiggum (Anthropic MIT) + tanweai/pua pua-loop。
 
 set -euo pipefail
 
@@ -43,7 +43,7 @@ OPTIONS:
   --completion-promise '<text>'    完成信号词（默认 SWARM_YUAN_DONE）
   -h, --help                       显示帮助
 
-GATE PROTOCOL（借鉴 autoresearch Oracle Isolation）:
+GATE PROTOCOL（来源：autoresearch Oracle Isolation）:
   Phase 1 (in-prompt): AI 跑 self-check/precheck，决定输出 <promise>
   Phase 2 (in-hook):   hook 独立跑 --verify 命令
   Phase 2 失败 → promise 被拒绝 → loop 继续 + 错误输出喂回 AI
@@ -132,13 +132,13 @@ ${PROMPT}
 5. 发现问题就修，修完再验证（不声称完成，先验证）
 6. 只有当任务完全完成且验证通过时，输出 <promise>${COMPLETION_PROMISE}</promise>
 
-== 验证门控（Oracle Isolation，借鉴 autoresearch）==
+== 验证门控（Oracle Isolation，来源：autoresearch）==
 - 你输出 <promise> 后，hook 会独立运行: ${VERIFY_COMMAND}
 - 如果验证命令退出码 ≠ 0 → 你的 promise 被拒绝 → loop 继续
 - Oracle 不可欺骗：你无法绕过验证命令
 - 先自己跑一遍验证命令确认通过，再输出 <promise>
 
-== 防原地打转协议（借鉴 autoresearch Stall Detection）==
+== 防原地打转协议（来源：autoresearch Stall Detection）==
 - 每轮开始先检查 git log + git diff：如果发现自己在重复上轮的改动，必须切换到完全不同的方案
 - 连续 3 轮改同一个文件的同一区域 → 退一步重新分析根因
 - 如果 self-check/precheck 持续失败，先读完整错误输出，列 3 个不同假设再行动
@@ -157,7 +157,7 @@ echo "{\"iteration\":0,\"status\":\"init\",\"verify_command\":\"${VERIFY_COMMAND
 
 # ===== 输出启动信息 =====
 cat <<EOF
-🔄 swarm-yuan Oracle Gate Loop 启动（借鉴 autoresearch + tanweai/pua pua-loop）
+🔄 swarm-yuan Oracle Gate Loop 启动（来源：autoresearch + tanweai/pua pua-loop）
 
 迭代: 1
 最大迭代: $(if [[ $MAX_ITERATIONS -gt 0 ]]; then echo $MAX_ITERATIONS; else echo "无限（跑到 Oracle 验证通过）"; fi)

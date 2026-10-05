@@ -685,7 +685,7 @@ fi
 # ===== precheck 启动挂 upstream-baseline（advisory warn）=====
 # 原为 advisory-only（不在任何执行序列，须显式 --upstream-baseline 才跑——五轮病理的"僵尸门禁"）。
 # 整合语义：每次 precheck 启动时顺带跑一次（fail-open warn，README.md 中 upstream-baseline 段不存在
-# 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 教义。
+# 时静默跳过——目标技能侧无该文件属正常，生成器侧才有）；有下层门禁兜底，符合 §2.2 原则。
 # 段头降级（impl-conformance）：启动期输出的 "=== " 段头改写为 "··· "——"=== X ===" 命名空间
 # 只属于门禁执行段（cli-ab CORE10_SEQUENCE 断言按 '^=== ' 提取执行序列，启动 advisory
 # 不得混入；显式 --upstream-baseline 单跑时仍保留原段头）。
@@ -1515,7 +1515,7 @@ graphify_ensure_built() {
 # 最终 verifier_status 由 external harness/hook/human 定，防「自己改自己验收」。
 # 拓扑映射（详见 references/governance-agents.md）：
 #   决策权 → policy-guardian    ：定义门禁阈值 / enforce_level / 放行策略
-#   执行权 → action-executor    ：跑 generate-skill 12 步 / 改代码 / 跑门禁
+#   执行权 → action-executor    ：跑 generate-skill 13 步 / 改代码 / 跑门禁
 #   审计权 → self-reviewer      ：只读复核执行结果 / 边界 / 失败路径 / 证据完整性
 #   仲裁权 → verifier           ：终验（外部 harness/hook/human），定 verifier_status
 # 可用 --governance-topology 打印此四权映射（仅打印，不改动门禁逻辑）。
@@ -1650,7 +1650,7 @@ $3"
 _print_governance_topology() {
   echo "▶ 治理 Agent 四权分离拓扑（governance-agents.md）"
   echo "  ① 决策权 (policy-guardian / 立法)：定义门禁阈值 / enforce_level / 放行策略"
-  echo "  ② 执行权 (action-executor / 执法)：跑 generate-skill 12 步 / 改代码 / 跑门禁，仅产出 candidate_pass"
+  echo "  ② 执行权 (action-executor / 执法)：跑 generate-skill 13 步 / 改代码 / 跑门禁，仅产出 candidate_pass"
   echo "  ③ 审计权 (self-reviewer / 司法)：只读复核执行结果 / 边界 / 失败路径 / 证据完整性"
   echo "  ④ 仲裁权 (verifier / 终验)：外部 harness/hook/human 定 verifier_status，防「自己改自己验收」"
   echo "  跨权硬约束：action-executor 不得自判 verifier_status；仲裁权须独立于执行权。"

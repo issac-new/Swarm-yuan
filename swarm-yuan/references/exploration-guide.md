@@ -14,7 +14,7 @@
 
 每路子代理的 prompt 要明确"报告具体路径、命令名、版本号、文件名、连接串格式、端口"。
 
-> **per-phase profile 探查分级**：探查阶段按项目规模分级（与 `auto_detect_profile` 同信号源），轻量项目降级为单路探查，重量项目升级为三路+图谱工具：
+> **per-phase profile 探查分级**：探查阶段按项目规模分级（与 `auto_detect_profile` 同信号源），轻量项目走单路探查，重量项目走三路+图谱工具：
 >
 > | profile | 规模信号 | 探查策略 | 图谱工具 |
 > |---------|---------|---------|---------|
@@ -85,7 +85,7 @@
 
 ### 多源探查矛盾裁决（来源：semantica conflicts）
 
-> 整合自 [semantica-agi/semantica](https://github.com/semantica-agi/semantica) v0.7.0 `conflicts/conflict_resolver.py` 的 7 种 ResolutionStrategy 与 `source_tracker.py` 来源可信度模型（机制级借鉴，不引依赖）。上文「文档证据源优先级」管**文档 vs 代码**一个维度；本节管**任意多源**矛盾时的通用裁决序。
+> 来源：[semantica-agi/semantica](https://github.com/semantica-agi/semantica) v0.7.0 `conflicts/conflict_resolver.py` 的 7 种 ResolutionStrategy 与 `source_tracker.py` 来源可信度模型（只取机制，不引依赖）。上文「文档证据源优先级」管**文档 vs 代码**一个维度；本节管**任意多源**矛盾时的通用裁决序。
 
 **矛盾从哪来**（探查期四类）：三路并行探查子代理对同一组件给出互斥结论；代码 vs 文档（上文优先级表）；图谱工具（gitnexus/graphify）边集 vs 静态扫描清单；项目记忆（mine-habits/claude-mem）vs 代码现状。
 
@@ -108,7 +108,7 @@
 
 **裁决三纪律**：单源胜出时记录败方结论与证据（下次重探查可直接复核）；裁决过程落 trace（哪两源、各自锚点、为何胜出）；禁止「静默取其一」——没写裁决理由的取舍就是暗账。
 
-**双时态注记**（semantica `_temporal_support_projection.py` Window 语义借鉴）：清单条目/探查结论有两个时间轴——**valid time**（代码何时如此，锚 commit/项目指纹）与 **recorded time**（第 N 轮探查何时知道）。反馈回路的「单条更新」= 写一条新 recorded time 记录，不回头改写旧结论的历史有效性；last-good 红线（条目骤降 >50% 视为探查失败保留旧清单）防的正是「新一轮探查污染历史有效认知」。
+**双时态注记**（semantica `_temporal_support_projection.py` Window 语义）：清单条目/探查结论有两个时间轴——**valid time**（代码何时如此，锚 commit/项目指纹）与 **recorded time**（第 N 轮探查何时知道）。反馈回路的「单条更新」= 写一条新 recorded time 记录，不回头改写旧结论的历史有效性；last-good 红线（条目骤降 >50% 视为探查失败保留旧清单）防的正是「新一轮探查污染历史有效认知」。
 
 **待确认事项清单回填协议**：裁决序走到「并存标注」仍不能定的项、探查中 AI 拿不准的业务语义，集中落到 `notes/cognition.md` 待确认事项清单段（每项：问题/两源证据锚点/需要谁回填），不散落在各文档的「待验证」字样里自然蒸发。回填后按裁决序重新转正（升级 UserChallenge 的项走 trace-log --decision 留痕），转正即从清单销项——待确认事项清单长度是探查完成度的显式指标，mark-active 抽样核验时可对照。
 
@@ -145,7 +145,7 @@ bash scripts/mine-habits.sh <PROJECT_DIR>            # → .swarm-yuan/notes/hab
 | 工作偏好（粒度/测试习惯/工具链） | dev-guide.md「开发偏好」节 | 测试提交占比、提交规模分桶等实测值支撑偏好判断 |
 | 共变文件对/热点文件 | reference-manual.md 说明列注意事项 + recipes.md 配方提取（§D.7 源②） | 高频共变=隐性耦合/拼装单元信号；异常信号（测试占比 0%、巨型提交为主）如实写、不粉饰 |
 
-红线：habits.md 是统计事实不是规范——前缀分布 ≠ 必须遵守的提交规范（书面规则优先，统计只作实证交叉）。
+红线：habits.md 是统计事实不是规范——前缀分布 ≠ 必须遵守的提交规范（书面规则优先，统计只作交叉验证）。
 
 ### 读取 AI Agent 运行时（如项目含 agent 运行时）
 
@@ -326,7 +326,7 @@ graphify export callflow-html # 调用流导出（组件依赖链路段可视化
 
 > **判定产出**：记录"本项目含以下维度：[前端UI / 后端API / 异步消费 / 桌面IPC / 移动端 / 库导出 ...]"，后续 D.1-D.4 **只枚举列出的维度**。
 
-> **★视觉成熟度探查（impeccable v4.0.2 吸收，仅含前端时执行；详见 `references/frontend-design-methodology.md` §十一）**：含前端维度时，追加探查前端视觉成熟度，决定是否引用前端设计质量方法论：
+> **★视觉成熟度探查（来源 impeccable v4.0.2，仅含前端时执行；详见 `references/frontend-design-methodology.md` §十一）**：含前端维度时，追加探查前端视觉成熟度，决定是否引用前端设计质量方法论：
 > - **探查信号**：CSS custom properties（`--*:`）数量 ≥3 / className tokens（独特类名）数量 ≥12 / styled-components / CSS Modules / Tailwind config 文件 ≥3 / DESIGN.md 存在性
 > - **判定产出**：① 「有现存视觉实现但无 DESIGN.md」→ 引用 `references/frontend-design-methodology.md` 的 `document` 命令模式（从代码反推 DESIGN.md）；② 「有 DESIGN.md」→ 引用 `extract` 命令模式（提取 token 进设计系统）+ craft-floor 审查（Verify 8 项 + Refuse 反 slop 清单）；③ 「空白」→ 引用 `init` + `shape` + `new-work` 命令模式（从 PRODUCT.md 起建视觉世界）
 > - **降级**：探查信号不全时按更重档处理（质量优先），全量引用前端设计质量方法论；本探查不改 17 特征卡数字（§D.0 是探查方法论，非特征卡项）

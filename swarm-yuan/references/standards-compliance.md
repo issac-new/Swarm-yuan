@@ -111,7 +111,7 @@
 
 ## B. GB/T 8566 过程 × 生成流程映射
 
-GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 协定、6.2 组织的项目使能、6.3 技术管理、6.4 技术。验证过程定「构建了正确的产品」（built right），确认过程定「产品是正确构建的」（right built）。swarm-yuan 生成流程 Step 1-12（编号口径见 references/generation-flow.md）映射如下：
+GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 协定、6.2 组织的项目使能、6.3 技术管理、6.4 技术。验证过程定「构建了正确的产品」（built right），确认过程定「产品是正确构建的」（right built）。swarm-yuan 生成流程 Step 1-13（编号口径见 references/generation-flow.md）映射如下：
 
 | 生成流程步骤 | 8566-2022 过程组 | 过程定位 | 信息项（留痕证据，附录 B 对齐） |
 |---|---|---|---|
@@ -121,13 +121,13 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | Step 4 项目形态判定+详尽构件库清单+调用链路分析（§D.0–§D.5） | 6.4 技术过程组 | 系统/软件需求分析（现状建模） | reference-manual.md 各维表 + 计数核验记录 |
 | Step 5 提取 17 项特征卡 | 6.4 技术过程组 | 需求定义（质量需求按特性陈述，对齐 GB/T 25000.10） | codebase.md 特征卡（17 项具体值） |
 | Step 6 create 骨架 | 6.4 技术过程组 | 设计/实现启动（合成） | generate-skill.sh 输出 + 骨架文件树 |
-| Step 7 AI 填充全部文件 + Step 4.5 框架深化 | 6.4 技术过程组 | 实现过程（文档/门禁实现） | 六段式文件全量内容（零占位标记） |
+| Step 7 AI 填充全部文件 + Step 4 框架深化 | 6.4 技术过程组 | 实现过程（文档/门禁实现） | 六段式文件全量内容（零占位标记） |
 | Step 8 AI 配置 precheck.conf | 6.3 技术管理过程组 | 质量保证策划 + 配置管理（测度元素实例化） | precheck.conf 生成期必读文件（173 变量真实值） |
 | Step 9 AI 生成 hooks/commands/MCP 集成 | 6.2 组织的项目使能 | 工具链/过程支撑环境 | hooks.json/commands/settings.local.json/.mcp.json |
 | Step 10 AI 运行门禁验证（--all → --all-full） | 6.4 技术过程组·验证过程 | built-right 证据 | precheck 输出 + fail 修复重跑记录 |
-| Step 4.5 门禁注入（--inject-frameworks） | 6.3 技术管理过程组 | 配置管理（受控变更，幂等+哈希裁决） | precheck.sh 标记区块 + 注入日志 |
-| Step 11 AI 写回项目记忆 | 6.2 组织的项目使能 | 知识/信息管理（闭环） | claude-mem/.zcode/memories/.project-knowledge.md |
-| Step 12 AI 最终检查（零占位标记+计数核验+框架四要素） | 6.4 技术过程组·确认过程 + 6.3 质量保证 | right-built 证据 | 最终检查清单 + 计数核验偏差记录 |
+| Step 4 框架深化：门禁注入（--inject-frameworks） | 6.3 技术管理过程组 | 配置管理（受控变更，幂等+哈希裁决） | precheck.sh 标记区块 + 注入日志 |
+| Step 12 AI 写回项目记忆 | 6.2 组织的项目使能 | 知识/信息管理（闭环） | claude-mem/.zcode/memories/.project-knowledge.md |
+| Step 13 AI 最终检查（零占位标记+计数核验+框架四要素） | 6.4 技术过程组·确认过程 + 6.3 质量保证 | right-built 证据 | 最终检查清单 + 计数核验偏差记录 |
 
 ### 剪裁声明写法示例（GB/T 8566-2022 附录 A 对齐）
 

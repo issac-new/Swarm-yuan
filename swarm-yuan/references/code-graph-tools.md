@@ -17,7 +17,7 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 | 工具 | 许可证（事实登记，供使用方自查） | 能力定位 |
 |------|--------|----------|
 | **graphify** | Apache-2.0（2026-07-18 MIT→Apache 2.0） | 广谱知识图（代码+文档+媒体）、可提交 graph.json、Mermaid 导出；**--watch 自动同步（代码变更免 LLM 即时重建+文档/图片仅通知）+ git commit hook + --wiki agent 可爬取知识库导出**；91.7k stars、活跃（2026-10 核验） |
-| **GitNexus** | PolyForm Noncommercial 1.0.0（GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20；2026-09-14 复核不变） | 深度代码调用图、Tree-sitter 原生解析、LadybugDB 持久图、`--pdg` 污点分析、PreToolUse/PostToolUse hooks、多仓库 group query（v1.6.12 stable 已出（2026-09-12 tag，rc 线收口）；license-risk 登记不变——v1.6.12 含诚实状态族样本（diverged/unknown 索引态显式报告 + foreign embedding fail-closed），license 解除前零接触） |
+| **GitNexus** | PolyForm Noncommercial 1.0.0（GitHub API 返回 NOASSERTION，LICENSE 原文实测 2026-07-20；2026-09-14 复核不变） | 深度代码调用图、Tree-sitter 原生解析、LadybugDB 持久图、`--pdg` 污点分析、PreToolUse/PostToolUse hooks、多仓库 group query（v1.6.12 stable（2026-09-12 tag）；license-risk 结论不变——v1.6.12 含诚实状态报告（diverged/unknown 索引态显式报告 + foreign embedding fail-closed），license 解除前零接触） |
 | **codegraph** | MIT（GitHub API 2026-09-18 实测；71,356★、2026-01 创建、活跃） | 预索引代码知识图 + 代码变更自动同步；**单 MCP 工具** `codegraph_explore`（自然语言任务描述，自主决定检索深度）+ `codegraph explore/affected` CLI；100% 本地（SQLite + FTS5，无 LLM API）；代码变更时索引自动更新 |
 
 三者**平权**，按项目需要选择或并用：
@@ -29,7 +29,7 @@ AI agent 理解代码库时，传统方式是 grep + 读文件——易遗漏关
 补充说明：
 
 - **graphify 仓库已迁移**：org URL 由 `safishamsi/graphify` 迁至 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)（GitHub API 2026-07-20 实测），引用一律用新 URL。
-- **graphify 引用基线：v0.9.75（GitHub v8 线）**——名为 v1.0.0 的 tag 是 2026-04-05 旧异源分支、世系实测不在 v8 线，**不取**（npm `graphifyy` 通道的 0.10.0/v1.0.0 同源；升级前必做世系核验：merge-base 祖先确认在 v8 线才升）。能力面与选型相关三件：--watch 后台自动同步（代码保存触发 AST-only 即时重建零 LLM、文档/图片变更仅通知跑 --update 做 LLM 复扫——确定性/语义分流）+ post-commit git hook（每次提交自动重建，无后台进程）+ --wiki 导出（每社区/god node 一篇 Wikipedia 式 markdown+index.md 入口，agent 读文件即可导航知识库，不必解析 JSON）；基准表规模条件化（6 文件 ~1x——小语料价值是结构清晰非压缩、52 文件 71.5x，worked/ 目录含原始输入+真实输出可自行复验）。
+- **graphify 引用基线：v0.9.75（GitHub v8 线）**——名为 v1.0.0 的 tag 是 2026-04-05 旧异源分支、版本线归属实测不在 v8 线，**不取**（npm `graphifyy` 通道的 0.10.0/v1.0.0 同源；0.x 版本升级前须核验版本线归属：merge-base 祖先确认在 v8 线才升）。选型相关的三项能力：--watch 后台自动同步（代码保存触发 AST-only 即时重建零 LLM、文档/图片变更仅通知跑 --update 做 LLM 复扫——确定性/语义分流）+ post-commit git hook（每次提交自动重建，无后台进程）+ --wiki 导出（每社区/god node 一篇 Wikipedia 式 markdown+index.md 入口，agent 读文件即可导航知识库，不必解析 JSON）；基准表规模条件化（6 文件 ~1x——小语料价值是结构清晰非压缩、52 文件 71.5x，worked/ 目录含原始输入+真实输出可自行复验）。
 - **codegraph 证据与边界**：官方基准（B 级）工具调用 −88% / token −62% / 成本 −44%、文件读取归零（7 仓库×4 次）；**上下文残留 +80%**（官方诚实声明——索引驻留上下文的代价）；Swift 27k 文件约 100s、Linux 内核 70k 文件约 12min（文章转述 C 级）。选型对照：GitNexus 给 17 个确定性 MCP 查询工具，codegraph 押单工具+模型自主检索（工具面哲学对照见 `mcp-governance.md` 工具面设计三原则）。本机未实测安装与索引（npm/cargo 安装形态未核）——**整合前置条件：本机跑通一次索引+查询再进目标技能默认推荐**。
 
 ## GitNexus（Node 生态，深度代码调用图）
@@ -82,7 +82,7 @@ pipx install graphifyy
 > ⚠️ PyPI 包名是 `graphifyy`（双 y）。其他 `graphify*` 包不相关。
 > ⚠️ `uvx graphify` 会失败——必须 `uvx --from graphifyy graphify install`。
 > ⚠️ 若 `graphify: command not found`，运行 `uv tool update-shell`（或 `pipx ensurepath`）后重开终端。
-> 📌 **v0.9.42 Windows 可移植性加固**：`source_file` 与模型面向的路径规范为 POSIX；原子写/install 对 Windows 加固（含只读打包 bundle）；`GRAPH_REPORT.md` 用可移植 basename 而非宿主绝对路径。这意味着 graphify 在 Windows 上不再泄漏 `\` 路径到 graph.json 的 node id（v0.9.40 修了跨平台 source_file 绝对路径泄漏）。graph provenance（`built_at_commit`）从被分析仓库盖戳，而非 shell cwd——与 swarm-yuan `trace-log.sh` 的 honest-edge provenance（EXTRACTED/INFERRED/AMBIGUOUS）同向：溯源锚到真实仓库，不锚到运行环境。
+> 📌 **v0.9.42 Windows 可移植性加固**：`source_file` 与模型面向的路径规范为 POSIX；原子写/install 对 Windows 加固（含只读打包 bundle）；`GRAPH_REPORT.md` 用可移植 basename 而非宿主绝对路径。Windows 上 graph.json 的 node id 不含 `\` 路径（v0.9.40 修复跨平台 `source_file` 绝对路径泄漏）。graph provenance（`built_at_commit`）从被分析仓库盖戳，而非 shell cwd——与 swarm-yuan `trace-log.sh` 的 honest-edge provenance（EXTRACTED/INFERRED/AMBIGUOUS）一致：溯源锚到真实仓库，不锚到运行环境。
 
 ### 核心命令
 ```bash
@@ -109,7 +109,7 @@ python -m graphify.serve graph.json --transport http --port 8080 # 共享 HTTP M
 
 ### ECC v2.0 Hook 治理（hook runtime governance）
 
-> 来自 ECC v2.0.0。将 hook 管理从"静态 hooks.json"升级为"运行时 profile + env gating + dispatcher 架构"。
+> 来源：ECC v2.0.0。Hook 管理采用运行时 profile + env gating + dispatcher 架构。
 
 #### Hook Runtime Governance
 
@@ -162,7 +162,7 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 
 ### graphify v0.9.13–v0.9.19 新增能力
 
-> 来自 graphify v0.9.13 → v0.9.19 release notes。correctness + privacy + strict hook 批次。
+> 来源：graphify v0.9.13–v0.9.19 release notes。
 
 | 能力 | 版本 | 描述 | swarm-yuan 落点 |
 |------|------|------|----------------|
@@ -230,7 +230,7 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 
 ## GitNexus v1.6 全量能力（swarm-yuan 须知道但可选引用）
 
-> 来自 GitNexus v1.6.9 源码调研。44 节点类型 + 21 关系类型，14 语言支持。
+> 来源：GitNexus v1.6.9 源码调研。44 节点类型 + 21 关系类型，14 语言支持。
 
 ### 17 个 MCP 工具
 
@@ -278,7 +278,7 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 
 ## graphify v0.9 全量能力（swarm-yuan 须知道但可选引用）
 
-> 来自 graphify v0.9.5 源码调研。36 tree-sitter 语法，22 平台集成。
+> 来源：graphify v0.9.5 源码调研。36 tree-sitter 语法，22 平台集成。
 
 ### 关键能力（swarm-yuan 可能没用到）
 
@@ -301,7 +301,7 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 
 ### graphify v0.9.6–v0.9.12 新增能力
 
-> 来自 graphify v0.9.6 → v0.9.12 release notes。
+> 来源：graphify v0.9.6–v0.9.12 release notes。
 
 | 能力 | 版本 | 描述 | swarm-yuan 落点 |
 |------|------|------|----------------|
@@ -319,16 +319,16 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | **`pascal` 可选 extra** | v0.9.7 | Delphi 提取（AST-quality） | Delphi 项目可引用 |
 | **大小写不敏感扩展名分发** | v0.9.7 | `App.PY`/`script.JS` 不再被跳过 | 跨平台文件名可引用 |
 | **`affected <Class>` 成员种子** | v0.9.7 | `affected` 从类的成员节点种子反向遍历 | 影响分析可引用 |
-- 版本注记：v0.9.56——Rust trait 方法提取 + Node subpath imports 解析 + 无向 MCP 查询 + TS normalizer 去二次方扫描——覆盖面/性能修复族对账通过；克隆 origin 已重指向 Graphify-Labs。
-- 版本注记：v0.9.58——**python/php/bash import 解析**（跨语言边扩展）+ 同文件源路径碰撞合并修复 + SQL 索引 + rust static/const 声明提取——图谱完整性族延续。
-- 版本注记：v0.9.57——**增量重建不再擦除跨文件项目 AST 节点**（重提取 `.csproj` 曾连带丢被引用项目的 package/framework 节点）+ 重复节点合并保**更富节点**为幸存者（非空字段折叠）+ C# 泛型调用点解析 + `this.X` 成员全形态捕获——图谱完整性修复族对账通过。
-- 版本注记：v0.9.61（跨 0.9.59-61）——**未分类文件浮出双出口**（GRAPH_REPORT.md 列出 + `graphify update` 路径同浮出——「不可分类 ≠ 静默跳过」诚实族图谱构建侧样本，与「缺失证据不显示为零」同根）+ **Windows os.replace 回退语义**（fallback swap 失败恢复目标原状 + src==dst 守卫 + symlink 目标保持 replace 语义 + GraphML/AST 缓存/skill 安装三写点统一共享 helper——写安全族，与 ocr 报告原子写入同族）+ Python 3.12/3.13 断裂连环修（0.9.60 引入 0.9.61 修——发布门禁缺运行时矩阵反面样本）+ Python 3.14 可选依赖 + JS 导出函数内调用解析（含 aliased imports）/workspace exports 按 importer 平台选择——图谱完整性族延续。**v1.0.0 tag 甄别为 2026-04-05 旧异源、不在 v8 线，不取。**
-- 版本注记：v0.9.63——**god node guard**：拒绝跨两个无关同名类型并池方法 + 重复索引键保留全部映射方法（同名碰撞曾是伪超级节点成因）——「**同名 ≠ 同物**」图谱侧实体判别原语，消歧必须显式族（与权限路径规范化空间比对同谱系）；elixir 跨文件 alias/import 解析（含嵌套模块捕获守卫）+ rust selective extraction——跨语言边扩展；code-span mention 边跨增量重建保持 + markdown 点式限定词/显式相对引用——图谱完整性族延续；回归测试四批先于修复入库（发布卫生样本）。**v1.0.0 异源维持不取。**
-- 版本注记：v0.9.64——**Terraform block attributes 提取 + secret 命名属性值 redaction**：机密不落图谱索引（机密面族：界画在索引入口，与 claude URL 脱敏/codex 遥测最小化同谱系）+ **PHP 内联 script 的 JS 索引与 PHP/JS 节点碰撞边丢弃修复**（跨语言嵌入代码归属判别——同文件多语言共存消歧族）+ Kotlin object 成员调用 resolver / generic Rust self calls（跨语言边扩展族延续）+ Markdown 链接 parse 失败保持与后缀 reconcile（容错不丢数据）。**v1.0.0 异源维持不取。**
-- 版本注记：v0.9.65——**JS let/const 块级作用域绑定**：绑定按所在块（block）解析而非函数级，不同块的 `let x` 是不同绑定实体——「**同名 ≠ 同物**」判别原语再添实例（与 v0.9.63 god node guard 同族），配块级遮蔽回归测试；**fail-closed 保全节点跨遍存活**（#3695：显式判为 fail-closed preserved 的节点不得被后续 AST 所有权逐出遍删除——保全承诺必须在所有后续遍保持，诚实族图谱侧）+ Go interface/Swift protocol 方法需求提取（类型约束面进图谱 = 实现关系边提取面拓宽）+ Java enum 成员归属 enum 而非文件（归属精确性）+ Verilog 实例链接本地定义 + vis-network 导出栈溢出崩溃修复（查看器稳定性）+ Pillow CVE floor（cve-2026-54058→12.3.0，供应链安全面）+ 删两条永不触发的 symlink 假测试（测试卫生族：永不触发的测试 = 假阳性通过）。**v1.0.0 异源维持不取。**
+- **v0.9.56**：Rust trait 方法提取、Node subpath imports 解析、无向 MCP 查询、TS normalizer 去二次方扫描；克隆 origin 指向 Graphify-Labs。
+- **v0.9.57**：**增量重建保留跨文件项目 AST 节点**（重提取 `.csproj` 不连带丢被引用项目的 package/framework 节点）+ 重复节点合并保**更富节点**为幸存者（非空字段折叠）+ C# 泛型调用点解析 + `this.X` 成员全形态捕获。
+- **v0.9.58**：**python/php/bash import 解析**（跨语言边扩展）+ 同文件源路径碰撞合并修复 + SQL 索引 + rust static/const 声明提取。
+- **v0.9.61（跨 0.9.59–61）**：**未分类文件浮出双出口**（GRAPH_REPORT.md 列出 + `graphify update` 路径同浮出——「不可分类 ≠ 静默跳过」，图谱构建侧的显式报告）+ **Windows os.replace 回退语义**（fallback swap 失败恢复目标原状 + src==dst 守卫 + symlink 目标保持 replace 语义 + GraphML/AST 缓存/skill 安装三写点统一共享 helper，与 ocr 报告原子写入同一写安全做法）+ Python 3.12/3.13 断裂连环修复（0.9.60 引入、0.9.61 修复）+ Python 3.14 可选依赖 + JS 导出函数内调用解析（含 aliased imports）/workspace exports 按 importer 平台选择。**v1.0.0 tag 为 2026-04-05 旧异源分支、不在 v8 线，不取。**
+- **v0.9.63**：**god node guard**——拒绝跨两个无关同名类型并池方法 + 重复索引键保留全部映射方法（同名碰撞是伪超级节点成因）：「**同名 ≠ 同物**」的图谱侧实体判别原语，消歧必须显式（同类设计：权限路径规范化空间比对）；elixir 跨文件 alias/import 解析（含嵌套模块捕获守卫）+ rust selective extraction（跨语言边扩展）；code-span mention 边跨增量重建保持 + markdown 点式限定词/显式相对引用；回归测试四批先于修复入库。
+- **v0.9.64**：**Terraform block attributes 提取 + secret 命名属性值 redaction**——机密不落图谱索引（界画在索引入口，与 claude URL 脱敏/codex 遥测最小化同类）+ **PHP 内联 script 的 JS 索引与 PHP/JS 节点碰撞边丢弃修复**（跨语言嵌入代码归属判别：同文件多语言共存消歧）+ Kotlin object 成员调用 resolver / generic Rust self calls（跨语言边扩展）+ Markdown 链接 parse 失败保持与后缀 reconcile（容错不丢数据）。
+- **v0.9.65**：**JS let/const 块级作用域绑定**——绑定按所在块（block）解析而非函数级，不同块的 `let x` 是不同绑定实体（「**同名 ≠ 同物**」判别原语，与 v0.9.63 god node guard 同类），配块级遮蔽回归测试；**fail-closed 保全节点跨遍存活**（#3695：显式判为 fail-closed preserved 的节点不得被后续 AST 所有权逐出遍删除——保全承诺必须在所有后续遍保持）+ Go interface/Swift protocol 方法需求提取（实现关系边提取面拓宽）+ Java enum 成员归属 enum 而非文件（归属精确性）+ Verilog 实例链接本地定义 + vis-network 导出栈溢出崩溃修复（查看器稳定性）+ Pillow CVE floor（cve-2026-54058→12.3.0）+ 删除两条永不触发的 symlink 假测试（永不触发的测试 = 假阳性通过）。
 
-- 版本注记：v0.9.66——**五语言提取器**（COBOL/VB.NET/R/Solidity/Erlang——语言面单版最大扩展，图谱完整性族：覆盖面即完整性）+ **PYTHONHASHSEED 确定性入构建**（同输入同输出——可复现构建族图谱侧首证：产物生成的不确定性是可审计性的反面，与「评估可复现」同根）+ 共享 GRAPHIFY_OUT 绝对路径 root marker 修复（共享输出根判别，配回归测试）。**v1.0.0 异源维持不取。**
+- **v0.9.66**：**五语言提取器**（COBOL/VB.NET/R/Solidity/Erlang，单版最大语言扩展）+ **PYTHONHASHSEED 确定性入构建**（同输入同输出，构建可复现）+ 共享 GRAPHIFY_OUT 绝对路径 root marker 修复（共享输出根判别，配回归测试）。
 
-- 版本注记：v0.9.67——**PHP 闭包提取**（路由闭包合成 `VERB /path`，非路由用 `{closure#N}`）+ **Python 绝对包导入解析**（**跨树同名歧义 fail closed 而非随意绑定**）+ **幽灵环回撤**（只回撤匹配模块文件 id 的临时边，**删掉「唯一即回撤」盲回落**）+ **导出幂等**（`write_text_atomic_if_changed`）+ **Windows hash-seed 回归**（改 `python -m graphify` 重 exec）。**v1.0.0 异源 tag 维持不取。**
+- **v0.9.67**：**PHP 闭包提取**（路由闭包合成 `VERB /path`，非路由用 `{closure#N}`）+ **Python 绝对包导入解析**（**跨树同名歧义 fail closed 而非随意绑定**）+ **幽灵环回撤**（只回撤匹配模块文件 id 的临时边，无「唯一即回撤」盲回落）+ **导出幂等**（`write_text_atomic_if_changed`）+ **Windows hash-seed 修复**（改 `python -m graphify` 重 exec）。
 
-- 版本注记：v0.9.75（跨 v0.9.72→v0.9.75 共 76 提交）——**干净解析零符号须警告**（f81c4e5：解析成功≠有产出，「不可分类≠静默跳过」同族图谱构建侧新形态）+ **去重收缩须用户同意且计量不入 graph.json**（daee93f/e8b5d27：节点合并致图谱收缩=破坏性操作须同意；收缩计量属报告面不属数据面——数据面/计量面分离）+ **聚类/标签写回保留全部原始边**（7527e73：派生层写回不得重定义边集——写回保真）+ **按 node id 恢复既有社区**（9ec7df0：恢复按身份不按名字——「同名≠同物」的反向执法：同物须按 id 认）+ hook-guard 输出路径用解析不用子串匹配（8e5649f）+ 五语言 self/super 调用绑定调用者类链 + Rust prelude 类型不再成 god node（7f1d45d）+ workspace 源条目优先于构建产物（81b0391）。**v8 线 v0.9.75 许可三处一致**（LICENSE/LICENSE-MIT 在树+pyproject Apache-2.0+license-files 齐备）；**世系核验（merge-base 祖先）为 0.x 运行时升级动作的强制步骤**，不止在拒绝动作上执法；**v1.0.0 异源 tag 维持不取。**
+- **v0.9.75（跨 v0.9.72→v0.9.75 共 76 提交）**：**干净解析零符号须警告**（f81c4e5：解析成功≠有产出，「不可分类≠静默跳过」）+ **去重收缩须用户同意且计量不入 graph.json**（daee93f/e8b5d27：节点合并致图谱收缩=破坏性操作须同意；收缩计量属报告面不属数据面，数据面/计量面分离）+ **聚类/标签写回保留全部原始边**（7527e73：派生层写回不得重定义边集，写回保真）+ **按 node id 恢复既有社区**（9ec7df0：恢复按身份不按名字，同物须按 id 认）+ hook-guard 输出路径用解析不用子串匹配（8e5649f）+ 五语言 self/super 调用绑定调用者类链 + Rust prelude 类型不成为 god node（7f1d45d）+ workspace 源条目优先于构建产物（81b0391）。**v8 线 v0.9.75 许可三处一致**（LICENSE/LICENSE-MIT 在树+pyproject Apache-2.0+license-files 齐备）；**版本线归属核验（merge-base 祖先确认）是 0.x 升级前的强制步骤**，不只在拒绝动作时执行；

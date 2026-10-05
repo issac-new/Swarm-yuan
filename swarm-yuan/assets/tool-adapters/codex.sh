@@ -15,7 +15,7 @@ render_tool_codex() {  # <skill_dir> <proj> <level>
 # 配置位置：项目级 <proj>/.codex/hooks.json（hooks/src/engine/discovery.rs 的 config layer 探测点）。
 # 铁律（audit-2026-08-25）：PreToolUse 命令禁止 `|| true` / `2>/dev/null`——|| true 把 exit 2 吞成 0、
 # stderr 重定向丢弃透传原因，deny 协议将整体静默失效；PostToolUse 为 advisory 可 fail-open（|| true）但须保留 stderr。
-# 回归发现#23（2026-08-27 R11 双宿主整合）：原扁平 {"matcher","command","timeout"} 不符 Codex 真实
+# 回归发现 #23（2026-08-27，两宿主整合）：原扁平 {"matcher","command","timeout"} 不符 Codex 真实
 # schema（config/src/hook_config.rs MatcherGroup）——matcher 组的执行体是 hooks 数组、元素为
 # tag 判别 {"type":"command","command":...}。扁平 command 字段被 serde 静默丢弃、hooks 空数组
 # → 注册了 matcher 却零 handler，Codex 门禁 hook 完全惰性。改为嵌套 schema（对 research/codex
