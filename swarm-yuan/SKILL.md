@@ -1,163 +1,113 @@
 ---
 name: swarm-yuan
-description: "元技能生成器：为任意代码仓库生成项目专属开发技能（六段式：SKILL.md+workflow+references+assets+precheck+scripts）。核心能力：探查期全量组件库清单+调用链分析→编排约束推导+任务配方（recipes 五要素）+行为观察（mine-habits）+关系边集（relations.jsonl）；门禁三值规则（rules.d）；自成长链（结构变化+问题沉淀双通道）。何时用：用户说'为某项目生成开发技能'、'create a dev skill'、'六段式 skill'。计数真值见 assets/facts.conf（不手抄）。"
+description: "元技能生成器：为任意代码仓库生成项目专属开发技能（六段目录：SKILL.md + workflow + references + assets + 门禁配置 + scripts）。生成流程 Step 1-12：探查（组件清单 + 调用链 + 关系边集 + 任务配方）→ 特征卡 → 骨架 → 填充 → 门禁与 hooks → 验证审查 → 激活；目标技能执勤九节点开发工作流（需求 → 探查 → spec → plan → 编码 → 测试 → 审查 → 合入 → 发布）；项目变化由指纹感知并局部更新技能。何时用：用户说'为某项目生成开发技能'、'create a dev skill'。数字口径以 assets/facts.conf 为准。"
 ---
 
-# swarm-yuan — 项目需求交付技能生成器
+# swarm-yuan — 项目开发技能生成器
 
-元技能（生成器）：针对任意代码仓库，按六段式模板生成项目专属开发技能（下称"目标技能"）。跨项目复用，不依赖任何具体项目内容。
+swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产出一个项目专属的开发技能（下称**目标技能**）；此后该项目的 AI 编码由目标技能执勤。本文件是生成器的操作手册：何时用、生成流程怎么跑、目标技能怎么执勤、技能怎么随项目更新。设计论证见同目录 [README.md](README.md)（唯一设计文档），操作命令与术语表见仓库 docs/usage-manual.md。
 
-**总闭环**（各层围绕它展开）：本 skill 探查项目→生成目标技能→目标技能在项目里执勤开发→项目演进产生变化→指纹感知→技能局部更新→继续执勤。两条主流程：**生成流程**=生成器的 12 步生成流程；**开发工作流**=目标技能的九节点执勤工作流。五层依次回答：为什么这样做（理念）、原则是什么（设计）、结构长什么样（架构）、流程怎么转与机制落地（实现）、用户怎么进入（使用）——每层的每个概念都能在第四层的流程表里找到诞生步与消费方。
+**生命周期**：生成目标技能 → 目标技能执勤开发 → 项目演进 → 指纹感知变化 → 技能局部更新 → 继续执勤。两条流程：**生成流程**（Step 1-12，逐步详解见 [references/generation-flow.md](references/generation-flow.md)）与**开发工作流**（目标技能侧 9 节点，逐节点要素由目标技能 references/workflow.md 承载）。
 
-> **口径权威源**：`assets/facts.conf`（数字单一事实源，self-check 自动检查）；设计文档见本目录 `README.md`（仓库内即 `swarm-yuan/README.md`，standalone 安装时随技能自包含；核心已内联到本文与 references/）；决策史与上游基线已物化为 `docs/design-evolution.md` 与 `docs/upstream-baseline.md`。
->
-> **路径注**：`trace-log.sh`/`state-machine.sh`/`memory-writeback.sh` 在生成器侧位于 `assets/`，在目标技能侧映射为 `scripts/`；执行生成流程（Step 1-12）时以 `assets/xxx.sh` 调用（`cost-report.sh`/`generate-skill.sh`/`self-check.sh` 位于 `scripts/` 不受影响）。
+## 何时使用
 
-## 第一层 理念
+- 用户说"为某项目生成开发技能"/"create a dev skill"，或给了仓库要为其研发技能。
+- 为「关节编排」类汇报准备自动检查证据（案例映射见 references/case-studies/articulation-orchestration.md）。
 
-**先认识，再行动。** AI 写代码前必须先认识项目——认知不是看懂代码，是让拼装有依据：
+**不适用**：个人脚本/一次性原型（AI 裸写即可）；typo 级小改；纯人工开发（本范式为 AI 驱动）；只是要在某项目里做开发任务（那用该项目的目标技能，不是本生成器）。轻量替代：单文件门禁脚本、传统 lint/test 工具链。适用边界详表见 README.md 五章。
 
-- **拼装式开发**：新功能 = 既有稳定单元拼装 + 最小新增胶水。禁止重复造轮子/侵入式重构/破坏性改造——探查产出的"可复用稳定单元清单"就是零件目录。
-- **特征卡是立法，门禁是执法，验证器是司法**：特征卡定义项目应然，门禁验证代码合规，verifier 独立证明门禁有效。三权分立。
-- **诚实降级**：运行时未装不阻塞但显式披露；权限边界一律 fail-closed。
-- **AI 全自动、零手动配置**：生成为 AI 一键完成；使用时用户对 AI 说话。
+## 工作原则（生成与执勤共用）
 
-**何时使用**：用户说"为某项目生成开发技能"/"create a dev skill"/"六段式 skill"、给了仓库要研发 skill、或要为「关节编排」类汇报准备自动检查证据（案例映射见 `references/case-studies/articulation-orchestration.md`）。
+- **拼装式开发**：新功能 = 既有稳定单元拼装 + 最小新增胶水；禁止重复造轮子、侵入式重构。探查产出的组件库清单就是零件目录。
+- **特征卡立法、门禁执法、验证器司法**：特征卡定义项目应然，门禁核验代码实然，独立验证器证明门禁有效。
+- **诚实降级**：运行时未安装不阻塞，但显式披露；权限边界一律 fail-closed。
+- **AI 全自动、零手动配置**：生成由 AI 一键完成；使用时用户对 AI 说话。
+- **左移**：测试设计、变更影响、可观测性在 spec/plan 阶段就写入约束（spec 模板相应节），编码先测试后实现。
+- **决策留痕**：决策三级分类（Mechanical 直接做 / Taste 给方案+推荐 / UserChallenge 必停问用户），用 `assets/trace-log.sh --decision` 落盘 decisions.jsonl。
+- **三条铁律**：① 版本锁定，不随意升级核心依赖（`--deps` 检测）；② 安全遵守 OWASP Top 10 / STRIDE / CWE（`--security`，依据 references/security-spec.md）；③ 三平台兼容，bash 硬前置（Windows 走 Git Bash/WSL）；脚本不用 `declare -A`，`sed -i.bak` 后 `rm`，`${var}` 防多字节截断，`$(cd … && pwd)` 替代 `readlink -f`。
+- **AI 判断边界**：质量类门禁（cognition/diagram/pr_quality/consistency/link_depth）是 AI 判断引导模式——脚本不假装能判断质量，AI 按检查单自查并留痕 notes/。
 
-**不适用**：个人脚本/一次性原型（AI 裸写即可）；typo 级小改（不走 spec）；纯人工开发（范式为 AI 驱动）；用户只是要在某项目里做开发任务（那用该项目的目标技能）。替代：单文件 precheck.sh 只做门禁，或传统 lint/test 工具链。
+## 外部运行时整合（调用不重实现）
 
-**理念→兑现追踪**（每条理念在后续层有唯一落点）：拼装式开发→①.5 组件库清单+计数核验（流程表）→reference-manual 地图；三权分立→⑤ conf 门禁（执法）+⑥⑦ 验证序列+verifier（司法）；诚实降级→每节点降级策略+trace-log 留痕；零手动→⑤.5 hooks 自动执勤（工作流程表逐行对应）。
+外部运行时按整合深度分三层，每层自带降级载体，未装不阻塞但披露：深度层 GitNexus/graphify/claude-mem/ocr（门禁内真实子进程）；CLI 层 OpenSpec/comet/gsd-core/codex-security（按需调用）；方法论层 superpowers/gstack/ECC/Ruflo/impeccable（AI 按节点引用）。清单与降级链见 references/subagent-orchestration.md，代码图谱备选选型见 references/code-graph-tools.md。
 
-## 第二层 设计
+## 生成流程总览（Step 1-12）
 
-**工作时的思考框架**（每条在对应环节被真实使用）：
+逐步详解按步按需读取：[references/generation-flow.md](references/generation-flow.md)；探查方法论：references/exploration-guide.md；填充规范：references/template-spec.md。
 
-- **探查**：认知六阶链逐层看项目——概念→结构→空间→映射→规律→处理；留痕 `.swarm-yuan/notes/cognition.md`。
-- **思考**：思维语言推演 + 逻辑剃刀删冗余假设；方案过偏差自检（cognitive-bias.md 按需读）。
-- **决策**：三级分类（Mechanical 直接做 / Taste 给方案+推荐 / UserChallenge 必停五要素）——`trace-log.sh --decision` 落痕 decisions.jsonl。
-- **纠偏**：辩证推演统一多视角冲突；领域知识防达克（domain-knowledge.md 按需读）。
-- **左移**：测试/变更影响/可观测性在 spec/plan 阶段就嵌入约束（spec §19/§20/§21），编码先测试后实现，合入前确认回滚，发布前确认灰度+告警。门禁 `--shift-left` 校验。
+| Step | 动作 | 调用 |
+|------|------|------|
+| 1 | 自检 | `bash scripts/self-check.sh --check-only`（运行时检测 + 文档一致性） |
+| 2 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem 提取规则；`scripts/mine-habits.sh` 行为统计初稿（AI 审读：铁律引用 / 开发偏好节 / 注意事项三去向） |
+| 3 | 探查仓库 | 三路并行子代理（结构/规范/代码组织，方法论见 exploration-guide），每路启动前 `assets/trace-log.sh` 公告并落盘 |
+| 4 | 形态判定 + 组件库清单 + 调用链 | 按 exploration-guide §D 穷举 + 计数核验（≥ 枚举 × 0.95）；gitnexus/graphify 图谱；`scripts/relations-extract.sh` 提取声明式映射边（XML↔接口/实体/bean 装配等字符串耦合，编译不校验） |
+| 4.5 | 框架深化与门禁注入 | `scripts/framework-evidence.sh` 取证 + AI 判断实例化（每条规律须项目代码证据，无证据剔除并记录反例）→ `bash scripts/generate-skill.sh --inject-frameworks <skill-dir>` 把门禁片段挂入 precheck 标记区块（实例化在 Step 7 填充后做，注入须在 Step 12 前完成） |
+| 5 | 特征卡 | 特征项写入认知缓冲（P0 强制项落具体值不用占位符；映射表见 template-spec §3） |
+| 6 | 创建骨架 | `bash scripts/generate-skill.sh <name> <project-dir>`（auto/lite/standard/compliance 四档，默认 auto 按项目自适应） |
+| 7 | AI 填充全部文件 | 按 template-spec 逐节填真实探查内容；recipes 任务配方五要素（提取源见 exploration-guide §D.6/§D.7） |
+| 7.1 | 多文件并行填充时 | gsd Wave 分批 + worktree 隔离（每 Wave 独立验收，前批全绿再进下批） |
+| 8 | 配置 precheck.conf | conf-render 已出初稿；AI 补 `# TODO:model` 语义项 + 从编排约束推导 rules.d/project.rules |
+| 8.5 | 配置审查口径时 | Mutation Check：变异门禁函数后重跑 fixture，变异后仍检出才证明断言有效 |
+| 9 | 集成宿主 | 定制 hooks.json + commands + settings + .mcp.json；workflow.md 节点标注 |
+| 10 | 编码验证 | `bash scripts/precheck.sh --all`，fail 修复重跑 |
+| 10.5 | 独立审查 | AI 第三方视角审查 + `bash scripts/precheck.sh --review` 核验留痕 + review-record 落盘（ocr 可用用 5 维审查点，否则 AI 清单诚实降级；`--review` 是 precheck.sh 的旗标，不要对 generate-skill.sh 调用） |
+| 11 | 写回记忆 | `bash assets/memory-writeback.sh`（项目知识 / 宿主记忆 / claude-mem 三路） |
+| 12 | 终检激活 | `--verify-completeness --strict` 确认无占位符残留 → `--mark-active`（路径验真 + 决策留痕） |
 
-**三条铁律**：①版本锁定——不随意升级核心依赖（`--deps` 检测）；②安全规范——目标技能遵守 OWASP Top 10 / STRIDE / CWE（`--security`，依据 `references/security-spec.md`）；③三平台兼容——bash 硬前置（Windows 走 Git Bash/WSL + .bat），脚本约束：不用 `declare -A`、`sed -i.bak+rm`、`${var}` 防多字节、`$(cd+pwd)` 替代 `readlink -f`。
+**路径约定**：trace-log.sh、state-machine.sh、memory-writeback.sh 在生成器侧位于 assets/，在目标技能侧映射为 scripts/。
 
-**AI 判断边界**：质量类门禁（cognition/diagram/pr_quality/consistency/link_depth）为 AI 判断引导模式——自动化脚本不假装能判断质量，AI 按检查单自查并留痕 `notes/`。
+**铁律**：draft 骨架不可交付——状态门三关（占位符清零、清单路径零幻觉、计数核验达标）全过才翻 active；每步公告 `→ [Step N] 调用 …` 并落盘 trace.jsonl；门禁误报调 conf 重跑，不绕过；编排约束每条须有代码证据；任务路由避免全任务全量（references/task-methodology-router.md）。
 
-以上原则的**实物载体**在第三层成为结构（conf/模板/hooks），在第四层工作流程中被逐步调用——思考框架的留痕（decisions.jsonl/notes）由生成流程 ⑧记忆写回持久化、开发工作流 执勤时消费；左移约束由生成流程 ④ template-spec 承载、开发工作流 ③spec 评审时检查。
+## 目标技能执勤（开发工作流 9 节点）
 
-## 第三层 架构
+需求理解 → 探查 → spec → plan → 编码 → 测试 → 独立审查 → 合入 → 发布；六阶段状态机逐段守卫前序产出物（design 需 proposal、build 需批准的 spec、verify 需 tasks 全勾、archive 需 verify pass 与证据）。
 
-**六段式模板**：meta（SKILL.md）/ workflow（9 节点×4 要素）/ reference（map + spec-template + 按需）/ assets（模板）/ check（precheck 门禁族 + rules.d 三值规则）/ scripts（工具箱）。
+守卫实物：spec-first hook 拦"无 spec 写源码"（Claude deny / Codex exit 2 双宿主）；rules.d 三值规则（allow/prompt/forbid 取最严，forbid 必带替代方案）在每次 Bash/Edit 实时匹配；门禁按序列执勤，分核心/架构/合规/advisory 四族（执行序列与口径数字见 facts.conf）；拦截落 gate-deny.jsonl 可复盘。
 
-**门禁四族**（计数真值见 `assets/facts.conf`，全部有真实触发路径——序列/hooks/loop-hook）：核心（随 `--all`）/ 架构（随 `--all-full`）/ 合规（随 `--compliance-suite`）/ advisory。规则数据在 `rules.d/*.rules`（三值 allow/prompt/forbid 取最严，FORBID 消息带替代方案）；审批可沉淀为持久规则。enforce 分层（strict/warn/advisory）是实现细节，模型只选执行序列。
+## 反馈回路（技能随项目生长）
 
-**三层整合**（13 运行时，调用不重实现）：深度（GitNexus/graphify/claude-mem/ocr，门禁内真实子进程）/ CLI（OpenSpec/comet/gsd-core/codex-security，按需 CLI）/ 方法论（superpowers/gstack/ECC/Ruflo/impeccable，AI 按节点引用）——代码图谱平权选型可并用（第三备选 codegraph 见 `references/code-graph-tools.md`，watch 未整合）。清单与降级链详见 `references/subagent-orchestration.md`。
+SessionStart hook（lite 档由 AI 主动）跑 `scripts/project-fingerprint.sh <proj> --diff` → 得变化范围 → 按 exploration-guide §D 局部重探查 → 清单单条更新（条目骤降超 50% 拒写保留旧版；过期条目三态处置见 references/knowledge-lifecycle-methodology.md §五）→ `generate-skill.sh --upgrade`（项目内容文件保留）→ 落新基线。结构变化走指纹 --diff，**内容演化走 git diff/--stable-diff**——指纹只看结构。
 
-**结构→流程对应**（每个结构元素在流程中的位置）：六段式模板=生成流程 ③骨架产物；门禁四族=⑤ conf 声明+⑦.5 片段注入+开发工作流 按序列执勤；rules.d 三值=开发工作流 hook 实时消费；三层整合=①.5 探查（gitnexus/graphify 真图谱）与⑥验证（真子进程）时调用。全部追踪见第四层表格。
+## 用户使用
 
-## 第四层 实现（工作流程双流闭环）
+**首次部署（一次）**：`bash install.sh`（自动检测 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi，`--list` 查看）→ 对 AI 说"为 /path/to/project 生成开发技能" → 终检后激活。
 
-**生命周期总闭环**——两个工作流首尾相接，反馈回路驱动循环：
-
-```
-生成流程 生成流（本 skill）：⓪自检→⓪.5读知识→①探查→①.5清单+调用链→②特征卡
- →③骨架→④填充→④.5框架深化→⑤conf→⑤.5hooks→⑥验证→⑦审查→⑦.5注入
- →⑧写回→⑨终检→ --mark-active →【目标技能 active】
-        ↓ 交付接力：目标技能接管项目
-开发工作流 开发流（目标技能，AI 对用户）：①需求理解+②探查→③spec→④plan
- →⑤编码（hook 拦无 spec/违规）→⑥测试→⑦独立审查→⑧合入→⑨发布
- （六阶段状态机逐段守卫前序产出物）
-        ↓ 项目演进：fingerprint 感知变化
-反馈回路：变指纹→--diff 定位变化 scope→局部重探查→清单单条更新
- （last-good 防坏）→ --upgrade 更新工具链 → 回开发工作流 继续（技能随项目生长）
-```
-
-**生成流程 逐步实物调用**（每步：做什么 → 调什么）：
-
-| 步 | 动作 | 实物调用 |
-|----|------|---------|
-| ⓪ | 自检 | `scripts/self-check.sh --check-only`（运行时/文档一致性） |
-| ⓪.5 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem search 提取规则 + mine-habits 行为初稿（习惯三去向） |
-| ① | 探查三路并行 | `references/exploration-guide.md` §C+（结构/规范/代码组织子代理各按其方法论） |
-| ①.5 | 形态判定+清单+调用链 | §C+.0 判定；穷举+计数核验（≥枚举×0.95，数据映射四维度 DIM 自动检查）；gitnexus/graphify 真图谱；`relations-extract.sh` 声明式边（mapper-binding/data-mapping/bean-wiring——XML↔接口/实体/bean 装配的字符串耦合，编译不校验） |
-| ② | 特征卡 | 特征项写入认知缓冲（17 项 = P0 6 强制 + P1 11，承接表见 template-spec §3） |
-| ③ | 骨架 | `scripts/generate-skill.sh <name> <proj>`（UNIVERSAL_FILES 按档拷贝） |
-| ④ | 填充 | template-spec §1-§25 逐节填 + codebase/dev-guide/release/reference-manual/workflow/recipes 六文件（recipes=任务配方，§C+.6/§C+.7） |
-| ④.5 | 框架深化 | `--inject-frameworks`（门禁片段注入 + framework-knowledge 实例化） |
-| ⑤ | conf | precheck.conf 生成期必读文件（conf-render 初稿 + AI 补 TODO:model） |
-| ⑤.5 | hooks/MCP | hooks.json（双宿主）+ settings + .mcp.json 按需 |
-| ⑥ | 编码验证 | `bash scripts/precheck.sh --all`（目标技能侧 core 门禁） |
-| ⑦ | 独立审查 | AI 第三方视角审查 + `bash scripts/precheck.sh --review`（check_review 核验留痕）+ review-record 落盘（ocr 有 endpoint 用 5 维，否则诚实降级 AI 清单——R83-D1：generate-skill.sh 无 --review 旗标，勿对它调用） |
-| ⑦.5 | 门禁注入 | 框架门禁片段（④.5 产物）挂入 precheck 区块 |
-| ⑧ | 记忆写回 | `assets/memory-writeback.sh`（三路） |
-| ⑨ | 终检 | `--verify-completeness --strict`（无占位符）→ `--mark-active`（+路径存在+决策留痕） |
-
-铁律：draft 骨架不可交付（状态门三关）；每步公告 `→ [节点X] 调用 …` + `assets/trace-log.sh` 落盘；门禁误报调 conf 重跑（每节点有降级）；编排约束每条须代码证据；任务路由避免全任务全量（task-methodology-router.md）。流程详解按需读 `references/generation-flow.md`（上图 ⓪-⑨ 符号链即其 Step 1-12 的压缩视图，⓪.5/①.5 等半步并入相邻 Step 计数）。
-
-**概念↔实物追踪表**（上面各层的每个核心概念：诞生于哪步→被谁消费→闭环回哪里）：
-
-| 概念（出处层） | 诞生（生成流程 步） | 消费方 | 闭环点 |
-|----------------|----------------|--------|--------|
-| 组件库清单/地图（理念/设计） | ①.5 穷举+计数核验 | 开发工作流 ⑤编码拼装（零件目录） | 变化后反馈回路更新（reference-manual） |
-| 任务配方/业务功能清单（理念·拼装式，R21） | ①.5 盘点+④ 填充（§C+.6/§C+.7） | 开发工作流 ②探查先查配方、⑤编码按配方拼装 | mark-active 五要素检查；问题沉淀追加配方 |
-| 开发偏好（设计，R21） | ⓪.5 行为观察（mine-habits 初稿） | 开发工作流 全程（AI 遵开发者实际习惯） | memory-writeback 记忆闭环；节存在性检查 |
-| 关系边集（架构，R21） | ①.5 relations-extract 自动提取的边（import+声明式映射+字段明细） | --stable-diff 传播+开发工作流 ②探查查边集（relations-query.sh 按字段/实体/XML 反查） | mark-active 抽样核验；断边→重建（relations-extract/inventory-verify 随技能分发，v2.14.2 起执勤侧自包含重跑） |
-| 文档证据源分级（设计，v2.14.3） | ⓪.5 探查期提取（docs/ 设计文档+需求文档） | 研发期参考架构/外部交互/数据契约（以代码为准，冲突声明） | spec §假设与约束段冲突声明；PDF/Word 转 markdown 入 docs/converted/ |
-| 数据映射链/任务链/消息拓扑（架构，字符串耦合防线） | ①.5 声明式边+§C+.2-B Layer 5/§C+.2-J/§C+.2-A 配对表（实体↔mapper XML↔表列；job→读写数据资产；MQ 端点双边配对） | 开发工作流 ②探查影响面反查（改字段召回 XML/job/迁移/契约面）+ fw_mybatis_field_sync/fw_*_pair 拦截 | DIM 四维度计数核验；边集 --verify 防校验失效 |
-| 特征卡（理念） | ② 特征项提取 | ⑤ conf 生成期必读文件（门禁参数源） | mark-active 三关核验其真实性 |
-| 门禁四族（架构） | ⑤ conf+⑦.5 片段注入 | 开发工作流 序列执勤+hook 强制 | 误报→调 conf 重跑；拦截落 gate-deny.jsonl |
-| rules.d 三值（设计/架构） | ③ 骨架随技能分发+⑤ 探查期项目规则（R21） | 开发工作流 Bash/Edit 实时匹配 | 审批沉淀回写 rules.d（持久化闭环） |
-| hooks 双宿主（架构） | ⑤.5 hooks.json | 开发工作流 每次 Write/Edit/Bash | deny→AI 修正→重试→放行 |
-| 三层整合（架构） | ⓪ 自检探测 | ①.5 探查+⑥验证真子进程 | 未装→降级链披露（诚实理念兑现） |
-| spec §19-21 左移（设计） | ④ template-spec 填写 | 开发工作流 ③spec 评审+--shift-left | 违缺→fail-gate 拦截→补齐 |
-| 规模与工作量估算（设计，功能点法 NESMA） | ④ template-spec 填写（spec §25 选填节+方法论随技能分发） | 开发工作流 ③spec 填 §25、④plan 任务拆分校验（偏离 2 倍回查） | 实战"估算 vs 实际"偏差回填校准（methodology §9） |
-| 懒生成阶梯（理念·拼装具体化，R37） | ①.5 清单盘点（层 2 零件目录）+ 随技能分发 reference | 开发工作流 ②探查先查零件、⑤编码七层下探（层 7 才新增） | check_reuse 复用合规；造轮子拦截 hook 候选（未实施） |
-| 决策留痕（设计） | 全程 trace-log --decision | 开发工作流 复盘+audit-closure 闭环检查 | open goal→阻断收口 |
-| 问题沉淀通道（演化链，R21） | 开发工作流 使用中随时（问题→方案→沉淀物） | 三载体：清单/配方/规则 | decisions.jsonl 留痕审计（自成长第⑤环） |
-| 项目指纹（演化链） | ⑧ 写回基线 | 反馈回路 --diff 感知 | 变化→局部更新→新基线 |
-
-上表即闭环整体的显式证明：**任何概念都有诞生步、消费方与回流点，无一悬空**。
-
-**开发工作流 的守卫**（目标技能侧，本 skill 生成的实物在执勤）：spec-first hook（fail-gate-hook 拦"无 spec 写源码"，Claude deny/Codex exit 2 双宿主）→ 状态机阶段守卫（design 需 proposal、build 需批准 spec、verify 需 tasks 全勾、archive 需 verify pass+证据）→ 门禁四族按序列 → 拦截落 gate-deny.jsonl 可复盘。九节点×4 要素由目标技能 `references/workflow.md` 承载。
-
-**反馈回路**：SessionStart hook（lite 档 AI 主动）跑 `scripts/project-fingerprint.sh <proj> --diff` → 变化 scope → exploration-guide §C+ 局部重探查 → reference-manual 单条更新（骤降 >50% 拒写；条目过期三态处置见 knowledge-lifecycle-methodology §五；三态触发双路：结构变化走指纹 --diff，**内容演化走 git diff/--stable-diff**——指纹只看结构，R58 补）→ 生成器 `--upgrade`（项目内容文件保留）→ 落新基线——自成长闭环。
-
-## 第五层 使用——一个需求的完整旅程
-
-**首次部署（一次）**：`bash install.sh` 安装生成器（自动检测 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi，详见 `install.sh --list`）→ 对 AI 说"为 /path/to/project 生成开发技能"→ AI 执行生成流程（见第四层，全步自动）→ 终检后 `--mark-active` 激活。
-
-**之后每个需求**（开发工作流，AI 与用户协作，门禁全程执勤）：
+**之后每个需求**（AI 与用户协作，门禁全程执勤）：
 
 ```
 用户："开始新需求：给订单列表加导出按钮"
-  ↓ ① 需求理解    AI 复述需求+列影响面，用户确认或纠正（现在纠正我）
-  ↓ ② 探查        AI 先查 recipes 配方与 §A 同类功能，再按 reference-manual 地图定位既有组件
-                    （拼装零件；"谁依赖 X"查 relations.jsonl 边集；读法见 knowledge-lifecycle 六步协议）
-  ↓ ③ 设计 spec    AI 写 spec（决策记录+影响范围+测试设计）→ 用户评审批准
-  ↓ ④ 实施 plan    AI 拆 tasks（.swarm-yuan/tasks.md）
-  ↓ ⑤ 编码        AI 实现（先查再写：按 lazy-generation 七层下探复用，层 7 才新增代码）；【若跳过了 spec】fail-gate-hook 直接拒绝写源码（spec-first 强制）
-                    【若违反 rules.d 禁令】hook deny + 替代方案提示
-                    【若改动敏感路径】门禁 fail 拦下并给出修复建议
-  ↓ ⑥ 测试验证     门禁序列执行（--all/--all-full 按变更面）；全绿进下一步
-  ↓ ⑦ 独立审查     review 门禁 + review-record 落盘；发现问题回 ⑤ 修复环
-  ↓ ⑧ 合入        状态机核验 verify pass + 证据引用；断环清单无 open 项
-  ↓ ⑨ 发布        构建+发布门禁（release-sign 等）→ 完成
-任何一步被拦：提示给出原因+解除路径（补 spec/调 conf/留痕豁免），修复后重跑该步即可。
+  ① 需求理解  AI 复述需求 + 列影响面，用户确认或纠正
+  ② 探查      先查 recipes 配方与 §A 同类功能，再按 reference-manual 地图定位既有组件
+              （"谁依赖 X"用 relations-query.sh 查 relations.jsonl 边集反查）
+  ③ spec      AI 写 spec（决策记录 + 影响范围 + 测试设计）→ 用户评审批准
+  ④ plan      AI 拆 tasks（.swarm-yuan/tasks.md）
+  ⑤ 编码      先查再写：七层下探找可复用件，都落空才新增
+              【无 spec 写源码】hook 拒绝；【违反 forbid 规则】hook deny + 替代方案
+  ⑥ 测试      门禁序列执行，全绿进下一步
+  ⑦ 独立审查  review 门禁 + review-record 落盘；发现问题回 ⑤
+  ⑧ 合入      状态机核验 verify pass + 证据引用
+  ⑨ 发布      构建 + 发布门禁
+任一步被拦：提示给出原因与解除路径（补 spec / 调 conf / 留痕豁免），修复后重跑该步。
 ```
 
-**用户动作 → 闭环入口**（对照第四层流程图）："生成技能"=生成流程 起点；"开始新需求"=开发工作流 起点（上面旅程）；"项目变了/升级 skill"=反馈回路（指纹感知→局部更新）；"跑门禁/报了误报"=执勤干预（门禁执行/调 conf 消误报+decisions.jsonl 留痕）。四个入口覆盖全部日常，其余由 hook 与状态机自动驱动。
+**入口对照**："生成技能"= 生成流程；"开始新需求"= 开发工作流；"项目变了/升级技能"= 反馈回路；"跑门禁/报误报"= 调 conf 消误报 + 决策留痕。
 
-## 第六层 引用（按需路由，全部带"何时读我"头）
+## 参考文档路由
 
-> 本段各 reference 本身是生成流程 ③骨架随技能分发的产物（知识库自举）：生成器用它们生成目标技能，目标技能执勤时又按路由读它们——文档即流程产物，流程即文档消费者。
+全部参考文档带"何时读我"路由头，按下表按需读取；逐档来源/证据/消费节点登记见 references/capability-map.md（self-check 双向校验未登记文档）：
 
-按五类路由（吸收层整合清单与逐档 来源/证据/消费节点/触发 见 capability-map，self-check 双向一致性校验未登记文档检查）：
+| 族 | 文档 |
+|----|------|
+| 生成主干（Step 1-12 消费） | exploration-guide、generation-flow、template-spec、agent-skills-methodology、context-engineering-layering、task-methodology-router、cost-estimation-methodology、domain-knowledge、code-graph-tools、togaf-metamodel-methodology、frontend-design-methodology |
+| 拼装与知识消费（探查与编码节点） | lazy-generation-methodology、cordis-composability-methodology、knowledge-lifecycle-methodology、mattpocock-skills-methodology、memory-persistence、cognition-framework、cognitive-bias、logic-razor、four-theories-methodology、mea-loop-methodology |
+| 编排与治理（全程纪律） | governance-agents、subagent-orchestration、gsd-patterns、decision-governance、dsh-engineering-methodology、codex-methodology、claude-code-capabilities、mcp-governance、codex-security-methodology |
+| 验证与过程资产 | review-methodology、canary-monitoring、ai-process-records、quality-management-standards、rsi-evidence-methodology |
+| 安全合规与行业 | security-spec、crypto-spec、cwe-database、security-certification-profiles、standards-compliance、行业 profile 八档（`--industry` 加载：finance/gov/medical/telecom/automotive/energy/industrial/payment） |
 
-| 族（闭环段） | 档 |
-|-------------|-----|
-| ① 生成主干（生成流程 探查/填充/生成） | exploration-guide（§C+.0.6 四层视角/矛盾裁决）、generation-flow、template-spec（§24/§25）、agent-skills-methodology、context-engineering-layering、task-methodology-router、cost-estimation-methodology、domain-knowledge、code-graph-tools、togaf-metamodel-methodology、frontend-design-methodology |
-| ② 拼装与知识消费（开发工作流 ②⑤） | lazy-generation-methodology、cordis-composability-methodology、knowledge-lifecycle-methodology、mattpocock-skills-methodology（访谈协议/测试缝/纵切拆分/诊断回路，①②③+fix 消费）、memory-persistence、cognition-framework、cognitive-bias、logic-razor、four-theories-methodology、mea-loop-methodology |
-| ③ 编排与治理（开发工作流 全程纪律） | governance-agents（四权分离 + §Z 五协议）、subagent-orchestration、gsd-patterns、decision-governance、dsh-engineering-methodology、codex-methodology、claude-code-capabilities、mcp-governance、codex-security-methodology |
-| ④ 验证与过程资产（⑥⑦⑧⑨） | review-methodology、canary-monitoring、ai-process-records、quality-management-standards、rsi-evidence-methodology（改进的三类证据：任务增益/能力保留/改进器增益） |
-| ⑤ 安全合规与行业立法（门禁） | security-spec + frameworks/ 规则库按 ACTIVE_FRAMEWORKS 选读、crypto-spec、cwe-database、security-certification-profiles、standards-compliance、行业 profile 八档（`--industry` 真实加载：finance/gov/medical/telecom/automotive/energy/industrial/payment） |
+frameworks/ 规则库随 ACTIVE_FRAMEWORKS 注入，不按名路由。
 
-frameworks/ 规则库（81 集）随 ACTIVE_FRAMEWORKS 注入，不按名路由。
+## 文档与档案边界
+
+- 设计论证：README.md（唯一设计文档，回答为什么这样设计、凭什么有效）。
+- 数字口径：assets/facts.conf（单一事实源；文档不手抄计数，self-check 机器对账）。
+- 决策史与上游基线：仓库 docs/design-evolution.md、docs/upstream-baseline.md（仓库档案，不随技能分发）。

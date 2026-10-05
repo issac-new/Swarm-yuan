@@ -6,7 +6,7 @@
 > 纪律：只引用模式，不调 impeccable CLI / detector 引擎 / live 浏览器模式 / 子代理 TOML；不复制 `scripts/` 源码（上游仓库 [pbakaus/impeccable](https://github.com/pbakaus/impeccable) 可按需 `git clone` 到 `swarm-yuan/research/impeccable/` 供 AI 阅读引用，本地 gitignored，不入 git）。
 > **impeccable v4.0 要点**：① **自动判别设计任务类型**——impeccable 现自行识别 5 类（blank-slate 空白/new-page 新页/addition 增段/redesign 重设计/refinement 局部精修），每类给不同自由度。这与 swarm-yuan 的改造分类（拼装式/侵入式/破坏式）+ 任务类型路由（feature/fix/refactor…）同向：redesign 把旧貌当证据替换（非打磨），addition 继承周围页面世界只决定引入部分。② 方向由骰子决定（dice-seeded）而非品味——外部种子命名方向 + 6 个挑战者世界，防同一 brief 总落在同三字体。这两项强化了 §二 Modes 四分类（按访客成功形态）之外的「按任务自由度」维度。
 > 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；守决策 26：复杂度预算不增。
-> 适用场景：目标项目含前端 UI 维度（§C+.0 判定）时，AI 在探查/填充/spec/审查节点引用本文方法论做前端设计质量决策。
+> 适用场景：目标项目含前端 UI 维度（§D.0 判定）时，AI 在探查/填充/spec/审查节点引用本文方法论做前端设计质量决策。
 
 ---
 
@@ -18,8 +18,8 @@ impeccable 补的正是这条空白：
 
 | 维度 | swarm-yuan 既有 | impeccable 增量 |
 |------|---------------|----------------|
-| 组件枚举 | §C+.1-F `find *.vue/.tsx` + 签名提取 | 不重复，专注设计质量 |
-| 调用链路 | §C+.2-F 注册装配 + 挂载树 + store 依赖 | 不重复，专注视觉层级 |
+| 组件枚举 | §D.1-F `find *.vue/.tsx` + 签名提取 | 不重复，专注设计质量 |
+| 调用链路 | §D.2-F 注册装配 + 挂载树 + store 依赖 | 不重复，专注视觉层级 |
 | 组件架构门禁 | `--frontend`（循环依赖/嵌套深度/props 数） | 不替代，补视觉反模式 |
 | 框架代码规则 | `references/frameworks/{vue,react,antd,...}.md` | 不重复，补设计层规律 |
 | **视觉设计方法论** | **无** | **Modes + 三层权威 + craft-floor + 反模式字典** |
@@ -204,10 +204,10 @@ impeccable shipped 的 `finish_reviewer` 子代理做完工审查，三段式：
 
 | 既有触点 | 文件:行 | 整合方式 |
 |---------|--------|---------|
-| 项目形态判定 | `exploration-guide.md` §C+.0（L228-243） | 加「视觉成熟度」探查子维度（见 §十一） |
-| 前端组件枚举 | `exploration-guide.md` §C+.1-F（L290-304） | 不重复，impeccable 专注设计质量不枚举组件 |
-| 前端调用链路 | `exploration-guide.md` §C+.2-F（L459-497） | 不重复，impeccable 专注视觉层级不画调用图 |
-| 前端编排约束 | `exploration-guide.md` §C+.3（L580-602） | craft-floor 可作为新增「设计约束」类别参考 |
+| 项目形态判定 | `exploration-guide.md` §D.0（L228-243） | 加「视觉成熟度」探查子维度（见 §十一） |
+| 前端组件枚举 | `exploration-guide.md` §D.1-F（L290-304） | 不重复，impeccable 专注设计质量不枚举组件 |
+| 前端调用链路 | `exploration-guide.md` §D.2-F（L459-497） | 不重复，impeccable 专注视觉层级不画调用图 |
+| 前端编排约束 | `exploration-guide.md` §D.3（L580-602） | craft-floor 可作为新增「设计约束」类别参考 |
 | 特征卡第 11 项 | `exploration-guide.md` L809-854 | 11b/11d 已枚举组件/store，impeccable 不加新子项 |
 | 特征卡第 15 项 | `exploration-guide.md` L971-1008 | 15a-f 已含 6 类约束，不加第 7 类 |
 | reference-manual §7 | `template-spec.md` L289 | **最直接触点**：「UI/UX 设计资源清单」扩展引用本文档三层权威分层 |
@@ -217,9 +217,9 @@ impeccable shipped 的 `finish_reviewer` 子代理做完工审查，三段式：
 
 ---
 
-## 十一、视觉成熟度探查子维度（§C+.0 扩展）
+## 十一、视觉成熟度探查子维度（§D.0 扩展）
 
-在 `exploration-guide.md` §C+.0 项目形态判定加一个探查子维度，**不改 17 特征卡数字**（§C+.0 是探查方法论，非特征卡项）。
+在 `exploration-guide.md` §D.0 项目形态判定加一个探查子维度，**不改 17 特征卡数字**（§D.0 是探查方法论，非特征卡项）。
 
 **探查信号**：
 - CSS custom properties（`--*:`）数量 ≥3

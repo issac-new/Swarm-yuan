@@ -6,7 +6,7 @@
 # 消费方：--stable-diff 1 跳下游传播（gates-warn 优先读边集）、流B ②探查查边集替代读 mermaid 图。
 #
 # 提取范围（确定性 grep+相对路径解析，零外部依赖全平台可用——madge/graphify 深度层由 AI
-# 按 exploration-guide §C+ 工具矩阵富化，本脚本不假装接线未装工具）：
+# 按 exploration-guide §D 工具矩阵富化，本脚本不假装接线未装工具）：
 #   TS/JS/Vue: import/require/export-from 的相对说明符（./ ../），扩展名/index 解析
 #   Python:    from .x / from ..x 相对导入（绝对导入按根目录+同目录 best-effort）
 #   Go:        go.mod module 前缀的工程内 import → 目录
@@ -410,9 +410,9 @@ done < <(grep -RnE '^[[:space:]]*import[[:space:]]+[a-z][a-zA-Z0-9_.]*;' "$PROJ"
 #   mapper-binding: <mapper namespace="a.b.C">  → src/main/java/a/b/C.java（Mapper 接口）
 #   data-mapping:   resultMap type=/resultType=/parameterType="a.b.E" → src/main/java/a/b/E.java（实体）
 # 短名（typeAliases）解析：mybatis-config.xml <typeAlias alias> 映射优先；无映射按
-# src 下同名 .java 唯一命中（多命中不猜，AI 按 exploration-guide §C+.2.5 补）。
+# src 下同名 .java 唯一命中（多命中不猜，AI 按 exploration-guide §D.2.5 补）。
 # Spring Batch/Quartz job→数据资产依赖为语义耦合（reader SQL 列↔实体字段无确定性映射），
-# 机械层不猜——AI 补 kind=job-flow 边（exploration-guide §C+.2-J 链路模型）。
+# 机械层不猜——AI 补 kind=job-flow 边（exploration-guide §D.2-J 链路模型）。
 _fq_resolve() { # $1=完全限定名 a.b.C → stdout 项目相对 .java 路径 或 空（R47-D2：遍历发现的 Java 源根）
   local pkgpath="$1"; pkgpath=$(printf '%s' "$pkgpath" | tr '.' '/')
   local root
@@ -515,7 +515,7 @@ rm -f "$_ALIAS_T"
 #   bean-wiring: Spring beans XML <bean class="a.b.C"> → src/main/java/a/b/C.java
 #   data-mapping: JPA orm.xml <entity class="a.b.C"> / hbm.xml <class name="a.b.C"> → 实体
 # 文件判据按根元素内容（文件名惯例不可靠）：含 <beans（Spring）/ <entity-mapping（JPA orm）/
-# <hibernate-mapping（hbm）。只解析含点号全限定名——短名机械不猜（AI 按 §C+.2.5 补）。
+# <hibernate-mapping（hbm）。只解析含点号全限定名——短名机械不猜（AI 按 §D.2.5 补）。
 while IFS= read -r x_abs; do
   [[ -z "$x_abs" ]] && continue
   x_rel="${x_abs#"$PROJ"/}"

@@ -325,7 +325,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | 13. 五层认知基底 | reference-manual.md（认知映射表+六维动力学基线+逻辑谬误图谱+辩证映射表）+ spec-template.md（§14交付衰减/§15蓝图/§16偏差自检/§17辩证映射）+ precheck.sh --cognition | 认知映射 + 动力学基线 + 辩证映射 + 五层体检门禁 |
 | 14. 领域知识 | reference-manual.md（领域知识段：技术+业务领域规则）+ spec-template.md（§18领域知识约束）+ precheck.sh --domain | 领域识别 + 客观规律约束 + 违规检测门禁 |
 | **15. 编排调用关系及约束** | **dev-guide.md §8（编排约束）+ reference-manual.md §5（链路图含约束注释）+ SKILL.md（改造分类表标注约束）+ precheck.sh --layer/--frontend** | **导入方向 + 注册顺序 + 路由挂载 + 改造分类 + 状态所有权 + 测试边界** |
-| **16. 详尽构件库清单（全量）** | **reference-manual.md §4（全量构件表）+ §6（全量接口端点表）+ §9（全量 store/类型/模型/mapper XML 表）+ exploration-guide §C+.0-C+.5（全量穷举+计数核验；数据映射四维度 DIM_DATA_MODEL/DIM_MAPPER_XML/DIM_SCHEDULE_JOB/DIM_ORM_SCHEMA 机器执法）** | **按 §C+.0 形态判定 + §C+.1 按维度全量穷举，清单计数 ≥ 枚举计数 × 0.95** |
+| **16. 详尽构件库清单（全量）** | **reference-manual.md §4（全量构件表）+ §6（全量接口端点表）+ §9（全量 store/类型/模型/mapper XML 表）+ exploration-guide §D.0-D.5（全量穷举+计数核验；数据映射四维度 DIM_DATA_MODEL/DIM_MAPPER_XML/DIM_SCHEDULE_JOB/DIM_ORM_SCHEMA 机器执法）** | **按 §D.0 形态判定 + §D.1 按维度全量穷举，清单计数 ≥ 枚举计数 × 0.95** |
 
 **文件：** 多个，按主题拆分。
 
@@ -335,23 +335,23 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 | `dev-guide.md` | §7 组件库代码填充说明（部分）+ **§8 编排约束** | 改造分类详解 + 开发指南 + **拼装式开发原则（优先复用既有稳定单元）** + **编排调用关系及约束（导入方向/注册顺序/路由挂载/状态所有权/测试边界）** + **开发偏好（R21-B 固定节：提交/分支/工作流/工具偏好，来源 mine-habits+已写规则+口述，无来源写「暂无已记录偏好」）** + 领域/实体对象域填充 + 接口参数填充 + 任务流程填充（一般流程指引；拼装序列归 recipes.md §B，不重复） |
 | `release.md` | §3 项目编译规则清单 | 编译规则表 + 构建命令 + 产物位置 + 失败排查 |
 | `reference-manual.md` | §2/4/5/6/7/8/9 + check §1/2/3/4 | 见下方 |
-| `recipes.md`（R21 配方层，standard/compliance 档；lite 不生成） | exploration-guide §C+.6/§C+.7 | §A 业务功能清单（功能→入口→复用组件→接口→数据→测试编目）+ §B 任务配方（每配方五要素：触发场景/前置查询/复用件/胶水/门禁与验证） |
-| `relations.jsonl`（R21-D 关系边集，可选产物；探查期生成） | exploration-guide §C+.2.5 | 机器可读依赖边 `{"from","to","kind","evidence"}`：自动 import 边（relations-extract.sh）+ AI 语义边（call/route/message/ipc/export）；--stable-diff 传播与开发工作流 探查消费 |
+| `recipes.md`（R21 配方层，standard/compliance 档；lite 不生成） | exploration-guide §D.6/§D.7 | §A 业务功能清单（功能→入口→复用组件→接口→数据→测试编目）+ §B 任务配方（每配方五要素：触发场景/前置查询/复用件/胶水/门禁与验证） |
+| `relations.jsonl`（R21-D 关系边集，可选产物；探查期生成） | exploration-guide §D.2.5 | 机器可读依赖边 `{"from","to","kind","evidence"}`：自动 import 边（relations-extract.sh）+ AI 语义边（call/route/message/ipc/export）；--stable-diff 传播与开发工作流 探查消费 |
 
 **reference-manual.md 必须包含的章节（按项目形态动态适配）：**
 
-> **★通用性铁律：以下章节按 exploration-guide §C+.0 项目形态判定结果动态填充。** 只填项目实际存在的维度——纯后端项目不填"UI组件清单"，纯前端项目不填"请求处理管道"。不存在的维度标注"本项目无此维度"而非留空。
+> **★通用性铁律：以下章节按 exploration-guide §D.0 项目形态判定结果动态填充。** 只填项目实际存在的维度——纯后端项目不填"UI组件清单"，纯前端项目不填"请求处理管道"。不存在的维度标注"本项目无此维度"而非留空。
 
 | 章节 | 材料项 | 内容 | 适用形态 |
 |------|--------|------|---------|
 | §安全检查规则清单 | §2 | 脱敏、密钥、网络白名单、框架安全基线 | 通用 |
 | §构件库清单（全量） | §4 | **按探查维度全量**：前端(UI组件/store/composable) + 后端(controller/service/repository/middleware/model) + 异步(生产者/消费者/队列) + 桌面(主/preload/IPC) + 库(公共API)。清单计数 ≥ find 计数 × 0.95 | 按形态动态 |
-| §调用链路说明 | §5 | **按形态选链路模型**：前端(注册装配+模块矩阵+挂载树+store依赖) / 后端(请求处理管道+分层矩阵+数据流+外部依赖+**数据映射链路**) / 异步(消息流转) / 微服务(跨服务调用链) + §5.1 编排约束注释；**含定时/批处理信号时加调度任务表**（§C+.2-J 产物：任务/入口路径/触发方式/读数据资产/写数据资产/幂等策略；DIM_SCHEDULE_JOB 计数核验，路径进 --path-check） | 按形态动态 |
+| §调用链路说明 | §5 | **按形态选链路模型**：前端(注册装配+模块矩阵+挂载树+store依赖) / 后端(请求处理管道+分层矩阵+数据流+外部依赖+**数据映射链路**) / 异步(消息流转) / 微服务(跨服务调用链) + §5.1 编排约束注释；**含定时/批处理信号时加调度任务表**（§D.2-J 产物：任务/入口路径/触发方式/读数据资产/写数据资产/幂等策略；DIM_SCHEDULE_JOB 计数核验，路径进 --path-check） | 按形态动态 |
 | §应用接口清单（全量） | §6 | **按接口形态全量**：REST(每路由文件端点表) / GraphQL(Query/Mutation) / gRPC(service.method) / MQ(queue+handler) / 库(导出函数)。无通配符占位 | 按形态动态 |
 | §UI/UX设计资源清单 | §7 | 设计文档、主题、样式、品牌资源、i18n；含前端时按 `references/frontend-design-methodology.md` 三层权威分层（PRODUCT.md 产品真相 > DESIGN.md 视觉决策 > surface brief 单面策略）组织设计决策，含 design token（colors/typography/rounded/spacing/components）+ 品牌资源 + i18n | 仅含前端 |
-| §数据字典及数据规范 | §8 | schema 位置、数据流、业务规则、勾稽关系；**字段级映射清单（有数据访问层时必含，§C+.2-B Layer 5 产物）：核心实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单 ↔ 批处理 reader 列——改字段的影响面以此清单为唯一依据；**纯 REST JSON 项目（无数据访问层）用 JSON 契约面列族：JSON 字段 ↔ 前端调用点 ↔ 测试锚点**（R66 存放位置补，同四查①语义）；JPQL @Query 内嵌实体/字段名须入清单**；**schema/迁移资产表（横向清剿轮补，DIM_ORM_SCHEMA 计数核验）：prisma/migrations/alembic/flyway/liquibase/orm.xml/hbm/schema.sql 全枚举——改模型必核"迁移是否已生成"（模型↔迁移漂移 = 漏改字段的姊妹缺陷）** | 通用（有数据层时） |
+| §数据字典及数据规范 | §8 | schema 位置、数据流、业务规则、勾稽关系；**字段级映射清单（有数据访问层时必含，§D.2-B Layer 5 产物）：核心实体字段 ↔ 表列 ↔ resultMap property ↔ SQL 列清单 ↔ 批处理 reader 列——改字段的影响面以此清单为唯一依据；**纯 REST JSON 项目（无数据访问层）用 JSON 契约面列族：JSON 字段 ↔ 前端调用点 ↔ 测试锚点**（R66 存放位置补，同四查①语义）；JPQL @Query 内嵌实体/字段名须入清单**；**schema/迁移资产表（横向清剿轮补，DIM_ORM_SCHEMA 计数核验）：prisma/migrations/alembic/flyway/liquibase/orm.xml/hbm/schema.sql 全枚举——改模型必核"迁移是否已生成"（模型↔迁移漂移 = 漏改字段的姊妹缺陷）** | 通用（有数据层时） |
 | §store/类型/模型全量清单 | §9 | 前端(store+类型) / 后端(ORM model+entity+DTO+**mapper XML 文件表：路径/namespace↔接口/resultMap 实体引用**——DIM_MAPPER_XML 计数核验，与实体同节共表) / 通用(类型定义) | 按形态动态 |
-| §消息拓扑配对表 | §5 | **含异步时必含（§C+.2-A 产物）**：每行=端点名/生产侧 file:line/消费侧 file:line/序列化格式/幂等策略；单边端点显式标"外部系统"或"孤儿端点"——端点名是双边字符串，改名前必查 | 按形态动态 |
+| §消息拓扑配对表 | §5 | **含异步时必含（§D.2-A 产物）**：每行=端点名/生产侧 file:line/消费侧 file:line/序列化格式/幂等策略；单边端点显式标"外部系统"或"孤儿端点"——端点名是双边字符串，改名前必查 | 按形态动态 |
 | §测试案例（check §1） | check §1 | 单测/接口/集成/回归/安全测试案例及数据 | 通用 |
 | §业务规则案例（check §2） | check §2 | 业务规则 + 案例数据 | 通用 |
 | §数据勾稽核对（check §3） | check §3 | 无多漏错重核对项 | 通用（有数据层时） |
@@ -359,22 +359,22 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 
 **填充规则：**
 - 全部用探查到的**真实路径、版本号、命令名、连接串格式**
-- **★构件库清单（reference-manual.md §4 必须全量，按 exploration-guide §C+.1 方法论）**：
- - 先做 §C+.0 项目形态判定，按判定结果选择的维度做全量枚举
+- **★构件库清单（reference-manual.md §4 必须全量，按 exploration-guide §D.1 方法论）**：
+ - 先做 §D.0 项目形态判定，按判定结果选择的维度做全量枚举
  - 每个维度独立计数核验：清单计数 ≥ 枚举计数 × 0.95（偏差须注明原因）
  - 按模块/层分组，每个构件含：名称/路径/签名/用途/复用方式/稳定性标注
  - 严禁"代表性样本"填充——必须穷举
  - 严禁"维度错配"——纯后端项目不填 UI 组件表；纯前端项目不填 controller 表
  - 通用维度（类型/工具函数/配置）所有项目都填
-- **★调用链路（reference-manual.md §5 按形态选模型，按 exploration-guide §C+.2 方法论）**：
- - 按 §C+.0 判定结果选择链路模型（前端/后端/异步/微服务/桌面/库）
+- **★调用链路（reference-manual.md §5 按形态选模型，按 exploration-guide §D.2 方法论）**：
+ - 按 §D.0 判定结果选择链路模型（前端/后端/异步/微服务/桌面/库）
  - 前端含：注册装配链路 + 模块依赖矩阵 + 组件挂载树 + store 依赖
  - 后端含：请求处理管道 + 分层依赖矩阵 + 数据流图 + 外部依赖链路
  - 异步含：消息流转链路 + 幂等/DLQ/重试策略
  - 微服务含：跨服务调用链 + 共享DB检测 + trace透传
- - §5.1 编排约束注释：按 §C+.3 推导的约束类别
+ - §5.1 编排约束注释：按 §D.3 推导的约束类别
  - **§5.2 文档证据注记（v2.14.3 排查 B 补）**：docs/ 设计文档/ADR 中的架构决策意图与外部交互设计，探查期提取后在此标注（"设计文档 X §Y 设计为 A，代码实装为 B（file:line）"）——以代码为准，文档为辅；不一致即声明冲突（详见 exploration-guide §文档证据源优先级）
-- **★接口清单（reference-manual.md §6 必须全量，按 exploration-guide §C+.4 方法论）**：
+- **★接口清单（reference-manual.md §6 必须全量，按 exploration-guide §D.4 方法论）**：
  - 按探查到的接口形态枚举：REST(逐端点) / GraphQL(逐resolver) / gRPC(逐method) / MQ(逐queue+handler) / 库(逐导出)
  - 每个接口文件一张表，每行含：方法/类型 + 完整路径/名称 + handler + 认证 + 用途 + 复用方式
  - 严禁通配符占位（"GET/POST /api/xxx/*"）
@@ -388,16 +388,16 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
  - **禁止侵入式重构**：不修改既有稳定单元的签名/行为，只通过组合/扩展复用
  - **禁止破坏性改造**：不改只读骨架/第三方依赖/框架核心，只通过项目允许的机制（patch/overlay/插件）接入
  - 每个新增文件须标注：复用了哪些既有单元（引用特征卡第 11 项的路径/签名）
-- **★编排约束（dev-guide.md §8 必须含，从 exploration-guide §C+.3 + 特征卡第 15 项承接）**：
- - **按 §C+.0 项目形态选择约束类别**——只推导项目实际存在的约束
+- **★编排约束（dev-guide.md §8 必须含，从 exploration-guide §D.3 + 特征卡第 15 项承接）**：
+ - **按 §D.0 项目形态选择约束类别**——只推导项目实际存在的约束
  - 前端约束：导入方向/跨模块边界/注册顺序/feature-gate/路由挂载/状态所有权/测试边界
  - 后端约束：分层依赖方向/事务边界/DTO转换边界/中间件顺序/认证层/外部副作用隔离/测试边界
  - 异步约束：消费幂等/消息时序/重试DLQ/生产消费解耦
  - 微服务约束：服务调用方向/共享DB禁止/trace透传/熔断降级/Saga补偿
  - 通用约束：改造分类与文件落位/版本锁定/可改vs只读边界
  - 每条约束须标注代码证据（文件:行 或 grep 命令）
-- **★任务配方（recipes.md 必须含，standard/compliance 档；从 exploration-guide §C+.6/§C+.7 承接，R21 配方层）**：
- - §A 业务功能清单：从 §C+.1 枚举产物 + §C+.2 链路**归纳**（不是重新探查），每功能一行 `| 功能 | 入口路径 | 复用组件 | 接口 | 数据 | 测试 |`；组件路径反引号包裹（`--path-check` 校验）；无测试的功能显式标"无"
+- **★任务配方（recipes.md 必须含，standard/compliance 档；从 exploration-guide §D.6/§D.7 承接，R21 配方层）**：
+ - §A 业务功能清单：从 §D.1 枚举产物 + §D.2 链路**归纳**（不是重新探查），每功能一行 `| 功能 | 入口路径 | 复用组件 | 接口 | 数据 | 测试 |`；组件路径反引号包裹（`--path-check` 校验）；无测试的功能显式标"无"
  - §B 任务配方：三源提取（既有实现 / git 同类任务历史 / 开发者文档），每配方五要素齐全——触发场景/前置查询/复用件/胶水/门禁与验证（`--verify-completeness` 机器执法，缺要素即列 file:line）
  - **数据模型变更配方（有数据访问层时必须建**，漏改字段高发任务）：触发场景=改/加/删实体字段或表列；**前置查询必须含四查**——①查 relations.jsonl `data-mapping`/`mapper-binding` 边反查该实体的全部 mapper XML；②查 §8 字段级映射清单定位 property/SQL 列；③查 §5 调度任务表定位读写该数据资产的 job（reader SQL 内嵌列名不在 import 边里）；④查**对外契约面**（R58 补）——字段若暴露于 API JSON（响应体/请求体 DTO），反查前端调用点与契约测试，前端 fixtures/mock 同名字段一并改（对应回归②接口命中路）；胶水=同步点清单（resultMap property/SQL 列/reader SQL/@TableField/DDL 迁移/JSON 契约字段）；门禁与验证=`fw_mybatis_field_sync` + job 回归 + 契约消费方测试
  - 复用件清单表格化（`| 复用件路径 | 用途 |`，反引号路径）——散文行的命令反引号不进 path-check（防误报）
@@ -409,7 +409,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
  - 探查时记录当前版本基线（特征卡第 4 项 → codebase.md 技术栈版本表）。**版本语义单一约定（R82-D1）：版本表一律记 manifest 声明值——range 原样保留（如 `^12.0.0`），lock 实装/实测安装版本写说明列**。check_deps（--deps）的基线与 manifest 两侧同语义比较；记成实装版本（如 lock 的 12.11.1）会在 range 声明 `^12.0.0` 的项目上吃假阳性 fail（NestJS 执勤实证）
  - 任何版本变更须在 spec-template.md 版本约束声明段中显式声明理由 + 经用户确认
  - precheck.sh `--deps` 检测 package.json/pyproject.toml/go.mod 等依赖版本是否被变更
-- **★可复用稳定单元清单（reference-manual.md §4/5/6/9 必须含，全量）**：从特征卡第 11 项整理，列出全部稳定单元的签名/路径/用途/复用方式/稳定性标注。**不允许样本化——清单计数须通过 §C+.1 计数核验**
+- **★可复用稳定单元清单（reference-manual.md §4/5/6/9 必须含，全量）**：从特征卡第 11 项整理，列出全部稳定单元的签名/路径/用途/复用方式/稳定性标注。**不允许样本化——清单计数须通过 §D.1 计数核验**
 - **★安全规范（reference-manual.md §2 必须含 + dev-guide.md 必须含安全编码规范）**：引用 `references/security-spec.md`，覆盖 OWASP Top 10（注入/XSS/CSRF/访问控制/身份认证/敏感数据/依赖安全）、代码安全（路径穿越/反序列化/SSRF/安全配置/日志安全）、网络安全（接口安全/传输安全/端口安全）、LLM 信任边界。precheck.sh `--security` 检测常见安全模式
 - **★三平台兼容（swarm-yuan 自身的 .sh 脚本必须遵守，非目标技能强制）**：不用 declare -A / sed -i.bak+rm / grep -E / date -u / cd+pwd 替代 readlink -f / wc|xargs / ${var} 防 C-locale。详见 `references/security-spec.md` §六
 
@@ -419,9 +419,9 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 - **运维监控左移**：spec 阶段（节点②）写可观测性约束段（日志结构化规范/metrics 埋点清单/trace 透传链/告警阈值/健康检查端点）；验证阶段（节点⑥）确认 metrics/日志/trace 已埋点且可通过健康检查端点访问；发布阶段（节点⑧）确认灰度策略 + 告警阈值已设 + runbook 已更新。precheck `--shift-left` 校验：spec 含可观测性段 + 代码中 metrics/日志/trace 埋点存在 + 健康检查端点可访问
 - **左移三项的关系**：测试左移防缺陷流入后段；变更左移防变更爆炸半径失控；运维左移防线上故障不可观测。三者配套——不可只做一项
 
-**★框架适配（由 exploration-guide §C+.0.5 探查结果激活 + dev-guide.md §10 框架约束 + precheck.conf ACTIVE_FRAMEWORKS + framework-knowledge.md 框架规则集）：**
-- **框架探查**：探查阶段（§C+.0.5）从依赖清单+注解+配置文件识别具体框架（Spring/MyBatis/Lombok/Sharding/Dubbo/RocketMQ/Kafka/RabbitMQ/Redis/Quartz/MySQL/SQLServer/PostgreSQL/Element/AntDesign/Vue/React/NaiveUI 等 20+ 框架），产出 ACTIVE_FRAMEWORKS 列表
-- **框架规则集激活**：只激活探查到的框架的领域规则集（位于 `references/frameworks/<fw>.md`，六段式结构；`framework-knowledge.md` 是其项目实例化产物）+ 枚举模式（§C+.1-FW 框架特定构件）+ 约束模板 + precheck 配置
+**★框架适配（由 exploration-guide §D.0.5 探查结果激活 + dev-guide.md §10 框架约束 + precheck.conf ACTIVE_FRAMEWORKS + framework-knowledge.md 框架规则集）：**
+- **框架探查**：探查阶段（§D.0.5）从依赖清单+注解+配置文件识别具体框架（Spring/MyBatis/Lombok/Sharding/Dubbo/RocketMQ/Kafka/RabbitMQ/Redis/Quartz/MySQL/SQLServer/PostgreSQL/Element/AntDesign/Vue/React/NaiveUI 等 20+ 框架），产出 ACTIVE_FRAMEWORKS 列表
+- **框架规则集激活**：只激活探查到的框架的领域规则集（位于 `references/frameworks/<fw>.md`，六段式结构；`framework-knowledge.md` 是其项目实例化产物）+ 枚举模式（§D.1-FW 框架特定构件）+ 约束模板 + precheck 配置
 - **框架特定约束**：dev-guide.md §10 须含按激活框架推导的约束（如 MyBatis ${} 白名单规则 / Lombok @Data+JPA 冲突 / Spring @Transactional 代理自调用 / Sharding 分片键必含 / Dubbo 超时重试幂等等），每框架 ≥ 3 条
 - **precheck 框架感知**：`--security` 区分 MyBatis #{} vs ${}（#{} 安全跳过，${} 须白名单）；`--deps` 支持 pom.xml/build.gradle 版本锁定；`--shift-left` 日志埋点感知 @Slf4j；`--layer` 领域层禁止 import Java 框架；`--framework <id>` 实跑 `_fw_<id>_check` 动态分发器（模板内置，`declare -f` 派发到 `assets/framework-gates/<fw>.sh` 中的 `_fw_<id>_<rule>`，缺失则 fail）
 - **门禁片段注入**：`scripts/generate-skill.sh --inject-frameworks` 将 `assets/framework-gates/<fw>.sh` 注入到 `scripts/precheck.sh` 的 `# >>> swarm-yuan:framework-gates >>>` ... `# <<< swarm-yuan:framework-gates <<<` 标记区块；`--upgrade` 触发自动重注入（幂等）
@@ -654,12 +654,12 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 **★拼装式开发核对：**
 · dev-guide.md §7 含拼装式开发原则（优先复用既有稳定单元；禁止重复造轮子/侵入式重构/破坏性改造）
 · reference-manual.md §4/5/6/9 含可复用稳定单元清单（API接口/组件/类/函数/方法/store/类型定义，每个含签名/路径/用途/复用方式/稳定性标注）
-· recipes.md §A 业务功能清单 + §B 任务配方五要素（standard/compliance 档；§C+.6/§C+.7 提取——拼装的"路线层"）
+· recipes.md §A 业务功能清单 + §B 任务配方五要素（standard/compliance 档；§D.6/§D.7 提取——拼装的"路线层"）
 · spec-template.md 含复用约束段（复用的既有单元表 + 新增胶水代码表 + 拼装合规声明）
 · precheck.sh 含 `--reuse` 子命令（检测重复造轮子 + 提示核对稳定单元清单）
 
 **★编排约束核对（按项目形态动态）：**
-· dev-guide.md §8 含编排约束段，**按 §C+.0 形态选择约束类别**
+· dev-guide.md §8 含编排约束段，**按 §D.0 形态选择约束类别**
 · 前端项目：含导入方向/跨模块边界/注册顺序/feature-gate/路由挂载/状态所有权/测试边界
 · 后端项目：含分层依赖方向/事务边界/DTO转换/中间件顺序/认证层/外部副作用隔离/测试边界
 · 异步项目：含消费幂等/消息时序/重试DLQ/生产消费解耦
@@ -669,7 +669,7 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 · reference-manual.md §6 按接口形态全量（REST逐端点 / GraphQL逐resolver / gRPC逐method / MQ逐queue）
 
 **★详尽构件库清单核对（新增，防止样本化+维度错配）：**
-· 先做 §C+.0 项目形态判定，记录"本项目含以下维度：[...]"
+· 先做 §D.0 项目形态判定，记录"本项目含以下维度：[...]"
 · reference-manual.md §4 按判定的维度全量填充，每个维度独立计数核验
 · 纯后端项目：§4 含 controller/service/repository/middleware/model 全量，无 UI 组件表
 · 纯前端项目：§4 含 UI组件/store/composable 全量，无 controller/service 表
@@ -709,8 +709,8 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 · precheck.conf 含左移配置段（TEST_DESIGN_FILE/CHANGE_IMPACT_FILE/OBSERVABILITY_FILE/METRIC_ENDPOINTS/HEALTH_CHECK_URLS/MIGRATION_DIRS）
 
 **★框架适配核对（新增）：**
-· exploration-guide §C+.0.5 框架探查层存在（从依赖清单+注解+配置文件识别框架）
-· exploration-guide §C+.1-FW 框架特定构件枚举段存在（按激活框架动态枚举）
+· exploration-guide §D.0.5 框架探查层存在（从依赖清单+注解+配置文件识别框架）
+· exploration-guide §D.1-FW 框架特定构件枚举段存在（按激活框架动态枚举）
 · `references/frameworks/<fw>.md` 含探查到框架的领域规则集（六段式，探查到才激活；domain-knowledge.md 仅留通用领域速查——框架规则已迁移，见其"框架特定领域规则集（已迁移）"声明）
 · precheck.conf 含框架适配配置段（ACTIVE_FRAMEWORKS/MYBATIS_MAPPER_DIRS/SQL_INJECTION_WHITELIST/LOMBOK_SRC_GLOBS/SHARDING_KEY_COLUMNS/SHARDED_TABLES/SPRING_BATCH_JOB_DIRS/JAVA_BUILD_FILES）
 · precheck.sh `--security` 区分 MyBatis #{} vs ${}（#{} 安全跳过，${} 须白名单）

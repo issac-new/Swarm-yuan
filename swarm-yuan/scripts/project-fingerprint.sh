@@ -221,7 +221,7 @@ if [[ "${_dc_a}" != "${_dc_b}" ]]; then
   done
   # 新增：b 有 a 没有
   comm -13 <(LC_ALL=C awk '{print $1}' "$_da_t" | LC_ALL=C sort) <(LC_ALL=C awk '{print $1}' "$_db_t" | LC_ALL=C sort) | while IFS= read -r k; do
-    [[ -n "$k" ]] && echo "    + ${k}（新增目录——按 §C+.0 形态判定是否引入新维度）"
+    [[ -n "$k" ]] && echo "    + ${k}（新增目录——按 §D.0 形态判定是否引入新维度）"
   done
   # cksum 变化：两边都有但值不同
   LC_ALL=C join -j 1 "$_da_t" "$_db_t" 2>/dev/null | LC_ALL=C awk '$2 != $3 {print $1}' | while IFS= read -r k; do

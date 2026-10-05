@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # inventory-verify.sh — 维度计数核验 + 维度错配 lint（WP-P2/M1）
-# 把 Step 12 / exploration-guide §C+ 的手工枚举计数核验脚本化：
+# 把 Step 12 / exploration-guide §D 的手工枚举计数核验脚本化：
 #   对目标仓库按维度注册表跑 find/grep 枚举 → 数 reference-manual.md 对应表行数 → 去重 → 算比率（≥0.95 PASS）
 #   顺带维度错配 lint：声明纯后端却有 UI 组件文件 / 纯前端却有 controller → DIM_MISMATCH
 # WP-Q1A（2026-08-19，三能力实操性复盘）新增两模式，堵"计数核验防漏不防伪"的洞：
@@ -21,7 +21,7 @@
 # 输出: stdout TSV「维度	枚举计数	清单计数	比率	状态」按维度排序 + 末行 DIM_MISMATCH（如有）
 #       + HALLUCINATION / STABILITY_WARN 行（对应模式开启时）
 # 退出码: 0 正常（含 FAIL 维度，fail-open 核验）；1 arg 错误 / PROJECT_DIR 不存在。
-# 红线：本脚本只做计数 + 错配 lint + 路径存在性 + 机械信号，不替模型判断维度是否适用（适用判断由 §C+.0 形态判定驱动）。
+# 红线：本脚本只做计数 + 错配 lint + 路径存在性 + 机械信号，不替模型判断维度是否适用（适用判断由 §D.0 形态判定驱动）。
 set -uo pipefail
 BASE=$(cd "$(dirname "${0}")/.." && pwd)
 
@@ -166,7 +166,7 @@ if [[ "$FORM" == "backend" ]]; then
   if [[ -n "$fcmd" ]]; then
     fenum=$(_enum_count "$fcmd")
     if [[ "${fenum:-0}" -gt 0 ]]; then
-      mismatches="${mismatches}DIM_MISMATCH	声明形态=backend 但检出前端 UI 组件 ${fenum} 个（回 §C+.0 重判形态）
+      mismatches="${mismatches}DIM_MISMATCH	声明形态=backend 但检出前端 UI 组件 ${fenum} 个（回 §D.0 重判形态）
 "
     fi
   fi
@@ -175,7 +175,7 @@ elif [[ "$FORM" == "frontend" ]]; then
   if [[ -n "$bcmd" ]]; then
     benum=$(_enum_count "$bcmd")
     if [[ "${benum:-0}" -gt 0 ]]; then
-      mismatches="${mismatches}DIM_MISMATCH	声明形态=frontend 但检出后端 controller ${benum} 个（回 §C+.0 重判形态）
+      mismatches="${mismatches}DIM_MISMATCH	声明形态=frontend 但检出后端 controller ${benum} 个（回 §D.0 重判形态）
 "
     fi
   fi
@@ -261,7 +261,7 @@ if [[ "$PATH_CHECK" -eq 1 && -n "$SKILL_DIR" && -f "$SKILL_DIR/references/recipe
     [[ -n "$_p" ]] || continue
     _p="${_p//\\//}"
     if [[ ! -f "$PROJ/$_p" ]]; then
-      hallus="${hallus}HALLUCINATION	配方引用路径不存在: ${_p}（recipes.md §A/§B；疑似幻觉复用件，回 §C+.6/§C+.7 核实）
+      hallus="${hallus}HALLUCINATION	配方引用路径不存在: ${_p}（recipes.md §A/§B；疑似幻觉复用件，回 §D.6/§D.7 核实）
 "
     fi
   done <<< "$_rcp_paths"

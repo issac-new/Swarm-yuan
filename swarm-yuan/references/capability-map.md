@@ -27,7 +27,7 @@
 
 | 档 | 来源（证据） | 消费节点 | 触发 |
 |----|-------------|---------|------|
-| exploration-guide | 内生 + semantica/graphify 借鉴（A） | 生成流程 ⓪.5/①.5 探查（含 §C+.0.6/矛盾裁决） | 执行任何探查 |
+| exploration-guide | 内生 + semantica/graphify 借鉴（A） | 生成流程 ⓪.5/①.5 探查（含 §D.0.6/矛盾裁决） | 执行任何探查 |
 | generation-flow | 内生（决策 32 折叠） | 生成流程 Step 1-12 详解 | 生成流程逐步执行 |
 | template-spec | 内生 + agent-skills 联动（A） | 生成流程 ④ 填充六文件 | 填 spec/六文件 |
 | agent-skills-methodology | addyosmani/agent-skills（B） | 生成流程 ④ + 开发工作流 ⑤ | 反借口/假设前置/Prove-It |
@@ -36,7 +36,7 @@
 | cost-estimation-methodology | 人行科技司培训 + GB/T 42588（B） | spec §25 填充 | 规模/工作量估算 |
 | domain-knowledge | 内生速查（A） | 生成流程 ①.5 + --domain 门禁 | 领域规律推导 |
 | code-graph-tools | GitNexus/graphify/codegraph 调研（A） | 生成流程 ① 图谱优先 | 图谱工具选型 |
-| togaf-metamodel-methodology | TOGAF BDAT（B） | §C+.0.6 四层视角 | 架构类变更探查 |
+| togaf-metamodel-methodology | TOGAF BDAT（B） | §D.0.6 四层视角 | 架构类变更探查 |
 | frontend-design-methodology | pbakaus/impeccable（B） | 生成流程 ④ + 开发工作流 ⑤ 前端 | 前端设计任务 |
 
 ### 族② 拼装与知识消费（开发工作流 ②⑤）

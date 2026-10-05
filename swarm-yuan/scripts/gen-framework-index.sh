@@ -22,7 +22,7 @@ fi
 
 if ! grep -qF "${BEGIN_MARK}" "${GUIDE}" || ! grep -qF "${END_MARK}" "${GUIDE}"; then
   echo "✗ ${GUIDE} 中缺少 framework-signal-index 标记区块（${BEGIN_MARK} / ${END_MARK}）。" >&2
-  echo "  T4 须在 exploration-guide.md §C+.0.5 加入标记区块后本脚本才能重写。" >&2
+  echo "  T4 须在 exploration-guide.md §D.0.5 加入标记区块后本脚本才能重写。" >&2
   exit 1
 fi
 
