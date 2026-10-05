@@ -2,28 +2,24 @@
 
 ## [v2.53.0] - 2026-10-05
 
-> R90 终态化清理轮（方案 C 全做）：用户面文档全面去历史包袱——skill 自身文档 453 处裸轮次标记、397 处版本注记、47 处半步编号清零；历史三重归位（决策全文=design-evolution、轮次账=CHANGELOG、调研档案=docs/research，均在册未删）；防复发锁从"自造词"扩到"历史包袱"四类禁项。SWARM-YUAN 从"历次推演叠加的过程记录"收敛为"干净完整的终态方案描述"。
+> R90 终态文档清理轮（用户驱动，四方案全做）：SKILL.md 与 references 48 档去历史包袱——89 轮迭代沉积的 R 轮次标记、swarm-yuan 自身版本注记（v2.14.x）、补丁式编号（⓪.5 半步 / §C+ / Step -1）、评审答辩材料（理念→兑现追踪 / 概念↔实物追踪表 / 结构→流程对应）、文档自身编辑史叙事全面清除；机制语义按「改写而非删除」原则逐条保留（包裹仍生效约束的轮次注改写为机制陈述，上游版本号 / issue 号 / 来源归属 / 诚实状态标注全保留）。生成流程编号统一为 references/generation-flow.md 的 Step 1-12 唯一口径，⓪-⑨ 符号链废弃。防复发：test-r68 从自造词扩到「历史包袱」四类禁项。历史三重归位不动摇：决策全文 = docs/design-evolution.md、轮次账 = 本文件、调研档案 = docs/research/。
 
 ### Changed
-- **SKILL.md 终态重写**（20320B→12.4KB）：轮次标记（R21/R37/R58/R83-D1）、版本注记（v2.14.x）、三类评审答辩材料（理念→兑现追踪/结构→流程对应/概念↔实物追踪表）删除；编号统一采用 generation-flow.md Step 1-12 唯一口径（⓪-⑨ 符号链与 ⓪.5/①.5 半步废弃）；理念论证归位 README；Step 4 补"对外契约面"维度。
-- **claude-code-capabilities.md 结构瘦身**（69KB→40KB）：文末 21 节逐版"版本注记"巡检日志删除（详表在 docs/upstream-baseline.md §三 + docs/research 双重在册）；正文 160+ 处修复史注记（"v2.1.199 修复 X"式）改写为现状能力描述；目录型"来源版本"表格列保留；新增"版本基线与变化追踪"节为唯一指针。
-- **codex-methodology.md**：v0.148-0.160 十五节版本注记删除；v0.147/148 能力事实改写为"Codex 宿主能力速览"（现状表述，兼容性下限保留）；hooks 事件面与信任机制节保留为终态能力参考。
-- **review-methodology.md**：R17-R43 逐轮上游日志块删除（每条在 research 档+CHANGELOG 在册）；R57/R74/R79/R81/R84/R85 六段审查纪律去轮次化为主题节（内容保留，轮号/日期/"吸收判据两问"过程行删除）。
-- **memory-persistence.md**：claude-mem/ruflo 四节补核段合并为两个"治理要点"主题清单（版本号段落头、簿记句删除，蒸馏纪律全部保留）。
-- **references 其余 38 档**：行内轮次标记与工单注记（R58-D5/R21-B/R21-C 式）清零；"R8 §③"式轮次速记全部改为 `docs/research/R8-security-standards.md §③` 完整文件名引用；行业档法规编号（UNECE R155/R156）与 GB/JR/T/ISO 标准号原样保留；上游项目版本/PR 证据锚（如 gstack v1.91.8.0 #2994）保留；"版本注记日期戳"（YYYY-MM-DD 核）清除、证据分级的"核验"日期保留。
-- **README.md**：附录 A/B 登记次数注记（"R72 第四次登记""当前第十八次登记"）去过程化，数字真值指针保留；附录 C 决策溯源表保留为唯一决策索引。
-- **docs/usage-manual.md**：术语表"考古标签"条改为形态描述（终态正文不再出现裸标记）；禁用词清单标题去轮次；生成流程 Step 口径统一 1-12；§C+ 章节引用随 exploration-guide 改 §D。
-- **generation-flow/exploration-guide/资产脚本联动**：分工表与引用随新编号口径同步；exploration-guide §C+→§D、Step -1/Step 0 改命名节，全语料 14 个引用方同步改名；self-check 输出指针同步。
-- **install.sh 分发包瘦身**：research/（上游调研原料）、.swarm-yuan/（生成器运行留痕）、offline-cache/（历史缓存）不再随安装拷贝——假 HOME 试装验证：排除生效、保留项在位、产物 35M（原含 research 时 3.5G）；vendor-knowledge/（运行时引用）与 tests/（fixture 计数断言依赖）保留。
+- **SKILL.md 终态重写**（20320B → 12.5KB）：删轮次标记 8 处、版本注记、三类评审答辩材料、双编号对账注；总览表改 Step 1-12（⑦.5 门禁注入并入 Step 4.5 行并注明执行时点）；理念论证归位 README.md；「五层/六层」不一致修正为平直章节；Step 4 穷举维度行补对外契约面；frontmatter description 重写为可读一段。
+- **编号统一**：exploration-guide §C+ → §D（正文与 14 个引用方同步，含 5 个 scripts 注释/提示串）；Step -1 / Step 0 改命名节；capability-map / usage-manual 步骤表 / standards-compliance §B 表 / quality-management-standards PDCA 表的 ⓪-⑨ 与本地变体编号全量改 Step 1-12。
+- **references 48 档五族清理**：行内轮次标记与工单注记（R21-B / R58-D5 / Q2-heavy / P1-6 式）清除或改写为机制陈述；标题出处尾巴清理（节号锚点不动）；谱系叙事（会师 / 同族 / 第 N 波实证计数）删除留判据；版本注记日期戳（YYYY-MM-DD 核）清除，证据核验日期保留；档案引用统一为 `docs/research/` 文件名锚或「调研报告」具名引用；行业档法规编号（UNECE R155/R156）与 GB/JR/T/ISO 标准号原样保留。
+- **README.md**：附录 A/B 登记次数注记（"R72 第四次登记"式）去过程化，数字真值指针保留；附录 C 决策溯源表保留为唯一决策索引。
+- **install.sh 分发包瘦身**：research/（上游调研原料，未跟踪入仓）、.swarm-yuan/（生成器运行留痕）、offline-cache/（历史遗留缓存）不再随安装拷贝——假 HOME 试装验证：排除生效、保留项在位、产物 35M（本机含 research 时为 3.5G）；vendor-knowledge/ 经核实有运行时数据链路（industry-profile-payment §7 按相对路径读取限额/冲突裁决数据）保留，tests/ 因 self-check fixture 计数断言依赖保留。
+- **docs/usage-manual.md**：术语表「WP-/R-/决策编号」条改写为形态描述（终态正文不使用，只在历史档案遇到）；禁用词清单标题去轮次；生成流程步骤表改 Step 1-12。
 
 ### Added
-- **test-r68-jargon-free 扩终态纪律四锁**（防复发执法面扩容）：①裸轮次标记 R\d+ 零出现（docs/research 文件名锚与 UNECE R155/R156 法规号豁免）②半步编号零出现（编号唯一口径在 generation-flow.md）③轮次簿记句（补核/薄轮不开档/watch 维持/轮次台账）零出现④版本注记日期戳零出现（证据核验日期豁免）。扫描面含 SKILL.md/README/references/usage-manual/commands；决策编号不在禁类（README 附录 C 溯源表引用机制）。
-- claude-code-capabilities.md / codex-methodology.md 各设"版本基线与变化追踪"节：版本真值单一指针指向 docs/upstream-baseline.md 与 docs/research/。
+- **test-r68-jargon-free 扩终态纪律四锁**：①裸轮次标记零出现（docs/research 文件名锚与 UNECE R155/R156 法规号豁免）②半步编号零出现 ③轮次簿记句（补核/薄轮不开档/watch 维持/轮次台账）零出现 ④版本注记日期戳零出现（证据核验日期豁免）。扫描面 SKILL.md / README / references / usage-manual / commands；决策编号不在禁类。
 
 ### Fixed
-- test-r58 锁：SKILL.md 终态重写后"契约面"概念回归（Step 4 穷举维度行），L8 清剿面检查恢复绿。
-- test-r77 / test-r82 锚字符串随终态措辞同步（"5. 消费节点真实性（R77，决策 46）"→"5. 消费节点真实性"、"版本语义单一约定（R82-D1）"→"版本语义单一约定"），锁意不变。
-- template-spec 残留半步编号"②.5 文档冲突声明"改命名节；code-graph-tools / codex-security / agent-skills 版本注记日期戳清除。
+- **两处过度删除恢复**：claude-code-capabilities 与 codex-methodology 的版本注记尾段（v2.1.233-289 / v0.152-0.160 共 33 节）在清理流程中曾被整段删除——逐版能力事实（Opus 5.5 / 无界重试有界化 / maxEffortLevel / 技能预算先去重再计量 #49127 / pending 环境保留 / 断线重连输入恢复等头部表格未覆盖内容）逐节复核补回，仅去轮次框架与档案指针；review-methodology 谱系删除时误伤的受保护判据 10 条按「机制名（上游版本/issue）」补回（ocr v1.11.7 / #1416 / pass^3 / Mutation Check 等）。
+- **事实漂移订正**：code-graph-tools graphify 基线两行漏改回 v8 线 v0.9.75；template-spec P1 十项 → 十一项（对齐 FACT_FEATURE_CARDS_P1）；CLAUDE.md 79→81 框架、24→25 spec 节；frontend-design impeccable v4.0.2→v4.0.4；dsh-engineering 版本指针 0.1.2-rc.1→0.2.1-alpha.1；spec-template §23 标题去「D 方向」标签；gen-framework-index.sh 两处生成物注释的 WP-P1 考古源头清除（产物行已同步）。
+- **锁同步**：test-r58 L3 钉文本锁随「待确认事项清单（生成承载）」新措辞更新；test-r77 / test-r82 锚字符串随终态措辞同步（"5. 消费节点真实性（R77，决策 46）"→"5. 消费节点真实性"、"版本语义单一约定（R82-D1）"→"版本语义单一约定"），锁意不变。
+- 验证口径：self-check --check-only EXIT=0 零 warn（G18/G19/G25/预算断言全过）；r68（11 项）/ r58（15）/ r77（17）/ r82（8）四锁全绿；禁用词 / 轮次标 / 自身版本注 / 生成符号四查零命中；上下文表面 183170B ≤ 194560B、UNIVERSAL_FILES 495382B ≤ 544768B 双预算达标。
 
 ## [v2.52.0] - 2026-10-04
 

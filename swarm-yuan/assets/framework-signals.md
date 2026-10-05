@@ -1,4 +1,4 @@
-<!-- 由 scripts/gen-framework-index.sh 生成（WP-P1 数据化外迁），手改会被覆盖 -->
+<!-- 由 scripts/gen-framework-index.sh 生成维护，手改会被覆盖 -->
 # 框架信号索引（81 个框架）
 
 | ruleset_id | 信号类型 | 模式 | 置信度 |

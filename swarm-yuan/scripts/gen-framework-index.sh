@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 用法: gen-framework-index.sh —— 扫描 references/frameworks/*.md（跳过 _template.md）
 #       提取每个文件 frontmatter 的 ruleset_id + §1 探查信号表前几列，
-#       组装成 markdown 信号汇总索引（WP-P1 双产物）：
+#       组装成 markdown 信号汇总索引（双产物）：
 #       ① 完整信号表写入 assets/framework-signals.md（数据文件，模型按需读）；
 #       ② references/exploration-guide.md 中
 #       `# >>> framework-signal-index >>>` / `# <<< framework-signal-index <<<` 标记区块
@@ -85,11 +85,11 @@ EOF
 
 N="$(printf '%s\n' "${FILES}" | grep -c '^/.')"
 
-# WP-P1 双产物：① 完整信号表 → assets/framework-signals.md（数据文件，模型按需读）
+# 双产物：① 完整信号表 → assets/framework-signals.md（数据文件，模型按需读）
 #               ② guide 标记区块 → 2 行指针（模型必读物减重 ~300 行）
 SIG_TMP="$(mktemp /tmp/fwsig.XXXXXX)"
 {
-  printf '<!-- 由 scripts/gen-framework-index.sh 生成（WP-P1 数据化外迁），手改会被覆盖 -->\n'
+  printf '<!-- 由 scripts/gen-framework-index.sh 生成维护，手改会被覆盖 -->\n'
   printf '# 框架信号索引（%s 个框架）\n\n' "${N}"
   cat "${IDX_FILE}"
 } > "${SIG_TMP}"
@@ -103,7 +103,7 @@ fi
 
 PTR_FILE="$(mktemp /tmp/fwptr.XXXXXX)"
 {
-  printf '> 本表已数据化外迁（WP-P1/M4）：完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。\n'
+  printf '> 完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。\n'
   printf '> 运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件，无需常驻上下文。\n'
 } > "${PTR_FILE}"
 
