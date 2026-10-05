@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# context-surface.sh — 静态上下文表面计量（WP-P0/M6）
+# context-surface.sh — 静态上下文表面计量
 # 计量「模型必读文件」的字节/行数总量，输出确定性 TSV（同输入字节级一致，可 byte-diff）。
 # 用法:
 #   bash context-surface.sh --gen             生成期必读面（swarm-yuan 自身三件套）

@@ -28,7 +28,7 @@ OS_INFO="$(uname -srm 2>/dev/null || echo 未知)"
 BASH_INFO="${BASH_VERSION:-未知}"
 GIT_INFO="$(git rev-parse --short HEAD 2>/dev/null || echo 非-git-环境)"
 
-# audit-claims-reality（A4）：门禁固定序动态取自 assets/precheck.sh 的 ALL_GATES_FULL
+# 门禁固定序动态取自 assets/precheck.sh 的 ALL_GATES_FULL
 # （单一事实源；此前硬编码 34 门禁，FULL 实际 48——14 个门禁落"未登记追加"分支，
 # 且 missing_evidence 计数打印错变量恒等于 Present）。取不到时降级空序（全部追加于后）。
 _PRE="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)/assets/precheck.sh"
@@ -96,7 +96,7 @@ awk -v jsonl="$JSONL" -v gen_ts="$GEN_TS" -v report_id="$REPORT_ID" \
     idx=0
     for(i=1;i<=ng;i++){ g=order[i]; if(g in cnt){ idx++; emit_row(g, idx) } }
     for(g in cnt) if(!(g in ord)){ idx++; emit_row(g, idx) }
-    printf "### 4.2 证据状态分级（R14 better-harness 吸收：配置≠使用≠有效）\n\n"
+    printf "### 4.2 证据状态分级（配置≠使用≠有效）\n\n"
     printf "证据态语义（better-harness agent-work-loop）：**Present**（机制存在未路由）/ **Wired**（任务路由可达）/ **Exercised**（被任务使用并留结果）/ **Outcome-supported**（后期可比结果支持）。分数上限：Missing/Unobserved ≤59 · Present ≤74 · Wired ≤84 · Exercised ≤94 · Outcome-supported ≤100。\n\n"
     printf "| 证据态 | 门禁数 | 含义 | 分数上限 |\n|---|---|---|---|\n"
     ep=0; ew=0; ee=0; eo=0; em=0
@@ -108,15 +108,15 @@ awk -v jsonl="$JSONL" -v gen_ts="$GEN_TS" -v report_id="$REPORT_ID" \
     }
     printf "| Exercised | %d | 有 pass/fail/warn 结果留痕（被任务真实使用） | ≤94 |\n", ee
     printf "| Present | %d | 仅 skip（机制存在未被路由触达） | ≤74 |\n", ep
-    # R15（HarnessEval 吸收 P5）：missing_evidence 态——"该测没测"显式计数。
+    # missing_evidence 态——"该测没测"显式计数。
     # HarnessEval 语义：缺证据宁可 invalid 不插值——本任务计划要测但未执行的门禁显式标出，
     # 不算 Present（机制存在）也不算 Exercised（用过），是独立的"缺失"态（≤59）。
-    # audit-claims-reality（A4）：em = 计划应执行（ALL_GATES_FULL）− 有记录门禁数——
+    # em = 计划应执行（ALL_GATES_FULL）− 有记录门禁数——
     # 此前错印 ep（与 Present 恒等，"该测没测"永远错报）。
     em=0
     for(i=1;i<=ng;i++){ if(!(order[i] in cnt)) em++ }
     printf "| missing_evidence | %d | 应执行但未执行（该测没测，不插值不算分） | ≤59 |\n", em
-    printf "\n> 口径注：swarm-yuan 的门禁执行即 Exercised（precheck 跑过即留痕）；Wired/Outcome-supported 需任务级路由与后期对比证据，由 gate-trends 双账本承载（§R14）。\n\n"
+    printf "\n> 口径注：swarm-yuan 的门禁执行即 Exercised（precheck 跑过即留痕）；Wired/Outcome-supported 需任务级路由与后期对比证据，由 gate-trends 双账本承载。\n\n"
     printf "\n## 5. fail id 清单（失效须可见）\n\n"
     if(frows>0){
       printf("| # | 门禁 | fail id | 时间(UTC) |\n|---|---|---|---|\n")
@@ -160,7 +160,7 @@ if [[ $_rc -eq 3 ]]; then
 fi
 [[ $_rc -eq 0 ]] || { rm -f /tmp/.gate-report.$$.tmp; echo "✗ 报告聚合失败（awk 退出 ${_rc}）" >&2; exit 1; }
 
-# audit-2026-08-25（H10）：key-nodes 看板首个消费者——九节点关键调用各节点最新状态。
+# key-nodes 看板首个消费者——九节点关键调用各节点最新状态。
 # 数据源与 gate-runs 同目录（.swarm-yuan/key-nodes.jsonl）；不存在则跳过（非必选账）。
 _kn="$(dirname "$JSONL")/key-nodes.jsonl"
 if [[ -f "$_kn" ]]; then

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gate-plan.sh — R15 HarnessEval 吸收 P4：选择即证据（负空间可审计）
+# gate-plan.sh — 选择即证据（负空间可审计；来源：HarnessEval 吸收）
 # 任务开工时声明"本任务启用哪些门禁/跳过哪些/为什么"（plan）；收口时 diff 实际触发集 vs 计划集。
 # HarnessEval 语义：每个"启用"要记 case-grounded 理由，每个"跳过"也要记理由——负空间可审计。
 # 用法:

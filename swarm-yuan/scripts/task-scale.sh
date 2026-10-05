@@ -5,7 +5,7 @@
 #   - detect-spec-scale.sh：从 spec.md 解析（事后，spec 写完后判定）
 #   - task-scale.sh：从 git diff 判定（事前，分支开发中即时判定）
 #
-# 判定规则（决策 18 + WP-Q4）：
+# 判定规则（决策 18）：
 #   simple  : diff 文件数 ≤5 且不触碰敏感目录
 #   standard: diff 触碰单一服务/模块
 #   full    : diff 触碰多服务，或触碰公共接口/数据模型/权限目录（强制升级）

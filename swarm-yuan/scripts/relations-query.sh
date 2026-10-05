@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# relations-query.sh — 关系边集查询器（执勤侧影响面反查的可执行入口，v2.14.3 排查 A3）
+# relations-query.sh — 关系边集查询器（执勤侧影响面反查的可执行入口）
 #
 # 设计动机：relations.jsonl 是机器可查边集（机械 import/声明式映射边 + AI 语义边），
 # 但研发期"改实体字段 X 影响哪些 mapper XML / job"只能靠 grep 字符串——没有结构化反查入口。
@@ -52,10 +52,10 @@ case "$MODE" in
     ;;
   field)
     # field-mapping 边按 property 精确反查（改字段的影响面：哪些 resultMap 引用了该字段；
-    # API JSON 暴露字段的契约面=前端调用点/契约测试——spec 四查④，R59 清剿）
+    # API JSON 暴露字段的契约面=前端调用点/契约测试——spec 四查④）
     hits=$(grep "\"property\":\"${FIELD}\"" "$E" 2>/dev/null || true)
     [[ -n "$hits" ]] && { echo "▶ 字段 ${FIELD} 被以下 resultMap 引用（改该字段须同步这些行）："; printf '%s\n' "$hits" | _pretty; } \
-      || echo "ℹ 无边命中字段 ${FIELD}——三支判别（R58-D2）：①字段不在实体/schema（拼写？）②字段不在 resultMap（property 列名差异？）③知识缺漏（该 mapper 未提取/边集旧）——先 grep 实体确认字段存在再判缺漏"
+      || echo "ℹ 无边命中字段 ${FIELD}——三支判别：①字段不在实体/schema（拼写？）②字段不在 resultMap（property 列名差异？）③知识缺漏（该 mapper 未提取/边集旧）——先 grep 实体确认字段存在再判缺漏"
     ;;
   file)
     # 依赖该文件的边（to=该文件 的 from 集——"谁依赖我"）

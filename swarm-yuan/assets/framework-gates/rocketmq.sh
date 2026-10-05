@@ -235,7 +235,7 @@ ${orderly_send}"
   done <<< "$dup_groups"
   _fw_report warn fw_rocketmq_group_consistency "${gc_bad}" "同一 consumerGroup 订阅不同 topic（broker 端订阅互相覆盖，消息静默丢弃）" "无同组多 topic 订阅"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

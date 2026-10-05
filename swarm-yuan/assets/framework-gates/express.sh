@@ -84,7 +84,7 @@ _fw_express_check() {
   # fw_express_x_powered_by(warn)：app.disable('x-powered-by')
   # ====================================================================
   local xpb_hit
-  # R67-F1：helmet({hidePoweredBy:true}) 或 helmet.hidePoweredBy() 同样禁 x-powered-by——单检 disable() 误报
+  # helmet({hidePoweredBy:true}) 或 helmet.hidePoweredBy() 同样禁 x-powered-by——单检 disable() 误报
   xpb_hit=$(grep -rlE "disable\(['\"]x-powered-by['\"]\)|hidePoweredBy" "${jsarr[@]+"${jsarr[@]}"}" 2>/dev/null || true)
   if [[ -n "$xpb_hit" ]]; then
     pass "fw_express_x_powered_by: x-powered-by 已禁用"
@@ -213,7 +213,7 @@ ${ae_bad}"
   done
   _fw_report warn fw_express_cors "$cors_bad" "CORS 未显式配置 origin 白名单（cors() 空参 / origin:* 放行任意源 CWE-942）" "CORS origin 白名单已配或未启用 CORS"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

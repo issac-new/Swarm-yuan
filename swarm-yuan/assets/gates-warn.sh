@@ -14,7 +14,7 @@ check_scope() {
   # 在 PROJECT_DIR 下检查 git diff，看是否有改动落在只读目录
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     local changed; changed=$(_git_changed_files)
-    # R23 回归 D7：两类工具链自有路径不属项目只读语义（列只读即每轮自干扰永久红，回归实证）——
+    # 两类工具链自有路径不属项目只读语义（列只读即每轮自干扰永久红）——
     # ① 运行时账本 .swarm-yuan/**：门禁与 hook 自写（trace/审计/flag/指纹/记忆写回），
     #    防篡改靠链式锚定与审计兜底，不靠 scope 门；
     # ② 技能资产 .claude/skills/**（含 .codex/skills）：create/upgrade/--persist 的合法写入面，
@@ -48,7 +48,7 @@ check_build() {
     echo "  (跳过：未配置 BUILD_CMD)"
     return
   fi
-  # R44-D8（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：显式捕获退出码——原实现
+  # 显式捕获退出码——原实现
   # `if eval "$BUILD_CMD" | tail` 判的是管道尾命令（tail）的退出码，正确性依赖外层
   # pipefail 的间接传导；且命令不存在（127）与构建失败同词"构建失败"，排障方向不明。
   # 拆分捕获：127 单列（命令缺失→指向工具链/conf），其余才报"构建失败"。
@@ -67,7 +67,7 @@ check_build() {
 check_test() {
   echo "=== 测试检查（check §1 单测/接口/集成/回归/安全）==="
   if [[ -z "$TEST_CMD" || "$TEST_CMD" == "<test 命令>" ]]; then
-    # R21-C：未配置 TEST_CMD 不再静默跳过——探到测试文件即显式 warn（探查漏项信号：
+    # 未配置 TEST_CMD 不再静默跳过——探到测试文件即显式 warn（探查漏项信号：
     # 测试体系存在而无运行通道=验证能力缺口，"配置≠使用≠有效"三段论第一段就不过）。
     # 检测模式与 assets/inventory-dimensions.conf 的 DIM_TESTFILES_CMD 镜像（两处注释互指，改一处须同步另一处）。
     local _tf=""
@@ -85,17 +85,17 @@ check_test() {
   printf '%s
 ' "$_tout"
   if [[ "$_trc" -ne 0 ]] && printf '%s' "$_tout" | grep -qiE 'command not found|未找到命令'; then
-    # R44-D3 同源（D8 排障方向区分）：测试命令缺失≠测试失败——命令不可执行指向工具链/conf
+    # 同源排障方向区分：测试命令缺失≠测试失败——命令不可执行指向工具链/conf
     fail "测试命令不可执行（command not found）：$TEST_CMD——安装对应工具链或回生成流程 Step 8 修 conf（命令缺失≠测试失败，排障方向不同）"
     return
   fi
-  # field-feedback 2026-08-26（反馈 3 补强）：0 用例检出——"测试通过"且输出明示 0 用例时
+  # 实证反馈补强：0 用例检出——"测试通过"且输出明示 0 用例时
   # warn（空跑通过是逻辑错误的最弱兜底，不算真兜底）。各框架输出格式启发式匹配。
-  # R25-PF3（2026-09-12 Java 执勤实证）：原正则只认 jest/pytest 风格——Maven/Gradle surefire
+  # 原正则只认 jest/pytest 风格——Maven/Gradle surefire
   # "Tests run: 0"、Node TAP "# tests 0"、pytest "no tests ran" 三种形态漏检，零用例假阳性通过
   # 穿透门禁打出"✓ 测试通过"。补齐三种主流 runner 形态。
   if [[ "$_trc" -eq 0 ]]; then
-    # R39-D2（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：cargo 多 suite 形态——
+    # cargo 多 suite 形态——
     # unittests/各集成测试/doc-tests 各打一行 "test result: ok. N passed; ..."，且空 suite
     # （无 doc-tests 的项目）合法打印 "running 0 tests"。原通用正则对 "0 tests" 单行即 warn，
     # 8 用例全过仍误报"输出 0 用例"（且 tail -20 窗口敏感：用例多时窗口滑过又不报，形态不稳）。
@@ -109,7 +109,7 @@ check_test() {
       else
         pass "测试通过（cargo ${_cargo_passed} 用例，多 suite 聚合）"
       fi
-    # R44-D3（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：dotnet test 单行聚合形态——
+    # dotnet test 单行聚合形态——
     # xUnit/VSTest 各 assembly 打一行 "Passed!  - Failed: 0, Passed: 12, Skipped: 0, Total: 12"。
     # 原通用正则对其零用例形态（"Total: 0"）无一条命中 → 零用例假阳性通过静默 pass；多 target/
     # 多 assembly 时 Passed 数也不进汇总口径。dotnet 分支：聚合全部行的 Passed 求和，总和 0
@@ -122,7 +122,7 @@ check_test() {
       else
         pass "测试通过（dotnet ${_dotnet_passed} 用例，聚合）"
       fi
-    # R30-D3（2026-09-16 Node 栈执勤实证）：首分支加左边界约束——npm run 横幅
+    # 首分支加左边界约束——npm run 横幅
   # "> shop-api@0.1.0 test" 的版本号尾 0 与脚本名构成 "0 test" 子串，无边界正则
   # 对一切版本号以 0 结尾的 npm 项目假报空跑。0 须位于行首或空白后；
   # ".0 test"（版本号内）不再命中，"Tests: 0 passed"/"Ran 0 tests" 照常命中。
@@ -138,7 +138,7 @@ check_test() {
 
 _check_sensitive_gitleaks() {
   # 空 SCAN_DIRS 交回内置路径（与基线同一 warn 披露文案，避免双份漂移）
-  # 返回码语义（六轮复盘扩展）：0=gitleaks 通过（调用方须继续叠加内置正则族）
+  # 返回码语义扩展：0=gitleaks 通过（调用方须继续叠加内置正则族）
   #   1=执行错误（降级内置）｜2=SCAN_DIRS 空｜3=gitleaks 已 fail（调用方跳过内置，避免重复报）
   [[ ${#SCAN_DIRS[@]} -eq 0 ]] && return 2
   local found=0 dir report hits files f rc
@@ -159,10 +159,10 @@ _check_sensitive_gitleaks() {
       # 逐文件聚合去重（v8+ 字段 File；旧版小写 file 兜底）
       files=$(grep -oE '"File": ?"[^"]+"' "$report" 2>/dev/null | sed 's/"File": *"//; s/"$//' | sort -u || true)
       [[ -z "$files" ]] && files=$(grep -oE '"file": ?"[^"]+"' "$report" 2>/dev/null | sed 's/"file": *"//; s/"$//' | sort -u || true)
-      # 七轮复盘修复（误报）：gitleaks 路径原零排除，而内置正则路径（L157）有
+      # 修复（误报）：gitleaks 路径原零排除，而内置正则路径（L157）有
       # 'example|placeholder|test|mock|dummy' 排除——同一门禁两条路径判定标准不一致。
       # 实测误报：gin 的 context_test.go（测试假密钥）/ testdata/certificate/key.pem（测试证书）。
-      # 六轮把两条路径改叠加后，装了 gitleaks 反而多收测试固件误报。此处对齐内置排除 +
+      # 两条路径改叠加后，装了 gitleaks 反而多收测试固件误报。此处对齐内置排除 +
       # SENSITIVE_EXCLUDE_GLOBS 可配豁免（测试路径/示例文件不应报为密钥泄露）。
       files=$(printf '%s\n' "$files" | grep -viE '(^|/)(test|tests|testdata|__tests__|__mocks__|fixtures?|mocks?|examples?)(/|$)|_test\.[a-z]+$|\.test\.|\.spec\.|example|placeholder|dummy' || true)
       if [[ ${#SENSITIVE_EXCLUDE_GLOBS[@]} -gt 0 ]]; then
@@ -182,13 +182,13 @@ _check_sensitive_gitleaks() {
     pass "未发现明显敏感信息（gitleaks）"
     return 0
   fi
-  # 六轮复盘：gitleaks 已 fail → 返回 3，调用方跳过内置正则（避免重复报同一文件）
+  # gitleaks 已 fail → 返回 3，调用方跳过内置正则（避免重复报同一文件）
   return 3
 }
 
 check_sensitive() {
   echo "=== 敏感信息脱敏扫描（check §4 UI脱敏/日志）==="
-  # 工具链降级（P1-3）：SENSITIVE_TOOL=auto/builtin/gitleaks；auto=有 gitleaks 用 gitleaks，否则内置
+  # 工具链降级：SENSITIVE_TOOL=auto/builtin/gitleaks；auto=有 gitleaks 用 gitleaks，否则内置
   # 内置路径（下方原逻辑）行为一字不变；gitleaks 执行失败降级内置（不静默 fail-open）
   local _sensitive_tool="${SENSITIVE_TOOL:-auto}"
   if [[ "$_sensitive_tool" == "auto" ]]; then
@@ -209,7 +209,7 @@ check_sensitive() {
       2)
         : ;;  # SCAN_DIRS 空，落入内置路径的同文案披露
       0)
-        # 六轮复盘修复（安全）：gitleaks 通过**不再 return**，继续叠加内置正则族。
+        # 修复（安全）：gitleaks 通过**不再 return**，继续叠加内置正则族。
         # 两者互补：gitleaks 强在熵检测/已知密钥格式（sk-/AKIA/JWT 等），
         # 内置正则强在自定义模式（yml 的 password: 键、mongodb:// 内联凭证等）。
         # 与 check_security 同款修复（原"工具通过就 return"把互补做成互斥二选一）。
@@ -257,8 +257,8 @@ check_stable_diff() {
   local found=0
 
   if [[ ${#STABLE_GLOBS[@]} -eq 0 ]]; then
-    # R23 回归 D11：模板把 STABLE_GLOBS 标 deprecated、流程无填写指引——README 3.5 管束链
-    # 承诺的"稳定单元被改而未声明（失败）"出厂即休眠（回归实证）。reference-manual §4 是
+    # 模板把 STABLE_GLOBS 标 deprecated、流程无填写指引——README 3.5 管束链
+    # 承诺的"稳定单元被改而未声明（失败）"出厂即休眠。reference-manual §4 是
     # 组件库清单单一事实源，说明列稳定性标注词（与 --stability-audit 同一词库）可机械反推
     # 稳定单元路径作兜底源；显式配置 STABLE_GLOBS 仍优先。
     local _rm_file
@@ -323,7 +323,7 @@ check_stable_diff() {
   fi
 
   # ---- 2. 对每个被改的稳定文件，检查是否有 spec 声明 MODIFIED ----
-  # 找 spec 文档（含 §5.5 复用约束的 spec）——R23 D6：统一走 _find_spec_file
+  # 找 spec 文档（含 §5.5 复用约束的 spec）——统一走 _find_spec_file
   local spec_file
   spec_file=$(_find_spec_file '复用约束|拼装合规声明|MODIFIED')
 
@@ -374,7 +374,7 @@ check_stable_diff() {
         | sed -E 's/<!-- stable-propagate:[^→]*→//; s/ *-->.*//' \
         | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | sort -u || true)
     fi
-    # 3a'. R21-D：机器可读关系边集（references/relations.jsonl，relations-extract.sh 产物）补充——
+    # 3a'. 机器可读关系边集（references/relations.jsonl，relations-extract.sh 产物）补充——
     #      边 to=稳定文件 的 from 即 1 跳下游（import 边精确，优于 3b 的 basename grep 启发式）。
     #      与标记集取并集（warn-only 语义：多召回只多提示不误拦）；无边集时行为不变。
     local reledge
@@ -489,10 +489,10 @@ _extract_deps() {
 }
 
 _norm_ver() {
-  # R75-D2（2026-09-29 NestJS 执勤实证）：原实现只剥 range 前缀后做字面字符串比较，
+  # 原实现只剥 range 前缀后做字面字符串比较，
   # semver 等价写法 ^5.7 vs ^5.7.0 被判"变更"（假阳性 fail——数字段缺省不参与比较）。
   # 修：数字段补齐三段后再比较（5.7 → 5.7.0）；非纯数字段（如 2.1.4.RELEASE）NF>3 原样保留。
-  # R87-D3（2026-10-04 Vue2+SpringBoot 前后端同仓执勤实证 r87-drill-fullstack）：版本表列自然
+  # 版本表列自然
   # 携带尾注（"4.5.14（devDep）"/"4.5.14 (dev)"）时两侧归一不等——报错信息显示基线=当前却 fail
   # （自相矛盾证据）。修：从第一个括号（全角/半角）起截断尾注再比较；无括号形态（2.1.4.RELEASE）
   # 不受影响——版本号内括号不合法，截断安全。
@@ -500,7 +500,7 @@ _norm_ver() {
 }
 
 check_deps() {
-  # R66-A7：非 git 仓库时依赖类门禁依赖 git 历史——诚实降级披露（fail-open 但须可见）
+  # 非 git 仓库时依赖类门禁依赖 git 历史——诚实降级披露（fail-open 但须可见）
   if ! git rev-parse --git-dir >/dev/null 2>&1; then
     warn "check_deps: 非 git 仓库（--deps/--stable-diff 依赖 git 历史，本仓失能——人工核对依赖与稳定标注）"
     return 0
@@ -516,7 +516,7 @@ check_deps() {
     local cand
     cand=$(find "$PROJECT_DIR/.claude/skills" -name codebase.md -path '*/references/*' 2>/dev/null | head -n 1 || true)
     [[ -n "$cand" ]] && baseline_file="$cand"
-    # R36-D6（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：自定义 target-dir 生成的技能不在
+    # 自定义 target-dir 生成的技能不在
     # 默认安装位 .claude/skills/ 下，find 失明致 warn——技能自带 references/codebase.md 即基线
     # （生成物自包含）。技能根绝对路径用 _CONF_DIR（precheck.sh:338 启动期解析，cd $PROJECT_DIR
     # 后仍有效；BASH_SOURCE 相对路径此时已失效）。
@@ -539,7 +539,7 @@ check_deps() {
     local cand2
     cand2=$(find "$PROJECT_DIR/.claude/skills" -type f -name '*.md' 2>/dev/null | grep -iE 'spec' | head -n 1 || true)
     [[ -n "$cand2" ]] && spec_file="$cand2"
-    # R36-D6 同源兜底：自定义 target-dir 失明时走项目 SPEC_GLOB 约定位（版本约束声明在 spec §5.6）
+    # 同源兜底：自定义 target-dir 失明时走项目 SPEC_GLOB 约定位（版本约束声明在 spec §5.6）
     if [[ -z "$spec_file" ]]; then
       local _sf
       for _sf in "${PROJECT_DIR}"/${SPEC_GLOB:-docs/specs/*.md}; do
@@ -761,14 +761,14 @@ check_impact() {
   echo "=== 变更影响分析检查（TOGAF：变更须含影响范围段 + 消费方清单）==="
   local found=0
 
-  # ---- 0. 基线短路（R25-PR2，2026-09-12 实仓回归 flask/mybatis-3 实证）----
+  # ---- 0. 基线短路 ----
   # 刚激活、无待审变更的存量项目基线跑 --all-full 即红"未找到 spec 文档"——TOGAF 语义
   # "变更须做影响分析"前提是有变更。与 check_scope 同口径：HEAD 在基点且工作区 clean
   # （无待审变更）→ 放行；有变更（工作区脏或领先基点）→ 维持原 fail 语义。
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     local _imp_base _imp_dirty _imp_ahead
     _imp_base=$(_git_base)
-    # 技能/账本为工具链自有写入面（R23-D7 scope 豁免同口径）——create 未提交时不算待审变更；
+    # 技能/账本为工具链自有写入面（scope 豁免同口径）——create 未提交时不算待审变更；
     # porcelain 对未跟踪目录整目录显示（?? .claude/），故模式须匹配目录形态本身。
     # || true 与 check_scope 同口径：porcelain 为空或全被豁免滤掉时 grep 退出 1，
     # set -euo pipefail 下裸赋值会杀整个 precheck（v2.13.2 实证：干净基线一跑 --impact 即崩）
@@ -781,7 +781,7 @@ check_impact() {
   fi
 
   # ---- 1. 找 spec 文件（影响范围段应在此）----
-  # R23 回归 D6：发现逻辑统一走 _find_spec_file（SPEC_GLOB 优先；显式 IMPACT_SPEC_FILE 仍最高）。
+  # 发现逻辑统一走 _find_spec_file（SPEC_GLOB 优先；显式 IMPACT_SPEC_FILE 仍最高）。
   local spec_file="${IMPACT_SPEC_FILE:-$SPEC_FILE}"
   [[ -z "$spec_file" ]] && spec_file=$(_find_spec_file '影响范围|impact|消费方|stakeholder')
 
@@ -797,8 +797,8 @@ check_impact() {
   fi
 
   # ---- 3. 变更影响分析：优先用 gitnexus impact/detect_changes，降级 grep ----
-  # P0-5：消费前确保已构建（gitnexus_ensure_indexed/graphify_ensure_built），未构建则触发构建提示/降级
-  # 回归发现#22（2026-08-27 深度整合抽检）：graphify god-nodes 原挂在 gitnexus 分支的 elif 上——
+  # 消费前确保已构建（gitnexus_ensure_indexed/graphify_ensure_built），未构建则触发构建提示/降级
+  # graphify god-nodes 原挂在 gitnexus 分支的 elif 上——
   # 两工具同装时 graphify 永不执行，与 SKILL.md「代码图谱平权选型可并用」声称不符。两者检测面
   # 不同（gitnexus=受影响进程 / graphify=God Node 枢纽），正交应并行；grep 降级仍兜底在最后。
   if has_gitnexus && gitnexus_ensure_indexed; then
@@ -815,7 +815,7 @@ check_impact() {
     fi
   fi
   if has_graphify && graphify_ensure_built; then
-    # graphify God Nodes 变更影响检测（R6 P1：God Nodes 是变更风险放大器）
+    # graphify God Nodes 变更影响检测（God Nodes 是变更风险放大器）
     # C4 修复：graphify v0.9.22+ 的 god-nodes 是顶层子命令（graphify god-nodes），非 graphify explain god-nodes。
     trace_tool "graphify" "god-nodes"
     local gf_report; gf_report=$(graphify god-nodes 2>/dev/null | head -50 || true)
@@ -880,7 +880,7 @@ check_service() {
     for cf in "${DB_CONFIG_FILES[@]}"; do
       [[ -f "$cf" ]] || continue
       # 提取数据库连接 URI/host（粗筛：含 host/port/database 的配置行）
-      # audit-claims-reality（A9）：BRE sed 的 \s（字面 s）与 \?（GNU 扩展）在 BSD 不支持，
+      # BRE sed 的 \s（字面 s）与 \?（GNU 扩展）在 BSD 不支持，
       # 改 ERE + [[:space:]] + ?——此前 macOS 上 URI 剥离行为分歧。
       local uri
       uri=$(grep -hoE '(host|HOST|url|URL|dsn|DSN|database_url|DATABASE_URL)[[:space:]]*[:=][[:space:]]*["'"'"']?[^"'"'"'[:space:],;]+' "$cf" 2>/dev/null \
@@ -1177,7 +1177,7 @@ check_domain() {
   # ---- 1. spec §18 领域知识段存在性 + 动态分析质量 ----
   local spec_file="${SPEC_FILE:-}"
   [[ -z "$spec_file" ]] && spec_file=$(_first_existing_file "spec-template.md" "specs/spec-template.md" "docs/spec-template.md")
-  # WP-CogAudit：排除 *template* 模板文件--模板含 §18 标题会自证 pass（乞题谬误）
+  # 排除 *template* 模板文件--模板含 §18 标题会自证 pass（乞题谬误）
   [[ -n "$spec_file" && "$(basename "$spec_file")" == *template* ]] && spec_file=""
   if [[ -n "$spec_file" && -f "$spec_file" ]]; then
     if grep -qE '^## 18\..*领域知识' "$spec_file" 2>/dev/null; then
@@ -1296,7 +1296,7 @@ check_knowledge() {
 
   # ---- 2. 检查生成的 SKILL.md 是否引用了知识来源 ----
   local skill_file
-  # R36-D6 同源兜底：候选末位加本技能自身 SKILL.md（技能根取 _CONF_DIR 绝对路径）——
+  # 同源兜底：候选末位加本技能自身 SKILL.md（技能根取 _CONF_DIR 绝对路径）——
   # 自定义 target-dir 生成时前三级（默认安装位/相对 cwd）在项目根 cwd 下全部失明。
   local _self_skill_md
   _self_skill_md="${_CONF_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)}/SKILL.md"
@@ -1410,7 +1410,7 @@ check_crypto() {
   local profile="${CRYPTO_PROFILE:-}"
   if [[ -z "$profile" ]]; then
     if [[ -n "${CRYPTO_EXEMPT_REASON:-}" ]]; then
-      warn "密码算法检查已豁免（${CRYPTO_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+      warn "密码算法检查已豁免（${CRYPTO_EXEMPT_REASON}）——fail-closed：豁免须显式声明理由"
     else
       fail "gate_crypto_unconfigured: CRYPTO_PROFILE 未配置且无豁免理由——安全门禁须显式配置（CRYPTO_PROFILE=gm）或填写 CRYPTO_EXEMPT_REASON 豁免理由（GB/T 39786-2021 密评）"
     fi
@@ -1487,7 +1487,7 @@ check_sast_deep() {
   echo "=== 深度 SAST 检查（AST/数据流层；GB/T 34943/34944/34946-2017 源代码漏洞测试规范）==="
   if [[ ${#SECURITY_SCAN_DIRS[@]} -eq 0 ]]; then
     if [[ -n "${SAST_DEEP_EXEMPT_REASON:-}" ]]; then
-      warn "深度 SAST 检查已豁免（${SAST_DEEP_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+      warn "深度 SAST 检查已豁免（${SAST_DEEP_EXEMPT_REASON}）——fail-closed：豁免须显式声明理由"
     else
       fail "gate_sast_deep_unconfigured: SECURITY_SCAN_DIRS 未配置且无豁免理由——安全门禁须显式配置或填写 SAST_DEEP_EXEMPT_REASON 豁免理由（GB/T 34943/34944/34946-2017 源代码漏洞测试规范）"
     fi
@@ -1552,7 +1552,7 @@ check_sast_deep() {
     local _cs_rc=0
     # 扫描日志落在 _cs_scan_root 内（原写死 /tmp/codex-security-sast-deep.log，多实例并行会互相覆盖）
     local _cs_log="$_cs_scan_root/sast-deep.log"
-    # 回归发现#26（2026-08-27 R12 运行时签名核对）：原 `--json` 不在 codex-security scan 的
+    # 原 `--json` 不在 codex-security scan 的
     # 真实 flag 面（0.1.21：--format <toon|json|yaml|md|jsonl>，真源 CLI --help 核验）——未知
     # flag → rc=2 走降级链，codex-security 载体从不真执行（恒降 semgrep 的假 opt-in）。改 --format json。
     npx @openai/codex-security scan "${SECURITY_SCAN_DIRS[@]}" \
@@ -1634,7 +1634,7 @@ check_sast_deep() {
   fi
   if [[ $found -eq 0 ]]; then
     pass "深度 SAST 检查通过（载体：${bin}）"
-    # 六轮复盘诚实化：本门禁是 if/elif 互斥载体选择（工具 **或** builtin，不叠加）——
+    # 诚实化：本门禁是 if/elif 互斥载体选择（工具 **或** builtin，不叠加）——
     # 与 check_security/check_sensitive 已改为叠加不同。此处显式披露"未叠加"，
     # 避免"通过"被误读为"语义层+词法层都查过了"。
     # 不改控制流的理由：sast-deep 是 advisory-only + 重型路径（需 API key / 大扫描量），
@@ -1646,7 +1646,7 @@ check_sast_deep() {
   fi
 }
 
-# check_oss_eval（--oss-eval，WP-S1）：开源代码安全评价，GB/T 43848-2024 四维
+# check_oss_eval（--oss-eval）：开源代码安全评价，GB/T 43848-2024 四维
 # （来源/安全质量/知识产权/管理）。复用 --sbom 产物（SBOM_OUTPUT_DIR/SBOM_LICENSE_BLOCKLIST/
 # SBOM_LICENSE_EXEMPTIONS），不重复扫描。2 个 fail 点 → warn 档。
 # 措辞纪律：本标准将成分清单与许可证合规纳入评价体系，不宣称"强制提交 SBOM"。
@@ -1654,7 +1654,7 @@ check_oss_eval() {
   echo "=== 开源代码安全评价（GB/T 43848-2024：来源/安全质量/知识产权/管理四维）==="
   if [[ "${OSS_EVAL_REQUIRED:-0}" != "1" ]]; then
     if [[ -n "${OSS_EVAL_EXEMPT_REASON:-}" ]]; then
-      warn "开源代码安全评价已豁免（${OSS_EVAL_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+      warn "开源代码安全评价已豁免（${OSS_EVAL_EXEMPT_REASON}）——fail-closed：豁免须显式声明理由"
     else
       fail "gate_oss_eval_unconfigured: OSS_EVAL_REQUIRED 未启用且无豁免理由——安全门禁须显式配置（OSS_EVAL_REQUIRED=1）或填写 OSS_EVAL_EXEMPT_REASON 豁免理由（GB/T 43848-2024 开源代码安全评价）"
     fi
@@ -1700,7 +1700,7 @@ check_oss_eval() {
   [[ $found -eq 0 ]] && pass "开源代码安全评价通过（成分清单在案，许可证未命中块名单）"
 }
 
-# field-feedback 2026-08-26（反馈 5：单方法太大无拆分——此前无任何方法粒度门禁）
+# 实证反馈（单方法太大无拆分——此前无任何方法粒度门禁）
 # 语言无关启发式：按函数/方法起始行（java/py/go/js/ts 常见声明模式）到下一个同级起始或文件尾的行数，
 # 超 METHOD_MAX_LINES（默认 60）warn。不抓圈复杂度（语义边界），只抓"物理太大"这个可机械判定面。
 check_method_size() {

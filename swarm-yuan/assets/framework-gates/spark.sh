@@ -1,6 +1,6 @@
 # ruleset: spark  requires_conf: SPARK_SRC_GLOBS
 # gates: fw_spark_data_skew(warn) fw_spark_shuffle_partitions(warn) fw_spark_broadcast(warn) fw_spark_collect(fail) fw_spark_persist(warn) fw_spark_checkpoint(warn) fw_spark_streaming_watermark(warn)
-# harvested-from: WP-P2-extension 2026-08-26，规律源自 Apache Spark 3.x RDD 编程指南 / Spark SQL 性能调优 / Structured Streaming 官方文档
+# harvested-from: 2026-08-26，规律源自 Apache Spark 3.x RDD 编程指南 / Spark SQL 性能调优 / Structured Streaming 官方文档
 _fw_spark_check() {
   echo "  [spark] Apache Spark 3.x 框架规律"
 

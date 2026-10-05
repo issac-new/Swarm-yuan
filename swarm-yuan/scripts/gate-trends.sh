@@ -87,12 +87,12 @@ if [[ -z "$rows" ]]; then
 fi
 
 # ---- 文本模式（默认）：输出与原实现逐行一致（既有断言/人工判读契约不变）----
-# WP-Z10 增强：追加整体通过率/弱点密度/门禁活跃度汇总行（Q-20 度量反馈）
+# 追加整体通过率/弱点密度/门禁活跃度汇总行（Q-20 度量反馈）
 if [[ -z "$HTML_OUT" ]]; then
   echo "gate-runs 趋势（数据源: ${JSONL}；窗口: 近 $N 次/门禁）"
   printf "%-28s %6s %6s %6s %6s %6s %8s  %s\n" "gate" "样本" "pass" "fail" "warn" "skip" "通过率" "趋势(旧→新)"
   printf '%s\n' "$rows" | sort
-  # WP-Z10：整体汇总行（Q-20 度量反馈）
+  # 整体汇总行（Q-20 度量反馈）
   _total_records=$(wc -l < "$JSONL" | xargs)
   _total_pass=$(grep -c '"status":"pass"' "$JSONL" 2>/dev/null || true)
   _total_fail=$(grep -c '"status":"fail"' "$JSONL" 2>/dev/null || true)
@@ -104,7 +104,7 @@ if [[ -z "$HTML_OUT" ]]; then
   _gate_kinds=$(awk -v RS='\n' '{ if (match($0,/"gate":"[^"]+"/)) print substr($0,RSTART+8,RLENGTH-9) }' "$JSONL" | sort -u | wc -l | xargs)
   _density=$((_total_fail * 100 / (_gate_kinds > 0 ? _gate_kinds : 1)))
   printf "弱点密度: %d%%（fail %d 次 / 门禁 %d 种）\n" "$_density" "$_total_fail" "$_gate_kinds"
-  # R14（better-harness 吸收）：双账本——当窗验证（Repair Progress）vs 跨窗效果（Loop Effectiveness）。
+  # 双账本（better-harness 吸收）——当窗验证（Repair Progress）vs 跨窗效果（Loop Effectiveness）。
   # "本次修复已验证 ≠ 下次任务真的变好"——同窗口通过率只证明修复状态，跨窗改进需后期可比窗口证据。
   # 本账本：当窗 repair_verified_rate = pass/记录数（即时验证）；跨窗 later_outcome 需 --window 两次执行对比（登记候选，当前输出当窗位 + guardrail 配对）
   _guardrail=$_density
@@ -128,7 +128,7 @@ TMP_TOP="$(mktemp /tmp/gate-trends-top.XXXXXX)" || { echo "✗ mktemp 失败" >&
 trap 'rm -f "$TMP_TOP"' EXIT
 
 # 主体 awk：门禁固定序动态取自 precheck.sh ALL_GATES_FULL（单一事实源，与 gate-report.sh 同款——
-# audit-claims-reality：此前硬编码 34 门禁，FULL 实际 48）保证输出顺序稳定；
+# 此前硬编码 34 门禁，FULL 实际 48）保证输出顺序稳定；
 # 未登记门禁追加于后。fail id 以「次数|最近ts|gate|id」写入 TMP_TOP（id 含 | 不支持，契约内不出现）。
 _PRE="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)/assets/precheck.sh"
 FULL_GATES="$(sed -n 's/^ALL_GATES_FULL=(\(.*\))/\1/p' "$_PRE" 2>/dev/null || true)"

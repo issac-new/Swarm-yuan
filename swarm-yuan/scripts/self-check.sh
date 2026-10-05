@@ -59,7 +59,7 @@ check_graphify(){
   if command -v graphify &>/dev/null; then pass "graphify: $(graphify --help 2>&1|head -1)"; else miss "graphify"; fi
 }
 check_superpowers(){
-  # 实质检测（R5 实证）：目录存在 ≠ 已安装。离线包曾只 vendor superpowers-marketplace
+  # 实质检测：目录存在 ≠ 已安装。离线包曾只 vendor superpowers-marketplace
   # 目录仓（LICENSE/README/.claude-plugin/marketplace.json 等市场元数据），核心插件
   # v6.1.1 本体不在包内。须含核心插件证据——skills/ 子目录或 .claude-plugin/plugin.json
   # ——才视为已安装；仅 marketplace 元数据判空壳 miss（fail-closed）。
@@ -316,7 +316,7 @@ if [[ -n "$SINGLE" ]]; then
       exit 1
     fi
     echo "=== 安装 ${name}（最新版）==="
-    # audit-claims-reality（A5）：传播安装退出码——此前无条件 exit 0，安装失败也报成功
+    # 传播安装退出码——此前无条件 exit 0，安装失败也报成功
     "$inst"
     exit $?
   done
@@ -335,7 +335,7 @@ for p in "${PROJECTS[@]}"; do
   if "$chk" 2>/dev/null; then
     :
   else
-    MISSING+=("$name|$chk|$inst|$auto|$npmpkg")  # C10 修复：补第 5 字段 npmpkg，供 --latest 升级路径用
+    MISSING+=("$name|$chk|$inst|$auto|$npmpkg")  # 补第 5 字段 npmpkg，供 --latest 升级路径用
   fi
 done
 
@@ -343,8 +343,8 @@ echo ""
 if [[ ${#MISSING[@]} -eq 0 ]]; then
   echo "✓ 全部 11 个项目运行时已安装"
 fi
-# 运行时整合分层标注（WP1.4）：让用户清楚每个运行时的真实整合程度，不假装全深接
-# WP-CogAudit：计数从 facts.conf 动态读取（原硬编码 4/3/4，林迪效应失效--不随实现演变）
+# 运行时整合分层标注：让用户清楚每个运行时的真实整合程度，不假装全深接
+# 计数从 facts.conf 动态读取（原硬编码 4/3/4，林迪效应失效--不随实现演变）
 _runtime_base="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ -z "${FACT_RUNTIMES_DEEP:-}" && -f "$_runtime_base/assets/facts.conf" ]]; then
   set +u; # shellcheck disable=SC1090
@@ -521,7 +521,7 @@ _count_gate_array() {
   ' "$2" 2>/dev/null || echo 0
 }
 
-# WP-Bootstrap：单文件 conf 变量计数（scripts/ + assets/ 双路径兜底，与 true_vars 同口径）。
+# 单文件 conf 变量计数（scripts/ + assets/ 双路径兜底，与 true_vars 同口径）。
 # 用法：_count_conf_vars <base> <conf_basename>  例：_count_conf_vars "$base" "precheck.arch.conf"
 _count_conf_vars() {
   local base="$1" bn="$2" n=0
@@ -532,7 +532,7 @@ _count_conf_vars() {
   echo "$n"
 }
 
-# WP-Bootstrap：advisory-only 门禁数 = 总门禁数 - 出现在任一执行数组（CORE/STANDARD/FULL/COMPLIANCE）的去重门禁数。
+# advisory-only 门禁数 = 总门禁数 - 出现在任一执行数组（CORE/STANDARD/FULL/COMPLIANCE）的去重门禁数。
 # 这些门禁不在三档执行序列（--all/--all-full/--compliance-suite）里，只能单独触发（如 --canary/--learnings）。
 # 用法：_count_advisory_only <precheck_sh> <true_gates_total>
 _count_advisory_only() {
@@ -554,7 +554,7 @@ _count_advisory_only() {
   echo $(( total - arr_cnt ))
 }
 
-# WP-Q1.3：拆分后 check_* 函数在 gates-strict/warn/advisory.sh 三文件，不在 precheck.sh 主文件。
+# 拆分后 check_* 函数在 gates-strict/warn/advisory.sh 三文件，不在 precheck.sh 主文件。
 # 所有"数 check_* 函数"的 grep 须扫四文件（precheck.sh + gates-*.sh）。
 # 打包态（install.sh bundle）下三文件已内联回 precheck.sh，gates-*.sh 不存在，此时只扫 precheck.sh。
 _all_gate_files() {
@@ -578,7 +578,7 @@ check_doc_consistency() {
     set +u; # shellcheck disable=SC1090
     source "$facts_conf"; set -u
   else
-    _have_facts=0   # global-consistency-r2：目标技能上下文（facts.conf 不随技能分发）——FACT_ 断言走 :-0 假默认必误报，整段跳过
+    _have_facts=0   # 目标技能上下文（facts.conf 不随技能分发）——FACT_ 断言走 :-0 假默认必误报，整段跳过
   fi
 
   # 1. 框架规则文件数 == 门禁片段数（真值对账）
@@ -603,7 +603,7 @@ check_doc_consistency() {
     FAIL=1
   fi
 
-  # 2b. 门禁子族计数六键等值断言（audit-claims-reality C1：复活 _count_gate_array/
+  # 2b. 门禁子族计数六键等值断言（复活 _count_gate_array/
   # _count_advisory_only——这组函数本为守子族计数而生，定义后从未整合（死代码），
   # 致 COMPLIANCE 17→19 / ADVISORY_ONLY 10→6 漂移漏网。fail 级，与 FACT_GATES_TOTAL 同级）
   local _psh="$base/assets/precheck.sh"
@@ -627,7 +627,7 @@ check_doc_consistency() {
     FAIL=1
   fi
 
-  # 2c. conf 变量四键等值断言（audit-claims-reality C2：此前仅 ≤200 预算断言，等值漂移
+  # 2c. conf 变量四键等值断言（此前仅 ≤200 预算断言，等值漂移
   # 漏网——PROMO 174/14 即实证。USERFACE 是"约 20"估算值非自动可数，不设等值断言）
   local _v_core _v_arch _v_comp _v_total
   _v_core=$(_count_conf_vars "$base" "precheck.conf")
@@ -645,7 +645,7 @@ check_doc_consistency() {
     FAIL=1
   fi
 
-  # 2d. FACT_COGNITION_LAYERS 对齐（audit-claims-reality C3：facts.conf 声称的 G-cognition
+  # 2d. FACT_COGNITION_LAYERS 对齐（facts.conf 声称的 G-cognition
   # 扫描此前不存在——空头执法。窄域实现：①定义源表（cognition-framework.md 五层总览表）
   # 层数行自动计数对账；②计数型表述扫描（"N层认知框架/基底"），非 5/五 即漂移——
   # 限定"框架/基底"搭配，避开"第三层认知辩证"等单层引用与"3 层整合"等异轴表述）
@@ -679,7 +679,7 @@ check_doc_consistency() {
     FAIL=1
   fi
 
-  # 3b. FACT_FRAMEWORKS 等值断言（global-consistency-r2：此前仅 golden-vector 行数间接断言，facts 漂移无直接执法）
+  # 3b. FACT_FRAMEWORKS 等值断言（此前仅 golden-vector 行数间接断言，facts 漂移无直接执法）
   if [[ "${FACT_FRAMEWORKS:-0}" == "$rule_cnt" ]]; then
     echo "  ✓ FACT_FRAMEWORKS($rule_cnt) == 规则库真值"
   else
@@ -687,7 +687,7 @@ check_doc_consistency() {
     FAIL=1
   fi
 
-  # 3c. FACT_SPEC_SECTIONS 等值断言（global-consistency-r2：该 key 此前零消费者——装饰性死配置判例同型，补真实消费路径）
+  # 3c. FACT_SPEC_SECTIONS 等值断言（该 key 此前零消费者——装饰性死配置判例同型，补真实消费路径）
   local _spec_secs
   _spec_secs=$(grep -cE '^## [0-9]+\. ' "$base/assets/spec-template.md" 2>/dev/null)
   _spec_secs="${_spec_secs:-0}"
@@ -701,7 +701,7 @@ check_doc_consistency() {
     echo "  ℹ 非生成器仓（无 assets/facts.conf）——#2/#2b/#2c/#2d/#3 FACT_ 真值断言跳过（防 :-0 假默认误报）；#1 结构对账与 #4 预算断言仍执行"
   fi
 
-  # 4. R13 预算断言（§6#1/#7）——口径修正：生成物"每会话固定税"（SKILL.md+hooks.json+settings+conf ≤8KB）+
+  # 4. 预算断言——口径修正：生成物"每会话固定税"（SKILL.md+hooks.json+settings+conf ≤8KB）+
   # "上下文预算 references 拷贝"（≤256KB）——脚本是按需调用工具不算税（Codex"正文选中才注入"同构：工具不占预读认知）。
   local uf_budget="${FACT_ARTIFACT_BYTES_BUDGET:-262144}"
   local uf_bytes=0 _entry
@@ -717,13 +717,13 @@ check_doc_consistency() {
   done < <(awk '/^UNIVERSAL_FILES=\(/{f=1;next} f&&/^\)/{f=0} f' "$base/scripts/generate-skill.sh" | grep -oE '"[^"]+\|[^"]+"' | tr -d '"')
   echo "  ℹ UNIVERSAL_FILES 上下文预算体积 ≈ ${uf_bytes}B（预算 ${uf_budget}B，超标 fail）"
   if [[ "$uf_bytes" -gt "$uf_budget" ]]; then
-    warn "生成物上下文预算（references 拷贝）${uf_bytes}B > 预算 ${uf_budget}B（R13 预算断言）——references 按需拷贝收窄或瘦身"
+    warn "生成物上下文预算（references 拷贝）${uf_bytes}B > 预算 ${uf_budget}B（预算断言）——references 按需拷贝收窄或瘦身"
     FAIL=1
   fi
 
   # 5. 文档数字手抄退役声明：SKILL.md/README 不再内联具体计数（渲染由发布脚本注入）
   if grep -qE '(^|[^0-9.])[0-9]+ ?个(质量)?门禁' "$base/SKILL.md" 2>/dev/null && ! grep -q 'FACT_GATES_TOTAL' "$base/SKILL.md" 2>/dev/null; then
-    warn "SKILL.md 仍手抄门禁数字（R13 后应引用 facts.conf 或不写数字）"
+    warn "SKILL.md 仍手抄门禁数字（应引用 facts.conf 或不写数字）"
   fi
 
   # 6. 版本口径三面机器锚（决策 38：根 README badge = 技能 README badge = CHANGELOG 首行版本）
@@ -747,7 +747,7 @@ check_doc_consistency() {
 }
 check_doc_consistency
 
-# ===== 已删除文档族死链扫描（global-consistency-r2，warn-only）=====
+# ===== 已删除文档族死链扫描（warn-only）=====
 # b67af27 单一文档整合删除 docs/ 17 份后，README/正文仍残留 80+ 活指针（本文件散文扫描半径
 # 不含外层仓库，长期漏网）。本扫描守"已删除文档族"复活：允许两类合法残留——
 # ①"原 docs/…"历史归档标注；② docs/research/（真实存在）；③ file:line 式历史证据引文（docs/XX.md:215）。
@@ -833,14 +833,14 @@ check_compat_tier() {
 }
 check_compat_tier
 
-# ===== WP-CogAudit：NEVER_GATE 单源一致性断言 =====
+# ===== NEVER_GATE 单源一致性断言 =====
 # precheck.sh _never_gate 与 adaptive-gating.sh NEVER_GATE 须为同一清单（防三源漂移）
 check_never_gate_consistency() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local precheck="$base/assets/precheck.sh"
   local adaptive="$base/scripts/adaptive-gating.sh"
   [[ -f "$precheck" && -f "$adaptive" ]] || return 0
-  echo "▶ NEVER_GATE 单源一致性（WP-CogAudit）"
+  echo "▶ NEVER_GATE 单源一致性"
   # 提取 _never_gate=" a b c " 的引号内清单（precheck.sh）
   local ng_precheck
   ng_precheck=$(grep -E '^[[:space:]]*_never_gate="' "$precheck" 2>/dev/null | head -1 | sed 's/.*_never_gate="//; s/"[[:space:]]*$//' | tr -s ' ' | sed 's/^ //; s/ $//')
@@ -864,7 +864,7 @@ check_never_gate_consistency() {
 }
 check_never_gate_consistency
 
-# ===== WP-CogAudit：运行时整合分层对账断言（林迪效应防治--标注须随实现演变）=====
+# ===== 运行时整合分层对账断言（林迪效应防治--标注须随实现演变）=====
 # 从 precheck.sh 的 has_* 守卫函数存在性派生 tier，对账 facts.conf 的 FACT_RUNTIMES_* 权威计数
 check_runtime_tier() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
@@ -875,7 +875,7 @@ check_runtime_tier() {
     set +u; # shellcheck disable=SC1090
     source "$base/assets/facts.conf"; set -u
   fi
-  echo "▶ 运行时整合分层对账（WP-CogAudit）"
+  echo "▶ 运行时整合分层对账"
   # 派生 deep 集合：precheck.sh 中 has_gitnexus/has_graphify/has_ocr/has_claude_mem 函数定义存在
   local deep_cnt=0 cli_cnt=0
   for fn in has_gitnexus has_graphify has_ocr has_claude_mem; do
@@ -905,7 +905,7 @@ check_runtime_tier() {
 }
 check_runtime_tier
 
-# ===== WP-CogAudit：golden-vector.txt 行数断言（金向量漂移防治）=====
+# ===== golden-vector.txt 行数断言（金向量漂移防治）=====
 # golden-vector.txt 行数须 == FACT_FRAMEWORKS（+1 行 FIXTURES_TOTAL 尾行）
 # 防止新增框架后 golden 未重建导致 C1 golden diff 对新 fixture 失效
 check_golden_vector() {
@@ -917,7 +917,7 @@ check_golden_vector() {
     set +u; # shellcheck disable=SC1090
     source "$base/assets/facts.conf"; set -u
   fi
-  echo "▶ golden-vector 行数对账（WP-CogAudit）"
+  echo "▶ golden-vector 行数对账"
   # golden-vector.txt 行数 = FACT_FRAMEWORKS 行 FIXTURE + 1 行 FIXTURES_TOTAL
   local golden_lines exp_lines
   golden_lines=$(wc -l < "$golden" | tr -d ' ')
@@ -925,7 +925,7 @@ check_golden_vector() {
   if [[ "$golden_lines" == "$exp_lines" ]]; then
     echo "  ✓ golden-vector.txt ${golden_lines} 行（${FACT_FRAMEWORKS:-79} fixture + 1 尾行）与 facts.conf 一致"
   elif [[ "${SWARM_YUAN_GOLDEN_REBUILD:-0}" == "1" ]]; then
-    # R63 边界披露②：显式一键重建（opt-in，不自动跟随漂移——保基线独立性）。
+    # 显式一键重建（opt-in，不自动跟随漂移——保基线独立性）。
     # 用法：SWARM_YUAN_GOLDEN_REBUILD=1 bash scripts/self-check.sh（重建后本轮即对账）
     echo "  ℹ SWARM_YUAN_GOLDEN_REBUILD=1：执行 verifier 官方重建……"
     bash "$base/../verifier/v1/run-verifier.sh" rebuild-golden >/dev/null 2>&1 || true
@@ -943,16 +943,16 @@ check_golden_vector() {
 }
 check_golden_vector
 
-# ===== S12 修复：框架规则集 vs fixture 配对断言（G12）=====
+# ===== 框架规则集 vs fixture 配对断言（G12）=====
 # 守"4-element coupling"的第 3 元素（fixture 正反例）：references/frameworks/*.md 数须 == tests/fixtures/ 目录数。
 # 此前 self-check 只断言 rules.md vs gate.sh 配对（要素 2），fixture 配对（要素 3）无守。
-# S12 已把 verify-framework-ruleset.sh 的 fixture 缺失从 warn 升 fail；本断言在 self-check 层补全覆盖。
+# 已把 verify-framework-ruleset.sh 的 fixture 缺失从 warn 升 fail；本断言在 self-check 层补全覆盖。
 check_framework_fixture_pairing() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local rules_dir="$base/references/frameworks"
   local fx_dir="$base/tests/fixtures"
   [[ -d "$rules_dir" && -d "$fx_dir" ]] || return 0
-  echo "▶ 框架规则集 vs fixture 配对断言（G12，S12 修复）"
+  echo "▶ 框架规则集 vs fixture 配对断言（G12）"
   local _rules _fx _missing=""
   _rules=$(find "$rules_dir" -maxdepth 1 -name "*.md" ! -name "_template*" 2>/dev/null | wc -l | xargs)
   _fx=$(find "$fx_dir" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | xargs)
@@ -967,18 +967,18 @@ check_framework_fixture_pairing() {
     fi
   done
   if [[ -n "$_missing" ]]; then
-    warn "框架缺 fixture 配对：${_missing}（S12 后全 79 框架强制正反例覆盖）"
+    warn "框架缺 fixture 配对：${_missing}（全 79 框架强制正反例覆盖）"
     FAIL=1
   elif [[ "$_rules" -ne "$_fx" ]]; then
-    warn "框架规则集数 ${_rules} ≠ fixture 目录数 ${_fx}（S12 配对断言）"
+    warn "框架规则集数 ${_rules} ≠ fixture 目录数 ${_fx}（配对断言）"
     FAIL=1
   else
-    echo "  ✓ 框架规则集 ${_rules} = fixture ${_fx}（S12 全配对，4-element coupling 要素 3 守住）"
+    echo "  ✓ 框架规则集 ${_rules} = fixture ${_fx}（全配对，4-element coupling 要素 3 守住）"
   fi
 }
 check_framework_fixture_pairing
 
-# ===== WP-Z11：测度元素元数据覆盖率断言（Q-06，GB/T 25000.21-2019）=====
+# ===== 测度元素元数据覆盖率断言（Q-06，GB/T 25000.21-2019）=====
 # conf 变量须含 # MEASURE: 注释（characteristic/function/threshold 三元组）
 # 渐进式：FACT_MEASURE_METADATA_REQUIRED=0 时 warn-only 报告覆盖率；1 时 fail
 check_measure_metadata() {
@@ -1015,7 +1015,7 @@ upstream_baseline_check() {
   [[ -f "$bl" ]] || { [[ -f "$base/README.md" ]] && bl="$base/README.md"; }
   [[ -f "$bl" ]] || return 0
   local drifted
-  # WP-Bootstrap: 锚定表格行（以 `|` 起始、`baseline_status=drifted |` 结尾）。
+  # 锚定表格行（以 `|` 起始、`baseline_status=drifted |` 结尾）。
   # 旧版裸 grep 'baseline_status=drifted' 会误匹配 README.md（已整合 upstream-baseline.md）里的散文行
   # （如"上述 `baseline_status=drifted` 的 3 项..."、"将 `baseline_status=drifted` 改为..."），
   # 散文行经 IFS='|' 切分后第 2 列为空 -> 输出"（未命名行）"，且计数从 3 虚高到 5。
@@ -1026,12 +1026,12 @@ upstream_baseline_check() {
   # 仅 warn 不置 FAIL--版本漂移是提醒而非门禁失败
   grep -E '^\| .*baseline_status=drifted \|$' "$bl" | while IFS='|' read -r _ name _rest; do
     name=$(echo "$name" | sed 's/^ *//;s/ *$//')
-    warn "上游基线 drifted：${name:-（未命名行）}--引用基线落后上游最新版，详见 docs/upstream-baseline.md 上游运行时基线（重核列入 P1-7）"
+    warn "上游基线 drifted：${name:-（未命名行）}--引用基线落后上游最新版，详见 docs/upstream-baseline.md 上游运行时基线"
   done
 }
 upstream_baseline_check
 
-# ===== WP-rhetoric-honesty：复杂度负向预算断言（G9，决策 26）=====
+# ===== 复杂度负向预算断言（G9，决策 26）=====
 # 门禁/变量数超 facts.conf 的 BUDGET 上限则 fail（非 warn）--防范式自身复杂度无约束膨胀。
 # 与 check_doc_consistency 互补：前者守"声明 vs 真值"漂移，本断言守"真值 vs 预算"膨胀。
 check_complexity_budget() {
@@ -1138,9 +1138,9 @@ check_gates_header_comment() {
 }
 check_gates_header_comment
 
-# ===== audit-2026-08-25：FACT_ENFORCE_* 双层对账（此前三键无消费者——死数字）=====
+# ===== FACT_ENFORCE_* 双层对账（此前三键无消费者——死数字）=====
 # 静态层（gate-enforce-level.conf，gen-enforce-level 按 fail() 计数生成）对账 FACT_ENFORCE_*；
-# 有效层（静态 + precheck.sh _ENFORCE_OVERRIDE 的 WP-Q2H 降级）对账 FACT_ENFORCE_EFFECTIVE_*。
+# 有效层（静态 + precheck.sh _ENFORCE_OVERRIDE 的降级）对账 FACT_ENFORCE_EFFECTIVE_*。
 check_enforce_facts() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local elc="$base/assets/gate-enforce-level.conf" pc="$base/assets/precheck.sh"
@@ -1176,7 +1176,7 @@ check_enforce_facts() {
 }
 check_enforce_facts
 
-# 决策 22 第二触发点（audit-2026-08-25 补整合）：profile 漂移自检（warn 不 fail）。
+# 决策 22 第二触发点：profile 漂移自检（warn 不 fail）。
 # 第一触发点=precheck --all/--all-full 启动（本批已对决策收窄触发面）；此处为自检面：
 # 载体存在 + 阈值单一来源（profile-thresholds.conf，防 auto_detect_profile 漂移副本）。
 check_profile_drift() {
@@ -1194,7 +1194,7 @@ check_profile_drift() {
 }
 check_profile_drift
 
-# ===== C1 修复：UNIVERSAL_FILES 计数断言（G11）=====
+# ===== UNIVERSAL_FILES 计数断言（G11）=====
 # facts.conf FACT_UNIVERSAL_FILES 声明值须与 generate-skill.sh UNIVERSAL_FILES 数组条目数一致。
 # 此前该 FACT 无断言守，曾长期漂移（声明 29，实际 39）。本断言自动计数对齐。
 check_universal_files_count() {
@@ -1211,14 +1211,14 @@ check_universal_files_count() {
   local _true
   _true=$(sed -n '/^UNIVERSAL_FILES=(/,/^)/p' "$gen" | grep -cE '"[^"]+\|' || echo 0)
   if [[ "$_true" -ne "$_declared" ]]; then
-    warn "UNIVERSAL_FILES 声明 ${_declared} 与真值 ${_true} 不符（C1）--改 facts.conf FACT_UNIVERSAL_FILES 或核实 generate-skill.sh 数组"
+    warn "UNIVERSAL_FILES 声明 ${_declared} 与真值 ${_true} 不符--改 facts.conf FACT_UNIVERSAL_FILES 或核实 generate-skill.sh 数组"
     FAIL=1
   else
-    echo "  ✓ UNIVERSAL_FILES ${_true} 条 = FACT_UNIVERSAL_FILES ${_declared}（C1 对齐）"
+    echo "  ✓ UNIVERSAL_FILES ${_true} 条 = FACT_UNIVERSAL_FILES ${_declared}（对齐）"
   fi
-  # WP-Audit2026-07-27: lite 档条目数断言（FACT_UNIVERSAL_FILES_CORE）——此前该 FACT 无断言守，
+  # lite 档条目数断言（FACT_UNIVERSAL_FILES_CORE）——此前该 FACT 无断言守，
   # 曾长期漂移（声明 21，真值 20）。自动计数 UNIVERSAL_FILES 中第三段为 lite 的条目。
-  # audit-2026-08-25：计数模式去行尾锚——带尾注释的 lite 条目（gate-plan/audit-closure/ontology-verify/objects.md）
+  # 计数模式去行尾锚——带尾注释的 lite 条目（gate-plan/audit-closure/ontology-verify/objects.md）
   # 曾被 `\|lite"$` 漏数 4 条（读数 30 ≠ 真值 34，断言假绿）。模式与 generate-skill.sh 解析语义对齐。
   local _core_declared="${FACT_UNIVERSAL_FILES_CORE:-37}"
   local _core_true
@@ -1232,11 +1232,11 @@ check_universal_files_count() {
 }
 check_universal_files_count
 
-# ===== WP-rhetoric-honesty：修辞强度扫描（G8）=====
+# ===== 修辞强度扫描（G8）=====
 # 数字漂移由 check_doc_consistency 守；本断言守"修辞漂移"--
 # 绝对化断言（全行业未解/凭什么检查/停留零/唯一闭环）若未带限定语则 warn。
 # 限定语白名单：样本/本轮/调研/限于/非全行业/边界/教学类比/隐喻/代理/未测量。
-# warn-only 不置 FAIL：修辞强度是诚实提醒，非数字硬契约（与 P0/P1 修复配套）。
+# warn-only 不置 FAIL：修辞强度是诚实提醒，非数字硬契约。
 check_claim_intensity() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local _root_docs="$base/.."
@@ -1251,7 +1251,7 @@ check_claim_intensity() {
       _scan_docs="$_scan_docs ${_cf#"$base/"}"
     done
   fi
-  echo "▶ 修辞强度扫描（G8，WP-rhetoric-honesty）"
+  echo "▶ 修辞强度扫描（G8）"
   # 绝对化词 -> 限定语白名单（命中即放行）
   # declare -A 在 bash 3.2 不可用，用平行数组 + 索引对齐
   local _abs_words=("全行业未解" "凭什么检查" "停留零" "唯一闭环" "全行业")
@@ -1278,7 +1278,7 @@ check_claim_intensity() {
           : # 带限定语，放行
         else
           local _docname; _docname="$(basename "$docpath")"
-          warn "$_docname: 命中绝对化修辞 '$_w' 未带限定语--建议加「本轮调研样本/非全行业普查/教学类比」等限定（见 P0-1/P1-3 修复）"
+          warn "$_docname: 命中绝对化修辞 '$_w' 未带限定语--建议加「本轮调研样本/非全行业普查/教学类比」等限定"
           _hit=$((_hit+1))
         fi
       done < <(grep -nE "$_w" "$docpath" 2>/dev/null | sed 's/^[0-9]*://')
@@ -1327,7 +1327,7 @@ check_version_oracle_single_source() {
   for _script in "${_scan_scripts[@]}"; do
     [[ -f "$_script" ]] || continue
     _scanned=$((_scanned+1))
-    # R36-D1：逐行 echo|grep 双 fork 循环向量化为单 awk（行级命中通常为 0，命中行的
+    # 逐行 echo|grep 双 fork 循环向量化为单 awk（行级命中通常为 0，命中行的
     # 消息格式化留在 bash 侧——与原语义逐字节一致）
     while IFS= read -r _ln; do
       [[ -z "$_ln" ]] && continue
@@ -1537,7 +1537,7 @@ check_codex_security_cli_wiring() {
 }
 check_codex_security_cli_wiring
 # ===== 标记沿调用链传播断言（G16，决策 28，Palantir markings-propagate 映射）=====
-# 决策 28（R11-Palantir-mapping §4.1）：稳定单元标注是 file-glob 级静态属性，
+# 决策 28：稳定单元标注是 file-glob 级静态属性，
 # 不沿调用链传播——`--stable-diff` 防直接改稳定单元，防不了"改下游依赖间接破坏契约"。
 # G16 断言守"下游影响域"标注的覆盖率：
 #   - references/exploration-guide.md §11g 含"下游影响域"段（填充指引载体，warn-only）
@@ -1617,17 +1617,17 @@ check_stable_propagate_wiring() {
   fi
 }
 
-# ===== G20：多字节相邻变量铁律自动检查（security-spec §6.1，第 20 轮复盘固化）=====
+# ===== G20：多字节相邻变量铁律自动检查（security-spec §6.1）=====
 # 铁律：`$var中文` 须 `${var}`——bash 3.2 C-locale 下 $var 紧跟多字节字符会把其字节吞进
-# 变量名，报 "<var><乱码>: unbound variable"。本会话三次真实踩中（F2 warn 行 / v2 run 脚本
-# CORPUS 行 / F4 --remove echo 行——后者是潜伏雷，正常 locale 不炸、C-locale 必炸）。
+# 变量名，报 "<var><乱码>: unbound variable"。曾三次真实踩中（warn 行 / v2 run 脚本
+# CORPUS 行 / --remove echo 行——后者是潜伏雷，正常 locale 不炸、C-locale 必炸）。
 # 扫描范围：本仓全部 .sh 的【非注释行】（注释不执行，存量注释表述保留不扰动）。
-# 违规即 fail（存量已于本轮清零，fail 严格成立）。
+# 违规即 fail（存量已清零，fail 严格成立）。
 check_multibyte_var_adjacency() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   echo "▶ 多字节相邻变量铁律（G20，security-spec §6.1：\$var 紧跟全角标点须 \${var}）"
   local hits=0
-  # R36-D1（2026-09-18 Go 栈回归实测）：原逐行 printf|grep fork 循环扫 22.7k 行耗 11min35s
+  # 原逐行 printf|grep fork 循环扫 22.7k 行耗 11min35s
   # （fork 风暴；G24 check_portability 已有同款问题先例与预筛解法）。向量化为单 awk 进程/检查。
   # 注意 awk 正则是字节级的：全角标点字符类 [）。，…] 会按字节误匹配任意 CJK 第二三字节，
   # 必须写成全角字面量交替（（）|。|，…）保持与 grep -E 字符类等价的语义。
@@ -1661,9 +1661,9 @@ check_multibyte_var_adjacency() {
 check_stable_propagate_wiring
 check_multibyte_var_adjacency
 
-# ===== G22：sed 正则方言铁律自动检查（audit-claims-reality F2，决策 35 解法占有锚）=====
+# ===== G22：sed 正则方言铁律自动检查（决策 35 解法占有锚）=====
 # BSD sed（macOS）不认 GNU 扩展：\s/\b/\w 被当字面字母（requests→requet 实证），
-# BRE 的 \?/\+ 不支持。该类已被修三次（WP-R Bug#3、A3/A9、spring-batch F2）——
+# BRE 的 \?/\+ 不支持。该类已被修三次——
 # 散文纪律（security-spec §6.1）不防复发，机器扫描才占有解法。
 # 范围与 G20 同（含 framework-gates）；只查 sed 类（grep -E 的 \s/\b 三平台现行版本
 # 均支持，属存量容忍——新增代码仍应优先 POSIX 类）。违规即 fail（清零后严格成立）。
@@ -1671,7 +1671,7 @@ check_sed_regex_dialect() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   echo "▶ sed 正则方言铁律（G22，security-spec §6.1：BSD 不认 GNU 扩展，POSIX 类 + sed -E 唯一合法）"
   local hits=0
-  # R36-D1：向量化（同 G20 注；单 awk 多文件，动态正则经 -v 传引号字符）
+  # 向量化（同 G20 注；单 awk 多文件，动态正则经 -v 传引号字符）
   local _g22_files=( ) _g
   for _g in "$base"/scripts/*.sh "$base"/assets/*.sh "$base"/assets/hooks/*.sh \
             "$base"/assets/framework-gates/*.sh \
@@ -1741,7 +1741,7 @@ check_portability() {
   if [[ ${#_g24_files[@]} -eq 0 ]]; then
     hits=0
   else
-  # R36-D1：内层逐行 fork 循环向量化为单 awk（\b 在 awk 无支持，改词边界等价式
+  # 内层逐行 fork 循环向量化为单 awk（\b 在 awk 无支持，改词边界等价式
   # (^|[^A-Za-z0-9_])word([^A-Za-z0-9_]|$)；引号字符经 -v 传入动态正则）
   hits=$(awk -v q1="'" -v q2='"' '
     FNR == 1 { bn = FILENAME; sub(/.*\//, "", bn) }
@@ -1785,7 +1785,7 @@ check_portability() {
 }
 check_portability
 
-# ===== 决策 35 创造锚：gate-enforce-level.conf 再生能力断言（audit-claims-reality F1）=====
+# ===== 决策 35 创造锚：gate-enforce-level.conf 再生能力断言 =====
 # 入库产物 + 生成器不被运行 = 占有产物但无法证明仍保有创造能力（费曼第一条）。
 # 再生到临时 base（不动真文件）与现文件逐字节 diff——漂移即 fail。
 check_enforce_level_regen() {
@@ -1810,7 +1810,7 @@ check_enforce_level_regen() {
 check_enforce_level_regen
 
 # ===== G21：framework-globs 快照对账（impl-conformance：快照消费者，关闭 §11 已知边界②）=====
-# assets/rules.d/framework-globs.rules 是 R13 conf 收缩的 glob 默认值快照（43 变量）。
+# assets/rules.d/framework-globs.rules 是 conf 收缩的 glob 默认值快照（43 变量）。
 # 本断言让它获得真实消费路径：arch.conf 里的 glob 变量集与值须与快照一致——
 # 快照从"无消费者的数据副本"升级为"arch.conf glob 默认值的对账锚"（漂移即 warn）。
 check_framework_globs_reconciliation() {
@@ -1888,24 +1888,24 @@ check_cordis_composability_wiring() {
   fi
 }
 
-# ===== G25：文档索引双向一致性校验断言（R50 整合轮——吸收层整合清单未登记文档检查）=====
+# ===== G25：文档索引双向一致性校验断言 =====
 # 裂缝背景：46+ 档 references 各自带"路由表见 SKILL.md"头，但第六层长期散文泛列举——
 # 约三分之一档位不按名出现（claude-code-capabilities/memory-persistence/review-methodology 等），
 # 吸收物之间无整合清单（13 运行时/19 行 upstream-baseline/46 references 三者零对账）。
-# R50 修复：references/capability-map.md 为吸收层整合单一事实源 + SKILL.md 第六层五类路由表化。
+# references/capability-map.md 为吸收层整合单一事实源 + SKILL.md 第六层五类路由表化。
 # 本断言（warn-only，对齐 G13-G17，不计入 FACT_GATES_TOTAL=55）守六面（序号=代码内检查序）：
 #   ① 载体存在性：capability-map.md 存在且非空（清单本体）；
 #   ② 未登记文档检查：references/*.md（不含 frameworks/ 与 capability-map 自身）basename 必须出现在 map；
 #   ③ 失效引用检查：map 整合表中首列为纯档名的行，其档必须实存（防登记不存在的档）；
 #   ④ 两级互指：SKILL.md 第六层必须引用 capability-map（路由表→清单）。
-#   ⑤ 文档路由覆盖（R51）：references/*-methodology.md 每档必须可从 task-methodology-router.md
+#   ⑤ 文档路由覆盖：references/*-methodology.md 每档必须可从 task-methodology-router.md
 #      文档路由表到达（反向索引闭环：建档必整合、整合必可达）。
-#   ⑥ 分发范围（R52）：*-methodology.md 必须随技能分发（UNIVERSAL_FILES）或在路由表标【生成器侧】——
+#   ⑥ 分发范围：*-methodology.md 必须随技能分发（UNIVERSAL_FILES）或在路由表标【生成器侧】——
 #      分派目标侧可达（随技能分发补缺前实测 13 方法论仅 3 随技能分发，目标技能侧分派悬空）。
 check_capability_map_wiring() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local map="$base/references/capability-map.md"
-  echo "▶ 文档索引双向一致性校验断言（G25，R50 整合轮）"
+  echo "▶ 文档索引双向一致性校验断言（G25）"
   local _warn=0
 
   # ① 载体存在性（清单本体）
@@ -1956,7 +1956,7 @@ check_capability_map_wiring() {
     _warn=$((_warn+1))
   fi
 
-  # ⑤ 文档路由覆盖（R51 反向索引闭环）：*-methodology.md 每档必须可从路由表到达
+  # ⑤ 文档路由覆盖（反向索引闭环）：*-methodology.md 每档必须可从路由表到达
   local undispatched="" mf mb
   for mf in "$base"/references/*-methodology.md; do
     [[ -f "$mf" ]] || continue
@@ -1972,9 +1972,9 @@ check_capability_map_wiring() {
     _warn=$((_warn+1))
   fi
 
-  # ⑥ 分发范围（R52 立，R55 扩面全档名）：references/*.md（除 capability-map 自身）凡被路由表
+  # ⑥ 分发范围：references/*.md（除 capability-map 自身）凡被路由表
   # 引用，必须随技能分发（UNIVERSAL_FILES）或在路由表标【生成器侧】——路由表随技能分发而被分派的档不随技能分发
-  # = 目标技能侧分派悬空（R52 实锤 13 方法论仅 3 随技能分发；R55 扩面首跑抓出 generation-flow/
+  # = 目标技能侧分派悬空（实锤 13 方法论仅 3 随技能分发；扩面首跑抓出 generation-flow/
   # template-spec/quality-management-standards 三处生成器侧引用未标注）。
   local unshipped="" sf sb
   for sf in "$base"/references/*.md; do
@@ -2009,7 +2009,7 @@ check_capability_map_wiring
 
 echo ""
 [[ $FAIL -eq 0 ]] && echo "✓ 自检通过" || echo "⚠ 部分未通过（手动安装的需按提示操作后重跑）"
-# ===== R16-A：本体层类型对账（objects/links/actions 三目录 vs 实现存证）=====
+# ===== 本体层类型对账（objects/links/actions 三目录 vs 实现存证）=====
 # 类型目录是承诺清单——每个类型声明了"实现存证"列；本断言抽可自动验证的存证点逐一对账。
 # 类型与实现漂移（如 Fingerprint 脚本改名/四本账少一本）→ warn（advisory，本体层是口径不是门禁）。
 check_ontology_types() {
@@ -2063,7 +2063,7 @@ check_r13_orphan_assets() {
       orphans=$((orphans+1))
     fi
   done
-  # R16 本体层同纪律：assets/ontology/*.md 随生成物分发，无路由头 = 无消费路径
+  # 本体层同纪律：assets/ontology/*.md 随生成物分发，无路由头 = 无消费路径
   for f in "$base"/assets/ontology/*.md; do
     [[ -f "$f" ]] || continue
     if ! head -3 "$f" 2>/dev/null | grep -q '何时读我'; then
@@ -2076,7 +2076,7 @@ check_r13_orphan_assets() {
     _consumers=$(grep -rl "rules.d" "$base/scripts/gate-rules.sh" "$base/assets/hooks/fail-gate-hook.sh" 2>/dev/null | wc -l | tr -d ' ')
     [[ "$_consumers" -ge 1 ]] || warn "rules.d 存在但无消费者（gate-rules/fail-gate-hook 未引用）"
   fi
-  # audit-2026-08-25（G23）：forbid 必带替代方案的格式契约机器锚——此前仅 --persist 写入口有校验，
+  # G23：forbid 必带替代方案的格式契约机器锚——此前仅 --persist 写入口有校验，
   # 数据文件本身无锚（手写/探查期生成的 rules.d 缺替代方案不可检出）。fail 级（底座当前 4/4 合规）。
   local _g23_bad=0 _g23_f _g23_hits
   for _g23_f in "$base"/assets/rules.d/*.rules; do
@@ -2093,7 +2093,7 @@ check_r13_orphan_assets() {
   else
     echo "  ✓ G23 rules.d forbid 全带替代方案（格式契约机器锚）"
   fi
-  [[ "$orphans" -eq 0 ]] && echo "  ✓ 孤儿资产扫描：references+ontology 全部带路由头（R13 §4.5.2 连接性）"
+  [[ "$orphans" -eq 0 ]] && echo "  ✓ 孤儿资产扫描：references+ontology 全部带路由头（连接性）"
 }
 
 # G19 层间反向引用（结构性 §4.5.1）：references/ 硬编码 scripts/ 路径 = 地图依赖约束层（违单向性）。
@@ -2110,7 +2110,7 @@ check_r13_layer_references() {
     echo "  ✓ 层间反向引用：0（无可扫描 references）"
     return
   fi
-  # R36-D1：逐行 printf|sed + printf|grep 双 fork 循环向量化为单 awk（fence 状态机在 awk 内维护）
+  # 逐行 printf|sed + printf|grep 双 fork 循环向量化为单 awk（fence 状态机在 awk 内维护）
   while IFS= read -r _hit; do
     [[ -z "$_hit" ]] && continue
     warn "层间反向引用：$_hit"
@@ -2132,12 +2132,12 @@ check_r13_layer_references() {
       }
     }
   ' "${_r13_files[@]}")
-  [[ "$hits" -eq 0 ]] && echo "  ✓ 层间反向引用：0（references 不依赖 scripts——R13 §4.5.1 结构性）"
+  [[ "$hits" -eq 0 ]] && echo "  ✓ 层间反向引用：0（references 不依赖 scripts）"
 }
 check_r13_orphan_assets
 check_r13_layer_references
 
-# 死代码防线（本轮复盘固化）：exit $FAIL 之后不得再有可执行行——断言写在 exit 后 = 永不执行
+# 死代码防线（复盘固化）：exit $FAIL 之后不得再有可执行行——断言写在 exit 后 = 永不执行
 _last_exit_line=$(grep -n '^exit \$FAIL$' "$0" | tail -1 | cut -d: -f1)
 if [[ -n "$_last_exit_line" ]]; then
   _dead_lines=$(tail -n +"$((_last_exit_line+1))" "$0" | grep -cvE '^[[:space:]]*(#|$)')

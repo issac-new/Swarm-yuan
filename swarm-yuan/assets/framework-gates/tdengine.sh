@@ -1,6 +1,6 @@
 # ruleset: tdengine  requires_conf: TDENGINE_SRC_GLOBS
 # gates: fw_tdengine_super_table(fail) fw_tdengine_ts_primary(fail) fw_tdengine_subtable_tags(fail) fw_tdengine_tag_design(warn) fw_tdengine_keep(warn) fw_tdengine_write_read_split(warn) fw_tdengine_block_size(warn) fw_tdengine_conn_protocol(warn) fw_tdengine_batch_write(warn) fw_tdengine_index_design(warn)
-# harvested-from: WP-P2-extension 2026-08-26，规律源自 TDengine 3.x 官方文档（建模/标签/keep/一写多读/连接协议）
+# harvested-from: 2026-08-26，规律源自 TDengine 3.x 官方文档（建模/标签/keep/一写多读/连接协议）
 _fw_tdengine_check() {
   echo "  [tdengine] TDengine 3.x 框架规律"
 

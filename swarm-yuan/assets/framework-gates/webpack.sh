@@ -184,7 +184,7 @@ ${dt_bad}"
     [[ -n "$ln" ]] || continue
     # 简化：检出 use 数组含 sass-loader + css-loader，且 sass-loader 行号 < css-loader 行号
     local sass_l css_l
-    # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+    # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
     sass_l=$(grep -nE 'sass-loader' "$f" 2>/dev/null | head -1 | cut -d: -f1 || true)
     css_l=$(grep -nE 'css-loader' "$f" 2>/dev/null | head -1 | cut -d: -f1 || true)
     if [[ -n "$sass_l" && -n "$css_l" && "$sass_l" -lt "$css_l" ]]; then
@@ -224,7 +224,7 @@ ${dt_bad}"
     warn "fw_webpack_copy_plugin: 未用 CopyWebpackPlugin（public 静态资源须显式拷贝，否则部署缺失）"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

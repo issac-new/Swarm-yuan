@@ -46,7 +46,7 @@ done
 bash -n "$GATE" 2>/dev/null && ok "片段语法 OK" || err "片段语法错误"
 grep -q 'declare -A' "$GATE" && err "片段用了 declare -A（违反三平台铁律）"
 
-# 要素3c: NOBSD 可移植性静态检查（P1-2；证据：docs/research/R4-frameworks.md §五 :162/:189）
+# 要素3c: NOBSD 可移植性静态检查
 # 背景：spring-boot 的 [A-Za-z0-9_<>,.\[\] ] 字符类在 BSD grep 2.6.0-FreeBSD 下 \] 被提前闭类，
 #   正则结构改变 → 门禁恒 pass 沉睡（GNU CI 不发病，macOS 本地与 CI 判定不一致）。本节把此类模式变静态红线。
 # 五类禁则（仅检可执行行；整行注释豁免——说明性文字允许出现模式字面量）：
@@ -104,7 +104,7 @@ if [[ -f "$GATE" ]]; then
   [[ "$NOBSD_BAD" -eq 0 ]] && ok "NOBSD 可移植性静态检查通过（五类禁则零新增命中）"
 fi
 
-# 要素4: fixture 双态（S12 修复：全 79 框架强制，不再仅核心 10）
+# 要素4: fixture 双态（全 79 框架强制，不再仅核心 10）
 # 现状：79 框架已全有 fixture（2026-07 核实），故从 warn 升 fail。
 # CORE_RULESETS 保留作历史标记，但 fixture 缺失一律 fail（不再 warn 放过）。
 CORE_RULESETS="spring-boot mybatis react vue gin kafka mysql django fastapi nextjs"
@@ -113,10 +113,10 @@ if [[ -d "${FX}/violating" && -d "${FX}/compliant" ]]; then
   bash "$BASE/tests/run-framework-fixture.sh" "$ID" >/dev/null 2>&1 \
     && ok "fixture 双态通过" || err "fixture 双态失败（运行 tests/run-framework-fixture.sh $ID 查看）"
 else
-  err "缺 fixture 双态（${FX}）——S12 后全 79 框架强制双态覆盖（核心集 $ID 尤甚）"
+  err "缺 fixture 双态（${FX}）——全 79 框架强制双态覆盖（核心集 $ID 尤甚）"
 fi
 
-# 要素5: freshness——frontmatter「最后调研」日期时效（WP-K；self-check.sh 有同构全量检查）
+# 要素5: freshness——frontmatter「最后调研」日期时效（self-check.sh 有同构全量检查）
 # 默认 warn（时间流逝不应破坏构建）；--strict-freshness 时 >365 天 fail-closed
 _fd=$(sed -n 's/^最后调研: *\([0-9-]*\).*/\1/p' "$RULE" | head -1)
 if [[ -z "$_fd" ]]; then

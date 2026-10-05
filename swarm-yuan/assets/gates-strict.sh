@@ -61,7 +61,7 @@ check_layer() {
       pass "gitnexus 查询跨层依赖:无问题"
     fi
   else
-    # 回归发现#17（2026-08-27 第六轮回归）：gitnexus 缺失/未索引时原静默跳过（无 else 提示），
+    # gitnexus 缺失/未索引时原静默跳过（无 else 提示），
     # 与 check_review 的 ocr 缺失 warn 提示诚实化不一致——降级链须显式披露，不假装跑了图谱分析。
     warn "gitnexus 未装/未索引——分层检查降级为 grep/awk 静态分析（未用代码图谱，精度较低；gitnexus analyze 或 BUILD_DEEP_RUNTIMES=1 可升级）"
   fi
@@ -251,7 +251,7 @@ check_reuse() {
   # 找到最近一份 spec（项目内 specs/ 或当前目录）。
   # 注意：排除 *-template.md 模板文件——模板的 §5.5 checkbox 本就该是 [ ] 待用户复制后勾选，
   # 把模板当具体 spec 检会误判 fail（范式自举检查发现的缺陷）。
-  # R23 回归 D6：发现逻辑统一走 _find_spec_file（SPEC_GLOB 优先，旧硬编码路径兜底）。
+  # 发现逻辑统一走 _find_spec_file（SPEC_GLOB 优先，旧硬编码路径兜底）。
   local spec_file
   spec_file=$(_find_spec_file '拼装合规声明')
 
@@ -259,15 +259,15 @@ check_reuse() {
     # 无 spec 文档（项目本身无具体变更 spec，如范式仓库自身/纯工具仓库）：跳过而非 fail。
     # --all-full 静默跳过；显式 --reuse 时 warn 提示（拼装式开发项目应配 spec）。
     skip_if_unconfigured "未找到含 §5.5 复用约束段的 spec 文档（拼装式开发项目应在 specs/ 下配 spec；纯工具/范式仓库可跳过）"
-    # R36-D5（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：skip 后必须 return——
+    # skip 后必须 return——
     # skip_if_unconfigured 不终止函数，原实现继续走下方 AI 自查指引并打印「✓ 复用合规检查通过」，
     # skip 态叠加假 pass 信号（trace 记 done），三处呈现分裂（汇总=skip 对、输出与 trace=done 错）。
     return 0
   else
     # 校验 §5.5 拼装合规声明 4 个 checkbox 已勾选
-    # R83-D2（2026-10-02 Angular 栈执勤实证 r83-drill-kanban）：原区间 '/复用约束|拼装合规声明/,/^## [0-9]/'
+    # 原区间 '/复用约束|拼装合规声明/,/^## [0-9]/'
     # 的终止模式与 spec-template.md 自身标题形态冲突——模板 §5.5 标题是 "## 5.5 ★复用约束"（数字紧跟 ## ），
-    # 同一行同时命中起止模式 → awk 区间自塌为单标题行 → 规范填齐 4 勾仍恒报 "0/4" 假 fail（R82 靠 "## §5.5"
+    # 同一行同时命中起止模式 → awk 区间自塌为单标题行 → 规范填齐 4 勾仍恒报 "0/4" 假 fail（"## §5.5"
     # 形态碰巧绕过）。且原终止只认数字标题，非数字标题（## 回滚）不终止 → 区间吞到文件尾，后续段落的
     # checkbox 被误计入本段（假放行面）。改为：标题含关键词进区间、任意其它 ## 标题出区间——两种标题
     # 形态（## 5.5 / ## §5.5）均正确解析，计数面收紧到本段。
@@ -326,7 +326,7 @@ check_reuse() {
 
   if [[ -n "$spec_file" && -n "$ref_file" ]]; then
     # 从 spec §5.5 "新增胶水代码" 表提取首列单元名（跳过表头/分隔行/空行）
-    # R30-D9（2026-09-16 Node 栈执勤实证 shop-api）：原提取用默认空白分字段取 $2——
+    # 原提取用默认空白分字段取 $2——
     # 既不是表格列语义，又把"胶水落在既有文件内"（首列=文件路径，模板口径）与
     # §4/5/6 首列路径对比，重名必判——而"在既有单元内加最小胶水"正是拼装式开发
     # 的推荐形态，检测语义拧反，任何正常 spec 必被拦。修复：
@@ -389,9 +389,9 @@ check_reuse() {
   echo "    - 禁止侵入式重构：不改既有稳定单元签名/行为"
   echo "    - 禁止破坏性改造：不改 upstream 骨架/第三方依赖"
   echo "    - 每个新增文件应标注复用了哪些既有单元（见 spec-template.md §5.5 复用约束段）"
-  # field-feedback 2026-08-26（反馈 6：强行复用不贴合场景）——反方向检查：
+  # 实证反馈（强行复用不贴合场景）——反方向检查：
   # 机械层只能抓"该复用没复用"（重名/新增导出过多），"复用错了"（跨场景硬套、
-  # 为复用扭曲新代码）是语义判断，机械抓不住。此处给 AI 判断引导（R13 _ai_hint 同款模式）：
+  # 为复用扭曲新代码）是语义判断，机械抓不住。此处给 AI 判断引导（_ai_hint 同款模式）：
   # 本次复用的每个稳定单元须有一句"场景贴合性"留痕，供审查回放。
   echo "  → AI 自查（语义层，机械不判）：本次改动复用的每个稳定单元，逐一回答——"
   echo "    ① 该单元的设计场景与本次需求场景是否同类（输入域/输出域/副作用面一致）？"
@@ -414,7 +414,7 @@ _sec_scan() {
     if [[ ${#MYBATIS_MAPPER_DIRS[@]} -gt 0 ]]; then
       includes="$includes --include=*.xml"
     fi
-    # R72-D2c：--exclude-dir 排除链补齐（$d 可能配成项目根，.venv/node_modules 不入生产面）
+    # --exclude-dir 排除链补齐（$d 可能配成项目根，.venv/node_modules 不入生产面）
     grep -rnE "$pattern" "$d" $includes --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=venv --exclude-dir=site-packages --exclude-dir=__pycache__ --exclude-dir=.tox --exclude-dir=dist --exclude-dir=build --exclude-dir=target --exclude-dir=vendor 2>/dev/null \
       | grep -viE 'test|mock|node_modules|\.patch|__fixtures__|__mocks__|\.spec\.|\.d\.ts|/dist/|/\.tmp/|/out/|/build/|/\.next/|/coverage/' || true
   done
@@ -422,7 +422,7 @@ _sec_scan() {
 
 _check_security_semgrep() {
   # 与内置路径同一目标集：WRITABLE_DIRS + SCAN_DIRS 去重（语义同下方原逻辑）
-  # 返回码语义（六轮复盘扩展）：0=semgrep 通过（ERROR 级 0 命中，调用方须继续叠加内置扫描）
+  # 返回码语义扩展：0=semgrep 通过（ERROR 级 0 命中，调用方须继续叠加内置扫描）
   #   1=执行错误（≥2，降级内置）｜2=无可扫目录｜3=semgrep 已 fail（调用方跳过内置，避免重复报同一问题）
   local targets=() seen="" d
   for d in ${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"} ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"}; do
@@ -443,7 +443,7 @@ _check_security_semgrep() {
     rm -f "$out"
     return 1
   fi
-  # ERROR 级命中 → warn 披露（非确定性信号不作 fail 依据）。自举实证（2026-08-29）：
+  # ERROR 级命中 → warn 披露（非确定性信号不作 fail 依据）。自举实证：
   #   同一仓库同一提交，--config auto 云端规则集三次运行三种命中——ifs-tampering@
   #   profile-threshold-survey → ifs-tampering@inventory-verify → detect-insecure-
   #   websocket@inventory-update。同代码不同结果 = fail 信号本身不可信。确定性执法
@@ -469,7 +469,7 @@ _check_security_semgrep() {
 
 check_security() {
   echo "=== 安全规范检查（OWASP Top 10 / 代码安全 / 网络安全）==="
-  # 工具链降级（P1-3）：SECURITY_TOOL=auto/builtin/semgrep；auto=有 semgrep 用 semgrep，否则内置
+  # 工具链降级：SECURITY_TOOL=auto/builtin/semgrep；auto=有 semgrep 用 semgrep，否则内置
   # 内置路径（下方原逻辑）行为一字不变；semgrep 执行失败降级内置（不静默 fail-open）
   local _security_tool="${SECURITY_TOOL:-auto}"
   if [[ "$_security_tool" == "auto" ]]; then
@@ -490,7 +490,7 @@ check_security() {
       2)
         : ;;  # 无可扫目录，落入内置路径的同文案披露
       0)
-        # 六轮复盘修复（安全）：semgrep 通过**不再 return**，继续叠加内置模式族。
+        # 修复（安全）：semgrep 通过**不再 return**，继续叠加内置模式族。
         # 缺陷：原逻辑"semgrep 通过就 return"把互补的两种范式做成互斥二选一——
         #   semgrep 强在语义/框架感知（依赖已知类型签名），内置强在模式化鲁棒性
         #   （SQL 关键字 + 字符串拼接特征 / eval 词法）。实测自定义对象方法
@@ -555,7 +555,7 @@ check_security() {
     | grep -viE '\.exec\(|RegExp|regex|pattern\.exec|match\.' || true)
 
   # §3 不安全动态代码执行：eval / new Function
-  # 七轮复盘修复（误报）：原裸匹配 'eval\(|new Function\(' 无任何白名单，
+  # 修复（误报）：原裸匹配 'eval\(|new Function\(' 无任何白名单，
   # 同文件 §1/§2/§4 都有排除（MyBatis #{}/命令注入 .exec(|RegExp/XSS 须含拼接），唯 §3 没有。
   # 实测误报：flask 的 ast.literal_eval()——Python 官方推荐的 eval 安全替代（只解析字面量、
   # 不执行代码），恰恰是正确解法，误报会训练用户改回不安全写法或加豁免（反向激励）。
@@ -643,13 +643,13 @@ check_shift_left() {
   local found=0
 
   # ---- 定位 spec 文件 ----
-  # R39-D7b（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：本门禁原用 _first_existing_file
+  # 本门禁原用 _first_existing_file
   # 硬编码文件名发现——不走 SPEC_GLOB（fail-gate-hook/check_reuse 均走 _find_spec_file），
   # docs/specs/*.md 约定位的具体 spec 对本门禁不可见（spec-first 拦它写码，左移检查却不认它
   # 的 spec——同一 conf 语义两套发现逻辑）。统一走 _find_spec_file（SPEC_GLOB 优先）。
   local spec_file="${SPEC_FILE:-}"
   [[ -z "$spec_file" ]] && spec_file=$(_find_spec_file '测试设计|测试左移|测试策略|可观测性')
-  # WP-CogAudit：排除 *template* 模板文件--模板的 §19/§20/§21 标题本就该存在，把模板当具体 spec 检会自证 pass（乞题谬误）
+  # 排除 *template* 模板文件--模板的 §19/§20/§21 标题本就该存在，把模板当具体 spec 检会自证 pass（乞题谬误）
   [[ -n "$spec_file" && "$(basename "$spec_file")" == *template* ]] && spec_file=""
   local test_design_file="${TEST_DESIGN_FILE:-$spec_file}"
   local obs_file="${OBSERVABILITY_FILE:-$spec_file}"
@@ -657,7 +657,7 @@ check_shift_left() {
   # ---- 定位 plan 文件 ----
   local plan_file="${CHANGE_IMPACT_FILE:-}"
   [[ -z "$plan_file" ]] && plan_file=$(_first_existing_file "plan-template.md" "plans/plan-template.md" "docs/plan-template.md")
-  # WP-CogAudit：plan 模板同样排除（模板含 §20 标题会自证 pass）
+  # plan 模板同样排除（模板含 §20 标题会自证 pass）
   [[ -n "$plan_file" && "$(basename "$plan_file")" == *template* ]] && plan_file=""
 
   echo "  ── 测试左移（spec §19 + test 先于 impl）──"
@@ -685,7 +685,7 @@ check_shift_left() {
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     local base; base=$(_git_base)
     local test_commits impl_commits
-    # R39-D7a（2026-09-19 Rust 栈执勤实证）：测试文件形态补 Rust——原正则只认 .test./.spec./
+    # 测试文件形态补 Rust——原正则只认 .test./.spec./
     # __tests__（JS 中心），Rust 集成测试约定 tests/*.rs 与 test_*.rs 全漏（TDD 实做了
     # tests/ 先提交仍报"无 test 文件提交"）。低误报：tests/ 目录内 .rs 或 test_ 前缀。
     test_commits=$(git log --name-only --pretty=format: "$base..HEAD" 2>/dev/null | grep -E '\.test\.|\.spec\.|__tests__|(^|/)tests/[^/]*\.rs$|(^|/)test_[^/]*\.rs$' | sort -u | wc -l | tr -d ' ' || true)
@@ -701,7 +701,7 @@ check_shift_left() {
     fi
   fi
 
-  # field-feedback 2026-08-26（反馈 3 补强）：spec §11 测试策略段非占位核验——
+  # 实证反馈补强：spec §11 测试策略段非占位核验——
   # "测试兜底逻辑错误"的前提是 spec 里有真测试设计，不是空表。§19 管"测试左移段存在"，
   # 此处管"§11 测试策略有实质内容"（单元/集成行须填覆盖范围，非空单元格）。
   if [[ -n "$test_design_file" && -f "$test_design_file" ]]; then
@@ -878,7 +878,7 @@ check_compliance() {
       found=1
     fi
   fi
-  # ---- WP-S1 标准映射表核验（STANDARDS_MAP_FILE 配置或默认探测；文件不存在则跳过）----
+  # ---- 标准映射表核验（STANDARDS_MAP_FILE 配置或默认探测；文件不存在则跳过）----
   local _smap="${STANDARDS_MAP_FILE:-}"
   if [[ -z "$_smap" ]]; then
     # 默认探测 SKILL_DIR/assets/standards-map.conf（SKILL_DIR 用 _CONF_DIR 推导，同矩阵探测口径）
@@ -915,7 +915,7 @@ check_sbom() {
   echo "=== SBOM 物料清单与许可证扫描 ==="
   if [[ "${SBOM_REQUIRED:-0}" != "1" ]]; then
     if [[ -n "${SBOM_EXEMPT_REASON:-}" ]]; then
-      warn "SBOM 检查已豁免（${SBOM_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+      warn "SBOM 检查已豁免（${SBOM_EXEMPT_REASON}）——fail-closed：豁免须显式声明理由"
     else
       fail "gate_sbom_unconfigured: SBOM_REQUIRED 未启用且无豁免理由——安全门禁须显式配置（SBOM_REQUIRED=1）或填写 SBOM_EXEMPT_REASON 豁免理由（数安法第27条/SLSA供应链要求）"
     fi
@@ -1334,7 +1334,7 @@ check_dengbao() {
   local level="${DENGBAO_LEVEL:-}"
   if [[ -z "$level" ]]; then
     if [[ -n "${DENGBAO_EXEMPT_REASON:-}" ]]; then
-      warn "等保检查已豁免（${DENGBAO_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+      warn "等保检查已豁免（${DENGBAO_EXEMPT_REASON}）——fail-closed：豁免须显式声明理由"
     else
       fail "gate_dengbao_unconfigured: DENGBAO_LEVEL 未配置且无豁免理由——安全门禁须显式配置（DENGBAO_LEVEL=2/3）或填写 DENGBAO_EXEMPT_REASON 豁免理由（GB/T 22239-2019 等保 2.0 / 数安法第27条）"
     fi
@@ -1475,7 +1475,7 @@ check_pia() {
   echo "=== 隐私影响评估（PIA）检查（个人信息保护法第55-56条 / GB/T 35273-2020）==="
   [[ "${PIA_REQUIRED:-0}" == "1" ]] || {
     if [[ -n "${PIA_EXEMPT_REASON:-}" ]]; then
-      warn "PIA 检查已豁免（${PIA_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+      warn "PIA 检查已豁免（${PIA_EXEMPT_REASON}）——fail-closed：豁免须显式声明理由"
     else
       fail "gate_pia_unconfigured: PIA_REQUIRED 未启用且无豁免理由——安全门禁须显式配置（PIA_REQUIRED=1）或填写 PIA_EXEMPT_REASON 豁免理由（个保法第55条：处理敏感个人信息须事前进行个人信息保护影响评估）"
     fi
@@ -1664,7 +1664,7 @@ check_review() {
   #     生成物目录须存在 references/review-record.md 且非空（含 5 维审查点 + findings 表，零 TBD），否则 fail
   local found=0
   local _review_executed=0  # 追踪是否真跑了审查（ocr 未装时 fallback 不假装完成）
-  local _ocr_ok=0           # R23 回归 D9：ocr 真正产出审查结论（区别于"装了"）
+  local _ocr_ok=0           # ocr 真正产出审查结论（区别于"装了"）
 
   if has_ocr; then
     pass "ocr 已安装"
@@ -1704,8 +1704,8 @@ check_review() {
         fi
       else
         # --from/--to 失败时降级为 ocr scan
-        # R23 回归 D9：降级链须核真——scan 也失败（如 LLM endpoint 未配）时不得让外层
-        # 打"ocr 已执行，无 High/Critical"假 pass（回归实证：endpoint 错误后仍绿）。
+        # 降级链须核真——scan 也失败（如 LLM endpoint 未配）时不得让外层
+        # 打"ocr 已执行，无 High/Critical"假 pass（实证：endpoint 错误后仍绿）。
         # 判定用输出形态（非空且无 Error 头行），不用退出码——本文件宿主 set -euo pipefail，
         # 管道失败须 || true 护栏，退出码取不到。
         warn "ocr review --from/--to 失败（可能无 diff 或参数不支持），降级 ocr scan"
@@ -1772,7 +1772,7 @@ check_review() {
     fi
   fi
 
-  # field-feedback 2026-08-26（反馈 3 补强）：审查须留痕——AI 审查是逻辑错误的审查兜底，
+  # 实证反馈补强：审查须留痕——AI 审查是逻辑错误的审查兜底，
   # 但"看过了"没有证据等于没看。docs/reviews/ 下落一行审查记录（日期+范围+结论三要素，
   # 与 check_review_record 合规门禁的要素口径一致），给审查留可回放证据。
   local _rr_dir="${REVIEW_RECORD_DIR:-docs/reviews}"
@@ -1783,7 +1783,7 @@ check_review() {
     warn "审查未留痕（${_rr_dir}/$(date -u +%Y-%m-%d).md 不存在）——AI 审查后须落一行：日期/范围/结论三要素"
   fi
   # ocr 未装时走 AI fallback（found=0 但未真审查），不假装完成，诚实 warn。
-  # R23 回归 D9：_review_executed 只说明"装了 ocr"，不说明"审查真跑成"——
+  # _review_executed 只说明"装了 ocr"，不说明"审查真跑成"——
   # review/scan 降级链全失败（如 LLM endpoint 未配）时不得打"无 High/Critical"假 pass。
   if [[ $_ocr_ok -eq 1 ]]; then
     [[ $found -eq 0 ]] && pass "代码审查检查完成（ocr 已执行，无 High/Critical 级问题）"
@@ -1793,11 +1793,11 @@ check_review() {
     warn "代码审查未执行（ocr 未装；AI 须自行按 5 维度审查：正确性/安全/性能/可维护/测试覆盖，本门禁未验证）"
   fi
 
-  # ── 第二段：独立审查留痕核验（⑦独立审查节点硬性交付门，P0-4 九节点硬拆）──
+  # ── 第二段：独立审查留痕核验（⑦独立审查节点硬性交付门，九节点硬拆）──
   # 生成物目录须存在 references/review-record.md 且非空（含 5 维审查点 + findings 表），否则 fail。
-  # 开关守卫（对齐 WP-S2 check_review_record 惯例）：REVIEW_RECORD_REQUIRED 未配置（默认 0）时
+  # 开关守卫（对齐 check_review_record 惯例）：REVIEW_RECORD_REQUIRED 未配置（默认 0）时
   # 降级 warn 明示、不 fail——CI 自举/工具仓库无生成物产物是常态，fail-closed 会让
-  # precheck --all 在无 SKILL_DIR 上下文的环境恒红（2026-08-26 CI 复盘：gate-fixture review/summary 红）。
+  # precheck --all 在无 SKILL_DIR 上下文的环境恒红（CI 实证：gate-fixture review/summary 红）。
   # =1 时本段为 ⑦ 节点硬门（目标技能 active 态建议在 conf 里配置）。
   if [[ "${REVIEW_RECORD_REQUIRED:-0}" != "1" ]]; then
     warn "独立审查留痕核验未启用（REVIEW_RECORD_REQUIRED 未配置=warn 不 fail；=1 后核验 references/review-record.md 五维点+findings+零TBD）"
@@ -1810,7 +1810,7 @@ check_review() {
   if [[ ! -f "$_rr_path" && -n "${SKILL_DIR:-}" && -f "${SKILL_DIR}/${_rr}" ]]; then
     _rr_path="${SKILL_DIR}/${_rr}"
   fi
-  # R23 回归 D13：项目根直跑 precheck 时 SKILL_DIR 不存在——补技能标准落点 glob 探测
+  # 项目根直跑 precheck 时 SKILL_DIR 不存在——补技能标准落点 glob 探测
   # （create 默认生成到 <项目根>/.claude/skills/<name>/，review-record ⑦ 交付物在其 references/ 下）
   if [[ ! -f "$_rr_path" ]]; then
     local _rr_hit
@@ -1851,7 +1851,7 @@ check_release_sign() {
   echo "=== 发布签名与 provenance 检查（SLSA Build L2 / SSDF PS.2 发布完整性）==="
   if [[ "${RELEASE_SIGN_REQUIRED:-0}" != "1" ]]; then
     if [[ -n "${RELEASE_SIGN_EXEMPT_REASON:-}" ]]; then
-      warn "发布签名检查已豁免（${RELEASE_SIGN_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+      warn "发布签名检查已豁免（${RELEASE_SIGN_EXEMPT_REASON}）——fail-closed：豁免须显式声明理由"
     else
       fail "gate_release_sign_unconfigured: RELEASE_SIGN_REQUIRED 未启用且无豁免理由——安全门禁须显式配置（RELEASE_SIGN_REQUIRED=1）或填写 RELEASE_SIGN_EXEMPT_REASON 豁免理由（SLSA Build L2 / SSDF PS.2 发布完整性）"
     fi
@@ -1924,7 +1924,7 @@ check_release_sign() {
   fi
 }
 
-# check_quality_model（--quality-model，WP-S2）：质量特性剪裁核验
+# check_quality_model（--quality-model）：质量特性剪裁核验
 # GB/T 25000.10-2016 八特性（功能适合性/性能效率/兼容性/易用性/可靠性/安全性/维护性/可移植性）
 # 逐项适用/剪裁声明；ISO/IEC 25010:2023 新增 Safety（无害性/人身安全），国标暂无，主动对齐。
 # 5 个 fail 点 → strict 档。启用后 fail-closed。
@@ -1990,7 +1990,7 @@ check_loop_oracle() {
   # Z3 fail-closed：LOOP_ORACLE_REQUIRED=1 但无 loop → fail
   if [[ "${LOOP_ORACLE_REQUIRED:-0}" == "1" && -z "$loop_state" ]]; then
     if [[ -n "${LOOP_ORACLE_EXEMPT_REASON:-}" ]]; then
-      warn "loop-oracle 检查已豁免（${LOOP_ORACLE_EXEMPT_REASON}）——WP-Z3 fail-closed：豁免须显式声明理由"
+      warn "loop-oracle 检查已豁免（${LOOP_ORACLE_EXEMPT_REASON}）——fail-closed：豁免须显式声明理由"
     else
       fail "gate_loop_oracle_required: LOOP_ORACLE_REQUIRED=1 但无活跃 loop 状态文件——强制要求走 Oracle 验证（${state_dir}/loop-*.md 不存在）。或填 LOOP_ORACLE_EXEMPT_REASON 豁免理由"
     fi

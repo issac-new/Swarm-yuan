@@ -130,7 +130,7 @@ _fw_lombok_check() {
       for cfile in "${cfa[@]}"; do
         # 本文件类名（从代码行提取，忽略 javadoc）
         local my_cls other_cls other_file
-        # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+        # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
         my_cls=$(_fw_strip_comments_c "$cfile" | grep -E '^\s*(public\s+)?(final\s+|abstract\s+)*class\s+\w+' | head -1 | sed -E 's/.*class[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\1/' || true)
         [[ -z "$my_cls" ]] && continue
         # 找本文件引用的其他 ctor 文件类作为 final 字段类型
@@ -374,7 +374,7 @@ ${cfg_found}"
     pass "fw_lombok_mapstruct: PROJECT_DIR 未配置，跳过"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

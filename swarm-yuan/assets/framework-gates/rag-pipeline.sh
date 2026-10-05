@@ -1,6 +1,6 @@
 # ruleset: rag-pipeline  requires_conf: RAG_PIPELINE_GLOBS
 # gates: fw_rag_embedding_latest(fail) fw_rag_prompt_injection(fail) fw_rag_similarity_threshold(warn) fw_rag_chunk_strategy(warn) fw_rag_rerank(warn) fw_rag_grounding(warn) fw_rag_context_window(warn) fw_rag_hit_monitor(warn) fw_rag_fallback(warn) fw_rag_index_refresh(warn)
-# harvested-from: WP-V（2026-07-23），规律源自 OWASP LLM Top 10（LLM01/LLM08/LLM09）与 LangChain/LlamaIndex RAG 工程实践
+# harvested-from: （2026-07-23），规律源自 OWASP LLM Top 10（LLM01/LLM08/LLM09）与 LangChain/LlamaIndex RAG 工程实践
 _fw_rag_pipeline_check() {
   echo "  [rag-pipeline] RAG 管线（LangChain/LlamaIndex/自定义）框架规律"
 
@@ -206,7 +206,7 @@ _fw_rag_pipeline_check() {
     warn "fw_rag_index_refresh: 检出向量库初始化但无 add_documents/upsert/rebuild 更新信号（知识腐化：答案引用废止制度、删掉的敏感文档仍可检出；须增量更新+定期全量重建蓝绿切换）"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

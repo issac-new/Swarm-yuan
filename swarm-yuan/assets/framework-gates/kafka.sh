@@ -268,7 +268,7 @@ ${range_hit}"
   _fw_report warn fw_kafka_group_mgmt "$gm_bad" "不同业务 listener 复用同一 groupId（一 listener 一组，命名按业务域.用途.环境）" "无跨 topic 消费组复用"
 
   # ====================================================================
-  # fw_kafka_topic_pair(warn)：topic 名双边字符串配对（横向清剿轮——端点名改一边即静默断链）
+  # fw_kafka_topic_pair(warn)：topic 名双边字符串配对（端点名改一边即静默断链）
   # 生产侧字面量（.send("X" / new ProducerRecord("X"）与消费侧字面量（@KafkaListener topics="X"）
   # 双向 diff；常量引用（send(topicVar)）提不出字面量自然跳过；跨服务/外部系统属正常单边 → warn 人工核。
   # ====================================================================
@@ -292,7 +292,7 @@ ${range_hit}"
   done <<< "$cons_topics"
   _fw_report warn fw_kafka_topic_pair "$pair_bad" "topic 名单边悬挂（生产/消费两侧字符串互不知晓，改一边即静默断链）" "topic 生产/消费字面量配对完整（或无常量外单边）"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

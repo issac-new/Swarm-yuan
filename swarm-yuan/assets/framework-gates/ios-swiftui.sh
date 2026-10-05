@@ -1,6 +1,6 @@
 # ruleset: ios-swiftui  requires_conf: IOS_SWIFTUI_GLOBS
 # gates: fw_ios_webview_js(fail) fw_ios_userdefaults_secret(fail) fw_ios_print(warn) fw_ios_ats(fail) fw_ios_keychain(warn) fw_ios_privacy_manifest(warn) fw_ios_state_object(warn) fw_ios_lazy_list(warn) fw_ios_swiftlint(warn) fw_ios_async(warn)
-# harvested-from: WP-W 移动端补强（2026-07-23），规律源自 Apple iOS Security Guide + OWASP MASVS 1.4 + SwiftLint 默认规则集
+# harvested-from: 移动端补强（2026-07-23），规律源自 Apple iOS Security Guide + OWASP MASVS 1.4 + SwiftLint 默认规则集
 _fw_ios_swiftui_check() {
   echo "  [ios-swiftui] iOS Swift/SwiftUI 框架规律"
   local srcs srcarr=()
@@ -100,7 +100,7 @@ _fw_ios_swiftui_check() {
   done
   _fw_report warn fw_ios_async "$bad" "URLSession completionHandler 无 async" "async/await 使用正确"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

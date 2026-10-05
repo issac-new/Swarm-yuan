@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# migrate-verify-blocks.sh — 框架文件 verify 块草稿生成（WP-P3a 辅助，一次性迁移工具）
+# migrate-verify-blocks.sh — 框架文件 verify 块草稿生成（一次性迁移工具）
 # 解析 references/frameworks/<fw>.md §3 每条「### 规律」的「验证方法」行：
 #   - 含 grep/find 命令 → 提取为 cmd，expect=hits>0（命中即 applicable 候选）
 #   - 「人工检查」/无 grep → expect=always（脚本不执行，台账标 manual）

@@ -189,7 +189,7 @@ ${hits}
     for cfile in "${cfgarr[@]}"; do
       local ln
       ln=$(grep -nE 'management\.endpoints\.web\.exposure\.include' "$cfile" 2>/dev/null || true)
-      # 嵌套 YAML 还原点号键（management:\n  endpoints:... 惯用分层写法），与点平铺键同口径判定（P1-1 判定面补全）
+      # 嵌套 YAML 还原点号键（management:\n  endpoints:... 惯用分层写法），与点平铺键同口径判定
       local flat
       flat=$(awk '
         /^[[:space:]]*(#|$)/ { next }
@@ -318,7 +318,7 @@ ${hits}
       else
         # 检查是否有其他 @Configuration 在启动类所在包的上层包（启发：package 行与启动类包比较）
         local app_pkg
-        # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+        # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
         app_pkg=$(grep -E '^package[[:space:]]+' "$app_file" 2>/dev/null | head -1 | sed -E 's/^package[[:space:]]+//; s/;.*//' || true)
         local deeper=0
         for sfile in "${srcarr[@]}"; do
@@ -434,7 +434,7 @@ ${app_file}"
     _fw_report warn fw_sboot_datasource_pool "$ds_bad" "配置含 datasource.url 但未显式 hikari.maximum-pool-size（默认 10 易连接耗尽）" "连接池参数已配置或无 datasource"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

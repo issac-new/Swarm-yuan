@@ -2,17 +2,17 @@
 # advisory 物理文件（15 个 check_* 函数；原由 split-gates.sh 抽取，现手工维护；决策 19）
 # 被 precheck.sh source（开发态/安装态同路径；install.sh 整目录拷贝含本文件）。
 # 注：物理函数数 15 ≠ enforce-level advisory 16——check_method_size 物理在 gates-warn.sh
-#   但 0 fail 机械归 advisory（field-feedback 新增，物理未迁移）；
-#   check_cognition 在 Z3 fail-closed 化后由 warn 降为 advisory，物理与分档归位本文件。
+#   但 0 fail 机械归 advisory（新增，物理未迁移）；
+#   check_cognition 在 fail-closed 化后由 warn 降为 advisory，物理与分档归位本文件。
 # _enforce_of 读 gate-enforce-level.conf 而非文件位置（跨档情况见 gates-strict/warn.sh 头部）。
 # 头部数字由 self-check.sh check_gates_header_comment 机器执法（防注释漂移）。
 # 不要单独执行——依赖 precheck.sh 主文件的 fail()/warn()/pass() 与全局变量。
 
-# ===== WP-Q2H-A：GATE_AI_JUDGMENT=1 时 5 个 advisory 门禁转 AI 自觉判断 =====
-# 背景：Q2 报告（机械门禁破坏 AI 灵活性）+ Q2-heavy 评审（D1 探索式）。
+# ===== GATE_AI_JUDGMENT=1 时 5 个 advisory 门禁转 AI 自觉判断 =====
+# 背景：机械门禁破坏 AI 灵活性（探索式评审结论）。
 # 5 个候选：cognition / diagram / pr_quality / consistency / link_depth——
 # 这些门禁的"质量判断"本质是 AI 看语义，不是 grep 能搞定的。
-# GATE_AI_JUDGMENT 成为唯一模式（恒 1）——机械打分逻辑退役（D1 落地化）。
+# GATE_AI_JUDGMENT 成为唯一模式（恒 1）——机械打分逻辑退役。
 # 变量保留为兼容别名（旧 conf 设 0/1 均不影响行为），下游 _ai_hint 路径无条件生效。
 _AI_JUDGMENT=1
 _ai_hint() { # $1=门禁名 $2=AI 自查要点
@@ -162,7 +162,7 @@ check_cognition() {
   # 机械计分退役（awk 数表行数给"理解"打分——五轮诊断的病灶标本：
   # 0 fail、诱导填表冒充理解）。认知框架概念不删除，落地为 AI 判断引导 + notes 留痕——
   # 概念从"要背的名词"变为"AI 判断的检查单"，被真实消费（GATE_AI_JUDGMENT 唯一模式）。
-  echo "=== 认知体检（check_cognition——AI 判断引导模式，R13 D1）==="
+  echo "=== 认知体检（check_cognition——AI 判断引导模式）==="
   echo "  机械计分已退役：本门禁不再用 awk 数表行数给理解打分。"
   echo "  → AI 按认知框架逐维自查（对照 reference-manual.md §1-§9），每维一句判断："
   echo "    ① 概念（六阶链第 1 阶）：核心业务概念是否都有定义？术语表与代码命名一致吗？"
@@ -312,14 +312,14 @@ print("PHASES:"+",".join(sorted(phases)) if phases else "PHASES:none")
 # --canary：发布后基线对比监控（A 方向，gstack canary 吸收，warn 级 advisory）
 # 哲学："alert on changes, not absolutes"（告警变化非绝对值）+ "don't cry wolf"（连续 2 次才告警）。
 # 记录发布后健康指标（响应时间/错误率）基线到 .swarm-yuan/canary-baseline.jsonl，
-# check_learnings（--learnings，WP-W）：learn 闭环——检查 .swarm-yuan/learnings.jsonl
+# check_learnings（--learnings）：learn 闭环——检查 .swarm-yuan/learnings.jsonl
 # 存在且对近期 fail 门禁有对应学习记录。advisory 级，不阻断交付。
-# 理念来源：gstack learn 的 learnings.jsonl + 置信度 + operational self-improvement 闭环（R5 §七.4）。
+# 理念来源：gstack learn 的 learnings.jsonl + 置信度 + operational self-improvement 闭环。
 check_learnings() {
   echo "=== 学习闭环检查（--learnings，advisory）==="
   local learn_file="${PROJECT_DIR:-$(pwd)}/.swarm-yuan/learnings.jsonl"
   if [[ ! -f "$learn_file" ]]; then
-    warn "learnings.jsonl 不存在（学习未留痕；R5 learn 闭环——建议对近期 门禁失败记录根因与修复模式）"
+    warn "learnings.jsonl 不存在（学习未留痕；learn 闭环——建议对近期 门禁失败记录根因与修复模式）"
     return 0
   fi
   if [[ ! -s "$learn_file" ]]; then
@@ -391,7 +391,7 @@ print("GATES_WITH_LEARNING:" + ",".join(sorted(gates_with_learning)))
     echo "  ℹ 无 python3，降级为行数检查（${total} 条记录）"
   fi
   if [[ "$total" -gt 0 && "$recent" -eq 0 ]]; then
-    warn "learnings.jsonl 有 ${total} 条记录但近 30 天无新增——学习闭环停滞（R5 learn：门禁失败应触发根因记录）"
+    warn "learnings.jsonl 有 ${total} 条记录但近 30 天无新增——学习闭环停滞（learn 闭环：门禁失败应触发根因记录）"
   elif [[ "$total" -gt 0 ]]; then
     echo "  ✓ 学习闭环活跃（${total} 条记录，近 30 天 ${recent} 条）"
   fi
@@ -400,8 +400,8 @@ print("GATES_WITH_LEARNING:" + ",".join(sorted(gates_with_learning)))
   fi
 }
 
-# check_state_phase（--state-phase，WP-X）：comet 硬前置——阶段状态机证据核验
-# 理念来源：comet "无证据不流转"（R6 P0）。advisory 级（warn-only），不阻断交付。
+# check_state_phase（--state-phase）：comet 硬前置——阶段状态机证据核验
+# 理念来源：comet "无证据不流转"。advisory 级（warn-only），不阻断交付。
 # 检查 .swarm-yuan/state.json 存在且当前阶段有 evidence 记录。
 check_state_phase() {
   echo "=== 阶段状态机证据核验（--state-phase，advisory；comet 理念：无证据不流转）==="
@@ -468,8 +468,8 @@ else:
   fi
 }
 
-# check_upstream_baseline（--upstream-baseline，WP-X）：上游运行时基线 drift 核验
-# 理念来源：R6 §上游基线漂移（comet/graphify/ruflo 版本落后）。
+# check_upstream_baseline（--upstream-baseline）：上游运行时基线 drift 核验
+# 理念来源：上游基线漂移（comet/graphify/ruflo 版本落后）。
 # 检查 README.md（已整合 upstream-baseline.md）的 baseline_status 标记，drifted 项 warn。
 check_upstream_baseline() {
   echo "=== 上游运行时基线 drift 核验（--upstream-baseline，advisory）==="
@@ -508,8 +508,8 @@ check_upstream_baseline() {
   fi
 }
 
-# check_pr_quality（--pr-quality，WP-Y）：PR 质量评分 + fingerprint 去重
-# 理念来源：gstack PR Quality Score + fingerprint 去重 +1 boost / Red Team（R5 §七.4）。
+# check_pr_quality（--pr-quality）：PR 质量评分 + fingerprint 去重
+# 理念来源：gstack PR Quality Score + fingerprint 去重 +1 boost / Red Team。
 # advisory 级（warn-only）。轻量实现：从 git diff 计算变更规模 + 重复模式检测。
 check_pr_quality() {
 
@@ -521,8 +521,8 @@ check_pr_quality() {
 
 }
 
-# check_skill_supply_chain（--skill-supply-chain，WP-Y）：Skill 供应链安全审计
-# 理念来源：cso Phase 8 Skill Supply Chain（R5 §七.4）。advisory 级。
+# check_skill_supply_chain（--skill-supply-chain）：Skill 供应链安全审计
+# 理念来源：cso Phase 8 Skill Supply Chain。advisory 级。
 # 扫描 .claude/skills/ 下第三方 skill 的已知恶意模式。
 check_skill_supply_chain() {
   echo "=== Skill 供应链安全审计（--skill-supply-chain，advisory；cso P8 理念）==="

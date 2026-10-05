@@ -55,7 +55,7 @@ else
 fi
 
 # --- L5 A4 源码锁 ---
-if grep -q 'R60-A4' assets/framework-gates/django.sh; then
+if grep -q '测试夹具豁免' assets/framework-gates/django.sh; then
   ok "L5 A4 测试夹具豁免在位"
 else
   bad "L5 django.sh 丢了 secret_key 测试豁免（A4 回归）"
@@ -95,7 +95,7 @@ else
 fi
 
 # --- L10 A8 makemigrations --check 真整合（R61 补缺：提示≠实跑；锚词随 R78 黑话替换联改）---
-if grep -q "makemigrations --check --dry-run" assets/framework-gates/django.sh && grep -q "R60-A8 整合" assets/framework-gates/django.sh; then
+if grep -q "makemigrations --check --dry-run" assets/framework-gates/django.sh && grep -q "增量漂移真判" assets/framework-gates/django.sh; then
   ok "L10 A8 迁移增量判别已实跑整合"
 else
   bad "L10 django.sh 退回只提示不实跑（A8 回归）"

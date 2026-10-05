@@ -1,6 +1,6 @@
 # ruleset: cargo  requires_conf: CARGO_GLOBS
 # gates: fw_cargo_unsafe(fail) fw_cargo_unwrap_expect(warn) fw_cargo_lockfile(warn) fw_cargo_git_deps(fail) fw_cargo_release_profile(warn) fw_cargo_lints_config(warn) fw_cargo_allow_warnings(fail) fw_cargo_panic_abort(warn) fw_cargo_license_check(warn) fw_cargo_audit(warn)
-# harvested-from: WP-U 新增（2026-07-23），规律源自 doc.rust-lang.org/cargo / rustc lints / cargo-audit / cargo-deny 官方文档
+# harvested-from: 新增（2026-07-23），规律源自 doc.rust-lang.org/cargo / rustc lints / cargo-audit / cargo-deny 官方文档
 _fw_cargo_check() {
   echo "  [cargo] Cargo 1.70+ / Rust 2021 edition 框架规律"
 
@@ -65,7 +65,7 @@ ${ulines}
   local unwrap_bad=""
   for t in "${rsarr[@]+"${rsarr[@]}"}"; do
     [[ -n "$t" ]] || continue
-    # tests/ 目录豁免（R39-D6：_fw_resolve_globs 对 CARGO_GLOBS="tests/**/*.rs" 解出
+    # tests/ 目录豁免（_fw_resolve_globs 对 CARGO_GLOBS="tests/**/*.rs" 解出
     # 相对路径 "tests/xxx.rs"——原 case 只有 */tests/*（绝对/带前缀形态）时相对路径漏豁免）
     case "$t" in
       */tests/*|*/test/*|tests/*|test/*|*_test.rs|*test.rs) continue ;;
@@ -209,7 +209,7 @@ ${ulines}
   # fw_cargo_license_check(warn)：须配 cargo-deny 或 cargo-license
   # ====================================================================
   # 口径：项目无 deny.toml 且 Cargo.toml 无 cargo-deny/cargo-license 引用 → warn
-  # R39-D5（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：原实现只在 CARGO_GLOBS 文件集内
+  # 原实现只在 CARGO_GLOBS 文件集内
   # 找 deny.toml——deny.toml 不在默认 CARGO_GLOBS（"Cargo.toml" "src/**/*.rs"）时恒漏检，
   # 合规项目误报。对齐 ruleset cargo.md §3 规律 9 口径：全仓 find deny.toml（cwd=PROJECT_DIR）。
   local has_deny_file=0 has_license_ref=0
@@ -236,7 +236,7 @@ ${ulines}
   # fw_cargo_audit(warn)：须配 cargo-audit 安全扫描
   # ====================================================================
   # 口径：项目无 cargo-audit 引用（Cargo.toml/CI/README 均算）→ warn
-  # R39-D5 同源：引用面按 ruleset 口径扩展到 README*/docs/*.md/.github/*（原只扫
+  # 引用面按 ruleset 口径扩展到 README*/docs/*.md/.github/*（原只扫
   # CARGO_GLOBS 文件集，README 写明 "cargo audit" 的合规项目恒误报）+ 全仓 find audit.toml。
   local has_audit=0
   find . -name 'audit.toml' -not -path '*/target/*' -not -path '*/.git/*' 2>/dev/null | grep -q . && has_audit=1
@@ -245,7 +245,7 @@ ${ulines}
     _fw_strip_comments_cfg "$t" | grep -qE 'cargo-audit|cargo audit|audit\.toml' && has_audit=1
   done
   if [[ "$has_audit" -eq 0 ]]; then
-    # R39-D5：README/docs/.github 引用兜底（规则集口径"CI 配置/README 均算"）
+    # README/docs/.github 引用兜底（规则集口径"CI 配置/README 均算"）
     if find . -maxdepth 3 -type f \( -name 'README*' -o -path './.github/*' -o -path './docs/*' \) \
         -not -path '*/target/*' -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null \
         | LC_ALL=C grep -E '(README|\.md|\.yml|\.yaml)$' 2>/dev/null \
@@ -259,7 +259,7 @@ ${ulines}
     pass "fw_cargo_audit: 已配 cargo-audit"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

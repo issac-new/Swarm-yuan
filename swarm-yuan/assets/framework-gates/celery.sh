@@ -1,6 +1,6 @@
 # ruleset: celery  requires_conf: CELERY_SRC_GLOBS
 # gates: fw_celery_acks_late_idempotent(fail) fw_celery_serializer_pickle(fail) fw_celery_retry_backoff(warn) fw_celery_result_backend(warn) fw_celery_timezone(warn) fw_celery_concurrency_model(warn) fw_celery_task_routes(warn) fw_celery_time_limit(warn) fw_celery_monitoring(warn) fw_celery_beat_idempotent(warn) fw_celery_canvas_error(warn)
-# harvested-from: WP-R 阶段 2 Python 异步任务队列补强（2026-07-22），规律源自 Celery 5.3+ 官方文档与 celery-exporter 实践
+# harvested-from: Python 异步任务队列补强（2026-07-22），规律源自 Celery 5.3+ 官方文档与 celery-exporter 实践
 _fw_celery_check() {
   echo "  [celery] Celery 5.x 框架规律"
   local srcs srcarr=()
@@ -132,7 +132,7 @@ _fw_celery_check() {
     pass "fw_celery_canvas_error: 无 canvas 用法，跳过"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

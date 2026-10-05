@@ -40,7 +40,7 @@ done
 # 用 framework-gates 头部的 # ruleset: 行 + 文件名匹配
 _tmpfile="$(mktemp /tmp/dfw.XXXXXX)"
 
-# 简化的框架→依赖信号映射（覆盖 80 框架的主要识别模式；R39-D1b 起 cargo/dockerfile 走 file_exists 自动探测，kubernetes/flutter 等仍须手配，见下方注释）
+# 简化的框架→依赖信号映射（覆盖 80 框架的主要识别模式；cargo/dockerfile 走 file_exists 自动探测，kubernetes/flutter 等仍须手配，见下方注释）
 # 按依赖文件类型组织
 cat > "$_tmpfile" <<'SIGNALS'
 # format: framework_id|pattern|file_type
@@ -63,7 +63,7 @@ sentinel|sentinel|pyreq
 sharding|org.apache.shardingsphere|pom
 elasticsearch|org.elasticsearch|pom
 elasticsearch|elasticsearch-java|pom
-# R48-G1（2026-09-24 跨栈回归补齐审计）：以下大数据/数据库规则集此前无任何探测信号，
+# 以下大数据/数据库规则集此前无任何探测信号，
 # ACTIVE_FRAMEWORKS 恒空、门禁永不注入（"规则集在册≠链路可达"同族，靠全量审计暴露而非换栈碰运气）
 hive|org.apache.hive|pom
 spark|org.apache.spark|pom
@@ -112,7 +112,7 @@ kratos|github.com/go-kratos|gomod
 gin|github.com/gin-gonic|gomod
 gorm|gorm.io/gorm|gomod
 gorm|github.com/jinzhu/gorm|gomod
-# R36-D2（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：Go 生态中间件信号缺位——
+# Go 生态中间件信号缺位——
 # go.mod 含 github.com/redis/go-redis/v9、gorm.io/driver/mysql 均漏报（gomod 行此前只有
 # kratos/gin/gorm/terraform 四族；Java/Py/Node 的 redis/mysql 各有 pom/pyreq 行，Go 零覆盖）。
 redis|github.com/redis/go-redis|gomod
@@ -147,49 +147,49 @@ rabbitmq|amqplib|pkgjson
 paimon|org.apache.paimon|pom
 kettle|pentaho|pom
 terraform|hashicorp/terraform|gomod
-# WP-R Bug#3/A4: 补全缺失信号
+# 补全缺失信号
 celery|celery|pyreq
 celery|celery|pyproject
 flink|org.apache.flink|pom
 flink|flink-python|pyreq
 flink|apache-flink|pyproject
-# druid（WP-R A4 新增，双信号 groupId+artifactId 兜底）
+# druid（双信号 groupId+artifactId 兜底）
 druid|com.alibaba.druid|pom
 druid|druid-spring-boot-starter|pom
-# 回归发现#1（2026-08-27 RuoYi 回归）：SpringBoot 4 适配版 druid-spring-boot-4-starter
+# 回归发现（2026-08-27 RuoYi 回归）：SpringBoot 4 适配版 druid-spring-boot-4-starter
 # （groupId 为 com.alibaba 非 com.alibaba.druid）两旧信号均不中 → 主流项目漏探。
 # 宽信号覆盖 1/2/3/4 starter（依赖命中即高置信）。
 druid|druid-spring-boot|pom
-# WP-U：opentelemetry（可观测性）——三语言生态信号
+# opentelemetry（可观测性）——三语言生态信号
 opentelemetry|@opentelemetry/api|pkgjson
 opentelemetry|opentelemetry-sdk|pyproject
 opentelemetry|opentelemetry|pyreq
 opentelemetry|go.opentelemetry.io/otel|gomod
 opentelemetry|io.opentelemetry|pom
-# R39-D1b（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：file_exists 型信号——
+# file_exists 型信号——
 # 原实现只做依赖字符串匹配，"Cargo.toml 文件存在即激活"的 cargo 规则集激活语义无法表达，
 # Rust 项目 ACTIVE_FRAMEWORKS 恒空、10 条 cargo 门禁不会自动注入（违反零手动配置）。
 # signal 字段=项目根相对文件路径，存在即命中（高置信：Cargo.toml 是 Cargo 工程清单）。
 cargo|Cargo.toml|file_exists
-# WP-U：dockerfile（IaC 容器镜像）——文件存在型，同 file_exists 通道（v2.16.1 起可自动探测）
+# dockerfile（IaC 容器镜像）——文件存在型，同 file_exists 通道（v2.16.1 起可自动探测）
 dockerfile|Dockerfile|file_exists
-# R44-D2（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：file_glob 型信号——
+# file_glob 型信号——
 # framework-signals.md §D.0.5 本就记载 dotnet 三条文件信号（*.csproj 含 Sdk / Program.cs /
 # using Microsoft.AspNetCore），但检测器无对应通道，ACTIVE_FRAMEWORKS 恒空、10 条 fw_dotnet_*
-# 门禁不自动注入（"规则集在册≠链路可达"，同 R39-D1b cargo 家族）。新增 file_glob 通道：
+# 门禁不自动注入（"规则集在册≠链路可达"，同 cargo file_exists 家族）。新增 file_glob 通道：
 # signal=文件名 glob（全工程 find，排除 bin/obj/node_modules/.git），命中即激活。
 # csproj/fsproj 全覆盖（sln/slnx 非必需文件不作信号）。
 dotnet|*.csproj|file_glob
 dotnet|*.fsproj|file_glob
-# R48-G1（2026-09-24 跨栈回归补齐审计）：12 个规则集探测表零信号 → 门禁链路不可达，
-# 其中 10 个有确定性机械信号，本轮补齐；doris/rag-pipeline 无干净信号保持手动（见下注）。
+# 12 个规则集探测表零信号 → 门禁链路不可达，
+# 其中 10 个有确定性机械信号，已补齐；doris/rag-pipeline 无干净信号保持手动（见下注）。
 kubernetes|deployment.yaml|file_glob
 flutter|pubspec.yaml|file_exists
 harmonyos|*.ets|file_glob
 c-cpp|CMakeLists.txt|file_exists
 android|app/src/main/AndroidManifest.xml|file_exists
 ios-swiftui|project.pbxproj|file_glob
-# R62（2026-09-25 第九棒换栈演练补缺）：PHP+composer 生态此前 79 规则集零覆盖、探测零信号——
+# PHP+composer 生态此前 79 规则集零覆盖、探测零信号——
 # composer.json 是 PHP 工程清单（file_exists 高置信），composer.lock/artisan 为补充信号，
 # *.php 文件存在型兜底（无 composer 的 legacy PHP 项目）。composer.json 依赖字符串匹配
 # （laravel/framework 等）留待子规则集按需增行，本行级只定 php 生态激活。
@@ -198,7 +198,7 @@ php|php|composer
 php|composer.lock|file_exists
 php|artisan|file_exists
 php|*.php|file_glob
-# R64（2026-09-26 第十棒换栈演练补缺）：Ruby+Bundler 生态此前 80 规则集零覆盖、探测零信号——
+# Ruby+Bundler 生态此前 80 规则集零覆盖、探测零信号——
 # Gemfile 是 Ruby 工程清单（file_exists 高置信），Rakefile 为任务入口补充信号，
 # *.gemspec 存在即 gem 开发场景（file_glob 兜底）。Gemfile.lock 不作独立信号（与 Gemfile
 # 同现无增量信息）；rails/sinatra 等 gem 名字符串匹配留待子规则集按需增行，本行级只定 ruby 生态激活。
@@ -207,11 +207,11 @@ ruby|Rakefile|file_exists
 ruby|*.gemspec|file_glob
 # doris：无干净机械信号（Doris 客户端依赖形态杂：flink-connector/jdbc-catalog 均非项目级强信号）——保持手动配置 ACTIVE_FRAMEWORKS=("doris")
 # rag-pipeline：RAG 模式规则集非依赖可探测（langchain 等组件有自己的 id）——设计上手动激活
-# WP-V：react-native（移动端跨平台 JS/TS）——package.json dependencies 含 react-native 即激活
+# react-native（移动端跨平台 JS/TS）——package.json dependencies 含 react-native 即激活
 react-native|react-native|pkgjson
-# WP-V：flutter（移动端跨平台 Dart）——detect-frameworks.sh 不支持 file 类型探测
+# flutter（移动端跨平台 Dart）——detect-frameworks.sh 不支持 file 类型探测
 # （pubspec.yaml 文件存在即激活，非依赖字符串匹配）。须手动配置 ACTIVE_FRAMEWORKS=("flutter")
-# WP-CogAudit：以下 3 框架无 SIGNALS 信号行（detect 不自动探测），须手动配置 ACTIVE_FRAMEWORKS：
+# 以下 3 框架无 SIGNALS 信号行（detect 不自动探测），须手动配置 ACTIVE_FRAMEWORKS：
 # android（移动端原生）--build.gradle/AndroidManifest.xml 文件存在即激活，非依赖字符串匹配。
 #   须手动配置 ACTIVE_FRAMEWORKS=("android")
 # opengauss（关系型数据库）--SQL/配置文件存在型，与 dockerfile 同属文件存在型探测。
@@ -220,7 +220,7 @@ react-native|react-native|pkgjson
 #   作为独立 ruleset 未列入 SIGNALS。须手动配置 ACTIVE_FRAMEWORKS=("rag-pipeline")
 SIGNALS
 
-# WP-R Bug#3: 重构依赖收集——分桶(file_type) + pom 同时提取 groupId+artifactId +
+# 重构依赖收集——分桶(file_type) + pom 同时提取 groupId+artifactId +
 # 递归扫描子模块 pom/package.json + pkgjson 短词单词边界。消除三个子根因:
 #   ① pom 信号用 groupId 但只提取 artifactId → 27个 groupId 信号失效
 #   ② file_type 字段被忽略 → 跨语言误匹配(pyreq 信号命中 Java pom)
@@ -235,9 +235,9 @@ _composer_deps=""
 
 # --- package.json: 递归扫描(前端 monorepo),排除 node_modules ---
 # 提取 dependencies + devDependencies 的 key(pkg 名)
-# WP-R Bug#3: \s 在 BSD sed(macOS)不识别,改 [[:space:]];提取后 trim 前导空白(边界匹配依赖纯净 key)
+# \s 在 BSD sed(macOS)不识别,改 [[:space:]];提取后 trim 前导空白(边界匹配依赖纯净 key)
 while IFS= read -r _pj; do
-  # WP-fix-consistency：冒号后空白改为可选 + 单行 JSON 兜底——紧凑/单行 JSON（npm 生成常见）
+  # 冒号后空白改为可选 + 单行 JSON 兜底——紧凑/单行 JSON（npm 生成常见）
   # 此前 `^[[:space:]]+"..."` 只匹配行首 key，单行 JSON 的 key 全在行中间被漏检。
   if command -v python3 >/dev/null 2>&1; then
     _deps=$(python3 -c "
@@ -260,9 +260,9 @@ done < <(find "$PROJ" -name package.json -not -path '*/node_modules/*' -not -pat
 # 关键: pom 信号 pattern 多为 groupId(org.apache.dubbo),须提取 <groupId> 才能命中
 while IFS= read -r _pom; do
   # 提取 artifactId
-  # WP-R Bug#3: BSD sed(macOS)BRE 模式不支持 \?,须用 -E(ERE);否则标签不剥离,groupId 信号匹配失效
+  # BSD sed(macOS)BRE 模式不支持 \?,须用 -E(ERE);否则标签不剥离,groupId 信号匹配失效
   _a=$(grep -oE '<artifactId>[^<]+</artifactId>' "$_pom" 2>/dev/null | sed -E 's/<\/?artifactId>//g' || true)
-  # 提取 groupId(WP-R Bug#3 ①: 原 logic 只取 artifactId,27个 groupId 信号全失效)
+  # 提取 groupId(原 logic 只取 artifactId,27个 groupId 信号全失效)
   _g=$(grep -oE '<groupId>[^<]+</groupId>' "$_pom" 2>/dev/null | sed -E 's/<\/?groupId>//g' || true)
   _pom_deps="${_pom_deps}
 ${_a}
@@ -277,7 +277,7 @@ ${_deps}"
 done < <(find "$PROJ" -name go.mod -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/site-packages/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/vendor/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
 
 # --- requirements.txt: 递归(Python 多环境/子项目) ---
-# audit-claims-reality（A3）：\s 在 BSD sed(macOS) 是字面字母 s（requests→requet），
+# \s 在 BSD sed(macOS) 是字面字母 s（requests→requet），
 # 改 [[:space:]]——本文件 :180 已立此规，这两处是漏改点。
 while IFS= read -r _rq; do
   _deps=$(grep -vE '^[[:space:]]*#|^[[:space:]]*$' "$_rq" 2>/dev/null | sed -E 's/[=<>~!].*//; s/\[.*//; s/[[:space:]]//g' || true)
@@ -286,7 +286,7 @@ ${_deps}"
 done < <(find "$PROJ" -name requirements.txt -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/vendor/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
 
 # --- pyproject.toml: 递归 ---
-# 回归发现#8（2026-08-27 fastapi-tpl 回归）：现代 pyproject 依赖在 [project] dependencies
+# 回归发现（2026-08-27 fastapi-tpl 回归）：现代 pyproject 依赖在 [project] dependencies
 # 数组双引号串中（"fastapi[standard]>=0.141"），原 grep 只认裸 key 行首（^字母），
 # array 元素行首是引号 → 整桶零命中 → fastapi/sqlmodel/alembic 全漏探。
 # 修复：双桶——裸 key 行 + 数组元素（含引号串）各抽一份。
@@ -299,7 +299,7 @@ ${_deps}
 ${_arr_deps}"
 done < <(find "$PROJ" -name pyproject.toml -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/vendor/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
 
-# --- composer.json require/require-dev（R63 边界披露①：composer 通道——PHP 生态依赖字符串
+# --- composer.json require/require-dev（composer 通道——PHP 生态依赖字符串
 # 匹配通道，laravel/symfony 等子规则集细分的前置；PHP 信号此前只能 file_exists/file_glob 激活）---
 # awk 状态机只取 require / require-dev 段内的键（vendor/name 与 php/ext-*），跳过其余 JSON 键防误报
 while IFS= read -r _cj; do
@@ -316,8 +316,8 @@ ${_deps}"
 done < <(find "$PROJ" -name composer.json -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/vendor/*' -not -path "${PROJ}/research/*" -not -path "${PROJ}/docs/*" -not -path "${PROJ}/third_party/*" -not -path "${PROJ}/tests/fixtures/*" -not -path "${PROJ}/tests/gate-fixtures/*" 2>/dev/null || true)
 
 # 匹配信号表,输出命中的框架 ID
-# WP-R Bug#3 ②: 强制使用 file_type 分桶匹配,消除跨语言误匹配
-# WP-R Bug#3 ③: pkgjson 短词加单词边界,消除 next→i18next 子串误报
+# 强制使用 file_type 分桶匹配,消除跨语言误匹配
+# pkgjson 短词加单词边界,消除 next→i18next 子串误报
 _detected=""
 _detail=""
 while IFS='|' read -r fw pattern ftype; do
@@ -331,16 +331,16 @@ while IFS='|' read -r fw pattern ftype; do
     pyreq)     _bucket="$_pyreq_deps" ;;
     pyproject) _bucket="$_pyproject_deps" ;;
     composer)  _bucket="$_composer_deps" ;;
-    file_exists) _bucket="" ;;  # R39-D1b：文件存在型，不走依赖桶
-    file_glob) _bucket="" ;;    # R44-D2：文件名 glob 型，不走依赖桶
+    file_exists) _bucket="" ;;  # 文件存在型，不走依赖桶
+    file_glob) _bucket="" ;;    # 文件名 glob 型，不走依赖桶
     *)         continue ;;
   esac
   _hit=0
   if [[ "$ftype" == "file_exists" ]]; then
-    # R39-D1b：signal=项目根相对文件路径，存在即命中（cfg 高置信：清单/入口文件）
+    # signal=项目根相对文件路径，存在即命中（cfg 高置信：清单/入口文件）
     [[ -f "$PROJ/$pattern" ]] && _hit=1
   elif [[ "$ftype" == "file_glob" ]]; then
-    # R44-D2：signal=文件名 glob，全工程 find 命中即激活（排除构建产物与依赖目录防噪音）
+    # signal=文件名 glob，全工程 find 命中即激活（排除构建产物与依赖目录防噪音）
     find "$PROJ" -name "$pattern" -not -path '*/bin/*' -not -path '*/obj/*' \
       -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null \
       | grep -q . && _hit=1
@@ -350,9 +350,9 @@ while IFS='|' read -r fw pattern ftype; do
     # pattern 可能含正则元字符(如 @ant-design 的 @),用 grep -E 需转义;这里 pattern
     # 多为简单标识符,对含特殊字符的用 grep -qF 兜底(无边界但精确)
     if [[ "$pattern" =~ ^@[^/]+$ ]]; then
-      # R75-D1（2026-09-29 NestJS 执勤实证 r75-drill-tasks-api）：scope 前缀形态（@xxx 不含 /）
+      # scope 前缀形态（@xxx 不含 /）
       # 信号此前落入下方 grep -qxF 整行精确匹配——依赖桶里是 @nestjs/common 等完整包名，
-      # 裸 @nestjs 永不命中（死信号，同族 @ant-design 共 2 条；"规则集在册≠链路可达"第九现）。
+      # 裸 @nestjs 永不命中（死信号，同族 @ant-design 共 2 条，同属"规则集在册≠链路可达"）。
       # 修：scope 前缀走 ^@xxx/ 前缀匹配（@nestjs → @nestjs/ 前缀即命中）；
       # 信号表两条死信号已改完整包名（@nestjs/core、@ant-design/icons，对齐 @angular/core 惯例），
       # 本分支是造表防御——未来再写前缀形态也能命中。
@@ -367,7 +367,7 @@ while IFS='|' read -r fw pattern ftype; do
   else
     # pom/gomod/pyreq/pyproject: groupId/artifactId/模块名,固定字符串包含匹配
     # (groupId 如 org.apache.dubbo 是完整前缀,包含匹配即可;artifactId 短名同理)
-    # audit-claims-reality（A3）：py* 大小写不敏感（pip 包名大小写不敏感，
+    # py* 大小写不敏感（pip 包名大小写不敏感，
     # 信号表 Django/Flask/SQLAlchemy 是 PyPI 大名,requirements.txt 通行小写）；
     # pom/gomod 保持大小写敏感（Java groupId/Go module 通行小写,精确性优先）。
     case "$ftype" in

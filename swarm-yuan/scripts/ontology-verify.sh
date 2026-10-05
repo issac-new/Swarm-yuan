@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ontology-verify.sh — R16-B：本体论健康检查（统一依赖完整性入口）
+# ontology-verify.sh — 本体论健康检查（统一依赖完整性入口）
 #
 # 设计来源：swarm-yuan/README.md 三章 How · 3.8 完备性（本体关系派生机制——每条依赖配机器锚）。
 # 此前六锚散落各命令（fingerprint/stability-audit/版本/digest/audit/last-good），用户要判断
@@ -22,7 +22,7 @@ PROJ=$(cd "$PROJ" && pwd)
 BASE="$(cd "$(dirname "$0")" && pwd)"
 [[ -z "$SKILL_DIR" && -f "$PROJ/../SKILL.md" ]] && SKILL_DIR="$PROJ/.."
 
-echo "## 本体论健康检查（六锚一站式，R16）—— project=${PROJ}"
+echo "## 本体论健康检查（六锚一站式）—— project=${PROJ}"
 _ok()  { echo "  ✓ $1"; }
 _bad() { echo "  ⚠ $1"; }
 
@@ -60,7 +60,7 @@ else
   _bad "版本戳缺失（.swarm-yuan-version 不存在——生成物↔生成器依赖未锚定，--upgrade 溯源将失效）"
 fi
 
-# 锚4：decisions↔trace 链式依赖（digest 锚；audit-2026-08-25 重写）
+# 锚4：decisions↔trace 链式依赖（digest 锚）
 # 旧实现只比"decisions 末行 ref vs trace 当前末行"——决策后正常追加 trace 即系统性误报，
 # 且篡改任何非末行永不检出。新语义（与写入端对齐）：每条带锚 decisions 行的 ref_trace_hash
 # 必须能在 trace.jsonl 中解析到具体行（存在性——被引用行遭篡改则 cksum 变、解析失败），
@@ -90,7 +90,7 @@ if [[ -f "$DEC" && -f "$TR" ]]; then
   if [[ -n "$_stale_at" ]]; then
     _bad "decisions↔trace（digest 链）：失配——${_stale_at}；被引用的 trace 行遭篡改或丢失，全链自该点 stale"
   elif [[ "$_anchored" -eq 0 ]]; then
-    _ok "decisions↔trace（digest 链）：无锚定行（${_legacy} 行均为 R15 前旧行/写入时无 trace——非失配）"
+    _ok "decisions↔trace（digest 链）：无锚定行（${_legacy} 行均为锚定引入前旧行/写入时无 trace——非失配）"
   else
     _ok "decisions↔trace（digest 链）：${_resolved}/${_anchored} 锚定行解析且顺序一致（另 ${_legacy} 行旧式无锚）"
   fi

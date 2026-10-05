@@ -91,7 +91,7 @@ ${bad_lines}
       # 取所有 .Use( 行号，判断 Recovery 是否首个
       local uses rec_line
       uses=$(_fw_strip_comments_c_inline "$g" | grep -nE '\.Use\(' || true)
-      # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+      # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
       rec_line=$(_fw_strip_comments_c_inline "$g" | grep -nE 'gin\.Recovery\(\)' | head -1 | cut -d: -f1 || true)
       if [[ -n "$uses" && -n "$rec_line" ]]; then
         local first_use
@@ -301,7 +301,7 @@ ${use_order}"
     pass "fw_gin_health_check: 健康检查路由未受根级鉴权/限流拦截"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

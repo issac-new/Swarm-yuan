@@ -100,7 +100,7 @@ c=$(bash -c "source '$NV'; _norm_ver '^0.3.20'" 2>/dev/null)
 [[ "$a" != "$c" ]] && ok "L4b _norm_ver 真差异保留（${a} ≠ ${c}）" || bad "L4b 归一过度（0.3 与 0.3.20 被判等价）"
 
 # ---- L5 源码锁：D2 注释锚在位（防归一逻辑被静默回退）----
-grep -q 'R75-D2' assets/gates-warn.sh && ok "L5 R75-D2 修复锚在位" || bad "L5 R75-D2 修复锚丢失"
+grep -q '原实现只剥 range 前缀后做字面字符串比较' assets/gates-warn.sh && ok "L5 R75-D2 修复锚在位" || bad "L5 R75-D2 修复锚丢失"
 grep -qF 'OFS=.' assets/gates-warn.sh && ok "L5b OFS=. 显式设置在位（BSD awk 字段重建防线）" || bad "L5b OFS=. 缺失"
 
 # ---- L6 源码锁：mark-active spec-first 联动校验（D3）----

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# audit-closure.sh — R15 HarnessEval 吸收 P7：审计即完成条件（closure 完备性重走）
+# audit-closure.sh — 审计即完成条件（closure 完备性重走；来源：HarnessEval 吸收）
 # HarnessEval 语义：audit 不过不开工；收尾按全矩阵重走（goal_id 全集的 closure 完备性），
 # 且"审计脚本重跑输出与落盘一致"是验收条件之一（no-op 幂等）。
 # 用法:
@@ -18,9 +18,9 @@ done
 [[ -n "$PROJ" && -d "$PROJ" ]] || { echo "✗ PROJECT_DIR 缺失或不存在: ${PROJ:-（空）}" >&2; exit 1; }
 PROJ=$(cd "$PROJ" && pwd)
 DEC="$PROJ/.swarm-yuan/decisions.jsonl"
-# R23 回归 D14：decisions.jsonl 有两本账——项目侧（执勤期决策，trace-log --persist 写）
+# decisions.jsonl 有两本账——项目侧（执勤期决策，trace-log --persist 写）
 # 与技能侧（生成期决策，mark-active 核验的 <skill>/.swarm-yuan/）。原脚本只读项目侧，
-# 生成期决策对闭环审计不可见（回归实证：mark-active 已核验 ≥1 决策，audit-closure 仍报"无"）。
+# 生成期决策对闭环审计不可见（实证：mark-active 已核验 ≥1 决策，audit-closure 仍报"无"）。
 # 两处都探测并合并（同 goal_id 以末条为准，文件序=项目侧在前技能侧在后）。
 _skill_dec=""
 for _cand in "$PROJ"/.claude/skills/*/.swarm-yuan/decisions.jsonl "$PROJ"/.codex/skills/*/.swarm-yuan/decisions.jsonl; do
@@ -35,7 +35,7 @@ _merged_dec="$(mktemp "${TMPDIR:-/tmp}"/audit-closure.XXXXXX)"
 [[ -n "$_skill_dec" ]] && echo "  ⓘ 合并技能侧决策账本: ${_skill_dec#$PROJ/}"
 DEC="$_merged_dec"
 
-echo "## goal 闭环完备性（R15 审计即完成条件）"
+echo "## goal 闭环完备性（审计即完成条件）"
 # goal_id 全集（非空 goal_id 的分布）
 _goals=$(sed -n 's/.*"goal_id":"\([^"]*\)".*/\1/p' "$DEC" | grep -v '^$' | sort -u)
 _total=0; _closed=0; _open=0; _open_list=""

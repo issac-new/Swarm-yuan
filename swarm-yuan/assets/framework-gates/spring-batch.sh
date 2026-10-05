@@ -79,7 +79,7 @@ _fw_spring_batch_check() {
       while IFS= read -r cl; do
         [[ -z "$cl" ]] && continue
         # 提取 .chunk( 后第一个参数（到 , 或 ) ）
-        # audit-claims-reality（F2）：sed -E 下 \s 在 BSD 是字面 s——与 A3/A9 同类破窗，改 [[:space:]]
+        # sed -E 下 \s 在 BSD 是字面 s——改 [[:space:]]
         local arg
         arg=$(printf '%s' "$cl" | sed -E 's/.*\.chunk\([[:space:]]*//; s/[[:space:]]*[,)].*//')
         if [[ -z "$arg" ]]; then
@@ -331,7 +331,7 @@ ${tp_bad}"
     _fw_report warn fw_batch_builderfactory_migration "${bf_bad}" "检出 JobBuilderFactory/StepBuilderFactory（Spring Batch 5.0 废弃、5.2 移除，须迁移到 new JobBuilder(name, jobRepository) / new StepBuilder(name, jobRepository)，且 chunk/tasklet 显式传 PlatformTransactionManager）" "未检出 JobBuilderFactory/StepBuilderFactory（已用 JobBuilder/StepBuilder）"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

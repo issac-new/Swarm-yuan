@@ -1,6 +1,6 @@
 # ruleset: android  requires_conf: ANDROID_GLOBS
 # gates: fw_android_webview_js_enabled(fail) fw_android_sharedprefs_secret(fail) fw_android_log_debug(warn) fw_android_cleartext_traffic(fail) fw_android_proguard(warn) fw_android_network_security_config(warn) fw_android_permissions(warn) fw_android_findviewbyid(warn) fw_android_room_sqlite(warn) fw_android_leakcanary(warn)
-# harvested-from: WP-W（2026-07-23），规律源自 Android Security Guidelines + OWASP MASVS
+# harvested-from: （2026-07-23），规律源自 Android Security Guidelines + OWASP MASVS
 _fw_android_check() {
   echo "  [android] Android 原生（Kotlin/Java）框架规律"
   local srcs srcarr=()
@@ -117,7 +117,7 @@ _fw_android_check() {
   done
   _fw_report warn fw_android_leakcanary "$bad" "无 LeakCanary 内存泄漏检测" "LeakCanary 配置齐备或无 gradle"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

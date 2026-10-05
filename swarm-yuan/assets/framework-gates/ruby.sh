@@ -1,6 +1,6 @@
 # ruleset: ruby  requires_conf: RUBY_SRC_GLOBS RUBY_ENV_SAMPLE_GLOBS RUBY_VIEW_GLOBS
 # gates: fw_ruby_hardcoded_secret(fail) fw_ruby_gemfile_lock(warn) fw_ruby_env_key_drift(warn) fw_ruby_view_var(warn)
-# harvested-from: R64 第十棒换栈演练补缺（2026-09-26），规律源自 ruby-lang.org 与 bundler.io 文档口径（未逐条核实点见 references/frameworks/ruby.md §6 待验证标注）
+# harvested-from: 换栈演练补缺（2026-09-26），规律源自 ruby-lang.org 与 bundler.io 文档口径（未逐条核实点见 references/frameworks/ruby.md §6 待验证标注）
 _fw_ruby_check() {
   echo "  [ruby] Ruby 3.x + Bundler 2.x 框架规律"
 
@@ -170,7 +170,7 @@ _fw_ruby_check() {
     _fw_report warn fw_ruby_view_var "$view_bad" "erb 视图 @ivar 与渲染侧赋值双源漂移" "视图 @ivar 与渲染侧赋值双向对齐"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

@@ -53,7 +53,7 @@ grep -q "TEST_CMD='(cd backend && python3 -m pytest)'" <<<"$out2" \
 rm -rf "$FX2"
 
 # ---- 源码锁：poly 分支嗅探形态在位（.venv/bin/python 嗅探 + _py 拼接进 _t）----
-grep -q 'R80-D1' scripts/conf-render.sh \
+grep -q 'poly 分支 Python 段' scripts/conf-render.sh \
   && ok "poly 段 R80-D1 修复注记在位" \
   || bad "poly 段修复注记丢失（同族溯源断裂）"
 sed -n '/elif .*requirements.txt.*pyproject.toml/,/_tc=1; _b=/p' scripts/conf-render.sh | grep -q '\$PROJ/\$_d/.venv/bin/python' \

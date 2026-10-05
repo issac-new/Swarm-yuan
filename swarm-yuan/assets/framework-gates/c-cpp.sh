@@ -1,6 +1,6 @@
 # ruleset: c-cpp  requires_conf: C_CPP_GLOBS
 # gates: fw_ccpp_unsafe_str(fail) fw_ccpp_gets(fail) fw_ccpp_memleak(warn) fw_ccpp_format_str(warn) fw_ccpp_raii(warn) fw_ccpp_const(warn) fw_ccpp_nullptr(warn) fw_ccpp_static_cast(warn) fw_ccpp_clang_tidy(warn) fw_ccpp_std_string(warn)
-# harvested-from: WP-W 语言生态补强（2026-07-23），规律源自 CWE C/C++ 安全编码规范 + clang-tidy 官方检查集
+# harvested-from: 语言生态补强（2026-07-23），规律源自 CWE C/C++ 安全编码规范 + clang-tidy 官方检查集
 _fw_c_cpp_check() {
   echo "  [c-cpp] C/C++ 框架规律"
   local srcs srcarr=()
@@ -98,7 +98,7 @@ _fw_c_cpp_check() {
   done
   _fw_report warn fw_ccpp_std_string "$bad" "char* 无 std::string" "std::string 使用正确"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

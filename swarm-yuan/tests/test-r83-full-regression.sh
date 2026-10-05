@@ -95,7 +95,7 @@ printf '%s' "$out5" | grep -q '拼装合规声明未全部勾选' \
   || bad "D2 执法面丢失：勾选不足未拦——check_reuse 契约被误改"
 
 # ---- D1 源码锁：守卫与文档归属在位 ----
-grep -q 'R83-D1' scripts/generate-skill.sh \
+grep -q '未识别 flag 守卫' scripts/generate-skill.sh \
   && ok "generate-skill.sh 未知旗标守卫 R83-D1 注记在位" \
   || bad "generate-skill.sh R83-D1 注记丢失（守卫同族溯源断裂）"
 grep -q 'precheck.sh --review' SKILL.md && ! grep -q '^| ⑦ | 独立审查 | `--review`（ocr 5 维度或 AI 清单）+ review-record 落盘 |$' SKILL.md \
@@ -103,7 +103,7 @@ grep -q 'precheck.sh --review' SKILL.md && ! grep -q '^| ⑦ | 独立审查 | `-
   || bad "SKILL.md ⑦ 行归属句丢失或幽灵句复现"
 
 # ---- D2 源码锁：区间修复形态在位 ----
-grep -q 'R83-D2' assets/gates-strict.sh \
+grep -q '同一行同时命中起止模式' assets/gates-strict.sh \
   && ok "gates-strict.sh §5.5 区间修复 R83-D2 注记在位" \
   || bad "gates-strict.sh R83-D2 注记丢失（同族溯源断裂）"
 grep -q "inr && /\^## / && !/复用约束|拼装合规声明/{inr=0}" assets/gates-strict.sh \

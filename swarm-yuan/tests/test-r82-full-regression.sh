@@ -63,13 +63,13 @@ printf '%s' "$out2" | grep -q '缺少决策记录' \
   || bad "无账本形态未报缺——C2 strict 契约被误改"
 
 # ---- 源码锁：D2 修复形态在位 ----
-grep -q 'R82-D2' scripts/generate-skill.sh \
+grep -q '不剥则路径拼接失明' scripts/generate-skill.sh \
   && ok "verify-completeness 回退 R82-D2 注记在位" \
   || bad "generate-skill.sh R82-D2 注记丢失（同族溯源断裂）"
-grep -q "cut -d'#' -f1" scripts/generate-skill.sh && grep -q 'R28-DF7 同款剥法' scripts/generate-skill.sh \
+grep -q "cut -d'#' -f1" scripts/generate-skill.sh && grep -q '去 # 尾注 + 去引号去尾空格' scripts/generate-skill.sh \
   && ok "generate-skill.sh 回退剥法（cut # 尾注）在位" \
   || bad "generate-skill.sh 剥法形态丢失（尾注垃圾复发面）"
-grep -q 'R82-D2 同族' scripts/detect-profile-drift.sh && grep -q "cut -d'#' -f1" scripts/detect-profile-drift.sh \
+grep -q '同族剥法' scripts/detect-profile-drift.sh && grep -q "cut -d'#' -f1" scripts/detect-profile-drift.sh \
   && ok "detect-profile-drift ②级同族剥法在位" \
   || bad "detect-profile-drift 同族修复丢失（静默跳过复发面）"
 

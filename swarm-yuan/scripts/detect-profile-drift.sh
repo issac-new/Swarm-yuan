@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# detect-profile-drift.sh — 运行时探测 profile 漂移（WP-P6）
+# detect-profile-drift.sh — 运行时探测 profile 漂移
 #
 # 作用：重跑 auto_detect_profile 逻辑对比当前 SKILL.md frontmatter 的 profile 字段，
 # 漂移则输出建议（只升不降，质量优先偏置）。
@@ -35,21 +35,21 @@ _profile_rank() { case "$1" in lite) echo 1;; compliance) echo 3;; *) echo 2;; e
 
 # 重跑 auto_detect_profile 逻辑（从 generate-skill.sh 移植；本脚本是运行时 advisory 子集——
 # 合规关键词 + 规模两信号、只升不降，全量信号集以 generate-skill.sh:auto_detect_profile 为单一来源）
-# audit-claims-reality（A10）：项目根解析三级回退——①显式第 2 参数（precheck.sh 调用点传入，
+# 项目根解析三级回退——①显式第 2 参数（precheck.sh 调用点传入，
 # 它从 conf 已知真值）②skill conf 的 PROJECT_DIR= ③旧推导 $SKILL_DIR/../../..（仅适配
 # <project>/.claude/skills/<name> 布局；用户级安装 ~/.claude/skills/<name> 下旧推导会误扫 $HOME）。
 PROJECT_DIR="${2:-}"
 if [[ -z "$PROJECT_DIR" && -f "$SKILL_DIR/scripts/precheck.conf" ]]; then
-  # R82-D2 同族（2026-10-01）：conf 行带 `# AUTO:detected` 溯源注释是 conf-render 固定形态，
+  # 同族剥法：conf 行带 `# AUTO:detected` 溯源注释是 conf-render 固定形态，
   # 原剥法不切 # 尾注 → 路径带注释垃圾 → -d 校验失败静默跳过检测（降级未披露为"读到真值"）。
-  # 对齐 generate-skill.sh:1029 R28-DF7 剥法（cut -d'#' -f1）。
+  # 对齐 generate-skill.sh:1029 剥法（cut -d'#' -f1）。
   PROJECT_DIR=$(grep -m1 '^PROJECT_DIR=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null \
     | cut -d'#' -f1 | sed 's/^PROJECT_DIR=//;s/^"//;s/"$//;s/[[:space:]]*$//' || true)
 fi
 [[ -z "$PROJECT_DIR" ]] && PROJECT_DIR=$(cd "$SKILL_DIR/../../.." 2>/dev/null && pwd)
 [[ -n "$PROJECT_DIR" && -d "$PROJECT_DIR" ]] || { echo "ℹ 无法推导项目根目录，跳过 profile 漂移检测" >&2; exit 0; }
 
-# 阈值与生成器单一来源对齐（WP-CogAudit 同款 source；缺 conf 走默认 80）
+# 阈值与生成器单一来源对齐（同款 source；缺 conf 走默认 80）
 _pthr="$SKILL_DIR/assets/profile-thresholds.conf"
 [[ -f "$_pthr" ]] && { set +u; source "$_pthr"; set -u; }
 _lite_max=${PROFILE_LITE_MAX_FILES:-80}

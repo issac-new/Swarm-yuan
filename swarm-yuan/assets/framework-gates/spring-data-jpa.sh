@@ -250,7 +250,7 @@ _fw_spring_data_jpa_check() {
   fi
 
   # ====================================================================
-  # fw_jpa_jpql_entity(warn)：@Query JPQL 实体名字符串校验（横向清剿轮）
+  # fw_jpa_jpql_entity(warn)：@Query JPQL 实体名字符串校验
   # JPQL "from X"/"join X" 的实体名是对 @Entity 类名的字符串引用——编译不查（容器启动才解析），
   # 实体重命名后 @Query 内旧名静默漂移。X.java 在源码集不存在 → warn。
   # ====================================================================
@@ -274,7 +274,7 @@ _fw_spring_data_jpa_check() {
     pass "fw_jpa_jpql_entity: 无 Java 源文件，跳过"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

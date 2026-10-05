@@ -208,7 +208,7 @@ ${glue_warn}"
   local core_ver=""
   for c in "${cfgarr[@]+"${cfgarr[@]}"}"; do
     local v
-    # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+    # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
     v=$(grep -A3 -E 'xxl-job-core' "$c" 2>/dev/null | grep -oE '<version>[0-9][^<]*</version>' | head -1 | sed -E 's/<\/?version>//g' || true)
     [[ -z "$v" ]] && v=$(grep -oE 'xxl-job-core[^0-9"]*[0-9]+\.[0-9]+(\.[0-9]+)?' "$c" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || true)
     [[ -n "$v" && -z "$core_ver" ]] && core_ver="$v"
@@ -221,7 +221,7 @@ ${glue_warn}"
     pass "fw_xxljob_version_align: xxl-job-core=${core_ver} 为 3.x"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。
