@@ -13,7 +13,7 @@
 - **docs/usage-manual.md**：术语表「WP-/R-/决策编号」条改写为形态描述（终态正文不使用，只在历史档案遇到）；禁用词清单标题去轮次；生成流程步骤表改 Step 1-12。
 
 ### Added
-- **test-r68-jargon-free 扩终态纪律四锁**：①裸轮次标记零出现（docs/research 文件名锚与 UNECE R155/R156 法规号豁免）②半步编号零出现 ③轮次簿记句（补核/薄轮不开档/watch 维持/轮次台账）零出现 ④版本注记日期戳零出现（证据核验日期豁免）。扫描面 SKILL.md / README / references / usage-manual / commands；决策编号不在禁类。
+- **test-r68-jargon-free 扩终态纪律四锁**：①裸轮次标记零出现（docs/research 文件名锚与 UNECE R155/R156 法规号豁免）②半步编号零出现 ③轮次簿记句（补核/薄轮不开档/watch 维持/轮次台账）零出现 ④版本注记日期戳零出现（证据核验日期豁免）⑤工作包标签（WP-xxx）零出现。扫描面 SKILL.md / README / references / usage-manual / commands；决策编号不在禁类。
 
 ### Fixed
 - **两处过度删除恢复**：claude-code-capabilities 与 codex-methodology 的版本注记尾段（v2.1.233-289 / v0.152-0.160 共 33 节）在清理流程中曾被整段删除——逐版能力事实（Opus 5.5 / 无界重试有界化 / maxEffortLevel / 技能预算先去重再计量 #49127 / pending 环境保留 / 断线重连输入恢复等头部表格未覆盖内容）逐节复核补回，仅去轮次框架与档案指针；review-methodology 谱系删除时误伤的受保护判据 10 条按「机制名（上游版本/issue）」补回（ocr v1.11.7 / #1416 / pass^3 / Mutation Check 等）。

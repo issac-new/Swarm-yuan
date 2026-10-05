@@ -47,6 +47,7 @@ done
 #   ② 半步编号（⓪.5/①.5 式带圈数字加点）——生成流程唯一编号口径在 references/generation-flow.md（Step 1-12 含命名子阶段）
 #   ③ 轮次簿记句（补核/薄轮不开档/watch 维持/轮次台账）
 #   ④ 版本注记日期戳（"（YYYY-MM-DD 核）"式）——证据分级的"核验"日期（标准/URL 访问与复核日期）不在禁类
+#   ⑤ 工作包标签（WP-P1/WP-Z3 式）——历史工作包的考古标签，同轮次标记归档
 # 决策编号（决策 N）不在禁类：它是 README 附录 C 溯源表的引用机制，指向 design-evolution.md 决策全文。
 # 上游项目版本/PR 证据锚（如 v1.91.8.0 #2994）与表格"来源版本"列不在禁类。
 _terminal_scan="SKILL.md README.md references/*.md ../docs/usage-manual.md .claude/commands/swarm-yuan.md"
@@ -83,6 +84,14 @@ if [[ -z "$stamp_hits" ]]; then
 else
   bad "终态纪律④：版本注记日期戳残留："
   printf '%s\n' "$stamp_hits" | head -5
+fi
+
+wp_hits=$(grep -rEn 'WP-[A-Z][A-Za-z0-9]*' $_terminal_scan 2>/dev/null)
+if [[ -z "$wp_hits" ]]; then
+  ok "终态纪律⑤：用户面零工作包标签（WP-xxx，历史归 design-evolution）"
+else
+  bad "终态纪律⑤：工作包标签残留："
+  printf '%s\n' "$wp_hits" | head -5
 fi
 
 echo "PASS test-r68-jargon-free (${pass} ok, ${fail} fail)"

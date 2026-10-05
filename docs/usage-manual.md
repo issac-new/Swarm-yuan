@@ -134,7 +134,7 @@ bash install.sh
 | **warn** | 22 | 17 | 1-2 真实 fail()，能 fail 但触发窄，混合 warn |
 | **advisory** | 16 | 21 | 0 fail()，永不阻断（认知/观测类；子 shell 内重定义 `fail()`/`warn()` 为纯 echo，"不阻断"语义机器化） |
 
-- **有效 = 静态 + precheck.sh 顶部 `_ENFORCE_OVERRIDE`**（当前 5 项 warn→advisory：stable-diff / framework / knowledge / metrics / crypto，WP-Q2H 误报治理；名单以 precheck.sh 数组为准，不在此手抄）
+- **有效 = 静态 + precheck.sh 顶部 `_ENFORCE_OVERRIDE`**（当前 5 项 warn→advisory：stable-diff / framework / knowledge / metrics / crypto，误报治理见 conf 调整；名单以 precheck.sh 数组为准，不在此手抄）
 - **查实时名单**：`bash scripts/precheck.sh --list-gates`（输出 flag / gate_fn / enforce / tier 四列）——本节不手抄 55 个门禁名，手抄即漂移（agents-md-audit-round：旧名单表三度失同步后删除）
 - **自动归类**：`bash scripts/gen-enforce-level.sh` 扫 precheck.sh fail() 数，重生成 `assets/gate-enforce-level.conf`（幂等，可逐字节再生）
 - **自检**：`self-check.sh` 校验 conf 与 precheck.sh fail 数一致 + strict 门禁必含 ≥1 fail()（防 strict 声明空壳）
@@ -189,7 +189,7 @@ bash install.sh
 | `--shift-left` | 左移核验（spec §19 测试设计/§20 变更影响/§21 可观测性非占位） | 第 8 项 |
 | `--framework` | 框架适配门禁（按 ACTIVE_FRAMEWORKS 跑注入的 `_fw_<id>_check` 片段） | 第 4 项 |
 
-#### 合规门禁（19 个，独立 `--compliance-suite` 按需执行；未配置静默跳过或 WP-Z3 豁免留痕）
+#### 合规门禁（19 个，独立 `--compliance-suite` 按需执行；未配置静默跳过或登记豁免留痕）
 
 | 门禁 | 检查什么 | 特征卡依据 |
 |------|---------|-----------|
@@ -261,7 +261,7 @@ bash install.sh
 
 #### 三档骨架（--profile）
 
-按项目规模与合规要求选择生成档位（**默认 `auto` 项目级自适应**：合规关键词 → compliance；文件数 <80 → lite；其余 standard；WP-Q2 偏置修正——信号明确才升档，模糊走默认 standard，判定依据会打印供你评估，显式 `--profile` 可覆盖。upgrade 自动继承既有档）：
+按项目规模与合规要求选择生成档位（**默认 `auto` 项目级自适应**：合规关键词 → compliance；文件数 <80 → lite；其余 standard；信号明确才升档，模糊走默认 standard，判定依据会打印供你评估，显式 `--profile` 可覆盖。upgrade 自动继承既有档）：
 
 | 档 | 适用 | 骨架内容 |
 |----|------|---------|
@@ -282,7 +282,7 @@ AI 自动：创建 spec → 判断规模 → **从特征卡第 11 项检索可�
 
 **全程可见（全链路追踪，无需确认）**：AI 每进入一节点先公告 `→ [节点X] 调用 <技能/工具> · <目的>`，节点级落盘 `.swarm-yuan/trace.jsonl`（`scripts/trace-log.sh`；`SWARM_YUAN_TRACE=verbose` 时含每次具体调用）。你随时知道正在调用何种工具及技能。
 
-| 规模 | 填哪些段 | 提交前门禁（任务级自适应，WP-N2） | 典型场景 |
+| 规模 | 填哪些段 | 提交前门禁（任务级自适应） | 典型场景 |
 |------|---------|---------|---------|
 | 简单 | §1-§4 + §5.5 复用约束 + §12 风险回滚 | `--all`（核心 10） | 改 bug / 加字段 |
 | 标准 | §1-§13 + §5.5/§5.6/§5.7 约束段 | `--all-full`（标准 28） | 新功能 / 改接口 |
