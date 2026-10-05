@@ -4,7 +4,7 @@
 
 > 来源：[Vibe编码 公众号《Opus 4.8 删掉了73%的提示词，Opus 5 为何又新增了 82%》](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（2026-07-27，作者 VibeCoder）+ Anthropic Context Engineering 文档。
 > 纪律：只引用方法论模式与证据视角，不调任何上游 CLI / 引擎 / 截获工具；不复制文章原文（上游文章可按需存档到 `swarm-yuan/research/context-engineering/` 供 AI 阅读，本地 gitignored，不入 git）。
-> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；守决策 26：复杂度预算不增。
+> 整合纪律：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；复杂度预算不增。
 > 适用场景：目标技能 在**生成自身骨架**（SKILL.md / hooks / commands / MCP / precheck.conf / CLAUDE.md）时，AI 引用本文方法论决定**规则应该放在哪一层**——是常驻 System、还是 CLAUDE.md、还是按需 Skill、还是 typed schema、还是运行时门禁。也用于 swarm-yuan 仓库自身的配置分层（本仓库是一套分层 Agent 运行时的元范例）。
 
 ---
@@ -23,7 +23,7 @@ swarm-yuan 当前 17 项特征卡 / 55 门禁 / 80 框架规则集回答了「�
 
 **关键证据解读**：4.8→5 的 System 增长 82.12%，但 System+Tools 只增长 4.14%——围绕提示词长短争论很容易忽略真正占上下文的大块接口层。
 
-**对本系统的价值**：swarm-yuan 的 SKILL.md / references / precheck.conf 生成期必读文件 / 55 门禁 / hooks.json / .mcp.json 本身就是一套分层上下文，但分层原则此前是隐性的（散落在各 WP 决策里）。本文把"分层放置规则"的方法论显式化，给 swarm-yuan 一个可引用的元决策框架。
+**对本系统的价值**：swarm-yuan 的 SKILL.md / references / precheck.conf 生成期必读文件 / 55 门禁 / hooks.json / .mcp.json 本身就是一套分层上下文，但分层原则此前是隐性的。本文把"分层放置规则"的方法论显式化，给 swarm-yuan 一个可引用的元决策框架。
 
 ---
 
@@ -70,7 +70,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 |-----------|---------------------|
 | 规则与用户请求/仓库惯例/其他规则冲突 | SKILL.md 铁律段只放 P0 六项（1/4/5/11/15/16），不堆砌 |
 | 低频说明长期占据注意力 | references 按需读，不进 SKILL.md 常驻 |
-| 模型能力变化后旧约束诱发过度检查 | 门禁分层 strict/warn/advisory（决策 19），advisory 永不 fail |
+| 模型能力变化后旧约束诱发过度检查 | 门禁分层 strict/warn/advisory，advisory 永不 fail |
 | Bash 9,821 字符教程式描述 | precheck.sh flag 接口压成 `--branch`/`--scope`/`--reuse`，用法在 `--list-gates` |
 
 **整合动作**：生成目标技能时，若 AI 发现自己在 SKILL.md 写超过 3 段的「如何做 X」教程式内容，应触发本层判断——大概率该挪进 reference 或压成 flag 接口。
@@ -95,7 +95,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 ## 六、Opus 5 的 Delivering work + Corrections（治理内核范式）
 
-文章对 Opus 5 新增两章的解读，是 swarm-yuan 治理回路 WP 批次（v2026.07.28）的方法论锚点：
+文章对 Opus 5 新增两章的解读，是 swarm-yuan 治理回路的方法论锚点：
 
 ### 6.1 Delivering work（交付工作）
 
@@ -139,7 +139,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 文章给的自检方式，转译为 swarm-yuan 生成目标技能 时的自检：
 
 1. **重新跑自己的任务集**——生成 skill 后用 `precheck.sh --all` 三档自举验证（RC=0）。
-2. **重点看**：范围扩张（`--scope` 是否触只读）、澄清次数（task-methodology-router 是否路由正确）、完成率（`--verify-completeness` 零占位）、过度验证（advisory 门禁是否误 warn）、子 Agent 成本（subagent 编排是否过度扇出）、纠错噪声（json/sarif 输出是否可消费）。
+2. **重点看**：范围扩张（`--scope` 是否触只读）、澄清次数（task-methodology-router 是否路由正确）、完成率（`--verify-completeness` 无占位符残留）、过度验证（advisory 门禁是否误 warn）、子 Agent 成本（subagent 编排是否过度扇出）、纠错噪声（json/sarif 输出是否可消费）。
 3. **若一个问题能由测试、接口或 Hook 更稳定地解决，就没有理由让它常驻 System**——下沉到门禁或 hooks。
 4. **只有跨任务复用、会影响用户决策、又无法从局部环境推断的规则，才值得进入最高优先级上下文**（SKILL.md 铁律段 / P0 特征卡）。
 
@@ -152,7 +152,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 | 六层上下文模型 | SKILL.md / references / precheck.conf / hooks.json / .mcp.json / memory-writeback | 本文显式化分层原则，AI 生成目标技能 时引用本文做「规则放哪层」决策 |
 | minimal ≠ short | `--profile auto`（按规模自适应披露）+ advisory 门禁分层 | 引用本文支撑「advisory 永不 fail」的合理性——最小充分不等于最短 |
 | Prompt = model adapter | SKILL.md 铁律段（P0 六项特征卡驱动） | 引用本文解释「为何 SKILL.md 只放 P0 六项铁律」——它是项目认知的 adapter |
-| Delivering work | governance-agents / decision-governance / generate-skill --verify-completeness | 治理回路 WP 批次的理论依据 |
+| Delivering work | governance-agents / decision-governance / generate-skill --verify-completeness | 治理回路的理论依据 |
 | Corrections | advisory 门禁 / decisions.jsonl / subagent 两阶段审查 | 纠错治理的方法论锚点 |
 | 升级时重新跑任务集 | self-check.sh + verifier/v1 all + generator self-gate 三档 | 引用本文作为「发版前回归全绿」的方法论依据 |
 
@@ -168,7 +168,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 ---
 
-## 十一、上下文三漏与输出经济学（R37 增补，2026-09-18）
+## 十一、上下文三漏与输出经济学
 
 > 来源：行者明灵《Harness实践》上下篇（2026-09-16/17）+ rtk-ai/rtk 0.49.0（Apache-2.0，80,864★）+ JuliusBrussee/caveman v2.3.1（106,373★；Skill=MIT，Proxy=BSL-1.1）。三漏回答本文前面各节未显式回答的问题：**token 从哪三个通道漏进窗口**——读（agent 找信息）、拿（工具结果回灌）、说（模型输出）。
 
@@ -176,7 +176,7 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 | 漏点 | 上游治法 | swarm-yuan 对应（既有，非新增） |
 |------|---------|-------------------------------|
-| **读**：逐文件 grep + 读全文 | 图谱查询替代遍历（CodeGraph/graphify query） | ①.5 gitnexus/graphify 真图谱 + relations.jsonl 边集反查；framework-signals.md 索引替代重复 grep |
+| **读**：逐文件 grep + 读全文 | 图谱查询替代遍历（CodeGraph/graphify query） | Step 4 gitnexus/graphify 真图谱 + relations.jsonl 边集反查；framework-signals.md 索引替代重复 grep |
 | **拿**：工具输出全量回灌 | RTK 压缩四招（过滤无关行/分组计数/截断中间/去重） | precheck `--format json` + to-sarif 结构化输出；ENUM_ZERO_DIM 披露替代长 dump |
 | **说**：模型叙事膨胀 | Caveman 电报体（任务级 −65%） | 门禁驱动开发天然简洁（跑门禁-看结果-修复）；本节吸收的是其**边界纪律**而非话术 |
 
@@ -192,18 +192,18 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 
 ### 11.4 不引用部分
 
-- RTK 的代理整合与命令改写路由表（宿主层工具，目标技能不整合；crates.io 同名包陷阱已在 R37 档案登记）
+- RTK 的代理整合与命令改写路由表（宿主层工具，目标技能不整合；crates.io 存在同名无关包，注意甄别）
 - Caveman Proxy/Engine（BSL-1.1 非 OSI 开源，零接触；与 GitNexus PolyForm 处置同构）
 
 ---
 
-## 十二、措辞三判据（R86 增补，2026-10-03）
+## 十二、措辞三判据
 
 > 来源：mattpocock/skills v1.2.3 `skills/productivity/writing-for-agents/SKILL.md`。§三 六层模型回答"规则放哪一层"，本节回答"每一句写下去值不值"——三条可操作的判据，供生成器写 SKILL.md/references 与目标技能维护文档时自检。
 
 1. **no-op 判定**：一句指令若模型默认行为下本来就会这么做，它就是 no-op——白占窗口还什么都没改变。判据是"跑了这份文档，行为会不会变"，不是"读起来有没有道理"；两人对 no-op 有分歧，分歧在"默认行为是什么"，靠跑文档裁决，不靠辩论。失败即整句删除（不是削词）。判据也给领头词定级：压不过默认行为的弱词（模型本来就"仔细"时写"要仔细"）是 no-op，解法是换更强的词，不是换技巧。
 2. **否定句失败模式**：用禁止来转向会把被禁行为拉进上下文、反而更可及（"别想大象"——满脑子都是大象）。写**正向目标行为**（"写一行式注释"而非"别写长注释"）；只有无法正向表述的硬护栏才保留禁止句，且必须与正向目标成对出现。
-3. **领头词经济学**：优先用预训练里已有的紧凑概念（复用模型先验，一个词锚定一整片行为），自造词要花定义 token 买回先验免费给的东西。同一段形容在三个位置重复、一句手势指向一个概念——都是该收敛成单个词的位置。与 R53 术语词典咬合：词典管"新词先入册"，本判据管"造词之前先找现成词"。
+3. **领头词经济学**：优先用预训练里已有的紧凑概念（复用模型先验，一个词锚定一整片行为），自造词要花定义 token 买回先验免费给的东西。同一段形容在三个位置重复、一句手势指向一个概念——都是该收敛成单个词的位置。与术语词典咬合：词典管"新词先入册"，本判据管"造词之前先找现成词"。
 
 与 §十一 的分工：三漏管 token 从哪漏，本节管写下去的每一句买回了什么。
 
@@ -212,8 +212,8 @@ Anthropic 对 Context Engineering 的定义：**minimal 并不必然 short，关
 - 来源：[Vibe编码 公众号《Opus 4.8 删掉了73%的提示词，Opus 5 为何又新增了 82%》](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（2026-07-27，作者 VibeCoder）+ Anthropic Context Engineering 文档
 - 许可证：文章内容版权归原作者，swarm-yuan 只引用方法论模式与证据视角，不复制原文
 - 上游文章：[Vibe编码 公众号原文](https://mp.weixin.qq.com/s/GXEnP16WbpjWtWDxj5OE2A)（可按需存档到 `swarm-yuan/research/context-engineering/` 供 AI 阅读，本地 gitignored，不入 git）
-- 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
+- 整合纪律：吸收优先于新增门禁 + 复杂度负向预算，门禁数保持 55
 - 自检断言：G14 `check_context_engineering_layering`（`self-check.sh`，warn-only，守本文档存在性 + SKILL.md 整合 + facts.conf 口径）
-- 口径同步：`facts.conf` `FACT_REFERENCES=33`（本文档 +1）
-- R37 增补来源：行者明灵《Harness实践》上下篇（2026-09-16/17）+ rtk-ai/rtk（Apache-2.0）+ JuliusBrussee/caveman（Skill=MIT/Proxy=BSL-1.1）——§十一 三漏与输出经济学；档案 `docs/research/R37-harness-practice-absorption.md`
-- R86 增补来源：mattpocock/skills v1.2.3（MIT）`writing-for-agents/SKILL.md`——§十二 措辞三判据；档案 `docs/research/R86-mattpocock-skills-absorption.md`
+- 口径同步：`facts.conf` `FACT_REFERENCES=33`
+- §十一 增补来源：行者明灵《Harness实践》上下篇（2026-09-16/17）+ rtk-ai/rtk（Apache-2.0）+ JuliusBrussee/caveman（Skill=MIT/Proxy=BSL-1.1）
+- §十二 增补来源：mattpocock/skills v1.2.3（MIT）`writing-for-agents/SKILL.md`

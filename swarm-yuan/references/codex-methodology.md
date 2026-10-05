@@ -2,7 +2,7 @@
 
 # Codex 执行纪律方法论（OpenAI Codex CLI——省 token / 高效 / 质量三线）
 
-> 来源：[openai/codex](https://github.com/openai/codex)（Rust 实现的本地编码 agent，Apache-2.0，2026-08 调研，基于官方文档 + `codex-rs` 源码实证：`compact.rs`/`compact_token_budget.rs`/`truncation.rs`/`prompts/templates/compact/*`/`review/rubric.md`/`protocol/src/prompts/base_instructions`）；版本核至 rust-v0.153.4（2026-09-05 R17 补核，见文末版本注记）。
+> 来源：[openai/codex](https://github.com/openai/codex)（Rust 实现的本地编码 agent，Apache-2.0，2026-08 调研，基于官方文档 + `codex-rs` 源码实证：`compact.rs`/`compact_token_budget.rs`/`truncation.rs`/`prompts/templates/compact/*`/`review/rubric.md`/`protocol/src/prompts/base_instructions`）；版本口径与逐版变化见文末「版本基线与变化追踪」。
 > 纪律：**非运行时整合**——Codex 虽是 swarm-yuan 的 7 个安装目标之一（install.sh 检测），本文不调用 codex CLI，只吸收其「为什么省 token、效率高、质量高」的执行纪律，供生成目标技能的 AI 遵守 + 编织进目标技能的 workflow/执行 prompt。对齐决策 27 吸收模式（cordis/context-engineering-layering 先例），不新增门禁（守决策 26）。
 
 ## 一、省 token 生成期必读文件（截断—压缩—缓存，全部是硬机制非玄学）
@@ -29,7 +29,7 @@ Codex 的 compaction prompt 原文结构（`prompts/templates/compact/prompt.md`
 
 压缩后重注入前缀的关键句："Use this to **avoid duplicating work**"（防重复劳动）。多次压缩的摘要**按序重注入**（不丢早期摘要）。两条压缩路径：模型摘要式（零 token 换不来时用）与 **token-budget 式**（跳过摘要直接换新上下文窗口，零摘要成本）。
 
-> **目标技能落地**：swarm-yuan 已有 builder-journal compaction 续传（WP-loop）；生成技能的长任务中断恢复按四段模板写 journal，恢复时先读 journal 防重做。
+> **目标技能落地**：swarm-yuan 已有 builder-journal compaction 续传；生成技能的长任务中断恢复按四段模板写 journal，恢复时先读 journal 防重做。
 
 ### 1.3 稳定前缀换缓存命中（AGENTS.md 固定注入）
 
@@ -104,64 +104,77 @@ Codex Skills 只常载 frontmatter（name/description），正文按触发注入
 
 ---
 
-## 版本注记：v0.148（含 v0.147）
+## Codex 宿主能力速览
 
-> 基线 v0.146.0（2026-08-14 调研）→ 最新 stable v0.148.0（2026-08-18）+ v0.149.0-alpha.4（2026-08-20）预告。详见 docs/upstream-baseline.md（上游运行时基线登记）CLI 条目。
+> 版本口径与逐版变化见 `docs/upstream-baseline.md`；本节为当前宿主形态速览。
 
-### hooks 异步命令 + MCP 工具调用（v0.148——重要机会）
+### hooks 异步命令 + MCP 工具调用
 
-Codex hooks 现在支持**异步执行命令**并**调用 MCP 工具**。这意味着 precheck 门禁可注册为 Codex hook 而非仅靠 prompt 约定——门禁"执法"在 Codex 侧获得官方强制点（本仓 fail-gate-hook.sh 在 Claude Code 侧已有 PreToolUse/PostToolUse 强制点，Codex 侧此前缺失）。
-登记候选：下轮评估 Codex hooks 配置格式，生成器为 Codex 目标输出等价的 hooks 注册。
+Codex hooks 现在支持**异步执行命令**并**调用 MCP 工具**。这意味着 precheck 门禁可注册为 Codex hook 而非仅靠 prompt 约定——门禁"执法"在 Codex 侧获得官方强制点（本仓 fail-gate-hook.sh 在 Claude Code 侧已有 PreToolUse/PostToolUse 强制点，Codex 侧经 hooks 事件面对齐）。
 
-### Agent Plugins 四类目录（v0.147）
+### Agent Plugins 四类目录
 
-可移植插件安装，跨 local/personal/workspace/remote 四类目录搜索。生成技能的分发新通道：打包为 Codex 插件而非仅放 `~/.codex`。登记候选。
+可移植插件安装，跨 local/personal/workspace/remote 四类目录搜索。生成技能的分发备选通道：打包为 Codex 插件而非仅放 `~/.codex`。
 
-### 会话资产化（v0.147-148 + v0.149-alpha）
+### 会话资产化
 
-- `codex exec fork` 派生会话 + TUI resume 选择器归档/恢复（v0.148）
-- `/export` 会话完整导出 Markdown（v0.148）——门禁验收记录可随会话导出留档
-- 排队消息（向既有会话排队消息 + 跨进程分发，v0.149-alpha）
-- `codex agents` 仪表盘 + 异步用户消息工具（v0.149-alpha）——多代理管理界面成形
+- `codex exec fork` 派生会话 + TUI resume 选择器归档/恢复
+- `/export` 会话完整导出 Markdown——门禁验收记录可随会话导出留档
+- 排队消息（向既有会话排队消息 + 跨进程分发）
+- `codex agents` 仪表盘 + 异步用户消息工具——多代理管理界面成形
 
-### Guardian 审批体系（v0.147 入口 + v0.149-alpha v2）
+### Guardian 审批体系
 
-`--approve-for-me` CLI flag（v0.147）是自动审批正式入口；v0.149-alpha 的 Guardian v2 补齐：风险分类改进、transcript 图像纳入审查、默认跳沙箱命令、风险评分错误 fail-closed、可代替必需模型审查。
-观察项：Guardian 成熟后，生成技能中的高危门禁命令（删除/依赖升级）可标注给自动审批分类器。
+`--approve-for-me` CLI flag 是自动审批正式入口；Guardian v2：风险分类、transcript 图像纳入审查、默认跳沙箱命令、风险评分错误 fail-closed、可代替必需模型审查。生成技能中的高危门禁命令（删除/依赖升级）可标注给自动审批分类器。
 
-### skill-creator validation 拒绝 TODO 占位符（v0.148）
+### skill-creator validation 拒绝 TODO 占位符
 
 Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--verify-completeness`（无占位符检测，P0/P1 分级）同构，方向验证。
 
-### 破坏性变更（两处）
+### 兼容性下限
 
-1. **v0.147 移除 `codex exec --full-auto`**——改用 `--sandbox workspace-write`。本仓生成脚本无 `--full-auto` 引用（无影响）；install.sh 对 Codex 目标的检测登记版本下限候选（≥0.147）。
-2. **v0.149-alpha 移除技能模型委托**——skills 不能再指定委托模型。本仓无按子任务指定模型的设计（无影响）。
+1. `codex exec --full-auto` 已移除——改用 `--sandbox workspace-write`。本仓生成脚本无 `--full-auto` 引用；install.sh 对 Codex 目标的检测按下限 0.147 处理。
+2. 技能模型委托已移除——skills 不能再指定委托模型。本仓无按子任务指定模型的设计。
 
-## 版本注记：v0.152（2026-09-01 核）——v0.149-152 的能力变化
 
-> 当前 stable v0.152.0。本段覆盖 v0.149-152（docs/skills.md 零 diff，技能目录/格式不变）。详表见 `docs/upstream-baseline.md`。
+## Codex hooks 事件面与信任机制
+
+> 吸收自《Harness实践》实测；证据锚点 `docs/research/R37-harness-practice-absorption.md`。
+
+- **hooks 事件切面**：文档口径 11 类（SessionStart/SessionEnd/UserPromptSubmit/AgentTurnStart/AgentTurnEnd/Interrupt/PreToolUse/PostToolUse/PreCompact/Stop/Notification；CLI 界面另列 12——多出项即 Interrupt 的界面呈现差异）。与 Claude Code hooks 双宿主对照面：swarm-yuan 双宿主 hooks.json 现覆盖 Write/Edit/Bash 面，Interrupt/PreCompact 面在 Codex 侧暂未接入。
+- **matcher 按工具名正则**：`matcher = "Edit|Write"` 可拦 apply_patch 类写操作（Codex 的文件修改原语）；hook 经 stdin 收 JSON、stdout 回 JSON 协议，`permissionDecision: "deny"` 即拦截——与 Claude Code hook 协议同构，双宿主适配按此对齐。
+- **trusted_hash 信任门禁**：hooks 配置带内容哈希，改动未复审即失效——与 Ponytail"装完≠激活"（lazy-generation-methodology §三）同族：**信任锚定内容而非位置**。
+- **多来源全加载**：全局/项目/插件 hooks 全量加载并发执行（不互斥）——生成技能向 Codex 宿主注入 hooks 时须幂等（重复注册去重，同 self-check MCP 重复注册检测口径）。
+- **timeout 语义**：默认 600s；SessionEnd 硬预算 1s（上限 3s）——短事件面挂重检查会静默丢失，Stop/SessionEnd 只放轻断言。
+- **`[features] hooks = false`**：会话级一键关停——诚实披露面：宿主可整体禁 hooks，门禁证据在 hooks-off 会话不可作数（与 restricted 会话同口径）。
+- **`$` 执行 / `@` 引用**：AGENTS.md 里 `$cmd` 把命令输出注入上下文、`@file` 引用文件——项目指令的动态上下文原语，目标技能 AGENTS.md 注记登记（慎用：动态注入破坏缓存前缀稳定性，见 §1.3）。
+
+## 版本基线
+
+方法论以 npm/GitHub stable 基线版本为准核验（当前 rust-v0.160.0）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+
+## 版本注记：v0.152——v0.149-152 的能力变化
+
+> 覆盖 v0.149-152（docs/skills.md 零 diff，技能目录/格式不变）。
 
 - **Guardian v2 落地形态**（v0.149-152）：flag 默认 false 迭代；`--approve-for-me`（别名 `--not-so-yolo`）fail-closed 评审（90s 超时严格 JSON）；**用户显式调用的 skills 受信任**（v0.151）；过期风险分类不授权（v0.151）；跨 compaction 保留授权（v0.152）。**门禁产出的结构化 PASS/FAIL 结论可被 Guardian 引用为 trusted context——证据态输出与宿主审批体系咬合。**
 - **skills token 预算**（v0.149，直接影响技能形态）：`[skills] max_context_tokens`（默认 2% 上下文、上限 10k）——技能目录进 prompt 前有预算截断 + 实验性路由。本仓生成技能 frontmatter 三行制紧凑已满足；多技能项目须知目录 token 成本。
 - **破坏性两处对账全过**：①v0.150 untrusted 项目不加载项目级 AGENTS.md——install.sh 走用户级 `~/.codex/skills` 无暴露面；②v0.152 planning 工具默认禁用——目标技能自备 spec/plan 文件不依赖宿主 plan 工具。
-- **Interrupt hook 事件**（v0.150；hooks 共 11 事件）：登记候选（打断后半成品守护点，与 R4 hooks 候选同批评估）；**extensions 可拦截/替换 MCP 工具结果**（v0.151，观察项）。
+- **Interrupt hook 事件**（v0.150；hooks 共 11 事件）：登记候选（打断后半成品守护点，登记候选评估）；**extensions 可拦截/替换 MCP 工具结果**（v0.151，观察项）。
 - **安全加固波**（v0.150）：config/sed 解析 fail-closed、Seatbelt/bubblewrap 加固、app 签名校验——与 Claude Code v2.1.246-252 硬化波同期同向。
 - 会话资产化续（v0.149-152）：agents 仪表盘、queue、`@` mention 任务、per-tool `output_token_limit`（v0.152）、thread/shellCommand 超时 >1h 可配置。
 
-## 版本注记：v0.153（2026-09-05 核）——v0.153.0-153.4 的能力变化
+## 版本注记：v0.153——v0.153.0-153.4 的能力变化
 
-> 当前 stable：0.153.4（npm latest 与 git tag 已追平，2026-09-05 同日复核）。本段覆盖 0.153.0-153.4（106 commits，其中 0.153.1-4 共 7 个为 GPT-6-Astra 模型目录热修；docs/skills.md 连续第二轮零 diff）。无 v0.150 级破坏项（仅 `disable_paste_burst` 移入 `[tui]`，旧键 legacy fallback）。详表见 `docs/upstream-baseline.md`。
+> 覆盖 0.153.0-153.4（106 commits，其中 0.153.1-4 共 7 个为 GPT-6-Astra 模型目录热修；docs/skills.md 零 diff）。无 v0.150 级破坏项（仅 `disable_paste_burst` 移入 `[tui]`，旧键 legacy fallback）。
 
-- **Guardian 条件性兜底**（v0.153.0，#42147/#42256）：Full Access 与 User approval 模式跳过 Guardian 评分/评审（含活动中途切换）；computer-use 评分尊重模型要求（v0.153.1，#42424）。**执法确定性论证必须落在自持门禁：Guardian 复核只是条件性兜底，宿主审批层不保证在场**——与 Claude Code v2.1.260 宿主 deny 回退（Read deny 应用至 Bash 参数后即回退）构成双宿主同向证据：R13"hooks fail-open 须下层门禁兜底"教义升级为"宿主治理层整体视为条件性"。
-- **回合中结构化问答原语**（v0.153.0，#42178）：`request_user_input_async`（替换 `send_user_message_async`）带建议答案的结构化问题、回合继续执行、按模型可用性限定——人机协作点首次进入协议层 schema。R16 登记的 Interrupt hook 半成品守护点自此有了正式参照（打断→问答→续跑）；登记候选不落地（本仓交互面走宿主审批通道已够）。
+- **Guardian 条件性兜底**（v0.153.0，#42147/#42256）：Full Access 与 User approval 模式跳过 Guardian 评分/评审（含活动中途切换）；computer-use 评分尊重模型要求（v0.153.1，#42424）。**执法确定性论证必须落在自持门禁：Guardian 复核只是条件性兜底，宿主审批层不保证在场**——与 Claude Code v2.1.260 宿主 deny 回退（Read deny 应用至 Bash 参数后即回退）构成双宿主同向证据：「hooks fail-open 须下层门禁兜底」原则升级为"宿主治理层整体视为条件性"。
+- **回合中结构化问答原语**（v0.153.0，#42178）：`request_user_input_async`（替换 `send_user_message_async`）带建议答案的结构化问题、回合继续执行、按模型可用性限定——人机协作点首次进入协议层 schema。Interrupt hook 半成品守护点自此有了正式参照（打断→问答→续跑）；登记候选不落地（本仓交互面走宿主审批通道已够）。
 - **hooks 内置白名单三层信任**（v0.153.0，#42110）：allowlisted bundled cleanup hooks 标记 `builtin: true`，信任态直接 Trusted 且无视 per-hook enabled——hook 信任模型成三层（builtin/managed/user）。本仓用户级 PreToolUse 三能力整合零变化（`codex-rs/hooks/src/engine/discovery.rs` 各 events 文件仅测试结构体加字段，对账通过）。
 - **实验性 context management**（v0.153.0，#42385）：`features.context_management.experimental_mode`——token 预算上下文 + history notes + `new_context` 工具；仅 ChatGPT Plus/Pro/Pro Lite 且 Codex 后端，自定义 provider 禁用。与 v0.149 `[skills] max_context_tokens` 预算机制相邻，登记观望（experimental + 后端限定，等 GA）。
 - 其余：插件 CLI 远程 marketplace（#42150/#42149，源策略约束）；network requirements 增 `header_injections`（企业托管向）；权限变换感知 executor 路径上下文（`sandboxing/policy_transforms.rs` +416 行，观察项）。
 
-## 版本注记：v0.154（2026-09-10 核）——worktree 隔离原语 + 技能热装载成双宿主标配
-
-> 当前 stable：rust-v0.154.0（2026-09-09，R20 收口后数小时兑现；0.154 线 alpha.1-11 收敛后发布）。档案 `docs/research/R22-runtime-refresh.md`。
+## 版本注记：v0.154——worktree 隔离原语 + 技能热装载成双宿主标配
 
 - **实验性 worktree 支持**（v0.154.0，#42652/#43069）：`--worktree` / `/worktree` 为新会话或 fork 创建隔离检出、可浏览恢复——**会话与工作区隔离原语进宿主**，与 Claude Code v2.1.257 `permissions.blockReadsOutsideWorkingDirectories` 构成双宿主互为正反。生成技能并行门禁（多 worktree 验证）的宿主原语候选登记（触发 = 并行 gate 执行真实需求）。
 - **inline 追问**（v0.154.0，#42891）：工作继续中用建议选项或自定义文本回答问题、不丢主草稿——`request_user_input_async`（0.153）的交互面强化，Interrupt 守护点候选第 2 号参照（打断→问答→续跑且用户草稿不丢）。
@@ -171,21 +184,11 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **`codex mcp-server` 入口移除**（v0.154.0，#42993，破坏项）：deprecated 入口删除。对账：本仓 `install.sh`/`self-check.sh`/`SKILL.md` 零引用，无暴露面。
 - 其余：GPT-6-Astra 进 model picker / Windows 共享后台 server + daemon 生命周期 / Vim `R` replace 模式 / `/copy` 富文本——运维便利，对账通过。
 
-## 版本注记：Codex hooks 事件面与信任机制（R37，2026-09-18 吸收自《Harness实践》下篇实测，C 级；宿主基线 rust-v0.154.0）
+## 版本注记：rust-v0.155.0——Guardian 治理深化与遥测最小化
 
-- **hooks 事件切面**：文档口径 11 类（SessionStart/SessionEnd/UserPromptSubmit/AgentTurnStart/AgentTurnEnd/Interrupt/PreToolUse/PostToolUse/PreCompact/Stop/Notification；CLI 界面另列 12——多出项即 Interrupt 的界面呈现差异）。与 Claude Code hooks 双宿主对照面：swarm-yuan 双宿主 hooks.json 现覆盖 Write/Edit/Bash 面，Interrupt/PreCompact 面为 Codex 侧登记候选。
-- **matcher 按工具名正则**：`matcher = "Edit|Write"` 可拦 apply_patch 类写操作（Codex 的文件修改原语）；hook 经 stdin 收 JSON、stdout 回 JSON 协议，`permissionDecision: "deny"` 即拦截——与 Claude Code hook 协议同构，双宿主适配按此对齐。
-- **trusted_hash 信任门禁**：hooks 配置带内容哈希，改动未复审即失效——与 Ponytail"装完≠激活"（lazy-generation-methodology §三）同族：**信任锚定内容而非位置**。
-- **多来源全加载**：全局/项目/插件 hooks 全量加载并发执行（不互斥）——生成技能向 Codex 宿主注入 hooks 时须幂等（重复注册去重，同 self-check MCP 重复注册检测口径）。
-- **timeout 语义**：默认 600s；SessionEnd 硬预算 1s（上限 3s）——短事件面挂重检查会静默丢失，Stop/SessionEnd 只放轻断言。
-- **`[features] hooks = false`**：会话级一键关停——诚实披露面：宿主可整体禁 hooks，门禁证据在 hooks-off 会话不可作数（与 restricted 会话同口径）。
-- **`$` 执行 / `@` 引用**：AGENTS.md 里 `$cmd` 把命令输出注入上下文、`@file` 引用文件——项目指令的动态上下文原语，目标技能 AGENTS.md 注记登记（慎用：动态注入破坏缓存前缀稳定性，见 §1.3）。
+> 219 commits 大版本（stable 线 0.154.0→0.155.0）。
 
-## 版本注记：rust-v0.155.0（2026-09-18 R38 核）——Guardian 治理深化与遥测最小化
-
-> 219 commits 大版本（stable 线 0.154.0→0.155.0）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R38-runtime-refresh.md`。
-
-- **Guardian 授权治理深化**（R22 第一波的方法论收束）：审批评审绑定发起执行（网络审批不得脱离原上下文裁决）+ 评审消费捕获时的 action settings（评审所见=执行所用）+ 授权证据保全至请求预算化 + 完整动作保全于评审记录——**审批的完整性、归属、时效三轴**在单一治理对象内闭环。
+- **Guardian 授权治理深化**（Guardian 治理深化的方法论收束）：审批评审绑定发起执行（网络审批不得脱离原上下文裁决）+ 评审消费捕获时的 action settings（评审所见=执行所用）+ 授权证据保全至请求预算化 + 完整动作保全于评审记录——**审批的完整性、归属、时效三轴**在单一治理对象内闭环。
 - **遥测最小化**：skill analytics 移除 repo_url、Guardian 评审分析移除路径字段——分析事件不得携带仓库身份与文件路径；**可观测性与隐私的边界画在字段级**。
 - **认证属主绑定**：认证属主变更即重置 WebSocket 缓存态 + 远程控制会话绑定认证属主——凭证换手后旧派生态必须失效。
 - **压缩失败保全输入**：pre-turn compaction 失败不丢 incoming prompts——压缩是优化不是门槛，fail-safe 方向为保用户输入。
@@ -193,60 +196,56 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **分域有界化**：MCP 描述与 Guardian action JSON 分别限界（一处超界不拖垮另一域）+ app-server stdio 有界关闭 + SIGTERM 优雅退出。
 - 登记不吸收：会话隔离与子代理归属解耦（#44521，无单机落地面）、Windows 沙箱修复批、voice alpha 排练（alpha 面）。
 
-## 版本注记：rust-v0.155.1（2026-09-19 R40 核）——默认值回归回滚
+## 版本注记：rust-v0.155.1——默认值回归回滚
 
-> hotfix 单主题（stable 线 0.155.0→0.155.1，2 commits）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R40-runtime-refresh.md`。
+> hotfix 单主题（stable 线 0.155.0→0.155.1，2 commits）。
 
-- **恢复 TUI reasoning summary 默认 none**：0.155.0 变更默认值引发回归，0.155.1 回滚——默认值变更与行为变更同权入回归面（修复轮即回归源族第三例：claude 270/276 同族）。
+- **恢复 TUI reasoning summary 默认 none**：0.155.0 变更默认值引发回归，0.155.1 回滚——默认值变更与行为变更同权入回归面（默认值回滚同族：claude 270/276 同款）。
 
-## 版本注记：rust-v0.156.0/0.156.1（2026-09-23 R44 核）——证据资产化与多代理消息持久化
+## 版本注记：rust-v0.156.0/0.156.1——证据资产化与多代理消息持久化
 
-> 实质 minor（0.155.1→0.156.1，527 commits；0.156.0 tag 2026-09-22 11:39 -0700 + 同日 0.156.1 hotfix）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R44-runtime-refresh.md`。
+> 实质 minor（0.155.1→0.156.1，527 commits；0.156.0 tag 2026-09-22 11:39 -0700 + 同日 0.156.1 hotfix）。
 
 - **`/tui` 全屏交互 transcript**（#46732/#46849）：搜索/鼠标选择进 TUI——**证据资产化族**：会话记录升为可检索一等产物，与本仓 trace.jsonl 同向。
-- **Agent message boards 进持久化多代理运行时**（#46959/#47029/#47042）：根线程删除连带删板 + **删除中损坏存储可恢复**——**消息持久化原语**（dsh R22 消息归属之后）：多代理消息先持久化再消费，删除=事务（连带、可恢复、失败不损既有）。
+- **Agent message boards 进持久化多代理运行时**（#46959/#47029/#47042）：根线程删除连带删板 + **删除中损坏存储可恢复**——**消息持久化原语**（dsh 消息归属机制之后）：多代理消息先持久化再消费，删除=事务（连带、可恢复、失败不损既有）。
 - **失败/中断/子代理完成事件保留流式答案与计划**（#45549/#46867）——partial 语义宿主再实证：中途产物不因轮次失败而丢弃（与本仓「完成 ≠ 中途停」分级、gate-report partial 态同构）。
-- **worktree 支持默认启用**（#46839）+ 会话复用既有 daemon（#46498）——R22 隔离原语转默认。
+- **worktree 支持默认启用**（#46839）+ 会话复用既有 daemon（#46498）——0.154 的隔离原语转默认。
 - **opt-in compaction after final responses**（#46541）——压缩时点显式化：应答完成后才压（不在轮中），上下文操作不打断用户可见流。
-- **reasoning effort 以模型显式支持为闸**（#46530）+ 0.156.1 回滚「新线程默认关 reasoning summary」——能力未声明不启用（诚实口径族）；默认值变更入回归面（R40 同族第四例）。
+- **reasoning effort 以模型显式支持为闸**（#46530）+ 0.156.1 回滚「新线程默认关 reasoning summary」——能力未声明不启用（诚实口径族）；默认值变更入回归面（默认值回滚同族）。
 - **Guardian 策略解析集中化**（#45957）——策略从多处判定收敛到 config+protocol 单点——**规则单一事实源族**宿主侧实证，与本仓「特征卡立法」同构。
 - 网络与沙箱面：系统代理回落登录 + 沙箱缺口三连修（Windows 入站/特权 socket/只读句柄写入）+ Unix socket 与受限命令隔离——不吸收（与本仓门禁面无新原语）。
 
-## 版本注记：rust-v0.157.0（2026-09-25 R57 核）——可撤销许可与检查点元数据
-
-> 实质 minor；证据锚点 `docs/research/R57-runtime-refresh.md`。
+## 版本注记：rust-v0.157.0——可撤销许可与检查点元数据
 
 - **门禁升级为「可撤销许可」**：redirect/响应体/WebSocket 都持 permit，策略收紧即取消在途，**deny 不可重试且不记成功**，策略加载失败即断网→给工具调用发带生命周期的许可，策略变更作废在途。
 - **检查点自带恢复元数据**：`resume_metadata` 记版本/起始 turn/设置，与压缩检查点同写→`state.yaml` 与 compact 绑定写恢复状态。
 - **派发原子性 + 孤儿清理**：子代理取消即拆存储态、关 spawn edge，**驱逐与排队消息互斥**→provisional 任务失败即回收。
 - **产出带来源归属且跨状态持久**：provenance 跨 compaction/resume 存续→产物打 actor 标记进 `trace.jsonl`。
 
-## 版本注记：rust-v0.157.0 后线内 ~277 提交（2026-09-28 R70 核；0.158 全线 alpha 不物化）
-
-> 稳定 tag 停在 0.157.0（R57 物化位不变）；证据锚点 `docs/research/R70-runtime-refresh.md`。
+## 版本注记：rust-v0.157.0 后线内 ~277 提交（0.158 线当时全 alpha 未采纳）
 
 - **中断错误结构化**：Guardian circuit-breaker 中断改 opt-in 结构化错误（错误为一等公民带类型，非字符串匹配）→ 吸收点：本技能 rules.d 的 forbid 条款已带替代方案，错误面同样应可机读可分支。
-- **Guardian 历史跨压缩独立保留**：评审证据不再被父会话 compaction 冲掉→治理证据的生命周期与会话压缩解耦（对照 R57「provenance 跨 compaction 存续」同族纪律）。
+- **Guardian 历史跨压缩独立保留**：评审证据不再被父会话 compaction 冲掉→治理证据的生命周期与会话压缩解耦（对照 0.157「provenance 跨 compaction 存续」同族纪律）。
 - **MCP 单服发现 + 线程级连接复用**：status discovery 从全量扫描改单服按需 + 连接复用→大型 MCP 编排下的探测经济学。
 - **历史感知预热**：空闲线程按使用历史预热（预热是有依据的预测，不是全量常驻）。
 - **Windows 沙箱加固族**：ETXTBSY 竞态集中创建可执行 fixture、受限启动器回退 embedded 模式、pip 子进程无控制台窗→Windows 面的「进程卫生」清单可并入 cross-platform 纪律。
 
-## 版本注记：rust-v0.157.0 → rust-v0.158.0（2026-09-28 R71 物化；207 提交）
+## 版本注记：rust-v0.157.0 → rust-v0.158.0（207 提交）
 
-> R70 时 0.158 全线 alpha，本轮稳定 tag 已出并物化（research/ 与部署副本双克隆对齐）；证据锚点 `docs/research/R71-runtime-refresh.md`。R70 线内记档的五主题（Guardian 结构化中断/MCP 单服发现/历史感知预热/Windows 沙箱加固/Mermaid 扩展）已随 0.158.0 全部落进稳定线。
+> 上一节线内记档的五主题（Guardian 结构化中断/MCP 单服发现/历史感知预热/Windows 沙箱加固/Mermaid 扩展）已随 0.158.0 全部落进稳定线。
 
 - **治理证据完整性三连**：Guardian 评审保留助手上下文与消息序（`#47582/#47584/#47585`）、评审绑定动作的目标环境（`#47630`）、`user_message` 工具进授权上下文（`#47624`）——授权判定从「看当前请求」升为「看完整证据链 + 环境绑定」。吸收点：本技能审批门禁的证据摘要应带目标环境维度。
 - **exec-server WebSocket 承载令牌鉴权**（`#47601/#47648`，独立 crate `codex-websocket-auth`）+ MCP OAuth client secret 预注册（`#47891`）——本机进程间连接与生态准入的凭据面从「默认信任」转「显式凭据」。
-- **子进程启动器归一**：共享 child launcher 统一接管 shell 快照/管道/PTY/钩子（`#47605/#47610/#47611/#47617`）+ reap-only 回收策略（`#47603`）——R70 记档的「进程卫生清单」升级为统一设施。
+- **子进程启动器归一**：共享 child launcher 统一接管 shell 快照/管道/PTY/钩子（`#47605/#47610/#47611/#47617`）+ reap-only 回收策略（`#47603`）——0.157 后线记档的「进程卫生清单」升级为统一设施。
 - **审批重试语义**（`#47819`）：新用户输入到来时在途审批重试而非自动中止——「状态问询炸掉在途动作」的反模式被显式修复。吸收点：本技能打回环里打回与在途动作的互斥语义可对照。
 - **审批分级降噪**（`#47799/#48073`）：提权命令终端输入审批默认开启，runtime-only 授权不再触发多余评审。
 - **限流协作**（`#47641`）：尊重 `Retry-After` 并保留服务端重试期限——重试纪律从纯本地退避升级为与服务端协商。
 - **TUI 交互面**：`tui.prompt_suggestions` 后续提问 + Tab 改写（`#47911/#47929`）、copy-on-select/右键粘贴保 Markdown 结构（`#47639/#47896/#48118`）、turn tips 与欢迎屏刷新——轮次结束后的「下一步引导」成为默认体验件。
 - **沙箱修复族**：Windows 10 普通路径/存储凭据拒绝/大权限策略（`#47672/#47695/#47919`）、嵌套可写根只读元数据挂载序（`#47623`）、Git 元数据保护跨可写根保留（`#47974`）、macOS 系统路径别名识别免多余审批（`#47879`）。
 
-## 版本注记：rust-v0.158.0 → rust-v0.159.0（2026-09-29 R73 物化；89 提交）
+## 版本注记：rust-v0.158.0 → rust-v0.159.0（89 提交）
 
-> R72 后稳定 tag 出线即物化；证据锚点 `docs/research/R73-runtime-refresh.md`。**tag 世系甄别**：0.159 非 0.158 严格后代（17 提交 cherry-pick 双现，同 PR 号核对），codex 稳定 tag 走 release 分支切流而非 main 直接打 tag——「稳定 tag 即近 tip」修正为「release 分支切流、内容与 main 同源」。
+> **tag 世系甄别**：0.159 非 0.158 严格后代（17 提交 cherry-pick 双现，同 PR 号核对），codex 稳定 tag 走 release 分支切流而非 main 直接打 tag——「稳定 tag 即近 tip」修正为「release 分支切流、内容与 main 同源」。
 
 - **Guardian 治理三连**：熔断中断的结构化错误 opt-in（`#48796`）、**评审历史跨父压缩独立保留**（`#48779`）、Code Mode 确认消息保留供评审（`#48725`）——压缩不再吃掉治理证据链，与 0.158「评审保留助手上下文」构成证据完整性两连版。吸收点：本技能 compaction/续传机制必须把审批与评审留痕列为不可丢弃位。
 - **历史感知预热**（`#48812`）：idle 线程按历史预热——预热从「盲热」变「按用热」；上下文计量显式直方图桶（`#48819`）——计量从计数走向分布，预算治理的数据面升级。
@@ -256,27 +255,25 @@ Codex 内置技能验证不再通过未完成的 TODO 占位符。本仓 `--veri
 - **会话语义**：首回合前可归档（`#48828`）、切换保空会话且不显示上一会话摘要（`#48628/#48626`）——会话生命周期边界（空态/切换态）显式化。
 - **技能目录跨执行器可用性稳定**（`#48353`）+ 移除 bundled plugin-creator（`#48604`）+ follow-up 建议默认移除改 opt-in（`#48621`）——宿主默认面收敛，「建议类功能 opt-in 化」与 claude-code 0.157 移除默认 follow-up 同向。
 
-## 版本注记：rust-v0.159.0 → rust-v0.159.2（2026-09-30 R79 物化；4 提交，2 patch）
+## 版本注记：rust-v0.159.0 → rust-v0.159.2（4 提交，2 patch）
 
-> 0.159 patch 线两条 backport；0.160.0-alpha.6.1 / 0.161.0-alpha.1–4 全 alpha 不物化，origin/main 领先 0.159.2 达 127 提交（记档不追）。release 分支切流口径（R73 甄别）维持；证据锚点 `docs/research/R79-runtime-refresh.md`。
+> 0.159 patch 线两条 backport；release 分支切流口径同上。
 
 - **Windows 控制台窗抑制**（`#49385`，0.159.2）：启动后台进程与沙箱命令不再闪烁控制台窗——0.157「piped 子进程不弹控制台窗」（`#48483`）的补全（覆盖非 piped 的后台启动路径），Windows 进程卫生清单收口。
 - **模型目录 backport**（`#49342`，0.159.1）：GPT-6.1 Sol Bedrock catalogs 进 0.159 稳定线——目录面（provider catalog）与功能面解耦发布，patch 线也可承载目录增量。方法论无新增落地单元。
 
-## 版本注记：rust-v0.159.2 → rust-v0.159.3（2026-10-01 R81 物化；2 提交，1 patch）
+## 版本注记：rust-v0.159.2 → rust-v0.159.3（2 提交，1 patch）
 
-> 0.159 patch 线第三条 backport；origin/main 领先 187 提交（记档不追）；0.160/0.161 全 alpha 不物化。release 分支切流口径（R73 甄别）维持；证据锚点 `docs/research/R81-runtime-refresh.md`。
+> 0.159 patch 线第三条 backport；release 分支切流口径同上。
 
 - **账户安全设置提醒 backport**（`#49744`，#49715 的不变 cherry-pick）：本地 ChatGPT 会话可选展示账户安全设置提醒——**服务端持有资格与灰度、通知不可用不出横幅**。平台面（提醒的展示通道），无方法论吸收；「服务端权威+不可用静默」与 0.159.2 的口径一致，patch 线质量纪律（exact-backport、稳定 patch ID）延续。
 
-## 版本注记：rust-v0.159.3 → rust-v0.160.0（2026-10-04 R89 物化；56 提交）
+## 版本注记：rust-v0.159.3 → rust-v0.160.0（56 提交）
 
-> 0.160 线 alpha.6.2 后收口 stable（live CLI 0.160.0 同版实证）；0.161 全 alpha 至 alpha.13 不物化。证据锚点 `docs/research/R89-runtime-refresh.md`。
+> 0.160 线 alpha.6.2 后收口 stable。
 
 - **技能预算先去重再计量**（#49127）：cloud 与 executor 双源技能清单先并集去重、后计预算——同一技能双源列出曾使预算翻倍。计量诚实族：**计量前先定义被计量集合的同一性**（去重是计量的前置步骤，不是事后修正）。
 - **子代理派发保留 pending 环境**（#49075）：spawn 子代理时挂起中的环境不丢——派发是上下文保真边，子代理起步视图 = 父会话挂起视图。
 - **遥测只采已用字段**（#49076）：技能分析不再采集未使用的 Git 元数据——遥测最小化在「字段是否被消费」粒度执法（0.155 repo_url 移出事件的延续）。
-- **显式 provider 模型目录权威**（#49135）：显式配置的目录覆盖内置目录——显式配置优先于隐式内置（与 ocr R42「显式 llm_protocol 尊重」同族）。
+- **显式 provider 模型目录权威**（#49135）：显式配置的目录覆盖内置目录——显式配置优先于隐式内置（与 ocr「显式 llm_protocol 尊重」同族）。
 - **断线重连恢复未发送输入**（#49105）：重连后未发出的输入回到输入区——用户输入不丢族宿主新样本（与 claude Ctrl+C 草稿恢复对偶：一个是误清空，一个是断线）。
-- **Guardian 评审上下文完整性五连**（#49038/#49057/#49036/#49060/#49065/#49082）：加密 agent 消息在评审快照中保留 + handoff-aware 根上下文（交接后的评审拿到交接后的真实语境）+ 评审 opt-in 检索会话历史 + 原生 agent 消息快照 + diff 路径跳过远程 Git 发现——治理证据链族：评审所见完整性从「消息不丢」深化到「加密态/交接态/历史可检索」三轴。
-- 记档行：生命周期贡献者可见原始错误详情（#49138，错误透明）、content-filter 重试带恢复指引（#49119/#49087）、Windows 沙箱 ACL 长路径修复族、SQLite 日志页后台回收（#49069）。

@@ -80,8 +80,8 @@ printf '%s' "$gline" | grep -q 'manifest 声明值' && printf '%s' "$gline" | gr
   || bad "填充行版本语义丢失（check_deps 假阳性复发面）"
 
 # ---- 源码锁：template-spec 版本语义单一约定在位 ----
-grep -q '版本语义单一约定（R82-D1）' references/template-spec.md \
-  && ok "template-spec ★版本锁定原则含 R82-D1 语义钉死" \
+grep -q '版本语义单一约定' references/template-spec.md \
+  && ok "template-spec ★版本锁定原则语义钉死" \
   || bad "template-spec 版本语义句丢失（文档侧契约断裂）"
 
 echo "—— R82 锁：$pass pass / $fail fail ——"

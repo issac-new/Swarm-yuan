@@ -2,10 +2,9 @@
 
 # 电信行业 profile 立法文档（industry-profile-telecom）
 
-> 版本：v1（2026-07-23，批次）
 > 条款纪律：条款号仅采用已核验事实；不虚构条款号、不虚构 URL——标准统一指向国家标准全文公开系统检索页或 3GPP/ISO 官方页，法律统一指向国家法律法规数据库，访问日期均 2026-07-23；行业共识但未经原文核实的条款号显式标注「条款号待原文核实」。
 > 配套配置包：`assets/industry-profiles/telecom.conf`（用法：`cat` 追加到 `precheck.conf` 末尾后按项目裁剪）。
-> 门禁基线：49 既有（`precheck.sh` GATE_FLAGS 注册表，含 /S2 合规门禁）；本 profile 不新增门禁，仅覆盖配置开关。
+> 门禁基线：49 既有（`precheck.sh` GATE_FLAGS 注册表，含合规门禁）；本 profile 不新增门禁，仅覆盖配置开关。
 > 边界声明：电信关基等保测评/密评/定级备案、电信设备进网许可属线下外审/行政许可，本范式不覆盖认证——门禁输出**不构成等保测评合规证据**（§3 差额项）。
 
 ## 0. 定位与适用
@@ -115,7 +114,7 @@
 6. NIST SP 800-218（SSDF v1.1，PS.2 发布完整性）：https://csrc.nist.gov/pubs/sp/800/218/final
 7. ISO/IEC/IEEE 29148（需求工程标准页）：https://www.iso.org/standard/72089.html
 
-## 6. 典型技术栈 → 框架映射表（P1-8）
+## 6. 典型技术栈 → 框架映射表
 
 > 行业典型技术栈常激活的框架门禁（与 `assets/industry-profiles/telecom.conf` 的 `ACTIVE_FRAMEWORKS_HINT` 对齐；
 > 非强制启用——实际以探查信号为准，详见对应 `references/frameworks/<id>.md`）。

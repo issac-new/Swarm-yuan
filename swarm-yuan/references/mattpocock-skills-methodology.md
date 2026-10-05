@@ -4,7 +4,7 @@
 
 > 来源：[mattpocock/skills](https://github.com/mattpocock/skills)（Matt Pocock，MIT，v1.2.3 tag 6acc160，2026-08-06 源码实测；main d81f3a1 2026-09-29 已合并 release/v1.3 未出 tag，线上三新技能一并评估）。
 > 形态：25 技能集合（engineering 17 + productivity 8），按**谁能触发**双轴分层——user-invoked 编排技能（仅人显式触发，`disable-model-invocation: true`）调用 model-invoked 纪律技能（人与模型都可触达，可复用原语）；user-invoked 不得互相调用。Claude Code 官方插件市场 + skills.sh 可编辑拷贝双渠道分发。
-> 纪律：只吸收机制不吸收装配叙事（R37 裁决沿用）；不调上游安装链。守决策 27：不新增 `check_*`，门禁数 55 不变；登记为机制源定位（同 pua/semantica/dsh 先例），不进 FACT_RUNTIMES 分层计数。
+> 纪律：只吸收机制不吸收装配叙事；不调上游安装链。守决策 27：不新增 `check_*`，门禁数 55 不变；登记为机制源定位（同 pua/semantica/dsh 先例），不进 FACT_RUNTIMES 分层计数。
 > 适用场景：开发工作流 节点①（§一）、节点② spec（§二）、节点③ plan（§三）、fix 类任务（§四）；编排与上下文两条增量分别落 `subagent-orchestration.md` / `memory-persistence.md`（见 §五指针）。
 
 ## 一、结构化访谈协议（grilling：设计树与前沿）——节点① 需求理解
@@ -50,11 +50,11 @@
 | pr 模板 Merge Danger（单向门/影响半径） | decision-governance §2.4 可逆性三值（one-way 自动升 UserChallenge） |
 | handoff 会话交接文档 | builder-journal compaction 续传 + session-restore（FACT_COMPACTION_JOURNAL=1） |
 | retro 环境复盘（机械违规优先落确定性检查） | 问题沉淀通道 + mine-habits + 决策倾向"手动一次 vs 自动化" |
-| CONTEXT.md 共享语言 + ADR 三条件（难逆/无上下文会困惑/真权衡才记） | 术语词典（R53）+ decisions.jsonl 决策留痕 |
+| CONTEXT.md 共享语言 + ADR 三条件（难逆/无上下文会困惑/真权衡才记） | 术语词典 + decisions.jsonl 决策留痕 |
 | user-invoked/model-invoked 双轴分层 | 目标技能为单技能形态（SKILL.md+hooks），无多子技能分层需求；description 写作纪律见 agent-skills §一 |
 | ask-matt 路由同步不变量（"说谎的路由"） | capability-map 双向对账（G25，孤儿零容忍）+ 四载体一致性 |
 
-**指针**：上游 implement-spec 的任务图并行实现协议 → `subagent-orchestration.md` R86 段；阶段边界五选树 → `memory-persistence.md` R86 段；措辞三判据（no-op 判定/否定句失败模式/领头词）→ `context-engineering-layering.md` R86 段。
+**指针**：任务图并行实现协议（implement-spec 吸收）→ `subagent-orchestration.md`；阶段边界五选树 → `memory-persistence.md`；措辞三判据（no-op 判定/否定句失败模式/领头词）→ `context-engineering-layering.md` §十二。
 
 ## 六、已登记未实施
 
@@ -66,6 +66,6 @@
 
 ## 七、来源溯源
 
-- 仓库：mattpocock/skills（MIT）。引用基线 v1.2.3（tag 6acc160，2026-08-06；`package.json` 与 `.claude-plugin/plugin.json` 双实核 1.2.3）；main d81f3a1（2026-09-29）合 release/v1.3 未出 tag，三新技能按 main 线评估：implement-spec → subagent-orchestration R86 段吸收；pr / retro → §五不吸收。
+- 仓库：mattpocock/skills（MIT）。引用基线 v1.2.3（tag 6acc160，2026-08-06；`package.json` 与 `.claude-plugin/plugin.json` 双实核 1.2.3）；main d81f3a1（2026-09-29）合 release/v1.3 未出 tag，三新技能按 main 线评估：implement-spec → subagent-orchestration 吸收；pr / retro → §五不吸收。
 - 一手材料（2026-10-03 本机克隆精读，A 级证据）：`skills/productivity/grilling/SKILL.md`（前沿原语）/ `skills/engineering/{to-spec,to-tickets,diagnosing-bugs,implement}/SKILL.md` / `skills/engineering/ask-matt/SKILL.md` + `PHASE-BOUNDARIES.md` / `skills/productivity/writing-for-agents/SKILL.md` / `.agents/invocation.md` / `.claude-plugin/plugin.json`（promoted 25 skills）。
 - 治理面注记：promoted 桶 ↔ README ↔ plugin.json skills 数组 ↔ docs 页 ↔ ask-matt 路由五处一致性不变量——与 swarm-yuan 四载体一致性同构，不另吸收。

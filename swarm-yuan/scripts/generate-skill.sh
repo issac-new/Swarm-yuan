@@ -1453,7 +1453,7 @@ if [[ "$PROFILE" == "auto" ]]; then
 fi
 
 # auto 档时探测框架，写入 precheck.arch.conf 的 ACTIVE_FRAMEWORKS（standard+ 档）
-# 替代 AI 手工探查 §C+.0.5。lite 档不拷 precheck.arch.conf，跳过。
+# 替代 AI 手工探查 §D.0.5。lite 档不拷 precheck.arch.conf，跳过。
 _wq3_script="$(cd "$(dirname "$0")" && pwd)/detect-frameworks.sh"
 if [[ "$PROFILE" != "lite" && -f "$_wq3_script" ]]; then
   _dfw_out=$(bash "$_wq3_script" "$PROJECT_DIR" 2>/dev/null || true)
@@ -1884,7 +1884,7 @@ for f in $_placeholder_refs; do
 
 **② 参与方：** AI + 用户（spec 评审）
 
-**③ 前序依赖检查（准入）：** 节点②探查完成（特征卡+组件库清单就绪；架构设计/演进类变更还须四层架构枚举——探查侧 §C+.0.6，生成器侧 exploration-guide）
+**③ 前序依赖检查（准入）：** 节点②探查完成（特征卡+组件库清单就绪；架构设计/演进类变更还须四层架构枚举——探查侧 §D.0.6，生成器侧 exploration-guide）
 
 **④ 质量门禁：** ★测试左移（spec §19 测试设计）+ ★运维左移（spec §21 可观测性约束）+ SPEC_REQUIRED 前置门（fail-gate-hook 拦无 spec 写码）+ 架构类变更须填 spec §24 架构映射（TOGAF BDAT 四层+纵向链验证，非架构变更可豁免）+ 规模与工作量估算（spec §25 功能点法，feature 档推荐选填、无门禁执法——识别规则与因子表查 references/cost-estimation-methodology.md）
 
@@ -2012,7 +2012,7 @@ WFEOF
       _write_if_absent "$SKILL_DIR/references/$f" <<'RMEOF'
 # reference-manual.md — 项目参考手册（组件库清单 / 接口约束 / 数据勾稽）
 
-> 填充规范：按 exploration-guide §C+ 探查后填充。§4/§6/§9 表格行两列：`| 路径 | 说明与约束 |`；
+> 填充规范：按 exploration-guide §D 探查后填充。§4/§6/§9 表格行两列：`| 路径 | 说明与约束 |`；
 > 路径用反引号包裹（--path-check 校验存在性）；稳定性标注词写进说明列（如"导出 add（禁止改）"）——
 > --stability-audit 按行内字面词识别（与列位置无关）。说明列 = AI 读代码后的理解，不是填表。
 >
@@ -2047,7 +2047,7 @@ RMEOF
       _write_if_absent "$SKILL_DIR/references/$f" <<'RCEOF'
 # recipes.md — 任务配方（组件库对应的拼装式编排路线）
 
-> 填充规范：§A 业务功能清单 + §B 任务配方。提取方法见生成器仓 references/exploration-guide.md §C+.6/§C+.7（既有实现 / git 同类任务历史 / 开发者文档三源）。
+> 填充规范：§A 业务功能清单 + §B 任务配方。提取方法见生成器仓 references/exploration-guide.md §D.6/§D.7（既有实现 / git 同类任务历史 / 开发者文档三源）。
 > 表格行内组件路径用反引号包裹（--path-check 校验存在性，防幻觉复用件）；每配方五要素缺一不可（--verify-completeness 执法）。
 > 语义/动能两区纪律：本文件写"怎么拼装"的路线；硬约束的执行体仍只落 rules.d 与门禁，此处至多引用。
 
@@ -2200,7 +2200,7 @@ description: 探查项目结构
 
 用 gitnexus/graphify/claude-mem 探查项目，更新特征卡。
 
-探查方法论与降级链：生成器仓 `references/exploration-guide.md`（不随技能分发，回生成器仓读；§C+.0 形态判定 → §C+.0.5 框架激活 → §C+.0.6 四层架构枚举 → §C+.1 全量穷举）；随技能分发工具速查 `references/code-graph-tools.md`。
+探查方法论与降级链：生成器仓 `references/exploration-guide.md`（不随技能分发，回生成器仓读；§D.0 形态判定 → §D.0.5 框架激活 → §D.0.6 四层架构枚举 → §D.1 全量穷举）；随技能分发工具速查 `references/code-graph-tools.md`。
 CEOF
 fi  # PROFILE != lite
 
@@ -2242,7 +2242,7 @@ status: draft
 | 测试命令 | $(grep -m1 '^TEST_CMD=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null | sed "s/^TEST_CMD=//;s/'//g;s| *#.*||" || echo "（AI 探查填充）") |
 | 检测框架 | $(bash "$SRC_SCRIPTS/detect-frameworks.sh" "$PROJECT_DIR" 2>/dev/null | grep -E '^ACTIVE_FRAMEWORKS=' | sed 's/^ACTIVE_FRAMEWORKS=//;s/[()"]//g' || echo "（无已知框架）") |
 
-> 项目类型与改造分类（A/B）由 AI 探查判定（§C+.0 语义判断）；生成器只做自动嗅探（命令/框架清单）。
+> 项目类型与改造分类（A/B）由 AI 探查判定（§D.0 语义判断）；生成器只做自动嗅探（命令/框架清单）。
 
 ## 填充指引
 <!-- 交接清单：本区是生成器→AI 的待办交接，逐项完成后整区删除（含本行与标题）再 --mark-active -->
@@ -2293,7 +2293,7 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 2. **判断**：「⚠ 项目源码已变化」→ 走更新链；「无变化」→ 正常开发。
 3. **更新链**（检出变化后）：
    - 工具链刷新：生成器（路径见 `.swarm-yuan-version` 的 source_repo）`--refresh` 看 dry-run → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留）
-   - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
+   - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §D 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
    - 核验：本地 `scripts/inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉；v2.14.2 起随技能分发自包含，生成器侧亦可）
    - 边集重建：本地 `scripts/relations-extract.sh` 重跑出 `references/relations.jsonl`（断边/项目演进后；v2.14.2 起随技能分发自包含）
 4. **落新基线**：`bash scripts/project-fingerprint.sh <项目根> --write`。
@@ -2312,7 +2312,7 @@ cat >> "$SKILL_DIR/SKILL.md" <<'EOF'
 2. **判断**：「⚠ 项目源码已变化」→ 走更新链；「无变化」→ 正常开发。
 3. **更新链**（检出变化后）：
    - 工具链刷新：生成器（路径见 `.swarm-yuan-version` 的 source_repo）`--refresh` 看 dry-run → `--upgrade` 更新门禁/模板（reference-manual.md 等项目内容文件保留）
-   - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §C+ 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
+   - 内容刷新：`--diff` 的「变化目录 scope」= 重探查范围——只对该 scope 按 swarm-yuan `references/exploration-guide.md` §D 重探查，更新 `references/reference-manual.md` 对应条目；未变条目原样保留
    - 核验：本地 `scripts/inventory-verify.sh` 计数核验（清单 ≥ 枚举 ×0.95 + 路径存在性防幻觉；v2.14.2 起随技能分发自包含，生成器侧亦可）
    - 边集重建：本地 `scripts/relations-extract.sh` 重跑出 `references/relations.jsonl`（断边/项目演进后；v2.14.2 起随技能分发自包含）
 4. **落新基线**：`bash scripts/project-fingerprint.sh <项目根> --write`。

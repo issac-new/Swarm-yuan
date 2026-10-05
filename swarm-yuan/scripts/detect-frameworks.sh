@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # detect-frameworks.sh —— 扫描项目依赖文件，识别 ACTIVE_FRAMEWORKS
-# 用途：替代 AI 手工探查 §C+.0.5（exploration-guide.md），机器判定框架列表
+# 用途：替代 AI 手工探查 §D.0.5（exploration-guide.md），机器判定框架列表
 #
 # 扫描文件：package.json / pom.xml / go.mod / pyproject.toml / requirements.txt
 # 匹配源：内置 SIGNALS 依赖信号表（framework|pattern|file_type）；
@@ -174,7 +174,7 @@ cargo|Cargo.toml|file_exists
 # WP-U：dockerfile（IaC 容器镜像）——文件存在型，同 file_exists 通道（v2.16.1 起可自动探测）
 dockerfile|Dockerfile|file_exists
 # R44-D2（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：file_glob 型信号——
-# framework-signals.md §C+.0.5 本就记载 dotnet 三条文件信号（*.csproj 含 Sdk / Program.cs /
+# framework-signals.md §D.0.5 本就记载 dotnet 三条文件信号（*.csproj 含 Sdk / Program.cs /
 # using Microsoft.AspNetCore），但检测器无对应通道，ACTIVE_FRAMEWORKS 恒空、10 条 fw_dotnet_*
 # 门禁不自动注入（"规则集在册≠链路可达"，同 R39-D1b cargo 家族）。新增 file_glob 通道：
 # signal=文件名 glob（全工程 find，排除 bin/obj/node_modules/.git），命中即激活。
@@ -413,5 +413,5 @@ else
   echo "# 未探测到任何已知框架（scripts/detect-frameworks.sh $(date -u +%Y-%m-%d)）"
   echo "ACTIVE_FRAMEWORKS=()"
   echo "" >&2
-  echo "未探测到已知框架（项目可能用自定义/冷门框架，需 AI 手工探查 §C+.0.5）" >&2
+  echo "未探测到已知框架（项目可能用自定义/冷门框架，需 AI 手工探查 §D.0.5）" >&2
 fi

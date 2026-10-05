@@ -108,10 +108,17 @@ install_to() {
   fi
 
   # 复制（逐项 cp -R 覆盖隐藏文件，三平台兼容，无需 tar --exclude）
+  # 分发边界：以下三项是仓库本地过程产物，不进入安装产物——
+  #   research/（上游调研原料，未跟踪入仓）、.swarm-yuan/（生成器自身运行留痕）、
+  #   offline-cache/（历史遗留缓存，未跟踪入仓，溯源已迁 release 源码包体系）
   mkdir -p "$skill_dir" "$dest"
-  local item
+  local item _item_base
   for item in "$SRC_DIR"/* "$SRC_DIR"/.[!.]* "$SRC_DIR"/..?*; do
     [[ -e "$item" ]] || continue
+    _item_base="$(basename "$item")"
+    case "$_item_base" in
+      research|.swarm-yuan|offline-cache) continue ;;
+    esac
     cp -R "$item" "$dest/"
   done
   rm -rf "$dest/docs" "$dest/.upgrade-backup-"* "$dest/.git" "$dest/.DS_Store" 2>/dev/null || true

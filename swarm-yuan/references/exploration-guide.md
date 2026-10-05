@@ -25,7 +25,7 @@
 > **质量优先偏置**：规模边界不确定按更重档处理（如 78 文件但含微服务结构 → 按 standard 三路探查）。
 > 探查阶段分级只影响探查效率（单路 vs 三路 vs 三路+图谱），不影响特征卡 17 项的完整度（所有档位都须全量探查特征卡）。
 
-## Step -1: 项目知识读取（= 生成流程 ⓪.5 / Step 2；先于一切探查，最高优先级）
+## 项目知识读取（= 生成流程 Step 2；先于一切探查，最高优先级）
 
 > **铁律：探查代码前，先读取项目既有的知识文件和记忆。** 这些文件是项目团队积累的规则、约定、教训——不读就生成 skill = 重复造轮子 + 违反既有约定。
 
@@ -52,7 +52,7 @@
 3. 合并去重（同一规则在多个文件出现的，保留最高优先级来源）
 ```
 
-### 文档转换流程（v2.14.3 排查 B2——PDF/Word/图片转 AI 可读）
+### 文档转换流程（PDF/Word/图片转 AI 可读）
 
 > 探查期枚举到文档后，非 Markdown 格式的需求/设计文档须先转换再提取——AI 读不了二进制 PDF/Word，图也读不了（除非 OCR/转图）。
 
@@ -71,7 +71,7 @@
 
 **转换后提取指引**：转出的 markdown 文档按需提取架构决策（docs/ ADR）、外部交互（API/数据库/MQ/第三方服务契约）、数据模型约定——提取去向 reference-manual §5 调用链路/§6 接口清单/§8 数据字典；**以代码为准**，文档内容与代码不一致时按 §文档证据源优先级 声明冲突。
 
-### 文档证据源优先级（v2.14.3 排查 B1——以代码为准，文档为辅，冲突须声明）
+### 文档证据源优先级（以代码为准，文档为辅，冲突须声明）
 
 > 探查/研发期参考文档时，**应用内的信息以代码为准、为主**（代码是当前真实行为）；设计文档为辅（设计意图与决策背景）；需求文档仅在需求分析时作为参考（描述的是目标而非现状）。
 
@@ -83,7 +83,7 @@
 
 **冲突声明义务**：探查/设计时发现文档与代码不一致（架构/外部交互/数据模型/接口契约任一维度），必须在 spec 的"假设与约束"段显式写出冲突点 + 以代码为准 + 建议文档更新（不留"文档与代码 silently 不一致"的暗账）。
 
-### 多源探查矛盾裁决（R45 semantica conflicts 吸收）
+### 多源探查矛盾裁决（来源：semantica conflicts）
 
 > 整合自 [semantica-agi/semantica](https://github.com/semantica-agi/semantica) v0.7.0 `conflicts/conflict_resolver.py` 的 7 种 ResolutionStrategy 与 `source_tracker.py` 来源可信度模型（机制级借鉴，不引依赖）。上文「文档证据源优先级」管**文档 vs 代码**一个维度；本节管**任意多源**矛盾时的通用裁决序。
 
@@ -110,7 +110,7 @@
 
 **双时态注记**（semantica `_temporal_support_projection.py` Window 语义借鉴）：清单条目/探查结论有两个时间轴——**valid time**（代码何时如此，锚 commit/项目指纹）与 **recorded time**（第 N 轮探查何时知道）。反馈回路的「单条更新」= 写一条新 recorded time 记录，不回头改写旧结论的历史有效性；last-good 红线（条目骤降 >50% 视为探查失败保留旧清单）防的正是「新一轮探查污染历史有效认知」。
 
-**待确认事项清单回填协议**（R49 知识生命周期吸收）：裁决序走到「并存标注」仍不能定的项、探查中 AI 拿不准的业务语义，集中落到 `notes/cognition.md` 待确认事项清单段（每项：问题/两源证据锚点/需要谁回填），不散落在各文档的「待验证」字样里自然蒸发。回填后按裁决序重新转正（升级 UserChallenge 的项走 trace-log --decision 留痕），转正即从清单销项——待确认事项清单长度是探查完成度的显式指标，mark-active 抽样核验时可对照。
+**待确认事项清单回填协议**：裁决序走到「并存标注」仍不能定的项、探查中 AI 拿不准的业务语义，集中落到 `notes/cognition.md` 待确认事项清单段（每项：问题/两源证据锚点/需要谁回填），不散落在各文档的「待验证」字样里自然蒸发。回填后按裁决序重新转正（升级 UserChallenge 的项走 trace-log --decision 留痕），转正即从清单销项——待确认事项清单长度是探查完成度的显式指标，mark-active 抽样核验时可对照。
 
 ```
 4. 写入特征卡对应项（不是复制原文，是提取结构化规则）
@@ -129,7 +129,7 @@
 
 > **生成的 skill 须能反向写入项目记忆**：当 AI 在开发过程中发现新规则/教训时，通过 claude-mem 或 .zcode/memories 写入，下次生成 skill 时自动读取。形成"记忆→生成→开发→记忆"闭环。
 
-### 行为观察（R21-B：读"已写下的"之外，再挖"实际做的"）
+### 行为观察（读"已写下的"之外，再挖"实际做的"）
 
 上面读的是开发者**已写下的**规则；实际研发习惯还藏在 git 历史里。自动挖掘出初稿，AI 审读采纳：
 
@@ -143,7 +143,7 @@ bash scripts/mine-habits.sh <PROJECT_DIR>            # → .swarm-yuan/notes/hab
 |------|------|------|
 | 提交前缀/分支命名分布 | SKILL.md 铁律段（引用来源，不写死值） | 与书面规范交叉验证：分布与规范一致=规范真实生效；不一致=如实记录实际惯例并标注 |
 | 工作偏好（粒度/测试习惯/工具链） | dev-guide.md「开发偏好」节 | 测试提交占比、提交规模分桶等实测值支撑偏好判断 |
-| 共变文件对/热点文件 | reference-manual.md 说明列注意事项 + recipes.md 配方提取（§C+.7 源②） | 高频共变=隐性耦合/拼装单元信号；异常信号（测试占比 0%、巨型提交为主）如实写、不粉饰 |
+| 共变文件对/热点文件 | reference-manual.md 说明列注意事项 + recipes.md 配方提取（§D.7 源②） | 高频共变=隐性耦合/拼装单元信号；异常信号（测试占比 0%、巨型提交为主）如实写、不粉饰 |
 
 红线：habits.md 是统计事实不是规范——前缀分布 ≠ 必须遵守的提交规范（书面规则优先，统计只作实证交叉）。
 
@@ -161,7 +161,7 @@ bash scripts/mine-habits.sh <PROJECT_DIR>            # → .swarm-yuan/notes/hab
 
 > 生成的目标技能的 reference-manual.md 须含"AI Agent 运行时"段，记录 agent 版本、能力清单、工具链、配置方式、插件清单。dev-guide.md 须含"如何配置 agent"指引。
 
-## Step 0: 代码图谱构建（= 生成流程 ① 探查 / Step 3 内图谱优先动作）
+## 代码图谱构建（= 生成流程 Step 3 内图谱优先动作）
 
 探查前，**先用代码图谱工具索引目标仓库**，让后续探查基于图谱而非 grep。组件依赖链路优先从图谱读取。
 
@@ -301,7 +301,7 @@ graphify export callflow-html # 调用流导出（组件依赖链路段可视化
 - CI/CD：.github/workflows、Jenkinsfile、部署流程
 ```
 
-### C+. 详尽组件库清单与调用链路分析（Exhaustive Inventory + Call-Chain Analysis）
+### D. 详尽组件库清单与调用链路分析（Exhaustive Inventory + Call-Chain Analysis）
 
 > **铁律：特征卡第 11 项与 reference-manual §4/§5/§6 不允许用"代表性样本"填充。** 必须按本节方法论做**全量穷举 + 调用链路分析 + 编排约束推导**，产出可被 `find` 计数核验的完整清单。
 >
@@ -309,7 +309,7 @@ graphify export callflow-html # 调用流导出（组件依赖链路段可视化
 >
 > 典型反模式（须杜绝）：探查到 85 个组件只列 10 个；依赖链路写成"模块A→模块B"的骨架树而无挂载顺序/跨模块边界/注册机制；接口清单写"GET/POST /api/xxx"而无具体端点与 handler；**对纯后端项目却按前端维度（.vue/store/bootstrap）枚举=维度错配**。
 
-#### C+.0 项目形态判定（先于一切枚举）
+#### D.0 项目形态判定（先于一切枚举）
 
 探查第一步：判定项目形态，决定后续枚举哪些维度。**不预设——按探查到的文件类型/框架特征动态判定。**
 
@@ -319,21 +319,21 @@ graphify export callflow-html # 调用流导出（组件依赖链路段可视化
 | 有 `@Controller`/`@RestController`/`router.get`/`app.get`/`Blueprint`/`FastAPI` | 含后端 | controller/route + service + repository/dao + middleware + ORM model |
 | 有 `package.json`+`electron`/`Electron`/`BrowserWindow` | 桌面应用 | 主进程+渲染进程+IPC+preload |
 | 有 `MainActivity`/`Info.plist`/`expo`/`flutter` | 移动端 | Activity/Fragment/Screen/Widget + 导航 + 平台桥接 |
-| 有 `go.mod`+`cmd/`/`Cargo.toml`+`src/main.rs`/`pom.xml`+`src/main/java` | 纯后端/CLI/库 | 按 §C+.1-B 后端维度 |
+| 有 `go.mod`+`cmd/`/`Cargo.toml`+`src/main.rs`/`pom.xml`+`src/main/java` | 纯后端/CLI/库 | 按 §D.1-B 后端维度 |
 | 有 `worker`/`consumer`/`@RabbitListener`/`@KafkaHandler`/`celery` | 含异步消费 | 消费者+生产者+队列拓扑+幂等键 |
 | 有 `Dockerfile`+`docker-compose`+多服务 | 微服务/多服务 | 每服务独立枚举 + 跨服务调用链 |
 | 只有 `src/`+导出、无入口（无 main/index） | 库 | 公共 API（导出函数/类/类型）+ 内部模块依赖 |
 
-> **判定产出**：记录"本项目含以下维度：[前端UI / 后端API / 异步消费 / 桌面IPC / 移动端 / 库导出 ...]"，后续 C+.1-C+.4 **只枚举列出的维度**。
+> **判定产出**：记录"本项目含以下维度：[前端UI / 后端API / 异步消费 / 桌面IPC / 移动端 / 库导出 ...]"，后续 D.1-D.4 **只枚举列出的维度**。
 
 > **★视觉成熟度探查（impeccable v4.0.2 吸收，仅含前端时执行；详见 `references/frontend-design-methodology.md` §十一）**：含前端维度时，追加探查前端视觉成熟度，决定是否引用前端设计质量方法论：
 > - **探查信号**：CSS custom properties（`--*:`）数量 ≥3 / className tokens（独特类名）数量 ≥12 / styled-components / CSS Modules / Tailwind config 文件 ≥3 / DESIGN.md 存在性
 > - **判定产出**：① 「有现存视觉实现但无 DESIGN.md」→ 引用 `references/frontend-design-methodology.md` 的 `document` 命令模式（从代码反推 DESIGN.md）；② 「有 DESIGN.md」→ 引用 `extract` 命令模式（提取 token 进设计系统）+ craft-floor 审查（Verify 8 项 + Refuse 反 slop 清单）；③ 「空白」→ 引用 `init` + `shape` + `new-work` 命令模式（从 PRODUCT.md 起建视觉世界）
-> - **降级**：探查信号不全时按更重档处理（质量优先），全量引用前端设计质量方法论；本探查不改 17 特征卡数字（§C+.0 是探查方法论，非特征卡项）
+> - **降级**：探查信号不全时按更重档处理（质量优先），全量引用前端设计质量方法论；本探查不改 17 特征卡数字（§D.0 是探查方法论，非特征卡项）
 
-#### C+.0.5 框架探查（从依赖清单+注解+配置文件识别具体框架，激活规则集）
+#### D.0.5 框架探查（从依赖清单+注解+配置文件识别具体框架，激活规则集）
 
-> **★铁律：§C+.0 只判前端/后端/异步等大类，§C+.0.5 进一步识别具体框架。** 探查到什么框架，就激活 `references/frameworks/<fw>.md` 中对应的框架规则集（唯一来源，T4 起自 domain-knowledge.md 迁出）+ §C+.1-B 框架特定构件枚举 + precheck.conf 框架配置变量。**不预设——按探查到的信号动态激活。**
+> **★铁律：§D.0 只判前端/后端/异步等大类，§D.0.5 进一步识别具体框架。** 探查到什么框架，就激活 `references/frameworks/<fw>.md` 中对应的框架规则集（唯一来源）+ §D.1-B 框架特定构件枚举 + precheck.conf 框架配置变量。**不预设——按探查到的信号动态激活。**
 
 **探查方法：从构建文件依赖清单提取框架 starter**
 
@@ -359,20 +359,20 @@ grep -rlE '@Data|@Slf4j|@Builder|@Mapper|@Transactional|@DubboService|@RocketMQM
 find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2>/dev/null
 ```
 
-**框架信号→规则集激活表已数据化外迁：完整表见 `assets/framework-signals.md`（由 `scripts/gen-framework-index.sh` 扫描 `references/frameworks/*.md` §1 生成维护）。运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件。**
+**框架信号→规则集激活表见 `assets/framework-signals.md`（由 `scripts/gen-framework-index.sh` 扫描 `references/frameworks/*.md` §1 生成维护）。运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件。**
 
-<!-- T4 改造：本区块由 gen-framework-index.sh 自动重写，手改内容会被覆盖。脚本失败会保留原文件不动（mv 守卫），不阻塞生成流程。 -->
+<!-- 本区块由 gen-framework-index.sh 自动重写，手改内容会被覆盖。脚本失败会保留原文件不动（mv 守卫），不阻塞生成流程。 -->
 
 # >>> framework-signal-index >>>
-> 本表已数据化外迁（WP-P1/M4）：完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。
+> 完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。
 > 运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件，无需常驻上下文。
 # <<< framework-signal-index <<<
 
-> **★版本号提取（与规则文件 §3 适用版本区间匹配，T4 新增铁律）**：探查时须同时提取各框架**版本号**（来源：JVM 项目 `pom.xml` `<version>` / `build.gradle` implementation；Node 项目 `package.json` `"vue": "^3.x"`；Go 项目 `go.mod` `module vX.Y.Z`；Python 项目 `pyproject.toml`/`requirements.txt` `fastapi==0.x`）。将提取到的版本与 `references/frameworks/<fw>.md` §3 规律的"适用版本"区间匹配——区间内规律实例化时附证据；区间外规律标"⚠ 待验证（项目版本 X，规律适用区间 Y）"；框架版本号须写入特征卡第 4 项技术栈摘要。
+> **★版本号提取（与规则文件 §3 适用版本区间匹配）**：探查时须同时提取各框架**版本号**（来源：JVM 项目 `pom.xml` `<version>` / `build.gradle` implementation；Node 项目 `package.json` `"vue": "^3.x"`；Go 项目 `go.mod` `module vX.Y.Z`；Python 项目 `pyproject.toml`/`requirements.txt` `fastapi==0.x`）。将提取到的版本与 `references/frameworks/<fw>.md` §3 规律的"适用版本"区间匹配——区间内规律实例化时附证据；区间外规律标"⚠ 待验证（项目版本 X，规律适用区间 Y）"；框架版本号须写入特征卡第 4 项技术栈摘要。
 
-> **判定产出**：记录"本项目激活以下框架规则集：[spring-boot, mybatis, lombok, sharding, ...]"。后续 §C+.1-B 枚举框架特定构件 / §C+.3 推导框架约束 / `references/frameworks/<fw>.md` 引用框架规则表 / precheck.conf 填充框架配置变量。
+> **判定产出**：记录"本项目激活以下框架规则集：[spring-boot, mybatis, lombok, sharding, ...]"。后续 §D.1-B 枚举框架特定构件 / §D.3 推导框架约束 / `references/frameworks/<fw>.md` 引用框架规则表 / precheck.conf 填充框架配置变量。
 
-#### C+.0.6 四层架构视角枚举（TOGAF BDAT，架构类变更前置探查）
+#### D.0.6 四层架构视角枚举（TOGAF BDAT，架构类变更前置探查）
 
 > 方法论依据 `references/togaf-metamodel-methodology.md` §1（五层元模型"对应物"列）。**触发条件**：形态判定为架构设计/专项设计/演进规划类变更时必做（适配矩阵 ★★+）；纯编码/文案类变更跳过（避免过度建模）。产出供 spec §24 架构映射节消费。
 
@@ -386,11 +386,11 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 **纵向链初判**：对本次变更涉及的主链路，先探后连——`业务服务→数据实体→应用服务→技术服务` 四环节是否都在探查清单中可定位；缺哪层回哪层补枚举。此清单是 spec §24.5 纵向链验证的探查侧输入。
 
 
-#### C+.1 全量穷举方法论（按维度动态适配，确保一个不漏）
+#### D.1 全量穷举方法论（按维度动态适配，确保一个不漏）
 
-**Step 1：按项目形态自动枚举（根据 C+.0 判定结果选择维度）**
+**第 1 步：按项目形态自动枚举（根据 D.0 判定结果选择维度）**
 
-**C+.1-F 前端 UI 维度（仅当 C+.0 判定含前端时）**
+**D.1-F 前端 UI 维度（仅当 D.0 判定含前端时）**
 ```bash
 # UI 组件（按项目框架：Vue/Svelte/React/Angular）
 find <可改源码目录> -type f \( -name "*.vue" -o -name "*.svelte" -o -name "*.tsx" -o -name "*.ts" \) -path "*/components/*" ! -path "*test*" | sort
@@ -406,7 +406,7 @@ find <可改源码目录> -type f \( -name "use*.ts" -o -name "use*.tsx" -o -nam
 grep -rlE "routes|createRouter|RouterProvider|<Route" <可改源码目录>
 ```
 
-**C+.1-B 后端 API 维度（仅当 C+.0 判定含后端时）**
+**D.1-B 后端 API 维度（仅当 D.0 判定含后端时）**
 ```bash
 # Controller / Route handler（按框架：Express/Koa/Fastify/Spring/FastAPI/Django/Gin/Echo）
 grep -rlE "router\.(get|post|put|delete|patch)|@(Rest)?Controller|@Get|@Post|app\.(get|post)|Blueprint\.route|APIRouter\(\)" <可改源码目录>
@@ -425,9 +425,9 @@ find <可改源码目录> -type f \( -path "*/migration*" -o -path "*/schema*" -
 grep -rlE "@Entity|@Table|Schema\(|mongoose\.|sequeliz|CREATE TABLE" <可改源码目录>
 ```
 
-**C+.1-FW 框架特定构件枚举（仅当 §C+.0.5 探查到对应框架时执行）**
+**D.1-FW 框架特定构件枚举（仅当 §D.0.5 探查到对应框架时执行）**
 
-> **★T4 改造：各框架完整枚举命令以 `references/frameworks/<fw>.md` §2 为准**——本段仅保留 Java/Node 各框架的示例命令作为快速参考，详细/最新的枚举命令、计数基准、覆盖语言与版本差异，均由 `references/frameworks/<fw>.md` §2（特定构件枚举）维护。探查时按 §C+.0.5 激活的 ACTIVE_FRAMEWORKS 逐框架读取对应规则文件 §2 执行，不在本段重复约束。
+> **★各框架完整枚举命令以 `references/frameworks/<fw>.md` §2 为准**——本段仅保留 Java/Node 各框架的示例命令作为快速参考，详细/最新的枚举命令、计数基准、覆盖语言与版本差异，均由 `references/frameworks/<fw>.md` §2（特定构件枚举）维护。探查时按 §D.0.5 激活的 ACTIVE_FRAMEWORKS 逐框架读取对应规则文件 §2 执行，不在本段重复约束。
 
 > 以下按激活的框架规则集动态选择，只枚举探查到的框架的特定构件。
 
@@ -478,7 +478,7 @@ grep -rlE 'a-|AntButton|AntTable|AntForm' <可改源码目录> --include='*.vue'
 grep -rlE 'n-|NButton|NDataTable|NForm' <可改源码目录> --include='*.vue' --include='*.ts' # NaiveUI
 ```
 
-**C+.1-A 异步/事件维度（仅当 C+.0 判定含异步消费时）**
+**D.1-A 异步/事件维度（仅当 D.0 判定含异步消费时）**
 ```bash
 # 消费者/生产者/队列定义
 grep -rlE "@RabbitListener|@KafkaHandler|@EventListener|celery|worker|consumer|Producer|publish|emit" <可改源码目录>
@@ -486,7 +486,7 @@ grep -rlE "@RabbitListener|@KafkaHandler|@EventListener|celery|worker|consumer|P
 find <可改源码目录> -type f \( -name "*queue*" -o -name "*topology*" -o -name "*exchange*" \)
 ```
 
-**C+.1-D 桌面/移动维度（仅当 C+.0 判定含桌面/移动时）**
+**D.1-D 桌面/移动维度（仅当 D.0 判定含桌面/移动时）**
 ```bash
 # 桌面：主进程/渲染进程/preload/IPC
 grep -rlE "ipcMain|ipcRenderer|contextBridge|BrowserWindow|app\.whenReady" <可改源码目录>
@@ -494,7 +494,7 @@ grep -rlE "ipcMain|ipcRenderer|contextBridge|BrowserWindow|app\.whenReady" <可�
 grep -rlE "Activity|Fragment|Composable|Screen|Navigator|expo|flutter.*Widget" <可改源码目录>
 ```
 
-**C+.1-L 库导出维度（仅当 C+.0 判定为库时）**
+**D.1-L 库导出维度（仅当 D.0 判定为库时）**
 ```bash
 # 公共 API：入口文件的导出
 cat <入口 index.ts/index.js/__init__.py/mod.go/lib.rs> # 提取全部 export
@@ -502,7 +502,7 @@ cat <入口 index.ts/index.js/__init__.py/mod.go/lib.rs> # 提取全部 export
 grep -rn "^import\|^from\|^use " <可改源码目录> | grep -v "test"
 ```
 
-**C+.1-T 通用维度（所有项目都枚举）**
+**D.1-T 通用维度（所有项目都枚举）**
 ```bash
 # 类型定义（TS 项目）
 grep -rlE "^export (interface|type) " <可改源码目录> --include="*.ts" --include="*.d.ts"
@@ -512,9 +512,9 @@ find <可改源码目录> -type f \( -name "util*" -o -name "helper*" -o -name "
 find <可改源码目录> -type f \( -name "config*" -o -name "constant*" -o -name "env*" \) ! -path "*node_modules*"
 ```
 
-**Step 2：解析每个文件的导出签名（非只数文件数）**
+**第 2 步：解析每个文件的导出签名（非只数文件数）**
 
-对 Step 1 枚举到的每个文件，提取其**全部导出**（函数名/类名/store名/类型名/组件名 + 签名）：
+对第 1 步枚举到的每个文件，提取其**全部导出**（函数名/类名/store名/类型名/组件名 + 签名）：
 
 ```bash
 # TS/JS：提取所有 export 行（签名级）
@@ -531,7 +531,7 @@ grep -nH "defineProps\|interface.*Props\|withDefaults\|defineEmits\|defineSlots"
 
 > 优先用 **gitnexus `context <symbol>`**（360度上下文：定义+被引用+引用关系）或 **graphify `explain <symbol>`**（节点邻域）系统性提取签名，而非逐文件 grep。
 
-**Step 3：计数核验（防止样本化填充）**
+**第 3 步：计数核验（防止样本化填充）**
 
 ```
 对每个维度独立核验：
@@ -540,32 +540,32 @@ grep -nH "defineProps\|interface.*Props\|withDefaults\|defineEmits\|defineSlots"
  断言：清单计数 ≥ 枚举计数 × 0.95（允许少量非公开/内部文件不列，但偏差须注明原因）
 ```
 
-> 若某维度清单计数远小于枚举计数（如 10 vs 85），**禁止提交**，回到 Step 2 继续补全该维度。
+> 若某维度清单计数远小于枚举计数（如 10 vs 85），**禁止提交**，回到第 2 步继续补全该维度。
 >
 > **数据映射四维度是机器执法面**：数据模型实体（DIM_DATA_MODEL→§9）、MyBatis mapper XML（DIM_MAPPER_XML→§9）、
-> 定时/批处理任务（DIM_SCHEDULE_JOB→§5）、ORM schema/迁移资产（DIM_ORM_SCHEMA→§8，横向清剿轮补）——`inventory-verify.sh` 按 `assets/inventory-dimensions.conf`
+> 定时/批处理任务（DIM_SCHEDULE_JOB→§5）、ORM schema/迁移资产（DIM_ORM_SCHEMA→§8）——`inventory-verify.sh` 按 `assets/inventory-dimensions.conf`
 > 自动核验这三类清单（漏列整维=FAIL；任务表路径进 --path-check）。字符串耦合层（XML/SQL 列）不进任何
-> Java import 边，这三张清单 + §C+.2-B Layer 5/§C+.2-J 链路产物就是"漏改字段"的唯一防线，禁止样本化。
+> Java import 边，这三张清单 + §D.2-B Layer 5/§D.2-J 链路产物就是"漏改字段"的唯一防线，禁止样本化。
 
-#### C+.2 调用链路分析方法论（按项目形态选择链路模型）
+#### D.2 调用链路分析方法论（按项目形态选择链路模型）
 
 **铁律：依赖链路不是"模块A→模块B"的骨架树。** 链路模型按项目形态选择——**前端追注册装配+组件挂载树；后端追请求处理管道+分层依赖；微服务追跨服务调用链**。不预设某一种。
 
-**按形态选择链路模型（根据 C+.0 判定）：**
+**按形态选择链路模型（根据 D.0 判定）：**
 
 | 项目形态 | 链路模型 | 追查重点 |
 |---------|---------|---------|
-| 含前端 | §C+.2-F 注册装配链路 + 组件挂载树 + store 依赖 | 注册顺序/feature-gate/静态vs动态路由/跨模块引用 |
-| 含后端 | §C+.2-B 请求处理管道 + 分层依赖 + **数据映射链路（Layer 5）** | 入口→中间件→路由→controller→service→repo→DB/外部；**实体↔表列↔resultMap↔SQL 列** |
-| 含异步 | §C+.2-A 消息流转链路 | 生产者→队列→消费者→副作用+幂等 |
-| 含定时/批处理 | §C+.2-J 任务链路（信号驱动，非形态） | 触发器→job→reader/processor/writer→读写的表与实体 |
-| 微服务 | §C+.2-M 跨服务调用链 | 服务间同步/异步调用/共享DB/网关/trace透传 |
-| 桌面 | §C+.2-D IPC 链路 | 主进程↔preload↔渲染进程 IPC 通道 |
-| 库 | §C+.2-L 导出依赖图 | 公共API→内部模块依赖 |
+| 含前端 | §D.2-F 注册装配链路 + 组件挂载树 + store 依赖 | 注册顺序/feature-gate/静态vs动态路由/跨模块引用 |
+| 含后端 | §D.2-B 请求处理管道 + 分层依赖 + **数据映射链路（Layer 5）** | 入口→中间件→路由→controller→service→repo→DB/外部；**实体↔表列↔resultMap↔SQL 列** |
+| 含异步 | §D.2-A 消息流转链路 | 生产者→队列→消费者→副作用+幂等 |
+| 含定时/批处理 | §D.2-J 任务链路（信号驱动，非形态） | 触发器→job→reader/processor/writer→读写的表与实体 |
+| 微服务 | §D.2-M 跨服务调用链 | 服务间同步/异步调用/共享DB/网关/trace透传 |
+| 桌面 | §D.2-D IPC 链路 | 主进程↔preload↔渲染进程 IPC 通道 |
+| 库 | §D.2-L 导出依赖图 | 公共API→内部模块依赖 |
 
 ---
 
-**§C+.2-F 前端注册装配链路 + 组件挂载树（仅含前端时）**
+**§D.2-F 前端注册装配链路 + 组件挂载树（仅含前端时）**
 
 Layer 1 注册装配链路：
 ```
@@ -606,7 +606,7 @@ Layer 4 store/服务依赖链路：
 
 ---
 
-**§C+.2-B 后端请求处理管道 + 分层依赖（仅含后端时）**
+**§D.2-B 后端请求处理管道 + 分层依赖（仅含后端时）**
 
 Layer 1 请求处理管道（从入口到 DB/外部副作用）：
 ```
@@ -678,7 +678,7 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
 
 ---
 
-**§C+.2-A 异步消息流转链路（仅含异步消费时）**
+**§D.2-A 异步消息流转链路（仅含异步消费时）**
 
 ```
 追查路径：
@@ -689,7 +689,7 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
 ```
 记录：**队列拓扑**、**消费幂等键**、**重试/DLQ 策略**、**消息时序保证**、**背压/限流**。
 
-**消息拓扑配对表（横向清剿轮补：端点名是双边字符串——producer 写 "order-topic" 与 listener 听
+**消息拓扑配对表（端点名是双边字符串——producer 写 "order-topic" 与 listener 听
 "order-topic" 互不知晓，改一边即静默断链，比漏改字段更隐蔽）**：
 ```
 产出：reference-manual §5 消息拓扑配对表（每行：端点名 | 生产侧（file:line）| 消费侧（file:line）|
@@ -704,15 +704,15 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
 
 ---
 
-**§C+.2-J 定时/批处理任务链路（仅探查到调度/批处理信号时：@Scheduled/@EnableBatchProcessing/Quartz/ElasticJob/celery beat 等）**
+**§D.2-J 定时/批处理任务链路（仅探查到调度/批处理信号时：@Scheduled/@EnableBatchProcessing/Quartz/ElasticJob/celery beat 等）**
 
-定时与批处理任务是"无入口请求的数据加工管道"——不经过 §C+.2-B 的请求处理管道，改数据模型时最易漏改的地方（研发漏改字段的高发区）：
+定时与批处理任务是"无入口请求的数据加工管道"——不经过 §D.2-B 的请求处理管道，改数据模型时最易漏改的地方（研发漏改字段的高发区）：
 
 ```
 追查路径：
  触发器（@Scheduled cron / Quartz CronTrigger / JobParameters / beat_schedule）
  → 任务入口（job 类 / JobBuilder 装配 / tasklet）
- → Step 生成期必读文件：ItemReader（SQL 列清单 / mapper 查询 / 文件字段）
+ → 批处理 Step（生成期必读文件）：ItemReader（SQL 列清单 / mapper 查询 / 文件字段）
                ItemProcessor（实体字段读写 getXxx/setXxx）
                ItemWriter（mapper 写方法 / 批量 SQL 列）
  → 数据资产（读哪些表/实体、写哪些表/实体——读写方向必须记录）
@@ -726,7 +726,7 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
 
 ---
 
-**§C+.2-M 微服务跨服务调用链（仅微服务时）**
+**§D.2-M 微服务跨服务调用链（仅微服务时）**
 
 ```
 追查路径：
@@ -738,7 +738,7 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
 ```
 记录：**同步调用链长度**、**共享DB**、**traceId透传**、**熔断/降级**、**Saga/Outbox 模式**。
 
-#### C+.2.5 机器可读关系边集（relations.jsonl——R21-D，§C+.2 的索引层）
+#### D.2.5 机器可读关系边集（relations.jsonl——§D.2 的索引层）
 
 调用链的 Markdown 图（mermaid 矩阵/挂载树）给 AI 读；同一批关系再落一份**机器可查的边集**给脚本消费：
 
@@ -747,14 +747,14 @@ bash scripts/relations-extract.sh <PROJECT_DIR> --skill-dir <目标技能目录>
 ```
 
 - **自动层**（脚本产出，确定性零依赖）：import 边——TS/JS/Vue 相对说明符、py 相对导入、go module 内、java 包路径映射；**声明式映射边**——MyBatis `namespace`→Mapper 接口（`mapper-binding`）、`resultMap type`/`resultType`/`parameterType`→实体（`data-mapping`；字符串耦合点编译不校验，改实体字段的影响面反查靠它）；每边带 `evidence`（file:line）。
-- **AI 层**（探查时在此初稿上补充）：语义边——`call`（调用）/`route`（路由挂载）/`message`（消息流）/`ipc`/`export`（库导出）/`job-flow`（定时/批处理装配：job 配置→reader/writer 依赖的 mapper/实体，按 §C+.2-J 逐条补），行格式同款（`{"from","to","kind","evidence"}`）；madge/graphify/gitnexus 可用时按工具矩阵富化后重建。
+- **AI 层**（探查时在此初稿上补充）：语义边——`call`（调用）/`route`（路由挂载）/`message`（消息流）/`ipc`/`export`（库导出）/`job-flow`（定时/批处理装配：job 配置→reader/writer 依赖的 mapper/实体，按 §D.2-J 逐条补），行格式同款（`{"from","to","kind","evidence"}`）；madge/graphify/gitnexus 可用时按工具矩阵富化后重建。
 - **消费方**：`--stable-diff` 1 跳下游传播优先读边集（import 边精确于 basename grep 启发式；改实体字段时 data-mapping 边把 mapper XML 拉进 1 跳影响面）；开发工作流 ②探查"谁依赖 X"直接查边集，替代读图；`--mark-active` 抽样核验断边（advisory）。
 
-#### C+.3 编排调用关系及约束推导（从链路分析中提炼规则）
+#### D.3 编排调用关系及约束推导（从链路分析中提炼规则）
 
 > **这是"研发流程"的核心**：不仅是列出组件，还要提炼出**新功能开发时必须遵守的编排约束**。约束类别按项目形态动态选择——**只推导项目实际存在的约束类别**。
 
-**按形态选择约束类别（根据 C+.0 判定）：**
+**按形态选择约束类别（根据 D.0 判定）：**
 
 | 项目形态 | 适用的约束类别 |
 |---------|-------------|
@@ -784,7 +784,7 @@ bash scripts/relations-extract.sh <PROJECT_DIR> --skill-dir <目标技能目录>
 
 **推导流程（每条约束须有代码证据）：**
 ```
-1. 从 C+.2 的依赖矩阵，识别所有跨边界 import/调用边
+1. 从 D.2 的依赖矩阵，识别所有跨边界 import/调用边
 2. 对每条边判断：允许的依赖 vs 应避免的反向依赖？
  → 依据：项目既有分层约定 + 循环依赖检测（madge/graphify）
 3. 从注册链路/中间件链，识别顺序与 feature-gate
@@ -793,7 +793,7 @@ bash scripts/relations-extract.sh <PROJECT_DIR> --skill-dir <目标技能目录>
 6. 写入 dev-guide.md "编排约束"段 + reference-manual.md §5 约束注释
 ```
 
-#### C+.4 接口清单全量枚举（按接口形态适配）
+#### D.4 接口清单全量枚举（按接口形态适配）
 
 **按探查到的接口形态选择枚举方式（不预设 REST）：**
 
@@ -824,9 +824,9 @@ grep -nH "^export " <库入口文件>
 |----------|-------------|-------------|------|------|---------|
 （一行一个端点，prefix 拼接到完整路径；GraphQL 列 Query/Mutation 名+返回类型；gRPC 列 service.method；MQ 列 queue+handler。不写通配符占位）
 
-#### C+.5 产出校验清单（按维度动态核验，探查完成前必过）
+#### D.5 产出校验清单（按维度动态核验，探查完成前必过）
 
-> **只核验 C+.0 判定存在的维度**。不存在的维度跳过（如纯后端项目不核验"组件穷举"）。
+> **只核验 D.0 判定存在的维度**。不存在的维度跳过（如纯后端项目不核验"组件穷举"）。
 
 **前端维度（仅含前端时）：**
 - [ ] **UI 组件穷举**：§4 组件表行数 ≥ `find` 组件文件计数 × 0.95，按模块分组，每行含路径/用途/稳定性
@@ -851,24 +851,24 @@ grep -nH "^export " <库入口文件>
 - [ ] **类型定义穷举**：§9 覆盖全部 export interface/type（TS）或等效
 - [ ] **编排约束**：dev-guide §8 含按形态推导的约束类别，每条有代码证据
 - [ ] **接口全量**：§6 无通配符占位（逐端点/逐 resolver/逐 method 列出）
-- [ ] **业务功能与配方**：recipes.md §A 覆盖已识别业务功能、§B 每配方五要素齐全（§C+.6/§C+.7，standard/compliance 档）
+- [ ] **业务功能与配方**：recipes.md §A 覆盖已识别业务功能、§B 每配方五要素齐全（§D.6/§D.7，standard/compliance 档）
 - [ ] **计数核验**：每个维度清单计数 ≥ 枚举计数 × 0.95
 
-#### C+.6 业务功能盘点（既有业务功能实现编目 → recipes.md §A）
+#### D.6 业务功能盘点（既有业务功能实现编目 → recipes.md §A）
 
-> 配方层的地基：先编目"项目已有哪些业务功能、各由哪些组件拼成"——每次成功拼装的实物记录。任务配方（§C+.7）与开发工作流 ②探查的复用决策都从这张表出发，不从零 grep。
+> 配方层的地基：先编目"项目已有哪些业务功能、各由哪些组件拼成"——每次成功拼装的实物记录。任务配方（§D.7）与开发工作流 ②探查的复用决策都从这张表出发，不从零 grep。
 
-从 §C+.1 枚举产物与 §C+.2 链路归纳（**不是重新探查**）：
+从 §D.1 枚举产物与 §D.2 链路归纳（**不是重新探查**）：
 - **功能识别**（按形态选入口）：前端=路由表/菜单项（页面功能）；后端=端点表按业务域聚合（接口功能）；异步=队列+handler（消费功能）；桌面=窗口/菜单项；库=导出 API 分组。每功能一行。
-- **组件归因**：每功能回溯 §C+.2 对应链路模型，列出它实际拼装了哪些稳定单元（§4 清单条目）。
+- **组件归因**：每功能回溯 §D.2 对应链路模型，列出它实际拼装了哪些稳定单元（§4 清单条目）。
 - **接口/数据对应**：功能消费的端点（§6）与数据表/模型（§9）。
 - **测试对应**：功能已有的测试案例文件与测试数据 fixture（验证资产与功能编目勾稽——无测试的功能显式标"无"）。
 
 产出表（recipes.md §A）：`| 功能 | 入口路径 | 复用组件 | 接口 | 数据 | 测试 |`——组件路径反引号包裹（`--path-check` 校验存在性）。
 
-#### C+.7 任务配方提取（高频任务形态的拼装序列 → recipes.md §B）
+#### D.7 任务配方提取（高频任务形态的拼装序列 → recipes.md §B）
 
-把"怎么拼不违规"（§C+.3 编排约束）上升为"按什么顺序拼"（配方）。三源提取，证据优先：
+把"怎么拼不违规"（§D.3 编排约束）上升为"按什么顺序拼"（配方）。三源提取，证据优先：
 
 1. **既有实现**（最可信源）：§A 业务功能清单就是现成配方实例——同类功能此前怎么拼的，新任务照路线复用。
 2. **git 同类任务历史**：`git log --oneline -- <功能目录>` 看同类任务的提交序列（改了哪些文件、什么顺序）；共变文件对（高频同改文件=隐性拼装单元，mine-habits 初稿）佐证复用组合。
@@ -890,11 +890,11 @@ grep -nH "^export " <库入口文件>
 - 构建配置：vite.config / webpack.config / tsconfig / electron-builder.yml
 - 目录：src/ packages/ apps/ monorepo?
 - overlay-fork 类（可改层/只读层分离）：patch 机制（patch 清单文件 + inject 脚本?）、符号链接、alias 链
-- **页面知识三角**（R49 知识生命周期吸收，进 reference-manual 前端构件表）：每个路由级页面枚举三答——①操作：页面有哪些按钮/入口/弹窗；②调用：每个操作调哪些 API 及**真实入参**（在调用点反推，前端常只透传一个参数对象，光看 API 定义抽不出字段）；③权限：什么角色/条件可见可点、无权限时如何降级提示。微前端项目另须单独理清主子应用拆分与通信机制（ mounting 方式/通信通道/路由归属），这是 AI 最难自己拼出的部分。
+- **页面知识三角**（进 reference-manual 前端构件表）：每个路由级页面枚举三答——①操作：页面有哪些按钮/入口/弹窗；②调用：每个操作调哪些 API 及**真实入参**（在调用点反推，前端常只透传一个参数对象，光看 API 定义抽不出字段）；③权限：什么角色/条件可见可点、无权限时如何降级提示。微前端项目另须单独理清主子应用拆分与通信机制（ mounting 方式/通信通道/路由归属），这是 AI 最难自己拼出的部分。
 
 ### Python
 
-> **R60-Django 执勤补**：Python/Django 生态的字符串耦合面（模板字段/URL 名/POST 参数/admin 注册/CSV 列头/工厂字段/settings 键/迁移双源等十六类，自动提取只覆盖 import 边）——探查必按 `references/frameworks/django.md` §字符串耦合面清单逐面枚举，字段变更走 spec 四查。
+> Python/Django 生态的字符串耦合面（模板字段/URL 名/POST 参数/admin 注册/CSV 列头/工厂字段/settings 键/迁移双源等十六类，自动提取只覆盖 import 边）——探查必按 `references/frameworks/django.md` §字符串耦合面清单逐面枚举，字段变更走 spec 四查。
 - pyproject.toml / setup.py / requirements.txt: 依赖、版本、entry points
 - 构建：poetry / pip / setup.py / Makefile
 - 目录：src/ pkg/ tests/ scripts/
@@ -1024,8 +1024,8 @@ git --version; gh --version; docker --version
 
 > 这是拼装式开发的关键。研发人员基于既有稳定单元（接口/组件/类/函数/方法）进行拼装，而非重复造轮子或侵入式重构。
 >
-> **★铁律：本项不允许用"代表性样本"填充。必须按 §C+.1 全量穷举方法论做自动枚举 + 签名提取 + 计数核验，确保一个不漏。清单计数 ≥ 枚举计数 × 0.95。** 探查指南见上方 §C+.1-C+.5。特征卡填好后供目标技能的 dev-guide.md 和 spec-template.md 引用。
-> **★铁律：本项必须配套产出"编排调用关系及约束"（见 §C+.3），写入特征卡第 15 项与目标技能 dev-guide.md。** 只列清单不推约束 = 未完成。
+> **★铁律：本项不允许用"代表性样本"填充。必须按 §D.1 全量穷举方法论做自动枚举 + 签名提取 + 计数核验，确保一个不漏。清单计数 ≥ 枚举计数 × 0.95。** 探查指南见上方 §D.1-D.5。特征卡填好后供目标技能的 dev-guide.md 和 spec-template.md 引用。
+> **★铁律：本项必须配套产出"编排调用关系及约束"（见 §D.3），写入特征卡第 15 项与目标技能 dev-guide.md。** 只列清单不推约束 = 未完成。
 
 #### 11a. 可复用 API 接口
 | 接口签名 | 方法 | 路径 | 用途 | 认证 | 复用方式 |
@@ -1069,8 +1069,8 @@ git --version; gh --version; docker --version
 
 > 探查时用 `gitnexus analyze` + `gitnexus mcp` 或 `graphify .` 构建图谱，用图谱查询调用链/依赖链，**系统性盘点**而非随机 grep。对每个稳定单元记录：签名、路径、用途、复用方式。
 
-#### 11g. 下游影响域（P0 必填，决策 28：标记沿调用链传播）
-> **★铁律（决策 28，Palantir markings-propagate 映射）：禁止改层的稳定单元，其"下游影响域"（1 跳：直接调用该稳定单元的下游文件）必须记录。** `--stable-diff` 门禁的传播段据此反查——本次变更触及下游影响域文件时 warn "依赖禁止改单元 X，改动可能破坏其契约"。只列"禁止改层"的下游；稳定层/不稳定层不强制（它们可改，传播意义弱）。记录在 `reference-manual.md §5` 调用链路图，用机器可读标记 `<!-- stable-propagate: <stable_file> → <downstream1>,<downstream2> -->`，G16 断言扫此标记。
+#### 11g. 下游影响域（P0 必填，标记沿调用链传播）
+> **★铁律（Palantir markings-propagate 映射）：禁止改层的稳定单元，其"下游影响域"（1 跳：直接调用该稳定单元的下游文件）必须记录。** `--stable-diff` 门禁的传播段据此反查——本次变更触及下游影响域文件时 warn "依赖禁止改单元 X，改动可能破坏其契约"。只列"禁止改层"的下游；稳定层/不稳定层不强制（它们可改，传播意义弱）。记录在 `reference-manual.md §5` 调用链路图，用机器可读标记 `<!-- stable-propagate: <stable_file> → <downstream1>,<downstream2> -->`，G16 断言扫此标记。
 | 稳定单元（禁止改层） | 下游影响域（1 跳直接调用者） | 证据 |
 |---------------------|--------------------------|------|
 | `src/repositories/UserRepo` | `src/services/UserService`, `src/services/AuthService` | graphify path / gitnexus trace |
@@ -1143,11 +1143,11 @@ git --version; gh --version; docker --version
 **分析流程（每步须产出具体结果，不可跳过）：**
 
 ```
-Step 1: 动态识别领域边界
+第 1 步：动态识别领域边界
  → 从 14a/14b 的识别结果，确定项目涉及哪些技术领域 + 业务领域
  → 产出："本项目涉及以下领域：[领域A, 领域B, ...]"
 
-Step 2: 逐领域深入分析
+第 2 步：逐领域深入分析
  → 对每个识别出的领域，回答以下问题（须有代码/文档证据）：
  (1) 该领域在本项目中的核心实体是什么？（从代码提取，非猜测）
  (2) 这些实体间的因果关系是什么？（A 导致 B，B 依赖 C）
@@ -1155,8 +1155,8 @@ Step 2: 逐领域深入分析
  (4) 当前代码是否遵循了这些约束？有无违反迹象？
  (5) 这些约束在本次变更中是否可能被破坏？
 
-Step 3: 推导客观规律
- → 基于 Step 2 的分析，推导出该领域在本项目中的客观规律
+第 3 步：推导客观规律
+ → 基于第 2 步的分析，推导出该领域在本项目中的客观规律
  → 每条规律格式："因为 [代码证据/文档证据/行业常识]，所以 [客观规律]，违反则 [后果]"
  → 产出：写入 reference-manual.md "领域知识"段
 ```
@@ -1165,13 +1165,13 @@ Step 3: 推导客观规律
 
 | 分析步骤 | 具体产出 |
 |---------|---------|
-| Step 1 识别 | 识别到项目含 IM 通讯领域（依据：`chat/` 目录 + Matrix/IRC/XMPP 协议依赖 + gateway/notice 相关文件） |
-| Step 2(1) 核心实体 | Message（消息）、Thread（会话线程）、Gateway（网关）——从代码类名提取 |
-| Step 2(2) 因果关系 | Gateway 状态变化 → 触发 Notice → 展示 Banner → 用户感知；消息发送 → 经过网关 → 落库 → 推送 |
-| Step 2(3) 客观约束 | 因为消息有时序性（代码证据：timeline 排序逻辑），所以消息顺序不可乱；因为已读状态会被多端同步（代码证据：多端 ACK 逻辑），所以已读须幂等；因为网关可能断线（代码证据：重连逻辑），所以离线消息须缓存 |
-| Step 2(4) 遵循情况 | 当前代码遵循时序（timeline 按 timestamp 排序）✓；已读状态无幂等键 ⚠ |
-| Step 2(5) 变更风险 | 本次变更如改消息发送逻辑，须保证时序不乱；如改已读逻辑，须加幂等键 |
-| Step 3 推导规律 | "因为消息有时序性（timeline 排序），所以消息发送/存储须保序，违反则消息错乱"；"因为已读状态多端同步，所以已读更新须幂等（idempotency-key），违反则重复通知" |
+| 第 1 步 识别 | 识别到项目含 IM 通讯领域（依据：`chat/` 目录 + Matrix/IRC/XMPP 协议依赖 + gateway/notice 相关文件） |
+| 第 2 步(1) 核心实体 | Message（消息）、Thread（会话线程）、Gateway（网关）——从代码类名提取 |
+| 第 2 步(2) 因果关系 | Gateway 状态变化 → 触发 Notice → 展示 Banner → 用户感知；消息发送 → 经过网关 → 落库 → 推送 |
+| 第 2 步(3) 客观约束 | 因为消息有时序性（代码证据：timeline 排序逻辑），所以消息顺序不可乱；因为已读状态会被多端同步（代码证据：多端 ACK 逻辑），所以已读须幂等；因为网关可能断线（代码证据：重连逻辑），所以离线消息须缓存 |
+| 第 2 步(4) 遵循情况 | 当前代码遵循时序（timeline 按 timestamp 排序）✓；已读状态无幂等键 ⚠ |
+| 第 2 步(5) 变更风险 | 本次变更如改消息发送逻辑，须保证时序不乱；如改已读逻辑，须加幂等键 |
+| 第 3 步 推导规律 | "因为消息有时序性（timeline 排序），所以消息发送/存储须保序，违反则消息错乱"；"因为已读状态多端同步，所以已读更新须幂等（idempotency-key），违反则重复通知" |
 
 > **关键区别：** 上面的规律不是从通用清单复制的"消息有序性须保证"——而是从项目实际代码（timeline 排序逻辑）分析得出的**具体约束**（"因为 timeline 按 timestamp 排序，所以须保序"）。通用清单只做参考，具体规律须从代码证据推导。
 
@@ -1194,7 +1194,7 @@ Step 3: 推导客观规律
 ### 15. 编排调用关系及约束（P0 必填）（从调用链路分析推导，必填）
 
 > **★铁律：特征卡第 11 项（稳定单元清单）必须配套本项。** 只列组件不推约束 = 未完成。
-> 推导方法论见上方 §C+.3。本项把 §C+.2 三层链路分析的结论结构化为研发约束，写入目标技能 dev-guide.md 的"编排约束"段。
+> 推导方法论见上方 §D.3。本项把 §D.2 三层链路分析的结论结构化为研发约束，写入目标技能 dev-guide.md 的"编排约束"段。
 
 #### 15a. 导入方向与跨模块边界约束
 | 允许的依赖方向 | 禁止的反向依赖 | 代码证据 | 违反后果 |
@@ -1230,24 +1230,24 @@ Step 3: 推导客观规律
 
 > 每条约束须标注代码证据（文件:行 或 grep 命令）。precheck `--layer` 门禁可校验导入方向；`--frontend` 门禁校验循环依赖。
 
-### 16. 详尽组件库清单（P0 必填）（全量，从 §C+.1 全量穷举得出）
+### 16. 详尽组件库清单（P0 必填）（全量，从 §D.1 全量穷举得出）
 
 > **★铁律：本项是特征卡第 11 项的"全量保障"。** 第 11 项列稳定单元清单，本项记录全量枚举的计数核验结果，确保不漏。
-> 按 §C+.0 项目形态判定 → §C+.1 按维度全量穷举 → 每维度计数核验（清单计数 ≥ 枚举计数 × 0.95）。
+> 按 §D.0 项目形态判定 → §D.1 按维度全量穷举 → 每维度计数核验（清单计数 ≥ 枚举计数 × 0.95）。
 > 产出写入 reference-manual.md §4（全量构件表）+ §6（全量接口端点表）+ §9（全量 store/类型表）。
 
 #### 16a. 枚举计数核验表
 
 > **本表由 `scripts/inventory-verify.sh` 自动产出（维度注册表 `assets/inventory-dimensions.conf` 数据驱动）。**
-> 跑 `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <§C+.0形态> [--tsv]`：
+> 跑 `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <§D.0形态> [--tsv]`：
 > - 全 PASS → 直接引用报告结论填本表「核验结果」列；
-> - FAIL（清单计数 < 枚举计数 × 0.95）→ 只针对失败维度回 §C+.1 补全清单后重跑；
-> - DIM_MISMATCH（声明形态与枚举结果矛盾，如 backend 却检出 UI 组件）→ 回 §C+.0 重判形态。
-> 红线：脚本只做计数 + 错配 lint，不替模型判断维度是否适用（适用判断由 §C+.0 形态判定驱动）。
+> - FAIL（清单计数 < 枚举计数 × 0.95）→ 只针对失败维度回 §D.1 补全清单后重跑；
+> - DIM_MISMATCH（声明形态与枚举结果矛盾，如 backend 却检出 UI 组件）→ 回 §D.0 重判形态。
+> 红线：脚本只做计数 + 错配 lint，不替模型判断维度是否适用（适用判断由 §D.0 形态判定驱动）。
 
 | 维度 | 枚举计数 | 清单计数 | 比率 | 核验结果 | 偏差说明 |
 |------|---------|---------|------|---------|---------|
-（由 inventory-verify.sh 报告填，按 §C+.0 判定的维度）
+（由 inventory-verify.sh 报告填，按 §D.0 判定的维度）
 
 ### 17. 合规与质量特性基线（P1·可增量）
 

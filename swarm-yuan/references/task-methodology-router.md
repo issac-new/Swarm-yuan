@@ -11,7 +11,7 @@
 
 swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径见 generation-flow.md【生成器侧】），但不同任务类型的关键节点不同：
 - **新项目生成**：全 12 步 + compliance 档合规矩阵
-- **框架规则注入**：Step 3（探查框架）→ Step 7 内④.5（框架深化）→ ⑦.5（门禁注入）→ Step 11（记忆写回）+ framework-gates 四要素核验
+- **框架规则注入**：Step 3（探查框架）→ Step 4.5（框架深化与门禁注入）→ Step 11（记忆写回）+ framework-gates 四要素核验
 - **升级已有技能**：Step 4（项目形态重判）→ Step 7（填充，保留 PROJECT_SPECIFIC_FILES）→ Step 11（记忆写回）→ Step 12（最终检查）
 - **合规审计**：Step 5（特征卡含合规基线）→ Step 8（合规门禁配置）→ Step 9（集成拓扑）→ Step 12（fail-closed 核验）+ industry-profiles
 
@@ -24,14 +24,14 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 | 任务类型 | 触发信号 | 关键节点序列 | 门禁聚焦 | profile 档 |
 |---------|---------|-------------|---------|-----------|
 | **新项目生成** | `generate-skill.sh <name> <project-dir>`（无 --upgrade） | 全 12 步（Step 1-12） | --all-full（标准 28）+ 按需 --compliance-suite | auto（默认 standard，合规信号→compliance） |
-| **框架规则注入** | `--inject-frameworks` 或 ACTIVE_FRAMEWORKS 变更 | Step 3（探查框架）→ Step 7 内④.5（框架深化）→ ⑦.5（门禁注入）→ Step 11（记忆写回） | 框架四要素核验（计数/规则/函数/约束）+ --framework <id> exit 0 | 继承现有 profile |
+| **框架规则注入** | `--inject-frameworks` 或 ACTIVE_FRAMEWORKS 变更 | Step 3（探查框架）→ Step 4.5（框架深化与门禁注入）→ Step 11（记忆写回） | 框架四要素核验（计数/规则/函数/约束）+ --framework <id> exit 0 | 继承现有 profile |
 | **升级已有技能** | `--upgrade <name> <project-dir>` | Step 4（项目形态重判）→ Step 7（填充，保留 PROJECT_SPECIFIC_FILES）→ Step 11（记忆写回）→ Step 12（最终检查） | --verify-completeness + 维度计数核验 + 框架四要素 | 继承现有 profile |
 | **合规审计** | `--compliance-suite` 或 compliance 档项目 | Step 5（特征卡含合规基线）→ Step 8（合规门禁配置）→ Step 9（四权分离拓扑）→ Step 12（Z3 fail-closed 核验） | --compliance-suite（合规 19：sbom/crypto/dengbao/pia/sast-deep/oss-eval/release-sign）+ 行业 profile | compliance |
 | **占位符修复** | `--verify-completeness` 报占位符残留 | Step 7（填充缺失文件）→ Step 8（conf 占位符）→ Step 12（复验） | --verify-completeness --strict（列 file:line）+ self-check 数字漂移 | 继承现有 profile |
 | **门禁 fail 修复** | precheck.sh --all-full 报 fail | Step 8（conf 调整）→ Step 10（重跑门禁）→ Step 11（记忆写回） | gate-runs.jsonl fail-id 级断言 + conf-render.sh 重嗅探 | 继承现有 profile |
 | **数字漂移修复** | self-check.sh 报文档数字与 facts.conf 不符 | Step 7（文档同步）→ Step 12（self-check 复验） | self-check.sh --check-only（数字漂移检测） | N/A（生成器自身维护） |
 | **Oracle Gate 循环** | `setup-loop.sh` 启动 | 无固定节点——AI 自主迭代直到 verify_command 通过 | verify_command（默认 self-check + precheck --all-full） | 继承现有 profile |
-| **架构设计/演进类变更** | spec 变更触及服务划分/数据模型重构/技术选型/迁移升级 | Step 3 探查加 §C+.0.6 四层枚举（TOGAF BDAT）→ Step 7 spec 填 §24 架构映射（四层+纵向链验证） | --adr + --contract + --consistency-cross + --impact（治理三角已机器化）+ spec §24 纵向链完整性 | 继承现有 profile；纯编码/文案类不触发（适配矩阵 ★★+ 才路由，见 togaf-metamodel-methodology.md §4） |
+| **架构设计/演进类变更** | spec 变更触及服务划分/数据模型重构/技术选型/迁移升级 | Step 3 探查加 §D.0.6 四层枚举（TOGAF BDAT）→ Step 7 spec 填 §24 架构映射（四层+纵向链验证） | --adr + --contract + --consistency-cross + --impact（治理三角已机器化）+ spec §24 纵向链完整性 | 继承现有 profile；纯编码/文案类不触发（适配矩阵 ★★+ 才路由，见 togaf-metamodel-methodology.md §4） |
 
 ## 路由决策准则
 
@@ -70,7 +70,7 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 
 | 维度 | pua | swarm-yuan |
 |------|-----|-----------|
-| 路由对象 | 大厂味道（旁白风格）+ 方法论（行为约束） | 生成流程节点序列 + 门禁聚焦 + 方法论档分派（R51） |
+| 路由对象 | 大厂味道（旁白风格）+ 方法论（行为约束） | 生成流程节点序列 + 门禁聚焦 + 方法论档分派 |
 | 路由依据 | 失败模式（原地打转/放弃/质量差/没搜就猜/被动等待/空口完成/思维固化） | 任务类型（新项目/注入/升级/合规/修复） |
 | 切换信号 | PostToolUse hook 检测失败模式 → 切味道 | 命令参数 + 项目特征 → 选节点序列 |
 | 切换后果 | 换旁白风格 + 换方法论步骤 | 换跑哪些节点 + 聚焦哪些门禁 |
@@ -79,14 +79,14 @@ swarm-yuan 的 12 步生成流程是线性的（Step 1-12，唯一编号口径�
 ## 与现有机制的关系
 
 - **与 task-type-gates.conf 的关系**：task-type-gates.conf 是「任务类型 → 门禁命令映射」（feature→--all-full；fix→--all --reuse），本路由表是「任务类型 → 生成流程节点序列 + 方法论档分派」，三者互补——门禁 conf 管运行什么门禁，节点表管跑哪些生成节点，路由表管读哪些方法论档。
-- **与 capability-map 的关系（R51 互为正反）**：capability-map 是正向索引（档 → 消费节点/触发），本表文档路由表是反向索引（任务 → 档）——两表互为互为正反；`*-methodology.md` 每档必须可从本表分派到达（self-check G25 文档路由覆盖断言守），吸收层由此闭环：建档必整合（正向）、整合必可达（反向）。
+- **与 capability-map 的关系（互为正反）**：capability-map 是正向索引（档 → 消费节点/触发），本表文档路由表是反向索引（任务 → 档）——两表互为正反；`*-methodology.md` 每档必须可从本表分派到达（self-check G25 文档路由覆盖断言守），吸收层由此闭环：建档必整合（正向）、整合必可达（反向）。
 - **与 profile 档的关系**：profile（auto/lite/standard/compliance）管生成什么文件集，路由表管跑哪些节点——compliance 档 + 合规审计任务 = 全节点 + 合规门禁聚焦。
 - **与 Oracle Gate（E1）的关系**：路由表是常规路径，Oracle Gate 是非常规逃生舱——常规路由持续 fail 时切到无限迭代模式。
 - **与四权分离拓扑（E3）的关系**：compliance 档 + 改治理资产任务 → 路由表指向 Step 7 强制走四权分离拓扑。
 
 ## 使用方式
 
-AI 在开工（⓪ 自检/任务路由）时读本表，按任务类型选节点序列 + 门禁聚焦，在 trace-log 公告路由结果：
+AI 在开工（Step 1 自检/任务路由）时读本表，按任务类型选节点序列 + 门禁聚焦，在 trace-log 公告路由结果：
 
 ```
 → [任务路由] 合规审计 → 节点序列 Step 5/8/9/12（同路由表行）→ 门禁聚焦 --compliance-suite + Z3 fail-closed
@@ -94,4 +94,4 @@ AI 在开工（⓪ 自检/任务路由）时读本表，按任务类型选节点
 
 用户也可手动指定：`/swarm-yuan <项目路径> --task-type compliance-audit`（AI 按指定类型路由，不自动识别）。
 
-5. **流程档位之外还有代码引入档位（R37）**：路由表调的是"跑哪些节点"（流程仪式复杂度）；写入新代码前的"先查再写"下探顺序（已有吗→标准库→平台原生→已装依赖→一行→最小实现）是另一维档位，见 `lazy-generation-methodology.md`——两档正交：小任务轻流程不豁免复用检查，大任务全流程也不禁止层 6 一行解。
+5. **流程档位之外还有代码引入档位**：路由表调的是"跑哪些节点"（流程仪式复杂度）；写入新代码前的"先查再写"下探顺序（已有吗→标准库→平台原生→已装依赖→一行→最小实现）是另一维档位，见 `lazy-generation-methodology.md`——两档正交：小任务轻流程不豁免复用检查，大任务全流程也不禁止层 6 一行解。

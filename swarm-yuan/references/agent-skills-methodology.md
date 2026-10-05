@@ -4,7 +4,7 @@
 
 > 来源：[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)（Addy Osmani，Google 工程总监，83.6K star，MIT，HEAD df1edb2 / plugin v0.6.7，2026-08-14 源码实测）。24 技能 + 8 斜杠命令 + 4 专家角色，内容主体为纯 Markdown。
 > 纪律：只引用方法论模式与一手措辞，不调上游 CLI（其发布渠道是 Claude Code 插件市场 / `npx skills add`，与 swarm-yuan 安装目标重叠但机制独立）；不复制技能全文（上游可浅克隆到 `swarm-yuan/research/` 供 AI 阅读，gitignored 不入 git）。
-> 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；非运行时纯方法论吸收，不进 13/5 运行时计数。
+> 整合纪律：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；非运行时纯方法论吸收，不进 13/5 运行时计数。
 > 适用场景：目标技能 的 **SKILL.md meta 段写作**（反借口表/假设前置/描述纪律）、**bug 修复流程**（Prove-It 五步）、**自治执行暂停**（三类硬停）、**角色组合**（Composition 协议）。填充规范落点见 `template-spec.md` §1.2。
 
 ---
@@ -140,8 +140,8 @@ Bug report arrives
 
 | 候选 | 评估 | 决定 |
 |------|------|------|
-| 五轴审查全量引入（Correctness/Readability/Architecture/Security/Performance） | 与 review-methodology 五权审查高度同构；真增量是「概念计数」判据（"Count the concepts a reader must hold—if the count unchanged, it isn't cleaner"）+ 审查意见必须附结构处方 + 发现分级前缀（Critical/Nit/Optional/FYI 防止全部被当必修） | 登记，条件=review-methodology 下轮补强时合并吸收（避免与 codex rubric 双轨） |
-| 变更尺寸双阈值（diff ~100 好/~300 可接受/~1000 拆 + 单文件总行数 1000 预警 + 四种拆分策略） | check_pr_quality 已有尺寸维度？若有则补阈值口径 | 登记，条件=check_pr_quality 下轮调优时对齐 |
+| 五轴审查全量引入（Correctness/Readability/Architecture/Security/Performance） | 与 review-methodology 五权审查高度同构；真增量是「概念计数」判据（"Count the concepts a reader must hold—if the count unchanged, it isn't cleaner"）+ 审查意见必须附结构处方 + 发现分级前缀（Critical/Nit/Optional/FYI 防止全部被当必修） | 登记，条件=review-methodology 补强时合并吸收（避免与 codex rubric 双轨） |
+| 变更尺寸双阈值（diff ~100 好/~300 可接受/~1000 拆 + 单文件总行数 1000 预警 + 四种拆分策略） | check_pr_quality 已有尺寸维度？若有则补阈值口径 | 登记，条件=check_pr_quality 调优时对齐 |
 | 路由 eval 体系（每技能 positive/negative 触发用例 + description 余弦相似度碰撞检测 >0.75 拒绝 + rank-1 ratchet） | 真空白（生成的技能会不会被正确触发无人管），但需 embedding 基建 | 登记，条件=出现"生成技能不被路由命中"的真实案例时立项（可先做纯文本相似度碰撞检测，零依赖） |
 | /ship 并行 fan-out 编排 | swarm-yuan 是 bash 生成器，无并行 subagent 基建 | 不做 |
 | spec 六区极简模板 | swarm-yuan §1-23 深度规格是差异化优势，不换 | 不做 |
@@ -152,9 +152,9 @@ Bug report arrives
 - 一手材料（2026-08-16 浅克隆实测）：`docs/skill-anatomy.md`（模板纪律）/ `skills/spec-driven-development` 等 24 个 SKILL.md（Rationalizations 22/24 覆盖）/ `commands/build.toml`（三类硬停）/ `agents/`（Composition 生成期必读文件）/ `docs/agents.md`（三层架构与反模式）
 - 关键数字复核：153 条借口条目（22 技能平均 7 条）；description 上限 1024 字符；技能行数 178-499
 
-## 骨架级模式两条（R57 吸收，2026-09-25）
+## 骨架级模式两条
 
-> 来源 openspec `f2812f6` / graphify `3454890`；证据锚点 `docs/research/R57-runtime-refresh.md`。
+> 来源 openspec `f2812f6` / graphify `3454890`
 
 - **破坏性操作「atomic rename 认领」后再读、比对确认才删**：竞态写入要么被比对还原、要么成新文件永不被删。
 - **导出/重生成必须幂等**：同内容不写盘，孤儿产物末尾统一清扫→避免 diff 噪音淹没真实改动。

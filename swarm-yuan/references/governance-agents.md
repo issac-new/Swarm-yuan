@@ -1,4 +1,4 @@
-> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 治理 Agent 拓扑（四权分离，借鉴 tanweai/pua 改写）；§Z 交付纪律协议（诊断先行/失败计数语义/信心门控/四状态交付/体面退出，R45 吸收 pua v3.5.1）
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# 治理 Agent 拓扑（四权分离，借鉴 tanweai/pua 改写）；§Z 交付纪律协议（诊断先行/失败计数语义/信心门控/四状态交付/体面退出，改写自 pua v3.5.1）
 
 # 治理 Agent 拓扑（四权分离，借鉴 tanweai/pua 改写）
 
@@ -137,7 +137,7 @@ mechanical_gate_owner: integrity-guard / external harness / human
 
 **被 integrity-guard 阻拦时**：停下来报治理原因，不绕过。
 
-**自治模式暂停协议（三类硬停，Addy Osmani agent-skills /build auto 吸收，2026-08-16）**：
+**自治模式暂停协议（三类硬停，Addy Osmani agent-skills /build auto 吸收）**：
 自治执行（用户批准一次计划后逐任务推进）遇到以下三类情况**必须停下交还控制权，不得硬闯**：
 
 1. **技术硬停**：测试无法转绿或构建破坏且无显见修复 → 转调试流程（先复现后修复，Prove-It 五步见 `references/agent-skills-methodology.md` §四）
@@ -232,7 +232,7 @@ verifier_focus:
 - `bash scripts/inventory-verify.sh <项目根> --skill-dir <skill目录> --form <形态>`（维度计数核验）
 - `bash scripts/precheck.sh --all-full`（标准 28 门禁）
 - `bash scripts/precheck.sh --compliance-suite`（合规 19，compliance 档）
-- `bash scripts/trace-log.sh --verify-chain`（决策审计轨迹哈希链完整性，R45 semantica 吸收）
+- `bash scripts/trace-log.sh --verify-chain`（决策审计轨迹哈希链完整性，semantica 吸收）
 - `bash verifier/v1/run-verifier.sh`（司法层独立验收）
 
 **验证命令需要不可用基础设施时**：标 `inconclusive` 并说明缺的外部依赖。
@@ -255,7 +255,7 @@ forbidden_result:
 final_status_owner: external_harness_or_human
 ```
 
-**integrity / contract_audit 两轴与守卫降级链**（LHH auditor 协议吸收，2026-08-16；
+**integrity / contract_audit 两轴与守卫降级链**（LHH auditor 协议吸收；
 详见 `references/mea-loop-methodology.md` §3.4）：
 
 - `integrity`：验证过程本身干净吗——证据是新鲜跑出来的，还是贴的旧输出 / 被测物在验证期间被顺手改过？`clean`（干净）/ `suspect`（存疑）/ `violation`（检测到篡改或坏捷径）
@@ -265,7 +265,7 @@ final_status_owner: external_harness_or_human
  2. `integrity != clean` 或 `contract_audit != aligned` 时，`pass` 无效——降为 `fail`（violation）或 `inconclusive`（suspect/unknown）
  3. 只有 `pass + integrity:clean + contract_audit:aligned` 三轴齐绿才构成可收口结论；收口时把本报告落为 state-machine 的 `verify_evidence`（引用 gate-run#N 或报告路径）
 
-## Composition 协议（角色互调禁止，agent-skills 吸收 2026-08-16）
+## Composition 协议（角色互调禁止，agent-skills 吸收）
 
 四权角色是「视角」，不是「编排器」。每个角色在报告末尾自声明组合关系，生成期必读文件：
 
@@ -288,7 +288,7 @@ acceptance: <可验收的完成标准列表>
 forbidden: <禁止行为列表：不改 tests/scoring/verifier/CI/memory/secrets...>
 verify_commands: <公开验证命令列表>
 file_domain: <允许编辑的文件/目录范围>
-# 以下三维可选（LHH 任务级契约规则吸收，2026-08-16）——长任务/多产物任务建议补齐
+# 以下三维可选（LHH 任务级契约规则吸收）——长任务/多产物任务建议补齐
 state_carrier: <最终完成态落在哪个文件/服务/数据上——载体错了等于白做>
 persistence_boundary: <什么才算"已提交"：内存通过不算，落盘/入库/合入到哪个节点才算>
 contamination_watch: <旧产物/相似路径/缓存可能污染本次产出的位置清单>
@@ -322,7 +322,7 @@ verifier 报告），无证据引用的完成结论标 untrusted，不得作为�
  司法预言机。verifier agent 可调 verifier/v1 跑独立验收，但不写最终 status。
 - **与 state-machine.sh 的关系**：四权分离拓扑在 verify 阶段（state-machine 的 verify phase）
  启用——guard_phase 校验 tasks 全勾后，进 verifier agent 独立验收。
-- **与 LHH MEA 循环的关系**（：阿里 LongHorizon-Harness 的 Manager/
+- **与 LHH MEA 循环的关系**：阿里 LongHorizon-Harness 的 Manager/
  Executor/Auditor 三角色与本拓扑后三权同构（Manager↔主 agent 编排、Executor↔action-executor、
  Auditor↔self-reviewer+verifier）；本拓扑多出的 policy-guardian 是 LHH 没有的立法侧维度。
  从 LHH 吸收的增量不在拓扑，在四个实现细节：审计证据引用（gate-runs.jsonl `run` 序号）、
@@ -345,9 +345,9 @@ swarm-yuan 用「立法 / 执法 / 司法」三权分立（特征卡=立法 / �
 
 ---
 
-## §Y Q2-heavy 边界：自动门禁不破坏 AI 灵活性
+## §Y 边界：自动门禁不破坏 AI 灵活性
 
-**背景**：Q2 报告指出自动门禁/脚本扫描破坏 AI 灵活性。Q2-heavy 评审（D1/D2/D4）单独评审后落地 H-A/B/C：
+**背景**：自动门禁/脚本扫描全量机器执行会破坏 AI 灵活性，为此落地 H-A/B/C 三层分工：
 
 - **H-A**：advisory 档 5 个门禁（cognition/diagram/pr_quality/consistency/link_depth）转 AI 自觉判断——`GATE_AI_JUDGMENT=1` 时自动脚本不跑，输出 _ai_hint 提示 AI 自查要点。
 - **H-B**：warn 档 5 个门禁（stable_diff/framework/knowledge/metrics/crypto）降级 advisory——误报高启发式强，不再 fail 打断主流程。
@@ -357,11 +357,11 @@ swarm-yuan 用「立法 / 执法 / 司法」三权分立（特征卡=立法 / �
 
 **verifier 侧调整**：verifier 跑独立验收时，严格档 16 个门禁 fail → block；warn/advisory 档只报不 block；advisory 档 5 个 AI 自觉判断由 verifier 人读判断（不跑自动脚本）。
 
-**关联**：评审报告见 docs/design-evolution.md A9 档案（Q2 重量级审查）；分层实现 `assets/precheck.sh` `_ENFORCE_OVERRIDE_K/V` + `assets/gates-advisory.sh` `_ai_hint`。
+**关联**：背景档案见 docs/design-evolution.md A9；分层实现 `assets/precheck.sh` `_ENFORCE_OVERRIDE_K/V` + `assets/gates-advisory.sh` `_ai_hint`。
 
 ---
 
-## §Z 交付纪律协议（R45 吸收，pua v3.5.1 五协议改写）
+## §Z 交付纪律协议（pua v3.5.1 五协议改写）
 
 > 整合自 [tanweai/pua](https://github.com/tanweai/pua) v3.5.1 的运行契约与交付协议（`skills/pua/SKILL.md` 诊断先行/信心门控/体面退出 + `references/runtime-contract.md` 失败计数语义/四状态），改写为 swarm-yuan 叙事。四权分离管「谁有权做什么」（拓扑防越权），本节管「交付前后怎么做才诚实」（协议防自嗨）——两者互补。装配叙事（大厂味道/职级扮演）不吸收。
 

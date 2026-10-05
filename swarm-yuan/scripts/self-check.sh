@@ -354,7 +354,7 @@ echo "  整合分层："
 echo "    深度整合(${FACT_RUNTIMES_DEEP:-4},precheck.sh 真实命令调用)：gitnexus / graphify / claude-mem / ocr"
 echo "    CLI 整合(${FACT_RUNTIMES_CLI:-4},门禁/状态机按需调用 CLI)：openspec / comet / gsd-core / codex-security"
 echo "    方法论引用(${FACT_RUNTIMES_METHOD:-5},AI 按节点引用模式)：superpowers / gstack / ruflo / ECC / impeccable"
-echo "  （每层有自带降级载体，未装不阻塞--详见 SKILL.md「它整合的方法论」分层表）"
+echo "  （每层有自带降级载体，未装不阻塞--详见 SKILL.md「外部运行时整合」分层说明）"
 unset _runtime_base
 
 # 即便全部已装，若启用 --latest 则升级到最新版

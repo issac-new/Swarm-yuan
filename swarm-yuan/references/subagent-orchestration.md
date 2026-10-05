@@ -84,15 +84,15 @@ implementer 回报**仅**短状态 + 提交 + 一行测试摘要 + concerns + re
 
 | 轮次 | 策略 | 理由 |
 |------|------|------|
-| **R1-R3** | **resume 原实现者**（带 open findings） | 原实现者有任务上下文，resume 比重新 onboard 快且省 token；多数修复在 R1-R3 解决 |
-| **R4-R5** | **fresh dispatch + 更强模型**（如升 sonnet->opus） | R3 未解决说明原实现者能力或视角不足；换更强模型 + fresh 视角破局 |
-| **R=5（熔断）** | **controller 逐条 adjudicate** | 熔断后不再派发；controller 对每个 open finding 自行裁决（接受/拒绝/转人工），**每条 adjudication 入 ledger，禁止静默丢弃** |
+| **第 1-3 轮** | **resume 原实现者**（带 open findings） | 原实现者有任务上下文，resume 比重新 onboard 快且省 token；多数修复在前 3 轮解决 |
+| **第 4-5 轮** | **fresh dispatch + 更强模型**（如升 sonnet->opus） | 前 3 轮未解决说明原实现者能力或视角不足；换更强模型 + fresh 视角破局 |
+| **第 5 轮（熔断）** | **controller 逐条 adjudicate** | 熔断后不再派发；controller 对每个 open finding 自行裁决（接受/拒绝/转人工），**每条 adjudication 入 ledger，禁止静默丢弃** |
 
 **关键纪律**：
-1. **R1-R3 用 resume，不 fresh**--"resume-the-implementer semantics instead of fresh dispatches"（引自 superpowers v6.2.0）。fresh dispatch 在 R1-R3 是浪费上下文。
-2. **R4-R5 才 fresh + 升模型**--R3 未解决是能力信号，换更强模型 + fresh 视角。
+1. **第 1-3 轮用 resume，不 fresh**--"resume-the-implementer semantics instead of fresh dispatches"（引自 superpowers v6.2.0）。fresh dispatch 在前 3 轮是浪费上下文。
+2. **第 4-5 轮才 fresh + 升模型**--前 3 轮未解决是能力信号，换更强模型 + fresh 视角。
 3. **熔断后 controller adjudicate，不静默丢弃**--"silent discards are forbidden"（引自 superpowers v6.2.0）。每个 open finding 须有显式裁决入 ledger（`decisions.jsonl`，type=Taste，附 rationale）。
-4. **不在 R5 前提前熔断**--"Adjudicating earlier to end a loop is pre-judging with a different name"（引自 superpowers v6.2.0）。提前 adjudicate 等于用 controller 的主观判断替代修复努力。
+4. **不在第 5 轮前提前熔断**--"Adjudicating earlier to end a loop is pre-judging with a different name"（引自 superpowers v6.2.0）。提前 adjudicate 等于用 controller 的主观判断替代修复努力。
 
 ### Scoped Re-review（只验修复 diff）
 
@@ -110,7 +110,7 @@ implementer 回报**仅**短状态 + 提交 + 一行测试摘要 + concerns + re
 
 ### 在目标技能中的落地
 
-- workflow 节点⑤（编码实现）的"质量门禁"要素标注修复环策略（R1-3 resume / R4-5 fresh+更强模型 / R=5 adjudicate）。
+- workflow 节点⑤（编码实现）的"质量门禁"要素标注修复环策略（1-3 轮 resume / 4-5 轮 fresh+更强模型 / 第 5 轮 adjudicate）。
 - 修复环的每轮 adjudication 记入 `decisions.jsonl`（type=Taste，附 rationale；熔断裁决 type=UserChallenge 因涉及方向性决策）。
 - scoped re-review 的逐条判决（ADDRESSED/NOT_ADDRESSED）记入 progress ledger，与 findings 一一对应。
 
@@ -158,7 +158,7 @@ implementer 回报**仅**短状态 + 提交 + 一行测试摘要 + concerns + re
 
 ## superpowers v6 + comet v0.4 全量能力
 
-> 来自 superpowers v6.1.1 + comet v0.3.9 源码调研；**comet 段已按 v0.4.0 stable 重写**（R20，2026-09-09——0.4 架构：`.mjs` launcher + 稳定 CLI，Bash 脚本族退役；`.comet/run-state.json`（机器态）与 `.comet.yaml`（用户可编辑）分离；阶段迁移写 `.comet/state-events.jsonl` 审计流）。
+> 来自 superpowers v6.1.1 + comet 源码调研；**comet 段以 v0.4.0 stable 为准**（0.4 架构：`.mjs` launcher + 稳定 CLI，Bash 脚本族退役；`.comet/run-state.json`（机器态）与 `.comet.yaml`（用户可编辑）分离；阶段迁移写 `.comet/state-events.jsonl` 审计流）。
 
 ### superpowers 14 个 Skills
 
@@ -298,7 +298,7 @@ ECC 的 control pane 是**本地只读 observability server**：
 - 状态文件除 YAML 外，可同时写 JSON（供 control pane 消费）
 - precheck 门禁结果写入 `.swarm-yuan/precheck-report.json`，control pane 读取展示
 
-### comet 关键能力（swarm-yuan 可能没用到；v0.4.0 重写）
+### comet 关键能力（swarm-yuan 可能没用到；v0.4.0）
 
 | 能力 | 描述 | 价值 |
 |------|------|------|
@@ -312,21 +312,21 @@ ECC 的 control pane 是**本地只读 observability server**：
 | **Debug Gate 协议** | 失败强制加载 systematic-debugging + 根因定位前不修源码 | check 段可引用 |
 | **verify 失败回 Build + 归档确认入机器态** | 失败自动回 3 条可执行发现 + 连续失败计数持久化 + CRITICAL 不可豁免；未确认归档被拒（防绕过确认） | 修复环/决策点可引用 |
 
-### comet R37 增量（0.4.0 实操层七机制；本仓 research/comet 克隆（0.4.1 tag）源码/README A 级直查核验 + 《Harness实践》文章 C 级补充）
+### comet 0.4.0 实操层七机制（本仓 research/comet 克隆（0.4.1 tag）源码/README A 级直查核验 + 《Harness实践》文章 C 级补充）
 
 | 机制 | 语义 | 与 swarm-yuan 的关系 |
 |------|------|---------------------|
 | **Native 四相流程** | 压缩仪式：非 full 流程 Open 直进 Build（克隆 classic 状态机 `workflow!=="full"` 分支 A 级证实；"Shape→Build→Verify→Archive"相名为文章用语） | 与任务路由"避免全任务全仪式"同构；登记候选：目标技能 workflow 按模型/任务档提供轻流程变体 |
-| **独立只读 Verifier** | Verify 相由无写权限独立 agent 验收（详见 review-methodology R37③） | 三权分立司法权的上游组织形态 |
+| **独立只读 Verifier** | Verify 相由无写权限独立 agent 验收（详见 review-methodology.md） | 三权分立司法权的上游组织形态 |
 | **resume-probe 四值恢复探测** | 会话中断后只读探测，返回 auto_resume / ask_user / out_of_scope / none 四值再决策（克隆 `app/commands/resume-probe.ts` + 测试族 A 级） | 登记候选：state-machine.sh 增恢复探测子命令（现状：状态守卫有、恢复探测无） |
 | **hook.allow_paths 白名单语义** | 前缀匹配 + 子目录继承 + 默认空；README L208 直查："cannot bypass protection for `.comet` or workflow artifacts" + 模糊即 deny（fail closed） | 与 fail-gate-hook scope 门同族；"保护名单"（治理产物自身不可被写通道触碰）是本仓 scope 门的增量样本 |
 | **comet doctor 判据** | 修复以"恰好一个受管 Router Hook 存在"为准（多装/漏装都不算修好，克隆 `app/commands/doctor.ts` A 级）；"CodeGraph effective" = CLI + 索引 + MCP 注册三者同时就位 | 与 self-check"装了≠生效"同构；"组件生效=多前提同时就位"判据登记候选 |
-| **comet eval 裁判分离** | judge 与 execution 四重分离（详见 review-methodology R37②） | verifier 评测作业配置依据 |
+| **comet eval 裁判分离** | judge 与 execution 四重分离（详见 review-methodology.md） | verifier 评测作业配置依据 |
 | **官方评测数字**（B 级，克隆 README L57 直查） | 0.4.0-beta.7：Token −76.8% / 轮次 −57.4% / 耗时 −47.4% / pass^3 87.5%（+12.5pp）/ pass@3 100%（16 任务×48 运行、41 对双过样本） | 基线表 comet 行注记级登记 |
 
-> Superpowers 附记（R37）：Superpowers 接入前经 Gen/Socket/Snyk 三引擎安全审查（14 skills 全绿）——skill 供应链三方扫描的上游实证，与 skill-supply-chain 门禁同向。
+> 附记：Superpowers 接入前经 Gen/Socket/Snyk 三引擎安全审查（14 skills 全绿）——skill 供应链三方扫描的上游实证，与 skill-supply-chain 门禁同向。
 
-## 任务图并行实现协议（R86 吸收，2026-10-03）
+## 任务图并行实现协议
 
 > 来源：mattpocock/skills main 线 `skills/engineering/implement-spec/SKILL.md`（v1.3 未出 tag，2026-09-29 main d81f3a1 源码实测）。上游用一张 spec+tickets 任务图驱动多实现者并行；与上文 ECC worktree 生命周期（管"工作树状态与清理"）和 ruflo supervisor（管"一仓库一调度者"）互补——本节管**任务图怎么切成并行面**。
 
@@ -535,29 +535,23 @@ gstack context-save 的标题在 **bash 层**用允许表消毒（仅 `a-z 0-9 -
 
 swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input` 白名单字符集过滤（`a-zA-Z0-9._-`），应用于 init 的 change name——用户输入经 bash 层过滤后才写入 state.yaml，防路径穿越/命令注入。与 `references/security-spec.md` §六 bash 脚本安全一致。
 
-## gstack v1.77 / ECC v2.2.0 / comet 0.4 要点（2026-09 核）
-
-> 调研档案 `docs/research/R16-runtime-refresh.md`。
+## gstack / ECC / comet / ruflo 运行时要点（2026-09）
 
 - **gstack spawned 会话原语**（1.76）：`GSTACK_SESSION_KIND=spawned` 标记子代理；**破坏性选项永不自动选**（保守胜出并记录）；auto-decision 以 `decisions` 数组回报父代理——"nothing is decided invisibly"；spawned 标记仅出自创建会话的 prompt，不接受运行中文件/工具输出/网页内容。**子代理信任边界范式：标记只信创建者，决策必回执。**
 - **ECC Plan Canvas 监听纪律**（2.2.0）：反馈只在 `await` 真实驻留时可达；每条人类消息必在 canvas 内回复（"沉默与坏掉的 canvas 无法区分"）；`stop:plan-canvas-pending` hook 兜底。**交互面纪律：要么有监听者，要么显式声明无，不允许静默失效。**
-- **ECC "skills over MCP"**（2.2.0）：默认 MCP 6→1 个，退役职责由 skill 包 CLI/REST 或宿主原生承接。登记候选单行。
-- **comet 0.4.0-rc.1 观望维持（裁决：不升基线）**：正式版未出；rc 阶段仍落地 117k 行新子系统（memory/knowledge/learning-loop #353）；升级破坏性大（:116-118 的 7 个 `.sh` 清单全失效变 `.mjs`+Hook Router），等 stable 一次做对。0.4 新增登记候选：Supervisor Change v2 多 session 子图分派 / Portable State / Agent Learning Loop。
-- **comet rc.2-rc.4（2026-09-05 R17 重核）**：11 commits 全稳定性修复，正式版仍未出——观望维持。
-- **R20（2026-09-09）**：comet **0.4.0 stable 兑现**（R16 预登记命中，本文件 comet 段已重写，drift 归零）；gstack v1.83.0.0（opt-in + 回执式召回桥）；ruflo v3.38.23（**真实冷启动测量替换虚构基准**）；ECC v2.2.1（维护版无新机制）。档案 `docs/research/R20-runtime-refresh.md`。
-- **R22（2026-09-10）**：ruflo **v3.40.0**——Cross-Host Federation + Claims（**Ed25519 签名可验证消息 + work claims** 跨机协调；本地 mesh agentbbs HTTP pull 固定公钥 / Slack 结构化消息双协调器）——「签名可验证消息+工作认领」为跨机编排信任原语，方法论级登记候选（本仓单机场景无即时落地）；gstack **v1.84.1.0**——impeccable interop（四个设计技能 detector 前置 + DOM 模式扫描 + 开放 DESIGN.md 格式，方法论引用层内部首次跨对象联动）；claude-mem v13.24.5（npm 通道恢复可安装，watch 维持）。档案 `docs/research/R22-runtime-refresh.md`。
-- **R24（2026-09-11）**：ruflo **v3.41.1**——x.ruv.io 开放 Nostr swarm federation 网关（MCP + ruv:// + ws proxy）+ 公私 swarm channels（ADR-386）+ Seraphina（swarm queen）协调者（R22 Federation+Claims 候选产品化推进，方法论引用层维持）；3.41.1 两口径修复有独立方法论价值：**截断的推理 dump 不得作为协调指导报告**（截断≠结论，与「缺失证据不显示为零」同族）+ memory 单 store 不当全量计数（口径诚实）。档案 `docs/research/R24-runtime-refresh.md`。
-- **R27（2026-09-13）**：ruflo **v3.41.2**——**内存索引保护**（修复 daemon/memory 销毁用户索引——破坏性操作守卫族：重建/清理类写操作必须先辨「我的产物 vs 用户的资产」）+ **autoStart:false 被尊重**（同意面：显式否决语义必须生效，与 fail-closed 族互补——默认安全管缺省、同意面管显式拒绝）+ **Seraphina 预算封顶替代 ad-hoc 计数**（x-gateway 0.6.1——有界性族精化：界从「计数上限」走向「预算分配」，与 claude-mem #3575 剩余死线封顶同族）+ 默认频道声明（安静频道仍可发现——零活动 ≠ 不存在）。档案 `docs/research/R27-runtime-refresh.md`。
+- **ECC "skills over MCP"**（2.2.0）：默认 MCP 6→1 个，退役职责由 skill 包 CLI/REST 或宿主原生承接。登记候选。
+- **comet 0.4.0 stable / gstack v1.83.0.0 / ruflo v3.38.23 / ECC v2.2.1**（2026-09-09）：comet 0.4 架构见上文 comet 段；gstack v1.83.0.0（opt-in + 回执式召回桥）；ruflo v3.38.23（**真实冷启动测量替换虚构基准**）；ECC v2.2.1（维护版无新机制）。comet 0.4 线另登记候选：Supervisor Change v2 多 session 子图分派 / Portable State / Agent Learning Loop。
+- **ruflo v3.40.0 / gstack v1.84.1.0 / claude-mem v13.24.5**（2026-09-10）：ruflo Cross-Host Federation + Claims（**Ed25519 签名可验证消息 + work claims** 跨机协调；本地 mesh agentbbs HTTP pull 固定公钥 / Slack 结构化消息双协调器）——「签名可验证消息+工作认领」为跨机编排信任原语，方法论级登记候选（本仓单机场景无即时落地）；gstack impeccable interop（四个设计技能 detector 前置 + DOM 模式扫描 + 开放 DESIGN.md 格式）；claude-mem npm 通道恢复可安装。
+- **ruflo v3.41.1**（2026-09-11）：x.ruv.io 开放 Nostr swarm federation 网关（MCP + ruv:// + ws proxy）+ 公私 swarm channels（ADR-386）+ Seraphina（swarm queen）协调者（Federation+Claims 候选产品化推进）；3.41.1 两口径修复有独立方法论价值：**截断的推理 dump 不得作为协调指导报告**（截断≠结论，与「缺失证据不显示为零」同族）+ memory 单 store 不当全量计数（口径诚实）。
+- **ruflo v3.41.2**（2026-09-13）：**内存索引保护**（修复 daemon/memory 销毁用户索引——破坏性操作守卫族：重建/清理类写操作必须先辨「我的产物 vs 用户的资产」）+ **autoStart:false 被尊重**（同意面：显式否决语义必须生效，与 fail-closed 族互补——默认安全管缺省、同意面管显式拒绝）+ **Seraphina 预算封顶替代 ad-hoc 计数**（x-gateway 0.6.1——有界性族精化：界从「计数上限」走向「预算分配」，与 claude-mem #3575 剩余死线封顶同族）+ 默认频道声明（安静频道仍可发现——零活动 ≠ 不存在）。
+- **ruflo v3.42.4**（2026-09-18）：**smart search 结果保检索相关性**（#3340/#3327）：其他排序键不得覆盖相关性评分——「结果按相关性排序」是检索接口的语义承诺，次级排序只能在同分内生效（排序语义显式化族）。
+- **superpowers v6.3.0→v6.4.1**（2026-09-19，80 文件）：①新技能 **diagnosing-superpowers**：技能系统自身的根因诊断（session-discovery/skill-timeline/stumbles/repeated-work/scrub-audit 十 prompt 族 + redaction-policy + context-safety）——「技能要有诊断自身效能的元技能」，与复盘须复盘方法本身同构；②executing-plans 增 task-start/task-done 原子标记脚本（计划执行推进可观测）；③OpenCode 2.0 + Muse 宿主支持（宿主面加宽）；④codex plugin hooks 自动发现兜底修复：**关闭一个行为只有唯一显式形态**（hooks:{} 才生效；缺席/[]/空列表都回退 fallback——配置语义显式化族：「缺席 ≠ 关闭」）。
+- **ruflo 3.42.5 / comet 0.4.2 / gstack 1.87.5.0**（2026-09-22）：ruflo reasoningBank **接真 embedder 激活**（登记在案的能力必须真实整合——死配置激活族，承诺兑现）；comet prepareNativeSkillInstallTarget 全局作用域放行（CLI 不假设项目内安装目标），无新原语；gstack 测试与 CI 规划移除空闲等待（等待即浪费——测试时间预算族）。
+- **comet 0.4.2→0.4.3**（2026-09-22，#450 项目记忆与 workflow 运行时批）：①**project-knowledge 索引重建可恢复**：重建失败不得损毁既有索引（破坏性操作守卫族：重建=事务性操作，失败回原状）；②workflow CLI 检查优化 + Windows 守护任务挂起修复且**保留加速路径**（修复不得回退既有性能——修复轮成对验证族）；③skill 项目记忆完成指引恢复（指导丢失即恢复）+ manifest 与原生技能预算对齐（发布面一致性）。
 
-- **R38（2026-09-18）**：ruflo **v3.42.4**——**smart search 结果保检索相关性**（#3340/#3327）：其他排序键不得覆盖相关性评分——「结果按相关性排序」是检索接口的语义承诺，次级排序只能在同分内生效（排序语义显式化族）。档案 `docs/research/R38-runtime-refresh.md`。
+## ruflo v3.43–v3.45 路由智能化与可观测诚实化
 
-- **R40（2026-09-19）**：superpowers **v6.3.0→v6.4.1**（80 文件）——①新技能 **diagnosing-superpowers**：技能系统自身的根因诊断（session-discovery/skill-timeline/stumbles/repeated-work/scrub-audit 十 prompt 族 + redaction-policy + context-safety）——「技能要有诊断自身效能的元技能」，与本仓 24h review 轮同构（复盘要复盘方法本身）；②executing-plans 增 task-start/task-done 原子标记脚本（计划执行推进可观测）；③OpenCode 2.0 + Muse 宿主支持（宿主面加宽）；④codex plugin hooks 自动发现兜底修复：**关闭一个行为只有唯一显式形态**（hooks:{} 才生效；缺席/[]/空列表都回退 fallback——配置语义显式化族：「缺席 ≠ 关闭」）。档案 `docs/research/R40-runtime-refresh.md`。
-- **R42（2026-09-22）**：薄轮三注——①ruflo **3.42.5**：reasoningBank **接真 embedder 激活**（登记在案的能力必须真实整合——死配置激活族，承诺兑现）；②comet **0.4.2**：prepareNativeSkillInstallTarget 全局作用域放行（CLI 不假设项目内安装目标），无新原语；③gstack **1.87.5.0**：测试与 CI 规划移除空闲等待（等待即浪费——测试时间预算族）。
-- **R43（2026-09-22）**：comet **0.4.2→0.4.3**（#450 项目记忆与 workflow 运行时批）——①**project-knowledge 索引重建可恢复**：重建失败不得损毁既有索引（破坏性操作守卫族：重建=事务性操作，失败回原状）；②workflow CLI 检查优化 + Windows 守护任务挂起修复且**保留加速路径**（修复不得回退既有性能——修复轮成对验证族）；③skill 项目记忆完成指引恢复（指导丢失即恢复）+ manifest 与原生技能预算对齐（发布面一致性）。
-
-## ruflo v3.43–v3.45 路由智能化与可观测诚实化（2026-09-25 R57 核）
-
-> v3.42.5→v3.45.0；证据锚点 `docs/research/R57-runtime-refresh.md`。
+> v3.42.5→v3.45.0。
 
 - **路由三重门禁 + 弃权回退**：abstain ≤ 0.30 / lift ≥ 1.2 / margin ≥ 0.005，不达标就**保留原选择并标注原因**；**未校准置信度绝不写入 `successProbability`**→宁可弃权不硬猜。
 - **新能力默认关、可拔除、可测量**：opt-in + 动态 import + 出错静默回退→宿主无关。
@@ -565,12 +559,12 @@ swarm-yuan 吸收：`state-machine.sh` 的 `sanitize_input` 白名单字符集�
 - **失败面显式化而非静默降级**：`embeddingError`/`available+reason`/「Learning degraded」告警；**学习回执不再编造**。
 - **句柄空闲自释放 + 写盘原子重试**：WAL 句柄空闲释放（原残留致 `memory_store` 被守卫拒绝）；rename 有界退避→写失败会让**一次性审批可被复用**。
 
-## Pi codemode：沙箱脚本聚合形态（2026-10-04 R88 记档）
+## Pi codemode：沙箱脚本聚合形态
 
-> earendil-works/pi（原 badlogic/pi-mono 重定向）`packages/codemode`；Pi 机制源定位不进 FACT_RUNTIMES（同 dsh/pua/mattpocock 先例，登记 upstream-baseline 行）。证据：官方 README 直查（B+）。
+> earendil-works/pi（原 badlogic/pi-mono 重定向）`packages/codemode`；Pi 机制源定位不进 FACT_RUNTIMES（同 dsh/pua/mattpocock 先例，见 docs/upstream-baseline.md）。证据：官方 README 直查（B+）。
 
 - **机制**：QuickJS/WASM 沙箱内让模型写 JS 编排其他工具——嵌套 tool call 在沙箱内完成，**只有脚本最终输出进入主上下文窗口**（中间调用与结果不进入）。
 - **定位**：子代理进程的替代形态——不开新子代理上下文，用沙箱脚本聚合多次工具调用。上下文成本模型对比：子代理=固定开新窗口+结果回流；codemode=零新窗口+只回流终值。
-- **与既有档咬合**：ECC 上下文经济学（compaction/蒸馏）同族但方向相反——那是"事后压缩已进入的"，codemode 是"事前阻止进入"；与 R86 任务图并行实现（子代理扇出）、 Mods `turn.step` 就地代答并列为编排形态第三选项。
+- **与既有档咬合**：ECC 上下文经济学（compaction/蒸馏）同族但方向相反——那是"事后压缩已进入的"，codemode 是"事前阻止进入"；与上文任务图并行实现协议（子代理扇出）、 Mods `turn.step` 就地代答并列为编排形态第三选项。
 - **对照警示**：DSH 曾有 `code-runtime` 包（0.1.x 线）后在 0.2.1 收敛中移除——进程内代码执行面在大厂运行时也未站稳，形态选型时优先子代理扇出，codemode 记档备查。
 - **不吸收理由（当下）**：Claude Code 无进程内沙箱脚本面（Mods 非沙箱）；宿主出现等价面时再评估。

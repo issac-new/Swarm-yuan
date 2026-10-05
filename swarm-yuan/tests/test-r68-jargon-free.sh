@@ -37,8 +37,62 @@ fi
 # 机器锚必须在位（防误伤——改叙事不得动机器锚）
 for anchor in '调用追踪' '方法论引用' '生成器侧' '待填充' '填充指引'; do
   cnt=$(grep -rl "$anchor" scripts/*.sh references/template-spec.md 2>/dev/null | wc -l | tr -d ' ')
-  [[ "$cnt" -ge 1 ]] && ok "机器锚在位: $anchor" || bad "机器锚丢失: ${anchor}（误伤）"
+  [[ "$cnt" -ge 1 ]] && ok "机器锚在位: ${anchor}" || bad "机器锚丢失: ${anchor}（误伤）"
 done
+
+# --- 终态纪律锁：历史包袱禁入用户面 ---
+# 终态文档 = 干净完整的方案描述；过程历史归 docs/design-evolution.md（决策全文）、
+# CHANGELOG.md（轮次账）与 docs/research/（调研档案）。禁类与豁免：
+#   ① 裸轮次标记（R21/R83-D1 式）——豁免：docs/research/R\d+-<slug>.md 文件名锚、UNECE/UN 法规编号（本仓引用的全部法规号为 R155/R156，新增其他法规号时先扩 sed 豁免行）
+#   ② 半步编号（⓪.5/①.5 式带圈数字加点）——生成流程唯一编号口径在 references/generation-flow.md（Step 1-12 含命名子阶段）
+#   ③ 轮次簿记句（补核/薄轮不开档/watch 维持/轮次台账）
+#   ④ 版本注记日期戳（"（YYYY-MM-DD 核）"式）——证据分级的"核验"日期（标准/URL 访问与复核日期）不在禁类
+#   ⑤ 工作包标签（WP-P1/WP-Z3 式）——历史工作包的考古标签，同轮次标记归档
+# 决策编号（决策 N）不在禁类：它是 README 附录 C 溯源表的引用机制，指向 design-evolution.md 决策全文。
+# 上游项目版本/PR 证据锚（如 v1.91.8.0 #2994）与表格"来源版本"列不在禁类。
+_terminal_scan="SKILL.md README.md references/*.md ../docs/usage-manual.md .claude/commands/swarm-yuan.md"
+
+round_hits=$(grep -rEn '[[:<:]]R[0-9]+[[:>:]]' $_terminal_scan 2>/dev/null \
+  | sed -E 's#R[0-9]+-[a-zA-Z0-9_.-]+\.md#文件名锚#g; s#(UN|UNECE) R[0-9]+#REG-EXEMPT#g; s#[[:<:]]R15[56][[:>:]]#REG-EXEMPT#g' \
+  | grep -E '[[:<:]]R[0-9]+[[:>:]]')
+if [[ -z "$round_hits" ]]; then
+  ok "终态纪律①：用户面零裸轮次标记（文件名锚与 UN 法规号豁免）"
+else
+  bad "终态纪律①：裸轮次标记残留（历史归 design-evolution/CHANGELOG/docs/research）："
+  printf '%s\n' "$round_hits" | head -5
+fi
+
+half_hits=$(grep -rEn '[⓪①②③④⑤⑥⑦⑧⑨]\.[0-9]' $_terminal_scan 2>/dev/null)
+if [[ -z "$half_hits" ]]; then
+  ok "终态纪律②：用户面零半步编号（编号唯一口径在 generation-flow.md）"
+else
+  bad "终态纪律②：半步编号残留："
+  printf '%s\n' "$half_hits" | head -5
+fi
+
+ledger_hits=$(grep -rEn '补核|薄轮不开档|watch 维持|轮次台账' $_terminal_scan 2>/dev/null)
+if [[ -z "$ledger_hits" ]]; then
+  ok "终态纪律③：用户面零轮次簿记句"
+else
+  bad "终态纪律③：轮次簿记句残留："
+  printf '%s\n' "$ledger_hits" | head -5
+fi
+
+stamp_hits=$(grep -rEn '[0-9] 核[，）]' $_terminal_scan 2>/dev/null)
+if [[ -z "$stamp_hits" ]]; then
+  ok "终态纪律④：用户面零版本注记日期戳（证据核验日期豁免）"
+else
+  bad "终态纪律④：版本注记日期戳残留："
+  printf '%s\n' "$stamp_hits" | head -5
+fi
+
+wp_hits=$(grep -rEn 'WP-[A-Z][A-Za-z0-9]*' $_terminal_scan 2>/dev/null)
+if [[ -z "$wp_hits" ]]; then
+  ok "终态纪律⑤：用户面零工作包标签（WP-xxx，历史归 design-evolution）"
+else
+  bad "终态纪律⑤：工作包标签残留："
+  printf '%s\n' "$wp_hits" | head -5
+fi
 
 echo "PASS test-r68-jargon-free (${pass} ok, ${fail} fail)"
 [[ $fail -eq 0 ]]

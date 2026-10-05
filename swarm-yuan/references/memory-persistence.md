@@ -153,7 +153,7 @@ claude-mem 支持的查询维度：
 
 ## 阶段边界五选树（上下文何时切换）
 
-> 理念来源：mattpocock/skills v1.2.3 `skills/engineering/ask-matt/PHASE-BOUNDARIES.md`（R86 吸收，2026-10-03）。本节管"什么时候切上下文、切到哪种"；上文的记忆方案管"切了之后丢什么、怎么补"——互补关系。
+> 理念来源：mattpocock/skills v1.2.3 `skills/engineering/ask-matt/PHASE-BOUNDARIES.md`（吸收登记见 `docs/research/R86-mattpocock-skills-absorption.md`）。本节管"什么时候切上下文、切到哪种"；上文的记忆方案管"切了之后丢什么、怎么补"——互补关系。
 
 **阶段**是会话内的一整块工作（需求访谈、实现、验证）；**阶段边界**是两块之间的缝隙，是切换决策唯一的合法位置——阶段中途只有两种选择：继续，或把剩余工作拆给子代理（中途压缩会让 agent 丢线）。
 
@@ -169,7 +169,7 @@ claude-mem 支持的查询维度：
 
 **一手源换二手源**：除"继续"外每个动作都把一手源（会话原样）换成二手源（其摘要）——信息变少、噪音变少、腾出空间。这是问题 1 排第一的原因：只有留下比换掉更贵时才付这个损耗。
 
-**落地**：开发工作流 执勤 AI 在节点之间（spec→plan、plan→编码、编码→验证）做此判定；builder-journal/compaction 续传承载"压缩"分支的内容保全，与本树正交。
+**落地**：开发工作流执勤 AI 在节点之间（spec→plan、plan→编码、编码→验证）做此判定；builder-journal/compaction 续传承载"压缩"分支的内容保全，与本树正交。
 
 ## 知识溯源三级标记（Honest-edge Provenance）
 
@@ -447,38 +447,27 @@ ECC 的 knowledge-ops 定义了 6 层知识架构：
 
 claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli / antigravity / goose / roo-code / warp
 
-## claude-mem v13.21 要点
+## claude-mem 治理要点
 
 > **npm 通道**：npm `latest` 被回钉 12.4.7，主通道为插件市场 + cmem.ai；oracle 以 GitHub tag 为准（详见 `docs/upstream-baseline.md`）。调研档案 `docs/research/R16-runtime-refresh.md`。
 
-- **配额熔断器四规则**（13.20.0）：熔断状态跨 worker 重启持久化；冷却期只放一个探针；探针认领绑定 generator（防前辈退出误清后辈）；**"额度耗尽 ≠ 故障"**不计 health ledger——上轮错误信封分类的机制级延伸。
+- **配额熔断器四规则**（13.20.0）：熔断状态跨 worker 重启持久化；冷却期只放一个探针；探针认领绑定 generator（防前辈退出误清后辈）；**"额度耗尽 ≠ 故障"**不计 health ledger（错误信封分类：配额耗尽属正常态而非故障）。
+- **熔断判据绑定真实事件形状**（13.23.x，#3838）：判据与 SDK 真实消息形状不匹配即失效——本仓门禁判据绑定真实退出码/产物，同向。
+- **熔断状态可观测**：熔断/冷却状态 surfaced 到 observer-health 与 session-start——熔断判据与降级披露配套（判据不变）。
 - **观察者契约显式化**（13.18.1）：SILENT BY DESIGN（被观察者知道被观察就会改变行为）+ NO CONTACT（单向记录器，禁止联系任何 session）。
+- **观察者最小权限**：observer 会话 deny SendMessage/ListAgents——只读角色的权限枚举必须排除动作面（「看」的角色不得获得「做」的工具）。
 - **有界会话代际**（13.20.0）：observer 改 memory 播种的有界 generation，回收自恢复——同时解决上下文无限增长与末条观察搁浅。
-- **重启验证语义**（13.19.0）：成功判定="继任者就绪"（/health 新 pid + /api/readiness ok），**bound port ≠ ready worker**；fail-soft 旁路（13.16.0）+ 显式优于探测（13.21.0）。
+- **重启验证语义**（13.19.0）：成功判定="继任者就绪"（/health 新 pid + /api/readiness ok），**bound port ≠ ready worker**；「健康但永不就绪」的 worker 按「未达就绪」回收（就绪≠存活，活性判据从「未崩溃」精确到「达到就绪」）；fail-soft 旁路（13.16.0）+ 显式优于探测（13.21.0）。
+- **健康探测按调用方剩余死线封顶**（#3575）：每个探测与重试睡眠吃调用方剩余预算，`waitForHealth(short)` 不坐满 5s——子操作预算 = 调用方剩余死线：超时从入口一次性分配向下传播，不是各层自定。
+- **worker 不可用降级三态**（#4033）：fail-loud 一次后 fail-open——同一场故障只阻塞第一个提示，后续 hook 放行；比持续 fail-closed 与静默 fail-open 都优。
+- **配置写通道即攻击面**：环境变量暴露的 HTTP 写通道须鉴权 + 遥测脱敏（CLAUDE_CODE_PATH 修复先例）；配置过滤器显式配置产生空集时回退安全默认而非空上下文（fail-back）。
+- **采集选择性**：不是所有会话都值得记忆（plugin cache 会话/空标题观测不采集）；检索通路须覆盖非拉丁语系（CJK substring 查询）。
 
-### v13.22-13.24 补核（2026-09-05 R17）
+## ruflo 记忆治理要点
 
-- **熔断器事件形状修正**（13.23.x，#3838）：判据与 SDK 真实消息形状不匹配——**触发判据必须绑定上游真实事件形状**。📖 对账：本仓门禁判据绑定真实退出码/产物，同向；R16 四规则语义不变。13.24.0 多宿主分发不吸收，watch 维持。
+> 调研档案 `docs/research/R29-runtime-refresh.md`。
 
-### v13.24.10 补核（2026-09-11 R24）
-
-- **凭据泄漏路径关闭**（#3985）：安全修复，登记。
-- **配额熔断上浮可见**：熔断/冷却状态 surfaced 到 observer-health 与 session-start——熔断器四规则的**可观测性**补全（判据不变）。
-- **CJK/日文 substring 检索**：非拉丁语系查询通路修复——检索口径的多语种完备，登记。
-- 其余（sync 内容 flush 批次收缩 + hub push 超时上调、Windows ghost listener 端口探测有界化）为工程修复，对账通过。watch 维持。档案 `docs/research/R24-runtime-refresh.md`。
-
-### v13.24.23 补核（2026-09-12 R26）
-
-- **健康探测按调用方剩余死线封顶**（#3575）：每个探测与重试睡眠吃调用方剩余预算，`waitForHealth(short)` 不再坐满 5s——**死线传播族**（子操作预算 = 调用方剩余死线）：超时不是各层自定，而是从入口一次性分配向下传播。与 claude-code WebFetch 300s 宿主死线、ocr `timeout_sec` 同族。
-- **worker 不可用 fail-loud 一次后 fail-open**（#4033）：同一场故障只阻塞第一个提示，后续 hook 放行——**降级三态**（可见一次 → 不重复打扰 → 降级运行），比持续 fail-closed 与静默 fail-open 都优。
-- **三处有界化**：sync_outbox 增长（云同步未配置时）、会话摘要输入按载荷尺寸、定时投影修复工作量——资源占用须有上限，未配置的外部依赖不得无限堆积本地状态。
-- **SDK 子进程 cwd 监禁**（#4054）+ **记忆卫生**（plugin cache 会话 #4042 / 空标题观测 #3176 不采集——**采集选择性**：不是所有会话都值得记忆，诚实口径延伸到采集侧）+ memory_session_id 幂等注册（#4027）。
-- 其余（项目名锚定 Claude 项目目录 #4055、localhost 归一化、chroma 解析崩溃不中止管线、Bun ENOENT fail-loud、冷启动误报修复、macOS 桌面捆绑 codex CLI 探测 #3445）为修复族，对账通过。watch 维持。档案 `docs/research/R26-runtime-refresh.md`。
-
-## ruflo v3.42.0：有界性第三形态与证据可信度传播（2026-09-16 R29）
-
-- **maxToolCallsPerTurn 滑动窗口重置**（#3151）：有界性族第三波——固定计数上限（3.40 前）→ 预算分配（3.41.2 Seraphina 封顶）→ 时间窗速率（3.42 滑动窗口）。三种有界形态对应三种失效模式：超总量、超预算、突发速率。
+- **maxToolCallsPerTurn 滑动窗口重置**（#3151）：有界性三形态对应三种失效模式——固定计数上限（超总量）→ 预算分配（超预算）→ 时间窗速率（突发速率）。
 - **findSimilar 置信度按来源可靠性门控**（#3301）：结论置信度不得高于其证据来源的可靠性上限——不信任单点聚合放大（证据可信度传播族）。
 - **LearningBridge.consolidate() reward-blind**（#3159）：记忆固化判据与激励信号解耦——防 reward hacking 写入长期记忆。
-- 近重复 embedding 检测整合 MemoryCore（#3231）：入库侧去重，防记忆池同义膨胀。MCP 治理 opt-in 与 ADR-377 身份绑定见 `mcp-governance.md` R29 段。
-- **R42（2026-09-22）**：claude-mem **v13.24.23→v13.25.3**（19 commits）——①**observer 会话 deny SendMessage/ListAgents**：只读角色的权限枚举必须排除动作面（观察者最小权限——「看」的角色不得获得「做」的工具）；②**健康但永不就绪的 worker 回收**：活性判据从「未崩溃」精确到「达到就绪」（就绪≠存活，活性定义族）；③**CLAUDE_CODE_PATH HTTP 写通道安全修复**：环境变量配置面暴露写通道须鉴权 + 遥测脱敏（配置写通道=攻击面）；④UTC 日界日志文件名重算（午夜翻页族第三实证）；⑤配置过滤器空匹配回退模式默认（fail-back：显式配置产生空集时回退安全默认而非空上下文）。watch 行迭代极快，薄轮不开档。
+- 近重复 embedding 检测整合 MemoryCore（#3231）：入库侧去重，防记忆池同义膨胀。MCP 治理 opt-in 与 ADR-377 身份绑定见 `mcp-governance.md`。

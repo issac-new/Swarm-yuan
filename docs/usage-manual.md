@@ -134,7 +134,7 @@ bash install.sh
 | **warn** | 22 | 17 | 1-2 真实 fail()，能 fail 但触发窄，混合 warn |
 | **advisory** | 16 | 21 | 0 fail()，永不阻断（认知/观测类；子 shell 内重定义 `fail()`/`warn()` 为纯 echo，"不阻断"语义机器化） |
 
-- **有效 = 静态 + precheck.sh 顶部 `_ENFORCE_OVERRIDE`**（当前 5 项 warn→advisory：stable-diff / framework / knowledge / metrics / crypto，WP-Q2H 误报治理；名单以 precheck.sh 数组为准，不在此手抄）
+- **有效 = 静态 + precheck.sh 顶部 `_ENFORCE_OVERRIDE`**（当前 5 项 warn→advisory：stable-diff / framework / knowledge / metrics / crypto，误报治理见 conf 调整；名单以 precheck.sh 数组为准，不在此手抄）
 - **查实时名单**：`bash scripts/precheck.sh --list-gates`（输出 flag / gate_fn / enforce / tier 四列）——本节不手抄 55 个门禁名，手抄即漂移（agents-md-audit-round：旧名单表三度失同步后删除）
 - **自动归类**：`bash scripts/gen-enforce-level.sh` 扫 precheck.sh fail() 数，重生成 `assets/gate-enforce-level.conf`（幂等，可逐字节再生）
 - **自检**：`self-check.sh` 校验 conf 与 precheck.sh fail 数一致 + strict 门禁必含 ≥1 fail()（防 strict 声明空壳）
@@ -189,7 +189,7 @@ bash install.sh
 | `--shift-left` | 左移核验（spec §19 测试设计/§20 变更影响/§21 可观测性非占位） | 第 8 项 |
 | `--framework` | 框架适配门禁（按 ACTIVE_FRAMEWORKS 跑注入的 `_fw_<id>_check` 片段） | 第 4 项 |
 
-#### 合规门禁（19 个，独立 `--compliance-suite` 按需执行；未配置静默跳过或 WP-Z3 豁免留痕）
+#### 合规门禁（19 个，独立 `--compliance-suite` 按需执行；未配置静默跳过或登记豁免留痕）
 
 | 门禁 | 检查什么 | 特征卡依据 |
 |------|---------|-----------|
@@ -236,21 +236,20 @@ bash install.sh
 
 | 步骤 | 做什么 |
 |------|--------|
-| ⓪ | 自检（13 运行时整合口径 = 11 工具自动探测 + 2 方法论引用） |
-| ⓪.5 | 读取项目知识（AGENTS.md / CLAUDE.md / 记忆 / agent 运行时）+ **行为观察**（`mine-habits.sh` 六维统计初稿 → AI 审读三去向，R21-B） |
-| ① | 三路并行探查代码库（结构 / 规范 / 代码组织） |
-| ①.5 | **项目形态判定 + 详尽构件库清单 + 调用链路分析**（§C+.0-C+.7，按形态选维度，全量穷举 + 计数核验 + **业务功能盘点与任务配方提取**→recipes.md + **关系边集**→relations.jsonl，R21） |
-| ② | **提取 17 项特征卡**（每项落到真实路径，不用占位符） |
-| ③ | 创建骨架（含 hooks / commands / precheck.conf） |
-| ④ | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
-| ④.5 | **框架深化**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + 门禁清单对齐 |
-| ⑤ | AI 配置 precheck.conf——**185 个变量从特征卡推导** |
-| ⑤.5 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
-| ⑥ | AI 运行门禁（--all 核心 10 → --all-full 标准 28；合规 19 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
-| ⑦ | AI 独立审查——`--review`（ocr 5 维度或 AI 清单）+ review-record 落盘 |
-| ⑦.5 | **门禁注入**——`generate-skill.sh --inject-frameworks` 把激活框架门禁片段写入 precheck.sh 标记区块 |
-| ⑧ | AI 写回项目记忆（闭环） |
-| ⑨ | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**无占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
+| Step 1 | 自检（13 运行时整合口径 = 11 工具自动探测 + 2 方法论引用） |
+| Step 2 | 读取项目知识（AGENTS.md / CLAUDE.md / 记忆 / agent 运行时）+ **行为观察**（`mine-habits.sh` 六维统计初稿 → AI 审读三去向） |
+| Step 3 | 三路并行探查代码库（结构 / 规范 / 代码组织） |
+| Step 4 | **项目形态判定 + 详尽构件库清单 + 调用链路分析**（§D.0-§D.7，按形态选维度，全量穷举 + 计数核验 + **业务功能盘点与任务配方提取**→recipes.md + **关系边集**→relations.jsonl） |
+| Step 5 | **提取 17 项特征卡**（每项落到真实路径，不用占位符） |
+| Step 6 | 创建骨架（含 hooks / commands / precheck.conf） |
+| Step 7 | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
+| Step 4.5 | **框架深化与门禁注入**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + `generate-skill.sh --inject-frameworks` 把门禁片段写入 precheck.sh 标记区块（实例化在填充后做，注入须在 Step 12 前完成） |
+| Step 8 | AI 配置 precheck.conf——**185 个变量从特征卡推导** |
+| Step 9 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
+| Step 10 | AI 运行门禁（--all 核心 10 → --all-full 标准 28；合规 19 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
+| Step 10.5 | AI 独立审查——`precheck.sh --review`（ocr 5 维度或 AI 清单）+ review-record 落盘 |
+| Step 11 | AI 写回项目记忆（闭环） |
+| Step 12 | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**无占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
 
 #### 质量门禁序列（quality:full 模式，执勤期收口用）
 
@@ -262,7 +261,7 @@ bash install.sh
 
 #### 三档骨架（--profile）
 
-按项目规模与合规要求选择生成档位（**默认 `auto` 项目级自适应**：合规关键词 → compliance；文件数 <80 → lite；其余 standard；WP-Q2 偏置修正——信号明确才升档，模糊走默认 standard，判定依据会打印供你评估，显式 `--profile` 可覆盖。upgrade 自动继承既有档）：
+按项目规模与合规要求选择生成档位（**默认 `auto` 项目级自适应**：合规关键词 → compliance；文件数 <80 → lite；其余 standard；信号明确才升档，模糊走默认 standard，判定依据会打印供你评估，显式 `--profile` 可覆盖。upgrade 自动继承既有档）：
 
 | 档 | 适用 | 骨架内容 |
 |----|------|---------|
@@ -283,7 +282,7 @@ AI 自动：创建 spec → 判断规模 → **从特征卡第 11 项检索可�
 
 **全程可见（全链路追踪，无需确认）**：AI 每进入一节点先公告 `→ [节点X] 调用 <技能/工具> · <目的>`，节点级落盘 `.swarm-yuan/trace.jsonl`（`scripts/trace-log.sh`；`SWARM_YUAN_TRACE=verbose` 时含每次具体调用）。你随时知道正在调用何种工具及技能。
 
-| 规模 | 填哪些段 | 提交前门禁（任务级自适应，WP-N2） | 典型场景 |
+| 规模 | 填哪些段 | 提交前门禁（任务级自适应） | 典型场景 |
 |------|---------|---------|---------|
 | 简单 | §1-§4 + §5.5 复用约束 + §12 风险回滚 | `--all`（核心 10） | 改 bug / 加字段 |
 | 标准 | §1-§13 + §5.5/§5.6/§5.7 约束段 | `--all-full`（标准 28） | 新功能 / 改接口 |
@@ -402,7 +401,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ### 8. FAQ
 
-#### R21 新增：任务配方（recipes.md）是什么？行为观察（mine-habits）会读我的什么数据？
+#### 任务配方（recipes.md）是什么？行为观察（mine-habits）会读我的什么数据？
 
 - **recipes.md**：目标技能里的"装配说明书"——§A 业务功能清单（既有功能各由哪些组件拼成）+ §B 任务配方（高频任务按什么顺序查表/复用/写胶水/过门禁，五要素）。开发时 AI 先查配方再动手；解决新问题后按 SKILL.md 自成长段第⑤环沉淀新配方。
 - **mine-habits.sh** 只读 git 元数据（提交信息前缀/分支名/变更文件清单/行数统计），产出 `.swarm-yuan/notes/habits.md` 统计初稿供 AI 审读；不读文件内容、不外传。统计事实 ≠ 规范——书面规则优先。
@@ -428,7 +427,7 @@ swarm-yuan 内置 79 个框架规则集（references/frameworks/*.md + assets/fr
 
 #### 生成时激活
 
-1. **框架探查**（§C+.0.5）：从 pom.xml/package.json/go.mod/pyproject.toml 提取依赖，识别 ACTIVE_FRAMEWORKS
+1. **框架探查**（§D.0.5）：从 pom.xml/package.json/go.mod/pyproject.toml 提取依赖，识别 ACTIVE_FRAMEWORKS
 2. **门禁注入**（--inject-frameworks）：按 ACTIVE_FRAMEWORKS 把对应门禁片段注入目标技能的 precheck.sh 标记区块
 3. **四要素核验**（verify-framework-ruleset.sh）：每框架须通过 枚举+领域知识+门禁+约束 四要素
 4. **fixture 正反例**（run-framework-fixture.sh）：每框架含 violating→FAIL / compliant→PASS 测试
@@ -439,7 +438,7 @@ swarm-yuan 内置 79 个框架规则集（references/frameworks/*.md + assets/fr
 2. 创建 `assets/framework-gates/<fw>.sh`（`_fw_<id>_check()` 函数 + 头注释 `# ruleset:` + `# gates:`）
 3. 创建 `tests/fixtures/<fw>/{violating,compliant}/`
 4. 跑 `bash scripts/verify-framework-ruleset.sh <fw>` 核验
-5. 跑 `bash scripts/gen-framework-index.sh` 更新索引（产物：assets/framework-signals.md + exploration-guide.md §C+.0.5 指针）
+5. 跑 `bash scripts/gen-framework-index.sh` 更新索引（产物：assets/framework-signals.md + exploration-guide.md §D.0.5 指针）
 
 #### 门禁运行
 
@@ -469,12 +468,12 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 | **门禁 vs rules.d 规则** | 门禁=检查**代码与仓库状态**的 bash 函数（55 个，四结果）；rules.d=判定**命令该不该执行**的数据规则（三值）。前者管"代码合不合规矩"，后者管"命令让不让跑"。 |
 | **hooks/ 目录 vs scripts/ 目录** | 目标技能里：`scripts/` 放全部可执行脚本（含 5 个钩子脚本）；`hooks/` 只放 `hooks.json`（宿主钩子注册配置）。 |
 | **draft vs active** | 目标技能的两个生命周期状态：draft=骨架未填满（禁全量门禁，防半成品错觉）；active=验证无占位符后激活（全量解锁）。 |
-| **WP-/R-/决策编号** | 历史工作包/调研轮/决策记录的**考古标签**（如 WP-Q2H-B、R13、决策 35），用于追溯"为什么改成这样"。它们不是系统概念，新人无需记忆——正文出现的概念一律以本语文义为准。 |
+| **WP-/R-/决策编号** | 历史档案（design-evolution/CHANGELOG/docs/research 文件名）中的溯源标签（形如 WP- 工作包号、R 加数字的轮次号、决策加数字的决策号），用于追溯"为什么改成这样"。它们不是系统概念；终态文档正文不使用，读者只在历史档案里会遇到。 |
 | **verifier v1 vs v2** | v1=内部自洽验收（改动前后行为一致吗——CI 强制）；v2=外部有效验收（门禁能拦真实 bug 吗——测量脚本已落地、语料待采集，未达阈值前对外禁用"100% 可靠"）。 |
 
 ---
 
-### 标准术语对照表（R69 黑话清零·禁用词清单，2026-09-26）
+### 标准术语对照表（黑话清零·禁用词清单）
 
 > **纪律**：用户面文档（SKILL.md / README / references/*.md）禁止使用下列自造词——用右列标准术语；新增写作前先读本表。机器锚（变量名/gate id/文件名/占位词/【生成器侧】）不受此约束。防复发锁：`tests/test-r68-jargon-free.sh`。
 
@@ -530,7 +529,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 - **FAIL-open / fail-closed**：失败时放行 / 失败时拒绝。权限边界一律 fail-closed；fail-open 只用于有下层兜底处。
 - **五层认知（cognition）**：`references/cognition-framework.md` 定义的五层框架（认知递进/思维语言/认知辩证/偏差防范/辩证认知），特征卡第 13 项的认知基底；属建议性体检（`--cognition` 出报告不判违规），不是门禁家族。
 - **spec / spec 模板**：任务规格（每次开发任务的合同），模板 25 节按任务类型裁减（§25 功能点估算 feature 档选填）。
-- **生成流程（生成流程）**：生成器把一个仓库变成目标技能的 12 步流程（Step 0-12，逐步详解在 references/generation-flow.md）。
+- **生成流程**：生成器把一个仓库变成目标技能的 12 步流程（Step 1-12，逐步详解在 references/generation-flow.md）。
 - **开发工作流（执勤工作流）**：目标技能里的九节点开发工作流（①需求理解→②探查→③设计 spec→④实施 plan→⑤编码→⑥测试→⑦独立审查→⑧合入→⑨发布，载体是目标技能的 references/workflow.md）。
 - **档（参考文档）**：references/ 目录下按需阅读的参考文档的简称（"47 档"=47 个 .md 文件；每档开头有"何时读我"路由行）。
 - **随技能分发**：随目标技能一起安装分发——generate-skill.sh 的 UNIVERSAL_FILES 清单列出的文件会拷进每个目标技能；不在清单里的文档只存在于生成器仓，目标技能读不到。
@@ -569,6 +568,6 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 | 生成流程逐步口径 | `swarm-yuan/references/generation-flow.md`（Step 1-12） |
 | 79 框架各自的规则 | `swarm-yuan/references/frameworks/` |
 | 验收体系怎么运作 | `verifier/README.md` 与 `verifier/v1/acceptance-criteria.md` |
-| 调研证据（方案怎么长出来的） | `docs/research/`（R1-R20，R10 无报告） |
+| 调研证据（方案怎么长出来的） | `docs/research/`（各轮调研报告，文件名带轮次编号） |
 
 > 维护注记：本段是解释层，不承载规格——若与设计文档（`swarm-yuan/README.md`）冲突以设计文档为准，并视为本段需要修订；发现歧义请按"术语词典"先对齐命名再讨论。

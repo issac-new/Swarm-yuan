@@ -3,7 +3,7 @@
 # 懒生成方法论（Lazy Generation）
 
 > 来源：行者明灵《Harness实践：OpenSpec + Superpowers + CodeGraph + Ponytail + Caveman + RTK》上下篇（2026-09-16/17）+ [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) v4.9.0（MIT；141,551★，GitHub API 2026-09-18 A 级实测）。
-> 证据分级（R37 口径）：仓库元数据=A（本机核验）/ 性能数字=B（官方 benchmark 自述）/ 文章对照实测=C（二手信源）。
+> 证据分级：仓库元数据=A（本机核验）/ 性能数字=B（官方 benchmark 自述）/ 文章对照实测=C（二手信源）。
 > 纪律：只引用方法论模式，不 vendor 上游 skill；守决策 26/27——门禁 55 不增，本文档为纯文档载体。
 
 ## 一、定位：给"拼装式开发"一个可执行的决策程序

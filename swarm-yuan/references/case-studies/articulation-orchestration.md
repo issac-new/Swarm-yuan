@@ -21,7 +21,7 @@ swarm-yuan 的能力（特征卡 / 门禁 / verifier / 合规矩阵）本身是�
 | 「检查不经 AI · 三道最能拦」 | `--reuse`（防重复造轮子）/ `--stable-diff`（防偷改老代码）/ `--layer`（防乱调层级）strict 档机器执法 |
 | 「质量左移：测试/回滚/监控写代码前定好」 | `--shift-left` 门禁 + spec 模板 §19 测试设计 + §20 变更影响 + §21 可观测性约束 |
 | 「四层纵深 L4 影子级行为一致性 ≥ 99.99%」 | verifier C5（CLI A/B 字节级等价）+ C8（合规 fixture 双态）司法独立验证 |
-| 「观测驱动飞轮」 | `gate-trends.sh` Q-20 度量反馈（整体通过率 · 弱点密度 · 门禁活跃度） |
+| 「观测驱动飞轮」 | `gate-trends.sh` 度量反馈（整体通过率 · 弱点密度 · 门禁活跃度） |
 | 「修正落到文件 · 审计可追溯 · 不可抵赖」 | `trace-log.sh` → `.swarm-yuan/trace.jsonl` 调用留痕 + `decisions.jsonl` 决策留痕（ISO/IEC 42001 人工监督） |
 | 「等保四级 · 监管框架对齐」 | 金融行业 profile：JR/T 0044（RTO 6h/RPO 15min/能力 5 级）+ JR/T 0142 + JR/T 0171（C3/C2/C1 分级）；`--dengbao`/`--privacy`/`--pia`/`--crypto`/`--release-sign` 19 合规门禁 |
 | 「重量是设计选择不是缺陷」 | profile 四档自适应：auto/lite/standard/compliance（`--profile auto` 项目级自适应） |

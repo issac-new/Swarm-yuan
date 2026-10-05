@@ -11,17 +11,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 There is no compiled artifact and no conventional build — the product is a set of bash scripts, markdown templates/references, and shell gate fragments that get copied into a target skill directory.
 
-## 范式定位（WP-P10 → R13 修正）
+## 范式定位
 
-swarm-yuan 现为**两体系统**（swarm-yuan/README.md 一章 What）：生成器侧 ~74K 行自举仍在（一次性消费不算税，行数口径机械实测 2026-09-10，排除 tests/research/offline-cache），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` 五章 When。（2026-07 WP-P10 的"重量级范式，重量是设计选择"是历史定位，R13 起以上述两体系统为准。）
+swarm-yuan 现为**两体系统**（swarm-yuan/README.md 一章 What）：生成器侧 ~74K 行自举仍在（一次性消费不算税，行数口径机械实测 2026-09-10，排除 tests/research/offline-cache），生成物侧 ~25 文件、概念负担降到 5 个层次名词——重量没有消失，只是归位。四档 `--profile auto|lite|standard|compliance` 让重量显式可选，`auto` 按项目规模+合规+技术栈复杂度自适应判定（质量优先升档偏置）。适用/不适用场景与轻量替代方案详见 `swarm-yuan/README.md` 五章 When。
 
 ## Repository layout (three top-level roles)
 
 - **`swarm-yuan/`** — the generator skill itself. This is the primary thing you edit.
-  - `SKILL.md` — the AI entry point / operating manual (generation pipeline 唯一口径 = `references/generation-flow.md` Step 1–12；分工视图 ⓪-⑨ 为同一流程压缩标记（⑦=Step 10.5 独立审查），"Step 0-8 / 13 节点"是已退役旧口径（见 `docs/design-evolution.md` 决策史）).
+  - `SKILL.md` — the AI entry point / operating manual (generation pipeline 编号 = `references/generation-flow.md` Step 1–12，SKILL.md 总览表为同一口径）。
   - `install.sh` — one-key installer; auto-detects 7 AI runtimes and copies the skill in.
-  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` + `gates-strict.sh` + `gates-warn.sh` + `gates-advisory.sh` (55 gates split across four files; LOC tracked by `facts.conf` `FACT_SCRIPT_LOC`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (config vars, WP-I split), `spec-template.md` (24-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (79 per-framework gate fragments).
-  - `references/` — methodology docs + `references/frameworks/<fw>.md` (79 framework rule sources).
+  - `assets/` — **templates + gates, the source of truth for generated skills.** `precheck.sh` + `gates-strict.sh` + `gates-warn.sh` + `gates-advisory.sh` (55 gates split across four files; LOC tracked by `facts.conf` `FACT_SCRIPT_LOC`), `precheck.conf` + `precheck.arch.conf` + `precheck.compliance.conf` (config vars, core/arch/compliance 三文件拆分）, `spec-template.md` (25-section spec), `trace-log.sh` (full-chain invocation tracing: stdout announcement + `.swarm-yuan/trace.jsonl`; node-level default, `SWARM_YUAN_TRACE=verbose` for call-level), `framework-gates/<fw>.sh` (81 per-framework gate fragments).
+  - `references/` — methodology docs + `references/frameworks/<fw>.md` (81 framework rule sources).
   - `scripts/` — the generator `generate-skill.sh`, `self-check.sh`, framework tooling.
   - `tests/` — fixture + e2e tests (see below).
 - **`verifier/`** — a self-contained acceptance harness that re-runs the whole suite (fixture double-state + id-level assertions) with golden-vector line-count reconciliation (`run-verifier.sh golden` does content comparison; `rebuild-golden` rebuilds the baseline after intentional gate changes).
@@ -63,8 +63,7 @@ bash swarm-yuan/scripts/verify-framework-ruleset.sh <framework-id>
 bash verifier/v1/run-verifier.sh all       # or: fixtures | e2e | shellcheck | metrics
 
 # --- Local full regression in ONE command (locks + 3 e2e + verifier all + self-check) ---
-# 收口前必跑：任何"验证通过"的声称以本命令 EXIT=0 为准（R70 流程修复——临时 for 循环
-# sweep 不含 verifier，是 R66-R69 连续四轮 CI 红未被察觉的流程根因）。
+# 收口前必跑：任何"验证通过"的声称以本命令 EXIT=0 为准。
 bash swarm-yuan/tests/run-sweep.sh
 ```
 

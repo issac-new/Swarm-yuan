@@ -1,5 +1,26 @@
 # Changelog
 
+## [v2.53.0] - 2026-10-05
+
+> R90 终态文档清理轮（用户驱动，四方案全做）：SKILL.md 与 references 48 档去历史包袱——89 轮迭代沉积的 R 轮次标记、swarm-yuan 自身版本注记（v2.14.x）、补丁式编号（⓪.5 半步 / §C+ / Step -1）、评审答辩材料（理念→兑现追踪 / 概念↔实物追踪表 / 结构→流程对应）、文档自身编辑史叙事全面清除；机制语义按「改写而非删除」原则逐条保留（包裹仍生效约束的轮次注改写为机制陈述，上游版本号 / issue 号 / 来源归属 / 诚实状态标注全保留）。生成流程编号统一为 references/generation-flow.md 的 Step 1-12 唯一口径，⓪-⑨ 符号链废弃。防复发：test-r68 从自造词扩到「历史包袱」四类禁项。历史三重归位不动摇：决策全文 = docs/design-evolution.md、轮次账 = 本文件、调研档案 = docs/research/。
+
+### Changed
+- **SKILL.md 终态重写**（20320B → 12.5KB）：删轮次标记 8 处、版本注记、三类评审答辩材料、双编号对账注；总览表改 Step 1-12（⑦.5 门禁注入并入 Step 4.5 行并注明执行时点）；理念论证归位 README.md；「五层/六层」不一致修正为平直章节；Step 4 穷举维度行补对外契约面；frontmatter description 重写为可读一段。
+- **编号统一**：exploration-guide §C+ → §D（正文与 14 个引用方同步，含 5 个 scripts 注释/提示串）；Step -1 / Step 0 改命名节；capability-map / usage-manual 步骤表 / standards-compliance §B 表 / quality-management-standards PDCA 表的 ⓪-⑨ 与本地变体编号全量改 Step 1-12。
+- **references 48 档五族清理**：行内轮次标记与工单注记（R21-B / R58-D5 / Q2-heavy / P1-6 式）清除或改写为机制陈述；标题出处尾巴清理（节号锚点不动）；谱系叙事（会师 / 同族 / 第 N 波实证计数）删除留判据；版本注记日期戳（YYYY-MM-DD 核）清除，证据核验日期保留；档案引用统一为 `docs/research/` 文件名锚或「调研报告」具名引用；行业档法规编号（UNECE R155/R156）与 GB/JR/T/ISO 标准号原样保留。
+- **README.md**：附录 A/B 登记次数注记（"R72 第四次登记"式）去过程化，数字真值指针保留；附录 C 决策溯源表保留为唯一决策索引。
+- **install.sh 分发包瘦身**：research/（上游调研原料，未跟踪入仓）、.swarm-yuan/（生成器运行留痕）、offline-cache/（历史遗留缓存）不再随安装拷贝——假 HOME 试装验证：排除生效、保留项在位、产物 35M（本机含 research 时为 3.5G）；vendor-knowledge/ 经核实有运行时数据链路（industry-profile-payment §7 按相对路径读取限额/冲突裁决数据）保留，tests/ 因 self-check fixture 计数断言依赖保留。
+- **docs/usage-manual.md**：术语表「WP-/R-/决策编号」条改写为形态描述（终态正文不使用，只在历史档案遇到）；禁用词清单标题去轮次；生成流程步骤表改 Step 1-12。
+
+### Added
+- **test-r68-jargon-free 扩终态纪律四锁**：①裸轮次标记零出现（docs/research 文件名锚与 UNECE R155/R156 法规号豁免）②半步编号零出现 ③轮次簿记句（补核/薄轮不开档/watch 维持/轮次台账）零出现 ④版本注记日期戳零出现（证据核验日期豁免）⑤工作包标签（WP-xxx）零出现。扫描面 SKILL.md / README / references / usage-manual / commands；决策编号不在禁类。
+
+### Fixed
+- **两处过度删除恢复**：claude-code-capabilities 与 codex-methodology 的版本注记尾段（v2.1.233-289 / v0.152-0.160 共 33 节）在清理流程中曾被整段删除——逐版能力事实（Opus 5.5 / 无界重试有界化 / maxEffortLevel / 技能预算先去重再计量 #49127 / pending 环境保留 / 断线重连输入恢复等头部表格未覆盖内容）逐节复核补回，仅去轮次框架与档案指针；review-methodology 谱系删除时误伤的受保护判据 10 条按「机制名（上游版本/issue）」补回（ocr v1.11.7 / #1416 / pass^3 / Mutation Check 等）。
+- **事实漂移订正**：code-graph-tools graphify 基线两行漏改回 v8 线 v0.9.75；template-spec P1 十项 → 十一项（对齐 FACT_FEATURE_CARDS_P1）；CLAUDE.md 79→81 框架、24→25 spec 节；frontend-design impeccable v4.0.2→v4.0.4；dsh-engineering 版本指针 0.1.2-rc.1→0.2.1-alpha.1；spec-template §23 标题去「D 方向」标签；gen-framework-index.sh 两处生成物注释的 WP-P1 考古源头清除（产物行已同步）。
+- **锁同步**：test-r58 L3 钉文本锁随「待确认事项清单（生成承载）」新措辞更新；test-r77 / test-r82 锚字符串随终态措辞同步（"5. 消费节点真实性（R77，决策 46）"→"5. 消费节点真实性"、"版本语义单一约定（R82-D1）"→"版本语义单一约定"），锁意不变。
+- 验证口径：self-check --check-only EXIT=0 零 warn（G18/G19/G25/预算断言全过）；r68（11 项）/ r58（15）/ r77（17）/ r82（8）四锁全绿；禁用词 / 轮次标 / 自身版本注 / 生成符号四查零命中；上下文表面 183170B ≤ 194560B、UNIVERSAL_FILES 495382B ≤ 544768B 双预算达标。
+
 ## [v2.52.0] - 2026-10-04
 
 > R89 运行时刷新轮（例行轮+纠错）：**codex rust-v0.160.0**（0.160 线收口 stable，56 提交：Guardian 评审上下文完整性五连——加密消息保留/handoff-aware 根上下文/opt-in 历史检索/原生消息快照/diff 路径跳远程发现+技能预算先去重再计量 #49127+子代理派发保留 pending 环境+遥测只采已用字段+显式 provider 目录权威+断线重连恢复未发送输入）+ **graphify 纠错回 v8 线并升 v0.9.75**（**R81 曾误取异源 v1.0.0**——0a31c08 2026-04-05，`merge-base --is-ancestor v0.9.72 v1.0.0` 不成立=第五次诱取实录，克隆 HEAD 同步纠出；v8 线 76 提交：干净解析零符号警告/去重收缩须同意且计量分离/聚类写回保全边/按 node id 恢复社区；v8 线许可三处一致，R81「丢 LICENSE」注记属异源树随纠错失效）+ **mattpocock-skills v1.3.1**（tag 正式化 R86 已按 main 评估的三技能毕业+ask-matt 复盘路由）+ **claude-code npm 2.1.289**（权限通道完备性三连+插件元数据越权修复）+ claude-mem main 前移记档 + gstack tip 快进 4015c28（v1.91.18.0）。live CLI：claude 2.1.289（漂移归零）/codex 0.160.0（=新基线零滞后）。零移动 13 行注记（codex-security npm 断流第六轮/dsh 触发点未至等）。细节 `docs/research/R89-runtime-refresh.md`。

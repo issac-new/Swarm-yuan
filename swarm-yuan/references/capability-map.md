@@ -2,8 +2,8 @@
 
 # 文档索引（Capability Map）——references 吸收层整合清单
 
-> **定位**：本表是吸收内容（48 份参考文档 + 21 个上游运行时）的**整合总清单**：每份文档登记 来源→证据分级→消费环节→何时读，由生成器自检的 G25 断言双向一致性校验（每份实存文档必须入账、账上不登记不存在的文档）。分工：SKILL.md 第四层的"概念↔实物追踪表"（内部俗称追踪表）登记**核心概念**的诞生步/消费方/回流点；本表登记**吸收来的文档**从哪来、在哪被用——粒度互补，纪律同一条：无悬空（谁都有消费方）。**本表只在生成器仓维护，不随目标技能分发**（目标技能只收到 UNIVERSAL_FILES 清单里的子集）。
-> **证据分级**（R37 口径）：A=本机实测；B=官方一手直查；C=二手转述（未核验不进基线）。
+> **定位**：本表是吸收内容（48 份参考文档 + 21 个上游运行时）的**整合总清单**：每份文档登记 来源→证据分级→消费环节→何时读，由生成器自检的 G25 断言双向一致性校验（每份实存文档必须入账、账上不登记不存在的文档）。分工：SKILL.md 的参考文档路由表按族分组登记按需入口；本表登记**吸收来的文档**从哪来、在哪被用——粒度互补，纪律同一条：无悬空（谁都有消费方）。**本表只在生成器仓维护，不随目标技能分发**（目标技能只收到 UNIVERSAL_FILES 清单里的子集）。
+> **证据分级**：A=本机实测；B=官方一手直查；C=二手转述（未核验不进基线）。
 
 ## 一、整合视图：吸收物如何构成一个整体
 
@@ -11,7 +11,7 @@
 
 | 族 | 回答的问题 | 闭环段 |
 |----|-----------|--------|
-| ① 生成主干 | 生成流程 怎么把仓库变成技能 | 探查/填充/生成（生成流程 ⓪-⑫） |
+| ① 生成主干 | 生成流程 怎么把仓库变成技能 | 探查/填充/生成（生成流程 Step 1-12） |
 | ② 拼装与知识消费 | 开发工作流 ②⑤怎么先查再写、知识怎么读 | 执勤生产段 |
 | ③ 编排与治理 | 多 agent 怎么协作、纪律怎么守 | 执勤全程 + hooks |
 | ④ 验证与过程资产 | ⑥⑦怎么证、审计留什么痕 | 验证司法段 |
@@ -27,17 +27,17 @@
 
 | 档 | 来源（证据） | 消费节点 | 触发 |
 |----|-------------|---------|------|
-| exploration-guide | 内生 + semantica/graphify 借鉴（A） | 生成流程 ⓪.5/①.5 探查（含 §C+.0.6/矛盾裁决） | 执行任何探查 |
-| generation-flow | 内生（决策 32 折叠） | 生成流程 Step 1-12 详解 | 生成流程逐步执行 |
-| template-spec | 内生 + agent-skills 联动（A） | 生成流程 ④ 填充六文件 | 填 spec/六文件 |
-| agent-skills-methodology | addyosmani/agent-skills（B） | 生成流程 ④ + 开发工作流 ⑤ | 反借口/假设前置/Prove-It |
+| exploration-guide | 内生 + semantica/graphify 借鉴（A） | 生成流程 Step 2/Step 4 探查（含 §D.0.6/矛盾裁决） | 执行任何探查 |
+| generation-flow | 内生 | 生成流程 Step 1-12 详解 | 生成流程逐步执行 |
+| template-spec | 内生 + agent-skills 联动（A） | 生成流程 Step 7 填充六文件 | 填 spec/六文件 |
+| agent-skills-methodology | addyosmani/agent-skills（B） | 生成流程 Step 7 + 开发工作流 ⑤ | 反借口/假设前置/Prove-It |
 | context-engineering-layering | Vibe编码文章 + Anthropic 文档（B/C） | 生成器自身配置分层 | 决定规则放哪层 |
 | task-methodology-router | tanweai/pua 改写（A） | 开发工作流 任务类型路由 | 任务类型判定 |
 | cost-estimation-methodology | 人行科技司培训 + GB/T 42588（B） | spec §25 填充 | 规模/工作量估算 |
-| domain-knowledge | 内生速查（A） | 生成流程 ①.5 + --domain 门禁 | 领域规律推导 |
-| code-graph-tools | GitNexus/graphify/codegraph 调研（A） | 生成流程 ① 图谱优先 | 图谱工具选型 |
-| togaf-metamodel-methodology | TOGAF BDAT（B） | §C+.0.6 四层视角 | 架构类变更探查 |
-| frontend-design-methodology | pbakaus/impeccable（B） | 生成流程 ④ + 开发工作流 ⑤ 前端 | 前端设计任务 |
+| domain-knowledge | 内生速查（A） | 生成流程 Step 4 + --domain 门禁 | 领域规律推导 |
+| code-graph-tools | GitNexus/graphify/codegraph 调研（A） | 生成流程 Step 3 图谱优先 | 图谱工具选型 |
+| togaf-metamodel-methodology | TOGAF BDAT（B） | §D.0.6 四层视角 | 架构类变更探查 |
+| frontend-design-methodology | pbakaus/impeccable（B） | 生成流程 Step 7 + 开发工作流 ⑤ 前端 | 前端设计任务 |
 
 ### 族② 拼装与知识消费（开发工作流 ②⑤）
 
@@ -47,8 +47,8 @@
 | mattpocock-skills-methodology | mattpocock/skills v1.2.3（A） | 开发工作流 ①②③ + fix 任务路由 | 模糊需求访谈/spec 测试缝/任务纵切/诊断回路 |
 | cordis-composability-methodology | DeepSeek Harness（B） | 机制设计参考 | 设计可组合机制 |
 | knowledge-lifecycle-methodology | 京东海博文章 + OKF 核验（B） | 开发工作流 ② 读法 + 反馈回路三态 | 知识读取/更新处置 |
-| memory-persistence | claude-mem/ruflo/ECC 工具族（A） | ⑧ 记忆写回 + 溯源标记 | 跨会话记忆/蒸馏 |
-| cognition-framework | 内生五层认知（A） | 生成流程 ① 认知六阶链 | 探查建模 |
+| memory-persistence | claude-mem/ruflo/ECC 工具族（A） | Step 11 记忆写回 + 溯源标记 | 跨会话记忆/蒸馏 |
+| cognition-framework | 内生五层认知（A） | 生成流程 Step 3 认知六阶链 | 探查建模 |
 | cognitive-bias | 内生 + Kahneman 框架（B） | spec §16 自检 | 方案偏差自检 |
 | logic-razor | 内生（A） | 方案删冗余假设 | 思维语言推演 |
 | four-theories-methodology | 工程控制论等四源（B） | 生成器自身设计决策 | 划边界/评估门禁/上下文预算 |
@@ -76,7 +76,7 @@
 | canary-monitoring | check_canary 降档保留（A） | ⑨ 发布后监控（setup-loop --verify） | 发布后基线对比 |
 | ai-process-records | GB/T 8566 扩展（B） | trace/decisions 留痕口径 | 审计/复盘/交接 |
 | quality-management-standards | ISO 9001/CMMI 映射（B） | 认证过程资产引用 | 组织级标准对齐 |
-| rsi-evidence-methodology | 清华 RSI 综述 + D2I-ai + 字节三论文（B，R88） | 生成侧吸收轮收口验收 + 目标技能自成长链证据纪律（⑤⑦） | 改进/自进化系统的验收证据分层、升级已有技能 |
+| rsi-evidence-methodology | 清华 RSI 综述 + D2I-ai + 字节三论文（B） | 生成侧吸收轮收口验收 + 目标技能自成长链证据纪律（⑤⑦） | 改进/自进化系统的验收证据分层、升级已有技能 |
 
 ### 族⑤ 安全合规与行业立法（门禁）
 
@@ -101,7 +101,7 @@
 | 整合深度 | 运行时 | 消费点 | 降级链 |
 |---------|--------|--------|--------|
 | 深度×4 | GitNexus / graphify | 探查图谱优先（code-graph-tools 三选型，codegraph 为 watch 备选） | 未装→静态扫描清单 |
-| 深度×4 | claude-mem | ⑧ 记忆写回 sink 之一 | 未装→.zcode/project-knowledge 本地落盘 |
+| 深度×4 | claude-mem | Step 11 记忆写回 sink 之一 | 未装→.zcode/project-knowledge 本地落盘 |
 | 深度×4 | ocr | ⑥ 测试验证 5 审查维度 | 未装→4 维 |
 | CLI×4 | OpenSpec | 节点②③ spec proposal/tasks 格式 | 未装→自有 spec-template |
 | CLI×4 | comet | 工作流骨架仪式/resume-probe | 未装→state-machine.sh |
@@ -114,6 +114,6 @@
 
 1. references/*.md（不含 frameworks/ 与本表自身）每个 basename 必须出现在本表——吸收必整合，未登记文档检查；
 2. 本表提及的每个档名必须实存——清单不登记幽灵；
-3. SKILL.md 第六层必须引用本表——路由表与清单两级互指。
-4. 文档路由覆盖（R51）：`*-methodology.md` 每档必须可从 task-methodology-router.md §文档路由表到达（反向索引闭环：建档必整合、整合必可达）。
-5. 消费节点真实性（R77，决策 46）：本表"消费节点"列登记的触达点必须有真实证据（消费方文档正文引用 / 分发行+任务分派注入 / 门禁依据 / 按需加载机制 / 机制代码化）——本表登记行本身不算证据，G25 只对账存在性、不判真实性。吸收入库（含扩充既有档）前过两问：哪个环节缺这个、谁在什么场景消费它；答不上记轮台账即可，不入库。
+3. SKILL.md 参考文档路由表必须引用本表——路由表与清单两级互指。
+4. 文档路由覆盖：`*-methodology.md` 每档必须可从 task-methodology-router.md §文档路由表到达（反向索引闭环：建档必整合、整合必可达）。
+5. 消费节点真实性：本表"消费节点"列登记的触达点必须有真实证据（消费方文档正文引用 / 分发行+任务分派注入 / 门禁依据 / 按需加载机制 / 机制代码化）——本表登记行本身不算证据，G25 只对账存在性、不判真实性。吸收入库（含扩充既有档）前过两问：哪个环节缺这个、谁在什么场景消费它；答不上记轮台账即可，不入库。
