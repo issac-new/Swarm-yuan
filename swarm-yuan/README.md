@@ -206,7 +206,7 @@
 | 特征卡 | 17 项（P0 六项强制，P1 十一项可增量） |
 | 框架规则集 | 81（规则文档与门禁片段 1:1 配对） |
 | 配置变量 / 上限 | 185 / 200 |
-| 目标技能预算 | SKILL.md ≤10240B（≈8KB 锚，R72 第四次登记）、地图 ≤32KiB、上下文预算 ≤500KiB（512000B；决策 38 起逐例登记例外链，当前第十八次登记，理由留 facts.conf）、概念体系 ≤5 |
+| 目标技能预算 | SKILL.md ≤10240B（≈8KB 锚）、地图 ≤32KiB、上下文预算 ≤500KiB（512000B；例外逐例登记于 facts.conf，理由链留档）、概念体系 ≤5 |
 | 外部运行时 | 13 个整合（深度 4 + CLI 4 + 方法论 5）；登记 19（含图谱备选 codegraph、两宿主、机制源 pua/semantica）；自动检测 11 |
 | 类型目录 | 实体 17 / 关系 10 / 动作 11（assets/ontology/ 三份） |
 | 生成流程 | 12 步（唯一编号口径在 generation-flow.md）；目标技能工作流 9 节点 × 4 要素 |
@@ -221,9 +221,9 @@
 | 深度整合四件（GitNexus / graphify / claude-mem / ocr） | 门禁内真实子进程 + 多级降级链 | references/code-graph-tools.md 等（图谱第三备选 codegraph 同文件，watch 未整合） |
 | CLI 四件（OpenSpec / comet / gsd-core / codex-security） | 按需调用 CLI，降级自带载体 | references/ 各 methodology |
 | 方法论五件（superpowers / gstack / Ruflo / ECC / impeccable） | AI 按工作流节点引用模式 | references/subagent-orchestration.md |
-| 外部方法论文档与能力档 49 篇（codex / dsh / cordis / mea-loop / agent-skills / mattpocock-skills / four-theories / cost-estimation / lazy-generation / knowledge-lifecycle / rsi-evidence 等） | 蒸馏为 references 方法论，全带"何时读我"路由头 | references/ 同名文件；**逐档整合清单见 references/capability-map.md（R50 建，现 48 档来源/证据分级/消费节点/触发 + 21 运行时消费侧映射，self-check G25 双向一致性校验未登记文档检查）** |
+| 外部方法论文档与能力档 49 篇（codex / dsh / cordis / mea-loop / agent-skills / mattpocock-skills / four-theories / cost-estimation / lazy-generation / knowledge-lifecycle / rsi-evidence 等） | 蒸馏为 references 方法论，全带"何时读我"路由头 | references/ 同名文件；**逐档整合清单见 references/capability-map.md（48 档来源/证据分级/消费节点/触发 + 21 运行时消费侧映射，self-check G25 双向一致性校验含未登记文档检查）** |
 | 功能点估算（NESMA GB/T 42588-2023，人民银行科技司 2025-07 培训吸收） | spec §25 选填节（feature 档推荐）+ 方法论随技能分发执勤侧 | references/cost-estimation-methodology.md + assets/spec-template.md §25 |
-| 懒生成（七层复用阶梯 + 懒≠偷工，R37 吸收自 DietrichGebert/ponytail） | ⑤编码"先查再写"下探决策程序 + 方法论随技能分发执勤侧 | references/lazy-generation-methodology.md |
+| 懒生成（七层复用阶梯 + 懒≠偷工；吸收自 DietrichGebert/ponytail） | ⑤编码"先查再写"下探决策程序 + 方法论随技能分发执勤侧 | references/lazy-generation-methodology.md |
 | 行业法规映射 8 档 | conf + 法规依据文档配对，真实加载 | assets/industry-profiles/ + references/industry-profile-*.md |
 | 标准族（OWASP / STRIDE / CWE / GB/T / ISO 42001 / ISO 29148 / EARS） | 门禁条款机器可读映射 + spec 句式对齐 | assets/standards-map.conf + references/standards-compliance.md |
 | Palantir 本体论工程 | 标记沿调用链传播的设计借鉴 | docs/design-evolution.md 决策 28 |
@@ -267,7 +267,7 @@
 | 4 | 门禁可达率 | 100% | 默认执行序列可触达 / facts.conf 对账 |
 | 5 | 地图预算 | 32KiB 硬顶 | self-check 断言 |
 | 6 | description ≤1024 字符 / SKILL.md 正文 ≤10240B（≈8KB 锚） | 达标 | gen-e2e 断言（锚定目标技能产物） |
-| 7 | 上下文预算体积（references 拷贝） | ≤500KiB（512000B；决策 38 起逐例登记，当前第十八次，理由链留 facts.conf） | self-check 断言 |
+| 7 | 上下文预算体积（references 拷贝） | ≤500KiB（512000B；例外逐例登记于 facts.conf） | self-check 断言 |
 | 8 | 结构性：反向引用数 | 0 | self-check G19 |
 | 9 | 连接性：孤儿资产数 | 0 | self-check G18 |
 | 10 | 有效性：零拦截 / 沉睡门禁 | 零拦截入季度质疑，沉睡入候选清单 | gate-trends + adaptive-gating |

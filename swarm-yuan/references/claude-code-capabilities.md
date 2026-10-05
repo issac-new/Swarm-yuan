@@ -1,8 +1,8 @@
-> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。首行：# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252 全量调研；版本核至 v2.1.280（2026-09-23 R44 补核），见文末版本注记）
+> **何时读我**：任务命中本文档主题时按需读取（路由表见 SKILL.md）。
 
-# Claude Code 官方能力全量清单（基于 GitHub releases v2.0.73→v2.1.252（npm 2.x.y 全 223 版，CHANGELOG 发布说明 175 条）+ `claude --help` CLI 调研；版本核至 v2.1.280（2026-09-23 R44 补核，见文末版本注记））
+# Claude Code 官方能力全量清单（GitHub releases 发布说明 + `claude --help` CLI 实测调研）
 
-> 口径：GitHub releases 发布说明（覆盖 v2.0.73→v2.1.252，253 起见版本注记）+ `claude --help` 系列 CLI 实测；npm dist-tag latest=2.1.280（2026-09-23 R44 实测）/ stable=2.1.267（分裂持续且 stable 通道前移）。
+> 口径：GitHub releases 发布说明 + `claude --help` 系列 CLI 实测；当前基线版本与逐版变化见文末「版本基线」及各版本注记节。
 > 生成目标技能时，AI 须把以下能力编织进 SKILL.md / workflow.md / reference-manual.md / hooks / commands / settings。
 
 ## 一、核心工具（Tools）
@@ -17,12 +17,12 @@
 | **Bash** | 执行 shell 命令（cwd 持久，timeout≤600s，run_in_background） | 运行 precheck.sh / state-machine.sh / npm 命令 |
 | **Task**（Subagent） | 派发隔离上下文子代理（不继承主会话，可并行，可选模型） | workflow 节点⑤每任务新 subagent + 两阶段审查 |
 | **TodoWrite** | 结构化任务清单（一次一个 in_progress） | workflow 节点清单 + 完成检查表 |
-| **AskUserQuestion** | 结构化多选问题（v2.1.200 起不再自动继续，需 /config 开启 idle timeout） | 疑虑确认（7 个必须暂停场景） |
+| **AskUserQuestion** | 结构化多选问题（默认不再自动继续，需 /config 开启 idle timeout） | 疑虑确认（7 个必须暂停场景） |
 | **WebSearch** | 网络搜索 | 4-Phase SOP Phase 2 强制联网检索 |
 | **WebFetch** | 抓取 URL → markdown → 回答问题（15min 缓存，auth URL 失败） | 联网检索上游文档/规范 |
-| **SendMessage** | 向运行中的子代理发消息（v2.1.199 修复名称重用路由问题） | subagent 编排中的协调通信 |
-| **LSP** | 语言服务器协议工具：go-to-definition / find-references / hover 文档（v2.0.74 引入，v2.1.50 `startupTimeout` 配置） | 代码导航（比 grep 更精确） |
-| **Skill** | 发现并调用内置/自定义 skill（v2.1.108 起可发现 `/init`/`/review`/`/security-review` 等内置命令） | 目标技能间互调 |
+| **SendMessage** | 向运行中的子代理发消息 | subagent 编排中的协调通信 |
+| **LSP** | 语言服务器协议工具：go-to-definition / find-references / hover 文档（`startupTimeout` 配置） | 代码导航（比 grep 更精确） |
+| **Skill** | 发现并调用内置/自定义 skill（可发现 `/init`/`/review`/`/security-review` 等内置命令） | 目标技能间互调 |
 | **SendUserMessage** | agent→用户通信（`--brief` 启用，v2.1.198） | subagent 向用户汇报 |
 
 ## 二、Slash Commands（`/command`）
@@ -40,26 +40,26 @@
 | `/btw` | 附带"c to copy"快捷键复制原始 markdown | v2.1.163 |
 | `/dataviz` | 图表/仪表盘设计指导 + 可运行调色板验证器 | v2.1.198 |
 | `/background` | 后台化会话 | v2.1.199 |
-| `/loop` | 循环调度（v2.1.140 修复冗余唤醒） | v2.1.140 |
-| `/goal` | 目标导向（v2.1.140 修复 hook 禁用时静挂） | v2.1.140 |
+| `/loop` | 循环调度 | v2.1.140 |
+| `/goal` | 目标导向 | v2.1.140 |
 | `/remote-control` | 远程控制 | v2.1.181 |
 | `/desktop` | 桌面模式 | v2.1.198 |
 | `/clear` | 清除会话 | 早期 |
 | `/compact` | 压缩对话 | 早期 |
-| `/code-review [effort]` | 代码审查（原 `/simplify`，v2.1.146 重命名，支持 effort 等级） | v2.1.146 |
+| `/code-review [effort]` | 代码审查（原 `/simplify`，支持 effort 等级） | v2.1.146 |
 | `/recap` | 会话回顾（v2.1.108 引入，可 `/config` 配置或 `CLAUDE_CODE_ENABLE_AWAY_SUMMARY` 强制） | v2.1.108 |
 | `/undo` / `/rewind` | 撤销操作（v2.1.108 `/undo` 作为 `/rewind` 别名） | v2.1.108 |
 | `/powerup` | 交互式 Claude Code 功能教程 + 动画演示 | v2.1.90 |
-| `/context` | 上下文可视化（按来源分组 skills/agents/commands + token 计数，v2.0.74 改进） | v2.0.74 |
-| `/terminal-setup` | 终端配置（支持 Kitty/Alacritty/Zed/Warp，v2.0.74 新增） | v2.0.74 |
-| `/theme` | 主题选择器（v2.0.73 直接打开，v2.0.74 `Ctrl+T` 切换语法高亮） | v2.0.73 |
-| `/doctor` | 健康检查（v2.1.116 起可在 Claude 响应时打开） | 早期 |
-| `/permissions` | 权限管理（v2.1.80 Tab 切换改进） | 早期 |
-| `/reload-plugins` | 重载插件（v2.1.116 起自动安装缺失依赖） | v2.1.116 |
+| `/context` | 上下文可视化（按来源分组 skills/agents/commands + token 计数） | v2.0.74 |
+| `/terminal-setup` | 终端配置（支持 Kitty/Alacritty/Zed/Warp） | v2.0.74 |
+| `/theme` | 主题选择器（`Ctrl+T` 切换语法高亮） | v2.0.73 |
+| `/doctor` | 健康检查（可在 Claude 响应时打开） | 早期 |
+| `/permissions` | 权限管理 | 早期 |
+| `/reload-plugins` | 重载插件（自动安装缺失依赖） | v2.1.116 |
 | `/sandbox` | 沙箱模式 | 早期 |
 | **自定义命令** | `.claude/commands/*.md`（frontmatter: name/description/allowed-tools/argument-hint） | 早期 |
 
-> **目标技能可附带 `commands/` 目录**，暴露 `/my-skill:spec`、`/my-skill:precheck`、`/my-skill:explore` 等入口。支持 `$ARGUMENTS` 参数 + `@path` 文件引用。v2.1.199 起支持堆叠调用 `/skill-a /skill-b do XYZ`（最多 5 个）。
+> **目标技能可附带 `commands/` 目录**，暴露 `/my-skill:spec`、`/my-skill:precheck`、`/my-skill:explore` 等入口。支持 `$ARGUMENTS` 参数 + `@path` 文件引用。支持堆叠调用 `/skill-a /skill-b do XYZ`（最多 5 个）。
 
 ## 三、Skills（SKILL.md 自动加载）
 
@@ -73,7 +73,7 @@
 | `hooks:` frontmatter | agent 定义中 `hooks:` 在 `--agent` 运行时触发 | v2.1.116 |
 | `${CLAUDE_SESSION_ID}` | skill 命令体中替换为当前会话 ID | v2.1.9 |
 | `plansDirectory` | 设置项自定义 plan 文件存储位置 | v2.1.9 |
-| 条件规则 | `.claude/rules/` 条件规则（v2.1.198 修复符号链接路径不加载） | v2.1.198 |
+| 条件规则 | `.claude/rules/` 条件规则（符号链接路径可加载） | v2.1.198 |
 | 堆叠调用 | `/skill-a /skill-b do XYZ` 加载多个 skill（最多 5） | v2.1.199 |
 | slash=skill 合并 | v2.1.3 起合并 slash commands 和 skills（统一心智模型） | v2.1.3 |
 | 内置命令可被 Skill 调用 | `/init`/`/review`/`/security-review` 等内置命令可通过 Skill 工具发现调用 | v2.1.108 |
@@ -88,7 +88,7 @@
 | `PostToolUse` | 工具调用后（matcher: `*`） | 观察工具 I/O | 早期 |
 | `Stop` | 会话结束 | v2.1.163 起可返回 `additionalContext` 给 Claude 反馈，保持会话继续 | v2.1.163 |
 | `SubagentStop` | 子代理结束 | v2.1.163 起可返回 `additionalContext` | v2.1.163 |
-| `SubagentStart` | 子代理启动 | v2.1.199 修复 stderr 隐藏 | v2.1.199 |
+| `SubagentStart` | 子代理启动 | stderr 对用户可见 | v2.1.199 |
 | `UserPromptSubmit` | 用户提交 prompt | 语义注入 | 早期 |
 | `Notification` | 通知事件 | v2.1.198 起 background agent 完成/需输入时触发（`agent_needs_input`/`agent_completed`） | v2.1.198 |
 | `FileChanged` | 文件变更 | 文件监控 | 早期 |
@@ -97,23 +97,23 @@
 | `WorktreeRemove` | worktree 移除 | 自定义 VCS 清理 | v2.1.50 |
 | `DirectoryAdded` | `/add-dir` 或 SDK `register_repo_root` 注册新工作目录 | 会话中途新增工作目录时触发 | v2.1.219 |
 | `Setup` | 安装时 | 版本检查 | 早期 |
-| `ConfigChange` | 配置变更 | v2.1.140 修复符号链接误触 | v2.1.140 |
+| `ConfigChange` | 配置变更 | 符号链接不误触 | v2.1.140 |
 | `PreModelSwitch` | 模型切换前 | 可 block/confirm/annotate 模型切换 | v2.1.251 |
 | `PostModelSwitch` | 模型切换后 | 切换完成通知/记录 | v2.1.251 |
 
 ### Hook 关键特性
 
-- **matcher 精确匹配**：v2.1.195 修复连字符标识符（`code-reviewer`/`mcp__brave-search`）子串误匹配——现在精确匹配，用 `mcp__brave-search__.*` 匹配 MCP server 全部工具
-- **if 条件**：`if: "Bash(...)"` 条件匹配（v2.1.163 修复 `$`/`$VAR` 子 shell 误触）
-- **additionalContext 反馈**：Stop/SubagentStop 可返回反馈让 Claude 继续（v2.1.163）
-- **stderr 可见**：v2.1.199 修复 SessionStart/Setup/SubagentStart 的 stderr 被隐藏
+- **matcher 精确匹配**：连字符标识符（`code-reviewer`/`mcp__brave-search`）不子串误匹配，用 `mcp__brave-search__.*` 匹配 MCP server 全部工具
+- **if 条件**：`if: "Bash(...)"` 条件匹配
+- **additionalContext 反馈**：Stop/SubagentStop 可返回反馈让 Claude 继续
+- **stderr 可见**：SessionStart/Setup/SubagentStart 的 stderr 对用户可见
 
 > **目标技能应附带 `hooks/hooks.json`**：
 > - SessionStart → `bash scripts/state-machine.sh get current-phase` 注入当前阶段
 > - PreToolUse(Write|Edit) → `bash scripts/precheck.sh --scope --quiet` 检查写入范围
 > - WorktreeCreate/Remove → 自定义 VCS 设置/清理
 
-### Hook Runtime Governance（ECC v2.0.0）
+### Hook Runtime Governance（吸收自 ECC）
 
 ECC 的 hook 系统有 4 层治理——生成的目标技能的 hooks.json 可参考：
 
@@ -156,7 +156,7 @@ ECC 的 hook 系统有 4 层治理——生成的目标技能的 hooks.json 可�
 - 开启是 UserChallenge 类决策（须决策落痕）
 - **审计双层**：deny 行双写 `gate-deny.jsonl`（旧格式保留），同时每个决策点（门禁红期间的拦截域调用）落 `gate-audit.jsonl` 全量审计行 `{ts,handler,tool,decision,reason,target≤500字符,gates}`——pass 也落行（exempt-path / bash-not-whitelisted），`--report` 据此输出拦截率（deny/决策点）与工具决策分布；休眠态（flag 不存在/工具不在域）不写。fail-open：审计写失败不阻塞主流程
 
-### MCP Health Check（ECC v2.0.0）
+### MCP Health Check（吸收自 ECC）
 
 ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 - 阻断：MCP server 不健康（unreachable / error）
@@ -175,15 +175,15 @@ ECC 的 `mcp-health-check.js` hook 在 MCP 调用前检查 server 健康：
 | **模型选择** | 按任务复杂度选模型（Explore agent 继承主会话模型，上限 opus） | v2.1.198 |
 | **文件交接** | 子代理通过文件交接（非粘贴） | 早期 |
 | **深度限制** | 前台/后台 subagent 均限制 5 层嵌套 | v2.1.181 |
-| **部分结果保留** | v2.1.199 修复 rate limit 截断的 subagent 静默失败——现在返回部分结果 | v2.1.199 |
-| **错误报告** | v2.1.199 修复 subagent 把 API 错误报为成功——现在向父代理报告错误 | v2.1.199 |
+| **部分结果保留** | rate limit 截断时返回部分结果（不静默失败） | v2.1.199 |
+| **错误报告** | API 错误向父代理如实报告（不报为成功） | v2.1.199 |
 | **extended thinking 继承** | v2.1.198 起 subagent 和 compaction 继承会话的 extended thinking 配置 | v2.1.198 |
 | **isolation: worktree** | agent 定义中声明 `isolation: worktree` 在隔离 git worktree 中运行 | v2.1.50 |
 | **`claude agents` CLI** | 列出所有配置的 agent + 会话管理 | v2.1.50 |
 | **background agent PR** | v2.1.198 起 background agent 完成代码工作后自动 commit/push/开 draft PR | v2.1.198 |
 | **agent teams** | 多代理协作（`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`） | v2.1.50 |
 | **idle subagent 折叠** | v2.1.199 空闲 subagent 折叠为可展开摘要行 | v2.1.199 |
-| **SendMessage 修复** | v2.1.199 修复重用名称时消息误路由 | v2.1.199 |
+| **SendMessage** | 重用名称时消息不误路由 | v2.1.199 |
 | **subagent forking** | `subagent_type: "fork"` 继承完整对话 + prompt cache（非空上下文启动）；交互会话中非 teammate agent 默认后台运行 | v2.1.232 |
 | **--forward-subagent-text** | flag/env 把 subagent 文本 + thinking 纳入 stream-json 输出（headless 编排用） | v2.1.211 |
 | **subagent model 受限警告** | workflow agents/forked skills/slash commands 请求的 subagent model 被限制时警告（父模型顶替） | v2.1.223 |
@@ -236,9 +236,9 @@ enterprise → `~/.claude/settings.json` → project `.claude/settings.json` →
 | `--channels` | MCP server 主动推送消息到会话（research preview） | v2.1.80 |
 | `add-from-claude-desktop` | 从 Claude Desktop 导入 MCP server（Mac/WSL） | CLI |
 | `mcp serve` | Claude Code 自身作为 MCP server 启动 | CLI |
-| 分页修复 | `resources/list`/`resources/templates/list`/`prompts/list` 分页服务器不再丢项 | v2.1.146 |
+| 分页完整 | `resources/list`/`resources/templates/list`/`prompts/list` 分页服务器不再丢项 | v2.1.146 |
 | 工具发现 | tool search 启用时自动发现 MCP 工具 | v2.1.50 |
-| `claude mcp get/list` | MCP server 状态检查（v2.1.181 修复 tools/list 失败误报已连接） | v2.1.181 |
+| `claude mcp get/list` | MCP server 状态检查（tools/list 失败不误报已连接） | v2.1.181 |
 | `disabledMcpServers` / `enabledMcpServers` | 按 server 禁用/启用 | v2.1.200 |
 
 ## 八、Plugin 系统
@@ -250,13 +250,13 @@ enterprise → `~/.claude/settings.json` → project `.claude/settings.json` →
 | `/plugin list` | 列出已安装插件（`--enabled`/`--disabled`） | v2.1.163 |
 | `/plugin enable/disable` | 启用/禁用插件 | 早期 |
 | 项目级插件 | `.claude/settings.json` 启用的项目插件 | v2.1.195 |
-| worktree 插件 | v2.1.198 修复 worktree 中项目插件不加载 | v2.1.198 |
+| worktree 插件 | worktree 中项目插件可加载 | v2.1.198 |
 | `${CLAUDE_PLUGIN_ROOT}` | 插件根目录环境变量 | 早期 |
 | 默认组件目录 | `commands/`/`skills/`/`hooks/` 等（v2.1.140 起 `plugin.json` 覆盖时警告） | v2.1.140 |
 | `archive` plugin source | zip over HTTPS 安装插件（不需 git/npm）+ 可选 SHA-256 pinning | v2.1.224 |
 | `command` plugin source | 本地命令（如 IDE）打印插件目录，每会话重解析，`mode: link` 原地用 | v2.1.229 |
 
-### Mods（v2.1.287+，R88 核——官方文档直查，修正 R84「产品面卷不吸收」归类）
+### Mods（v2.1.287 起可用；来源：官方文档直查）
 
 mod 不是独立格式，是**插件的子集**：官方定义 "A mod is a plugin whose code registers event handlers"——进程内 JS/TS 事件处理器，无需构建步骤；一个插件可同时打包 mod、skills 与 MCP servers。**无独立 mods.json**（二手转述常见失真）：结构仍是 `.claude-plugin/plugin.json` + `hooks/hooks.json`（其中 `modules: ["./register.js"]` 字段使插件成为 mod）+ `register.js` 导出 `register(on)`。
 
@@ -268,7 +268,7 @@ mod 不是独立格式，是**插件的子集**：官方定义 "A mod is a plugi
 | 版本/生命周期 | v2.1.287 起（CHANGELOG "plugins may now modify deeper behavior"，同版内置 "You should know" mod）；市场安装（`/plugin install`），无 `~/.claude/mods` 目录；开发态 `claude --plugin-dir ./dir` **热重载**（文件变更即重跑 register），已安装 mod 按版本缓存无热重载；`--safe-mode`/`disableAllHooks` 禁用 |
 | 官方示例 | anthropics/claude-code-playground `claude-code/mods/`：replay-theater（会话回放）/ blast-radius（改动影响面）/ token-weather（token 消耗可视化）；4 个内置 mod 源码公开（sec-default/diff/telemetry/agents-md） |
 
-**与 settings hooks 的关系**：事件面是进程内超集（`classic.*` 桥接保证旧 hooks 可迁移），且能改参数/换模型/绘 UI——旧 hooks 的外部 shell 命令做不到。目标技能的 fail-gate-hook 形态选型（⑤.5）在 2.1.287+ 宿主可评估 mod 形态；`$.prompt.submit` 冒充提交与全权限运行是 mcp-governance 同族安全面。跨运行时信号：DSH v0.2.1-alpha.1 已建 Mods 兼容桥（`dsh-engineering-methodology.md` §十三，含权限时序差异陷阱）——Mods API 正成为跨运行时插件事件面的参照标准。
+**与 settings hooks 的关系**：事件面是进程内超集（`classic.*` 桥接保证旧 hooks 可迁移），且能改参数/换模型/绘 UI——旧 hooks 的外部 shell 命令做不到。目标技能的 fail-gate-hook 形态选型（Step 9）在 2.1.287+ 宿主可评估 mod 形态；`$.prompt.submit` 冒充提交与全权限运行是 mcp-governance 同族安全面。跨运行时信号：DSH v0.2.1-alpha.1 已建 Mods 兼容桥（`dsh-engineering-methodology.md` §十三，含权限时序差异陷阱）——Mods API 正成为跨运行时插件事件面的参照标准。
 
 ## 九、Worktree Isolation
 
@@ -303,15 +303,15 @@ mod 不是独立格式，是**插件的子集**：官方定义 "A mod is a plugi
 
 | 能力 | 描述 | 来源版本 |
 |------|------|---------|
-| **voice dictation** | 语音输入（macOS/Linux，v2.1.195 修复中文/日文无空格语言自动提交） | v2.1.195 |
+| **voice dictation** | 语音输入（macOS/Linux，支持中文/日文等无空格语言） | v2.1.195 |
 | **screen reader** | 屏幕阅读器支持（v2.1.200 改进装饰字符隐藏 + 表格读法） | v2.1.200 |
-| **plan mode** | 计划模式（只读，v2.1.198 修复浏览器工具调用处理） | v2.1.198 |
+| **plan mode** | 计划模式（只读） | v2.1.198 |
 | **background sessions** | `claude --bg` 后台会话 + `claude agents` 管理 | v2.1.198 |
 | **Claude in Chrome** | Chrome 浏览器集成（v2.1.198 GA） | v2.1.198 |
 | **Remote Control** | 远程控制 | v2.1.181 |
 | **LSP 集成** | 语言服务器协议（v2.1.50 `startupTimeout` 配置） | v2.1.50 |
 | **auto-retry** | API 连接中断自动重试（v2.1.181 改进 mid-thinking 重试） | v2.1.181 |
-| **prompt caching** | 提示缓存（v2.1.181 修复自定义 base URL 不读缓存） | v2.1.181 |
+| **prompt caching** | 提示缓存（自定义 base URL 亦生效） | v2.1.181 |
 | **sandbox** | 沙箱模式（v2.1.181 `allowAppleEvents`） | v2.1.181 |
 | **agent teams** | 多代理协作（实验性，`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`） | v2.1.50 |
 | **tool search** | 工具搜索（`ENABLE_TOOL_SEARCH=true`） | v2.1.50 |
@@ -597,67 +597,59 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ---
 
+## 版本基线
+
+能力清单以 npm `latest` 基线版本为准核验（当前 2.1.289）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+
 ## 版本注记：v2.1.233-237 的能力变化（浓缩）
 
-- **Todo/Task 工具默认移除**（233，破坏性）：进度跟踪走自有 trace-log.sh。`notify_when_idle` 空闲通知原语（236，多会话候选）；"Concise" 风格（237）；`claude-api` 上下文 200k→25k（234，按需加载同构）。沙箱硬化（通配符 read-deny 防重命名绕过/密钥 `${VAR}` 化）。env：`ANTHROPIC_DEFAULT_MODEL`/`CLAUDE_CODE_TOOL_MEMORY_LIMIT` 等。详表 `docs/upstream-baseline.md` §3.1。
+- **Todo/Task 工具默认移除**（233，破坏性）：进度跟踪走自有 trace-log.sh。`notify_when_idle` 空闲通知原语（236，多会话候选）；"Concise" 风格（237）；`claude-api` 上下文 200k→25k（234，按需加载同构）。沙箱硬化（通配符 read-deny 防重命名绕过/密钥 `${VAR}` 化）。env：`ANTHROPIC_DEFAULT_MODEL`/`CLAUDE_CODE_TOOL_MEMORY_LIMIT` 等。
 
-## 版本注记：v2.1.252（2026-09-01 核）——v2.1.238 起的能力变化
-
-> 覆盖 v2.1.238-252；详表 `docs/upstream-baseline.md` §3.4。
+## 版本注记：v2.1.252——v2.1.238 起的能力变化
 
 - **`--restricted` 锁定模式**（248）：**restricted 会话=门禁失能会话**（全链依赖 Bash），交付断言不可作数。
-- **PreModelSwitch/PostModelSwitch hooks**（251）：模型切换首次成为可治理点（adaptive-gating 候选挂点）；Workflow prompt 外置 5.7k→1k（外置 skill 化第三次验证）。
+- **PreModelSwitch/PostModelSwitch hooks**（251）：模型切换首次成为可治理点（adaptive-gating 候选挂点）；Workflow prompt 外置 5.7k→1k（外置 skill 化又一验证）。
 - **子代理韧性/缓存**（243-251）：maxTurns 撞限标记 **partial**；`cacheTtl`/`promptCacheTtl`/`subagentPromptCacheTtl`。
 - **沙箱/权限硬化波**（246-252）：symlink TOCTOU、输出防重定向、`env` 禁设 `CLAUDE_CONFIG_DIR`/`TMPDIR`——模板保持最保守形态；hooks 非法 JSON→显式 error。
 
-## 版本注记：v2.1.261（2026-09-05 核）——v2.1.253 起的能力变化
+## 版本注记：v2.1.261——v2.1.253 起的能力变化
 
-> 覆盖 v2.1.253-261（纯修复版不列）。npm latest=2.1.261 / stable=2.1.236（分裂持续）；详表见 `docs/upstream-baseline.md` §3.5。
-
-- **无头执法档 `--permission-prompts none`**（259）：与 Codex exit-2-deny 双宿主互为正反；**无人值守 prompt 档坍缩为 deny**（R13 三值化边界）。
+- **无头执法档 `--permission-prompts none`**（259）：与 Codex exit-2-deny 双宿主互为正反；**无人值守 prompt 档坍缩为 deny**（三值化边界）。
 - **宿主 deny 语义漂移警示**（259→260）：Read deny 应用至 Bash 参数旋即回退——**宿主 deny 版本间震荡，不得为执法主体**（同向：Guardian 条件性跳过）。
-- **`/skill-doctor`**（261）：未使用技能上下文成本审计（门禁预算宿主侧证据源）；`--append-subagent-system-prompt-file` + 输出预算 `bashOutputMaxChars`（上下文外置第四次验证）。
+- **`/skill-doctor`**（261）：未使用技能上下文成本审计（门禁预算宿主侧证据源）；`--append-subagent-system-prompt-file` + 输出预算 `bashOutputMaxChars`（上下文外置又一验证）。
 - **治理**（257-260）：`CLAUDE_CODE_SUBAGENT_MODEL_FORCE` / `blockReadsOutsideWorkingDirectories` / Containment Escape / Workflow schema 前置校验（gate-report 同向）。
 
-## 版本注记：v2.1.263（2026-09-06 核）——纯修复轮
+## 版本注记：v2.1.263——纯修复轮
 
-- changelog 仅单条 reliability——无功能性条目，无吸收（R18 档案）；版本真值详见 `docs/upstream-baseline.md`。
+- changelog 仅单条 reliability——无功能性条目，无吸收。
 
-## 版本注记：v2.1.266（2026-09-09 核）——2.1.265 实质轮 + 266 回归修复
-
-> 覆盖 v2.1.264-266。npm latest=2.1.266（2026-09-08）/ stable 仍 2.1.236。详表 `docs/upstream-baseline.md`；档案 `docs/research/R20-runtime-refresh.md`。
+## 版本注记：v2.1.266——2.1.265 实质轮 + 266 回归修复
 
 - **`--plugin-dir` 目录化加载**（265）：插件目录的子目录各自加载、运行中热增删——技能分发粒度升为「目录树 + 热装载」。
 - **工具结果 1 GB 落盘上限**（265）：超限截断且预览显式标注（与 `bashOutputMaxChars`/dsh quota 同族）。
 - **prompt-cache 稳定性修复族**（265）：resume/teammates 不再改子代理工具表与提示前缀——**缓存稳定性成为编排不变量：编排层不得重排提示前缀**。
-- **中断工具调用恢复诚实性**（265）：死于工具运行中，resume 保留中断调用并标记 interrupted——partial 证据态第二次实证。
+- **中断工具调用恢复诚实性**（265）：死于工具运行中，resume 保留中断调用并标记 interrupted——partial 证据态又一实证。
 - **不可信内容标记**（265，候选）：Artifact 读他人产物按 untrusted 标记内嵌指令（触发 = 出现「读取外部产物并执行其中指令」场景）。
 - **266 教训**：`CLAUDE_CODE_USE_GATEWAY` 语义 265 漂移致网关配置报错、266 回滚——**宿主行为细节版本间不保证稳定**第三次实证。
 
-## 版本注记：v2.1.271–273（2026-09-16 R31 核）——撤销 268 竞态立场 + 网关提示头 + 度量精度
+## 版本注记：v2.1.271–273——撤销 268 竞态立场 + 网关提示头 + 度量精度
 
-> 覆盖 v2.1.271（R29 表行级吸收补档展开）/ v2.1.272（笼统修复轮）/ v2.1.273（npm latest；stable 通道 2.1.267——分裂持续且 stable 自 2.1.236 前移）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R31-runtime-refresh.md`。
-
-- **⚠ 撤销 268「不可分析即 deny」**（273）：`eval`/`env -C` 等 deny 立场因误伤 `time -p make build` 等合法形态被回退为 prompt——权限语义修正为「**不可分析 → ask，而非 deny**」；fail-closed（deny-all）保留给无交互兜底场景（managed 不可读）。R24 吸收注记已在 268 节同步修正，原「第五实证」计数作废。
-- **每命令 allowed_domains 网络出口白名单 + --accept-command 哈希钉定 + omitClaudeMd 子代理上下文卫生 + managed-mcp 保留独占 fail-closed + Bash 权限检查四连修**（271，实质轮，R29 已表行登记）：权限通道完备性族第七波——出口按命令粒度白名单是「作用域最小化」从文件面到网络面的延伸。
+- **⚠ 撤销 268「不可分析即 deny」**（273）：`eval`/`env -C` 等 deny 立场因误伤 `time -p make build` 等合法形态被回退为 prompt——权限语义修正为「**不可分析 → ask，而非 deny**」；fail-closed（deny-all）保留给无交互兜底场景（managed 不可读）。
+- **每命令 allowed_domains 网络出口白名单 + --accept-command 哈希钉定 + omitClaudeMd 子代理上下文卫生 + managed-mcp 保留独占 fail-closed + Bash 权限检查四连修**（271，实质轮）：权限通道完备性族新样本——出口按命令粒度白名单是「作用域最小化」从文件面到网络面的延伸。
 - **网关提示头族**（273）：`x-claude-code-request-class`/`agent-type`/`prev-tool-durations`/`compaction`/`context-compacted` 请求头（`CLAUDE_CODE_GATEWAY_HINT_HEADERS=1` opt-in）——上下文经济状态向 LLM 网关显式化，环境事实登记。
 - **MCP 断连放弃通知指向 /mcp**（273）：自动重连放弃成为显式可观测事件——**降级可见性族**（与本项目 MCP 降级信号/DegradationLadder 同向）。
 - **上下文计量与自动压缩双倍计数修复**（273）：advisor 工具轮按约两倍真实上下文计重、自动压缩在约半窗口误触发——**度量精度即行为触发器**：计量偏差直接改变压缩行为（与 ruflo v3.42.1 token savings 基线修正构成跨宿主双样本，度量口径族）。
 - remote-control 会话分叉为后台会话、`blockReadsOutsideWorkingDirectories` 下记忆目录隔离、子代理缺 token-usage 结果投递修复、定时任务会话绑定、SDK 后台化消息完整性：宿主编排/修复族，环境事实登记不展开。
 
-## 版本注记：v2.1.267（2026-09-10 核）——治理原语 + 工具动态缓存族 + managed fail-closed
+## 版本注记：v2.1.267——治理原语 + 工具动态缓存族 + managed fail-closed
 
-> 覆盖 v2.1.267（npm latest，2026-09-09 发布；stable 通道仍 2.1.236 分裂持续）。实质 patch。详表 `docs/upstream-baseline.md`；档案 `docs/research/R22-runtime-refresh.md`。
-
-- **`maxEffortLevel` 设置**（267）：top-level 或 per-model `modelSettings` 封顶 effort、低档仍可选——**effort 治理进宿主原生配置**，与 PreModelSwitch hooks（251）、`CLAUDE_CODE_SUBAGENT_MODEL_FORCE`（257）成谱系。adaptive-gating 分档的宿主侧新原语，候选登记（触发 = 弱模型越档真实场景，与 R16 同批）。
-- **prompt-cache 工具动态性大族**（267，约 12 项 fix）：MCP 重连不重写工具表、新 MCP 工具以 deferred definitions 到达（无 ToolSearch 会话）、resume 重放录制的工具描述而非重渲染、forked worker 不再注入 EnterWorktree、`-p` 会话 resume 不破缓存——**缓存稳定性编排不变量第三波实证**（265 前缀族 → 267 工具集动态族）。教义补充：工具面动态变更与缓存稳定的冲突由宿主 deferred/replay 机制消解，生成技能无需自防御。
-- **managed allow-list 不可读 → deny-all**（267）：`allowedHttpHookUrls`/`httpHookAllowedEnvVars`/`allowedChannelPlugins` 读取失败从默认 allow-all 改为拒绝一切——**fail-closed 第四实证**（Guardian 条件性缺席 / 260 deny 回退 / gsd 证据纪律 → managed 缺省值收敛）：连 managed 配置的缺省语义也按最坏情况设计。
+- **`maxEffortLevel` 设置**（267）：top-level 或 per-model `modelSettings` 封顶 effort、低档仍可选——**effort 治理进宿主原生配置**，与 PreModelSwitch hooks（251）、`CLAUDE_CODE_SUBAGENT_MODEL_FORCE`（257）成谱系。adaptive-gating 分档的宿主侧新原语，候选登记（触发 = 弱模型越档真实场景）。
+- **prompt-cache 工具动态性大族**（267，约 12 项 fix）：MCP 重连不重写工具表、新 MCP 工具以 deferred definitions 到达（无 ToolSearch 会话）、resume 重放录制的工具描述而非重渲染、forked worker 不再注入 EnterWorktree、`-p` 会话 resume 不破缓存——**缓存稳定性编排不变量又一实证**（265 前缀族 → 267 工具集动态族）。教义补充：工具面动态变更与缓存稳定的冲突由宿主 deferred/replay 机制消解，生成技能无需自防御。
+- **managed allow-list 不可读 → deny-all**（267）：`allowedHttpHookUrls`/`httpHookAllowedEnvVars`/`allowedChannelPlugins` 读取失败从默认 allow-all 改为拒绝一切——**fail-closed 又一实证**（Guardian 条件性缺席 / 260 deny 回退 / gsd 证据纪律 → managed 缺省值收敛）：连 managed 配置的缺省语义也按最坏情况设计。
 - `--system-prompt-snapshot off`（267）：每请求重渲染系统提示（默认快照=缓存友好）——快照与新鲜度成为显式权衡开关，上下文经济学新支点。
 - Workflow `agent()` 大 schema 改安全检查而非拒绝（267）；5 MB+ 大会话 resume 丟并行工具调用修复（267）。对账通过。
 
-## 版本注记：v2.1.269（2026-09-12 核）——plugin eval 可复现评估 + 权限通道完备性 + 并发有界
-
-> 覆盖 v2.1.269（CHANGELOG latest；stable 通道分裂持续）。评估面 + 权限通道修复 patch。详表 `docs/upstream-baseline.md`；档案 `docs/research/R26-runtime-refresh.md`。
+## 版本注记：v2.1.269——plugin eval 可复现评估 + 权限通道完备性 + 并发有界
 
 - **`claude plugin eval`**（269）：跑插件评估套件，评分 + 可复现 JSON/HTML 报告——**评估可复现族**：能力声明须有可复现评估载体，与本项目判别器断言（旧实现必挂）同向。宿主面事实，登记不升门禁。
 - **`Bash(tee:*)` 绕过写路径检查修复**（269）：无害外观工具被用作写通道即可旁路写路径检查——**权限检查通道完备性族**（检查挂在「命令外观」而非「效果语义」即可被中间工具旁路；与 268 符号链接两连同谱系）。`!` 前缀规则过应用修复同族（规则作用域收窄）。本仓 scope 门字面前缀为已登记边界，维持。
@@ -666,51 +658,43 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **CJK 无空格语言建议丢失修复**（269，中/日/泰）：分词空格假设修复——CJK 处理面持续补齐（与 claude-mem CJK substring 检索同向）。
 - 其余（kitty/st/rxvt/WezTerm 终端键大族、prompt-cache 部分失效、`/btw` 捏造工具调用修复（诚实面）、gateway model discovery 超时 env（死线族又一员）、synced skills 改名 `anthropic-skills:<name>`（命名空间隔离））为环境事实级，登记不展开。
 
-## 版本注记：v2.1.268（2026-09-11 核）——权限路径规范化两连 + 工具宿主死线 + 机密不落展示面
+## 版本注记：v2.1.268——权限路径规范化两连 + 工具宿主死线 + 机密不落展示面
 
-> 覆盖 v2.1.268（npm latest；stable 通道仍 2.1.236 分裂持续）。修复主导实质 patch。详表 `docs/upstream-baseline.md`；档案 `docs/research/R24-runtime-refresh.md`。
-
-- **符号链接目录 deny/ask 规则真实路径绕过修复**（268）：macOS `/etc` `/tmp` `/var`、Linux `/bin` 等符号链接拼写目录上的规则，以 realpath 给出路径时失效；Bash 对写在符号链接拼写上的 deny 规则同样忽略——**路径检查必须在规范化空间双向比对**（权限路径语义第六实证）。本仓对账：`check_scope` 按字面前缀匹配，符号链接别名为**已登记边界**（单机生成场景低暴露，不升门禁）。
-- **同行不可分析命令 deny 失效修复**（268）：`env -C`/`eval` 等检查器无法分析的命令与 deny 规则同行时规则被跳过——「**不可分析即最坏情况**」fail-closed 族延续（267 managed 不可读→deny-all 之后第五实证）。**⚠ 273 回退修正**：该 deny 立场因误伤 `time -p make build` 等合法形态于 v2.1.273 被上游撤销、回退为 prompt——修正后谱系为「**不可分析 → ask（人工确认），而非 deny**」；fail-closed 保留给无交互兜底的场景（managed 配置不可读→deny-all 维持成立）。「第五实证」计数随之作废。
+- **符号链接目录 deny/ask 规则真实路径绕过修复**（268）：macOS `/etc` `/tmp` `/var`、Linux `/bin` 等符号链接拼写目录上的规则，以 realpath 给出路径时失效；Bash 对写在符号链接拼写上的 deny 规则同样忽略——**路径检查必须在规范化空间双向比对**（权限路径语义又一实证）。本仓对账：`check_scope` 按字面前缀匹配，符号链接别名为**已登记边界**（单机生成场景低暴露，不升门禁）。
+- **同行不可分析命令 deny 失效修复**（268）：`env -C`/`eval` 等检查器无法分析的命令与 deny 规则同行时规则被跳过——「**不可分析即最坏情况**」fail-closed 族延续（267 managed 不可读→deny-all 谱系延续）。**⚠ 273 回退修正**：该 deny 立场因误伤 `time -p make build` 等合法形态于 v2.1.273 被上游撤销、回退为 prompt——修正后谱系为「**不可分析 → ask（人工确认），而非 deny**」；fail-closed 保留给无交互兜底的场景（managed 配置不可读→deny-all 维持成立）。。
 - **WebFetch 300 秒宿主死线**（268）：服务端不结束的响应挂死改为 300s 后失败，`CLAUDE_CODE_WEBFETCH_DEADLINE_MS` 可覆盖（0 关闭）——联网验证类工具的死线成为宿主默认，生成技能**无须自设超时兜底**（环境事实登记）。
 - **机密不落展示面**（268）：plugin/marketplace git 源 URL 中的 token/password、MCP 配置 `${VAR}` 解析值不再出现在错误与列表输出——与符号链接修复同为本轮安全硬化主轴。
-- 修复族对账通过：第三方兼容端点 Artifact regex 400（**宿主行为版本间不保证稳定第四次实证**，265 起回归）、长空闲会话 CPU busy-loop、SDK `excludeDynamicSections` 缓存中途破断（缓存稳定性第四波）、respawned teammate 拾取未信任目录同名 agent 文件（信任边界）、compact `$` 序列与 resume 顺序稳定性。网关定价透传/`gatewayInternalNetworks`/self-hosted-runner `--remove-session-state`/plugin `--json` 与单机生成场景无交集，登记不展开。
+- 修复族对账通过：第三方兼容端点 Artifact regex 400（**宿主行为版本间不保证稳定又一实证**，265 起回归）、长空闲会话 CPU busy-loop、SDK `excludeDynamicSections` 缓存中途破断（缓存稳定性族）、respawned teammate 拾取未信任目录同名 agent 文件（信任边界）、compact `$` 序列与 resume 顺序稳定性。网关定价透传/`gatewayInternalNetworks`/self-hosted-runner `--remove-session-state`/plugin `--json` 与单机生成场景无交集，登记不展开。
 
-## 版本注记：v2.1.270（2026-09-13 核）——权限通道变更须带回归面
-
-> 覆盖 v2.1.270（npm latest；stable 通道仍 2.1.236 分裂持续）。单条回归修复。详表 `docs/upstream-baseline.md`；档案 `docs/research/R27-runtime-refresh.md`。
+## 版本注记：v2.1.270——权限通道变更须带回归面
 
 - **只读 git 命令误要权限修复**（270，修复 269 引入的回归）：长会话中 read-only git 命令意外触发权限询问——269 的写路径检查收紧（tee 旁路修复族）反手误伤了只读路径的免询问。**权限通道变更须带回归面**：同域收紧须成对验证「堵住旁路」与「不误伤正路」，二者缺一即为回归源。与「宿主行为版本间不保证稳定」实证序列同向——**修复轮自身即回归源**，与本轮 graphify 0.9.60→0.9.61 连环修复（Python 3.12/3.13 断裂）构成跨宿主双样本。
 
-## 版本注记：v2.1.274（2026-09-17 R34 核）——无界重试的终结与等待的预算化
-
-> 修复主导批（npm latest；stable 2.1.267 分裂持续）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R34-runtime-refresh.md`。
+## 版本注记：v2.1.274——无界重试的终结与等待的预算化
 
 - **损坏 transcript 自愈替代无界重试**：会话卡死在 "unexpected tool_use_id" 400 无限重试——现在能自愈则自愈，否则明确错误 + `/rewind` 指引终止循环。「**无界重试 → 有界 + 明确错误**」族宿主侧新样本（重试是等待的另一种形态，等待必须有界）。
 - **MCP 启动等待有界化**：`CLAUDE_CODE_MCP_STARTUP_WAIT_MS`（0 = 不等）——首个非交互 turn 对 MCP 连接的等待成为显式预算；**Streamable HTTP 按 server timeout 生效**（~5 分钟硬顶修复）——死线语义以配置为准。
-- **/goal 稳定性两修**：compact 后 resume 不丢活动 goal + hook-driven goal 上下文再溢出改 compact 而非报错——R14 goal_id/closure 闭环谱系的宿主侧补强（goal 是长跑承诺，compaction 不得吞承诺）。
+- **/goal 稳定性两修**：compact 后 resume 不丢活动 goal + hook-driven goal 上下文再溢出改 compact 而非报错——goal_id/closure 闭环谱系的宿主侧补强（goal 是长跑承诺，compaction 不得吞承诺）。
 - **错误语义诚实化两例**：403 insufficient_scope 不再谎报为过期登录（指向 /mcp 重认证）；`claude agents` 自动更新重启不再丢 CLI flags。
 - **恢复原子性**：resume 的后台代理不再保留被中断 tool batch 的一半——半态不是可运行态。
 - **输出经济学**：Stop hook 重复 block 以 500 字符条件标签替代全量重发。
 - **供应链细节**：无自身 git 仓的 plugin/marketplace 目录不再误取外层 git 仓版本——版本归属。
 - 本仓对账：gates-strict/precheck 无无限循环重试点位，无门禁增量；「无界重试→有界」登记为动态面族样本，供生成技能的死线设计参照。
 
-## 版本注记：v2.1.275–276（2026-09-18 R38 核）——技能跨端同源与排队消息语义
-
-> 覆盖 v2.1.275（实质批）+ v2.1.276（单回归修复）。详表 `docs/upstream-baseline.md`；档案 `docs/research/R38-runtime-refresh.md`。
+## 版本注记：v2.1.275–276——技能跨端同源与排队消息语义
 
 - **claude.ai 技能/插件同步进终端会话**（`syncClaudeAiSkills/Plugins: false` 可关）——技能单一事实源跨端同源：云端与终端不维护两份启用态。
 - **排队消息 send-now 语义**：ctrl+enter 打断当前轮并立即冲刷全部排队消息；已发送与排队中在模型接收前以灰色区分——排队是可撤回的暂存态，冲刷是显式动作。
 - **静默失效可观测**：otelHeadersHelper 配置失败启动即告警（此前静默零遥测导出）——诚实族：导不出≠导出了。
-- **缓存稳定性第五波**：resume/compaction 后 memory 文件 age 注记漂移致 prompt cache miss 已修——缓存前缀内不得有时间性易变文案。
+- **缓存稳定性族**：resume/compaction 后 memory 文件 age 注记漂移致 prompt cache miss 已修——缓存前缀内不得有时间性易变文案。
 - **子代理消息传播完整性**：`--forward-subagent-text` 对 context: fork 技能及其嵌套 fork 丢消息已修——与 codex 0.155「fork 会话 hook 可区分」同族：派生会话的消息归属与传播是一等语义。
-- **机密脱敏延续**（R24 同族第三波）：plugin/marketplace 消息、日志与 list 输出不再回显 git/ssh/marketplace URL 内嵌的密码与 token。
-- **损坏 transcript 容错批**（R34 自愈族延续）：resume/选择器预览/后台代理/转录视图对 malformed 条目容错，损坏不再炸全会话。
+- **机密脱敏延续**（同族延续）：plugin/marketplace 消息、日志与 list 输出不再回显 git/ssh/marketplace URL 内嵌的密码与 token。
+- **损坏 transcript 容错批**（自愈族延续）：resume/选择器预览/后台代理/转录视图对 malformed 条目容错，损坏不再炸全会话。
 - **有界族两例**：Read 大文件解码失败报错而非挂死；Grep/Glob/@建议 20MB 输出上限。
 - **沙箱退出码语义**：Linux 沙箱 zsh 下失败命令误报 exit 0 已修——退出码是门禁的输入，语义不许漂。
 - **276 单回归**：自定义网关每请求 400（275 引入）——修复轮自身即回归源再添一例（270 同款），权限/网关变更须带回归面。
 
-## 版本注记：v2.1.277-278（2026-09-19 R40 补核）——AGENTS.md 跨宿主收敛与子代理输出防伪
+## 版本注记：v2.1.277-278——AGENTS.md 跨宿主收敛与子代理输出防伪
 
 - **AGENTS.md 进宿主**（277）：无 CLAUDE.md 的项目改读 AGENTS.md（/config Project instructions 可切；Bedrock/Vertex/Foundry 暂缺）——项目指令文件向 codex 惯例收敛，多宿主部署的指令面可单一事实源。
 - **子代理输出防伪**（277）：子代理结果以 header 标记为 subagent output 并缩进——子代理文本不得冒充会话自身指令（prompt injection 防线）；workflow 脚本计算的 agent() prompt 以 script-authored 框架呈现给安全分类器（Bedrock/Vertex/Foundry）。
@@ -721,18 +705,16 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **网关面两例**：CLAUDE_GATEWAY_PROXY_IS_EGRESS_BOUNDARY（出口域名交代理解析，本机不解析）+ gateway upstream 静态 headers map。
 - 登记不吸收：malformed state 容错批（~/.claude.json 各字段）与 plugin 稳定性修复批（质量面无方法论原语）、PDF Windows 长路径、VSCode 面更新。
 
-## 版本注记：v2.1.279-280（2026-09-23 R44 补核）——Opus 5.5 顶档与写路径权限语义
-
-> patch 两版。详表 `docs/upstream-baseline.md`；档案 `docs/research/R44-runtime-refresh.md`。
+## 版本注记：v2.1.279-280——Opus 5.5 顶档与写路径权限语义
 
 - **Claude Opus 5.5（`claude-opus-5-5`）成默认 Opus**：1M 上下文，$4/$20 per Mtok，缓存读 $0.20——顶档模型上下文与价格坐标前移（adaptive-gating 分档事实源更新；effort/能力档判定以模型目录为准，不硬编码）。
-- **符号链接写路径按真实落点判权限**：经 symlinked path 的写入按实际落点判读，prompt 明示落点；`acceptEdits`/allow 规则/auto mode 不再批准落在树外的写入——**权限路径语义第七实证**：R24 v2.1.268「规范化空间比对」谱系从读路径延到写路径。目标技能权限面（settings 模板）结论不变：deny 规则按规范化路径书写。
+- **符号链接写路径按真实落点判权限**：经 symlinked path 的写入按实际落点判读，prompt 明示落点；`acceptEdits`/allow 规则/auto mode 不再批准落在树外的写入——**权限路径语义又一实证**：v2.1.268「规范化空间比对」谱系从读路径延到写路径。目标技能权限面（settings 模板）结论不变：deny 规则按规范化路径书写。
 - **auto mode 重试治理两连**：安全检查拒绝评审的动作**一次拒绝并明示重试无用**（不再反复重试同一动作）；安全检查无应答时**退避重试，连拒十次终止本轮**——「无界重试→有界+明确错误」族宿主侧新样本（与 v2.1.274 损坏 transcript 自愈替代无界重试同族）。
-- Write 工具参数宽容化：模型发 `path`/`file_text`/`file_content`/杂散 `description` 时映射到 `file_path`/`content` 而非校验失败——输入宽容化（与 codex-security R32「产出收敛」成双向口径的输入侧）。
+- Write 工具参数宽容化：模型发 `path`/`file_text`/`file_content`/杂散 `description` 时映射到 `file_path`/`content` 而非校验失败——输入宽容化（与 codex-security「产出收敛」成双向口径的输入侧）。
 - `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH`：MCP 描述 2048 字符上限可调；hook 输出尺寸入 otel 事件——配置与可观测面。
 - 修复面（不吸收）：TUI 对话框交互批、skills/.trash 误移、插件 commit 追踪。
 
-## 版本注记：v2.1.281-282（2026-09-25 R57 补核）——权限堵旁路与静默失效可观测
+## 版本注记：v2.1.281-282——权限堵旁路与静默失效可观测
 
 > patch 两版（npm 实测 2.1.282）；闭源二进制，**仅发布说明级证据，内部实现未验证**。
 
@@ -740,19 +722,15 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **等待与重试有界化**：危险 `rm` 提示 2 分钟后自动 deny；无限重试无视 `--max-turns` 已修；compaction 摘要被拒转 fallback 模型；磁盘配额错误不再伪装「Exit code 1」。
 - **静默失效可观测**：启动与 `/status`/`claude doctor` **显式列出被忽略的遥测变量**。
 
-## 版本注记：v2.1.283（2026-09-28 R70 核）
-
-> npm dist-tag latest=2.1.283（R70 实测）；证据锚点 `docs/research/R70-runtime-refresh.md`。
+## 版本注记：v2.1.283
 
 - **模型治理三原语**：`availableModelsMatch: "exact"`（白名单精确匹配，新型号默认封锁直到显式列出）+ `deniedModels`（独立黑名单，白名单允许也可拒）→ 管理面从「允许清单」进化为「允许语义 + 拒绝清单」双层。
 - **`/doctor prompt-audit`**：审计 CLAUDE.md/skills/agents/commands 中「为旧模型写的提示模式」→ 提示资产纳入版本健康检查（提示语也有过时一说）。
 - **网关归因头**：`x-claude-code-prompt-id`（`CLAUDE_CODE_GATEWAY_HINT_HEADERS=1`）让网关按用户 prompt 分组请求→多代理共享网关的计费/归因面。
-- **OTel `tool.output` span**（`OTEL_LOG_TOOL_CONTENT=1`）：MCP/WebFetch/WebSearch 产出进遥测→可观测与内容审计的接缝（对照 codex R57「遥测最小化」：开的是通道，边界由 env 把守）。
+- **OTel `tool.output` span**（`OTEL_LOG_TOOL_CONTENT=1`）：MCP/WebFetch/WebSearch 产出进遥测→可观测与内容审计的接缝（对照 codex「遥测最小化」：开的是通道，边界由 env 把守）。
 - **插件校验硬化**：validate 拒绝不可安装名/逃逸路径；`installed_plugins.json` 坏记录不再静默丢档（点名 + 恢复路径）→ 生态资产的可恢复性纪律。
 
-## 版本注记：v2.1.284 → v2.1.285（2026-09-30 R79 核）
-
-> npm dist-tag latest=2.1.285（R79 实测，R73 升 2.1.284 无 changelog 故无注记）；本版恢复 changelog 发布（外部 checkout `upstream/claude-code` CHANGELOG 首段 2.1.285 实测）；证据锚点 `docs/research/R79-runtime-refresh.md`。
+## 版本注记：v2.1.284 → v2.1.285
 
 - **fork 子代理权限模式继承封闭**：fork 子代理运行在父会话权限模式下且**不能退出 plan mode**（修复此前 fork 不保留会话 plan/dontAsk 模式）——「委托不提权」：子代理的权限边界继承自会话，无权自行升格。吸收点：`references/subagent-orchestration.md` 分派规范可对照——分派产生的子任务权限边界应显式声明继承来源，不留自行提权口子。
 - **managed settings 分级 fail-open**：OS 拒读 managed settings 文件时**warn-and-start**（无策略启动），其余读错误与不可解析文件才全停——治理面按「权限性拒绝降级 / 内容性损坏停止」分级，一刀切 fail-closed 会把权限配置问题放大成不可用。吸收点：本仓降级载体「未装不阻塞」同族——降级与致命的边界按失败原因分级，不是按失败发生。
@@ -760,9 +738,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **沙箱 auto-allow 误报修复**：内联脚本（`python3 -c`/`node -e`）含 `=` 即逐次询问的误报修复——保守判定的误报面也要养（门禁误报训练用户橡皮图章，与漏报同罪）。
 - **产品面修复卷**（不吸收记档）：`CLAUDE_CODE_DISABLE_WEB_FETCH` 工具开关、`claude --desktop`、`plugin configure`/`--config` 安装时配置、`allowedProviders` 供应商白名单、URL 密码脱敏、MCP 名称注入终端转义序列清洗、`-p` 后台子代理权限请求直达 prompt tool 等约 30 项。
 
-## 版本注记：v2.1.285 → v2.1.286（2026-10-01 R81 核）
-
-> npm 2026-09-30T17:14Z 发版、R81 实测 latest=2.1.286；v2.1.286 tag changelog 随版（11 提交）；证据锚点 `docs/research/R81-runtime-refresh.md`。
+## 版本注记：v2.1.285 → v2.1.286
 
 - **同档回退重试**：默认模型/别名解析被 API 拒绝（400）时，按**上一模型同档**重试一次——降级阶梯保档位，不是跨档乱降。吸收点：降级链设计（模型/工具双通道）对照——降级目标按档位对齐而非就近可得，保住能力下界。
 - **关停排队不丢**：Claude Code 退出中到达的 Remote Control 消息不再被误标已送达，保持排队待下次运行应答——**关停窗口内的消息不得丢也不得假确认**。吸收点：trace-log/事件账本的退出路径对照——冲刷窗口内的事件落盘语义（fs.watch 尾随冲刷双修同族）。
@@ -770,28 +746,21 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **权限队列计数**：权限请求堆叠时提示加 "2 of 5" 计数——排队中的请求给位置感。吸收点：审批队列/门禁打回堆积时的用户面对照（可见的队列位置优于不可见的黑盒等待）。
 - **产品面修复卷**（不吸收记档）：云会话大历史容器加载中停止致永不唤醒、apps gateway 缓存写 1h/5min 计价纠偏、MCP 握手降级后工具列表陈旧一天、`/feedback` zip 内 transcript redaction 后 JSON 行损坏、Remote Control 策略关闭即断连等约 15 项。
 
-## 版本注记：v2.1.286 → v2.1.287（2026-10-02 R84 核）
+## 版本注记：v2.1.286 → v2.1.287
 
-> npm latest 实测=2.1.287（2026-10-02 registry 查）；changelog 随版；证据锚点 `docs/research/R84-runtime-refresh.md`。
-
-- **安全闸回归锁**：危险 `rm` 命令在演化中失去 always-ask 保护（本版修复）——防护语义会被后续改动静默卸除。吸收点：本仓规则闸（rules.d deny 族）与审批闸每个 deny/ask 语义至少一条 Mutation Check（变异测试）防复发断言在位（R82 防复发断言同族）；演化触碰命令分类面时先跑闸的负例。
+- **安全闸回归锁**：危险 `rm` 命令在演化中失去 always-ask 保护（本版修复）——防护语义会被后续改动静默卸除。吸收点：本仓规则闸（rules.d deny 族）与审批闸每个 deny/ask 语义至少一条 Mutation Check（变异测试）防复发断言在位（防复发断言同族）；演化触碰命令分类面时先跑闸的负例。
 - **恢复路径幂等**：恢复会话后 CLAUDE.md 重复附加（本版修复）——恢复/前情注入必须是幂等重放，重放 N 次与一次等价。吸收点：前情注入重启、memory-writeback 恢复面的幂等性核对（追加前查重/以清单驱动而非裸 append）。
 - **有界重试与钩子自激抑制**（记档一行）：Remote Control 重连 30 秒上限后放弃；asyncRewake 钩子反复唤醒修复——重试与钩子都要有上界与防自激，与「活性等待有界」判据族同向。
 - **产品面卷**（不吸收记档）：Claude Mods 深层行为修改插件族、agents 视图 `n:` 过滤、OTel prompt_text 字段（遥测加正文=隐私面扩大，反向警示）、alwaysLoad:false MCP 工具延后至工具搜索、Windows Bash/PowerShell 双拒警告、自托管 runner 内置 gh api（仅 REST）等。
 
-
-## 版本注记：v2.1.287 → v2.1.288（2026-10-03 R85 核）
-
-> npm latest 实测=2.1.288（2026-10-03 registry 查）；changelog 随版（GitHub 正本）；证据锚点 `docs/research/R85-runtime-refresh.md`。
+## 版本注记：v2.1.287 → v2.1.288
 
 - **中断恢复续跑**：mid-response API 超时不再判整轮失败——非交互会话与子代理从部分响应继续，仅思考（无正文）的响应才整段重试。部分响应是资产不是废轮（恢复语义按内容存续划分，不按进程边界）。
 - **零用量自动压缩触发口径**：长会话最后回复报 0 token 用量时，旧版抛 "Prompt is too long" 硬失败，本版改为触发自动压缩——上下文压力信号（用量计量）与压缩动作之间的因果链路修复；计量缺失不得变成硬拒绝。
 - **结构化输出可关**（`CLAUDE_CODE_DISABLE_STRUCTURED_OUTPUTS`）：Mantle/网关拒结构化输出时标题、记忆召回、提示钩子回退到非结构化通道——对外部中间件的能力面须有降级路径（fail-open 兼容族，与 2.1.274 网关提示头族同谱系）。
 - 记档行：$.ui.selection() 选中回传（mods 通道）、Ctrl+C 清空后 Up 恢复草稿（草稿=持久资产）、MCP OAuth 增权中途重认证、--max-findings 可调评审发现数。
 
-## 版本注记：v2.1.288 → v2.1.289（2026-10-04 R89 核）
-
-> npm latest 实测=2.1.289（2026-10-04 registry 查）；changelog 随版（GitHub 正本）；证据锚点 `docs/research/R89-runtime-refresh.md`。
+## 版本注记：v2.1.288 → v2.1.289
 
 - **权限通道完备性三连**：①复合 shell 命令嵌套段上的 deny/ask 规则不再被用户所装 mod 的批准压过（受管机器——**管理侧否决优先于用户侧授权**，fail-closed 层级执法）；②Read deny 规则经符号链接作用于 IDE @提及/变更/选中通道（路径规范化 268 谱系延到 IDE 通道——**同一文件的每一条进入路径都过同一权限检查**）；③Bash deny/ask 在沙箱 auto-allow 下不再漏检环境变量前缀展开值（`TZ="$HOME" rm -rf build`）与裸赋值后的命令——**auto-allow 是通道捷径不是豁免面**。
 - **插件元数据越权修复**：用户安装的插件不得改写组织管理的 MCP server 登录工具描述——元数据（描述=模型所见）也是权限面，越权描述可诱导模型走错端点。

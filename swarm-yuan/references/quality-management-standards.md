@@ -4,7 +4,7 @@
 
 > **边界声明（先读）**：ISO 9001、CMMI、ISO/IEC 15504 是**组织级**质量/过程成熟度认证体系，评估的是"组织是否有定义良好的过程并持续改进"，认证须机构审核，**非门禁级自动化能覆盖**。本文档只做**概念映射**——说明 swarm-yuan 的哪些机制对应这些标准的哪些原则/过程域，供认证时作为过程资产证据引用。**不提供专属门禁**（单变更无法门禁化组织过程成熟度；强行门禁化只会淹没误报）。
 >
-> 定位依据：仓库根 `docs/research/R3-methodology.md` §6.2（CMMI ≈L3 定位）、仓库根 `docs/research/R7-quality-standards.md`（质量标准调研）、verifier 标准合规探索报告 §4.2（三标准零覆盖确认）。
+> 定位依据：仓库根 `docs/research/` 方法论与质量标准调研档案（CMMI ≈L3 定位、质量标准调研）、verifier 标准合规探索报告 §4.2（三标准零覆盖确认）。
 
 ---
 
@@ -26,10 +26,10 @@
 
 | PDCA | swarm-yuan 环节 |
 |---|---|
-| Plan（策划） | ⓪/⓪.5 自检+读知识（Step 1-2）→ ①-①.5 探查（Step 3-4）→ ② 17 特征卡（Step 5）→ ④ spec/plan 填写（Step 7，spec §1-§25） |
-| Do（实施） | ③-⑤ 骨架/填充/conf/hooks 生成（Step 6-9）+ spec §5.5 复用约束（④ 填充期内落 spec） |
-| Check（检查） | ⑥/⑦.5 门禁（55 门禁三档 enforce_level，Step 10-11）+ ⑦ 独立审查 + verifier/v1 验收 + self-check |
-| Act（处置） | gate-fixture 正反例回归 + profile 动态升档 + ⑧ 记忆写回（memory-persistence 经验沉淀，Step 11） |
+| Plan（策划） | Step 1-2 自检+读知识 → Step 3-4 探查 → Step 5 特征卡 → Step 7 spec/plan 填写（spec §1-§25） |
+| Do（实施） | Step 6-9 骨架/填充/conf/hooks 生成 + spec §5.5 复用约束（Step 7 填充期内落 spec） |
+| Check（检查） | Step 10-11 门禁（55 门禁三档 enforce_level）+ 独立审查 + verifier/v1 验收 + self-check |
+| Act（处置） | gate-fixture 正反例回归 + profile 动态升档 + Step 11 记忆写回（memory-persistence 经验沉淀） |
 
 ---
 
@@ -37,7 +37,7 @@
 
 ### 2.1 成熟度定位：≈ L3 已定义级
 
-swarm-yuan 具备 L3 的两个核心特征：**组织级过程资产**（六段式模板 + 80 框架规则集 + 32 领域知识）与**验证规程**（55 门禁 + verifier/v1 + gate-fixture 正反例）。L4（量化管理）/L5（优化）**不具备**——R3 §6.2 已确认"缺真值度量则量化管理无从谈起"，此处显式声明而非假装覆盖。
+swarm-yuan 具备 L3 的两个核心特征：**组织级过程资产**（六段式模板 + 80 框架规则集 + 32 领域知识）与**验证规程**（55 门禁 + verifier/v1 + gate-fixture 正反例）。L4（量化管理）/L5（优化）**不具备**——缺真值度量则量化管理无从谈起，此处显式声明而非假装覆盖。
 
 ### 2.2 过程域 × 机制映射（含缺口声明）
 

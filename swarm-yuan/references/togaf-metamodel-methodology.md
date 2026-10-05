@@ -64,7 +64,7 @@
 
 ## 6. 与 swarm-yuan 既有机制的接缝声明
 
-- **门禁**：本文档不新增门禁（治理三角已由 --adr/--contract/--consistency-cross/--impact 机器化，守决策 26 预算）。
+- **门禁**：本文档不新增门禁（治理三角已由 --adr/--contract/--consistency-cross/--impact 机器化）。
 - **spec**：§24 架构映射节是本文档 §1/§2/§3 的产物落点（形态为单仓项目时四层可折叠为两行——业务能力+数据实体——避免过度建模）。
 - **探查**：exploration-guide §D.0.6 四层架构视角枚举消费本文档 §1 的"对应物"列。
 - **路由**：task-methodology-router 的架构类任务行引用本文档 §4 矩阵。

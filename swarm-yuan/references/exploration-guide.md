@@ -52,7 +52,7 @@
 3. 合并去重（同一规则在多个文件出现的，保留最高优先级来源）
 ```
 
-### 文档转换流程（v2.14.3 排查 B2——PDF/Word/图片转 AI 可读）
+### 文档转换流程（PDF/Word/图片转 AI 可读）
 
 > 探查期枚举到文档后，非 Markdown 格式的需求/设计文档须先转换再提取——AI 读不了二进制 PDF/Word，图也读不了（除非 OCR/转图）。
 
@@ -71,7 +71,7 @@
 
 **转换后提取指引**：转出的 markdown 文档按需提取架构决策（docs/ ADR）、外部交互（API/数据库/MQ/第三方服务契约）、数据模型约定——提取去向 reference-manual §5 调用链路/§6 接口清单/§8 数据字典；**以代码为准**，文档内容与代码不一致时按 §文档证据源优先级 声明冲突。
 
-### 文档证据源优先级（v2.14.3 排查 B1——以代码为准，文档为辅，冲突须声明）
+### 文档证据源优先级（以代码为准，文档为辅，冲突须声明）
 
 > 探查/研发期参考文档时，**应用内的信息以代码为准、为主**（代码是当前真实行为）；设计文档为辅（设计意图与决策背景）；需求文档仅在需求分析时作为参考（描述的是目标而非现状）。
 
@@ -83,7 +83,7 @@
 
 **冲突声明义务**：探查/设计时发现文档与代码不一致（架构/外部交互/数据模型/接口契约任一维度），必须在 spec 的"假设与约束"段显式写出冲突点 + 以代码为准 + 建议文档更新（不留"文档与代码 silently 不一致"的暗账）。
 
-### 多源探查矛盾裁决（R45 semantica conflicts 吸收）
+### 多源探查矛盾裁决（来源：semantica conflicts）
 
 > 整合自 [semantica-agi/semantica](https://github.com/semantica-agi/semantica) v0.7.0 `conflicts/conflict_resolver.py` 的 7 种 ResolutionStrategy 与 `source_tracker.py` 来源可信度模型（机制级借鉴，不引依赖）。上文「文档证据源优先级」管**文档 vs 代码**一个维度；本节管**任意多源**矛盾时的通用裁决序。
 
@@ -110,7 +110,7 @@
 
 **双时态注记**（semantica `_temporal_support_projection.py` Window 语义借鉴）：清单条目/探查结论有两个时间轴——**valid time**（代码何时如此，锚 commit/项目指纹）与 **recorded time**（第 N 轮探查何时知道）。反馈回路的「单条更新」= 写一条新 recorded time 记录，不回头改写旧结论的历史有效性；last-good 红线（条目骤降 >50% 视为探查失败保留旧清单）防的正是「新一轮探查污染历史有效认知」。
 
-**待确认事项清单回填协议**（R49 知识生命周期吸收）：裁决序走到「并存标注」仍不能定的项、探查中 AI 拿不准的业务语义，集中落到 `notes/cognition.md` 待确认事项清单段（每项：问题/两源证据锚点/需要谁回填），不散落在各文档的「待验证」字样里自然蒸发。回填后按裁决序重新转正（升级 UserChallenge 的项走 trace-log --decision 留痕），转正即从清单销项——待确认事项清单长度是探查完成度的显式指标，mark-active 抽样核验时可对照。
+**待确认事项清单回填协议**：裁决序走到「并存标注」仍不能定的项、探查中 AI 拿不准的业务语义，集中落到 `notes/cognition.md` 待确认事项清单段（每项：问题/两源证据锚点/需要谁回填），不散落在各文档的「待验证」字样里自然蒸发。回填后按裁决序重新转正（升级 UserChallenge 的项走 trace-log --decision 留痕），转正即从清单销项——待确认事项清单长度是探查完成度的显式指标，mark-active 抽样核验时可对照。
 
 ```
 4. 写入特征卡对应项（不是复制原文，是提取结构化规则）
@@ -129,7 +129,7 @@
 
 > **生成的 skill 须能反向写入项目记忆**：当 AI 在开发过程中发现新规则/教训时，通过 claude-mem 或 .zcode/memories 写入，下次生成 skill 时自动读取。形成"记忆→生成→开发→记忆"闭环。
 
-### 行为观察（R21-B：读"已写下的"之外，再挖"实际做的"）
+### 行为观察（读"已写下的"之外，再挖"实际做的"）
 
 上面读的是开发者**已写下的**规则；实际研发习惯还藏在 git 历史里。自动挖掘出初稿，AI 审读采纳：
 
@@ -333,7 +333,7 @@ graphify export callflow-html # 调用流导出（组件依赖链路段可视化
 
 #### D.0.5 框架探查（从依赖清单+注解+配置文件识别具体框架，激活规则集）
 
-> **★铁律：§D.0 只判前端/后端/异步等大类，§D.0.5 进一步识别具体框架。** 探查到什么框架，就激活 `references/frameworks/<fw>.md` 中对应的框架规则集（唯一来源，T4 起自 domain-knowledge.md 迁出）+ §D.1-B 框架特定构件枚举 + precheck.conf 框架配置变量。**不预设——按探查到的信号动态激活。**
+> **★铁律：§D.0 只判前端/后端/异步等大类，§D.0.5 进一步识别具体框架。** 探查到什么框架，就激活 `references/frameworks/<fw>.md` 中对应的框架规则集（唯一来源）+ §D.1-B 框架特定构件枚举 + precheck.conf 框架配置变量。**不预设——按探查到的信号动态激活。**
 
 **探查方法：从构建文件依赖清单提取框架 starter**
 
@@ -359,16 +359,16 @@ grep -rlE '@Data|@Slf4j|@Builder|@Mapper|@Transactional|@DubboService|@RocketMQM
 find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2>/dev/null
 ```
 
-**框架信号→规则集激活表已数据化外迁：完整表见 `assets/framework-signals.md`（由 `scripts/gen-framework-index.sh` 扫描 `references/frameworks/*.md` §1 生成维护）。运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件。**
+**框架信号→规则集激活表见 `assets/framework-signals.md`（由 `scripts/gen-framework-index.sh` 扫描 `references/frameworks/*.md` §1 生成维护）。运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件。**
 
-<!-- T4 改造：本区块由 gen-framework-index.sh 自动重写，手改内容会被覆盖。脚本失败会保留原文件不动（mv 守卫），不阻塞生成流程。 -->
+<!-- 本区块由 gen-framework-index.sh 自动重写，手改内容会被覆盖。脚本失败会保留原文件不动（mv 守卫），不阻塞生成流程。 -->
 
 # >>> framework-signal-index >>>
-> 本表已数据化外迁（WP-P1/M4）：完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。
+> 完整信号表见 `assets/framework-signals.md`（由 gen-framework-index.sh 生成维护，手改会被覆盖）。
 > 运行时框架识别以 `scripts/detect-frameworks.sh` 输出为准；AI 仅在需要探查细则时按需读该文件，无需常驻上下文。
 # <<< framework-signal-index <<<
 
-> **★版本号提取（与规则文件 §3 适用版本区间匹配，T4 新增铁律）**：探查时须同时提取各框架**版本号**（来源：JVM 项目 `pom.xml` `<version>` / `build.gradle` implementation；Node 项目 `package.json` `"vue": "^3.x"`；Go 项目 `go.mod` `module vX.Y.Z`；Python 项目 `pyproject.toml`/`requirements.txt` `fastapi==0.x`）。将提取到的版本与 `references/frameworks/<fw>.md` §3 规律的"适用版本"区间匹配——区间内规律实例化时附证据；区间外规律标"⚠ 待验证（项目版本 X，规律适用区间 Y）"；框架版本号须写入特征卡第 4 项技术栈摘要。
+> **★版本号提取（与规则文件 §3 适用版本区间匹配）**：探查时须同时提取各框架**版本号**（来源：JVM 项目 `pom.xml` `<version>` / `build.gradle` implementation；Node 项目 `package.json` `"vue": "^3.x"`；Go 项目 `go.mod` `module vX.Y.Z`；Python 项目 `pyproject.toml`/`requirements.txt` `fastapi==0.x`）。将提取到的版本与 `references/frameworks/<fw>.md` §3 规律的"适用版本"区间匹配——区间内规律实例化时附证据；区间外规律标"⚠ 待验证（项目版本 X，规律适用区间 Y）"；框架版本号须写入特征卡第 4 项技术栈摘要。
 
 > **判定产出**：记录"本项目激活以下框架规则集：[spring-boot, mybatis, lombok, sharding, ...]"。后续 §D.1-B 枚举框架特定构件 / §D.3 推导框架约束 / `references/frameworks/<fw>.md` 引用框架规则表 / precheck.conf 填充框架配置变量。
 
@@ -388,7 +388,7 @@ find . -name 'application*.yml' -o -name 'dubbo*.yml' -o -name 'bootstrap.yml' 2
 
 #### D.1 全量穷举方法论（按维度动态适配，确保一个不漏）
 
-**Step 1：按项目形态自动枚举（根据 D.0 判定结果选择维度）**
+**第 1 步：按项目形态自动枚举（根据 D.0 判定结果选择维度）**
 
 **D.1-F 前端 UI 维度（仅当 D.0 判定含前端时）**
 ```bash
@@ -427,7 +427,7 @@ grep -rlE "@Entity|@Table|Schema\(|mongoose\.|sequeliz|CREATE TABLE" <可改源�
 
 **D.1-FW 框架特定构件枚举（仅当 §D.0.5 探查到对应框架时执行）**
 
-> **★T4 改造：各框架完整枚举命令以 `references/frameworks/<fw>.md` §2 为准**——本段仅保留 Java/Node 各框架的示例命令作为快速参考，详细/最新的枚举命令、计数基准、覆盖语言与版本差异，均由 `references/frameworks/<fw>.md` §2（特定构件枚举）维护。探查时按 §D.0.5 激活的 ACTIVE_FRAMEWORKS 逐框架读取对应规则文件 §2 执行，不在本段重复约束。
+> **★各框架完整枚举命令以 `references/frameworks/<fw>.md` §2 为准**——本段仅保留 Java/Node 各框架的示例命令作为快速参考，详细/最新的枚举命令、计数基准、覆盖语言与版本差异，均由 `references/frameworks/<fw>.md` §2（特定构件枚举）维护。探查时按 §D.0.5 激活的 ACTIVE_FRAMEWORKS 逐框架读取对应规则文件 §2 执行，不在本段重复约束。
 
 > 以下按激活的框架规则集动态选择，只枚举探查到的框架的特定构件。
 
@@ -512,9 +512,9 @@ find <可改源码目录> -type f \( -name "util*" -o -name "helper*" -o -name "
 find <可改源码目录> -type f \( -name "config*" -o -name "constant*" -o -name "env*" \) ! -path "*node_modules*"
 ```
 
-**Step 2：解析每个文件的导出签名（非只数文件数）**
+**第 2 步：解析每个文件的导出签名（非只数文件数）**
 
-对 Step 1 枚举到的每个文件，提取其**全部导出**（函数名/类名/store名/类型名/组件名 + 签名）：
+对第 1 步枚举到的每个文件，提取其**全部导出**（函数名/类名/store名/类型名/组件名 + 签名）：
 
 ```bash
 # TS/JS：提取所有 export 行（签名级）
@@ -531,7 +531,7 @@ grep -nH "defineProps\|interface.*Props\|withDefaults\|defineEmits\|defineSlots"
 
 > 优先用 **gitnexus `context <symbol>`**（360度上下文：定义+被引用+引用关系）或 **graphify `explain <symbol>`**（节点邻域）系统性提取签名，而非逐文件 grep。
 
-**Step 3：计数核验（防止样本化填充）**
+**第 3 步：计数核验（防止样本化填充）**
 
 ```
 对每个维度独立核验：
@@ -540,10 +540,10 @@ grep -nH "defineProps\|interface.*Props\|withDefaults\|defineEmits\|defineSlots"
  断言：清单计数 ≥ 枚举计数 × 0.95（允许少量非公开/内部文件不列，但偏差须注明原因）
 ```
 
-> 若某维度清单计数远小于枚举计数（如 10 vs 85），**禁止提交**，回到 Step 2 继续补全该维度。
+> 若某维度清单计数远小于枚举计数（如 10 vs 85），**禁止提交**，回到第 2 步继续补全该维度。
 >
 > **数据映射四维度是机器执法面**：数据模型实体（DIM_DATA_MODEL→§9）、MyBatis mapper XML（DIM_MAPPER_XML→§9）、
-> 定时/批处理任务（DIM_SCHEDULE_JOB→§5）、ORM schema/迁移资产（DIM_ORM_SCHEMA→§8，横向清剿轮补）——`inventory-verify.sh` 按 `assets/inventory-dimensions.conf`
+> 定时/批处理任务（DIM_SCHEDULE_JOB→§5）、ORM schema/迁移资产（DIM_ORM_SCHEMA→§8）——`inventory-verify.sh` 按 `assets/inventory-dimensions.conf`
 > 自动核验这三类清单（漏列整维=FAIL；任务表路径进 --path-check）。字符串耦合层（XML/SQL 列）不进任何
 > Java import 边，这三张清单 + §D.2-B Layer 5/§D.2-J 链路产物就是"漏改字段"的唯一防线，禁止样本化。
 
@@ -689,7 +689,7 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
 ```
 记录：**队列拓扑**、**消费幂等键**、**重试/DLQ 策略**、**消息时序保证**、**背压/限流**。
 
-**消息拓扑配对表（横向清剿轮补：端点名是双边字符串——producer 写 "order-topic" 与 listener 听
+**消息拓扑配对表（端点名是双边字符串——producer 写 "order-topic" 与 listener 听
 "order-topic" 互不知晓，改一边即静默断链，比漏改字段更隐蔽）**：
 ```
 产出：reference-manual §5 消息拓扑配对表（每行：端点名 | 生产侧（file:line）| 消费侧（file:line）|
@@ -712,7 +712,7 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
 追查路径：
  触发器（@Scheduled cron / Quartz CronTrigger / JobParameters / beat_schedule）
  → 任务入口（job 类 / JobBuilder 装配 / tasklet）
- → Step 生成期必读文件：ItemReader（SQL 列清单 / mapper 查询 / 文件字段）
+ → 批处理 Step（生成期必读文件）：ItemReader（SQL 列清单 / mapper 查询 / 文件字段）
                ItemProcessor（实体字段读写 getXxx/setXxx）
                ItemWriter（mapper 写方法 / 批量 SQL 列）
  → 数据资产（读哪些表/实体、写哪些表/实体——读写方向必须记录）
@@ -738,7 +738,7 @@ Layer 5 数据映射链路（有数据访问层时——字符串耦合点，编
 ```
 记录：**同步调用链长度**、**共享DB**、**traceId透传**、**熔断/降级**、**Saga/Outbox 模式**。
 
-#### D.2.5 机器可读关系边集（relations.jsonl——R21-D，§D.2 的索引层）
+#### D.2.5 机器可读关系边集（relations.jsonl——§D.2 的索引层）
 
 调用链的 Markdown 图（mermaid 矩阵/挂载树）给 AI 读；同一批关系再落一份**机器可查的边集**给脚本消费：
 
@@ -890,11 +890,11 @@ grep -nH "^export " <库入口文件>
 - 构建配置：vite.config / webpack.config / tsconfig / electron-builder.yml
 - 目录：src/ packages/ apps/ monorepo?
 - overlay-fork 类（可改层/只读层分离）：patch 机制（patch 清单文件 + inject 脚本?）、符号链接、alias 链
-- **页面知识三角**（R49 知识生命周期吸收，进 reference-manual 前端构件表）：每个路由级页面枚举三答——①操作：页面有哪些按钮/入口/弹窗；②调用：每个操作调哪些 API 及**真实入参**（在调用点反推，前端常只透传一个参数对象，光看 API 定义抽不出字段）；③权限：什么角色/条件可见可点、无权限时如何降级提示。微前端项目另须单独理清主子应用拆分与通信机制（ mounting 方式/通信通道/路由归属），这是 AI 最难自己拼出的部分。
+- **页面知识三角**（进 reference-manual 前端构件表）：每个路由级页面枚举三答——①操作：页面有哪些按钮/入口/弹窗；②调用：每个操作调哪些 API 及**真实入参**（在调用点反推，前端常只透传一个参数对象，光看 API 定义抽不出字段）；③权限：什么角色/条件可见可点、无权限时如何降级提示。微前端项目另须单独理清主子应用拆分与通信机制（ mounting 方式/通信通道/路由归属），这是 AI 最难自己拼出的部分。
 
 ### Python
 
-> **R60-Django 执勤补**：Python/Django 生态的字符串耦合面（模板字段/URL 名/POST 参数/admin 注册/CSV 列头/工厂字段/settings 键/迁移双源等十六类，自动提取只覆盖 import 边）——探查必按 `references/frameworks/django.md` §字符串耦合面清单逐面枚举，字段变更走 spec 四查。
+> Python/Django 生态的字符串耦合面（模板字段/URL 名/POST 参数/admin 注册/CSV 列头/工厂字段/settings 键/迁移双源等十六类，自动提取只覆盖 import 边）——探查必按 `references/frameworks/django.md` §字符串耦合面清单逐面枚举，字段变更走 spec 四查。
 - pyproject.toml / setup.py / requirements.txt: 依赖、版本、entry points
 - 构建：poetry / pip / setup.py / Makefile
 - 目录：src/ pkg/ tests/ scripts/
@@ -1069,8 +1069,8 @@ git --version; gh --version; docker --version
 
 > 探查时用 `gitnexus analyze` + `gitnexus mcp` 或 `graphify .` 构建图谱，用图谱查询调用链/依赖链，**系统性盘点**而非随机 grep。对每个稳定单元记录：签名、路径、用途、复用方式。
 
-#### 11g. 下游影响域（P0 必填，决策 28：标记沿调用链传播）
-> **★铁律（决策 28，Palantir markings-propagate 映射）：禁止改层的稳定单元，其"下游影响域"（1 跳：直接调用该稳定单元的下游文件）必须记录。** `--stable-diff` 门禁的传播段据此反查——本次变更触及下游影响域文件时 warn "依赖禁止改单元 X，改动可能破坏其契约"。只列"禁止改层"的下游；稳定层/不稳定层不强制（它们可改，传播意义弱）。记录在 `reference-manual.md §5` 调用链路图，用机器可读标记 `<!-- stable-propagate: <stable_file> → <downstream1>,<downstream2> -->`，G16 断言扫此标记。
+#### 11g. 下游影响域（P0 必填，标记沿调用链传播）
+> **★铁律（Palantir markings-propagate 映射）：禁止改层的稳定单元，其"下游影响域"（1 跳：直接调用该稳定单元的下游文件）必须记录。** `--stable-diff` 门禁的传播段据此反查——本次变更触及下游影响域文件时 warn "依赖禁止改单元 X，改动可能破坏其契约"。只列"禁止改层"的下游；稳定层/不稳定层不强制（它们可改，传播意义弱）。记录在 `reference-manual.md §5` 调用链路图，用机器可读标记 `<!-- stable-propagate: <stable_file> → <downstream1>,<downstream2> -->`，G16 断言扫此标记。
 | 稳定单元（禁止改层） | 下游影响域（1 跳直接调用者） | 证据 |
 |---------------------|--------------------------|------|
 | `src/repositories/UserRepo` | `src/services/UserService`, `src/services/AuthService` | graphify path / gitnexus trace |
@@ -1143,11 +1143,11 @@ git --version; gh --version; docker --version
 **分析流程（每步须产出具体结果，不可跳过）：**
 
 ```
-Step 1: 动态识别领域边界
+第 1 步：动态识别领域边界
  → 从 14a/14b 的识别结果，确定项目涉及哪些技术领域 + 业务领域
  → 产出："本项目涉及以下领域：[领域A, 领域B, ...]"
 
-Step 2: 逐领域深入分析
+第 2 步：逐领域深入分析
  → 对每个识别出的领域，回答以下问题（须有代码/文档证据）：
  (1) 该领域在本项目中的核心实体是什么？（从代码提取，非猜测）
  (2) 这些实体间的因果关系是什么？（A 导致 B，B 依赖 C）
@@ -1155,8 +1155,8 @@ Step 2: 逐领域深入分析
  (4) 当前代码是否遵循了这些约束？有无违反迹象？
  (5) 这些约束在本次变更中是否可能被破坏？
 
-Step 3: 推导客观规律
- → 基于 Step 2 的分析，推导出该领域在本项目中的客观规律
+第 3 步：推导客观规律
+ → 基于第 2 步的分析，推导出该领域在本项目中的客观规律
  → 每条规律格式："因为 [代码证据/文档证据/行业常识]，所以 [客观规律]，违反则 [后果]"
  → 产出：写入 reference-manual.md "领域知识"段
 ```
@@ -1165,13 +1165,13 @@ Step 3: 推导客观规律
 
 | 分析步骤 | 具体产出 |
 |---------|---------|
-| Step 1 识别 | 识别到项目含 IM 通讯领域（依据：`chat/` 目录 + Matrix/IRC/XMPP 协议依赖 + gateway/notice 相关文件） |
-| Step 2(1) 核心实体 | Message（消息）、Thread（会话线程）、Gateway（网关）——从代码类名提取 |
-| Step 2(2) 因果关系 | Gateway 状态变化 → 触发 Notice → 展示 Banner → 用户感知；消息发送 → 经过网关 → 落库 → 推送 |
-| Step 2(3) 客观约束 | 因为消息有时序性（代码证据：timeline 排序逻辑），所以消息顺序不可乱；因为已读状态会被多端同步（代码证据：多端 ACK 逻辑），所以已读须幂等；因为网关可能断线（代码证据：重连逻辑），所以离线消息须缓存 |
-| Step 2(4) 遵循情况 | 当前代码遵循时序（timeline 按 timestamp 排序）✓；已读状态无幂等键 ⚠ |
-| Step 2(5) 变更风险 | 本次变更如改消息发送逻辑，须保证时序不乱；如改已读逻辑，须加幂等键 |
-| Step 3 推导规律 | "因为消息有时序性（timeline 排序），所以消息发送/存储须保序，违反则消息错乱"；"因为已读状态多端同步，所以已读更新须幂等（idempotency-key），违反则重复通知" |
+| 第 1 步 识别 | 识别到项目含 IM 通讯领域（依据：`chat/` 目录 + Matrix/IRC/XMPP 协议依赖 + gateway/notice 相关文件） |
+| 第 2 步(1) 核心实体 | Message（消息）、Thread（会话线程）、Gateway（网关）——从代码类名提取 |
+| 第 2 步(2) 因果关系 | Gateway 状态变化 → 触发 Notice → 展示 Banner → 用户感知；消息发送 → 经过网关 → 落库 → 推送 |
+| 第 2 步(3) 客观约束 | 因为消息有时序性（代码证据：timeline 排序逻辑），所以消息顺序不可乱；因为已读状态会被多端同步（代码证据：多端 ACK 逻辑），所以已读须幂等；因为网关可能断线（代码证据：重连逻辑），所以离线消息须缓存 |
+| 第 2 步(4) 遵循情况 | 当前代码遵循时序（timeline 按 timestamp 排序）✓；已读状态无幂等键 ⚠ |
+| 第 2 步(5) 变更风险 | 本次变更如改消息发送逻辑，须保证时序不乱；如改已读逻辑，须加幂等键 |
+| 第 3 步 推导规律 | "因为消息有时序性（timeline 排序），所以消息发送/存储须保序，违反则消息错乱"；"因为已读状态多端同步，所以已读更新须幂等（idempotency-key），违反则重复通知" |
 
 > **关键区别：** 上面的规律不是从通用清单复制的"消息有序性须保证"——而是从项目实际代码（timeline 排序逻辑）分析得出的**具体约束**（"因为 timeline 按 timestamp 排序，所以须保序"）。通用清单只做参考，具体规律须从代码证据推导。
 

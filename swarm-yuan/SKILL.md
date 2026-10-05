@@ -40,7 +40,7 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 | 1 | 自检 | `bash scripts/self-check.sh --check-only`（运行时检测 + 文档一致性） |
 | 2 | 读项目知识 | AGENTS.md/CLAUDE.md/claude-mem 提取规则；`scripts/mine-habits.sh` 行为统计初稿（AI 审读：铁律引用 / 开发偏好节 / 注意事项三去向） |
 | 3 | 探查仓库 | 三路并行子代理（结构/规范/代码组织，方法论见 exploration-guide），每路启动前 `assets/trace-log.sh` 公告并落盘 |
-| 4 | 形态判定 + 组件库清单 + 调用链 | 按 exploration-guide §D 穷举 + 计数核验（≥ 枚举 × 0.95）；gitnexus/graphify 图谱；`scripts/relations-extract.sh` 提取声明式映射边（XML↔接口/实体/bean 装配等字符串耦合，编译不校验） |
+| 4 | 形态判定 + 组件库清单 + 调用链 | 按 exploration-guide §D 穷举（组件/接口/数据/对外契约面等维度按形态选）+ 计数核验（≥ 枚举 × 0.95）；gitnexus/graphify 图谱；`scripts/relations-extract.sh` 提取声明式映射边（XML↔接口/实体/bean 装配等字符串耦合，编译不校验） |
 | 4.5 | 框架深化与门禁注入 | `scripts/framework-evidence.sh` 取证 + AI 判断实例化（每条规律须项目代码证据，无证据剔除并记录反例）→ `bash scripts/generate-skill.sh --inject-frameworks <skill-dir>` 把门禁片段挂入 precheck 标记区块（实例化在 Step 7 填充后做，注入须在 Step 12 前完成） |
 | 5 | 特征卡 | 特征项写入认知缓冲（P0 强制项落具体值不用占位符；映射表见 template-spec §3） |
 | 6 | 创建骨架 | `bash scripts/generate-skill.sh <name> <project-dir>`（auto/lite/standard/compliance 四档，默认 auto 按项目自适应） |

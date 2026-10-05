@@ -37,7 +37,7 @@ LHH 的出发点与「不断加长上下文/轨迹」的路线相反：**长任�
 
 与 swarm-yuan 已有的四权分离拓扑（policy-guardian/action-executor/self-reviewer/verifier）同构：LHH 的三角色是我们后三权的合并视图；我们的 policy-guardian（改治理资产前的立法侧审查）是 LHH 没有的维度，保留。**吸收点不在拓扑，在下面四个实现细节。**
 
-## 三、关键机制（实现级，本轮吸收落地）
+## 三、关键机制（实现级，已吸收落地）
 
 ### 3.1 审计证据引用（evidence ref）
 
@@ -93,7 +93,7 @@ Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 - 收益最大的是**跨长轨迹相互依赖状态**的任务；单步能力瓶颈型任务收益小
 - 案例二则：① 交互卡死不再原地重试 400 步，而是把「已审计的进度」记入状态，从断点继续；② 假完成拦截——视觉上对了但违规走了 XML 直改底层，Auditor 查底层证据拆穿
 
-## 五、长程编排拓扑：Harness / Loop / Graph 三层嵌套与评估（R88 增节）
+## 五、长程编排拓扑：Harness / Loop / Graph 三层嵌套与评估
 
 > 来源：《Harness、Loop Engineering、Graph Engineering：如何选择，如何评估》（B 级，2026-10 公众号文章，框架完整）。核心纠偏：**三层不是三选一的流派，是同一系统里嵌套的三个控制层**——比较"用哪个"从问题定义就偏了，该问"每层各自的证据在哪里"。
 
@@ -103,7 +103,7 @@ Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 |----|-----------|--------|----------------|
 | **Harness** | 模型/工具/权限/轨迹的**可信运行边界** | 权限判定、沙箱、hook、审计 | 门禁四族 + rules.d 三值 + fail-gate-hook + gate-deny.jsonl |
 | **Loop** | 单阶段内的**自我修复闭环** | 评估→修复→重评，收敛判据 | ⑥测试→fail→⑤修复环→重跑；误报→调 conf 重跑 |
-| **Graph** | 阶段间的**拓扑**（依赖/审批/发布） | DAG 编排、断点恢复 | 生成流程 ⓪-⑨ 与 开发工作流 九节点状态机（前序产出物守卫） |
+| **Graph** | 阶段间的**拓扑**（依赖/审批/发布） | DAG 编排、断点恢复 | 生成流程 Step 1-12 与开发工作流 九节点状态机（前序产出物守卫） |
 
 **三条设计原则**：trust boundary（非全局只读上下文，边界内才可见）/ 最小领域知识原则（用图返回的元信息路由，不猜全局状态）/ common format（trace 与 checkpoint 统一格式——跨层可审计的前提）。
 
@@ -138,4 +138,4 @@ Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 - 论文：arXiv:2608.01964；Website: lh-harness.pages.dev
 - 源码实测（2026-08-16，浅克隆 v0.1.5）：`manager.py` MEA 主循环 / `auditor_agent.py` 报告协议与机器守卫 / `prompt_texts.py` 契约规则 / `adapters/*` AgentAdapter（Claude Code/Codex/DeepSeek Harness 三后端）
 - 关键诚实披露：中文报道所称「Requirement/Artifact/Fact 三类记录」在代码中无对应 schema，实为 Manager 输出的四分类段落（口语化表述）；「Manager 2-8% token」为论文侧数据，仓库内无脚本可复算；auditor 的「只读 shell allowlist」仅存在于 prompt 文本，代码级靠工作区快照 diff 兜底
-- §五 增节来源（R88 2026-10-04）：《Harness、Loop Engineering、Graph Engineering：如何选择，如何评估》公众号文章（B 级转述，checkpoint 字段/指标五件为文中公式化内容，未核对原始论文）
+- §五 来源（2026-10-04）：《Harness、Loop Engineering、Graph Engineering：如何选择，如何评估》公众号文章（B 级转述，checkpoint 字段/指标五件为文中公式化内容，未核对原始论文）

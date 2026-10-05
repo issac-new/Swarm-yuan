@@ -2,9 +2,8 @@
 
 # 发布后基线对比监控（canary，文档化）
 
-> 此文档原为 `check_canary` 门禁（advisory 档），于 2026-07-27 决策 26.1 等价替换为
-> `check_loop_oracle`（strict 档），以腾出门禁预算（决策 26.2 冻结 55 上限）。
-> canary 监控能力以本文档 + `scripts/setup-loop.sh --verify` 形式保留——
+> canary 监控以本文档 + `scripts/setup-loop.sh --verify` 形式落地，
+> 由 strict 档 `check_loop_oracle` 门禁承载——
 > 用户可 `bash scripts/setup-loop.sh "发布后监控" --verify '<canary 验证命令>'`
 > 启动 Oracle Gate 循环做发布后基线对比。
 
@@ -43,4 +42,4 @@ bash scripts/setup-loop.sh "发布后 canary 监控" \
 ```
 
 AI 输出 `<promise>CANARY_OK</promise>` 后，hook 独立跑 verify（canary 基线 latency<500ms），
-拒绝则 loop 继续——比原 advisory 门禁的 warn 强制力更强。
+拒绝则 loop 继续——strict 档 fail-closed，比 warn 级 advisory 提示强制力更强。

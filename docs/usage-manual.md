@@ -468,12 +468,12 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 | **门禁 vs rules.d 规则** | 门禁=检查**代码与仓库状态**的 bash 函数（55 个，四结果）；rules.d=判定**命令该不该执行**的数据规则（三值）。前者管"代码合不合规矩"，后者管"命令让不让跑"。 |
 | **hooks/ 目录 vs scripts/ 目录** | 目标技能里：`scripts/` 放全部可执行脚本（含 5 个钩子脚本）；`hooks/` 只放 `hooks.json`（宿主钩子注册配置）。 |
 | **draft vs active** | 目标技能的两个生命周期状态：draft=骨架未填满（禁全量门禁，防半成品错觉）；active=验证无占位符后激活（全量解锁）。 |
-| **WP-/R-/决策编号** | 历史工作包/调研轮/决策记录的**考古标签**（如 WP-Q2H-B、R13、决策 35），用于追溯"为什么改成这样"。它们不是系统概念，新人无需记忆——正文出现的概念一律以本语文义为准。 |
+| **WP-/R-/决策编号** | 历史档案（design-evolution/CHANGELOG/docs/research 文件名）中的溯源标签（形如 WP- 工作包号、R 加数字的轮次号、决策加数字的决策号），用于追溯"为什么改成这样"。它们不是系统概念；终态文档正文不使用，读者只在历史档案里会遇到。 |
 | **verifier v1 vs v2** | v1=内部自洽验收（改动前后行为一致吗——CI 强制）；v2=外部有效验收（门禁能拦真实 bug 吗——测量脚本已落地、语料待采集，未达阈值前对外禁用"100% 可靠"）。 |
 
 ---
 
-### 标准术语对照表（R69 黑话清零·禁用词清单，2026-09-26）
+### 标准术语对照表（黑话清零·禁用词清单）
 
 > **纪律**：用户面文档（SKILL.md / README / references/*.md）禁止使用下列自造词——用右列标准术语；新增写作前先读本表。机器锚（变量名/gate id/文件名/占位词/【生成器侧】）不受此约束。防复发锁：`tests/test-r68-jargon-free.sh`。
 
@@ -529,7 +529,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 - **FAIL-open / fail-closed**：失败时放行 / 失败时拒绝。权限边界一律 fail-closed；fail-open 只用于有下层兜底处。
 - **五层认知（cognition）**：`references/cognition-framework.md` 定义的五层框架（认知递进/思维语言/认知辩证/偏差防范/辩证认知），特征卡第 13 项的认知基底；属建议性体检（`--cognition` 出报告不判违规），不是门禁家族。
 - **spec / spec 模板**：任务规格（每次开发任务的合同），模板 25 节按任务类型裁减（§25 功能点估算 feature 档选填）。
-- **生成流程（生成流程）**：生成器把一个仓库变成目标技能的 12 步流程（Step 0-12，逐步详解在 references/generation-flow.md）。
+- **生成流程**：生成器把一个仓库变成目标技能的 12 步流程（Step 1-12，逐步详解在 references/generation-flow.md）。
 - **开发工作流（执勤工作流）**：目标技能里的九节点开发工作流（①需求理解→②探查→③设计 spec→④实施 plan→⑤编码→⑥测试→⑦独立审查→⑧合入→⑨发布，载体是目标技能的 references/workflow.md）。
 - **档（参考文档）**：references/ 目录下按需阅读的参考文档的简称（"47 档"=47 个 .md 文件；每档开头有"何时读我"路由行）。
 - **随技能分发**：随目标技能一起安装分发——generate-skill.sh 的 UNIVERSAL_FILES 清单列出的文件会拷进每个目标技能；不在清单里的文档只存在于生成器仓，目标技能读不到。
@@ -568,6 +568,6 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 | 生成流程逐步口径 | `swarm-yuan/references/generation-flow.md`（Step 1-12） |
 | 79 框架各自的规则 | `swarm-yuan/references/frameworks/` |
 | 验收体系怎么运作 | `verifier/README.md` 与 `verifier/v1/acceptance-criteria.md` |
-| 调研证据（方案怎么长出来的） | `docs/research/`（R1-R20，R10 无报告） |
+| 调研证据（方案怎么长出来的） | `docs/research/`（各轮调研报告，文件名带轮次编号） |
 
 > 维护注记：本段是解释层，不承载规格——若与设计文档（`swarm-yuan/README.md`）冲突以设计文档为准，并视为本段需要修订；发现歧义请按"术语词典"先对齐命名再讨论。

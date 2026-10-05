@@ -24,7 +24,7 @@ grep -q '必须含四查' references/template-spec.md && grep -q '对外契约�
   && ok "L1 D1 四查+契约面在位" || bad "L1 template-spec 缺四查/契约面（D1 回归）"
 grep -q '页面三角表' references/template-spec.md \
   && ok "L2 D5 页面三角承载位在位" || bad "L2 template-spec 缺页面三角表（D5 回归）"
-grep -q '待确认事项清单（R58-D6 生成承载）' references/template-spec.md && grep -q 'notes/cognition.md' references/template-spec.md \
+grep -q '待确认事项清单（生成承载）' references/template-spec.md && grep -q 'notes/cognition.md' references/template-spec.md \
   && ok "L3 D6 待确认事项清单整合在位" || bad "L3 template-spec 缺待确认事项清单整合（D6 回归）"
 grep -q '内容演化走 git diff' SKILL.md \
   && ok "L4 D8 三态触发双路在位" || bad "L4 SKILL.md 缺三态双路（D8 回归）"

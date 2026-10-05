@@ -402,7 +402,7 @@ ocr 新增 LLM provider 支持：
 | 系统调试 | 4 阶段根因定位（root-cause-tracing / defense-in-depth / condition-based-waiting） | `--review` 可引用 |
 | 验证前完成 | 确保"真的修了"而非"以为修了" | goal-backward 可引用 |
 
-## pre-emit 引用门与置信度标定（gstack #1539 吸收，治 fail-open/误报）
+## pre-emit 引用门与置信度标定（gstack #1539，治 fail-open/误报）
 
 > 来源：gstack review/SKILL.md:1241-1276（pre-emit 验证门）+ cso/SKILL.md:1012-1046（置信度标定 + 并行独立验证）。
 
@@ -445,89 +445,72 @@ ocr 新增 LLM provider 支持：
 
 **对脚本/技能/prompt 测试的特殊提醒**：swarm-yuan 自身的脚本（precheck.sh/state-machine.sh/trace-log.sh）和生成的技能 prompt 不宜用 grep 式测试（string-presence trap）。可观察的是行为（exit code / 输出结构 / 副作用），不是文本存在性。fixture 正反例测试（violating/compliant）是行为测试的正解--它断言门禁在违规项目 fail、在合规项目 pass，而非断言脚本"含有某段代码"。
 
-## ocr / codex-security / ruflo / impeccable 要点（2026-09 核）
+## 上游审查工具要点（ocr / codex-security / ruflo / impeccable）
 
-> 调研档案 `docs/research/R16-runtime-refresh.md`。
+> 来源：ocr / openspec / gstack / comet 等上游 release 调研（调研档案见 `docs/research/`）。
 
 - **语义文件分组审查**（ocr #808，v1.10.0 headline）：LLM 先聚类变更文件（≤10 文件/组），每组一个 sub-agent 独立上下文审查——大 diff 降本直接模式，与两阶段审查互补。
 - **跨 session findings 比较**（ocr #922）：按 path+category+snippet（**非行号**）匹配，new/persisting/resolved/not-reviewed 四象限——为 scoped re-review 提供行号无关匹配键。
 - `--effort low/medium/high`（MaxReviewRounds 1/2/3）登记为 review 分档候选。
 - **assess-patch-risk 五值裁决**（codex-security #654/#664）：SHA-256 绑定工件 + 五维 + merge/revise/no_op/block/hold_for_evidence 五值 + auto_merge_candidate。登记候选。
 - **dream cycle**（ruflo）：假设评估前冻结 + 对抗性 critic 复现 + ACCEPT-scoped 落地。登记候选。
-- **impeccable skill-v4.1.2**：Stop hook 改发 Codex decision 格式——gate 输出必须匹配宿主拦截协议否则形同虚设。登记候选（R12 fail-gate 同向印证）。
+- **impeccable**：Stop hook 发 Codex decision 格式——gate 输出必须匹配宿主拦截协议，否则拦截形同虚设（本仓 fail-gate-hook 同款实现）。
+- **评审成本/深度可配置化**（ocr v1.11.6）：effort / max_tokens_budget / llm_reasoning_effort 一等评审控制。
+- **解析器不得静默改写**（openspec v1.13.0）：delta parser 不再静默改写/丢弃所写内容；apply 对无 delta specs 变更警告。ocr v1.11.7：报告原子写入 + 二次信号立即退出。
+- **预览=执行同一选择集**（ocr v1.11.9 #801）：`--preview` 应用与评审相同的选择函数，不允许平行实现。
+- **validate 拒绝的状态 apply 不得放行**（openspec v1.13.1 #1868）：apply 块按声明产物校验；不可解析全局 config 不触碰（#1876，坏输入不动原物）；未识别 checkbox 计为未完成（#1773 保守计数）。
+- **预算传播**（ocr v1.12.5 #1248）：运行中 group 内强制 --max-tokens-budget——预算界必须覆盖运行态。
+- **pass^3 / pass@3 双口径判据**（comet 0.4.0 官方评测机制，C 级证据）：pass^3=三次**连续**全过（稳定性），pass@3=三次内过任意一次（能力上界）；单次全绿只是准入，连三绿才是收敛。**裁判与运动员分离**：评测 judge 与 execution 分离（独立 agent / 模型 / baseUrl / 凭证）——被评对象不得自证，verifier 跑评测作业时照此配置。**评测集纪律**：用真实日常任务集（勿玩具任务），好坏样本配对防全绿假象。
+- **测试不得写用户真实环境**（ocr v1.12.6 #1416）：TestMain 隔离会话写入与真实 HOME——界画在测试进程边界。
+- **临时豁免必须有退出机制**（ocr v1.12.7 #1445）：最后一个 TEMPORARY english-only 豁免撤销——豁免登记即登记退出条件。allowlist 排除 pytest-style test_*.py 出评审（#1439）——评审对象选择显式化，测试代码不进评审范围。
+- **配置值进 shell 前校验**（ocr v1.12.9）：credential 命令执行前校验（拒绝 shell 元字符 + 明文凭据告警）；config 更新保留未知 JSON 字段（#1508，向前兼容守卫）；findings 跨文件重命名保持（#1529，评审状态与路径解耦迁移）。
 
-### R17 补核（2026-09-05）
 
-> 调研档 `docs/research/R17-runtime-refresh.md`；ocr v1.11.2-4 / ruflo v3.38.21 patch 线对账通过。
+## 未跑即不通过与操作语义分区判定
 
-- **impeccable v4.2.0 候选**：Comps 可执行契约阶段门（"声称已交付"前先过还原度门）+ 录制回放钉行为（830 命令逐字节回放——cli-ab 同构）。引用基线维持 v4.1.1（候选级）。
-
-### R18 补核（2026-09-06）
-
-> 调研档 `docs/research/R18-runtime-refresh.md`；openspec / ocr / ruflo / superpowers / ECC / codex-security 零增量对账通过。
-
-- **impeccable skill-v4.2.1（2026-09-05）**：Windows 引擎时间戳签名 + 下载失败三态区分 + 非交互 Claude 会话技能发现——候选级维持，engine-v0.1.2 线起。
-- **R20（2026-09-09）**：ocr **v1.11.6**——一等评审控制（effort / max_tokens_budget / llm_reasoning_effort + live progress）：**评审成本/深度可配置化**上游实证。档案 `docs/research/R20-runtime-refresh.md`。
-- **R22（2026-09-10）**：openspec **v1.13.0**——**delta parser 不再静默改写/丢弃所写内容**（fence-aware 空行整理 + bullet 识别 + 重复 ADDED 段全应用）+ apply 对无 delta specs 变更警告——「解析器不得静默改写」诚实性族新样本；「validate 拒绝的状态 apply 却放行」口径统一由此登记（R34 推进到产物级）。ocr **v1.11.7**（报告原子写入 + 二次信号立即退出）。档案 `docs/research/R22-runtime-refresh.md`。
-- **R24（2026-09-11）**：ocr **v1.11.8**——**Rego policy review 支持**（规则面新语言）+ **预览选择与执行对齐**（展示=执行口径一致族新样本，与 gsd「no-op 报真实条件」同族）。档案 `docs/research/R24-runtime-refresh.md`。
-- **R26（2026-09-12）**：ocr **v1.11.9**——**`--preview` 应用与评审相同的选择集**（#801——预览=执行口径族**第三实例**：预览与执行消费同一选择函数，不允许平行实现）。viewer compare 页（#1175）纯查看器面。档案 `docs/research/R26-runtime-refresh.md`。
-- **R27（2026-09-13）**：ocr **v1.12.0**——名义 minor 实薄轮（分组文件索引 perf + viewer store 会话态），无新方法论原语。**口径注记：版本号标签 ≠ 实质判定**（吸收判定以内容为准）。档案 `docs/research/R27-runtime-refresh.md`。
-- **R29（2026-09-16）**：gstack **v1.87.0.0**（71f6048→4a3c6a8）——①**v1.86.0.0 按 harness 路由外部评审**（#2850）：评审意见按来源 harness 的能力/语义路由到对应处理通道——评审输入不是同质文本流（「模型生成文本不是协议面」的评审侧镜像）；②**v1.87.0.0 CSO 可验证审计 + 可重放修复包**（#2852）：审计结论附可独立复核证据链 + 修复动作打包为可从快照重放的 bundle（过期快照须从供给源重放）——把「审过了/修好了」从断言变为可验证对象（诚实口径族治理面极端形态）。ocr **v1.12.2** 薄轮对账通过（preview 总量圈定 tracked 变更集——展示=执行口径族延续）。档案 `docs/research/R29-runtime-refresh.md`。
-- **R32（2026-09-16）**：ocr **v1.12.4**（薄轮）——①#1310 超大未跟踪文件**读前跳过**：进入读取前先量体积边界（预算前置族：不可控输入先验界再消费）；②#1288 untracked binary 判 binary：不可分析输入显式分类（诚实族）；③#1156 action 可选 pr_number + workflow_run 触发回退：事件源第二通道。档案 `docs/research/R32-runtime-refresh.md`。
-- **R34（2026-09-17）**：openspec **v1.13.1**（修复批）——①**schema validate apply 块按声明产物校验**（#1868）：apply 面消费的产物必须落在 spec 声明集合内——「validate 拒绝的状态 apply 却放行」口径统一从段级（R22 delta 段语义）推进到产物级，**第二条实证线**；②**delta 段外 requirements 显式报告**（#1804，不可分类≠静默跳过诚实族）；③**不可解析全局 config 不触碰**（#1876）——坏输入不动原物，读失败时写路径止步（破坏性操作守卫族，与 ruflo 3.41.2「我的产物 vs 用户资产」同向）；④**update-change 草稿-提交两阶段**（step 4 先 draft 终步才写——中间态不落盘，与 gsd staging 一次性 rename 同族）；⑤未识别 checkbox 计为未完成（#1773 保守计数）。方法论注记级吸收。档案 `docs/research/R34-runtime-refresh.md`。
-- **R35（2026-09-17）**：ocr **v1.12.5**（viewer 批 + 预算/同意两主线）——①**运行中 group 内强制 --max-tokens-budget**（#1248）：预算从入口延伸到运行中途的子群体——**预算传播族**评审侧实证（界必须覆盖运行态）；②**bot 自有过期评审线程 opt-in 才处置**（#567/#944）：自身历史产出默认不动、显式授权后才清理——**同意面**新样本（自有产物不豁免处置授权）；③kimi code plugin（#1355）平台适配器家族加宽；④增量评审重叠评论去重（#1359）+ 全局 code search 结果上限（#1306）——幂等输出/有界读取族延续；⑤截断 resume tail 容忍（#1312）+ CRLF 尾随 CR 剥离（#1302）——先归一再分析族。viewer 重设计六项无方法论原语。档案 `docs/research/R35-runtime-refresh.md`。
-- **R37（2026-09-18）**：comet **0.4.0 官方评测机制**（经行者明灵《Harness实践》上下篇转述，C 级证据；comet 基线 0.4.1 不变）——①**pass^3 / pass@3 双口径判据**：pass^3=三次**连续**全过（稳定性），pass@3=三次内过任意一次（能力上界）；单次全绿只是准入，连三绿才是收敛——与本仓"收敛判据=零新缺陷的完整轮"同构，登记为评测双口径名（官方 16 任务×48 运行：pass^3 87.5% / pass@3 100%）；②**裁判与运动员分离**：comet eval 的 judge 与 execution 四重分离（独立 agent / 模型 / baseUrl / 凭证）——被评对象不得自证，与三权分立（立法/执法/司法）同构的上游第二实证；verifier 跑评测作业时照此配置；③**独立只读 Verifier 形态**：Native 流程 Verify 相由无写权限的独立 agent 验收（只读、不改、只报不通过与原因）——司法权的组织形态样本；④**评测集纪律**：用真实日常任务集（勿玩具任务），好坏样本配对防全绿假象。档案 `docs/research/R37-harness-practice-absorption.md`。
-
-- **R38（2026-09-18）**：ocr **v1.12.6**（IDEA 插件 + viewer 重设计批）——①**TestMain 隔离会话写入与真实 HOME**（#1416）：测试运行不得写用户真实环境——测试卫生族（与 ruflo R27「写操作须辨我的产物 vs 用户资产」同谱系，界画在测试进程边界）；②**license/english-only 门禁扩展到 kt/py/css**（#1407）：门禁覆盖面必须随语言面同步扩展，新语言入库先入门禁；③IDEA plugin（#1031）平台适配器家族加宽（登记）；④viewer restyle 六项与 Windows updater console 修复无方法论原语（查看器面不吸收先例）。档案 `docs/research/R38-runtime-refresh.md`。
-- **R40（2026-09-19）**：ocr **v1.12.7**（门禁收口批）——①**最后一个 TEMPORARY english-only 豁免撤销**（#1445）：临时豁免必须有退出机制，门禁承诺全量兑现（license 门禁族收口——豁免登记即登记退出条件）；②**allowlist 排除 pytest-style test_*.py 出评审**（#1439）：评审对象选择显式化——测试代码不进评审范围（进入分析前先分类，与 1.12.4 untracked binary 判 binary 同族）；③viewer 会话导出自包含 HTML（#1167，查看器面不吸收先例）；④IDEA/VSCode 注释英译批（#1427-1437，卫生面）。档案 `docs/research/R40-runtime-refresh.md`。
-- **R42（2026-09-22）**：ocr **v1.12.7→v1.12.8**（路径与扫描面批）——①**git 引号包裹路径名解析**：diff 解析 quoted pathname（解码而非丢文件），非 ASCII/空格路径不静默掉出评审面——**机器产出格式的转义形态必须被解析方理解**（与 ncwk Git 面板 C 转义还原同族第三实证）；②**ls-files NUL 分隔保持**（#1497）：路径枚举走 NUL 分隔通道不丢路径（同族：分隔符选择即数据完整性）；③**依赖与构建产物目录默认排除**：扫描对象进入分析前先圈定边界（node_modules 等不默认入面）；④**显式 llm_protocol 尊重**（#action）：用户显式配置优先于工具默认强制（同意面在协议字段级）；⑤大结果集分页（读取有界化）+ F# 支持（语言面）+ API key 存储口径文档纠正（文档诚实性）。薄轮不开档，基线行承载。
-- **R43（2026-09-22）**：ocr **v1.12.8→v1.12.9**（10 commits 安全与一致性批）——①**credential 命令执行前校验**：validateKeyCmd 拒绝 shell 元字符进 api_key_cmd/auth_token_cmd + 明文凭据告警（配置值进 shell 前校验，防篡改/误配执行破坏性表达式——fail-closed 命令通道族）；②**config 更新保留未知 JSON 字段**（#1508：配置写回不得静默丢弃不认识的字段——向前兼容守卫，与 openspec「坏输入不动原物」同族）；③**findings 跨文件重命名保持**（#1529：评审状态与路径解耦迁移）；④--commit 后台通道隔离 git stderr（#1467，机器通道防污染）+ CI action 钉全 SHA（#856，供应链面）+ 引号路径解析改真实 git 子进程钉行为（测试卫生）。薄轮不开档，基线行承载。
-
-## 未跑即不通过与操作语义分区判定（openspec 1.13.2 吸收，2026-09-25 R57 核）
-
-> 证据锚点 `docs/research/R57-runtime-refresh.md`。
+> 来源：openspec 1.13.2。
 
 - **未验证维度不得报通过**：跳过的检查记 `Not verified`，终评必须点名，**任一检查未跑就不得宣称可归档**。
-- **验证按操作语义分区判定**：ADDED 查存在、REMOVED **反向查**（查不到才正确、行为仍在才 critical）、RENAMED 不查旧名。此前一律当「查实现」，**正确删除的需求被判 CRITICAL 并建议补实现**。
+- **验证按操作语义分区判定**：ADDED 查存在、REMOVED **反向查**（查不到才正确、行为仍在才 critical）、RENAMED 不查旧名。一律当「查实现」会把**正确删除的需求误判 CRITICAL 并建议补实现**。
 - **对外部契约做诚实性测试**：prompt 引用的字段都要与真实 CLI 输出对账 + 守门测试。
 - **破坏性操作「atomic rename 认领」后再读、比对确认才删**：竞态写入要么被比对还原、要么成新文件**永不被删**。
 
-## allowlist 模板化与上游基线保留 + 发布面 QA/文档门禁（R74 核，2026-09-29）
+## 规则生成物基线优先与发布面门禁
 
-> 证据锚点 `docs/research/R74-runtime-refresh.md`。
+> 来源：ocr 1.12.11 / gstack v1.91.7.0。
 
 - **规则生成物不得覆写基线**（ocr 1.12.11 #1056）：allowlist 规则可经 Jinja 模板批量生成，模板展开结果与上游规则冲突时**上游基线优先**（「preserve upstream rules after Jinja conflict resolution」）——配置合并语义：生成/派生层与人工基线冲突，输的一律是生成层；与本仓「投影不得改写真身」I4 不变量同构。
 - **diff 基线显式化**（ocr 1.12.11 #1544）：IDEA 插件列举 merge commit 文件改为对 **first parent**——比较基线必须显式钉定（与 gsd-core #5008 merge-base 钉定同族），否则「改了什么」本身失真。
-- **发布面三项门禁再会师**（gstack tip v1.91.7.0）：surface-aware 探索式 QA 门禁（QA setup 权威在主流程集成后保留——委托权威不被集成吞没）+ 发布前文档检查门禁（原子写入+归因）+ **发布点 fail-closed**。QA 证据、文档门禁、发布 fail-closed 三项在第三方 harness 与本仓交付门禁族同向收敛。
+- **发布面三项门禁**（gstack v1.91.7.0）：surface-aware 探索式 QA 门禁（QA setup 权威在主流程集成后保留——委托权威不被集成吞没）+ 发布前文档检查门禁（原子写入+归因）+ **发布点 fail-closed**。
 
-## 测试真实性会师与派生制品发布序（R79 核，2026-09-30）
+## 测试真实性与派生制品发布序
 
-> 证据锚点 `docs/research/R79-runtime-refresh.md`。吸收判据两问（决策 46）逐条过：落点本档=分发行，审查执勤触达。
+> 来源：gstack v1.91.8.0 / v1.91.9.0、graphify 0.9.72。
 
-- **测试真实性三连**（gstack v1.91.8.0 #2994）：① 行为测试不得伪造产品内部——inline mirror server 换成 ephemeral 端口跑真 `serve()`、源码 grep 断言换成行为断言（/internal/grant+revoke 真 token 矩阵）；② 无消费方的死评价资产退役——oracle 无 paid caller 即连同 52 个孤儿 fixture 一起删，不留「看起来在守护」的不生效资产；③ **never-green 退役**——断言为空或必不能有意义的测试删除而非容忍，永红的测试训练团队忽视红。与本仓 Mutation Check（绿≠有效）、R70「CI 连红五轮无人察觉」流程根因、test-upgrade-hygiene「断言 git 视角真实效果非文件存在表面断言」四面会师。吸收点：审查生成物测试面时核对——行为断言不得钉实现文本（防复发锁除外，锁的本职就是钉文本，R78 豁免边界先例）；退役资产连注册表行一起清（touchfile/清单残留=新死信号）。
-- **测试价值条常态化**（gstack v1.91.9.0 #2998）：test value bar 进 plan-eng-review/review/qa/ship 四流程 + 独立 /test-audit 命令——测试资产本身是被评审对象，价值维度在交付链每个节点在场而非事后专项。与本仓 Step 10 Mutation Check 会师；本仓审查清单已含测试有效性维度，无新增落地单元（记档）。
-- **派生制品按依赖序原子发布**（graphify 0.9.72 #3853）：label sidecar 先于 signature 发布、整体原子写——中断的重建不得留下「为已不存在的聚类而写的悬空标签」。多文件派生状态的发布须定安全顺序：**被依赖者先写**，中断在任意点都不产生悬空引用。吸收点：生成物多文件写回（hooks+commands+settings 三族）与 memory-writeback 的写序审查可对照——先写引用方后写被引用方=中断即悬空。
-- **可选依赖缺失 warn-once**（graphify 0.9.72 #3702）：pypdf 缺失时从「静默零产出」改为一次性显式告警——工具在跑、exit 0、输出为空是最隐蔽的死信号形态。与 R75-F1「规则集在册≠链路可达」同族补全：**依赖在册≠能力可用**。吸收点：降级载体「未装不阻塞」维持设计，但降级发生须可见（一次性提示），审查生成物降级路径时核对降级是否无声。
+- **测试真实性三连**（gstack v1.91.8.0 #2994）：① 行为测试不得伪造产品内部——inline mirror server 换成 ephemeral 端口跑真 `serve()`、源码 grep 断言换成行为断言（/internal/grant+revoke 真 token 矩阵）；② 无消费方的死评价资产退役——oracle 无 paid caller 即连同 52 个孤儿 fixture 一起删，不留「看起来在守护」的不生效资产；③ **never-green 退役**——断言为空或必不能有意义的测试删除而非容忍，永红的测试训练团队忽视红。审查生成物测试面时核对——行为断言不得钉实现文本（防复发锁除外，锁的本职就是钉文本）；退役资产连注册表行一起清（touchfile/清单残留=新死信号）。
+- **测试价值条常态化**（gstack v1.91.9.0 #2998）：test value bar 进 plan-eng-review/review/qa/ship 四流程 + 独立 /test-audit 命令——测试资产本身是被评审对象，价值维度在交付链每个节点在场而非事后专项。本仓 Step 10 Mutation Check 与审查清单的测试有效性维度已覆盖，无新增落地单元。
+- **派生制品按依赖序原子发布**（graphify 0.9.72 #3853）：label sidecar 先于 signature 发布、整体原子写——中断的重建不得留下「为已不存在的聚类而写的悬空标签」。多文件派生状态的发布须定安全顺序：**被依赖者先写**，中断在任意点都不产生悬空引用。生成物多文件写回（hooks+commands+settings 三族）与 memory-writeback 的写序审查可对照——先写引用方后写被引用方=中断即悬空。
+- **可选依赖缺失 warn-once**（graphify 0.9.72 #3702）：pypdf 缺失时从「静默零产出」改为一次性显式告警——工具在跑、exit 0、输出为空是最隐蔽的死信号形态。**依赖在册≠能力可用**：降级「未装不阻塞」维持设计，但降级发生须可见（一次性提示）；审查生成物降级路径时核对降级是否无声。
 
-## 评测宣称诚实性与弃权诚实（R81 核，2026-10-01）
+## 评测宣称诚实性与弃权诚实
 
-> 证据锚点 `docs/research/R81-runtime-refresh.md`。吸收判据两问（决策 46）逐条过：落点本档=分发行，审查/复盘执勤触达（R74/R79 段先例）。
+> 来源：graphify v1.0.0 / ruflo v3.49.0 / ECC v2.2.2。
 
-- **评测宣称必须带规模条件与复验入口**（graphify v1.0.0 154919b + ruflo v3.49.0 双源同周实证）：graphify 撤回"小语料¹"式脚注，改实测数字表——6 文件 ~1x（上下文窗口装得下，价值是结构清晰不是压缩）、52 文件 71.5x，且 worked/ 目录放原始输入+真实输出「you can run it yourself and verify」；ruflo 同轮把未复验的 150x/12,500x HNSW 加速宣称从 CLI 输出撤下。吸收点：审查产物的基准/加速宣称时核对三件——数字是否带语料规模条件、是否给复验入口（原始输入+产物+命令）、未复验的宣称是否进了默认输出面；无条件的倍数宣称按未验证处理。
-- **路由弃权诚实**（ruflo v3.49.0 #3567）：路由无匹配时不再报告其最高置信度——**弃权不得伪装成置信**。与本仓两级路由（LLM 语义分类→关键词兜底）同款风险面：分类器无匹配时取最高分兜底=把"不知道"冒充"最像"。吸收点：分类/路由类判据（含 adaptive-gating 门控）审查时核对无匹配路径的输出语义——无匹配必须显式弃权或降级到下一级路由，不得取分桶极值充数。
-- **检查面收敛到使用面**（ECC v2.2.2 #2838）：MCP 健康检查从全局收敛到实际使用的 MCP 工具——健康检查面不得大于实际使用面，对未用面做全局健康宣称=虚假背书。吸收点：审查生成物的自检/门禁清单时核对检查项与声明能力的对应关系——没有对应能力的检查项（纯装饰性绿灯）与未检查却宣称健康的面，双向都要清。
+- **评测宣称必须带规模条件与复验入口**（graphify v1.0.0 154919b + ruflo v3.49.0 双源实证）：graphify 撤回"小语料¹"式脚注，改实测数字表——6 文件 ~1x（上下文窗口装得下，价值是结构清晰不是压缩）、52 文件 71.5x，且 worked/ 目录放原始输入+真实输出「you can run it yourself and verify」；ruflo 同版本把未复验的 150x/12,500x HNSW 加速宣称从 CLI 输出撤下。审查产物的基准/加速宣称时核对三件——数字是否带语料规模条件、是否给复验入口（原始输入+产物+命令）、未复验的宣称是否进了默认输出面；无条件的倍数宣称按未验证处理。
+- **路由弃权诚实**（ruflo v3.49.0 #3567）：路由无匹配时不再报告其最高置信度——**弃权不得伪装成置信**。与本仓两级路由（LLM 语义分类→关键词兜底）同款风险面：分类器无匹配时取最高分兜底=把"不知道"冒充"最像"。分类/路由类判据（含 adaptive-gating 门控）审查时核对无匹配路径的输出语义——无匹配必须显式弃权或降级到下一级路由，不得取分桶极值充数。
+- **检查面收敛到使用面**（ECC v2.2.2 #2838）：MCP 健康检查从全局收敛到实际使用的 MCP 工具——健康检查面不得大于实际使用面，对未用面做全局健康宣称=虚假背书。审查生成物的自检/门禁清单时核对检查项与声明能力的对应关系——没有对应能力的检查项（纯装饰性绿灯）与未检查却宣称健康的面，双向都要清。
 
-## 任务态持久观测与断言自述（R84 核，2026-10-02）
+## 任务态持久观测与断言自述
 
-> 证据锚点 `docs/research/R84-runtime-refresh.md`。吸收判据两问（决策 46）逐条过：落点本档=分发行，审查/复盘执勤触达（R79/R81 段先例）。
+> 来源：ruflo v3.50.0 / v3.51.0（ADR-406）。
 
-- **任务控制态须进程外持久、观测面 headless 可达**（ruflo v3.50.0/v3.51.0 ADR-406）：mission contract 与执行态落 durable storage，观测经 CLI/MCP 均可达，console 视图只是投影（headless views 保底）——UI 关掉不丢任务真相。吸收点：审查多代理/工作流产物的任务态承载时核对——控制状态是否只存在于进程内存或单一 UI 会话；进程外可查（文件/账本）+ 无 UI 可观测是底线双件。
-- **测试断言自述**（ruflo v3.50.0：e2e checks say what they check、focus hint 与 Esc 行为描述说引擎真实所为）：测试名与失败输出必须陈述被验行为本身，读者不读实现即知测什么——与 R79「测试真实性三连」会师第四面（前三面：不伪造内部/死评价退役/never-green 退役）。吸收点：审查生成物测试面时核对——断言文案是否自述行为语义；引用编号/镜像实现文案的测试按可读性缺陷记。
+- **任务控制态须进程外持久、观测面 headless 可达**（ruflo v3.50.0/v3.51.0 ADR-406）：mission contract 与执行态落 durable storage，观测经 CLI/MCP 均可达，console 视图只是投影（headless views 保底）——UI 关掉不丢任务真相。审查多代理/工作流产物的任务态承载时核对——控制状态是否只存在于进程内存或单一 UI 会话；进程外可查（文件/账本）+ 无 UI 可观测是底线双件。
+- **测试断言自述**（ruflo v3.50.0：e2e checks say what they check、focus hint 与 Esc 行为描述说引擎真实所为）：测试名与失败输出必须陈述被验行为本身，读者不读实现即知测什么。审查生成物测试面时核对——断言文案是否自述行为语义；引用编号/镜像实现文案的测试按可读性缺陷记。
 
 
-## 拒绝语义的工程完整性（R85 核，2026-10-03）
+## 拒绝语义的工程完整性
 
-> 证据锚点 `docs/research/R85-runtime-refresh.md`（claude-mem v13.29.0 / ruflo v3.51.1）。吸收判据两问逐条过：可操作判据（两条均可写成守门断言）+ 落点本档（审查/复盘执勤触达，R79/R81/R84 段先例）。
+> 来源：claude-mem v13.29.0 / ruflo v3.51.1。
 
 - **永不可适用的操作不得楔死同步**（claude-mem #4346）：一个判定为「永不可适用」（never-apply）的操作曾让 pull 永远挂起——不可适用是终态判定，不是待重试态；终态判定必须释放队列而非重新入队。审查多代理同步/合并面时问：每个「放弃/跳过/不适用」分支是否都有明确出口？没有出口的跳过就是未来的楔死。
-- **拒绝须可被调用方感知**（ruflo pre-bash blocking exit status）：pre-bash 钩子拒绝执行后改用阻塞式退出码——静默跳过与显式拒绝在调用方看来必须是两种结果。审查拦截器/闸门时问：被拦下的请求，调用方拿到的是「明确的拒绝信号」还是「什么都没发生的假象」？（与 R40「就绪≠存活」、R81「健康检查面不得大于使用面」同谱系——语义精确化族。）
+- **拒绝须可被调用方感知**（ruflo pre-bash blocking exit status）：pre-bash 钩子拒绝执行后改用阻塞式退出码——静默跳过与显式拒绝在调用方看来必须是两种结果。审查拦截器/闸门时问：被拦下的请求，调用方拿到的是「明确的拒绝信号」还是「什么都没发生的假象」？
