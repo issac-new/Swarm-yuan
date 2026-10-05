@@ -230,12 +230,12 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 - 吸收决策：决策 27（运行时升级整合纪律——吸收优先于新增门禁）+ 决策 26（复杂度负向预算，门禁数保持 55）
 - 自检断言：G15 `check_codex_security_cli_wiring`（`self-check.sh`，warn-only，守 CLI 整合 + facts.conf 口径）
 - 口径同步：`facts.conf` `FACT_RUNTIMES=13` / `FACT_RUNTIMES_CLI=4` / `FACT_REFERENCES=41`
-- 版本注记：npm-v0.1.25（2026-09-05 核）
-- 版本注记：npm-v0.1.26（2026-09-09 核）——GitLab MR 验证补丁通道 + **安全修复验证须显式请求**（fail-closed 同向）+ confirmed finding 匹配提速。方法论无新增落地单元。档案 `docs/research/R20-runtime-refresh.md`。——patch 号下功能增量：**跨扫描发现关系保留**（findings 生命周期跨扫描延续：new/persisting/resolved 关系不因重扫丢失）+ sealed 扫描目录去重 + 去重评审阶段对齐加固。方法论无新增落地单元（发现生命周期管理与本仓 gate-trends 趋势对账同向，工程设施对账通过）。
+- 版本注记：npm-v0.1.25
+- 版本注记：npm-v0.1.26——GitLab MR 验证补丁通道 + **安全修复验证须显式请求**（fail-closed 同向）+ confirmed finding 匹配提速。方法论无新增落地单元。档案 `docs/research/R20-runtime-refresh.md`。——patch 号下功能增量：**跨扫描发现关系保留**（findings 生命周期跨扫描延续：new/persisting/resolved 关系不因重扫丢失）+ sealed 扫描目录去重 + 去重评审阶段对齐加固。方法论无新增落地单元（发现生命周期管理与本仓 gate-trends 趋势对账同向，工程设施对账通过）。
 
-- 版本注记：npm-v0.1.27（2026-09-11 核）——patch/validation **复用 scan 认证**（认证态一致性）+ SDK pipeline 去重并发可配 + **「文档尺寸上限」从 scan-contract 删除**（不存在的能力不写进契约——诚实口径族）+ UTF-8 BOM 容错。方法论无新增落地单元。档案 `docs/research/R24-runtime-refresh.md`。
+- 版本注记：npm-v0.1.27——patch/validation **复用 scan 认证**（认证态一致性）+ SDK pipeline 去重并发可配 + **「文档尺寸上限」从 scan-contract 删除**（不存在的能力不写进契约——诚实口径族）+ UTF-8 BOM 容错。方法论无新增落地单元。档案 `docs/research/R24-runtime-refresh.md`。
 
-- 版本注记：npm-v0.1.28（2026-09-16 核）——**fix(skills) fix-finding 限于安全漏洞**（#923）：扫描/评审技能的产出职责收敛，发现面不得越出其威胁模型承诺（scope fail-closed 族——与「文档尺寸上限从契约删除」的诚实口径互补：一收一放都在契约诚实性谱系）+ **cost 上下文感知估算区间**（#926）：估算给区间不给点值（诚实报告族）+ CLI 接受任意扩展名 KB 文本（#924，输入宽容化）。方法论无新增落地单元。档案 `docs/research/R32-runtime-refresh.md`。
-- 版本注记：npm-v0.1.29（2026-09-19 核）——**model refusals 后保留 undecided findings**（#960）：去重不得吞掉模型拒绝面的未决发现——「模型拒绝 ≠ 发现不存在」（诚实完整族，与 cost 估算区间同向）+ **失败扫描发结构化 JSON 错误**（#709：错误可机读，门禁可消费——错误语义可编程族）+ **Terraform 进 scan inventories**（#944：IaC 安全面扩展，与 graphify 0.9.64 同期加 Terraform——IaC 成图谱/安全双域趋势）+ **bound source preview reads**（#947，有界读取族）+ patch verified findings（#961）与 patching 进度显示（#931，修复验证面）+ policy discovery 容忍 malformed archived Git metadata（#935，容错族）。方法论无新增落地单元。档案 `docs/research/R40-runtime-refresh.md`。
+- 版本注记：npm-v0.1.28——**fix(skills) fix-finding 限于安全漏洞**（#923）：扫描/评审技能的产出职责收敛，发现面不得越出其威胁模型承诺（scope fail-closed 族——与「文档尺寸上限从契约删除」的诚实口径互补：一收一放都在契约诚实性谱系）+ **cost 上下文感知估算区间**（#926）：估算给区间不给点值（诚实报告族）+ CLI 接受任意扩展名 KB 文本（#924，输入宽容化）。方法论无新增落地单元。档案 `docs/research/R32-runtime-refresh.md`。
+- 版本注记：npm-v0.1.29——**model refusals 后保留 undecided findings**（#960）：去重不得吞掉模型拒绝面的未决发现——「模型拒绝 ≠ 发现不存在」（诚实完整族，与 cost 估算区间同向）+ **失败扫描发结构化 JSON 错误**（#709：错误可机读，门禁可消费——错误语义可编程族）+ **Terraform 进 scan inventories**（#944：IaC 安全面扩展，与 graphify 0.9.64 同期加 Terraform——IaC 成图谱/安全双域趋势）+ **bound source preview reads**（#947，有界读取族）+ patch verified findings（#961）与 patching 进度显示（#931，修复验证面）+ policy discovery 容忍 malformed archived Git metadata（#935，容错族）。方法论无新增落地单元。档案 `docs/research/R40-runtime-refresh.md`。
 
-- 版本注记：npm-v0.1.30/0.1.31（2026-09-25 核）——**finding 归属人建议 + 证据链**（`status: identified / abstained / error` + `evidence[]` + `limitations[]`，**允许弃权并说明局限**）+ **CWE 映射进 finding 契约**（Ajv 2020 校验，测试含 `[" cwe-089 "]` 等脏输入）+ **审计门禁口径**（**只有显式标为 scan-fatal 的错误才终止**，通用 OS 错误走有界重试；扫描失败按 error 上报而非静默；**本地 Git hook 是 advisory、不可作信任根**）。
+- 版本注记：npm-v0.1.30/0.1.31——**finding 归属人建议 + 证据链**（`status: identified / abstained / error` + `evidence[]` + `limitations[]`，**允许弃权并说明局限**）+ **CWE 映射进 finding 契约**（Ajv 2020 校验，测试含 `[" cwe-089 "]` 等脏输入）+ **审计门禁口径**（**只有显式标为 scan-fatal 的错误才终止**，通用 OS 错误走有界重试；扫描失败按 error 上报而非静默；**本地 Git hook 是 advisory、不可作信任根**）。

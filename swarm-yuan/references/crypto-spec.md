@@ -6,7 +6,7 @@
 > 与 `security-spec.md`（OWASP 应用安全层）互补：security-spec 管"应用怎么用密码学"，本规范管"密码学本身怎么选、怎么管"。
 > 被 `check_crypto` 门禁（GB/T 39786 密评弱算法扫描 + 国密正向核查）作为判定依据。**机构密评测评属线下**——本规范与门禁输出不构成密评合规证据。
 >
-> 调研依据：`docs/research/R8-security-standards.md`、verifier 标准合规探索报告 §5.3（密码学规范分散、无独立文档确认）。
+> 调研依据：docs/research/ 安全标准调研报告、verifier 标准合规探索报告 §5.3（密码学规范分散、无独立文档确认）。
 
 ---
 

@@ -183,7 +183,7 @@
 
 ## 6. --cert-audit 门禁（`precheck.sh --cert-audit`）
 
-按 `CERT_PROFILE` 环境变量/comf 配置选择认证标准，执行对应机器可查项。
+按 `CERT_PROFILE` 环境变量/conf 配置选择认证标准，执行对应机器可查项。
 
 ### 6.1 配置
 

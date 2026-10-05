@@ -2,10 +2,9 @@
 
 # 政务行业 profile 立法文档（industry-profile-gov）
 
-> 版本：v1（2026-07-22，批次）
 > 条款纪律：条款号仅采用已核验事实；不虚构条款号、不虚构 URL——标准统一指向国家标准全文公开系统检索页、法律统一指向国家法律法规数据库，访问日期均 2026-07-22。
 > 配套配置包：`assets/industry-profiles/gov.conf`（用法：`cat` 追加到 `precheck.conf` 末尾后按项目裁剪）。
-> 门禁基线：34 既有（`precheck.sh` GATE_FLAGS 注册表）+ 批次新增合规门禁（`--dengbao` 等保、`--pia` 隐私影响评估、`--sast-deep` 深度 SAST、`--oss-eval` 开源评价、`--rtm` 需求追溯、`--release-sign` 发布签名）。
+> 门禁基线：34 既有（`precheck.sh` GATE_FLAGS 注册表）+ 新增合规门禁（`--dengbao` 等保、`--pia` 隐私影响评估、`--sast-deep` 深度 SAST、`--oss-eval` 开源评价、`--rtm` 需求追溯、`--release-sign` 发布签名）。
 
 ## 0. 定位与适用
 
@@ -100,7 +99,7 @@
 3. NIST SP 800-218（SSDF v1.1，PS.2 发布完整性）：https://csrc.nist.gov/pubs/sp/800/218/final
 4. ISO/IEC/IEEE 29148（需求工程标准页）：https://www.iso.org/standard/72089.html
 
-## 6. 典型技术栈 → 框架映射表（P1-8）
+## 6. 典型技术栈 → 框架映射表
 
 > 行业典型技术栈常激活的框架门禁（与 `assets/industry-profiles/gov.conf` 的 `ACTIVE_FRAMEWORKS_HINT` 对齐；
 > 非强制启用——实际以探查信号为准，详见对应 `references/frameworks/<id>.md`）。
