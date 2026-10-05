@@ -236,21 +236,20 @@ bash install.sh
 
 | 步骤 | 做什么 |
 |------|--------|
-| ⓪ | 自检（13 运行时整合口径 = 11 工具自动探测 + 2 方法论引用） |
-| ⓪.5 | 读取项目知识（AGENTS.md / CLAUDE.md / 记忆 / agent 运行时）+ **行为观察**（`mine-habits.sh` 六维统计初稿 → AI 审读三去向，R21-B） |
-| ① | 三路并行探查代码库（结构 / 规范 / 代码组织） |
-| ①.5 | **项目形态判定 + 详尽构件库清单 + 调用链路分析**（§C+.0-C+.7，按形态选维度，全量穷举 + 计数核验 + **业务功能盘点与任务配方提取**→recipes.md + **关系边集**→relations.jsonl，R21） |
-| ② | **提取 17 项特征卡**（每项落到真实路径，不用占位符） |
-| ③ | 创建骨架（含 hooks / commands / precheck.conf） |
-| ④ | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
-| ④.5 | **框架深化**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + 门禁清单对齐 |
-| ⑤ | AI 配置 precheck.conf——**185 个变量从特征卡推导** |
-| ⑤.5 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
-| ⑥ | AI 运行门禁（--all 核心 10 → --all-full 标准 28；合规 19 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
-| ⑦ | AI 独立审查——`--review`（ocr 5 维度或 AI 清单）+ review-record 落盘 |
-| ⑦.5 | **门禁注入**——`generate-skill.sh --inject-frameworks` 把激活框架门禁片段写入 precheck.sh 标记区块 |
-| ⑧ | AI 写回项目记忆（闭环） |
-| ⑨ | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**无占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
+| Step 1 | 自检（13 运行时整合口径 = 11 工具自动探测 + 2 方法论引用） |
+| Step 2 | 读取项目知识（AGENTS.md / CLAUDE.md / 记忆 / agent 运行时）+ **行为观察**（`mine-habits.sh` 六维统计初稿 → AI 审读三去向） |
+| Step 3 | 三路并行探查代码库（结构 / 规范 / 代码组织） |
+| Step 4 | **项目形态判定 + 详尽构件库清单 + 调用链路分析**（§D.0-§D.7，按形态选维度，全量穷举 + 计数核验 + **业务功能盘点与任务配方提取**→recipes.md + **关系边集**→relations.jsonl） |
+| Step 5 | **提取 17 项特征卡**（每项落到真实路径，不用占位符） |
+| Step 6 | 创建骨架（含 hooks / commands / precheck.conf） |
+| Step 7 | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
+| Step 4.5 | **框架深化与门禁注入**——逐激活框架按 `references/frameworks/<fw>.md` §1-§6 枚举 + 规律实例化 + `generate-skill.sh --inject-frameworks` 把门禁片段写入 precheck.sh 标记区块（实例化在填充后做，注入须在 Step 12 前完成） |
+| Step 8 | AI 配置 precheck.conf——**185 个变量从特征卡推导** |
+| Step 9 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
+| Step 10 | AI 运行门禁（--all 核心 10 → --all-full 标准 28；合规 19 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
+| Step 10.5 | AI 独立审查——`precheck.sh --review`（ocr 5 维度或 AI 清单）+ review-record 落盘 |
+| Step 11 | AI 写回项目记忆（闭环） |
+| Step 12 | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**无占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
 
 #### 质量门禁序列（quality:full 模式，执勤期收口用）
 
@@ -402,7 +401,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ### 8. FAQ
 
-#### R21 新增：任务配方（recipes.md）是什么？行为观察（mine-habits）会读我的什么数据？
+#### 任务配方（recipes.md）是什么？行为观察（mine-habits）会读我的什么数据？
 
 - **recipes.md**：目标技能里的"装配说明书"——§A 业务功能清单（既有功能各由哪些组件拼成）+ §B 任务配方（高频任务按什么顺序查表/复用/写胶水/过门禁，五要素）。开发时 AI 先查配方再动手；解决新问题后按 SKILL.md 自成长段第⑤环沉淀新配方。
 - **mine-habits.sh** 只读 git 元数据（提交信息前缀/分支名/变更文件清单/行数统计），产出 `.swarm-yuan/notes/habits.md` 统计初稿供 AI 审读；不读文件内容、不外传。统计事实 ≠ 规范——书面规则优先。
@@ -428,7 +427,7 @@ swarm-yuan 内置 79 个框架规则集（references/frameworks/*.md + assets/fr
 
 #### 生成时激活
 
-1. **框架探查**（§C+.0.5）：从 pom.xml/package.json/go.mod/pyproject.toml 提取依赖，识别 ACTIVE_FRAMEWORKS
+1. **框架探查**（§D.0.5）：从 pom.xml/package.json/go.mod/pyproject.toml 提取依赖，识别 ACTIVE_FRAMEWORKS
 2. **门禁注入**（--inject-frameworks）：按 ACTIVE_FRAMEWORKS 把对应门禁片段注入目标技能的 precheck.sh 标记区块
 3. **四要素核验**（verify-framework-ruleset.sh）：每框架须通过 枚举+领域知识+门禁+约束 四要素
 4. **fixture 正反例**（run-framework-fixture.sh）：每框架含 violating→FAIL / compliant→PASS 测试
@@ -439,7 +438,7 @@ swarm-yuan 内置 79 个框架规则集（references/frameworks/*.md + assets/fr
 2. 创建 `assets/framework-gates/<fw>.sh`（`_fw_<id>_check()` 函数 + 头注释 `# ruleset:` + `# gates:`）
 3. 创建 `tests/fixtures/<fw>/{violating,compliant}/`
 4. 跑 `bash scripts/verify-framework-ruleset.sh <fw>` 核验
-5. 跑 `bash scripts/gen-framework-index.sh` 更新索引（产物：assets/framework-signals.md + exploration-guide.md §C+.0.5 指针）
+5. 跑 `bash scripts/gen-framework-index.sh` 更新索引（产物：assets/framework-signals.md + exploration-guide.md §D.0.5 指针）
 
 #### 门禁运行
 
