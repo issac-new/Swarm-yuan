@@ -462,6 +462,10 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 - **worker 不可用降级三态**（#4033）：fail-loud 一次后 fail-open——同一场故障只阻塞第一个提示，后续 hook 放行；比持续 fail-closed 与静默 fail-open 都优。
 - **配置写通道即攻击面**：环境变量暴露的 HTTP 写通道须鉴权 + 遥测脱敏（CLAUDE_CODE_PATH 修复先例）；配置过滤器显式配置产生空集时回退安全默认而非空上下文（fail-back）。
 - **采集选择性**：不是所有会话都值得记忆（plugin cache 会话/空标题观测不采集）；检索通路须覆盖非拉丁语系（CJK substring 查询）。
+- **压缩保真观察上下文**（13.30 线 #4403）：field compression 期间保留观察上下文——压缩不得吞并正在进行的观察（「压缩不吃结构化证据链」与 codex Guardian 评审历史跨压缩保留同谱系）。
+- **本地优先 newest-N 冷启动**（#4427）：session-start 上下文按 project key 取最新 N 条、本地优先——冷启动证据经济学：新会话第一屏用本地最新事实，不靠全量检索。
+- **读路径性能进 schema**（#4429）：merged-into 查询建覆盖索引——记忆库检索延迟是可用性的一部分，读路径预算落进库结构而非事后优化。
+- **退避下限保序**（#4383）：Retry-After 最小值经 jitter 后仍保留——服务端指示的死线不被客户端抖动侵蚀（死线传播族）。
 
 ## ruflo 记忆治理要点
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## [v2.54.0] - 2026-10-05
+
+> R91 运行时刷新轮（用户 /goal 三目标②触发）：5 移动物化——**claude-mem v13.31.0**（压缩保真观察上下文/本地优先 newest-N 冷启动/读路径覆盖索引）、**gsd-core v1.16.0**（检查动词全部收编为 gate 模块+计划工件写入 seam 单点化，实质 minor，gsd-patterns 增 v1.16.0 要点段）、**ruflo v3.52.0**（ADR-450 T2 状态文件形态校验）、**graphify v0.9.76**（修复轮）、**dsh 克隆对齐 0.2.1-alpha.1**（漂移归零）。research/ 五克隆 checkout 至新 tag；claude-code 2.1.289 / codex rust-v0.160.0 经核仍为最新稳定零移动。两问决策：四条方法论样本均为既有族（单点化/压缩保真/死线传播）正向补强，无边界修正。档案 `docs/research/R91-runtime-refresh.md`。
+
+### Changed
+- `docs/upstream-baseline.md`：claude-mem/graphify/gsd-core/ruflo/dsh 五行回写（新版本+吸收要点+世系注）。
+- `Swarm-yuan/references/memory-persistence.md`：claude-mem 治理要点 +4 条（13.30/13.31 线）。
+- `Swarm-yuan/references/gsd-patterns.md`：新增「gsd-core v1.16.0 要点」段（6 条）。
+- `Swarm-yuan/research/`：claude-mem→v13.31.0、graphify→v0.9.76、gsd-core→v1.16.0、ruflo→v3.52.0、dsh→dsh-v0.2.1-alpha.1。
+
 ## [v2.53.0] - 2026-10-05
 
 > R90 终态文档清理轮（用户驱动，四方案全做）：SKILL.md 与 references 48 档去历史包袱——89 轮迭代沉积的 R 轮次标记、swarm-yuan 自身版本注记（v2.14.x）、补丁式编号（⓪.5 半步 / §C+ / Step -1）、评审答辩材料（理念→兑现追踪 / 概念↔实物追踪表 / 结构→流程对应）、文档自身编辑史叙事全面清除；机制语义按「改写而非删除」原则逐条保留（包裹仍生效约束的轮次注改写为机制陈述，上游版本号 / issue 号 / 来源归属 / 诚实状态标注全保留）。生成流程编号统一为 references/generation-flow.md 的 Step 1-12 唯一口径，⓪-⑨ 符号链废弃。防复发：test-r68 从自造词扩到「历史包袱」四类禁项。历史三重归位不动摇：决策全文 = docs/design-evolution.md、轮次账 = 本文件、调研档案 = docs/research/。
