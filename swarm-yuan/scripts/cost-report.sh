@@ -38,7 +38,7 @@ _fails="${_fails:-0}"
 
 # 字段 Top10 聚合（bash 3.2 兼容：sed 提取 + sort|uniq -c，不用 declare -A）
 _top() { # $1=字段名
-  # WP-R Bug#1: sed|sort|uniq|sort|head -10 在 set -euo pipefail 下,head 截断使上游 sort/uniq 收
+  # sed|sort|uniq|sort|head -10 在 set -euo pipefail 下,head 截断使上游 sort/uniq 收
   # SIGPIPE(141),pipefail 传播非零 → set -e 退出。改用 sort|uniq -c|sort -rn 写临时再 head(无截断管道)。
   sed -E "s/.*\"$1\":\"([^\"]*)\".*/\1/" "$TRACE" 2>/dev/null | sort | uniq -c | sort -rn | head -10 || true
 }
@@ -72,7 +72,7 @@ _iso2epoch() {
   _top tool
   echo '```'
 
-  # WP-P0 节点耗时（wall-clock，模型处理时间代理）：started/done|fail 按 node+tool 最近配对
+  # 节点耗时（wall-clock，模型处理时间代理）：started/done|fail 按 node+tool 最近配对
   echo ""
   echo "## 按节点耗时（wall-clock，模型处理时间代理）"
   echo '```'

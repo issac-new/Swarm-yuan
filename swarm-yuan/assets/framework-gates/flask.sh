@@ -47,7 +47,7 @@ _fw_flask_check() {
   # fw_flask_errorhandler(warn)：须有统一错误处理
   # ====================================================================
   local has_routes=0 has_eh=0
-  # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+  # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
   has_routes=$(grep -rlE '@[A-Za-z_]+\.route\(' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
   has_eh=$(grep -rlE 'errorhandler|register_error_handler' "${srcarr[@]}" 2>/dev/null | head -1 | wc -l | xargs || true)
   if [[ "$has_routes" -eq 0 ]]; then
@@ -185,7 +185,7 @@ _fw_flask_check() {
     fi
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

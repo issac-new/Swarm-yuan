@@ -1,6 +1,6 @@
 # ruleset: hive  requires_conf: HIVE_SRC_GLOBS
 # gates: fw_hive_partition(warn) fw_hive_bucket(warn) fw_hive_execution_engine(warn) fw_hive_acid(fail) fw_hive_vectorization(warn) fw_hive_orc(warn) fw_hive_dynamic_partition(fail) fw_hive_external_location(warn)
-# harvested-from: WP-P2-extension 2026-08-26，规律源自 Apache Hive 3.x LanguageManual DDL / 事务文档 / 向量化 / 存储格式官方文档
+# harvested-from: 2026-08-26，规律源自 Apache Hive 3.x LanguageManual DDL / 事务文档 / 向量化 / 存储格式官方文档
 _fw_hive_check() {
   echo "  [hive] Apache Hive 3.x 框架规律"
 

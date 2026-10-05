@@ -1,6 +1,6 @@
 # ruleset: flutter  requires_conf: FLUTTER_GLOBS
 # gates: fw_flutter_webview_unrestricted(fail) fw_flutter_sharedprefs_secret(fail) fw_flutter_print(warn) fw_flutter_const_ctor(warn) fw_flutter_proguard(warn) fw_flutter_safe_area(warn) fw_flutter_listview_builder(warn) fw_flutter_setstate_sprawl(warn) fw_flutter_sliver(warn) fw_flutter_lints(warn)
-# harvested-from: WP-V 移动端补盲（2026-07-23），规律源自 Flutter/Dart 官方文档 / webview_flutter·shared_preferences·flutter_secure_storage README / flutter_lints 官方仓库 / OWASP MASVS
+# harvested-from: 移动端补盲（2026-07-23），规律源自 Flutter/Dart 官方文档 / webview_flutter·shared_preferences·flutter_secure_storage README / flutter_lints 官方仓库 / OWASP MASVS
 _fw_flutter_check() {
   echo "  [flutter] Flutter 3.x / Dart 3 移动端规律"
 
@@ -171,7 +171,7 @@ _fw_flutter_check() {
   done
   _fw_report warn fw_flutter_lints "${lt_bad}" "未接入 flutter_lints 静态分析（avoid_print/prefer_const_constructors 等静态防线缺失；pubspec 加 dev 依赖 + analysis_options include）" "flutter_lints 已接入或无依赖/分析配置在扫描范围"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

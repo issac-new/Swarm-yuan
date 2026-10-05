@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# relations-extract.sh — 机器可读关系边集提取（R21-D：核心链条①"结构关系认知"的索引层）
+# relations-extract.sh — 机器可读关系边集提取（核心链条①"结构关系认知"的索引层）
 # 机械提取确定性依赖边 → <skill>/references/relations.jsonl（每行 {"from","to","kind","evidence"}），
 # AI 在此初稿上补语义边（kind: call/route/message/ipc/export/job-flow——调用/路由/消息/IPC/库导出/批处理装配）。
-# 注意（R59 清剿）：HTTP/JSON 契约面不在机械提取面——字段改名的契约面反查见 spec 四查④（前端调用点/契约测试）。
+# 注意：HTTP/JSON 契约面不在机械提取面——字段改名的契约面反查见 spec 四查④（前端调用点/契约测试）。
 # 消费方：--stable-diff 1 跳下游传播（gates-warn 优先读边集）、流B ②探查查边集替代读 mermaid 图。
 #
 # 提取范围（确定性 grep+相对路径解析，零外部依赖全平台可用——madge/graphify 深度层由 AI
@@ -18,7 +18,7 @@
 #              字符串耦合点编译不报错（漏改字段即静默缺陷），必须进边集供影响面反查
 #   Spring:    beans XML 的 <bean class="a.b.C">→Java 类（bean-wiring 边）
 #   JPA/Hib:   orm.xml <entity class=> / *.hbm.xml <class name=>→实体（data-mapping 边）
-#              ——同属 XML↔Java 字符串耦合，横向清剿轮补齐
+#              ——同属 XML↔Java 字符串耦合，同款补齐
 #
 # 用法:
 #   bash relations-extract.sh <PROJECT_DIR> [--skill-dir <dir>] [--out <file>] [--max-edges <N>]
@@ -50,7 +50,7 @@ fi
 
 # --- --verify：边抽样核验（from/to 路径存在性 + 最多 20 条抽样）---
 if [[ "$VERIFY" -eq 1 ]]; then
-  [[ -f "$OUT" ]] || { echo "ℹ 无 relations.jsonl（R21-D 边集未生成——探查期可选产物，跳过核验）"; exit 0; }
+  [[ -f "$OUT" ]] || { echo "ℹ 无 relations.jsonl（边集未生成——探查期可选产物，跳过核验）"; exit 0; }
   _total=$(LC_ALL=C grep -c . "$OUT" 2>/dev/null || true); _total="${_total:-0}"
   [[ "$_total" -eq 0 ]] && { echo "ℹ relations.jsonl 为空（无边可核）"; exit 0; }
   _miss=0 _checked=0
@@ -99,7 +99,7 @@ _norm_rel() { # $1=基准目录(相对根) $2=说明符 → stdout 相对路径�
       *)    break ;;
     esac
   done
-  # R30-D5（2026-09-16 Node 栈执勤实证 shop-api）：单层 ../ 场景 dir 归为 "."，
+  # 单层 ../ 场景 dir 归为 "."，
   # 原输出拼成 "./src/x"——与 src/ 下同目标边的 to 键失配（stable-diff 反查/查边集
   # 按路径对账时断链）。顶层前缀不进输出；多级 ../ 语义不变。
   [[ "$dir" == "." ]] && dir=""
@@ -120,8 +120,8 @@ _emit() { # $1=from $2=to $3=evidence → 追加到 TMPF
   printf '{"from":"%s","to":"%s","kind":"import","evidence":"%s"}\n' "$1" "$2" "$3" >> "$TMPF"
 }
 
-# Go module 清单（R48-G2：前后端同仓形态 go.mod 在 server/ 等子目录，原单点 "$PROJ/go.mod"
-# 发现让 GO_MODULE 恒空、Go 工程内边全漏——与 R47-D2 Java 源根同族「解析基准假设 PROJ 根」。
+# Go module 清单（前后端同仓形态 go.mod 在 server/ 等子目录，原单点 "$PROJ/go.mod"
+# 发现让 GO_MODULE 恒空、Go 工程内边全漏——与 Java 源根发现同族「解析基准假设 PROJ 根」。
 # 多 go.mod 各自带 module 名与基准目录（go.mod 所在目录），确定性排序逐个匹配）
 _GOMODS_T=$(mktemp /tmp/relx.gomods.XXXXXX)
 find "$PROJ" \( -type d \( -name node_modules -o -name target -o -name .git -o -name dist -o -name .venv -o -name venv -o -name __pycache__ -o -name .tox -o -name vendor -o -name .swarm-yuan \) -prune \) -o -type f -name go.mod -print 2>/dev/null \
@@ -162,12 +162,12 @@ while IFS= read -r f_abs; do
         resolved=$(_resolve "$norm") || continue
         [[ "$resolved" == "$f_rel" ]] && continue
         _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
-      # 回归 2026-09-10（R23 全量回归 D1）：原模式要求引号紧跟 require/from/import，
+      # 回归 2026-09-10：原模式要求引号紧跟 require/from/import，
       # CommonJS 的 require('./x') 带左括号永不命中——CommonJS 项目 0 边。加 \(? 容许括号。
       done < <(grep -nE "(from|require|import)[[:space:]]*\(?[[:space:]]*[\"'][.][./][^\"']*[\"']" "$f_abs" 2>/dev/null || true)
       ;;
     *.py)
-      # from .x import y / from ..x import y（相对导入机械可靠；绝对导入见下方 R28-DF3 分支）
+      # from .x import y / from ..x import y（相对导入机械可靠；绝对导入见下方分支）
       while IFS= read -r hit; do
         [[ -z "$hit" ]] && continue
         ln="${hit%%:*}"; stmt="${hit#*:}"
@@ -185,7 +185,7 @@ while IFS= read -r f_abs; do
         [[ "$resolved" == "$f_rel" ]] && continue
         _emit "$f_rel" "$resolved" "import@${f_rel}:${ln}"
       done < <(grep -nE '^[[:space:]]*from[[:space:]]+\.[.A-Za-z_][.A-Za-z_0-9]*[[:space:]]+import' "$f_abs" 2>/dev/null || true)
-      # R28-DF3（2026-09-16 FastAPI 执勤实证 taskflow-api）：绝对导入提取。
+      # 绝对导入提取。
       # 原实现只认相对导入（原注释声称「绝对导入 best-effort 根解析」但无对应分支）——
       # FastAPI/Django 等绝对导入主流项目（PEP 8 推荐）import 边恒 0。
       # 机械可靠版与 Go module 前缀剥离同构：包路径 a.b → a/b，_resolve 试探
@@ -221,7 +221,7 @@ while IFS= read -r f_abs; do
       done < <(grep -nE '^[[:space:]]*(from[[:space:]]+[A-Za-z_][A-Za-z_0-9.]*[[:space:]]+import|import[[:space:]]+[A-Za-z_])' "$f_abs" 2>/dev/null || true)
       ;;
     *.php)
-      # R62-D2（PHP 生态首执勤实证 r62-drill-phpdotenv）：PHP 提取缺位——require/include 相对
+      # PHP 提取缺位——require/include 相对
       # 引用与 use 命名空间是 PHP 的 import 等价物。机械可靠子集两支（诚实留白不猜）：
       # ① require|require_once|include|include_once 的相对/__DIR__ 路径 → 文件解析；
       # ② use Foo\Bar\ClassName; → 全项目 ClassName.php 唯一命中才发边（PSR-4 类名=文件名语义；
@@ -261,7 +261,7 @@ while IFS= read -r f_abs; do
       done < <(grep -nE '^[[:space:]]*use[[:space:]]+[A-Za-z_]' "$f_abs" 2>/dev/null || true)
       ;;
     *.rb)
-      # R64-D2（ruby 生态首执勤实证 r64-drill-rack）：Ruby 提取缺位——require_relative 与
+      # Ruby 提取缺位——require_relative 与
       # require './x' 是 Ruby 的相对引用等价物（镜像 PHP 分支语义）。绝对 gem require（如
       # require 'rack'）是第三方依赖不发边；vendor/（bundle install --path）已由排除链剪掉。
       # require_relative 无扩展名语义：'x' → x.rb 或 x/x.rb（Ruby autoload 目录约定）
@@ -316,7 +316,7 @@ while IFS= read -r f_abs; do
   esac
 done <<< "$_src_files"
 
-# Go 工程内 import（module 前缀剥离 → go.mod 基准目录下目录存在即边；R48-G2 多模块遍历）
+# Go 工程内 import（module 前缀剥离 → go.mod 基准目录下目录存在即边；多模块遍历）
 if [[ -s "$_GOMODS_T" ]]; then
   while IFS= read -r f_abs; do
     [[ -z "$f_abs" ]] && continue
@@ -337,7 +337,7 @@ if [[ -s "$_GOMODS_T" ]]; then
   done < <(find "$PROJ" -type f -name '*.go' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/vendor/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
 fi
 
-# R39-D8（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：Rust use 语句 → 工程内模块路径。
+# Rust use 语句 → 工程内模块路径。
 # 原实现只覆盖 TS/JS-Vue/Python/Go/Java 四族——Rust 项目实测 0 边，影响面反查空转。
 # 解析（机械初稿，低估方向安全，未解析形态留给 AI 语义边）：
 #   crate::a::b::C → src/a/b.rs 或 src/a/b/mod.rs（lib.rs 是 crate 根）
@@ -358,8 +358,8 @@ while IFS= read -r f_abs; do
     use_mod="${use_path#*|}"
     use_mod="${use_mod%%::*}"        # 首段模块（a::b::C → a）
     [[ -z "$use_mod" ]] && continue
-    # R48-G3（跨栈同仓审计）：crate 根=文件所在 src/ 目录（backend/src/main.rs → backend/src）——
-    # 原硬编码 PROJ 根 src/ 使同仓形态 Rust 边全漏（与 R47-D2 Java/R48-G2 Go 同族）。
+    # crate 根=文件所在 src/ 目录（backend/src/main.rs → backend/src）——
+    # 原硬编码 PROJ 根 src/ 使同仓形态 Rust 边全漏（与 Java 源根/Go module 清单同族）。
     # 根级形态（src/ 直接在项目根）保持原行为。
     case "$f_rel" in
       */src/*) _crate_src="${f_rel%%/src/*}/src" ;;
@@ -379,7 +379,7 @@ while IFS= read -r f_abs; do
   done < <(grep -nE '^[[:space:]]*use[[:space:]][[:space:]]*(crate|super|self)::' "$f_abs" 2>/dev/null || true)
 done < <(find "$PROJ" -type f -name '*.rs' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/vendor/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/target/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
 
-# Java 源根发现（R47-D2：前后端同仓形态下 Java 根在 backend/ 等子目录，
+# Java 源根发现（前后端同仓形态下 Java 根在 backend/ 等子目录，
 # 硬编码 src/main/java 会让 Java import/mapper-binding/data-mapping 全链边集为零）。
 # 发现规则：*/src/{main,test}/java 目录，剪掉 node_modules/target/.git/dist/venv/.venv/build 噪音，
 # 相对路径确定性排序——首个命中即用（FQCN 已全限定，无猜测成分）。
@@ -413,7 +413,7 @@ done < <(grep -RnE '^[[:space:]]*import[[:space:]]+[a-z][a-zA-Z0-9_.]*;' "$PROJ"
 # src 下同名 .java 唯一命中（多命中不猜，AI 按 exploration-guide §D.2.5 补）。
 # Spring Batch/Quartz job→数据资产依赖为语义耦合（reader SQL 列↔实体字段无确定性映射），
 # 机械层不猜——AI 补 kind=job-flow 边（exploration-guide §D.2-J 链路模型）。
-_fq_resolve() { # $1=完全限定名 a.b.C → stdout 项目相对 .java 路径 或 空（R47-D2：遍历发现的 Java 源根）
+_fq_resolve() { # $1=完全限定名 a.b.C → stdout 项目相对 .java 路径 或 空（遍历发现的 Java 源根）
   local pkgpath="$1"; pkgpath=$(printf '%s' "$pkgpath" | tr '.' '/')
   local root
   while IFS= read -r root; do
@@ -430,7 +430,7 @@ grep -RhoE '<typeAlias[^>]*alias="[^"]*"[^>]*type="[^"]*"' "$PROJ" --include='my
 
 _SHORT_T=$(mktemp /tmp/relx.short.XXXXXX)
 
-_short_resolve() { # $1=短类名 → stdout 唯一命中的项目相对 .java 路径 或 空（R47-D2：全源根扫，非仅根 src/）
+_short_resolve() { # $1=短类名 → stdout 唯一命中的项目相对 .java 路径 或 空（全源根扫，非仅根 src/）
   local name="$1" fq hits
   fq=$(awk -F'\t' -v n="$name" '$1 == n { print $2; exit }' "$_ALIAS_T")
   if [[ -n "$fq" ]]; then _fq_resolve "$fq" && return 0 || return 1; fi
@@ -511,7 +511,7 @@ while IFS= read -r x_abs; do
 done <<< "$_xml_files"
 rm -f "$_ALIAS_T"
 
-# Spring/JPA/Hibernate 声明式装配边（横向清剿轮：MyBatis 之外的 XML↔Java 字符串耦合）
+# Spring/JPA/Hibernate 声明式装配边（MyBatis 之外的 XML↔Java 字符串耦合）
 #   bean-wiring: Spring beans XML <bean class="a.b.C"> → src/main/java/a/b/C.java
 #   data-mapping: JPA orm.xml <entity class="a.b.C"> / hbm.xml <class name="a.b.C"> → 实体
 # 文件判据按根元素内容（文件名惯例不可靠）：含 <beans（Spring）/ <entity-mapping（JPA orm）/
@@ -539,7 +539,7 @@ done < <(grep -rlE '<beans\b|<entity-mapping|<hibernate-mapping' "$PROJ" --inclu
   | grep -vE '/target/|/node_modules/|/dist/|/\.git/|/\.swarm-yuan/' | LC_ALL=C sort | head -200)
 
 # 截断 + 确定性排序 + 落盘
-# R36-D8（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：重建时保留既有文件里 AI 补充的
+# 重建时保留既有文件里 AI 补充的
 # 语义边（kind 不属机械五类的行：call/route/message/ipc/export/job-flow 等）——原实现整文件
 # 覆盖，AI 语义增量在每次重探查/自成长重建时被清空，补边永不持久（执勤实测 17 行→11 行）。
 _n_semantic_kept=0

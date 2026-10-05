@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # profile-threshold-survey.sh —— GitHub 开源仓库抽样统计项目规模分布
-# 用途：为 auto_detect_profile 的 lite/standard 阈值提供数据依据（决策 18 修订 + WP-Q2）
+# 用途：为 auto_detect_profile 的 lite/standard 阈值提供数据依据（决策 18 修订）
 #
 # 样本分层（按语言/规模）：
 #   - 小工具库 10（CLI 工具、小脚本库）
@@ -94,9 +94,9 @@ echo "P67 (standard 上限): $_p67 文件"
 
 # 生成 profile-thresholds.conf
 {
-  echo "# profile-thresholds.conf —— auto_detect_profile 阈值配置（决策 18 修订 + WP-Q2 + WP-Q3）"
+  echo "# profile-thresholds.conf —— auto_detect_profile 阈值配置（决策 18 修订）"
   echo "# 由 scripts/profile-threshold-survey.sh 统计生成（$(date -u +%Y-%m-%d)，样本 $_total 个）"
-  echo "# 用户可按项目类型调整。WP-Q2 偏置修正：信号明确才升档，模糊走默认 standard。"
+  echo "# 用户可按项目类型调整。偏置修正：信号明确才升档，模糊走默认 standard。"
   echo "#"
   echo "# 阈值：文件数 P33/P67 分位数（样本统计），用户可按项目类型微调"
   echo "PROFILE_LITE_MAX_FILES=$_p33"

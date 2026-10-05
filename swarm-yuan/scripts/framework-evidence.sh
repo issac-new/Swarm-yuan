@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# framework-evidence.sh — 框架规律证据台账（WP-P3b/M2，最大 token 池脚本化）
+# framework-evidence.sh — 框架规律证据台账（最大 token 池脚本化）
 # 输入: 目标仓库 + ACTIVE_FRAMEWORKS → 逐框架提取 references/frameworks/<fw>.md §3 verify 块
 #       → 批量执行 cmd（${PROJECT_DIR} 替换为实参）→ 输出证据台账 TSV
 # 输出: stdout TSV「framework | rule_id | rule_title | hits | evidence(top-N file:line) | SUGGEST」

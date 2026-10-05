@@ -1,7 +1,7 @@
 # ruleset: vue  requires_conf: VUE_FILE_GLOBS VUE_REQUIRE_SCRIPT_SETUP VUE_FORBIDDEN_OPTIONS_API VUE_VHTML_SANITIZE_REQUIRED VUE_VHTML_SANITIZE_PATTERNS VUE_VFOR_FORBIDDEN_INDEX_KEY VUE_REACTIVE_WARN_THRESHOLD VUE_PINIA_FILE_GLOBS VUE_PINIA_DEFINESTORE_REQUIRED VUE_PINIA_AGGREGATE_STORE
 # gates: fw_vue_script_setup(fail) fw_vue_no_options_api(fail) fw_vue_vhtml_sanitize(fail) fw_vue_vfor_index_key(warn) fw_vue_reactivity_threshold(warn) fw_vue_pinia_definestore(warn) fw_vue_pinia_aggregate(warn)
 # harvested-from: ncwk-dev precheck.sh:2454-2509 (2026-07-17)；pinia 合并自 ncwk-dev precheck.sh:2536-2555 (2026-07-17)
-# WP-P0-five-breaks：7 规律统一改用 _fw_report 报告器（fail_id 提取对齐 precheck.sh:498 FAIL_IDS 收集）
+# 7 规律统一改用 _fw_report 报告器（fail_id 提取对齐 precheck.sh:498 FAIL_IDS 收集）
 _fw_vue_check() {
   echo "  [vue] Vue 3.5 框架规律"
   local files
@@ -61,7 +61,7 @@ _fw_vue_check() {
     warn "fw_vue_reactivity_threshold: reactive 用量 $rc 处（阈值 ${VUE_REACTIVE_WARN_THRESHOLD}），建议优先 ref/computed"
   fi
 
-  # R67-F3：版本感知——package.json 检 vue 版本（2 vs 3 口径分流标注）
+  # 版本感知——package.json 检 vue 版本（2 vs 3 口径分流标注）
   local _vue_ver=""
   _vue_ver=$(grep -oE '"vue"[[:space:]]*:[[:space:]]*"[^"]*"' "${PROJECT_DIR:-.}/package.json" 2>/dev/null | grep -oE '^[0-9]+' | head -1)
   if [[ -n "$_vue_ver" && "$_vue_ver" != "3" ]]; then
@@ -95,7 +95,7 @@ _fw_vue_check() {
     _fw_report warn fw_vue_pinia_aggregate "$bad" "聚合层 store 缺失（pinia root 不可达）" "聚合层 store 存在（${VUE_PINIA_AGGREGATE_STORE}）"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

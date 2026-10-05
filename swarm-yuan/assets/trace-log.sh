@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ⚠ R67-F6：本脚本的 PROJECT_DIR 与 precheck.conf 的 PROJECT_DIR 同名不同义——
+# ⚠ 本脚本的 PROJECT_DIR 与 precheck.conf 的 PROJECT_DIR 同名不同义——
 # 此处指落盘根（decisions/trace 写入哪个 .swarm-yuan/），precheck 侧指项目源码根。
 # 调用者须显式传 --project-dir 指向目标技能目录（而非项目源码目录）。
 # trace-log.sh — 全链路调用追踪（swarm-yuan 设计理念 2：每一步具体调用都有信息提示）
@@ -10,7 +10,7 @@
 #   --decision 模式（G1 决策治理）：落盘 .swarm-yuan/decisions.jsonl，对齐 ISO/IEC 42001 人工监督留痕。
 #   --reversibility（§2.4，gsd-core v1.8.0 吸收）：决策可逆性评级，缺省 reversible；one-way 应由 AI 在调用前升级 type=UserChallenge。
 #   --confidence（知识溯源三标，graphify v0.9.27 吸收）：决策依据的溯源置信度，缺省 inferred。
-#   bash trace-log.sh --verify-chain（R45 semantica 吸收）：校验 decisions.jsonl 哈希链完整性，exit 0=完整 / 1=断裂。
+#   bash trace-log.sh --verify-chain（来源：semantica）：校验 decisions.jsonl 哈希链完整性，exit 0=完整 / 1=断裂。
 # 行为（双通道，均无需用户确认）:
 #   1) stdout 打印一行结构化提示：→ [<节点>] 调用 <actor> · <tool>（<status>）— <note>
 #   2) 追加 JSON 行到 ${PROJECT_DIR:-$(pwd)}/.swarm-yuan/trace.jsonl（与 gate-runs.jsonl 同目录同构）
@@ -22,7 +22,7 @@
 
 set -uo pipefail
 
-# JSON 最小转义（audit-claims-reality D4：统一定义于此——此前 _esc（key-node 段内联）与
+# JSON 最小转义（统一定义于此——此前 _esc（key-node 段内联）与
 # _json_esc（决策段）是同体重复定义；bash 函数须先于执行点定义，故提到主流程最前）
 _json_esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n'; }
 
@@ -31,9 +31,9 @@ NODE=""; ACTOR=""; TOOL=""; STATUS="started"; NOTE=""
 DECISION_MODE=0; D_TYPE=""; D_SUGGESTION=""; D_USER_ACTION=""; D_RATIONALE=""; D_GOAL=""; D_CLOSURE=""; D_REPAIR_REVIEW=""
 D_ALTERNATIVES=""; D_MISSING_CONTEXT=""; D_COST_IF_WRONG=""; D_PHASE=""
 D_REVERSIBILITY=""; D_CONFIDENCE=""; D_OUTCOME=""
-# --key-node 模式变量（WP-Q2-lite 关键节点化）
+# --key-node 模式变量（关键节点化）
 KEY_NODE_MODE=0; KEY_NODE_NAME=""
-# --verify-chain 模式变量（R45 semantica 溯源哈希链吸收）
+# --verify-chain 模式变量（semantica 溯源哈希链吸收）
 VERIFY_CHAIN_MODE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -62,18 +62,18 @@ while [[ $# -gt 0 ]]; do
     *) echo "未知参数: $1" >&2
        echo "Usage: bash trace-log.sh --node <节点> --actor <技能/子代理> --tool <工具/命令> [--status started|done|fail] [--note <说明>]" >&2
        echo "       bash trace-log.sh --decision --type <Mechanical|Taste|UserChallenge> --suggestion <建议> --user-action <approved|rejected|revised> [--rationale <理由>] [--phase <阶段>] [--reversibility <reversible|costly|one-way>] [--confidence <extracted|inferred|ambiguous>] [--outcome <implemented|rejected|superseded|proposed>] [--alternatives <备选>] [--missing-context <缺失上下文>] [--cost-if-wrong <代价>]" >&2
-       echo "       bash trace-log.sh --key-node <节点名> [--actor <谁>] [--status started|done|fail] [--note <说明>]  # WP-Q2-lite 关键节点化（九节点关键调用看板）" >&2
-       echo "       bash trace-log.sh --verify-chain  # R45 决策审计轨迹哈希链校验（exit 0=完整 / 1=断裂）" >&2
+       echo "       bash trace-log.sh --key-node <节点名> [--actor <谁>] [--status started|done|fail] [--note <说明>]  # 关键节点调用看板（九节点关键调用）" >&2
+       echo "       bash trace-log.sh --verify-chain  # 决策审计轨迹哈希链校验（exit 0=完整 / 1=断裂）" >&2
        exit 1 ;;
   esac
 done
 
-# --verify-chain 模式（R45 semantica 溯源哈希链吸收，provenance/schemas.py checksum+
+# --verify-chain 模式（semantica 溯源哈希链吸收，provenance/schemas.py checksum+
 # sequence_id+previous_checksum 三字段改写）：校验 decisions.jsonl 的链完整性。
 #   ① 逐行重算 checksum（body 篡改可检出）
 #   ② previous_checksum 链（行删除后继失配可检出）
 #   ③ seq 连续（重编号/跳号可检出）
-# 旧格式行（无链字段，R45 前落盘）跳过不计——链从首个带链字段的行起算（诚实披露边界）。
+# 旧格式行（无链字段，链功能引入前落盘）跳过不计——链从首个带链字段的行起算（诚实披露边界）。
 if [[ "$VERIFY_CHAIN_MODE" -eq 1 ]]; then
   STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
   DEC_FILE="$STATE_DIR/decisions.jsonl"
@@ -114,7 +114,7 @@ if [[ "$VERIFY_CHAIN_MODE" -eq 1 ]]; then
     exit 1
   fi
   _legacy_note=""
-  [[ "$_legacy" -gt 0 ]] && _legacy_note="——R45 前旧格式，链自首个带链字段行起算"
+  [[ "$_legacy" -gt 0 ]] && _legacy_note="——旧格式（无链字段），链自首个带链字段行起算"
   echo "verify-chain: OK（链完整：${_checked} 行校验通过，${_legacy} 行 legacy 跳过${_legacy_note}）"
   exit 0
 fi
@@ -125,7 +125,7 @@ if [[ "$DECISION_MODE" -eq 0 && -z "$TOOL" && "$KEY_NODE_MODE" -eq 0 ]]; then
   exit 1
 fi
 
-# --key-node 模式（WP-Q2-lite 关键节点化）：落盘 .swarm-yuan/key-nodes.jsonl
+# --key-node 模式（关键节点化）：落盘 .swarm-yuan/key-nodes.jsonl
 # 九节点视角的"关键调用看板"——trace.jsonl 是全链路流水，key-nodes.jsonl 是节点级关键调用记录。
 # 用法：bash trace-log.sh --key-node "①探查仓库" --actor "swarm-yuan/ai" --status started --note "三路并行+图谱工具"
 #       bash trace-log.sh --key-node "⑦写回项目记忆" --status done --note "memory-writeback.sh"
@@ -168,7 +168,7 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
   # 可逆性/置信度缺省（§2.4 + 知识溯源三标）
   [[ -z "$D_REVERSIBILITY" ]] && D_REVERSIBILITY="reversible"
   [[ -z "$D_CONFIDENCE" ]] && D_CONFIDENCE="inferred"
-  # WP-R12-D：决策生命周期 outcome 缺省推导（dsh Agent Notes 四态吸收——未采纳决策也是治理证据）：
+  # 决策生命周期 outcome 缺省推导（dsh Agent Notes 四态吸收——未采纳决策也是治理证据）：
   # user_action=rejected → outcome=rejected；其余缺省 implemented；显式 --outcome 优先（superseded/proposed）
   if [[ -z "$D_OUTCOME" ]]; then
     case "$D_USER_ACTION" in
@@ -194,10 +194,10 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
   STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
   if mkdir -p "$STATE_DIR" 2>/dev/null; then
     ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    # R14（better-harness 吸收）：goal_id + closure——审计单元从"运行/会话"升级为"目标闭环"
+    # goal_id + closure（吸收自 better-harness）：审计单元从"运行/会话"升级为"目标闭环"
     # （一个用户目标 + 一个验收边界；change set ↔ final validation set 链接才 closed）
     [[ -z "$D_CLOSURE" ]] && D_CLOSURE="open"
-    # R15（HarnessEval 吸收 P3）：digest 链式锚定——decisions 记录引用同项目 trace.jsonl 末行 hash。
+    # digest 链式锚定（吸收自 HarnessEval）：decisions 记录引用同项目 trace.jsonl 末行 hash。
     # 下游 artifact（decisions）的 digest 含上游（trace 末行）：trace 被篡改 → ref_trace_hash 失配 → 全链 stale 可检出。
     _ref_trace_hash=""
     if [[ -f "$STATE_DIR/trace.jsonl" ]]; then
@@ -211,7 +211,7 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
       "$(_json_esc "$D_USER_ACTION")" "$(_json_esc "$D_OUTCOME")" "$(_json_esc "$D_RATIONALE")" "$(_json_esc "${ACTOR:-swarm-yuan/ai}")" \
       "$(_json_esc "$D_ALTERNATIVES")" "$(_json_esc "$D_MISSING_CONTEXT")" "$(_json_esc "$D_COST_IF_WRONG")" \
       "$(_json_esc "$D_REVERSIBILITY")" "$(_json_esc "$D_CONFIDENCE")" "$(_json_esc "$D_GOAL")" "$(_json_esc "$D_CLOSURE")" "$(_json_esc "$D_REPAIR_REVIEW")" "$_ref_trace_hash")
-    # R45（semantica 溯源哈希链吸收，provenance/schemas.py:102 三字段）：决策行追加
+    # semantica 溯源哈希链吸收（provenance/schemas.py:102 三字段）：决策行追加
     # seq + previous_checksum + checksum——body 篡改/行删除（后继 prev 失配）/重编号（seq 断档）
     # 三类破坏均可由 --verify-chain 检出。checksum = cksum("seq|prev|body")，写读两侧同构。
     _dec_seq=1; _dec_prev=""

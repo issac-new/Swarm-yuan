@@ -65,7 +65,7 @@ _fw_nuxt_check() {
     has_mounted=$(printf '%s\n' "$body" | grep -cE 'onMounted\(' 2>/dev/null || true)
     if [[ "${has_random:-0}" -gt 0 && "${has_mounted:-0}" -eq 0 ]]; then
       local ln
-      # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+      # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
       ln=$(printf '%s\n' "$body" | grep -nE 'Date\.now\(\)|Math\.random\(\)|crypto\.randomUUID\(\)|new Date\(\)' 2>/dev/null | head -1 || true)
       hyd_bad="${hyd_bad}${f}:${ln}
 "
@@ -258,7 +258,7 @@ _fw_nuxt_check() {
   done
   _fw_report fail fw_nuxt_runtime_config_secret "$rc_bad" "runtimeConfig.public 含敏感 key（public 打包进客户端 bundle 泄露 CWE-312）" "未检出 public 含敏感值（或无 nuxt.config）"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# extract-feature-cards.sh — 特征卡机械类提取脚本（WP-Z9）
+# extract-feature-cards.sh — 特征卡机械类提取脚本
 # 从项目目录自动提取 P0 六项特征卡中机械可提取的 4 项：
 #   1. 项目类型（文件类型分布 → 前端/后端/全栈/移动/库）
 #   4. 框架列表（复用 detect-frameworks.sh 输出）
@@ -23,10 +23,10 @@ done
 BASE="$(cd "$(dirname "${0}")/.." && pwd)"
 
 # ---- 0. 扫描排除链（本脚本全部计数器共用；bash 3.2 数组，免 eval）----
-# R72-D2a（2026-09-29 FastAPI 执勤实证 r72-drill-library-api）：原排除只有 node_modules——
+# 原排除只有 node_modules——
 # 项目 .venv 的 site-packages 1493 个 .py 全部计入（backend_files 1510 vs 真实 17、
 # rest 端点 47 vs 真实 10、units 3326），特征卡→conf 阈值链整链污染。
-# R23-D5 排除链纪律的 Python 形态补齐（R56-D4 node_modules 同族漏修先例，本轮第三现）。
+# 排除链纪律的 Python 形态补齐（node_modules 同族漏修先例）。
 FIND_PRUNE=(-not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/site-packages/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/dist/*' -not -path '*/build/*' -not -path '*/target/*' -not -path '*/vendor/*')
 GREP_EXCLUDES=(--exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=venv --exclude-dir=site-packages --exclude-dir=__pycache__ --exclude-dir=.tox --exclude-dir=dist --exclude-dir=build --exclude-dir=target --exclude-dir=vendor)
 

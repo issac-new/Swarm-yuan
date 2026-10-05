@@ -792,24 +792,24 @@ verify_completeness() {
   hits=$(printf '%s\n%s\n' "$hits" "$recipes_miss" | grep -v '^$' || true)
   # G1：decisions.jsonl 校验（decisions_miss 并入 hits 统一裁决）
   # 检查 ① 每行 JSON 合法性 ② UserChallenge 行五要素非空（文件不存在不告警——draft 期允许空）
-  # R25-PF2（2026-09-12 Python/Java 执勤实证）：决策账本有双账——trace-log --decision 与 SKILL.md
+  # 决策账本有双账——trace-log --decision 与 SKILL.md
   # 填充指引都写项目侧 .swarm-yuan/decisions.jsonl，本核验此前只认技能侧账本，按文档执行即死锁
-  # （R23-D14 已合并 audit-closure 一侧，此处是另一半）。技能侧缺账时回退项目侧/codex 技能侧。
-  # R82-D2（2026-10-01 NestJS 执勤实证 r81-drill-taskboard，自定义 target-dir 形态）：
+  # （audit-closure 已合并一侧，此处是另一半）。技能侧缺账时回退项目侧/codex 技能侧。
+  # 自定义 target-dir 形态的决策账本回退：
   # 项目根原从 skill_dir 上三级派生（.claude/skills/<name> 布局假设）——自定义 target-dir
-  # 生成的技能（rNN-drill-skills/ 同级目录先例）上三级不是项目根，回退失明 → --strict 误报
-  # 「缺少决策记录」死锁。修法对齐 detect-profile-drift.sh:39 同族三级解析（R36-D6 先例）：
+  # 生成的技能（同级目录布局）上三级不是项目根，回退失明 → --strict 误报
+  # 「缺少决策记录」死锁。修法对齐 detect-profile-drift.sh:39 同族三级解析：
   # ① 环境 PROJECT_DIR ② 技能自身 precheck.conf 的 PROJECT_DIR= ③ 旧布局推导兜底。
   local dec_file="$skill_dir/.swarm-yuan/decisions.jsonl" decisions_miss=""
   if [[ ! -s "$dec_file" ]]; then
     local _dc _proj_root
     _proj_root="${PROJECT_DIR:-}"
     if [[ -z "$_proj_root" && -f "$skill_dir/scripts/precheck.conf" ]]; then
-      # R28-DF7 同款剥法（cut 去 # 尾注 + 去引号去尾空格）——conf 行带 `# AUTO:detected`
-      # 溯源注释是 conf-render 固定形态，不剥则路径拼接失明（R82-D2 实测）。
+      # 剥法（cut 去 # 尾注 + 去引号去尾空格）——conf 行带 `# AUTO:detected`
+      # 溯源注释是 conf-render 固定形态，不剥则路径拼接失明。
       _proj_root=$(grep -m1 '^PROJECT_DIR=' "$skill_dir/scripts/precheck.conf" 2>/dev/null \
         | cut -d'#' -f1 | sed 's/^PROJECT_DIR=//;s/^"//;s/"$//;s/[[:space:]]*$//' || true)
-      # 占位符形态（draft 未回填 <项目根绝对路径>）不当真值消费（R28-DF7 同判据）
+      # 占位符形态（draft 未回填 <项目根绝对路径>）不当真值消费（同判据）
       case "$_proj_root" in "<"*">") _proj_root="" ;; esac
     fi
     if [[ -z "$_proj_root" ]]; then
@@ -979,7 +979,7 @@ check_framework_globs() {
     echo "✗ 框架 glob 全空（TODO(framework-gates) 未填充）：${_cg_missing} 无任何已填变量——框架门禁将空转。填充 precheck.conf / precheck.arch.conf 对应 <FW>_SRC_GLOBS 等变量后重跑 --mark-active" >&2
     return 1
   fi
-  # R67-F4：全变量核验（≥1 只保"不空转"——空值变量无机器拦截，R65 #8 留档根因）
+  # 全变量核验（≥1 只保"不空转"——空值变量无机器拦截）
   local _cg_empty="" _cg_evar
   for _cg_id2 in ${_cg_ids}; do
     _cg_fw2="$(printf '%s' "$_cg_id2" | tr -d '-' | tr '[:lower:]' '[:upper:]')"
@@ -1068,7 +1068,7 @@ if [[ "${1:-}" == "--mark-active" ]]; then
     _ma_proj=$(cd "$_ma_proj" 2>/dev/null && pwd)
     if [[ -n "$_ma_proj" && -d "$_ma_proj" && -f "$_ma_dir/references/reference-manual.md" ]]; then
       _iv_out=$(bash "$_ma_iv" "$_ma_proj" --skill-dir "$_ma_dir" --tsv --path-check --stability-audit 2>&1) || true
-  # R67-F7：维度 TSV 证据面展示（此前只回显异常——12 维度 PASS 吞掉，不可见）。
+  # 维度 TSV 证据面展示（此前只回显异常——12 维度 PASS 吞掉，不可见）。
   # R70 修复两处：① $_iv_out 必须带引号（无引号展开被分词打散行结构）；
   # ② 匹配模式改行尾状态列（inventory-verify --tsv 行形态 = 标签\t枚举\t登记\t比率\t状态，
   #    状态词表 PASS/FAIL/NO_LIST——原 ^(DIM_|PASS|FAIL) 对行首永不命中，功能空转）；
@@ -1269,7 +1269,7 @@ case "$PROFILE" in
 esac
 _profile_rank() { case "$1" in lite) echo 1;; compliance) echo 3;; *) echo 2;; esac; }
 
-# R83-D1（2026-10-02 Angular 栈执勤实证 r83-drill-kanban）：未识别 flag 守卫。
+# 未识别 flag 守卫。
 # 此前任何不存在的 flag（如照旧文档对 generate-skill.sh 调 --review）会静默落入
 # skill-name 位置——技能名成了 "--review"、目标技能目录被当项目根，在其内部嵌套生成
 # .claude/skills/--review/ 垃圾骨架（污染交付物）。已知子命令均在上方独立拦截并 exit，

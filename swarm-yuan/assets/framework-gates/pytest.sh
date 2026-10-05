@@ -1,6 +1,6 @@
 # ruleset: pytest  requires_conf: PYTEST_TEST_GLOBS
 # gates: fw_pytest_session_scope_mutable(fail) fw_pytest_assert_truthy_only(fail) fw_pytest_parametrize_boundary(warn) fw_pytest_conftest_hierarchy(warn) fw_pytest_xdist_isolation(warn) fw_pytest_asyncio_mode(warn) fw_pytest_mock_cleanup(warn) fw_pytest_skip_reason(warn) fw_pytest_naming(warn) fw_pytest_coverage_threshold(warn)
-# harvested-from: WP-R 阶段 2 Python 测试框架补强（2026-07-22），规律源自 pytest 8.x 官方最佳实践 + pytest-xdist 隔离要求
+# harvested-from: Python 测试框架补强（2026-07-22），规律源自 pytest 8.x 官方最佳实践 + pytest-xdist 隔离要求
 _fw_pytest_check() {
   echo "  [pytest] pytest 8.x/9.x 框架规律"
   local srcs srcarr=()
@@ -112,7 +112,7 @@ _fw_pytest_check() {
     pass "fw_pytest_coverage_threshold: 已配覆盖率阈值"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

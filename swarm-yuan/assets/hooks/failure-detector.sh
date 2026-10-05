@@ -11,7 +11,7 @@
 #   - SPINNING → 注入「换本质不同方案」指令；EXPLORING → 「保持方向」；MIXED → 「选最新错误方向提交」
 #   - 突破检测（COUNT≥3 且 PEAK≥2 后成功）→ 降压归零 + 方法论沉淀指令
 #
-# R45（2026-09-23，pua v3.5.1 runtime-contract 失败计数语义对齐，语义权威源
+# 失败计数语义对齐 pua v3.5.1 runtime-contract（语义权威源
 # references/governance-agents.md §Z.2）：
 #   - 普通成功不清零失败计数（「ls 成功不是任务完成的证据」——Successful tools
 #     are silent；same_sig_count 照清因属 SPINNING 去重维度；突破检测保留为
@@ -51,10 +51,10 @@ if command -v python3 >/dev/null 2>&1; then
 import sys, json
 try:
     d = json.load(sys.stdin)
-    # R44-D12（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：Claude Code PostToolUse
+    # Claude Code PostToolUse
     # payload 的结果字段是 tool_response（旧版/部分宿主为 tool_result）——原实现只读
     # tool_result，现代宿主下 exit_code 恒取 0，失败计数/L 级升级/SPINNING 同签名去重
-    # 整链死代码（回归#20b「字段错位→机制整体失效」同型）。双字段兼容取值。
+    # 整链死代码（「字段错位→机制整体失效」同型先例）。双字段兼容取值。
     tr = d.get("tool_response", d.get("tool_result", {}))
     if not isinstance(tr, dict):
         tr = {}
@@ -63,7 +63,7 @@ try:
     if isinstance(content, dict):
         content = json.dumps(content)
     content = str(content)[:2000] if content else ""
-    # R45：命令文本（grep/rg 无匹配豁免需要——exit_code 分不清「无匹配」与「真错误」）
+    # 命令文本（grep/rg 无匹配豁免需要——exit_code 分不清「无匹配」与「真错误」）
     ti = d.get("tool_input", {})
     if not isinstance(ti, dict):
         ti = {}
@@ -108,7 +108,7 @@ elif echo "$TOOL_RESULT" | grep -qiE '^error:|^fatal:|^panic:|Traceback \(most r
   IS_ERROR="true"
 fi
 
-# R45：grep/rg 无匹配豁免（§Z.2「grep 无匹配/非预期版本=信息，按实验验收判定，不按退出码」）。
+# grep/rg 无匹配豁免（§Z.2「grep 无匹配/非预期版本=信息，按实验验收判定，不按退出码」）。
 # 判据：exit 1（grep 无匹配码；2 才是错误）+ 命令含 grep/rg + 输出无 error-like 模式 → 信息非失败。
 if [[ "$IS_ERROR" == "true" && "$EXIT_CODE" == "1" ]]; then
   if printf '%s' "$TOOL_COMMAND" | grep -qE '(^|;|&&|\|\||\|) *(command +grep|grep|rg) ' 2>/dev/null; then
@@ -148,7 +148,7 @@ if [[ "$IS_ERROR" == "false" ]]; then
       "$ts" "$PEAK_LEVEL" "$COUNT" >> "$ERROR_HISTORY_FILE" 2>/dev/null || true
     echo "0" > "$COUNTER_FILE"
     echo "0" > "$PEAK_LEVEL_FILE"
-    # WP-Q2-lite：突破时清 same_sig_count，避免下次同签名误判
+    # 突破时清 same_sig_count，避免下次同签名误判
     echo "0" > "${STATE_DIR}/.same_sig_count" 2>/dev/null || true
     rm -f "${STATE_DIR}/.last_sig_hash" 2>/dev/null || true
     cat << EOF
@@ -166,7 +166,7 @@ if [[ "$IS_ERROR" == "false" ]]; then
 EOF
     exit 0
   fi
-  # R45：普通成功不清零 COUNT（「ls 成功不是任务完成的证据」，pua v3.5.1
+  # 普通成功不清零 COUNT（「ls 成功不是任务完成的证据」，pua v3.5.1
   # runtime-contract「Successful tools are silent」）；验证类命令成功（test/verify/
   # check/build/lint 语义）=「子目标验收通过」的机器近似，清零。same_sig_count 照清
   # （换新尝试即进入新签名周期，属 SPINNING 去重维度）；突破检测保留为大挣扎后的降压出口。
@@ -189,7 +189,7 @@ ERROR_SIG=$(echo "$TOOL_RESULT" | grep -iE 'error|fatal|Traceback|Exception|FAIL
 [[ -z "$ERROR_SIG" ]] && ERROR_SIG=$(echo "$TOOL_RESULT" | head -1 | cut -c1-200)
 [[ -z "$ERROR_SIG" ]] && ERROR_SIG="exit_code_${EXIT_CODE}"
 
-# WP-Q2-lite：提前定义 _sig_hash（同签名去重与 SPINNING 共用）
+# 提前定义 _sig_hash（同签名去重与 SPINNING 共用）
 _sig_hash() {
   local s="$1"
   if command -v md5sum >/dev/null 2>&1; then
@@ -203,7 +203,7 @@ _sig_hash() {
   fi
 }
 
-# WP-Q2-lite：同签名累加（在 225 行 exit 0 之前，保证 run 1 也累加）
+# 同签名累加（在 225 行 exit 0 之前，保证 run 1 也累加）
 _cur_hash=$(_sig_hash "$ERROR_SIG") 2>/dev/null || _cur_hash="$ERROR_SIG"
 if [[ ! -f "${STATE_DIR}/.last_sig_hash" ]]; then
   echo "$_cur_hash" > "${STATE_DIR}/.last_sig_hash"
@@ -237,7 +237,7 @@ PATTERN_ANALYSIS=""
 if [[ "$COUNT" -ge 3 ]]; then
   # 纯 bash 模式分析（无 python3 依赖的降级路径）
   # 取最近 3 条签名，算 MD5（md5sum 优先，降级 md5，再降级 cksum，再降级首 40 字符）
-  # _sig_hash 已在 ERROR_SIG 提取后定义（WP-Q2-lite 上移）
+  # _sig_hash 已在 ERROR_SIG 提取后定义（上移）
   # 读最近 3 条签名
   recent_sigs=()
   while IFS= read -r line; do
@@ -273,7 +273,7 @@ elif [[ "$COUNT" -eq 2 ]]; then
   CURRENT_LEVEL=1
 fi
 
-# 同签名 3+ 次 → 仅一行 brief（WP-Q2-lite 修复：完整诊断已在 L2 给出，不重复；R13 保留）
+# 同签名 3+ 次 → 仅一行 brief（完整诊断已在 L2 给出，此处不重复）
 if [[ "${SAME_SIG_COUNT:-1}" -ge 3 ]]; then
   cat << EOF
 [swarm-yuan SPINNING brief — 同一错误第 ${SAME_SIG_COUNT} 次]

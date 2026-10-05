@@ -1,6 +1,6 @@
 # ruleset: dotnet  requires_conf: DOTNET_GLOBS
 # gates: fw_dotnet_sql_injection(fail) fw_dotnet_password_hash(fail) fw_dotnet_cors(fail) fw_dotnet_https(warn) fw_dotnet_auth(warn) fw_dotnet_async(warn) fw_dotnet_di(warn) fw_dotnet_logging(warn) fw_dotnet_ef_migration(warn) fw_dotnet_nullable(warn)
-# harvested-from: WP-W 语言生态补强（2026-07-23），规律源自 OWASP .NET 安全指南 + Microsoft Secure Coding Guidelines for .NET
+# harvested-from: 语言生态补强（2026-07-23），规律源自 OWASP .NET 安全指南 + Microsoft Secure Coding Guidelines for .NET
 _fw_dotnet_check() {
   echo "  [dotnet] .NET / C# 框架规律"
   local srcs srcarr=()
@@ -72,10 +72,10 @@ _fw_dotnet_check() {
   _fw_report warn fw_dotnet_logging "$bad" "Console.WriteLine 生产代码（CWE-209）" "未检出 Console.WriteLine"
 
   # fw_dotnet_nullable(warn)
-  # R44-D6（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：原循环内 `.cs$` continue 守卫
+  # 原循环内 `.cs$` continue 守卫
   # 在 csproj 检查之前——.csproj 文件根本进不了循环体，`<Nullable>enable</Nullable>`（SDK
   # 现代项目的主流启用方式）是死代码，门禁对标准启用的项目恒误报。修：csproj 走独立 find
-  # 兜底（全工程，排除 bin/obj；不依赖 DOTNET_GLOBS 是否收录 .csproj——扫描面与 R39-D5
+  # 兜底（全工程，排除 bin/obj；不依赖 DOTNET_GLOBS 是否收录 .csproj——扫描面与 cargo
   # deny.toml 兜底同哲学），.cs 文件保留 #nullable enable 指令路径。
   bad=""
   local has_nullable=0
@@ -107,7 +107,7 @@ _fw_dotnet_check() {
   done
   _fw_report warn fw_dotnet_ef_migration "$bad" "裸 SQL 迁移（建议 EF Core Migrations）" "EF Core 迁移使用正确"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

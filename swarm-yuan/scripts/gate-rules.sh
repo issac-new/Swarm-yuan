@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # gate-rules.sh — rules.d 三值规则求值器（Codex Decision 架构的 bash 最小切片）
 #
-# 设计（docs/research/R13-final-plan.md §4.3）：
+# 设计：
 #   规则是数据不是代码：rules.d/*.rules 行格式
 #     # 注释行
 #     <pattern> → <allow|prompt|forbid> # <justification（forbid 须含替代方案）>
@@ -109,7 +109,7 @@ for _rf in "${_rule_files[@]}"; do
     [[ "$_matched" -eq 0 ]] && case "$_first_one" in $_pat_base) _matched=1 ;; esac
     [[ "$_matched" -eq 0 ]] && case "$_first_two" in $_pat_base) _matched=1 ;; esac
     [[ "$_matched" -eq 0 ]] && case "$CMD" in $_pat) _matched=1 ;; esac
-    # R36-D9（2026-09-18 Go 栈执勤实证 r36-drill-order-api）：3+ token pattern 的"尾 * 可省"失守——
+    # 3+ token pattern 的"尾 * 可省"失守——
     # "可有可无的尾参"只靠 _first_two 覆盖两 token（npm publish *），四 token 如
     # "docker compose down -v *"对裸命令不命中（CMD 全串 vs 含 * glob 差尾参），静默降级 prompt。
     # 补 CMD 前缀匹配 _pat_base*：裸命令与带任意尾参均命中，与行格式注释语义一致。
@@ -128,7 +128,7 @@ _decision="${_decision:-prompt}"   # 规则文件存在但无一命中 → promp
 
 if [[ "$_decision" == "forbid" ]]; then
   # 消息规格（头注释契约）：FORBID <rule-id>: <原因>；替代：<方案>——
-  # audit-2026-08-25：_alt 提取后曾未使用（死变量），整段 justification 原样输出。
+  # _alt 提取后曾未使用（死变量），整段 justification 原样输出。
   _alt=$(printf '%s' "${_hit_just:-}" | sed -n 's/.*替代[：:][[:space:]]*//p')
   _reason=$(printf '%s' "${_hit_just:-}" | sed 's/[；;][[:space:]]*替代[：:].*$//')
   _rid=$(basename "${_hit_file:-${_rule_files[0]}}" .rules)

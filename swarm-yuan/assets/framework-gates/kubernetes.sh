@@ -1,6 +1,6 @@
 # ruleset: kubernetes  requires_conf: KUBERNETES_GLOBS
 # gates: fw_kubernetes_latest_image(fail) fw_kubernetes_privileged(fail) fw_kubernetes_run_as_root(fail) fw_kubernetes_no_resource_limits(warn) fw_kubernetes_no_probes(warn) fw_kubernetes_default_namespace(warn) fw_kubernetes_hardcoded_secret(fail) fw_kubernetes_no_network_policy(warn) fw_kubernetes_no_pdb(warn) fw_kubernetes_image_pull_policy(warn)
-# harvested-from: WP-U 新增（2026-07-23），规律源自 kubernetes.io 官方文档 / CIS Kubernetes Benchmark v1.8.0 / kube-bench+kubescape 规则库 / NSA Kubernetes Hardening Guide 2022
+# harvested-from: 新增（2026-07-23），规律源自 kubernetes.io 官方文档 / CIS Kubernetes Benchmark v1.8.0 / kube-bench+kubescape 规则库 / NSA Kubernetes Hardening Guide 2022
 _fw_kubernetes_check() {
   echo "  [kubernetes] Kubernetes 1.25+ IaC 规律"
 
@@ -171,7 +171,7 @@ ${sd_lines}
   done
   _fw_report warn fw_kubernetes_image_pull_policy "${ipp_bad}" "工作负载清单无 imagePullPolicy: IfNotPresent（默认 Always 浪费带宽+标签可变，CWE-668；GB/T 25000.51-2016）" "已配 IfNotPresent 或无工作负载"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

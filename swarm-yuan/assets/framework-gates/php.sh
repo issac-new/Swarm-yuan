@@ -1,6 +1,6 @@
 # ruleset: php  requires_conf: PHP_SRC_GLOBS PHP_ENV_SAMPLE_GLOBS PHP_VIEW_GLOBS PHP_ROUTE_GLOBS
 # gates: fw_php_hardcoded_secret(fail) fw_php_composer_lock(warn) fw_php_env_key_drift(warn) fw_php_route_name(warn) fw_php_view_var(warn)
-# harvested-from: R62 第九棒换栈演练补缺（2026-09-25），规律源自 php.net 手册与 Composer 2 文档口径（未逐条核实点见 references/frameworks/php.md §6 待验证标注）
+# harvested-from: 换栈演练补缺（2026-09-25），规律源自 php.net 手册与 Composer 2 文档口径（未逐条核实点见 references/frameworks/php.md §6 待验证标注）
 _fw_php_check() {
   echo "  [php] PHP 8.x + Composer 2.x 框架规律"
 
@@ -223,7 +223,7 @@ ${pw}
     _fw_report warn fw_php_view_var "$view_bad" "视图变量与控制器传参双源漂移" "视图变量与控制器传参双向对齐"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

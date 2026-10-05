@@ -107,7 +107,7 @@ _fw_spring_cloud_check() {
     gw_hit=1
     # 简化检测：Path=/** 或 Path=/api/** 出现在具体 Path=/api/xxx 之前
     local lines star_line specific_line
-    # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+    # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
     star_line=$(grep -nE 'Path=/\*\*|Path=/api/\*\*|Path:[[:space:]]*/\*\*|Path:[[:space:]]*/api/\*\*' "$c" 2>/dev/null | head -1 | cut -d: -f1 || true)
     specific_line=$(grep -nE 'Path=/api/[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*$|Path:[[:space:]]*/api/[a-zA-Z0-9_-]+(/[a-zA-Z0-9_{}-]+)*' "$c" 2>/dev/null | head -1 | cut -d: -f1 || true)
     if [[ -n "$star_line" && -n "$specific_line" && "$star_line" -lt "$specific_line" ]]; then
@@ -309,7 +309,7 @@ ${bs_files}"
     warn "fw_scloud_version_matrix: spring-cloud-dependencies=${sc_ver}，须人工核对与 Spring Boot 版本矩阵对齐（2024.x↔Boot 3.4 / 2025.x↔Boot 4.0）"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

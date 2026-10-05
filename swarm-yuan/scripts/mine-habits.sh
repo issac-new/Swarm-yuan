@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mine-habits.sh — 开发者行为机械挖掘（R21-B：核心链条⑥"吸收具体开发人员的实际研发流程和习惯"）
+# mine-habits.sh — 开发者行为机械挖掘（核心链条⑥"吸收具体开发人员的实际研发流程和习惯"）
 # 纯机械 git log 统计初稿 → .swarm-yuan/notes/habits.md，AI 审读三去向：
 #   提交/分支习惯 → 目标技能 SKILL.md 铁律段（引用来源，不写死值）；
 #   工作偏好     → dev-guide.md「开发偏好」节；

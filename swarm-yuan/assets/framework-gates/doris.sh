@@ -1,6 +1,6 @@
 # ruleset: doris  requires_conf: DORIS_SRC_GLOBS
 # gates: fw_doris_bucket(warn) fw_doris_replication(fail) fw_doris_rollup(warn) fw_doris_colocate(warn) fw_doris_mv_refresh(warn) fw_doris_varchar_width(warn) fw_doris_index(warn) fw_doris_dynamic_partition(warn) fw_doris_stream_load(warn) fw_doris_resource_group(warn)
-# harvested-from: WP-P2-extension 2026-08-26，规律源自 Apache Doris 2.x 数据模型/索引/物化视图/资源隔离官方文档
+# harvested-from: 2026-08-26，规律源自 Apache Doris 2.x 数据模型/索引/物化视图/资源隔离官方文档
 _fw_doris_check() {
   echo "  [doris] Apache Doris 2.x 框架规律"
 

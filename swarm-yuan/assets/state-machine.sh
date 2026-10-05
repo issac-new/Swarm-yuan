@@ -19,7 +19,7 @@
 
 set -euo pipefail
 
-# ===== 回归发现#20（2026-08-27 第八轮回归）：conf 整合断裂修复 =====
+# ===== conf 整合断裂修复 =====
 # 守卫错误提示一直教用户"可在 precheck.conf 配 PROPOSAL_FILE/TASKS_FILE/SPEC_*"，但本脚本
 # 从未读取该 conf——用户照提示配置不生效（断裂指引）。对齐 fail-gate-hook 的 grep 读取惯例
 # （不 source、无副作用、路径含 # 与空格的边界不放宽）；调用方 export 的环境变量优先，
@@ -32,7 +32,7 @@ _sm_conf_val() {  # $1=变量名 → conf 末行赋值（剥引号/行内注释/
     case "$_v" in
       "\${$1:-"*'}') _v="${_v#\$\{$1:-}"; _v="${_v%\}}" ;;
     esac
-    # R28-DF8（2026-09-16 执勤实证）：骨架模板 conf 的 <项目根绝对路径> 占位符不得当真实值消费——
+    # 骨架模板 conf 的 <项目根绝对路径> 占位符不得当真实值消费——
     # 生成器仓 assets/precheck.conf 与 state-machine.sh 同目录，draft 未回填期 PROJECT_DIR=占位符
     # 会让 STATE_DIR 落进字面量「<项目根绝对路径>/.swarm-yuan」垃圾目录。占位符形态视为未配置。
     case "$_v" in
@@ -69,9 +69,9 @@ sanitize_input() {
 # 未装/项目未用 comet 时降级到本脚本自带的文件检查 guard_phase 逻辑。
 has_comet() { command -v comet >/dev/null 2>&1; }
 
-# WP-D3：trace_tool 辅助函数（全链路追踪——设计理念 2，state-machine 侧）
+# trace_tool 辅助函数（全链路追踪——设计理念 2，state-machine 侧）
 # 打印"→ [状态流转] 调用 工具 · X（started）"到 stderr + 落盘 trace.jsonl。
-# 分级（WP-C 减重）：第三方工具「调用级」细节默认关闭，SWARM_YUAN_TRACE=verbose 时启用；
+# 分级（减重）：第三方工具「调用级」细节默认关闭，SWARM_YUAN_TRACE=verbose 时启用；
 # 节点级（阶段迁移）追踪不受影响。
 TRACE_LOG_SH="${STATE_DIR:-${PROJECT_DIR:-$(pwd)}/.swarm-yuan}/../scripts/trace-log.sh"
 [[ -f "$TRACE_LOG_SH" ]] || TRACE_LOG_SH="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/trace-log.sh"
@@ -87,7 +87,7 @@ init_state() {
   # A 方向：change name 经白名单消毒（防路径穿越/命令注入）
   change=$(sanitize_input "$change")
   [[ -z "$change" ]] && { echo "ERROR: change name 全被过滤（含非法字符），请重命名"; exit 1; }
-  # R30-D8（2026-09-16 Node 栈执勤实证 shop-api）：覆盖确认原为交互 read——
+  # 覆盖确认原为交互 read——
   # AI/CI 非交互场景 stdin EOF → confirm 空 → exit 0 静默无效：rc=0 但状态未重置，
   # 调用方（自动化执勤正是主战场）误信 init 成功，后续 transition 全落在旧 change 上。
   # 非交互环境改须显式 --force（rc 语义明确）；交互终端保留确认。
@@ -125,7 +125,7 @@ get_field() {
   local field="${1:-}"
   [[ -z "$field" ]] && { echo "Usage: state-machine.sh get <field>"; exit 1; }
   [[ ! -f "$STATE_FILE" ]] && { echo "ERROR: 状态文件不存在，先 init"; exit 1; }
-  # WP-R Bug#1: grep|head -1|sed 在 set -euo pipefail 下,若同字段多行 grep 被 head 截断收 SIGPIPE(141)。
+  # grep|head -1|sed 在 set -euo pipefail 下,若同字段多行 grep 被 head 截断收 SIGPIPE(141)。
   # head -1 只取首行,改用 sed 取首行(无截断管道);grep 无匹配返回 1 也需 || true 兜底。
   grep "^$field:" "$STATE_FILE" 2>/dev/null | sed -n "1s/^$field: //p" || true
 }
@@ -162,7 +162,7 @@ guard_phase() {
   local ok=1
   case "$phase" in
     design)
-      # WP-C1：实装产出物检查（替换原占位 pass）。检查 open 阶段产出 proposal.md 存在。
+      # 实装产出物检查（替换原占位 pass）。检查 open 阶段产出 proposal.md 存在。
       # 可配 PROPOSAL_FILE（默认 $PROJECT_DIR/.swarm-yuan/proposal.md 或 $SPEC_FILE）。
       local proposal="${PROPOSAL_FILE:-}"
       [[ -z "$proposal" ]] && proposal="$(_sm_conf_val PROPOSAL_FILE)"   # #20：conf 整合
@@ -192,7 +192,7 @@ guard_phase() {
       ;;
     build)
       # 门禁：build_mode/isolation 状态字段 + design 阶段产出 spec。
-      # 回归发现#20（2026-08-27 第八轮回归）：原注释声称"检查 design doc + tasks"但代码只查
+      # 原注释声称"检查 design doc + tasks"但代码只查
       # init 即写入的 build_mode/isolation——design→build 零产物守卫（注释-代码断裂）。
       # 对齐 fail-gate-hook SPEC_REQUIRED 同名开关同判据（SPEC_GLOB 默认 docs/specs/*.md，
       # 已批准=含「## 决策记录」段且非占位）：SPEC_REQUIRED=1 时硬拦，未启用降级提示（与
@@ -224,7 +224,7 @@ guard_phase() {
       fi
       ;;
     verify)
-      # WP-C1：实装产出物检查（替换原占位 pass）。检查 tasks.md 全部 - [x]（所有任务完成）。
+      # 实装产出物检查（替换原占位 pass）。检查 tasks.md 全部 - [x]（所有任务完成）。
       # 可配 TASKS_FILE（默认 $PROJECT_DIR/.swarm-yuan/tasks.md）。未配置/不存在时降级 skip（不阻塞）。
       local tasks_f="${TASKS_FILE:-}"
       [[ -z "$tasks_f" ]] && tasks_f="$(_sm_conf_val TASKS_FILE)"         # #20：conf 整合
@@ -322,7 +322,7 @@ guard_phase() {
 transition_phase() {
   local target="${1:-}"
   [[ -z "$target" ]] && { echo "Usage: state-machine.sh transition <phase>"; exit 1; }
-  # R28-DF5（2026-09-16 执勤实证）：未知阶段名（如 implement，合法为 build）原先落到
+  # 未知阶段名（如 implement，合法为 build）原先落到
   # tgt_idx=-1 走「不能回退」分支，且在「阶段转换」横幅之后才报——横幅+回退话术双重误导。
   # 阶段名合法性前置校验，未知名直接报错并列出合法阶段，不打横幅。
   local _t_ok=0 _c_ok=0 _p
@@ -346,7 +346,7 @@ transition_phase() {
     echo "ERROR: 不能回退到 ${target}（当前 ${current}）"
     exit 1
   fi
-  # R30-D7（2026-09-16 Node 栈执勤实证 shop-api）：原实现只拦回退不拦跳级——
+  # 原实现只拦回退不拦跳级——
   # open 一路 transition verify 直达（verify 准入 tasks.md 缺省降级跳过），
   # design 的 proposal / build 的 spec 批准（SPEC_REQUIRED=1 spec-first 硬防线）
   # 被单次跳跃整体绕过，阶段守卫形同虚设。逐级准入即门禁：前跳限一阶，
@@ -386,7 +386,7 @@ next_phase() {
   fi
 }
 
-# WP-C2：auto 子命令——自动判定下一阶段并尝试流转（免去用户记阶段名）。
+# auto 子命令——自动判定下一阶段并尝试流转（免去用户记阶段名）。
 # 语义：读当前 phase → 找下一个 → 跑 guard → 通过则 transition，失败则提示缺什么产出物。
 # 不跳过 guard（守卫仍检查产出物），只免去显式传阶段名。设计理念 1：连贯动作。
 auto_phase() {
@@ -593,7 +593,7 @@ restore_phase() {
 }
 
 case "${1:-}" in
-  init) init_state "${2:-}" "${3:-}" ;;   # R30-D8：--force 透传
+  init) init_state "${2:-}" "${3:-}" ;;   # --force 透传
   get) get_field "${2:-}" ;;
   set) set_field "${2:-}" "${3:-}" ;;
   transition) transition_phase "${2:-}" ;;

@@ -50,7 +50,7 @@ _fw_kratos_check() {
     fi
     # Recovery 行号须等于文件内最早中间件构造调用行号（即链首）
     local rec_line first_mid
-    # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+    # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
     rec_line=$(printf '%s\n' "$code" | grep -nE 'recovery\.Recovery\(' | head -1 | cut -d: -f1 || true)
     first_mid=$(printf '%s\n' "$code" | grep -nE '(recovery\.Recovery|logging\.Server|validate\.Validate|tracing\.Server|metrics\.Server|ratelimit\.Server|circuitbreaker\.Server|selector\.Server|metadata\.Server)\(' | head -1 | cut -d: -f1 || true)
     if [[ -n "$first_mid" && -n "$rec_line" && "$rec_line" -ne "$first_mid" ]]; then
@@ -328,7 +328,7 @@ ${rec_order_bad}"
   done
   _fw_report warn fw_kratos_wire_gen_missing "$wgen_bad" "wire_gen.go 缺失（须执行 wire 生成并提交；CI 不含 wire 步骤时直接编译失败）" "wire_gen.go 已生成"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

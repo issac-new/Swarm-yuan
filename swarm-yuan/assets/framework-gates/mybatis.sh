@@ -185,7 +185,7 @@ _fw_mybatis_check() {
   fi
 
   # ---------- fw_mybatis_wrapper_injection(warn)：Wrapper last/having/apply 字符串注入面 ----------
-  # 回归发现#18（2026-08-27 第七轮回归）：原实现对全部 Java 源扫 \.(last|having|apply)\(，非 MP
+  # 原实现对全部 Java 源扫 \.(last|having|apply)\(，非 MP
   # 项目命中全是函数式接口 Function.apply 误报（RuoYi SensitiveJsonSerializer 实证），且与同族
   # fw_mybatis_logic_delete 的 has_mp 守卫口径不一致。改为先筛含 Wrapper 用法的文件再扫——
   # Wrapper 之外的 .last/.having/.apply 无 SQL 语义（MP 项目内同样消灭 Function.apply 误报）。
@@ -325,7 +325,7 @@ $(printf '%s\n' "$p_hits")"
     _fw_report fail fw_mybatis_field_sync "$fs_bad" "resultMap property 与实体字段失同步（改实体字段必须同步 resultMap/SQL 列/reader 列，前置查询查 data-mapping 边集；JSON 契约面不在本门禁面——见 spec 四查）" "resultMap property 均可在实体中定位（或无 resultMap/未配实体源）"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

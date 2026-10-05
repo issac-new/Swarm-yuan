@@ -83,7 +83,7 @@ _fw_paimon_check() {
   # fw_paimon_changelog_producer(warn)：流读 changelog 须配 changelog-producer
   # ====================================================================
   local scan_hit=0
-  # WP-R Bug#1: grep -l|head -1|grep -q . 在 set -euo pipefail 下,head 截断使 grep 收 SIGPIPE。
+  # grep -l|head -1|grep -q . 在 set -euo pipefail 下,head 截断使 grep 收 SIGPIPE。
   # 改用 grep -qliE(-q 静默 + -l 列文件名,但 -q 优先不输出,无截断管道,语义等价"存在即真")。
   if grep -qliE 'scan\.mode' ${srcarr[@]+"${srcarr[@]}"} ${tablearr[@]+"${tablearr[@]}"} 2>/dev/null; then
     scan_hit=1
@@ -224,7 +224,7 @@ _fw_paimon_check() {
   done <<< "$pm_tables"
   _fw_report warn fw_paimon_file_format "$ff_hit" "检出 file.format 配置（orc/parquet 分析列裁剪优、avro 行存 CDC 写入开销低；跨引擎须全支持，人工确认选型）" "未配 file.format（默认 orc 待验证）"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

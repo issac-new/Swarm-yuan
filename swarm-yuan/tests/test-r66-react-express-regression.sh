@@ -45,7 +45,7 @@ grep -q 'JSON 契约面列族' references/template-spec.md \
 
 # --- L5 源码锁：待确认事项清单用途 + git 降级 ---
 grep -q '待确认事项清单（拿不准语义集中落此）' scripts/generate-skill.sh \
-  && grep -q 'R66-A7' assets/gates-warn.sh \
+  && grep -q '非 git 仓库时依赖类门禁依赖 git 历史' assets/gates-warn.sh \
   && ok "L5 待确认事项清单用途行 + git 降级披露在位" \
   || bad "L5 A6/A7 缺失（回归）"
 

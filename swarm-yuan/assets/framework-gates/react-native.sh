@@ -1,6 +1,6 @@
 # ruleset: react-native  requires_conf: REACT_NATIVE_GLOBS
 # gates: fw_react_native_webview_no_whitelist(fail) fw_react_native_asyncstorage_secret(fail) fw_react_native_console_log(warn) fw_react_native_hermes_disabled(fail) fw_react_native_proguard(warn) fw_react_native_permissions(warn) fw_react_native_safe_area(warn) fw_react_native_flatlist(warn) fw_react_native_memo(warn) fw_react_native_flipper(warn)
-# harvested-from: WP-V 移动端补盲（2026-07-23），规律源自 React Native 官方文档 / react-native-webview·async-storage README / OWASP MASVS / Hermes·Flipper 官方文档
+# harvested-from: 移动端补盲（2026-07-23），规律源自 React Native 官方文档 / react-native-webview·async-storage README / OWASP MASVS / Hermes·Flipper 官方文档
 _fw_react_native_check() {
   echo "  [react-native] React Native 0.7x 移动端规律"
 
@@ -168,7 +168,7 @@ _fw_react_native_check() {
   done
   _fw_report warn fw_react_native_flipper "${fp_bad}" "package.json 无 Flipper 依赖（网络/布局/存储调试无工具链；RN 0.74+ 须手动集成 react-native-flipper）" "Flipper 已接入或无 package.json 在扫描范围"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

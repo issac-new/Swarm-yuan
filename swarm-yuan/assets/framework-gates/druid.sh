@@ -1,9 +1,9 @@
 # ruleset: druid  requires_conf: DRUID_CONFIG_FILES
 # gates: fw_druid_statview_expose(fail) fw_druid_wall_filter(warn) fw_druid_datasource_pool(warn) fw_druid_slow_sql(warn)
-# harvested-from: WP-R A4 新增：druid 数据库连接池规则集（references/frameworks/druid.md §4 对齐）；调研时点 2026-07-22，源码 druid 1.2.24 / druid-spring-boot-starter 1.2.24
-# WP-R A4 新增：druid 数据库连接池规则集（references/frameworks/druid.md §4 对齐）
+# harvested-from: 新增：druid 数据库连接池规则集（references/frameworks/druid.md §4 对齐）；调研时点 2026-07-22，源码 druid 1.2.24 / druid-spring-boot-starter 1.2.24
+# 新增：druid 数据库连接池规则集（references/frameworks/druid.md §4 对齐）
 # 调研时点 2026-07-22，源码 druid 1.2.24 / druid-spring-boot-starter 1.2.24
-# WP-P0-five-breaks：4 规律统一改用 _fw_report 报告器（fail_id 提取对齐 precheck.sh:498 FAIL_IDS 收集）
+# 4 规律统一改用 _fw_report 报告器（fail_id 提取对齐 precheck.sh:498 FAIL_IDS 收集）
 _fw_druid_check() {
   echo "  [druid] Druid 1.2.x 连接池框架规律"
 
@@ -18,7 +18,7 @@ _fw_druid_check() {
   fi
 
   # 合并所有配置文件文本（配置项可能跨文件，yml/properties/xml 混合）
-  # WP-R: 剥离注释行（# 开头），防止注释里的关键词被误判为配置存在
+  # 剥离注释行（# 开头），防止注释里的关键词被误判为配置存在
   local all_cfg
   all_cfg=$(grep -vE '^[[:space:]]*#' "${fa[@]}" 2>/dev/null || true)
 
@@ -131,7 +131,7 @@ _fw_druid_check() {
     _fw_report pass fw_druid_slow_sql "" "未配慢 SQL 监控（可选项，跳过）" ""
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

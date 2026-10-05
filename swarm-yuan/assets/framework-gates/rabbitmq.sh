@@ -269,7 +269,7 @@ ${queue_decl}"
   _fw_report warn fw_rabbitmq_auto_delete "$ad_bad" "检出 autoDelete/exclusive 队列（消费者断连即删队列丢消息，仅限 RPC reply-to 等临时场景；quorum 不支持二者）" "未检出 autoDelete/exclusive 队列"
 
   # ====================================================================
-  # fw_rabbit_endpoint_pair(warn)：队列/routingKey 名双边字符串配对（横向清剿轮）
+  # fw_rabbit_endpoint_pair(warn)：队列/routingKey 名双边字符串配对
   # 生产侧 convertAndSend("Q"/原生 basicPublish("", "RK") 字面量集 ↔ 消费侧
   # @RabbitListener(queues="X") 字面量集；双向 diff；常量引用提不出字面量自然跳过；
   # 外部系统单边正常 → warn 人工核对拓扑配对表。
@@ -294,7 +294,7 @@ ${queue_decl}"
   done <<< "$rcons"
   _fw_report warn fw_rabbit_endpoint_pair "$rpair_bad" "队列名单边悬挂（生产/监听两侧字符串互不知晓，改一边即静默断链）" "队列名生产/监听字面量配对完整（或无常量外单边）"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

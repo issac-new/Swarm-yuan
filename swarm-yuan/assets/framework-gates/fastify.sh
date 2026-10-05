@@ -151,7 +151,7 @@ ${init_file}"
   local po_bad=""
   for f in "${jsarr[@]+"${jsarr[@]}"}"; do
     local route_ln reg_ln
-    # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+    # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
     route_ln=$(grep -nE '(app|fastify|server|router)\.(get|post|put|delete|patch|route)\(' "$f" 2>/dev/null | head -1 | cut -d: -f1 || true)
     reg_ln=$(grep -nE '\.register\(' "$f" 2>/dev/null | head -1 | cut -d: -f1 || true)
     if [[ -n "$route_ln" && -n "$reg_ln" && "$route_ln" -lt "$reg_ln" ]]; then
@@ -246,7 +246,7 @@ ${cors_bad}"
     warn "fw_fastify_swagger: 未检出 @fastify/swagger（手维护文档与实现漂移风险，须以路由 schema 生成 OpenAPI）"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

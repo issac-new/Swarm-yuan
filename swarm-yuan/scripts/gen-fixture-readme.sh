@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gen-fixture-readme.sh —— fixture README 草稿生成器（P1-1）
+# gen-fixture-readme.sh —— fixture README 草稿生成器
 # 逐框架读 references/frameworks/<id>.md 的 §4 门禁清单（fail 级）+ 对应 fixture 目录，
 # 自动生成 README 草稿（≤30 行），说明该 fixture 触发哪个 fail id、对应反模式、violating/compliant 差异。
 # 既有的有 README 的 fixture 不覆盖。

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# fail-gate-hook.sh — PreToolUse 门禁失败捕获门（WP-Enforce1：precheck fail 从"红字"升级为"真拦截"）
+# fail-gate-hook.sh — PreToolUse 门禁失败捕获门（precheck fail 从"红字"升级为"真拦截"）
 #
-# 设计动机：此前的 PreToolUse hook 只 echo "✗ FAIL" 文字，AI 不重跑就等于绕过（诊断轮发现
+# 设计动机：此前的 PreToolUse hook 只 echo "✗ FAIL" 文字，AI 不重跑就等于绕过（诊断发现
 # 的第一大洞）。本 hook 在门禁 fail 后捕获"未修复就继续改文件"的行为，返回 deny JSON 真拦截。
 #
 # 机制（捕获模型，非前置模型——不预跑门禁防慢，只抓"已 fail 未修复"）：
@@ -18,13 +18,13 @@
 #   stdout = deny 时 hookSpecificOutput JSON；其余静默 exit 0
 #   bash 3.2 兼容；解析失败一律放行（fail-open，不误伤正常流）
 #
-# WP-Enforce3：--report 子命令（deny 事件审计报告，独立于 hook stdin 流程）
+# --report 子命令（deny 事件审计报告，独立于 hook stdin 流程）
 #   用法：bash fail-gate-hook.sh --report [N] [--project <项目根>]
 #     N = 输出最近 N 条事件（默认 20）
 #     --project = 项目根（缺省 = 当前目录）
 #   退出码：0 正常（含空文件）；1 arg 错误。
 #
-# WP-R12-A（dsh R12 调研吸收，hook-protocol/src/events.ts 的配对审计模式 bash 化）：
+# 配对审计模式（吸收自 dsh 调研 hook-protocol/src/events.ts，bash 化）：
 #   deny-only 日志升级为"每个决策点一行"的全量审计 .swarm-yuan/gate-audit.jsonl：
 #     ① invoked/result 配对语义折叠为单行（本 hook 是同步单次进程，无异步生命周期，
 #        dsh 的配对事件是为跨异步边界 join；单行自包含 = 同语义的 bash 适配）；
@@ -56,7 +56,7 @@ if [[ "${1:-}" == "--report" ]]; then
   done
   _rp_file="${_rp_proj}/.swarm-yuan/gate-deny.jsonl"
   _rp_audit="${_rp_proj}/.swarm-yuan/gate-audit.jsonl"
-  # WP-R12-A：audit 文件存在 → 新四段（含拦截率）；否则退回旧三段（向后兼容）
+  # audit 文件存在 → 新四段（含拦截率）；否则退回旧三段（向后兼容）
   if [[ -f "$_rp_audit" ]]; then
     echo "## fail-gate 审计报告（project=${_rp_proj}，最近 ${_rp_n} 条，源=gate-audit.jsonl）"
     echo
@@ -148,7 +148,7 @@ fi
 
 # ===== 定位 skill 根与配置 =====
 # hooks.json 用 ${CLAUDE_PLUGIN_ROOT:-.} 调用，cwd 是项目根；skill 脚本在 scripts/ 下
-# 回归发现#20b（2026-08-27 第八轮回归）：原实现 CONF/SKILL.md 全部取自 CWD 侧——测试的单目录
+# 原实现 CONF/SKILL.md 全部取自 CWD 侧——测试的单目录
 # 布局（skill 即项目）碰巧成立，但生成物是双目录布局（CLAUDE_PLUGIN_ROOT=skill 目录 ≠ cwd=
 # 项目根），CONF 永远读不到 → spec 前置门在真实部署中整体死代码。修复：skill 侧文件三级
 # 解析（CLAUDE_PLUGIN_ROOT → CWD（测试/单目录布局）→ 脚本自身位置）；项目侧（.swarm-yuan、
@@ -169,7 +169,7 @@ for _cand in "${CLAUDE_PLUGIN_ROOT:-}/SKILL.md" "$ROOT/SKILL.md" "${_sm_self}/..
 done
 
 # 白名单读取（GATE_ENFORCE_DENY=check_security,check_sensitive 或 all）
-# R25-D3：对齐同文件 SPEC_REQUIRED 解析范式（cut 剥注释 → tr 剥空白 → sed 剥引号）。
+# 对齐同文件 SPEC_REQUIRED 解析范式（cut 剥注释 → tr 剥空白 → sed 剥引号）。
 # 原缺陷：该行带 # MEASURE 行尾注释，sed 剥不到中间引号、注释全量混入 DENY_LIST；
 # 首版修复只加 cut 不调 tr 顺序仍残留引号（态 30 判别器抓到）——tr 必须在 sed 前，
 # 否则剥注释后的行尾空格让 s/"$// 锚不上。
@@ -190,7 +190,7 @@ _deny_log() { # $1=tool $2=target $3=gates
   printf '{"ts":"%s","tool":"%s","target":"%s","gates":"%s"}\n' "$_dl_ts" "$_e1" "$_e2" "$_e3" >> "$_dl_file" 2>/dev/null || true
 }
 
-# WP-R12-A：全量决策审计（invoked/result 配对语义的 bash 单行适配）
+# 全量决策审计（invoked/result 配对语义的 bash 单行适配）
 # $1=handler $2=tool $3=target $4=decision(deny|pass) $5=reason $6=gates
 _audit_log() {
   local _al_dir="$ROOT/.swarm-yuan"
@@ -211,7 +211,7 @@ _audit_log() {
 # forbid 是无条件的：不依赖 GATE_ENFORCE_DENY/GATE_ENFORCE_DENY_BASH 开关、不依赖门禁红 flag——
 # 随生成物分发的 rules.d/*.rules 即"规则治理命令"的常态面（npm publish/rm -rf/git reset --hard/sudo
 # 默认硬拦，deny 消息带替代方案）。allow → 审计 pass 放行；prompt（3）/无规则 → 落回下方白名单（opt-in 面）。
-# audit-claims-reality 修复：此前求值嵌在 Bash 分支内，被 GATE_ENFORCE_DENY 空（:160 区域）与
+# 此前求值嵌在 Bash 分支内，被 GATE_ENFORCE_DENY 空（:160 区域）与
 # GATE_ENFORCE_DENY_BASH 空两道 early-exit 挡死——默认配置下 rules.d 永不生效，与"无条件"注释矛盾。
 if [[ "$EVENT" == "PreToolUse" && "$TOOL" == "Bash" && -n "$CMD" ]]; then
   _gr="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/gate-rules.sh"
@@ -236,7 +236,7 @@ EOF
   fi
 fi
 
-# 白名单空（默认）= flag 捕获面关闭——但不挡 spec-first 无条件面（field-feedback：
+# 白名单空（默认）= flag 捕获面关闭——但不挡 spec-first 无条件面（
 # SPEC_REQUIRED 与 rules.d 同级，不依赖 GATE_ENFORCE_DENY 开关）。DENY_LIST 空的判定下沉到
 # PreToolUse flag 分支内。
 
@@ -258,7 +258,7 @@ if [[ "$EVENT" == "PostToolUse" && "$TOOL" == "Bash" ]]; then
 fi
 
 # ===== PreToolUse Write/Edit/MultiEdit/Bash：flag 存在 → deny =====
-# WP-Enforce2 扩展：
+# 拦截面扩展：
 #   ① 拦截范围加 Bash（仅拦"推进态"命令白名单：git push/commit/merge/release/deploy/install 等；
 #      不拦只读命令 git status/log/diff/ls/cat/grep，也不拦测试命令 npm test/build/lint——fail 后
 #      需要重跑这些诊断，拦了反而死锁）。
@@ -266,23 +266,23 @@ fi
 #      和用户复盘——这是 deny 动作的"留痕"（G1 决策治理对齐 ISO/IEC 42001）。
 #   ③ Bash 拦截需独立开关 GATE_ENFORCE_DENY_BASH（默认空=不拦 Bash，避免误伤）。
 # （_deny_log/_audit_log 定义与 rules.d 无条件求值已前移至 DENY_LIST 检查之前——
-#   audit-claims-reality：FORBID 是无条件面，不应被白名单开关挡死。）
+#   FORBID 是无条件面，不应被白名单开关挡死。）
 if [[ "$EVENT" == "PreToolUse" ]]; then
   case "$TOOL" in
     Write|Edit|MultiEdit)
       # draft 期自动关闭（骨架期门禁红是常态）——静默面=白名单/flag 捕获面 + spec 前置门；
       # 不含 rules.d 无条件面：forbid 是无条件的（A6 既定意图），骨架期 rm -rf/sudo 照样硬拦。
       # 位置：必须在 spec-first 之前——draft 骨架期无 spec 是常态，spec 门若先判会把骨架期
-      # 全部写操作 deny 死锁（field-feedback 修复期实证：顺序反了 draft 态写 src/ 被误拦）。
+      # 全部写操作 deny 死锁（实证：顺序反了 draft 态写 src/ 被误拦）。
       if [[ -n "$SKILL_MD" ]] && grep -q '^status: draft' "$SKILL_MD" 2>/dev/null; then
         exit 0
       fi
-      # field-feedback 2026-08-26（SPEC_REQUIRED 流程前置门，无条件面）：
+      # SPEC_REQUIRED 流程前置门（无条件面）：
       # 写源码区（WRITABLE_DIRS 内）但当前无已批准 spec → deny。spec 缺失跳流程是
       # "流程性约束缺失"反馈的根因——workflow.md 是文档自觉，这里是机器强制。
       # draft 骨架期放行（骨架期无 spec 是常态）；conf 缺失/WRITABLE_DIRS 未配 → 放行（不阻碍诊断）。
       _spec_req=""
-      # 回归发现#20b：conf 惯用自引用默认（SPEC_REQUIRED="${SPEC_REQUIRED:-1}"，source 时求值
+      # conf 惯用自引用默认（SPEC_REQUIRED="${SPEC_REQUIRED:-1}"，source 时求值
       # 为 1）——原 grep 提取拿到字面 ${SPEC_REQUIRED:-1} ≠ "1"，spec 前置门恒不启用（死代码）。
       # 改为末行生效 + 解析自引用默认；grep 无命中时 || printf '' 保空。
       if [[ -f "$CONF" ]]; then
@@ -295,7 +295,7 @@ if [[ "$EVENT" == "PreToolUse" ]]; then
       if [[ "$_spec_req" == "1" ]]; then
         _in_src=0
         _wd=""
-        # R56-D5：WRITABLE_DIRS 迁移到 #20b/R25-D3 注释安全范式（末行生效 + cut 剥注释 + rtrim 后剥括号）。
+        # WRITABLE_DIRS 迁移到同文件注释安全范式（末行生效 + cut 剥注释 + rtrim 后剥括号）。
         # 旧式 sed 's/)$//' 行尾锚——conf 行带行尾注释（模板惯例 WRITABLE_DIRS=()  # TODO:model）时
         # 剥不掉括号，提取出 `src)  # ...` 垃圾串 → 可写区匹配恒 false → spec-first 整链静默失效。
         [[ -f "$CONF" ]] && _wd=$(grep '^WRITABLE_DIRS=' "$CONF" 2>/dev/null | tail -1 | cut -d'#' -f1 | sed -e 's/^WRITABLE_DIRS=(//' -e 's/[[:space:]]*)[[:space:]]*$//' -e 's/"//g' || printf '')
@@ -356,10 +356,10 @@ EOF
       if [[ -n "$SKILL_MD" ]] && grep -q '^status: draft' "$SKILL_MD" 2>/dev/null; then
         exit 0
       fi
-      # WP-Enforce2：Bash 拦截需独立开关 GATE_ENFORCE_DENY_BASH（默认空=不拦，避免误伤）
+      # Bash 拦截需独立开关 GATE_ENFORCE_DENY_BASH（默认空=不拦，避免误伤）
       # 白名单：git push/commit/merge/release/deploy/install/publish；不拦只读（status/log/diff/ls/cat/grep）与测试命令（npm test/build/lint）——fail 后需要重跑诊断。
       _bash_deny=""
-      # R25-D3 同款：tr 在 sed 前（对齐 SPEC_REQUIRED 范式），行尾注释不再混入白名单匹配
+      # tr 在 sed 前（对齐 SPEC_REQUIRED 范式），行尾注释不再混入白名单匹配
       [[ -f "$CONF" ]] && _bash_deny=$(grep -m1 '^GATE_ENFORCE_DENY_BASH=' "$CONF" 2>/dev/null | cut -d'#' -f1 | tr -d '[:space:]' | sed 's/^GATE_ENFORCE_DENY_BASH=//;s/^"//;s/"$//' || printf '')
       [[ -z "$_bash_deny" ]] && exit 0
       [[ ! -f "$FLAG" ]] && exit 0

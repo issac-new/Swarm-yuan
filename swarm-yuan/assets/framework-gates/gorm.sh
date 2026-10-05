@@ -152,7 +152,7 @@ ${bad_lines}
       [[ -z "$sl" ]] && continue
       local lineno=${sl%%:*}
       local end
-      # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+      # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
       end=$(printf '%s\n' "$code" | sed -n "${lineno},\$p" | grep -nE '^\}' | head -1 | cut -d: -f1 || true)
       [[ -z "$end" ]] && continue
       local block
@@ -329,7 +329,7 @@ ${tn_files}"
     pass "fw_gorm_naming: 命名策略一致"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

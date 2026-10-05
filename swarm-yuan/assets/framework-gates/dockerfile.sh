@@ -1,6 +1,6 @@
 # ruleset: dockerfile  requires_conf: DOCKERFILE_GLOBS
 # gates: fw_dockerfile_latest_base(fail) fw_dockerfile_root_user(fail) fw_dockerfile_hardcoded_secret(fail) fw_dockerfile_no_healthcheck(warn) fw_dockerfile_no_multistage(warn) fw_dockerfile_no_dockerignore(warn) fw_dockerfile_apt_cleanup(warn) fw_dockerfile_copy_no_chown(warn) fw_dockerfile_no_expose(warn) fw_dockerfile_entrypoint_cmd_split(warn)
-# harvested-from: WP-U 新增（2026-07-23），规律源自 docs.docker.com/engine/reference/builder / OWASP Docker Top 10 / Hadolint S1000+ 规则库
+# harvested-from: 新增（2026-07-23），规律源自 docs.docker.com/engine/reference/builder / OWASP Docker Top 10 / Hadolint S1000+ 规则库
 _fw_dockerfile_check() {
   echo "  [dockerfile] Dockerfile syntax 1.x IaC 规律"
 
@@ -191,7 +191,7 @@ _fw_dockerfile_check() {
   done
   _fw_report warn fw_dockerfile_entrypoint_cmd_split "${ep_bad}" "缺 ENTRYPOINT 或 CMD（入口未分离，docker run 难覆盖参数；GB/T 25000.51-2016 使用性）" "ENTRYPOINT+CMD 已分离"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

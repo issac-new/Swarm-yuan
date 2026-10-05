@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# project-fingerprint.sh — 项目源码指纹（WP-Q3-1 自成长机制最小切片）
+# project-fingerprint.sh — 项目源码指纹（自成长机制最小切片）
 # 把项目源码的"结构指纹"算出来写到 .swarm-yuan/project-fingerprint：
 #   文件数 / 源码扩展名分布 / 关键目录 sha256(文件名列表)
 # 用法:
@@ -36,10 +36,10 @@ _compute_fp() {
   local p="$1"
   {
     # 排除 .git/node_modules/dist/build/.next/.cache + 元数据（.swarm-yuan/.claude/.vscode/.idea）
-    # R33-D6（2026-09-17 Java 栈执勤实证）：排除链缺 Maven target/（25 个 .class/.jar/.lst 计入基线
+    # 排除链缺 Maven target/（25 个 .class/.jar/.lst 计入基线
     # → 每次 mvn build 后 --diff 误报「项目已变化」，自成长链被构建噪音误触发）。顺带补 Gradle/venv。
     # inventory-dimensions.conf DIM_DATA_MODEL 排除链同源（--exclude-dir=target），两处口径一致。
-    # R44-D11（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：排除链缺 bin/ obj/——.NET 构建
+    # 排除链缺 bin/ obj/——.NET 构建
     # 产物（实测基线 552 个 .dll/.pdb/.deps.json 混入 685 总文件）随 SDK/包版本或 clean 重建
     # 改变文件集 → --diff 误报。补两目录（与 target/dist 同族通用产物名；inventory-dimensions
     # 各维 --exclude-dir=bin/obj 已同步）。
@@ -63,7 +63,7 @@ _compute_fp() {
       | LC_ALL=C cksum \
       | awk '{print $1}')
     echo "skel_cksum=${skel:-0}"
-    # WP-R12-C：顶层目录分组 cksum（dsh agent-instructions 路径级 digest 的 bash 最小切片，
+    # 顶层目录分组 cksum（dsh agent-instructions 路径级 digest 的 bash 最小切片，
     # 见 references/dsh-engineering-methodology.md §3.2）——单趟 find 按顶层目录分组到临时文件
     # （find 输出已 sort，组内追加保序 → cksum 确定），--diff 据此报告"哪个 scope 变了"，
     # AI 自成长重探查只针对变化 scope（局部重探查），不整仓重扫。
@@ -92,7 +92,7 @@ _compute_fp() {
 }
 
 if [[ "$WRITE" -eq 1 ]]; then
-  # WP-R3-2 last-good 红线：若既有基线存在且新指纹 total 骤降 >50%，默认拒绝写入
+  # last-good 红线：若既有基线存在且新指纹 total 骤降 >50%，默认拒绝写入
   # （防 AI 在项目异常状态/扫盘 bug 下把"条目数骤降"的指纹误落为新基线，覆盖 last-good）。
   # 真实的项目重构场景由 --force 显式覆盖（UserChallenge 类决策，须决策落痕）。
   if [[ -f "$FP_FILE" && "$FORCE" -ne 1 ]]; then
@@ -140,7 +140,7 @@ fi
 
 # --diff 模式：parse 两边字段做差异（避免直接 diff 文本——cksum 变化不直观）
 # bash 3.2 不支持关联数组，用 _kv_KEY=value 形式前缀变量模拟
-# （audit-claims-reality D4：_parse 函数已删——定义后零调用，_load_kv 才是活路径）
+# （_parse 函数已删——定义后零调用，_load_kv 才是活路径）
 _load_kv() { # $1=file  $2=prefix  → 设置 _kv_<prefix>_<key>="value"
   local prefix="$2" key value
   # awk: key=第 1 字段；value=拼接 NF>=2 之后所有字段（ext_dist 含等号）
@@ -169,7 +169,7 @@ fi
 echo "⚠ 项目源码已变化——按目标技能 SKILL.md「自成长」段走更新链："
 echo "  ① 生成器 generate-skill.sh --upgrade 刷工具链 ② AI 重探查变化维度更新 reference-manual.md 清单"
 echo "  ③ inventory-verify.sh 计数核验 ④ 本脚本 --write 落新基线"
-# WP-R3-2 last-good 红线预警（--diff 视角）：total 骤降 >50% 时显著提示，避免 AI 顺势 --write
+# last-good 红线预警（--diff 视角）：total 骤降 >50% 时显著提示，避免 AI 顺势 --write
 if [[ "${_tot_a:-0}" -gt 0 && "${_tot_b:-0}" -gt 0 ]]; then
   if awk -v n="$_tot_b" -v o="$_tot_a" 'BEGIN{ exit !(n*2 < o) }'; then
     _pct=$(awk -v n="$_tot_b" -v o="$_tot_a" 'BEGIN{ printf "%.1f", (o-n)*100/o }')
@@ -207,7 +207,7 @@ if [[ "${_ext_a}" != "${_ext_b}" ]]; then
   fi
   rm -f "$_a_t" "$_b_t"
 fi
-# WP-R12-C：顶层目录 scope 变化报告（局部重探查指引——只重探查变化的 scope，不整仓重扫）
+# 顶层目录 scope 变化报告（局部重探查指引——只重探查变化的 scope，不整仓重扫）
 if [[ "${_dc_a}" != "${_dc_b}" ]]; then
   echo "  变化目录（scope——AI 自成长只重探查这些目录的组件/接口/约束）:"
   _dc_a_norm=$(echo "${_dc_a}" | LC_ALL=C tr ' ' '\n' | LC_ALL=C grep -E '^dir_cksum\[' | LC_ALL=C sort -u)

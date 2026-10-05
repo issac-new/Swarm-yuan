@@ -185,7 +185,7 @@ _fw_redis_check() {
   done
   _fw_report warn fw_redis_db_consistency "${cons_bad}" "写库操作无删缓存痕迹（须 Cache Aside：先更库再删缓存，禁止改缓存）" "写库路径有缓存失效痕迹或无写库"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

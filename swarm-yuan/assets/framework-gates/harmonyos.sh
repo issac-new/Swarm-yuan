@@ -1,6 +1,6 @@
 # ruleset: harmonyos  requires_conf: HARMONYOS_SRC_GLOBS
 # gates: fw_harmonyos_napi_bridge(fail) fw_harmonyos_native_mem(fail) fw_harmonyos_permission(fail) fw_harmonyos_ability_lifecycle(warn) fw_harmonyos_arkts_strict(warn) fw_harmonyos_main_thread(warn) fw_harmonyos_cross_ref(warn) fw_harmonyos_cmake_link(warn) fw_harmonyos_state_decorator(warn) fw_harmonyos_concurrency_err(warn)
-# harvested-from: WP-P2-extension 2026-08-26，规律源自 HarmonyOS NEXT NDK/ArkTS/权限/Ability 官方文档
+# harvested-from: 2026-08-26，规律源自 HarmonyOS NEXT NDK/ArkTS/权限/Ability 官方文档
 _fw_harmonyos_check() {
   echo "  [harmonyos] HarmonyOS NEXT 框架规律"
 

@@ -1,6 +1,6 @@
 # ruleset: opengauss  requires_conf: OPENGAUSS_GLOBS
 # gates: fw_opengauss_hardcoded_password(fail) fw_opengauss_sql_concat(fail) fw_opengauss_ssl_disabled(fail) fw_opengauss_pg_hba_trust(fail) fw_opengauss_conn_pool(warn) fw_opengauss_audit_log(warn) fw_opengauss_rls(warn) fw_opengauss_slow_log(warn) fw_opengauss_statement(warn) fw_opengauss_autovacuum(warn)
-# harvested-from: WP-V（2026-07-23），规律源自 openGauss 官方文档（docs.opengauss.org）与信创数据库接入安全实践（CWE-798/89/319/306/778/639）
+# harvested-from: （2026-07-23），规律源自 openGauss 官方文档（docs.opengauss.org）与信创数据库接入安全实践（CWE-798/89/319/306/778/639）
 _fw_opengauss_check() {
   echo "  [opengauss] openGauss（信创数据库）框架规律"
 
@@ -190,7 +190,7 @@ _fw_opengauss_check() {
   done
   _fw_report warn fw_opengauss_autovacuum "$av_bad" "全局关闭 autovacuum（死元组堆积表膨胀+统计信息腐化计划失真；批量导入临时关闭后必须恢复并手工 VACUUM ANALYZE）" "autovacuum 未全局关闭"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

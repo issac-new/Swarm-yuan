@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# conf-render.sh — precheck.conf 三件套初稿渲染（WP-P4/M3）
+# conf-render.sh — precheck.conf 三件套初稿渲染
 # 把 Step 8 模型手译 176 变量的机械工作脚本化：嗅探项目 → 渲染 conf 初稿
 #   每变量带溯源注释: # AUTO:detected（探测所得）/ # AUTO:default（默认值未动）/ # TODO:model（语义型，须人工）
 # 模型新动作: 只处理 # TODO:model 清单 + 审 diff（从「写 158 行」变「审 + 补少数」）
@@ -33,8 +33,8 @@ PROJ=$(cd "$PROJ" && pwd)
 [[ -n "$OUT" ]] && { mkdir -p "$OUT"; }
 
 # ===== 嗅探层 =====
-# R48-G4（跨栈同仓审计）：根级单点嗅探对前后端同仓（backend/+frontend/ 等）全空——
-# R47 实证构建/测试命令落 AUTO:default 空值。无根清单时 depth≤3 发现各工程目录
+# 根级单点嗅探对前后端同仓（backend/+frontend/ 等）全空——
+# 构建/测试命令落 AUTO:default 空值。无根清单时 depth≤3 发现各工程目录
 # （剪构建产物与依赖目录），供下方 poly 分支合成复合命令。有根清单则维持原单栈路径。
 _mo_dirs=""
 if ! [[ -f "$PROJ/package.json" || -f "$PROJ/pom.xml" || -f "$PROJ/build.gradle" \
@@ -51,7 +51,7 @@ if [[ -f "$PROJ/package.json" ]]; then
   if [[ -f "$PROJ/yarn.lock" ]]; then _pm="yarn"; _build="yarn build"; _test="yarn test"; _build_confirmed=1; _test_confirmed=1
   elif [[ -f "$PROJ/pnpm-lock.yaml" ]]; then _pm="pnpm"; _build="pnpm build"; _test="pnpm test"; _build_confirmed=1; _test_confirmed=1
   else _pm="npm"
-  # R66-A2：BUILD_CMD 自指防 fork bomb——scripts.build 内再调 npm run build（如 "cd frontend
+  # BUILD_CMD 自指防 fork bomb——scripts.build 内再调 npm run build（如 "cd frontend
   # && npm run build" 而 frontend 无独立 package.json）会向上寻包自递归（实测 820 进程）。
   # 自指形态 → BUILD_CMD 留空（AUTO:default 空值语义），人工修正。
   _bt=$(grep -oE '"build"[[:space:]]*:[[:space:]]*"[^"]*"' "$PROJ/package.json" 2>/dev/null | head -1)
@@ -70,34 +70,34 @@ elif [[ -f "$PROJ/build.gradle" ]] || [[ -f "$PROJ/build.gradle.kts" ]]; then
 elif [[ -f "$PROJ/go.mod" ]]; then
   _lang="go"; _pm="go"; _build="go build ./..."; _test="go test ./..."; _build_confirmed=1; _test_confirmed=1
 elif [[ -f "$PROJ/Gemfile" ]]; then
-  # R64-D3（ruby 生态首执勤）：Bundler 命令族。BUILD=bundle install（按 lock 确定性安装，
-  # 非改写纪律同 R62-D3）；TEST=bundle exec rake（生态主流 Rake 任务）。lock 才 confirmed。
+  # Bundler 命令族。BUILD=bundle install（按 lock 确定性安装，
+  # 非改写纪律同 php/composer 族）；TEST=bundle exec rake（生态主流 Rake 任务）。lock 才 confirmed。
   _lang="ruby"; _pm="bundler"; _build="bundle install"; _test="bundle exec rake"
   if [[ -f "$PROJ/Gemfile.lock" ]]; then _build_confirmed=1; _test_confirmed=1; fi
 elif [[ -f "$PROJ/composer.json" ]]; then
-  # R62-D3（php 生态首执勤）：composer 命令族。BUILD=composer install（按 lock 确定性安装，
-  # 不改写既有版本——对齐 R60-A2 非改写纪律）；TEST=vendor/bin/phpunit（生态主流，其他
+  # composer 命令族。BUILD=composer install（按 lock 确定性安装，
+  # 不改写既有版本——对齐 uv 分支非改写纪律）；TEST=vendor/bin/phpunit（生态主流，其他
   # runner 人工修正）。不实跑不语义确认：confirmed 仅 composer.lock 存在时置位（锁=自证）。
   _lang="php"; _pm="composer"; _build="composer install"; _test="vendor/bin/phpunit"
   if [[ -f "$PROJ/composer.lock" ]]; then _build_confirmed=1; _test_confirmed=1; fi
 elif [[ -f "$PROJ/pyproject.toml" ]] || [[ -f "$PROJ/requirements.txt" ]]; then
   _lang="python"; _pm="pip"
-  # R60-A2：uv 分支原 `uv run build` 双缺陷——build 脚本未必存在（实跑 Failed to spawn: build），
+  # uv 分支原 `uv run build` 双缺陷——build 脚本未必存在（实跑 Failed to spawn: build），
   # 且 uv run 默认按 uv.lock 改写 venv（实测 Django 6.1.1 被静默降 6.1，违反版本锁定铁律）。
   # 改非改写口径：build=stdlib compileall（零依赖零改写）；test 加 --no-sync 禁环境改写。
   if [[ -f "$PROJ/uv.lock" ]]; then _pm="uv"; _build="python3 -m compileall -q ."; _test="uv run --no-sync python3 -m pytest"; _build_confirmed=1; _test_confirmed=1
   elif [[ -f "$PROJ/poetry.lock" ]]; then _pm="poetry"; _build="poetry build"; _test="poetry run pytest"; _build_confirmed=1; _test_confirmed=1
   else
-    # R25-PF1（2026-09-12 Python 执勤实证 notes-api）：裸锁文件项目此前默认 _test=pytest /
+    # 裸锁文件项目此前默认 _test=pytest /
     # _build="python -m build"——两者都是第三方包，未声明未安装时默认值不可执行（AUTO:default
     # 语义=默认未动，翻车在门禁 check_test 真跑时）。改为：声明了 pytest 才用 pytest（confirmed），
     # 否则标准库 unittest 零依赖兜底；无 pyproject.toml（纯 requirements.txt 应用仓）无构建语义
     # 则 BUILD_CMD 留空（与 Node 样本 task-api 口径一致）。
-    # R28-DF1（2026-09-16 FastAPI 执勤实证 taskflow-api）：pytest 形态用 `python3 -m pytest`
+    # pytest 形态用 `python3 -m pytest`
     # 而非裸 pytest——无 pytest.ini/pyproject[tool.pytest] 的项目（纯 requirements.txt 应用仓
     # 主流形态）裸 pytest 不把 cwd 注入 sys.path，收集 `from app.main import app` 必 ModuleNotFoundError；
     # `-m` 语义注入 cwd，对有配置项目等价（与同函数 unittest 兜底的 python3 -m 口径一致）。
-    # R72-D3（2026-09-29 FastAPI 执勤实证 r72-drill-library-api）：项目 .venv 存在时解释器
+    # 项目 .venv 存在时解释器
     # 必须取 .venv/bin/python——系统 python3 的 user site-packages 与项目依赖无关（实测碰巧
     # 装了 fastapi 才假绿；无全局包机器上 check_test 必炸 ModuleNotFoundError，测的还是
     # 错误环境）。precheck.sh 门禁在 cd "$PROJECT_DIR" 后 eval TEST_CMD，相对路径成立。
@@ -115,14 +115,14 @@ elif [[ -f "$PROJ/pyproject.toml" ]] || [[ -f "$PROJ/requirements.txt" ]]; then
     if [[ -f "$PROJ/pyproject.toml" ]]; then _build="python -m build"; else _build=""; fi
   fi
 elif [[ -f "$PROJ/Cargo.toml" ]]; then
-  # R39-D1（2026-09-19 Rust 栈执勤实证 r39-drill-taskflow）：嗅探表此前无 Cargo.toml 分支——
+  # 嗅探表此前无 Cargo.toml 分支——
   # Rust 项目 BUILD_CMD/TEST_CMD 落 AUTO:default 空值，check_build/check_test 无命令可跑
   # （"零手动配置"卖点对整个 Rust 生态失效）。cargo 官方语义即构建/测试入口，无需确认探测：
   # Cargo.toml 存在即 confirmed（workspace 根与单 crate 同样成立）。
   _lang="rust"; _pm="cargo"; _build="cargo build"; _test="cargo test"
   _build_confirmed=1; _test_confirmed=1
 elif [[ -n "${_mo_dirs}" ]]; then
-  # R48-G4：多工程同仓——每目录按确定性优先级（pom>gradle>node>go>python>rust）取一套命令，
+  # 多工程同仓——每目录按确定性优先级（pom>gradle>node>go>python>rust）取一套命令，
   # 子 shell 段串联 `(cd <dir> && <cmd>) && ...`：段间无 cd 状态耦合、相对路径可移植、任一段失败整体失败。
   # confirmed 语义：test 至少一段确证即 detected（docs 型子工程无测试不拖死整仓）。
   _lang="poly"; _pm="multi"
@@ -144,8 +144,8 @@ elif [[ -n "${_mo_dirs}" ]]; then
     elif [[ -f "$PROJ/$_d/go.mod" ]]; then
       _b="go build ./..."; _t="go test ./..."; _tc=1
     elif [[ -f "$PROJ/$_d/requirements.txt" || -f "$PROJ/$_d/pyproject.toml" ]]; then
-      # R80-D1（2026-10-01 Flask+Vue3 monorepo 执勤实证 r80-drill-notes-hub）：poly 分支 Python 段
-      # 此前硬编码裸 python3——R72-D3 的 venv 三级嗅探只落了根级 Python 分支（上方同函数），
+      # poly 分支 Python 段
+      # 此前硬编码裸 python3——venv 三级嗅探只落了根级 Python 分支（上方同函数），
       # 前后端同仓形态（<dir>/requirements.txt + 另一 node 子目录）走 poly 分支漏嗅探，依赖装在
       # <dir>/.venv 时生成的 TEST_CMD 在无全局包机器上 check_test 必炸 ModuleNotFoundError
       # （实测：系统 python3 连 flask_sqlalchemy 都 import 不了，AUTO:detected 初值整条假）。
@@ -176,8 +176,8 @@ elif [[ -n "${_mo_dirs}" ]]; then
   _build_confirmed=0
   [[ -n "$_build" ]] && _build_confirmed=1
 elif [[ -n "$(find "$PROJ" -maxdepth 3 \( -name '*.csproj' -o -name '*.fsproj' -o -name '*.sln' -o -name '*.slnx' \) -not -path '*/bin/*' -not -path '*/obj/*' -print -quit 2>/dev/null)" ]]; then
-  # R44-D1（2026-09-23 .NET 栈执勤实证 r44-drill-inventory）：嗅探表此前无 csproj/sln/slnx 分支
-  # （同 R39-D1 Rust 形态缺位家族第六例）——.NET 项目 BUILD_CMD/TEST_CMD 落 AUTO:default 空值。
+  # 嗅探表此前无 csproj/sln/slnx 分支
+  # （同 Rust Cargo.toml 形态缺位同族）——.NET 项目 BUILD_CMD/TEST_CMD 落 AUTO:default 空值。
   # dotnet CLI 在工程/解决方案目录下免参即可发现唯一 sln/slnx/csproj（多解决方案目录才需显式
   # 指定，属少数形态，AI 填 conf 时按特征卡修正）；存在任一 .NET 工程文件即 confirmed。
   _lang="csharp"; _pm="dotnet"; _build="dotnet build"; _test="dotnet test"
@@ -189,7 +189,7 @@ _monorepo=0
 [[ -d "$PROJ/services" && $(ls -1 "$PROJ/services" 2>/dev/null | wc -l | tr -d ' ') -gt 1 ]] && _monorepo=1
 [[ -n "${_mo_dirs}" ]] && _monorepo=1
 # ACTIVE_FRAMEWORKS（调 detect-frameworks.sh；其行式解析器对紧凑单行 package.json 会漏探，fail-open 兜底补 pkgjson）
-# 回归发现#2（2026-08-27 RuoYi 双项目回归）：原解析 sed 's/.*"\([^"]*\)".*/\1/p' 贪婪匹配
+# 回归发现（2026-08-27 RuoYi 双项目回归）：原解析 sed 's/.*"\([^"]*\)".*/\1/p' 贪婪匹配
 # 只捕获 ACTIVE_FRAMEWORKS=("vue" "element" "vite") 行的最后一个 "vite" → 骨架 conf 只落
 # 1 个框架（SKILL.md 认知摘要另一套正确解析写 3 个 → 设计/实现/生成物三体不一致）。
 # 修复：整行剥壳（去 ACTIVE_FRAMEWORKS= 前缀 + 剥 ()"），框架 id 全量保留。
@@ -260,7 +260,7 @@ _render_var() { # $1=变量名 $2=模板行
         printf "ACTIVE_FRAMEWORKS=()  # AUTO:default"
       fi ;;
     # 注意：STORE_DIR / COMPONENT_DIR 是标量（单目录，门禁按 "$STORE_DIR" 引用），
-    # 不在此处强渲染成数组——bash 3.2 + set -u 下空数组标量展开即 unbound（回归#18：
+    # 不在此处强渲染成数组——bash 3.2 + set -u 下空数组标量展开即 unbound（
     # 原白名单把它们与数组型变量混写 =()，导致 check_state/check_frontend 崩）。
     # 它们走 * 分支保留模板标量形态（=""，门禁 [[ -n "$STORE_DIR" ]] 安全）。
     LAYER_DEFS|SERVICE_DIRS|WRITABLE_DIRS|READONLY_DIRS|SCAN_DIRS|CONSISTENCY_DIRS)
@@ -312,7 +312,7 @@ if [[ -n "$INDUSTRY" ]]; then
     exit 1
   fi
   # 行业层头部改写：原"手工 cat >>"用法注释替换为"本文件由 conf-render --industry 生成"溯源
-  _ip_content=$(sed -e '1,10s|^# 用法：.*|# 本文件由 conf-render.sh --industry '"$INDUSTRY"' 生成（R13 D3 真实加载，勿手工编辑）|' "$_ip_src")
+  _ip_content=$(sed -e '1,10s|^# 用法：.*|# 本文件由 conf-render.sh --industry '"$INDUSTRY"' 生成（真实加载，勿手工编辑）|' "$_ip_src")
   _emit_section "precheck.industry.conf" "$_ip_content"
   # precheck.conf 尾部挂 source（core 的 patch source 之前——行业先于用户覆盖）
   _ind_line='[[ -f "${_conf_self_dir}/precheck.industry.conf" ]] && source "${_conf_self_dir}/precheck.industry.conf" || true'
@@ -324,7 +324,7 @@ if [[ -n "$INDUSTRY" ]]; then
   ')
 fi
 
-# R25-PR1b（2026-09-12 实仓回归实证）：lite 档无 arch.conf，探测到的 ACTIVE_FRAMEWORKS
+# lite 档无 arch.conf，探测到的 ACTIVE_FRAMEWORKS
 # 此前不落任何 conf（框架清单只在 stdout 提示）——框架门禁对 lite 档永远无法注入/生效。
 # 修复：lite 档把框架清单渲染进主 conf 尾部（standard/compliance 档仍归 arch.conf）。
 if [[ "$PROFILE" == "lite" && -n "$_frameworks" ]]; then
@@ -339,8 +339,8 @@ _emit_section "precheck.conf" "$core"
 
 if [[ "$PROFILE" == "standard" || "$PROFILE" == "compliance" ]]; then
   arch=$(_render_conf "assets/precheck.arch.conf")
-  # 回归发现#14（2026-08-27 第五轮回归）：arch.conf 模板把 79 框架的全部变量行（51+）整份渲染进
-  # 骨架，与 WP-P3 懒生成约定（骨架期只留激活框架变量）断裂——ACTIVE_FRAMEWORKS 只激活 N 个，
+  # arch.conf 模板把 79 框架的全部变量行（51+）整份渲染进
+  # 骨架，与懒生成约定（骨架期只留激活框架变量）断裂——ACTIVE_FRAMEWORKS 只激活 N 个，
   # 骨架却带 51 个框架变量行（C 维死变量扫描 53 个实锤：48 个非激活框架占位 + 注释死变量）。
   # 修复：渲染后按 ACTIVE_FRAMEWORKS 懒裁剪——保留激活框架 requires_conf 并集 + 非框架专属变量
   # （通用安全/构建/部署），注释死变量行（可恢复，与 sync_framework_vars 同款处置，不删除）。
@@ -372,11 +372,11 @@ if [[ "$PROFILE" == "compliance" ]]; then
   _emit_section "precheck.compliance.conf" "$comp"
 fi
 
-# F3（dsh 吸收·分层 patch 最小步）：用户覆盖层骨架——纯注释零变量（不进 conf 计数）。
+# 用户覆盖层骨架（dsh 吸收·分层 patch 最小步）：纯注释零变量（不进 conf 计数）。
 # 加载顺序 core→arch→compliance→patch（precheck.conf 尾部 source，后写胜出）：
 # 用户在这里覆盖生成值，不直接改生成的 conf 文件 → upgrade 保留用户配置不再依赖
 # "文件被手改"启发式，根治升级漂移。--dump-conf 按同一顺序输出合成视图+来源层。
-patch_skel='# precheck.patch.conf —— 用户覆盖层（F3 分层 patch）
+patch_skel='# precheck.patch.conf —— 用户覆盖层（分层 patch）
 # 用法：在此覆盖任意生成变量（后 source 即胜出），例：
 #   SENSITIVE_TOOL=builtin          # 覆盖 core 层的 auto
 #   ACTIVE_FRAMEWORKS=("vue" "koa") # 覆盖 arch 层框架清单
@@ -384,11 +384,11 @@ patch_skel='# precheck.patch.conf —— 用户覆盖层（F3 分层 patch）
 _emit_section "precheck.patch.conf" "$patch_skel"
 
 # TODO:model 清单汇总
-# R23 回归 D3：原文案写在双引号串里，字面 "" 被 shell 吞成两个空格；D4：SERVICE_DIRS 在
+# 原文案写在双引号串里，字面 "" 被 shell 吞成两个空格；SERVICE_DIRS 在
 # 渲染后 arch conf 已是 deprecated 注释行，列入清单会误导模型填废弃变量——移除。
 todo='# ===== # TODO:model 清单（须模型补实值）=====
 # LAYER_DEFS / WRITABLE_DIRS / READONLY_DIRS / SCAN_DIRS / CONSISTENCY_DIRS
-# （STORE_DIR / COMPONENT_DIR 为单目录标量，保留模板 "" 形态不列入数组 TODO 清单——回归#18）
+# （STORE_DIR / COMPONENT_DIR 为单目录标量，保留模板 "" 形态不列入数组 TODO 清单）
 # （标注 deprecated 的变量不列本清单——恢复时手工解开 arch.conf 对应注释行）'
 if [[ -n "$OUT" ]]; then
   printf '%s\n' "$todo" > "$OUT/TODO-model.txt"

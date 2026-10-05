@@ -2,7 +2,7 @@
 # split-gates.sh —— 把 precheck.sh 的 check_* 门禁 + 专属辅助函数抽到
 # gates-strict.sh / gates-warn.sh / gates-advisory.sh 三文件（按 gate-enforce-level.conf）。
 #
-# S7 状态：此脚本已不活跃（守卫 :20-22 在 gates-strict.sh 已存在时直接跳过，非幂等）。
+# 状态：此脚本已不活跃（守卫 :20-22 在 gates-strict.sh 已存在时直接跳过，非幂等）。
 #   gates-*.sh 现手工维护，FN 列表/计数可能滞后——以 assets/gates-*.sh 实际 check_* 函数为准。
 #   真值（2026-07-27 核实）：gates-strict.sh=17 / gates-warn.sh=21 / gates-advisory.sh=16（含 check_cognition 因历史）。
 #   enforce-level 真值（gate-enforce-level.conf）：strict=20 / warn=19 / advisory=15。
@@ -141,7 +141,7 @@ mv "${PRECHECK}.tmp" "${PRECHECK}"
 GUARD_FILE="$(mktemp /tmp/split-guard.XXXXXX)"
 cat > "$GUARD_FILE" <<'GUARDEOF'
 
-# ===== WP-Q1.3 门禁函数 source 守卫（决策 19：三档拆分）=====
+# ===== 门禁函数 source 守卫（决策 19：三档拆分）=====
 # 开发态：source gates-strict/warn/advisory.sh 三文件（与 precheck.sh 同目录）
 # install.sh 整目录拷贝（含三文件）；SWARM_YUAN_BUNDLED=1 为预留扩展点（当前无生产者）
 if [[ -z "${SWARM_YUAN_BUNDLED:-}" ]]; then

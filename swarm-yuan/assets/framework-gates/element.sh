@@ -16,7 +16,7 @@ _fw_element_check() {
     return
   fi
 
-  # R67-F3：版本感知——package.json 检 element-ui vs element-plus（两代 API 不同）
+  # 版本感知——package.json 检 element-ui vs element-plus（两代 API 不同）
   if grep -q '"element-ui"' "${PROJECT_DIR:-.}/package.json" 2>/dev/null; then
     pass "fw_element_version_aware: Element UI 2.x 项目（非 Element Plus）——规则集主口径 Plus 2.x，element-ui 项目 i18n/虚拟滚动等规律不适用（import 按 element-ui 包名）"
   fi
@@ -64,7 +64,7 @@ _fw_element_check() {
     if grep -qE ':data="[a-zA-Z_]*(list|List|rows|Rows|data|Data)"' "$f" 2>/dev/null; then
       if ! grep -qE 'virtual|virtualScroll|el-table-v2|lazy' "$f" 2>/dev/null; then
         local ln
-        # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+        # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
         ln=$(grep -nE '<el-table\b' "$f" 2>/dev/null | head -1 || true)
         tbl_bad="${tbl_bad}${f}:${ln}
 "
@@ -236,7 +236,7 @@ _fw_element_check() {
   done
   _fw_report warn fw_element_select_remote_search "$sel_bad" "el-select filterable 但未配 remote-method（大数据选项须远程搜索，否则全量渲染卡顿）" "el-select 远程搜索配置合理（或无 filterable）"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

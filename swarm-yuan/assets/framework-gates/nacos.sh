@@ -28,7 +28,7 @@ _fw_nacos_check() {
   # ---------- Nacos 使用痕迹总判定 ----------
   local nacos_used=0
   local nu_hit
-  # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+  # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
   nu_hit=$(grep -rlE 'spring\.cloud\.nacos|nacos\.server-addr|^[[:space:]]*nacos:|@NacosValue|@NacosPropertySource|@NacosConfigListener|NamingService|ConfigService|NacosConfigManager|com\.alibaba\.nacos|nacos-client' "${javaarr[@]+"${javaarr[@]}"}" "${cfgarr[@]+"${cfgarr[@]}"}" 2>/dev/null | head -1 || true)
   [[ -n "$nu_hit" ]] && nacos_used=1
 
@@ -259,7 +259,7 @@ ${val_files}"
     warn "fw_nacos_metadata: discovery 配置无 metadata（version/region 等元数据是灰度路由、同可用区优先的基础，裸注册无法精细流量治理）"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

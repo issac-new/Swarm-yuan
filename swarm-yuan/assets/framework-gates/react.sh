@@ -18,7 +18,7 @@ _fw_react_check() {
 
   # 代码正文过滤：调公共库 _fw_strip_comments_c（C 系，去单行注释与块注释行，避免注释误报）
 
-  # R67-F3：版本感知——package.json 检 react 版本（18 vs 19 口径分流标注）
+  # 版本感知——package.json 检 react 版本（18 vs 19 口径分流标注）
   local _react_ver=""
   _react_ver=$(grep -oE '"react"[[:space:]]*:[[:space:]]*"[^"]*"' "${PROJECT_DIR:-.}/package.json" 2>/dev/null | grep -oE '[0-9]+' | head -1)
   if [[ -n "$_react_ver" && "$_react_ver" != "19" ]]; then
@@ -178,7 +178,7 @@ ${lazy_files}"
   # ====================================================================
   # fw_react_server_client_boundary(warn)：RSC 内禁 Hook/浏览器 API
   # ====================================================================
-  # WP-R P3-1: 原"任一文件含 'use client' 即判 is_app_router=1"对 CSR SPA 误报——
+  # 原"任一文件含 'use client' 即判 is_app_router=1"对 CSR SPA 误报——
   # shadcn ui 组件自带 'use client'(模板残留)但项目是 react-router CSR 非 Next.js RSC。
   # 修复: 须同时满足"含 use client"且"是 Next.js App Router 项目"(检出 next.config 或
   # app/ 目录含 page.tsx/layout.tsx)。仅 use client 不够——CSR 项目也可能有残留。
@@ -268,7 +268,7 @@ ${lazy_files}"
   done
   _fw_report warn fw_react_no_forwardref "${fwd_hit}" "检出 forwardRef（React 19 起 ref 可作 prop 直传，新组件禁用 forwardRef 包裹；存量组件标注待迁移）" "未检出 forwardRef"
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

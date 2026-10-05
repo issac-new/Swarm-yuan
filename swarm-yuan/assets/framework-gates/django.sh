@@ -127,7 +127,7 @@ ${csrf_bad}"
   # ====================================================================
   local sk_bad=""
   for f in "${srcarr[@]}"; do
-    # R60-A4：测试夹具豁免（test_settings.py 硬编码 SECRET_KEY 是测试标配，对齐 fw_django_debug 豁免口径）
+    # 测试夹具豁免（test_settings.py 硬编码 SECRET_KEY 是测试标配，对齐 fw_django_debug 豁免口径）
     case "$f" in *test*.py|*/tests/*|*/test/*) continue ;; esac
     local ln
     ln=$(_fw_strip_comments_hash "$f" | grep -nE 'SECRET_KEY[[:space:]]*=[[:space:]]*["'"'"']' 2>/dev/null \
@@ -247,7 +247,7 @@ ${csrf_bad}"
   fi
 
   # ====================================================================
-  # fw_django_migration_drift(warn)：模型↔迁移漂移（横向清剿轮——漏改字段的姊妹缺陷）
+  # fw_django_migration_drift(warn)：模型↔迁移漂移（漏改字段的姊妹缺陷）
   # models.py 含 models.Model 子类但全仓无迁移文件 = 漏 makemigrations 信号（表结构与
   # 代码漂移，运行期才 OperationalError）。有迁移的项目提示跑 --check 复核增量漂移。
   # ====================================================================
@@ -258,7 +258,7 @@ ${csrf_bad}"
   elif [[ ${#migarr[@]} -eq 0 ]]; then
     warn "fw_django_migration_drift: 检出 ${model_cnt} 个 Model 文件但 0 迁移文件（漏 makemigrations：表结构与代码漂移，运行期 OperationalError；跑 python manage.py makemigrations --check 验证）"
   else
-    # R60-A8 整合：增量漂移真判——实跑 makemigrations --check --dry-run（不产文件）。
+    # 增量漂移真判——实跑 makemigrations --check --dry-run（不产文件）。
     # manage.py 形态可实跑；可复用 app 形态（无 manage.py）依赖 DJANGO_SETTINGS_MODULE，
     # 不实跑仅诚实提示（fail-open，同框架门禁降级口径）。
     local _mig_root="${PROJECT_DIR:-.}" _mig_out=""
@@ -277,7 +277,7 @@ ${csrf_bad}"
     fi
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

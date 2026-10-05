@@ -1,6 +1,6 @@
 # ruleset: opentelemetry  requires_conf: OPENTELEMETRY_GLOBS
 # gates: fw_opentelemetry_service_name(warn) fw_opentelemetry_exporter_endpoint(warn) fw_opentelemetry_sampler(warn) fw_opentelemetry_deployment_env(warn) fw_opentelemetry_deprecated_exporter(fail) fw_opentelemetry_span_attributes(warn) fw_opentelemetry_baggage_propagation(warn) fw_opentelemetry_metrics_export(warn) fw_opentelemetry_logs_api(warn) fw_opentelemetry_graceful_shutdown(warn)
-# harvested-from: WP-U 新增（2026-07-23），规律源自 opentelemetry.io 官方文档 / spec v1.39 / 各 SDK README
+# harvested-from: 新增（2026-07-23），规律源自 opentelemetry.io 官方文档 / spec v1.39 / 各 SDK README
 _fw_opentelemetry_check() {
   echo "  [opentelemetry] OpenTelemetry 1.x 可观测性规律"
 
@@ -216,7 +216,7 @@ _fw_opentelemetry_check() {
     pass "fw_opentelemetry_graceful_shutdown: 无 trace provider（跳过）"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。

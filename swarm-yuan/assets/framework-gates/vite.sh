@@ -12,7 +12,7 @@ _fw_vite_check() {
 
   # ====================================================================
   # fw_vite_alias_array_form(warn)：alias 须数组形式
-  # WP-R P2: 原 fail 对"对象形式 alias"过严——对象形式是 vite 合法用法(Vite resolve.alias
+  # 原 fail 对"对象形式 alias"过严——对象形式是 vite 合法用法(Vite resolve.alias
   # 接受 Record<string,string>)。降为 warn:对象形式存在时提示建议数组(保证顺序),不 fail。
   # 仅当完全无 alias 配置时才保持原 fail 语义(配置缺失)。
   # ====================================================================
@@ -26,7 +26,7 @@ _fw_vite_check() {
 
   # ====================================================================
   # fw_vite_alias_order(warn)：@/custom 须在 @ 之前
-  # WP-R P2: alias_order 依赖 alias_array_form 的数组形式,对象形式无顺序保证概念。
+  # alias_order 依赖 alias_array_form 的数组形式,对象形式无顺序保证概念。
   # 对象形式时降为 warn(无法判定顺序);无 @/custom 时 skip。
   # ====================================================================
   local custom_line at_line
@@ -44,7 +44,7 @@ _fw_vite_check() {
 
   # ====================================================================
   # fw_vite_inject_clean(warn)：inject.mjs 须支持 --clean 回滚
-  # WP-R P1-2: 原 fail 对"VITE_INJECT_SCRIPT 指向非 inject.mjs 文件"的项目过严。
+  # 原 fail 对"VITE_INJECT_SCRIPT 指向非 inject.mjs 文件"的项目过严。
   # 如 RuoYi-Vue3 把 VITE_INJECT_SCRIPT 填为 vite/plugins/index.js(非 inject 脚本)，
   # 门禁 grep 不到 --clean 直接 fail。修复：文件存在但非 inject 脚本(无 inject 特征)
   # 降为 warn(可能误配);仅当明确是 inject.mjs 但缺 --clean 才 fail。空值仍 skip。
@@ -147,7 +147,7 @@ _fw_vite_check() {
   local proxy_bad=""
   if grep -qE 'proxy:' "$cfg" 2>/dev/null; then
     if ! grep -qE 'target:' "$cfg" 2>/dev/null; then
-      # WP-R Bug#1: SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
+      # SIGPIPE 加固（head 截断致 grep SIGPIPE，在 $() 末尾加 || true）
       proxy_bad=$(grep -nE 'proxy:' "$cfg" 2>/dev/null | head -1 || true)
     fi
   fi
@@ -166,7 +166,7 @@ _fw_vite_check() {
     pass "fw_vite_esbuild_minify: minify 默认 esbuild（或未显式关闭）"
   fi
 
-### P1-4 AI 自查段（仅注释，不改动函数体）
+### AI 自查段（仅注释，不改动函数体）
 # 违规行定位：本函数内各门禁分支的 fail/warn 由 pass/fail/warn 宏直接上报，
 #   命中行即对应 pass/fail/warn 调用所在行；定位方法：grep -nE 'fail "fw_|warn "fw_' <file>。
 # 优先级建议：fail 级（数据/安全不可逆后果）须 AI 亲自核验修复后复跑；warn 级评估后采纳。
