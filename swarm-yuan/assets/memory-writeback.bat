@@ -1,7 +1,7 @@
 @echo off
 REM memory-writeback.bat - Windows 包装器，自动查找 bash 并运行 memory-writeback.sh
 REM 用法:
-REM   memory-writeback.bat [--skill-dir <目录>] [--project-dir <目录>]    Step 11 记忆写回（三路 best-effort）
+REM   memory-writeback.bat [--skill-dir <目录>] [--project-dir <目录>]    Step 12 记忆写回（三路 best-effort）
 REM 注：本 .bat 供已生成的目标 skill 使用（其 scripts/memory-writeback.sh 存在）；
 REM     swarm-yuan 源仓库内 memory-writeback.sh 位于 assets/，源仓库开发请直接 bash assets/memory-writeback.sh。
 

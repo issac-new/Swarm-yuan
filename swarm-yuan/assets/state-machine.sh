@@ -429,7 +429,7 @@ show_status() {
   cat "$STATE_FILE"
 }
 
-# ===== WP-loop: compaction 状态续传（借鉴 tanweai/pua builder-journal + session-restore）=====
+# ===== compaction 状态续传（来源：tanweai/pua builder-journal + session-restore）=====
 # 与决策 13 断点续传（文件级幂等补缺）正交——compaction-journal 是运行时状态快照，
 # 在 context compaction 前把 current_phase/failure_count/stuck_since dump 到 builder-journal.md，
 # 新会话 SessionStart 检测 builder-journal.md 存在且 <2h → 恢复状态 + 注入「你在 X 卡了 N 次失败」。

@@ -1,10 +1,10 @@
-> **何时读我**：参考 GSD 计划/验证/状态管理模式时。gsd-core 吸收——计划验证/STATE 戳/validator envelope。
+> **何时读我**：参考 GSD 计划/验证/状态管理模式时。来源：gsd-core（计划验证/STATE 戳/validator envelope）。
 
 # gsd-core 模式整合 (GSD-Core Patterns)
 
-> 整合自 [gsd-core](https://github.com/open-gsd/gsd-core) 的方法论模式与运行时工具。
+> 来源：[gsd-core](https://github.com/open-gsd/gsd-core)（方法论模式与运行时工具）。
 > **安装 gsd-core 并引用其命令（gsd-tools / /gsd-* / capability），不复制其源码。**
-> **gsd-core v1.9-1.10 要点**：① **effort surface axis**（v1.9.0 #2481）——negotiated 努力程度轴 + 调用时 effort 参数，与 swarm-yuan `task-scale.sh`（任务规模判定）同向：按任务复杂度协商投入；② **deferred-items.md 里程碑暴露**（v1.10.0 #2646）——milestone 关闭时 surface 未解决的 deferred items，与 swarm-yuan `--mark-active` 无占位符核验同向（关门前查遗留，不让 deferred 债务悄悄进 milestone）。
+> **gsd-core v1.9-1.10 要点**：① **effort surface axis**（v1.9.0 #2481）——negotiated 努力程度轴 + 调用时 effort 参数，与 swarm-yuan `task-scale.sh`（任务规模判定）一致：按任务复杂度协商投入；② **deferred-items.md 里程碑暴露**（v1.10.0 #2646）——milestone 关闭时 surface 未解决的 deferred items，与 swarm-yuan `--mark-active` 无占位符核验一致（关门前查遗留，不让 deferred 债务悄悄进 milestone）。
 
 ## gsd-core 安装与运行时调用（工具引用）
 
@@ -342,7 +342,7 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 
 > 一个破坏性变更：`<fails_when>` 强制。
 
-- **`.planning/state.json` 机器可读状态契约**（#3227）：step 边界发布 versioned contract，best-effort 写永不失败 + `planning inspect` 只读快照——v1.11"guard 可观测性"升级为"状态本身可机器消费"。
+- **`.planning/state.json` 机器可读状态契约**（#3227）：step 边界发布 versioned contract，best-effort 写永不失败 + `planning inspect` 只读快照——状态本身可机器消费（v1.11 的 guard 可观测性扩展到状态本身）。
 - **`<fails_when>` 强制**（#3172）：验收命令必须声明可观察失败信号——"无法表达失败模式的命令不是验收测试"；与 openspec v1.10 完成判据合并为两要素=命令+失败信号。
 - **证据纪律**：元数据缺失不得推出 [VERIFIED]（#2951，与本仓 missing_evidence 再印证）；多评审并行+共识门，孤立 HIGH 按证据加权（#2398/#3034）。
 - 供应链：runtime-identity 断言防同名工具（#3146/#3841）+ versioned exit contract + `state validate --strict` 可门禁。
@@ -351,28 +351,29 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 
 > minor 级、无破坏性变更。
 
-- **证据纪律三连**：复核阻塞须确定性证据（#4085）+ **no-op 报真实条件与已算值**（#4157，"缺失证据不显示为零"族）+ **不可读目录不得报为空**（#4163）——复核/上报/枚举三面全钉确定性。
+- **证据纪律三连**：复核阻塞须确定性证据（#4085）+ **no-op 报真实条件与已算值**（#4157，"缺失证据不显示为零"同类）+ **不可读目录不得报为空**（#4163）——复核/上报/枚举三面全钉确定性。
 - **Review Dispositions Ledger 契约化**（#4345）：评审处置清单——与 gate-audit.jsonl 同构印证。
-- 同向：context-drift 前置门（#4147，与 fingerprint --diff 同向）。候选：dispatch.maxConcurrency 容量轴（#4162）/ quick-batch 可恢复 manifest / bracket-tolerant id（#2867）。
+- context-drift 前置门（#4147）与 fingerprint --diff 一致。尚未落地：dispatch.maxConcurrency 容量轴（#4162）/ quick-batch 可恢复 manifest / bracket-tolerant id（#2867）。
 
 ## gsd-core v1.14.0 要点
 
 > 实质 minor（178 commits / 604 文件）。
 
-- **路径遏制单点化**（#4653/#4636）："containment ONE decision, resolved two ways"——全部遏制实现删除或路由经唯一 canonical predicate，存活包装器不得自行判定"是否受遏制"；**symlink 逃逸补洞**（lexical 检查可被符号链接绕过，failing-first 覆盖先行）——路径语义须在规范化空间比对（单一事实源族·安全边界精化；与 claude-code v2.1.268 deny/ask 真实路径绕过修复同谱系）。
-- **自建 lint + 违规清零**（#4654）：ESLint 规则 `no-unconfined-path-join`（426 行）+ allowlist + 全仓 drain to zero——架构不变量从 review 纪律升维为机器门禁；守门测试钉行为，lint 钉写法，双手段互补。
-- **already_present 诚实报告**（#4558）：restore 计划把与备份字节相同的目的地当缺失报 `eligible`，改报 `already_present`——「no-op 报真实条件」族（v1.13.0 #4157）计划侧延续。
-- **dispatch-identity 单一所有者**（#4594）：隔离守卫曾 regex 刨模型散文判定 run-scoped sentinel；改为发射格式与回读解析器同一所有者——**模型生成文本不是协议面**，判定依据须来自结构化字段。
-- **install-time 校验全注册表**（#3929）：安装时校验只看 candidate map 曾使非空 `requires` 永不可满足；改为 merged registry（第一方+已装+候选）——同一校验在不同时点必须同口径（「预览=执行口径」姊妹样本）。
-- 同向注记：分支真新验真（#4055，幂等创建族）/ 命名超时常量五批迁移（界要命名）/ WINDOWS.md 清单跨进程串行化（#3780，共享可变状态写串行化）。
+- **路径遏制单点化**（#4653/#4636）："containment ONE decision, resolved two ways"——全部遏制实现删除或路由经唯一 canonical predicate，存活包装器不得自行判定"是否受遏制"；**symlink 逃逸补洞**（lexical 检查可被符号链接绕过，failing-first 覆盖先行）——路径语义须在规范化空间比对（单一事实源原则在安全边界的精化；与 claude-code v2.1.268 deny/ask 真实路径绕过修复同类）。
+- **自建 lint + 违规清零**（#4654）：ESLint 规则 `no-unconfined-path-join`（426 行）+ allowlist + 全仓 drain to zero——架构不变量由机器门禁执法；守门测试钉行为，lint 钉写法，双手段互补。
+- **already_present 诚实报告**（#4558）：restore 计划对与备份字节相同的目的地报 `already_present`，不报缺失 `eligible`——「no-op 报真实条件」（v1.13.0 #4157）在计划侧的延续。
+- **dispatch-identity 单一所有者**（#4594）：隔离守卫的 run-scoped sentinel 由发射格式与回读解析器同一所有者判定，不从模型散文 regex 刨——**模型生成文本不是协议面**，判定依据须来自结构化字段。
+- **install-time 校验全注册表**（#3929）：安装时校验取 merged registry（第一方+已装+候选），非空 `requires` 在该注册表内可满足——同一校验在不同时点必须同口径（「预览=执行口径」同类样本）。
+- 相关要点：分支真新验真（#4055，幂等创建同类）/ 命名超时常量五批迁移（超时界限收敛为具名常量）/ WINDOWS.md 清单跨进程串行化（#3780，共享可变状态写串行化）。
+
 ## gsd-core v1.16.0 要点
 
 > 实质 minor（161 commits）。
 
 - **检查动词全部收编为 gate 模块**（ADR-5057/#5219）：gate 模块之外不得存在检查动词——router 只从 gate 模块 import 动词，游离检查要么删除要么进 gate 模块。「门禁单点化」从遏制谓词（v1.14.0）延伸到全部检查面：守门判断只有一个事实源。
 - **计划工件写入 seam 单点化**（#5217）：planning-artifact 的每次变更都经其 seam 路由（拒收 fenced planned edits、跨引用写入按 seam 拆分），自建 lint 覆盖全部写入形态——写通道收编与路径遏制同构（单一写通道 + 机器门禁钉写法）。
-- **陈旧计划拒绝先于回滚备份**（#5217）：记录 rollback backup 前先拒绝 stale plan file——备份动作不得固化陈旧态（先验真再落账，「no-op 报真实条件」族姊妹）。
-- **注册可证明**（#5215）：hook 注册以「注册后真的激活」为证（activation census + 对外通告命令从注册面生成）——「装了」≠「生效」，注册面与运行面同口径（install-time 校验全注册表同族：同一校验不同时点同口径）。
+- **陈旧计划拒绝先于回滚备份**（#5217）：记录 rollback backup 前先拒绝 stale plan file——备份动作不得固化陈旧态（先验真再落账，「no-op 报真实条件」同类）。
+- **注册可证明**（#5215）：hook 注册以「注册后真的激活」为证（activation census + 对外通告命令从注册面生成）——「装了」≠「生效」，注册面与运行面同口径（install-time 校验全注册表同类：同一校验不同时点同口径）。
 - **drift 世系戳校验**（#5219）：mapped-commit stamp 进校验面——世系证据自身须可校验（证据不可自证的清单不算证据链）。
-- 同向注记：Svelte 脚本块尾注释终止与读错误上报（graphify 同向的「解析边界诚实化」）/ CI 超时预算历史（#5210）。
+- 相关要点：Svelte 脚本块尾注释终止与读错误上报（graphify 的「解析边界诚实化」）/ CI 超时预算历史（#5210）。
 

@@ -14,10 +14,10 @@
 | `generated_by` | 生成（技能由生成器某版本产出） | Skill → Generator | n:1 | `.swarm-yuan-version` 的 source_repo+version |
 | `governs` | 规范性治理（规则约束命令行为——是/应当区分的工程化） | RuleFile → 命令空间 | n:m | gate-rules 求值：每次实例化留命中记录；FORBID 消息即治理关系的可读投影 |
 | `records` | 记录（账本行固化一个发生体） | Ledger 行 → Generation/Decision/GateExecution | 1:1（一行一事件） | jsonl 行契约（ts+必填字段）；gate-audit 的 invoked/result 配对审计 |
-| `mounted_in` | 挂载（技能的 hook 部分寄宿宿主生命周期） | Skill 的 hooks 部分 → HostCLI | n:m（双宿主） | hooks.json（Claude 形态）/ .codex/hooks.json + codex-gate-wrapper（Codex 形态） |
+| `mounted_in` | 挂载（技能的 hook 部分寄宿宿主生命周期） | Skill 的 hooks 部分 → HostCLI | n:m（两宿主） | hooks.json（Claude 形态）/ .codex/hooks.json + codex-gate-wrapper（Codex 形态） |
 | `anchors` | 依赖锚定（账本行引用上游账本末态） | decisions 行 → trace 末行 | n:1 | `ref_trace_hash` 字段：篡改 → 失配 → 全链 stale 可检出 |
 | `snapshot_of` | 快照（指纹是仓库特定时态的固化） | Fingerprint → Repository 时态 | n:1（新快照不覆盖旧，last-good 保护） | fingerprint 文件 + 骤降 >50% 拒写红线 |
-| `propagates_to` | 谱系传播（稳定性标记沿调用链向下传播） | StabilityMark → 下游组件 | 1:n | `--stable-diff` 下游传播 warn（决策 28，Palantir markings-propagate 映射） |
+| `propagates_to` | 沿调用链传播（稳定性标记沿调用链向下传播） | StabilityMark → 下游组件 | 1:n | `--stable-diff` 下游传播 warn（决策 28，Palantir markings-propagate 映射） |
 | `plans` | 选择声明（任务计划启用/跳过门禁并记理由） | gate-plan 声明 → Gate 族 | n:m | gate-plan.json + `--diff` 收口对账（missing_evidence/计划外/skip 违反） |
 | `closes` | 闭环（决策事件关闭某目标） | Decision → Goal | n:1（末次决策定 closure 态） | closure 字段 + audit-closure `--strict` 完备性重走 |
 

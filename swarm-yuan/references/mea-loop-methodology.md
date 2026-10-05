@@ -1,4 +1,4 @@
-> **何时读我**：长任务规划与审计证据引用、多 agent/多阶段编排的形态选型与评估（Harness/Loop/Graph 三层嵌套，§五）时。阿里 LongHorizon-Harness 吸收——MEA 循环/verify_evidence 铁律。
+> **何时读我**：长任务规划与审计证据引用、多 agent/多阶段编排的形态选型与评估（Harness/Loop/Graph 三层嵌套，§五）时。来源：阿里 LongHorizon-Harness（MEA 循环/verify_evidence 铁律）。
 
 # MEA 循环方法论（Manage-Execute-Audit，长程执行的任务状态管理）
 
@@ -35,15 +35,15 @@ LHH 的出发点与「不断加长上下文/轨迹」的路线相反：**长任�
 | Executor | 在契约边界内改环境，报告 `agent_proposed_status` | 写最终状态、声称完成 | `governance-agents.md` action-executor |
 | Auditor | 只读检查环境，产出审计报告（含 integrity 判定） | 写文件（快照 diff 检测篡改，篡改即 integrity violation） | self-reviewer + verifier（四权分离的后两权） |
 
-与 swarm-yuan 已有的四权分离拓扑（policy-guardian/action-executor/self-reviewer/verifier）同构：LHH 的三角色是我们后三权的合并视图；我们的 policy-guardian（改治理资产前的立法侧审查）是 LHH 没有的维度，保留。**吸收点不在拓扑，在下面四个实现细节。**
+与 swarm-yuan 已有的四权分离拓扑（policy-guardian/action-executor/self-reviewer/verifier）同构：LHH 的三角色是我们后三权的合并视图；我们的 policy-guardian（改治理资产前的立法侧审查）是 LHH 没有的维度，保留。**相对 LHH 的增量不在拓扑，在下面四个实现细节。**
 
-## 三、关键机制（实现级，已吸收落地）
+## 三、关键机制（实现级，已落地）
 
 ### 3.1 审计证据引用（evidence ref）
 
 LHH 任务状态的每条事实必须引用 auditor 轮次（如 `round_003`）；Manager 下发子任务时按引用拉取对应审计报告原文注入（默认 5000 chars/轮，上限 60000 chars），**不是全量历史**——这是 Manager 只占 2-8% token 的机制根源。
 
-**落地**：`precheck.sh` 的 `_gate_evidence` 给 gate-runs.jsonl 每行加 `"run":<序号>`——门禁证据从「某时刻某门禁的输出」升级为**可被引用的编号证据**（决策记录/verifier 报告/state-machine 字段引用 `gate-run#N`）。下游解析（gate-report/trends/adaptive-gating）逐行读 JSONL，新增字段向后兼容。
+**落地**：`precheck.sh` 的 `_gate_evidence` 给 gate-runs.jsonl 每行加 `"run":<序号>`——门禁证据成为**可被引用的编号证据**（决策记录/verifier 报告/state-machine 字段引用 `gate-run#N`），而不只是某时刻某门禁的输出。下游解析（gate-report/trends/adaptive-gating）逐行读 JSONL，新增字段向后兼容。
 
 ### 3.2 verify_evidence 字段（自我声明 ≠ 持久状态）
 
@@ -103,13 +103,13 @@ Contract audit: aligned|unknown|needs_revision|invalid # 与契约对齐吗
 |----|-----------|--------|----------------|
 | **Harness** | 模型/工具/权限/轨迹的**可信运行边界** | 权限判定、沙箱、hook、审计 | 门禁四族 + rules.d 三值 + fail-gate-hook + gate-deny.jsonl |
 | **Loop** | 单阶段内的**自我修复闭环** | 评估→修复→重评，收敛判据 | ⑥测试→fail→⑤修复环→重跑；误报→调 conf 重跑 |
-| **Graph** | 阶段间的**拓扑**（依赖/审批/发布） | DAG 编排、断点恢复 | 生成流程 Step 1-12 与开发工作流 九节点状态机（前序产出物守卫） |
+| **Graph** | 阶段间的**拓扑**（依赖/审批/发布） | DAG 编排、断点恢复 | 生成流程 Step 1-13 与开发工作流 九节点状态机（前序产出物守卫） |
 
 **三条设计原则**：trust boundary（非全局只读上下文，边界内才可见）/ 最小领域知识原则（用图返回的元信息路由，不猜全局状态）/ common format（trace 与 checkpoint 统一格式——跨层可审计的前提）。
 
 **四层评估口径**（编排系统的验收，不能用单一完成率代替）：结果质量（任务达成）/ 执行质量（副作用受控）/ 资源效率（预算遵守）/ 治理质量（决策可审计）。固定口径指标五件：重复副作用率、恢复成功率、人工接管率、路由违约率、预算停止准确率。
 
-**中断恢复两机制**（长程执行特有）：① checkpoint 七字段（id/timestamp/graph_ref/inputs_hash/outputs/next_action）+ `recovery_lease` 单写者（防并发恢复打架）；② **副作用三态** `confirmed_executed / confirmed_not_executed / unknown`——unknown 不是失败也不是成功，是必须显式留痕的第三态（与归因三态、过期三态同族：**不许把"不知道"静默折算成任一端**）。
+**中断恢复两机制**（长程执行特有）：① checkpoint 七字段（id/timestamp/graph_ref/inputs_hash/outputs/next_action）+ `recovery_lease` 单写者（防并发恢复打架）；② **副作用三态** `confirmed_executed / confirmed_not_executed / unknown`——unknown 不是失败也不是成功，是必须显式留痕的第三态（与归因三态、过期三态同类：**不许把"不知道"静默折算成任一端**）。
 
 **消费指引**：目标技能遇到"多 agent/多阶段/可恢复"编排设计时（⑤复杂变更扇出、长任务），先按三层各自找证据位——harness 层有什么权限拦截、loop 层每阶段的收敛判据、graph 层断点恢复靠什么；三缺一就是该层的缺口，而不是"换个更强的 agent 框架"。
 

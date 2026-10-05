@@ -182,7 +182,7 @@ impeccable 对原生平台（iOS/Android）有专门的 reference 和命令变�
 - `concept-seed.mjs` 外部掷骰：分配索引（从模型自己的 resonance 排序短列表里挑哪条去建）+ 6 个 challengers（来自 concept-ingredients.json，分 graphic system/instrument language/atmosphere world 三层）+ re-roll 链
 - `serve-question.mjs` 守护进程 + 决策页 + key + `--wait` 收集 ANSWER
 
-**swarm-yuan 引用方式**：在 spec §6 前端/UI 段或 new-work 决策时，AI 主动提出 2+ 方案权衡 + 推荐（对齐决策治理 UserChallenge 类五要素），**不自动决定**。impeccable 的掷骰子机制是「把用户决策拉回设计选择现场」的参考模式——AI 可借鉴其「外部 challengers」思路扩大方案空间，但执行用 swarm-yuan 自带的 `references/decision-governance.md` 五要素 + `decisions.jsonl` 留痕。
+**swarm-yuan 引用方式**：在 spec §6 前端/UI 段或 new-work 决策时，AI 主动提出 2+ 方案权衡 + 推荐（对齐决策治理 UserChallenge 类五要素），**不自动决定**。impeccable 的掷骰子机制是「把用户决策拉回设计选择现场」的参考模式——AI 可采用其「外部 challengers」思路扩大方案空间，但执行用 swarm-yuan 自带的 `references/decision-governance.md` 五要素 + `decisions.jsonl` 留痕。
 
 ---
 

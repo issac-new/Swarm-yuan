@@ -2,7 +2,7 @@
 
 # 记忆持久化模式 (Memory Persistence Patterns)
 
-> 整合自 [claude-mem](https://github.com/thedotmack/claude-mem) 的方法论模式。
+> 来源：[claude-mem](https://github.com/thedotmack/claude-mem)。
 > **只引用模式与 `claude-mem` 工具命令，不复制其源码。**
 
 ## 它解决什么问题
@@ -31,7 +31,7 @@ npx claude-mem install
 
 ## Detached Observer Agent（核心创新）
 
-引自 `src/sdk/prompts.ts`：
+来源：`src/sdk/prompts.ts`：
 
 > "You are a Claude-Mem, a specialized observer tool… You do not have access to tools."
 
@@ -50,7 +50,7 @@ observation XML 格式：
 </observation>
 ```
 
-> **`sensitive` 观察类型（claude-mem v13.13.0）**：介于 `private`（私密）与公开之间的敏感信息——内部 URL、未发布计划、个人细节、业务指标、客户/合作方名称。与 `security_alert`（硬编码密钥等安全告警）正交：`security_alert` 是「代码里的安全缺陷」，`sensitive` 是「不应泄漏到后续内容开发错误上下文的业务敏感信息」。默认触发 Telegram 通知（与 `security_alert` 同通道，由 `CLAUDE_MEM_TELEGRAM_TRIGGER_TYPES` 控制）。与 swarm-yuan 门禁呼应：`--sensitive`（敏感信息扫描，gitleaks/正则）守代码层；`sensitive` 观察类型守记忆层——防业务敏感信息经记忆→生成链路泄漏。
+> **`sensitive` 观察类型（claude-mem v13.13.0）**：介于 `private`（私密）与公开之间的敏感信息——内部 URL、未发布计划、个人细节、业务指标、客户/合作方名称。与 `security_alert`（硬编码密钥等安全告警）正交：`security_alert` 是「代码里的安全缺陷」，`sensitive` 是「不应泄漏到后续内容开发错误上下文的业务敏感信息」。默认触发 Telegram 通知（与 `security_alert` 同通道，由 `CLAUDE_MEM_TELEGRAM_TRIGGER_TYPES` 控制）。与 swarm-yuan 门禁的分工：`--sensitive`（敏感信息扫描，gitleaks/正则）守代码层；`sensitive` 观察类型守记忆层——防业务敏感信息经记忆→生成链路泄漏。
 
 ### 在目标技能中的落地
 - 若项目已装 claude-mem：workflow 节点⑤的 subagent 编排无需手动写记忆，observer 自动捕获
@@ -58,7 +58,7 @@ observation XML 格式：
 
 ## 3 层渐进式检索（Token 经济）
 
-引自 `plugin/skills/mem-search/SKILL.md`。按需检索，省 ~10x token：
+来源：`plugin/skills/mem-search/SKILL.md`。按需检索，省 ~10x token：
 
 1. **search** — 紧凑索引（每结果 ~50-100 token，含 ID）
 2. **timeline** — 某锚点 ID 周围的时序上下文
@@ -72,7 +72,7 @@ observation XML 格式：
 
 ## 两 Session-ID 架构（压缩存活）
 
-引自 `docs/SESSION_ID_ARCHITECTURE.md`：
+来源：`docs/SESSION_ID_ARCHITECTURE.md`：
 - `contentSessionId` — Claude Code 的会话 ID（不变）
 - `memorySessionId` — observer 的会话 ID（worker 重启时变）
 - observation 存于 memorySessionId；恢复由 `hasRealMemorySessionId && lastPromptNumber > 1` 门控
@@ -85,7 +85,7 @@ observation XML 格式：
 
 ## SQLite 并发安全（claude-mem v13.10.2）
 
-> 引自 claude-mem v13.10.2。worker + hook 并发访问同一 SQLite DB 时的防御。
+> 来源：claude-mem v13.10.2。worker + hook 并发访问同一 SQLite DB 时的防御。
 
 - **`busy_timeout`**：worker 进程与 PostToolUse hook 可能同时写 `claude-mem.db`，须设 `busy_timeout`（如 `5000ms`）避免 `SQLITE_BUSY` 立即失败
 - **原子 settings 写**：`~/.claude-mem/settings.json` 须原子写（write-to-temp + rename），避免 hook 读到半写状态
@@ -98,7 +98,7 @@ observation XML 格式：
 
 ## 代理环境变量透传（claude-mem v13.10.2）
 
-> 引自 claude-mem v13.10.2。supervisor 进程启动 SDK 子进程时须保留代理环境。
+> 来源：claude-mem v13.10.2。supervisor 进程启动 SDK 子进程时须保留代理环境。
 
 - `HTTPS_PROXY` 须透传给 SDK 子进程（不能只继承部分 env）
 - Bedrock/Vertex 的 `skip-auth` env 须保留（否则子进程失去免鉴权配置）
@@ -109,7 +109,7 @@ observation XML 格式：
 
 ## Mode-JSON 分类法（生成+检索同源）
 
-引自 `plugin/modes/code.json`。一个 mode JSON 定义：
+来源：`plugin/modes/code.json`。一个 mode JSON 定义：
 - `observation_types[]` — id/label/description（bugfix/feature/refactor/change/discovery/decision/security_*）
 - `observation_concepts[]` — 知识类别（how-it-works/why-it-exists/what-changed/problem-solution/gotcha/pattern/trade-off）
 - `prompts{}` — 运行时组合的 prompt 片段字典
@@ -121,7 +121,7 @@ observation XML 格式：
 
 ## `<private>` 隐私标签
 
-引自 `user-message.ts`：用户用 `<private>...</private>` 包裹消息，存储前被剥离。
+来源：`user-message.ts`：用户用 `<private>...</private>` 包裹消息，存储前被剥离。
 
 ### 在目标技能中的落地
 - workflow 的"产出物归档"要素：敏感上下文可用 `<private>` 标签保护，不写入持久记忆
@@ -153,7 +153,7 @@ claude-mem 支持的查询维度：
 
 ## 阶段边界五选树（上下文何时切换）
 
-> 理念来源：mattpocock/skills v1.2.3 `skills/engineering/ask-matt/PHASE-BOUNDARIES.md`（吸收登记见 `docs/research/R86-mattpocock-skills-absorption.md`）。本节管"什么时候切上下文、切到哪种"；上文的记忆方案管"切了之后丢什么、怎么补"——互补关系。
+> 来源：mattpocock/skills v1.2.3 `skills/engineering/ask-matt/PHASE-BOUNDARIES.md`（调研档案 `docs/research/R86-mattpocock-skills-absorption.md`）。本节管"什么时候切上下文、切到哪种"；上文的记忆方案管"切了之后丢什么、怎么补"——互补关系。
 
 **阶段**是会话内的一整块工作（需求访谈、实现、验证）；**阶段边界**是两块之间的缝隙，是切换决策唯一的合法位置——阶段中途只有两种选择：继续，或把剩余工作拆给子代理（中途压缩会让 agent 丢线）。
 
@@ -173,7 +173,7 @@ claude-mem 支持的查询维度：
 
 ## 知识溯源三级标记（Honest-edge Provenance）
 
-> 理念来源：graphify v0.9.x（上游仓 `research/graphify/ARCHITECTURE.md:43-56`（克隆于生成器仓 swarm-yuan/research/，不入生成物））。graphify 对每条图边标 `EXTRACTED`/`INFERRED`/`AMBIGUOUS`，让用户始终知道什么是读出来的、什么是猜的。swarm-yuan 已在 `references/code-graph-tools.md:185` 引用 graphify 的 `GRAPH_REPORT.md` 三标输出，本节把它吸收进自身决策/记忆层。统一语义同时兼容 ECC instinct 的 0.0-1.0 置信度（见下文 §Memory Distillation 的 instinct 置信度）。
+> 来源：graphify v0.9.x（上游仓 `research/graphify/ARCHITECTURE.md:43-56`）。graphify 对每条图边标 `EXTRACTED`/`INFERRED`/`AMBIGUOUS`，让用户始终知道什么是读出来的、什么是猜的。`references/code-graph-tools.md:185` 引用 graphify 的 `GRAPH_REPORT.md` 三标输出；本节把三级标记用于决策/记忆层。统一语义同时兼容 ECC instinct 的 0.0-1.0 置信度（见下文 §Memory Distillation 的 instinct 置信度）。
 
 **核心问题**：AI 写回的记忆/断言/决策若不分"读出来的"和"推断的"，后续会话会把推断当事实用，累积成幻觉。溯源三级标记让每条知识的**来源确定性**显式可见。
 
@@ -199,7 +199,7 @@ claude-mem 支持的查询维度：
 
 ## WAL 安全备份（ruflo v3.23.0）
 
-> 引自 ruflo v3.23.0。SQLite WAL 模式下的安全备份模式——naive 拷贝会损坏 DB。
+> 来源：ruflo v3.23.0。SQLite WAL 模式下的安全备份模式——naive 拷贝会损坏 DB。
 
 ### 为什么不能直接拷贝
 SQLite 在 WAL（Write-Ahead Logging）模式下，`*.db` + `*-wal` + `*-shm` 三个文件组成一致状态。naive `cp *.db` 只拷贝主文件，丢失 WAL 中未 checkpoint 的事务——恢复后数据不一致或损坏。
@@ -226,15 +226,12 @@ sqlite3 "$DB" ".backup '$DEST'"
 
 ## Failure-signal 真实捕获（ruflo v3.22.0）
 
-> 引自 ruflo v3.22.0。PostToolUse hook 须记录真实的工具执行结果，而非硬编码 `success:true`。
+> 来源：ruflo v3.22.0。PostToolUse hook 须记录真实的工具执行结果，而非硬编码 `success:true`。
 
-### 问题
-observer 之前在 PostToolUse hook 中记录 `success: true` 硬编码值（898/898 次成功，0 失败）——oracle 层永远没有负例，无法学习"什么操作会失败"。
-
-### 修复
-- PostToolUse hook 读取 Claude Code 的 PostToolUse outcome（`tool_response.success` / `tool_response.error`）
+### 记录语义
+- PostToolUse hook 读取 Claude Code 的 PostToolUse outcome（`tool_response.success` / `tool_response.error`），不硬编码 `success: true`——硬编码会让 oracle 层没有负例，无法学习"什么操作会失败"
 - 记录真实 failure：`success: false` + `error_message` + `error_type`
-- 这使 oracle 层有了负例：可挖掘"哪种 tool 组合容易失败"、"哪种输入导致 exec 超时"
+- oracle 层由此获得负例：可挖掘"哪种 tool 组合容易失败"、"哪种输入导致 exec 超时"
 
 **在目标技能中的落地：**
 - memory-persistence 的 observer 须读 PostToolUse 真实 outcome，不可硬编码 `success:true`
@@ -243,7 +240,7 @@ observer 之前在 PostToolUse hook 中记录 `success: true` 硬编码值（898
 
 ## Memory Distillation 自学习环（ruflo v3.22.0, ADR-174）
 
-> 引自 ruflo v3.22.0。从 raw observations 蒸馏出可复用的 reasoning patterns——增量、非破坏式、provenance-gated。
+> 来源：ruflo v3.22.0。从 raw observations 蒸馏出可复用的 reasoning patterns——增量、非破坏式、provenance-gated。
 
 ### 蒸馏流水线
 ```
@@ -267,9 +264,9 @@ memory_entries (raw observations)
 
 ## claude-mem v13.11.0 Worker-Native Cloud Sync
 
-> 引自 claude-mem v13.11.0。独立 cloud-sync daemon 退役，worker 自行同步记忆到云端。
+> 来源：claude-mem v13.11.0。记忆由各 worker 直接同步到云端，无独立同步进程。
 
-### 为什么退役独立 daemon
+### 为什么由 worker 自行同步
 - 独立 `cloud-sync.mjs` daemon 需要单独安装、启动、维护——增加运维负担
 - daemon 与 worker 之间的状态同步容易竞态（如 session memory id 注册时 prompt 上传仍在进行）
 
@@ -283,7 +280,7 @@ memory_entries (raw observations)
 
 **监控端点**：`GET /api/sync/status` 返回 pending counts per kind + last flush time + last error。
 
-**Schema v40 自修复**：升级时，所有已同步的 prompt（包括旧 daemon 上传的）重新入队，通过修复后的 mapper 重新推送；backfill lane header 抑制 realtime broadcast 风暴。
+**Schema v40 自修复**：升级时所有已同步的 prompt（包括旧 daemon 上传的）重新入队，经 mapper 重新推送；backfill lane header 抑制 realtime broadcast 风暴。
 
 **在目标技能中的落地：**
 - 若项目用 claude-mem cloud sync，dev-guide.md 提示：无需独立 daemon，worker 自行同步
@@ -291,12 +288,11 @@ memory_entries (raw observations)
 
 ## ruflo v3.30.2 Doctor Memory 功能性检查
 
-> 引自 ruflo v3.30.2。`ruflo doctor --component memory` 从"文件存在性检查"升级为"功能性检查"。
-
-### 问题
-旧版 `doctor --component memory` 只做 `existsSync` + `statSync`——任何存在的文件都报 PASS，即使是 99.97% 空的或 SQLite 损坏的 DB。
+> 来源：ruflo v3.30.2。`ruflo doctor --component memory` 执行功能性检查（非仅文件存在性检查）。
 
 ### 三层功能性检查
+
+仅做 `existsSync` + `statSync` 的存在性检查会把 99.97% 空的或 SQLite 损坏的 DB 也报 PASS；三层功能性检查为：
 
 | 检查 | 方法 | 失败条件 |
 |------|------|---------|
@@ -313,11 +309,11 @@ memory_entries (raw observations)
 
 ## ECC v2.0 记忆与学习方法论
 
-> 来自 ECC v2.0.0。将记忆系统从"观察+检索"升级为"原子 instinct 生命周期 + observer lease + skills→rules 蒸馏"。
+> 来源：ECC v2.0.0。记忆系统采用原子 instinct 生命周期 + observer lease + skills→rules 蒸馏。
 
 ### Atomic Instinct 生命周期（continuous-learning-v2）
 
-ECC 的 instinct 系统将观察升级为**原子 instinct**——每个观察是一个带置信度评分的独立实体：
+ECC 的 instinct 系统中，每个观察是带置信度评分的独立实体——**原子 instinct**：
 
 ```
 session 观察（PostToolUse hook）
@@ -347,9 +343,9 @@ session 观察（PostToolUse hook）
 
 ### Observer Lease 模式（kill idle observers deterministically）
 
-ECC 修复了 claude-mem/ruflo 的 observer 僵尸问题：
+ECC 的 observer lease 与循环防护针对以下 observer 失效模式：
 
-| 问题 | 原因 | ECC 修复 |
+| 问题 | 原因 | ECC 防御机制 |
 |------|------|---------|
 | Observer 内存爆炸 | observer 永不退出，累积历史 | session-aware lease：最后一个 lease 消失时退出 |
 | Zombie observer | session 结束但 observer 仍运行 | SessionEnd 移除 lease，observer 检测无 lease 退出 |
@@ -366,7 +362,7 @@ ECC 的 `rules-distill` 方向与 swarm-yuan 的 memory distillation 互补：
 | 方向 | 来源 | 产物 | swarm-yuan 映射 |
 |------|------|------|----------------|
 | sessions → memory | claude-mem/ruflo observations | reasoning patterns | 已有的 memory distillation |
-| **skills → rules** | ECC skills 扫描 | cross-cutting rule 文件 | **新增**：从已生成的目标技能中提炼规则 |
+| **skills → rules** | ECC skills 扫描 | cross-cutting rule 文件 | 从已生成的目标技能中提炼规则 |
 
 **流程：**
 1. 扫描项目下所有 skills（目标技能）
@@ -399,7 +395,7 @@ ECC 的 knowledge-ops 定义了 6 层知识架构：
 
 ## claude-mem v13 全量能力（swarm-yuan 须知道但可选引用）
 
-> 以下能力来自 claude-mem v13.10.1 源码调研。swarm-yuan **不要求全部使用**，但生成目标技能时须知道这些能力存在，按项目需要引用。
+> 来源：claude-mem v13.10.1 源码调研。swarm-yuan **不要求全部使用**，但生成目标技能时须知道这些能力存在，按项目需要引用。
 
 ### 18 个内置 Skills（`plugin/skills/`）
 
@@ -449,17 +445,17 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 
 ## claude-mem 治理要点
 
-> **npm 通道**：npm `latest` 被回钉 12.4.7，主通道为插件市场 + cmem.ai；oracle 以 GitHub tag 为准（详见 `docs/upstream-baseline.md`）。调研档案 `docs/research/R16-runtime-refresh.md`。
+> **npm 通道**：npm `latest` 钉在 12.4.7，主通道为插件市场 + cmem.ai；oracle 以 GitHub tag 为准（详见 `docs/upstream-baseline.md`）。调研档案 `docs/research/R16-runtime-refresh.md`。
 
 - **配额熔断器四规则**（13.20.0）：熔断状态跨 worker 重启持久化；冷却期只放一个探针；探针认领绑定 generator（防前辈退出误清后辈）；**"额度耗尽 ≠ 故障"**不计 health ledger（错误信封分类：配额耗尽属正常态而非故障）。
-- **熔断判据绑定真实事件形状**（13.23.x，#3838）：判据与 SDK 真实消息形状不匹配即失效——本仓门禁判据绑定真实退出码/产物，同向。
+- **熔断判据绑定真实事件形状**（13.23.x，#3838）：判据与 SDK 真实消息形状不匹配即失效——与本仓门禁判据（绑定真实退出码/产物）一致。
 - **熔断状态可观测**：熔断/冷却状态 surfaced 到 observer-health 与 session-start——熔断判据与降级披露配套（判据不变）。
 - **观察者契约显式化**（13.18.1）：SILENT BY DESIGN（被观察者知道被观察就会改变行为）+ NO CONTACT（单向记录器，禁止联系任何 session）。
 - **观察者最小权限**：observer 会话 deny SendMessage/ListAgents——只读角色的权限枚举必须排除动作面（「看」的角色不得获得「做」的工具）。
 - **有界会话代际**（13.20.0）：observer 改 memory 播种的有界 generation，回收自恢复——同时解决上下文无限增长与末条观察搁浅。
-- **重启验证语义**（13.19.0）：成功判定="继任者就绪"（/health 新 pid + /api/readiness ok），**bound port ≠ ready worker**；「健康但永不就绪」的 worker 按「未达就绪」回收（就绪≠存活，活性判据从「未崩溃」精确到「达到就绪」）；fail-soft 旁路（13.16.0）+ 显式优于探测（13.21.0）。
+- **重启验证语义**（13.19.0）：成功判定="继任者就绪"（/health 新 pid + /api/readiness ok），**bound port ≠ ready worker**；「健康但永不就绪」的 worker 按「未达就绪」回收（就绪≠存活，活性判据是「达到就绪」而非「未崩溃」）；fail-soft 旁路（13.16.0）+ 显式优于探测（13.21.0）。
 - **健康探测按调用方剩余死线封顶**（#3575）：每个探测与重试睡眠吃调用方剩余预算，`waitForHealth(short)` 不坐满 5s——子操作预算 = 调用方剩余死线：超时从入口一次性分配向下传播，不是各层自定。
-- **worker 不可用降级三态**（#4033）：fail-loud 一次后 fail-open——同一场故障只阻塞第一个提示，后续 hook 放行；比持续 fail-closed 与静默 fail-open 都优。
+- **worker 不可用降级三态**（#4033）：fail-loud 一次后 fail-open——同一场故障只阻塞第一个提示，后续 hook 放行（区别于持续 fail-closed 与静默 fail-open）。
 - **配置写通道即攻击面**：环境变量暴露的 HTTP 写通道须鉴权 + 遥测脱敏（CLAUDE_CODE_PATH 修复先例）；配置过滤器显式配置产生空集时回退安全默认而非空上下文（fail-back）。
 - **采集选择性**：不是所有会话都值得记忆（plugin cache 会话/空标题观测不采集）；检索通路须覆盖非拉丁语系（CJK substring 查询）。
 - **压缩保真观察上下文**（13.30 线 #4403）：field compression 期间保留观察上下文——压缩不得吞并正在进行的观察（「压缩不吃结构化证据链」与 codex Guardian 评审历史跨压缩保留同谱系）。
@@ -471,7 +467,7 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 
 > 调研档案 `docs/research/R29-runtime-refresh.md`。
 
-- **maxToolCallsPerTurn 滑动窗口重置**（#3151）：有界性三形态对应三种失效模式——固定计数上限（超总量）→ 预算分配（超预算）→ 时间窗速率（突发速率）。
-- **findSimilar 置信度按来源可靠性门控**（#3301）：结论置信度不得高于其证据来源的可靠性上限——不信任单点聚合放大（证据可信度传播族）。
+- **maxToolCallsPerTurn 滑动窗口重置**（#3151）：有界性的三种做法对应三种失效模式——固定计数上限防超总量、预算分配防超预算、时间窗速率防突发速率。
+- **findSimilar 置信度按来源可靠性门控**（#3301）：结论置信度不得高于其证据来源的可靠性上限——不信任单点聚合放大。
 - **LearningBridge.consolidate() reward-blind**（#3159）：记忆固化判据与激励信号解耦——防 reward hacking 写入长期记忆。
 - 近重复 embedding 检测整合 MemoryCore（#3231）：入库侧去重，防记忆池同义膨胀。MCP 治理 opt-in 与 ADR-377 身份绑定见 `mcp-governance.md`。

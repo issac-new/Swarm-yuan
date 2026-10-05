@@ -11,7 +11,7 @@
 
 | 族 | 回答的问题 | 闭环段 |
 |----|-----------|--------|
-| ① 生成主干 | 生成流程 怎么把仓库变成技能 | 探查/填充/生成（生成流程 Step 1-12） |
+| ① 生成主干 | 生成流程 怎么把仓库变成技能 | 探查/填充/生成（生成流程 Step 1-13） |
 | ② 拼装与知识消费 | 开发工作流 ②⑤怎么先查再写、知识怎么读 | 执勤生产段 |
 | ③ 编排与治理 | 多 agent 怎么协作、纪律怎么守 | 执勤全程 + hooks |
 | ④ 验证与过程资产 | ⑥⑦怎么证、审计留什么痕 | 验证司法段 |
@@ -27,8 +27,8 @@
 
 | 档 | 来源（证据） | 消费节点 | 触发 |
 |----|-------------|---------|------|
-| exploration-guide | 内生 + semantica/graphify 借鉴（A） | 生成流程 Step 2/Step 4 探查（含 §D.0.6/矛盾裁决） | 执行任何探查 |
-| generation-flow | 内生 | 生成流程 Step 1-12 详解 | 生成流程逐步执行 |
+| exploration-guide | 内生 + semantica/graphify（A） | 生成流程 Step 2/Step 4 探查（含 §D.0.6/矛盾裁决） | 执行任何探查 |
+| generation-flow | 内生 | 生成流程 Step 1-13 详解 | 生成流程逐步执行 |
 | template-spec | 内生 + agent-skills 联动（A） | 生成流程 Step 7 填充六文件 | 填 spec/六文件 |
 | agent-skills-methodology | addyosmani/agent-skills（B） | 生成流程 Step 7 + 开发工作流 ⑤ | 反借口/假设前置/Prove-It |
 | context-engineering-layering | Vibe编码文章 + Anthropic 文档（B/C） | 生成器自身配置分层 | 决定规则放哪层 |
@@ -47,7 +47,7 @@
 | mattpocock-skills-methodology | mattpocock/skills v1.2.3（A） | 开发工作流 ①②③ + fix 任务路由 | 模糊需求访谈/spec 测试缝/任务纵切/诊断回路 |
 | cordis-composability-methodology | DeepSeek Harness（B） | 机制设计参考 | 设计可组合机制 |
 | knowledge-lifecycle-methodology | 京东海博文章 + OKF 核验（B） | 开发工作流 ② 读法 + 反馈回路三态 | 知识读取/更新处置 |
-| memory-persistence | claude-mem/ruflo/ECC 工具族（A） | Step 11 记忆写回 + 溯源标记 | 跨会话记忆/蒸馏 |
+| memory-persistence | claude-mem/ruflo/ECC 工具族（A） | Step 12 记忆写回 + 溯源标记 | 跨会话记忆/蒸馏 |
 | cognition-framework | 内生五层认知（A） | 生成流程 Step 3 认知六阶链 | 探查建模 |
 | cognitive-bias | 内生 + Kahneman 框架（B） | spec §16 自检 | 方案偏差自检 |
 | logic-razor | 内生（A） | 方案删冗余假设 | 思维语言推演 |
@@ -101,7 +101,7 @@
 | 整合深度 | 运行时 | 消费点 | 降级链 |
 |---------|--------|--------|--------|
 | 深度×4 | GitNexus / graphify | 探查图谱优先（code-graph-tools 三选型，codegraph 为 watch 备选） | 未装→静态扫描清单 |
-| 深度×4 | claude-mem | Step 11 记忆写回 sink 之一 | 未装→.zcode/project-knowledge 本地落盘 |
+| 深度×4 | claude-mem | Step 12 记忆写回 sink 之一 | 未装→.zcode/project-knowledge 本地落盘 |
 | 深度×4 | ocr | ⑥ 测试验证 5 审查维度 | 未装→4 维 |
 | CLI×4 | OpenSpec | 节点②③ spec proposal/tasks 格式 | 未装→自有 spec-template |
 | CLI×4 | comet | 工作流骨架仪式/resume-probe | 未装→state-machine.sh |

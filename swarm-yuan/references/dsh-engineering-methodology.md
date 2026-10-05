@@ -1,9 +1,9 @@
-> **何时读我**：设计审计/状态韧性/增量自成长机制时。DeepSeek Harness rc.8 产品层吸收——配对决策审计/状态韧性/增量自成长/工程纪律。
+> **何时读我**：设计审计/状态韧性/增量自成长机制时。DeepSeek Harness rc.8 产品层——配对决策审计/状态韧性/增量自成长/工程纪律。
 
-# dsh 工程机制方法论（DeepSeek Harness 产品层吸收）
+# dsh 工程机制方法论（DeepSeek Harness 产品层）
 
 > 来源：[DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) @ `141eb6fe`（2026-08-19，tag `dsh-v0.1.0-rc.8`，developer preview；版本核至 `dsh-v0.2.1-alpha.1`，见 §七-§十三）。调研证据到包/文件级。
-> 与 `cordis-composability-methodology.md` 的分工：那份吸收 Cordis **框架层**（时空可组合性：可逆效应 + 响应式依赖，论文级）；本文吸收 dsh **产品层**工程机制（决策审计/状态韧性/增量感知/工程纪律，源码级）。论文无新版（2026-08-13 草稿），理念层无增量。
+> 与 `cordis-composability-methodology.md` 的分工：那份是 Cordis **框架层**（时空可组合性：可逆效应 + 响应式依赖，论文级）；本文是 dsh **产品层**工程机制（决策审计/状态韧性/增量感知/工程纪律，源码级）。理念层以 2026-08-13 论文草稿为准。
 > 纪律：只引用方法论模式与设计视角，不调任何上游 CLI/运行时；不复制源码（上游克隆在 `swarm-yuan/research/dsh/`，gitignored）。守决策 26/27：不新增 `check_*`，门禁总数保持 55（决策 26.2）。
 > 适用场景：目标技能与生成器自身的 hook/门禁审计、状态机与日志韧性、自成长链（项目变化感知→清单更新）、复盘与决策治理设计。
 
@@ -41,7 +41,7 @@ dsh `user-approval`：审批审计写不进去时**宁可拒绝也不返回未�
 
 dsh `packages/goal`：每次状态迁移追加**完整事后快照**事件（含单调 revision），fold = last-wins；变更携 `{id, revision}` CAS，stale 修订直接拒绝；独立伴生校验器在事件**入日志前**校验形状/revision 连续性/合法迁移表/时间戳单调性，第一条损坏事件即停游标。
 
-bash 映射（候选，见 §五已登记未实施）：`state-machine.sh` 的 `state.yaml` 迁移为 `state.jsonl` 整快照追加 + revision CAS。**触发条件**：真实出现并发写 state.yaml 损坏/竞态事故再自动化；当前单 AI 会话串行写，YAML 覆写够用。
+bash 映射（候选，见 §五）：`state-machine.sh` 的 `state.yaml` 迁移为 `state.jsonl` 整快照追加 + revision CAS。**触发条件**：真实出现并发写 state.yaml 损坏/竞态事故再自动化；当前单 AI 会话串行写，YAML 覆写够用。
 
 ### 2.2 持久态与进程本地"激活权"分离
 
@@ -53,7 +53,7 @@ bash 映射：`state.json`/yaml 存阶段（durable），锁/PID 文件存"本�
 
 dsh `tool-workflow`：观测记录写入失败时，**要么无记录、要么是合法的连续前缀，绝不改变主流程结果或清理路径**（首次 append 失败即禁用该 run 后续记录并告警一次）。
 
-bash 映射：`trace-log.sh` 已是"永不 fail 阻塞主流程"；升级为更精确的语义——写 trace.jsonl 失败时打一条 stderr 告警（每进程一次），**之后不再重试写**（避免每节点都刷告警），主流程零影响。决策日志（decisions.jsonl）同理但语义更重（见 §1.4 授权取舍）。
+bash 映射：`trace-log.sh` 的语义是"永不 fail 阻塞主流程"且更精确——写 trace.jsonl 失败时打一条 stderr 告警（每进程一次），**之后不再重试写**（避免每节点都刷告警），主流程零影响。决策日志（decisions.jsonl）同理但语义更重（见 §1.4 授权取舍）。
 
 ### 2.4 回放规则不可变
 
@@ -73,13 +73,13 @@ bash 映射：目标技能 `reference-manual.md` 的组件清单段是 catalog�
 
 dsh `agent-instructions`：不靠 inotify，观察 read/write/edit 工具的 durable result——touch 到某 scope 才做该 scope 重探查；`{path, version, sha1 digest}` 缓存跳过未变文件。
 
-bash 映射（部分落地 -C）：`project-fingerprint.sh` 增路径级 digest 缓存——结构指纹感知到变化后，AI 重探查**只针对 git diff 涉及的目录/维度**，SHA 未变的路径直接复用旧清单条目。增量且幂等。
+bash 映射（部分落地）：`project-fingerprint.sh` 增路径级 digest 缓存——结构指纹感知到变化后，AI 重探查**只针对 git diff 涉及的目录/维度**，SHA 未变的路径直接复用旧清单条目。增量且幂等。
 
 ### 3.3 fail-closed 解析 + last-good 保留
 
 dsh `skill-filesystem`：frontmatter 解析失败**整个条目带警告剔除**（坏数据不出现在禁用面）；发现过程 I/O 失败时快照标 `complete: false`、不缓存、消费者继续用 last-good。
 
-bash 映射（红线已入骨架 SKILL.md 自成长段，-C 自动化）：清单更新**先完整生成到临时文件再原子替换**（`mv` 同目录原子性），探查中途失败绝不覆盖上一份好清单；探查输出本身畸形（条目数骤降 >50%）视为失败，保留 last-good 并告警。
+bash 映射（红线已入骨架 SKILL.md 自成长段，已自动化）：清单更新**先完整生成到临时文件再原子替换**（`mv` 同目录原子性），探查中途失败绝不覆盖上一份好清单；探查输出本身畸形（条目数骤降 >50%）视为失败，保留 last-good 并告警。
 
 ## 四、工程纪律（簇 D）
 
@@ -110,7 +110,7 @@ bash 映射：decisions.jsonl 增 `outcome` 字段（implemented/rejected/supers
 
 dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的复盘有调研报告编号（docs/research/），事后分析目前口头化在 commit message 与 memory；如需对外交付事故复盘，可采用 NNNN 编号 + 固定骨架（现象/时间线/根因/教训/行动项）。当前不强制。
 
-## 五、已登记未实施（触发条件写明）
+## 五、候选方案与触发条件
 
 | 候选 | 内容 | 触发条件 |
 |------|------|---------|
@@ -121,61 +121,54 @@ dsh `docs/postmortem/NNNN-<slug>.md` 四篇编号事后分析。swarm-yuan 的�
 
 ## 六、与 cordis 框架层的关系
 
-cordis 框架层（`cordis-composability-methodology.md`，2026-08-14）吸收可逆效应/响应式依赖，落地 `--inject-frameworks` 快照+ledger+`--rollback-frameworks` 与 precheck.patch.conf 分层 patch。本文产品层机制与框架层同根（都是"动态组合系统的可信度工程"），但回答的问题不同：框架层回答"组件加装/拆除是否可控"，产品层回答"决策是否可审计、状态是否可恢复、感知是否可持续"。两者在 swarm-yuan 的交点：自成长链+ fail-gate 审计。
+cordis 框架层（`cordis-composability-methodology.md`，2026-08-14）涵盖可逆效应/响应式依赖，落地 `--inject-frameworks` 快照+ledger+`--rollback-frameworks` 与 precheck.patch.conf 分层 patch。本文产品层机制与框架层同根（都是"动态组合系统的可信度工程"），但回答的问题不同：框架层回答"组件加装/拆除是否可控"，产品层回答"决策是否可审计、状态是否可恢复、感知是否可持续"。两者在 swarm-yuan 的交点：自成长链+ fail-gate 审计。
 
-## 七、0.1.1 版本注记（基线 rc.8 → 0.1.1-rc.2）
+## 七、0.1.1-rc.2 能力
 
-> 基线 rc.8（2026-08-19）→ 0.1.1-rc.2（2026-08-21，207 commits，功能线无 breaking；goal/decision 审计核心无演进）。无新增落地单元，增量全部登记候选（§五）或留档：凭据 seam 生成期必读文件（本仓若引入凭据注入，按"键空间按所有者划界 / flow 拥有写入"划界）；二版本模式（历史存 canonical、传输派生投影，§五已登记）；坏态整 log 重建（§2.1/2.2 同语义对账通过）；发布纪律样本"合而复撤"（回退优先于带病修复，与 §4.1 同簇）。逐条细节从略。
+0.1.1-rc.2（相对 rc.8）无 breaking 变更，goal/decision 审计核心不变。条目：
 
-## 八、0.1.2 版本注记（dsh-v0.1.2-rc.1）
+- **凭据 seam 划界**：凭据注入按"键空间按所有者划界 / flow 拥有写入"划界（本仓若引入凭据注入，按此划界）。
+- **二版本模式**：历史存 canonical、传输派生投影（见 §五）。
+- **坏态整 log 重建**：与 §2.1/2.2 同语义。
+- **发布纪律"合而复撤"**：回退优先于带病修复（同 §4.1）。
 
-> 基线 0.1.1-rc.2 → 0.1.2-rc.1（2026-09-03，1735 commits / 8 breaking）。两条有操作含量的原则：
+## 八、dsh-v0.1.2-rc.1 能力
 
-- **两种格式迁移谱系分开对待**：缓存格式演代用"声明兼容（按域声明旧版可读、写恒盖当前版）+ 坏记录备份跳过、域照常打开 + 真实盘面归档夹具回归"；权威格式删后端用"显式切断 + 旧构建导出口"。本仓 inventory-update 原子替换 + last-good 红线属前者；自动化触发条件不变（§五：state/账本出 v2 时）。
-- **删后端纪律三段式**：不迁（拒绝为无消费者的格式养平行迁移协议）/ 出口（需要内容者用旧构建导出后再升级）/ 守门（派生投影降格为可弃、测试改锚权威源）。"无真实部署的第二权威格式，删优于养"——与决策 26 复杂度负向预算同族。
+- **两种格式迁移路径分开对待**：缓存格式演代用"声明兼容（按域声明旧版可读、写恒盖当前版）+ 坏记录备份跳过、域照常打开 + 真实盘面归档夹具回归"；权威格式删后端用"显式切断 + 旧构建导出口"。本仓 inventory-update 原子替换 + last-good 红线属前者；自动化触发条件不变（§五：state/账本出 v2 时）。
+- **删后端纪律三段式**：不迁（拒绝为无消费者的格式养平行迁移协议）/ 出口（需要内容者用旧构建导出后再升级）/ 守门（派生投影降格为可弃、测试改锚权威源）。"无真实部署的第二权威格式，删优于养"——与决策 26 复杂度负向预算同类。
+- 其他能力：失败词表 `<domain>/<reason>` 单点声明（同 gate ID 前缀设计）；Agent Teams 孵化围栏；绞杀者模式 api 拆分。
 
-其余增量（失败词表 `<domain>/<reason>` 单点声明、Agent Teams 孵化围栏、绞杀者模式 api 拆分）与本仓既有机制同族（gate ID 前缀、§五候选登记制），登记不展开。
+## 九、dsh-v0.1.5 能力
 
-## 九、0.1.5 版本注记（dsh-v0.1.5-rc.2）
+- **动态系统提示不破 KV Cache**：模型显式声明支持即可运行中改系统提示且保持 KV 命中（缓存友好编排的上游样本：claude 265 前缀保持、267 工具动态更新、dsh 系统提示更新）。系统提示是「可变但保持命中的受控更新」（非不可变前缀）——技能动态注入（运行中更新规则/frontmatter）的可行性上游样本；本仓落地触发条件不变（§五：真实需要动态注入的场景出现）。
+- **消息归属与顺序是编排不变量**：子代理支持消息排队/编辑/删除/Steer/停止；Agent Team `send_message` 统一 steer 语义，跨 Agent 与冷恢复投递保留发送者归属与顺序——**谁发的、按什么顺序发，跨代理/冷恢复不丢**（与 265 前缀保持、KV cache 保持同类不变量）。
+- **暂停即终止 + 用户独占恢复权**：Web 暂停目标立即终止当前模型轮次且模型不能自行恢复，恢复必须由用户触发——**用户控制权 fail-closed**（与 gsd「复核阻塞须确定性证据」的用户主权同类）。
+- 其他能力：DeepSeek-V41-Flash 默认模型；Web 通用文件上传混排（模型按路径按需读取）；Sidebar 多标签产物预览；代理环境变量遵循；流式工具调用续传分片修复。
+- **0.1.5-rc.2（2026-09-11）**：web feedback + file refinements。
+- **0.1.6 alpha 线（dsh-v0.1.6-alpha.1，2026-09-16）**：pkg/运行时解析重构——runtime host 迁入 asar、内置 loader 升 0.1.6、addon 管理原生缓存、ESM default resolver 对齐、boot 解析边界加固。生态侧：comet 0.4.1 #406 已把 dsh 注册为受支持 hook 平台（`docs/upstream-baseline.md` comet 行）。
 
-> 基线 0.1.2-rc.1 → 0.1.5-rc.1（2026-09-10，跨 0.1.3-alpha.1/2 + 0.1.5-alpha.1/2 两功能线；rc 作基线）。三条有操作含量的原则：
+## 十一、v0.1.7-rc.2+155 能力（无稳定 tag）
 
-- **动态系统提示不破 KV Cache**：模型显式声明支持即可运行中改系统提示且保持 KV 命中——**缓存友好编排第三实证**（claude 265 前缀族 → 267 工具动态族 → dsh 系统提示族）。系统提示从「不可变前缀」变为「可变但保持命中的受控更新」——技能动态注入（运行中更新规则/frontmatter）的可行性上游样本；本仓落地触发条件不变（§五：真实需要动态注入的场景出现）。
-- **消息归属与顺序成为编排不变量**：子代理支持消息排队/编辑/删除/Steer/停止；Agent Team `send_message` 统一 steer 语义，跨 Agent 与冷恢复投递保留发送者归属与顺序——编排操作的「保持不变量」清单再添一项（与 265 前缀保持、KV cache 保持同族）：**谁发的、按什么顺序发，跨代理/冷恢复不丢**。
-- **暂停即终止 + 用户独占恢复权**：Web 暂停目标立即终止当前模型轮次且模型不能自行恢复，恢复必须由用户触发——**用户控制权 fail-closed**（与 gsd「复核阻塞须确定性证据」的用户主权面向同族）。
-
-其余增量（DeepSeek-V41-Flash 默认模型 / Web 通用文件上传混排（模型按路径按需读取——输入经济学族）/ Sidebar 多标签产物预览 / 代理环境变量遵循 / 流式工具调用续传分片修复）对账通过，登记不展开。
-
-- **0.1.5-rc.2（2026-09-11）**：web feedback + file refinements 回移 0.1.5 线（2 commits），无方法论新原语，基线随升。
-
-- **0.1.6 预发布线（2026-09-16）**：**dsh-v0.1.6-alpha.1** 出现，rc.2 以来 **800 commits** 大切割，主题为 pkg/运行时解析重构（runtime host 迁入 asar、内置 loader 升 0.1.6、addon 管理原生缓存、ESM default resolver 对齐、boot 解析边界连环加固）。alpha 不取，维持 rc.2 基线（分发工程面为主，无方法论新原语）。生态信号：comet 0.4.1 #406 已把 dsh 注册为受支持 hook 平台（`docs/upstream-baseline.md` comet 行）。
-
-## 十一、v0.1.7-rc.2+155 版本注记（无稳定 tag，alpha 顺延惯例）
-
-> 657 提交（2026-09-22→09-27）全量核过。
-
-- **插件束（bundle）兼容性治理**：束自带行集合，行开关随束联动（单切被拒、有 typed refusal）；**DSH 对等兼容性强制 + 精确豁免**——插件生态的版本协商从「文档约定」升为「安装时门禁 + 类型化拒绝」。吸收点：本技能三层整合的深度/CLI 层版本协商可引用此模式（拒绝要带机器可读的原因与豁免清单）。
+- **插件束（bundle）兼容性治理**：束自带行集合，行开关随束联动（单切被拒、有 typed refusal）；**DSH 对等兼容性强制 + 精确豁免**——插件生态的版本协商是安装时门禁 + 类型化拒绝（非文档约定）。对本仓：三层整合的深度/CLI 层版本协商可引用此模式（拒绝要带机器可读的原因与豁免清单）。
 - **遥测双通道**：OTLP 字节有界会话日志上传 + 桌面端 OTel 产品分析——「有界」是关键词（上传量与隐私面先画边界再开通道）。
 - **动态工具更新按路由投影**：LLM 侧动态工具更新（toolset 变更）按路由投影到各消费面——工具面变更的传播纪律。
 - **会话归档三态化**：显式三向菜单（全部/仅归档/未归档）替代隐式过滤——列表状态机的「显式优于隐式」。
 
-## 十二、v0.1.7-rc.2+155 → master tip（v0.2.0-rc.1 切版在 tip）（无稳定 tag）
+## 十二、v0.2.0-rc.1 能力（无稳定 tag）
 
-> rc.2 起主线再进 106 提交（2026-09-27→09-28），tip 即 0.2.0-rc.1 发布提交（`4878cdab`）。
-
-- **0.2.0-rc.1 切版**（`4878cdab`）：0.1.7 线未出 stable 直跳 0.2.0-rc——大版本切换用 rc 探路，stable 缺位时以 tip 发布提交为事实版本锚。
-- **遥测 HTTP 传输隔离**（`2974008`）+ 桌面 OTel 超时治理（`#5316`）——§十一「遥测双通道」的落实面：传输实例独立、超时显式，遥测故障不外溢主链路。
-- **Windows 几何净空纪律族**（`#5268/#5359` 族）：对话框/浮层/全屏/dockkit 浮头统一避让标题栏——桌面几何约束从「单点修补」升为「统一净空常量」。
+- **版本锚**：0.1.7 无 stable 版本，0.2.0-rc.1 发布提交（`4878cdab`）即版本锚——stable 缺位时以 tip 发布提交为事实版本锚；大版本切换用 rc 探路。
+- **遥测 HTTP 传输隔离**（`2974008`）+ 桌面 OTel 超时治理（`#5316`）——§十一「遥测双通道」的传输实现：传输实例独立、超时显式，遥测故障不外溢主链路。
+- **Windows 几何净空纪律**（`#5268/#5359`）：对话框/浮层/全屏/dockkit 浮头统一避让标题栏——桌面几何约束用统一净空常量。
 - **设置面组合缓存**（`f2af035`/`3e6c104`）：未覆写项复用组合、未用组合跳过——渲染经济学与 §十一「动态工具按路由投影」同属按需物化纪律。
 - **任务管理器详情关闭竞态修复**（`#5339`）：详情面板关闭与数据到达的竞态显式处理。
 - **agent-preset 经验技能与 creator mode 共享**（`8931fa2`）：预设面经验物跨模式复用——技能资产的单一事实源纪律。
-- **0.2 预览声明强制确认**（`#5356` 族）：预览版说明需显式确认——版本面文案与用户知情的门禁化。
+- **0.2 预览声明强制确认**（`#5356`）：预览版说明需显式确认——版本面文案与用户知情的门禁化。
 
-## 十三、v0.2.1-alpha.1 版本注记（release notes + 源码树 diff 直查）
+## 十三、v0.2.1-alpha.1 能力
 
 > tag `dsh-v0.2.1-alpha.1`（2026-10-03 发布，v0.2.0 仅 rc.1/rc.2 无正式版）。
 
-- **Claude Code Mods 兼容桥**（`packages/experimental/claude-code-mods/`，v0.1.2-rc.1 树中不存在，0.2.1 新增）：`defineMod({name, version, root, register})` **直接包装 mod 的 `register(on)` 函数**、转为普通 Cordis 插件挂载——不解析 plugin.json/hooks.json 等清单；生命周期映射 `session.start`←`agent/created`（首轮前等待）、`prompt.submit`←`agent/pre-step`、`tool.call` 包裹 `tools/execute` 瀑布、`session.end`←`agent/disposed`；**不可触发事件点名警告**（`tool.check`/`ui.*`/`telemetry.*` 可注册但永不触发，加载时告知而非静默）；**权限时序差异**：DSH 的 `tool.call` 在 harness 权限判定**之后**运行（Claude Code 在之前），改写参数/换工具的钩子被跳过——「同一事件名跨运行时语义不同」的桥接陷阱正例；`$` 命名空间按需组合 harness 服务，未组合的以 `no implementation for <namespace>.<method>` 显式拒绝。官方定位：验证「Claude Code Mods API ⊂ DSH 插件能力」的 alpha 演示，非完整兼容（官方 mods/diff 等 4 个真实 mod 评估为不可运行）。吸收点：**子集验证式桥接**——不仿全集，先证包含关系，差异面（权限时序/不可触发事件）显式记档。
-- **`dsh-hooks-claude-code` / `dsh-hooks-codex` 桥包记档**（0.1.2-rc.1 树已存在，非 0.2.x 增量）：CC 30 个 hook 事件支持 7 个（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop/SubagentStart/SubagentStop → `agent/created`/`agent/pre-step`/`tools/pre|post-execute`/`agent/turn-stopping`/`subagent/start|end`），决策折叠 `deny > ask > allow`、串行执行、Stop 阻塞经 `steer()` 强制续轮；codex 桥 10 事件支持 5 个、payload 保持 Codex 方言。设计立场「兼容适配器而非强力工具」——与本技能 hooks 双宿主（Claude deny/Codex exit 2）同族：宿主差异显式化优于假装兼容。
-- **0.1.3→0.2.1 演进要点**：`SessionHandle` 生命周期 + 会话锁（一进程一持有者）；插件管理页热启停 + 依赖运行时解析 + 运行时卸载；桌面端捆绑 `dsh` 命令免装 Node/pnpm；0.2.1 移除运行时 invariant 插件、`runtime-diagnostics` 包与子路径插件独立 `package.json`——**运行时自检收敛进类型系统与装载模型**（解释性空实现契约 §4.2 的延伸：invariant 从运行时插件降为构建期保证，「删优于养」§八第三实证）。
-- **同构不吸收**：社区 RFC workspace-scoped configuration（discussion #941，2026-08-14 开启、早于 0.1.2 基线、至今无官方回应未落地——workspace 运行时注册表/引用计数 Lease/作用域链设计记档待其落地再评）；「让 Agent 创建插件」入口、开发者工具组合包、`--public-url` 反代（产品面记档）。
+- **Claude Code Mods 兼容桥**（`packages/experimental/claude-code-mods/`，v0.2.1 起提供）：`defineMod({name, version, root, register})` **直接包装 mod 的 `register(on)` 函数**、转为普通 Cordis 插件挂载——不解析 plugin.json/hooks.json 等清单；生命周期映射 `session.start`←`agent/created`（首轮前等待）、`prompt.submit`←`agent/pre-step`、`tool.call` 包裹 `tools/execute` 瀑布、`session.end`←`agent/disposed`；**不可触发事件点名警告**（`tool.check`/`ui.*`/`telemetry.*` 可注册但永不触发，加载时告知而非静默）；**权限时序差异**：DSH 的 `tool.call` 在 harness 权限判定**之后**运行（Claude Code 在之前），改写参数/换工具的钩子被跳过——「同一事件名跨运行时语义不同」的桥接陷阱；`$` 命名空间按需组合 harness 服务，未组合的以 `no implementation for <namespace>.<method>` 显式拒绝。官方定位：验证「Claude Code Mods API ⊂ DSH 插件能力」的 alpha 演示，非完整兼容（官方 mods/diff 等 4 个真实 mod 评估为不可运行）。对本仓：**子集验证式桥接**——不仿全集，先证包含关系，差异面（权限时序/不可触发事件）显式记录。
+- **`dsh-hooks-claude-code` / `dsh-hooks-codex` 桥包**（v0.1.2-rc.1 起存在）：CC 30 个 hook 事件支持 7 个（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop/SubagentStart/SubagentStop → `agent/created`/`agent/pre-step`/`tools/pre|post-execute`/`agent/turn-stopping`/`subagent/start|end`），决策折叠 `deny > ask > allow`、串行执行、Stop 阻塞经 `steer()` 强制续轮；codex 桥 10 事件支持 5 个、payload 保持 Codex 方言。设计立场「兼容适配器而非强力工具」——与本技能 Claude Code 与 Codex 两类宿主 hooks（Claude deny/Codex exit 2）同类设计：宿主差异显式化优于假装兼容。
+- **0.1.3-0.2.1 能力面**：`SessionHandle` 生命周期 + 会话锁（一进程一持有者）；插件管理页热启停 + 依赖运行时解析 + 运行时卸载；桌面端捆绑 `dsh` 命令免装 Node/pnpm；**运行时自检收敛进类型系统与装载模型**——无运行时 invariant 插件、无 `runtime-diagnostics` 包、子路径插件无独立 `package.json`，invariant 是构建期保证（解释性空实现契约 §4.2 的延伸，「删优于养」同 §八）。
+- **社区 RFC workspace-scoped configuration**（discussion #941，2026-08-14 开启、尚无官方回应）：workspace 运行时注册表/引用计数 Lease/作用域链设计——待其落地再评。产品面另有：「让 Agent 创建插件」入口、开发者工具组合包、`--public-url` 反代。

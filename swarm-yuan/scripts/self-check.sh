@@ -645,7 +645,19 @@ check_doc_consistency() {
     FAIL=1
   fi
 
-  # 2d. FACT_COGNITION_LAYERS 对齐（facts.conf 声称的 G-cognition
+  # 2d. FACT_FLOW_STEPS 等值断言（该 key 此前零消费者——生成流程步骤数漂移只会静默失真；
+  # 真值源：references/generation-flow.md "^## Step" 主步骤标题机械计数，与 facts.conf 注释口径一致）
+  local _flow_steps
+  _flow_steps=$(grep -cE '^## Step [0-9]+\.' "$base/references/generation-flow.md" 2>/dev/null | xargs)
+  _flow_steps="${_flow_steps:-0}"
+  if [[ "${FACT_FLOW_STEPS:-0}" == "$_flow_steps" ]]; then
+    echo "  ✓ FACT_FLOW_STEPS(${FACT_FLOW_STEPS:-?}) == generation-flow Step 标题真值($_flow_steps)"
+  else
+    warn "FACT_FLOW_STEPS(${FACT_FLOW_STEPS:-?}) != generation-flow Step 标题真值($_flow_steps)——更新 facts.conf"
+    FAIL=1
+  fi
+
+  # 2e. FACT_COGNITION_LAYERS 对齐（facts.conf 声称的 G-cognition
   # 扫描此前不存在——空头执法。窄域实现：①定义源表（cognition-framework.md 五层总览表）
   # 层数行自动计数对账；②计数型表述扫描（"N层认知框架/基底"），非 5/五 即漂移——
   # 限定"框架/基底"搭配，避开"第三层认知辩证"等单层引用与"3 层整合"等异轴表述）

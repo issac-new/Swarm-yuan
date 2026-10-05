@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# loop-hook.sh — Stop hook：swarm-yuan Oracle Gate（借鉴 tanweai/pua pua-loop-hook + autoresearch）
+# loop-hook.sh — Stop hook：swarm-yuan Oracle Gate（来源：tanweai/pua pua-loop-hook + autoresearch）
 #
 # 设计理念：AI 说「完成了」不算数，verify_command 说了才算。
 # 检测 <promise> 标签 → 独立跑 verify_command → exit≠0 拒绝 promise + 喂回输出 + loop 继续。
@@ -17,7 +17,7 @@
 # ASI（失败记忆）: 每次迭代追加 loop-history.jsonl，git revert 撤代码不撤记忆。
 #
 # 三平台兼容：bash 3.2 / date -u / stat -f %m(Linux: -c %Y) / timeout→gtimeout→perl 降级。
-# 借鉴 Ralph Wiggum (Anthropic MIT) + tanweai/pua pua-loop-hook，改写为 swarm-yuan 叙事。
+# 来源：Ralph Wiggum（Anthropic MIT）+ tanweai/pua pua-loop-hook。
 
 set -uo pipefail
 command -v jq >/dev/null 2>&1 || { echo "jq not found, skipping loop hook" >&2; exit 0; }

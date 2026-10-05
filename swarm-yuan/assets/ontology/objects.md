@@ -25,7 +25,7 @@
 | `Skill` | 目标技能 | continuant/independent | name, profile, status(draft/active) | `SKILL.md` frontmatter 三字段 |
 | `RuleFile` | 规则文件 | continuant/independent | path, format(rules 行格式) | `rules.d/*.rules` |
 | `Ledger` | 账本 | continuant/independent | path, schema(jsonl 行契约) | trace/decisions/gate-runs/gate-audit 四本账文件 |
-| `HostCLI` | 宿主 CLI | continuant/independent | name(claude/codex/...) | hooks.json 双宿主渲染；install.sh 检测 |
+| `HostCLI` | 宿主 CLI | continuant/independent | name(claude/codex/...) | hooks.json 两宿主渲染；install.sh 检测 |
 
 ### 特定依赖持续体（specifically dependent continuant——系于单一承载者）
 
@@ -47,7 +47,7 @@
 
 | 类型 ID | 名称 | 时间部分 | 记录载体（occurrent 固化为 continuant） |
 |---------|------|----------|----------------------------------------|
-| `Generation` | 生成过程 | Step 1-12 | trace.jsonl 节点行 |
+| `Generation` | 生成过程 | Step 1-13 | trace.jsonl 节点行 |
 | `DevSession` | 开发会话 | turns | hooks 生命周期；trace 会话段 |
 | `GateExecution` | 门禁执行 | 单次 check 起止 | gate-runs.jsonl 行 |
 | `Decision` | 决策事件 | 提议→审议→落定 | decisions.jsonl 行（含 outcome 生命周期） |
