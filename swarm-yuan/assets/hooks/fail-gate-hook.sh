@@ -24,7 +24,7 @@
 #     --project = 项目根（缺省 = 当前目录）
 #   退出码：0 正常（含空文件）；1 arg 错误。
 #
-# 配对审计模式（吸收自 dsh 调研 hook-protocol/src/events.ts，bash 化）：
+# 配对审计模式（来源：dsh 调研 hook-protocol/src/events.ts，bash 化）：
 #   deny-only 日志升级为"每个决策点一行"的全量审计 .swarm-yuan/gate-audit.jsonl：
 #     ① invoked/result 配对语义折叠为单行（本 hook 是同步单次进程，无异步生命周期，
 #        dsh 的配对事件是为跨异步边界 join；单行自包含 = 同语义的 bash 适配）；
