@@ -1793,12 +1793,18 @@ if [[ "$RESUME" -eq 0 ]]; then
   else
     echo "  ⚠ conf-render.sh 不可用，保留模板占位符（须手填）"
   fi
-  # 框架探测结果落盘 arch.conf 的 ACTIVE_FRAMEWORKS 行（create 新建态写；续传/upgrade 不覆盖）。
-  # 此前只 echo 打印不落盘：--inject-frameworks 从 conf source 该数组 → 恒空 → 静默跳过注入，
-  # 且 arch.conf 的 ACTIVE_FRAMEWORKS=() 在 precheck.conf 之后 source 会覆盖 AI 按（错误）交接清单
-  # 填进主 conf 的同名值——两步契约（create→inject）彻底断裂。落点唯一化到 arch.conf。
-  if [[ -n "${_dfw_fws:-}" && "$_dfw_fws" != 'ACTIVE_FRAMEWORKS=()' && -f "$SKILL_DIR/scripts/precheck.arch.conf" ]]; then
-    _af_tmp="${SKILL_DIR}/scripts/precheck.arch.conf"
+fi
+# 框架探测结果落盘 arch.conf 的 ACTIVE_FRAMEWORKS 行。
+# 此前只 echo 打印不落盘：--inject-frameworks 从 conf source 该数组 → 恒空 → 静默跳过注入，
+# 且 arch.conf 的 ACTIVE_FRAMEWORKS=() 在 precheck.conf 之后 source 会覆盖 AI 按（错误）交接清单
+# 填进主 conf 的同名值——两步契约（create→inject）彻底断裂。落点唯一化到 arch.conf。
+# 续传态（RESUME=1）同样落盘：生成流程 Step 4 先跑 relations-extract 会预创建技能目录，
+# 后续 create 必走续传路径（order-forge Java 栈实测）——只在 RESUME=0 落盘会让
+# 按流程文档执行的 AI 永远拿不到落盘结果。续传保护以"当前值仍是空默认"为界，
+# 已填过值（用户/AI 手工）不覆盖。
+if [[ -n "${_dfw_fws:-}" && "$_dfw_fws" != 'ACTIVE_FRAMEWORKS=()' && -f "$SKILL_DIR/scripts/precheck.arch.conf" ]]; then
+  _af_tmp="${SKILL_DIR}/scripts/precheck.arch.conf"
+  if grep -qE '^ACTIVE_FRAMEWORKS=\(\)[[:space:]]*#' "$_af_tmp"; then
     sed -i.bak -E "s|^ACTIVE_FRAMEWORKS=\(.*\).*|${_dfw_fws}  # AUTO:detected（create 探测落盘：detect-frameworks.sh；--inject-frameworks 消费）|" "$_af_tmp" && rm -f "${_af_tmp}.bak"
     if grep -q "^${_dfw_fws}" "$_af_tmp" 2>/dev/null; then
       echo "  ✓ ACTIVE_FRAMEWORKS 已落盘 arch.conf：${_dfw_fws}"
