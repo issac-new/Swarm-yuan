@@ -1,5 +1,12 @@
 # Changelog
 
+## [v2.58.0] - 2026-10-06
+
+> R95 设计文档修订轮（用户指令：说人话、不要脚手架、不要堆积历史补丁，整合近期发版内容）。对象 swarm-yuan/README.md（唯一设计文档）七处修订：①字符串耦合段收编——七种耦合类型的逐轮堆叠（mapper XML/批处理 SQL/消息端点/MQ 配对表/迁移漂移/JPQL/bean 装配各塞一句）重写为"一类问题 + 两手对策"的原则表述（能提取的进边集、不能提取的建清单，枚举一句话收尾）；②司法验证段历史叙事平实化——"曾在 5 个真实项目上漏过 3 个真 bug"改为机制陈述（构造样例证明不了真实覆盖），并把评测双口径补上半句人话解释（连续三次全绿防运气好、任意一次过防低估）；③真实项目回归矩阵终态化入附录 D——R93/R94 建制的双样例矩阵（JS 全栈 + Java 企业栈，可编译带真实测试、每轮走完整生成+研发流程、真实工具链全绿）从轮次账升级为验收事实，后续扩族方向一并写明；④术语消歧段删仓库内部作业词汇罗列（G25/生成期必读文件等）；⑤衔接总表删"登记未实施"过程簿记；⑥附录 B 删 11 个来源名的括号罗列（capability-map 有全表）；⑦附录 C 决策编号区轮次叙事平实化。净瘦身 95B（只删堆积不加新壳）。验证：test-r68 终态纪律 15/0、self-check EXIT=0、run-sweep 全量 56/0。
+
+### Changed
+- `swarm-yuan/README.md`：上述七处（3.1 字符串耦合段重写 / 3.5 司法边界与评测口径平实化 / 附录 B 收编 / 附录 C 平实化 / 附录 D 回归矩阵终态化 + 沉睡门禁表述 / 衔接总表去簿记 / 术语段精简）。
+
 ## [v2.57.0] - 2026-10-06
 
 > R94 Java 企业栈回归轮（回归矩阵补位：用户点名 vue/element/spring framework/mybatis/spring batch/spring boot 必测）。回归载体：order-forge 全栈样例（Spring Boot 3.2 + Spring MVC + MyBatis(XML resultMap) + Spring Batch(CSV 订单导入) + H2 后端 / Vue3 + Element Plus 前端，104 文件 10 提交，JDK 17 真实工具链 mvn 全绿）。生成流程 Step 1-13 完整闭环：7 框架识别（spring-boot/spring-batch/mybatis/vue/element/vite/jest-vitest）、JVM 专属路径首次实测——mapper-binding 4 + data-mapping 9 + **field-mapping 27 条字段级映射边**（column=property + file:line 定位）、调度任务维度、`--form "frontend,backend"` 多形态计数核验全 PASS、mark-active 激活。研发工作两项走九节点合入：①物流单号字段五层传播（schema→实体→resultMap+SQL 列→DTO→前端两视图；field-mapping 边反查定位到行；**测试左移首跑抓到 update <set> 尾逗号衔接 updated_at 的潜伏 SQL 缺陷**——部分字段更新即语法错，此前无 PUT 用例从未触发）；②批处理明细双写落库（JdbcBatchItemWriter 换单表写为 KeyHolder 主表+明细双写；**H2 RETURN_GENERATED_KEYS 回带 DEFAULT 列致 getKey() 抛异常的方言坑适配**）。门禁实测：MyBatis `ORDER BY ${orderBy}` 走 SQL_INJECTION_WHITELIST 登记留痕（service 层 ORDER_BY_WHITELIST 五键白名单 + 注入攻击负例测试锚双保险）；研发后 `--all-full` 28 门禁零 fail。发现并修复生成器缺陷 1 项（D10）：**续传态 ACTIVE_FRAMEWORKS 落盘失效**——生成流程 Step 4 先跑 relations-extract 会预创建技能目录，后续 create 必走 RESUME=1 续传路径，而上一轮的落盘代码只在新建分支执行——按流程文档执行的 AI 永远拿不到落盘结果（上轮验证用全新目录未测到该路径，本轮 Java 栈按文档时序实测抓到）；修复：落盘逻辑移出 RESUME 分支，续传保护以"当前值仍是空默认"为界（已填值不覆盖）。验证：run-sweep 全量回归 56/0 EXIT=0、修复在 order-forge 续传场景复验（7 框架一步注入）、bash 3.2 兼容。回归矩阵登记：task-forge（JS 全栈，R93）+ order-forge（Java 企业栈，R94）入项目记忆，后续回归轮按矩阵覆盖缺口族（React/AntD、Django、Gin 等至少每轮推进一族）。
