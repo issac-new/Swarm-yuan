@@ -1799,7 +1799,7 @@ if [[ "$RESUME" -eq 0 ]]; then
   # 填进主 conf 的同名值——两步契约（create→inject）彻底断裂。落点唯一化到 arch.conf。
   if [[ -n "${_dfw_fws:-}" && "$_dfw_fws" != 'ACTIVE_FRAMEWORKS=()' && -f "$SKILL_DIR/scripts/precheck.arch.conf" ]]; then
     _af_tmp="${SKILL_DIR}/scripts/precheck.arch.conf"
-    sed -i.bak -E "s|^ACTIVE_FRAMEWORKS=\(.*\).*|${_dfw_fws}  # create 探测落盘（detect-frameworks.sh；--inject-frameworks 消费）|" "$_af_tmp" && rm -f "${_af_tmp}.bak"
+    sed -i.bak -E "s|^ACTIVE_FRAMEWORKS=\(.*\).*|${_dfw_fws}  # AUTO:detected（create 探测落盘：detect-frameworks.sh；--inject-frameworks 消费）|" "$_af_tmp" && rm -f "${_af_tmp}.bak"
     if grep -q "^${_dfw_fws}" "$_af_tmp" 2>/dev/null; then
       echo "  ✓ ACTIVE_FRAMEWORKS 已落盘 arch.conf：${_dfw_fws}"
     else

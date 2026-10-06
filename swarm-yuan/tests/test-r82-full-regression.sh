@@ -66,9 +66,14 @@ printf '%s' "$out2" | grep -q '缺少决策记录' \
 grep -q '不剥则路径拼接失明' scripts/generate-skill.sh \
   && ok "verify-completeness 回退 R82-D2 注记在位" \
   || bad "generate-skill.sh R82-D2 注记丢失（同族溯源断裂）"
-grep -q "cut -d'#' -f1" scripts/generate-skill.sh && grep -q '去 # 尾注 + 去引号去尾空格' scripts/generate-skill.sh \
+grep -q "cut -d'#' -f1" scripts/generate-skill.sh && grep -q '去尾空格 + 去引号' scripts/generate-skill.sh \
   && ok "generate-skill.sh 回退剥法（cut # 尾注）在位" \
   || bad "generate-skill.sh 剥法形态丢失（尾注垃圾复发面）"
+# 顺序锁：尾空格必须先于闭引号剥离（值与 # 尾注间的对齐空格使 s/"$// 失配、引号残留路径尾，
+# 项目侧决策账本回退失明 → strict 误报缺决策记录；task-forge 全栈样例实证）
+grep -q "s/\[\[:space:\]\]\*\$//;s/^\"//;s/\"\$//" scripts/generate-skill.sh \
+  && ok "剥引号顺序正确（尾空格先剥，防引号残留）" \
+  || bad "剥引号顺序回退（闭引号先于尾空格剥——R93 实证缺陷形态复发）"
 grep -q '同族剥法' scripts/detect-profile-drift.sh && grep -q "cut -d'#' -f1" scripts/detect-profile-drift.sh \
   && ok "detect-profile-drift ②级同族剥法在位" \
   || bad "detect-profile-drift 同族修复丢失（静默跳过复发面）"
