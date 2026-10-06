@@ -1,13 +1,13 @@
 ---
 name: swarm-yuan
-description: "元技能生成器：为任意代码仓库生成项目专属开发技能（六段目录：SKILL.md + workflow + references + assets + 门禁配置 + scripts）。生成流程 Step 1-13：探查（组件清单 + 调用链 + 关系边集 + 任务配方）→ 特征卡 → 骨架 → 填充 → 门禁与 hooks → 验证审查 → 激活；目标技能执勤九节点开发工作流（需求 → 探查 → spec → plan → 编码 → 测试 → 审查 → 合入 → 发布）；项目变化由指纹感知并局部更新技能。何时用：用户说'为某项目生成开发技能'、'create a dev skill'。数字口径以 assets/facts.conf 为准。"
+description: "元技能生成器：为任意代码仓库生成项目专属开发技能（六段目录：SKILL.md + workflow + references + assets + 门禁配置 + scripts）。生成流程 Step 1-13：探查（组件库清单 + 调用链 + 关系边集 + 任务配方）→ 特征卡 → 骨架 → 填充 → 门禁与 hooks → 验证审查 → 激活；目标技能执勤开发工作流九节点（需求 → 探查 → spec → plan → 编码 → 测试 → 审查 → 合入 → 发布）；项目变化由指纹感知并局部更新技能。何时用：用户说'为某项目生成开发技能'、'create a dev skill'。数字口径以 assets/facts.conf 为准。"
 ---
 
 # swarm-yuan — 项目开发技能生成器
 
 swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产出一个项目专属的开发技能（下称**目标技能**）；此后该项目的 AI 编码由目标技能执勤。本文件是生成器的操作手册：何时用、生成流程怎么跑、目标技能怎么执勤、技能怎么随项目更新。设计论证见同目录 [README.md](README.md)（唯一设计文档），操作命令与术语表见仓库 docs/usage-manual.md。
 
-**生命周期**：生成目标技能 → 目标技能执勤开发 → 项目演进 → 指纹感知变化 → 技能局部更新 → 继续执勤。两条流程：**生成流程**（Step 1-13，逐步详解见 [references/generation-flow.md](references/generation-flow.md)）与**开发工作流**（目标技能侧 9 节点，逐节点要素由目标技能 references/workflow.md 承载）。
+**生命周期**：生成目标技能 → 目标技能执勤开发 → 项目演进 → 指纹感知变化 → 技能局部更新 → 继续执勤。两条流程：**生成流程**（Step 1-13，逐步详解见 [references/generation-flow.md](references/generation-flow.md)）与**开发工作流**（目标技能侧九节点，逐节点要素由目标技能 references/workflow.md 承载）。
 
 ## 何时使用
 
@@ -18,7 +18,7 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 
 ## 工作原则（生成与执勤共用）
 
-- **拼装式开发**：新功能 = 既有稳定单元拼装 + 最小新增胶水；禁止重复造轮子、侵入式重构。探查产出的组件库清单就是零件目录。
+- **拼装式开发**：新功能 = 既有稳定单元拼装 + 最小新增胶水；禁止重复造轮子、侵入式重构。探查产出的组件库清单就是拼装零件的总目录。
 - **特征卡立法、门禁执法、验证器司法**：特征卡定义项目应然，门禁核验代码实然，独立验证器证明门禁有效。
 - **诚实降级**：运行时未安装不阻塞，但显式披露；权限边界一律 fail-closed。
 - **AI 全自动、零手动配置**：生成由 AI 一键完成；使用时用户对 AI 说话。
@@ -53,9 +53,9 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 
 **路径约定**：trace-log.sh、state-machine.sh、memory-writeback.sh 在生成器侧位于 assets/，在目标技能侧映射为 scripts/。
 
-**铁律**：draft 骨架不可交付——状态门三关（占位符清零、清单路径零幻觉、计数核验达标）全过才翻 active；每步公告 `→ [Step N] 调用 …` 并落盘 trace.jsonl；门禁误报调 conf 重跑，不绕过；编排约束每条须有代码证据；任务路由避免全任务全量（references/task-methodology-router.md）。
+**铁律**：draft 骨架不可交付——状态门三关（占位符清零、清单路径零幻觉、计数核验达标）全过才激活；每步公告 `→ [Step N] 调用 …` 并落盘 trace.jsonl；门禁误报调 conf 重跑，不绕过；编排约束每条须有代码证据；任务路由避免全任务全量（references/task-methodology-router.md）。
 
-## 目标技能执勤（开发工作流 9 节点）
+## 目标技能执勤（开发工作流九节点）
 
 需求理解 → 探查 → spec → plan → 编码 → 测试 → 独立审查 → 合入 → 发布；六阶段状态机逐段守卫前序产出物（design 需 proposal、build 需批准的 spec、verify 需 tasks 全勾、archive 需 verify pass 与证据）。
 
@@ -74,7 +74,7 @@ SessionStart hook（lite 档由 AI 主动）跑 `scripts/project-fingerprint.sh 
 ```
 用户："开始新需求：给订单列表加导出按钮"
   ① 需求理解  AI 复述需求 + 列影响面，用户确认或纠正
-  ② 探查      先查 recipes 配方与 §A 同类功能，再按 reference-manual 地图定位既有组件
+  ② 探查      先查 recipes 配方与 §A 同类功能，再按 reference-manual 组件库清单定位既有组件
               （"谁依赖 X"用 relations-query.sh 查 relations.jsonl 边集反查）
   ③ spec      AI 写 spec（决策记录 + 影响范围 + 测试设计）→ 用户评审批准
   ④ plan      AI 拆 tasks（.swarm-yuan/tasks.md）

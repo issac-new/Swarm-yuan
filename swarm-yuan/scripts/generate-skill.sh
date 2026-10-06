@@ -2249,7 +2249,7 @@ if [[ "$PROFILE" == "lite" ]]; then
 else
   _nav_design="改造分类+拼装原则+安全规范→references/dev-guide.md；左移 spec §19-21→assets/spec-template.md；决策纪律（Mechanical/Taste/UserChallenge）→decisions.jsonl"
   _nav_arch="项目认知=下方摘要表；六段式结构+框架规律→references/framework-knowledge.md（按 ACTIVE_FRAMEWORKS 生成）"
-  _nav_flow="执勤九节点（①需求→…→⑨发布）→references/workflow.md；任务配方→references/recipes.md（②探查先查）；守卫链=spec-first hook（无 spec 写码即拦）→状态机阶段守卫→门禁序列→拦截落 gate-deny.jsonl"
+  _nav_flow="开发工作流九节点（①需求→…→⑨发布）→references/workflow.md；任务配方→references/recipes.md（②探查先查）；守卫链=spec-first hook（无 spec 写码即拦）→状态机阶段守卫→门禁序列→拦截落 gate-deny.jsonl"
 fi
 cat > "$SKILL_DIR/SKILL.md" <<EOF
 ---
@@ -2262,7 +2262,7 @@ status: draft
 > 由 swarm-yuan 生成器创建（${SWARM_YUAN_STAMP}，profile=${PROFILE}），AI 探查填充后 \`--mark-active\` 激活。填充规范见 swarm-yuan/references/template-spec.md
 
 **五层导航**（本文按理念→设计→架构→工作流程→使用组织，闭环=执勤→变化→自成长→再执勤）：
-- **理念**：拼装式开发（零件目录=reference-manual §4 清单，禁重复造轮子）；三权分立——特征卡立法（地图=reference-manual）/门禁执法（precheck 四族）/审查司法（节点⑦+review-record）；诚实降级——误报走 conf+decisions.jsonl 留痕
+- **理念**：拼装式开发（组件库清单=reference-manual §4，禁重复造轮子）；三权分立——特征卡立法（组件库清单载体=reference-manual）/门禁执法（precheck 四族）/审查司法（节点⑦+review-record）；诚实降级——误报走 conf+decisions.jsonl 留痕
 - **设计**：${_nav_design}
 - **架构**：${_nav_arch}
 - **工作流程**：${_nav_flow}
@@ -2381,7 +2381,7 @@ _idx_desc() {  # $1=path $2=cat → 用途短语（≤10 字，防 8KB 预算爆
     spec-template.md) echo "spec 模板 §1-24";;
     plan-template.md) echo "plan 模板";;
     review-record-template.md) echo "审查留痕模板";;
-    reference-manual.md) echo "项目地图/零件目录";;
+    reference-manual.md) echo "组件库清单（旧称地图/零件目录）";;
     cognition.md) echo "待确认事项清单（拿不准语义集中落此）";;
     task-type-gates.conf) echo "任务→门禁映射";;
     profile-thresholds.conf) echo "档位阈值";;

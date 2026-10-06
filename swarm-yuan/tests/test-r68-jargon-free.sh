@@ -127,5 +127,23 @@ else
   printf '%s\n' "$deriv_hits" | head -5
 fi
 
+
+# ---- 术语统一锁：一概念一名（用户面禁非规范变体；"地图"字面不锁——"阅读地图"等合法用法） ----
+_term_hits=$(grep -nE '零件目录|项目地图|执勤九节点|翻 active|详尽构件库清单' SKILL.md README.md references/*.md ../../docs/usage-manual.md 2>/dev/null | grep -vE '已废弃|曾称|:[0-9]+:\|' | head -5 || true)
+if [ -z "$_term_hits" ]; then
+  ok "术语统一：用户面零非规范变体（组件库清单/开发工作流九节点/激活/门禁执法）"
+else
+  bad "术语变体残留（规范名见 usage-manual 禁用对照表）：$_term_hits"
+fi
+
+
+# ---- 术语统一锁（随发面）：模板/脚本提示串与用户面同规 ----
+_term_ship_hits=$(grep -rnE '零件目录|项目地图|执勤九节点|翻 active|详尽构件库清单' assets/ scripts/ 2>/dev/null | grep -vE '已废弃|旧称' | head -5 || true)
+if [ -z "$_term_ship_hits" ]; then
+  ok "术语统一（随发面）：模板与脚本提示串零非规范变体"
+else
+  bad "随发面术语变体残留：$_term_ship_hits"
+fi
+
 echo "PASS test-r68-jargon-free (${pass} ok, ${fail} fail)"
 [[ $fail -eq 0 ]]
