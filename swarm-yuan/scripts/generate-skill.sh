@@ -805,10 +805,12 @@ verify_completeness() {
     local _dc _proj_root
     _proj_root="${PROJECT_DIR:-}"
     if [[ -z "$_proj_root" && -f "$skill_dir/scripts/precheck.conf" ]]; then
-      # 剥法（cut 去 # 尾注 + 去引号去尾空格）——conf 行带 `# AUTO:detected`
+      # 剥法（cut 去 # 尾注 + 去尾空格 + 去引号）——conf 行带 `# AUTO:detected`
       # 溯源注释是 conf-render 固定形态，不剥则路径拼接失明。
+      # 顺序铁律：尾空格先于闭引号剥（值与注释之间的对齐空格会使 s/"$// 失配、
+      # 引号残留在路径尾 → 项目侧决策账本回退失明，--strict 误报"缺少决策记录"）。
       _proj_root=$(grep -m1 '^PROJECT_DIR=' "$skill_dir/scripts/precheck.conf" 2>/dev/null \
-        | cut -d'#' -f1 | sed 's/^PROJECT_DIR=//;s/^"//;s/"$//;s/[[:space:]]*$//' || true)
+        | cut -d'#' -f1 | sed 's/^PROJECT_DIR=//;s/[[:space:]]*$//;s/^"//;s/"$//' || true)
       # 占位符形态（draft 未回填 <项目根绝对路径>）不当真值消费（同判据）
       case "$_proj_root" in "<"*">") _proj_root="" ;; esac
     fi
@@ -1036,7 +1038,7 @@ if [[ "${1:-}" == "--mark-active" ]]; then
   # 占位符形态（draft 未回填 <项目根绝对路径>）不导出，保持原回退链。
   if [[ -z "${PROJECT_DIR:-}" && -f "$_ma_dir/scripts/precheck.conf" ]]; then
     _ma_pd=$(grep -m1 '^PROJECT_DIR=' "$_ma_dir/scripts/precheck.conf" 2>/dev/null \
-      | cut -d'#' -f1 | sed 's/^PROJECT_DIR=//;s/^"//;s/"$//;s/[[:space:]]*$//' || true)
+      | cut -d'#' -f1 | sed 's/^PROJECT_DIR=//;s/[[:space:]]*$//;s/^"//;s/"$//' || true)
     case "$_ma_pd" in
       "<"*">") : ;;
       ?*) [[ -d "$_ma_pd" ]] && export PROJECT_DIR="$_ma_pd" ;;
@@ -1313,7 +1315,9 @@ auto_detect_profile() {
   fi
   # 规模信号：文件数（head 截断加速，≥阈值即 standard；统计失败按 standard--默认不降）
   # _lite_max+1 截断：文件数 < _lite_max 才 lite，截断到 _lite_max+1 足够判定
+  # 排除 AI 运行时留痕与生成技能目录（复生成/升级时 .claude/skills 自身会被计入——自引用膨胀）
   n=$(find "$proj" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' \
+      -not -path '*/.claude/*' -not -path '*/.codex/*' -not -path '*/.swarm-yuan/*' \
       2>/dev/null | head -$((_lite_max + 1)) | wc -l | tr -d ' ')
   n="${n:-$((_lite_max + 1))}"
   [[ "$n" =~ ^[0-9]+$ ]] || n=$((_lite_max + 1))
@@ -1325,11 +1329,19 @@ auto_detect_profile() {
   forms=0
   # 前端形态
   # WP-R Bug#1: find -print -quit 替代 find|head -1（避免 set -euo pipefail 下 SIGPIPE 崩溃）
-  find "$proj" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
+  find "$proj" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
   # 后端形态（.py/.java/.go/.rb/.php/.kt + .rs/.cs/.swift；WP-CogAudit 补 .rs/.cs/.swift 漏检；.scala 暂无 framework-gates 门禁，不纳入形态判定）
-  find "$proj" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.cs" -o -name "*.swift" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
+  find "$proj" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.cs" -o -name "*.swift" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
+  # JS/TS 后端形态：package.json 声明 Node 服务框架（express/koa/nestjs/fastify 均在框架门禁支持面内，
+  # 此前裸 .js 无法判前后端而漏计——纯前端 SPA 的 package.json 不含服务框架，不误计）
+  _pkg_jsons=$(find "$proj" -name package.json -not -path '*/node_modules/*' 2>/dev/null || true)
+  if [[ -n "$_pkg_jsons" ]]; then
+    # xargs 防 -l 无操作数读 stdin 挂起；列表为空时不执行 grep
+    printf '%s\n' "$_pkg_jsons" | xargs grep -lE '"(express|koa|fastify|@nestjs/[a-z-]+|hapi|egg)"' 2>/dev/null | grep -q . && forms=$((forms+1))
+  fi
   # 异步/MQ 形态（含 consumer/handler/listener/subscriber 文件名；WP-CogAudit 补 handler 漏检）
-  find "$proj" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" -o -name "*handler*" \) -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
+  # handler 命名收紧：裸 *handler* 把 web 层 error-handler/request-handler 误计为异步形态（  # task-forge 实证 3 形态里 1 个是误报）；只认消息/事件/队列语义的 handler 命名
+  find "$proj" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" -o -name "*message*handler*" -o -name "*event*handler*" -o -name "*queue*handler*" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null | grep -q . && forms=$((forms+1))
   # 微服务形态（services/ 或 apps/ 多服务目录）
   # WP-R Bug#1: find -maxdepth 1 -mindepth 1 -type d 列目录后 wc -l，find 目录数有限不会触发 SIGPIPE；
   # 但原 head -2 截断在 pipefail 下有风险。改用 find ... -print -quit 两次判定 ≥2：先确认 services/ 有子目录，
@@ -1430,7 +1442,7 @@ if [[ "$PROFILE" == "auto" ]]; then
     # WP-R Bug#1: find|head -81|wc -l 在 $(...) 内 set -e 不传播，但 pipefail 下 find SIGPIPE(141)
     # 会使赋值非零（虽 head -81 有意截断计数）。改用 find -printf '' 计数或 awk 统计避免截断管道。
     # 这里只需"是否 ≥80 文件"判定，用 find ... | wc -l 全量计数（不截断）更准且无 SIGPIPE。
-    _fc=$(find "$PROJECT_DIR" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' 2>/dev/null | wc -l | tr -d ' ')
+    _fc=$(find "$PROJECT_DIR" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.claude/*' -not -path '*/.codex/*' -not -path '*/.swarm-yuan/*' 2>/dev/null | wc -l | tr -d ' ')
     _auto_reason="规模信号：文件数 ${_fc:-?}（<${PROFILE_LITE_MAX_FILES:-80} → lite，否则 standard）"
   fi
   # 技术栈复杂度信号（只升不降，质量优先）
@@ -1438,9 +1450,13 @@ if [[ "$PROFILE" == "auto" ]]; then
   # pipefail 使管道非零 → && 链非零 → set -e 触发脚本退出（5/5 真实项目崩溃 exit 141）。
   # 改用 find -print -quit：find 原生首匹配即停，无管道无 SIGPIPE。
   _forms=0
-  find "$PROJECT_DIR" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
-  find "$PROJECT_DIR" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.cs" -o -name "*.swift" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
-  find "$PROJECT_DIR" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" -o -name "*handler*" \) -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
+  find "$PROJECT_DIR" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
+  find "$PROJECT_DIR" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.cs" -o -name "*.swift" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
+  _pkg_jsons2=$(find "$PROJECT_DIR" -name package.json -not -path '*/node_modules/*' 2>/dev/null || true)
+  if [[ -n "$_pkg_jsons2" ]]; then
+    printf '%s\n' "$_pkg_jsons2" | xargs grep -lE '"(express|koa|fastify|@nestjs/[a-z-]+|hapi|egg)"' 2>/dev/null | grep -q . && _forms=$((_forms+1))
+  fi
+  find "$PROJECT_DIR" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" -o -name "*message*handler*" -o -name "*event*handler*" -o -name "*queue*handler*" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
   { [[ -d "$PROJECT_DIR/electron" || -d "$PROJECT_DIR/src-tauri" || -d "$PROJECT_DIR/android" || -d "$PROJECT_DIR/ios" ]]; } && _forms=$((_forms+1))
   _msig=""
   if [[ -d "$PROJECT_DIR/services" ]]; then
@@ -1776,6 +1792,19 @@ if [[ "$RESUME" -eq 0 ]]; then
     echo "  ✓ precheck.conf 初稿由 conf-render.sh 渲染（# AUTO:detected/default + # TODO:model 清单）"
   else
     echo "  ⚠ conf-render.sh 不可用，保留模板占位符（须手填）"
+  fi
+  # 框架探测结果落盘 arch.conf 的 ACTIVE_FRAMEWORKS 行（create 新建态写；续传/upgrade 不覆盖）。
+  # 此前只 echo 打印不落盘：--inject-frameworks 从 conf source 该数组 → 恒空 → 静默跳过注入，
+  # 且 arch.conf 的 ACTIVE_FRAMEWORKS=() 在 precheck.conf 之后 source 会覆盖 AI 按（错误）交接清单
+  # 填进主 conf 的同名值——两步契约（create→inject）彻底断裂。落点唯一化到 arch.conf。
+  if [[ -n "${_dfw_fws:-}" && "$_dfw_fws" != 'ACTIVE_FRAMEWORKS=()' && -f "$SKILL_DIR/scripts/precheck.arch.conf" ]]; then
+    _af_tmp="${SKILL_DIR}/scripts/precheck.arch.conf"
+    sed -i.bak -E "s|^ACTIVE_FRAMEWORKS=\(.*\).*|${_dfw_fws}  # create 探测落盘（detect-frameworks.sh；--inject-frameworks 消费）|" "$_af_tmp" && rm -f "${_af_tmp}.bak"
+    if grep -q "^${_dfw_fws}" "$_af_tmp" 2>/dev/null; then
+      echo "  ✓ ACTIVE_FRAMEWORKS 已落盘 arch.conf：${_dfw_fws}"
+    else
+      echo "  ⚠ ACTIVE_FRAMEWORKS 落盘失败（保留空默认，AI 须手工填 arch.conf 该行）"
+    fi
   fi
 fi
 
@@ -2261,10 +2290,12 @@ EOF
 fi
 # R33-F1：检测到框架时显式交接 conf 框架 glob 填充（否则 TODO(framework-gates) 注释是唯一线索，
 # 填充 AI 漏填 → 框架门禁空转；mark-active 侧 R33-F1 机器执法兜底，两侧同源）。
+# 探测的 ACTIVE_FRAMEWORKS 已在 create 内联段落落盘 arch.conf（两步契约闭合）；
+# checklist 锚点指向真实落点 precheck.arch.conf（标记行 `--inject-frameworks` 注入后出现）。
 _fw_detected=$(bash "$SRC_SCRIPTS/detect-frameworks.sh" "$PROJECT_DIR" 2>/dev/null | grep -E '^ACTIVE_FRAMEWORKS=' | sed 's/^ACTIVE_FRAMEWORKS=//;s/[()"]//g' | tr -d '[:space:]' || true)
 if [[ -n "$_fw_detected" ]]; then
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
-- [ ] conf: 填充 \`scripts/precheck.conf\` 的 TODO(framework-gates) 框架 glob（空数组=框架门禁空转，mark-active 会拦）
+- [ ] conf: 框架 glob 填 \`scripts/precheck.arch.conf\`（ACTIVE_FRAMEWORKS 已由 create 探测落盘；跑生成器 \`--inject-frameworks\` 注入门禁后，按 \`TODO(framework-gates)\` 标记行填 <FW>_SRC_GLOBS 等 glob；全空=框架门禁空转，mark-active 会拦）
 EOF
 fi
 # checklist assets 行档位感知（lite 无 branch/env/data；§14-§18 仅 compliance 保留；state-machine 在 scripts/ 段）

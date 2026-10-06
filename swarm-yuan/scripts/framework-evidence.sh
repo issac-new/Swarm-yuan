@@ -63,8 +63,49 @@ for fw in "$@"; do
     fi
     # 替换 ${PROJECT_DIR} 并执行（eval 处理引号；fail-open 失败计 0/空）
     _cmd=$(printf '%s' "$vcmd" | sed "s|\${PROJECT_DIR}|$PROJ|g")
-    # 单次 eval 捕获输出，再派生 hits + evidence（避免双重执行/词法分裂）
-    _out=$(eval "$_cmd" 2>/dev/null || true)
+    # 单次 eval 捕获输出，再派生 hits + evidence（避免双重执行/词法分裂）。
+    # 无操作数 grep 运行时防护：verify cmd 常含 conf 数组变量（如 ${VUE_PINIA_FILE_GLOBS[@]+...}），
+    # 本脚本运行在 conf 渲染前（Step 4），变量未定义 → 展开零参数 → grep 无文件操作数时
+    # GNU grep -r 递归扫 cwd（含 node_modules/dist，依赖库代码冒充项目证据）。
+    # 子 shell 内定义 grep 包装函数计数实际展开后的非旗标实参（pattern 占 1），零文件操作数
+    # 即拒执行并标 NO_SCOPE（manual），宁可无证据也不出伪证据。同时 cd "$PROJ" 钉死相对递归范围。
+    _ev_marker="${TMPDIR:-/tmp}/swarm-yuan-ev-noscope.$$"
+    rm -f "$_ev_marker"
+    _out=$(
+      cd "$PROJ" || exit 0
+      grep() {
+        # bash 3.2 的 $() 解析器不支持函数内 case（实证 /tmp 最小复现），此处只能 if 链
+        local _n=0 _a _r=0
+        for _a in "$@"; do
+          if [[ "$_a" == -* ]]; then
+            if [[ "$_a" == -*r* || "$_a" == --recursive* ]]; then _r=1; fi
+          else
+            _n=$((_n + 1))
+          fi
+        done
+        # 只拦危险形态：-r 递归 + 零文件操作数（无操作数时 GNU grep -r 递归 cwd，
+        # node_modules/依赖库冒充项目证据）；stdin 管道型 grep（无 -r）不拦。
+        if [[ "$_r" -eq 1 && "$_n" -le 1 ]]; then
+          : > "${TMPDIR:-/tmp}/swarm-yuan-ev-noscope.$$" 2>/dev/null
+          return 1
+        fi
+        command grep "$@"
+      }
+      eval "$_cmd" 2>/dev/null || true
+    )
+    if [[ -f "$_ev_marker" ]]; then
+      rm -f "$_ev_marker"
+      printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$fw" "$vid" "$vtitle" "-" "-" "NO_SCOPE"
+      continue
+    fi
+    rm -f "$_ev_marker" 2>/dev/null || true
+    # 证据面净化：剔除依赖库/生成物/版本库路径（node_modules、.claude/skills、.swarm-yuan、
+    # .git、dist、research/offline-cache）——这些命中是文档/依赖代码冒充项目源码证据，
+    # 会虚增 hits 与 SUGGEST=applicable 的信号强度（实证：element-r1 证据曾被生成技能
+    # 自身的 framework-knowledge.md 霸榜）。全被剔净 = 该规则无项目源码证据（hits=0）。
+    if [[ -n "$_out" ]]; then
+      _out=$(printf '%s\n' "$_out" | LC_ALL=C grep -vE '(^|/)(node_modules|\.git|dist|build|\.claude/skills|\.swarm-yuan|\.codex|research|offline-cache)(/|$)' || true)
+    fi
     if [[ -z "$_out" ]]; then
       _hits=0
       _evid=""
