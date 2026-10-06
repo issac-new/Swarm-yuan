@@ -613,7 +613,7 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 - [ ] 1. 无占位符：`bash generate-skill.sh --verify-completeness <skill-dir> --strict`
 - [ ] 2. 清单可信：`bash inventory-verify.sh <项目根> --skill-dir <skill-dir> --tsv --path-check --stability-audit`（HALLUCINATION=0）
 - [ ] 3. 计数覆盖：同上命令中各维度 ratio ≥ 0.95 或有 FAIL 告警已处理
-- [ ] 4. 状态门：`bash generate-skill.sh --mark-active <skill-dir>`（三关全过翻 active）
+- [ ] 4. 状态门：`bash generate-skill.sh --mark-active <skill-dir>`（三关全过激活）
 
 **P0 核心映射九项（人工目检，每项一行判断）：**
 - [ ] 5. SKILL.md description 任务触发式（做什么+何时用）
@@ -668,7 +668,7 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 · reference-manual.md §5 按形态选链路模型（前端三层 / 后端请求管道+分层 / 异步消息流 / 微服务跨服务链）
 · reference-manual.md §6 按接口形态全量（REST逐端点 / GraphQL逐resolver / gRPC逐method / MQ逐queue）
 
-**★详尽构件库清单核对（防止样本化+维度错配）：**
+**★详尽组件库清单核对（防止样本化+维度错配）：**
 · 先做 §D.0 项目形态判定，记录"本项目含以下维度：[...]"
 · reference-manual.md §4 按判定的维度全量填充，每个维度独立计数核验
 · 纯后端项目：§4 含 controller/service/repository/middleware/model 全量，无 UI 组件表
