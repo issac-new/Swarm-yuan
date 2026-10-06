@@ -1,5 +1,18 @@
 # Changelog
 
+## [v2.56.0] - 2026-10-06
+
+> R93 全量回归轮（用户指令驱动：典型前后端样例实测生成+执勤，识别并修复生成器缺陷）。回归载体：task-forge 全栈样例（Vue 3 + Vite + Element Plus + Pinia 前端 / Express + better-sqlite3 + JWT 后端，101 文件 16 提交），完整走生成流程 Step 1-13（技能激活、门禁 fail 0、计数核验全 PASS、mark-active）与三项典型研发工作（feature 任务归档全栈链路 / fix IDOR 越权修复 / refactor 重复分页收敛，九节点工作流 + spec-first + 门禁序列 + 审查留痕，终态 --all-full 零 fail）。回归发现并修复 8 项生成器缺陷（每项含样例实证锚点）：①**框架注入两步契约断裂**——create 探测 ACTIVE_FRAMEWORKS 只打印不落盘，--inject-frameworks 从 conf source 恒空静默跳过，且 arch.conf 的 ACTIVE_FRAMEWORKS=() 会覆盖按（错误）交接清单填进主 conf 的同名值；修复：create 内联段落把探测结果写入 arch.conf 该行，交接清单锚点改为真实落点。②**决策账本项目侧回退失明**——conf 值剥引号 sed 顺序错误（尾空格先于闭引号剥离才正确），对齐注释形态的 PROJECT_DIR 行剥后残留引号 → --verify-completeness --strict 误报"缺少决策记录"（三处同族修正：generate-skill.sh×2 + detect-profile-drift.sh）。③**框架证据伪证据**——verify cmd 含 conf 数组变量时（Step 4 运行在 conf 渲染前）展开零参数，GNU grep -r 无操作数递归扫 cwd，node_modules/依赖库代码冒充项目证据（vue-r16 命中 11 处全在 node_modules 实证）；修复：eval 子 shell 注入 grep 包装函数拦"-r 且零文件操作数"形态标 NO_SCOPE（bash 3.2 $() 解析器不支持函数内 case，实证后改 if 链），并统一净化证据面（剔除 node_modules/.git/dist/.claude/skills/.swarm-yuan/生成物路径——生成技能自身文档霸榜 element-r1 证据实证）。④**计数核验多形态失明**——inventory-verify --form 逐 token 精确匹配，"frontend,backend"（§D.0 形态判定的自然产物）整串不中任何维度，前端/后端维度静默跳过只剩 common 空转；单形态运行又误报 DIM_MISMATCH；修复：逗号分隔多形态归一化逐 token 比对 + 多形态声明豁免错配 lint。⑤**store 枚举过匹配**——裸库名（pinia/zustand/jotai/recoil）匹配 import/装配/测试文件（4 store 枚举成 6 实证），诚实清单达不到 0.95 逼清单掺非 store 行；收紧为状态定义 token + 排除测试文件。⑥**形态判定三处失真**——JS/TS 后端（express/koa/nestjs/fastify 均在 82 框架支持面）不计后端形态；裸 *handler* 把 error-handler 误计异步形态；文件计数含 .claude/skills 生成物自引用（214 vs 真实 108）且各形态 find 从不排除 node_modules（依赖库 .py/*subscriber* 虚增形态）；修复：package.json 服务框架依赖判 JS 后端形态（xargs 防 grep 无操作数挂起）、handler 命名收紧为消息/事件/队列语义、计数与形态 find 统一排除生成物与依赖目录（样例判定从误导性"3 形态"归真为"前端+JS 后端"）。⑦**check_test 失败明细截断**——TEST_CMD 输出只留末 20 行，suite 级失败原因（jest ● 段在中部）被截，排障盲飞；tail 扩到 80 行。⑧**create 交接清单锚点失实**——指向 precheck.conf 的 TODO(framework-gates) 标记（该标记实际由 --inject-frameworks 之后才写入 arch.conf），照单执行必扑空；改指 arch.conf 真实落点并写明两步时序。验证：run-sweep 全量回归零新缺陷、bash 3.2 语法兼容（含新发现的 $() 内禁 case 实证注释）、修复逐项在 task-forge 样例上复验（探测落盘→一步注入通、决策回退通、证据净化后 element-r1 证据回到真实源码、多形态核验全维度 PASS、store 枚举归真 4）。
+
+### Fixed
+- `generate-skill.sh`：create 落盘 ACTIVE_FRAMEWORKS 到 arch.conf（原只打印）；--inject-frameworks 两步契约闭合；mark-active/verify-completeness 的 PROJECT_DIR 剥引号 sed 顺序（尾空格先剥）；交接清单 conf 锚点改指 arch.conf 真实落点。
+- `detect-profile-drift.sh`：同族 PROJECT_DIR 剥法对齐。
+- `framework-evidence.sh`：无操作数递归 grep 运行时防护（NO_SCOPE 诚实标注，不产伪证据）+ 证据面净化（依赖库/生成物路径剔除）+ bash 3.2 兼容（$() 内 if 链）。
+- `inventory-verify.sh`：--form 逗号分隔多形态支持（全栈项目核验不再空转）+ 多形态豁免错配 lint + 表头展示完整声明形态。
+- `inventory-dimensions.conf`：DIM_STORE_CMD 收紧（状态定义 token；排除测试文件；去裸库名/组件用法 token）。
+- `generate-skill.sh` 形态判定：JS 后端识别（package.json 服务框架依赖）、*handler* 命名收紧、文件计数排除生成物目录、全部形态 find 排除 node_modules。
+- `assets/gates-warn.sh`：check_test 输出保留 80 行（suite 失败明细不再截断）。
+
 ## [v2.55.0] - 2026-10-05
 
 > R92 叙事级历史包袱清理轮（用户二轮批评"终态文档看不懂在说啥"驱动）：R90 清掉的是词级痕迹（R 标记/日期戳/WP 标签），本轮清的是叙事级包袱——正文在讲"这份文档怎么被改出来的"五类过程叙事全面清除：①补丁式半步编号（Step 4.5/7.1/8.5/10.5、"…时"条件句、"须在 Step N 前/后做"排序注记）②逐版编年流水账（"版本注记：vX——…"标题、"方法论无新增落地单元/档案 docs/research/R##"簿记、"教训/回退修正"轮次叙事）③变迁叙事（"将 A 从 X 升级为 Y/X 退役/曾…改为"）④派生署名（"吸收自/借鉴 X 改写为 Y…不吸收 Z"）⑤维护者簿记（"自检断言/口径同步/对账通过/登记不展开/候选登记"）与推演黑话（双宿主/教义/谱系/三值化/互为正反/"X 族"式族标记/又一实证）。清理原则承 a37c6d6 验收边界：**能力事实与版本/PR 锚一条不丢，只删叙事外壳**，来源署名统一为「来源：X vN」一行式，设计结论（判据/不变量/边界）改平实表述保留。生成流程编号重整为连续 **Step 1-13**（4.5/7.1/8.5 并入父步命名子阶段并删排序注记，10.5 独立审查转正 Step 11、写回记忆→12、终检激活→13），全仓 80+ 处引用与机器/随发面同步。防复发：test-r68 终态纪律增⑥编年簿记/⑦变迁叙事/⑧派生过程句三锁，禁用自造词表扩 8 词（双宿主/教义/三值化/互为正反/收官/会师/又一实证/谱系）；FACT_FLOW_STEPS 补等值断言（此前零消费者，漂移只会静默失真）。验证：test-r68 15 项全绿、self-check --check-only EXIT=0（G25 双向对账零漂移）、tests/ 51 个全 PASS（含 test-r83 的 precheck --review 字面量锁、test-cost-report StepN 节点锁）、版本锚/PR 锚机械对账无丢失（下降项均为同条目重复版本名去重）。

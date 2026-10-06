@@ -47,6 +47,16 @@ if [[ -z "$FORM" && -n "$SKILL_DIR" ]]; then
 fi
 FORM="${FORM:-all}"
 
+# 多形态支持：--form "frontend,backend"（§D.0 形态判定的自然产物是多维清单——全栈项目
+# 必然多形态）。此前逐 token 精确匹配使 "frontend,backend" 整串不中任何维度的 FORMS，
+# 前端/后端维度静默跳过、只剩 common 维度空转，核验形同虚设（task-forge 全栈样例实证）。
+# 归一化为空格分隔多 token；"all" 语义不变。
+_forms_multi=""
+if [[ "$FORM" != "all" ]]; then
+  _forms_multi=$(printf '%s' "$FORM" | tr ',' ' ' | tr -s ' ')
+  FORM=$(printf '%s' "$_forms_multi" | cut -d' ' -f1)
+fi
+
 # source 维度注册表
 # shellcheck disable=SC1091
 . "$BASE/assets/inventory-dimensions.conf" 2>/dev/null || { echo "✗ 维度注册表缺失: assets/inventory-dimensions.conf" >&2; exit 1; }
@@ -54,15 +64,25 @@ FORM="${FORM:-all}"
 # 收集所有维度 ID（DIM_<ID>_TITLE 去前缀）
 _dims=$(set | LC_ALL=C sed -n 's/^DIM_\([A-Z0-9_]*\)_TITLE=.*/\1/p' | sort -u)
 
-# 形态适用判定：FORM=all 或维度 FORMS 含 $FORM 或维度 FORMS 含 common 且 $FORM != lib
+# 形态适用判定：FORM=all 或维度 FORMS 命中任一声明形态（多形态逐 token 比对）
+# 或维度 FORMS 含 common 且声明形态不含 lib
 _form_applicable() { # $1=维度FORMS
-  local dfs="$1"
+  local dfs="$1" f
   [[ "$FORM" == "all" ]] && return 0
   case " $dfs " in
     *" all "*) return 0 ;;
-    *" $FORM "*) return 0 ;;
-    *" common "*) [[ "$FORM" != "lib" ]] && return 0 ;;
   esac
+  for f in $_forms_multi; do
+    case " $dfs " in
+      *" $f "*) return 0 ;;
+    esac
+  done
+  if [[ " $dfs " == *" common "* ]]; then
+    case " $_forms_multi " in
+      *" lib "*) return 1 ;;
+      *) return 0 ;;
+    esac
+  fi
   return 1
 }
 
@@ -161,6 +181,8 @@ done
 
 # 维度错配 lint：声明 backend 但检出前端 UI 组件 / 声明 frontend 但检出后端 controller → DIM_MISMATCH
 # 注意：错配 lint 必须枚举「对面形态」的维度，与上面适用性过滤无关（FRONTEND_UI 对 backend 不适用，但仍需检测错配）。
+# 多形态声明（如 "frontend,backend"）不做错配探测——跨形态共存是声明本身的内容，探测必误报。
+if [[ -z "$_forms_multi" || "$FORM" == "$_forms_multi" ]]; then
 if [[ "$FORM" == "backend" ]]; then
   eval "fcmd=\${DIM_FRONTEND_UI_CMD:-}"
   if [[ -n "$fcmd" ]]; then
@@ -179,6 +201,7 @@ elif [[ "$FORM" == "frontend" ]]; then
 "
     fi
   fi
+fi
 fi
 
 # ===== WP-Q1A：§4/§5/§6/§8/§9 表格行的 路径+稳定性标注 抽取（两模式共用）=====
@@ -330,7 +353,7 @@ fi
 if [[ "$TSV" -eq 1 ]]; then
   printf '%s' "$rows" | LC_ALL=C sort
 else
-  echo "## 维度计数核验（inventory-verify.sh，形态=${FORM}）"
+  echo "## 维度计数核验（inventory-verify.sh，形态=${_forms_multi:-${FORM}}）"
   echo "维度	枚举计数	清单计数	比率	状态"
   printf '%s' "$rows" | LC_ALL=C sort
 fi

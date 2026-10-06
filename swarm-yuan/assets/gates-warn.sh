@@ -81,7 +81,9 @@ check_test() {
     return
   fi
   local _tout _trc
-  _tout=$(eval "$TEST_CMD" 2>&1 | tail -20) && _trc=0 || _trc=1
+  # tail -80：suite 级失败明细（jest 逐 suite ● 段）在输出中部，tail -20 只剩汇总行——
+  # 排障盲飞（实证：2 suite 失败原因被截，靠手动复跑定位才能看出崩溃栈）
+  _tout=$(eval "$TEST_CMD" 2>&1 | tail -80) && _trc=0 || _trc=1
   printf '%s
 ' "$_tout"
   if [[ "$_trc" -ne 0 ]] && printf '%s' "$_tout" | grep -qiE 'command not found|未找到命令'; then

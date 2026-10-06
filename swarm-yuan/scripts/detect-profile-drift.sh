@@ -42,9 +42,9 @@ PROJECT_DIR="${2:-}"
 if [[ -z "$PROJECT_DIR" && -f "$SKILL_DIR/scripts/precheck.conf" ]]; then
   # 同族剥法：conf 行带 `# AUTO:detected` 溯源注释是 conf-render 固定形态，
   # 原剥法不切 # 尾注 → 路径带注释垃圾 → -d 校验失败静默跳过检测（降级未披露为"读到真值"）。
-  # 对齐 generate-skill.sh:1029 剥法（cut -d'#' -f1）。
+  # 对齐 generate-skill.sh 同族剥法（cut -d'#' -f1）；尾空格先于闭引号剥（对齐空格防 s/"$// 失配）。
   PROJECT_DIR=$(grep -m1 '^PROJECT_DIR=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null \
-    | cut -d'#' -f1 | sed 's/^PROJECT_DIR=//;s/^"//;s/"$//;s/[[:space:]]*$//' || true)
+    | cut -d'#' -f1 | sed 's/^PROJECT_DIR=//;s/[[:space:]]*$//;s/^"//;s/"$//' || true)
 fi
 [[ -z "$PROJECT_DIR" ]] && PROJECT_DIR=$(cd "$SKILL_DIR/../../.." 2>/dev/null && pwd)
 [[ -n "$PROJECT_DIR" && -d "$PROJECT_DIR" ]] || { echo "ℹ 无法推导项目根目录，跳过 profile 漂移检测" >&2; exit 0; }
