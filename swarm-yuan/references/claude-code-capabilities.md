@@ -599,7 +599,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ## 版本基线
 
-能力清单以 npm `latest` 基线版本为准核验（当前 2.1.289）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+能力清单以 npm `latest` 基线版本为准核验（当前 2.1.292）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
 
 ## v2.1.233-237 能力
 
@@ -761,3 +761,14 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **权限通道完备性三项**（v2.1.288-289）：①复合 shell 命令嵌套段上的 deny/ask 规则不再被用户所装 mod 的批准压过（受管机器——**管理侧否决优先于用户侧授权**，fail-closed 层级执法）；②Read deny 规则经符号链接作用于 IDE @提及/变更/选中通道（v2.1.268 路径规范化延到 IDE 通道——**同一文件的每一条进入路径都过同一权限检查**）；③Bash deny/ask 在沙箱 auto-allow 下不再漏检环境变量前缀展开值（`TZ="$HOME" rm -rf build`）与裸赋值后的命令——**auto-allow 是通道捷径不是豁免面**。
 - **插件元数据越权修复**（v2.1.288-289）：用户安装的插件不得改写组织管理的 MCP server 登录工具描述——元数据（描述=模型所见）也是权限面，越权描述可诱导模型走错端点。
 - 其余（v2.1.288-289）：agent.spawn teammates + $.agent.list() idle/waiting 态（多代理状态面）、mods 渲染失败单区隔离（ui.fault——一个 mod 的 Client 失败只废它自己，不带崩全局渲染）。
+
+## v2.1.290-292 能力
+
+- **`serverToolUses` 进 mod `turn.step` 结果**（v2.1.290）：turn 结算把 API 自跑的工具调用（advisor）连同 id/名称/输入/起止暴露给 mod——**服务端代跑的动作也进审计面**（谁执行了什么不再因「不是客户端工具」而不可见）。
+- **`tool.check` 带 agentId 与 ceiling**（v2.1.290）：权限检查事件可辨子代理 vs 主会话，且带组织要求的审批等级——**权限事件的归属（谁）与阈值（要多高的批准）都成一等字段**。
+- **WebFetch 截断显式化 + offset 续读**（v2.1.290）：页面文本超 100,000 字符不再静默丢弃，显式报告未读量并接受 offset——「没读到」必须可见（与 Grep/Glob 不可读如实报错同族）。
+- **计划任务恢复两族**（v2.1.290/292）：`/loop` 间隔与提醒在 compaction 后可恢复（覆盖本版起的压缩）、后台交接（←/`/background`）后前台设定的定时任务不再永不触发、resume/respawn/fork 不再重复跑——**持久化任务与对话压缩/交接解耦**；292 补：`/resume`/`/branch`/`/clear` 后创建的任务不再永不触发、任务文件毫秒级双写不吞后续增删。
+- **UNC 网络路径读审批旁路修复**（v2.1.292，安全）：PreToolUse hook 批准与 auto mode 此前可绕过网络（UNC）路径读的权限提示——**网络路径与本地路径同一权限面**。
+- **Agent 工具 effort 参数**（v2.1.292）：子代理按指定 effort 档运行（与 maxEffortLevel 封顶、PreModelSwitch 挂点同族的派发面补全）。
+- **`$.model.complete` prompt 缓存块**（v2.1.292）：`prompt`/`system` 接受文本块、`cache: true` 缓存到该块为止——mod 侧可声明缓存边界（缓存友好编排的 API 化）。
+- 其余（v2.1.290-292）：`claude attach/logs` 会话名子串定位、`/claude-api managed-agents-onboard`（URL/quickstart 两形态）、`claude plugin install --marketplace`（装即挂源同策略检查）、`prompt.autocomplete` mod 事件、MCP >128 字符工具名单点剔除+点名（不再全请求失败）、Grep/Glob 资源不可读重试一次或报错、`CLAUDE_CODE_OVERLOADED_RETRY_BASE_DELAY_MS`（529 退避基值可调）、291 双回归修（云会话权限应答丢失+退出丢末消息——修复轮即回归源的连续实证）、managed settings 外链与沙箱忽略项 /status·doctor 警告、resumed subagent/teammate 保留 thinking 与 prompt cache。
