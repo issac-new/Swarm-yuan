@@ -1,5 +1,15 @@
 # Changelog
 
+## [v2.60.0] - 2026-10-08
+
+> R97 运行时例行刷新轮（用户 /goal 三目标触发：research 目录运行时更新到最新稳定版+差异比较+吸收）。9 移动物化：**codex rust-v0.160.0→v0.161.0**（155 提交实质 minor：`/mcp login` 会话内 MCP 登录；提权是加法不是重置——已批准文件系统提权授更宽写但保留拒绝读与网络限制、后台任务保留 originating turn 权限；显式启动权限跨重连存活；线程 resume 含最新已提交历史；SQLite 损坏早期检测先保全备份；重试遵循服务端 Retry-After 指引）+ **codex-security npm-v0.1.32→v0.2.0**（威胁模型随扫描落盘可离线导出（export --artifact threat-model，双格式兼容读）；暴露凭证检查（离线不试证、区分占位符）；--model/--effort 贯穿 patch/验证/核验；C++ 头 .hh/.hxx+EJS/ERB/PHTML+Vyper 入扫描面；Unix 沙箱预检先于付费调用；**npm 断流终结**——0.1.32 空洞后 0.2.0 已上 registry）+ **claude-code 2.1.289→2.1.292**（290：serverToolUses 进 turn.step 审计面+tool.check 带 agentId/ceiling+WebFetch 100k 截断显式化带 offset+计划任务与 compaction/后台交接解耦两族；291 双回归修；292：UNC 网络路径读审批旁路修复（安全）+Agent 工具 effort 参数+$.model.complete 缓存块）+ **claude-mem v13.31.0→v13.34.2**（**prompt-cache 前缀不变性**：13.29.0 起请求前修剪已发送消息致 OpenRouter/Gemini 观察环缓存前缀复用失效；修复=同代际已发送消息重发逐字节不变、缩减只在代际边界）+ **graphify v0.9.76→v0.9.80**（65 提交，v8 世系核验通过：克隆同一性确定性——node id/manifest 键不泄漏本地路径与 OS 用户名；MCP 检索缓存 query ~1.6x/shortest_path ~300x；Python 注解类型方法解析+Java 匿名类体+TYPE_CHECKING type-only）+ ruflo v3.52.0→v3.54.1（BM25 Porter 最长后缀→持久索引须重建记档；better-sqlite3 双副本 sidecar 互删修复）+ openspec v1.14.1（CLI 懒加载 24 vs 485 模块；spec 草拟即写——中断保留进度）+ ocr v1.12.12（薄轮）+ gstack main tip 快进 db74567（+15：measurement bar explained-red/诚实 eval 失败报告族）；semantica main 前移 +115 修复批记档；11 行零移动（dsh 0.2.x stable/rc 触发点未至、comet/gsd-core/ECC/superpowers/GitNexus/mattpocock-skills/pua 已在最新）。吸收五档过决策 46 两问：codex-methodology rust-v0.161.0 段+codex-security-methodology v0.2.0 行+claude-code-capabilities v2.1.290-292 段（基线 2.1.292）+memory-persistence v13.34.2 行+code-graph-tools v0.9.80 段；跨运行时主题三条（缓存边界显式化/产物环境无关性/审批面字段化与通道闭环）记 R97 档。live CLI：codex 0.160.0 滞后一版记档（升级窗口待用户）/claude 本轮 shell 不可达（R89 记 2.1.289）。
+
+### Changed
+- `docs/upstream-baseline.md`：R97 重核口径注 + 9 行基线回写 + semantica 前移记档。
+- `references/`：codex-methodology/codex-security-methodology/claude-code-capabilities/memory-persistence/code-graph-tools 五档吸收段。
+- `swarm-yuan/research/`：7 仓 checkout 新稳定 tag + gstack/semantica main 快进（gitignored 本地克隆）。
+- `README.md` ×2：release badge v2.60.0。
+
 ## [v2.59.0] - 2026-10-06
 
 > R96 全局术语统一轮（用户指令：保证全局术语概念统一）。审计坐实四概念多名混用后逐一归一：①**组件库清单**——此前"地图/组件库/零件目录/组件清单/构件库清单/项目地图"六名并存（README 地图×11、组件库×5、零件目录×3；词典规范名"项目地图"竟是零使用的少数派），以机器面为准归一（特征卡第 16 项与 inventory-verify 输出本就叫"详尽组件库清单"），词典词条更名并声明旧称废弃；②**开发工作流九节点**——"执勤九节点/9 节点"变体归一；③**激活**——"翻 active"归一（mark-active 为命令名不受影响）；④**门禁执法**——README 理念二"门禁拦截"与 SKILL.md"门禁执法"同句式不一致，统一为"门禁执法"（三权隐喻内允许用法）。改动面：设计文档 18 处、SKILL.md 7 处、使用手册 3 处 + 禁用对照表 +4 行、references 3 档 4 处（generation-flow/lazy-generation/template-spec）、generate-skill.sh 随发模板串 3 处（目标技能 SKILL.md 模板里的变体——不修则每个生成物继续携带旧术语）。防复发：test-r68 增两把术语锁（用户面 + 随发面各一，禁"零件目录/项目地图/执勤九节点/翻 active/详尽构件库清单"非规范变体；"地图"字面不锁——"阅读地图"等合法用法；词典对照表行与旧称声明行豁免）。验证：test-r68 17/0、gen-e2e EXIT=0（模板串改动产物面回归）、self-check EXIT=0、模板词法/上下文面/G25/R83 锁全过。

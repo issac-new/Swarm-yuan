@@ -471,3 +471,4 @@ claude-code / cursor / opencode / openclaw / windsurf / codex-cli / copilot-cli 
 - **findSimilar 置信度按来源可靠性门控**（#3301）：结论置信度不得高于其证据来源的可靠性上限——不信任单点聚合放大。
 - **LearningBridge.consolidate() reward-blind**（#3159）：记忆固化判据与激励信号解耦——防 reward hacking 写入长期记忆。
 - 近重复 embedding 检测整合 MemoryCore（#3231）：入库侧去重，防记忆池同义膨胀。MCP 治理 opt-in 与 ADR-377 身份绑定见 `mcp-governance.md`。
+- **v13.34.2 观察者历史不改写**：13.29.0 起每次请求前修剪已发送消息（tool-use 交换出最近八条即被 stub 替换）→ 从第五次观察起每个请求都改写早前消息 → OpenAI 兼容观察环（OpenRouter/Gemini）**prompt-cache 前缀复用失效**。修复=已发送消息重发逐字节不变，上下文压力改由代际尺寸预算回收兜底（generation 更快到预算→更常回收，成本影响未实测不宣称）。**机制纪律：prompt-cache 前缀不变性——同一代际内已发送的消息是只读资产，缩减只能在代际边界做**（与 dsh「动态修改系统提示不破 KV Cache」同为缓存友好编排族，彼在系统提示面、此在历史消息面）。回归测试形态可借鉴：深拷贝每个发出请求，断言「每个请求以上一请求的消息逐字节开头」。来源：`docs/research/R97-runtime-refresh.md`。
