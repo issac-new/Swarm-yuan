@@ -599,7 +599,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ## 版本基线
 
-能力清单以 npm `latest` 基线版本为准核验（当前 2.1.292）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+能力清单以 npm `latest` 基线版本为准核验（当前 2.1.294）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
 
 ## v2.1.233-237 能力
 
@@ -761,6 +761,17 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **权限通道完备性三项**（v2.1.288-289）：①复合 shell 命令嵌套段上的 deny/ask 规则不再被用户所装 mod 的批准压过（受管机器——**管理侧否决优先于用户侧授权**，fail-closed 层级执法）；②Read deny 规则经符号链接作用于 IDE @提及/变更/选中通道（v2.1.268 路径规范化延到 IDE 通道——**同一文件的每一条进入路径都过同一权限检查**）；③Bash deny/ask 在沙箱 auto-allow 下不再漏检环境变量前缀展开值（`TZ="$HOME" rm -rf build`）与裸赋值后的命令——**auto-allow 是通道捷径不是豁免面**。
 - **插件元数据越权修复**（v2.1.288-289）：用户安装的插件不得改写组织管理的 MCP server 登录工具描述——元数据（描述=模型所见）也是权限面，越权描述可诱导模型走错端点。
 - 其余（v2.1.288-289）：agent.spawn teammates + $.agent.list() idle/waiting 态（多代理状态面）、mods 渲染失败单区隔离（ui.fault——一个 mod 的 Client 失败只废它自己，不带崩全局渲染）。
+
+## v2.1.293-294 能力
+
+- **指令式钩子的执行力**（v2.1.294，方法层主条）：`prompt`/`agent` hooks 以自然语言指令写就时（如「拦截××命令」），宿主现在真正**判定并执行**其阻断意图——此前这类指令式守门「写着拦截却拦不住」；Stop/SubagentStop 上的指令钩子判定同步收紧（模型更不会提前停）。**指令即门禁需要裁决路径，不依赖模型自觉**——自然语言守门从 prompt 层沉淀到宿主层。
+- **工具 schema 可见性经济学**（v2.1.293）：`$.tool.register` 的 `isDeferred`——`false` 时工具 schema 从首轮 prompt 即列出（默认走 deferred definitions，需要时再展开）。mod 注册的工具可显式选择「一开始就可见」——schema 体积与发现性的显式权衡。
+- **压缩边界不动已完成态**（v2.1.293）：修 Claude 把自己压缩前最后的动作当「未做完」而回撤重做——**compaction 是上下文手术，不是任务状态重置**（压缩必须保持已完成/未完成的判定连续性）。
+- **HTTP MCP 连接内存泄漏修复**（v2.1.293）：连接此前保留其发过的每个请求直到关闭——**长连通道必须对历史请求有回收策略**（资源核算面）。
+- **诚实指令面**（v2.1.293）：被 host/权限规则/`--tools` 移除的工具不再写进「继续用 SendMessage」类指令；子代理不再被告知全局禁用了只有自己缺的工具——**指令不得引用不存在的通道**。
+- **排队消息保全**（v2.1.293）：`←` 后台化时排队消息不可迁则原地不动并说明（此前静默丢失）；Esc/No 在权限提示上如刚按过 `←` 也能停轮。
+- **`claude plugin test` 的 `mock.session`**（v2.1.293）：测试可回读 `$.session.append` 追加的行——**插件测试面补齐到可断言副作用**（与 mock.session 之外的只读 mock 相对）。
+- 其余（v2.1.293）：`subagentStatusLine` 载荷带 `agentType`（状态行脚本可辨自定义子代理类型）、Claude Haiku 5.5 成默认（1M 上下文）、`claude plugin eval` 在 Mac Docker Desktop 下不再误拒（拒绝时点名凭据来源）、path-scoped 规则在单文件 cat/head/tail/sed/grep 下也加载、粘贴文本不再被误判为键入、`/model` effort ←/→ 不再越界回绕。
 
 ## v2.1.290-292 能力
 
