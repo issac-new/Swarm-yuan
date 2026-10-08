@@ -1,5 +1,23 @@
 # Changelog
 
+## [v2.61.0] - 2026-10-09
+
+> R99 运行时例行刷新轮（用户 /goal 三目标触发：research 目录运行时更新到最新稳定版+差异比较+吸收+前后端回归+发版；R98 号位被并行会话 mem-adapter 轮占用，本轮顺延 R99）。3 移动物化：**claude-code 2.1.292→2.1.294**（294 **指令式钩子执行力**：prompt/agent hooks 以自然语言指令写就时宿主真正判定并执行阻断意图——「写着拦截却拦不住」终结；Stop/SubagentStop 指令钩子判定收紧；293 大修复批：`$.tool.register` isDeferred 工具 schema 延迟进 prompt+subagentStatusLine agentType+**压缩边界不动已完成态**（修把压缩前最后动作当未做完而回撤重做——compaction 是上下文手术不是任务状态重置）+**HTTP MCP 连接每请求保留至关闭的泄漏修复**+排队消息 ← 后台化保全+被移除工具不进指令+`claude plugin test` mock.session+Haiku 5.5 默认；**live CLI 2.1.294=漂移归零**）+ **ocr v1.12.13**（薄：扫描根 "." 归一+分隔符转换+LLM 独立超时/deadline 诊断文档化）+ **ruflo v3.55.0**（**共享 toast 系统成体系**：等级/去重/持久化+ADR-477 策略+toast 绑 session.start 而非 engine.create+held errors 定时释放；三平台见证清单重签）；18 行零移动。同构观察两条：**指令的裁决权上移**（claude-code 294 与 codex 0.161 提权保留拒绝面同向——守门逻辑从 prompt 层沉淀到宿主层）/ **生命周期锚点从引擎细化到会话**（ruflo toast 绑 session.start 与 claude-code 排队消息绑会话同周落位）。
+
+### Fixed
+- `assets/inventory-dimensions.conf`：**接口端点维度补 Django 分支**（R99 note-forge 回归实测发现）——`path('api/notes/', views.x)` / `re_path` / DRF `@api_view` / `router.register` 此前全漏（urls.py 声明式端点不在任何模式分支——Java 死正则/gin 缺位同族第三例）；修=免引号结构匹配 `\b(path|re_path)\(`（`path.join(` 点号形态天然不中）；note-forge 枚举 0→2，81 夹具面零误报（django/gin/spring-boot/express 复核）。
+
+### Verified（前后端项目回归：note-forge 全栈样例，Django 族首证）
+- 回归载体：note-forge（Django 6.1 后端 JSON API+sqlite+真实 migration+4 测试 / Vue3+Vite 前端，21 文件）——回归矩阵 task-forge（JS，R93）+ order-forge（Java，R94）后 Django 族补位。
+- 真实工具链双过：`manage.py check` 零 issue + `manage.py test` 4/4 OK；`vite build` 产物 3 件成功。
+- 技能管线全链：detect-frameworks 3 框架识别（vue/vite/django）→ create 骨架（draft）→ relations-extract 5 import 边（file:line 证据，跨前后端）→ inventory-verify `--form "frontend,backend"` 多形态（过程中揪出并修复上述 Django 端点缺口）。
+
+### Changed
+- `docs/upstream-baseline.md`：R99 重核口径注 + claude-code/ocr/ruflo 三行基线回写。
+- `references/claude-code-capabilities.md`：v2.1.293-294 段 + 基线 2.1.294。
+- `swarm-yuan/research/`：open-code-review v1.12.13 + ruflo v3.55.0 checkout（gitignored 本地克隆）。
+- `README.md` ×2：release badge v2.61.0。
+
 ## [v2.60.0] - 2026-10-08
 
 > R97 运行时例行刷新轮（用户 /goal 三目标触发：research 目录运行时更新到最新稳定版+差异比较+吸收）。9 移动物化：**codex rust-v0.160.0→v0.161.0**（155 提交实质 minor：`/mcp login` 会话内 MCP 登录；提权是加法不是重置——已批准文件系统提权授更宽写但保留拒绝读与网络限制、后台任务保留 originating turn 权限；显式启动权限跨重连存活；线程 resume 含最新已提交历史；SQLite 损坏早期检测先保全备份；重试遵循服务端 Retry-After 指引）+ **codex-security npm-v0.1.32→v0.2.0**（威胁模型随扫描落盘可离线导出（export --artifact threat-model，双格式兼容读）；暴露凭证检查（离线不试证、区分占位符）；--model/--effort 贯穿 patch/验证/核验；C++ 头 .hh/.hxx+EJS/ERB/PHTML+Vyper 入扫描面；Unix 沙箱预检先于付费调用；**npm 断流终结**——0.1.32 空洞后 0.2.0 已上 registry）+ **claude-code 2.1.289→2.1.292**（290：serverToolUses 进 turn.step 审计面+tool.check 带 agentId/ceiling+WebFetch 100k 截断显式化带 offset+计划任务与 compaction/后台交接解耦两族；291 双回归修；292：UNC 网络路径读审批旁路修复（安全）+Agent 工具 effort 参数+$.model.complete 缓存块）+ **claude-mem v13.31.0→v13.34.2**（**prompt-cache 前缀不变性**：13.29.0 起请求前修剪已发送消息致 OpenRouter/Gemini 观察环缓存前缀复用失效；修复=同代际已发送消息重发逐字节不变、缩减只在代际边界）+ **graphify v0.9.76→v0.9.80**（65 提交，v8 世系核验通过：克隆同一性确定性——node id/manifest 键不泄漏本地路径与 OS 用户名；MCP 检索缓存 query ~1.6x/shortest_path ~300x；Python 注解类型方法解析+Java 匿名类体+TYPE_CHECKING type-only）+ ruflo v3.52.0→v3.54.1（BM25 Porter 最长后缀→持久索引须重建记档；better-sqlite3 双副本 sidecar 互删修复）+ openspec v1.14.1（CLI 懒加载 24 vs 485 模块；spec 草拟即写——中断保留进度）+ ocr v1.12.12（薄轮）+ gstack main tip 快进 db74567（+15：measurement bar explained-red/诚实 eval 失败报告族）；semantica main 前移 +115 修复批记档；11 行零移动（dsh 0.2.x stable/rc 触发点未至、comet/gsd-core/ECC/superpowers/GitNexus/mattpocock-skills/pua 已在最新）。吸收五档过决策 46 两问：codex-methodology rust-v0.161.0 段+codex-security-methodology v0.2.0 行+claude-code-capabilities v2.1.290-292 段（基线 2.1.292）+memory-persistence v13.34.2 行+code-graph-tools v0.9.80 段；跨运行时主题三条（缓存边界显式化/产物环境无关性/审批面字段化与通道闭环）记 R97 档。live CLI：codex 0.160.0 滞后一版记档（升级窗口待用户）/claude 本轮 shell 不可达（R89 记 2.1.289）。
