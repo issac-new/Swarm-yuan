@@ -2,7 +2,7 @@
 
 > 对任意代码仓库跑一次，生成一个项目专属的开发技能。此后 AI 在这个项目里写代码，先查组件、依赖和规矩，再动手。
 
-[![Release](https://img.shields.io/badge/release-v2.68.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.68.0)
+[![Release](https://img.shields.io/badge/release-v2.69.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.69.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
