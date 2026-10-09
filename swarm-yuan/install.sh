@@ -47,6 +47,8 @@ detect_runtimes() {
   if [[ -d "$HOME/.gemini/skills" ]]; then printf 'Gemini CLI\t%s\t\n' "$HOME/.gemini/skills"; fi
   # Kimi
   if [[ -d "$HOME/.kimi/skills" ]]; then printf 'Kimi\t%s\t\n' "$HOME/.kimi/skills"; fi
+  # ZCode（AGENTS.md 指令载体；skills 目录为技能装载位）
+  if [[ -d "$HOME/.zcode/skills" ]]; then printf 'ZCode\t%s\t\n' "$HOME/.zcode/skills"; fi
 }
 
 # ===== 多平台规则渲染（P3）：安装后补生成该工具原生规则文件 =====
@@ -61,6 +63,7 @@ render_native_rules() {
     "Windsurf")    key="windsurf" ;;
     "Gemini CLI")  key="gemini" ;;
     "Kimi")        key="kimi" ;;
+    "ZCode")       key="zcode" ;;
     *)             key="" ;;
   esac
   [[ -n "$key" ]] || return 0
@@ -95,6 +98,13 @@ install_to() {
   # 不能自我复制（SRC_DIR == dest 时跳过复制，只注册 slash command）
   if [[ "$SRC_DIR" == "$dest" ]]; then
     skip_self_install "$name" "$cmd_dir"
+    return 0
+  fi
+
+  # 目标已是符号链接（如由技能管理器统一维护的部署）：不穿透、不破坏链接——跳过拷贝并显式提示。
+  # 实体安装请先移除该链接，或由管理方在链接源头更新。
+  if [[ -L "$dest" ]]; then
+    echo "  ⚠ ${dest} 是符号链接（疑似由技能管理器维护）——跳过安装以防破坏链接；如需实体安装请先移除该链接"
     return 0
   fi
 
@@ -218,6 +228,9 @@ case "$MODE" in
     ;;
   --kimi)
     install_to "Kimi" "$HOME/.kimi/skills" ""
+    ;;
+  --zcode)
+    install_to "ZCode" "$HOME/.zcode/skills" ""
     ;;
   --all)
     found="$(detect_runtimes)"

@@ -71,6 +71,7 @@ UNIVERSAL_FILES=(
   "scripts/mcp-tools.md|assets"
   "scripts/state-machine.sh|assets|lite"
   "scripts/trace-log.sh|assets|lite"
+  "scripts/memory-backends.sh|assets|lite"  # 记忆后端适配层（memory-writeback/知识门禁共用，先于 writeback 分发）
   "scripts/memory-writeback.sh|assets|lite"
   # audit-claims-reality 修复：hooks 统一装到 scripts/（kind=hook，源 assets/hooks/）。
   # 此前 dest=assets/hooks/，但 hooks.json/settings 白名单/codex 适配器/文档全部引用 scripts/*.sh，
@@ -1229,7 +1230,7 @@ detect_skill_dir() {
   local project="$1"
   # 1) 项目内已有 skills 目录（任意受支持运行时）→ 优先复用
   local rt
-  for rt in .claude/skills .codex/skills .cursor/skills .codeium/windsurf/skills .config/opencode/skills .gemini/skills .kimi/skills; do
+  for rt in .claude/skills .codex/skills .cursor/skills .codeium/windsurf/skills .config/opencode/skills .gemini/skills .kimi/skills .zcode/skills; do
     if [[ -d "$project/$rt" ]]; then echo "$project/$rt"; return; fi
   done
   # 2) 项目内无 skills 目录 → 默认在项目内创建 .claude/skills/
@@ -1246,6 +1247,7 @@ detect_runtime_name() {
   elif [[ -d "$project/.config/opencode/skills" ]]; then echo "OpenCode"
   elif [[ -d "$project/.gemini/skills" ]]; then echo "Gemini CLI"
   elif [[ -d "$project/.kimi/skills" ]]; then echo "Kimi"
+  elif [[ -d "$project/.zcode/skills" ]]; then echo "ZCode"
   else echo "通用（将在项目内创建 .claude/skills/）"
   fi
 }
@@ -1697,7 +1699,7 @@ SEOF
         .mcp.json)
           cat > "$SKILL_DIR/$cfg" <<'MEOF'
 {
-  "_comment": "MCP server 接入模板（由 swarm-yuan 生成）。默认无激活 server——AI 按项目已装运行时激活对应 server。常用：gitnexus（代码图谱，PolyForm 非商用）/ claude-mem（跨会话记忆）/ graphify（MIT 代码图谱，默认推荐）。",
+  "_comment": "MCP server 接入模板（由 swarm-yuan 生成）。默认无激活 server——AI 按项目已装运行时激活对应 server。常用：gitnexus（代码图谱，PolyForm 非商用）/ claude-mem（跨会话记忆；CLI 侧经 scripts/memory-backends.sh 适配层接入，可替换后端）/ graphify（MIT 代码图谱，默认推荐）。",
   "mcpServers": {
   }
 }
@@ -2190,7 +2192,7 @@ SEOF
 # JSON 不支持注释，用 "_comment" 字段承载说明；激活时删除对应 server 前的注释行（改为有效 JSON）。
 _write_if_absent "$SKILL_DIR/.mcp.json" <<'MEOF'
 {
-  "_comment": "MCP server 接入模板（由 swarm-yuan 生成）。默认无激活 server——AI 按项目已装运行时激活对应 server。激活示例：把 mcpServers 对象内对应 server 的注释去掉（改为有效 JSON 键值）。常用 server：gitnexus（代码图谱，PolyForm 非商用）/ claude-mem（跨会话记忆）/ graphify（MIT 代码图谱，默认推荐）。",
+  "_comment": "MCP server 接入模板（由 swarm-yuan 生成）。默认无激活 server——AI 按项目已装运行时激活对应 server。激活示例：把 mcpServers 对象内对应 server 的注释去掉（改为有效 JSON 键值）。常用 server：gitnexus（代码图谱，PolyForm 非商用）/ claude-mem（跨会话记忆；CLI 侧经 scripts/memory-backends.sh 适配层接入，可替换后端）/ graphify（MIT 代码图谱，默认推荐）。",
   "mcpServers": {
   }
 }
@@ -2236,7 +2238,7 @@ _write_if_absent "$SKILL_DIR/commands/explore.md" <<'CEOF'
 description: 探查项目结构
 ---
 
-用 gitnexus/graphify/claude-mem 探查项目，更新特征卡。
+用代码图谱（gitnexus/graphify）与记忆后端（scripts/memory-backends.sh 注册，如 claude-mem）探查项目，更新特征卡。
 
 探查方法论与降级链：生成器仓 `references/exploration-guide.md`（不随技能分发，回生成器仓读；§D.0 形态判定 → §D.0.5 框架激活 → §D.0.6 四层架构枚举 → §D.1 全量穷举）；随技能分发工具速查 `references/code-graph-tools.md`。
 CEOF

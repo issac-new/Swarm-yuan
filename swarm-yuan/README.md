@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.62.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.62.0)
+[![Release](https://img.shields.io/badge/release-v2.63.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.63.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -218,7 +218,7 @@
 
 | 来源 | 吸收形式 | 落点 |
 |---|---|---|
-| 深度整合四件（GitNexus / graphify / claude-mem / ocr） | 门禁内真实子进程 + 多级降级链 | references/code-graph-tools.md 等（图谱第三备选 codegraph 同文件，watch 未整合） |
+| 深度整合四件（GitNexus / graphify / claude-mem / ocr） | 门禁内真实子进程 + 多级降级链；记忆类插件经 memory-backends.sh 适配层接入（绑定后端契约，可替换） | references/code-graph-tools.md 等（图谱第三备选 codegraph 同文件，watch 未整合） |
 | CLI 四件（OpenSpec / comet / gsd-core / codex-security） | 按需调用 CLI，降级自带载体 | references/ 各 methodology |
 | 方法论五件（superpowers / gstack / Ruflo / ECC / impeccable） | AI 按工作流节点引用模式 | references/subagent-orchestration.md |
 | 外部方法论文档与能力档 49 篇 | 蒸馏为 references 方法论，全带"何时读我"路由头 | references/ 同名文件；逐档整合清单（来源/证据分级/消费节点/触发）见 references/capability-map.md，self-check 做双向一致性校验 |

@@ -102,7 +102,7 @@
 | 整合深度 | 运行时 | 消费点 | 降级链 |
 |---------|--------|--------|--------|
 | 深度×4 | GitNexus / graphify | 探查图谱优先（code-graph-tools 三选型，codegraph 为 watch 备选） | 未装→静态扫描清单 |
-| 深度×4 | claude-mem | Step 12 记忆写回 sink 之一 | 未装→.zcode/project-knowledge 本地落盘 |
+| 深度×4 | claude-mem | Step 12 记忆写回后端 + 知识门禁记忆检索（均经 memory-backends.sh 适配层注册，可替换后端） | 未装→local 项目本地落盘（.swarm-yuan/，探测到 .zcode/memories 时同步） |
 | 深度×4 | ocr | ⑥ 测试验证 5 审查维度 | 未装→4 维 |
 | CLI×4 | OpenSpec | 节点②③ spec proposal/tasks 格式 | 未装→自有 spec-template |
 | CLI×4 | comet | 工作流骨架仪式/resume-probe | 未装→state-machine.sh |

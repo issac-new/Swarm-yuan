@@ -35,6 +35,22 @@ SRC_RELEASE_TAG="${SRC_RELEASE_TAG:-v$(date -u +%Y%m%d)-src}"
 has_cmd(){ command -v "$1" &>/dev/null; }
 
 # ---------- 检测函数（miss 时 return 1，pass 时 return 0；if/else 形式避免 A&&B||C 误判）----------
+# 记忆后端适配层（生成器侧 assets/memory-backends.sh，安装态同目录 scripts/；缺失时 CLI 直探兜底）
+_MB_SH=""
+for _c in "$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)/assets/memory-backends.sh" "$(cd "$(dirname "$0")" 2>/dev/null && pwd)/memory-backends.sh"; do
+  if [[ -f "$_c" ]]; then _MB_SH="$_c"; break; fi
+done
+if [[ -n "$_MB_SH" ]]; then
+  # shellcheck disable=SC1090
+  source "$_MB_SH"
+fi
+
+# 方法论插件候选目录（跨宿主生态探测：Claude Code plugins/skills + 通用 ~/.agents/skills + ZCode ~/.zcode/skills）
+# 目录存在 ≠ 已安装到当前宿主——只作"本机哪里有"的存在性检测，消费仍以 references 蒸馏档为准
+_methodology_dirs(){  # $1=插件名 → stdout 候选目录（每行一个）
+  printf '%s\n' "$HOME/.claude/plugins/$1" "$HOME/.claude/skills/$1" "$HOME/.agents/skills/$1" "$HOME/.zcode/skills/$1"
+}
+
 check_openspec(){
   if command -v openspec &>/dev/null; then pass "OpenSpec: $(openspec --version 2>&1|head -1)"; else miss "OpenSpec"; fi
 }
@@ -48,9 +64,20 @@ check_gsd_core(){
   if command -v gsd-tools &>/dev/null; then pass "gsd-core: gsd-tools 可用"; else miss "gsd-core"; fi
 }
 check_claude_mem(){
-  if command -v claude-mem &>/dev/null; then pass "claude-mem: $(claude-mem --version 2>&1|head -1)"
-  elif [[ -d ~/.claude-mem ]]; then warn "claude-mem: 数据目录存在但 CLI 未装（~/.claude-mem 存在，command -v claude-mem 失败）--深度整合需 CLI，建议 npm i -g claude-mem"
-  else miss "claude-mem"; fi
+  # 经记忆后端适配层派发（detect=当前可用，present=本机有痕迹含数据目录）；适配层缺失时 CLI 直探兜底
+  if command -v mem_detect >/dev/null 2>&1; then
+    if mem_detect claude_mem; then
+      pass "claude-mem: $(claude-mem --version 2>&1|head -1)"
+    elif mem_present claude_mem; then
+      warn "claude-mem: 本机有数据痕迹但 CLI 不可用（mem_present 命中）--深度整合需 CLI，建议 npm i -g claude-mem"
+    else
+      miss "claude-mem"
+    fi
+  elif command -v claude-mem &>/dev/null; then
+    pass "claude-mem: $(claude-mem --version 2>&1|head -1)"
+  else
+    miss "claude-mem"
+  fi
 }
 check_ocr(){
   if command -v ocr &>/dev/null; then pass "open-code-review: $(ocr --version 2>&1|head -1)"; else miss "open-code-review (ocr)"; fi
@@ -64,23 +91,31 @@ check_superpowers(){
   # v6.1.1 本体不在包内。须含核心插件证据——skills/ 子目录或 .claude-plugin/plugin.json
   # ——才视为已安装；仅 marketplace 元数据判空壳 miss（fail-closed）。
   local d
-  for d in ~/.claude/plugins/superpowers ~/.claude/skills/superpowers; do
+  for d in $(_methodology_dirs superpowers); do
     [[ -d "$d" ]] || continue
     if [[ -d "$d/skills" || -f "$d/.claude-plugin/plugin.json" ]]; then
-      pass "superpowers: 已安装（核心插件证据齐备）"; return 0
+      pass "superpowers: 已安装（核心插件证据齐备，位于 ${d}）"; return 0
     fi
     miss "superpowers（空壳：marketplace 元数据非核心插件，需在线 /plugin install）"; return 1
   done
   miss "superpowers（需 /plugin install）"
 }
 check_gstack(){
-  if [[ -d ~/.claude/skills/gstack ]]; then pass "gstack: 已安装"; else miss "gstack（需 git clone + setup）"; fi
+  local d
+  for d in $(_methodology_dirs gstack); do
+    if [[ -d "$d" ]]; then pass "gstack: 已安装（${d}）"; return 0; fi
+  done
+  miss "gstack（需 git clone + setup）"
 }
 check_ruflo(){
   if command -v ruflo &>/dev/null; then pass "ruflo: $(ruflo --version 2>&1|head -1)"; else miss "ruflo"; fi
 }
 check_ecc(){
-  if [[ -d ~/.claude/plugins/ecc || -d ~/.claude/skills/ecc ]]; then pass "ECC: 已安装"; else miss "ECC（需 /plugin marketplace add https://github.com/affaan-m/ECC && /plugin install ecc）"; fi
+  local d
+  for d in $(_methodology_dirs ecc); do
+    if [[ -d "$d" ]]; then pass "ECC: 已安装（${d}）"; return 0; fi
+  done
+  miss "ECC（需 /plugin marketplace add https://github.com/affaan-m/ECC && /plugin install ecc）"
 }
 
 # ---------- 通用：从 GitHub Release 源码包安装 ----------
@@ -821,7 +856,7 @@ check_bootstrap_gate
 
 # ===== AI 工具兼容三档对账（G7）=====
 # 对账 tool-adapters/common.sh 的 TA_TIER_<tool> 声明数 vs facts.conf 口径
-# （FACT_COMPAT_DEEP=1 / FACT_COMPAT_CLI=6）。口径漂移机器执法：不符 warn + FAIL=1。
+# （FACT_COMPAT_DEEP=1 / FACT_COMPAT_CLI=7）。口径漂移机器执法：不符 warn + FAIL=1。
 check_compat_tier() {
   local base; base="$(cd "$(dirname "$0")/.." && pwd)"
   local adapters="$base/assets/tool-adapters"
@@ -916,6 +951,30 @@ check_runtime_tier() {
   fi
 }
 check_runtime_tier
+
+# ===== 记忆后端注册表对账 =====
+# memory-backends.sh 的后端注册数（mem_*_detect 函数定义）vs facts.conf FACT_MEM_BACKENDS。
+# 口径漂移机器执法：后端增删未同步 facts.conf 时 warn + FAIL=1。
+check_mem_backends() {
+  local base; base="$(cd "$(dirname "$0")/.." && pwd)"
+  local mb="$base/assets/memory-backends.sh"
+  [[ -f "$mb" ]] || { warn "memory-backends.sh 不存在（记忆后端适配层缺失）"; FAIL=1; return 0; }
+  if [[ -z "${FACT_MEM_BACKENDS:-}" && -f "$base/assets/facts.conf" ]]; then
+    set +u; # shellcheck disable=SC1090
+    source "$base/assets/facts.conf"; set -u
+  fi
+  echo "▶ 记忆后端注册表对账"
+  local cnt
+  cnt=$(grep -cE '^mem_[a-z_]+_detect\(\)' "$mb" 2>/dev/null || true)
+  cnt="${cnt:-0}"
+  local exp="${FACT_MEM_BACKENDS:-3}"
+  if [[ "$cnt" == "$exp" ]]; then
+    echo "  ✓ 记忆后端 ${cnt} 个与 facts.conf FACT_MEM_BACKENDS=${exp} 一致"
+  else
+    warn "记忆后端注册数=${cnt} ≠ facts.conf FACT_MEM_BACKENDS=${exp}"; FAIL=1
+  fi
+}
+check_mem_backends
 
 # ===== golden-vector.txt 行数断言（金向量漂移防治）=====
 # golden-vector.txt 行数须 == FACT_FRAMEWORKS（+1 行 FIXTURES_TOTAL 尾行）
