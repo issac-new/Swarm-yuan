@@ -96,7 +96,7 @@ SKILL.md/codebase/dev-guide/release/reference-manual/workflow/recipes/snippets/m
 
 ## Step 10. AI 编码验证（测试）
 
-`precheck.sh --all`（核心 10）→ fail 自动修复重跑 → `--mark-active` 激活后 `--all-full`（标准 28：核心 10+架构 18）；强监管交付按需追加 `--compliance-suite`（合规 19）。**★测试门禁（check_test）**：独立承载单元/集成测试验证——脚本自动跑项目测试套件，`check_test` 门禁核验 0 用例检测（无测试即 fail）、断言密度等硬指标；**测试有效性**引用 **Mutation Check**（Step 8 审查口径校验；变异测试：注入故障后测试套件必须捕获，捕获率不达标 fail，防止"假阳性通过"测试）。**★compliance 档 / 改治理资产 / 发布链路：强制走四权分离 agent 拓扑**（policy-guardian → action-executor → self-reviewer → verifier，立法/执法/司法三权隐喻，详见 `references/governance-agents.md`）——action-executor 只给 candidate_pass，最终 verifier_status 由 external harness/hook/human 定，防「自己改自己验收」。**★compaction 状态续传**：PreCompact hook 自动 `bash scripts/state-machine.sh dump-journal` 把 phase/failure_count/peak_level dump 到 `.swarm-yuan/builder-journal.md`；SessionStart 自动 `restore-journal` 检测 <2h 的 journal 并恢复压力状态——压力不因 compaction 重置
+`precheck.sh --all`（核心 11）→ fail 自动修复重跑 → `--mark-active` 激活后 `--all-full`（标准 29：核心 11+架构 18）；强监管交付按需追加 `--compliance-suite`（合规 19）。**★测试门禁（check_test）**：独立承载单元/集成测试验证——脚本自动跑项目测试套件，`check_test` 门禁核验 0 用例检测（无测试即 fail）、断言密度等硬指标；**测试有效性**引用 **Mutation Check**（Step 8 审查口径校验；变异测试：注入故障后测试套件必须捕获，捕获率不达标 fail，防止"假阳性通过"测试）。**★compliance 档 / 改治理资产 / 发布链路：强制走四权分离 agent 拓扑**（policy-guardian → action-executor → self-reviewer → verifier，立法/执法/司法三权隐喻，详见 `references/governance-agents.md`）——action-executor 只给 candidate_pass，最终 verifier_status 由 external harness/hook/human 定，防「自己改自己验收」。**★compaction 状态续传**：PreCompact hook 自动 `bash scripts/state-machine.sh dump-journal` 把 phase/failure_count/peak_level dump 到 `.swarm-yuan/builder-journal.md`；SessionStart 自动 `restore-journal` 检测 <2h 的 journal 并恢复压力状态——压力不因 compaction 重置
 
 ## Step 11. AI 独立审查（review）
 

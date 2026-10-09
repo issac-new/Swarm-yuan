@@ -23,7 +23,7 @@ swarm-yuan 的 13 步生成流程是线性的（Step 1-13，唯一编号口径�
 
 | 任务类型 | 触发信号 | 关键节点序列 | 门禁聚焦 | profile 档 |
 |---------|---------|-------------|---------|-----------|
-| **新项目生成** | `generate-skill.sh <name> <project-dir>`（无 --upgrade） | 全 13 步（Step 1-13） | --all-full（标准 28）+ 按需 --compliance-suite | auto（默认 standard，合规信号→compliance） |
+| **新项目生成** | `generate-skill.sh <name> <project-dir>`（无 --upgrade） | 全 13 步（Step 1-13） | --all-full（标准 29）+ 按需 --compliance-suite | auto（默认 standard，合规信号→compliance） |
 | **框架规则注入** | `--inject-frameworks` 或 ACTIVE_FRAMEWORKS 变更 | Step 3（探查框架）→ Step 4 框架深化与门禁注入→ Step 12（记忆写回） | 框架四要素核验（计数/规则/函数/约束）+ --framework <id> exit 0 | 继承现有 profile |
 | **升级已有技能** | `--upgrade <name> <project-dir>` | Step 4（项目形态重判）→ Step 7（填充，保留 PROJECT_SPECIFIC_FILES）→ Step 12（记忆写回）→ Step 13（最终检查） | --verify-completeness + 维度计数核验 + 框架四要素 | 继承现有 profile |
 | **合规审计** | `--compliance-suite` 或 compliance 档项目 | Step 5（特征卡含合规基线）→ Step 8（合规门禁配置）→ Step 9（四权分离拓扑）→ Step 13（Z3 fail-closed 核验） | --compliance-suite（合规 19：sbom/crypto/dengbao/pia/sast-deep/oss-eval/release-sign）+ 行业 profile | compliance |
@@ -42,15 +42,15 @@ swarm-yuan 的 13 步生成流程是线性的（Step 1-13，唯一编号口径�
 
 ## 文档路由表（任务开工该读什么）
 
-> 本表与文档索引（capability-map.md，生成器仓维护）配套：那张表从**文档**查"它在哪里被使用"，本表从**任务**查"开工该读什么"——48 份参考文档由此全部可达。表内序号（②⑤⑦…）是执勤工作流（开发工作流，目标技能 references/workflow.md）的节点号；【必】=该任务必读，【按】=命中条件才读。覆盖纪律：`*-methodology.md` 每份必须能从本表查到（生成器自检的 G25 断言把关）。
+> 本表与文档索引（capability-map.md，生成器仓维护）配套：那张表从**文档**查"它在哪里被使用"，本表从**任务**查"开工该读什么"——48 份参考文档由此全部可达。表内序号（②⑤⑦…）是开发工作流（目标技能 references/workflow.md）的节点号；【必】=该任务必读，【按】=命中条件才读。覆盖纪律：`*-methodology.md` 每份必须能从本表查到（生成器自检的 G25 断言把关）。
 > **可及性**：本表引用的文档都随目标技能分发（在生成器 UNIVERSAL_FILES 分发清单里，拷进目标技能 references/ 直接可读）；标【生成器侧】的文档只在生成器仓里存在——引用它的任务在生成器里做，不会进目标技能。同样由 G25 断言把关。
 
-| 任务类型 | 触发信号 | 该读的参考文档（按执勤工作流节点序） |
+| 任务类型 | 触发信号 | 该读的参考文档（按开发工作流节点序） |
 |---------|---------|---------------------------|
 | **feature（新功能）** | 分支 feat/*、用户开发需求 | ①【按·需求模糊】mattpocock-skills-methodology（访谈协议 §一）→ ②【必】knowledge-lifecycle（读法六步）+【按】mattpocock-skills-methodology（spec 测试缝/防腐 §二）→ ③【按】mattpocock-skills-methodology（纵切拆分 §三）+ cost-estimation-methodology（§25 估算）→ ⑤【必】lazy-generation（先查再写）；复杂变更加 subagent-orchestration（任务图并行实现）、长任务加 mea-loop-methodology；⑦【必】review-methodology → ⑧ decision-governance（用户确认点）；全程 ai-process-records |
 | **fix（缺陷修复）** | 分支 fix/*、报障 | ②【必】knowledge-lifecycle（影响面查法）→ ⑤【必】lazy-generation +【按·硬 bug】mattpocock-skills-methodology（诊断回路 §四：反馈回路先行/red-capable/可证伪假设）→ ⑦【必】review-methodology（回归面=修复点+相邻路径）；全程 codex-methodology（执行纪律）+ ai-process-records |
 | **refactor（重构）** | 分支 refactor/* | ②【必】knowledge-lifecycle（影响面）→ ③【按·架构类】togaf-metamodel-methodology（§24）/ cordis-composability-methodology（可组合性）→ ⑤ lazy-generation → ⑦【必】review-methodology |
-| **test（测试）** | 分支 test/* | ⑦【必】review-methodology（测试有效性判定）+ 回归分级（template-spec §19【生成器侧】，执勤侧载体是 spec §19 本身）；长测试计划 mea-loop-methodology |
+| **test（测试）** | 分支 test/* | ⑦【必】review-methodology（测试有效性判定）+ 回归分级（template-spec §19【生成器侧】，目标技能侧载体是 spec §19 本身）；长测试计划 mea-loop-methodology |
 | **docs（文档）** | 分支 docs/* | ②【必】knowledge-lifecycle（知识四阶段协议，文档即知识）→ ⑦ review-methodology（三方一致核对） |
 | **chore（杂务/依赖）** | 分支 chore/* | ⑤【必】codex-methodology（版本锁定例外四条件）；全程 ai-process-records |
 | **exp（实验）** | 分支 exp/* | 全程【必】ai-process-records（实验不入 main 须留痕）；长实验 mea-loop-methodology |

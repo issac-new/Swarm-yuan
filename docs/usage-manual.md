@@ -6,7 +6,7 @@
 >
 > **口径权威源**：`assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 >
-> **两体阅读提示**：本文覆盖两个对象——**生成器**（swarm-yuan 本身，"生成"段落操作它）与**目标技能**（生成器产出的项目专属规则包，"日常使用"段落操作它；亦称"生成物"）。17 项特征卡、55 个门禁、四本账都是**目标技能**的资产；生成器是它们的模板来源。
+> **两体阅读提示**：本文覆盖两个对象——**生成器**（swarm-yuan 本身，"生成"段落操作它）与**目标技能**（生成器产出的项目专属规则包，"日常使用"段落操作它；亦称"生成物"）。17 项特征卡、56 个门禁、四本账都是**目标技能**的资产；生成器是它们的模板来源。
 
 ---
 
@@ -83,7 +83,7 @@ bash install.sh
 | SCAN_DIRS / CONSISTENCY_DIRS | 第 7/12 项（安全/数据） |
 | COG_SPEED_FILES / COG_CUMULATIVE_TODO | 第 13 项（认知框架） |
 
-**特征卡 → 开发流程（日常使用）：** 开始新需求时，AI 从特征卡第 11 项检索可复用单元，预填 spec §5.5 复用约束。编码时 AI 查特征卡第 11 项的组件库清单，拼装优先。提交前 55 个门禁按特征卡配置的规则检查。
+**特征卡 → 开发流程（日常使用）：** 开始新需求时，AI 从特征卡第 11 项检索可复用单元，预填 spec §5.5 复用约束。编码时 AI 查特征卡第 11 项的组件库清单，拼装优先。提交前 56 个门禁按特征卡配置的规则检查。
 
 #### 特征卡探查工具矩阵
 
@@ -122,20 +122,20 @@ bash install.sh
 
 #### 门禁与特征卡的关系
 
-特征卡定义了「项目应该是什么样的」，55 个门禁验证「代码是否符合特征卡定义的规则」。
+特征卡定义了「项目应该是什么样的」，56 个门禁验证「代码是否符合特征卡定义的规则」。
 
 #### 门禁分层（决策 19，横切维度）
 
-55 门禁按 `fail()` 调用能力分三档，与 core/standard/compliance 门禁家族正交（一个门禁同时属于 core + strict，或 standard + advisory）。计数真值在 `assets/facts.conf`（FACT_ENFORCE_* 族）：
+56 门禁按 `fail()` 调用能力分三档，与 core/standard/compliance 门禁家族正交（一个门禁同时属于 core + strict，或 standard + advisory）。计数真值在 `assets/facts.conf`（FACT_ENFORCE_* 族）：
 
 | 分层 | 静态计数 | 有效计数 | fail() 能力与行为 |
 |------|------|------|------------|
 | **strict** | 17 | 17 | ≥3 真实 fail()，真 fail 阻断交付 |
-| **warn** | 22 | 17 | 1-2 真实 fail()，能 fail 但触发窄，混合 warn |
+| **warn** | 23 | 18 | 1-2 真实 fail()，能 fail 但触发窄，混合 warn |
 | **advisory** | 16 | 21 | 0 fail()，永不阻断（认知/观测类；子 shell 内重定义 `fail()`/`warn()` 为纯 echo，"不阻断"语义机器化） |
 
 - **有效 = 静态 + precheck.sh 顶部 `_ENFORCE_OVERRIDE`**（当前 5 项 warn→advisory：stable-diff / framework / knowledge / metrics / crypto，误报治理见 conf 调整；名单以 precheck.sh 数组为准，不在此手抄）
-- **查实时名单**：`bash scripts/precheck.sh --list-gates`（输出 flag / gate_fn / enforce / tier 四列）——本节不手抄 55 个门禁名，手抄即漂移（agents-md-audit-round：旧名单表三度失同步后删除）
+- **查实时名单**：`bash scripts/precheck.sh --list-gates`（输出 flag / gate_fn / enforce / tier 四列）——本节不手抄 56 个门禁名，手抄即漂移（agents-md-audit-round：旧名单表三度失同步后删除）
 - **自动归类**：`bash scripts/gen-enforce-level.sh` 扫 precheck.sh fail() 数，重生成 `assets/gate-enforce-level.conf`（幂等，可逐字节再生）
 - **自检**：`self-check.sh` 校验 conf 与 precheck.sh fail 数一致 + strict 门禁必含 ≥1 fail()（防 strict 声明空壳）
 
@@ -245,14 +245,14 @@ bash install.sh
 | Step 7 | AI 填充全部文件——**特征卡驱动，消除全部占位符** |
 | Step 8 | AI 配置 precheck.conf——**185 个变量从特征卡推导** |
 | Step 9 | AI 生成 hooks / commands / settings.local.json / .mcp.json 集成（generate-skill.sh create 段自动产出骨架，AI 按项目已装运行时激活 MCP server） |
-| Step 10 | AI 运行门禁（--all 核心 10 → --all-full 标准 28；合规 19 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
+| Step 10 | AI 运行门禁（--all 核心 11 → --all-full 标准 29；合规 19 按需 --compliance-suite）——**特征卡定义规则，门禁验证合规** |
 | Step 11 | AI 独立审查——`precheck.sh --review`（ocr 5 维度或 AI 清单）+ review-record 落盘 |
 | Step 12 | AI 写回项目记忆（闭环） |
 | Step 13 | AI 最终检查——运行 `generate-skill.sh --verify-completeness` 脚本确认**无占位符残留 + workflow 每节点含「调用追踪」要素**（命中即列 file:line 并 exit 1，零命中才通过） |
 
-#### 质量门禁序列（quality:full 模式，执勤期收口用）
+#### 质量门禁序列（quality:full 模式，交付收口用）
 
-多门禁同跑时按序串行、fail-fast（任一步 fail 即停不跑后续），顺序与理由：build（构建能过）→ test（测试真过，0 用例检出）→ contract（契约不破）→ reuse（新增不与稳定单元重名）→ consistency（业务/数据勾稽）→ layer/link-depth（分层与依赖方向）→ docs-pack（文档齐备）→ security（安全）→ deps（版本锁定）。构建测试先行（跑不了代码谈什么都白搭），契约一致性次之，架构文档安全殿后。全部映射 precheck 既有 flag，不新增门禁；执行入口：`--all`（日常核心 10）/ `--all-full`（结构变更标准 28）/ 追加 `--compliance-suite`（强监管合规 19）。每步耗时与 pass/fail 落 `.swarm-yuan/gate-runs.jsonl`；节点⑦独立审查以此确认序列真实跑过。
+多门禁同跑时按序串行、fail-fast（任一步 fail 即停不跑后续），顺序与理由：build（构建能过）→ test（测试真过，0 用例检出）→ contract（契约不破）→ reuse（新增不与稳定单元重名）→ consistency（业务/数据勾稽）→ layer/link-depth（分层与依赖方向）→ docs-pack（文档齐备）→ security（安全）→ deps（版本锁定）。构建测试先行（跑不了代码谈什么都白搭），契约一致性次之，架构文档安全殿后。全部映射 precheck 既有 flag，不新增门禁；执行入口：`--all`（日常核心 11）/ `--all-full`（结构变更标准 29）/ 追加 `--compliance-suite`（强监管合规 19）。每步耗时与 pass/fail 落 `.swarm-yuan/gate-runs.jsonl`；节点⑦独立审查以此确认序列真实跑过。
 
 > **全链路追踪（每步必做，无需确认）**：每步开始先公告 `→ [Step N] 调用 <技能/工具> · <目的>`，节点级落盘 `.swarm-yuan/trace.jsonl`（`SWARM_YUAN_TRACE=verbose` 时含每次具体调用）。
 
@@ -283,8 +283,8 @@ AI 自动：创建 spec → 判断规模 → **从特征卡第 11 项检索可�
 
 | 规模 | 填哪些段 | 提交前门禁（任务级自适应） | 典型场景 |
 |------|---------|---------|---------|
-| 简单 | §1-§4 + §5.5 复用约束 + §12 风险回滚 | `--all`（核心 10） | 改 bug / 加字段 |
-| 标准 | §1-§13 + §5.5/§5.6/§5.7 约束段 | `--all-full`（标准 28） | 新功能 / 改接口 |
+| 简单 | §1-§4 + §5.5 复用约束 + §12 风险回滚 | `--all`（核心 11） | 改 bug / 加字段 |
+| 标准 | §1-§13 + §5.5/§5.6/§5.7 约束段 | `--all-full`（标准 29） | 新功能 / 改接口 |
 | 完整 | spec 全 25 节（含 §14-§18 认知/辩证/领域 + §25 功能点估算，仅 compliance 档保留 §14-§18） | `--all-full` + `--shift-left`；compliance 档项目追加 `--compliance-suite` | 架构变更 / 跨服务 |
 
 > **任务级自适应规则（质量优先偏置）**：规模判断不确定时**按更大规模处理**（升档不降级）；涉及公共接口/数据模型/权限的改动，无论规模一律按「完整」执行门禁集；compliance 档项目任意规模都追加 `--compliance-suite`（强监管场景无"简单任务"豁免）。
@@ -292,8 +292,8 @@ AI 自动：创建 spec → 判断规模 → **从特征卡第 11 项检索可�
 #### 提交前门禁检查
 
 ```bash
-bash .claude/skills/my-project-dev/scripts/precheck.sh --all         # 核心 10 门禁
-bash .claude/skills/my-project-dev/scripts/precheck.sh --all-full    # 标准 28 门禁（核心 10 + 架构 18）
+bash .claude/skills/my-project-dev/scripts/precheck.sh --all         # 核心 11 门禁
+bash .claude/skills/my-project-dev/scripts/precheck.sh --all-full    # 标准 29 门禁（核心 11 + 架构 18）
 bash .claude/skills/my-project-dev/scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交付按需）
 ```
 
@@ -326,7 +326,7 @@ GATE_RUNS_DIR=.gate-runs bash scripts/precheck.sh --all-full
         └→ 有 ⚠ → 评估
 
 架构审查：
-  对 AI 说 "跑全量门禁"（55 个门禁全跑）
+  对 AI 说 "跑全量门禁"（56 个门禁全跑）
 
 升级：
   对 AI 说 "升级 skill"（AI 重新探查 → 更新特征卡 → 更新门禁配置）
@@ -443,7 +443,7 @@ swarm-yuan 内置 79 个框架规则集（references/frameworks/*.md + assets/fr
 
 ```bash
 bash scripts/precheck.sh --framework    # 运行所有激活框架门禁
-bash scripts/precheck.sh --all-full     # 标准 28 门禁（核心 10 + 架构 18，含 --framework）
+bash scripts/precheck.sh --all-full     # 标准 29 门禁（核心 11 + 架构 18，含 --framework）
 bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交付按需）
 ```
 
@@ -534,7 +534,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 - **五层认知（cognition）**：`references/cognition-framework.md` 定义的五层框架（认知递进/思维语言/认知辩证/偏差防范/辩证认知），特征卡第 13 项的认知基底；属建议性体检（`--cognition` 出报告不判违规），不是门禁家族。
 - **spec / spec 模板**：任务规格（每次开发任务的合同），模板 25 节按任务类型裁减（§25 功能点估算 feature 档选填）。
 - **生成流程**：生成器把一个仓库变成目标技能的 13 步流程（Step 1-13，逐步详解在 references/generation-flow.md）。
-- **开发工作流（执勤工作流）**：目标技能里的九节点开发工作流（①需求理解→②探查→③设计 spec→④实施 plan→⑤编码→⑥测试→⑦独立审查→⑧合入→⑨发布，载体是目标技能的 references/workflow.md）。
+- **开发工作流**：目标技能里的九节点开发工作流（①需求理解→②探查→③设计 spec→④实施 plan→⑤编码→⑥测试→⑦独立审查→⑧合入→⑨发布，载体是目标技能的 references/workflow.md）。
 - **档（参考文档）**：references/ 目录下按需阅读的参考文档的简称（"47 档"=47 个 .md 文件；每档开头有"何时读我"路由行）。
 - **随技能分发**：随目标技能一起安装分发——generate-skill.sh 的 UNIVERSAL_FILES 清单列出的文件会拷进每个目标技能；不在清单里的文档只存在于生成器仓，目标技能读不到。
 - **整合**：一项被吸收的能力"从哪来、在哪个环节被使用、用不了时怎么降级"的登记关系。
@@ -557,7 +557,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 3. **重量级是设计选择**：小项目请用 lite 档或更轻的替代（单拷 precheck.sh / 传统 lint 工具链 / 直接对 AI 说需求），不必强上本系统。
 4. **外部有效性未达成**：verifier v2（门禁能否拦截真实缺陷）的语料评测未完成前，对外不说"100% 可靠"；已验证的是"组件测试 + 受约束生成 + 独立校验"三段。
 5. **降级是常态不是异常**：外部工具未装就降级（图谱工具→grep），合规规矩未配置就明示 skip——系统不假装满配运行。
-6. **门禁不抓逻辑错误**：55 个门禁全是词法/结构模式匹配（import 方向、注解模式、文件存在性、命令黑名单）——它们抓"不懂规矩"，不抓"想错逻辑"。逻辑错误的兜底是**测试+审查**，且机器层对兜底本身有核验：①测试兜底要求 spec §11 测试策略段有实质内容（check_shift_left 核验非占位）+ 测试命令 0 用例检出（check_test 对"空跑通过"warn）；②审查兜底要求留痕（check_review 核验 docs/reviews/<日期>.md 存在，三要素：评审人/日期/结论；模板随生成物分发 assets/review-record-template.md）。这是设计边界，不是缺陷（SKILL.md:16"自动脚本不假装能判断质量"）——但"该做的兜底没做"是机器可查的。
+6. **门禁不抓逻辑错误**：56 个门禁全是词法/结构模式匹配（import 方向、注解模式、文件存在性、命令黑名单）——它们抓"不懂规矩"，不抓"想错逻辑"。逻辑错误的兜底是**测试+审查**，且机器层对兜底本身有核验：①测试兜底要求 spec §11 测试策略段有实质内容（check_shift_left 核验非占位）+ 测试命令 0 用例检出（check_test 对"空跑通过"warn）；②审查兜底要求留痕（check_review 核验 docs/reviews/<日期>.md 存在，三要素：评审人/日期/结论；模板随生成物分发 assets/review-record-template.md）。这是设计边界，不是缺陷（SKILL.md:16"自动脚本不假装能判断质量"）——但"该做的兜底没做"是机器可查的。
 7. **流程强制的覆盖边界**：spec 前置门（SPEC_REQUIRED=1）拦"无 spec 写源码区"，门禁失败捕获门（GATE_ENFORCE_DENY）拦"fail 未修复继续写"——但流程节点的**判断质量**（spec 写得对不对、plan 是否合理）仍是 AI/人的责任，机器只管"顺序与存在性"，不管"内容好坏"。
 
 ---

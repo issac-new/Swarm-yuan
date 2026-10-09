@@ -54,7 +54,7 @@ gsd-core 安装器只 prune `gsd-` 前缀目录。目标技能（`<target-skill-
 - 状态控制可引用 gsd-core 的 `.planning/STATE.md`（或继续用 swarm-yuan 的 `.swarm-yuan/state.yaml`，两者各管一层）
 - **若项目已装 gsd-core**：目标技能的 workflow 标注"可选用 gsd-core 运行时执行 phase-loop"；若未装，降级为 swarm-yuan 自带的 state-machine.sh + subagent-orchestration.md 手动编排
 
-## 五步 Phase Loop（核心心智模型）
+## 五步 Phase Loop（核心思维框架）
 
 gsd-core 的中心流程（引自 `docs/explanation/the-phase-loop.md`）：
 

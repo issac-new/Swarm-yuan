@@ -2,7 +2,7 @@
 
 > 让 AI 先懂你的项目，再写代码：为一个仓库生成项目专属开发技能，把项目的组件、依赖关系和规矩装进技能里。
 
-[![Release](https://img.shields.io/badge/release-v2.67.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.67.0)
+[![Release](https://img.shields.io/badge/release-v2.68.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.68.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 [![CI](https://github.com/issac-new/Swarm-yuan/actions/workflows/ci.yml/badge.svg)](https://github.com/issac-new/Swarm-yuan/actions/workflows/ci.yml)
 

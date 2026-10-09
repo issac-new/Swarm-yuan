@@ -274,7 +274,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 3. 实施 plan（采用 OpenSpec tasks checkbox 格式 + superpowers writing-plans bite-sized 步骤；任务拆分走纵切纪律：每票纵切全层可独立验证+声明阻塞边+宽改造 expand-contract 例外，见 `mattpocock-skills-methodology.md` §三）—— **★变更左移**：plan 须含"变更影响范围"段（消费方反查/回滚预案/灰度策略/数据库迁移兼容窗口）
 4. 分支准备
 5. 编码实现（采用 superpowers subagent-driven：orchestrator + 每任务新 subagent + 两阶段审查；**复杂变更（>3 文件/跨模块）用 Dynamic Workflows 并行扇出 + 交叉验证**）—— **★测试左移**：每个 task 须先写/更新测试再实现（TDD/BDD），precheck `--shift-left` 校验 test 与 impl 同分支提交
-6. 测试验证（含 gstack/OCR 5 审查维度 + AUTO-FIX/ASK + 可选 `claude ultrareview` 云端多 agent 审查）—— **★运维左移**：验证阶段须确认 metrics/日志/trace 已埋点且可通过健康检查端点访问；独立跑单元/集成测试，`check_test` 门禁核验 0 用例检测 + 断言密度 + Mutation Check 测试有效性。**★质量门禁序列（quality:full 十步模式）**：多门禁按序执行、fail-fast（任一步 fail 即停不跑后续）、每步耗时留痕；序列=build→test→contract→reuse→consistency→layer/link-depth→docs-pack→security→deps，全部映射 precheck 既有 flag，不新增 check_*；执行入口 `--all-full`（标准 28 已含全部）或按需单跑。生成骨架 emit 该序列指引（workflow.md 节点⑥）。
+6. 测试验证（含 gstack/OCR 5 审查维度 + AUTO-FIX/ASK + 可选 `claude ultrareview` 云端多 agent 审查）—— **★运维左移**：验证阶段须确认 metrics/日志/trace 已埋点且可通过健康检查端点访问；独立跑单元/集成测试，`check_test` 门禁核验 0 用例检测 + 断言密度 + Mutation Check 测试有效性。**★质量门禁序列（quality:full 十步模式）**：多门禁按序执行、fail-fast（任一步 fail 即停不跑后续）、每步耗时留痕；序列=build→test→contract→reuse→consistency→layer/link-depth→docs-pack→security→deps，全部映射 precheck 既有 flag，不新增 check_*；执行入口 `--all-full`（标准 29 已含全部）或按需单跑。生成骨架 emit 该序列指引（workflow.md 节点⑥）。
 7. 独立审查 —— **独立 code review（非自检）**：以第三方 reviewer 视角找 Step 7 填充后仍残留的逻辑错误/占位符遗漏/门禁误配/清单错漏等低级错误；`check_review` 门禁核验 `references/review-record.md` 留痕非空（5 维审查点 + findings 表），缺则 fail；**审查范围含质量门禁序列运行证据**（确认节点⑥序列真实跑过——gate-runs.jsonl 有当次 run 记录）
 8. 合入 main —— **★变更左移**：合入前须确认回滚预案存在 + 数据库变更兼容（向前兼容/双写期）
 9. 构建发布 —— **★运维左移**：发布须含灰度/金丝雀策略 + 监控告警阈值已设 + 运维 runbook 已更新
@@ -289,7 +289,7 @@ ECC 的 `agent.yaml` 是**导出 surface**（portability layer），不是**auth
 1. **流程入口** — 每节点标注其在流程中的位置（前序/后续/并行），顶部流程图体现全局入口顺序
 2. **参与方** — 明确每个节点的参与者与角色（执行/决策/确认）
 3. **准入检查** — 具体可验证（如"git rev-parse HEAD == git rev-parse main"）
-4. **质量门禁** — 可被 precheck.sh 验证的检查项；**任务级自适应（质量优先偏置）**：简单任务 → `--all`（核心 10）；标准任务 → `--all-full`（标准 28）；完整任务（架构变更/跨服务/公共接口/数据模型/权限）→ `--all-full` + `--shift-left`，compliance 档项目追加 `--compliance-suite`。规模判断不确定时按更大规模处理（升档不降级）
+4. **质量门禁** — 可被 precheck.sh 验证的检查项；**任务级自适应（质量优先偏置）**：简单任务 → `--all`（核心 11）；标准任务 → `--all-full`（标准 29）；完整任务（架构变更/跨服务/公共接口/数据模型/权限）→ `--all-full` + `--shift-left`，compliance 档项目追加 `--compliance-suite`。规模判断不确定时按更大规模处理（升档不降级）
 5. **分支处理** — 必须覆盖成功/失败/信息不足三种情况
 6. **产出物归档** — 区分持久化（落盘）vs 临时上下文（对话/草稿）
 7. **流程控制** — 标注可否暂停/恢复/重启及恢复方式
@@ -762,9 +762,9 @@ bash precheck.sh --shift-left # ★左移检查：测试设计段+变更影响�
 
 ## §X 自动门禁 vs AI 灵活性的边界
 
-**背景**：针对"自动门禁/脚本扫描破坏 AI 灵活性"的专项评审——55 门禁按"自动信号 vs AI 判断"二分。
+**背景**：针对"自动门禁/脚本扫描破坏 AI 灵活性"的专项评审——56 门禁按"自动信号 vs AI 判断"二分。
 
-**分层结论（55 门禁）：**
+**分层结论（56 门禁）：**
 
 | 档 | 数量 | 处置 | 理由 |
 |----|------|------|------|

@@ -1,5 +1,16 @@
 # Changelog
 
+## [v2.68.0] - 2026-10-10
+
+> 全技能面受控语言排查轮（用户指令：公文笔法 + ASD-STE100 同等处理技能各项内容）。两类产出：**语言清理**（用户面黑话清零——执勤/活体实证/暗账/执政/祛魅/防复胖/双名/管束/心智模型/颗粒度/双流/闭环滥用等词族，换成平实词：日常使用/已实测/差异留记录/循环/思维框架等；SKILL.md 长句与分号串联拆短，散文面 gongwen-lint 硬违规 22→0，余量为 YAML frontmatter 单行与表格命令登记列两类格式约束面豁免；generate-skill.sh 产物 SKILL.md 模板两处同步——"执勤=precheck"改"日常开发=precheck"、五层导航"闭环=执勤→…"改"循环=日常使用→…"；术语词典删"执勤工作流"别名）。**手抄数字漂移修复**（R101 check_spec_first 入编后文档未跟，grep 全用户面清剿）：门禁 55→56 族（总数/预算/分层 核心 10→11/标准 28→29/FULL 49→50，涉 README 附录 A、usage-manual、generation-flow、governance-agents、task-methodology-router、standards-compliance、template-spec、quality-management-standards、security-spec、codex-methodology、context-engineering-layering、frontend-design-methodology、four-theories、industry-profile-finance 共 14 文件 40+ 处）；框架规则集 80→81 ×3；上下文预算旧口径 ≤256KB→≤500KiB ×3；usage-manual enforce 表 warn 行 22/17→23/18（facts.conf FACT_ENFORCE 对账）；standards-compliance F.1 姿态表补第 56 行 check_spec_first（fail-closed，gates-warn.sh:52 行为依据）。沉淀教训：门禁/资产计数变更时手抄面=全部用户面文档，self-check 只拦 SKILL.md 一处，rest 靠 grep 清剿。验证：r58（15 ok）/r68（17 ok）/g25（13 ok）/r100（22 ok，产物接线实测）/self-check --check-only 通过（版本三面一致、UNIVERSAL_FILES 预算 532356B ≤ 544768B）。
+
+### Fixed
+- 手抄数字漂移：55→56 门禁族 40+ 处、80→81 框架规则集 ×3、≤256KB→≤500KiB ×3、enforce warn 22/17→23/18、F.1 表补 check_spec_first 行（14 文件）。
+
+### Changed
+- 用户面黑话清零：SKILL.md（7 处执勤+活体实证+归一）、references 13 档、generate-skill.sh 产物模板 2 处、usage-manual 3 处；capability-map"总闭环/执勤段"改"主循环/日常开发段"、four-theories"双流闭环"改"这条循环"。
+- SKILL.md 散文重排：不适用/外部运行时/守卫实物/入口对照改列表化，长句拆短；生成流程表"调用"列保持命令登记格式（机面豁免）。
+
 ## [v2.67.0] - 2026-10-09
 
 > R104 离线安装包轮（用户指令：离线 Windows 目标机安装包，npm/pip 镜像可解决部分依赖）。新增 **scripts/make-offline-bundle.sh**（可复用构建器，随包分发）+ **scripts/offline-manifest.conf**（运行时通道清单，口径源 upstream-baseline）——产物 zip 三层：技能本体（离线完备：核心能力零外部依赖，运行时缺装按诚实降级链运行）/ vendor 本地包（npm 8 + pip 1，目标机免源安装）/ Windows 入口（install-offline.bat 经 Git Bash + README-OFFLINE 降级语义说明）。实测 38MB、vendor 9/9 零失败、隔离假 HOME 验收通过。通道事实三条固化：graphify 的 PyPI 真名 **graphifyy（双 y）**（裸名无版本占位、npm 同名异源——本机 dist-info 实证）；gsd-core 必用 @opengsd/ 域名包（裸名占位）；claude-mem npm 滞后 GitHub（可装，后端可替换）。本轮实录坑三条入档并锁：构建器 `$rt（`全角紧跟 unbound（本仓登记 bash 3.2 坑本人实录，修 ${} 定界 + test-r104 全角扫描锁）；brew pip 坏解释器（python@3.10 被挪，构建器/安装器一律 python3 -m pip）；Desktop TCC 读限制（验收走非保护目录）。github 通道运行时（comet/superpowers/gstack）不入 vendor——离线不可得→降级运行，README-OFFLINE 披露。
