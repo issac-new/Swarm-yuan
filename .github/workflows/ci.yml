@@ -218,6 +218,7 @@ jobs:
           bash tests/test-r101-spec-first-universal.sh
           bash tests/test-r102-legacy-items.sh
           bash tests/test-r103-host-hooks.sh
+          bash tests/test-r104-offline-bundle.sh
           bash tests/test-compare-baseline.sh
           bash tests/test-gate-trends.sh
       - name: 治理/hook/账本/指纹/记忆写回/行业 profile 测试（audit-claims-reality 接线）
