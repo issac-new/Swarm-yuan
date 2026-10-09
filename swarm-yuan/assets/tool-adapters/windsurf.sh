@@ -5,6 +5,11 @@
 #   trigger 四值 always_on|model_decision|glob|manual；model_decision 凭 description 由模型决定加载，
 #   与 Cursor 的 Agent Requested 对齐。2026-06 起新版偏好 .devin/rules/，.windsurf/rules/ 保留回退
 #   （https://skillwright.app/blog/windsurf-rules-guide）；全局规则 6,000 字符硬上限。
+# R103 双面：Windsurf 文档已并入 Devin（docs.devin.ai），CLI 面（devin）有可阻断 PreToolUse
+#   ——hooks 格式依据（访问 2026-10-09）：https://docs.devin.ai/cli/extensibility/hooks/overview.md
+#   .devin/hooks.v1.json 的 hooks 对象即整文件（无外层键），条目 Claude 嵌套形
+#   {"matcher","hooks":[{"type":"command",...}]}；阻断=decision block 或 exit 2；
+#   桌面端 Cascade 插件 hook 仅 best-effort（官方明示），维持 advisory 降级线。
 render_tool_windsurf() {  # <skill_dir> <proj> <level>
   local proj="$2" level="$3"
   local tmp; tmp="$(mktemp "${TMPDIR:-/tmp}/rtwindsurf.XXXXXX")"
@@ -24,10 +29,29 @@ render_tool_windsurf() {  # <skill_dir> <proj> <level>
         echo "  ⚠ $dest 已 ${size} 字符，超 Windsurf 全局规则 6,000 字符上限，请精简"
       fi
       rm -f "$tmp"
+      render_tool_windsurf_hooks "$1" "$proj"
       return 0
     fi
     rm -f "$tmp"
     return 1
   fi
   ta_write_if_changed "$tmp" "$proj/.windsurf/rules/${TA_SKILL_NAME}.md" "Windsurf .windsurf/rules/${TA_SKILL_NAME}.md"
+  render_tool_windsurf_hooks "$1" "$proj"
+}
+
+# spec-first 写时拦截（L1，Devin CLI 面）：合并进 .devin/hooks.v1.json（bare 形，幂等保用户配置）。
+render_tool_windsurf_hooks() {  # <skill_dir> <proj>
+  local entry; entry="$(mktemp "${TMPDIR:-/tmp}/rtdevh.XXXXXX")"
+  python3 - "$1" > "$entry" <<'PYEOF'
+import json, sys
+skill = sys.argv[1]
+print(json.dumps({
+    "matcher": "write|edit|exec",
+    "hooks": [{"type": "command",
+               "command": "bash \"%s/scripts/spec-first-bridge.sh\" --host devin" % skill,
+               "timeout": 5}]
+}, ensure_ascii=False))
+PYEOF
+  ta_merge_json_hook "$2/.devin/hooks.v1.json" "bare" "PreToolUse" "$entry" "spec-first-bridge"
+  rm -f "$entry"
 }

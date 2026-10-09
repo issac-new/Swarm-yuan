@@ -77,6 +77,7 @@ UNIVERSAL_FILES=(
   # lite 档 fail-gate-hook 在发（lite 也 source），故判定库必须 lite 随发。
   "scripts/spec-first-lib.sh|assets|lite"
   "scripts/spec-first-pre-commit.sh|hook|standard"  # L2 提交时强拦（Step 9 core.hooksPath 垫片指向；lite 档无 hooks 生命周期不发）
+  "scripts/spec-first-bridge.sh|hook|standard"  # R103 五宿主 L1 写时拦截桥（归一化 payload → fail-gate-hook → exit 2 阻断协议）
   # audit-claims-reality 修复：hooks 统一装到 scripts/（kind=hook，源 assets/hooks/）。
   # 此前 dest=assets/hooks/，但 hooks.json/settings 白名单/codex 适配器/文档全部引用 scripts/*.sh，
   # 且 hook 命令带 || true 兜底——生成物 hooks 整体静默失效（fail-gate 真拦截从不触发）。

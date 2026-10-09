@@ -8,7 +8,7 @@
 #   bash install.sh --opencode         # 强制安装到 ~/.config/opencode/skills/
 #   bash install.sh --windsurf         # 强制安装到 ~/.codeium/windsurf/skills/
 #   bash install.sh --gemini           # 强制安装到 ~/.gemini/skills/
-#   bash install.sh --kimi             # 强制安装到 ~/.kimi/skills/
+#   bash install.sh --kimi             # 强制安装到 ~/.kimi-code/skills/（kimi-code；旧 kimi-cli 回退 ~/.kimi/skills/）
 #   bash install.sh --all              # 安装到所有已检测到的环境
 #   bash install.sh --list             # 仅列出检测到的环境，不安装
 #   bash install.sh --version          # 显示版本号 + bash 版本
@@ -45,8 +45,12 @@ detect_runtimes() {
   if [[ -d "$HOME/.config/opencode/skills" ]]; then printf 'OpenCode\t%s\t\n' "$HOME/.config/opencode/skills"; fi
   # Gemini CLI
   if [[ -d "$HOME/.gemini/skills" ]]; then printf 'Gemini CLI\t%s\t\n' "$HOME/.gemini/skills"; fi
-  # Kimi
-  if [[ -d "$HOME/.kimi/skills" ]]; then printf 'Kimi\t%s\t\n' "$HOME/.kimi/skills"; fi
+  # Kimi（R103 产品更替：kimi-cli 已归档（2026-09-23），接任 kimi-code 优先；旧路径 legacy 回退）
+  if [[ -d "$HOME/.kimi-code" ]]; then
+    printf 'Kimi\t%s\t\n' "$HOME/.kimi-code/skills"
+  elif [[ -d "$HOME/.kimi/skills" ]]; then
+    printf 'Kimi\t%s\t\n' "$HOME/.kimi/skills"
+  fi
   # ZCode（AGENTS.md 指令载体；skills 目录为技能装载位）
   if [[ -d "$HOME/.zcode/skills" ]]; then printf 'ZCode\t%s\t\n' "$HOME/.zcode/skills"; fi
 }
@@ -229,7 +233,11 @@ case "$MODE" in
     install_to "Gemini CLI" "$HOME/.gemini/skills" ""
     ;;
   --kimi)
-    install_to "Kimi" "$HOME/.kimi/skills" ""
+    if [[ -d "$HOME/.kimi-code" ]]; then
+      install_to "Kimi" "$HOME/.kimi-code/skills" ""
+    else
+      install_to "Kimi" "$HOME/.kimi/skills" ""
+    fi
     ;;
   --zcode)
     install_to "ZCode" "$HOME/.zcode/skills" ""

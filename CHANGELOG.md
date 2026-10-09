@@ -1,5 +1,21 @@
 # Changelog
 
+## [v2.66.0] - 2026-10-09
+
+> R103 五宿主 hooks 整合轮（完成 R102 §五三项：五宿主 L1 整合、Kimi 安装目标更替、Windsurf 双面）。**架构：spec-first-bridge 多宿主桥**（assets/hooks/spec-first-bridge.sh）——五宿主协议趋同点是「exit 2 + stderr 原因 = 阻断」（Cursor/Gemini/Devin/kimi-code 官方文档一致；OpenCode 以 tool.execute.before 抛错阻断），桥把各宿主 PreToolUse payload 宽松归一（tool_name/toolName/tool + tool_input/toolInput/tool_args/args 兼顶层平铺；Shell|run_shell_command|exec|bash→Bash 等工具名统一映射）→ 喂判定单一事实源 fail-gate-hook（spec-first-lib 判据，零改造复用）→ deny 翻译为 exit 2。**五渲染器各按官方 schema**（防 Claude 嵌套形混用——扁平 hooks.json 三例教训的反面）：cursor hooks.json version:1+扁平条目、gemini settings.json hooks 嵌套（timeout 毫秒）、devin .devin/hooks.v1.json（hooks 对象即整文件，Claude 嵌套形）、opencode .opencode/plugins/ 本地插件（JS 模板调桥后 throw）、kimi-code config.toml [[hooks]]（TOML 注释标记块，ta_upsert_marker_block 风格参数扩展 html|toml）；JSON 三家幂等合并（ta_merge_json_hook：结构缺则建+判别子串防重+原子写，用户既有配置保全）。**活体实证受阻面如实记录**（五家 CLI/凭据均不可得：cursor/devin 未装无 OAuth、gemini 无 API key、opencode auth 0 credentials、kimi-code CLI 不在机且 oauth 空 token 过期）——宣称面按「未实证不宣称」收窄：能力表三态化（hook=活体实证 3 家 / rendered=配置已渲染未实证 5 家 / 未声明），安全线三态明示，FACT_HOST_HOOKS_RENDERED=5 新增；deny 实证留后续轮。调查记录两个发现：**npm 包 kimi-code 是冒名代理包**（Groq 转发器，非 Moonshot 官方 CLI，已装验后卸载清理）；真实 kimi-code 为桌面应用形态，其 migration-report 载明 2026-07-20 完成 ~/.kimi→~/.kimi-code 配置迁移（产品更替本机实证）。**Kimi 安装目标更替**：install.sh 检测/安装 ~/.kimi-code/skills 优先（旧 kimi-cli ~/.kimi/skills legacy 回退）、ta_is_user_level +kimi-code；**Windsurf 双面**：渲染 Devin CLI 面（.devin/hooks.v1.json），安全线明注桌面端 Cascade 仅 advisory（官方明示 best-effort）。R102 §五三项全部销项。
+
+### Added
+- `assets/hooks/spec-first-bridge.sh`：五宿主 L1 写时拦截桥（归一化 → fail-gate-hook → exit 2 统一阻断协议）。
+- 五渲染器 hooks 整合：cursor.sh/gemini.sh/windsurf.sh（Devin 面）/opencode.sh（插件）/kimi.sh（config.toml）。
+- `assets/tool-adapters/common.sh`：ta_merge_json_hook（JSON 幂等合并）+ ta_upsert_marker_block TOML 风格 + 能力表三态（hook/rendered/未声明）。
+- `tests/test-r103-host-hooks.sh`：桥矩阵 9 + 渲染器 schema 锁 14 + 三态安全线 8 + kimi 更替 3 + 随发登记 2 断言。
+
+### Changed
+- `install.sh`：kimi 检测/安装面向 kimi-code 优先（~/.kimi legacy 回退）。
+- `assets/tool-adapters/common.sh` ta_write_enforce_of 三态归一；README.md 四层段与 SKILL.md 守卫段能力状态三态化表述；test-r101 ④断言串同步。
+- 记账：facts.conf（FACT_SPEC_WRITE_HOOK_HOSTS 语义收窄为「活体实证」、+FACT_HOST_HOOKS_RENDERED=5、UNIVERSAL_FILES 90→91 台账补链）；docs/research/R103-host-hooks.md（schema 锚+受阻面+冒名包记录）；R102 §五三项销项。
+
+
 ## [v2.65.0] - 2026-10-09
 
 > R102 遗留项收尾轮（完成 R101 留档三项后续）。**①生成物 hooks.json 扁平形态在 Claude Code 被静默丢弃——坐实为真 bug**（活体实证 claude CLI 2.1.295 三步对照：扁平形态 PreToolUse deny 不生效、Write 照常落盘；嵌套形态真实阻断、文件未创建+reason 透传；嵌套+无害命令=放行对照成立，归因锁死）——与 Codex 回归 #23、ZCode 同型的 schema 静默失效第三例，deep 集成的 L1 写时拦截（fail-gate-hook deny）在宿主层长期未生效。修复：generate-skill.sh 模板五事件 10 条目改嵌套形态（命令串逐字保留），test-r102 ①机器锁（模板提取 JSON 解析断言全嵌套 + 扁平模式反断言 + zcode/codex 适配器同形态锁）。**②五宿主 hook 能力复核——基线判定全部过时**（官方文档/官方仓库锚点，两个关键锚点主会话独立复核）：Cursor preToolUse（deny/exit 2/failClosed，hooks.json 双级）、Devin CLI（Windsurf 承接者）PreToolUse（.devin/hooks.v1.json，兼容 .claude/settings.json；桌面端 Cascade 仍仅 advisory）、OpenCode tool.execute.before（throw 即中止）、Gemini CLI BeforeTool（decision deny/exit 2，settings.json hooks 四层）、kimi-code PreToolUse（exit 2/permissionDecision，config.toml [[hooks]]；旧 kimi-cli 2026-09-23 已归档）——4 家为 2026-07 基线漏判（hook 早于基线存在），Kimi 为基线后产品更替。四家协议已趋同 Claude Code 风格，均默认 fail-open。本轮动作：能力基线更正（common.sh 能力表+降级线措辞「无写时拦截」→「本生成链未整合写时拦截」、facts.conf 注记、README/SKILL.md/两处代码注释同步），原「无 hook 宿主」表述失实改「L1 未覆盖宿主（hook 通道在册）」；接线不做——本机仅 opencode CLI 可用，其余四家无法活体实证（扁平 hooks.json 教训：未实证的接线=静默失效风险），五宿主整合轮登记 docs/research/R102-legacy-items.md §五。**③软链部署 self-check 误报根治**（双修，81 框架 fixture 矩阵 81/0 + 软链布局复现转绿）：dotnet csproj 兜底从 `find .`（cwd 相对两坑：precheck cd PROJECT_DIR 后 fixture 语料越界、软链 find 不穿链失明）改「源目录上溯至 PROJECT_DIR + 源目录子树」双通道，语义收紧到与扫描源同工程，越界与失明同消；CI 三档对账三分支（repo 缺 ci.yml=warn+FAIL / 部署副本=⊘ skip 不计 FAIL / 齐全=pass），根因侧 install.sh 分发边界补排除 ci/（G4「安装态无 ci/」假设因未排除而失效）。顺带：清理已合并残留分支 feat/r97/feat/r99。R101 §五三项全部销项（销项指针归档 R101 文内）。

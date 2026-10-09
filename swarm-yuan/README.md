@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.65.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.65.0)
+[![Release](https://img.shields.io/badge/release-v2.66.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.66.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -107,7 +107,7 @@
 
 门禁在三个位置拦截。**写之前**：hooks 拦"无 spec 写源码"，拦命中 forbid 规则的命令；拒绝消息必带替代方案，拒绝即指路，AI 能自动改道。**改之时**：每次编辑过范围与敏感度检查。**收尾时**：按任务类型选门禁序列执行。多门禁同跑有执行纪律：按"构建、测试、契约、复用、一致性、分层、文档、安全、依赖"的顺序串行，任一步失败即停，不拿后面的绿掩盖前面的红；每步留痕到执行账本，审查时据此确认序列真跑过，而不是声称跑过。
 
-"无 spec 写源码"这条流程约束按四层拦截落地，判据出自同一个库（spec-first-lib.sh）：写时（宿主 hooks deny——Claude Code/Codex/ZCode 三宿主有此通道）、提交时（git pre-commit，宿主无关，写时拦截未覆盖的宿主也有真拦截点）、门禁时（check_spec_first 入核心序列）、流程准入（状态机 build 阶段）。写时拦截未覆盖的宿主，规则文件里明写"写时不拦"的诚实降级线，强制时点后移到提交与门禁——不假装写时拦得住。
+"无 spec 写源码"这条流程约束按四层拦截落地，判据出自同一个库（spec-first-lib.sh）：写时（宿主 hooks，经 spec-first-bridge 归一到同一判据后以 exit 2 阻断——Claude Code/Codex/ZCode 三家已活体实证，Cursor/Gemini/OpenCode/Kimi-Code/Devin 五家配置已渲染但未活体实证）、提交时（git pre-commit，宿主无关）、门禁时（check_spec_first 入核心序列）、流程准入（状态机 build 阶段）。能力状态在规则文件里分三态明示：实证过的写"已接"，只渲染未实证的写"未活体实证"，强制面一律以提交与门禁为准——不假装写时拦得住。
 
 门禁分 strict、warn、advisory 三级，这不是技术洁癖，是诚实分层：能给出稳定 fail 信号的才配阻断交付；信号有噪声的降级为提示，由 AI 判断采纳；判断不了的（例如"这次复用是否贴合场景"）不假装能判，门禁输出三问引导，AI 自查并留痕供审查回放。自动化只管信号可信处、判断留给 AI 并留痕，这条边界是全系统防自欺的总阀门。
 
