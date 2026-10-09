@@ -64,7 +64,7 @@ swarm-yuan 的 13 步生成流程是线性的（Step 1-13，唯一编号口径�
 
 **生成侧任务同样按本表分派**（叠加在上表"路由表"节点序列之上）：升级已有技能 → 加 knowledge-lifecycle（反馈回路三态）+ memory-persistence（记忆写回）+【生成器侧】rsi-evidence-methodology（吸收与升级收口的三类证据对账）；合规审计 → 加 four-theories-methodology（剪裁评估）+ quality-management-standards（【生成器侧】认证资产映射）。
 
-**其余档按场景补充到达**：计划/状态管理 → gsd-patterns；方案对抗 → logic-razor + cognitive-bias（spec §16）；治理拓扑 → governance-agents；MCP 接入 → mcp-governance；图谱工具 → code-graph-tools；宿主原生能力 → claude-code-capabilities；规则分层 → context-engineering-layering（【生成器侧】）；领域规律 → domain-knowledge。安全合规族（crypto-spec/cwe-database/security-certification-profiles/standards-compliance/行业八档）不走任务分派——由 `--security`/`--industry`/compliance 档门禁条件加载。
+**其余档按场景补充到达**：计划/状态管理 → gsd-patterns；方案对抗 → logic-razor + cognitive-bias（spec §16）；治理拓扑 → governance-agents；MCP 接入 → mcp-governance；图谱工具 → code-graph-tools；宿主原生能力 → claude-code-capabilities；规则分层 → context-engineering-layering（【生成器侧】）；领域规律 → domain-knowledge；**人面输出（会话回复/进度汇报/回归轮报告/审查意见）→ controlled-language-methodology（全任务类型全程适用）**。安全合规族（crypto-spec/cwe-database/security-certification-profiles/standards-compliance/行业八档）不走任务分派——由 `--security`/`--industry`/compliance 档门禁条件加载。
 
 ## 与 pua methodology-router 的差异
 
