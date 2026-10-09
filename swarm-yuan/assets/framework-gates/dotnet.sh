@@ -77,6 +77,10 @@ _fw_dotnet_check() {
   # 现代项目的主流启用方式）是死代码，门禁对标准启用的项目恒误报。修：csproj 走独立 find
   # 兜底（全工程，排除 bin/obj；不依赖 DOTNET_GLOBS 是否收录 .csproj——扫描面与 cargo
   # deny.toml 兜底同哲学），.cs 文件保留 #nullable enable 指令路径。
+  # R102 兜底改双通道（原 `find .` cwd 相对两坑：precheck cd PROJECT_DIR 后 fixture 语料
+  # 越界命中他语料 csproj；软链部署 find 不下钻符号链接致兜底失明误报）：通道一自源目录
+  # 上溯至 PROJECT_DIR 查 *.csproj（覆盖 csproj 在 .cs 祖先目录的标准布局）；通道二源目录
+  # 子树 find（排除口径同上）。语义收紧到「与扫描源同工程」，越界与失明同时消除。
   bad=""
   local has_nullable=0
   for f in "${srcarr[@]}"; do
@@ -84,9 +88,27 @@ _fw_dotnet_check() {
     _fw_strip_comments_c "$f" 2>/dev/null | grep -qE '#nullable enable' && has_nullable=1
   done
   if [[ $has_nullable -eq 0 ]]; then
-    while IFS= read -r _csproj; do
-      [[ -n "$_csproj" ]] && grep -qE '<Nullable>enable</Nullable>' "$_csproj" 2>/dev/null && { has_nullable=1; break; }
-    done <<< "$(find . -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null)"
+    local _d _up _lv _csproj
+    for f in "${srcarr[@]}"; do
+      [[ $has_nullable -eq 1 ]] && break
+      echo "$f" | grep -qE '\.cs$' || continue
+      _d=$(dirname "$f")
+      # 通道一：源目录逐级上溯至 PROJECT_DIR（含）查 *.csproj（层级上限 20 防环）
+      _up="$_d"; _lv=0
+      while [[ -n "$_up" && "$_up" != "/" && $_lv -lt 20 ]]; do
+        for _csproj in "$_up"/*.csproj; do
+          [[ -f "$_csproj" ]] && grep -qE '<Nullable>enable</Nullable>' "$_csproj" 2>/dev/null && { has_nullable=1; break; }
+        done
+        [[ $has_nullable -eq 1 ]] && break
+        [[ -n "${PROJECT_DIR:-}" && "$_up" == "${PROJECT_DIR%/}" ]] && break
+        _up=$(dirname "$_up"); _lv=$((_lv+1))
+      done
+      [[ $has_nullable -eq 1 ]] && break
+      # 通道二：源目录子树 find *.csproj（排除 bin/obj 等构建产物，口径同上）
+      while IFS= read -r _csproj; do
+        [[ -n "$_csproj" ]] && grep -qE '<Nullable>enable</Nullable>' "$_csproj" 2>/dev/null && { has_nullable=1; break; }
+      done <<< "$(find "$_d" -name '*.csproj' -not -path '*/bin/*' -not -path '*/obj/*' -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null)"
+    done
   fi
   [[ $has_nullable -eq 0 ]] && warn "fw_dotnet_nullable: 未启用 nullable 引用类型（CWE-476）" || pass "fw_dotnet_nullable: nullable 引用类型已启用"
 

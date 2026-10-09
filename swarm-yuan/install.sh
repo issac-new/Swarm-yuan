@@ -118,16 +118,18 @@ install_to() {
   fi
 
   # 复制（逐项 cp -R 覆盖隐藏文件，三平台兼容，无需 tar --exclude）
-  # 分发边界：以下三项是仓库本地过程产物，不进入安装产物——
+  # 分发边界：以下四项是仓库本地过程产物，不进入安装产物——
   #   research/（上游调研原料，未跟踪入仓）、.swarm-yuan/（生成器自身运行留痕）、
-  #   offline-cache/（历史遗留缓存，未跟踪入仓，溯源已迁 release 源码包体系）
+  #   offline-cache/（历史遗留缓存，未跟踪入仓，溯源已迁 release 源码包体系）、
+  #   ci/（生成器仓 CI 自举配置，仅 repo 布局消费——R102 补排除：self-check G4 的
+  #   「安装态无 ci/ 静默跳过」假设因未排除而失效，部署副本被 CI 三档对账误伤）
   mkdir -p "$skill_dir" "$dest"
   local item _item_base
   for item in "$SRC_DIR"/* "$SRC_DIR"/.[!.]* "$SRC_DIR"/..?*; do
     [[ -e "$item" ]] || continue
     _item_base="$(basename "$item")"
     case "$_item_base" in
-      research|.swarm-yuan|offline-cache) continue ;;
+      research|.swarm-yuan|offline-cache|ci) continue ;;
     esac
     cp -R "$item" "$dest/"
   done
