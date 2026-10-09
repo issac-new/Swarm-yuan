@@ -215,6 +215,7 @@ jobs:
           bash tests/test-r68-jargon-free.sh
           bash tests/test-r70-ci-red-fix.sh
           bash tests/test-r100-controlled-language.sh
+          bash tests/test-r101-spec-first-universal.sh
           bash tests/test-compare-baseline.sh
           bash tests/test-gate-trends.sh
       - name: 治理/hook/账本/指纹/记忆写回/行业 profile 测试（audit-claims-reality 接线）
@@ -226,6 +227,7 @@ jobs:
           bash tests/test-failure-detector.sh
           bash tests/test-gate-rules.sh
           bash tests/test-codex-adapter.sh
+          bash tests/test-zcode-adapter.sh
           bash tests/test-inventory-update.sh
           bash tests/test-project-fingerprint.sh
           bash tests/test-spec-task-type-gating.sh
