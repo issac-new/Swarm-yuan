@@ -60,7 +60,7 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 
 需求理解 → 探查 → spec → plan → 编码 → 测试 → 独立审查 → 合入 → 发布；六阶段状态机逐段守卫前序产出物（design 需 proposal、build 需批准的 spec、verify 需 tasks 全勾、archive 需 verify pass 与证据）。
 
-守卫实物：spec-first 四层拦截"无 spec 写源码"（判据单一事实源 spec-first-lib.sh——L1 写时宿主 hooks：Claude Code deny JSON / Codex exit 2 / ZCode 插件嵌套 hooks；L2 提交时 git pre-commit（core.hooksPath，宿主无关）；L3 门禁时 check_spec_first（入核心序列）；L4 状态机 build 准入。L1 未覆盖宿主渲染诚实降级线，强制时点在 L2-L4）；rules.d 三值规则（allow/prompt/forbid 取最严，forbid 必带替代方案）在每次 Bash/Edit 实时匹配；门禁按序列执勤，分核心/架构/合规/advisory 四族（执行序列与口径数字见 facts.conf）；拦截落 gate-deny.jsonl 可复盘。
+守卫实物：spec-first 四层拦截"无 spec 写源码"（判据单一事实源 spec-first-lib.sh——L1 写时宿主 hooks 经 spec-first-bridge 归一阻断（exit 2）：Claude Code deny JSON / Codex exit 2 / ZCode 插件嵌套 hooks 三家活体实证，Cursor/Gemini/OpenCode/Kimi-Code/Devin 五家配置已渲染未实证；L2 提交时 git pre-commit（core.hooksPath，宿主无关）；L3 门禁时 check_spec_first（入核心序列）；L4 状态机 build 准入。强制面以 L2-L4 为准，能力状态三态明示）；rules.d 三值规则（allow/prompt/forbid 取最严，forbid 必带替代方案）在每次 Bash/Edit 实时匹配；门禁按序列执勤，分核心/架构/合规/advisory 四族（执行序列与口径数字见 facts.conf）；拦截落 gate-deny.jsonl 可复盘。
 
 ## 反馈回路（技能随项目生长）
 

@@ -45,9 +45,9 @@
 
 ## 五、留待后续
 
-- **五宿主 L1 接线轮**（本轮复核的直接产出）：按 §二 统一语义渲染五宿主 hooks 配置（cursor hooks.json / .devin/hooks.v1.json / opencode 插件 / gemini settings.json hooks / kimi-code config.toml `[[hooks]]`），每家以本机 CLI 活体实证为准（先装 CLI 再接，未实证不宣称——扁平 hooks.json 三例教训）；接线后 TA_WRITE_HOOK_* 与 FACT_SPEC_WRITE_HOOK_HOSTS 同步 3→8。
-- **Kimi 安装目标对象更替**：install.sh 的 kimi 检测/安装面向已归档的 kimi-cli（~/.kimi）；接任 kimi-code 的安装/规则位（~/.kimi-code/config.toml）与产物布局待接线轮一并处理。
-- Windsurf/Devin 双面（桌面端 Cascade 插件 hook 仅 advisory）：接线轮按 Devin CLI 面渲染，桌面面维持诚实降级线。
+- **五宿主 L1 接线轮**（本轮复核的直接产出）：按 §二 统一语义渲染五宿主 hooks 配置（cursor hooks.json / .devin/hooks.v1.json / opencode 插件 / gemini settings.json hooks / kimi-code config.toml `[[hooks]]`），每家以本机 CLI 活体实证为准（先装 CLI 再接，未实证不宣称——扁平 hooks.json 三例教训）；接线后 TA_WRITE_HOOK_* 与 FACT_SPEC_WRITE_HOOK_HOSTS 同步 3→8。【已销项：R103 完成渲染全量（spec-first-bridge 统一 exit 2 协议 + 五家 schema 渲染器）；活体实证受阻面如实记录（五家 CLI/凭据不可得，见 R103 §三），宣称面按 rendered 态收窄，FACT 新增 HOST_HOOKS_RENDERED=5；deny 实证留 R103 §六】
+- **Kimi 安装目标对象更替**：install.sh 的 kimi 检测/安装面向已归档的 kimi-cli（~/.kimi）；接任 kimi-code 的安装/规则位（~/.kimi-code/config.toml）与产物布局待接线轮一并处理。【已销项：R103 install.sh 改 ~/.kimi-code/skills 优先（legacy 回退 ~/.kimi），kimi 适配器 hooks 入 config.toml [[hooks]]，ta_is_user_level +kimi-code】
+- Windsurf/Devin 双面（桌面端 Cascade 插件 hook 仅 advisory）：接线轮按 Devin CLI 面渲染，桌面面维持诚实降级线。【已销项：R103 渲染 .devin/hooks.v1.json（CLI 面），安全线明注桌面端 Cascade 仅 advisory】
 
 ## 六、验证
 

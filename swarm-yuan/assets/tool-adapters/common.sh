@@ -38,31 +38,39 @@ ta_tier_of() {  # $1=tool → stdout tier（runnable/cli/deep）
   eval "echo \"\${TA_TIER_${tool}:-runnable}\""
 }
 
-# ---- R101 写时强拦截能力表（四层拦截模型 L1 面）----
-# 1 = 宿主有 PreToolUse 强拦截通道且生成链已整合（spec-first deny）；
-# 未声明 = 本生成链未接写时拦截——渲染诚实降级线（gstack 先例 "advisory, not blocked"），
-# 强制时点后移到 L2 git pre-commit / L3 门禁 spec-first / L4 状态机 build 准入。
-# 2026-10-09 复核（docs/research/R102-legacy-items.md §二）：五宿主 hook 通道在册、本生成链未整合——
-# cursor preToolUse（deny/exit 2）/Devin CLI PreToolUse（.devin/hooks.v1.json）/opencode
-# tool.execute.before（throw 即中止）/gemini BeforeTool（decision deny）/kimi-code PreToolUse
-# （exit 2/permissionDecision）均可阻断；4 家为 2026-07 基线漏判、Kimi 为产品更替（kimi-cli
-# 已归档，接任 kimi-code）。整合待独立轮（本机 CLI 可活体实证才做，防扁平 hooks.json 同型静默失效）。
-# 实证锚：claude=hooks.json deny JSON（深度集成）；codex=.codex/hooks.json exit 2
-# （codex.sh 头注）；zcode=zcode-plugin/ 嵌套 hooks.json + config.json 注册
-# （zcode.sh 头注五条实证，2026-10-09 活体验证）。
+# ---- 写时拦截能力表（四层拦截模型 L1 面，R101 建/R103 三态化）----
+# hook     = 已整合且活体实证（spec-first deny 真实阻断过）；
+# rendered = 配置已渲染（官方 schema 文档锚 + exit 2 阻断协议，但宿主 CLI/凭据不可得未活体实证）
+#            ——宣称面按「未实证不宣称」收窄，强制面以 L2/L3/L4 为准；
+# 未声明   = 未整合——渲染诚实降级线（gstack 先例 "advisory, not blocked"）。
+# 实证锚：claude=hooks.json deny JSON（R102 三步对照活体实证）；codex=.codex/hooks.json exit 2
+# （codex.sh 头注）；zcode=zcode-plugin/ 嵌套 hooks.json + config.json 注册（zcode.sh 头注五条）。
+# rendered 五家 schema 锚（访问 2026-10-09，详见 docs/research/R103-host-hooks.md §二）：
+# cursor hooks.json version:1 扁平条目（preToolUse，exit 2=block）；gemini settings.json hooks
+# 嵌套（BeforeTool，decision deny/exit 2，超时毫秒）；devin .devin/hooks.v1.json（hooks 对象即
+# 整文件，Claude 嵌套形，decision block/exit 2）；kimi-code config.toml [[hooks]]（exit 2）；
+# opencode .opencode/plugins/ 本地插件 tool.execute.before throw 即中止。
 TA_WRITE_HOOK_claude=1
 TA_WRITE_HOOK_codex=1
 TA_WRITE_HOOK_zcode=1
-ta_write_enforce_of() {  # $1=tool → stdout "hook"（有）或空（无）
+TA_WRITE_HOOK_cursor=rendered
+TA_WRITE_HOOK_gemini=rendered
+TA_WRITE_HOOK_windsurf=rendered
+TA_WRITE_HOOK_opencode=rendered
+TA_WRITE_HOOK_kimi=rendered
+ta_write_enforce_of() {  # $1=tool → stdout "hook"|"rendered"|空（表值 1 归一为 hook）
   local tool="$1" _v
   eval "_v=\"\${TA_WRITE_HOOK_${tool}:-}\""
-  if [[ -n "$_v" ]]; then printf 'hook'; else printf ''; fi
+  case "$_v" in
+    1|hook) printf 'hook' ;;
+    rendered) printf 'rendered' ;;
+  esac
 }
 
 # ---- 用户级工具 home 判定（与 install.sh detect_runtimes 的 8 目录一一对应）----
 ta_is_user_level() {  # $1=tool_home
   case "$1" in
-    "$HOME/.claude"|"$HOME/.cursor"|"$HOME/.codex"|"$HOME/.gemini"|"$HOME/.kimi"|"$HOME/.zcode"|"$HOME/.config/opencode"|"$HOME/.codeium/windsurf") return 0 ;;
+    "$HOME/.claude"|"$HOME/.cursor"|"$HOME/.codex"|"$HOME/.gemini"|"$HOME/.kimi"|"$HOME/.kimi-code"|"$HOME/.zcode"|"$HOME/.config/opencode"|"$HOME/.codeium/windsurf") return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -127,10 +135,15 @@ ta_write_if_changed() {  # <tmpfile> <dest> <label>
 
 # ---- 标记区块幂等 upsert（AGENTS.md / GEMINI.md / Windsurf global_rules.md 用）----
 # 区块已存在则原位替换；不存在则文件末尾追加。缺闭标记 fail-closed 中止（同 --inject-frameworks 教训）
-ta_upsert_marker_block() {  # <dest> <tool> <skill_name> <body_file>
-  local dest="$1" tool="$2" name="$3" body="$4"
-  local open="<!-- >>> swarm-yuan:${tool}:${name} >>> （由 generate-skill.sh --render-tools 维护，勿手改） -->"
-  local close="<!-- <<< swarm-yuan:${tool}:${name} <<< -->"
+ta_upsert_marker_block() {  # <dest> <tool> <skill_name> <body_file> [style=html|toml]
+  local dest="$1" tool="$2" name="$3" body="$4" style="${5:-html}"
+  local open close
+  case "$style" in
+    toml) open="# >>> swarm-yuan:${tool}:${name} >>> （由 generate-skill.sh --render-tools 维护，勿手改）"
+          close="# <<< swarm-yuan:${tool}:${name} <<<" ;;
+    *)    open="<!-- >>> swarm-yuan:${tool}:${name} >>> （由 generate-skill.sh --render-tools 维护，勿手改） -->"
+          close="<!-- <<< swarm-yuan:${tool}:${name} <<< -->" ;;
+  esac
   local new merged
   new="$(mktemp "${TMPDIR:-/tmp}/rtblock.XXXXXX")"
   merged="$(mktemp "${TMPDIR:-/tmp}/rtmerge.XXXXXX")"
@@ -161,6 +174,48 @@ ta_upsert_marker_block() {  # <dest> <tool> <skill_name> <body_file>
   ta_write_if_changed "$merged" "$dest" "${tool} $(basename "$dest")"
 }
 
+# ---- JSON hooks 配置幂等合并（R103：cursor/gemini/devin 三家 hooks 文件可能已有用户配置，禁覆盖）----
+# $1=dest JSON $2=wrap（hooks=事件挂 .hooks 下 / bare=事件挂顶层，devin 的 hooks 对象即整文件）
+# $3=事件名 $4=条目 JSON 文件 $5=幂等判别子串（如 spec-first-bridge）
+# 语义：结构键缺则建、事件数组缺则建；序列化后含判别子串的条目已存在则 no-op；原子写。
+ta_merge_json_hook() {
+  local dest="$1" wrap="$2" event="$3" ef="$4" id="$5"
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "  ⚠ 缺 python3，${dest} hooks 合并跳过（手工接入：把 bridge 命令加入该文件 ${event} 数组）"
+    return 0
+  fi
+  python3 - "$dest" "$wrap" "$event" "$ef" "$id" <<'PYEOF'
+import json, os, sys
+dest, wrap, event, ef, idsub = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+entry = json.load(open(ef, encoding='utf-8'))
+d = {}
+if os.path.exists(dest):
+    try:
+        d = json.load(open(dest, encoding='utf-8'))
+    except Exception:
+        d = {}
+if not isinstance(d, dict):
+    d = {}
+root = d.setdefault('hooks', {}) if wrap == 'hooks' else d
+if not isinstance(root, dict):
+    root = {}
+    d['hooks' if wrap == 'hooks' else event] = root
+arr = root.setdefault(event, [])
+if not isinstance(arr, list):
+    arr = []
+    root[event] = arr
+if any(idsub in json.dumps(x, ensure_ascii=False) for x in arr):
+    print('  · %s: hooks 已含 %s 条目（幂等）' % (dest, event))
+else:
+    arr.append(entry)
+    tmp = dest + '.swarm-tmp'
+    os.makedirs(os.path.dirname(dest) or '.', exist_ok=True)
+    json.dump(d, open(tmp, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+    os.replace(tmp, dest)
+    print('  ✓ %s: hooks %s 条目已写入' % (dest, event))
+PYEOF
+}
+
 # ---- 规则正文（各工具共享骨架 + 按宿主写时拦截能力差异化的诚实降级线；不含时间戳）----
 ta_build_body() {  # $1=skill_dir（绝对路径）$2=tool（可空=不加能力行，向后兼容）→ stdout 规则正文
   local _spf_line=""
@@ -172,11 +227,16 @@ ta_build_body() {  # $1=skill_dir（绝对路径）$2=tool（可空=不加能力
       opencode) _spf_disp="OpenCode" ;; gemini) _spf_disp="Gemini" ;; kimi) _spf_disp="Kimi" ;;
       *) _spf_disp="$2" ;;
     esac
-    if [[ -n "$(ta_write_enforce_of "$2")" ]]; then
-      _spf_line="- 写时拦截：${_spf_disp} 已接 spec-first deny（宿主 hooks，L1）；git pre-commit（L2）与门禁 spec-first（L3）纵深兜底"
-    else
-      _spf_line="- 写时拦截：${_spf_disp} 本生成链未整合写时拦截（advisory, not blocked）——spec-first 由 git pre-commit（L2，core.hooksPath）+ 门禁 spec-first（L3）+ 状态机 build 准入（L4）强制：改源码前先写含「## 决策记录」的 spec"
-    fi
+    _spf_state="$(ta_write_enforce_of "$2")"
+    case "$_spf_state" in
+      hook)
+        _spf_line="- 写时拦截：${_spf_disp} 已接 spec-first deny（宿主 hooks，L1，活体实证）；git pre-commit（L2）与门禁 spec-first（L3）纵深兜底" ;;
+      rendered)
+        _spf_line="- 写时拦截：${_spf_disp} 已渲染写时拦截配置（L1，官方 schema 文档锚、未活体实证）——强制面以 git pre-commit（L2，core.hooksPath）+ 门禁 spec-first（L3）+ 状态机 build 准入（L4）为准：改源码前先写含「## 决策记录」的 spec"
+        [[ "$2" == "windsurf" ]] && _spf_line="${_spf_line}；配置为 Devin CLI 面（.devin/hooks.v1.json），Windsurf 桌面端 Cascade 仅 advisory" ;;
+      *)
+        _spf_line="- 写时拦截：${_spf_disp} 本生成链未整合写时拦截（advisory, not blocked）——spec-first 由 git pre-commit（L2，core.hooksPath）+ 门禁 spec-first（L3）+ 状态机 build 准入（L4）强制：改源码前先写含「## 决策记录」的 spec" ;;
+    esac
   fi
   cat <<EOF
 ## ${TA_SKILL_NAME}（swarm-yuan 生成技能）
