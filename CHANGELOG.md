@@ -1,5 +1,16 @@
 # Changelog
 
+## [v2.67.0] - 2026-10-09
+
+> R104 离线安装包轮（用户指令：离线 Windows 目标机安装包，npm/pip 镜像可解决部分依赖）。新增 **scripts/make-offline-bundle.sh**（可复用构建器，随包分发）+ **scripts/offline-manifest.conf**（运行时通道清单，口径源 upstream-baseline）——产物 zip 三层：技能本体（离线完备：核心能力零外部依赖，运行时缺装按诚实降级链运行）/ vendor 本地包（npm 8 + pip 1，目标机免源安装）/ Windows 入口（install-offline.bat 经 Git Bash + README-OFFLINE 降级语义说明）。实测 38MB、vendor 9/9 零失败、隔离假 HOME 验收通过。通道事实三条固化：graphify 的 PyPI 真名 **graphifyy（双 y）**（裸名无版本占位、npm 同名异源——本机 dist-info 实证）；gsd-core 必用 @opengsd/ 域名包（裸名占位）；claude-mem npm 滞后 GitHub（可装，后端可替换）。本轮实录坑三条入档并锁：构建器 `$rt（`全角紧跟 unbound（本仓登记 bash 3.2 坑本人实录，修 ${} 定界 + test-r104 全角扫描锁）；brew pip 坏解释器（python@3.10 被挪，构建器/安装器一律 python3 -m pip）；Desktop TCC 读限制（验收走非保护目录）。github 通道运行时（comet/superpowers/gstack）不入 vendor——离线不可得→降级运行，README-OFFLINE 披露。
+
+### Added
+- `scripts/make-offline-bundle.sh`：离线包构建器（技能本体四排除 + vendor npm/pip 拉包逐条披露 + zip/tar.gz + 随包分发）。
+- `scripts/offline-manifest.conf`：11 行运行时通道清单（npm 9/pip 1/github 3，含通道陷阱注记）。
+- `tests/test-r104-offline-bundle.sh`：清单格式与通道陷阱锁 + 构建器关键内容 + 安装器模板（16 断言，含全角紧跟 G20 扫描）。
+- `docs/research/R104-offline-bundle.md`：产物结构/通道事实/实录坑归档。
+
+
 ## [v2.66.0] - 2026-10-09
 
 > R103 五宿主 hooks 整合轮（完成 R102 §五三项：五宿主 L1 整合、Kimi 安装目标更替、Windsurf 双面）。**架构：spec-first-bridge 多宿主桥**（assets/hooks/spec-first-bridge.sh）——五宿主协议趋同点是「exit 2 + stderr 原因 = 阻断」（Cursor/Gemini/Devin/kimi-code 官方文档一致；OpenCode 以 tool.execute.before 抛错阻断），桥把各宿主 PreToolUse payload 宽松归一（tool_name/toolName/tool + tool_input/toolInput/tool_args/args 兼顶层平铺；Shell|run_shell_command|exec|bash→Bash 等工具名统一映射）→ 喂判定单一事实源 fail-gate-hook（spec-first-lib 判据，零改造复用）→ deny 翻译为 exit 2。**五渲染器各按官方 schema**（防 Claude 嵌套形混用——扁平 hooks.json 三例教训的反面）：cursor hooks.json version:1+扁平条目、gemini settings.json hooks 嵌套（timeout 毫秒）、devin .devin/hooks.v1.json（hooks 对象即整文件，Claude 嵌套形）、opencode .opencode/plugins/ 本地插件（JS 模板调桥后 throw）、kimi-code config.toml [[hooks]]（TOML 注释标记块，ta_upsert_marker_block 风格参数扩展 html|toml）；JSON 三家幂等合并（ta_merge_json_hook：结构缺则建+判别子串防重+原子写，用户既有配置保全）。**活体实证受阻面如实记录**（五家 CLI/凭据均不可得：cursor/devin 未装无 OAuth、gemini 无 API key、opencode auth 0 credentials、kimi-code CLI 不在机且 oauth 空 token 过期）——宣称面按「未实证不宣称」收窄：能力表三态化（hook=活体实证 3 家 / rendered=配置已渲染未实证 5 家 / 未声明），安全线三态明示，FACT_HOST_HOOKS_RENDERED=5 新增；deny 实证留后续轮。调查记录两个发现：**npm 包 kimi-code 是冒名代理包**（Groq 转发器，非 Moonshot 官方 CLI，已装验后卸载清理）；真实 kimi-code 为桌面应用形态，其 migration-report 载明 2026-07-20 完成 ~/.kimi→~/.kimi-code 配置迁移（产品更替本机实证）。**Kimi 安装目标更替**：install.sh 检测/安装 ~/.kimi-code/skills 优先（旧 kimi-cli ~/.kimi/skills legacy 回退）、ta_is_user_level +kimi-code；**Windsurf 双面**：渲染 Devin CLI 面（.devin/hooks.v1.json），安全线明注桌面端 Cascade 仅 advisory（官方明示 best-effort）。R102 §五三项全部销项。
