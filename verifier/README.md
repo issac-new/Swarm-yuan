@@ -91,3 +91,6 @@
 - 本轮修复项（2 处 verifier/自检链路缺陷，非门禁语义变更）：
   1. self-check.sh：MISSING==0（运行时全装）时早期 exit，文档一致性/框架规则集核验/enforce 分层段永不执行——2026-07-21 修复的「--check-only 死代码」同类缺陷另一分支；修复后本地检查段无条件执行。注：此前记录「--check-only 早期 exit 为 HEAD 既有行为」自本轮起不再成立
   2. metrics-assert.sh ③：self-check 改 `--check-only`——裸跑默认 FORCE_LATEST=1，全装也联网升级全部运行时（npm i -g/npx/源码包重装/gstack setup 拉 playwright chromium ~160MB），断言目标（文档一致性段）与升级无关却使 verifier 非密封且篡改全局环境；本轮首跑即在 chromium 下载段（~40KB/s）挂 1.5h 被终止（如实登记：首跑未完成非代码失败）。--check-only（FORCE_LATEST=0）跳过升级段，文档一致性段经修复 1 后照常执行
+
+## 回归记录（2026-10-09，r101-spec-first-universal 轮）
+- 基线变更：v1/core10-sequence.txt 10→11 段头（理由：R101 check_spec_first 入 ALL_GATES_CORE——无 hook 宿主 spec-first 强拦截在门禁面的唯一承载，门禁预算决策 26.2 例外修订 55→56 同轮留痕；diff 摘要：纯插入 `=== spec-first 流程门（L3 门禁时强拦，R101）===` 一行于「改动范围检查」后，既有 10 行逐字节不变）｜ 详见 CHANGELOG v2.64.0 与 docs/research/R101-spec-first-universal.md
