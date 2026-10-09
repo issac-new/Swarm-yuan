@@ -39,7 +39,7 @@ ta_tier_of() {  # $1=tool → stdout tier（runnable/cli/deep）
 }
 
 # ---- R101 写时强拦截能力表（四层拦截模型 L1 面）----
-# 1 = 宿主有 PreToolUse 强拦通道且生成链已接线（spec-first deny）；
+# 1 = 宿主有 PreToolUse 强拦截通道且生成链已整合（spec-first deny）；
 # 未声明 = 无写时拦截——渲染诚实降级线（gstack 先例 "advisory, not blocked"），
 # 强制时点后移到 L2 git pre-commit / L3 门禁 spec-first / L4 状态机 build 准入。
 # 实证锚：claude=hooks.json deny JSON（深度集成）；codex=.codex/hooks.json exit 2

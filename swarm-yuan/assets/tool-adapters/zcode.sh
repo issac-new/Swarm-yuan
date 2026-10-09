@@ -17,7 +17,7 @@
 #   ④ 注册面是用户级 ~/.zcode/cli/config.json plugins.dirs（无项目级 hooks 发现路径）；
 #   ⑤ config.json hooks.events 直挂的 PreToolUse 钩子输出 deny JSON 只降级为建议
 #      （reason 注入工具结果但调用照常执行）——不构成强拦截，勿走该通道。
-# 故接线形态：<skill>/zcode-plugin/ 独立插件目录（.zcode-plugin manifest + 嵌套 hooks.json，
+# 故整合形态：<skill>/zcode-plugin/ 独立插件目录（.zcode-plugin manifest + 嵌套 hooks.json，
 #   命令用绝对路径直调 fail-gate-hook，不动 Claude Code 侧 hooks/hooks.json），
 #   项目级渲染时注册进 config.json（fail-gate-hook 按 cwd/conf 自限，未配置项目零干扰）。
 render_tool_zcode() {  # <skill_dir> <proj> <level>
