@@ -1,5 +1,23 @@
 # Changelog
 
+## [v2.69.0] - 2026-10-10
+
+> R105 运行时例行刷新轮（用户 /goal 三目标；R100-R104 号位被本仓并行轮占用顺延）。5 移动物化 + 四档吸收 + note-forge 回归再证。**诱取拦截第六例**：graphify 远端 v1.0.0（0a31c08，2026-04-05）世系实测不在 v8 线——R81 误取/R89 纠错同一异源 tag，按世系核验惯例拦截，取 v8 线真最新 v0.9.82。live CLI：claude 2.1.295 漂移归零；codex 0.160.0 滞后 0.161.0 记档（升级窗口待用户）。
+
+### Changed
+- `docs/upstream-baseline.md`：R105 重核口径注 + claude-code/claude-mem/graphify/ruflo/dsh 五行基线回写。
+- `references/claude-code-capabilities.md`：v2.1.295 段（钩子失败即阻断 onFailure:"block"——fail-open→fail-closed；OSC 7501 终端程序状态协议；MCP 重连退避族——断/慢/环三态分治）+ 基线 2.1.295。
+- `references/memory-persistence.md`：R105 行——渐进式记忆检索（先窄后宽按反馈逐级放开）+原生记忆笔记桥（记忆升为可被外部读写的一等资产）。
+- `references/code-graph-tools.md`：R105 段——跨文件类型解析族收口（python self/cls/super() 他文件基类/TS 同名接收者按调用方 import/this.field 类字段定型等）+图快照不变性钉测（checkout 目录/rebuild/行尾三态逐字节一致）+AMBIGUOUS 边隔离。
+- `references/dsh-engineering-methodology.md`：v0.2.1-alpha.2 记档——保留式 Git worktree/插件官方 bundle 按需装+preset 组合/DeepSeek Flash 翻译持久化/voice-input 选源。
+- `swarm-yuan/research/`：graphify v0.9.82 + claude-mem v13.35.0 + ruflo v3.56.2 + dsh alpha.2 checkout。
+
+### Verified（前后端项目回归：note-forge 全栈样例再证）
+- 回归载体：note-forge（Django 6.1.2 后端 JSON API+sqlite+真实 migration / Vue3+Vite 前端，双端真实工具链）。
+- 真实工具链双过：`manage.py check` 零 issue + `manage.py test` 4/4 OK；`vite build` 产物 3 件成功。
+- 技能管线全链：detect-frameworks 3 框架（vue/vite/django——Django 经 requirements.txt pyreq 通道）→ generate-skill 骨架（draft）→ relations-extract 4 import 边（file:line 证据，跨前后端）→ inventory-verify frontend/backend/组合三形态（Django 端点 3=path() 分支枚举，R99 修复点回归证明；DIM_MISMATCH 双向 lint 正确）。
+- 门禁：self-check 通过；test-r68-jargon-free 17 ok 0 fail（R105 新写 references 两处措辞当场修合规——裸轮次标记/变迁叙事句）；run-sweep 终态见发版记录。
+
 ## [v2.68.0] - 2026-10-10
 
 > 全技能面受控语言排查轮（用户指令：公文笔法 + ASD-STE100 同等处理技能各项内容）。两类产出：**语言清理**（用户面黑话清零——执勤/活体实证/暗账/执政/祛魅/防复胖/双名/管束/心智模型/颗粒度/双流/闭环滥用等词族，换成平实词：日常使用/已实测/差异留记录/循环/思维框架等；SKILL.md 长句与分号串联拆短，散文面 gongwen-lint 硬违规 22→0，余量为 YAML frontmatter 单行与表格命令登记列两类格式约束面豁免；generate-skill.sh 产物 SKILL.md 模板两处同步——"执勤=precheck"改"日常开发=precheck"、五层导航"闭环=执勤→…"改"循环=日常使用→…"；术语词典删"执勤工作流"别名）。**手抄数字漂移修复**（R101 check_spec_first 入编后文档未跟，grep 全用户面清剿）：门禁 55→56 族（总数/预算/分层 核心 10→11/标准 28→29/FULL 49→50，涉 README 附录 A、usage-manual、generation-flow、governance-agents、task-methodology-router、standards-compliance、template-spec、quality-management-standards、security-spec、codex-methodology、context-engineering-layering、frontend-design-methodology、four-theories、industry-profile-finance 共 14 文件 40+ 处）；框架规则集 80→81 ×3；上下文预算旧口径 ≤256KB→≤500KiB ×3；usage-manual enforce 表 warn 行 22/17→23/18（facts.conf FACT_ENFORCE 对账）；standards-compliance F.1 姿态表补第 56 行 check_spec_first（fail-closed，gates-warn.sh:52 行为依据）。沉淀教训：门禁/资产计数变更时手抄面=全部用户面文档，self-check 只拦 SKILL.md 一处，rest 靠 grep 清剿。验证：r58（15 ok）/r68（17 ok）/g25（13 ok）/r100（22 ok，产物接线实测）/self-check --check-only 通过（版本三面一致、UNIVERSAL_FILES 预算 532356B ≤ 544768B）。

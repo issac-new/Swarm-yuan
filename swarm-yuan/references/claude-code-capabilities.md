@@ -599,7 +599,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ## 版本基线
 
-能力清单以 npm `latest` 基线版本为准核验（当前 2.1.294）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+能力清单以 npm `latest` 基线版本为准核验（当前 2.1.295）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
 
 ## v2.1.233-237 能力
 
@@ -761,6 +761,15 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **权限通道完备性三项**（v2.1.288-289）：①复合 shell 命令嵌套段上的 deny/ask 规则不再被用户所装 mod 的批准压过（受管机器——**管理侧否决优先于用户侧授权**，fail-closed 层级执法）；②Read deny 规则经符号链接作用于 IDE @提及/变更/选中通道（v2.1.268 路径规范化延到 IDE 通道——**同一文件的每一条进入路径都过同一权限检查**）；③Bash deny/ask 在沙箱 auto-allow 下不再漏检环境变量前缀展开值（`TZ="$HOME" rm -rf build`）与裸赋值后的命令——**auto-allow 是通道捷径不是豁免面**。
 - **插件元数据越权修复**（v2.1.288-289）：用户安装的插件不得改写组织管理的 MCP server 登录工具描述——元数据（描述=模型所见）也是权限面，越权描述可诱导模型走错端点。
 - 其余（v2.1.288-289）：agent.spawn teammates + $.agent.list() idle/waiting 态（多代理状态面）、mods 渲染失败单区隔离（ui.fault——一个 mod 的 Client 失败只废它自己，不带崩全局渲染）。
+
+## v2.1.295 能力
+
+- **钩子失败即阻断（onFailure:"block"）**（方法层主条）：command/HTTP 钩子起不来、超时、以意外退出码退出时**阻断被挂起的动作**，而非放行——安全默认从 fail-open 翻转为 fail-closed。**钩子是门禁的一部分时，钩子失联必须等价于门禁关闭**（与 294「指令式钩子执行力」同轴：294 让指令真的拦，295 让失联也拦）。
+- **终端程序状态协议（OSC 7501）**：宿主把「工作中/等你输入/完成」写入支持该序列的终端状态行——CLI 与终端间的结构化状态面，状态不再是「盯输出流猜」。
+- **MCP 重连退避族**：远程 MCP 断连>15s 不再永久失联（headless/SDK 会话）；服务端反复即断改为指数退避（至 30s）；服务端错误回复含网络错误名不再被误判断连；重复分页游标的服务端不再每次连接重拉同一页 20 次——**通道韧性=区分「断」「慢」「环」三态并分别处置**。
+- **`-p` 多轮输出逐轮保全**：后台工作开启新轮时，此前各轮响应不再丢失——每轮响应在该轮结束时打印（headless 输出的完整性语义）。
+- **plugin marketplace 先验校验**：名称下装不进任何插件的 marketplace 直接拒绝添加；`/plugin` Errors 页不再因加载失败误卸载整个源——外部源的失败不联动删除已装资产。
+- 其余（v2.1.295）：gateway 上游 `timeouts.upstream_ttfb_ms`（流首字节超时→failover 或 502）+每上游可选 `models` 白名单（failover 也只发列内）+`forceLoginMethod:"gateway"`；`$.ui.notify`（mods 走用户通知设置的原生通知，带来源频道）；mod `Button` 可含字符串/`Text` 子元素（列表行=一个可按压整体）；`CLAUDE_CODE_RETRY_WATCHDOG_MAX_WAIT_MS`（无人值守重试等 429/529 的上限）；`claude -p` 挂起时 stderr 说明在等什么；CSS/JS/XML 等 MCP 文件不再存为 .bin（Read 拒读族修复）；`command_description`/`description` 参数名容错；`CLAUDE_AUTO_BACKGROUND_TASKS` 不再让编辑/命令插到子代理前执行。
 
 ## v2.1.293-294 能力
 
