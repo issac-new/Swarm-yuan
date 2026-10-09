@@ -470,17 +470,20 @@ else:
 
 # check_upstream_baseline（--upstream-baseline）：上游运行时基线 drift 核验
 # 理念来源：上游基线漂移（comet/graphify/ruflo 版本落后）。
-# 检查 README.md（已整合 upstream-baseline.md）的 baseline_status 标记，drifted 项 warn。
+# 基线标记的正主是 docs/upstream-baseline.md（基线已自 README 物化移出，README 不再承载）。
+# 候选序：项目内 → 技能根 → 技能根上一级（生成器仓内布局）；均无则跳过（目标技能侧无基线属正常）。
+# 文件存在但 0 个 baseline_status 标记时显式 warn（不得以 synced=0 drifted=0 假通过）。
 check_upstream_baseline() {
   echo "=== 上游运行时基线 drift 核验（--upstream-baseline，advisory）==="
-  local bl_file="${PROJECT_DIR:-$(pwd)}/README.md"
-  if [[ ! -f "$bl_file" ]]; then
-    # 兜底：SKILL_DIR/../（README.md 已整合 upstream-baseline.md）
-    local _sd="${SKILL_DIR:-${_CONF_DIR:-$(pwd)}/..}"
-    bl_file="${_sd}/README.md"
-  fi
-  if [[ ! -f "$bl_file" ]]; then
-    warn "README.md 不存在（上游运行时版本基线未登记）"
+  local _sd="${SKILL_DIR:-${_CONF_DIR:-$(pwd)}/..}"
+  local bl_file=""
+  local _cand
+  for _cand in "${PROJECT_DIR:-$(pwd)}/docs/upstream-baseline.md" "${_sd}/docs/upstream-baseline.md" "${_sd}/../docs/upstream-baseline.md"; do
+    if [[ -f "$_cand" ]]; then bl_file="$_cand"; break; fi
+  done
+  if [[ -z "$bl_file" ]]; then
+    # warn 而非 skip：目标技能侧无基线属正常，但维持显式披露口径（执行统计与历史 golden 一致）
+    warn "基线文件不存在（docs/upstream-baseline.md 未找到——目标技能侧无基线属正常）"
     return 0
   fi
   local drifted=0 synced=0 watch=0 license_risk=0
@@ -494,7 +497,11 @@ check_upstream_baseline() {
       *baseline_status=license-risk*) license_risk=$((license_risk+1));;
     esac
   done < "$bl_file" 2>/dev/null
-  echo "  ⓘ 上游基线：synced=${synced} drifted=${drifted} watch=${watch} license-risk=${license_risk}"
+  if [[ $((synced + drifted + watch + license_risk)) -eq 0 ]]; then
+    warn "基线文件 ${bl_file} 存在但无任何 baseline_status 标记——基线未登记或已迁移，请重核（不以零标记假通过）"
+    return 0
+  fi
+  echo "  ⓘ 上游基线（${bl_file}）：synced=${synced} drifted=${drifted} watch=${watch} license-risk=${license_risk}"
   if [[ $drifted -gt 0 ]]; then
     warn "上游运行时 ${drifted} 项 drifted（引用基线落后上游最新版）——建议重核并更新基线"
     grep -nE 'baseline_status=drifted' "$bl_file" 2>/dev/null | head -5 | sed 's/^/    /'

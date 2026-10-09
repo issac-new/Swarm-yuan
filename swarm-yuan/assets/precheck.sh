@@ -675,7 +675,8 @@ _load_enforce_levels
 # SWARM_YUAN_BUNDLED=1 预留给未来"单文件打包"形态（内联三文件到 precheck.sh）——
 # 当前无生产者置此变量（install.sh 仅 cp -R，未内联），留作扩展点；split-gates.sh:146 同此口径。
 if [[ -z "${SWARM_YUAN_BUNDLED:-}" ]]; then
-  for _gf in gates-strict.sh gates-warn.sh gates-advisory.sh; do
+  # memory-backends.sh 在前：gates 的记忆类门禁（check_knowledge）经适配层派发，先定义后用
+  for _gf in memory-backends.sh gates-strict.sh gates-warn.sh gates-advisory.sh; do
     _gp="$(dirname "$0")/$_gf"
     # WP-R Bug#2: [[ -f ]] && source 在循环末条时，文件缺失返回 1 会触发 set -e。|| true 兜底。
     [[ -f "$_gp" ]] && source "$_gp" || true
@@ -1321,7 +1322,12 @@ _gate_exec() {
 has_gitnexus() { command -v gitnexus >/dev/null 2>&1; }
 has_graphify() { command -v graphify >/dev/null 2>&1; }
 has_ocr() { command -v ocr >/dev/null 2>&1; }
-has_claude_mem() { command -v claude-mem >/dev/null 2>&1; }
+# claude-mem 经记忆后端适配层派发（memory-backends.sh 注册表）；适配层未加载时退化为 CLI 直探
+has_claude_mem() {
+  if command -v mem_detect >/dev/null 2>&1; then mem_detect claude_mem
+  else command -v claude-mem >/dev/null 2>&1
+  fi
+}
 # CLI 整合层运行时守卫（WP1：OpenSpec/comet/gsd-core 半整合→真整合）
 has_openspec() { command -v openspec >/dev/null 2>&1; }
 has_comet() { command -v comet >/dev/null 2>&1; }

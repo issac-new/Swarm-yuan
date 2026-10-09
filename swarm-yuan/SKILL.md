@@ -30,7 +30,7 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 
 ## 外部运行时整合（调用不重实现）
 
-外部运行时按整合深度分三层，每层自带降级载体，未装不阻塞但披露：深度层 GitNexus/graphify/claude-mem/ocr（门禁内真实子进程）；CLI 层 OpenSpec/comet/gsd-core/codex-security（按需调用）；方法论层 superpowers/gstack/ECC/Ruflo/impeccable（AI 按节点引用）。清单与降级链见 references/subagent-orchestration.md，代码图谱备选选型见 references/code-graph-tools.md。
+外部运行时按整合深度分三层，每层自带降级载体，未装不阻塞但披露：深度层 GitNexus/graphify/claude-mem/ocr（门禁内真实子进程；记忆类插件经 assets/memory-backends.sh 适配层接入，绑定的是后端契约而非具体工具，可替换）；CLI 层 OpenSpec/comet/gsd-core/codex-security（按需调用）；方法论层 superpowers/gstack/ECC/Ruflo/impeccable（AI 按节点引用）。清单与降级链见 references/subagent-orchestration.md，代码图谱备选选型见 references/code-graph-tools.md。
 
 ## 生成流程总览（Step 1-13）
 
@@ -49,10 +49,10 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 | 9 | 集成宿主 | 定制 hooks.json + commands + settings + .mcp.json；workflow.md 节点标注 |
 | 10 | 编码验证 | `bash scripts/precheck.sh --all`，fail 修复重跑 |
 | 11 | 独立审查 | AI 第三方视角审查 + `bash scripts/precheck.sh --review` 核验留痕 + review-record 落盘（ocr 可用用 5 维审查点，否则 AI 清单诚实降级；`--review` 是 precheck.sh 的旗标，不要对 generate-skill.sh 调用） |
-| 12 | 写回记忆 | `bash assets/memory-writeback.sh`（项目知识 / 宿主记忆 / claude-mem 三路） |
+| 12 | 写回记忆 | `bash assets/memory-writeback.sh`（记忆后端适配层派发：本地 / .zcode / claude-mem 等可替换后端，见 assets/memory-backends.sh） |
 | 13 | 终检激活 | `--verify-completeness --strict` 确认无占位符残留 → `--mark-active`（路径验真 + 决策留痕） |
 
-**路径约定**：trace-log.sh、state-machine.sh、memory-writeback.sh 在生成器侧位于 assets/，在目标技能侧映射为 scripts/。
+**路径约定**：trace-log.sh、state-machine.sh、memory-backends.sh、memory-writeback.sh 在生成器侧位于 assets/，在目标技能侧映射为 scripts/。
 
 **铁律**：draft 骨架不可交付——状态门三关（占位符清零、清单路径零幻觉、计数核验达标）全过才激活；每步公告 `→ [Step N] 调用 …` 并落盘 trace.jsonl；门禁误报调 conf 重跑，不绕过；编排约束每条须有代码证据；任务路由避免全任务全量（references/task-methodology-router.md）。
 
@@ -68,7 +68,7 @@ SessionStart hook（lite 档由 AI 主动）跑 `scripts/project-fingerprint.sh 
 
 ## 用户使用
 
-**首次部署（一次）**：`bash install.sh`（自动检测 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi，`--list` 查看）→ 对 AI 说"为 /path/to/project 生成开发技能" → 终检后激活。
+**首次部署（一次）**：`bash install.sh`（自动检测 Claude Code/Codex/Cursor/Windsurf/OpenCode/Gemini/Kimi/ZCode，`--list` 查看）→ 对 AI 说"为 /path/to/project 生成开发技能" → 终检后激活。
 
 **之后每个需求**（AI 与用户协作，门禁全程执勤）：
 

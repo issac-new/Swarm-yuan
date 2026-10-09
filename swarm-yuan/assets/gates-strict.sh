@@ -1748,9 +1748,14 @@ check_review() {
   fi
 
   # 附加：如果装了 gstack，提示可用的扩展审查维度
-  if [[ -d "$HOME/.claude/skills/gstack" ]]; then
-    echo "  gstack 扩展审查可用：/cso（安全 OWASP+STRIDE）/ /investigate（根因调试）/ /codex（跨模型第二意见）/ /benchmark（性能）"
-  fi
+  # 候选目录跨宿主生态探测（Claude Code skills/plugins + 通用 ~/.agents/skills + ZCode ~/.zcode/skills）
+  local _gd
+  for _gd in "$HOME/.claude/skills/gstack" "$HOME/.agents/skills/gstack" "$HOME/.zcode/skills/gstack"; do
+    if [[ -d "$_gd" ]]; then
+      echo "  gstack 扩展审查可用：/cso（安全 OWASP+STRIDE）/ /investigate（根因调试）/ /codex（跨模型第二意见）/ /benchmark（性能）"
+      break
+    fi
+  done
 
   # 附加：gsd-tools CLI 整合（WP1.3）：若装了 gsd-tools 且项目用了 gsd-core（有 .planning/ 或 .gsd/），
   # 跑 `gsd-tools validate health` 检查项目一致性健康度。status!=healthy → warn（项目配置问题，非代码缺陷，不 fail）。

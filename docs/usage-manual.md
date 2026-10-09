@@ -92,13 +92,13 @@ bash install.sh
 | # | 特征项 | 优先工具 | 降级 |
 |---|--------|---------|------|
 | 1 | 项目类型 | gitnexus `query "architecture"` + graphify `explain` | Read package.json |
-| 2 | 可改范围 | claude-mem `search "project rules"` + Read AGENTS.md | Glob + Grep |
+| 2 | 可改范围 | 记忆后端检索（memory-backends.sh 注册，如 claude-mem `search "project rules"`）+ Read AGENTS.md | Glob + Grep |
 | 4 | 技术栈 | gitnexus `query "tech stack"` + graphify `explain` | Read package.json |
 | 9 | 测试体系 | gitnexus `query "test files"` | Glob `**/*.test.*` |
 | 10 | 环境资源 | gitnexus `route_map` + `tool_map` | Grep "host/port" |
 | 11 | 可复用单元 | **gitnexus `context <symbol>`**（360 度上下文） | Grep `export` |
 | 12 | 数据规范 | gitnexus `query "data models"` | Grep `CREATE TABLE` |
-| 14 | 领域知识 | gitnexus `query "domain"` + claude-mem + WebSearch | Read 领域模型 |
+| 14 | 领域知识 | gitnexus `query "domain"` + 记忆后端（如 claude-mem）+ WebSearch | Read 领域模型 |
 
 > 注：GitNexus（PolyForm Noncommercial 禁商用）降级为非默认；graphify（MIT）提为默认代码图谱工具——商用场景请把上表 gitnexus 优先位替换为 graphify（依据见 `references/code-graph-tools.md` §许可证与选型）。
 
@@ -223,7 +223,7 @@ bash install.sh
 | `--impact` | gitnexus detect_changes | git diff + grep |
 | `--layer` | gitnexus query | grep import |
 | `--review` | ocr review / `claude ultrareview` | AI 5 维度审查 |
-| `--knowledge` | claude-mem search | 文件检测 |
+| `--knowledge` | 记忆后端检索（memory-backends.sh 适配层，如 claude-mem） | 文件检测 |
 | `--frontend` 循环 | madge --circular | grep 互引 |
 
 ---

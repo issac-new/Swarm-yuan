@@ -1268,28 +1268,44 @@ check_knowledge() {
   echo "=== 项目知识复用检查（AGENTS.md/CLAUDE.md/记忆 → 生成 skill 是否复用）==="
   local found=0
 
-  # ---- 0. 优先用 claude-mem search 查项目记忆（has_claude_mem 守 CLI 存在，C2 收紧）----
-  if has_claude_mem; then
-    trace_tool "claude-mem" "search project rules conventions"
-    local mem_results mem_err
-    mem_results=$(claude-mem search "project rules conventions" 2>/tmp/cm_err.$$ | head -10 || true)
-    mem_err=$(cat /tmp/cm_err.$$ 2>/dev/null; rm -f /tmp/cm_err.$$ 2>/dev/null)
-    if [[ -n "$mem_results" ]]; then
-      pass "claude-mem 记忆库有历史记录（项目知识已积累）"
-    elif [[ -n "$mem_err" ]]; then
-      warn "claude-mem CLI 已装但 search 报错（${mem_err:0:80}）——首次生成或 worker 未运行，探查后写入项目特征摘要"
-    else
-      warn "claude-mem CLI 已装但无项目记忆——首次生成 skill，探查后写入项目特征摘要"
-    fi
+  # ---- 0. 可检索记忆后端逐个探（memory-backends.sh 适配层派发，不绑定具体插件）----
+  # 后端未定义 search 契约函数（如 local 文件后端）或不可用时自然跳过；
+  # 有一个后端有历史记录即 pass，已装但无记忆/报错则 warn 披露（首次生成属正常）。
+  if command -v mem_backends_list >/dev/null 2>&1; then
+    local _backend _rc
+    for _backend in $(mem_backends_list); do
+      # 仅可检索后端参与（未定义 mem_<id>_search 契约的后端——如 local 项目状态文件——不算记忆证据源）
+      command -v "mem_${_backend}_search" >/dev/null 2>&1 || continue
+      mem_detect "$_backend" || continue
+      # set -e 下取退出码必须走 if 条件上下文（条件位挂起 -e，else 分支 $? 仍有效）
+      if mem_search "$_backend" "project rules conventions" >/dev/null 2>&1; then
+        _rc=0
+      else
+        _rc=$?
+      fi
+      trace_tool "mem:${_backend}" "search project rules conventions"
+      if [[ $_rc -eq 0 ]]; then
+        pass "记忆后端 ${_backend} 有历史记录（项目知识已积累）"
+      elif [[ $_rc -eq 2 ]]; then
+        warn "记忆后端 ${_backend} 已装但检索报错——首次生成或 worker 未运行，探查后写入项目特征摘要"
+      else
+        warn "记忆后端 ${_backend} 已装但无项目记忆——首次生成 skill，探查后写入项目特征摘要"
+      fi
+    done
   fi
 
   # ---- 1. 检查项目是否有知识文件 ----
   local has_agents=0 has_claude=0 has_memories=0
   [[ -f "$PROJECT_DIR/AGENTS.md" ]] && has_agents=1
   [[ -f "$PROJECT_DIR/CLAUDE.md" ]] && has_claude=1
-  # 检查 .zcode/memories 或 .claude 目录
-  [[ -d "$PROJECT_DIR/.zcode/memories" || -d "$HOME/.zcode/cli/memories" ]] && has_memories=1
-  [[ -d "$PROJECT_DIR/.claude" || -d "$HOME/.claude-mem" ]] && has_memories=1
+  # 记忆痕迹探测：项目内通用目录 + 适配层各后端的 present（含插件数据目录，由后端自报）
+  [[ -d "$PROJECT_DIR/.zcode/memories" || -d "$HOME/.zcode/cli/memories" || -d "$PROJECT_DIR/.claude" ]] && has_memories=1
+  if command -v mem_present >/dev/null 2>&1; then
+    local _pb
+    for _pb in $(mem_backends_list); do
+      if mem_present "$_pb"; then has_memories=1; break; fi
+    done
+  fi
 
   if [[ $has_agents -eq 0 && $has_claude -eq 0 && $has_memories -eq 0 ]]; then
     skip_if_unconfigured "项目无 AGENTS.md/CLAUDE.md/记忆文件，知识复用检查跳过"

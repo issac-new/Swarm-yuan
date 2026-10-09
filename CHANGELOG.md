@@ -1,5 +1,25 @@
 # Changelog
 
+## [v2.63.0] - 2026-10-09
+
+> R98 运行时依赖通用化轮（用户指令：为适应不同工具的能力，类似 claude-mem 这种和具体工具绑定的插件需要做到通用化——对 skill 运行时依赖全面排查及改进）。排查面：research/ 20 个 vendored 克隆全归类核实（12 个已整合运行时 + codex 宿主研究仓 + 7 个零子进程机制源，无漏网的工具绑定插件）；13 个外部运行时按「子进程调用点 × 数据目录探测 × 输出文案耦合 × 测试覆盖」分级——claude-mem 绑定最深（gates-warn search / memory-writeback add→search / self-check 检测共 3 处硬编码子进程 + 2 处 `~/.claude-mem` 私有数据目录探测 + tests 零覆盖，对比 ocr 有专门的未装降级 fixture）；superpowers/gstack/ECC 的安装检测单路径绑死 `~/.claude/plugins|skills`（非 Claude 宿主下恒 miss）。改进四线：**①记忆后端适配层**（新增 assets/memory-backends.sh，注册表 + 函数派发：后端契约 detect/write/search/present 四函数，默认注册 local/zcode/claude_mem，`SWARM_YUAN_MEM_BACKENDS` 可覆盖清单与顺序——新记忆插件 = 契约函数 + 注册一行，调用方零改动；每后端恰好一行披露（✓写入/⚠跳过/⚠失败）消灭 memory-writeback 原先的静默跳过；上游 v12.4.7+ 移除 add 的降级注记随迁移保留）；四个调用点收敛（memory-writeback.sh 三路函数、gates-warn check_knowledge 检索与痕迹探测、precheck has_claude_mem 委托、self-check check_claude_mem 经 mem_detect/mem_present）；随技能分发（UNIVERSAL_FILES）+ fixture runner 拷贝清单同步。**②宿主生态探测通用化**：self-check superpowers/gstack/ECC 与 gates-strict gstack 提示从单 `~/.claude` 路径改为四候选目录循环（+ `~/.agents/skills` + `~/.zcode/skills`），superpowers 空壳 fail-closed 判定保留；generate-skill.sh 三处模板文案（两处 .mcp.json 注释 + commands/explore.md）从具名 claude-mem 改为「记忆后端（经 memory-backends.sh 适配层接入，可替换）」。**③缺陷修复**：check_upstream_baseline 改读基线正主 docs/upstream-baseline.md（原只读 PROJECT_DIR/README.md——基线已迁出后 0 标记以 synced=0 drifted=0 **假通过**；现 README 候选删除 + 文件存在但零标记显式 warn）；capability-map.md claude-mem 行降级链文字与实现对齐（.zcode/project-knowledge → local 项目本地落盘 + .zcode 探测同步）。**④ZCode 第 8 安装目标**（用户确认）：install.sh 检测 `~/.zcode/skills` + `--zcode` 模式 + 目标为符号链接时 fail-safe 跳过（防破坏技能管理器维护的软链部署）+ tool-adapters/zcode.sh（AGENTS.md 标记区块，与 codex 适配器同形态）+ common.sh TA_TIER_zcode=cli + generate-skill.sh 项目内运行时探测序补 .zcode/skills；FACT_COMPAT_CLI 6→7。测试：test-memory-writeback 5→9 断言（披露契约/后端清单覆盖/claude-mem fixture double）；knowledge fixture 组 +2（compliant-no-mem-cli PATH 遮蔽断言降级零噪音 / compliant-mem-double 断言适配层正路径披露）；新建 test-zcode-adapter 8 态（标记区块幂等/fail-closed/假 HOME 用户级/调度器接线）；facts.conf +FACT_MEM_BACKENDS=3 与 self-check 新对账断言（注册表机械计数）。修复过程中抓到并修正两处实现 bug：memory-backends 同行 local 多赋值引用前变量 set -u 下 unbound（拆行）；check_knowledge 对无 search 契约的后端（local）误报「已装但无记忆」（循环前加可检索判定）。另抓到一个 bash 变量名解析坑并修复：`$d）`（变量后直接跟全角字符）会把多字节首字节并入变量名，set -u 下报 unbound——self-check 三处新文案改 `${d}` 显式定界（该坑入 bash 3.2 兼容铁律既有口径「${var} 引用」的实证案例）。验证：run-sweep 全量 EXIT=0（锁测试/e2e×3/verifier all/self-check 六段全绿）、shellcheck 严格层零 error、bash 3.2 兼容（无 declare -A / sed -i / readlink -f）。
+
+### Added
+- `assets/memory-backends.sh`：记忆后端适配层（注册表 local/zcode/claude_mem + detect/write/search/present 契约 + mem_write_all 逐后端披露；SWARM_YUAN_MEM_BACKENDS 覆盖）。
+- `assets/tool-adapters/zcode.sh`：ZCode 适配器（项目级 AGENTS.md / 用户级 ~/.zcode/AGENTS.md 标记区块）。
+- `tests/test-zcode-adapter.sh`（8 态）；`tests/gate-fixtures/knowledge/compliant-no-mem-cli/`、`compliant-mem-double/`。
+
+### Changed
+- `assets/memory-writeback.sh`：三路写回函数收敛为适配层派发，披露契约补齐（汇总行如实计数）。
+- `assets/gates-warn.sh` check_knowledge：claude-mem 硬编码 search 与 `~/.claude-mem` 痕迹探测改经适配层（可检索后端逐个探 + present 痕迹）。
+- `assets/precheck.sh`：source memory-backends.sh（gates 派发前置）；has_claude_mem 委托 mem_detect。
+- `scripts/self-check.sh`：check_claude_mem 经适配层；superpowers/gstack/ECC 四候选目录探测；+记忆后端注册表对账（FACT_MEM_BACKENDS）。
+- `assets/gates-advisory.sh` check_upstream_baseline：基线文件候选序 docs/upstream-baseline.md 优先 + 零标记显式 warn（不再假通过）。
+- `assets/gates-strict.sh` check_review：gstack 提示探测改候选循环。
+- `install.sh`：+ZCode 检测/`--zcode`/符号链接 fail-safe 守卫；`scripts/generate-skill.sh`：UNIVERSAL_FILES +memory-backends.sh、运行时探测序 +.zcode/skills、三处模板文案适配层化；`assets/tool-adapters/common.sh`：TA_TIER_zcode=cli、ta_is_user_level +$HOME/.zcode、渲染序 +zcode。
+- 口径与文档：facts.conf（FACT_COMPAT_CLI=7、+FACT_MEM_BACKENDS=3）、SKILL.md（Step 12/外部运行时整合/宿主清单/路径约定）、references/capability-map.md、docs/usage-manual.md、README.md 附录 B、CLAUDE.md。
+- `tests/scripts/test-memory-writeback.sh`：5→9 断言；`tests/run-gate-fixture.sh`：拷贝清单 +memory-backends.sh。
+
 ## [v2.62.0] - 2026-10-09
 
 > R100 受控语言轮（用户 /goal 触发：全流程推演与自动回归测试中，模型面向人的回复黑话多、思路跳跃，未应用公文笔法与 ASD-STE100 受控语言原则——要求全局修复）。结论：AI 面向人的输出从此有立法（references/controlled-language-methodology.md）、有接线（生成器与目标技能两侧六处）、有防复发锁（test-r100，CI 执法）。规则分两档沿用 ASD-STE100 二分：结构规则六条可机器核对（结论先行/一词一义/术语首现定义/短句单义/顺序不跳/情态不升降级），词汇规则仅方向（黑话替代表：赋能/抓手/闭环/箭头链等→具体事实）。双轨制划界：会话回复/进度汇报/回归轮报告/审查意见属人面（受控）；trace.jsonl/decisions.jsonl/conf 键值属机面（紧凑登记式，不受控）。回归轮报告定格式：首屏结论+关键数字+风险，每栈一段"命令+原文输出+结论"，过程细节归账本。

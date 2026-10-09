@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
-# memory-writeback.sh — Step 12 记忆写回（S9 实装：补全"记忆→生成→开发→记忆"闭环的写回半环）
+# memory-writeback.sh — Step 12 记忆写回（补全"记忆→生成→开发→记忆"闭环的写回半环）
 #
-# 理念来源：SKILL.md:100 Step 12 "claude-mem/.zcode/memories/.project-knowledge.md 三路写回"。
-# 此前该步纯 AI 自由动作、无脚本兜底（S9 审计发现）；本脚本提供机器兜底：
-# 把本次生成的项目知识摘要（特征卡 + 框架清单 + spec 摘要）写回三路 sink，幂等、best-effort、不阻塞主流程。
+# 理念来源：SKILL.md Step 12 "记忆写回"。本脚本提供机器兜底：
+# 把本次生成的项目知识摘要（特征卡 + 框架清单 + spec 摘要）写回各记忆后端，幂等、best-effort、不阻塞主流程。
 #
 # 用法:
 #   bash scripts/memory-writeback.sh [--skill-dir <目标技能目录>] [--project-dir <项目目录>]
 #   缺省 --skill-dir 用 ${PROJECT_DIR:-$(pwd)}/.swarm-yuan/skill（生成产物）；
 #   --project-dir 缺省用 $PWD。
 #
-# 三路写回（每路独立降级，任一失败仅 warn 不阻塞）:
-#   1) .swarm-yuan/project-knowledge.md   — 项目本地知识文件（swarm-yuan 自有状态目录，始终写）
-#   2) $PROJECT_DIR/.zcode/memories/project-knowledge.md — .zcode 记忆目录（仅当目录存在时追加）
-#   3) claude-mem CLI（仅当 command -v claude-mem 成功时调，best-effort）
+# 记忆后端（经同目录 memory-backends.sh 适配层派发，默认注册序 local / zcode / claude-mem，
+# 环境变量 SWARM_YUAN_MEM_BACKENDS 可覆盖）：每后端恰好一行披露（✓写入 / ⚠跳过 / ⚠失败），
+# 任一后端失败仅 warn 不阻塞；后端清单与接入方式见 memory-backends.sh 头注。
 #
 # 幂等：同一项目重复写回用时间戳分节，不覆盖历史；旧节保留供 diff。
 # 三平台兼容：bash 3.2 / 无 declare -A / date -u / sed 无 -i / $(cd+pwd)。
@@ -34,8 +32,14 @@ done
 [[ -z "$SKILL_DIR" ]] && SKILL_DIR="${PROJECT_DIR}/.swarm-yuan/skill"
 [[ -d "$SKILL_DIR" ]] || SKILL_DIR="${PROJECT_DIR}"
 
-STATE_DIR="${PROJECT_DIR}/.swarm-yuan"
-ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+# 适配层随技能分发于同目录（生成器侧 assets/，目标技能侧 scripts/）
+_MB_SH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/memory-backends.sh"
+if [[ ! -f "$_MB_SH" ]]; then
+  echo "⚠ [记忆写回] 适配层缺失: ${_MB_SH}——无法写回（不阻塞主流程）" >&2
+  exit 0
+fi
+# shellcheck disable=SC1090
+source "$_MB_SH"
 
 # ---- 0. 采集项目知识摘要（从生成产物读，不自己探查）----
 # 优先读目标技能的 SKILL.md 头部 + spec.md 摘要 + facts.conf（若存在）；缺则降级用项目目录名。
@@ -61,65 +65,13 @@ _collect_summary() {
   printf '%s' "$summary"
 }
 
-# ---- 写回函数（每路独立，返回 0/1，不 exit）----
-_write_local() {
-  # 1) .swarm-yuan/project-knowledge.md（项目本地，始终写）
-  mkdir -p "$STATE_DIR" 2>/dev/null || return 1
-  local f="${STATE_DIR}/project-knowledge.md"
-  {
-    echo "---"
-    echo "ts: ${ts}"
-    echo "project: $(basename "$PROJECT_DIR")"
-    echo "---"
-    _collect_summary
-    echo ""
-  } >> "$f" 2>/dev/null || return 1
-  echo "→ [记忆写回] 本地: $f"
-  return 0
-}
+# ---- 写回（适配层派发；body 落临时文件供文件类后端全文写、CLI 类后端取摘要）----
+_BODY="$(mktemp "${TMPDIR:-/tmp}/mwb.XXXXXX")"
+_collect_summary > "$_BODY"
 
-_write_zcode() {
-  # 2) $PROJECT_DIR/.zcode/memories/project-knowledge.md（仅当 .zcode/memories 目录存在）
-  local zdir="${PROJECT_DIR}/.zcode/memories"
-  [[ -d "$zdir" ]] || return 0  # 目录不存在=跳过，非错误
-  local f="${zdir}/project-knowledge.md"
-  {
-    echo "---"
-    echo "ts: ${ts}"
-    echo "---"
-    _collect_summary
-    echo ""
-  } >> "$f" 2>/dev/null || return 1
-  echo "→ [记忆写回] .zcode: $f"
-  return 0
-}
+echo "=== 记忆写回（Step 12，best-effort）==="
+mem_write_all "$_BODY"
+rm -f "$_BODY"
 
-_write_claude_mem() {
-  # 3) claude-mem CLI（仅当 CLI 存在；best-effort，不阻塞）
-  command -v claude-mem >/dev/null 2>&1 || return 0
-  # P0-5：真实写入——优先 `claude-mem add` 显式写记忆，失败/不支持时降级 search 触发 observation 捕获。
-  # 深度整合抽检修正（2026-08-27 #22 批）：claude-mem 现行上游（v12.4.7 CLI / v13.x worker）已移除
-  # add 子命令——写入机制是 hooks 捕获 observation，CLI 层 search 触发即现行真实写入路径（非降级假象）。
-  # add 调用保留：面向仍带 add 的旧版上游（title + content 签名），新版自动落入 search 路径，不阻塞。
-  local _content="swarm-yuan skill generated ${ts}: 项目知识已写回（特征卡+框架清单+spec 摘要）"
-  if claude-mem add "swarm-yuan 生成" "$_content" >/dev/null 2>&1; then
-    echo "→ [记忆写回] claude-mem: 已写入（add 真实子进程）"
-    return 0
-  fi
-  # 现行上游写入路径：search 触发 observation 捕获（hooks 侧落库）
-  if claude-mem search "swarm-yuan skill generated ${ts}" >/dev/null 2>&1; then
-    echo "→ [记忆写回] claude-mem: 已触发（observation 由其 hooks 捕获）"
-  fi
-  return 0
-}
-
-# ---- 三路写回（每路独立降级，不阻塞）----
-echo "=== 记忆写回（Step 12，三路 best-effort）==="
-_ok=0
-_write_local   && _ok=$((_ok+1)) || echo "⚠ 本地写回失败（$STATE_DIR/project-knowledge.md 不可写）" >&2
-_write_zcode   && _ok=$((_ok+1)) || echo "⚠ .zcode 写回失败（目录存在但不可写）" >&2
-_write_claude_mem && _ok=$((_ok+1)) || echo "⚠ claude-mem 写回失败（CLI 异常）" >&2
-
-echo "✓ 记忆写回完成（${_ok}/3 路成功）"
 # 永不 fail 阻塞主流程（记忆写回是 best-effort，失败不阻断生成）
 exit 0
