@@ -2,7 +2,7 @@
 
 # 标准合规映射矩阵（standards-compliance）
 
-> 证据基线：仓库根 `docs/research/` 质量与安全标准两份调研报告（2026-07-20，条款号均出自该两报告，禁止虚构）；门禁语义基线：`swarm-yuan/assets/precheck.sh`（55 门禁 = FULL 49 + advisory-only 6；FULL 49 = 标准 28（核心 10+架构 18）+ 合规 19 + FULL-only 2（decision/state-phase））与 `swarm-yuan/assets/precheck.conf`。
+> 证据基线：仓库根 `docs/research/` 质量与安全标准两份调研报告（2026-07-20，条款号均出自该两报告，禁止虚构）；门禁语义基线：`swarm-yuan/assets/precheck.sh`（56 门禁 = FULL 50 + advisory-only 6；FULL 50 = 标准 29（核心 11+架构 18）+ 合规 19 + FULL-only 2（decision/state-phase））与 `swarm-yuan/assets/precheck.conf`。
 > **口径权威源**：`../assets/facts.conf`（catchphrase 数字单一事实源，self-check 机器执法）。
 
 ## 本文件作用与用法
@@ -20,7 +20,7 @@
 
 ## A. GB/T 25000.51 八特性 × 门禁映射
 
-依据 GB/T 25000.51-2016（RUSP）§5.2 用户文档集要求、§5.3 软件质量要求（八特性，与 GB/T 25000.10-2016 质量模型一致），将 55 个门禁按八特性逐行登记；「测量函数/阈值/证据」列对齐 GB/T 25000.21-2019 测度元素格式（本文件即「门禁级四元组登记」的落地）。特性名同时标注 ISO/IEC 25010:2023 双轨命名（国标尚未跟进 2023 版）。
+依据 GB/T 25000.51-2016（RUSP）§5.2 用户文档集要求、§5.3 软件质量要求（八特性，与 GB/T 25000.10-2016 质量模型一致），将 56 个门禁按八特性逐行登记；「测量函数/阈值/证据」列对齐 GB/T 25000.21-2019 测度元素格式（本文件即「门禁级四元组登记」的落地）。特性名同时标注 ISO/IEC 25010:2023 双轨命名（国标尚未跟进 2023 版）。
 
 ### A.1 功能适合性（Functional Suitability）
 
@@ -255,7 +255,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 |---|---|---|---|
 | PO（组织准备 PO.1–PO.5：安全需求/角色/工具链/检查标准） | 生成器配置层：特征卡定级 + precheck.conf 测度实例化 + 本矩阵 | 本矩阵 + conf | ✅🟡 文档层覆盖 |
 | PS（保护软件 PS.1–PS.3：代码防篡改/**发布完整性验证机制**/发布归档） | PS.1/PS.3 部分 ↔ git 工作流 + `--stable-diff`；**PS.2 ↔ `--release-sign`** | `--release-sign` | ✅🟡 已覆盖（产物伴随签名 .sig/.asc/.att/.bundle + cosign verify-blob 验签 + provenance fail-closed；无 cosign 降级存在性检查） |
-| PW（生产安全软件 PW.1–PW.9：安全设计/编码/构建/评审/测试/默认安全配置） | 门禁体系主体：`--security`/`--layer`/`--review`/`--test`/`--shift-left` | 55 门禁 | ✅ 主体覆盖（PW≈门禁体系） |
+| PW（生产安全软件 PW.1–PW.9：安全设计/编码/构建/评审/测试/默认安全配置） | 门禁体系主体：`--security`/`--layer`/`--review`/`--test`/`--shift-left` | 56 门禁 | ✅ 主体覆盖（PW≈门禁体系） |
 | RV（响应漏洞 RV.1–RV.3：识别/修复/**根因分析**） | `--review` 部分覆盖；缺陷追踪根因字段 | 无 | 🟡 部分；RV ❌ 缺口（根因字段） |
 
 动态登记：SP 800-218 Rev.1（v1.2）公开草案强化 SBOM/VEX/签名发布——发布签名门禁设计须对齐 v1.2。
@@ -285,7 +285,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 
 **理由**：这些标准要求完整的功能安全生命周期（HARA 危害分析 / ASIL 分解 / 安全案例 Safety Case / SOUP 评估 / 工具链鉴定），属机构测评/认证级，远超门禁级自动化范畴。强行门禁化会淹没误报（违反"不贸然唤醒沉睡门禁"原则——无真实项目校准的硬门禁是头号风险）。正确做法是显式声明边界，让"不覆盖"成为诚实声明而非隐性缺口。
 
-**外审指引**：涉及功能安全域的项目，swarm-yuan 的 55 门禁可作为**通用质量/安全基线**，但功能安全合规必须由具备资质的机构按标准全文外审。swarm-yuan 的门禁证据（gate-runs.jsonl / SBOM 产物 / RTM 追溯矩阵 / 豁免 5 字段登记）可作为外审输入材料，**不构成合规证据本身**。
+**外审指引**：涉及功能安全域的项目，swarm-yuan 的 56 门禁可作为**通用质量/安全基线**，但功能安全合规必须由具备资质的机构按标准全文外审。swarm-yuan 的门禁证据（gate-runs.jsonl / SBOM 产物 / RTM 追溯矩阵 / 豁免 5 字段登记）可作为外审输入材料，**不构成合规证据本身**。
 
 > **适用范围声明**：本范式暂不覆盖功能安全认证场景。涉及车规（ISO 26262 ASIL 分级）、医疗软件（IEC 62304 安全分级）或工控功能安全（IEC 61508/62443）时，本矩阵与门禁体系**不构成合规证据**——须经具备资质的外部机构评审（外审），并补充行业专用过程（危害分析/HARA、安全案例 safety case、SOUP 评估、工具链鉴定等）后方可用于对应场景。
 
@@ -301,7 +301,7 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 
 ## F. 门禁姿态与豁免登记
 
-### F.1 全 55 门禁姿态表
+### F.1 全 56 门禁姿态表
 
 姿态三值：`fail-closed`（启用即执法，命中即 fail）/ `skip-if-unconfigured`（未配置静默跳过，--all-full 下不打印；显式单门禁调用时 warn 提示）/ `warn-only`（只告警不判违规）。混合姿态以「主姿态+备注」记。判定语义与既有输出行不因本登记改变。
 
@@ -361,7 +361,8 @@ GB/T 8566-2022（IDT ISO/IEC/IEEE 12207:2017）第 6 章四大过程组：6.1 �
 | 52 | `--skill-supply-chain` / check_skill_supply_chain | advisory-only（0 fail） | 同上；技能供应链（来源/签名/版本）观测 |
 | 53 | `--state-phase` / check_state_phase | advisory-only（0 fail） | 同上；状态机阶段流转一致性观测 |
 | 54 | `--upstream-baseline` / check_upstream_baseline | advisory-only（0 fail） | 同上；上游基线漂移观测（生成器仓 docs/upstream-baseline.md 对账，drifted → warn） |
-| 55 | `--method-size` / check_method_size | warn-only（enforce advisory，0 fail） | 在标准/完整序列内执勤（决策 26.2 追认预算 55）；方法体规模预算观测，超限 warn |
+| 55 | `--method-size` / check_method_size | warn-only（enforce advisory，0 fail） | 在标准/完整序列内执行（决策 26.2 追认预算 55）；方法体规模预算观测，超限 warn |
+| 56 | `--spec-first` / check_spec_first | fail-closed | 可写区（WRITABLE_DIRS）变更无已批准 spec → fail；未配置 WRITABLE_DIRS / 缺 spec-first-lib.sh → skip-if-unconfigured（spec-first 四层拦截的门禁面承载，核心序列成员） |
 
 汇总姿态约定（与 GB/T 15532 准出「失效须可见」对齐）：`--all-full` 末次汇总打印「—— 执行汇总：调用 N，执行 N−S，跳过 S（清单），fail F，warn W ——」（跳过计数器）；退出码与既有输出行一字不改。
 

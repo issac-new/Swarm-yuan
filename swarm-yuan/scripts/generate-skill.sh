@@ -2286,7 +2286,7 @@ if [[ "$RESUME" -eq 0 || ! -f "$SKILL_DIR/SKILL.md" ]]; then
 if [[ "$PROFILE" == "lite" ]]; then
   _nav_design="改造分类与拼装原则内嵌于 reference-manual 与本文件 meta 段（lite 精简档）；安全规范依据 security-spec"
   _nav_arch="项目认知=下方摘要表；六段式精简为 meta/reference/check/scripts（lite）"
-  _nav_flow="执勤=precheck --all（core 门禁序列）+ state-machine 阶段守卫（六阶段↔九节点对照见 scripts/state-machine.sh 头注）；lite 不含 workflow.md，九节点详解不随技能分发"
+  _nav_flow="日常开发=precheck --all（core 门禁序列）+ state-machine 阶段守卫（六阶段↔九节点对照见 scripts/state-machine.sh 头注）；lite 不含 workflow.md，九节点详解不随技能分发"
 else
   _nav_design="改造分类+拼装原则+安全规范→references/dev-guide.md；左移 spec §19-21→assets/spec-template.md；决策纪律（Mechanical/Taste/UserChallenge）→decisions.jsonl"
   _nav_arch="项目认知=下方摘要表；六段式结构+框架规律→references/framework-knowledge.md（按 ACTIVE_FRAMEWORKS 生成）"
@@ -2302,7 +2302,7 @@ status: draft
 # $SKILL_NAME — （填充指引：项目名 + 需求交付全流程技能）
 > 由 swarm-yuan 生成器创建（${SWARM_YUAN_STAMP}，profile=${PROFILE}），AI 探查填充后 \`--mark-active\` 激活。填充规范见 swarm-yuan/references/template-spec.md
 
-**五层导航**（本文按理念→设计→架构→工作流程→使用组织，闭环=执勤→变化→自成长→再执勤）：
+**五层导航**（本文按理念→设计→架构→工作流程→使用组织，循环=日常使用→变化→自成长→再使用）：
 - **理念**：拼装式开发（组件库清单=reference-manual §4，禁重复造轮子）；三权分立——特征卡立法（组件库清单载体=reference-manual）/门禁执法（precheck 四族）/审查司法（节点⑦+review-record）；诚实降级——误报走 conf+decisions.jsonl 留痕；回复纪律——面向人的输出用受控语言（references/controlled-language-methodology.md）
 - **设计**：${_nav_design}
 - **架构**：${_nav_arch}

@@ -2,7 +2,7 @@
 
 > 对任意代码仓库跑一次，生成一个项目专属的开发技能。此后 AI 在这个项目里写代码，先查组件、依赖和规矩，再动手。
 
-[![Release](https://img.shields.io/badge/release-v2.67.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.67.0)
+[![Release](https://img.shields.io/badge/release-v2.68.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.68.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -278,8 +278,8 @@
 
 | 维度 | 口径 |
 |---|---|
-| 门禁总数 / 预算上限 | 55 / 55（冻结，新增须等额删除） |
-| 门禁分层 | 核心 10 + 架构 18 + 合规 19 + 专项 8。执行序列 `--all` / `--all-full` / `--compliance-suite` |
+| 门禁总数 / 预算上限 | 56 / 56（冻结，新增须等额删除） |
+| 门禁分层 | 核心 11 + 架构 18 + 合规 19 + 专项 8。执行序列 `--all` / `--all-full` / `--compliance-suite` |
 | 特征卡 | 17 项（P0 六项强制，P1 十一项可增量） |
 | 框架规则集 | 81（规则文档与门禁片段 1:1 配对） |
 | 配置变量 / 上限 | 185 / 200 |
