@@ -168,6 +168,14 @@ for _cand in "${CLAUDE_PLUGIN_ROOT:-}/SKILL.md" "$ROOT/SKILL.md" "${_sm_self}/..
   SKILL_MD="$_cand"; break
 done
 
+# spec-first 判定库（R101 单一事实源；目标技能布局 scripts/ 同目录，生成器仓布局 assets/hooks/ 上级）。
+# 缺库=spec 判定面降级放行（与「解析失败一律放行」同一失败哲学）；生成物成套分发，配对由 test-r101 锁。
+SPF_LIB=""
+for _cand in "${_sm_self}/spec-first-lib.sh" "${_sm_self}/../spec-first-lib.sh"; do
+  [[ -f "$_cand" ]] && { SPF_LIB="$_cand"; break; }
+done
+[[ -n "$SPF_LIB" ]] && . "$SPF_LIB"
+
 # 白名单读取（GATE_ENFORCE_DENY=check_security,check_sensitive 或 all）
 # 对齐同文件 SPEC_REQUIRED 解析范式（cut 剥注释 → tr 剥空白 → sed 剥引号）。
 # 原缺陷：该行带 # MEASURE 行尾注释，sed 剥不到中间引号、注释全量混入 DENY_LIST；
@@ -281,46 +289,20 @@ if [[ "$EVENT" == "PreToolUse" ]]; then
       # 写源码区（WRITABLE_DIRS 内）但当前无已批准 spec → deny。spec 缺失跳流程是
       # "流程性约束缺失"反馈的根因——workflow.md 是文档自觉，这里是机器强制。
       # draft 骨架期放行（骨架期无 spec 是常态）；conf 缺失/WRITABLE_DIRS 未配 → 放行（不阻碍诊断）。
+      # 判定自 R101 收敛到 spec-first-lib.sh（spf_*，与 L2 pre-commit/L3 门禁/L4 状态机同源）；
+      # 解析链历史坑（自引用默认死代码/行尾注释括号）的注记随迁该库，此处不重复。
       _spec_req=""
-      # conf 惯用自引用默认（SPEC_REQUIRED="${SPEC_REQUIRED:-1}"，source 时求值
-      # 为 1）——原 grep 提取拿到字面 ${SPEC_REQUIRED:-1} ≠ "1"，spec 前置门恒不启用（死代码）。
-      # 改为末行生效 + 解析自引用默认；grep 无命中时 || printf '' 保空。
-      if [[ -f "$CONF" ]]; then
-        _spec_req=$(grep '^SPEC_REQUIRED=' "$CONF" 2>/dev/null | tail -1 | cut -d'#' -f1 | tr -d '[:space:]' | sed 's/^SPEC_REQUIRED=//;s/^"//;s/"$//' || printf '')
-        case "$_spec_req" in
-          '${SPEC_REQUIRED:-'*'}')
-            _spec_req="${_spec_req#\$\{SPEC_REQUIRED:-}"; _spec_req="${_spec_req%\}}" ;;
-        esac
-      fi
+      [[ -n "$SPF_LIB" && -f "$CONF" ]] && _spec_req=$(spf_conf_val "$CONF" SPEC_REQUIRED)
       if [[ "$_spec_req" == "1" ]]; then
-        _in_src=0
         _wd=""
-        # WRITABLE_DIRS 迁移到同文件注释安全范式（末行生效 + cut 剥注释 + rtrim 后剥括号）。
-        # 旧式 sed 's/)$//' 行尾锚——conf 行带行尾注释（模板惯例 WRITABLE_DIRS=()  # TODO:model）时
-        # 剥不掉括号，提取出 `src)  # ...` 垃圾串 → 可写区匹配恒 false → spec-first 整链静默失效。
-        [[ -f "$CONF" ]] && _wd=$(grep '^WRITABLE_DIRS=' "$CONF" 2>/dev/null | tail -1 | cut -d'#' -f1 | sed -e 's/^WRITABLE_DIRS=(//' -e 's/[[:space:]]*)[[:space:]]*$//' -e 's/"//g' || printf '')
+        [[ -n "$SPF_LIB" ]] && _wd=$(spf_writable_dirs "$CONF")
         _norm_p=$(printf '%s' "$FILE_PATH" | tr '\\' '/')
-        for _d in $_wd; do
-          case "$_norm_p" in *"/${_d}/"*|"${PROJECT_DIR:-}/${_d}/"*) _in_src=1; break;; esac
-        done
-        if [[ "$_in_src" -eq 1 ]]; then
+        if spf_path_in_dirs "$_norm_p" "${PROJECT_DIR:-}" $_wd; then
           _spec_glob=""
-          # #20b 同款：末行生效 + 剥注释/空白 + 解析 ${SPEC_GLOB:-...} 自引用默认
-          if [[ -f "$CONF" ]]; then
-            _spec_glob=$(grep '^SPEC_GLOB=' "$CONF" 2>/dev/null | tail -1 | cut -d'#' -f1 | tr -d '[:space:]' | sed 's/^SPEC_GLOB=//;s/^"//;s/"$//' || printf '')
-            case "$_spec_glob" in
-              '${SPEC_GLOB:-'*'}') _spec_glob="${_spec_glob#\$\{SPEC_GLOB:-}"; _spec_glob="${_spec_glob%\}}" ;;
-            esac
-          fi
+          [[ -n "$SPF_LIB" ]] && _spec_glob=$(spf_conf_val "$CONF" SPEC_GLOB)
           _spec_glob="${_spec_glob:-docs/specs/*.md}"
           _spec_found=""
-          for _sf in "${ROOT}"/${_spec_glob}; do
-            [[ -f "$_sf" ]] || continue
-            # 已批准判定：含「## 决策记录」段且非全占位符
-            if grep -q '^## .*决策记录' "$_sf" 2>/dev/null && ! grep -qE '待填充|<占位符>' "$_sf" 2>/dev/null; then
-              _spec_found="$_sf"; break
-            fi
-          done
+          [[ -n "$SPF_LIB" ]] && _spec_found=$(spf_find_approved_spec "$ROOT" "$_spec_glob")
           if [[ -z "$_spec_found" ]]; then
             _audit_log "fail-gate-hook:edit" "$TOOL" "$FILE_PATH" "deny" "spec-required" "spec-first"
             _deny_log "$TOOL" "$FILE_PATH" "spec-required"

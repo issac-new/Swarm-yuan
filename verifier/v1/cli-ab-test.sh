@@ -151,7 +151,7 @@ done
 # ② 固定用例：无参数（默认 --all）/ --all-full / 未知 flag
 # field-feedback 2026-08-26：序列成员新增（--all-full 序列 +check_method_size）时 A/B 必 DIFF——
 # A 版（HEAD）序列无新门禁，B 版多一段输出与汇总计数。判别：B 版 GATE_FLAGS 含而 A 版不含新 flag
-# → 序列用例豁免 A/B 对比（新门禁回归保护走 fixtures；序列基线由下方断言③守 core10 段头）。
+# → 序列用例豁免 A/B 对比（新门禁回归保护走 fixtures；序列基线由下方断言③守核心序列段头（R101 起 11 段））。
 _seq_new=0
 for flag in $FLAGS; do
   case " $FLAGS_A " in *" $flag "*) ;; *) _seq_new=1;; esac
@@ -177,7 +177,7 @@ if [ -f "$SEQ_FILE" ]; then
   CALLS=$((CALLS+1))
   grep '^=== ' "$WORK/all.out" > "$WORK/seq.out"
   if [ "$rc_seq" = "0" ] && cmp -s "$SEQ_FILE" "$WORK/seq.out"; then
-    echo "CLI_AB_CORE10_SEQUENCE OK（核心 10 段头序列与 v1/core10-sequence.txt 逐字节一致）"
+    echo "CLI_AB_CORE10_SEQUENCE OK（核心序列段头与 v1/core10-sequence.txt 逐字节一致；R101 起核心 11 段）"
   else
     echo "CLI_AB_CORE10_SEQUENCE DIFF (rc=$rc_seq)"
     diff "$SEQ_FILE" "$WORK/seq.out" | head -20

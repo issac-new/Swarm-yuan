@@ -73,6 +73,10 @@ UNIVERSAL_FILES=(
   "scripts/trace-log.sh|assets|lite"
   "scripts/memory-backends.sh|assets|lite"  # 记忆后端适配层（memory-writeback/知识门禁共用，先于 writeback 分发）
   "scripts/memory-writeback.sh|assets|lite"
+  # R101 四层拦截：判定库四层共源（L1 fail-gate-hook/L2 pre-commit/L3 门禁/L4 状态机），
+  # lite 档 fail-gate-hook 在发（lite 也 source），故判定库必须 lite 随发。
+  "scripts/spec-first-lib.sh|assets|lite"
+  "scripts/spec-first-pre-commit.sh|hook|standard"  # L2 提交时强拦（Step 9 core.hooksPath 垫片指向；lite 档无 hooks 生命周期不发）
   # audit-claims-reality 修复：hooks 统一装到 scripts/（kind=hook，源 assets/hooks/）。
   # 此前 dest=assets/hooks/，但 hooks.json/settings 白名单/codex 适配器/文档全部引用 scripts/*.sh，
   # 且 hook 命令带 || true 兜底——生成物 hooks 整体静默失效（fail-gate 真拦截从不触发）。
@@ -2198,6 +2202,32 @@ _write_if_absent "$SKILL_DIR/.mcp.json" <<'MEOF'
 }
 MEOF
 
+# R101 L2 提交时强拦装配：git pre-commit 垫片 + core.hooksPath（宿主无关拦截点——
+# 无 hook 宿主（Cursor/Windsurf/OpenCode/Gemini/Kimi）此前只有 advisory 规则文件，
+# git pre-commit 是它们唯一的真强制点；有 hook 宿主（Claude Code/Codex/ZCode）则
+# 与 L1 写时拦截构成纵深）。垫片指向技能内 scripts/spec-first-pre-commit.sh 绝对
+# 路径（用户级安装技能目录不在仓库内，相对路径不可达——与 codex hooks.json 同款取舍）。
+# 尊重现状：项目已有自定义 core.hooksPath 不覆盖（披露+手工接入指引）；非 git 项目跳过披露。
+if [[ "$PROFILE" != "lite" ]] && git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  _syh_dir="$PROJECT_DIR/.swarm-yuan/hooks"
+  mkdir -p "$_syh_dir"
+  cat > "$_syh_dir/pre-commit" <<PCEOF
+#!/usr/bin/env bash
+# swarm-yuan spec-first L2 提交时强拦垫片（由 generate-skill.sh 装配，勿手改；
+# 卸载: git config --unset core.hooksPath && rm -rf .swarm-yuan/hooks）
+exec bash "${SKILL_DIR}/scripts/spec-first-pre-commit.sh" "\$@"
+PCEOF
+  chmod +x "$_syh_dir/pre-commit"
+  _syh_hp="$(git -C "$PROJECT_DIR" config core.hooksPath 2>/dev/null || true)"
+  if [[ -z "$_syh_hp" ]]; then
+    git -C "$PROJECT_DIR" config core.hooksPath ".swarm-yuan/hooks"
+    echo "  ✓ L2 提交时强拦: core.hooksPath=.swarm-yuan/hooks（spec-first pre-commit 垫片已装配）"
+  elif [[ "$_syh_hp" == ".swarm-yuan/hooks" ]]; then
+    echo "  · L2 提交时强拦: core.hooksPath 已指向 .swarm-yuan/hooks（幂等，垫片已刷新）"
+  else
+    echo "  ⚠ L2 提交时强拦: 项目已有 core.hooksPath=${_syh_hp}，不覆盖——手工接入方式：在既有钩子目录并入 .swarm-yuan/hooks/pre-commit 的调用（UserChallenge 类决策，建议 decisions.jsonl 落痕）"
+  fi
+fi
 
 _write_if_absent "$SKILL_DIR/commands/spec.md" <<'CEOF'
 ---

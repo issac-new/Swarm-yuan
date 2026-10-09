@@ -60,7 +60,7 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 
 需求理解 → 探查 → spec → plan → 编码 → 测试 → 独立审查 → 合入 → 发布；六阶段状态机逐段守卫前序产出物（design 需 proposal、build 需批准的 spec、verify 需 tasks 全勾、archive 需 verify pass 与证据）。
 
-守卫实物：spec-first hook 拦"无 spec 写源码"（Claude Code deny / Codex exit 2 两类宿主同拦）；rules.d 三值规则（allow/prompt/forbid 取最严，forbid 必带替代方案）在每次 Bash/Edit 实时匹配；门禁按序列执勤，分核心/架构/合规/advisory 四族（执行序列与口径数字见 facts.conf）；拦截落 gate-deny.jsonl 可复盘。
+守卫实物：spec-first 四层拦截"无 spec 写源码"（判据单一事实源 spec-first-lib.sh——L1 写时宿主 hooks：Claude Code deny JSON / Codex exit 2 / ZCode 插件嵌套 hooks；L2 提交时 git pre-commit（core.hooksPath，宿主无关）；L3 门禁时 check_spec_first（入核心序列）；L4 状态机 build 准入。无 L1 宿主渲染诚实降级线，强制时点在 L2-L4）；rules.d 三值规则（allow/prompt/forbid 取最严，forbid 必带替代方案）在每次 Bash/Edit 实时匹配；门禁按序列执勤，分核心/架构/合规/advisory 四族（执行序列与口径数字见 facts.conf）；拦截落 gate-deny.jsonl 可复盘。
 
 ## 反馈回路（技能随项目生长）
 
@@ -80,7 +80,7 @@ SessionStart hook（lite 档由 AI 主动）跑 `scripts/project-fingerprint.sh 
   ③ spec      AI 写 spec（决策记录 + 影响范围 + 测试设计）→ 用户评审批准
   ④ plan      AI 拆 tasks（.swarm-yuan/tasks.md）
   ⑤ 编码      先查再写：七层下探找可复用件，都落空才新增
-              【无 spec 写源码】hook 拒绝；【违反 forbid 规则】hook deny + 替代方案
+              【无 spec 写源码】四层拦截：有 hook 宿主写时拒；其余提交时/门禁时拦；【违反 forbid 规则】hook deny + 替代方案
   ⑥ 测试      门禁序列执行，全绿进下一步
   ⑦ 独立审查  review 门禁 + review-record 落盘；发现问题回 ⑤
   ⑧ 合入      状态机核验 verify pass + 证据引用

@@ -2,7 +2,7 @@
 
 > 从「AI 辅助写代码」到「AI 懂项目再写代码」的认知基础设施。
 
-[![Release](https://img.shields.io/badge/release-v2.63.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.63.0)
+[![Release](https://img.shields.io/badge/release-v2.64.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.64.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -107,9 +107,11 @@
 
 门禁在三个位置拦截。**写之前**：hooks 拦"无 spec 写源码"，拦命中 forbid 规则的命令；拒绝消息必带替代方案，拒绝即指路，AI 能自动改道。**改之时**：每次编辑过范围与敏感度检查。**收尾时**：按任务类型选门禁序列执行。多门禁同跑有执行纪律：按"构建、测试、契约、复用、一致性、分层、文档、安全、依赖"的顺序串行，任一步失败即停，不拿后面的绿掩盖前面的红；每步留痕到执行账本，审查时据此确认序列真跑过，而不是声称跑过。
 
+"无 spec 写源码"这条流程约束按四层拦截落地，判据出自同一个库（spec-first-lib.sh）：写时（宿主 hooks deny——Claude Code/Codex/ZCode 三宿主有此通道）、提交时（git pre-commit，宿主无关，无 hook 的 Cursor/Windsurf/OpenCode/Gemini/Kimi 也有真拦截点）、门禁时（check_spec_first 入核心序列）、流程准入（状态机 build 阶段）。没有写时通道的宿主，规则文件里明写"写时不拦"的诚实降级线，强制时点后移到提交与门禁——不假装写时拦得住。
+
 门禁分 strict、warn、advisory 三级，这不是技术洁癖，是诚实分层：能给出稳定 fail 信号的才配阻断交付；信号有噪声的降级为提示，由 AI 判断采纳；判断不了的（例如"这次复用是否贴合场景"）不假装能判，门禁输出三问引导，AI 自查并留痕供审查回放。自动化只管信号可信处、判断留给 AI 并留痕，这条边界是全系统防自欺的总阀门。
 
-门禁自身的复杂度也被门禁管住：门禁总数冻结在预算上限内，新增须等额删除，配置变量与上下文预算同理。声称帮项目降复杂度的东西，自己不能失控。另有一条失败方向原则：权限边界 fail-closed，fail-open 只允许发生在还有下层强制兜底的地方（例如 hooks 失败不阻断，因为命令还要过门禁）。
+门禁自身的复杂度也被门禁管住：门禁总数冻结在预算上限内，新增须等额删除，例外上调须逐例登记留痕（登记处：facts.conf 键注记与 CHANGELOG），配置变量与上下文预算同理。声称帮项目降复杂度的东西，自己不能失控。另有一条失败方向原则：权限边界 fail-closed，fail-open 只允许发生在还有下层强制兜底的地方（例如 hooks 失败不阻断，因为命令还要过门禁）。
 
 ## 3.5 执勤层（下）：验证管"想错逻辑"
 

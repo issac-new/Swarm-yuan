@@ -135,6 +135,13 @@ _find_spec_file() { # $1=可选：内容反查 ERE（如 '拼装合规声明'）
   printf '%s' "$_hit"
 }
 
+# spec-first 判定库（R101 单一事实源；与本文件同目录——目标技能布局 scripts/、生成器仓布局 assets/）。
+# 消费方：本文件 check_spec_first（L3 门禁时）——与 fail-gate-hook（L1 写时）/
+# spec-first-pre-commit（L2 提交时）/state-machine build 准入（L4）四层判据同源。
+_spf_lib="$(cd "$(dirname "$0")" && pwd)/spec-first-lib.sh"
+# shellcheck disable=SC1090
+[[ -f "$_spf_lib" ]] && . "$_spf_lib"
+
 # 通用源码扫描：在目录中按 ERE 模式 grep（限定源码扩展名），并滤除 test/mock 等噪声行
 # $1=ERE 模式；$2=逗号分隔扩展名（如 ts,js,py）；$3=排除用 BRE（\| 分隔，与原内联写法一致）
 # 其余参数=扫描目录；无目录参数时 grep -r 退化为扫描当前目录（与原内联写法一致）
@@ -592,18 +599,18 @@ skip_if_unconfigured() {
 }
 
 # ===== 门禁注册表（--all/--all-full 执行序列 + 单门禁 flag 清单）=====
-# 核心门禁（适用所有项目）：分支/范围/构建/敏感/一致性/审查/复用/依赖/安全/测试
-ALL_GATES_CORE=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
+# 核心门禁（适用所有项目）：分支/范围/spec-first/构建/敏感/一致性/审查/复用/依赖/安全/测试
+ALL_GATES_CORE=(check_branch check_scope check_spec_first check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_test)
 # 合规门禁（标准合规族 + P1 安全门禁族深化 + P3 长期清单 rtm/release-sign，仅 --compliance-suite/单门禁执行；未配置的静默跳过）
 ALL_GATES_COMPLIANCE=(check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_cert_audit check_cwe_audit)
-# 标准门禁（核心 10 + 架构 18 = 28；facts.conf FACT_GATES_STANDARD/ARCH 对账，field-feedback +method_size 17→18 后注释同步）：--all-full 执行序列（合规 19 已拆出为 --compliance-suite 按需执行）
-ALL_GATES_STANDARD=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_method_size check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_test)
+# 标准门禁（核心 11 + 架构 18 = 29；facts.conf FACT_GATES_STANDARD/ARCH 对账，field-feedback +method_size 17→18 后注释同步；R101 +spec_first 入核心）：--all-full 执行序列（合规 19 已拆出为 --compliance-suite 按需执行）
+ALL_GATES_STANDARD=(check_branch check_scope check_spec_first check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_method_size check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_test)
 # 全部门禁（含架构/认知/合规门禁，未配置的静默跳过；--fix-suggest 用）
-ALL_GATES_FULL=(check_branch check_scope check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_method_size check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_cert_audit check_cwe_audit check_decision_audit check_state_phase check_test)
+ALL_GATES_FULL=(check_branch check_scope check_spec_first check_build check_sensitive check_consistency check_review check_reuse check_deps check_security check_layer check_stable_diff check_link_depth check_adr check_contract check_consistency_cross check_impact check_service check_api check_state check_frontend check_method_size check_cognition check_domain check_knowledge check_diagram check_shift_left check_framework check_compliance check_docs_pack check_sbom check_privacy check_authz check_requirements check_crypto check_rtm check_dengbao check_pia check_sast_deep check_oss_eval check_quality_model check_test_evidence check_review_record check_metrics check_release_sign check_cert_audit check_cwe_audit check_decision_audit check_state_phase check_test)
 # 单门禁 flag 清单（Usage 顺序）。flag → 函数映射规则：check_ + flag 去 -- 前缀并将 - 转为 _
 #（如 --stable-diff → check_stable_diff；--consistency-cross → check_consistency_cross）
 # --diagram（原 --mermaid，升级为多图表引擎）：mermaid 结构图 + echarts/antv 数据图；--mermaid 保留为别名
-GATE_FLAGS=(--branch --scope --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --diagram --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --dengbao --pia --sast-deep --oss-eval --quality-model --test-evidence --review-record --metrics --method-size --release-sign --operate --decision-audit --loop-oracle --cwe-audit --cert-audit --pr-quality --skill-supply-chain --state-phase --upstream-baseline --learnings)
+GATE_FLAGS=(--branch --scope --spec-first --build --test --sensitive --consistency --review --reuse --deps --security --layer --stable-diff --link-depth --adr --contract --consistency-cross --impact --service --api --state --frontend --cognition --domain --knowledge --diagram --shift-left --framework --compliance --docs-pack --sbom --privacy --authz --requirements --crypto --rtm --dengbao --pia --sast-deep --oss-eval --quality-model --test-evidence --review-record --metrics --method-size --release-sign --operate --decision-audit --loop-oracle --cwe-audit --cert-audit --pr-quality --skill-supply-chain --state-phase --upstream-baseline --learnings)
 
 # ===== 门禁分层 enforce_level（决策 19：strict/warn/advisory 三档）=====
 # 自动按 fail() 调用数归类（gen-enforce-level.sh 生成 gate-enforce-level.conf）：
@@ -1801,6 +1808,7 @@ _fix_suggest() {
     fw_batch_step_scope*)           suggest="Spring Batch ItemReader/Processor/Writer 须加 @StepScope（late binding 失效）";;
     fw_sharding_key_in_dml*)        suggest="分表 DML 须含分片键（sharding-key），否则全表扫描";;
     gate_scope_*)                   suggest="修改超出了 WRITABLE_DIRS 范围，把改动收回到可写目录或在 conf 登记只读区修改机制";;
+    gate_spec_first_missing*)       suggest="先写 spec（含「## 决策记录」段，位置按 SPEC_GLOB）再改源码——四层拦截同判据（写时 hook/提交时 pre-commit/门禁/状态机）；确属非源码改动检查 WRITABLE_DIRS；显式豁免：conf 置 SPEC_REQUIRED=0 并落痕 decisions.jsonl";;
     gate_sensitive_*)               suggest="扫描出敏感信息（密钥/凭证/IP），移除或改用环境变量/密钥管理服务";;
     gate_layer_*|gate_stable_diff_*|gate_link_depth_*) suggest="分层/稳定单元/调用链门禁——查看上方具体 fail 行，按 DDD 层边界调整依赖方向";;
     gate_test_*)                    suggest="测试未通过——运行 TEST_CMD 查看失败用例，修复测试或被测代码";;

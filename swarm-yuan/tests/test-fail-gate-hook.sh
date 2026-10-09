@@ -3,6 +3,7 @@
 set -uo pipefail
 cd "$(dirname "${0}")/.." || exit 1
 HOOK="assets/hooks/fail-gate-hook.sh"
+SPFLIB="assets/spec-first-lib.sh"  # R101 判定库与 hook 成套分发——夹具须同布局拷贝（生成物 scripts/ 同目录）
 TMP="$(mktemp -d /tmp/fgt.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT
 FAIL=0
@@ -163,7 +164,7 @@ EOF
 PROJECT_DIR="$1"
 GATE_ENFORCE_DENY=""
 EOF
-  cp "$HOOK" "$1/scripts/fail-gate-hook.sh"
+  cp "$HOOK" "$1/scripts/fail-gate-hook.sh"; cp "$SPFLIB" "$1/scripts/spec-first-lib.sh"
   cp "scripts/gate-rules.sh" "$1/scripts/gate-rules.sh"
   cp assets/rules.d/*.rules "$1/rules.d/"
 }
@@ -214,7 +215,7 @@ WRITABLE_DIRS=("src")
 SPEC_REQUIRED="1"
 GATE_ENFORCE_DENY=""
 EOF
-  cp "$HOOK" "$1/scripts/fail-gate-hook.sh"
+  cp "$HOOK" "$1/scripts/fail-gate-hook.sh"; cp "$SPFLIB" "$1/scripts/spec-first-lib.sh"
 }
 setup_spec_proj "$TMP/ps1"
 # 态24：无 spec 写源码区 → deny
@@ -250,7 +251,7 @@ SPEC_REQUIRED="\${SPEC_REQUIRED:-1}"
 SPEC_GLOB="\${SPEC_GLOB:-docs/specs/*.md}"
 GATE_ENFORCE_DENY=""
 EOF
-cp "$HOOK" "$TMP/skill28/scripts/fail-gate-hook.sh"
+cp "$HOOK" "$TMP/skill28/scripts/fail-gate-hook.sh"; cp "$SPFLIB" "$TMP/skill28/scripts/spec-first-lib.sh"
 # 态28：双目录布局无 spec 写项目 src/ → deny（conf 自引用默认 SPEC_REQUIRED 求值为 1）
 out=$(printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"'$TMP'/proj28/src/foo.py"},"cwd":"'$TMP'/proj28"}' | CLAUDE_PLUGIN_ROOT="$TMP/skill28" bash "$TMP/skill28/scripts/fail-gate-hook.sh" 2>&1)
 echo "$out" | grep -q '"permissionDecision":"deny"' && ok "态28 双目录布局无 spec 硬拦（#20b 锁死）" || bad "态28 双目录未 deny: $out"
@@ -318,7 +319,7 @@ $2
 SPEC_REQUIRED="1"
 GATE_ENFORCE_DENY=""
 EOF
-  cp "$HOOK" "$1/scripts/fail-gate-hook.sh"
+  cp "$HOOK" "$1/scripts/fail-gate-hook.sh"; cp "$SPFLIB" "$1/scripts/spec-first-lib.sh"
 }
 # 态32：WRITABLE_DIRS 带行尾注释 + 无 spec 写 src/ → 必须 deny（D5 回归锁）
 setup_wd_comment_proj "$TMP/p32" 'WRITABLE_DIRS=("src")  # MEASURE: characteristic=维护性 function=目录存在性 threshold=非空'

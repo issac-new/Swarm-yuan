@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# warn 物理文件（21 个 check_* 函数；由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
+# warn 物理文件（22 个 check_* 函数；由 scripts/split-gates.sh 从 precheck.sh 抽取，决策 19）
 # 被 precheck.sh source（开发态/安装态同路径；install.sh 整目录拷贝含本文件）。
-# 注：物理函数数 21 ≠ enforce-level warn 22——物理位置与 enforce 分档正交，两者各自准确：
+# 注：物理函数数 22 ≠ enforce-level warn 23——物理位置与 enforce 分档正交，两者各自准确：
 #   本文件内 check_sast_deep/oss_eval 的 enforce=strict（Z3 fail-closed 化后升档，物理未迁移）；
 #   反之 check_authz/privacy/requirements/rtm 物理在 gates-strict.sh 但 enforce=warn。
 # _enforce_of 读 gate-enforce-level.conf 而非文件位置，功能正确。
@@ -40,6 +40,60 @@ check_scope() {
     done
   fi
   [[ $readonly_violation -eq 0 ]] && pass "只读目录无改动"
+}
+
+# R101 L3 门禁时强拦：git 变更触及可写源码区但无已批准 spec → fail。
+# 判据与 L1 fail-gate-hook（写时）/L2 spec-first-pre-commit（提交时）/L4 state-machine
+# build 准入同源（spf_* 判定库，precheck.sh 主文件已 source）——无 hook 宿主
+# （Cursor/Windsurf/OpenCode/Gemini/Kimi）在 ⑥测试/⑦审查/⑧合入节点的兜底强制点。
+# 跳过（⊘ 披露，绿≠合规）：SPEC_REQUIRED≠1 / WRITABLE_DIRS 未配 / 非 git 仓库 /
+# 判定库缺失 / 变更未触及可写区。
+check_spec_first() {
+  echo "=== spec-first 流程门（L3 门禁时强拦，R101）==="
+  local _sr="${SPEC_REQUIRED:-}"
+  case "$_sr" in '${SPEC_REQUIRED:-'*) _sr="${_sr#\$\{SPEC_REQUIRED:-}"; _sr="${_sr%\}}" ;; esac
+  if [[ "$_sr" != "1" ]]; then
+    skip_if_unconfigured "SPEC_REQUIRED 未启用（conf 置 1 开启——与 fail-gate-hook/pre-commit/state-machine 同开关）"
+    return 0
+  fi
+  if [[ -z "${WRITABLE_DIRS[*]:-}" ]]; then
+    skip_if_unconfigured "WRITABLE_DIRS 未配置（spec-first 检测面为空）"
+    return 0
+  fi
+  if ! command -v spf_find_approved_spec >/dev/null 2>&1; then
+    skip_if_unconfigured "spec-first-lib.sh 缺失（判定面不可用，生成物成套分发被破坏）"
+    return 0
+  fi
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    skip_if_unconfigured "非 git 仓库（无变更检测面；L2 pre-commit 亦不适用）"
+    return 0
+  fi
+  local _root="${PROJECT_DIR:-$(pwd)}"
+  local _changed _hit=""
+  _changed=$(_git_changed_files)
+  # 与 check_scope 同款豁免过滤：工具链自有路径（.swarm-yuan/.claude/skills/.codex/skills）
+  # 是门禁/hook/技能升级的合法写入面，不属"无 spec 写源码"语义——分层执法，不重复兜。
+  _changed=$(printf '%s\n' "$_changed" | grep -vE '^(\.claude/skills/|\.codex/skills/|\.swarm-yuan/)' || true)
+  local _f
+  while IFS= read -r _f; do
+    [[ -z "${_f:-}" ]] && continue
+    # _git_changed_files 给仓库相对路径；spf_path_in_dirs 按绝对路径段匹配——补根再判（同 L2）
+    if spf_path_in_dirs "${_root}/${_f}" "$_root" "${WRITABLE_DIRS[*]}"; then _hit="$_f"; break; fi
+  done <<< "$_changed"
+  if [[ -z "$_hit" ]]; then
+    pass "spec-first: git 变更未触及可写源码区（WRITABLE_DIRS）"
+    return 0
+  fi
+  local _sg="${SPEC_GLOB:-}"
+  case "$_sg" in '${SPEC_GLOB:-'*) _sg="${_sg#\$\{SPEC_GLOB:-}"; _sg="${_sg%\}}" ;; esac
+  _sg="${_sg:-docs/specs/*.md}"
+  local _approved=""
+  _approved="$(spf_find_approved_spec "$_root" "$_sg")"
+  if [[ -n "$_approved" ]]; then
+    pass "spec-first: 可写区变更已有已批准 spec（${_approved}）"
+  else
+    fail "gate_spec_first_missing: git 变更触及可写源码区（如 ${_hit}）但 ${_sg} 无已批准 spec（须含「## 决策记录」段且非占位）——先 spec 再编码；四层拦截同判据（L1 写时 hook/L2 提交时 pre-commit/本门/L4 状态机 build 准入）"
+  fi
 }
 
 check_build() {

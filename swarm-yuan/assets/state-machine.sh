@@ -47,6 +47,12 @@ if [[ -z "${PROJECT_DIR:-}" ]]; then
   [[ -n "$_sm_pd" ]] && PROJECT_DIR="$_sm_pd"
 fi
 
+# spec-first 判定库（R101 单一事实源；与脚本同目录——目标技能布局 scripts/、生成器仓布局 assets/）。
+# 消费点：guard build 的已批准 spec 检测。缺库不致命——guard 内按可用性降级披露（见消费点）。
+_spf_lib="$(cd "$(dirname "$0")" && pwd)/spec-first-lib.sh"
+# shellcheck disable=SC1090
+[[ -f "$_spf_lib" ]] && . "$_spf_lib"
+
 # ===== 按项目定制 =====
 STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
 STATE_FILE="$STATE_DIR/state.yaml"
@@ -205,14 +211,16 @@ guard_phase() {
       local _sm_sr="${SPEC_REQUIRED:-}"
       [[ -z "$_sm_sr" ]] && _sm_sr="$(_sm_conf_val SPEC_REQUIRED)"        # #20：conf 整合
       if [[ "$_sm_sr" == "1" ]]; then
-        local _sg="${SPEC_GLOB:-docs/specs/*.md}" _sf _approved=""
+        local _sg="${SPEC_GLOB:-docs/specs/*.md}" _approved=""
         [[ "$_sg" == "docs/specs/*.md" ]] && { local _sgc; _sgc="$(_sm_conf_val SPEC_GLOB)"; [[ -n "$_sgc" ]] && _sg="$_sgc"; }
-        for _sf in "${PROJECT_DIR:-$(pwd)}"/$_sg; do
-          [[ -f "$_sf" ]] || continue
-          if grep -q '^## .*决策记录' "$_sf" 2>/dev/null && ! grep -qE '待填充|<占位符>' "$_sf" 2>/dev/null; then
-            _approved="$_sf"; break
-          fi
-        done
+        # 已批准 spec 检测自 R101 收敛到 spec-first-lib.sh（spf_*，与 fail-gate-hook/
+        # pre-commit/precheck check_spec_first 四层同源）；库缺失时降级披露不阻断流转。
+        _approved=""
+        if command -v spf_find_approved_spec >/dev/null 2>&1; then
+          _approved="$(spf_find_approved_spec "${PROJECT_DIR:-$(pwd)}" "$_sg")"
+        else
+          echo "  (spec-first-lib.sh 缺失——build 准入 spec 判定降级跳过)"
+        fi
         if [[ -n "$_approved" ]]; then
           pass "build 准入: design 阶段产出 spec 已批准（${_approved}）"
         else

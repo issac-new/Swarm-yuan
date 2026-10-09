@@ -38,6 +38,22 @@ ta_tier_of() {  # $1=tool → stdout tier（runnable/cli/deep）
   eval "echo \"\${TA_TIER_${tool}:-runnable}\""
 }
 
+# ---- R101 写时强拦截能力表（四层拦截模型 L1 面）----
+# 1 = 宿主有 PreToolUse 强拦截通道且生成链已整合（spec-first deny）；
+# 未声明 = 无写时拦截——渲染诚实降级线（gstack 先例 "advisory, not blocked"），
+# 强制时点后移到 L2 git pre-commit / L3 门禁 spec-first / L4 状态机 build 准入。
+# 实证锚：claude=hooks.json deny JSON（深度集成）；codex=.codex/hooks.json exit 2
+# （codex.sh 头注）；zcode=zcode-plugin/ 嵌套 hooks.json + config.json 注册
+# （zcode.sh 头注五条实证，2026-10-09 活体验证）。
+TA_WRITE_HOOK_claude=1
+TA_WRITE_HOOK_codex=1
+TA_WRITE_HOOK_zcode=1
+ta_write_enforce_of() {  # $1=tool → stdout "hook"（有）或空（无）
+  local tool="$1" _v
+  eval "_v=\"\${TA_WRITE_HOOK_${tool}:-}\""
+  if [[ -n "$_v" ]]; then printf 'hook'; else printf ''; fi
+}
+
 # ---- 用户级工具 home 判定（与 install.sh detect_runtimes 的 8 目录一一对应）----
 ta_is_user_level() {  # $1=tool_home
   case "$1" in
@@ -140,8 +156,23 @@ ta_upsert_marker_block() {  # <dest> <tool> <skill_name> <body_file>
   ta_write_if_changed "$merged" "$dest" "${tool} $(basename "$dest")"
 }
 
-# ---- 规则正文（各工具共享；不含时间戳，保证重渲染字节一致）----
-ta_build_body() {  # $1=skill_dir（绝对路径）→ stdout 规则正文（markdown）
+# ---- 规则正文（各工具共享骨架 + 按宿主写时拦截能力差异化的诚实降级线；不含时间戳）----
+ta_build_body() {  # $1=skill_dir（绝对路径）$2=tool（可空=不加能力行，向后兼容）→ stdout 规则正文
+  local _spf_line=""
+  local _spf_disp=""
+  if [[ -n "${2:-}" ]]; then
+    case "$2" in
+      claude) _spf_disp="Claude Code" ;; codex) _spf_disp="Codex" ;; zcode) _spf_disp="ZCode" ;;
+      cursor) _spf_disp="Cursor" ;; windsurf) _spf_disp="Windsurf" ;;
+      opencode) _spf_disp="OpenCode" ;; gemini) _spf_disp="Gemini" ;; kimi) _spf_disp="Kimi" ;;
+      *) _spf_disp="$2" ;;
+    esac
+    if [[ -n "$(ta_write_enforce_of "$2")" ]]; then
+      _spf_line="- 写时拦截：${_spf_disp} 已接 spec-first deny（宿主 hooks，L1）；git pre-commit（L2）与门禁 spec-first（L3）纵深兜底"
+    else
+      _spf_line="- 写时拦截：${_spf_disp} 无写时拦截（advisory, not blocked）——spec-first 由 git pre-commit（L2，core.hooksPath）+ 门禁 spec-first（L3）+ 状态机 build 准入（L4）强制：改源码前先写含「## 决策记录」的 spec"
+    fi
+  fi
   cat <<EOF
 ## ${TA_SKILL_NAME}（swarm-yuan 生成技能）
 
@@ -150,6 +181,7 @@ ta_build_body() {  # $1=skill_dir（绝对路径）→ stdout 规则正文（mar
 - 质量门禁：bash "$1/scripts/precheck.sh" --all（门禁配置：$1/scripts/precheck.conf）
 - 激活框架门禁：${TA_FRAMEWORKS:-未配置}
 - 流程状态机：bash "$1/scripts/state-machine.sh" status
+${_spf_line:+$_spf_line}
 
 > 本规则由 swarm-yuan generate-skill.sh --render-tools 从 SKILL.md + precheck.conf 派生；改动请重跑渲染，勿手改。
 EOF
@@ -180,7 +212,6 @@ ta_render_tools() {  # <skill_dir> [project_root] [tool]
   [[ -z "$TA_SKILL_DESC" ]] && TA_SKILL_DESC="swarm-yuan 生成技能 ${TA_SKILL_NAME}（特征卡 + 门禁 + 状态机的项目研发范式）"
   TA_FRAMEWORKS="$(ta_active_frameworks "$skill_dir" | sed -e 's/ $//' -e 's/ /, /g')"
   TA_BODY="$(mktemp "${TMPDIR:-/tmp}/rtbody.XXXXXX")"
-  ta_build_body "$skill_dir" > "$TA_BODY"
   echo "=== 渲染多平台原生规则: ${TA_SKILL_NAME}（${level} 级，目标根 ${proj}）==="
   local tools="cursor windsurf gemini codex opencode kimi zcode claude"
   [[ -n "$filter" ]] && tools="$filter"
@@ -192,6 +223,8 @@ ta_render_tools() {  # <skill_dir> [project_root] [tool]
     fi
     # shellcheck disable=SC1090
     . "$TA_DIR/$t.sh"
+    # R101：正文按宿主生成（写时拦截能力差异化诚实降级线；无差异的骨架部分逐字节一致）
+    ta_build_body "$skill_dir" "$t" > "$TA_BODY"
     if command -v "render_tool_$t" >/dev/null 2>&1; then
       if ! "render_tool_$t" "$skill_dir" "$proj" "$level"; then
         echo "  ⚠ $t 渲染失败（继续其余工具）"

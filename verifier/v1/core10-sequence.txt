@@ -1,5 +1,6 @@
 === 分支检查 ===
 === 改动范围检查 ===
+=== spec-first 流程门（L3 门禁时强拦，R101）===
 === 构建状态检查 ===
 === 敏感信息脱敏扫描（check §4 UI脱敏/日志）===
 === check_consistency（AI 自觉判断模式，GATE_AI_JUDGMENT=1）===
