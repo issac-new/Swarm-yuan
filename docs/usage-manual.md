@@ -513,6 +513,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 ### 术语词典（首次定义汇总，按拼音排序）
 
 - **本体（ontology）**：对系统全部概念的类型化声明（有什么东西、什么关系、什么动作），三份文件 objects/links/actions，是一切机制的上游。
+- **受控语言（controlled language）**：AI 面向人的输出纪律——结论先行、一词一义、术语首现定义、短句不跳跃、情态不升降级；规则见技能 references/controlled-language-methodology.md。机器账本（jsonl/conf）不受此约束。
 - **账本（ledger）**：目标项目根 `.swarm-yuan/` 下的 JSONL 留痕文件，四本：trace / decisions / gate-runs / gate-audit。
 - **档位（profile）**：生成物的轻重配置：lite / standard / compliance / auto。
 - **生成器（generator）**：swarm-yuan 本身，元技能——生成目标技能的技能。

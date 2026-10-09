@@ -149,6 +149,7 @@ UNIVERSAL_FILES=(
   "references/frontend-design-methodology.md|ref|standard"  # 前端 UI 类任务（③⑤）
   "references/codex-security-methodology.md|ref|standard"  # 安全类任务威胁建模（③）
   "references/mcp-governance.md|ref|standard"  # MCP 接入治理（目标侧 .mcp.json 配置）
+  "references/controlled-language-methodology.md|ref|lite"  # 受控语言纪律（人面输出：回复/汇报/回归报告——全档适用，含 lite）
   "references/crypto-spec.md|ref|compliance"  # check_crypto 门禁判定依据（合规档同 cwe-database 口径）
 )
 
@@ -1848,6 +1849,8 @@ for f in $_placeholder_refs; do
 > **state-machine 六阶段 ↔ 九节点对照**（粗粒度状态桶 ↔ 细粒度执行流，`scripts/state-machine.sh` 按阶段守产出物）：
 > open=①需求理解+②探查 ｜ design=③设计 spec+④实施 plan ｜ build=⑤编码实现 ｜ verify=⑥测试验证+⑦独立审查 ｜ archive=⑧合入 main ｜ operate=⑨构建发布
 
+> **回复纪律（全节点通用）**：向用户汇报的每一段话遵守受控语言——结论先行、一词一义、术语首现定义、短句不跳跃、情态不升降级；黑话替代表与报告格式见 `references/controlled-language-methodology.md`。机器账本（trace.jsonl/decisions.jsonl）不受此约束。
+
 ---
 
 ## 节点①：需求理解
@@ -2262,7 +2265,7 @@ status: draft
 > 由 swarm-yuan 生成器创建（${SWARM_YUAN_STAMP}，profile=${PROFILE}），AI 探查填充后 \`--mark-active\` 激活。填充规范见 swarm-yuan/references/template-spec.md
 
 **五层导航**（本文按理念→设计→架构→工作流程→使用组织，闭环=执勤→变化→自成长→再执勤）：
-- **理念**：拼装式开发（组件库清单=reference-manual §4，禁重复造轮子）；三权分立——特征卡立法（组件库清单载体=reference-manual）/门禁执法（precheck 四族）/审查司法（节点⑦+review-record）；诚实降级——误报走 conf+decisions.jsonl 留痕
+- **理念**：拼装式开发（组件库清单=reference-manual §4，禁重复造轮子）；三权分立——特征卡立法（组件库清单载体=reference-manual）/门禁执法（precheck 四族）/审查司法（节点⑦+review-record）；诚实降级——误报走 conf+decisions.jsonl 留痕；回复纪律——面向人的输出用受控语言（references/controlled-language-methodology.md）
 - **设计**：${_nav_design}
 - **架构**：${_nav_arch}
 - **工作流程**：${_nav_flow}

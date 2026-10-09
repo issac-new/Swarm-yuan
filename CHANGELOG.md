@@ -1,5 +1,23 @@
 # Changelog
 
+## [v2.62.0] - 2026-10-09
+
+> R100 受控语言轮（用户 /goal 触发：全流程推演与自动回归测试中，模型面向人的回复黑话多、思路跳跃，未应用公文笔法与 ASD-STE100 受控语言原则——要求全局修复）。结论：AI 面向人的输出从此有立法（references/controlled-language-methodology.md）、有接线（生成器与目标技能两侧六处）、有防复发锁（test-r100，CI 执法）。规则分两档沿用 ASD-STE100 二分：结构规则六条可机器核对（结论先行/一词一义/术语首现定义/短句单义/顺序不跳/情态不升降级），词汇规则仅方向（黑话替代表：赋能/抓手/闭环/箭头链等→具体事实）。双轨制划界：会话回复/进度汇报/回归轮报告/审查意见属人面（受控）；trace.jsonl/decisions.jsonl/conf 键值属机面（紧凑登记式，不受控）。回归轮报告定格式：首屏结论+关键数字+风险，每栈一段"命令+原文输出+结论"，过程细节归账本。
+
+### Added
+- `references/controlled-language-methodology.md`：受控语言纪律档（49→50 档）——ASD-STE100 规范思想 + 公文笔法 skill 调研档案（含改写保真基线测试）双源；六结构规则 + 黑话替代表 + 双轨制 + 回归轮报告专项 + 改写保真六件不可丢 + 30 秒写完自检。
+- `tests/test-r100-controlled-language.sh`：防复发锁（22 断言）——立法载体要素齐 / 生成器接线（SKILL.md 工作原则 + 路由表族行）/ 登记链闭环（capability-map G25② + 路由表 G25⑤ + UNIVERSAL_FILES G25⑥ + FACT_REFERENCES 计数）/ 生成物实测（lite 档随发纪律档 + standard 档 workflow 骨架含锚 + 9 节点结构不受挤占）。
+
+### Changed
+- `SKILL.md`：工作原则新增「回复纪律（受控语言）」条；参考文档路由表编排与治理族登记 controlled-language-methodology。
+- `scripts/generate-skill.sh`：UNIVERSAL_FILES 新增纪律档分发行（lite 档起随发——回复纪律不分档）；workflow.md 骨架「流程总览」后新增全节点通用回复纪律段；产物 SKILL.md 骨架理念行追加回复纪律指针（预算内，run-gen-e2e C4 锚复测通过）。
+- `references/task-methodology-router.md`：其余档场景补充到达新增人面输出 → controlled-language-methodology（全任务类型全程适用）。
+- `references/capability-map.md`：族③ 编排与治理新增登记行（来源 ASD-STE100 规范思想 + 公文笔法 skill 调研档案（A））；表头计数 48→49。
+- `assets/facts.conf`：FACT_REFERENCES 49→50 + 历史链 R100 条目；三笔计数欠账补记——FACT_SCRIPT_LOC 6541→6543（R93 2a99bb3 gates-warn 决策账本回退修复净 +2，收口未登记，本轮 git show 实测复核）、FACT_UNIVERSAL_FILES 86→87 与 lite 档 42→43（本轮 +controlled-language-methodology 分发行；另补 R88 rsi 档随发 +1 的历史链缺口——键值先于链更新，链尾曾停在 85）。
+- `docs/usage-manual.md`：术语词典新增「受控语言（controlled language）」词条。
+- `.github/workflows/ci.yml`：test-r100 入第三测试组（test-r68 后）。
+- `README.md` ×2：release badge v2.62.0。
+
 ## [v2.61.0] - 2026-10-09
 
 > R99 运行时例行刷新轮（用户 /goal 三目标触发：research 目录运行时更新到最新稳定版+差异比较+吸收+前后端回归+发版；R98 号位被并行会话 mem-adapter 轮占用，本轮顺延 R99）。3 移动物化：**claude-code 2.1.292→2.1.294**（294 **指令式钩子执行力**：prompt/agent hooks 以自然语言指令写就时宿主真正判定并执行阻断意图——「写着拦截却拦不住」终结；Stop/SubagentStop 指令钩子判定收紧；293 大修复批：`$.tool.register` isDeferred 工具 schema 延迟进 prompt+subagentStatusLine agentType+**压缩边界不动已完成态**（修把压缩前最后动作当未做完而回撤重做——compaction 是上下文手术不是任务状态重置）+**HTTP MCP 连接每请求保留至关闭的泄漏修复**+排队消息 ← 后台化保全+被移除工具不进指令+`claude plugin test` mock.session+Haiku 5.5 默认；**live CLI 2.1.294=漂移归零**）+ **ocr v1.12.13**（薄：扫描根 "." 归一+分隔符转换+LLM 独立超时/deadline 诊断文档化）+ **ruflo v3.55.0**（**共享 toast 系统成体系**：等级/去重/持久化+ADR-477 策略+toast 绑 session.start 而非 engine.create+held errors 定时释放；三平台见证清单重签）；18 行零移动。同构观察两条：**指令的裁决权上移**（claude-code 294 与 codex 0.161 提权保留拒绝面同向——守门逻辑从 prompt 层沉淀到宿主层）/ **生命周期锚点从引擎细化到会话**（ruflo toast 绑 session.start 与 claude-code 排队消息绑会话同周落位）。

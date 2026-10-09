@@ -26,6 +26,7 @@ swarm-yuan 是一个生成器：对任意代码仓库跑一次生成流程，产
 - **决策留痕**：决策三级分类（Mechanical 直接做 / Taste 给方案+推荐 / UserChallenge 必停问用户），用 `assets/trace-log.sh --decision` 落盘 decisions.jsonl。
 - **三条铁律**：① 版本锁定，不随意升级核心依赖（`--deps` 检测）；② 安全遵守 OWASP Top 10 / STRIDE / CWE（`--security`，依据 references/security-spec.md）；③ 三平台兼容，bash 硬前置（Windows 走 Git Bash/WSL）；脚本不用 `declare -A`，`sed -i.bak` 后 `rm`，`${var}` 防多字节截断，`$(cd … && pwd)` 替代 `readlink -f`。
 - **AI 判断边界**：质量类门禁（cognition/diagram/pr_quality/consistency/link_depth）是 AI 判断引导模式——脚本不假装能判断质量，AI 按检查单自查并留痕 notes/。
+- **回复纪律（受控语言）**：面向人的输出（会话回复、进度汇报、回归轮报告、审查意见、向用户提问）遵守受控语言——结论先行、一词一义、术语首现定义、短句不跳跃、情态不升降级；黑话替代表与回归轮报告格式见 [references/controlled-language-methodology.md](references/controlled-language-methodology.md)。写给机器的账本（trace.jsonl/decisions.jsonl/conf）不受此约束。
 
 ## 外部运行时整合（调用不重实现）
 
@@ -97,7 +98,7 @@ SessionStart hook（lite 档由 AI 主动）跑 `scripts/project-fingerprint.sh 
 |----|------|
 | 生成主干（Step 1-13 消费） | exploration-guide、generation-flow、template-spec、agent-skills-methodology、context-engineering-layering、task-methodology-router、cost-estimation-methodology、domain-knowledge、code-graph-tools、togaf-metamodel-methodology、frontend-design-methodology |
 | 拼装与知识消费（探查与编码节点） | lazy-generation-methodology、cordis-composability-methodology、knowledge-lifecycle-methodology、mattpocock-skills-methodology、memory-persistence、cognition-framework、cognitive-bias、logic-razor、four-theories-methodology、mea-loop-methodology |
-| 编排与治理（全程纪律） | governance-agents、subagent-orchestration、gsd-patterns、decision-governance、dsh-engineering-methodology、codex-methodology、claude-code-capabilities、mcp-governance、codex-security-methodology |
+| 编排与治理（全程纪律） | governance-agents、subagent-orchestration、gsd-patterns、decision-governance、dsh-engineering-methodology、codex-methodology、claude-code-capabilities、mcp-governance、codex-security-methodology、controlled-language-methodology（人面输出纪律） |
 | 验证与过程资产 | review-methodology、canary-monitoring、ai-process-records、quality-management-standards、rsi-evidence-methodology |
 | 安全合规与行业 | security-spec、crypto-spec、cwe-database、security-certification-profiles、standards-compliance、行业 profile 八档（`--industry` 加载：finance/gov/medical/telecom/automotive/energy/industrial/payment） |
 
