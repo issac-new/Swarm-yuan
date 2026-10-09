@@ -44,8 +44,9 @@ check_scope() {
 
 # R101 L3 门禁时强拦：git 变更触及可写源码区但无已批准 spec → fail。
 # 判据与 L1 fail-gate-hook（写时）/L2 spec-first-pre-commit（提交时）/L4 state-machine
-# build 准入同源（spf_* 判定库，precheck.sh 主文件已 source）——无 hook 宿主
-# （Cursor/Windsurf/OpenCode/Gemini/Kimi）在 ⑥测试/⑦审查/⑧合入节点的兜底强制点。
+# build 准入同源（spf_* 判定库，precheck.sh 主文件已 source）——L1 未覆盖宿主
+# （Cursor/Windsurf/OpenCode/Gemini/Kimi；hook 通道在册、本生成链未整合，见 docs/research/R102）
+# 在 ⑥测试/⑦审查/⑧合入节点的兜底强制点。
 # 跳过（⊘ 披露，绿≠合规）：SPEC_REQUIRED≠1 / WRITABLE_DIRS 未配 / 非 git 仓库 /
 # 判定库缺失 / 变更未触及可写区。
 check_spec_first() {

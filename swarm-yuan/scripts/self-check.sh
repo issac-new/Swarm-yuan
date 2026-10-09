@@ -847,9 +847,14 @@ check_bootstrap_gate() {
       warn "CI 自举 step 数=$n < 3（应含 --all/--all-full/--compliance-suite）"
       FAIL=1
     fi
-  else
-    warn "CI workflow 不存在: ${ci}（无法对账三档 step）"
+  elif [[ -d "$base/../verifier" ]]; then
+    # 生成器仓布局（repo 根有 verifier/）但缺 ci.yml = 真缺口：三档 step 无从对账
+    warn "CI workflow 不存在: ${ci}（生成器仓布局缺失，无法对账三档 step）"
     FAIL=1
+  else
+    # 部署副本布局（无 .github 与 verifier/）：CI 三档对账不适用——⊘ 跳过披露，不计 FAIL
+    # （R102：原缺文件即 warn+FAIL，软链部署副本 self-check 恒红；对齐 WP-F「跳过≠警告」口径）
+    echo "  ⊘ SKIPPED（部署副本无 .github，CI 三档 step 对账不适用）"
   fi
 }
 check_bootstrap_gate

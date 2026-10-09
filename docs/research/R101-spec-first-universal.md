@@ -35,9 +35,9 @@ FACT_GATES_BUDGET 冻结值 55→56：check_spec_first 是无 hook 宿主（5/8 
 
 ## 五、留待后续
 
-- 生成物 hooks/hooks.json 的扁平形态（Claude 面）是否被 Claude Code 宿主静默丢弃（同本轮实证②的怀疑，未在 Claude Code 活体验证）——若坐实，影响面是 Claude 宿主 L1 有效性，独立小轮处理。
-- 5 无 hook 宿主 2026-07 基线后的 hook 能力复核（Cursor/OpenCode 生态变化快）——本轮只按现状渲染降级线，接线留独立轮。
-- **软链部署下 self-check 环境性误报**（收口部署时发现，非本轮回归——R101 前的物理安装备份同代码 dotnet 双态通过，实证为布局差异）：`~/.zcode/skills/swarm-yuan` 经软链指向 `~/.cc-switch/...` 时，framework fixture 的 `__REPO_ROOT__` 替换为技能父目录，precheck 启动 cd 到 PROJECT_DIR 后 `find .` 不下钻符号链接（find 默认不穿链）——fw_dotnet_nullable 的 csproj 兜底失明、合规侧误报（81 框架中仅 dotnet 受累，因仅它走 `find .` csproj 兜底）。附带同性质提示：部署副本无 `../.github/workflows/ci.yml`（repo 布局专属，warn）。影响面=软链部署副本的 self-check 报「部分未通过」，仓内 run-sweep/verifier/release 门不受影响。候选修法（独立小轮，须过 81 框架 fixture 全矩阵防回归）：csproj 兜底改为沿 srcarr 来源目录共址搜索（语义收紧，兼修 fixture 语料隔离的潜在越界），或 find 加 -L。
+- 生成物 hooks/hooks.json 的扁平形态（Claude 面）是否被 Claude Code 宿主静默丢弃（同本轮实证②的怀疑，未在 Claude Code 活体验证）——若坐实，影响面是 Claude 宿主 L1 有效性，独立小轮处理。【已销项：坐实为真 bug，R102 改嵌套形态+机器锁，见 R102 §一】
+- 5 无 hook 宿主 2026-07 基线后的 hook 能力复核（Cursor/OpenCode 生态变化快）——本轮只按现状渲染降级线，接线留独立轮。【已销项：复核完成，五家 hook 通道均在册（4 家基线漏判+Kimi 产品更替），基线更正，接线留新轮，见 R102 §二/§五】
+- **软链部署下 self-check 环境性误报**（收口部署时发现，非本轮回归——R101 前的物理安装备份同代码 dotnet 双态通过，实证为布局差异）：`~/.zcode/skills/swarm-yuan` 经软链指向 `~/.cc-switch/...` 时，framework fixture 的 `__REPO_ROOT__` 替换为技能父目录，precheck 启动 cd 到 PROJECT_DIR 后 `find .` 不下钻符号链接（find 默认不穿链）——fw_dotnet_nullable 的 csproj 兜底失明、合规侧误报（81 框架中仅 dotnet 受累，因仅它走 `find .` csproj 兜底）。附带同性质提示：部署副本无 `../.github/workflows/ci.yml`（repo 布局专属，warn）。影响面=软链部署副本的 self-check 报「部分未通过」，仓内 run-sweep/verifier/release 门不受影响。候选修法（独立小轮，须过 81 框架 fixture 全矩阵防回归）：csproj 兜底改为沿 srcarr 来源目录共址搜索（语义收紧，兼修 fixture 语料隔离的潜在越界），或 find 加 -L。【已销项：R102 双通道修复（上溯+子树）+CI 对账三分支+install 排除 ci/，81 矩阵 81/0，见 R102 §三】
 
 ## 六、验证
 

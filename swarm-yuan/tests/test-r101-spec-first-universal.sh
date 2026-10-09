@@ -123,8 +123,8 @@ printf '%s' "$out" | grep -q "spec-first 流程门" && ok "3d --all 序列含 sp
 TB_DIR="$PWD/assets/tool-adapters"
 for t in kimi gemini cursor windsurf opencode; do
   body=$(TA_DIR="$TB_DIR" bash -c "source '$TB_DIR/common.sh'; TA_SKILL_NAME=x; TA_SKILL_DESC=x; TA_FRAMEWORKS=; ta_build_body '/sk' '$t'" 2>/dev/null)
-  if printf '%s' "$body" | grep -q "无写时拦截（advisory, not blocked）"; then
-    ok "4$t 降级线渲染（无写时拦截明示）"
+  if printf '%s' "$body" | grep -q "本生成链未整合写时拦截（advisory, not blocked）"; then
+    ok "4$t 降级线渲染（本生成链未整合写时拦截明示）"
   else
     bad "4$t 降级线缺失"
   fi

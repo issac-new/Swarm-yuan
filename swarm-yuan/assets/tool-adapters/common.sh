@@ -40,8 +40,13 @@ ta_tier_of() {  # $1=tool → stdout tier（runnable/cli/deep）
 
 # ---- R101 写时强拦截能力表（四层拦截模型 L1 面）----
 # 1 = 宿主有 PreToolUse 强拦截通道且生成链已整合（spec-first deny）；
-# 未声明 = 无写时拦截——渲染诚实降级线（gstack 先例 "advisory, not blocked"），
+# 未声明 = 本生成链未接写时拦截——渲染诚实降级线（gstack 先例 "advisory, not blocked"），
 # 强制时点后移到 L2 git pre-commit / L3 门禁 spec-first / L4 状态机 build 准入。
+# 2026-10-09 复核（docs/research/R102-legacy-items.md §二）：五宿主 hook 通道在册、本生成链未整合——
+# cursor preToolUse（deny/exit 2）/Devin CLI PreToolUse（.devin/hooks.v1.json）/opencode
+# tool.execute.before（throw 即中止）/gemini BeforeTool（decision deny）/kimi-code PreToolUse
+# （exit 2/permissionDecision）均可阻断；4 家为 2026-07 基线漏判、Kimi 为产品更替（kimi-cli
+# 已归档，接任 kimi-code）。整合待独立轮（本机 CLI 可活体实证才做，防扁平 hooks.json 同型静默失效）。
 # 实证锚：claude=hooks.json deny JSON（深度集成）；codex=.codex/hooks.json exit 2
 # （codex.sh 头注）；zcode=zcode-plugin/ 嵌套 hooks.json + config.json 注册
 # （zcode.sh 头注五条实证，2026-10-09 活体验证）。
@@ -170,7 +175,7 @@ ta_build_body() {  # $1=skill_dir（绝对路径）$2=tool（可空=不加能力
     if [[ -n "$(ta_write_enforce_of "$2")" ]]; then
       _spf_line="- 写时拦截：${_spf_disp} 已接 spec-first deny（宿主 hooks，L1）；git pre-commit（L2）与门禁 spec-first（L3）纵深兜底"
     else
-      _spf_line="- 写时拦截：${_spf_disp} 无写时拦截（advisory, not blocked）——spec-first 由 git pre-commit（L2，core.hooksPath）+ 门禁 spec-first（L3）+ 状态机 build 准入（L4）强制：改源码前先写含「## 决策记录」的 spec"
+      _spf_line="- 写时拦截：${_spf_disp} 本生成链未整合写时拦截（advisory, not blocked）——spec-first 由 git pre-commit（L2，core.hooksPath）+ 门禁 spec-first（L3）+ 状态机 build 准入（L4）强制：改源码前先写含「## 决策记录」的 spec"
     fi
   fi
   cat <<EOF
