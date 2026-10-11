@@ -52,6 +52,11 @@ e2e() {
   local rc
   bash "$SY/tests/e2e/run-e2e.sh" >/tmp/verifier-e2e.log 2>&1
   rc=$?
+  # R106 可见性修复：失败时把被 /tmp 吞掉的日志现场打出来（CI 上原本只见 E2E_RC 1 无诊断）
+  if [ "$rc" -ne 0 ]; then
+    echo "E2E 失败日志尾部（全文 /tmp/verifier-e2e.log）："
+    tail -20 /tmp/verifier-e2e.log | sed 's/^/    /'
+  fi
   echo "E2E_RC $rc"
   return "$rc"
 }
@@ -62,6 +67,13 @@ gen_e2e() {
   local rc
   bash "$SY/tests/e2e/run-gen-e2e.sh" >/tmp/verifier-gen-e2e.log 2>&1
   rc=$?
+  # R106 可见性修复：失败时把被 /tmp 吞掉的日志现场打出来（CI 上原本只见 GEN_E2E_RC 1 无诊断——
+  # f7ddd4c 超 251B 即借此洞静默合入 main）
+  if [ "$rc" -ne 0 ]; then
+    echo "GEN-E2E 失败日志尾部（全文 /tmp/verifier-gen-e2e.log）："
+    grep '✗' /tmp/verifier-gen-e2e.log | head -10 | sed 's/^/    /'
+    tail -20 /tmp/verifier-gen-e2e.log | sed 's/^/    /'
+  fi
   echo "GEN_E2E_RC $rc"
   return "$rc"
 }
@@ -188,7 +200,9 @@ bootstrap_self_gate() {
   # detached HEAD 兜底：建临时 feat 分支让分支门禁真实执行
   ( cd "$ROOT" && git checkout -b feat/verifier-bootstrap-self-gate 2>/dev/null ) || true
   local out rc
-  out=$( cd "$ROOT" && bash "$tmpdir/precheck.sh" --all 2>&1 ) || true
+  # R106 死票修复：原 `out=$(...) || true; rc=$?` 使 rc 恒为 0——precheck --all 失败
+  # 也投"通过"票（BOOTSTRAP_SELF_GATE 永远 OK）。本脚本仅 set -u 无 set -e，直接捕获真实 rc。
+  out=$( cd "$ROOT" && bash "$tmpdir/precheck.sh" --all 2>&1 )
   rc=$?
   # 清理临时分支（不破坏原 HEAD）
   ( cd "$ROOT" && git checkout - 2>/dev/null && git branch -D feat/verifier-bootstrap-self-gate 2>/dev/null ) || true
