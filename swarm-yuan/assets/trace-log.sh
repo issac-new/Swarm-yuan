@@ -35,8 +35,12 @@ D_REVERSIBILITY=""; D_CONFIDENCE=""; D_OUTCOME=""
 KEY_NODE_MODE=0; KEY_NODE_NAME=""
 # --verify-chain 模式变量（semantica 溯源哈希链吸收）
 VERIFY_CHAIN_MODE=0
+PROJECT_DIR_ARG=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    # R106-D10：头部文档一直要求"显式传 --project-dir"，但解析器从未实现该旗标——
+    # 传入即落"未知参数"exit 1，决策/调用留痕静默失败。补齐旗标（与 PROJECT_DIR 环境变量同义，旗标优先）。
+    --project-dir) PROJECT_DIR_ARG="${2:-}"; shift 2 ;;
     --node)   NODE="${2:-}";   shift 2 ;;
     --actor)  ACTOR="${2:-}";  shift 2 ;;
     --tool)   TOOL="${2:-}";   shift 2 ;;
@@ -75,7 +79,7 @@ done
 #   ③ seq 连续（重编号/跳号可检出）
 # 旧格式行（无链字段，链功能引入前落盘）跳过不计——链从首个带链字段的行起算（诚实披露边界）。
 if [[ "$VERIFY_CHAIN_MODE" -eq 1 ]]; then
-  STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
+  STATE_DIR="${PROJECT_DIR_ARG:-${PROJECT_DIR:-$(pwd)}}/.swarm-yuan"
   DEC_FILE="$STATE_DIR/decisions.jsonl"
   if [[ ! -f "$DEC_FILE" ]]; then
     echo "verify-chain: $DEC_FILE 不存在——无决策留痕可校验（vacuously intact）"
@@ -134,7 +138,7 @@ if [[ "$KEY_NODE_MODE" -eq 1 ]]; then
     echo "⚠ --key-node 缺节点名，降级记录（exit 0 不阻塞）" >&2
     exit 0
   fi
-  STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
+  STATE_DIR="${PROJECT_DIR_ARG:-${PROJECT_DIR:-$(pwd)}}/.swarm-yuan"
   if mkdir -p "$STATE_DIR" 2>/dev/null; then
     ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     _kn_line=$(printf '{"ts":"%s","key_node":"%s","actor":"%s","status":"%s","note":"%s"}' \
@@ -191,7 +195,7 @@ _line="${_line}${TOOL}"
 
 # --decision 模式：落盘 decisions.jsonl（G1 决策治理，永不 fail 阻塞主流程）
 if [[ "$DECISION_MODE" -eq 1 ]]; then
-  STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
+  STATE_DIR="${PROJECT_DIR_ARG:-${PROJECT_DIR:-$(pwd)}}/.swarm-yuan"
   if mkdir -p "$STATE_DIR" 2>/dev/null; then
     ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     # goal_id + closure（来源：better-harness）：审计单元以"目标闭环"为单位（而非"运行/会话"）
@@ -240,7 +244,7 @@ if [[ "$DECISION_MODE" -eq 1 ]]; then
 fi
 
 # 2) 落盘 trace.jsonl（失败仅 warn，不阻塞主流程）
-STATE_DIR="${PROJECT_DIR:-$(pwd)}/.swarm-yuan"
+STATE_DIR="${PROJECT_DIR_ARG:-${PROJECT_DIR:-$(pwd)}}/.swarm-yuan"
 if mkdir -p "$STATE_DIR" 2>/dev/null; then
   ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   if ! printf '{"ts":"%s","node":"%s","actor":"%s","tool":"%s","status":"%s","note":"%s"}\n' \

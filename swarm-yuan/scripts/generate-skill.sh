@@ -230,7 +230,7 @@ merge_precheck_conf() {
     seen="$seen $new"; fws+=("$new")
   done <<< "$_af"
   [[ ${#fws[@]} -eq 0 ]] && { echo "  （ACTIVE_FRAMEWORKS 为空，跳过变量补占位）"; return 0; }
-  local frag var missing=()
+  local frag var missing=() _mu_line _mu_file
   for fw in "${fws[@]}"; do
     frag="$paradigm_dir/assets/framework-gates/$fw.sh"
     [[ -f "$frag" ]] || continue
@@ -238,8 +238,12 @@ merge_precheck_conf() {
     req=$(sed -n 's/^# ruleset:.*requires_conf: *//p' "$frag" | tr -s ' ')
     for var in $req; do
       # 变量可能定义在主 conf 或 arch conf（物理三分），两处都查
-      grep -q "^${var}=" "$conf" 2>/dev/null && continue
-      [[ -f "$merge_target" ]] && grep -q "^${var}=" "$merge_target" 2>/dev/null && continue
+      # R106-D12 同款修复：行存在但值为空不算"已声明"（与 mark-active 语义对齐），
+      # 空行就地打 TODO(upgrade) 标记，行缺失才追加占位。
+      _mu_line=$( { grep -h "^${var}=" "$conf" 2>/dev/null; [[ -f "$merge_target" ]] && grep -h "^${var}=" "$merge_target" 2>/dev/null; } | head -1 || true)
+      if [[ -n "${_mu_line}" && "${_mu_line}" != *"()"* && "${_mu_line}" != *'=""'* && "${_mu_line}" != *"=() "* && "${_mu_line}" != *='""'* ]]; then
+        continue  # 行存在且非空——用户已配置
+      fi
       missing+=("$var")
     done
   done
@@ -250,11 +254,31 @@ merge_precheck_conf() {
     useen="$useen $var"; uniq_missing+=("$var")
   done
   if [[ ${#uniq_missing[@]} -gt 0 ]]; then
-    echo "" >> "$merge_target"
-    echo "# ===== 由 upgrade 增量补充（激活框架需要的变量，用户未声明）=====" >> "$merge_target"
+    local _mu_hdr=0
     for var in "${uniq_missing[@]}"; do
-      printf '%s=()  # TODO(upgrade): 由用户按项目实际填充\n' "$var" >> "$merge_target"
-      echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
+      # R106-D12：行存在但为空 → 就地打 TODO(upgrade) 标记（幂等）；行缺失才追加。
+      _mu_file=""
+      if [[ -f "$merge_target" ]] && grep -q "^${var}=" "$merge_target" 2>/dev/null; then
+        _mu_file="$merge_target"
+      elif grep -q "^${var}=" "$conf" 2>/dev/null; then
+        _mu_file="$conf"
+      fi
+      if grep -q "^${var}=.*TODO(upgrade)" "$conf" 2>/dev/null || \
+         { [[ -f "$merge_target" ]] && grep -q "^${var}=.*TODO(upgrade)" "$merge_target" 2>/dev/null; }; then
+        continue
+      fi
+      if [[ -n "${_mu_file}" ]]; then
+        sed -i.bak -E "s|^(${var}=.*)$|\1  # TODO(upgrade): 激活框架变量空值就地标记，由用户按项目实际填充|" "${_mu_file}" && rm -f "${_mu_file}.bak"
+        echo "⚠ conf 变量 ${var} 存在但为空，已就地打 TODO(upgrade) 标记（须填充）"
+      else
+        if [[ "${_mu_hdr}" -eq 0 ]]; then
+          echo "" >> "$merge_target"
+          echo "# ===== 由 upgrade 增量补充（激活框架需要的变量，用户未声明）=====" >> "$merge_target"
+          _mu_hdr=1
+        fi
+        printf '%s=()  # TODO(upgrade): 由用户按项目实际填充\n' "$var" >> "$merge_target"
+        echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
+      fi
     done
   fi
 }
@@ -427,7 +451,7 @@ inject_frameworks() {
   local block; block="$(mktemp /tmp/fwblock.XXXXXX)"
   local uncovered=() missing_conf=()
   echo '# >>> swarm-yuan:framework-gates >>> （由 generate-skill.sh --inject-frameworks 维护，勿手改）' > "$block"
-  local fw frag req var
+  local fw frag req var _vc_line
   for fw in "${ACTIVE_FRAMEWORKS[@]}"; do
     frag="$paradigm_dir/assets/framework-gates/$fw.sh"
     if [[ -f "$frag" ]]; then
@@ -436,8 +460,14 @@ inject_frameworks() {
       req=$(sed -n 's/^# ruleset:.*requires_conf: *//p' "$frag" | tr -s ' ')
       for var in $req; do
         # 变量可能定义在主 conf 或 arch conf（物理三分），两处都查
-        grep -q "^${var}=" "$conf" 2>/dev/null && continue
-        [[ "$arch_conf" != "$conf" ]] && grep -q "^${var}=" "$arch_conf" 2>/dev/null && continue
+        # R106-D12：行存在但值为空（()/""）不再视为"已配置"——与 mark-active"空=未填"
+        # 语义对齐。原实现只查行存在：静态模板自带空行的框架（react/vite/vitest 等）永远
+        # 等不到 TODO 占位行，交接清单"按 TODO(framework-gates) 标记行填"照办必漏、
+        # mark-active 必拦。空行进 missing_conf，由下方写入段就地打标记。
+        _vc_line=$( { grep -h "^${var}=" "$conf" 2>/dev/null; [[ "$arch_conf" != "$conf" ]] && grep -h "^${var}=" "$arch_conf" 2>/dev/null; } | head -1 || true)
+        if [[ -n "${_vc_line}" && "${_vc_line}" != *"()"* && "${_vc_line}" != *'=""'* && "${_vc_line}" != *"=() "* && "${_vc_line}" != *='""'* ]]; then
+          continue  # 行存在且非空——真已配置
+        fi
         missing_conf+=("$var")
       done
     else
@@ -505,9 +535,28 @@ inject_frameworks() {
   rm -f "$tmp" "$block"
 
   # 3) 缺失 conf 变量：注入占位 + warn（不静默）——落 arch conf（框架变量组）
+  # R106-D12：行已存在但为空时不再追加重复行——就地给该行追加 TODO(framework-gates)
+  # 标记（幂等：已带标记不再打），交接清单"按标记行填"即可覆盖全部激活框架；
+  # 行不存在才追加新占位行（原行为）。
+  local _mt_file
   for var in ${missing_conf[@]+"${missing_conf[@]}"}; do
-    printf '%s=()  # TODO(framework-gates): 由生成流程 Step 4 框架深化门禁注入填充\n' "${var}" >> "$arch_conf"
-    echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
+    if grep -q "^${var}=.*TODO(framework-gates)" "$arch_conf" 2>/dev/null || \
+       { [[ -f "$conf" ]] && grep -q "^${var}=.*TODO(framework-gates)" "$conf" 2>/dev/null; }; then
+      continue  # 已带标记——幂等跳过
+    fi
+    _mt_file=""
+    if grep -q "^${var}=" "$arch_conf" 2>/dev/null; then
+      _mt_file="$arch_conf"
+    elif [[ -f "$conf" ]] && grep -q "^${var}=" "$conf" 2>/dev/null; then
+      _mt_file="$conf"
+    fi
+    if [[ -n "${_mt_file}" ]]; then
+      sed -i.bak -E "s|^(${var}=.*)$|\1  # TODO(framework-gates): 激活框架变量（R106-D12 空值行就地标记），由生成流程 Step 4 框架深化门禁注入填充|" "${_mt_file}" && rm -f "${_mt_file}.bak"
+      echo "⚠ conf 变量 ${var} 存在但为空，已就地打 TODO(framework-gates) 标记（须填充）"
+    else
+      printf '%s=()  # TODO(framework-gates): 由生成流程 Step 4 框架深化门禁注入填充\n' "${var}" >> "$arch_conf"
+      echo "⚠ conf 缺失变量 ${var}，已注入占位（须填充）"
+    fi
   done
 
   # 4) 未覆盖框架：warn 列出（不静默跳过）
@@ -1324,7 +1373,11 @@ auto_detect_profile() {
   sig=$(grep -rliE '等保|密评|GB/T[[:space:]]*39786|GB/T[[:space:]]*22239|个人信息保护|个保法|金融行业|医疗行业' \
         "$proj/docs" "$proj"/README* 2>/dev/null | head -1 || true)
   if [[ -n "$sig" ]]; then
-    echo "compliance"; return
+    # 输出两行：第 1 行档位结果，第 2 行完整判定依据（R106 修复：理由只在函数内拼装，
+    # 调用方曾自建理由串丢失框架信号等升档缘由——判定与理由单一来源，防再漂移）
+    echo "compliance"
+    echo "命中合规信号（等保/密评/个保法/金融/医疗关键词：${sig}）"
+    return
   fi
   # 规模信号：文件数（head 截断加速，≥阈值即 standard；统计失败按 standard--默认不降）
   # _lite_max+1 截断：文件数 < _lite_max 才 lite，截断到 _lite_max+1 足够判定
@@ -1394,6 +1447,7 @@ auto_detect_profile() {
     result="standard"; reason="${reason}；monorepo 信号（lerna/pnpm-workspace/turbo → 升 standard）"
   fi
   echo "$result"
+  echo "${reason:-信号模糊（默认 standard）}"
 }
 
 # Windows 路径转换（.bat 包装器 %* 原样透传，C:\proj 在 Git Bash 反斜杠被吞、WSL 下非法路径）。
@@ -1438,46 +1492,15 @@ fi
 mkdir -p "$TARGET_DIR"
 
 # auto 档解析为具体档（在 PROJECT_DIR 校验后、骨架创建前；输出判定依据供用户评估）
+# R106 修复：原调用方在此重复实现一遍信号计算来自建理由串，且丢了函数内独有的
+# 框架信号/微服务信号/monorepo 升档缘由（go.mod 26 依赖升 standard 时打印只剩
+# "文件数 35（<80 → lite）"——判定依据与结论自相矛盾）。判定与理由合一到
+# auto_detect_profile（两行输出），调用方只消费不再重算。
 if [[ "$PROFILE" == "auto" ]]; then
-  # WP-CogAudit：source profile-thresholds.conf 让 reason 文案的阈值与 auto_detect_profile 一致（消除死配置）
-  if [[ -z "${PROFILE_LITE_MAX_FILES:-}" ]]; then
-    _pthr2="${BASE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/assets/profile-thresholds.conf"
-    [[ -f "$_pthr2" ]] && { set +u; # shellcheck disable=SC1090
-      source "$_pthr2"; set -u; }
-  fi
-  _auto_reason=""
-  # 注：先捕获再判空——pipefail 下 grep|head 的 SIGPIPE(141) 会让 if 管道直接误判（全库已知坑）
-  _sig=$(grep -rliE '等保|密评|GB/T[[:space:]]*39786|GB/T[[:space:]]*22239|个人信息保护|个保法|金融行业|医疗行业' \
-      "$PROJECT_DIR/docs" "$PROJECT_DIR"/README* 2>/dev/null | head -1 || true)
-  if [[ -n "$_sig" ]]; then
-    _auto_reason="命中合规信号（等保/密评/个保法/金融/医疗关键词：${_sig}）"
-  else
-    # WP-R Bug#1: find|head -81|wc -l 在 $(...) 内 set -e 不传播，但 pipefail 下 find SIGPIPE(141)
-    # 会使赋值非零（虽 head -81 有意截断计数）。改用 find -printf '' 计数或 awk 统计避免截断管道。
-    # 这里只需"是否 ≥80 文件"判定，用 find ... | wc -l 全量计数（不截断）更准且无 SIGPIPE。
-    _fc=$(find "$PROJECT_DIR" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.claude/*' -not -path '*/.codex/*' -not -path '*/.swarm-yuan/*' 2>/dev/null | wc -l | tr -d ' ')
-    _auto_reason="规模信号：文件数 ${_fc:-?}（<${PROFILE_LITE_MAX_FILES:-80} → lite，否则 standard）"
-  fi
-  # 技术栈复杂度信号（只升不降，质量优先）
-  # WP-R Bug#1: 原 find|head -1|grep -q . 在 set -euo pipefail 下，find 输出被 head 截断收 SIGPIPE(141)，
-  # pipefail 使管道非零 → && 链非零 → set -e 触发脚本退出（5/5 真实项目崩溃 exit 141）。
-  # 改用 find -print -quit：find 原生首匹配即停，无管道无 SIGPIPE。
-  _forms=0
-  find "$PROJECT_DIR" -type f \( -name "*.vue" -o -name "*.jsx" -o -name "*.tsx" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
-  find "$PROJECT_DIR" -type f \( -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rb" -o -name "*.php" -o -name "*.kt" -o -name "*.rs" -o -name "*.cs" -o -name "*.swift" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
-  _pkg_jsons2=$(find "$PROJECT_DIR" -name package.json -not -path '*/node_modules/*' 2>/dev/null || true)
-  if [[ -n "$_pkg_jsons2" ]]; then
-    printf '%s\n' "$_pkg_jsons2" | xargs grep -lE '"(express|koa|fastify|@nestjs/[a-z-]+|hapi|egg)"' 2>/dev/null | grep -q . && _forms=$((_forms+1))
-  fi
-  find "$PROJECT_DIR" -type f \( -name "*consumer*" -o -name "*listener*" -o -name "*subscriber*" -o -name "*message*handler*" -o -name "*event*handler*" -o -name "*queue*handler*" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -print -quit 2>/dev/null | grep -q . && _forms=$((_forms+1))
-  { [[ -d "$PROJECT_DIR/electron" || -d "$PROJECT_DIR/src-tauri" || -d "$PROJECT_DIR/android" || -d "$PROJECT_DIR/ios" ]]; } && _forms=$((_forms+1))
-  _msig=""
-  if [[ -d "$PROJECT_DIR/services" ]]; then
-    _svc_cnt=$(find "$PROJECT_DIR/services" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
-    [[ "$_svc_cnt" =~ ^[0-9]+$ && "$_svc_cnt" -ge 2 ]] && { _forms=$((_forms+1)); _msig="services/ 含 ${_svc_cnt} 服务"; }
-  fi
-  [[ $_forms -ge ${PROFILE_FORMS_THRESHOLD:-3} ]] && _auto_reason="${_auto_reason}；技术栈复杂度：${_forms} 种形态${_msig:+（${_msig}）}（≥${PROFILE_FORMS_THRESHOLD:-3} → 升 standard）"
-  PROFILE=$(auto_detect_profile "$PROJECT_DIR")
+  _detected=$(auto_detect_profile "$PROJECT_DIR")
+  PROFILE=$(printf '%s\n' "${_detected}" | sed -n 1p)
+  _auto_reason=$(printf '%s\n' "${_detected}" | sed -n 2p)
+  [[ -n "${_auto_reason}" ]] || _auto_reason="信号模糊（默认 standard）"
   echo "profile auto 判定: ${PROFILE}（${_auto_reason}；信号明确才升档，模糊走默认 standard。显式 --profile 可覆盖）"
 fi
 
@@ -2308,7 +2331,23 @@ _detect_delivery_shapes() {
   if find "$d" -maxdepth 3 \( -name 'vite.config.*' -o -name 'next.config.*' -o -name 'index.html' \) 2>/dev/null | grep -q .; then
     out="${out:+${out}；}web-frontend（运行证据=真实浏览器走查帧）"
   fi
+  # backend-service 判据（R106-D9 扩容：原 Dockerfile/src/server* 偏 JS——Go/Django/JVM 后端全漏，
+  # go-forge 回归实证 13 条 REST 路由只因 internal/ 布局嗅不出形态）。任一命中即计一次（去重防拼接）。
+  local _be_svc=0
   if find "$d" -maxdepth 3 \( -name 'Dockerfile' -o -path '*/src/server*' \) 2>/dev/null | grep -q .; then
+    _be_svc=1
+  fi
+  if [[ "$_be_svc" -eq 0 ]] && find "$d" -maxdepth 3 -name 'go.mod' 2>/dev/null | grep -q . && \
+     { find "$d" -maxdepth 3 \( -name 'main.go' -o -name 'cmd' \) 2>/dev/null | grep -q .; }; then
+    _be_svc=1
+  fi
+  if [[ "$_be_svc" -eq 0 ]] && find "$d" -maxdepth 3 -name 'manage.py' 2>/dev/null | grep -q .; then
+    _be_svc=1
+  fi
+  if [[ "$_be_svc" -eq 0 ]] && find "$d" -maxdepth 2 \( -name 'pom.xml' -o -name 'build.gradle' -o -name 'build.gradle.kts' \) 2>/dev/null | grep -q .; then
+    _be_svc=1
+  fi
+  if [[ "$_be_svc" -eq 1 ]]; then
     out="${out:+${out}；}backend-service（运行证据=启动冒烟日志+跨模块契约测试）"
   fi
   if find "$d" -maxdepth 3 \( -path '*android/app/build.gradle*' -o -name 'project.pbxproj' \) 2>/dev/null | grep -q .; then
