@@ -536,6 +536,14 @@ check_security() {
     if echo "$line" | grep -qE '\$\{[A-Z_][A-Z_0-9]*\}|\$\{placeholders\}|encodeURIComponent'; then
       continue
     fi
+    # ★参数化绑定值豁免（R106-D13）：SQL 字面量含 ? 占位符且后随逗号——拼接只发生在
+    # 绑定值实参位（GORM/参数化 query 标准写法 Where("... LIKE ?", "%"+name+"%")），
+    # 且关键字字面量本身不被 + 拼接（"SELECT ... " + var 形态仍拦）。误报实证：go-forge
+    # 回归轮参数化子查询（IN (SELECT ... LIKE ?) + "%"+custName+"%"）被误判注入 fail。
+    if echo "$line" | grep -qE '"[^"]*(SELECT|INSERT|UPDATE|DELETE|DROP)[^"]*\?[^"]*"[[:space:]]*,' \
+      && ! echo "$line" | grep -qE '"[^"]*(SELECT|INSERT|UPDATE|DELETE|DROP)[^"]*"[[:space:]]*\+'; then
+      continue
+    fi
     if [[ $in_whitelist -eq 1 ]]; then
       warn "MyBatis \${} 白名单命中（须人工确认安全）：$line"
     # ★语义豁免（变量经 sanitize 函数，ERE 不可判）：降级 warn 人工复核，不 fail

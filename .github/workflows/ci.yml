@@ -172,23 +172,28 @@ jobs:
           rm -rf "$tmpdir"
           [[ "$rc" -eq 0 ]] && echo "✓ Generator self-gate passed (precheck --compliance-suite RC=0)" || { echo "✗ Generator self-gate --compliance-suite failed RC=$rc"; exit 1; }
 
-  # ---------- Job 3：self-check 时效检查 + 运行时工具检测 ----------
+  # ---------- Job 3：self-check 全量诚实门禁（R106：原管道吞退出码——只验证"跑过"不验证"通过"，----------
+  # 3 处 G20 违规 + gen-e2e 超预算合入 main 即此洞；改跑 --check-only --ci 全量面：
+  # 运时缺失=环境态豁免只披露，文档一致性/G20/G22 等代码性违规照旧 fail-closed，退出码硬断言）
   self-check:
-    name: Self-check (freshness + runtimes)
+    name: Self-check (full, honest exit code)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: swarm-yuan
     steps:
       - uses: actions/checkout@v5
-      - name: self-check.sh (framework freshness + runtime detection)
-        # self-check 检测 11 个运行时工具（openspec/comet/graphify 等），
-        # CI 环境未装这些工具会 miss 但不 fail（设计如此：手动安装的需按提示操作）。
-        # 重点验证：fw_freshness_check 实际执行（非死代码）+ 脚本无语法错。
+      - name: self-check.sh --check-only --ci (full local checks, runtime misses waived as environment)
+        # 断言三件：① 脚本无语法错 ② 时效检查实际执行（防死代码回潮）③ 退出码=0（诚实门禁本体）。
+        # 注意不能用 `bash ... | grep`——管道会吞退出码（R106 实锤：违规合入 main 时本 job 仍绿）。
         run: |
           bash -n scripts/self-check.sh
-          bash scripts/self-check.sh 2>&1 | grep -q "框架规则库时效检查" || { echo "✗ fw_freshness_check 未执行"; exit 1; }
-          echo "✓ self-check 时效检查执行正常"
+          bash scripts/self-check.sh --check-only --ci > /tmp/selfcheck.log 2>&1
+          rc=$?
+          grep -q "框架规则库时效检查" /tmp/selfcheck.log || { echo "✗ fw_freshness_check 未执行"; exit 1; }
+          grep -q "多字节相邻变量铁律" /tmp/selfcheck.log || { echo "✗ G20 检查未执行"; exit 1; }
+          if [ "$rc" -ne 0 ]; then echo "✗ self-check 退出码 $rc（诚实门禁：违规即红）"; cat /tmp/selfcheck.log; exit 1; fi
+          echo "✓ self-check 全量通过（运行时缺失已按环境态披露豁免）"
       - name: 计量/信号/维度/框架证据/conf/上下文/对比报告测试（WP-P0~P6）
         run: |
           bash tests/test-context-surface.sh
@@ -219,6 +224,8 @@ jobs:
           bash tests/test-r102-legacy-items.sh
           bash tests/test-r103-host-hooks.sh
           bash tests/test-r104-offline-bundle.sh
+          bash tests/test-r106-ci-honesty.sh
+          bash tests/test-r106-devchain-fixes.sh
           bash tests/test-compare-baseline.sh
           bash tests/test-gate-trends.sh
       - name: 治理/hook/账本/指纹/记忆写回/行业 profile 测试（audit-claims-reality 接线）
@@ -322,10 +329,14 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
       - name: verifier all (79 fixture id 级 + 48 gate-fixture + e2e + cli-ab + metrics-assert)
         # verifier all 较慢（cli-ab 155 次调用 ~3-5min），设 timeout 15min
+        # R106 诚实性修复：GitHub step 默认 bash -e，脚本非零时 `rc=$?` 永不可达（死代码，
+        # ✗ 汇总行从未打出）；先 set +e 再捕获，失败时现场已由 run-verifier.sh 尾段打印。
         timeout-minutes: 15
         run: |
+          set +e
           bash ../verifier/v1/run-verifier.sh all
           rc=$?
+          set -e
           [[ "$rc" -eq 0 ]] && echo "✓ verifier all passed" || { echo "✗ verifier all failed RC=$rc"; exit 1; }
 
   # ---------- Job 6b：真实项目冒烟（R9 核心建议：fixture 不能替代真实项目测试）----------

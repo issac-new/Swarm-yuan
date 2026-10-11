@@ -24,7 +24,7 @@
 set -uo pipefail
 FAIL=0
 pass(){ echo "  ✓ $1"; }
-miss(){ echo "  ✗ $1 未安装"; FAIL=1; return 1; }
+miss(){ if [[ $CI_MODE -eq 1 ]]; then echo "  ⚠ $1 未安装（--ci 环境豁免：CI 容器无此运行时属环境态，非代码缺陷）"; return 1; fi; echo "  ✗ $1 未安装"; FAIL=1; return 1; }
 warn(){ echo "  ⚠ $1"; }
 
 # ---------- 源码包 Release 配置 ----------
@@ -317,6 +317,7 @@ install_hint() {
 }
 
 CHECK_ONLY=0
+CI_MODE=0
 SINGLE=""
 FORCE_LATEST=1   # 默认拉最新版
 
@@ -324,11 +325,17 @@ FORCE_LATEST=1   # 默认拉最新版
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --check-only) CHECK_ONLY=1; FORCE_LATEST=0; shift ;;
+    --ci) CI_MODE=1; shift ;;
     --install) SINGLE="${2:-}"; shift; [[ $# -gt 0 ]] && shift ;;
     --latest) FORCE_LATEST=1; shift ;;
-    *) echo "✗ 未知参数: $1"; echo "用法: bash self-check.sh [--check-only] [--install <name>] [--latest]"; exit 1 ;;
+    *) echo "✗ 未知参数: $1"; echo "用法: bash self-check.sh [--check-only] [--ci] [--install <name>] [--latest]"; exit 1 ;;
   esac
 done
+if [[ $CI_MODE -eq 1 ]]; then
+  # CI 诚实性（R106 立法）：运行时缺失=环境态非代码缺陷，豁免 FAIL 只披露；
+  # 文档一致性/框架规则集/上游基线/G20 等本地检查段照旧 fail-closed。
+  echo "  （--ci 模式：运行时缺失仅披露不计 FAIL——CI 容器未装 11 运行时属环境态；代码与文档一致性违规照旧 fail）"
+fi
 
 echo "=========================================="
 echo "  swarm-yuan 自检：11 个项目运行时"
