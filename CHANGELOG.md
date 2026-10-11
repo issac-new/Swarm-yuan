@@ -12,8 +12,12 @@
 - `references/subagent-orchestration.md`：R106 注记——压缩纪律须经压力例 eval（v7.0.0 TDD 段压缩实测退化 8/10→5/10 后回滚，方法层：压缩优化必须带压力例 eval，不能只看正常触发路径）。
 - `swarm-yuan/research/`：graphify v0.9.85 + codex rust-v0.162.1 + ruflo v3.56.5 + comet 0.4.5 + superpowers v7.0.0 checkout。
 
-### Verified（前后端项目回归：note-forge 全栈样例再证）
-- 待本轮回归执行后回填（见发版记录）。
+### Verified（前后端项目回归：todo-fullstack 紧凑全栈样例 + 并行 gin-react 深回归）
+- 回归载体：todo-fullstack（Vue3+Vite+TS 前端 / Go 1.27 stdlib 后端，双端真实工具链）。
+- 真实工具链双过：`go vet` + `go build` 零错；`vite build` 产物 3 件成功。
+- 技能管线四步：detect-frameworks 探出 vue+vite（Go stdlib 在规则面外为已知边界——gin 规则面向 gin 工程，探测面诚实记录）→ generate-skill draft 骨架生成 → relations-extract 8 条 import 边（file:line 证据）→ inventory-verify 三态诊断正确（含 DIM_MISMATCH 对未填充 draft 维度的正确 FAIL——验证器行为即回归点）。
+- 门禁终态：self-check 通过；test-r68-jargon-free 17 ok 0 fail；run-sweep 全绿（60+ 项 0 fail）。
+- 深度回归（gin-react 全栈样例 + 生成/执勤链缺陷修复三批）由并行轮 feat/r106-gin-react-regression 执行中，落地后随下版入账。
 
 ## [v2.69.0] - 2026-10-10
 
