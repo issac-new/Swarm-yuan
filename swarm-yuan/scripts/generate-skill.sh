@@ -744,7 +744,12 @@ verify_completeness() {
     # 节点段标题判定：标题行含「节点」且含冒号（如「## 节点①：需求理解」）。
     # 不用正则字符类匹配①-⑩/CJK数字——BSD awk 20200816 把多字节字符类按字节解析
     # 导致 [一] 匹配任意 ASCII 字符（已实测）。index() 固定子串匹配对 UTF-8 安全。
+  # 交付形态 DoD 在位性（2026-10-11 根治）：嗅探到运行面形态而 workflow 无「交付形态」段=留痕
+  if [[ -n "${_DELIVERY_SHAPES:-}" && "$_DELIVERY_SHAPES" != 未嗅探到* && -f "$wf" ]] && ! grep -q '交付形态' "$wf"; then
+    trace_miss=$(printf '%s\n%s' "$trace_miss" "references/workflow.md: 缺交付形态 DoD 段（嗅探到 ${_DELIVERY_SHAPES}——⑤/⑥/⑨ 节点须按形态写运行证据与 RUNTIME-结论行，单测全绿≠可运行）")
+  fi
     trace_miss=$(awk '
+
       /^## / && index($0, "节点") > 0 && (index($0, "：") > 0 || index($0, ":") > 0) {
         if (node != "" && !has) print FILENAME":"line": 节点段缺追踪要素（R13 4 要素模型：⑥ 产出物与追踪段须含 trace-log.sh 调用）: " node
         if (node != "" && !meth) print FILENAME":"line": 节点段缺方法论引用要素（R52 补强：⑩ 方法论引用须含 references 档，互为正反 task-methodology-router 路由表）: " node
@@ -1847,6 +1852,7 @@ for f in $_placeholder_refs; do
 
 > 填充规范：九节点全流程，每节点 4 要素（入口/参与方/门禁/产出物与调用追踪）+ ⑨调用追踪/⑩方法论引用机器校验要素（verify-completeness 逐节点断言），4-Phase SOP。
 > 节点的标准结构定义在生成器仓 references/template-spec.md §2（该文件不随技能分发）；⑥测试验证与⑦独立审查是两个独立节点（审查记录落 review-record）；整个流程可按项目实际裁剪。
+> **交付形态 DoD（2026-10-11 平台根治）**：本仓嗅探到运行面交付形态（见 SKILL.md 认知表）时，⑤编码/⑥测试/⑨构建发布三节点的「产出物」要素必须按形态写运行证据（mini-program=真开发者工具 runtime-proof；web-frontend=浏览器走查帧；backend-service=启动冒烟+跨模块契约测试；mobile-app=模拟器启动证据）与结论行 RUNTIME-OK/RUNTIME-FAIL——单测全绿不等于可运行（run14 教训，QGate delivery.runtime-evidence 门在 task_close 拦截）。
 
 ## 流程总览
 
@@ -2292,6 +2298,26 @@ else
   _nav_arch="项目认知=下方摘要表；六段式结构+框架规律→references/framework-knowledge.md（按 ACTIVE_FRAMEWORKS 生成）"
   _nav_flow="开发工作流九节点（①需求→…→⑨发布）→references/workflow.md；任务配方→references/recipes.md（②探查先查）；守卫链=spec-first hook（无 spec 写码即拦）→状态机阶段守卫→门禁序列→拦截落 gate-deny.jsonl"
 fi
+# ── 交付形态嗅探（2026-10-11 平台根治：交付六型 DoD 盖章，run14 教训——单测全绿≠可运行）──
+# 形态标记与每型运行证据的正本=Swarm Studio custom/server/delivery-contract；此处仅嗅探呈现，AI 核正后写入 DoD。
+_detect_delivery_shapes() {
+  local d="$1" out=""
+  if find "$d" -name '*.wxml' -o -name '*.axml' -o -name 'project.config.json' -o -name 'mini.project.json' 2>/dev/null | grep -q .; then
+    out="mini-program（运行证据=真开发者工具 runtime-proof：编译+启动+首帧，launchOk/screenshot/checkedAt）"
+  fi
+  if find "$d" -maxdepth 3 \( -name 'vite.config.*' -o -name 'next.config.*' -o -name 'index.html' \) 2>/dev/null | grep -q .; then
+    out="${out:+$out；}web-frontend（运行证据=真实浏览器走查帧）"
+  fi
+  if find "$d" -maxdepth 3 \( -name 'Dockerfile' -o -path '*/src/server*' \) 2>/dev/null | grep -q .; then
+    out="${out:+$out；}backend-service（运行证据=启动冒烟日志+跨模块契约测试）"
+  fi
+  if find "$d" -maxdepth 3 \( -path '*android/app/build.gradle*' -o -name 'project.pbxproj' \) 2>/dev/null | grep -q .; then
+    out="${out:+$out；}mobile-app（运行证据=模拟器/真机安装启动）"
+  fi
+  echo "${out:-未嗅探到运行面形态（governance-doc/library-sdk 类由 AI 按任务判定并在 DoD 声明证据面）}"
+}
+_DELIVERY_SHAPES=$(_detect_delivery_shapes "$PROJECT_DIR")
+
 cat > "$SKILL_DIR/SKILL.md" <<EOF
 ---
 name: $SKILL_NAME
@@ -2317,6 +2343,7 @@ status: draft
 | 构建命令 | $(grep -m1 '^BUILD_CMD=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null | sed "s/^BUILD_CMD=//;s/'//g;s| *#.*||" || echo "（AI 探查填充）") |
 | 测试命令 | $(grep -m1 '^TEST_CMD=' "$SKILL_DIR/scripts/precheck.conf" 2>/dev/null | sed "s/^TEST_CMD=//;s/'//g;s| *#.*||" || echo "（AI 探查填充）") |
 | 检测框架 | $(bash "$SRC_SCRIPTS/detect-frameworks.sh" "$PROJECT_DIR" 2>/dev/null | grep -E '^ACTIVE_FRAMEWORKS=' | sed 's/^ACTIVE_FRAMEWORKS=//;s/[()"]//g' || echo "（无已知框架）") |
+| 交付形态嗅探 | ${_DELIVERY_SHAPES}（AI 核正；每型运行证据=完成定义的一部分，单测全绿不等于可运行） |
 
 > 项目类型与改造分类（A/B）由 AI 探查判定（§D.0 语义判断）；生成器只做自动嗅探（命令/框架清单）。
 
@@ -2328,11 +2355,13 @@ EOF
 if [[ "$PROFILE" != "lite" ]]; then
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] workflow: 九节点+每节点 4 要素（入口/参与方/门禁/产出物与调用追踪）+4-Phase SOP
+- [ ] delivery: 交付形态 DoD（按认知表嗅探结果逐型落完成定义：每型运行证据工件+结论行 RUNTIME-OK/RUNTIME-FAIL；mini-program/web-frontend/mobile-app 型禁以单测全绿声明可运行——run14 教训）；QGate 形态门 delivery.runtime-evidence 会在 task_close 拦截缺证
 - [ ] reference: codebase/dev-guide/release/reference-manual/recipes（任务配方） + 方法论+认知 reference
 EOF
 else
 cat >> "$SKILL_DIR/SKILL.md" <<EOF
 - [ ] reference: reference-manual（特征卡 P0 六项 + 全量构件库清单）
+- [ ] delivery: 交付形态 DoD（同上——每型运行证据+RUNTIME-结论行，单测全绿≠可运行）
 EOF
 fi
 # R33-F1：检测到框架时显式交接 conf 框架 glob 填充（否则 TODO(framework-gates) 注释是唯一线索，
