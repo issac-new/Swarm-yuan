@@ -566,3 +566,11 @@ swarm-yuan 的 `state-machine.sh` 采用 `sanitize_input` 白名单字符集过�
 - **与既有能力的关系**：ECC 上下文经济学（compaction/蒸馏）方向相反——那是"事后压缩已进入的"，codemode 是"事前阻止进入"；与上文任务图并行实现协议（子代理扇出）、 Mods `turn.step` 就地代答并列为编排形态第三选项。
 - **对照警示**：DSH 的 `code-runtime` 包（0.1.x 线）在 0.2.1 移除——进程内代码执行形态在大厂运行时也未站稳；形态选型时优先子代理扇出，codemode 备查。
 - **暂不采用**：Claude Code 无进程内沙箱脚本能力（Mods 非沙箱）；宿主出现等价能力时再评估。
+
+
+### 压缩纪律须经压力例 eval（superpowers v7.0.0）
+
+- **背景**：superpowers v7.0.0（51 文件 +2219/-399）把 TDD 技能的 Why-Order-Matters 段压缩成一行表格。发布附带 **eval 实验数据**：压力场景（「先把代码写了，测试后补」的诱惑）下 test-first 行为 control 8/10 → treatment 5/10（n=10，Claude/Codex 双臂复验）；正常 TDD 触发路径两臂无差（PPPPP→PPPPP）。发布时把五段驳论折回表格行。
+- **方法层**：**「等价压缩」可能在恰好需要那段论证的压力场景测量性退化**——正常路径测不出的损失，出现在决策最脆弱的时刻。压缩优化必须带**压力例 eval**（控制/实验双臂+明确 n），不能只看正常触发路径；文档变更与代码变更同样进可测量验证面。
+- **同构**：与 ruflo 评测宣称清剿先例同向（宣称须有数据），但方向相反——那是「无数据的宣称撤下」，这是「有数据的回滚」；两者合起来构成**变更须带测量**的完整闭环。
+- 其余（v7.0.0）：brainstorming 仪式重建（按任务规模缩放的进一步演化）+Antigravity Marketplace manifest（多市集分发面）+Windows hook 修复批（run-hook-cmd 223 行测试）。来源：`docs/research/R106-runtime-refresh.md`。

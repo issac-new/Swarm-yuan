@@ -2306,13 +2306,13 @@ _detect_delivery_shapes() {
     out="mini-program（运行证据=真开发者工具 runtime-proof：编译+启动+首帧，launchOk/screenshot/checkedAt）"
   fi
   if find "$d" -maxdepth 3 \( -name 'vite.config.*' -o -name 'next.config.*' -o -name 'index.html' \) 2>/dev/null | grep -q .; then
-    out="${out:+$out；}web-frontend（运行证据=真实浏览器走查帧）"
+    out="${out:+${out}；}web-frontend（运行证据=真实浏览器走查帧）"
   fi
   if find "$d" -maxdepth 3 \( -name 'Dockerfile' -o -path '*/src/server*' \) 2>/dev/null | grep -q .; then
-    out="${out:+$out；}backend-service（运行证据=启动冒烟日志+跨模块契约测试）"
+    out="${out:+${out}；}backend-service（运行证据=启动冒烟日志+跨模块契约测试）"
   fi
   if find "$d" -maxdepth 3 \( -path '*android/app/build.gradle*' -o -name 'project.pbxproj' \) 2>/dev/null | grep -q .; then
-    out="${out:+$out；}mobile-app（运行证据=模拟器/真机安装启动）"
+    out="${out:+${out}；}mobile-app（运行证据=模拟器/真机安装启动）"
   fi
   echo "${out:-未嗅探到运行面形态（governance-doc/library-sdk 类由 AI 按任务判定并在 DoD 声明证据面）}"
 }
