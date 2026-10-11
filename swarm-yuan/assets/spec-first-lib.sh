@@ -58,15 +58,23 @@ spf_find_approved_spec() {  # $1=项目根 $2=spec glob（相对根，如 docs/s
 
 # 路径是否落入可写区（fail-gate-hook 原匹配语义：相对段命中 */<dir>/* 或项目根前缀 <root>/<dir>/）。
 # $2=项目根（可空——空时前缀模式退化为 /<dir>/，与原 "${PROJECT_DIR:-}/${_d}/" 展开等价）。
-spf_path_in_dirs() {  # $1=规范化路径 $2=项目根(可空) $3..=目录表 → rc 0=命中 1=未命中
+# R106-D14 修复①（传参两态兼容）：L3 门禁传 "${WRITABLE_DIRS[*]}"（空格拼接单串），L1/L2 传裸数组
+# （多个参数）——原实现只按独立参数迭代，拼接串被当成一个超长"目录名"整体匹配，多目录
+# 可写区永远不命中（go-forge 回归实证：internal 改动 L3 判"未触及"）。单参内再按空白拆分，两态通吃。
+# R106-D14 修复②（文件型条目）：WRITABLE_DIRS 可含文件条目（如 main.go）——原模式强制尾斜杠
+# （*/<dir>/），文件路径永不能命中（死条目）。补 "${_proj}/${_part}" 精确匹配分支。
+spf_path_in_dirs() {  # $1=规范化路径 $2=项目根(可空) $3..=目录/文件表（多参数或空格拼接单串均可） → rc 0=命中 1=未命中
   local _p="$1" _proj="$2"
   shift 2
-  local _d
+  local _d _part
   for _d in "$@"; do
-    [[ -z "$_d" ]] && continue
-    case "$_p" in
-      *"/${_d}/"*|"${_proj}/${_d}/"*) return 0 ;;
-    esac
+    # shellcheck disable=SC2086  # 有意按空白拆分（拼接串形态）；路径含空格的条目不在本表语义内
+    for _part in $_d; do
+      [[ -z "${_part}" ]] && continue
+      case "$_p" in
+        *"/${_part}/"*|"${_proj}/${_part}/"*|"${_proj}/${_part}") return 0 ;;
+      esac
+    done
   done
   return 1
 }
