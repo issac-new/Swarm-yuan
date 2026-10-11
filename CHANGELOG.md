@@ -1,5 +1,20 @@
 # Changelog
 
+## [v2.70.0] - 2026-10-11
+
+> R106 运行时例行刷新轮（用户 /goal 三目标）。6 移动物化 + 五档吸收。**诱取拦截第七例**：graphify 远端 v1.0.0（0a31c08）世系实测仍不在 v8 线，取 v8 线真最新 v0.9.85。live CLI：claude 2.1.296 漂移归零；codex 0.160.0 滞后 0.162.1 记档（升级窗口待用户）。**方法层新原语**：压缩纪律须经压力例 eval（superpowers v7.0.0 用控制/实验双臂数据回滚一段压缩文档——正常路径无差、压力路径 8/10→5/10）；审计面机读化（codex Guardian JSON transcript）；诊断通道与数据通道分离（codex 无凭据 rendezvous 诊断）。
+
+### Changed
+- `docs/upstream-baseline.md`：R106 重核口径注 + claude-code/codex-cli/comet/graphify/superpowers/ruflo 六行基线回写。
+- `references/claude-code-capabilities.md`：v2.1.296 段（BASH_ARGV0 审批收紧——shell 变量赋值通道不得绕审批；非 UTF-8 文件拒改——编码不确定不静默转码写回；Read allow_large；工作流子代理模型钉定；529 退避上限可配）+ 基线 2.1.295→2.1.296。
+- `references/codex-methodology.md`：R106 段（0.162.1，229 提交：共享任务钉定+无凭据 rendezvous 诊断+Guardian JSON transcript+部分答案相位+ranked tool discovery+agent spawn 有界诊断）。
+- `references/code-graph-tools.md`：R106 段（graphify v0.9.85：单遍树走查性能族+同名节点 id 去重防吞+巨型 export default 防崩+watch 重建锁竞态+非 ASCII 文件名 hook+AFFECTED_RELATIONS 补 defines+多语言提取修复族）。
+- `references/subagent-orchestration.md`：R106 注记——压缩纪律须经压力例 eval（v7.0.0 TDD 段压缩实测退化 8/10→5/10 后回滚，方法层：压缩优化必须带压力例 eval，不能只看正常触发路径）。
+- `swarm-yuan/research/`：graphify v0.9.85 + codex rust-v0.162.1 + ruflo v3.56.5 + comet 0.4.5 + superpowers v7.0.0 checkout。
+
+### Verified（前后端项目回归：note-forge 全栈样例再证）
+- 待本轮回归执行后回填（见发版记录）。
+
 ## [v2.69.0] - 2026-10-10
 
 > R105 运行时例行刷新轮（用户 /goal 三目标；R100-R104 号位被本仓并行轮占用顺延）。5 移动物化 + 四档吸收 + note-forge 回归再证。**诱取拦截第六例**：graphify 远端 v1.0.0（0a31c08，2026-04-05）世系实测不在 v8 线——R81 误取/R89 纠错同一异源 tag，按世系核验惯例拦截，取 v8 线真最新 v0.9.82。live CLI：claude 2.1.295 漂移归零；codex 0.160.0 滞后 0.161.0 记档（升级窗口待用户）。

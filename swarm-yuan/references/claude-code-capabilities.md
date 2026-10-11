@@ -599,7 +599,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ## 版本基线
 
-能力清单以 npm `latest` 基线版本为准核验（当前 2.1.295）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+能力清单以 npm `latest` 基线版本为准核验（当前 2.1.296）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
 
 ## v2.1.233-237 能力
 
@@ -761,6 +761,15 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 - **权限通道完备性三项**（v2.1.288-289）：①复合 shell 命令嵌套段上的 deny/ask 规则不再被用户所装 mod 的批准压过（受管机器——**管理侧否决优先于用户侧授权**，fail-closed 层级执法）；②Read deny 规则经符号链接作用于 IDE @提及/变更/选中通道（v2.1.268 路径规范化延到 IDE 通道——**同一文件的每一条进入路径都过同一权限检查**）；③Bash deny/ask 在沙箱 auto-allow 下不再漏检环境变量前缀展开值（`TZ="$HOME" rm -rf build`）与裸赋值后的命令——**auto-allow 是通道捷径不是豁免面**。
 - **插件元数据越权修复**（v2.1.288-289）：用户安装的插件不得改写组织管理的 MCP server 登录工具描述——元数据（描述=模型所见）也是权限面，越权描述可诱导模型走错端点。
 - 其余（v2.1.288-289）：agent.spawn teammates + $.agent.list() idle/waiting 态（多代理状态面）、mods 渲染失败单区隔离（ui.fault——一个 mod 的 Client 失败只废它自己，不带崩全局渲染）。
+
+## v2.1.296 能力
+
+- **Bash 审批通道再收紧：`BASH_ARGV0` 不再自动批准**（安全）：以 `BASH_ARGV0` 变量劫持形态构造的命令退出审批检查——**审批判定不得被 shell 变量赋值通道绕过**（与 2.1.284 命令替换递归 rm 同族：权限通道变更须带回归面）。
+- **非 UTF-8 文件拒改**（安全/数据完整性）：Windows-1252/Shift-JIS/GBK 等非 UTF-8 编码文件的编辑被拒绝——「读得像文本」≠「可安全改写」，静默转码写回=数据损坏（编码不确定时 fail-closed）。
+- **Read `allow_large`**：大文件可一次读完（越过尺寸上限）——与 WebFetch offset 续读族互补：截断要么显式要么经用户显式豁免。
+- **工作流子代理模型钉定**：`CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` 为工作流（动态 workflow 脚本）子代理统一钉模型；subagent frontmatter 新增 `autoCompactWindow`——子代理资源治理（模型/上下文窗口）进配置面。
+- **529 过载退避上限可配**：`CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MS`——过载重试有界化族宿主侧延续（退避不仅要退，还要可封顶）。
+- 其余（v2.1.296）：MCP 工具描述/指令上限 2048→4096 字符、插件 secrets 名 `constructor`/`prototype` 拒绝（防原型污染）、PowerShell 权限规则 32KB 上限、Sonnet 5.5 缓存读定价 $0.20→$0.10/百万、managed PreToolUse hooks/密文脱敏/工作流脚本截断修复批、Windows 修复批（MCP 关闭、HTTPS clone 回退、Git Bash `rm -rf`）。
 
 ## v2.1.295 能力
 
