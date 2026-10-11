@@ -1,5 +1,36 @@
 # Changelog
 
+## [v2.71.0] - 2026-10-12
+
+> R106 回归轮（gin-react 深回归——号位与 v2.70.0 让位给并行运行时刷新轮，按其"归下版"注记升 v2.71.0）：回归矩阵缺口族首测（go-forge：Gin+GORM 后端 / React+AntD 前端——Go 语言族与 React/AntD 首次生成级实测），发现并修复 12 项生成器缺陷。三项为"带病合入 main"实锤（G20×3、产物 SKILL.md 超 251B、CI 吞码三洞）——上一交付形态 DoD 轮在 CI 红的状态下合入，本轮把 CI 诚实性根治（self-check 管道吞退出码 / verifier step bash -e 死代码 / bootstrap 死票 / gen-e2e 日志黑洞）。交付形态 DoD 在样例上逼出两个"单测全绿但不可运行"缺陷（生产路径缺表/客户列空数据）——run14 教训在本轮复现并修复。
+
+### Fixed（生成器缺陷——每项带防复发锁）
+- CI 诚实性族（test-r106-ci-honesty.sh 15 断言锁）：generate-skill.sh 3 处 `$out；` G20 违规；facts.conf SKILL.md 预算第六次登记 10752→11264（交付形态 DoD 功能性增量 +251B）；CI self-check job 管道吞退出码改 `--check-only --ci` 全量面+硬断言；CI verifier step `set +e` 护住 rc 捕获（bash -e 下原为死代码）；run-verifier.sh bootstrap 票去 `|| true`（原恒投通过票）；gen-e2e/e2e 失败日志现场打印（原进 runner /tmp 黑洞）。
+- D8 auto 档判定依据合一：auto_detect_profile 输出两行（档位+完整理由），调用方删 30 行重复信号计算——原打印丢框架信号升档缘由（go.mod 47 依赖升 standard 时只剩"文件数 35（<80 → lite）"，依据与结论自相矛盾）。
+- D9 交付形态嗅探 backend-service 判据扩容：go.mod+main.go/cmd、manage.py、pom.xml/build.gradle 三族强信号（Go/Django/JVM 后端原全漏——判据偏 JS），多信号去重防拼接。
+- D10 trace-log.sh 补 `--project-dir` 旗标解析（头部文档一直要求传、解析器从未实现——传入即"未知参数"exit 1，留痕静默失败）。
+- D12 框架变量空值语义对齐（test-r106-devchain-fixes.sh 锁）：inject-frameworks 与 upgrade 合并的"行存在即跳过"改"存在且非空才算已配置"；空值行就地打 TODO(framework-gates)/TODO(upgrade) 标记（幂等）——照交接清单填不再漏框架（react/vite/vitest 三家静态模板空行原必漏、mark-active 必拦）。
+- D13 check_security 参数化绑定值豁免：SQL 字面量含 `?` 且后随逗号（拼接只发生在绑定值实参位——GORM `Where("... LIKE ?", "%"+name+"%")` 标准写法曾被子查询关键字误判注入 fail）；关键字字面量被 `+` 拼接的危险形态仍拦；security compliant 夹具补豁免形态双态锁。
+- D14 spf_path_in_dirs 两态传参兼容+文件型条目匹配：L3 门禁传 `"${WRITABLE_DIRS[*]}"` 拼接串原被当单个"目录名"整体匹配（多目录可写区 spec-first L3 全盲——`--no-verify` 逃逸提交不可见）；`main.go` 等文件型条目原任何形态都不命中。
+
+### Added
+- self-check.sh `--ci` 旗标：运行时缺失=环境态豁免只披露（CI 容器不装 11 运行时），文档一致性/G20 等代码性检查照旧 fail-closed。
+- tests/test-r106-ci-honesty.sh（15 断言，含 bootstrap 死票行为级探针）+ tests/test-r106-devchain-fixes.sh（10 断言，含嗅探双族/就地标记幂等/夹具双态/路径函数四判据）——均入 run-sweep 与 CI。
+
+### Verified（go-forge 全栈样例回归：新栈首测，双端真实工具链）
+- 样例构成：Go 1.24 后端（gin+gorm+glebarez/sqlite 纯 Go+golang-jwt v5+bcrypt，internal/ 分层 12 文件）+ React 18 前端（vite 5+antd 5+axios+react-router 6+vitest 2，15 文件）；git 仓库 35 受控文件。
+- 真实工具链双绿：`go vet ./...` 零告警 + `go test ./...` 4 用例 ok；`vite build` 产物 3 件 + `npm test` vitest 5/5。
+- 生成流程 Step 1-13 全跑：detect-frameworks 6 框架全中（antd/react/vite/gin/gorm/jest-vitest）→ create（auto 判 standard，判定依据完整：规模+框架信号 47 依赖升档）→ relations-extract 26 条 import 边 → 65 条框架规律逐条带项目 file:line 证据 → precheck --all 绿 → 独立审查留痕（发现 2 项：gin 绑定计数误写当场修；D9 嗅探缺口移交）→ memory-writeback 三路 → verify-completeness --strict 零占位符 → mark-active 激活（激活门先后拦住：框架 glob 空——D12 修复后填齐；recipes 缩写路径 4 处幻觉——path-check 执勤；测试文件维度 NO_LIST——补 §测试案例 节）。
+- 九节点新需求（订单按客户名筛选）：spec（决策记录/§5.5 拼装合规声明/§19 测试设计/§20 影响面）→ 测试先行先红后绿（JOIN 列歧义被集成测试当场抓出改子查询）→ 前后端实现 → precheck --all 两轮后绿 → review-record 增补 → 合入 main。
+- 执勤拦截：L2 pre-commit 拦无 spec 提交（exit 1+四条解除路径）；L3 拦 `--no-verify` 逃逸提交（D14 修复前实证放行、修复后拦）；分支门二次执勤（chore/ 前缀拒绝——BRANCH_REGEX 只认 feat|fix|refactor）。
+- 反馈回路：清单内容刷新（新参数/新模型入册）→ `--upgrade`（备份+用户内容保留+D12 upgrade 路径实测）→ project-fingerprint 基线落盘。
+- 交付形态 DoD 运行证据（单测全绿≠可运行实证×2）：backend-service 启动冒烟逼出 User 模型未入生产 AutoMigrate（测试路径手工建表掩盖缺表）→ 归位 model 层修复；web-frontend 真实浏览器走查两帧（客户名筛选收窄/清空恢复）逼出 List 缺 Customer Preload（客户列空数据）→ 修复复测；双形态 RUNTIME-OK 落盘 `.swarm-yuan/runtime-evidence/`。
+- 门禁终态：run-sweep 64/0（全绿）；self-check --check-only exit 0；test-r68-jargon-free（受控语言）绿；security/gate 夹具双态绿。
+
+### Changed
+- facts.conf：FACT_SKILLMD_BYTES_BUDGET 第六次登记 10752→11264（成因注记：交付形态 DoD 功能性增量，原轮未跑 gen-e2e 即合入）；FACT_SCRIPT_LOC 补记账 6640→6648（D13 豁免段 +8 行）。
+- tests/gate-fixtures/security/compliant：补参数化绑定值豁免形态（R106-D13 行为锁）。
+
 ## [v2.70.0] - 2026-10-11
 
 > R106 运行时例行刷新轮（用户 /goal 三目标）。6 移动物化 + 五档吸收。**诱取拦截第七例**：graphify 远端 v1.0.0（0a31c08）世系实测仍不在 v8 线，取 v8 线真最新 v0.9.85。live CLI：claude 2.1.296 漂移归零；codex 0.160.0 滞后 0.162.1 记档（升级窗口待用户）。**方法层新原语**：压缩纪律须经压力例 eval（superpowers v7.0.0 用控制/实验双臂数据回滚一段压缩文档——正常路径无差、压力路径 8/10→5/10）；审计面机读化（codex Guardian JSON transcript）；诊断通道与数据通道分离（codex 无凭据 rendezvous 诊断）。

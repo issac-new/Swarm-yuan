@@ -40,7 +40,7 @@ out=$(bash assets/trace-log.sh --project-dir "$SB/proj" --node "t" --tool "probe
 if [[ $rc -eq 0 && "$out" != *"未知参数"* ]]; then
   ok "2a --project-dir 旗标可解析（rc=0）"
 else
-  bad "2a --project-dir 旗标回潮失效（rc=$rc out=$out）"
+  bad "2a --project-dir 旗标回潮失效（rc=${rc} out=${out}）"
 fi
 [[ -f "$SB/proj/.swarm-yuan/trace.jsonl" ]] && ok "2b 留痕落指定 --project-dir" || bad "2b trace.jsonl 未落指定目录"
 

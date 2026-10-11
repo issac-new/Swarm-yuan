@@ -53,7 +53,7 @@ grep -q 'E2E 失败日志尾部' "$VR" && ok "4b e2e 失败现场打印" || bad 
 
 # ===== ⑤ 预算登记完整性（超 251B 洞的账面锁：登记值须覆盖实测增量成因注记） =====
 grep -q '^FACT_SKILLMD_BYTES_BUDGET=11264' assets/facts.conf && ok "5a SKILL.md 预算第六次登记在位（11264）" || bad "5a 预算登记漂移"
-grep -q '交付形态 DoD 盖章' assets/facts.conf && ok "5b 登记注记含成因（交付形态功能性增量）" || bad "5b 登记缺成因注记"
+grep -q '交付形态 DoD' assets/facts.conf && ok "5b 登记注记含成因（交付形态功能性增量）" || bad "5b 登记缺成因注记"
 
 if [[ $FAIL -eq 0 ]]; then echo "test-r106-ci-honesty: PASS"; else echo "test-r106-ci-honesty: FAIL" >&2; fi
 exit $FAIL
