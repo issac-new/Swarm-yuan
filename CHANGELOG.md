@@ -1,5 +1,24 @@
 # Changelog
 
+## [v2.72.0] - 2026-10-12
+
+> R107 运行时例行刷新轮（用户 /goal 三目标）。4 移动物化 + 三档吸收。**诱取拦截第八例**：graphify 远端 v1.0.0（0a31c08）世系实测不在 v8 线，取 v8 线真最新 v0.9.86（`merge-base --is-ancestor v0.9.85 v0.9.86` 成立）。live CLI：claude 2.1.296 零漂移；codex 0.160.0 滞后 0.162.1 记档（升级窗口待用户）。**方法层新原语**：产物形态为评审者设计（graph.json 单行紧凑——重建 diff 数万行→一行）；CLI 退出码是机器接口（exit 3 歧义/4 无匹配/0 答案）；去重前先快照身份（ruflo auto-memory 无 id 条目不被去重吞）；解析不了的严重度按最坏处理（gstack review-gates fail-closed）。
+
+### Changed
+- `docs/upstream-baseline.md`：R107 重核口径注 + graphify/ruflo/gstack/semantica 四行回写（graphify v0.9.85→v0.9.86 / ruflo v3.56.5→v3.56.7（npm 同步实测）/ gstack main tip db74567→e23f7b80 / semantica main tip 前移记档）。
+- `references/code-graph-tools.md`：新增 v0.9.86 段（产物单行紧凑 JSON 可评审性+查无此名 exit 3/4 弃权语义机读化+去重排序按扫描根锚定+Rust grouped use/Scala derives/Julia operator 提取族+uninstall --purge 安全界）。
+- `references/subagent-orchestration.md`：新增 ruflo v3.56.7 注记（去重前快照 store ids——身份不明不得被去重吞；TUI 观测页与只读钉定 AI 页）。
+- `references/review-methodology.md`：新增 gstack v1.91.91-93 段（评审门禁三原则：不可读即最坏/主体完工才出报告/外发带同意+压缩副本归并）。
+- `swarm-yuan/research/`：graphify v0.9.86 + ruflo v3.56.7 + gstack e23f7b80 + semantica d47696a2 checkout。
+- `facts.conf`：FACT_ARTIFACT_BYTES_BUDGET 第二十五次登记 544768→548864（+4KiB 沿决策 38 形态，成因=R107 吸收注记增量，非内容膨胀）。
+- 双 README badge v2.71.0→v2.72.0。
+
+### Verified（前后端项目回归：todo-fullstack 紧凑全栈样例，双端真实工具链）
+- 样例构成：Vue 3.5+Vite 6 前端（4 文件）+ Go 1.24 stdlib 后端（net/http mux 路由+并发安全内存存储，含单测，3 文件）。
+- 真实工具链双绿：`go vet ./...` 零告警 + `go test ./...` 1 用例通过 + `go build` 成功；`vite build` 产物 2 件成功。
+- 技能管线四步：detect-frameworks 探出 vue+vite（Go stdlib 在探测规则面外为已知边界——规则面向框架工程，探测面诚实记录）→ generate-skill draft 骨架生成（断点续传幂等）→ relations-extract 1 条 import 边（file:line 证据）→ inventory-verify 三态诊断正确（未填充 draft 维度全部 NO_LIST——验证器行为即回归点）。
+- 门禁终态：self-check `--check-only --ci` exit 0；test-r68-jargon-free 17 ok 0 fail；run-sweep 全绿（见发版记录）。
+
 ## [v2.71.0] - 2026-10-12
 
 > R106 回归轮（gin-react 深回归——号位与 v2.70.0 让位给并行运行时刷新轮，按其"归下版"注记升 v2.71.0）：回归矩阵缺口族首测（go-forge：Gin+GORM 后端 / React+AntD 前端——Go 语言族与 React/AntD 首次生成级实测），发现并修复 12 项生成器缺陷。三项为"带病合入 main"实锤（G20×3、产物 SKILL.md 超 251B、CI 吞码三洞）——上一交付形态 DoD 轮在 CI 红的状态下合入，本轮把 CI 诚实性根治（self-check 管道吞退出码 / verifier step bash -e 死代码 / bootstrap 死票 / gen-e2e 日志黑洞）。交付形态 DoD 在样例上逼出两个"单测全绿但不可运行"缺陷（生产路径缺表/客户列空数据）——run14 教训在本轮复现并修复。
