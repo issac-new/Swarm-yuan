@@ -514,3 +514,13 @@ ocr 新增 LLM provider 支持：
 
 - **永不可适用的操作不得卡死同步**（claude-mem #4346）：「永不可适用」（never-apply）的操作若重新入队会让 pull 永远挂起——不可适用是终态判定，不是待重试态；终态判定必须释放队列而非重新入队。审查多代理同步/合并面时问：每个「放弃/跳过/不适用」分支是否都有明确出口？没有出口的跳过就是未来的卡死。
 - **拒绝须可被调用方感知**（ruflo pre-bash blocking exit status）：pre-bash 钩子拒绝执行后改用阻塞式退出码——静默跳过与显式拒绝在调用方看来必须是两种结果。审查拦截器/闸门时问：被拦下的请求，调用方拿到的是「明确的拒绝信号」还是「什么都没发生的假象」？
+
+## 评审门禁三原则：不可读即最坏、主体完工才出报告、外发带同意（gstack v1.91.91-93）
+
+> 来源：gstack v1.91.91.0 / v1.91.92.0 / v1.91.93.0（main tip e23f7b80，2026-10-12）。
+
+- **解析不了的严重度按最坏处理**（v1.91.91.0）：outside-review 门禁读 P0-P3 标签（label 位/表格单元格/严重度词），读不了的标签=unparsed_severity=「Verdict: not ready」且 FINDINGS: unspecified 阻塞——**不可读 ≠ 可通过**；fail-closed 在评审门禁面的实例。评审门禁的判定输入本身要过完整性检查，标签不可解析就整个判红。
+- **发布报告门禁要求主体完工**（v1.91.93.0）：release report gates require finished repos——**报告的门禁前提是被报告对象已经完成**；对「先出报告后干活」形态的反向门禁。与本仓交付形态门禁（运行证据先于宣称）同构，属上游第三方独立演进到同一原则。
+- **consent 执法进发送件**（v1.91.92.0）：codex_reviews 同意位在四个发送二进制里执法（not_run/consent_missing 一律 exit 3）——外发评审必须携带同意证据；同意检查不能只存在于配置层，要落到每个发送通道。
+- **压缩副本归并**（v1.91.91.0）：宿主压缩（Claude Code 2.1.293）产生的消息副本（除 uuid/parentUuid/usage 全等）由 owned journal reader 折叠——门禁不被压缩副本误伤；「压缩不改语义」的**消费侧对策**：消费端对压缩副本做等价折叠。
+- 其余：stamp-at-merge 自举发布（gstack ships itself）/Windows LF 嵌套脚本与 Git Bash hook 误报恢复/transcript ingest 落 managed gbrain。来源：`docs/research/R107-runtime-refresh.md`。
