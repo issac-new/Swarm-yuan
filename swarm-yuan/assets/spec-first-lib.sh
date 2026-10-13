@@ -48,11 +48,97 @@ spf_find_approved_spec() {  # $1=项目根 $2=spec glob（相对根，如 docs/s
   local _sf
   for _sf in "${_root}"/${_glob}; do
     [[ -f "$_sf" ]] || continue
-    if grep -q '^## .*决策记录' "$_sf" 2>/dev/null && ! grep -qE '待填充|<占位符>' "$_sf" 2>/dev/null; then
+    if spf_is_approved_spec "$_sf"; then
       printf '%s' "$_sf"
       return 0
     fi
   done
+  return 0
+}
+
+# 单文件「已批准」判据（自 spf_find_approved_spec 抽出——R109-D8 关联判定复用同一批准语义，
+# 候选集收紧但批准标准不变）。
+spf_is_approved_spec() {  # $1=spec 文件绝对路径 → rc 0=已批准 1=否
+  [[ -f "$1" ]] || return 1
+  grep -q '^## .*决策记录' "$1" 2>/dev/null && ! grep -qE '待填充|<占位符>' "$1" 2>/dev/null
+}
+
+# R109-D8 spec-变更关联模型（根治 R108-D8：L2/L3 原判据=「工作区存在任一已批准 spec」，
+# 首 spec 合入 main 后，从 main 切出的分支天然携带历史 spec——无 spec 提交也放行，
+# 护栏退化为存在性检查（rust-forge probe 实证）。修复：特性分支上，治理本次变更的 spec
+# 须出现在变更集里，历史 spec 不再天然放行）。
+#
+# 分层语义（四层各取所需，判据同源本库）：
+#   L1 写时 / L4 准入：保持存在性（写时无提交可言；build 准入问「项目有无已批准 spec」）。
+#   L2 提交时：关联面 = staged ∪ branch（本次提交含 spec，或本分支写过 spec）。
+#   L3 门禁时：关联面 = staged ∪ branch ∪ untracked（开发中态：spec 已写未提交也认）。
+#   基分支（main/master/BASE_BRANCH）上：保留存在性——主干直提交归分支门（check_branch）
+#   管，合并后全量复查依赖存在性通过（三点 diff 虽含 spec，但主干语义按宽口径放行）。
+#
+# base 解析与 precheck _git_base 同口径：BASE_BRANCH(conf) > main > master > HEAD~1。
+# fail-open：非 git 仓库 / 无提交 / 当前在基分支 → 调用方回退存在性（见 spf_on_base_branch）。
+spf_on_base_branch() {  # $1=项目根 $2=conf 路径（可空——读 BASE_BRANCH） → rc 0=在基分支/不可判 1=特性分支
+  local _root="$1" _conf="${2:-}"
+  local _cur _base=""
+  _cur=$(cd "$_root" 2>/dev/null && git branch --show-current 2>/dev/null || true)
+  [[ -z "$_cur" ]] && return 0                    # detached/非 git——不可判按基分支宽口径
+  if [[ -n "$_conf" && -f "$_conf" ]]; then
+    _base="$(spf_conf_val "$_conf" BASE_BRANCH)"
+  fi
+  [[ -z "$_base" ]] && _base="main"
+  case "$_cur" in
+    main|master|"$_base") return 0 ;;
+  esac
+  return 1
+}
+
+# 变更集内已批准 spec（关联判定主体）。
+# $1=项目根 $2=spec glob（相对根） $3=关联面（空格分隔：staged branch untracked）
+# $4=conf 路径（可空——branch 面的 BASE_BRANCH 优先级来源，与 precheck _git_base 同口径）
+# → stdout 命中路径（空=变更集内无已批准 spec）。输出为仓库相对路径的 spec 文件，
+# 批准判据复用 spf_is_approved_spec（读工作区该文件内容）。
+spf_find_governing_spec() {
+  local _root="$1" _glob="$2" _faces="$3" _conf="${4:-}"
+  local _cand _p _base _changed=""
+  [[ -d "$_root" ]] || return 0
+  case " ${_faces} " in
+    *" branch "*)
+      _base=""
+      [[ -n "$_conf" && -f "$_conf" ]] && _base="$(spf_conf_val "$_conf" BASE_BRANCH)"
+      if [[ -z "$_base" ]] || ! git -C "$_root" rev-parse --verify -q "$_base" >/dev/null 2>&1; then
+        _base=""
+      fi
+      if [[ -z "$_base" ]] && git -C "$_root" rev-parse --verify -q main >/dev/null 2>&1; then
+        _base="main"
+      elif [[ -z "$_base" ]] && git -C "$_root" rev-parse --verify -q master >/dev/null 2>&1; then
+        _base="master"
+      elif [[ -z "$_base" ]]; then
+        git -C "$_root" rev-parse --verify -q HEAD~1 >/dev/null 2>&1 && _base="HEAD~1"
+      fi
+      # 命令替换吞尾换行——face 间拼接须显式补分隔（实测两 face 首尾粘连成废行）
+      [[ -n "$_base" ]] && _changed="${_changed}${_changed:+$'\n'}$(git -C "$_root" diff --name-only "${_base}...HEAD" 2>/dev/null || true)"
+      ;;
+  esac
+  case " ${_faces} " in
+    *" staged "*) _changed="${_changed}${_changed:+$'\n'}$(git -C "$_root" diff --cached --name-only 2>/dev/null || true)" ;;
+  esac
+  case " ${_faces} " in
+    *" untracked "*) _changed="${_changed}${_changed:+$'\n'}$(git -C "$_root" ls-files --others --exclude-standard 2>/dev/null || true)" ;;
+  esac
+  [[ -z "$_changed" ]] && return 0
+  while IFS= read -r _cand; do
+    [[ -z "${_cand:-}" ]] && continue
+    # glob 匹配（bash 3.2 兼容：case 模式内变量展开即 glob；spec glob 形如 docs/specs/*.md）
+    case "$_cand" in
+      ${_glob})
+        _p="${_root}/${_cand}"
+        if spf_is_approved_spec "$_p"; then
+          printf '%s' "$_p"
+          return 0
+        fi
+        ;;
+    esac
+  done <<< "$_changed"
   return 0
 }
 

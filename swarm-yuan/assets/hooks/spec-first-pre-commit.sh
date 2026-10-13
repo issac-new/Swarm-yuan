@@ -64,8 +64,18 @@ done <<< "$_staged"
 
 _sg="$(spf_conf_val "$CONF" SPEC_GLOB)"
 _sg="${_sg:-docs/specs/*.md}"
-_approved="$(spf_find_approved_spec "$ROOT" "$_sg")"
-[[ -n "$_approved" ]] && exit 0
+# R109-D8 spec-变更关联：特性分支上，治理 spec 须出现在变更集（staged ∪ 本分支 diff）——
+# 历史 spec（合入 main 前的）不再天然放行（R108 probe 实证护栏退化）。
+# 基分支（main/master/BASE_BRANCH）保留存在性：主干直提交归分支门管，合并后复查按宽口径。
+if spf_on_base_branch "$ROOT" "$CONF"; then
+  _approved="$(spf_find_approved_spec "$ROOT" "$_sg")"
+  [[ -n "$_approved" ]] && exit 0
+else
+  _governing="$(spf_find_governing_spec "$ROOT" "$_sg" 'staged branch' "$CONF")"
+  if [[ -n "$_governing" ]]; then
+    exit 0
+  fi
+fi
 
 # 拦截：落审计（与 fail-gate-hook 同 jsonl 格式，tool=git-commit）+ stderr 原因与解除路径
 _audit_dir="$ROOT/.swarm-yuan"
@@ -74,6 +84,6 @@ _ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 _e="$(printf '%s' "$_hit" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\r\n')"
 printf '{"ts":"%s","tool":"git-commit","target":"%s","gates":"spec-required"}\n' "$_ts" "$_e" >> "$_audit_dir/gate-deny.jsonl" 2>/dev/null || true
 
-echo "✗ swarm-yuan spec-first（L2 提交时强拦）: staged 改动触及可写源码区（如 ${_hit}）但 ${_sg} 无已批准 spec（须含「## 决策记录」段且非占位）——流程强制：先 spec 再编码。" >&2
-echo "  解除方式: 1) 先写 spec（含「## 决策记录」段）后重新提交；2) 确认改动确属源码区（否则检查 WRITABLE_DIRS 配置）；3) 显式豁免: precheck.conf 置 SPEC_REQUIRED=0 并落痕 decisions.jsonl；4) 逃生门: git commit --no-verify（git 标准机制——L3 门禁与状态机 build 准入兜底，deny 已落盘 gate-deny.jsonl）。" >&2
+echo "✗ swarm-yuan spec-first（L2 提交时强拦）: staged 改动触及可写源码区（如 ${_hit}）但本变更集无已批准 spec（须含「## 决策记录」段且非占位；R109-D8 起=spec 须随本分支提交或本次 staged 携带，工作区历史 spec 不再放行）——流程强制：先 spec 再编码。" >&2
+echo "  解除方式: 1) 本分支先提交 spec（含「## 决策记录」段）或将 spec 与本次改动同提交；2) 确认改动确属源码区（否则检查 WRITABLE_DIRS 配置）；3) 显式豁免: precheck.conf 置 SPEC_REQUIRED=0 并落痕 decisions.jsonl；4) 逃生门: git commit --no-verify（git 标准机制——L3 门禁与状态机 build 准入兜底，deny 已落盘 gate-deny.jsonl）。" >&2
 exit 1
