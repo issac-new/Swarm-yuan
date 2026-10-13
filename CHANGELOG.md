@@ -1,5 +1,23 @@
 # Changelog
 
+## [v2.75.0] - 2026-10-14
+
+> R110 运行时例行刷新轮（用户 /goal 三目标触发；R108/R109 号位被 Rust 族回归轮与债务清偿轮占用）。5 移动物化 + 15 行零移动，零生成器代码改动（纯方法论文本增量），三门禁全绿（run-sweep 66/0、self-check exit 0、r68 17/0），rust-forge 前后端样例复验通过（inventory-verify 比率 1.00 全 PASS + cargo check 零告警）。
+
+### Changed（上游基线物化——细节 docs/research/R110-runtime-refresh.md）
+- graphify v0.9.86→v0.9.89（3 patch 28 提交，v8 世系核验通过，v1.0.0 诱取拦截第九例）：跨仓成员调用「先停靠后链接」族（Go/Kotlin/ObjC/PHP/TS 五语言）+置信度防守门污染+泛型参数不入引用——入 references/code-graph-tools.md R110 段。
+- claude-mem v13.35.0→v13.37.0（3 版 28 提交）：隐私剥离先于服务端遥测+退出权先于 worker 启动+只放自己拿的锁——入 references/memory-persistence.md R110 行。
+- open-code-review v1.12.13→v1.13.0（1 minor 10 提交）：ACP 服务形态暴露评审能力（#1218）+渲染溢出=失败评审+删除文件可读可列——入 references/review-methodology.md R110 段。
+- gstack main tip e23f7b80→7edaf4f5（+5，v1.91.94-98）：计划义务与仓门禁对账/无人值守可关闭/诚实安装自升级/重开修订决策 id 唯一——同入 review-methodology R110 段。
+- ruflo v3.56.7→v3.56.9（2 patch 26 提交薄轮）：worktree 移除后 status/diff 收窄作用域+skills CLI 钉定——薄记 baseline 行。
+- 零移动 15 行记档（claude-code npm 2.1.296=最新零漂移/codex 0.163 全 alpha 不取/dsh alpha 通道维持）；live CLI：claude 2.1.296（漂移归零）/codex 0.160.0（滞后 0.162.1 记档，升级窗口待用户）。
+
+### Verified
+- 三门禁：run-sweep 66/0 / self-check exit 0（UNIVERSAL_FILES 预算 548858B/548864B 压线过）/ test-r68-jargon-free 17/0（终态纪律①抓出本轮 references 裸轮次标记一处，当场清除）。
+- rust-forge（R108 前后端样例，axum+React）复验：inventory-verify 比率 1.00 全 PASS（ENUM_ZERO_DIM 披露口径与 R109 态一致）+cargo check 零告警。
+- run-sweep 内含 gen-e2e（生成产物/mark-active 闭环）通过——生成链路零回归实证。
+
+
 ## [v2.74.0] - 2026-10-13
 
 > R109 债务清偿轮（用户指令：R108 挂账与遗留全部清偿后发版）。四挂账全修 + 一遗留补发：R108-D8 L2/L3 spec-first 判据根治（分支级存在性 → spec-变更关联，防「首 spec 合入后护栏退化」）；R108-D6 数据模型维补 Rust 形态（ENUM_ZERO_DIM 披露族收敛）；R108-D7 边集补 bin crate 名 use 边 + mod 声明边；R108-D9 upgrade 对用户确认空值（N/A 注释）不再打标；v2.72.0 GitHub Release 补发（R107 漏发，Latest 已修回 v2.73.0）。修复过程逼出两枚新坑（face 拼接吞换行成废行 / pipefail 下 grep -q 早退短路 helper——后者为仓库 WP-R Bug#1 同族第三例）。

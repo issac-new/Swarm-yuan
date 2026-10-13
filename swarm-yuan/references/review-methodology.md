@@ -527,7 +527,7 @@ ocr 新增 LLM provider 支持：
 
 ## 评审服务化与输入完备（ocr v1.13.0 + gstack v1.91.94-98）
 
-> 来源：open-code-review v1.13.0 / gstack main tip 7edaf4f5（2026-10-14 R110）。
+> 来源：open-code-review v1.13.0 / gstack main tip 7edaf4f5（2026-10-14）。
 
 - **评审能力以 ACP 服务形态暴露**（ocr #1218）：评审从「人跑的 CLI」升格为 agent 宿主可编排的服务面（记形态参照）。
 - **渲染溢出=失败评审**（ocr #1652）：prompt overflow 记为 failed review 而非静默跳过——输入构造失败必须以失败呈现（fail-closed 评审输入面：不可构造 ≠ 不评审）。
