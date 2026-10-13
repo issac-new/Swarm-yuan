@@ -544,6 +544,15 @@ check_security() {
       && ! echo "$line" | grep -qE '"[^"]*(SELECT|INSERT|UPDATE|DELETE|DROP)[^"]*"[[:space:]]*\+'; then
       continue
     fi
+    # ★HTTP 动词豁免（R108-D4）：method: 'DELETE' 是 HTTP 动词不是 SQL——与模板字面量 ${}
+    # 同行时被注入启发式误伤（rust-forge 回归实证 web/src/api.js deleteTask 整行误报 fail，
+    # 该文件零 SQL；前端 REST 层 DELETE/PUT/POST 端点全是此形态=大面积误报家族）。
+    # 判据：关键字仅以 method 值（引号包裹）形态出现，且行内无 SQL 子句词
+    # （FROM/WHERE/SET/INTO/VALUES/TABLE/JOIN）——真 SQL 拼接行仍拦（含子句词不豁免）。
+    if echo "$line" | grep -qE "method[[:space:]]*:[[:space:]]*['\"\`]?[[:space:]]*(DELETE|GET|POST|PUT|PATCH|HEAD|OPTIONS)" \
+      && ! echo "$line" | grep -qE '(FROM|WHERE|SET|INTO|VALUES|TABLE|JOIN)[^a-zA-Z]'; then
+      continue
+    fi
     if [[ $in_whitelist -eq 1 ]]; then
       warn "MyBatis \${} 白名单命中（须人工确认安全）：$line"
     # ★语义豁免（变量经 sanitize 函数，ERE 不可判）：降级 warn 人工复核，不 fail

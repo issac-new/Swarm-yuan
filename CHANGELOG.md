@@ -1,5 +1,35 @@
 # Changelog
 
+## [v2.73.0] - 2026-10-13
+
+> R108 回归轮（Rust 语言族首测）：回归矩阵缺口族补位——rust-forge 全栈样例（axum 0.8+tokio 后端 lib+bin 布局 / React 18+Vite 5 前端，cargo fmt/clippy -D warnings/test/build 与 vitest/build 真实工具链双绿），生成流程 Step 1-13 完整闭环（4 框架识别 react/vite/jest-vitest/cargo、10 条 import 边、45 条框架规律全带项目证据、inventory-verify 双形态 PASS、mark-active 激活），九节点研发工作三项（feature 状态筛选+分页 / fix PUT 局部更新语义 / refactor StatusBadge 提取，均 spec 先行+测试先红后绿+审查留痕+合入），执勤拦截四层实证（L2 无 spec 提交拦+deny 落盘 / L3 --no-verify 逃逸兜底 / 分支名门 / 交付形态 DoD 双型 RUNTIME-OK+浏览器走查三帧），反馈回路闭环（指纹 --diff 定位 scope → 清单局部更新 → 边集重建 → --upgrade → 新基线）。发现并修复 5 项生成器缺陷（每项带防复发锁 test-r108-rust-family.sh 6 断言）。
+
+### Fixed（生成器缺陷——每项带防复发锁）
+- R108-D1 交付形态嗅探 backend-service 判据缺 Cargo.toml：Rust 服务全漏（rust-forge 实证 axum 后端只嗅出 web-frontend，⑥/⑨ 节点缺启动冒烟 DoD）——判据家族补位（go.mod/manage.py/pom 之后第四族）。
+- R108-D2a auto 档文件数计数不排 target/：cargo 构建产物数千文件充数（rust-forge 干净树 20 文件被计成 81——结论碰巧对、依据失真，掩盖同类项目误判 lite 的风险）。
+- R108-D2b 框架信号粗计无 Cargo.toml 且 package.json 只看根目录：纯 Rust 项目依赖信号恒 0、backend+web 前后端布局的子目录前端依赖不计——两路补位（Cargo.toml `name = value` 行粗计对齐 go.mod 家族口径；子目录 package.json maxdepth 2 同正则计入）。
+- R108-D4 check_security SQL 注入启发式误伤 HTTP 动词：`method: 'DELETE'` 与模板字面量 `${}` 同行的前端 REST 层标准写法被误判 fail（rust-forge web/src/api.js 实证零 SQL 文件整行误报——DELETE/PUT 端点全是此形态=大面积误报家族）——method 值（引号包裹）形态豁免，行含 SQL 子句词（FROM/WHERE/SET/INTO/VALUES/TABLE/JOIN）不豁免（真注入仍拦）；夹具双态锁（compliant 补 HTTP 动词形态 / violating 不变）。
+- R108-D5 DIM_TESTFILES 枚举 glob 缺 *.test.jsx/*.spec.jsx：.test.js/.test.tsx 都在、唯独 .jsx 漏（React JSX 测试最常见形态；rust-forge 实测 App.test.jsx 不被枚举）。
+
+### Verified（rust-forge 全栈样例回归：Rust 族首测，双端真实工具链）
+- 样例构成：Rust 1.99 后端（axum 0.8+tokio+serde 内存 BTreeMap 存储，lib+bin 六文件，16 用例）+ React 18 前端（vite 5+vitest 2+testing-library，12 用例）；git 仓库 20 提交（生成+feature+fix+refactor+反馈回路全程留痕）。
+- 真实工具链双绿：`cargo fmt --check` 零 diff + `cargo clippy --all-targets -- -D warnings` 零告警 + `cargo test` 16 用例 + `cargo build`；`npm test` 12/12 + `npm run build`。
+- 生成流程：detect-frameworks 4 框架全中 → auto 判 standard（修复后依据自洽：文件数 26 排除 target + 框架信号 26 依赖含 Cargo 与 web/ 子目录）→ relations-extract 10 条 import 边（Rust crate:: 解析正确）→ 45 条框架规律全带 file:line 证据 → precheck --all 绿（SQL 误报按设计路径 conf 白名单过渡，D4 根治后白名单清零复验绿）→ 独立审查 4 项发现（行号锚点漂移当场机械重采修正）→ verify-completeness --strict 零占位符 → inventory-verify 双形态全 PASS（测试文件维度 3/3 含两个 .test.jsx）→ mark-active 激活。
+- 九节点三项：feature（筛选+分页：ListQuery/Store::list_filtered/前端 toolbar，4 后端用例+2 前端用例先红后绿，左移门禁当场拦出 spec §5.5 勾选与 §19 标题形态两处格式缺口后对齐）→ fix（PUT 全量替换丢字段：复现测试先红后绿，Store::replace 改 merge 语义，前端零改动自动受益）→ refactor（StatusBadge 提取：不变式锚定，12 用例零回归+4 组件用例新增）。
+- 执勤拦截：L2 pre-commit 拦无 spec 提交（exit 1+四条解除路径+gate-deny.jsonl 落盘）；L3 拦 --no-verify 逃逸（check_spec_first fail）；分支门拦 probe/ 前缀。
+- 交付形态 DoD 双型：backend-service 启动冒烟（局部更新契约+筛选+分页+400 四断言）+ web-frontend 真实浏览器走查三帧（筛选收窄 1 行/清空恢复 3 行程序化断言）；RUNTIME-OK 结论行落 .swarm-yuan/runtime-evidence/。
+- 反馈回路：指纹 --diff（文件数 21→26、scope=docs+web）→ reference-manual 局部更新（Store 方法族/端点参数/StatusBadge/契约冲突声明收敛）→ 边集重建 13 条 → --upgrade → 新基线落盘。
+
+### Known（记档不修——语义边界与 P3 待办）
+- R108-D8 L2 spec-first 判据=分支级「spec 文件存在」而非「本次改动关联 spec」：首个 spec 合入 main 后，从 main 切出的新分支天然携带历史 spec，L2 护栏退化（rust-forge probe 实证：带历史 spec 的分支无 spec 提交放行；删除全部 spec 后拦截恢复）。根治需 spec-变更关联模型（spec mtime/commit 关联或 spec id 入 commit message），影响面大，挂账待专门轮。
+- R108-D6 inventory 维度枚举器无 Rust 实体形态（struct 不被任何实体维度枚举，ENUM_ZERO_DIM 诚实披露族——同 R28 SQLAlchemy 先例）；R108-D7 relations-extract 不解 bin target 的 crate 名前缀 use（`rust_forge::`）与 lib.rs `pub mod` 声明边（低估不虚报家族）；R108-D9 --upgrade 对故意留空的 N/A 框架变量重打 TODO 标记（空值语义与 N/A 场景摩擦，注释逐次堆积）。
+- 发版流程缺口记档：v2.72.0 有 tag 无 GitHub Release（R107 轮漏发 release notes）——本轮补齐 v2.73.0 的 Release 并在此留痕。
+
+### Changed
+- facts.conf：FACT_SCRIPT_LOC 6648→6657（R108-D4 豁免段 +9 行）。
+- tests/gate-fixtures/security/compliant：补 HTTP 动词形态（R108-D4 行为锁）。
+- 双 README badge v2.72.0→v2.73.0。
+
 ## [v2.72.0] - 2026-10-12
 
 > R107 运行时例行刷新轮（用户 /goal 三目标）。4 移动物化 + 三档吸收。**诱取拦截第八例**：graphify 远端 v1.0.0（0a31c08）世系实测不在 v8 线，取 v8 线真最新 v0.9.86（`merge-base --is-ancestor v0.9.85 v0.9.86` 成立）。live CLI：claude 2.1.296 零漂移；codex 0.160.0 滞后 0.162.1 记档（升级窗口待用户）。**方法层新原语**：产物形态为评审者设计（graph.json 单行紧凑——重建 diff 数万行→一行）；CLI 退出码是机器接口（exit 3 歧义/4 无匹配/0 答案）；去重前先快照身份（ruflo auto-memory 无 id 条目不被去重吞）；解析不了的严重度按最坏处理（gstack review-gates fail-closed）。

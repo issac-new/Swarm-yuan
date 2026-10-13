@@ -15,3 +15,13 @@ function loadConfig() {
 }
 
 module.exports = { findUser, searchOrders, loadConfig };
+
+// R108-D4 豁免形态锁：HTTP 动词 method:'DELETE' + 模板字面量 ${} 同行——
+// 前端 REST 层标准写法（文件零 SQL），曾被 SQL 注入启发式误判 fail（rust-forge api.js 实证）
+const BASE = '/api'
+export async function removeUser(id) {
+  return fetch(`${BASE}/users/${id}`, { method: 'DELETE' })
+}
+export async function promoteUser(id) {
+  return fetch(`${BASE}/users/${id}`, { method: 'PUT', body: JSON.stringify({ role: 'admin' }) })
+}

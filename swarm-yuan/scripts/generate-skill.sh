@@ -1382,7 +1382,10 @@ auto_detect_profile() {
   # 规模信号：文件数（head 截断加速，≥阈值即 standard；统计失败按 standard--默认不降）
   # _lite_max+1 截断：文件数 < _lite_max 才 lite，截断到 _lite_max+1 足够判定
   # 排除 AI 运行时留痕与生成技能目录（复生成/升级时 .claude/skills 自身会被计入——自引用膨胀）
+  # R108-D2a：排除 target/（cargo 构建产物数千文件充数——rust-forge 实测干净树 20 文件
+  # 因 target/ 被计成 81，「结论碰巧对、依据失真」掩盖同类项目误判；dist/ 同理已排）
   n=$(find "$proj" -type f -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' \
+      -not -path '*/target/*' \
       -not -path '*/.claude/*' -not -path '*/.codex/*' -not -path '*/.swarm-yuan/*' \
       2>/dev/null | head -$((_lite_max + 1)) | wc -l | tr -d ' ')
   n="${n:-$((_lite_max + 1))}"
@@ -1424,6 +1427,17 @@ auto_detect_profile() {
   [[ -f "$proj/package.json" ]] && fws=$(grep -cE '"[a-z@/][^"]+":[[:space:]]*"' "$proj/package.json" 2>/dev/null | head -1 || echo 0)
   [[ -f "$proj/pom.xml" ]] && fws=$((fws + $(grep -cE "<artifactId>" "$proj/pom.xml" 2>/dev/null || echo 0)))
   [[ -f "$proj/go.mod" ]] && fws=$((fws + $(grep -cE "^\s*[a-z]" "$proj/go.mod" 2>/dev/null || echo 0)))
+  # R108-D2b：Cargo.toml 计入（原三清单缺位——纯 Rust 项目依赖信号恒 0，rust-forge 同形态
+  # 后端只靠 .rs 形态分凑不够阈值）。粗计口径对齐 go.mod 家族：`name = value` 行（含
+  # [package] 元数据 3 行，粗计容忍）。
+  [[ -f "$proj/Cargo.toml" ]] && fws=$((fws + $(grep -cE '^[[:space:]]*[a-zA-Z0-9_-]+[[:space:]]*=' "$proj/Cargo.toml" 2>/dev/null || echo 0)))
+  # R108-D2b：子目录 package.json 计入（backend+web 前后端布局——原只看根，web/ 里的
+  # react/vite 依赖不计；maxdepth 2 覆盖 web/frontend/app 常规布局，深嵌套 monorepo 走
+  # forms/msig/monorepo 信号兜底）。粗计口径与根 package.json 同一正则。
+  while IFS= read -r _subpkg; do
+    [[ "$_subpkg" == "$proj/package.json" ]] && continue
+    fws=$((fws + $(grep -cE '"[a-z@/][^"]+":[[:space:]]*"' "$_subpkg" 2>/dev/null || echo 0)))
+  done < <(find "$proj" -maxdepth 2 -name package.json -not -path '*/node_modules/*' -not -path '*/.git/*' 2>/dev/null)
   [[ "$fws" =~ ^[0-9]+$ ]] || fws=0
   # 微服务信号：services/ 目录存在且含 ≥2 子目录
   msig=0
@@ -2345,6 +2359,12 @@ _detect_delivery_shapes() {
     _be_svc=1
   fi
   if [[ "$_be_svc" -eq 0 ]] && find "$d" -maxdepth 2 \( -name 'pom.xml' -o -name 'build.gradle' -o -name 'build.gradle.kts' \) 2>/dev/null | grep -q .; then
+    _be_svc=1
+  fi
+  # R108-D1：Cargo.toml 是 Rust 服务的工程清单（同 go.mod/manage.py 家族）——原判据缺位，
+  # rust-forge 回归实证 axum 后端 5 条 REST 路由只嗅出 web-frontend、backend-service 全漏
+  # （⑥/⑨ 节点缺启动冒烟 DoD 要求）。maxdepth 3 对齐 go.mod（含 workspace 子 crate 布局）。
+  if [[ "$_be_svc" -eq 0 ]] && find "$d" -maxdepth 3 -name 'Cargo.toml' 2>/dev/null | grep -q .; then
     _be_svc=1
   fi
   if [[ "$_be_svc" -eq 1 ]]; then
