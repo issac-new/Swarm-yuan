@@ -89,11 +89,23 @@ check_spec_first() {
   case "$_sg" in '${SPEC_GLOB:-'*) _sg="${_sg#\$\{SPEC_GLOB:-}"; _sg="${_sg%\}}" ;; esac
   _sg="${_sg:-docs/specs/*.md}"
   local _approved=""
-  _approved="$(spf_find_approved_spec "$_root" "$_sg")"
-  if [[ -n "$_approved" ]]; then
-    pass "spec-first: 可写区变更已有已批准 spec（${_approved}）"
+  # R109-D8 spec-变更关联（与 L2 同源 spec-first-lib）：特性分支上治理 spec 须在变更集
+  # （staged ∪ 本分支 diff ∪ untracked——门禁时开发中态的 spec 已写未提交也认）；
+  # 基分支保留存在性（主干直提交归分支门，合并后全量复查按宽口径放行）。
+  # --no-verify 逃逸的提交在 L3 被抓：分支 diff 有源码无 spec 即 fail（比存在性更强）。
+  # conf 路径=本文件同目录（生成器 assets/ 与目标技能 scripts/ 两布局皆然）——BASE_BRANCH 优先级来源。
+  local _CONF_PATH
+  _CONF_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/precheck.conf"
+  [[ -f "$_CONF_PATH" ]] || _CONF_PATH=""
+  if spf_on_base_branch "$_root" "$_CONF_PATH"; then
+    _approved="$(spf_find_approved_spec "$_root" "$_sg")"
   else
-    fail "gate_spec_first_missing: git 变更触及可写源码区（如 ${_hit}）但 ${_sg} 无已批准 spec（须含「## 决策记录」段且非占位）——先 spec 再编码；四层拦截同判据（L1 写时 hook/L2 提交时 pre-commit/本门/L4 状态机 build 准入）"
+    _approved="$(spf_find_governing_spec "$_root" "$_sg" 'staged branch untracked' "$_CONF_PATH")"
+  fi
+  if [[ -n "$_approved" ]]; then
+    pass "spec-first: 可写区变更有变更集内已批准 spec（${_approved}）"
+  else
+    fail "gate_spec_first_missing: git 变更触及可写源码区（如 ${_hit}）但本变更集无已批准 spec（须含「## 决策记录」段且非占位；R109-D8 起=spec 须随本分支提交/staged/untracked 携带，历史 spec 不再放行）——先 spec 再编码；四层拦截同判据（L1 写时 hook/L2 提交时 pre-commit/本门/L4 状态机 build 准入）"
   fi
 }
 

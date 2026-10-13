@@ -244,6 +244,9 @@ merge_precheck_conf() {
       if [[ -n "${_mu_line}" && "${_mu_line}" != *"()"* && "${_mu_line}" != *'=""'* && "${_mu_line}" != *"=() "* && "${_mu_line}" != *='""'* ]]; then
         continue  # 行存在且非空——用户已配置
       fi
+      if [[ -n "${_mu_line}" ]] && _user_acknowledged_empty "${_mu_line}"; then
+        continue  # R109-D9：空值但带用户 N/A 说明注释——已审配置，不打 TODO 标记
+      fi
       missing+=("$var")
     done
   done
@@ -263,8 +266,12 @@ merge_precheck_conf() {
       elif grep -q "^${var}=" "$conf" 2>/dev/null; then
         _mu_file="$conf"
       fi
-      if grep -q "^${var}=.*TODO(upgrade)" "$conf" 2>/dev/null || \
-         { [[ -f "$merge_target" ]] && grep -q "^${var}=.*TODO(upgrade)" "$merge_target" 2>/dev/null; }; then
+      # R109-D9：跨类 TODO 感知（TODO(framework-gates) 已在也跳过，防双标记堆积）+ 已确认空值跳过
+      if grep -q "^${var}=.*TODO(" "$conf" 2>/dev/null || \
+         { [[ -f "$merge_target" ]] && grep -q "^${var}=.*TODO(" "$merge_target" 2>/dev/null; }; then
+        continue
+      fi
+      if [[ -n "${_mu_file}" ]] && _user_acknowledged_empty "$(grep "^${var}=" "${_mu_file}" 2>/dev/null | head -1 || true)"; then
         continue
       fi
       if [[ -n "${_mu_file}" ]]; then
@@ -281,6 +288,34 @@ merge_precheck_conf() {
       fi
     done
   fi
+}
+
+# R109-D9 用户确认空值判定：行为空值且带用户自写的 N/A 说明注释——视为已审配置，不再打
+# TODO 标记。坑源：rust-forge 反馈回路 --upgrade 对 VITE_INJECT_SCRIPT=""（注释「本项目无
+# 注入脚本，保持空跳过」）等故意留空的 N/A 变量反复重打 TODO(upgrade)/TODO(framework-gates)
+# 标记且两类标记互不感知逐次堆积。
+# 「用户自写」判别锚=与生成器模板同名行逐字比对：create/conf-render 拷贝的模板原生行
+# （描述注释）不算确认；用户改写过注释（哪怕只加一句 N/A 声明）即算确认。含 TODO(/AUTO:
+# 溯源的行一律不算（那是机器标记不是用户决策）。
+_tpl_line_for_var() {  # $1=变量名 → stdout 生成器模板同名行（未找到=空）
+  local _v="$1" _f _t
+  for _f in "${ASSETS_DIR:-}/precheck.conf" "${ASSETS_DIR:-}/precheck.arch.conf"; do
+    [[ -f "$_f" ]] || continue
+    _t=$(grep -h "^${_v}=" "$_f" 2>/dev/null | head -1 || true)
+    [[ -n "$_t" ]] && { printf '%s' "$_t"; return 0; }
+  done
+  return 0
+}
+_user_acknowledged_empty() {  # $1=目标 conf 行 → rc 0=用户已确认的空值 1=未确认/非空
+  local _ln="$1" _tpl
+  [[ "$_ln" == *"#"* ]] || return 1                 # 无注释=无确认陈述
+  case "$_ln" in *"TODO("*|*"# AUTO:"*) return 1 ;; esac
+  _tpl="$(_tpl_line_for_var "${_ln%%=*}")"
+  [[ -n "$_tpl" && "$_tpl" == "$_ln" ]] && return 1  # 與模板逐字相同=原生未确认
+  case "$_ln" in
+    *'=""'*|*='""'*|"=() "*|*"=()") return 0 ;;
+  esac
+  return 1
 }
 
 # F1（dsh/cordis 吸收·协效应定向失效）：框架移出 ACTIVE_FRAMEWORKS 后的 conf 死变量注释。
@@ -540,9 +575,14 @@ inject_frameworks() {
   # 行不存在才追加新占位行（原行为）。
   local _mt_file
   for var in ${missing_conf[@]+"${missing_conf[@]}"}; do
-    if grep -q "^${var}=.*TODO(framework-gates)" "$arch_conf" 2>/dev/null || \
-       { [[ -f "$conf" ]] && grep -q "^${var}=.*TODO(framework-gates)" "$conf" 2>/dev/null; }; then
-      continue  # 已带标记——幂等跳过
+    if grep -q "^${var}=.*TODO(" "$arch_conf" 2>/dev/null || \
+       { [[ -f "$conf" ]] && grep -q "^${var}=.*TODO(" "$conf" 2>/dev/null; }; then
+      continue  # 已带（任一类）标记——幂等跳过（R109-D9 跨类感知）
+    fi
+    local _ack_line
+    _ack_line="$( { grep -h "^${var}=" "$arch_conf" 2>/dev/null; [[ -f "$conf" ]] && grep -h "^${var}=" "$conf" 2>/dev/null; } | head -1 || true)"
+    if [[ -n "${_ack_line}" ]] && _user_acknowledged_empty "${_ack_line}"; then
+      continue  # R109-D9：空值但带用户 N/A 说明注释——已审配置，不打标记
     fi
     _mt_file=""
     if grep -q "^${var}=" "$arch_conf" 2>/dev/null; then

@@ -343,7 +343,21 @@ fi
 #   crate::a::b::C → src/a/b.rs 或 src/a/b/mod.rs（lib.rs 是 crate 根）
 #   super::x       → 当前文件所在模块目录的同名兄弟（src/api/tasks.rs 的 super::conn → src/api/conn.rs）
 #   self::x        → 同目录
+#   <pkg>::a::B    → bin target 的 crate 名前缀 use（R109-D7：src/main.rs 的
+#                    `use rust_forge::routes::router`——包名取自 Cargo.toml [package] name，
+#                    连字符转下划线；解析同 crate:: 路径。原实现 bin 侧 use 边全漏）
 #   crate::{a,b} / 嵌套 use 不展开（低估不虚报）
+# mod 声明边（R109-D7）：`pub mod x;` / `mod x;`（行尾分号锚定，内联 mod {} 不计）→
+#   声明文件同目录的 x.rs 或 x/mod.rs——lib.rs 的模块树骨架边原全漏。
+_RUST_CRATE_NAMES=""
+while IFS= read -r _ct; do
+  [[ -z "$_ct" ]] && continue
+  _cn=$(sed -n 's/^name[[:space:]]*=[[:space:]]*"\([^"]*\)"/\1/p' "$_ct" 2>/dev/null | head -1 | tr '-' '_')
+  [[ -z "$_cn" ]] && continue
+  case " ${_RUST_CRATE_NAMES} " in *" $_cn "*) ;; *) _RUST_CRATE_NAMES="${_RUST_CRATE_NAMES:+${_RUST_CRATE_NAMES} }${_cn}" ;; esac
+done < <(find "$PROJ" -type f -name 'Cargo.toml' -not -path '*/.git/*' -not -path '*/target/*' -print 2>/dev/null | LC_ALL=C sort)
+_RUST_USE_PREFIX_RE='crate|super|self'
+[[ -n "$_RUST_CRATE_NAMES" ]] && _RUST_USE_PREFIX_RE="${_RUST_USE_PREFIX_RE}|${_RUST_CRATE_NAMES// /|}"
 while IFS= read -r f_abs; do
   [[ -z "$f_abs" ]] && continue
   f_rel="${f_abs#"$PROJ"/}"
@@ -352,7 +366,7 @@ while IFS= read -r f_abs; do
     [[ -z "$hit" ]] && continue
     ln="${hit%%:*}"; stmt="${hit#*:}"
     # G22 铁律：BSD sed BRE 不认 \|交替——一律 sed -E + (crate|super|self)
-    use_path=$(printf '%s' "$stmt" | sed -E -n 's/^[[:space:]]*use[[:space:]][[:space:]]*(crate|super|self)::([A-Za-z_][A-Za-z_0-9:]*).*/\1|\2/p')
+    use_path=$(printf '%s' "$stmt" | sed -E -n "s/^[[:space:]]*use[[:space:]][[:space:]]*(${_RUST_USE_PREFIX_RE})::([A-Za-z_][A-Za-z_0-9:]*).*/\1|\2/p")
     [[ -z "$use_path" ]] && continue
     use_kind="${use_path%%|*}"
     use_mod="${use_path#*|}"
@@ -365,8 +379,11 @@ while IFS= read -r f_abs; do
       */src/*) _crate_src="${f_rel%%/src/*}/src" ;;
       *)       _crate_src="src" ;;
     esac
+    # crate 名前缀（bin→lib）与 crate:: 同路径解析（R109-D7；crate 名为标识符集，
+    # 展开 alternation 无 glob 风险，故不加引号保 | 分隔语义）
+    # shellcheck disable=SC2086
     case "$use_kind" in
-      crate) cands="${_crate_src}/${use_mod}.rs ${_crate_src}/${use_mod}/mod.rs" ;;
+      crate|${_RUST_CRATE_NAMES// /|}) cands="${_crate_src}/${use_mod}.rs ${_crate_src}/${use_mod}/mod.rs" ;;
       super) cands="${f_dir}/${use_mod}.rs ${f_dir}/${use_mod}/mod.rs" ;;
       self)  cands="${f_dir}/${use_mod}.rs ${f_dir}/${use_mod}/mod.rs" ;;
     esac
@@ -376,7 +393,20 @@ while IFS= read -r f_abs; do
       _emit "$f_rel" "$cand" "import@${f_rel}:${ln}"
       break
     done
-  done < <(grep -nE '^[[:space:]]*use[[:space:]][[:space:]]*(crate|super|self)::' "$f_abs" 2>/dev/null || true)
+  done < <(grep -nE "^[[:space:]]*use[[:space:]][[:space:]]*(${_RUST_USE_PREFIX_RE})::" "$f_abs" 2>/dev/null || true)
+  # mod 声明边（R109-D7）：声明文件同目录解析；行尾分号锚定排除内联 mod tests {}
+  while IFS= read -r mhit; do
+    [[ -z "$mhit" ]] && continue
+    mln="${mhit%%:*}"
+    mname=$(printf '%s' "${mhit#*:}" | sed -E -n 's/^[[:space:]]*(pub[[:space:]]+)?mod[[:space:]]+([a-z_][a-z_0-9]*)[[:space:]]*;.*/\2/p')
+    [[ -z "$mname" ]] && continue
+    for cand in "${f_dir}/${mname}.rs" "${f_dir}/${mname}/mod.rs"; do
+      [[ -f "$PROJ/$cand" ]] || continue
+      [[ "$cand" == "$f_rel" ]] && break
+      _emit "$f_rel" "$cand" "import@${f_rel}:${mln}"
+      break
+    done
+  done < <(grep -nE '^[[:space:]]*(pub[[:space:]]+)?mod[[:space:]]+[a-z_][a-z_0-9]*[[:space:]]*;' "$f_abs" 2>/dev/null || true)
 done < <(find "$PROJ" -type f -name '*.rs' -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/vendor/*' -not -path '*/__pycache__/*' -not -path '*/.tox/*' -not -path '*/target/*' -print 2>/dev/null | LC_ALL=C sort | head -1500)
 
 # Java 源根发现（前后端同仓形态下 Java 根在 backend/ 等子目录，

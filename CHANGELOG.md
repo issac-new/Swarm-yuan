@@ -1,5 +1,31 @@
 # Changelog
 
+## [v2.74.0] - 2026-10-13
+
+> R109 债务清偿轮（用户指令：R108 挂账与遗留全部清偿后发版）。四挂账全修 + 一遗留补发：R108-D8 L2/L3 spec-first 判据根治（分支级存在性 → spec-变更关联，防「首 spec 合入后护栏退化」）；R108-D6 数据模型维补 Rust 形态（ENUM_ZERO_DIM 披露族收敛）；R108-D7 边集补 bin crate 名 use 边 + mod 声明边；R108-D9 upgrade 对用户确认空值（N/A 注释）不再打标；v2.72.0 GitHub Release 补发（R107 漏发，Latest 已修回 v2.73.0）。修复过程逼出两枚新坑（face 拼接吞换行成废行 / pipefail 下 grep -q 早退短路 helper——后者为仓库 WP-R Bug#1 同族第三例）。
+
+### Fixed（挂账清偿——每项带防复发锁 test-r109-debt-closure.sh，7 断言）
+- R108-D8→R109 **spec-变更关联模型**（spec-first-lib 新原语 spf_find_governing_spec/spf_on_base_branch）：特性分支上，治理 spec 须出现在变更集——L2=staged ∪ 本分支 diff，L3=再含 untracked（开发中态 spec 已写未提交也认）；基分支（main/master/BASE_BRANCH）保留存在性（主干直提交归分支门管，合并后全量复查按宽口径放行）。base 解析与 precheck _git_base 同口径。L1 写时/L4 准入维持存在性（写时无提交可言；build 准入问项目级）。--no-verify 逃逸在 L3 的检出因此增强（分支 diff 有源码无 spec 即 fail）。实弹：rust-forge 真现场「历史 spec 分支无 spec 提交」R108 放行、R109 拦截；正向（分支补 spec 提交）放行。
+- R108-D6→R109 DIM_DATA_MODEL 补 Rust `^pub[[:space:]]+(struct|enum)` 文件级计数（--include='*.rs'）。修订前决策注记：原「无机械标记不硬造正则」的保守面在 §9 清单口径（含 DTO/类型定义）下不成立——Rust 全部命名类型皆 pub struct/enum，文件级计数与清单语义对齐非高误报；rust-forge 实测 models/store/error 三文件命中、清单 6 行覆盖，ENUM_ZERO_DIM 噪声消除（EF POCO 维持披露兜底不变）。
+- R108-D7→R109 relations-extract Rust 两补：①bin target 的 crate 名前缀 use（`use rust_forge::routes::router`——包名取自 Cargo.toml [package] name 连字符转下划线，解析同 crate:: 路径，原 bin 侧 use 边全漏）；②mod 声明边（`pub mod x;` 行尾分号锚定排除内联 mod {}——lib.rs 模块树骨架边原全漏）。rust-forge 实测边集 10→19。
+- R108-D9→R109 upgrade/inject 空值标记注释感知：「用户确认空值」=空值 + 注释与生成器模板同名行逐字不同 + 无 TODO/AUTO 机器标记——不再打 TODO；未确认空值仍打（标记机制不失效）；TODO(upgrade)/TODO(framework-gates) 跨类感知（任一已在不重打，防双标堆积）。
+- （修复过程中逼出）spec-first-lib face 拼接坑：命令替换吞尾换行使两 face 首尾粘连成废行（`docs/specs/b.mdsrc/a.rs`）——累积时显式补 $'\n' 分隔。
+- （修复过程中逼出）inject 标记判定 pipefail 坑：`{...}|head -1|grep -q .` 在 set -o pipefail 下 grep -q 早退令 head 吃 SIGPIPE=141 → 条件假短路已确认空值判定（WP-R Bug#1 同族第三例）——改命令 substitution 先捕获行再判定。
+
+### Known（本轮新增记档）
+- D8 关联模型的边界：merge 提交在 main 上的复查靠基分支存在性宽口径（非三点 diff 关联）；BASE_BRANCH 自定义且 main/master 均不存在的仓库，branch 面 base 退 HEAD~1（仅覆盖最近一提交）。均为窄边界，使用面记档。
+- v2.72.0 Release 补发后 GitHub 按「创建时间」将其标 Latest——已 gh release edit --latest 修回 v2.73.0（后续版本发布自然前移）。
+
+### Verified
+- 防复发锁 test-r109-debt-closure.sh 7/7（D8 四场景：R108 探针复刻拦/分支 spec 放行/基分支宽口径/逃逸+untracked 语义；D6 枚举；D7 边集；D9 打标三态）。
+- 受影响存量套件七件全绿：test-r106-devchain-fixes（D12 标记行为锁）/ test-r108-rust-family（6/6）/ test-relations-extract / test-inventory-verify / test-upgrade-hygiene / test-r101-spec-first-universal / test-fail-gate-hook（35 态）。
+- rust-forge 实弹四项：L2 探针拦截+正向放行；边集 19 条（bin use×2+mod decl×4+前端新增×3）；数据模型维 3/6 PASS；upgrade 后两 N/A 行零标记零堆积。
+- run-sweep 全量 66/0（65+R109 新锁）；self-check --check-only exit 0。
+
+### Changed
+- facts.conf：FACT_SCRIPT_LOC 6657→6669（R109 增量：spec-first-lib 关联原语 + relations-extract Rust 两补 + generate-skill 空值判定）。
+- 双 README badge v2.73.0→v2.74.0。
+
 ## [v2.73.0] - 2026-10-13
 
 > R108 回归轮（Rust 语言族首测）：回归矩阵缺口族补位——rust-forge 全栈样例（axum 0.8+tokio 后端 lib+bin 布局 / React 18+Vite 5 前端，cargo fmt/clippy -D warnings/test/build 与 vitest/build 真实工具链双绿），生成流程 Step 1-13 完整闭环（4 框架识别 react/vite/jest-vitest/cargo、10 条 import 边、45 条框架规律全带项目证据、inventory-verify 双形态 PASS、mark-active 激活），九节点研发工作三项（feature 状态筛选+分页 / fix PUT 局部更新语义 / refactor StatusBadge 提取，均 spec 先行+测试先红后绿+审查留痕+合入），执勤拦截四层实证（L2 无 spec 提交拦+deny 落盘 / L3 --no-verify 逃逸兜底 / 分支名门 / 交付形态 DoD 双型 RUNTIME-OK+浏览器走查三帧），反馈回路闭环（指纹 --diff 定位 scope → 清单局部更新 → 边集重建 → --upgrade → 新基线）。发现并修复 5 项生成器缺陷（每项带防复发锁 test-r108-rust-family.sh 6 断言）。
