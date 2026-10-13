@@ -524,3 +524,13 @@ ocr 新增 LLM provider 支持：
 - **consent 执法进发送件**（v1.91.92.0）：codex_reviews 同意位在四个发送二进制里执法（not_run/consent_missing 一律 exit 3）——外发评审必须携带同意证据；同意检查不能只存在于配置层，要落到每个发送通道。
 - **压缩副本归并**（v1.91.91.0）：宿主压缩（Claude Code 2.1.293）产生的消息副本（除 uuid/parentUuid/usage 全等）由 owned journal reader 折叠——门禁不被压缩副本误伤；「压缩不改语义」的**消费侧对策**：消费端对压缩副本做等价折叠。
 - 其余：stamp-at-merge 自举发布（gstack ships itself）/Windows LF 嵌套脚本与 Git Bash hook 误报恢复/transcript ingest 落 managed gbrain。来源：`docs/research/R107-runtime-refresh.md`。
+
+## 评审服务化与输入完备（ocr v1.13.0 + gstack v1.91.94-98）
+
+> 来源：open-code-review v1.13.0 / gstack main tip 7edaf4f5（2026-10-14）。
+
+- **评审能力以 ACP 服务形态暴露**（ocr #1218）：评审从「人跑的 CLI」升格为 agent 宿主可编排的服务面（记形态参照）。
+- **渲染溢出=失败评审**（ocr #1652）：prompt overflow 记为 failed review 而非静默跳过——输入构造失败必须以失败呈现（fail-closed 评审输入面：不可构造 ≠ 不评审）。
+- **计划义务与仓门禁对账**（gstack v1.91.98.0）：plan obligations meet repo gates——计划承诺的义务必须对上仓里真实门禁（反「计划与门禁两张皮」）。
+- **无人值守必须可关闭**（v1.91.97.0）/**诚实安装自升级**（v1.91.96.0）/**重开修订决策 id 唯一**（dbf400ec，身份族）。
+- 其余：codex --effort 档位显式化/ChatGPT plan 公共 Responses/npm trusted publishing。来源：`docs/research/R110-runtime-refresh.md`。
