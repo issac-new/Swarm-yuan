@@ -1,6 +1,19 @@
 # Changelog
 
-## [v2.75.0] - 2026-10-14
+## [v2.76.0] - 2026-10-14
+
+> R111 运行时例行刷新轮（用户 /goal 三目标触发；零移动轮）。20 追踪运行时全部零前移（对照表 docs/research/R111-runtime-refresh.md 一表），零生成器代码改动（纯方法论文本增量），零移动亦发版——「七幕节拍」纪律的实例（节拍不依赖内容丰度）。
+
+### Changed（基线核实——零移动）
+- 20 追踪运行时对照远端 stable tag 全部零前移：graphify v0.9.89 / claude-mem v13.37.0 / open-code-review v1.13.0 / gstack tip 7edaf4f5 / ruflo v3.56.9 / codex rust-v0.162.1（0.163 全 alpha 不取）/ claude-code npm 2.1.296 / openspec 1.14.1 / codex-security npm-v0.2.0 / ECC v2.2.3 / mattpocock-skills v1.3.1 / pua v3.5.1 / semantica v0.7.0 / gsd-core v1.16.0 / comet 0.4.5 / superpowers v7.0.0 / gitnexus v1.6.12 / better-harness v0.6.6 / dsh dsh-v0.2.1-alpha.2（维持 alpha 通道）/ harnesseval-w tip 零前移。
+- 外部锚点：NousResearch/hermes-agent v0.22.0「The Threshold Release」2026-10-13 发布——非 swarm-yuan research/ 追踪对象，落在 ncwk 仓侧（用户三目标目标 1）。
+- 跨仓观察无新增（R110 三主题延续：不完备时保全身份 / fail-closed 面扩散 / 计量与链接分离）。
+
+### Verified
+- 门禁：self-check.sh / run-sweep.sh / test-r68-jargon-free.sh 见发版记录（v2.76.0）。
+- 回归：典型前后端项目验证（沿用 R110 §六 载体：Node/TS 后端 Express + Prisma + SQLite + Vue3 前端 Vite），零移动轮回归以「既有流程不回归」为通过判据。
+
+
 
 > R110 运行时例行刷新轮（用户 /goal 三目标触发；R108/R109 号位被 Rust 族回归轮与债务清偿轮占用）。5 移动物化 + 15 行零移动，零生成器代码改动（纯方法论文本增量），三门禁全绿（run-sweep 66/0、self-check exit 0、r68 17/0），rust-forge 前后端样例复验通过（inventory-verify 比率 1.00 全 PASS + cargo check 零告警）。
 
