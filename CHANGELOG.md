@@ -1,5 +1,23 @@
 # Changelog
 
+## [v2.77.0] - 2026-10-15
+
+> R112 运行时例行刷新轮（用户 /goal 三目标触发）。7 移动物化 / 13 零移动（对照表 docs/research/R112-runtime-refresh.md 一表），零生成器代码改动（纯方法论文本增量）。本轮主题会师：「时机化治理」三域（claude-code 空闲窗压缩/graphify post-merge 治愈/dsh 陈旧坐标失效——治理动作挂在系统状态变迁的时点上）；「失败可执行化」延续（gstack 失败点名修复命令/dsh 校验错误可读化）；「恢复与回收的作用域对齐」（dsh 按源重置/claude-mem 回收代围栏/ruflo 失败入学习库带上限）。
+
+### Changed（上游基线物化——细节 docs/research/R112-runtime-refresh.md）
+- claude-code npm 2.1.296→2.1.299（2 版，297/298 changelog 跳记）：空闲窗口压缩（200K+ 会话在 1h prompt cache 过期前抢先压缩——时机+阈值+总闸三件套）/@ 文件提及只给路径（注入面最小化）/沙箱内禁写插件目录（写权限按重载后执行语义判定）/停机排水/远程关 mod 回合边界卸载——入 references/claude-code-capabilities.md v2.1.299 段。
+- claude-mem v13.37.0→v13.39.0（2 版 30 提交）：回收代围栏+mode prompts 内建不可遮蔽+无头只读禁摘要+错误形态 observer 拒收+网关拒 thinking 降级重试+子代理线程记忆时间线恢复——入 references/memory-persistence.md R112 行。
+- graphify v0.9.89→v0.9.90（1 patch 18 提交，v1.0.0 诱取拦截第十例——异源 tag 时点 2026-04-05 早于 v0.9.89）：post-merge 钩子治愈 merge 复活态+回退遍历保留已访节点关系+边存活与宿主文件解绑+C# 同名消歧族+孤儿清扫/剪枝赦免——入 references/code-graph-tools.md R112 段。
+- ruflo v3.56.9→v3.56.10（薄轮）：失败工具结果入学习库带上限+钩子从项目 cwd 跑+路由召回屈折变体匹配——薄记 baseline 行。
+- dsh dsh-v0.2.1-alpha.2→alpha.3（56 提交，alpha 通道沿用）：失败预览按源重置（恢复作用域=故障作用域）+CUA 校验错误可读化+坐标指引+陈旧坐标失效+有界剪贴板等待——入 references/dsh-engineering-methodology.md R112 注记。
+- gstack main tip 7edaf4f5→15ebd85c（+2）：v1.91.100.0 评估调用计划全量计价（评估成本先于结论呈现）/v1.91.99.0 失败点名修复命令——入 references/review-methodology.md R112 段。
+- semantica main tip d47696a2→b24e2418（+10）：检索事实信任分级+min_trust 准入阈（分级准入：低于阈进待核不进结论区）——入 references/exploration-guide.md semantica 节增量。
+
+### Verified
+- 门禁：run-sweep 66/0 / self-check exit 0（UNIVERSAL_FILES 554556B/557056B——第二十六次登记 548864→557056，+8KiB）/ test-r68-jargon-free 17/0（首跑逮出本轮新增文本裸轮次标记×4+自造词「三件套」×1，当场清除）。
+- 回归：典型前后端项目验证——rust-forge（axum+React，R108 样例）骨架生成 exit 0 + cargo check 零告警；生成闭环（mark-active）由 run-sweep 内 gen-e2e 覆盖。
+- live CLI：claude 2.1.299（漂移归零）/codex 0.160.0（滞后 0.162.1 记档，升级窗口待用户）。
+
 ## [v2.76.0] - 2026-10-14
 
 > R111 运行时例行刷新轮（用户 /goal 三目标触发；零移动轮）。20 追踪运行时全部零前移（对照表 docs/research/R111-runtime-refresh.md 一表），零生成器代码改动（纯方法论文本增量），零移动亦发版——「七幕节拍」纪律的实例（节拍不依赖内容丰度）。

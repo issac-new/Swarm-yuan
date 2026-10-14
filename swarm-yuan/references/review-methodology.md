@@ -534,3 +534,10 @@ ocr 新增 LLM provider 支持：
 - **计划义务与仓门禁对账**（gstack v1.91.98.0）：plan obligations meet repo gates——计划承诺的义务必须对上仓里真实门禁（反「计划与门禁两张皮」）。
 - **无人值守必须可关闭**（v1.91.97.0）/**诚实安装自升级**（v1.91.96.0）/**重开修订决策 id 唯一**（dbf400ec，身份族）。
 - 其余：codex --effort 档位显式化/ChatGPT plan 公共 Responses/npm trusted publishing。来源：`docs/research/R110-runtime-refresh.md`。
+
+### 评估计价与可执行失败（gstack v1.91.99-100，tip 7edaf4f5→15ebd85c）
+
+> 来源：gstack main tip 15ebd85c（2026-10-14）。
+
+- **评估调用计划全量计价**（15ebd85c）：gbrain LongMemEval 一次调用计划把 gpt-4o、Voyage rerankers 全部按现价计入——评估自身的成本先于评估结论呈现，「计量与链接分离」在成本面的延续（评估不是免费的，报价单随计划走）。
+- **失败点名修复命令**（953a62a7）：Capy pins 失败信息直接给出 bootstrapper 命令——失败信息自带可执行的下一步，与 dsh v0.2.1-alpha.3「校验错误可读化+坐标指引」同族（失败的第一读者是下一个动作的决策者）。来源：`docs/research/R112-runtime-refresh.md`。

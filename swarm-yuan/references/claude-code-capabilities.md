@@ -599,7 +599,19 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ## 版本基线
 
-能力清单以 npm `latest` 基线版本为准核验（当前 2.1.296）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+能力清单以 npm `latest` 基线版本为准核验（当前 2.1.299）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+
+## v2.1.299 能力
+
+> npm 2.1.297/2.1.298 在版但上游 CHANGELOG 跳记（无公开条目），本节按 2.1.299 记。
+
+- **空闲窗口压缩**（idle compaction）：200K+ token 会话空闲约 54 分钟时，在一小时 prompt cache 过期**前**抢先压缩——下一条消息不再全量重处理。治理配置三面齐备：时机（缓存到期前的空闲窗）+阈值（`CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS` 调 200K 下限）+总开关（settings.json `idleCompaction:false`）。
+- **`@` 文件提及只给路径不给内容**（`CLAUDE_CODE_DISABLE_FILE_MENTIONS`）：提及的注入面从「文件内容」收窄为「路径+模型自读」——上下文注入默认值取最小面，与 2.1.296「Read allow_large 显式豁免」同族（注入要么最小要么显式放大）。
+- **沙箱不得写 `--plugin-dir`**（修复）：沙箱内 shell 命令写入插件目录被禁——插件代码在沙箱外重载执行，沙箱内可写=沙箱外执行的注入通道（权限按「重载后在哪执行」判定，不按「写在哪个目录」判定）。
+- **停机排水**（`--shutdown-drain-sec`，self-hosted-runner orchestrator）：SIGTERM 后停止取新任务，给在途轮询与 spawn 钩子限时收尾——优雅停机是「不再接受+存量限时跑完」两段式。
+- **远程关闭的 mod 下一回合卸载**（修复）：管理面关闭与运行面生效之间只隔一个回合边界，不留「已关仍在跑」窗口（关闭的生效点必须定义在明确的边界上）。
+- **mod 重写静默丢弃=缺陷**（修复）：`prompt.submit` 重写因带图 prompt 被静默丢弃、原文直发——改写通道的失败必须显性化，静默降级到原文等于改写承诺失效（与 ocr「渲染溢出=失败评审」同族：通道失败不得伪装成成功）。
+- 其余（v2.1.299）：`$.prompt.media`/`$.session.identity()`（管装 mod 的提示字节与会话身份上下文）、plugin eval `--disallow-tools`（评测环境排除内建工具如 Agent——评测口径可控）、`/usage` 对 max effort/工作流/常驻上下文预警（用量预警面）、`session.append` 的 `queue` 门（转录队列与实发 prompt 可分离）、mods UI `weight/size` 替代 `bold`、`--safe-mode` 会话在 peek 面板可见。
 
 ## v2.1.233-237 能力
 
