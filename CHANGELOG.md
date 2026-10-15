@@ -1,5 +1,22 @@
 # Changelog
 
+## [v2.79.0] - 2026-10-15
+
+> R114 mattpocock/skills 运行时整合轮（用户指令触发：作为运行时整合+完整回归+修复+发版）。定位升级：R86 机制源（不进 FACT_RUNTIMES）→ **CLI 层第 14 个运行时（物化型）**。27 技能整目录镜像入仓 `runtime/mattpocock-skills/`（engineering 20+productivity 7，main 49dd158，MIT，MANIFEST 登记，随 install.sh 装 8 宿主恒可达）；接线六处（has_mattpocock 物化守卫/FACT_RUNTIMES 13→14/CLI 4→5/FACT_MATTPPOCOCK_SKILLS=27 新键/self-check 物化完整性新断言/方法论档双层定位）；三门禁全绿；**FastAPI 缺口栈全栈真机回归首测**（mark-forge 样例：生成链 Step 1-13→激活 + 门禁执法七项实证 + feature 九节点全绿 TDD 红→绿→两轴审查→状态机四级→RUNTIME-OK 冒烟 + fix 诊断回路红→绿 + retro filterwarnings 固化）；阻断级缺陷 0、UX 改进候选 2（登记待批）。细节 docs/research/R114-mattpocock-runtime.md。
+
+### Added
+- `runtime/mattpocock-skills/`：上游 27 技能整镜像 + MANIFEST.md（来源/不取理由/刷新方法）+ LICENSE。物化型运行时：消费方式=读技能原文执行（ask-matt 路由/域建模/调研/原型/复盘/交接/访谈族全原语可达）。
+- `precheck.sh` `has_mattpocock()`：物化型守卫（目录存在性，非 command -v）。
+- `facts.conf` `FACT_MATTPPOCOCK_SKILLS=27`：self-check 对账上游刷新漂移的机器锚。
+- `self-check.sh` mattpocock 物化完整性断言（技能数+MANIFEST+LICENSE 三查）。
+
+### Changed
+- FACT_RUNTIMES 13→14 / FACT_RUNTIMES_CLI 4→5（手抄面 CLAUDE/README/usage-manual/facts 头注全量同步）；mattpocock-skills-methodology 双层定位（机制改写↔运行时原语，§六"已物化直调"）；capability-map CLI×5 行；upstream-baseline mattpocock 行升 main 49dd158。
+
+### Verified（2026-10-15 实跑记录）
+- 三门禁：self-check --check-only 全绿（新断言过）/ shellcheck CI 口径 0 error / e2e OK / verifier golden 82 行一致 / vue+mybatis fixture 双态。
+- 全栈回归（FastAPI 栈首测）：生成链 exit 0 → strict 零占位 → mark-active active；门禁执法实证 7 项（branch/strict×4 类/glob/spec-first 联动/L2 拦截/reuse/状态机×3）；Task A 九节点全绿（pytest 7/7+precheck fail0+RUNTIME-OK 冒烟 GET 200/POST 201）；Task B 红→绿（-W error 7 failed→7/7）。
+
 ## [v2.78.0] - 2026-10-15
 
 > R113 运行时例行刷新轮（用户 /goal 三目标触发）。5 移动物化 / 16 零移动（对照表 docs/research/R113-runtime-refresh.md 一表），零生成器代码改动（纯方法论文本增量）。本轮主题会师：「计量拆到不可再合并的维度」（claude-code 缓存写按 5m/1h 生命周期分列/gsd statusline 与 autocompact 口径对齐/验证状态点名已移动文件——计量要么拆维、要么对齐口径、要么分子分母同源）；「非键入变迁也入事件面」（claude-code prompt.change 钩子/graphify ollama num_ctx 配置通道=生效通道/gsd phase 状态以落盘为准）；「边界限定防越界」（graphify 接收者仅本类+基类、导入落点在声明侧/openspec 深嵌套拒绝+x- 扩展键忽略）。live CLI 双升级：claude 2.1.300（漂移归零）+codex 0.162.1（R110 起的升级窗口由本轮 /goal 指令关闭）。
