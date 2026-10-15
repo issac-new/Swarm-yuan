@@ -1,5 +1,16 @@
 # Changelog
 
+## [v2.79.1] - 2026-10-15
+
+> R114 followup：UX 修复两连（R114 研发链登记的改进候选，用户放行后实施）。零行为变更，纯报错可操作性/模板可发现性。
+
+### Fixed
+- mark-active 框架 glob 报错附空值变量精确位置（`precheck.arch.conf:236 FASTAPI_SRC_GLOBS` 形态）——框架变量双 conf 分散，此前只报框架名，首轮填充易改错文件（R114 研发链实录）。
+- assets/precheck.conf 模板 SPEC 段预置 PROPOSAL_FILE/TASKS_FILE 注释键——state-machine 准入提示"可在 precheck.conf 配"但键此前不存在，须手工新增行；现取消注释即用（lite 档生成物实证随发）。
+
+### Verified（2026-10-15 实跑记录）
+- self-check --check-only 零警告 / e2e OK / verifier golden 82 行一致 / mybatis fixture 双态 / generate-skill.sh shellcheck 0 error + bash -n / 新错误形态 draft 态实测 + 注释键 lite 生成物实测。
+
 ## [v2.79.0] - 2026-10-15
 
 > R114 mattpocock/skills 运行时整合轮（用户指令触发：作为运行时整合+完整回归+修复+发版）。定位升级：R86 机制源（不进 FACT_RUNTIMES）→ **CLI 层第 14 个运行时（物化型）**。27 技能整目录镜像入仓 `runtime/mattpocock-skills/`（engineering 20+productivity 7，main 49dd158，MIT，MANIFEST 登记，随 install.sh 装 8 宿主恒可达）；接线六处（has_mattpocock 物化守卫/FACT_RUNTIMES 13→14/CLI 4→5/FACT_MATTPPOCOCK_SKILLS=27 新键/self-check 物化完整性新断言/方法论档双层定位）；三门禁全绿；**FastAPI 缺口栈全栈真机回归首测**（mark-forge 样例：生成链 Step 1-13→激活 + 门禁执法七项实证 + feature 九节点全绿 TDD 红→绿→两轴审查→状态机四级→RUNTIME-OK 冒烟 + fix 诊断回路红→绿 + retro filterwarnings 固化）；阻断级缺陷 0、UX 改进候选 2（登记待批）。细节 docs/research/R114-mattpocock-runtime.md。

@@ -1076,10 +1076,18 @@ check_framework_globs() {
       | grep -cE "^(${_cg_pat})=(\"|\(\")[^\"]" || true)
     if [[ "${_cg_hit:-0}" -eq 0 ]]; then
       _cg_missing="${_cg_missing} ${_cg_fw}"
+      # R114-followup：报错附空值变量精确 file:line——框架变量双 conf 分散（precheck.conf 与
+      # precheck.arch.conf 各持若干），只报名字时首轮填充易改错文件（R114 研发链实录）。
+      for _cg_c in "$_cg_dir/scripts/precheck.conf" "$_cg_dir/scripts/precheck.arch.conf"; do
+        [[ -f "$_cg_c" ]] || continue
+        grep -nE "^(${_cg_pat})=" "$_cg_c" 2>/dev/null | while IFS= read -r _cg_ln; do
+          echo "    空值变量位置（改这里）：$(basename "${_cg_c}"):${_cg_ln%%:*} $(printf '%s' "${_cg_ln#*:}" | cut -d= -f1)" >&2
+        done
+      done
     fi
   done
   if [[ -n "$_cg_missing" ]]; then
-    echo "✗ 框架 glob 全空（TODO(framework-gates) 未填充）：${_cg_missing} 无任何已填变量——框架门禁将空转。填充 precheck.conf / precheck.arch.conf 对应 <FW>_SRC_GLOBS 等变量后重跑 --mark-active" >&2
+    echo "✗ 框架 glob 全空（TODO(framework-gates) 未填充）：${_cg_missing} 无任何已填变量——框架门禁将空转（空值变量逐条位置见上方清单；两 conf 均无该变量时按 requires_conf 声明名新增行）。填充后重跑 --mark-active" >&2
     return 1
   fi
   # 全变量核验（≥1 只保"不空转"——空值变量无机器拦截）
