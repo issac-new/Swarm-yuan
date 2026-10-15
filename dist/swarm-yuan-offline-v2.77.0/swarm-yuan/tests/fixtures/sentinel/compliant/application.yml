@@ -1,0 +1,22 @@
+spring:
+  cloud:
+    sentinel:
+      eager: true
+      transport:
+        dashboard: sentinel-dashboard.internal:8080
+      datasource:
+        flow:
+          nacos:
+            server-addr: nacos1.internal:8848,nacos2.internal:8848,nacos3.internal:8848
+            namespace: prod-namespace-id
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-flow-rules
+            rule-type: flow
+        degrade:
+          nacos:
+            server-addr: nacos1.internal:8848,nacos2.internal:8848,nacos3.internal:8848
+            namespace: prod-namespace-id
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-degrade-rules
+            rule-type: degrade
+            min-request-amount: 5

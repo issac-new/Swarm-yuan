@@ -366,6 +366,16 @@ gsd-core 的分层（引自 `docs/ARCHITECTURE.md`）：
 - **install-time 校验全注册表**（#3929）：安装时校验取 merged registry（第一方+已装+候选），非空 `requires` 在该注册表内可满足——同一校验在不同时点必须同口径（「预览=执行口径」同类样本）。
 - 相关要点：分支真新验真（#4055，幂等创建同类）/ 命名超时常量五批迁移（超时界限收敛为具名常量）/ WINDOWS.md 清单跨进程串行化（#3780，共享可变状态写串行化）。
 
+## gsd-core v1.17.0 要点
+
+> 1 minor（2026-10-15 升级，v1.17.0）。主题：状态以落盘为准+审计面跟文件走+注册幂等。
+
+- **phase 状态以落盘为准**（#4824）：phase.complete 的 Status/Current Plan/Stopped at 从下一阶段磁盘态写——阶段推进的汇报数据源是落盘事实，不是进程内暂态。
+- **验证状态点名已移动的被覆盖文件**（#4857）：verification status 对移动过的 covered files 点名新位置——覆盖率审计的分子分母随文件移动同步，否则陈旧诊断指向空路径。
+- **插件工作流注册幂等**（#4860）：Claude 插件对每个 workflow 只注册一次（经 manifest 单点）——重复注册=重复执行面。
+- **statusline 与 autocompact 口径对齐**（#4985）：宿主（Claude Code autocompact）与新计量（statusline meter）口径不一致时显示 100% 误报——引入计量先对齐既有口径。
+- **Codex Windows hook shim 自解析 node**（#4838）+ **context monitor 按宿主实装注册**（#4840）：只在装得上的宿主上注册组件——能力探测先于注册。来源：`docs/research/R113-runtime-refresh.md`。
+
 ## gsd-core v1.16.0 要点
 
 > 实质 minor（161 commits）。

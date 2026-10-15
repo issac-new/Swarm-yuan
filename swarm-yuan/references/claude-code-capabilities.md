@@ -599,7 +599,18 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ## 版本基线
 
-能力清单以 npm `latest` 基线版本为准核验（当前 2.1.299）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+能力清单以 npm `latest` 基线版本为准核验（当前 2.1.300）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+
+## v2.1.300 能力
+
+> 2026-10-15 升级（v2.1.300）。三个方法论位：计量拆维（缓存写按生命周期分列）、非键入变迁入钩子面、schema 不可用降级不炸会话。
+
+- **virtualText 提示框装饰**：画在提示框里的文本永不进入草稿与提交 prompt——装饰层与提交层分离，UI 提示不得污染实际输入（G 系「提示≠指令」参照）。
+- **OTel 缓存写计量按生命周期拆分**：`api_request` 事件新增 `cache_creation_5m_tokens`/`cache_creation_1h_tokens`——同一动作（缓存写）按不可互换的属性（寿命）拆列；聚合数掩盖不同寿命的成本结构。
+- **`prompt.change` mod 钩子**：提示框文本的非键入变迁（召回历史/清空/撤销/插件填充）也触发事件——状态变迁的观测面不限于用户直接键入。
+- **MCP 工具 schema 400 → 整会话无参降级**：API 拒绝某 MCP 工具入参 schema 时，后续调用改无参发送而不是每回合 400——单工具缺陷降级到该工具，不放大为会话级失败。
+- **SessionEnd 钩子停机排水**：退出时后台命令仍在跑也执行 SessionEnd——收尾钩子的执行不因并发后台任务而丢（与 2.1.299 SIGTERM 限时收尾同族）。
+- 其余：`$.ui.view({agentId})` 代理转录主视图切换、agent.spawn 可改写工作流 agent 的 prompt/model、`Text` 的 `dir` RTL 行排布、advisor（AWS 面）opt-in 默认不跑、`--worktree` reftable/裸仓/tag 名似 commit 修复族、已对话子代理完成后不消失。
 
 ## v2.1.299 能力
 

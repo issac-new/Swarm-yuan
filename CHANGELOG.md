@@ -1,5 +1,22 @@
 # Changelog
 
+## [v2.78.0] - 2026-10-15
+
+> R113 运行时例行刷新轮（用户 /goal 三目标触发）。5 移动物化 / 16 零移动（对照表 docs/research/R113-runtime-refresh.md 一表），零生成器代码改动（纯方法论文本增量）。本轮主题会师：「计量拆到不可再合并的维度」（claude-code 缓存写按 5m/1h 生命周期分列/gsd statusline 与 autocompact 口径对齐/验证状态点名已移动文件——计量要么拆维、要么对齐口径、要么分子分母同源）；「非键入变迁也入事件面」（claude-code prompt.change 钩子/graphify ollama num_ctx 配置通道=生效通道/gsd phase 状态以落盘为准）；「边界限定防越界」（graphify 接收者仅本类+基类、导入落点在声明侧/openspec 深嵌套拒绝+x- 扩展键忽略）。live CLI 双升级：claude 2.1.300（漂移归零）+codex 0.162.1（R110 起的升级窗口由本轮 /goal 指令关闭）。
+
+### Changed（上游基线物化——细节 docs/research/R113-runtime-refresh.md）
+- claude-code npm 2.1.299→2.1.300（1 版大 patch）：virtualText 提示框装饰（装饰与提交面分离）/OTel 缓存写计量按生命周期拆分/prompt.change 非键入变迁钩子/MCP schema 400 整会话无参降级/SessionEnd 停机排水/--worktree reftable 修复族——入 references/claude-code-capabilities.md v2.1.300 段。
+- graphify v0.9.90→v0.9.91（1 patch 16 提交，v1.0.0 诱取拦截第十一例——0a31c08 异源旧 tag 同 R112）：接收者限定三连（this.x 仅调用方类+基类/class-field 限定/文件域回调参数遮蔽）+导入落点（Rust use 落声明侧且根在本 crate）+同形消歧+社区标签防误合并+ollama /api/chat 令 num_ctx 生效——入 references/code-graph-tools.md R113 段。
+- gsd-core v1.16.0→v1.17.0（1 minor）：phase 状态以落盘为准+验证状态点名已移动的被覆盖文件+插件工作流注册幂等+statusline 与 autocompact 口径对齐——入 references/gsd-patterns.md v1.17.0 要点段+review-methodology.md R113 段。
+- openspec v1.14.1→v1.14.2（薄 patch）：删除的需求对照基线核查+brace 嵌套>16 层拒绝+x- 扩展键忽略——薄记 baseline 行（R97 先例同构）。
+- gstack main tip 15ebd85c→47d639ab（+1）：v1.91.101.0 field wave 收尾（install-honesty+无人值守 autoplan 波六缺口先红后绿闭合）——入 references/review-methodology.md R113 段。
+
+### Verified（2026-10-15 实跑记录）
+- 门禁：run-sweep 复跑 66/0（首跑 64/2：jargon 逮出本轮新增文本裸轮次标记 R113/R112×4 当场清除、self-check 预算断言超 2432B 按第二十七次登记 +4KiB→561152B）/ self-check exit 0（实测 559512B ≤ 预算）/ test-r68-jargon-free 17/0。
+- 回归：典型前后端项目验证——rust-forge（axum+React，R108 样例）四链全绿：生成链 `generate-skill.sh r113-regress` exit 0（react/vite/jest-vitest/cargo 四框架探测注入）+ 后端 `cargo check` 零告警 + `cargo test` 16/16 + 前端 `vite build` exit 0 + `vitest` 12/12（R112 仅 cargo check——本轮补齐后端测试与前端构建/测试）。
+- live CLI：claude 2.1.300（漂移归零）/codex 0.162.1（=最新 stable rust tag，滞后清零）。
+
+
 ## [v2.77.0] - 2026-10-15
 
 > R112 运行时例行刷新轮（用户 /goal 三目标触发）。7 移动物化 / 13 零移动（对照表 docs/research/R112-runtime-refresh.md 一表），零生成器代码改动（纯方法论文本增量）。本轮主题会师：「时机化治理」三域（claude-code 空闲窗压缩/graphify post-merge 治愈/dsh 陈旧坐标失效——治理动作挂在系统状态变迁的时点上）；「失败可执行化」延续（gstack 失败点名修复命令/dsh 校验错误可读化）；「恢复与回收的作用域对齐」（dsh 按源重置/claude-mem 回收代围栏/ruflo 失败入学习库带上限）。

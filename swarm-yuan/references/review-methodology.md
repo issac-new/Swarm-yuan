@@ -541,3 +541,13 @@ ocr 新增 LLM provider 支持：
 
 - **评估调用计划全量计价**（15ebd85c）：gbrain LongMemEval 一次调用计划把 gpt-4o、Voyage rerankers 全部按现价计入——评估自身的成本先于评估结论呈现，「计量与链接分离」在成本面的延续（评估不是免费的，报价单随计划走）。
 - **失败点名修复命令**（953a62a7）：Capy pins 失败信息直接给出 bootstrapper 命令——失败信息自带可执行的下一步，与 dsh v0.2.1-alpha.3「校验错误可读化+坐标指引」同族（失败的第一读者是下一个动作的决策者）。来源：`docs/research/R112-runtime-refresh.md`。
+
+
+### 收尾即缺口闭合与状态以落盘为准（gstack v1.91.101.0 + gsd-core v1.17.0）
+
+> 来源：gstack main tip 47d639ab、gsd-core v1.17.0（2026-10-15）。
+
+- **field wave 收尾=六缺口先红后绿闭合**（47d639ab）：install-honesty+无人值守 autoplan 波在真实机型（Capy）暴露六个残留缺口，每个缺口先写失败测试再修——收尾不是宣布完成，是把波及面上的缺口逐一用测试钉死。
+- **phase 状态以落盘为准**（gsd #4824）：phase.complete 写 Status/Current Plan/Stopped at 时读下一阶段的磁盘态而非进程内记忆——汇报态的权威源是落盘态（与「无证据不流转」同根：落盘即证据）。
+- **验证状态点名已移动的被覆盖文件**（gsd #4857）：文件移动后覆盖率的分子分母要跟文件走，陈旧诊断点名旧路径=审计面对移动失明。
+- **statusline 计量与宿主 autocompact 口径对齐**（gsd #4985）：计量显示 100% 而宿主口径未满=同一现象两种口径——计量要么对齐口径要么显式声明口径差。来源：`docs/research/R113-runtime-refresh.md`。
