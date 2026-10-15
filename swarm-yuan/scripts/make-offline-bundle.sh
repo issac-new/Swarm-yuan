@@ -177,6 +177,9 @@ IMD
 
 # ④ 打包（zip 优先，缺 zip 降级 tar.gz）
 echo "④ 打包…"
+# 先删旧档：zip -qr 对已存在 zip 是增量更新不清旧条目——同版本重跑时旧 vendor tarball
+# 会残留包内（2026-10-15 三目标轮⑯实录：二跑后 zip 里新旧两代并存、体积翻倍）。
+rm -f "$OUT_ROOT/swarm-yuan-offline-$VER.zip" "$OUT_ROOT/swarm-yuan-offline-$VER.tar.gz"
 if command -v zip >/dev/null 2>&1; then
   (cd "$OUT_ROOT" && zip -qr "swarm-yuan-offline-$VER.zip" "swarm-yuan-offline-$VER")
   ART="$OUT_ROOT/swarm-yuan-offline-$VER.zip"
