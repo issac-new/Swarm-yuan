@@ -1340,6 +1340,18 @@ has_openspec() { command -v openspec >/dev/null 2>&1; }
 has_comet() { command -v comet >/dev/null 2>&1; }
 has_gsd_tools() { command -v gsd-tools >/dev/null 2>&1; }
 has_madge() { command -v madge >/dev/null 2>&1; }
+# mattpocock-skills 物化型守卫（R114 CLI 层第 5 项）：仓内物化目录存在即"已装"，与
+# command -v 型同语义（运行时可用性探测）。生成器侧 assets/../runtime 恒真；目标技能侧
+# 不随发物化（设计边界见 runtime/mattpocock-skills/MANIFEST.md），恒假→消费点诚实降级到
+# 方法论层改写（references/mattpocock-skills-methodology.md）。
+has_mattpocock() {
+  local _p
+  for _p in "$(dirname "${BASH_SOURCE[0]}")/../runtime/mattpocock-skills" \
+            "$(dirname "${BASH_SOURCE[0]}")/../../runtime/mattpocock-skills"; do
+    [[ -f "${_p}/MANIFEST.md" ]] && return 0
+  done
+  return 1
+}
 
 # trace_tool 辅助函数（全链路追踪——设计理念 2）
 # 在第三方工具调用前调用，打印"→ [工具] 调用 X · Y（started）"到 **stderr**（不污染 stdout/cli-ab 逐字节等价）

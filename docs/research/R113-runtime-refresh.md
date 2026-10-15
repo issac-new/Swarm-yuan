@@ -53,3 +53,5 @@ R110 三主题（不完备时保全身份/fail-closed 面扩散/计量与链接�
 ## 五、实际执行记录（2026-10-15）
 
 ①三门禁全绿——run-sweep 复跑 66/0（首跑 64/2：jargon 逮出本轮新增文本裸轮次标记 R113/R112×4 处当场清除；self-check 预算断言实测 559488B 超 2432B，按第二十七次登记 557056→561152B）/ self-check exit 0（实测 559512B ≤ 预算）/ test-r68-jargon-free 17/0。②典型前后端项目验证（rust-forge，axum+React，R108 样例）四链全绿：生成链 exit 0（react/vite/jest-vitest/cargo 四框架探测+门禁注入）+ 后端 cargo check 零告警 + cargo test 16/16 + 前端 vite build exit 0 + vitest 12/12（较 R112 的 cargo check 单链补齐后端测试与前端构建/测试两链）。③live CLI 双升级实测：claude 2.1.300（/Users/cuishi/.local/bin/claude）/codex 0.162.1。④发版 v2.78.0 + 离线安装包（swarm-yuan-offline-v2.78.0.zip）。
+
+**勘误（2026-10-15 午后补，同日 /goal 三目标复扫轮）**：④ 所指离线安装包按当日本码构建时 vendor 钉版未随基线表同步（offline-manifest.conf 仍为 claude-code 2.1.294/graphify 0.9.80/gsd-core 1.14.0 等九通道旧钉），发布资产与 R113 基线不符。已修正：清单九通道实核刷新至基线（codex-security npm 0.3.0 超 GitHub 基线如实登记）、打包器补「zip -qr 对已存在包增量更新不清旧条目」根治（同版本重跑不再残留旧 tarball）、v2.78.0 release 资产以修正包覆盖。九通道复扫结论：全部追平 R113 基线，零新增移动。

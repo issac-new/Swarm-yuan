@@ -4,7 +4,8 @@
 
 > 来源：[mattpocock/skills](https://github.com/mattpocock/skills)（Matt Pocock，MIT，v1.2.3 tag 6acc160，2026-08-06 源码实测；main d81f3a1 2026-09-29 已合并 release/v1.3 未出 tag，线上三新技能一并评估）。
 > 形态：25 技能集合（engineering 17 + productivity 8），按**谁能触发**双轴分层——user-invoked 编排技能（仅人显式触发，`disable-model-invocation: true`）调用 model-invoked 纪律技能（人与模型都可触达，可复用原语）；user-invoked 不得互相调用。Claude Code 官方插件市场 + skills.sh 可编辑拷贝双渠道分发。
-> 纪律：只吸收机制，装配叙事不纳入；不调上游安装链。守决策 27：不新增 `check_*`，门禁数 55 不变；登记为机制源定位（同 pua/semantica/dsh 先例），不进 FACT_RUNTIMES 分层计数。
+> 纪律：只吸收机制，装配叙事不纳入；不调上游安装链。守决策 27：不新增 `check_*`，门禁数 55 不变。
+> 双层定位（R114 起）：本文档=方法论层（机制改写进九节点）；`runtime/mattpocock-skills/`=CLI 层运行时（上游原语全文物化，engineering 20 + productivity 7 共 27 技能，基线 main `49dd158` 2026-10-09，MANIFEST 登记来源与刷新）——读原文执行不悬空，R86 的"机制源定位不进 FACT_RUNTIMES"就此升级为第 14 个外部运行时（CLI 层第 5 项）。
 > 适用场景：开发工作流 节点①（§一）、节点② spec（§二）、节点③ plan（§三）、fix 类任务（§四）；编排与上下文两条增量分别落 `subagent-orchestration.md` / `memory-persistence.md`（见 §五指针）。
 
 ## 一、结构化访谈协议（grilling：设计树与前沿）——节点① 需求理解
@@ -56,16 +57,17 @@
 
 **指针**：任务图并行实现协议（来源 implement-spec）→ `subagent-orchestration.md`；阶段边界五选树 → `memory-persistence.md`；措辞三判据（no-op 判定/否定句失败模式/领头词）→ `context-engineering-layering.md` §十二。
 
-## 六、已登记未实施
+## 六、已登记未实施（R114 起原语已物化，触发条件到时直调）
 
 | 候选 | 评估 | 触发 |
 |---|---|---|
-| wayfinder 多会话决策地图（地图=索引非存储 / 雾区=问题还说不锐利 / 一票一会话 / 先认领后开工） | 与前沿同类的巨型规划形态；当前单项目单会话循环未到该尺度 | 出现真实"一个 spec 装不下"的多会话规划需求 |
-| wizard 人机步骤向导（人类专属步骤生成交互 bash 引导） | 发布/凭据场景存在但低频 | 目标技能出现真实人工步骤重复解释成本 |
-| teach / wait-what / to-questionnaire / triage 状态机 | 教学领域 / 会话内纠偏 / 问卷代询 / 工单分流——均不属目标技能职责 | 不做 |
+| wayfinder 多会话决策地图（地图=索引非存储 / 雾区=问题还说不锐利 / 一票一会话 / 先认领后开工） | 与前沿同类的巨型规划形态；当前单项目单会话循环未到该尺度。原语已物化可直接调用 | 出现真实"一个 spec 装不下"的多会话规划需求 |
+| wizard 人机步骤向导（人类专属步骤生成交互 bash 引导） | 发布/凭据场景存在但低频。原语已物化（含 template.sh 模板库） | 目标技能出现真实人工步骤重复解释成本 |
+| teach / wait-what / to-questionnaire / triage 状态机 | 教学领域 / 会话内纠偏 / 问卷代询 / 工单分流——不进九节点流程，但原语已物化，用户显式要求时直调（wait-what 要求 ASD-STE100 简明英语重述，与受控语言纪律天然同构） | 用户显式发起 |
 
 ## 七、来源溯源
 
 - 仓库：mattpocock/skills（MIT）。引用基线 v1.2.3（tag 6acc160，2026-08-06；`package.json` 与 `.claude-plugin/plugin.json` 双实核 1.2.3）；main d81f3a1（2026-09-29）合 release/v1.3 未出 tag，三新技能按 main 线评估：implement-spec 落 subagent-orchestration；pr / retro 见 §五吸收边界。
+- 运行时物化基线（R114，2026-10-15）：main `49dd158`（2026-10-09）→ `runtime/mattpocock-skills/` 整目录镜像 27 技能（较 R86 评估期新增：domain-modeling/codebase-design/research/prototype/triage/wayfinder/retro/wizard/teach/wait-what/writing-for-agents/to-questionnaire/handoff/grill-me 全原语可达；misc 与 in-progress 不取，理由见 MANIFEST）。
 - 一手材料（2026-10-03 本机克隆精读，A 级证据）：`skills/productivity/grilling/SKILL.md`（前沿原语）/ `skills/engineering/{to-spec,to-tickets,diagnosing-bugs,implement}/SKILL.md` / `skills/engineering/ask-matt/SKILL.md` + `PHASE-BOUNDARIES.md` / `skills/productivity/writing-for-agents/SKILL.md` / `.agents/invocation.md` / `.claude-plugin/plugin.json`（promoted 25 skills）。
 - 治理面注记：promoted 桶 ↔ README ↔ plugin.json skills 数组 ↔ docs 页 ↔ ask-matt 路由五处一致性不变量——与 swarm-yuan 四载体一致性同构，不另吸收。

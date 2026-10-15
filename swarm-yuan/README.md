@@ -2,7 +2,7 @@
 
 > 对任意代码仓库跑一次，生成一个项目专属的开发技能。此后 AI 在这个项目里写代码，先查组件、依赖和规矩，再动手。
 
-[![Release](https://img.shields.io/badge/release-v2.78.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.78.0)
+[![Release](https://img.shields.io/badge/release-v2.79.0-blue)](https://github.com/issac-new/Swarm-yuan/releases/tag/v2.79.0)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
@@ -284,7 +284,7 @@
 | 框架规则集 | 81（规则文档与门禁片段 1:1 配对） |
 | 配置变量 / 上限 | 185 / 200 |
 | 目标技能预算 | SKILL.md ≤10240B（≈8KB 锚）、组件库清单 ≤32KiB、上下文预算 ≤500KiB（512000B，例外逐例登记于 facts.conf，理由链留档）、概念体系 ≤5 |
-| 外部运行时 | 13 个整合（深度 4 + CLI 4 + 方法论 5）。登记 19（含图谱备选 codegraph、两宿主、机制源 pua/semantica）。自动检测 11 |
+| 外部运行时 | 14 个整合（深度 4 + CLI 5 + 方法论 5；CLI 第 5 项 mattpocock-skills 为仓内物化运行时）。登记 19（含图谱备选 codegraph、两宿主、机制源 pua/semantica 等）。自动检测 11 |
 | 类型目录 | 实体 17 / 关系 10 / 动作 11（assets/ontology/ 三份） |
 | 生成流程 | 13 步（唯一编号口径在 generation-flow.md）。目标技能工作流九节点 × 4 要素 |
 | 领域知识库 / 行业档 | 32 / 8 |
