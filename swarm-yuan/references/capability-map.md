@@ -108,7 +108,7 @@
 | CLI×5 | comet | 工作流骨架仪式/resume-probe | 未装→state-machine.sh |
 | CLI×5 | gsd-core | 计划验证/STATE 戳模式 | 未装→tasks.md checkbox |
 | CLI×5 | codex-security | 安全扫描门禁子进程 | 未装→grep 级安全模式 |
-| CLI×5 | mattpocock-skills（R114 物化型：runtime/mattpocock-skills/ 27 技能整镜像，非 command -v 型） | 生成器侧读技能原文执行：探查访谈（grilling/grill-with-docs）、领域建模（domain-modeling/codebase-design）、调研（research）、原型（prototype）、用户显式发起的 retro/handoff/triage/wayfinder/wizard 直调 | 仓内物化随 install.sh 装 8 宿主恒可达，无降级；目标技能侧不随发→消费走 mattpocock-skills-methodology 机制改写 |
+| CLI×5 | mattpocock-skills（物化型：runtime/mattpocock-skills/ 27 技能整镜像，非 command -v 型） | 生成器侧读技能原文执行：探查访谈（grilling/grill-with-docs）、领域建模（domain-modeling/codebase-design）、调研（research）、原型（prototype）、用户显式发起的 retro/handoff/triage/wayfinder/wizard 直调 | 仓内物化随 install.sh 装 8 宿主恒可达，无降级；目标技能侧不随技能分发→消费走 mattpocock-skills-methodology 机制改写 |
 | 方法论×5 | superpowers / gstack / ECC / Ruflo / impeccable | 编排/审查/记忆蒸馏/前端设计方法论引用 | 无运行时依赖（纯文档） |
 | 机制源×7 | dsh / pua / semantica / ponytail / codegraph / pi / 文章源 | 已蒸馏为 references 各档（见上表来源列） | 同上 |
 

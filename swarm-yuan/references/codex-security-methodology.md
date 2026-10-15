@@ -2,7 +2,7 @@
 
 # codex-security 安全扫描方法论（OpenAI Codex Security CLI 整合）
 
-> 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.11（Apache-2.0，**完全开源免费**），CLI 整合层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。
+> 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.3.0（Apache-2.0，**完全开源免费**），CLI 整合层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。
 > **v0.1.11 要点**：① 嵌套 Git 仓库 scan snapshots（#116）——含 submodule 的项目可整仓扫描，remediation checkout 保留嵌套仓库；② protected multi-architecture 容器镜像（x64/arm64）+ AppArmor 受限主机自动降级到 legacy sandbox——Docker 沙箱在受限 Ubuntu/容器环境不再硬崩。这两项让 codex-security 在真实项目（常含 submodule）+ 受限 CI 环境更可靠。
 > 纪律：CLI 整合层允许真实命令调用（`npx @openai/codex-security scan`），不重新实现、不复制源码（上游 clone 在 `swarm-yuan/research/codex-security/`，仅供 AI 阅读引用，gitignored）。
 > 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；守决策 26：复杂度预算不增。
@@ -225,7 +225,7 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 
 ## 十二、版本与来源
 
-- 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.1.4（Apache-2.0）
+- 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.3.0（Apache-2.0）
 - 许可证：Apache License 2.0
 - 上游 clone 位置：`swarm-yuan/research/codex-security/`（本地参考，gitignored，不入 git）
 
@@ -237,3 +237,4 @@ npm v0.1.25-0.1.31 能力：
 - **v0.1.29**：**model refusals 后保留 undecided findings**（#960，去重不得吞掉模型拒绝面的未决发现——「模型拒绝 ≠ 发现不存在」）；**失败扫描发结构化 JSON 错误**（#709，错误可机读、门禁可消费）；**Terraform 进 scan inventories**（#944，IaC 安全面扩展）；**bound source preview reads**（#947，有界读取）；patch verified findings（#961）与 patching 进度显示（#931，修复验证面）；policy discovery 容忍 malformed archived Git metadata（#935，容错）。来源：`docs/research/R40-runtime-refresh.md`。
 - **v0.1.30/0.1.31**：**finding 归属人建议 + 证据链**（`status: identified / abstained / error` + `evidence[]` + `limitations[]`，**允许弃权并说明局限**）；**CWE 映射进 finding 契约**（Ajv 2020 校验，测试含 `[" cwe-089 "]` 等脏输入）；**审计门禁语义**（**只有显式标为 scan-fatal 的错误才终止**，通用 OS 错误走有界重试；扫描失败按 error 上报而非静默；**本地 Git hook 是 advisory、不可作信任根**）。
 - **v0.2.0**：**威胁模型 artifact 化**（Standard/Deep/Diff 扫描与策略生成均落盘威胁模型，`export --artifact threat-model` 无模型调用导出；`threatmodel.md` 路径可 null 须判、markdown 与结构化双格式兼容读——**生成的中间资产落盘可复用，且消费方须兼容双格式**）；**暴露凭证检查**（源码含未用代码与测试；离线不试证（发现凭证不打服务）、区分疑似暴露与占位符——**检查动作本身不得放大风险**）；`--model`/`--effort` 贯穿 patch/验证/修复核验/比对（工具档位显式化贯穿全命令面）；**扫描选择面扩展**（C++ 头 .hh/.hxx、EJS/ERB/PHTML 服务端模板、Vyper——模板与非常规扩展名是扫描面的系统性盲区）；**Unix 沙箱预检先于付费调用**（先证明沙箱可用再花钱——资源消耗前的环境前置检查）；升级注意三条：findings API 强制 `Content-Type: application/json`（缺即 400）、诊断文本不再脱敏（输出可含敏感值须复核后再分享）、effort 接受任意非空串（值合法性归 provider）。npm 断流终结（registry 0.2.0 已上，0.1.32 空洞跳过）。来源：`docs/research/R97-runtime-refresh.md`。
+- **v0.3.0**（minor，328 提交）：**standalone validation 收窄 source-only**（#1423——独立验证输入面=源码+目录/内联上下文，不吃仓库全量上下文；验证面与扫描面输入契约分离，无仓库环境也能跑但结论口径相应收窄）；**scan outcome 退出码语义收敛为三值**（#1633——completed report-only=0 / opt-in findings 阈=1 / 执行或必需输出失败=2，**删 partial/unknown 中间态**：不可判定态不留词表，退出码每个值可判定；历史 sealed 报告保持可读（读兼容不写兼容）；Deep Scan 需当前版本插件；新 finding 须规范字段）；**CODEOWNERS 优先于推断归属**（#1519——归属建议先读声明式 CODEOWNERS，推断只补缺——声明优先于推断的归属族）；**config 加载失败给出原因**（#1634——坏配置文件报根因不静默，与 mark-active 框架 glob 报错附 file:line 精确位置的修复同向）；SDK 生成补丁无须管理 CLI 进程（#1635——能力内嵌不进程代理）；Cloud findings 读入 Codex（保存的发现可在宿主消费）；usage 耗尽即停 Deep Scan 工人（配额边界即停工）；`fix(cli)` 供给 issue 补丁返回 PR 详情、UNC 路径只读打开 SQLite 等修复批。来源：`docs/research/R115-runtime-refresh.md`。

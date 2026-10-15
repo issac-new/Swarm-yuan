@@ -1,5 +1,24 @@
 # Changelog
 
+## [v2.80.0] - 2026-10-16
+
+> R115 运行时例行刷新轮（用户指令触发：运行时更新+差异吸收+优化+完整回归+修缺陷+发版+离线包）。3 移动物化（codex-security npm-v0.3.0 minor 328 提交 / dsh alpha.4 89 提交 / semantica tip +7）+ 18 零移动；三门禁全绿；**Java 企业栈全栈真机回归首测**（trade-forge 样例：Spring Boot/Framework + MyBatis + Sharding-JDBC 分库分表 + Druid + Spring Batch + Dubbo + RocketMQ 后端，Vue2 + Element UI 前端——生成链 11 框架全中→激活，Java 栈 11 坑排障实录，feature 九节点 + fix 诊断回路双绿，后端 15/15+前端 8/8+双端 build）；缺陷修复三件（R114 存量终态违规 7 处清剿 / 手抄版本行漂移 2 处 / dist 误跟踪 4084 文件治理）。细节 docs/research/R115-runtime-refresh.md。
+
+### Changed
+- codex-security 基线 npm-v0.2.0→npm-v0.3.0（GitHub tag 2026-10-14 到位，R113 勘误「npm 超 GitHub 基线」差位归零）：standalone validation 收窄 source-only（验证输入面分离）/scan outcome 退出码收敛三值删 partial/unknown 中间态/CODEOWNERS 声明式归属优先/config 加载失败给根因/SDK 无进程管理生成补丁。`references/codex-security-methodology.md` v0.3.0 段+头两处手抄版本行漂移修正（v0.1.11/v0.1.4→v0.3.0）。
+- dsh 基线 alpha.3→alpha.4（89 提交）：宿主版本边界三连（跨宿主版本状态不消费）/包源码 module-scope await 静态拒绝/缺失退出码如实呈现/reasoning 档位从 pi-ai schema 读/插件市场来源可追溯三连。`references/dsh-engineering-methodology.md` R115 注记。
+- semantica tip b24e2418→815527cc（+7 修复批，薄记 baseline 行不立档）：facade 镜像仅同步已确认更新/导出保全后端端点名/测试断言执行路径。
+- offline-manifest.conf 九通道复扫⑰轮：全部追平 R115 基线（npm view/PyPI json 实测），codex-security 双通道同步注记。
+- FACT_ARTIFACT_BYTES_BUDGET 第二十八次登记 561152→565248（实测 562231B 超 1079B，本轮吸收注记增量）。
+
+### Fixed
+- R114 存量终态纪律违规 7 处清剿（发版时未复跑 jargon 门禁所留）：裸轮次标记 R114/R86×5+变迁叙事 2 处改写为现状描述；禁用自造词「随发」×3（SKILL.md/capability-map/task-router/precheck.sh）按术语词典改「不随技能分发」。
+- dist/ 误跟踪治理：R113 提交误将 v2.76/2.77 离线包（4084 文件）扫入 git——`git rm -r --cached`+`.gitignore` 补 `dist/`（本地保留、历史不重写；后续各轮均走 GitHub release 资产）。
+
+### Verified（2026-10-15/16 实跑记录）
+- 三门禁：run-sweep **66/0**（首跑 64/2 两处当场修）/ self-check --check-only exit 0 / test-r68-jargon-free **17/0**。
+- 全栈回归（Java 企业栈首测，trade-forge）：生成链 detect 11 框架全中→骨架→注入→填充（129 规律含证据）→verify --strict 零占位→mark-active；后端 mvn **15/15 BUILD SUCCESS**（分片路由物理表断言/结算批端到端+幂等/Dubbo 契约/MQ 载荷）；前端 vitest **8/8**+vite build exit 0；Task A feature 九节点（TDD 双端红→绿，precheck --all fail0——门禁三连递进执法：spec-first GLOB/SQL 注入真命中/spec §5.5 勾选）；Task B fix 诊断回路（守卫拆除即被逮→复位绿）。
+
 ## [v2.79.1] - 2026-10-15
 
 > R114 followup：UX 修复两连（R114 研发链登记的改进候选，用户放行后实施）。零行为变更，纯报错可操作性/模板可发现性。

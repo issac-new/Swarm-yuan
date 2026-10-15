@@ -34,3 +34,6 @@ verifier/v2/report.md
 # ---- 构建产物（fixture target 等）----
 target/
 *.jar
+
+# ---- 离线安装包产物（zip 随 GitHub release 分发，不入 git；R115 清剿 R113 误跟踪的 v2.76/2.77 两包）----
+dist/
