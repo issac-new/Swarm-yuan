@@ -559,7 +559,7 @@ swarm-yuan 的 `state-machine.sh` 采用 `sanitize_input` 白名单字符集过�
 
 ## Pi codemode：沙箱脚本聚合形态
 
-> earendil-works/pi（原 badlogic/pi-mono 重定向）`packages/codemode`；Pi 机制源定位不进 FACT_RUNTIMES（同 dsh/pua/mattpocock 先例，见 docs/upstream-baseline.md）。证据：官方 README 直查（B+）。
+> earendil-works/pi（原 badlogic/pi-mono 重定向）`packages/codemode`；Pi 机制源定位不进 FACT_RUNTIMES（同 dsh/pua 先例，见 docs/upstream-baseline.md；mattpocock 先例已于 R114 升级为 CLI 层运行时不再适用）。证据：官方 README 直查（B+）。
 
 - **机制**：QuickJS/WASM 沙箱内让模型写 JS 编排其他工具——嵌套 tool call 在沙箱内完成，**只有脚本最终输出进入主上下文窗口**（中间调用与结果不进入）。
 - **定位**：子代理进程的替代形态——不开新子代理上下文，用沙箱脚本聚合多次工具调用。上下文成本模型对比：子代理=固定开新窗口+结果回流；codemode=零新窗口+只回流终值。

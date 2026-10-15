@@ -394,7 +394,7 @@ if [[ -z "${FACT_RUNTIMES_DEEP:-}" && -f "$_runtime_base/assets/facts.conf" ]]; 
 fi
 echo "  整合分层："
 echo "    深度整合(${FACT_RUNTIMES_DEEP:-4},precheck.sh 真实命令调用)：gitnexus / graphify / claude-mem / ocr"
-echo "    CLI 整合(${FACT_RUNTIMES_CLI:-4},门禁/状态机按需调用 CLI)：openspec / comet / gsd-core / codex-security"
+echo "    CLI 整合(${FACT_RUNTIMES_CLI:-5},门禁/状态机按需调用 CLI)：openspec / comet / gsd-core / codex-security / mattpocock-skills(仓内物化)"
 echo "    方法论引用(${FACT_RUNTIMES_METHOD:-5},AI 按节点引用模式)：superpowers / gstack / ruflo / ECC / impeccable"
 echo "  （每层有自带降级载体，未装不阻塞--详见 SKILL.md「外部运行时整合」分层说明）"
 unset _runtime_base
@@ -940,19 +940,19 @@ check_runtime_tier() {
   for fn in has_gitnexus has_graphify has_ocr has_claude_mem; do
     grep -qE "^${fn}\(\)" "$precheck" 2>/dev/null && deep_cnt=$((deep_cnt+1))
   done
-  # 派生 cli 集合：has_openspec/has_comet/has_gsd_tools/has_codex_security
-  # codex-security 是 CLI 整合层第 4 对象（2026-07-30 吸收），但其 has_ 守卫在 gates-warn.sh 的
+  # 派生 cli 集合：has_openspec/has_comet/has_gsd_tools/has_mattpocock
+  # codex-security 是 CLI 整合层对象（2026-07-30 吸收），但其 has_ 守卫在 gates-warn.sh 的
   # check_sast_deep 内联判定（command -v npx + OPENAI_API_KEY），不是 precheck.sh 的顶层 has_ 函数。
-  # 此处对账 precheck.sh 顶层 has_ 函数（3 个：openspec/comet/gsd_tools），codex-security 的 has_
-  # 守卫在 check_sast_deep 内联——所以 cli_cnt 期望值要扣除 codex-security（它不进顶层 has_ 计数）。
-  for fn in has_openspec has_comet has_gsd_tools; do
+  # mattpocock-skills 是 CLI 层第 5 项（R114，物化型守卫：目录存在性，非 command -v），进顶层 has_ 计数。
+  # 此处对账 precheck.sh 顶层 has_ 函数（4 个：openspec/comet/gsd_tools/mattpocock）。
+  for fn in has_openspec has_comet has_gsd_tools has_mattpocock; do
     grep -qE "^${fn}\(\)" "$precheck" 2>/dev/null && cli_cnt=$((cli_cnt+1))
   done
   # method 集合 = FACT_RUNTIMES - deep - cli（PROJECTS 表 N 项，方法论层无 has_ 守卫）
-  # codex-security 虽属 CLI 层但无顶层 has_ 函数，cli_cnt=3（顶层 has_）≠ FACT_RUNTIMES_CLI=4，
+  # codex-security 虽属 CLI 层但无顶层 has_ 函数，cli_cnt=4（顶层 has_）≠ FACT_RUNTIMES_CLI=5，
   # 故 method_cnt 派生用 FACT_RUNTIMES - deep - (FACT_RUNTIMES_CLI)，而非 cli_cnt。
-  local method_cnt=$(( ${FACT_RUNTIMES:-13} - deep_cnt - ${FACT_RUNTIMES_CLI:-4} ))
-  local exp_deep="${FACT_RUNTIMES_DEEP:-4}" exp_cli="${FACT_RUNTIMES_CLI:-4}" exp_method="${FACT_RUNTIMES_METHOD:-5}"
+  local method_cnt=$(( ${FACT_RUNTIMES:-14} - deep_cnt - ${FACT_RUNTIMES_CLI:-5} ))
+  local exp_deep="${FACT_RUNTIMES_DEEP:-4}" exp_cli="${FACT_RUNTIMES_CLI:-5}" exp_method="${FACT_RUNTIMES_METHOD:-5}"
   if [[ "$deep_cnt" == "$exp_deep" && "$cli_cnt" == "$((exp_cli - 1))" && "$method_cnt" == "$exp_method" ]]; then
     echo "  ✓ 整合分层与 facts.conf 一致（deep=${deep_cnt} cli顶层has_=${cli_cnt}（+codex-security内联守卫1=CLI ${exp_cli}） method=${method_cnt}）"
   else
@@ -961,6 +961,13 @@ check_runtime_tier() {
     [[ "$cli_cnt" == "$((exp_cli - 1))" ]] || { warn "cli 整合 顶层 has_* 函数数=${cli_cnt} ≠ 期望 $((exp_cli - 1))（FACT_RUNTIMES_CLI=${exp_cli} 含 codex-security 内联守卫1，不进顶层 has_ 计数）"; FAIL=1; }
     [[ "$method_cnt" == "$exp_method" ]] || { warn "method 整合派生数=${method_cnt} ≠ facts.conf FACT_RUNTIMES_METHOD=${exp_method}"; FAIL=1; }
   fi
+  # mattpocock 物化完整性对账（R114）：技能数/登记文件三断言，上游刷新漂移机器执法
+  local _rt="$base/runtime/mattpocock-skills"
+  local _n
+  _n="$(find "$_rt" -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
+  { [[ -d "$_rt" ]] && [[ "$_n" == "${FACT_MATTPPOCOCK_SKILLS:-27}" ]] && [[ -f "$_rt/LICENSE" && -f "$_rt/MANIFEST.md" ]]; } \
+    && echo "  ✓ mattpocock 物化完整（${_n} 技能，MANIFEST+LICENSE 在位）" \
+    || { warn "mattpocock 物化不完整：目录=${_rt} 技能数=${_n}（期望 FACT_MATTPPOCOCK_SKILLS=${FACT_MATTPPOCOCK_SKILLS:-27}），LICENSE/MANIFEST 在位性须查——上游刷新后须同步 MANIFEST 与 facts.conf"; FAIL=1; }
 }
 check_runtime_tier
 
@@ -1477,11 +1484,11 @@ check_frontend_design_methodology() {
   else
     echo "  ✓ facts.conf FACT_RUNTIMES_METHOD=5（方法论引用层 5 对象）"
   fi
-  if [[ "${FACT_RUNTIMES:-0}" -ne 13 ]]; then
-    warn "facts.conf FACT_RUNTIMES=${FACT_RUNTIMES:-（未设）} ≠ 13（impeccable + codex-security 加入后应同步运行时总数为 13）"
+  if [[ "${FACT_RUNTIMES:-0}" -ne 14 ]]; then
+    warn "facts.conf FACT_RUNTIMES=${FACT_RUNTIMES:-（未设）} ≠ 14（impeccable + codex-security 加入后 13，R114 mattpocock-skills CLI 物化后 14）"
     _warn=$((_warn+1))
   else
-    echo "  ✓ facts.conf FACT_RUNTIMES=13（13 个外部运行时，含 codex-security CLI 整合）"
+    echo "  ✓ facts.conf FACT_RUNTIMES=14（14 个外部运行时，含 codex-security CLI 整合与 mattpocock-skills 物化）"
   fi
 
   if [[ $_missing -gt 0 ]]; then
@@ -1561,7 +1568,7 @@ check_context_engineering_layering
 # codex-security v0.1.4 作为 CLI 整合层第 4 对象（决策 27 吸收）：
 #   - references/codex-security-methodology.md 必须存在且非空（absorb 载体 ① references 文档）
 #   - SKILL.md CLI 整合表须含 codex-security（absorb 载体 ② SKILL.md 叙事）
-#   - facts.conf FACT_RUNTIMES=13 / FACT_RUNTIMES_CLI=4（口径同步硬约束）
+#   - facts.conf FACT_RUNTIMES=14 / FACT_RUNTIMES_CLI=5（口径同步硬约束；R114 前为 13/4）
 # 此断言守 absorb 三载体的一致性，不计入 FACT_GATES_TOTAL=55（决策 27 第 4 条：G<N> 是合规扩展点）。
 # 风格：对齐 G13/G14 warn-only——文件缺失才 fail，叙事/口径漂移只 warn。
 check_codex_security_cli_wiring() {
@@ -1596,18 +1603,18 @@ check_codex_security_cli_wiring() {
     _warn=$((_warn+1))
   fi
 
-  # ③ facts.conf 口径同步（warn-only，对齐 G13/G14 风格）
-  if [[ "${FACT_RUNTIMES_CLI:-0}" -ne 4 ]]; then
-    warn "facts.conf FACT_RUNTIMES_CLI=${FACT_RUNTIMES_CLI:-（未设）} ≠ 4（codex-security 加入 CLI 整合层应同步为 4）"
+  # ③ facts.conf 口径同步（warn-only，对齐 G13/G14 风格；R114 mattpocock-skills 物化后 CLI 层 4→5）
+  if [[ "${FACT_RUNTIMES_CLI:-0}" -ne 5 ]]; then
+    warn "facts.conf FACT_RUNTIMES_CLI=${FACT_RUNTIMES_CLI:-（未设）} ≠ 5（codex-security 后 4，R114 mattpocock-skills 物化后 5）"
     _warn=$((_warn+1))
   else
-    echo "  ✓ facts.conf FACT_RUNTIMES_CLI=4（CLI 整合层 4 对象）"
+    echo "  ✓ facts.conf FACT_RUNTIMES_CLI=5（CLI 整合层 5 对象，含 mattpocock-skills 物化型）"
   fi
-  if [[ "${FACT_RUNTIMES:-0}" -ne 13 ]]; then
-    warn "facts.conf FACT_RUNTIMES=${FACT_RUNTIMES:-（未设）} ≠ 13（codex-security 加入应同步运行时总数为 13）"
+  if [[ "${FACT_RUNTIMES:-0}" -ne 14 ]]; then
+    warn "facts.conf FACT_RUNTIMES=${FACT_RUNTIMES:-（未设）} ≠ 14（codex-security 加入后 13，R114 mattpocock-skills CLI 物化后 14）"
     _warn=$((_warn+1))
   else
-    echo "  ✓ facts.conf FACT_RUNTIMES=13（13 个外部运行时）"
+    echo "  ✓ facts.conf FACT_RUNTIMES=14（14 个外部运行时）"
   fi
 
   if [[ $_missing -gt 0 ]]; then

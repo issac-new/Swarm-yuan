@@ -104,12 +104,13 @@
 | 深度×4 | GitNexus / graphify | 探查图谱优先（code-graph-tools 三选型，codegraph 为 watch 备选） | 未装→静态扫描清单 |
 | 深度×4 | claude-mem | Step 12 记忆写回后端 + 知识门禁记忆检索（均经 memory-backends.sh 适配层注册，可替换后端） | 未装→local 项目本地落盘（.swarm-yuan/，探测到 .zcode/memories 时同步） |
 | 深度×4 | ocr | ⑥ 测试验证 5 审查维度 | 未装→4 维 |
-| CLI×4 | OpenSpec | 节点②③ spec proposal/tasks 格式 | 未装→自有 spec-template |
-| CLI×4 | comet | 工作流骨架仪式/resume-probe | 未装→state-machine.sh |
-| CLI×4 | gsd-core | 计划验证/STATE 戳模式 | 未装→tasks.md checkbox |
-| CLI×4 | codex-security | 安全扫描门禁子进程 | 未装→grep 级安全模式 |
+| CLI×5 | OpenSpec | 节点②③ spec proposal/tasks 格式 | 未装→自有 spec-template |
+| CLI×5 | comet | 工作流骨架仪式/resume-probe | 未装→state-machine.sh |
+| CLI×5 | gsd-core | 计划验证/STATE 戳模式 | 未装→tasks.md checkbox |
+| CLI×5 | codex-security | 安全扫描门禁子进程 | 未装→grep 级安全模式 |
+| CLI×5 | mattpocock-skills（R114 物化型：runtime/mattpocock-skills/ 27 技能整镜像，非 command -v 型） | 生成器侧读技能原文执行：探查访谈（grilling/grill-with-docs）、领域建模（domain-modeling/codebase-design）、调研（research）、原型（prototype）、用户显式发起的 retro/handoff/triage/wayfinder/wizard 直调 | 仓内物化随 install.sh 装 8 宿主恒可达，无降级；目标技能侧不随发→消费走 mattpocock-skills-methodology 机制改写 |
 | 方法论×5 | superpowers / gstack / ECC / Ruflo / impeccable | 编排/审查/记忆蒸馏/前端设计方法论引用 | 无运行时依赖（纯文档） |
-| 机制源×8 | dsh / pua / semantica / ponytail / codegraph / mattpocock-skills / pi / 文章源 | 已蒸馏为 references 各档（见上表来源列） | 同上 |
+| 机制源×7 | dsh / pua / semantica / ponytail / codegraph / pi / 文章源 | 已蒸馏为 references 各档（见上表来源列） | 同上 |
 
 ## 四、对账纪律（self-check G25 机器执法）
 

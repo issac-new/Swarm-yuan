@@ -418,7 +418,7 @@ bash ~/.claude/skills/swarm-yuan/scripts/generate-skill.sh --upgrade my-project-
 
 ### 9. 数字与口径
 
-全部数字（特征卡 17 / 门禁 55 四族分层 / 运行时 13 / 领域 32 / 认知 5 层 / 兼容 7 工具 / 三平台）不在本文手抄——速览表见 `swarm-yuan/README.md` 附录 A，真值以 `swarm-yuan/assets/facts.conf` 为准（self-check 机器对账，手抄即漂移）。
+全部数字（特征卡 17 / 门禁 55 四族分层 / 运行时 14 / 领域 32 / 认知 5 层 / 兼容 7 工具 / 三平台）不在本文手抄——速览表见 `swarm-yuan/README.md` 附录 A，真值以 `swarm-yuan/assets/facts.conf` 为准（self-check 机器对账，手抄即漂移）。
 
 ### 框架规则引擎
 
@@ -526,7 +526,7 @@ bash scripts/precheck.sh --compliance-suite  # 合规 19 门禁（强监管交�
 - **夹具（fixture）**：最小测试样本项目，分 violating（必被检出）与 compliant（必通过）正反例。
 - **闭环流 / 四本账链式锚定**：账本行间用校验和互相引用，上游篡改导致全链失效可检出。
 - **特征卡（feature card）**：17 项项目探查清单，立法产物。
-- **外部运行时（runtime）**：被整合的外部工具/方法论，13 个，分深度整合/CLI 整合/方法论引用三层，未装自动降级不阻塞。
+- **外部运行时（runtime）**：被整合的外部工具/方法论，14 个，分深度整合/CLI 整合/方法论引用三层，未装自动降级不阻塞（mattpocock-skills 为仓内物化运行时，恒可达）。
 - **组件库清单（map）**：目标技能 references/reference-manual.md 里的两列"路径|说明与约束"清单，≤32KiB（特征卡第 16 项"详尽组件库清单"指同一物；旧称"项目地图/地图/零件目录"已废弃）。
 - **Oracle（预言机验证）**：AI 声称完成时由 hook 独立重跑验证命令的机制，"完成了"需经独立验证才算数。
 - **facts.conf**：全部招牌数字的唯一权威文件；self-check 用代码真值自动对账。
