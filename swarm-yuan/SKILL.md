@@ -46,7 +46,7 @@ swarm-yuan 是一个生成器。对任意代码仓库跑一次生成流程，产
 外部运行时按整合深度分三层，每层自带降级载体，未装不阻塞但披露：
 
 - 深度层：GitNexus/graphify/claude-mem/ocr，门禁内真实子进程。记忆类插件经 assets/memory-backends.sh 适配层接入，绑定的是后端契约而非具体工具，可替换。
-- CLI 层：OpenSpec/comet/gsd-core/codex-security/mattpocock-skills，按需调用。mattpocock-skills 为仓内物化运行时（runtime/mattpocock-skills/，27 技能整镜像 + MANIFEST 来源登记），消费方式是读技能原文执行；物化随 install.sh 装 8 宿主恒可达，目标技能侧不随发（消费走方法论层改写降级）。
+- CLI 层：OpenSpec/comet/gsd-core/codex-security/mattpocock-skills，按需调用。mattpocock-skills 为仓内物化运行时（runtime/mattpocock-skills/，27 技能整镜像 + MANIFEST 来源登记），消费方式是读技能原文执行；物化随 install.sh 装 8 宿主恒可达，目标技能侧不随技能分发（消费走方法论层改写降级）。
 - 方法论层：superpowers/gstack/ECC/Ruflo/impeccable，AI 按节点引用。
 
 清单与降级链见 references/subagent-orchestration.md。代码图谱备选选型见 references/code-graph-tools.md。mattpocock 双层关系（方法论改写 ↔ 运行时原语）见 references/mattpocock-skills-methodology.md。
