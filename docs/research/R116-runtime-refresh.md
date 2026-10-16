@@ -11,7 +11,7 @@
 | impeccable | v4.1.1 | **cli-v4.6.0**（=skill-v4.6.0；4.1.1→4.6 跨 5 版） | **移动**（大跨度） |
 | mattpocock-skills | main 49dd158 | **v1.3.1**（tag 面） | **移动**（tag 面形式化；R114 已注明 49dd158=v1.3.1+1 提交，镜像内容零移动） |
 | semantica | tip 815527cc | tip ca6c9f191 | 薄记（tag 面 v0.7.0 维持零移动，tip 漂移照 R115 先例记档） |
-| openspec 1.14.2 / comet 0.4.5 / GitNexus 1.6.12 / gsd-core 1.17.0 / claude-mem 13.39.0 / ocr 1.13.0 / graphify 0.9.91 / superpowers 7.0.0 / ruflo 3.56.10 / ECC 2.2.3 / codex-security 0.3.0 / pua 3.5.1 / dsh alpha.4 | — | 均在最新 | 零移动 |
+| openspec 1.14.2 / comet 0.4.5 / GitNexus 1.6.12 / gsd-core 1.17.0 / claude-mem 13.39.0 / ocr 1.13.0 / graphify 0.9.91（GitHub tag）/ superpowers 7.0.0 / ruflo 3.56.10 / ECC 2.2.3 / codex-security 0.3.0 / pua 3.5.1 / dsh alpha.4 | — | 均在最新（核对时点） | 零移动（**勘误**：dsh 同日后出 alpha.5、graphifyy PyPI 通道 0.10.0——upstream-baseline 行内勘误补记，见 §三.4） |
 | gstack | tag v1.87.5.0 + tip 47d639ab | tip 47d639ab | 零移动（tip 面） |
 | gitnexus | 1.6.12 | 1.6.13-rc.112 全 rc 不取 | 零移动 |
 | better-harness | 0.6.6 | npm 0.0.0（占位）/ 0.7.0 全 alpha 不取 | 零移动 |
@@ -39,7 +39,8 @@ npm/live CLI 口径：`npm view @anthropic-ai/claude-code` 2.1.301 与 GitHub re
 
 1. **新增吸收文本门禁违例 5 处**（run-sweep 首跑 test-r68-jargon-free 逮出，当场改写为现状描述）：禁用自造词「三值化」「会师」×2（claude-code-capabilities / codex-methodology）+ 裸轮次标记 R116/R115 ×4（两档版本节头与交叉引用）——门禁有效性的又一次无意识变异测试（连续第二轮首跑即咬，R115 同型）。
 2. **预算断言第三十次登记**：references 拷贝体积实测 568043B 超 2795B，成因=本轮三档吸收注记增量（codex-methodology/claude-code-capabilities/frontend-design §十三A——4 移动运行时的方法层吸收），569344 登记（+4KiB 沿决策 38 冻结现状+显式余量形态）。
-3. **swarm-yuan 宿主侧（ncwk 轮联动，非本仓缺陷）**：v0.7.36 升级轮 apply.sh pipefail 假死（grep 空匹配退出 1 × set -o pipefail）——守卫管道补 `|| true` 根治（见 ncwk overlay 升级 spec D4）。
+3. **基线核对时点差勘误两处**（发版后复核实抓）：dsh 同日新出 alpha.5（核对时点后发布）/ graphifyy PyPI 通道 0.10.0（GitHub tag 口径 0.9.91 持平，npm/pip 通道面超前）——upstream-baseline.md 两行内勘误补记，吸收档仍锚 alpha.4 变更面（tag 口径吸收随下轮）。
+4. **swarm-yuan 宿主侧（ncwk 轮联动，非本仓缺陷）**：v0.7.36 升级轮 apply.sh pipefail 假死（grep 空匹配退出 1 × set -o pipefail）——守卫管道补 `|| true` 根治（见 ncwk overlay 升级 spec D4）。
 
 ## 四、全栈回归（典型前后端项目 task-forge）
 
