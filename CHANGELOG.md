@@ -1,5 +1,11 @@
 # Changelog
 
+## [v2.81.0] - 2026-10-16
+
+R116 运行时例行刷新轮
+
+4 移动+1 薄记：claude-code 2.1.301（结果词表诚实化第二实证——搜索失败≠无匹配）/ codex rust-v0.163.0（只读并行+门禁先于解析+权限态=会话态）/ impeccable cli-v4.6.0（检测面=真实可见面 wave）/ mattpocock-skills v1.3.1 tag 面形式化 + semantica tip 薄记。吸收三档过决策 46 两问（codex-methodology R116 段 / claude-code-capabilities R116 薄记 / frontend-design-methodology §十三A）。轮档 `docs/research/R116-runtime-refresh.md`。
+
 ## [v2.80.0] - 2026-10-16
 
 > R115 运行时例行刷新轮（用户指令触发：运行时更新+差异吸收+优化+完整回归+修缺陷+发版+离线包）。3 移动物化（codex-security npm-v0.3.0 minor 328 提交 / dsh alpha.4 89 提交 / semantica tip +7）+ 18 零移动；三门禁全绿；**Java 企业栈全栈真机回归首测**（trade-forge 样例：Spring Boot/Framework + MyBatis + Sharding-JDBC 分库分表 + Druid + Spring Batch + Dubbo + RocketMQ 后端，Vue2 + Element UI 前端——生成链 11 框架全中→激活，Java 栈 11 坑排障实录，feature 九节点 + fix 诊断回路双绿，后端 15/15+前端 8/8+双端 build）；缺陷修复三件（R114 存量终态违规 7 处清剿 / 手抄版本行漂移 2 处 / dist 误跟踪 4084 文件治理）。细节 docs/research/R115-runtime-refresh.md。
