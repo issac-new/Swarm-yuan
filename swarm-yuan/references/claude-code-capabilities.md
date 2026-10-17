@@ -599,7 +599,18 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, Task, T
 
 ## 版本基线
 
-能力清单以 npm `latest` 基线版本为准核验（当前 2.1.301）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+能力清单以 npm `latest` 基线版本为准核验（当前 2.1.302）。供应链登记（许可证 / 版本 / drift 状态）见仓库 `docs/upstream-baseline.md`（仓库档案，不随技能分发）。逐版能力变化如下各节。
+
+## v2.1.302 能力
+
+> 2026-10-17 升级（v2.1.302，1 patch 修复主导批）。两个方法论位：计量连续性（resume 后成本不从零）、有界读取（超限图片拒载）。
+
+- **auto mode 分类器模型独立可选**（`CLAUDE_CODE_AUTO_MODE_MODEL`）：客户端 auto mode 分类器用的模型可单独指定，且不动服务端 auto mode 的模型——**分类判定面与任务执行面的模型选择分离**，治理面配置不隐式改变执行面。
+- **云会话 resume 后成本/用量不从零重计**（修复）：会话在新进程恢复后累计成本与用量连续——**计量连续性**：恢复是执行态延续，不是新计费周期的开始（与「压缩边界不动已完成态」同族：边界操作不重置账本）。
+- **credit 计费面跳过建议**：prompt suggestions 在上一条回复按 credits 计费后跳过——建议是宿主自发动作，花费落在用户付费面时先停（成本守门，与「换小上下文模型先问后花」同族）。
+- **Read 图片超 128MB 拒载**（修复）：任意大小图片/图片名管道设备不再全量载入内存——**有界读取**族再添一例（大输入进内存前先量边界）。
+- **插件退出前排空配置写队列**（修复）：`claude plugin` 等子命令先等排队中的 settings/config 写完成再退出，不再丢改动或留 `.tmp` 残件——关停排水族第二实证（退出前存量写动作要收尾）。
+- 其余修复面：会话中途新增工具经 ToolSearch/压缩后重载不再 prompt cache miss（缓存稳定性族——工具面变更由宿主消解）；MCP 协议版本 2026-07-28 协商缺 `resultType`/`ttlMs`/`cacheScope` 时不再全工具失败（协议宽容化：可选字段缺席不致命）；git reftable ref 格式下插件市场不再每次重克隆（reftable 族）；worktree 隔离在 git 2.56+ 游离 `.git` 文件指向不存在目录时不再拒建/拒恢复；Windows exFAT/FAT32 项目盘写全拒修复；压缩进行中停止回合不再报「Prompt is too long」。
 
 ## v2.1.301 能力
 

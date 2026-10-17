@@ -1,5 +1,23 @@
 # Changelog
 
+## [v2.82.0] - 2026-10-17
+
+R117 运行时例行刷新轮
+
+9 移动：claude-code 2.1.302（分类器模型独立可选+resume 成本连续+credit 计费面跳过建议）/ openspec 1.14.3（glob artifacts 写前检查+braces 依赖移除）/ claude-mem 13.41.0（两版：TeamBrain 终端+团队简报+**MCP 执行回执为独立观察源不并入调用计数**）/ ocr 1.13.1（薄修复批）/ graphify 0.9.92（成员名 `_`/`$`/`#` 修饰符差异=不同节点；**PyPI 通道 0.10.0→0.9.92 归位，通道异常解除**）/ **dsh dsh-v0.2.1-rc.2（0.2.x rc 触发点命中：调试产物发布早拒+Windows 打包默认签名+PTC 指令组合非散文替换+时钟钉定回归扫 Host 距离）** / codex-security 0.4.0（**hosted scan 执行模型——授权/取消/持久执行态三权归宿主**+token 计量不双计）/ gstack tip +17（**agent-ready 错误契约**——每个错误为 AI 读者打分/跳过的升级永不说 ok/--paths 审计范围显式+跳过路径全报/test:health 如实/夹具不邀请自身失败）/ pi v1.3.0（机制源薄记）。吸收六档过决策 46 两问（claude-code-capabilities 2.1.302 段+codex-security-methodology v0.4.0 段+memory-persistence R117 行+code-graph-tools R117 段+review-methodology R117 段+dsh-engineering-methodology R117 记档）。live CLI 双归零（claude 2.1.302 同版/codex 0.162.1→0.163.0 本轮升级）。轮档 `docs/research/R117-runtime-refresh.md`。
+
+### Changed
+- upstream-baseline.md 九行回写+R117 口径注；pi 行 tag 面形式化（1.0→1.3.0，机制源未接线薄记不深读）。
+- FACT_ARTIFACT_BYTES_BUDGET 第三十次登记 569344→577536（实测 576423B 超 7079B，六档吸收注记增量）。
+
+### Fixed
+- 新增吸收文本 jargon 违例 3 处（裸轮次标记 2+变迁叙事句 1）当场改写——门禁连续第三轮首跑即咬。
+- gstack 安装面残留符号链接（connect-chrome→open-gstack-browser）击穿源码包重装——清残留后 self-check 全绿；源码包当日化随发版执行（release-src-packages.sh）。
+
+### Verified（2026-10-17 实跑记录）
+- 三门禁：jargon 17/0（首跑 15/2 两处当场修）/ self-check RC=0（预算登记后 576370≤577536）/ run-sweep 全绿（64+ 项，含 e2e/gen-e2e/fieldchange-e2e）。
+- **全栈回归（React 19 首测）**：生成链 detect 4 框架全中（react 门禁首次进回归面）→骨架→注入（sha=2344106150）→AI 填充（45 规律全带证据+conf 12 变量）→verify --strict 零占位→mark-active；Task A 标题搜索 TDD 双端红→绿（api 8/8+web 3/3+build 0），**门禁三连递进执法实录**（SQL WHERE 拼接→LIKE 参数近行→全绿 fail 0）；Task B 守卫诊断回路（静默型缺陷注入专测立即咬住→复位绿；冗余守卫两诚实发现记档）；node_modules 只读残留卫生补账。
+
 ## [v2.81.0] - 2026-10-16
 
 R116 运行时例行刷新轮

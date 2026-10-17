@@ -2,7 +2,7 @@
 
 # codex-security 安全扫描方法论（OpenAI Codex Security CLI 整合）
 
-> 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.3.0（Apache-2.0，**完全开源免费**），CLI 整合层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。
+> 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.4.0（Apache-2.0，**完全开源免费**），CLI 整合层第 4 对象（与 OpenSpec/comet/gsd-core 同档）。
 > **v0.1.11 要点**：① 嵌套 Git 仓库 scan snapshots（#116）——含 submodule 的项目可整仓扫描，remediation checkout 保留嵌套仓库；② protected multi-architecture 容器镜像（x64/arm64）+ AppArmor 受限主机自动降级到 legacy sandbox——Docker 沙箱在受限 Ubuntu/容器环境不再硬崩。这两项让 codex-security 在真实项目（常含 submodule）+ 受限 CI 环境更可靠。
 > 纪律：CLI 整合层允许真实命令调用（`npx @openai/codex-security scan`），不重新实现、不复制源码（上游 clone 在 `swarm-yuan/research/codex-security/`，仅供 AI 阅读引用，gitignored）。
 > 守决策 27：吸收优先于新增门禁，不新增 `check_*`，门禁数保持 55；守决策 26：复杂度预算不增。
@@ -225,11 +225,13 @@ codex-security 的 `Dockerfile` + `compose.yaml` + `codex-security-seccomp.json`
 
 ## 十二、版本与来源
 
-- 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.3.0（Apache-2.0）
+- 来源：[openai/codex-security](https://github.com/openai/codex-security) `@openai/codex-security` v0.4.0（Apache-2.0）
 - 许可证：Apache License 2.0
 - 上游 clone 位置：`swarm-yuan/research/codex-security/`（本地参考，gitignored，不入 git）
 
-npm v0.1.25-0.1.31 能力：
+npm v0.1.25-0.4.0 能力：
+
+- **v0.4.0**（minor）：**hosted scan 执行模型**（#1559——`runHostedScan(input, { executor, signal, onEvent })` SDK 与 `scan --host` JSON-RPC 适配器；**opt-in 且宿主供给执行器、冻结检出、显式模型与存储设置；授权、取消与持久执行态归宿主所有**——把「谁来执行、谁担责任」从隐式契约升为显式接口：执行权/取消权/执行态持久化三权在宿主侧声明，扫描器只消费冻结检出，与 G 系「扫描输入面冻结」参照同向）；**token 计量不双计**（此前 Deep Scan worker 失败尝试与上下文压缩的已记用量不入总额、resumed history 重复计——现失败尝试与压缩用量计入总额且恢复的历史只计一次；SDK 与兼容宿主可在报告生成后补记最终响应的尾款——**计量=真消耗的并集，恢复不重复收款**，与 claude-code 2.1.302「resume 后成本连续」同族互补：一个防从零重计、一个防恢复双计）；bulk-scan 恢复与报告格式化改善；**废弃 ranking helpers 移除**（minor 破坏项：直接消费 helper 者按迁移指引改道——破坏性删除进 minor 须带迁移指引）。来源：`docs/research/R117-runtime-refresh.md`。
 
 - **v0.1.26**：GitLab MR 验证补丁通道；**安全修复验证须显式请求**（fail-closed）；confirmed finding 匹配提速；**跨扫描发现关系保留**（findings 生命周期跨扫描延续：new/persisting/resolved 关系不因重扫丢失）；sealed 扫描目录去重；去重评审阶段对齐加固（发现生命周期管理与本仓 gate-trends 的趋势记录一致）。来源：`docs/research/R20-runtime-refresh.md`。
 - **v0.1.27**：patch/validation **复用 scan 认证**（认证态一致性）；SDK pipeline 去重并发可配；scan-contract 不声明「文档尺寸上限」（不存在的能力不写进契约）；UTF-8 BOM 容错。来源：`docs/research/R24-runtime-refresh.md`。
