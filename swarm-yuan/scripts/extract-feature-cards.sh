@@ -71,9 +71,13 @@ mq_consumers=$(grep -rnE '@KafkaListener|@RabbitListener|@RocketMQMessageListene
 total_endpoints=$((rest_endpoints + graphql_ops + grpc_methods + mq_consumers))
 
 # ---- 11. 可复用稳定单元（导出函数/类/组件计数）----
-# 前端组件：export default / export const / export function（.vue/.jsx/.tsx）
-frontend_components=$(grep -rnE '^export[[:space:]]+(default[[:space:]]+)?(const|function|class|let)' "$PROJ" \
-  --include='*.vue' --include='*.jsx' --include='*.tsx' "${GREP_EXCLUDES[@]}" 2>/dev/null | wc -l | xargs || true)
+# 前端组件：.vue 文件按文件计（SFC 即组件——script setup 无顶层 export，旧 export 计数法
+# 在纯 script-setup Vue3 项目恒 0，nest-forge 实证 4 组件报 0）+ .jsx/.tsx 按导出计
+# （export default / export const / export function）
+_vue_count=$(find "$PROJ" -name '*.vue' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.git/*' 2>/dev/null | wc -l | xargs || true)
+_jsx_count=$(grep -rnE '^export[[:space:]]+(default[[:space:]]+)?(const|function|class|let)' "$PROJ" \
+  --include='*.jsx' --include='*.tsx' "${GREP_EXCLUDES[@]}" 2>/dev/null | wc -l | xargs || true)
+frontend_components=$((_vue_count + _jsx_count))
 # 后端服务/工具：export class/function/def/func（.py/.java/.go）
 backend_units=$(grep -rnE '^export[[:space:]]+(class|function|def|func)|^public[[:space:]]+(class|interface)|^def[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*|^func[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*' "$PROJ" \
   --include='*.py' --include='*.java' --include='*.go' --include='*.ts' --include='*.js' "${GREP_EXCLUDES[@]}" 2>/dev/null \

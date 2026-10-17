@@ -1,5 +1,23 @@
 # Changelog
 
+## [v2.83.0] - 2026-10-18
+
+R118 全量回归轮（NestJS 缺口栈首测）
+
+> 用户指令驱动：完整回归（生成典型场景技能 → 基于其做典型研发工作 → 识别修复缺陷 → 验证 → 发版）。载体 nest-forge（NestJS 10 + TypeORM + better-sqlite3 + JWT / Vue3 + Element Plus + Pinia，54 文件）——生成流程 Step 1-13 完整闭环（8 框架探测全中→standard 档骨架→注入→85 条规律全带证据填充→strict 零占位→10 维度计数核验全 PASS→激活→--all-full fail 0）；研发工作两项九节点全绿：Task A dueDate 数据模型变更（TDD 双端红→绿，门禁逮出 spec §5.5 复用声明未勾当场补齐）+ Task B RolesGuard 接线诊断回路（**回路再暴露样例第二潜伏缺陷：findByUsername 的 addSelects 是 FindOneOptions 不存在的键被 TypeORM 静默忽略，注册后登录恒 401——修为 QueryBuilder addSelect + register→login 往返回归锚**）。发现并修复生成器缺陷 6 项（D1-D6，逐项带样例实证锚点，见轮档表）。细节 docs/research/R118-nestjs-regression.md。
+
+### Fixed
+- **D1** detect-frameworks @types/* 误作框架信号（@nestjs/platform-fastify 项目也常带 @types/express，express 规则集误激活）——pkgjson 桶剔除 @types/* + 补 @nestjs/platform-express/@nestjs/platform-fastify 真实平台适配器信号。
+- **D2** framework-evidence 自动探测 sed 贪婪提取多框架只出最后一个（8 框架台账静默缩水为 1）——逐 token 提取重写。
+- **D3** SENSITIVE_EXCLUDE_GLOBS 豁免只对 gitleaks 子路径生效，内置正则族路径零消费——测试夹具密码 conf 无法豁免必 fail；内置路径对齐两层排除（测试文件路径 + 项目级豁免）。
+- **D4** ENUM_ZERO_DIM 共享锚点行溢出噪音（非 Java 项目 MyBatis/迁移维度恒报"枚举器可能漏报"）——注册表新增 ZERO_HINT 形态特征，无命中判"维度真空确认"信息行。
+- **D5** check_domain 客观规律检测排除词表不含 .spec./.test. 路径形态——*.spec.ts 夹具密码命中"明文存储"硬 fail（与 D3 同族双报）；3a/3b 排除词补路径形态。
+- **D6** extract-feature-cards 前端组件计数只数顶层 export——Vue3 script-setup SFC 项目恒 0（4 组件报 0 实证）；.vue 按文件计 + jsx/tsx 保持 export 计。
+
+### Verified（2026-10-18 实跑记录）
+- 三门禁：run-sweep 65/66 首跑（唯一 fail 为 test-r75 L10 徽章同步锁与后台升版的读写竞态——升版完成后单跑 16/0 全绿，三面 2.83.0 一致；其余 65 项含 e2e/gen-e2e/fieldchange-e2e/verifier-all 首跑全绿）/ self-check --check-only exit 0（产物字节 576370B ≤ 577536B 预算内零登记）/ test-r68-jargon-free 17/0 首跑即绿。
+- 样例终态：后端单测 18/18 + e2e 7/7 + 前端 7/7 + 双端 build exit 0 + 目标技能 --all fail 0；修复逐项在 nest-forge 上复验（D1 express 经真实适配器命中/frontend_components 0→4/D2-D5 门禁红→绿/D4 ENUM_ZERO 转真空确认）。
+
 ## [v2.82.0] - 2026-10-17
 
 R117 运行时例行刷新轮

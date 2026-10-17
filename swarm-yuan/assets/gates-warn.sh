@@ -311,6 +311,23 @@ check_sensitive() {
         --include='*.scss' --include='*.java' \
         --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=venv --exclude-dir=site-packages --exclude-dir=__pycache__ --exclude-dir=.tox --exclude-dir=dist --exclude-dir=build --exclude-dir=target --exclude-dir=vendor 2>/dev/null \
         | grep -viE 'example|placeholder|test|mock|dummy|<.*>' || true)
+      # R118-D3（nest-forge 实证）：SENSITIVE_EXCLUDE_GLOBS 项目级豁免此前只对 gitleaks
+      # 子路径生效，内置正则族路径零消费——测试夹具密码（*.spec.ts 内 password: 'xxx'）
+      # 无法经 conf 豁免，内置路径必然 fail。对齐 gitleaks 路径的两层排除：
+      # ①测试文件路径排除（grep -rn 输出行首为 path:line:，按路径段过滤，与 gitleaks
+      #   路径的同款语义：测试固件密码不按密钥泄露论处）；②SENSITIVE_EXCLUDE_GLOBS
+      #   精确豁免（grep -vF 同款）。行内容排除（上方 test|mock 词过滤）保留不变。
+      if [[ -n "$matches" ]]; then
+        matches=$(printf '%s\n' "$matches" \
+          | grep -vE '(^|/)(tests?|testdata|__tests__|__mocks__|fixtures?|mocks?|examples?)/|(^|/)(tests?|testdata|__tests__|__mocks__|fixtures?|mocks?|examples?)\.[a-z]+:|\.spec\.[a-z]+:|\.test\.[a-z]+:|_test\.[a-z]+:' || true)
+        if [[ ${#SENSITIVE_EXCLUDE_GLOBS[@]} -gt 0 ]]; then
+          local _xgl2
+          for _xgl2 in "${SENSITIVE_EXCLUDE_GLOBS[@]}"; do
+            matches=$(printf '%s\n' "$matches" | grep -vF "$_xgl2" || true)
+          done
+          unset _xgl2
+        fi
+      fi
       if [[ -n "$matches" ]]; then
         fail "疑似敏感信息 ($dir):"
         echo "$matches" | head -10
@@ -1296,16 +1313,21 @@ check_domain() {
 
   # ---- 3. 客观规律违规检测（硬门禁：检测代码中违反通用常识的模式）----
   # 3a. 安全常识：密码明文存储
+  # R118-D5（nest-forge 实证）：排除词表补 \.spec\. / \.test\. / \.e2e-spec\. 路径形态——
+  # _scan_src 的 grep -v 作用于整行（含路径前缀），词表只认 test/mock 词时 *.spec.ts
+  # 测试夹具密码（password: 'super-secret-1'）照命中"明文存储"硬 fail，无豁免通道。
+  # 测试夹具不是"存储的密码"：夹具密码永不入生产存储，排除语义与 gitleaks 路径
+  # 排除（check_sensitive）对齐——同门禁族判定标准一致。
   local pwd_violation
-  pwd_violation=$(_scan_src "password\s*[=:]\s*['\"][^'\"]+['\"]" 'ts,js,py,java' 'test\|mock\|node_modules\|placeholder\|example\|xxx\|yyy' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}")
+  pwd_violation=$(_scan_src "password\s*[=:]\s*['\"][^'\"]+['\"]" 'ts,js,py,java' 'test\|mock\|node_modules\|placeholder\|example\|xxx\|yyy\|\.spec\.\|\.test\.\|\.e2e-spec\.' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}")
   if [[ -n "$pwd_violation" ]]; then
     fail "违反安全客观规律：检测到密码明文存储（密码必须哈希，不可明文）"
     echo "$pwd_violation" | head -3 | sed 's/^/    /'
     found=1
   fi
-  # 3b. 数据库常识：SQL 拼接（非参数化）
+  # 3b. 数据库常识：SQL 拼接（非参数化）——排除词同 R118-D5 补路径形态
   local sql_violation
-  sql_violation=$(_scan_src "SELECT.*\+.*FROM|INSERT.*\+.*VALUES|WHERE.*\+.*=" 'ts,js,py,java' 'test\|mock\|node_modules' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}")
+  sql_violation=$(_scan_src "SELECT.*\+.*FROM|INSERT.*\+.*VALUES|WHERE.*\+.*=" 'ts,js,py,java' 'test\|mock\|node_modules\|\.spec\.\|\.test\.\|\.e2e-spec\.' "${WRITABLE_DIRS[@]+"${WRITABLE_DIRS[@]}"}")
   if [[ -n "$sql_violation" ]]; then
     fail "违反数据库客观规律：检测到 SQL 字符串拼接（必须参数化查询，防注入）"
     echo "$sql_violation" | head -3 | sed 's/^/    /'
