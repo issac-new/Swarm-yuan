@@ -41,7 +41,7 @@ live CLI 口径：`claude --version` 2.1.302（=npm latest，漂移已自然归�
 1. **新增吸收文本门禁违例 3 处**（jargon 首跑 15/2 逮出，当场改写）：裸轮次标记 2 处（code-graph-tools「R116 登记」+dsh「R74 预登记/R17 先例」→去编号改现状引用）+ 变迁叙事句 1 处（review-methodology「越来越是/升为」→改现状描述「是 agent 可分级消费的契约」）——门禁有效性连续第三轮首跑即咬（R115/R116 同型）。
 2. **预算断言第三十次登记**：references 拷贝体积实测 576423B 超 7079B，成因=本轮六档吸收注记增量（9 移动运行时的方法层吸收），569344→577536 登记（+8KiB 沿决策 38 冻结现状+显式余量形态）。
 3. **gstack 安装面残留符号链接击穿源码包重装**：`~/.claude/skills/gstack/connect-chrome -> open-gstack-browser`（旧版安装残留）挡住新版源码包内同名目录拷贝（cp「Not a directory」）——清残留符号链接后 self-check 全绿。
-4. **ecc-src.zip（37M）上传持续失败（未解决，如实记档）**：v20261017-src 源码包发版中 gstack（22M）/superpowers（812K）两件当日化完成；ecc 37M 经 gh CLI 四次+curl 直传一次全部 HTTP 408（Upload body timed out due to inactivity）——同日 47M 离线包可正常上传（v2.82.0 release 实证），该件为特定大附件的持续上传失败非瞬态。**影响面**：self-check install_from_src_release 的当日 tag 缺件降级路径（回退 v20261013-src 的 ecc）已实证可用（§三.3 修复时走的即降级链）；ecc 本轮零版本移动（v2.2.3 持平），降级包内容无陈旧风险。**遗留动作**：网络窗口恢复后重传（release-src-packages.sh 幂等）。
+4. **ecc-src.zip（37M）上传失败→已清偿（2026-10-18 重传成功）**：v20261017-src 源码包发版中 gstack（22M）/superpowers（812K）两件当日化完成；ecc 37M 经 gh CLI 四次+curl 直传一次全部 HTTP 408（Upload body timed out due to inactivity）——同日 47M 离线包可正常上传（v2.82.0 release 实证），该件为特定大附件的持续上传失败非瞬态。**影响面**：self-check install_from_src_release 的当日 tag 缺件降级路径（回退 v20261013-src 的 ecc）已实证可用（§三.3 修复时走的即降级链）；ecc 本轮零版本移动（v2.2.3 持平），降级包内容无陈旧风险。**遗留动作**：已闭合——2026-10-18 04:00 定时重试成功（gh release upload 直传，38819028B 资产在案 v20261017-src；三件源码包齐备）。
 5. **run-sweep 首跑路径踩空**（流程缺陷，非产品缺陷）：`tests/run-sweep.sh` 被误呼为 `scripts/run-sweep.sh`——sweep 在 tests/ 目录（与 jargon 同目录），脚本路径记档防复发。
 4. **run-sweep 首跑路径踩空**（流程缺陷，非产品缺陷）：`tests/run-sweep.sh` 被误呼为 `scripts/run-sweep.sh`——sweep 在 tests/ 目录（与 jargon 同目录），脚本路径记档防复发。
 

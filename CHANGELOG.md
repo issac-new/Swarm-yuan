@@ -12,7 +12,7 @@ R117 运行时例行刷新轮
 
 ### Fixed
 - 新增吸收文本 jargon 违例 3 处（裸轮次标记 2+变迁叙事句 1）当场改写——门禁连续第三轮首跑即咬。
-- gstack 安装面残留符号链接（connect-chrome→open-gstack-browser）击穿源码包重装——清残留后 self-check 全绿。源码包当日化：gstack/superpowers 两件完成（v20261017-src）；**ecc-src.zip 37M 上传持续 408 未上（gh×4+curl×1）——降级链（v20261013-src 的 ecc，内容零移动无陈旧风险）已实证可用，网络窗口恢复后重传**（轮档 §三.4 如实记档）。
+- gstack 安装面残留符号链接（connect-chrome→open-gstack-browser）击穿源码包重装——清残留后 self-check 全绿。源码包当日化：gstack/superpowers 两件完成（v20261017-src）；**ecc-src.zip 37M 上传持续 408 未上（gh×4+curl×1）——降级链（v20261013-src 的 ecc，内容零移动无陈旧风险）已实证可用，网络窗口恢复后重传**（轮档 §三.4 如实记档；**2026-10-18 已清偿——定时重试成功，三件源码包齐备 v20261017-src**）。
 
 ### Verified（2026-10-17 实跑记录）
 - 三门禁：jargon 17/0（首跑 15/2 两处当场修）/ self-check RC=0（预算登记后 576370≤577536）/ run-sweep 全绿（64+ 项，含 e2e/gen-e2e/fieldchange-e2e）。
