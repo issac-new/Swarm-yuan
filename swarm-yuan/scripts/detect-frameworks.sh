@@ -93,8 +93,14 @@ vite|vite|pkgjson
 webpack|webpack|pkgjson
 tailwind|tailwindcss|pkgjson
 koa|koa|pkgjson
+# R118-D1（nest-forge 实证）：@types/* 是类型声明包，证明不了运行时平台——
+# @nestjs/platform-fastify 项目也常带 @types/express（@nestjs 生态类型传递依赖），
+# 旧信号 express|express|pkgjson 经 @types/express 误激活 express 规则集。
+# 双修：①pkgjson 桶统一剔除 @types/*（下方收集段）；②补真实平台适配器信号（全名精确匹配）。
 express|express|pkgjson
+express|@nestjs/platform-express|pkgjson
 fastify|fastify|pkgjson
+fastify|@nestjs/platform-fastify|pkgjson
 nestjs|@nestjs/core|pkgjson
 django|Django|pyreq
 django|django|pyproject
@@ -245,12 +251,14 @@ import json,sys
 try:
     d=json.load(open(sys.argv[1]))
     for sec in ('dependencies','devDependencies','peerDependencies'):
-        for k in (d.get(sec) or {}): print(k)
+        for k in (d.get(sec) or {}):
+            # R118-D1: @types/* 是类型声明非运行时框架——不入探测桶
+            if not k.startswith('@types/'): print(k)
 except Exception: pass
 " "$_pj" 2>/dev/null || true)
   else
-    # 无 python3 降级：行首 + 行内 "key":" 双模式提取
-    _deps=$(grep -oE '(^|,|\{)[[:space:]]*"[^"]+":[[:space:]]?' "$_pj" 2>/dev/null | sed -E 's/.*"([^"]+)":.*/\1/' || true)
+    # 无 python3 降级：行首 + 行内 \"key\":\" 双模式提取（@types/* 同剔除）
+    _deps=$(grep -oE '(^|,|\{)[[:space:]]*"[^"]+":[[:space:]]?' "$_pj" 2>/dev/null | sed -E 's/.*"([^"]+)":.*/\1/' | grep -v '^@types/' || true)
   fi
   _pkgjson_deps="${_pkgjson_deps}
 ${_deps}"

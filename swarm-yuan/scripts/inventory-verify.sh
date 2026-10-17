@@ -104,6 +104,30 @@ _enum_count() { # $1=CMD模板
 # 数 reference-manual.md 对应表行数：定位 §<n> 标题到下一个同级/更高级 ## 之间，数表格数据行（| 开头非分隔/表头）
 # R33-D5（2026-09-17 Java 栈执勤实证）：锚支持空格分隔多锚（'§8 §9'）——同维度在不同档位落不同节
 # （ORM schema standard/compliance 在 §8 数据字典、lite 精简档自然落 §9 数据勾稽），合计行数。
+# R118-D4：_anchor_row_paths 与 _list_count 同款节定位，但输出行内反引号路径（供 ZERO_HINT
+# 维度形态特征匹配）——两处节匹配条件必须保持一致（同族漂移防线，改一处须同步另一处）。
+_anchor_row_paths() { # $1=RM文件 $2=锚（空格分隔多锚）；stdout 每行一个路径
+  local rm="$1" anchor="$2"
+  [[ -f "$rm" ]] || return 0
+  local _a sec
+  for _a in $anchor; do
+    sec=${_a%%.*}
+    awk -v sec="$sec" '
+      { h = $0
+        if (index(h, "## " sec " ") == 1 || index(h, "## " sec ".") == 1 || index(h, "## " sec "（") == 1 || h == "## " sec) { insec=1; next }
+        if (insec && $0 ~ "^## ") { insec=0 }
+        if (insec && /^\|/) {
+          rest=$0
+          while (match(rest, /`[^`]+`/)) {
+            tok=substr(rest, RSTART+1, RLENGTH-2)
+            rest=substr(rest, RSTART+RLENGTH)
+            if (tok ~ /\//) print tok
+          }
+        }
+      }
+    ' "$rm"
+  done
+}
 _list_count() { # $1=RM文件 $2=锚（§<n>[.<sub>]，空格分隔多锚）
   local rm="$1" anchor="$2"
   [[ -f "$rm" ]] || { echo 0; return; }
@@ -174,8 +198,23 @@ for d in $_dims; do
   # （同 R28 缺 SQLAlchemy 的根因模式）。此处不改 PASS 判定（比率语义是清单覆盖枚举），
   # 独立披露行提示人工复核：维度真为空 or 枚举器漏报，两条路都该被看见。
   if [[ "$enum" -eq 0 && "$list" -gt 0 ]]; then
-    enum_zero="${enum_zero}ENUM_ZERO_DIM	${title}	枚举 0 命中但清单 ${list} 行——枚举器可能漏报该技术栈形态（同 R28 SQLAlchemy 先例）或维度真为空，人工复核
+    # R118-D4：ZERO_HINT 分流——清单行（锚节反引号路径）无一命中该维度形态特征 → 维度真空
+    # 确认（共享锚点行溢出，非枚举器漏报）；有命中或未配 hint → 保留原"可能漏报"警讯。
+    eval "_zh=\${DIM_${d}_ZERO_HINT:-}"
+    _ez_hit=1
+    if [[ -n "$_zh" && -n "$SKILL_DIR" && -f "$rm" ]]; then
+      _ez_paths=$(_anchor_row_paths "$rm" "$ref")
+      if ! printf '%s\n' "$_ez_paths" | grep -Eq "$_zh"; then
+        _ez_hit=0
+      fi
+    fi
+    if [[ "$_ez_hit" -eq 0 ]]; then
+      enum_zero="${enum_zero}ENUM_ZERO_CONFIRMED	${title}	枚举 0 且清单行（${list}）无一命中该维度形态特征——维度真空确认（清单行为共享锚点溢出），非枚举器漏报
 "
+    else
+      enum_zero="${enum_zero}ENUM_ZERO_DIM	${title}	枚举 0 命中但清单 ${list} 行——枚举器可能漏报该技术栈形态（同 R28 SQLAlchemy 先例）或维度真为空，人工复核
+"
+    fi
   fi
 done
 

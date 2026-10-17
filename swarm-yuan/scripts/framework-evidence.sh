@@ -30,7 +30,12 @@ PROJ="$(cd "$PROJ" && pwd)"
 # 框架列表：--frameworks > detect-frameworks.sh
 if [[ -z "$FWS" ]]; then
   if [[ -x "$BASE/scripts/detect-frameworks.sh" ]]; then
-    FWS=$("$BASE/scripts/detect-frameworks.sh" "$PROJ" 2>/dev/null | sed -n 's/.*"\([^"]*\)".*/\1/p' | tr '\n' ',' | sed 's/,$//')
+    # R118-D2（nest-forge 实证，8 框架只出 1）：旧 sed 's/.*"\([^"]*\)".*/\1/p' 贪婪匹配
+    # 在多框架 ACTIVE_FRAMEWORKS 行上只捕获最后一个引号 token——多框架项目证据台账
+    # 静默缩水为单框架。改为逐 token 提取：剥前缀/括号/引号 → 空格切列 → 逗号重组。
+    FWS=$("$BASE/scripts/detect-frameworks.sh" "$PROJ" 2>/dev/null \
+      | sed -n 's/^ACTIVE_FRAMEWORKS=//p' | tr -d '()"' | tr -s ' ' '\n' \
+      | grep -v '^$' | tr '\n' ',' | sed 's/,$//')
   fi
   [[ -z "$FWS" ]] && { echo "（无 ACTIVE_FRAMEWORKS，台账为空）"; exit 0; }
 fi
